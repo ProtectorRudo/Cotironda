@@ -85,6 +85,11 @@ jobs:
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261029183835_storage_private_buyer_drafts.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/94_storage_private_tenant.sql
+      - name: Revocacion de sesion Auth en RLS Storage (migracion 9)
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261029204400_storage_session_revocation.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/95_storage_session_revocation.sql
 
   migrations-from-zero:
     name: Reconstruir historial 7 migraciones en PostgreSQL limpio
@@ -117,12 +122,12 @@ jobs:
           persist-credentials: false
       - name: Emular solamente roles Supabase en PostgreSQL efímero
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/00_bootstrap.sql
-      - name: Aplicar las 8 migraciones HISTÓRICAS desde cero y en orden
+      - name: Aplicar las 9 migraciones HISTÓRICAS desde cero y en orden
         run: |
           set -euo pipefail
           shopt -s nullglob
           migrations=(supabase/migrations/*.sql)
-          if [[ "${#migrations[@]}" -ne 8 ]]; then
+          if [[ "${#migrations[@]}" -ne 9 ]]; then
             echo 'ERROR: número de migraciones inesperado, revisar historial dev' >&2
             exit 1
           fi
@@ -158,6 +163,8 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/93_revoked_session_status.sql
       - name: Storage privado por empresa en historial reconstruido
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/94_storage_private_tenant.sql
+      - name: Revocacion de sesion Storage tras reconstruir 9 migraciones
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/95_storage_session_revocation.sql
       - name: 'Verificar limpieza final: flag apagado y cero datos de pruebas'
         run: |
           set -euo pipefail
