@@ -177,6 +177,29 @@ async function run(){
  assert.equal(sql("select count(*) from public.supplier_delivery_areas where organization_id='"+ORGS.b+"'"),'1');
  console.log('PASS HTTP RLS: zonas de entrega respetan empresa y rol');
 
+ // Revocación inmediata: el MISMO JWT firmado ya no lee ni escribe catálogos.
+ exactIds(await rows('organizations',jwt.a),'id',[ORGS.a],'A antes de logout');
+ sql("delete from auth.sessions where id='"+SESSIONS.a+"'");
+ assert.equal(sql("select count(*) from auth.sessions where id='"+SESSIONS.a+"'"),'0');
+ exactIds(await rows('organizations',jwt.a),'id',[],'A tras logout');
+ exactIds(await rows('supplier_products',jwt.a),'id',[],'catálogo A tras logout');
+ exactIds(await rows('supplier_delivery_areas',jwt.a),'id',[],'zonas A tras logout');
+ const afterLogoutPatch=await http('PATCH','/supplier_products?id=eq.'+PRODUCT_A,jwt.a,{
+  product_name:'NO DEBE CAMBIAR JWT REVOCADO'
+ });
+ assert.equal(afterLogoutPatch.status,200);
+ assert.deepEqual(afterLogoutPatch.data,[]);
+ const afterLogoutInsert=await http('POST','/supplier_products',jwt.a,product(ORGS.a,'NO AUTORIZADO REVOCADO'));
+ assert.ok([401,403].includes(afterLogoutInsert.status));
+ assert.equal(sql("select product_name from public.supplier_products where id='"+PRODUCT_A+"'"),'Cable A actualizado CI');
+
+ const freshSession='f5555555-5555-4555-8555-555555555555';
+ sql("insert into auth.sessions(id,user_id,not_after) values ('"+freshSession+"','"+USERS.a+"',null)");
+ const freshToken=token(USERS.a,freshSession);
+ exactIds(await rows('organizations',freshToken),'id',[ORGS.a],'sesion nueva A');
+ exactIds(await rows('organizations',jwt.a),'id',[],'token antiguo no revive');
+ console.log('PASS HTTP RLS: JWT firmado revocado no puede leer ni escribir; nueva sesión no revive token viejo');
+
  // No se altera ni el registro, ni cuotas, ni el servicio remoto.
  assert.equal(sql('select count(*) from cotironda_private.registration_attempt_quotas'),'0');
  assert.equal(sql("select enabled from cotironda_private.registration_settings where singleton=true"),'f');

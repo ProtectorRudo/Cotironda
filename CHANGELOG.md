@@ -208,3 +208,14 @@
 - Contraste de extremos vía HTTP verdadero: denegación anónima, firma JWT alterada, expiración, 20 rechazos que consumen cuota y **HTTP 429 en el intento 21**, JWT todavía firmado con sesión revocada responde **HTTP 403 session_invalid**, login nuevo no revive JWT anterior y cuotas separadas. Todos los nombres de empresa son inválidos por diseño; **0 empresas creadas**, cleanup verificado.
 - **5/5 workflows SUCCESS y 142/142 unitarias** sobre commit probado `4e50478480134b9de15b7de539e2dd1e6ff39659`. HTTP PostgREST: https://github.com/ProtectorRudo/Cotironda/actions/runs/40969448761
 - No confundir este E2E HTTP con un JWT auténtico Supabase Auth: faltan prueba remota de logout/429 y SSR HTTPS con cookies. No hay cambios al proyecto Supabase real, main, Storage ni producción. Ver `docs/48-postgrest-real-http-ci.md`.
+
+
+## [Sin publicar — PR #73: RLS multiempresa probada con HTTP verdadero]
+- Fixture PostgreSQL CI con 2 proveedores y 4 personas ficticias: propietarios A/B, lector A y manager suspendido; peticiones GET/POST/PATCH/DELETE a PostgREST. Se verificó con SQL que los accesos negados no afectan filas, que el propietario modifica lo propio y que `user_metadata` falsa no eleva permisos.
+- Se corrigió **únicamente** el helper `auth.uid()` simulado de CI para leer JWT JSON tal como la versión oficial de Supabase. 146/146 unitarias y 5 workflows GitHub SUCCESS en PR #73, sin datos reales ni publicación. Ver `docs/49-tenant-isolation-http-ci.md`.
+
+## [Sin publicar — PR #75: cierre experimental de acceso comercial tras logout]
+- Consulta read-only en `cotironda-dev` detectó **17 de 23** policies comerciales para `authenticated` sin guard de sesión vigente; las 6 restantes son del registrador con guard específico. Se creó Issue #74.
+- `supabase/tests/ci/100_session_rls_hardening_draft.sql`: propuesta que agrega un guard `AND` en USING/WITH CHECK a las 17 policies de cliente, preservando los predicados y permisos anteriores. **SOLO se ejecutó en CI efímera, NO es migración oficial y NO se aplicó a Supabase dev.**
+- PostgREST real: JWT firmado revocado no puede leer ni escribir, nueva sesión no revive el antiguo; limpieza y registro apagado confirmados. **149/149 unitarias y 5/5 workflows SUCCESS** en HEAD `5197d44c8bdf48557c9c9632ebeefa0164283868`. Ver `docs/50-session-aware-rls-ci.md`.
+- Pendiente: migración formal generada por CLI, tests de 12 migraciones, revisión de rendimiento/seguridad, Auth Supabase genuino y cookies HTTPS. Sin merge, despliegue o cambios a producción.

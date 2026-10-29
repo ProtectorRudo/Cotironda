@@ -96,6 +96,8 @@ jobs:
           fi
       - name: HTTP JWT autentico de PostgREST (NO Supabase Auth) 429 revocacion y limpieza
         run: node tests/integration/postgrest-http-real.mjs
+      - name: Endurecer RLS de forma experimental SOLO en PostgreSQL efimero
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/100_session_rls_hardening_draft.sql
       - name: Preparar empresas y roles ficticios para prueba HTTP de aislamiento
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/99_tenant_http_fixture.sql
       - name: Verificar RLS real via HTTP entre empresas y limpiar fixtures
