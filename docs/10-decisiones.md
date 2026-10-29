@@ -14,6 +14,7 @@ Estados: **Aprobado**, **Propuesto**, **Pendiente**. Toda nueva decisión lleva 
 - D009 Evaluar compras completas con uno o hasta dos proveedores.
 - D010 Desarrollo modular con auditoría, pruebas y GitHub como fuente oficial.
 - D011 Repositorio inicialmente **público por instrucción del propietario (29-10-2026)**; prohibido incluir datos/secretos sensibles.
+- D012 El propietario informó haber comprado **cotironda.com** en Hostinger (29-10-2026). El dominio pertenece a su registro; no equivale a aprobar publicación inmediata ni cambiar DNS.
 
 ## Propuestas pendientes de confirmar
 - P001 Prueba gratis de 30 días y posible extensión si no hubo cotizaciones válidas.
@@ -21,6 +22,7 @@ Estados: **Aprobado**, **Propuesto**, **Pendiente**. Toda nueva decisión lleva 
 - P003 Invitaciones a 5–8 proveedores pertinentes por rubro (rotación y volumen a validar).
 - P004 Comunicar a proveedores cobertura y competitividad sin puestos engañosos ni presión.
 - P005 No procesar compra y pago de materiales desde Cotironda en MVP.
+- P006 Tomar **www.cotironda.com** como host público canónico, redirigir apex a www y asociar ambos al proyecto público de Vercel `cotironda` (no portal-dev). Su implementación requiere autorización `Publicalo`, revisión DNS, SSL y rollback.
 
 ## Preguntas abiertas
 - A001 Límites claros de uso razonable de pedidos «ilimitados».
