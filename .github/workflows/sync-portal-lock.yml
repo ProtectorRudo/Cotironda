@@ -30,7 +30,7 @@ jobs:
             echo "Lockfile actualizado previamente"
             exit 0
           fi
-          current_sha="$(gh api "repos/$REPO/contents/apps/portal/package-lock.json" --jq '.sha')"
+          current_sha="$(gh api "repos/$REPO/contents/apps/portal/package-lock.json?ref=$BRANCH" --jq '.sha')"
           CURRENT_SHA="$current_sha" node -e "const fs=require('node:fs');fs.writeFileSync('/tmp/cotironda-lock.json',JSON.stringify({message:'chore(portal): actualizar lockfile tras eliminar pg',content:fs.readFileSync('apps/portal/package-lock.json').toString('base64'),sha:process.env.CURRENT_SHA,branch:process.env.BRANCH}))"
           gh api --method PUT "repos/$REPO/contents/apps/portal/package-lock.json" --input /tmp/cotironda-lock.json > /dev/null
           rm -f /tmp/cotironda-lock.json
