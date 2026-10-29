@@ -7,7 +7,7 @@ const devTest=readFileSync(new URL('../../supabase/tests/manual/13_quarantine_le
 
 test('cuarentena nunca se abre a usuarios autenticados/anon en la migración',()=>{
  assert.match(migration,/cotironda-upload-quarantine/);
- assert.match(migration,/public,false,10485760/);
+ assert.match(migration,/values\('cotironda-upload-quarantine','cotironda-upload-quarantine',false,10485760/);
  assert.match(migration,/count\(\*\) from pg_policies/);
  assert.doesNotMatch(migration,/create policy/i);
  assert.doesNotMatch(migration,/grant\s+(insert|select|update|delete|all)\s+on\s+storage\.objects/i);
