@@ -48,5 +48,5 @@ jobs:
       - name: Validar rol limitado sin login ni bypass RLS
         run: |
           set -euo pipefail
-          psql -X -v ON_ERROR_STOP=1 -f supabase/changes/01_backend_role.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261029111731_backend_role_limited.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/40_backend_role.sql
