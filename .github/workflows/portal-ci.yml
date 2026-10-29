@@ -23,6 +23,8 @@ jobs:
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Verificar sintaxis del E2E sin red ni credenciales
         run: node --check scripts/auth-real-smoke.mjs
+      - name: Contrato HTTP de supabase-js con fetch simulado
+        run: node scripts/postgrest-429-contract.mjs
       - name: TypeScript
         run: npm run typecheck
       - name: Compilar con registro deshabilitado

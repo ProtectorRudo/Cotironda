@@ -29,15 +29,22 @@ test('no acepta datos RPC malformados',async()=>{
  }
 });
 
-test('RPC de cuota devuelve error acotado sin información confidencial',async()=>{
+test('cuota usa HTTP 429 del PostgrestResponse, aunque PostgrestError no tenga status',async()=>{
  for(const result of [
-  {data:[{organization_id:null,replay:null,registration_status:'rate_limited'}],error:null},
-  {data:null,error:{code:'429',message:'too many requests'}},
-  {data:null,error:{message:'[{"registration_status":"rate_limited"}]'}}
+  {status:200,data:[{organization_id:null,replay:null,registration_status:'rate_limited'}],error:null},
+  {status:429,data:null,error:{code:'PGRST_TEST',message:'Too Many Requests'}},
+  {status:429,data:null,error:{message:'Sin código explícito de cuota'}},
+  {status:429,data:null,error:null}
  ]){
   const p=puertoRegistroRpc({rpc:async()=>result});
   await assert.rejects(p.crearEmpresaConPropietario(input),e=>e.message==='limite_intentos');
  }
+});
+test('no confunde mensajes arbitrarios con HTTP 429',async()=>{
+ const p=puertoRegistroRpc({rpc:async()=>({
+  status:503,data:null,error:{message:'rate_limited (texto no confiable)',code:'PGRST500'}
+ })});
+ await assert.rejects(p.crearEmpresaConPropietario(input),e=>e.message==='registro_rpc_no_disponible');
 });
 test('respuestas estructuradas de rechazo del SQL sin datos internos',async()=>{
  const map=[

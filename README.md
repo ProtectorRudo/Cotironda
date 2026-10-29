@@ -1,6 +1,6 @@
 # Cotironda
 
-**Estado: Etapa 01 — identidad y catálogos en desarrollo. Vista preliminar publicada (sin licitaciones reales).**
+**Estado al 29/10/2026: Etapa 01, identidad y catálogos en desarrollo. Siete migraciones aplicadas únicamente en `cotironda-dev`. El registro y las licitaciones comerciales NO están habilitados; el sitio público es demostrativo.**
 
 Cotironda es una plataforma argentina B2B para solicitar cotizaciones privadas de **materiales de obra**. El comprador carga una lista una sola vez; la IA la interpreta y separa por rubro; el comprador revisa y confirma. Se invita a proveedores pertinentes según catálogo y cobertura geográfica; estos pueden responder desde WhatsApp (Whapi + IA) o por un portal opcional. El comprador compara ofertas anónimas, completas o parciales, y adjudica manualmente.
 
@@ -30,9 +30,9 @@ Issue → alcance y aceptación → rama → implementación → pruebas/auditor
 
 > **Repositorio público por decisión del propietario.** No colocar aquí tokens, contraseñas, presupuestos reales, números de teléfono, datos personales, listas de clientes o información confidencial. Este material inicial es de diseño, no código funcional.
 
-> Desarrollo de Etapa 01 en rama: esquema SQL declarativo en `supabase/schema.sql`, selector en `src/domain/elegibilidad.ts` y pruebas. **No se ha aplicado ninguna migración real.**
+> Desarrollo de Etapa 01 en ramas y PR apilados: esquema SQL, selector y pruebas. **Se aplicaron siete migraciones reales exclusivamente en Supabase `cotironda-dev`; producción permanece intacta.**
 
-**Vista preliminar pública:** https://cotironda.vercel.app — sitio demostrativo con datos ficticios, aislado de Viralio. **Pruebas reales SQL/RLS:** `.github/workflows/postgres-rls.yml` sobre PostgreSQL efímero de GitHub Actions. No hay Supabase Cotironda en la nube.
+**Vista preliminar pública:** https://cotironda.vercel.app — sitio demostrativo con datos ficticios, aislado de Viralio. **Pruebas reales SQL/RLS:** `.github/workflows/postgres-rls.yml` sobre PostgreSQL efímero de GitHub Actions. El único Supabase de Cotironda utilizado para estas migraciones es el proyecto aislado de desarrollo `cotironda-dev`.
 
 ## Etapa 01 — Portal de registro (rama de desarrollo)
 - Se creó `apps/portal` (Next.js 16, React 19, Supabase SSR) con ingreso, alta de empresa y ruta POST protegida; **sin datos reales ni registro habilitado**.
@@ -42,9 +42,9 @@ Issue → alcance y aceptación → rama → implementación → pruebas/auditor
 - **La migración inicial se aplicó y verificó en `cotironda-dev`; el portal sigue sin Auth real ni registros habilitados**. La demo de `cotironda.vercel.app` se mantiene sin cambios.
 
 ## Desarrollo: Supabase dedicado
-Proyecto de desarrollo: `cotironda-dev` (`qkercsoqhehbenbbncwk`), versión de migración `20261029105736`. RLS y registro SQL verificados directamente en Supabase con datos sintéticos revertidos. Ver [registro de verificación](docs/19-supabase-dev.md). Este entorno no debe usarse para cotizaciones reales.
+Proyecto de desarrollo: `cotironda-dev` (`qkercsoqhehbenbbncwk`), última migración aplicada `20261029140422_registration_attempt_rate_limiter` (7 en total). RLS y registro SQL verificados directamente en Supabase con datos sintéticos revertidos. Ver [registro de verificación](docs/19-supabase-dev.md). Este entorno no debe usarse para cotizaciones reales.
 
-**Seguridad del registro:** existe segunda migración `20261029111731_backend_role_limited` aplicada en Supabase dev, con rol de backend NOLOGIN y sin bypass RLS. El portal sigue cerrado: falta credencial de backend y sesión de Auth validada E2E.
+**Seguridad del registro:** existe segunda migración `20261029111731_backend_role_limited` aplicada en Supabase dev, con rol de backend NOLOGIN y sin bypass RLS. El portal sigue cerrado: usa JWT/cliente Supabase SSR y RPC, sin credencial de backend SQL; falta sesión Auth validada E2E.
 
 **Auditoría actual:** la tercera migración de Etapa 01 (`20261029112947_execute_only_registration`) deja al rol del backend sin permisos de inserción directos. Únicamente invoca la función privada auditada; falta autenticar el origen de `p_user_id` y habilitar conexión de servicio segura. Ver `docs/21-funcion-registro-privilegios.md`.
 
@@ -57,3 +57,5 @@ Proyecto de desarrollo: `cotironda-dev` (`qkercsoqhehbenbbncwk`), versión de mi
 **Prueba adversarial del JWT (PR #22):** se preparó un test contra PostgREST que altera el sujeto de un JWT sin volver a firmarlo, y exige rechazo explícito por autenticación. Los tests automáticos son sin red; el E2E auténtico sigue pendiente de activar Auth Hook en desarrollo. Ver [auditoría JWT](docs/25-jwt-adversarial-auditoria.md).
 
 **Auditoría de sesiones (PR #24):** sexta migración aplicada en `cotironda-dev`: valida sesión activa y estado actual del usuario en Auth antes de registrar, aun con JWT válido. Cierre de sesión/revocación, suspensión y eliminación bloquean nuevas altas. Los registros siguen deshabilitados y falta E2E real. Ver [sesiones vigentes](docs/26-sesiones-vigentes.md).
+
+**Cuota y contrato HTTP (PR #30 y #32):** séptima migración en `cotironda-dev` para 20 intentos autenticados por usuario cada 60 minutos con contador SQL atómico, incluida denegación de negocio. Un ensayo con 40 conexiones concurrentes pasó; el SDK real fue comprobado con respuestas HTTP simuladas 429/403/200. **No se ejecutó todavía HTTP Auth real**: hook y cuentas controladas continúan pendientes. El portal permanece fail-closed, la base con `registration_settings.enabled=false`, y no hay altas comerciales. Ver [cuota transaccional](docs/28-cuota-transaccional-registro.md) y [auditoría HTTP](docs/29-http-429-sdk-auditoria.md).
