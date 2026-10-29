@@ -25,7 +25,7 @@
 - 24/24 pruebas unitarias **nuevas** aprobadas con Node.js v22.16.0 y --experimental-strip-types.
 - TypeScript: tsc -p tsconfig.json correcto.
 - Los cuatro archivos de código/test guardados en GitHub fueron comparados por hash Git blob con el contenido probado localmente.
-- Los 21 tests previos de catálogo/elegibilidad **no se repitieron en esta ejecución**.
+- **CI GitHub Actions** corrió todos los tests del repositorio en Node 22.16.0: **50/50 aprobados**, sin fallos. La ejecución original se completó en https://github.com/ProtectorRudo/Cotironda/actions/runs/40833901535.
 - Sin tests reales de API, cookies/SSR, Supabase Auth, BD, concurrencia ni rollback.
 
 ## Próximos pasos

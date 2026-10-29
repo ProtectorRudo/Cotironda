@@ -12,3 +12,5 @@
 - Nuevo núcleo de registro y autorización de empresas: **24 tests nuevos ejecutados y aprobados**, TypeScript correcto.
 - Pruebas SQL/pgTAP pendientes; no existe una BD Cotironda aislada ni se aplicaron migraciones.
 - Pendiente: sesión auténtica, transacción persistente idempotente, UI y despliegue.
+
+- GitHub Actions con 50/50 pruebas unitarias y estáticas correctas (ejecución 40833901535). Aún faltan pruebas reales SQL/RLS.
