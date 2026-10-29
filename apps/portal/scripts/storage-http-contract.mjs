@@ -55,33 +55,33 @@ const client=createClient(url,'sb_publishable_fake_ci',{
 });
 const pdf=new Blob(['%PDF-1.7\nCI-TEST'],{type:'application/pdf'});
 const params={file:pdf,organizationId:A,requestId:R,fileId:F};
-const uploaded=await subirBorrador(client,params);
-assert.equal(uploaded.path,path);
-assert.equal(calls.length,1);
-assert.ok(calls[0].path.endsWith('/'+path));
+await assert.rejects(()=>subirBorrador(client,params),
+ /carga_pendiente_revision_servidor/);
+assert.equal(calls.length,0,'No debe salir POST de upload, incluso con PDF aparentemente válido');
 
 const downloaded=await descargarBorrador(client,{
  organizationId:A,requestId:R,fileId:F,extension:'pdf'
 });
 assert.match(await downloaded.text(),/^%PDF-/);
-assert.equal(calls.length,2);
-assert.ok(calls[1].path.includes('/object/'+bucket+'/'));
-assert.equal(calls[1].method,'GET');
+assert.equal(calls.length,1);
+assert.ok(calls[0].path.includes('/object/'+bucket+'/'));
+assert.equal(calls[0].method,'GET');
 
-await assert.rejects(()=>subirBorrador(client,{...params,organizationId:B}),/carga_rechazada/);
+await assert.rejects(()=>subirBorrador(client,{...params,organizationId:B}),
+ /carga_pendiente_revision_servidor/);
 await assert.rejects(()=>descargarBorrador(client,{
  organizationId:B,requestId:R,fileId:F,extension:'pdf'
 }),/descarga_denegada/);
-assert.equal(calls.length,4,'Solo los dos fallos RLS llegaron a Storage fake');
+assert.equal(calls.length,2,'Solo dos GET de prueba llegan al SDK; no uploads');
 await assert.rejects(()=>subirBorrador(client,{
  ...params,file:new Blob(['not PDF'],{type:'application/pdf'})
-}),e=>e.code==='firma_no_coincide');
-assert.equal(calls.length,4,'No enviar archivo con firma falsa');
+}),/carga_pendiente_revision_servidor/);
 await assert.rejects(()=>subirBorrador(client,{
  ...params,file:new Blob([new Uint8Array(10*1024*1024+1)],{type:'application/pdf'})
-}),e=>e.code==='archivo_excede_limite');
-assert.equal(calls.length,4,'No enviar archivo excedido');
+}),/carga_pendiente_revision_servidor/);
+assert.equal(calls.length,2,'Bloqueo local incluso para archivo malformado');
+
 assert.ok(!calls.some(c=>c.path.includes('/object/sign/')||c.path.includes('/object/public/')));
 assert.ok(!JSON.stringify(calls).includes('ci_only_fake_jwt'),
  'No incluir tokens ficticios en reporte de rutas');
-console.log('PASS: supabase-js real contra Storage HTTP ficticio: carga privada sin upsert, descarga, RLS 403 y preflight sin red');
+console.log('PASS: carga directa deshabilitada sin POST; descarga SDK autenticada y RLS 403 simulados');
