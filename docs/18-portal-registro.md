@@ -37,3 +37,14 @@ El código del portal se valida por CI con versiones de Next y React fijadas. `s
 - URL: https://cotironda-portal-mv39u52l2-protector-rudo-s-projects.vercel.app (requiere Vercel Authentication).
 - Vercel clasifica su primer despliegue como target `production` **del proyecto exclusivo de desarrollo**, pero está protegido por SSO completo, sin secretos ni habilitación de registros. **No** reemplaza el proyecto público Cotironda ni sus dominios.
 - No se completó una prueba HTTP externa detrás de SSO; sí se verificó el build de Next.js y el estado READY en Vercel.
+
+### Auditoría de activación y cookies SSR (PR #10)
+- `src/server/portal-entorno.ts`: registro deshabilitado salvo flag explícito y coincidencia **exacta** de proyecto Supabase en URL Auth, referencia de proyecto y conexión PostgreSQL; un entorno de Viralio o TeHiceEsto queda rechazado.
+- El origen público debe ser HTTPS, salvo `localhost` de desarrollo. No se permiten rutas ni credenciales embebidas en el origen.
+- `/ingresar`, `/alta`, backend y Proxy comparten el mismo control de activación: no aparece formulario ni se abre sesión con configuración parcial.
+- Proxy SSR aplica headers `Cache-Control: private, no-store` y propaga las cabeceras de `@supabase/ssr` cuando refresca cookies. Referencia: https://supabase.com/docs/guides/auth/server-side/advanced-guide
+- Prueba HTTP con servidor Next.js real confirma acceso a home, login sin formulario, alta cerrada y respuesta 503 de POST sin entorno válido.
+- **77/77 tests unitarios aprobados**: https://github.com/ProtectorRudo/Cotironda/actions/runs/40860533725
+- **PostgreSQL/RLS y concurrencia aprobados**: https://github.com/ProtectorRudo/Cotironda/actions/runs/40860533535
+- **TypeScript + Next build + smoke HTTP aprobados**: https://github.com/ProtectorRudo/Cotironda/actions/runs/40860533715
+- No se probaron sesiones reales ni navegador con credenciales. La activación sigue pendiente de un proyecto exclusivo de Cotironda y auditoría E2E.

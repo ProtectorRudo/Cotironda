@@ -21,3 +21,8 @@
 - 64 tests unitarios, PostgreSQL 17 con pruebas SQL y build de Next.js aprobados; producción sin modificaciones.
 
 - Vista previa aislada y protegida en Vercel `cotironda-portal-dev`; build READY sin credenciales ni registros activos.
+
+## [Seguridad de portal - PR #10]
+- Cierre por defecto de sesiones, formulario y POST cuando falta el proyecto exclusivo o no coincide el origen/DB.
+- Protección SSR contra caché compartida y reenvío de cabeceras de cookies renovadas.
+- 77 tests unitarios, PostgreSQL/RLS, build Next y prueba HTTP real aprobados; sin activación productiva.
