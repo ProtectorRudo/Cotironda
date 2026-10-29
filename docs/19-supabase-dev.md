@@ -36,3 +36,9 @@
 3. Ejecutar flujo de Supabase Auth real con un usuario de prueba, correo verificado y cookies SSR, incluyendo ataques cross-tenant.
 4. Configurar storage privado, trazabilidad, rate limits de infraestructura y observabilidad.
 5. Abrir/revisar PRs #4, #8 y #10; no integrarlos ni publicar producción sin superar aceptación.
+
+## Preparación de Vercel para pruebas
+- El proyecto de Vercel `cotironda-portal-dev` (`prj_d13rTHxJADvP2K9PcrM0CJQD9Zok`) recibió **sólo variables no secretas** de Supabase: URL, clave publicable y referencia de proyecto, dirigidas a `preview` y `development`.
+- `COTIRONDA_REGISTRATION_ENABLED=false` permanece establecido en **todos los entornos** del proyecto de desarrollo, incluido `production` de ese proyecto.
+- No se configuró contraseña de PostgreSQL ni clave de servicio, ni se activó login/registro. El portal público de Cotironda es otro proyecto y no se modificó.
+- Próximo paso: diseñar credenciales de backend con permisos mínimos y verificar Auth real antes de habilitar el registro, incluso en entorno protegido.
