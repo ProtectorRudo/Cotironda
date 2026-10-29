@@ -60,3 +60,8 @@ jobs:
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261029120021_jwt_bound_registration_locked.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/60_jwt_bound_registration.sql
+      - name: RPC invoker, hook correo y privilegios limitados
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/changes/05_invoker_email_hook.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/70_invoker_email_hook.sql
