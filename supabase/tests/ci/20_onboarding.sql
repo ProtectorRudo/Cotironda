@@ -102,7 +102,7 @@ select ci_helpers.assert_true(
  'FK invalida revierte alta completa');
 
 -- El límite de 5 altas por usuario y día se aplica atómicamente.
-do $
+do $$
 declare idx integer;
 begin
  for idx in 1..4 loop
@@ -121,7 +121,7 @@ begin
    if sqlerrm <> 'limite_registros' then raise; end if;
  end;
 end
-$;
+$$;
 select ci_helpers.assert_true(
  (select count(*) from public.organizations where display_name='Empresa Sexta')=0,
  'cuota se aplica sin registros parciales');
