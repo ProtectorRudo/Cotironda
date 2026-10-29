@@ -44,3 +44,8 @@ Commit `5197d44c8bdf48557c9c9632ebeefa0164283868`:
 - Permanecen prohibidos la carga comercial de documentos, los mensajes a proveedores y el despliegue sin `Publicalo`.
 
 **Producción, `main`, Vercel, DNS/Hostinger y Supabase remoto sin cambios por este PR.**
+
+
+## Actualización posterior (PR #77)
+
+La propuesta experimental de este documento **ya tiene sucesora formal**: la migración 12 `20261029234236_commercial_session_guard.sql`, aplicada y verificada **solo en `cotironda-dev`**, con el inventario 17/23 y registrador sin cambios. Este documento permanece como historial del PR #75; la fuente vigente del avance es [docs/51-commercial-session-migration.md](51-commercial-session-migration.md). El SQL temporal `100_session_rls_hardening_draft.sql` fue retirado de la rama hija porque ya no debe ejecutarse.
