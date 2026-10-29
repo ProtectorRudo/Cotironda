@@ -60,3 +60,6 @@ Con el proyecto portal instalado, ejecutar `node scripts/auth-real-smoke.mjs` de
 - Nueve pruebas unitarias nuevas prueban mutación de sujeto, integridad de la firma original y distinción entre fallos. La CI ejecuta además `node --check` sobre el script E2E sin enviar solicitudes.
 - **Esta prueba adversarial real sigue pendiente** porque el Auth Hook no está activado y no existen cuentas de test en el proyecto. No afirmar que se probó criptografía a nivel red hasta ejecutar el script completo.
 - Expiración y revocación auténticas continúan pendientes: no se presenta un token artificialmente alterado como equivalente a uno vencido pero correctamente firmado.
+
+## Sexta migración: obligación de sesión vigente
+El alta también consulta la fila actual de `auth.sessions` y el estado actual de `auth.users`; un JWT firmado de una sesión cerrada no debe permitir registrar empresas. Ver `docs/26-sesiones-vigentes.md`. El runner E2E debe ampliar la cobertura con sesión terminada auténtica (sin fingir que `signOut()` invalida el JWT inmediatamente). **Todavía no se ejecutó esa prueba Auth real.**

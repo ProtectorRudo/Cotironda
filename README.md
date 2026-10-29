@@ -55,3 +55,5 @@ Proyecto de desarrollo: `cotironda-dev` (`qkercsoqhehbenbbncwk`), versión de mi
 **Pruebas E2E de Auth (PR #20):** preparado un runner manual para JWT auténticos y sesión Supabase (sin crear usuarios ni empresas) con validación estricta de que se usa solamente `cotironda-dev`. Nueve pruebas de preflight automáticas; E2E auténtico pendiente porque el Auth Hook aún no está habilitado. Ver [protocolo de activación y rollback](docs/24-auth-e2e-seguridad.md).
 
 **Prueba adversarial del JWT (PR #22):** se preparó un test contra PostgREST que altera el sujeto de un JWT sin volver a firmarlo, y exige rechazo explícito por autenticación. Los tests automáticos son sin red; el E2E auténtico sigue pendiente de activar Auth Hook en desarrollo. Ver [auditoría JWT](docs/25-jwt-adversarial-auditoria.md).
+
+**Auditoría de sesiones (PR #24):** sexta migración aplicada en `cotironda-dev`: valida sesión activa y estado actual del usuario en Auth antes de registrar, aun con JWT válido. Cierre de sesión/revocación, suspensión y eliminación bloquean nuevas altas. Los registros siguen deshabilitados y falta E2E real. Ver [sesiones vigentes](docs/26-sesiones-vigentes.md).
