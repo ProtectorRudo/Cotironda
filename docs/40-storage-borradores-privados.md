@@ -51,3 +51,6 @@ Archivos de prueba únicamente, nunca comerciales; retención y cuota por empres
 - [Supabase — Storage helper functions](https://supabase.com/docs/guides/storage/schema/helper-functions)
 - [Issue #50](https://github.com/ProtectorRudo/Cotironda/issues/50)
 - [PR #52](https://github.com/ProtectorRudo/Cotironda/pull/52)
+
+## Etapa posterior — preflight implementado, no habilitado
+La rama del [PR #54](https://github.com/ProtectorRudo/Cotironda/pull/54) prepara inspección conservadora de firmas/ZIP, validación de nombres de objeto y SDK `upload/download` contra Auth/Storage simulados. **No representa un upload HTTP real**, análisis malware, control de sesiones revocadas ni UI de archivos. Ver `docs/41-storage-preflight-http-contract.md`.
