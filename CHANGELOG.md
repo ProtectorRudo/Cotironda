@@ -181,3 +181,9 @@
 - Tests CI `95_storage_session_revocation.sql` y fixture histórico 94 actualizado; reconstrucción de 9 migraciones. Hubo un error inicial de expresión regular UUID con un grupo adicional, **detectado por CI y corregido** antes de instalar.
 - Aplicado y validado SOLO en `cotironda-dev` con versión registrada por Supabase `20261029202610`. Test manual `11_storage_revoked_session_rollback.sql` real, con Auth sessions y organizaciones ficticias en `ROLLBACK`: sesión vigente permitida, correo no confirmado, sesión revocada y antigua tras login nuevo denegadas, nueva sesión aceptada, not_after vencido denegado; 0 datos persistidos.
 - Aún falta E2E HTTP firmado y antivirus, retención/backup y consolidación de PR. Ver `docs/43-storage-session-revocation.md`.
+
+## [Sin publicar — PR #60: bloqueo de uploads directos sin antivirus]
+- Hallazgo: el módulo preflight de PDF/Excel/Word/imágenes corre del lado cliente, por lo que no evita que alguien llame a Storage API con un fichero manipulado y MIME declarado permitido. RLS de sesión/membresía no inspecciona bytes.
+- 10ª migración elimina solamente la policy INSERT `cotironda_buyer_drafts_insert_manager`, mantiene SELECT privado con guard Auth; `subirBorrador()` falla localmente sin red con `carga_pendiente_revision_servidor`.
+- Nuevo test 96: owner autenticado conserva lectura y **no** puede hacer INSERT; sesión revocada tampoco lee. Los tests históricos 94/95 se ejecutan antes de migración 10 en ambos recorridos CI.
+- No se implementó escáner, cuarentena ni endpoint de ingreso. Ver `docs/44-storage-upload-fail-closed.md`; no habilitar carga comercial.
