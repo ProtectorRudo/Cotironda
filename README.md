@@ -39,4 +39,7 @@ Issue → alcance y aceptación → rama → implementación → pruebas/auditor
 - SQL: registro atómico/idempotente y límite provisional de 5 empresas nuevas por usuario/24h, serializado bajo lock; SQL/RLS probados contra PostgreSQL 17 efímero.
 - **Evidencia:** 64/64 tests unitarios (https://github.com/ProtectorRudo/Cotironda/actions/runs/40858591761), PostgreSQL 17 (https://github.com/ProtectorRudo/Cotironda/actions/runs/40858590551), build Next.js (https://github.com/ProtectorRudo/Cotironda/actions/runs/40858590465).
 - Las dependencias tienen versiones fijadas y `package-lock.json` generado y guardado por GitHub Actions.
-- **No se aplicaron migraciones a Supabase, ni se activó Auth real**. La demo de `cotironda.vercel.app` se mantiene sin cambios.
+- **La migración inicial se aplicó y verificó en `cotironda-dev`; el portal sigue sin Auth real ni registros habilitados**. La demo de `cotironda.vercel.app` se mantiene sin cambios.
+
+## Desarrollo: Supabase dedicado
+Proyecto de desarrollo: `cotironda-dev` (`qkercsoqhehbenbbncwk`), versión de migración `20261029105736`. RLS y registro SQL verificados directamente en Supabase con datos sintéticos revertidos. Ver [registro de verificación](docs/19-supabase-dev.md). Este entorno no debe usarse para cotizaciones reales.

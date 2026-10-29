@@ -1,16 +1,13 @@
 import { clienteSupabaseServidor } from '@/lib/supabase/server';
 import { puertoRegistroPostgres } from '@/lib/database';
 import { procesarAlta } from '../../../../../src/server/registro-http.ts';
+import { portalHabilitado } from '../../../../../src/server/portal-entorno.ts';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request): Promise<Response> {
-  const configurado = process.env.COTIRONDA_REGISTRATION_ENABLED==='true'
-    && Boolean(process.env.COTIRONDA_DATABASE_URL)
-    && Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL)
-    && Boolean(process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY)
-    && Boolean(process.env.COTIRONDA_SITE_ORIGIN);
+  const configurado = portalHabilitado(process.env);
   return procesarAlta(req,{
     configurado,
     originPermitido:process.env.COTIRONDA_SITE_ORIGIN||'',

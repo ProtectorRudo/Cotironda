@@ -8,6 +8,6 @@ export default async function Alta(){
   const {data:{user},error}=await auth.auth.getUser();
   if(error||!user) redirect('/ingresar');
   return <main className="panel"><span className="eyebrow">TU EMPRESA</span><h1>Crear empresa</h1><p>Configurá tu perfil como comprador o proveedor. No se enviarán invitaciones hasta confirmar el catálogo y la zona.</p>
-    {process.env.COTIRONDA_REGISTRATION_ENABLED==='true'?<FormularioEmpresa/>:<div className="notice">El registro permanece deshabilitado hasta completar la auditoría de integración.</div>}
+    {entornoAuthConfigurado()?<FormularioEmpresa/>:<div className="notice">El registro permanece deshabilitado hasta completar la auditoría de integración.</div>}
   </main>;
 }

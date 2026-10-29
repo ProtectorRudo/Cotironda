@@ -1,6 +1,6 @@
 # 09 — Hoja de ruta y puertas de calidad
 
-**Estado actual:** Etapa 00 integrada en `main`; sitio preliminar sin funcionalidades comerciales publicado. Etapa 01 en PR borrador: pruebas RLS y registro SQL aprobadas en PostgreSQL efímero; sigue pendiente la integración real Supabase Auth/HTTP y la instancia aislada de desarrollo.
+**Estado actual:** Etapa 00 integrada en `main`; sitio preliminar sin funcionalidades comerciales publicado. Etapa 01 en PR borrador: pruebas RLS y registro SQL aprobadas en PostgreSQL efímero; sigue pendiente la integración real Supabase Auth/HTTP y la validación de sesión real. Ya existe `cotironda-dev` y el esquema inicial fue aplicado/probado, sin registros de clientes.
 
 | Etapa | Entregable | Criterio de aprobación |
 | --- | --- | --- |
@@ -20,4 +20,4 @@ Inspección de situación actual → impacto y aceptación → rama → implemen
 Primero flujo pequeño con datos sintéticos. Activar WhatsApp real cuando base y autorización ya sean seguras. No optimizar por número de pantallas: optimizar por ronda de cotización completa y confiable.
 
 ### Desarrollo paralelo de interfaz (sin desplegar backend)
-Se creó el PR #8, apilado sobre el PR #4: portal Next.js para alta de empresas e inicio de sesión, preparado para Supabase Auth. Pasó build de Next.js y los tests HTTP/SQL, pero queda **inactivo** hasta contar con Supabase Cotironda dedicado, aplicar migraciones y completar pruebas con sesión real. La etapa 01 continúa abierta.
+Se creó el PR #8, apilado sobre el PR #4: portal Next.js para alta de empresas e inicio de sesión, preparado para Supabase Auth. Pasó build de Next.js y los tests HTTP/SQL, pero queda **inactivo** hasta configurar las credenciales de aplicación y completar pruebas E2E con sesión real. La base Supabase dedicada y la migración ya existen. La etapa 01 continúa abierta.

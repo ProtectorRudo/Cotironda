@@ -21,3 +21,15 @@
 - 64 tests unitarios, PostgreSQL 17 con pruebas SQL y build de Next.js aprobados; producción sin modificaciones.
 
 - Vista previa aislada y protegida en Vercel `cotironda-portal-dev`; build READY sin credenciales ni registros activos.
+
+## [Seguridad de portal - PR #10]
+- Cierre por defecto de sesiones, formulario y POST cuando falta el proyecto exclusivo o no coincide el origen/DB.
+- Protección SSR contra caché compartida y reenvío de cabeceras de cookies renovadas.
+- 77 tests unitarios, PostgreSQL/RLS, build Next y prueba HTTP real aprobados; sin activación productiva.
+
+## [Conexión a Supabase — desarrollo, 29/10/2026]
+- Viralio se pausó sin borrado para liberar un cupo gratuito (puede reanudarse).
+- Proyecto Supabase exclusivo `cotironda-dev` creado en São Paulo, costo cotizado USD 0/mes.
+- Migración inicial `20261029105736_initial_identity_catalog` aplicada en desarrollo; nueve tablas con RLS y cinco rubros.
+- Pruebas reales de aislamiento por organización y registro idempotente aprobadas y revertidas, sin filas de prueba persistentes.
+- Historial versionado en GitHub; continúan pendientes Supabase Auth en portal y E2E.

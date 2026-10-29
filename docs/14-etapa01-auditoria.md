@@ -25,3 +25,13 @@
 Se verificó directamente contra el blob GitHub del esquema corregido: 7 tablas RLS, 17 políticas únicas, acceso restringido a contactos, bloqueo de membresías desde cliente, ausencia de SECURITY DEFINER, privilegios PUBLIC revocados, regex E.164 completa y trigger intacto. **9/9 comprobaciones estáticas**; no equivalen a ejecutar SQL.
 
 Durante revisión se detectó una interpolación accidental de `$` al generar el SQL: se descartó el árbol incorrecto antes del commit y se regeneró el archivo íntegro. Versión corregida auditada con 17 políticas, sin duplicados.
+
+## Verificación Supabase real (29-10-2026)
+- Se creó proyecto exclusivo `cotironda-dev` en Supabase región São Paulo, distinto de Viralio/TeHiceEsto.
+- Migración inicial `20261029105736` aplicada con éxito.
+- 9 tablas, todas con RLS; 5 categorías semilla.
+- Se ejecutaron las suites SQL de aislamiento A/B y registro en PostgreSQL **de Supabase real**, sustituyendo el helper de CI por una función temporal. Todas las aserciones pasaron; operaciones con BEGIN/ROLLBACK.
+- Tras pruebas: cero empresas, cero membresías, cero registros de alta.
+- Advisors de seguridad: sólo observaciones INFO para 2 tablas privadas sin políticas, intencionadamente no expuestas a anon/authenticated; service_role autorizado.
+- Performance advisors: índices de claves foráneas opcionales pendientes; índices sin uso por base recién creada.
+- **Pendiente**: Supabase Auth de usuarios reales y portal protegido; no activar aplicaciones comerciales sin comprobar E2E.

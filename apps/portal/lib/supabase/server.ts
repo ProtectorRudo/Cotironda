@@ -1,8 +1,9 @@
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
+import { portalHabilitado } from '../../../../src/server/portal-entorno.ts';
 
 export function entornoAuthConfigurado(): boolean {
-  return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY);
+  return portalHabilitado(process.env);
 }
 export async function clienteSupabaseServidor() {
   if (!entornoAuthConfigurado()) throw new Error('auth_no_configurada');
