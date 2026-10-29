@@ -82,3 +82,9 @@
 - Alta exige session_id JWT y existencia de auth.sessions del mismo usuario; correo actual confirmado, no-anónimo, no-borrado y no-suspendido.
 - Helper booleano exclusivamente privado; AUTH no expuesto y sin permiso de ejecución por clientes; funcion pública INVOKER sin modificación de firma.
 - Pruebas PostgreSQL y Supabase reales reversibles, incluidos token sin session_id, sesión revocada, vencida y usuario suspendido. Sin producción ni usuarios reales.
+
+## [Auditoría de aislamiento y límites — PR de desarrollo]
+- Cerrada posibilidad de apuntar accidentalmente el portal al Supabase de Viralio o TeHiceEsto aun cuando la configuración sea internamente consistente.
+- Registros bloqueados en VERCEL_ENV=production de este portal de desarrollo.
+- Eliminado autorizarIntento siempre true; se reemplazó por respuesta 503 y cero escrituras hasta disponer de limitador durable.
+- Tests unitarios adicionales y documentación. No hay activación del registro ni cambios en la base Supabase.

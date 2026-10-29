@@ -57,3 +57,5 @@ Proyecto de desarrollo: `cotironda-dev` (`qkercsoqhehbenbbncwk`), versión de mi
 **Prueba adversarial del JWT (PR #22):** se preparó un test contra PostgREST que altera el sujeto de un JWT sin volver a firmarlo, y exige rechazo explícito por autenticación. Los tests automáticos son sin red; el E2E auténtico sigue pendiente de activar Auth Hook en desarrollo. Ver [auditoría JWT](docs/25-jwt-adversarial-auditoria.md).
 
 **Auditoría de sesiones (PR #24):** sexta migración aplicada en `cotironda-dev`: valida sesión activa y estado actual del usuario en Auth antes de registrar, aun con JWT válido. Cierre de sesión/revocación, suspensión y eliminación bloquean nuevas altas. Los registros siguen deshabilitados y falta E2E real. Ver [sesiones vigentes](docs/26-sesiones-vigentes.md).
+
+**Auditoría del portal (Etapa 01):** guard de Supabase fijado a `cotironda-dev`; la ruta real de alta responde 503 sin limitador durable. Registros web/SQL siguen apagados. Ver [revisión](docs/27-aislamiento-y-limites.md).

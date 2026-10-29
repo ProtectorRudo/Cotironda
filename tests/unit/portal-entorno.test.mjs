@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {origenSeguro,credencialesCotironda,portalHabilitado} from '../../src/server/portal-entorno.ts';
-const ref='abcdefghijklmnopqrst';
+import {origenSeguro,credencialesCotironda,portalHabilitado,COTIRONDA_DEV_REF} from '../../src/server/portal-entorno.ts';
+const ref=COTIRONDA_DEV_REF;
 const valid={
  COTIRONDA_REGISTRATION_ENABLED:'true',
  COTIRONDA_SITE_ORIGIN:'https://cotironda.ejemplo.com.ar',
@@ -27,3 +27,19 @@ test('no acepta rutas ni usuario en origen',()=>{
  assert.equal(origenSeguro('https://foo:bar@cotironda.com.ar'),false);
 });
 test('sin URL/Auth no habilita',()=>assert.equal(portalHabilitado({...valid,NEXT_PUBLIC_SUPABASE_URL:''}),false));
+
+test('no habilita una configuración internamente consistente de Viralio',()=>{
+ const other='bwsgxpttnrctklrcjmjs';
+ assert.equal(portalHabilitado({...valid,COTIRONDA_SUPABASE_PROJECT_REF:other,NEXT_PUBLIC_SUPABASE_URL:'https://'+other+'.supabase.co'}),false);
+});
+test('no habilita una configuración internamente consistente de TeHiceEsto',()=>{
+ const other='efvvadfxuyieswdqnsjg';
+ assert.equal(portalHabilitado({...valid,COTIRONDA_SUPABASE_PROJECT_REF:other,NEXT_PUBLIC_SUPABASE_URL:'https://'+other+'.supabase.co'}),false);
+});
+test('la rama de desarrollo no habilita producción accidentalmente',()=>{
+ assert.equal(portalHabilitado({...valid,VERCEL_ENV:'production'}),false);
+});
+test('rechaza proyecto arbitrario aunque ref y URL coincidan',()=>{
+ const other='abcdefghijklmnopqrst';
+ assert.equal(credencialesCotironda({...valid,COTIRONDA_SUPABASE_PROJECT_REF:other,NEXT_PUBLIC_SUPABASE_URL:'https://'+other+'.supabase.co'}),false);
+});
