@@ -168,3 +168,9 @@
 - Adaptador de Supabase `apps/portal/lib/storage/borradores.ts`: `upload(upsert:false)` y `download` autenticados por RLS sin exponer URLs públicas ni secretos; no conectado a UI.
 - Tests unitarios de documentos inválidos, macros, ZIP, extensiones y paths; contrato HTTP con SDK real y `fetch` falso, validación FormData y bloqueo 403 de rutas ajenas sin acceder a la red.
 - Documentación `docs/41-storage-preflight-http-contract.md`, Issue #53, PR #54 draft. Registro y producción cerrados, sin archivos ni empresa de prueba.
+
+## [Sin publicar — PR #56: prueba RLS Storage en Supabase real, reversible]
+- Se incorporó `supabase/tests/manual/10_storage_rls_dev_rollback.sql`, que ejecuta una transacción única sobre las tablas gestionadas de `cotironda-dev`: empresas/membresías ficticias, lectura/escritura cruzada A/B, downgrade miembro, suspensión y usuario anónimo. **Todos los cambios se revierten**.
+- La ejecución SQL remota devolvió `0` organizaciones, `0` membresías, `0` objetos del bucket y `registration_enabled=false`. Las dos cuentas de ensayo se seleccionan internamente sin exponer IDs ni emails; no hay HTTP ni JWT firmado.
+- `tests/unit/storage-live-rollback-safety.test.mjs` impide quitar ROLLBACK o introducir DDL/COMMIT/cambios Auth por accidente. Ver `docs/42-storage-real-db-rollback.md`.
+- Pendientes: E2E HTTP Storage real con miembro de empresa, antivirus, revocación access token y 429 remoto; sin merge ni deploy.
