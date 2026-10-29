@@ -38,4 +38,11 @@ Un bucket privado sin RLS de cliente reduce exposición, pero **un futuro link f
 ## Pruebas
 `supabase/tests/ci/97_quarantine_ledger.sql`: datos sintéticos `BEGIN/ROLLBACK`; chequea privacidad, ACL, aislamiento entre tenants, duplicados, MIME y tamaño; rechaza aprobación sin evidencia y cambios en identidad; comprueba transiciones válidas. Se ejecuta tras migración 11 en ambos caminos PostgreSQL 17. Nada toca Storage API remota ni produce archivos.
 
-**Control de publicación:** PR draft apilado, solo `cotironda-dev` tras CI y auditoría. No cambiar DNS, Vercel, `main` ni registro comercial.
+## Ejecución verificada en desarrollo
+- Migración 11 instalada **solo** en `cotironda-dev`, versión oficial Supabase `20261029213755_private_quarantine_ledger`. El historial versionado GitHub fue reconciliado con ese ID.
+- Consultas read-only: bucket de cuarentena `public=false` y 10.485.760 bytes, seis MIME; `storage.objects` conserva **una sola política SELECT** sobre el bucket de borradores; no hay políticas de carga ni de lectura para cuarentena. Ledger privado con RLS activa y **0 policies**, `authenticated` sin INSERT, `anon` sin SELECT; `service_role` con SELECT/INSERT, sin DELETE.
+- Ejecutado en Supabase real `supabase/tests/manual/13_quarantine_ledger_dev_rollback.sql`: dos empresas ficticias, una solicitud, denegación de lectura a authenticated, rechazo de duplicado y aprobación sin escáner; transición sintética válida con datos de prueba y comprobación de hash inmutable. El escáner es **ficticio en la prueba SQL**, no hay validación de bytes ni antivirus.
+- El ensayo acabó con `ROLLBACK` y verificación independiente: 0 organizaciones, 0 trabajos, 0 objetos Storage y 0 sesiones, registro SQL deshabilitado.
+- Security Advisor: la protección de contraseñas filtradas sigue deshabilitada (**WARN previo**). Hay dos **INFO** por RLS privada sin políticas (`supplier_contacts` y `document_intake_jobs`), intencionales al negar acceso directo; no declarar cero avisos.
+
+**Control de publicación:** PR draft apilado, instalado únicamente en desarrollo. No cambiar DNS, Vercel, `main` ni registro comercial.
