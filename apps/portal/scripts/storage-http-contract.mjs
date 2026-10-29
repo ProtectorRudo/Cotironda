@@ -33,15 +33,13 @@ const fakeFetch=async(input,init={})=>{
   assert.equal(init.method,'POST');
   // Supabase Storage JS envía Blob vía FormData; el navegador define
   // el Content-Type multipart automáticamente, no en init.headers.
-  if(process.env.CI)console.log('CI FormData keys (sin datos)',JSON.stringify({
-   isFormData:init.body instanceof FormData,
-   keys:init.body instanceof FormData?[...init.body.keys()]:[],
-   fileType:init.body instanceof FormData?init.body.get('file')?.type:null,
-   contentType:init.body instanceof FormData?init.body.get('contentType'):null
-  }));
+  // El SDK real permite una parte multipart con nombre vacío; no suponer
+  // que la parte se llama file o que Content-Type se fija en init.headers.
   assert.ok(init.body instanceof FormData,'SDK upload usa FormData');
-  assert.equal(init.body.get('file')?.type,'application/pdf');
-  assert.equal(init.body.get('contentType'),'application/pdf');
+  const blobs=[...init.body.values()].filter(x=>x instanceof Blob);
+  assert.equal(blobs.length,1,'Una sola parte binaria');
+  assert.equal(blobs[0].type,'application/pdf');
+  assert.equal(init.body.get('cacheControl'),'0');
   assert.notEqual(headers.get('x-upsert'),'true','Prohibida la sobreescritura');
   if(requested!==path)
    return new Response(JSON.stringify({statusCode:'403',error:'Forbidden',message:'RLS'}),{
