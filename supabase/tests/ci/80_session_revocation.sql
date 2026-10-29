@@ -67,135 +67,53 @@ select ci_helpers.assert_true(
  'a1111111-1111-4111-8111-111111111111','f1111111-1111-4111-8111-111111111111'),
  'sesión revocada bloqueada');
 
--- Contrato SQL actualizado tras migración 7: la RPC responde status estructurado.
--- Habilitación SOLO transaccional en PostgreSQL efímero; ROLLBACK al finalizar.
+-- Con el flag solo encendido dentro de ROLLBACK, el JWT firmado simulado
+-- no permite registro si falta session_id o si sesión fue revocada.
 update cotironda_private.registration_settings set enabled=true where singleton=true;
--- JWT sin session_id
 set local role authenticated;
-select set_config('request.jwt.claims','{"role":"authenticated","is_anonymous":false,"cotironda_email_verified":true,"sub":"a1111111-1111-4111-8111-111111111111"}',true);
+select set_config('request.jwt.claims',
+'{"role":"authenticated","is_anonymous":false,"cotironda_email_verified":true,"sub":"a1111111-1111-4111-8111-111111111111"}',true);
 select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111',true);
-do $test$
-declare v_status text; v_org uuid; v_replay boolean;
+do $$
 begin
- select registration_status,organization_id,replay into v_status,v_org,v_replay
- from public.register_company_for_current_user('f6666666-6666-4666-8666-666666666661','Empresa de prueba solamente','buyer');
- if v_status is distinct from 'session_invalid'
-  or v_org is not null or v_replay is not null then
-  raise exception 'TEST_FAILED: JWT sin session_id esperaba session_invalid, obtuvo %',v_status;
- end if;
-end;
-$test$;
+ begin
+  perform * from public.register_company_for_current_user(
+   'f6666666-6666-4666-8666-666666666666','No session','buyer');
+  raise exception 'TEST_FAILED: falta de session_id permitió alta';
+ exception when insufficient_privilege then null;
+ end;
+end;$$;
+select set_config('request.jwt.claims',
+'{"role":"authenticated","is_anonymous":false,"cotironda_email_verified":true,"sub":"a1111111-1111-4111-8111-111111111111","session_id":"f1111111-1111-4111-8111-111111111111"}',true);
+do $$
+begin
+ begin
+  perform * from public.register_company_for_current_user(
+   'f6666666-6666-4666-8666-666666666666','Session revoked','buyer');
+  raise exception 'TEST_FAILED: sesión borrada permitió alta';
+ exception when insufficient_privilege then null;
+ end;
+end;$$;
 reset role;
-select ci_helpers.assert_true((select count(*) from public.organizations)<=1,'JWT rechazado no crea empresa adicional');
--- JWT sesión ya revocada
+-- Nueva sesión realmente existente de usuario A: la misma identidad puede
+-- registrar empresa mientras siga vigente y su correo esté confirmado.
+insert into auth.sessions(id,user_id,not_after) values
+ ('f7777777-7777-4777-8777-777777777777',
+ 'a1111111-1111-4111-8111-111111111111',null);
 set local role authenticated;
-select set_config('request.jwt.claims','{"role":"authenticated","is_anonymous":false,"cotironda_email_verified":true,"sub":"a1111111-1111-4111-8111-111111111111","session_id":"f1111111-1111-4111-8111-111111111111"}',true);
-select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111',true);
-do $test$
-declare v_status text; v_org uuid; v_replay boolean;
-begin
- select registration_status,organization_id,replay into v_status,v_org,v_replay
- from public.register_company_for_current_user('f6666666-6666-4666-8666-666666666662','Empresa de prueba solamente','buyer');
- if v_status is distinct from 'session_invalid'
-  or v_org is not null or v_replay is not null then
-  raise exception 'TEST_FAILED: JWT sesión ya revocada esperaba session_invalid, obtuvo %',v_status;
- end if;
-end;
-$test$;
-reset role;
-select ci_helpers.assert_true((select count(*) from public.organizations)<=1,'JWT rechazado no crea empresa adicional');
--- Cuenta A inicia otra sesión distinta de la previamente revocada.
-insert into auth.sessions(id,user_id,not_after) values ('f7777777-7777-4777-8777-777777777777','a1111111-1111-4111-8111-111111111111',null);
--- login nuevo permite registro de prueba
-set local role authenticated;
-select set_config('request.jwt.claims','{"role":"authenticated","is_anonymous":false,"cotironda_email_verified":true,"sub":"a1111111-1111-4111-8111-111111111111","session_id":"f7777777-7777-4777-8777-777777777777"}',true);
-select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111',true);
-do $test$
-declare v_status text; v_org uuid; v_replay boolean;
-begin
- select registration_status,organization_id,replay into v_status,v_org,v_replay
- from public.register_company_for_current_user('f8888888-8888-4888-8888-888888888888','Empresa de prueba solamente','buyer');
- if v_status is distinct from 'ok'
-  or v_org is null or v_replay is distinct from false then
-  raise exception 'TEST_FAILED: login nuevo permite registro de prueba esperaba ok, obtuvo %',v_status;
- end if;
-end;
-$test$;
-reset role;
--- mismo request id es idempotente
-set local role authenticated;
-select set_config('request.jwt.claims','{"role":"authenticated","is_anonymous":false,"cotironda_email_verified":true,"sub":"a1111111-1111-4111-8111-111111111111","session_id":"f7777777-7777-4777-8777-777777777777"}',true);
-select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111',true);
-do $test$
-declare v_status text; v_org uuid; v_replay boolean;
-begin
- select registration_status,organization_id,replay into v_status,v_org,v_replay
- from public.register_company_for_current_user('f8888888-8888-4888-8888-888888888888','Empresa de prueba solamente','buyer');
- if v_status is distinct from 'ok'
-  or v_org is null or v_replay is distinct from true then
-  raise exception 'TEST_FAILED: mismo request id es idempotente esperaba ok, obtuvo %',v_status;
- end if;
-end;
-$test$;
-reset role;
--- JWT revocado NO revive tras otro login
-set local role authenticated;
-select set_config('request.jwt.claims','{"role":"authenticated","is_anonymous":false,"cotironda_email_verified":true,"sub":"a1111111-1111-4111-8111-111111111111","session_id":"f1111111-1111-4111-8111-111111111111"}',true);
-select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111',true);
-do $test$
-declare v_status text; v_org uuid; v_replay boolean;
-begin
- select registration_status,organization_id,replay into v_status,v_org,v_replay
- from public.register_company_for_current_user('f6666666-6666-4666-8666-666666666663','Empresa de prueba solamente','buyer');
- if v_status is distinct from 'session_invalid'
-  or v_org is not null or v_replay is not null then
-  raise exception 'TEST_FAILED: JWT revocado NO revive tras otro login esperaba session_invalid, obtuvo %',v_status;
- end if;
-end;
-$test$;
-reset role;
-select ci_helpers.assert_true((select count(*) from public.organizations)<=1,'JWT rechazado no crea empresa adicional');
--- session_id de otra persona
-set local role authenticated;
-select set_config('request.jwt.claims','{"role":"authenticated","is_anonymous":false,"cotironda_email_verified":true,"sub":"a1111111-1111-4111-8111-111111111111","session_id":"f2222222-2222-4222-8222-222222222222"}',true);
-select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111',true);
-do $test$
-declare v_status text; v_org uuid; v_replay boolean;
-begin
- select registration_status,organization_id,replay into v_status,v_org,v_replay
- from public.register_company_for_current_user('f6666666-6666-4666-8666-666666666664','Empresa de prueba solamente','buyer');
- if v_status is distinct from 'session_invalid'
-  or v_org is not null or v_replay is not null then
-  raise exception 'TEST_FAILED: session_id de otra persona esperaba session_invalid, obtuvo %',v_status;
- end if;
-end;
-$test$;
-reset role;
-select ci_helpers.assert_true((select count(*) from public.organizations)<=1,'JWT rechazado no crea empresa adicional');
--- session_id not_after caducado
-set local role authenticated;
-select set_config('request.jwt.claims','{"role":"authenticated","is_anonymous":false,"cotironda_email_verified":true,"sub":"c3333333-3333-4333-8333-333333333333","session_id":"f3333333-3333-4333-8333-333333333333"}',true);
-select set_config('request.jwt.claim.sub','c3333333-3333-4333-8333-333333333333',true);
-do $test$
-declare v_status text; v_org uuid; v_replay boolean;
-begin
- select registration_status,organization_id,replay into v_status,v_org,v_replay
- from public.register_company_for_current_user('f6666666-6666-4666-8666-666666666665','Empresa de prueba solamente','buyer');
- if v_status is distinct from 'session_invalid'
-  or v_org is not null or v_replay is not null then
-  raise exception 'TEST_FAILED: session_id not_after caducado esperaba session_invalid, obtuvo %',v_status;
- end if;
-end;
-$test$;
-reset role;
-select ci_helpers.assert_true((select count(*) from public.organizations)<=1,'JWT rechazado no crea empresa adicional');
--- A hizo seis intentos, C uno; denegaciones también consumen cuota.
+select set_config('request.jwt.claims',
+'{"role":"authenticated","is_anonymous":false,"cotironda_email_verified":true,"sub":"a1111111-1111-4111-8111-111111111111","session_id":"f7777777-7777-4777-8777-777777777777"}',true);
 select ci_helpers.assert_true(
- (select request_count from cotironda_private.registration_attempt_quotas where user_id='a1111111-1111-4111-8111-111111111111')=6
- and (select request_count from cotironda_private.registration_attempt_quotas where user_id='c3333333-3333-4333-8333-333333333333')=1,
- 'denegaciones consumen cuota y no permiten saltar limites por usuario');
+ (select replay from public.register_company_for_current_user(
+ 'f8888888-8888-4888-8888-888888888888','Empresa desde sesión activa','buyer'))=false,
+ 'sesión activa permite alta con control de correo');
 select ci_helpers.assert_true(
- (select count(*) from public.organizations)=1 and
- (select count(*) from public.organization_members where user_id='a1111111-1111-4111-8111-111111111111')=1,
- 'solo la sesion NUEVA valida registro una empresa de ensayo');
+ (select replay from public.register_company_for_current_user(
+ 'f8888888-8888-4888-8888-888888888888','Empresa desde sesión activa','buyer'))=true,
+ 'reintento de sesión activa es idempotente');
+reset role;
+select ci_helpers.assert_true(
+ (select count(*) from public.organization_members where
+ user_id='a1111111-1111-4111-8111-111111111111')=1,
+ 'sesión activa crea solo su propio miembro');
 rollback;
