@@ -16,8 +16,10 @@ const formatos:Record<string,string>={
 };
 
 export class DocumentoRechazado extends Error {
- constructor(public readonly code:string){
+ readonly code:string;
+ constructor(code:string){
   super(code);
+  this.code=code;
   this.name='DocumentoRechazado';
  }
 }
