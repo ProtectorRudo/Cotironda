@@ -83,7 +83,7 @@ jobs:
       - name: Storage privado y aislamiento por empresa (migracion 8)
         run: |
           set -euo pipefail
-          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261029182922_storage_private_buyer_drafts.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261029183835_storage_private_buyer_drafts.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/94_storage_private_tenant.sql
 
   migrations-from-zero:
