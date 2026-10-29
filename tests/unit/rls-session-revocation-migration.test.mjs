@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 
-const migration=readFileSync(new URL('../../supabase/migrations/20261029233650_commercial_session_guard.sql',import.meta.url),'utf8');
+const migration=readFileSync(new URL('../../supabase/migrations/20261029234236_commercial_session_guard.sql',import.meta.url),'utf8');
 const sqlTest=readFileSync(new URL('../../supabase/tests/ci/98_commercial_session_guard.sql',import.meta.url),'utf8');
 const postgres=readFileSync(new URL('../../.github/workflows/postgres-rls.yml',import.meta.url),'utf8');
 const postgrest=readFileSync(new URL('../../.github/workflows/postgrest-http-real.yml',import.meta.url),'utf8');
