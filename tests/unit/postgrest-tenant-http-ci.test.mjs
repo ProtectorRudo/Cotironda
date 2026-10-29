@@ -49,3 +49,11 @@ test('prueba RLS ejercita casos positivos, negativos, metadata falsa y efectos S
  assert.match(runner,/registration_settings where singleton=true/);
  assert.doesNotMatch(runner,/https:\/\/[a-z0-9]+\.supabase\.co/i);
 });
+
+test('bootstrap auth.uid coincide con Supabase Auth y soporta claims JSON de PostgREST',()=>{
+ const bootstrap=readFileSync(new URL('../../supabase/tests/ci/00_bootstrap.sql',import.meta.url),'utf8');
+ assert.match(bootstrap,/create function auth\.uid\(\) returns uuid/);
+ assert.match(bootstrap,/current_setting\('request\.jwt\.claim\.sub', true\)/);
+ assert.match(bootstrap,/current_setting\('request\.jwt\.claims', true\)/);
+ assert.match(bootstrap,/->> 'sub'/);
+});
