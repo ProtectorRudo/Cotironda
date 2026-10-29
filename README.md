@@ -45,6 +45,8 @@ Issue → alcance y aceptación → rama → implementación → pruebas/auditor
 **Auth Hook — estado 29/10/2026:** activado por el propietario desde el dashboard del proyecto de desarrollo, función `cotironda_private.email_verified_access_token`. La función respondió `cotironda_email_verified=false` para usuario inexistente en SQL read-only de Supabase dev. Se añade prueba CI usando el rol emulado `supabase_auth_admin` y limpieza global del runner E2E; **no hay aún validación de JWT firmado con cuenta real**. La base y el portal continúan cerrados. Ver `docs/33-auth-hook-rol-e2e.md`.
 
 
+**SSR y cookies (PR #43, sin publicar):** agregado contrato con SDK real y transporte Auth 100% simulado: login/lectura/refresh/aislamiento/logout, más el Proxy auténtico de Next.js renovando cookies de sesión ficticia vencida y exigiendo `Set-Cookie` con `Cache-Control: private, no-store`. `getClaims()` no sustituye el chequeo de sesión remota de `getUser()` o `auth.sessions`. Falta E2E del portal Next en navegador HTTPS con Auth real, expiración y revocación. Ver [auditoría SSR](docs/35-ssr-cookies-refresh-proxy.md).
+
 **Primera validación Auth REAL (29/10/2026):** el propietario ejecutó el diagnóstico local con dos cuentas de ensayo. Supabase Auth emitió un JWT válido con claim de correo confirmado, reconoció la identidad del token y rechazó el JWT manipulado; también rechazó el login del correo pendiente. SQL de solo lectura posterior: 1 cuenta con login, 0 sesiones, 0 organizaciones/membresías/contadores, registro apagado. Evidencia y límites en [informe de Auth real](docs/34-auth-jwt-navegador-real.md). Falta renovar cookies SSR, expirar/revocar access tokens y HTTP 429 auténtico. **Sin deploy ni registros comerciales.**
 
 ## Desarrollo: Supabase dedicado
