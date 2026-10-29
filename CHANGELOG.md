@@ -219,3 +219,11 @@
 - `supabase/tests/ci/100_session_rls_hardening_draft.sql`: propuesta que agrega un guard `AND` en USING/WITH CHECK a las 17 policies de cliente, preservando los predicados y permisos anteriores. **SOLO se ejecutó en CI efímera, NO es migración oficial y NO se aplicó a Supabase dev.**
 - PostgREST real: JWT firmado revocado no puede leer ni escribir, nueva sesión no revive el antiguo; limpieza y registro apagado confirmados. **149/149 unitarias y 5/5 workflows SUCCESS** en HEAD `5197d44c8bdf48557c9c9632ebeefa0164283868`. Ver `docs/50-session-aware-rls-ci.md`.
 - Pendiente: migración formal generada por CLI, tests de 12 migraciones, revisión de rendimiento/seguridad, Auth Supabase genuino y cookies HTTPS. Sin merge, despliegue o cambios a producción.
+
+
+## [Sin publicar — PR #77: migración 12 de sesión vigente en RLS comercial]
+- Supabase CLI 2.122.0 generó el archivo base y la migración final endurece 17 policies authenticated en siete tablas sin ampliar roles/acciones ni modificar las seis policies del registrador; falla cerrado ante discrepancias de inventario, permisos o registro abierto.
+- GitHub CI pasó reconstrucción incremental/histórica **12 migraciones**, pruebas PostgREST reales con JWT sintéticos, y 150 unitarias; correcciones del manifiesto a 12 y de un test que suponía cero sesiones en fixtures incrementales.
+- **Aplicada solo en `cotironda-dev`** mediante migración Supabase; backend registró versión `20261029234236`. Archivo local y referencias CI renombrados a la misma versión para evitar drift frente al timestamp CLI inicial `20261029233650`.
+- Verificación SQL remota: 23 policies totales, **17 client policies con guard de sesión**, seis policies registrador intactas (misma huella MD5), registro=false, 0 empresas, 0 sesiones, 0 objetos, 0 trabajos, 0 policies Storage de escritura. Security Advisor conserva 1 WARN previo por contraseña filtrada y 2 INFO intencionales.
+- Queda sin probar con JWT genuino Supabase Auth el efecto real de logout; sin cookies HTTPS, 429 remoto, permiso de subir, merge a main, producción ni cambios de Vercel/Hostinger. Ver `docs/51-commercial-session-migration.md`.
