@@ -7,7 +7,7 @@
 - Comprobación SQL de solo lectura sobre el Supabase real: `email_verified_access_token` devolvió `cotironda_email_verified=false` para un UUID inexistente. No se insertaron cuentas, sesiones ni empresas.
 - Supabase dev: 7 migraciones aplicadas y `registration_settings.enabled=false`. **Tras la creación manual de las cuentas por el propietario, hay 2 usuarios Auth: 1 con correo confirmado y 1 pendiente**, 0 sesiones, 0 empresas, 0 membresías y 0 filas de cuota. Security Advisor sin WARN/ERROR en la última auditoría (único INFO conocido sobre tabla privada con RLS sin policy por diseño).
 - Consulta SQL read-only del hook sobre ambos usuarios Auth existentes: 1 cuenta confirmada devolvió `cotironda_email_verified=true`; 1 no confirmada devolvió `false`; **2/2 coinciden, 0 discrepancias**. No se exponen IDs, emails ni contraseñas.
-- **No se probó aún la emisión de JWT por el servidor Auth ni la firma en un login real**. El estado ENABLED del dashboard y la función SQL aislada son evidencias diferentes.
+- **Actualización de evidencia:** posteriormente se ejecutó un login de Auth **real** desde Chrome y se observó el rechazo del JWT adulterado, con validaciones concretas y comprobación de estado en SQL. No se confunde con un E2E de cookies SSR, expiración de JWT o revocación efectiva con la barrera SQL abierta. Ver `docs/34-auth-jwt-navegador-real.md`.
 
 ## Prueba automatizada nueva
 El archivo `supabase/tests/ci/70_invoker_email_hook.sql` ahora hace `SET LOCAL ROLE supabase_auth_admin` dentro de un fixture reversible en PostgreSQL efímero. Con ese rol restringido invoca **realmente** la función SQL `SECURITY INVOKER` con cuatro entradas: cuenta confirmada con metadata falsa (claim verdadero), pendiente con metadata falsa positiva (claim falso), anónima confirmada (falso) e inexistente (falso). Se verifica que el hook preserve el `sub` y no cambie `user_metadata`, y que los permisos de ejecución de clientes sigan revocados.
@@ -19,8 +19,8 @@ El runner manual `apps/portal/scripts/auth-real-smoke.mjs` ahora pide al servido
 
 Importante: JWT ya firmados pueden conservar validez criptográfica hasta exp; `signOut` **no demuestra** por sí solo que un JWT capturado no pueda usarse. La base tiene un guard SQL específico contra sesiones revocadas, probado con sesiones emuladas; falta la evidencia E2E sobre Auth real, cookies SSR y 429 auténtico de PostgREST.
 
-## Próximo ensayo Auth real: preparación mínima y segura
-El ensayo **todavía no se ejecutó**. El propietario **ya creó las dos cuentas dedicadas** desde Authentication → Users de `cotironda-dev`, una confirmada y otra pendiente. Los conectores habilitados no permiten iniciar sesión con la contraseña privada de esas cuentas, que no debe enviarse en GitHub, Issues, capturas, chats ni logs de CI. La próxima ejecución requiere iniciar sesión desde un entorno local controlado.
+## Protocolo histórico del primer ensayo Auth real (ejecutado desde Chrome el 29/10/2026)
+**Actualización:** el propietario ejecutó un diagnóstico equivalente desde un HTML local en Chrome usando las dos cuentas dedicadas, sin proporcionar sus contraseñas. Todos los controles del navegador aparecieron verdes. Las consultas SQL posteriores confirmaron 1 login real, 0 sesiones restantes, 0 empresas y registro apagado. Ver informe de evidencia y límites `docs/34-auth-jwt-navegador-real.md`. El procedimiento CLI a continuación sigue disponible para una ejecución posterior independiente, pero no debe confundirse con un E2E en GitHub Actions.
 
 Una vez preparadas y comprobadas las credenciales de ensayo:
 1. Confirmar proyecto dev y que `registration_settings.enabled=false`; mantener el portal cerrado.
