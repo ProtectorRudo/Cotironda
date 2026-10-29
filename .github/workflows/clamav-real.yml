@@ -1,0 +1,80 @@
+name: ClamAV real - CI efimera sin uploads
+on:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  clamav-real:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - name: Checkout sin credenciales persistentes
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Node 22.16
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22.16.0'
+      - name: Instalar clamd REAL en runner desechable
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends clamav-daemon
+          clamd --version
+      - name: E2E Unix socket con firma EICAR de ensayo en base local temporal
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$(mktemp -d)"
+          pid=''
+          cleanup() {
+            if [[ -n "$pid" ]]; then
+              kill "$pid" 2>/dev/null || true
+              wait "$pid" 2>/dev/null || true
+            fi
+            rm -rf -- "$work"
+          }
+          trap cleanup EXIT
+          mkdir -m 700 "$work/db"
+          # Firma hash local de EICAR (no se descargan bases oficiales).
+          # Una firma sintética prueba el protocolo frente a clamd real
+          # sin depender de freshclam, cuotas de CDN ni actividad comercial.
+          printf '%s\n' '44d88612fea8a8f36de82e1278abb02f:68:Cotironda.Test.EICAR' > "$work/db/ci-only.hdb"
+          chmod 600 "$work/db/ci-only.hdb"
+          cat > "$work/clamd.conf" <<CONF
+          Foreground yes
+          User runner
+          DatabaseDirectory $work/db
+          LocalSocket $work/clamd.sock
+          LocalSocketMode 600
+          FixStaleSocket yes
+          StreamMaxLength 11M
+          MaxFileSize 10M
+          MaxScanSize 40M
+          MaxRecursion 8
+          MaxFiles 1000
+          MaxThreads 2
+          MaxQueue 4
+          ReadTimeout 15
+          CommandReadTimeout 15
+          AlertExceedsMax yes
+          AlertEncrypted yes
+          CONF
+          chmod 600 "$work/clamd.conf"
+          clamd --config-file="$work/clamd.conf" > "$work/clamd.log" 2>&1 &
+          pid=$!
+          for i in {1..90}; do
+            if [[ -S "$work/clamd.sock" ]]; then break; fi
+            if ! kill -0 "$pid" 2>/dev/null; then
+              echo 'ERROR: clamd terminó antes de abrir socket local' >&2
+              exit 1
+            fi
+            sleep 1
+          done
+          if [[ ! -S "$work/clamd.sock" ]]; then
+            echo 'ERROR: clamd no abrió socket antes del plazo' >&2
+            exit 1
+          fi
+          export COTIRONDA_CLAMD_TEST_SOCKET="$work/clamd.sock"
+          node --experimental-strip-types --test tests/integration/clamav-real.test.mjs
