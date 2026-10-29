@@ -103,7 +103,7 @@ jobs:
       - name: Guard de sesion en 17 RLS comerciales (migracion 12)
         run: |
           set -euo pipefail
-          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261029233650_commercial_session_guard.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261029234236_commercial_session_guard.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/98_commercial_session_guard.sql
 
   migrations-from-zero:
