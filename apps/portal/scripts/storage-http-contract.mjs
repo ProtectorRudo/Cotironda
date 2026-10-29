@@ -21,7 +21,7 @@ const fakeFetch=async(input,init={})=>{
  assert.ok(/^Bearer (ci_only_fake_jwt|sb_publishable_fake_ci)$/.test(auth),
   'La solicitud exige un bearer ficticio, nunca service role ni vacío');
  calls.push({method:init.method||'GET',path:uri.pathname,headers});
- if(uri.pathname.startsWith('/storage/v1/object/authenticated/'+bucket+'/')){
+ if(init.method==='GET'&&uri.pathname.startsWith('/storage/v1/object/'+bucket+'/')){
   const requested=decodeURIComponent(uri.pathname.split('/'+bucket+'/')[1]);
   if(requested!==path)
    return new Response(JSON.stringify({statusCode:'403',error:'Forbidden',message:'RLS'}),{
@@ -62,14 +62,11 @@ assert.ok(calls[0].path.endsWith('/'+path));
 
 const downloaded=await descargarBorrador(client,{
  organizationId:A,requestId:R,fileId:F,extension:'pdf'
-}).catch(err=>{
- if(process.env.CI)console.log('CI Storage download routes (sin tokens)',
-  JSON.stringify(calls.map(({method,path})=>({method,path}))));
- throw err;
 });
 assert.match(await downloaded.text(),/^%PDF-/);
 assert.equal(calls.length,2);
-assert.ok(calls[1].path.includes('/object/authenticated/'));
+assert.ok(calls[1].path.includes('/object/'+bucket+'/'));
+assert.equal(calls[1].method,'GET');
 
 await assert.rejects(()=>subirBorrador(client,{...params,organizationId:B}),/carga_rechazada/);
 await assert.rejects(()=>descargarBorrador(client,{
