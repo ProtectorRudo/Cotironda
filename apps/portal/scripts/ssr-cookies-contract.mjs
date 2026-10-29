@@ -17,11 +17,11 @@ let refreshes=0;
 let userReads=0;
 let logouts=0;
 
-const jwt=(generation)=>{
+const jwt=(generation,expiresAt=now+3600)=>{
  const header=Buffer.from(JSON.stringify({alg:'HS256',typ:'JWT'})).toString('base64url');
  const payload=Buffer.from(JSON.stringify({
   iss:url+'/auth/v1',sub:uid,aud:'authenticated',role:'authenticated',
-  iat:now,exp:now+3600,session_id:sid,is_anonymous:false,
+  iat:now,exp:expiresAt,session_id:sid,is_anonymous:false,
   cotironda_email_verified:true,token_generation:generation
  })).toString('base64url');
  return header+'.'+payload+'.ci_fake_signature_'+generation;
@@ -47,9 +47,10 @@ const fakeFetch=async (input,init={})=>{
   }
   if(grant==='refresh_token'){
    const body=JSON.parse(init.body);
-   assert.equal(body.refresh_token,'ci_refresh_one');
+   assert.ok(['ci_refresh_one','ci_refresh_two'].includes(body.refresh_token),
+    'No se aceptan refresh tokens arbitrarios');
    refreshes++;
-   return json(session('two'));
+   return json(session(body.refresh_token==='ci_refresh_one'?'two':'three'));
   }
  }
  if(endpoint.pathname==='/auth/v1/user'){
@@ -153,6 +154,34 @@ try{
  assert.ifError(serverErr);
  assert.equal(verifiedByServer?.id,uid);
  assert.ok(userReads>0,'getUser requiere validación con Auth simulado');
+
+ // Cookies emitidas por el SDK REAL, luego sesión ficticia caducada.
+ // El proxy debe refrescar y propagar Set-Cookie + Cache-Control no-store.
+ const staleJar=new Map(jar);
+ const entry=[...staleJar].find(([,value])=>value.startsWith('base64-'));
+ assert.ok(entry,'El SDK debe generar una cookie base64 para ensayar expiración');
+ const oldSession=JSON.parse(Buffer.from(entry[1].slice(7),'base64url').toString('utf8'));
+ assert.equal(oldSession.refresh_token,'ci_refresh_two');
+ oldSession.expires_at=now-120;
+ oldSession.expires_in=-120;
+ oldSession.access_token=jwt('expired',now-120);
+ staleJar.set(entry[0],'base64-'+Buffer.from(JSON.stringify(oldSession)).toString('base64url'));
+ const staleCookieHeader=[...staleJar].map(([name,value])=>
+  encodeURIComponent(name)+'='+encodeURIComponent(value)).join('; ');
+ const refreshCountBeforeProxy=refreshes;
+ const expiredRequest=new NextRequest('https://cotironda-ci.example/alta',{
+  headers:{cookie:staleCookieHeader}
+ });
+ const refreshedResponse=await proxy(expiredRequest);
+ assert.equal(refreshedResponse.headers.get('cache-control'),'private, no-store',
+  'La renovación SSR jamás puede ser cacheable');
+ assert.equal(refreshes,refreshCountBeforeProxy+1,
+  'Proxy debe renovar JWT vencido con Auth simulado');
+ const newCookies=refreshedResponse.headers.get('set-cookie')||'';
+ assert.ok(newCookies.includes('sb-'+ref+'-auth-token'),
+  'Proxy debe transmitir Set-Cookie de la sesión renovada');
+ assert.ok(newCookies.toLowerCase().includes('samesite=lax'));
+ assert.ok(!newCookies.includes('ci-password-never-real'));
  const inactive=new NextRequest('https://cotironda-ci.example/ingresar');
  const beforeDisabled=netCalls.length;
  process.env.COTIRONDA_REGISTRATION_ENABLED='false';
