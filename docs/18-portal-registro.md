@@ -30,3 +30,10 @@ El código del portal se valida por CI con versiones de Next y React fijadas. `s
 - PostgreSQL 17 real (RLS, registro, cuota y concurrencia): https://github.com/ProtectorRudo/Cotironda/actions/runs/40858590551.
 - Next.js 16, TypeScript y build sin credenciales: https://github.com/ProtectorRudo/Cotironda/actions/runs/40858590465.
 - Archivos de registro de clientes reales: **ninguno**. Proyecto Supabase de Cotironda: **no creado**.
+
+### Vista previa técnica protegida
+- Proyecto Vercel independiente: `cotironda-portal-dev` (`prj_d13rTHxJADvP2K9PcrM0CJQD9Zok`).
+- Despliegue del commit `14b4b9c`: `dpl_9PD322umqvKJLqbkS5P6yPByEN92`, estado **READY**.
+- URL: https://cotironda-portal-mv39u52l2-protector-rudo-s-projects.vercel.app (requiere Vercel Authentication).
+- Vercel clasifica su primer despliegue como target `production` **del proyecto exclusivo de desarrollo**, pero está protegido por SSO completo, sin secretos ni habilitación de registros. **No** reemplaza el proyecto público Cotironda ni sus dominios.
+- No se completó una prueba HTTP externa detrás de SSO; sí se verificó el build de Next.js y el estado READY en Vercel.
