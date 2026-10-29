@@ -162,3 +162,9 @@
 - No hay upload ni malware scanning, ni expiración de JWT de Storage comprobada con Auth real. Registro comercial permanece cerrado; ver `docs/40-storage-borradores-privados.md`.
 
 - **Verificación remota de Storage (dev):** aplicada octava migración registrada por Supabase con versión `20261029183835`, después de corregir incompatibilidad con tabla gestionada `storage.objects` (se retiró ALTER TABLE redundante). Bucket privado y dos políticas reales confirmados en pg_policies; 0 objetos/empresas, flag registro=false. Nunca se alteró el owner del servicio ni se usaron credenciales de Storage.
+
+## [Sin publicar — PR #54: validación previa a carga y contrato HTTP Storage]
+- Módulo determinista `src/domain/borradores-storage.ts`: 10 MiB, MIME de bucket privado, firmas PDF/JPEG/PNG/WEBP, inspección conservadora de ZIP Office con directorio central, rutas UUID y rechazo de paquetes sospechosos. **No sustituye antivirus ni aprobación de documentos reales**.
+- Adaptador de Supabase `apps/portal/lib/storage/borradores.ts`: `upload(upsert:false)` y `download` autenticados por RLS sin exponer URLs públicas ni secretos; no conectado a UI.
+- Tests unitarios de documentos inválidos, macros, ZIP, extensiones y paths; contrato HTTP con SDK real y `fetch` falso, validación FormData y bloqueo 403 de rutas ajenas sin acceder a la red.
+- Documentación `docs/41-storage-preflight-http-contract.md`, Issue #53, PR #54 draft. Registro y producción cerrados, sin archivos ni empresa de prueba.
