@@ -196,3 +196,8 @@
 - Tests `97_quarantine_ledger.sql` en 2 jobs PostgreSQL 17, 11 migraciones; test manual `13_quarantine_ledger_dev_rollback.sql` en Supabase real pasó y dejó 0 jobs, 0 empresas y 0 archivos. Sin datos comerciales ni Auth nuevo. `tests/unit/quarantine-ledger-safety.test.mjs` bloquea regresiones.
 - Hallazgo de arquitectura: Functions Vercel limitan el body a 4,5 MB frente al bucket de 10 MiB. Signed upload URLs de Supabase duran 2 horas sin nueva Auth. No emitirlas antes de resolver acceso a cuarentena, idempotencia, expiración, revocación y limpieza. Ver `docs/45-cuarentena-ledger-documentos.md`.
 - Todavía no existe antivirus, worker, backend de carga, promoción, cola ni borrado programado. No habilitar archivos reales.
+
+## [Sin publicar — Issue #68: auditoría read-only de puerta de Etapa 01]
+- Consulta SQL reproducible de 17 controles de registro, sesiones, RLS/Storage, Auth Hook y permisos ejecutada con **17/17 PASS** en `cotironda-dev` usando solo lectura, sin cambios a la base ni a producción.
+- Contrato unitario verifica que el script no incluya DDL/DML y que los controles fail-closed sigan presentes. Ver `supabase/tests/manual/14_etapa01_guardrails_readonly.sql` y `docs/47-etapa01-readiness-auditoria.md`.
+- Auditoría Security Advisor: **1 WARN** de protección de contraseñas filtradas deshabilitada y **2 INFO** intencionales por RLS de tablas privadas sin policies. Siguen pendientes HTTP 429 real, JWT revocado por HTTP, cookies HTTPS reales, consolidación de PR. Registro y uploads deshabilitados.
