@@ -46,3 +46,6 @@ Se aplicó **únicamente** en el proyecto `cotironda-dev`. Supabase asignó ofic
 - [Supabase — Auth sessions](https://supabase.com/docs/guides/auth/sessions)
 - [Issue #57](https://github.com/ProtectorRudo/Cotironda/issues/57)
 - [PR #58](https://github.com/ProtectorRudo/Cotironda/pull/58)
+
+## Actualización de seguridad (PR #60, posterior a este informe)
+La política INSERT abierta a owner/manager en esta migración 9 se reemplaza en la migración 10 por **denegación de cargas directas de todos los usuarios**, mientras no exista control antimalware en backend. Se mantiene SELECT con sesión vigente. Ver `docs/44-storage-upload-fail-closed.md`.
