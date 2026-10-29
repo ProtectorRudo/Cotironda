@@ -40,3 +40,9 @@
 - Ejecución SQL `register_company` autorizada al rol propio y revocada a `service_role`.
 - Migración 20261029111731 aplicada, registrada y probada en PostgreSQL de CI y Supabase real; fixtures revertidos.
 - Portal rechaza conexiones con usuario `postgres` o `service_role`; el registro continúa deshabilitado.
+
+## [Registro exclusivamente por función — desarrollo]
+- Migración `20261029112947_execute_only_registration` aplicada y versionada.
+- Revocados SELECT/INSERT directos del rol de API sobre empresas, membresías y solicitudes.
+- Alta permitida solo por función privada de propietario NOLOGIN, sin BYPASSRLS; nueva suite SQL contra PostgreSQL y Supabase real.
+- 79 unit tests, Next build y prueba SQL en CI aprobados; **sin activar usuarios reales ni publicar backend**.
