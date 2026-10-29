@@ -1,0 +1,28 @@
+import { clienteSupabaseServidor } from '@/lib/supabase/server';
+import { puertoRegistroPostgres } from '@/lib/database';
+import { procesarAlta } from '../../../../../src/server/registro-http.ts';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
+export async function POST(req: Request): Promise<Response> {
+  const configurado = process.env.COTIRONDA_REGISTRATION_ENABLED==='true'
+    && Boolean(process.env.COTIRONDA_DATABASE_URL)
+    && Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL)
+    && Boolean(process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY)
+    && Boolean(process.env.COTIRONDA_SITE_ORIGIN);
+  return procesarAlta(req,{
+    configurado,
+    originPermitido:process.env.COTIRONDA_SITE_ORIGIN||'',
+    verificarSesion:async()=>{
+      // Supabase Auth verifica la identidad contra su servidor: jamás usar userId enviado por formulario.
+      const client=await clienteSupabaseServidor();
+      const {data:{user},error}=await client.auth.getUser();
+      if(error || !user) return null;
+      return { userId:user.id, emailVerificado:Boolean(user.email_confirmed_at), anonimo:Boolean(user.is_anonymous) };
+    },
+    // SQL register_company aplica cuota atómica por actor tras lock, incluso con requests concurrentes.
+    autorizarIntento:async()=>true,
+    persistencia:puertoRegistroPostgres()
+  });
+}

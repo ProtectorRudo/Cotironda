@@ -18,3 +18,6 @@ Inspección de situación actual → impacto y aceptación → rama → implemen
 
 ## Prioridad
 Primero flujo pequeño con datos sintéticos. Activar WhatsApp real cuando base y autorización ya sean seguras. No optimizar por número de pantallas: optimizar por ronda de cotización completa y confiable.
+
+### Desarrollo paralelo de interfaz (sin desplegar backend)
+Se creó el PR #8, apilado sobre el PR #4: portal Next.js para alta de empresas e inicio de sesión, preparado para Supabase Auth. Pasó build de Next.js y los tests HTTP/SQL, pero queda **inactivo** hasta contar con Supabase Cotironda dedicado, aplicar migraciones y completar pruebas con sesión real. La etapa 01 continúa abierta.

@@ -33,3 +33,10 @@ Issue → alcance y aceptación → rama → implementación → pruebas/auditor
 > Desarrollo de Etapa 01 en rama: esquema SQL declarativo en `supabase/schema.sql`, selector en `src/domain/elegibilidad.ts` y pruebas. **No se ha aplicado ninguna migración real.**
 
 **Vista preliminar pública:** https://cotironda.vercel.app — sitio demostrativo con datos ficticios, aislado de Viralio. **Pruebas reales SQL/RLS:** `.github/workflows/postgres-rls.yml` sobre PostgreSQL efímero de GitHub Actions. No hay Supabase Cotironda en la nube.
+
+## Etapa 01 — Portal de registro (rama de desarrollo)
+- Se creó `apps/portal` (Next.js 16, React 19, Supabase SSR) con ingreso, alta de empresa y ruta POST protegida; **sin datos reales ni registro habilitado**.
+- SQL: registro atómico/idempotente y límite provisional de 5 empresas nuevas por usuario/24h, serializado bajo lock; SQL/RLS probados contra PostgreSQL 17 efímero.
+- **Evidencia:** 64/64 tests unitarios (https://github.com/ProtectorRudo/Cotironda/actions/runs/40858591761), PostgreSQL 17 (https://github.com/ProtectorRudo/Cotironda/actions/runs/40858590551), build Next.js (https://github.com/ProtectorRudo/Cotironda/actions/runs/40858590465).
+- Las dependencias tienen versiones fijadas y `package-lock.json` generado y guardado por GitHub Actions.
+- **No se aplicaron migraciones a Supabase, ni se activó Auth real**. La demo de `cotironda.vercel.app` se mantiene sin cambios.
