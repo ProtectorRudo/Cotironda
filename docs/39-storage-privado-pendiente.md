@@ -28,3 +28,6 @@ El objetivo de la Etapa 02 es extraer datos de PDFs/Excel/Word/imágenes enviado
 **No se crearon buckets, objetos ni políticas reales** durante esta auditoría. El plan de implementación queda en [Issue #50](https://github.com/ProtectorRudo/Cotironda/issues/50).
 
 Referencia: [Supabase — Storage buckets y acceso privado](https://supabase.com/docs/guides/storage/buckets/fundamentals).
+
+## Estado posterior a la auditoría inicial — 29/10/2026
+La migración `20261029183835_storage_private_buyer_drafts` se aplicó **únicamente en `cotironda-dev`**, tras aprobar CI. El bucket privado y las 2 políticas RLS existen, sin objetos ni empresas. El dato de `0 buckets` de esta auditoría es **histórico previo a la implementación**, no refleja el estado actual. El trabajo de upload HTTP, análisis antimalware, borrado/retención y reglas de ofertas continúa pendiente. Ver `docs/40-storage-borradores-privados.md`.
