@@ -1,6 +1,6 @@
 # 09 — Hoja de ruta y puertas de calidad
 
-**Estado actual:** Etapa 00 integrada en `main`; sitio preliminar sin funcionalidades comerciales publicado. Etapa 01 en PR borrador: pruebas RLS y registro SQL aprobadas en PostgreSQL efímero; sigue pendiente la integración real Supabase Auth/HTTP y la validación de sesión real. Ya existe `cotironda-dev` y el esquema inicial fue aplicado/probado, sin registros de clientes.
+**Estado auditado 29/10/2026:** Etapa 00 documentada; Etapa 01 en PR apilados hasta #48. Seven migraciones aplicadas solamente en `cotironda-dev`, registro SQL y portal comercial cerrados. El Auth Hook está ACTIVADO en desarrollo y el propietario probó un JWT real desde Chrome con cuentas de ensayo; CI de PostgreSQL, Next y SSR/HTTP aprobado sobre datos simulados. **Todavía falta Storage privado** (0 buckets y 0 políticas de storage.objects en el proyecto dev), un ensayo real de revocación JWT, prueba HTTP 429 auténtica controlada y consolidación de PR. El dominio comprado `cotironda.com` está registrado en Hostinger pero NO apunta a Vercel; su configuración se programa en la puerta de publicación. Ver `docs/38-dominio-hostinger-vercel.md` y `docs/39-storage-privado-pendiente.md`.
 
 | Etapa | Entregable | Criterio de aprobación |
 | --- | --- | --- |
@@ -23,4 +23,4 @@ Primero flujo pequeño con datos sintéticos. Activar WhatsApp real cuando base 
 Se creó el PR #8, apilado sobre el PR #4: portal Next.js para alta de empresas e inicio de sesión, preparado para Supabase Auth. Pasó build de Next.js y los tests HTTP/SQL, pero queda **inactivo** hasta configurar las credenciales de aplicación y completar pruebas E2E con sesión real. La base Supabase dedicada y la migración ya existen. La etapa 01 continúa abierta.
 
 ### Auditoría de identidad (29/10/2026)
-La quinta migración aplicada a `cotironda-dev` movió el privilegio de la RPC pública a una función privada, eliminando la advertencia WARN. Se exige claim de correo confirmado emitido por Auth Hook basado en `auth.users` y la cerradura BD sigue `false`. La Etapa 01 **no está cerrada**: falta habilitar/probar el Hook con JWT firmado, test E2E de Auth/cookies y mecanismos antiabuso. Ver `docs/23-hook-correo-auditoria.md`.
+La quinta migración aplicada a `cotironda-dev` movió el privilegio de la RPC pública a una función privada, eliminando la advertencia WARN. Se exige claim de correo confirmado emitido por Auth Hook basado en `auth.users` y la cerradura BD sigue `false`. La Etapa 01 **no está cerrada**: el Hook ya fue habilitado y se probó JWT real mediante Chrome; siguen pendientes Storage privado, JWT revocado real, 429 HTTP remoto y pruebas del portal completo con Auth real. Ver `docs/23-hook-correo-auditoria.md`.
