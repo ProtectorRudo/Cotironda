@@ -88,3 +88,11 @@
 - Verificación estructural adicional de claims de sesión firmada; el runner E2E comprueba cierre de sesión local y no ignora fallos de signOut.
 - Pruebas unitarias de no persistencia con limitador ausente y de cableado real de la ruta de Next.js.
 - **Sin nuevo rate limiter ni prueba real de revocación**: estos controles siguen bloqueantes. Sin cambios SQL ni producción.
+
+## [Sin publicar — PR #30: cuota SQL atómica de intentos]
+- Migración oficial 7 `20261029140422_registration_attempt_rate_limiter` aplicada solo en cotironda-dev después de ensayos SQL reversibles.
+- Cuota persistente de 20 solicitudes autenticadas por usuario/60 minutos, incluida denegación de negocio; RPC directa protegida incluso sin Vercel.
+- Contador SQL atómico con saturación, RLS privada y respuestas estructuradas; no se revierte el consumo al rechazar una petición.
+- Tests PostgreSQL con 40 conexiones (8 simultáneas), 20 aceptadas para validación y 20 bloqueadas; no hubo empresas creadas por esa prueba.
+- **108/108 tests unitarios** y cuatro GitHub Actions verdes. Supabase Advisor 0 WARN/ERROR, 0 usuarios/empresas/sesiones/cuotas persistidas.
+- **Bloqueantes vigentes:** Auth Hook auténtico, JWT/refresh/cookies E2E, verificación de HTTP 429 real y defensa contra abuso multi-cuenta/IP. Portal sigue fail-closed y producción intacta.

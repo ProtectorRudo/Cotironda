@@ -72,3 +72,20 @@ test('request ID reutilizado se comunica como conflicto',async()=>{
 test('fallo del proveedor de sesiones no permite alta',async()=>{
   assert.equal((await procesarAlta(alta(),deps({verificarSesion:async()=>{throw Error('auth offline')}}))).status,503);
 });
+
+test('traduce cuota persistente agotada a 429 sin exponer datos',async()=>{
+ const r=await procesarAlta(alta(),deps({persistencia:{
+  crearEmpresaConPropietario:async()=>{throw Error('limite_intentos')}
+ }}));
+ assert.equal(r.status,429);
+ assert.equal((await r.json()).error,'demasiadas_solicitudes');
+ assert.equal(r.headers.get('cache-control'),'no-store');
+});
+test('errores acotados de la RPC se traducen a 400 y 409',async()=>{
+ for(const [cause,status] of [['solicitud_invalida',400],['request_id_conflictivo',409]]){
+  const r=await procesarAlta(alta(),deps({persistencia:{
+   crearEmpresaConPropietario:async()=>{throw Error(cause)}
+  }}));
+  assert.equal(r.status,status);
+ }
+});
