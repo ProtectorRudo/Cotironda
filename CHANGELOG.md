@@ -187,3 +187,5 @@
 - 10ª migración elimina solamente la policy INSERT `cotironda_buyer_drafts_insert_manager`, mantiene SELECT privado con guard Auth; `subirBorrador()` falla localmente sin red con `carga_pendiente_revision_servidor`.
 - Nuevo test 96: owner autenticado conserva lectura y **no** puede hacer INSERT; sesión revocada tampoco lee. Los tests históricos 94/95 se ejecutan antes de migración 10 en ambos recorridos CI.
 - No se implementó escáner, cuarentena ni endpoint de ingreso. Ver `docs/44-storage-upload-fail-closed.md`; no habilitar carga comercial.
+
+- **Supabase real de desarrollo:** 10ª migración aplicada con versión oficial `20261029211609`; `pg_policies` confirma **solo SELECT** por sesión vigente y empresa, sin escrituras. Test SQL manual 12 sobre tablas reales: lectura permitida, INSERT denegado, lectura revocada; ROLLBACK y 0 objetos/organizaciones/sesiones. No se hicieron uploads HTTP ni se abrió registro.
