@@ -43,7 +43,16 @@ assert.ifError(signedIn.error);
 assert.equal(signedIn.data.session?.access_token,token);
 assert.ok(jar.size>0,'Supabase SSR no generó cookies');
 const cookie=[...jar].map(([name,value])=>encodeURIComponent(name)+'='+encodeURIComponent(value)).join('; ');
-const fakeCookie=cookie.replace(/(ci_not_a_real_signature)/g,'tampered_signature');
+// Adulterar la firma DENTRO del contenido base64 de cookie generado por SDK.
+const forgedJar=new Map(jar);
+const entry=[...forgedJar].find(([,value])=>value.startsWith('base64-'));
+assert.ok(entry,'SSR debe serializar cookies con base64');
+const decoded=JSON.parse(Buffer.from(entry[1].slice(7),'base64url').toString('utf8'));
+decoded.access_token=decoded.access_token.replace(/\\.ci_not_a_real_signature$/i,'.tampered_signature');
+assert.notEqual(decoded.access_token,token);
+forgedJar.set(entry[0],'base64-'+Buffer.from(JSON.stringify(decoded)).toString('base64url'));
+const fakeCookie=[...forgedJar].map(([name,value])=>
+ encodeURIComponent(name)+'='+encodeURIComponent(value)).join('; ');
 assert.notEqual(cookie,fakeCookie);
 
 const child=spawn(process.execPath,['node_modules/next/dist/bin/next','start','-H','127.0.0.1','-p','4175'],{
