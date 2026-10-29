@@ -1,11 +1,12 @@
 import 'server-only';
 import { Pool } from 'pg';
 import type { AltaEmpresaPort, AltaPersistible } from '../../../src/domain/onboarding.ts';
+import { portalHabilitado } from '../../../src/server/portal-entorno.ts';
 
 let pool: Pool | undefined;
 function db(): Pool {
   const connectionString=process.env.COTIRONDA_DATABASE_URL;
-  if(!connectionString) throw new Error('db_no_configurada');
+  if(!connectionString || !portalHabilitado(process.env)) throw new Error('db_no_configurada');
   if(!pool) pool=new Pool({
     connectionString, max:3, connectionTimeoutMillis:5000, idleTimeoutMillis:15000,
     query_timeout:7000, statement_timeout:6000, ssl:{rejectUnauthorized:true}

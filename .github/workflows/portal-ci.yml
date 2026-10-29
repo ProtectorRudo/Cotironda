@@ -20,11 +20,14 @@ jobs:
         with:
           node-version: '22.16.0'
       - name: Instalar versiones exactas
-        run: |
-          if [ -f package-lock.json ]; then npm ci --ignore-scripts --no-audit --no-fund; else npm install --ignore-scripts --no-audit --no-fund; fi
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: TypeScript
         run: npm run typecheck
       - name: Compilar con registro deshabilitado
         env:
           COTIRONDA_REGISTRATION_ENABLED: 'false'
         run: npm run build
+      - name: Smoke HTTP con autenticación desactivada
+        env:
+          COTIRONDA_REGISTRATION_ENABLED: 'false'
+        run: node scripts/smoke-disabled.mjs
