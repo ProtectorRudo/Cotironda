@@ -147,12 +147,18 @@ try{
  const request=new NextRequest('https://cotironda-ci.example/alta',{headers:{cookie:cookieHeader}});
  const result=await proxy(request);
  assert.equal(result.headers.get('cache-control'),'private, no-store','El proxy debe impedir cache cross-user');
- assert.ok(userReads>0,'El SDK autenticado usa la API simulada de Auth, no sólo un JWT no confiable');
+ // getClaims() del Proxy NO es equivalente a getUser():
+ // se comprueba por separado que una ruta sensible sí consulta Auth.
+ const {data:{user:verifiedByServer},error:serverErr}=await pageLoad.auth.getUser();
+ assert.ifError(serverErr);
+ assert.equal(verifiedByServer?.id,uid);
+ assert.ok(userReads>0,'getUser requiere validación con Auth simulado');
  const inactive=new NextRequest('https://cotironda-ci.example/ingresar');
+ const beforeDisabled=netCalls.length;
  process.env.COTIRONDA_REGISTRATION_ENABLED='false';
  const response=await proxy(inactive);
  assert.equal(response.headers.get('cache-control'),'private, no-store');
- assert.equal(netCalls.length,netCalls.length,'No hay fetch al proyecto real');
+ assert.equal(netCalls.length,beforeDisabled,'Flag apagado evita incluso solicitar Auth simulado');
 } finally {
  globalThis.fetch=prevFetch;
  for(const [name,value] of Object.entries(keep)){
