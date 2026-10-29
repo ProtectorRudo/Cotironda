@@ -43,3 +43,5 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f supabase/schema.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/10_tenant_rls.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/20_onboarding.sql
+      - name: Probar dos registros simultáneos
+        run: bash supabase/tests/ci/30_concurrency.sh
