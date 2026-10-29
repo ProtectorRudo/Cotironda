@@ -147,3 +147,10 @@
 - Se preservó el test 80 en su punto histórico y se añadió `93_revoked_session_status.sql`, ejecutado **en ambos jobs** de PostgreSQL después de migración 7.
 - Siete escenarios de JWT simulado: faltante, revocado, sesión nueva válida, idempotencia, sesión vieja tras nuevo login, ajena y vencida. Se exige estado y columnas exactas, ningún alta por rechazos y cuota por usuario.
 - Ejecución completa dentro de ROLLBACK sobre fixture CI. Sin cambios a las siete migraciones, Auth real o producción. `docs/36-revocacion-sesiones-rpc-actual.md`.
+
+## [Sin publicar — PR #48: E2E HTTP de Next en Preview con Auth ficticio]
+- Se sumó tercer `next build` y smoke HTTP del servidor real Next.js en `VERCEL_ENV=preview`, con bandera de portal activada **solo dentro de GitHub Actions**.
+- Interceptor CI en proceso Next bloquea fetch remoto externo y suplanta exclusivamente endpoints Auth esperados. La cookie SSR la genera `@supabase/ssr` instalado, con JWT de firma intencionalmente falsa.
+- Contrato: /ingresar tiene formulario, /alta anónimo redirige, /alta con cookie sintética validada por Auth falso presenta formulario, cookie adulterada y POST anónimo denegados, origen ajeno 403, POST con sesión simulada 503 `limite_no_disponible`, y `no-store`.
+- Supabase dev, Auth Hook, permisos, migraciones y entorno público sin modificar; registros comerciales permanecen deshabilitados.
+- Ver `docs/37-preview-http-auth-aislado.md`; siguen pendientes revocación de JWT auténtico y cookies HTTPS reales, registro y 429 seguro.
