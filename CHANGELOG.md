@@ -70,3 +70,9 @@
 - 9 pruebas unitarias nuevas de preflight y payload que no permite persistir datos ni con DB abierta accidentalmente.
 - Procedimiento de habilitación del Auth Hook y desactivación ante errores; WAF rate-limit examinado como capa futura, no activado por costos y cobertura incompleta.
 - Los tests reales con credenciales todavía no se ejecutaron. Doble bandera de registro desactivada, producción sin cambios.
+
+## [Sin publicar — PR #22, prueba adversarial de JWT]
+- Test E2E preparado: cambia el sujeto de un JWT legítimo sin modificar su firma y comprueba rechazo real en PostgREST, no solo en SQL.
+- Nueve pruebas nuevas evitan falsos positivos por errores de negocio o doble bloqueo; nombre inválido impide persistencia.
+- CI verifica sintaxis del runner E2E, sin enviar credenciales ni solicitudes Auth.
+- Firma real, expiración y revocación aún pendientes de E2E con el hook activado; sin producción ni registros.

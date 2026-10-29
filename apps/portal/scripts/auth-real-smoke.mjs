@@ -6,6 +6,7 @@
  */
 import {createClient} from '@supabase/supabase-js';
 import {randomUUID} from 'node:crypto';
+import {verificarFirmaContraPostgrest} from '../../../src/server/auth-e2e-adversarial.ts';
 import {validarEntornoE2E,cargaRpcNoPersistente} from '../../../src/server/auth-e2e-preflight.ts';
 
 const args=validarEntornoE2E(process.env);
@@ -28,7 +29,7 @@ async function invalidSession(){
 async function verifiedAccount(){
  const client=makeClient();
  try{
-   const {error:loginError}=await client.auth.signInWithPassword(args.verified);
+   const {data:loginData,error:loginError}=await client.auth.signInWithPassword(args.verified);
    assert(!loginError,'No se pudo iniciar sesión con la cuenta confirmada');
    const {data:userData,error:userError}=await client.auth.getUser();
    assert(!userError && userData.user && userData.user.email_confirmed_at &&
@@ -45,6 +46,10 @@ async function verifiedAccount(){
    assert(!data && error?.code==='42501' && /registro_no_habilitado/.test(error.message||''),
           'Se esperaba denegación de la cerradura SQL');
    record('RPC autenticada bloqueada por BD','PASS');
+   assert(typeof loginData.session?.access_token==='string', 'Falta token autenticado para comprobar firma');
+   await verificarFirmaContraPostgrest({url:args.url,key:args.key,
+     token:loginData.session.access_token,requestId:randomUUID()}, fetch);
+   record('JWT manipulado rechazado por Supabase antes de SQL','PASS');
  }finally{await client.auth.signOut({scope:'local'}).catch(()=>undefined);}
 }
 async function unverifiedAccount(){

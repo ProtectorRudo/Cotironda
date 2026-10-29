@@ -52,3 +52,11 @@ Con el proyecto portal instalado, ejecutar `node scripts/auth-real-smoke.mjs` de
 - https://supabase.com/docs/guides/auth/auth-hooks/custom-access-token-hook
 - https://supabase.com/docs/guides/auth/auth-hooks
 - https://vercel.com/docs/vercel-firewall/vercel-waf/rate-limiting
+
+## PR #22 — Auditoría adversarial de firma (no ejecutada contra Auth todavía)
+- `src/server/auth-e2e-adversarial.ts`: toma un JWT legítimo recién emitido durante el test, altera únicamente su `sub` sin recalcular la firma y hace POST directo a `/rest/v1/rpc/register_company_for_current_user`.
+- Exige respuesta HTTP 401/403 **con evidencia de rechazo por token, JWT o firma**. Un error de SQL (`registro_no_habilitado`), un rechazo por datos inválidos o un HTTP 200 **no cuentan como prueba aprobada**.
+- Todo POST usa nombre `X` (longitud 1), inválido en la función SQL de registro. No se imprimen ni almacenan JWT, contraseñas o respuestas de usuario. Se exige endpoint exacto de `cotironda-dev`.
+- Nueve pruebas unitarias nuevas prueban mutación de sujeto, integridad de la firma original y distinción entre fallos. La CI ejecuta además `node --check` sobre el script E2E sin enviar solicitudes.
+- **Esta prueba adversarial real sigue pendiente** porque el Auth Hook no está activado y no existen cuentas de test en el proyecto. No afirmar que se probó criptografía a nivel red hasta ejecutar el script completo.
+- Expiración y revocación auténticas continúan pendientes: no se presenta un token artificialmente alterado como equivalente a uno vencido pero correctamente firmado.
