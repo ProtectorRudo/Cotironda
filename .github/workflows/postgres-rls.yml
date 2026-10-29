@@ -80,6 +80,11 @@ jobs:
         run: bash supabase/tests/ci/92_rate_limit_concurrency.sh
       - name: Revocacion post-migracion 7 con estado estructurado
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/93_revoked_session_status.sql
+      - name: Storage privado y aislamiento por empresa (migracion 8)
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261029182922_storage_private_buyer_drafts.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/94_storage_private_tenant.sql
 
   migrations-from-zero:
     name: Reconstruir historial 7 migraciones en PostgreSQL limpio
@@ -112,12 +117,12 @@ jobs:
           persist-credentials: false
       - name: Emular solamente roles Supabase en PostgreSQL efímero
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/00_bootstrap.sql
-      - name: Aplicar las 7 migraciones HISTÓRICAS desde cero y en orden
+      - name: Aplicar las 8 migraciones HISTÓRICAS desde cero y en orden
         run: |
           set -euo pipefail
           shopt -s nullglob
           migrations=(supabase/migrations/*.sql)
-          if [[ "${#migrations[@]}" -ne 7 ]]; then
+          if [[ "${#migrations[@]}" -ne 8 ]]; then
             echo 'ERROR: número de migraciones inesperado, revisar historial dev' >&2
             exit 1
           fi
@@ -151,6 +156,8 @@ jobs:
         run: bash supabase/tests/ci/92_rate_limit_concurrency.sh
       - name: Revocacion y JWT antiguo con RPC estructurada
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/93_revoked_session_status.sql
+      - name: Storage privado por empresa en historial reconstruido
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/94_storage_private_tenant.sql
       - name: 'Verificar limpieza final: flag apagado y cero datos de pruebas'
         run: |
           set -euo pipefail
@@ -162,6 +169,8 @@ jobs:
             (select count(*) from auth.users)=0 and
             (select count(*) from auth.sessions)=0 and
             (select count(*) from public.organizations)=0 and
-            (select count(*) from cotironda_private.registration_attempt_quotas)=0,
+            (select count(*) from cotironda_private.registration_attempt_quotas)=0 and
+            (select count(*) from storage.objects)=0 and
+            (select public=false from storage.buckets where id='cotironda-buyer-drafts'),
             'datos sintéticos de pruebas deben limpiarse');
           SQL
