@@ -45,3 +45,8 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/20_onboarding.sql
       - name: Probar dos registros simultáneos
         run: bash supabase/tests/ci/30_concurrency.sh
+      - name: Validar rol limitado sin login ni bypass RLS
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/changes/01_backend_role.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/40_backend_role.sql
