@@ -120,3 +120,10 @@
 - Test de integridad del historial y equivalencia del SQL efectivo de migración 1 con el esquema declarativo.
 - Hallazgo: la limpieza concurrente borraba un usuario con sesión hija todavía existente, violando FK. Corregido el orden (sesión → usuario) y agregado check final de 0 datos sintéticos.
 - Base real Supabase, GitHub `main` y Vercel producción sin modificaciones. Ver `docs/32-reconstruccion-migraciones.md`.
+
+## [Sin publicar — Hook Auth habilitado y test de permisos con rol limitado]
+- El propietario habilitó en `cotironda-dev` el Custom Access Token Hook configurado con `cotironda_private.email_verified_access_token`. Comprobación remota SQL read-only ante UUID inexistente devolvió claim false (NO es un JWT firmado real).
+- Se agregó test PostgreSQL del hook como `supabase_auth_admin` emulado: verificado/no confirmado/anónimo/inexistente, preservación del `sub` e independencia de metadata editable.
+- El runner manual Auth E2E usará `signOut({scope:'global'})` para limpiar sesiones de **cuentas exclusivamente de ensayo**. JWT anteriormente emitido puede permanecer válido hasta exp; revocación por SQL Auth real no probada.
+- Registro comercial y plataforma productiva no habilitados. No se crean usuarios ni empresas; falta prueba E2E real con cuentas dedicadas y contraseñas privadas.
+- Ver `docs/33-auth-hook-rol-e2e.md` y `docs/24-auth-e2e-seguridad.md`.
