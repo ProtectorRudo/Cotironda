@@ -1,6 +1,6 @@
 # 24 — E2E real de Supabase Auth: plan seguro y auditoría
 
-**Estado:** preparado, NO ejecutado con JWT real. Requiere habilitar el Custom Access Token Hook en `cotironda-dev` y dos cuentas de prueba controladas. La cerradura SQL sigue apagada.
+**Estado actualizado 29/10/2026:** el Custom Access Token Hook **ya fue activado en el dashboard** de `cotironda-dev` y su función SQL respondió false ante un UUID inexistente. **NO se ejecutó todavía el E2E con JWT firmado** porque faltan dos cuentas dedicadas de prueba; las cerraduras siguen apagadas. Ver `docs/33-auth-hook-rol-e2e.md`.
 
 ## Objetivo de aceptación
 Comprobar de verdad que Supabase Auth emite un JWT firmado con `cotironda_email_verified`, que el sujeto de `getUser()` coincide con el JWT y que PostgREST rechaza las llamadas de registro mientras `cotironda_private.registration_settings.enabled=false`. Diferenciar el test SQL (claims simulados) de un test HTTP real de Auth.
@@ -32,7 +32,7 @@ COTIRONDA_E2E_UNVERIFIED_PASSWORD=<contraseña local>
 
 Con el proyecto portal instalado, ejecutar `node scripts/auth-real-smoke.mjs` desde `apps/portal`. El runner presenta solo PASS/FAIL y nombres de chequeos, no imprime credenciales ni tokens.
 
-## Activación controlada del hook (pendiente)
+## Activación controlada del hook (realizada en dev; falta E2E)
 1. Confirmar estado de `cotironda-dev`, de ambas cerraduras y de la migración 5.
 2. Acceder a Supabase → proyecto `cotironda-dev` → **Authentication → Hooks → Custom Access Token**. Elegir la función `cotironda_private.email_verified_access_token` si está disponible; comprobar en el panel si se admiten funciones del esquema privado antes de hacer cambios.
 3. Si el panel exige una función del esquema público, NO mover ni exponer la función privilegiada. Preparar y probar aparte una envoltura `SECURITY INVOKER` de uso exclusivo de `supabase_auth_admin`.
@@ -58,8 +58,11 @@ Con el proyecto portal instalado, ejecutar `node scripts/auth-real-smoke.mjs` de
 - Exige respuesta HTTP 401/403 **con evidencia de rechazo por token, JWT o firma**. Un error de SQL (`registro_no_habilitado`), un rechazo por datos inválidos o un HTTP 200 **no cuentan como prueba aprobada**.
 - Todo POST usa nombre `X` (longitud 1), inválido en la función SQL de registro. No se imprimen ni almacenan JWT, contraseñas o respuestas de usuario. Se exige endpoint exacto de `cotironda-dev`.
 - Nueve pruebas unitarias nuevas prueban mutación de sujeto, integridad de la firma original y distinción entre fallos. La CI ejecuta además `node --check` sobre el script E2E sin enviar solicitudes.
-- **Esta prueba adversarial real sigue pendiente** porque el Auth Hook no está activado y no existen cuentas de test en el proyecto. No afirmar que se probó criptografía a nivel red hasta ejecutar el script completo.
+- **Esta prueba adversarial real sigue pendiente**: el hook ya está habilitado en desarrollo, pero todavía no existen cuentas Auth de ensayo. No afirmar que se probó criptografía a nivel red hasta ejecutar el script completo.
 - Expiración y revocación auténticas continúan pendientes: no se presenta un token artificialmente alterado como equivalente a uno vencido pero correctamente firmado.
 
 ## Sexta migración: obligación de sesión vigente
 El alta también consulta la fila actual de `auth.sessions` y el estado actual de `auth.users`; un JWT firmado de una sesión cerrada no debe permitir registrar empresas. Ver `docs/26-sesiones-vigentes.md`. El runner E2E debe ampliar la cobertura con sesión terminada auténtica (sin fingir que `signOut()` invalida el JWT inmediatamente). **Todavía no se ejecutó esa prueba Auth real.**
+
+## Higiene de cierre de sesión — actualización
+El runner ahora solicita `signOut({scope:'global'})` sobre las cuentas dedicadas de prueba, en lugar de borrar únicamente el estado local. Eso revoca refresh tokens de esas cuentas, **no equivale a probar rechazo del JWT original** en un endpoint SQL sensible; esa prueba sigue pendiente. No reutilizar cuentas personales ni comerciales.
