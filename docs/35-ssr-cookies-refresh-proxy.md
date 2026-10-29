@@ -35,6 +35,11 @@ No forzar `HttpOnly` en los cookies manejados por `@supabase/ssr`: la guía ofic
 - **No** se probó que un access token auténtico ya emitido sea rechazado tras revocar la sesión, ni su expiración natural. Estas pruebas no deben eludir el flag SQL apagado ni atribuir su rechazo solo al flag.
 - **No** se recibió ni guardó ningún secreto real ni se habilitó el registro en desarrollo o producción.
 
+## Estado remoto comprobado después del contrato
+- `cotironda-dev`: 2 usuarios de ensayo, **0** sesiones, **0** empresas, **0** membresías, **0** filas de cuotas; `registration_settings.enabled=false`.
+- Security Advisor: 1 INFO conocido (`cotironda_private.supplier_contacts`, RLS sin políticas de lectura porque es privada) y 1 **WARN** de Auth por protección contra contraseñas filtradas deshabilitada. No se oculta esa advertencia ni se declara 0 WARN.
+- Supabase documenta esa protección específica para planes **Pro o superiores**. El proyecto de ensayo continúa en Free; no se modifica el plan ni se generan cargos. Se abrió [Issue #44](https://github.com/ProtectorRudo/Cotironda/issues/44) para decidir el control de seguridad y presupuesto **antes del piloto**. Por ahora se mantienen las medidas ya probadas: bloqueo de correo no confirmado, rate limiting SQL, restricciones de acceso y registro apagado.
+
 ## Próximos pasos
 1. Crear un E2E de cookies de **navegador** con origen HTTPS controlado, sin desplegar en Production y sin usar cuentas comerciales.
 2. Diseñar un ensayo de revocación con JWT firmado pero sesión eliminada que mida específicamente el guard de `auth.sessions`; el SQL de registro sigue cerrado y puede enmascarar el rechazo, por lo que requiere fixture/contrato aislado.
