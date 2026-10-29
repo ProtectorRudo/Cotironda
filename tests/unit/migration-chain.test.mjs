@@ -15,7 +15,7 @@ const expected=[
  '20261029183835_storage_private_buyer_drafts.sql',
  '20261029202610_storage_session_revocation.sql',
  '20261029211609_storage_upload_fail_closed.sql',
- '20261029224000_private_quarantine_ledger.sql'
+ '20261029213755_private_quarantine_ledger.sql'
 ];
 const actual=readdirSync(migrationDir).filter(p=>p.endsWith('.sql')).sort();
 
