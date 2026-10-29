@@ -27,24 +27,25 @@ create policy registrar_requests_insert
  on cotironda_private.organization_registration_requests
  for insert to cotironda_registrar with check (true);
 
--- Transferencia de propiedad: privilegio CREATE temporal, revocado inmediatamente.
+-- Configurar y cerrar ACL mientras postgres todavía es propietario.
+-- Todas estas operaciones y la cesión ocurren en UNA migración transaccional.
+alter function cotironda_private.register_company(uuid,uuid,text,text,text)
+ security definer;
+alter function cotironda_private.register_company(uuid,uuid,text,text,text)
+ set search_path = '';
+revoke all on function cotironda_private.register_company(uuid,uuid,text,text,text)
+ from public, anon, authenticated, service_role;
+grant execute on function cotironda_private.register_company(uuid,uuid,text,text,text)
+ to cotironda_app;
+
+-- Cambiar propietario al FINAL: Supabase no permite al propietario anterior
+-- modificar la función después de la cesión.
 grant create on schema cotironda_private to cotironda_registrar;
 grant cotironda_registrar to postgres with set true, inherit false;
 alter function cotironda_private.register_company(uuid,uuid,text,text,text)
  owner to cotironda_registrar;
 revoke cotironda_registrar from postgres;
 revoke create on schema cotironda_private from cotironda_registrar;
-
-alter function cotironda_private.register_company(uuid,uuid,text,text,text)
- security definer;
-alter function cotironda_private.register_company(uuid,uuid,text,text,text)
- set search_path = '';
-
--- Función privada no expuesta por PostgREST; solamente la app invoca.
-revoke all on function cotironda_private.register_company(uuid,uuid,text,text,text)
- from public, anon, authenticated, service_role;
-grant execute on function cotironda_private.register_company(uuid,uuid,text,text,text)
- to cotironda_app;
 
 -- Cortar completamente la ruta de escrituras directas, incluso la lectura.
 revoke select, insert on public.organizations, public.organization_members,
