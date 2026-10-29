@@ -31,7 +31,9 @@ begin
 end;
 $bucket$;
 
-alter table storage.objects enable row level security;
+-- RLS ya está habilitado por Supabase Storage. NO ALTER TABLE aquí:
+-- storage.objects pertenece a supabase_storage_admin y ALTER requiere owner.
+-- Supabase autoriza CREATE POLICY al rol postgres sin cambiar ownership.
 
 -- Ninguna política a anon. SELECT sólo miembro activo de empresa COMPRADORA.
 -- No usar owner_id ni metadata controlable por usuario; siempre consultar membresías RLS.
