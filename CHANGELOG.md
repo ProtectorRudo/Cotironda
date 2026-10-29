@@ -174,3 +174,10 @@
 - La ejecución SQL remota devolvió `0` organizaciones, `0` membresías, `0` objetos del bucket y `registration_enabled=false`. Las dos cuentas de ensayo se seleccionan internamente sin exponer IDs ni emails; no hay HTTP ni JWT firmado.
 - `tests/unit/storage-live-rollback-safety.test.mjs` impide quitar ROLLBACK o introducir DDL/COMMIT/cambios Auth por accidente. Ver `docs/42-storage-real-db-rollback.md`.
 - Pendientes: E2E HTTP Storage real con miembro de empresa, antivirus, revocación access token y 429 remoto; sin merge ni deploy.
+
+## [Sin publicar — PR #58: RLS de Storage comprueba revocación Auth por sesión]
+- Se corrigió el acceso de borradores privados tras `signOut`: antes RLS verificaba membresía pero no `auth.sessions`; ahora migración 9 `20261029202610_storage_session_revocation.sql` agrega función privada `storage_session_active()` que valida claims de request, sesión existente, identidad actual y estado de usuario. Sólo `authenticated` puede ejecutar el guard; `anon`/service_role no.
+- Tanto `SELECT` como `INSERT` de `cotironda-buyer-drafts` usan el guard además del aislamiento por empresa. Se conserva ausencia de UPDATE/DELETE, políticas anon y acceso público.
+- Tests CI `95_storage_session_revocation.sql` y fixture histórico 94 actualizado; reconstrucción de 9 migraciones. Hubo un error inicial de expresión regular UUID con un grupo adicional, **detectado por CI y corregido** antes de instalar.
+- Aplicado y validado SOLO en `cotironda-dev` con versión registrada por Supabase `20261029202610`. Test manual `11_storage_revoked_session_rollback.sql` real, con Auth sessions y organizaciones ficticias en `ROLLBACK`: sesión vigente permitida, correo no confirmado, sesión revocada y antigua tras login nuevo denegadas, nueva sesión aceptada, not_after vencido denegado; 0 datos persistidos.
+- Aún falta E2E HTTP firmado y antivirus, retención/backup y consolidación de PR. Ver `docs/43-storage-session-revocation.md`.
