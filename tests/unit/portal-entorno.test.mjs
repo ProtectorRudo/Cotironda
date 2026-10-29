@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {origenSeguro,credencialesCotironda,portalHabilitado} from '../../src/server/portal-entorno.ts';
-const ref='abcdefghijklmnopqrst';
+import {origenSeguro,credencialesCotironda,portalHabilitado,COTIRONDA_DEV_REF} from '../../src/server/portal-entorno.ts';
+const ref=COTIRONDA_DEV_REF;
 const valid={
  COTIRONDA_REGISTRATION_ENABLED:'true',
  COTIRONDA_SITE_ORIGIN:'https://cotironda.ejemplo.com.ar',
@@ -27,3 +27,20 @@ test('no acepta rutas ni usuario en origen',()=>{
  assert.equal(origenSeguro('https://foo:bar@cotironda.com.ar'),false);
 });
 test('sin URL/Auth no habilita',()=>assert.equal(portalHabilitado({...valid,NEXT_PUBLIC_SUPABASE_URL:''}),false));
+
+test('no habilita configuración completa de otro Supabase aunque URL y ref coincidan',()=>{
+ for(const other of ['bwsgxpttnrctklrcjmjs','efvvadfxuyieswdqnsjg','abcdefghijklmnopqrst']){
+  const foreign={...valid,COTIRONDA_SUPABASE_PROJECT_REF:other,
+    NEXT_PUBLIC_SUPABASE_URL:'https://'+other+'.supabase.co'};
+  assert.equal(credencialesCotironda(foreign),false,'credenciales ajenas: '+other);
+  assert.equal(portalHabilitado(foreign),false,'alta ajena: '+other);
+ }
+});
+test('bloquea Vercel production y permite sólo los entornos no productivos previstos',()=>{
+ assert.equal(portalHabilitado({...valid,VERCEL_ENV:'production'}),false);
+ assert.equal(portalHabilitado({...valid,VERCEL_ENV:'preview'}),true);
+ assert.equal(portalHabilitado({...valid,VERCEL_ENV:'development'}),true);
+});
+test('corte del flag prevalece incluso con proyecto correcto y entorno preview',()=>{
+ assert.equal(portalHabilitado({...valid,VERCEL_ENV:'preview',COTIRONDA_REGISTRATION_ENABLED:'false'}),false);
+});
