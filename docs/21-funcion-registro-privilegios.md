@@ -15,3 +15,18 @@ El procedimiento recibe `p_user_id`; una credencial comprometida todavía podrí
 - `COTIRONDA_REGISTRATION_ENABLED=false` y ninguna credencial privada en Vercel. `cotironda.vercel.app` no cambia.
 
 Guía de seguridad: https://supabase.com/docs/guides/database/functions y https://supabase.com/docs/guides/database/postgres/row-level-security
+
+## Ejecución y verificación completadas (29-10-2026)
+- **Tercera migración aplicada:** `20261029112947_execute_only_registration.sql` en Supabase `cotironda-dev`. Fuente versionada en GitHub: `supabase/migrations/20261029112947_execute_only_registration.sql`; hash idéntico al SQL revisado.
+- CI PostgreSQL 17, RLS, idempotencia y pruebas de acceso: https://github.com/ProtectorRudo/Cotironda/actions/runs/40866084063 (**SUCCESS**).
+- **79/79 pruebas unitarias**: https://github.com/ProtectorRudo/Cotironda/actions/runs/40866083948.
+- Build Next.js + TypeScript + HTTP cerrado: https://github.com/ProtectorRudo/Cotironda/actions/runs/40866084052.
+- Tests del sitio: https://github.com/ProtectorRudo/Cotironda/actions/runs/40866084000.
+- Sobre Supabase real: primero probamos todos los cambios en transacción **ROLLBACK**, corregimos la transferencia de propiedad para su modelo de permisos, repetimos con éxito, aplicamos la migración y volvimos a ejecutar toda la suite en otra transacción revertida.
+- Verificación posterior: `cotironda_app` NOLOGIN y sin INSERT de organizaciones/miembros; `cotironda_registrar` sin BYPASSRLS; cero empresas/miembros/altas ficticias; sin permisos temporales de `SET ROLE` sobrantes.
+- Advisors: **sin alertas críticas**; INFO de esquema privado sin política y de índices sin uso por instancia sin tráfico.
+
+### Advertencia de seguridad
+Se usa deliberadamente una única función `SECURITY DEFINER` en esquema privado con propietario NOLOGIN, **no propietario de las tablas ni con BYPASSRLS**, políticas RLS específicas y `search_path` vacío. Cualquier ampliación de funciones, grants o exposición REST exige nueva revisión. Si una contraseña del backend se filtrara, se podría intentar invocar la función con `p_user_id` ajeno. **Por esa razón no se creó LOGIN ni se habilitó el registro.**
+
+Siguiente paso: evaluar llamada RPC con identidad derivada del JWT autenticado y vinculada a la base sin permitir suplantación; probar correo verificado, cookies y rate limits reales. La función privada no debe exponerse en el esquema del Data API sin autorización explícita y auditada.
