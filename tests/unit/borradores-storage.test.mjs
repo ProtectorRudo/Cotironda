@@ -98,6 +98,7 @@ test('MIME falsificado no sortea inspección de firma',async()=>{
 test('Office ZIP malicioso, cifrado, duplicado o con macros se rechaza',async()=>{
  for(const entries of [
   ['[Content_Types].xml','word/document.xml','word/vbaProject.bin'],
+  ['[Content_Types].xml','word/document.xml','word/VBAPROJECT.BIN'],
   ['[Content_Types].xml','word/document.xml','../evil.txt'],
   ['[Content_Types].xml','word/document.xml','word/document.xml'],
   ['[Content_Types].xml','word/document.xml','EncryptionInfo']
