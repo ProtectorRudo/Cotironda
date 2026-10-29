@@ -3,6 +3,7 @@
 // El workflow debe COMPILAR con las mismas variables, no solo pasar el runtime.
 import { spawn } from 'node:child_process';
 import assert from 'node:assert/strict';
+import {portalHabilitado} from '../../../src/server/portal-entorno.ts';
 
 const port='4174';
 const base='http://127.0.0.1:'+port;
@@ -12,7 +13,11 @@ assert.equal(process.env.VERCEL_ENV,'production','Esta prueba debe ejecutar modo
 assert.equal(process.env.COTIRONDA_REGISTRATION_ENABLED,'true','Simular flag solicitado: true');
 assert.equal(process.env.COTIRONDA_SUPABASE_PROJECT_REF,expectedRef);
 assert.equal(process.env.NEXT_PUBLIC_SUPABASE_URL,'https://'+expectedRef+'.supabase.co');
-assert.equal(process.env.COTIRONDA_SITE_ORIGIN,base);
+assert.equal(process.env.COTIRONDA_SITE_ORIGIN,'https://cotironda-ci.example');
+assert.equal(portalHabilitado({...process.env,VERCEL_ENV:'preview'}),true,
+ 'Control positivo: con los mismos datos, en preview la configuración debería pasar');
+assert.equal(portalHabilitado(process.env),false,
+ 'Control negativo: Production debe fallar sólo por el guard del entorno');
 assert.match(process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY||'',/^sb_publishable_ci_dummy_/);
 
 const child=spawn(process.execPath,['node_modules/next/dist/bin/next','start','-p',port],{
@@ -57,7 +62,7 @@ try{
 
  const post=await request('/api/organizaciones',{
   method:'POST',
-  headers:{origin:base,'content-type':'application/json'},
+  headers:{origin:process.env.COTIRONDA_SITE_ORIGIN,'content-type':'application/json'},
   body:JSON.stringify({
    requestId:'123e4567-e89b-42d3-a456-426614170001',
    nombre:'Empresa prueba CI sin datos',
