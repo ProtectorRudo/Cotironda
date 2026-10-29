@@ -63,3 +63,10 @@
 - Tests de correo sin confirmar, anónimo, falta de claim, repetición, permisos, RLS y rollback aprobados en CI y en Supabase dev.
 - **Supabase Security Advisor: 0 WARN** tras aplicar la migración, queda solo observación INFO intencional.
 - Sin activación de registros ni despliegue comercial; E2E real de Auth Hook/JWT, límites de tasa y cookies siguen pendientes.
+
+## [Sin publicar — E2E de autenticación real, PR #20]
+- Runner seguro `apps/portal/scripts/auth-real-smoke.mjs` para validar con dos cuentas de prueba JWT firmados, claim de confirmación, RPC y bloqueo SQL sin registrar empresas.
+- Preflight estricto: sólo `cotironda-dev`, clave publicable, bandera específica para permitir llamadas Auth y dos cuentas distintas; nunca usa service_role.
+- 9 pruebas unitarias nuevas de preflight y payload que no permite persistir datos ni con DB abierta accidentalmente.
+- Procedimiento de habilitación del Auth Hook y desactivación ante errores; WAF rate-limit examinado como capa futura, no activado por costos y cobertura incompleta.
+- Los tests reales con credenciales todavía no se ejecutaron. Doble bandera de registro desactivada, producción sin cambios.

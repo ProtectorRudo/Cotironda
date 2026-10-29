@@ -40,3 +40,6 @@
 - https://supabase.com/docs/guides/observability/advisors?lint=0029_authenticated_security_definer_function_executable
 - https://supabase.com/docs/guides/auth/auth-hooks/custom-access-token-hook
 - https://supabase.com/docs/guides/auth/users
+
+## Complemento de auditoría — PR #20
+Se incorporó un runner E2E seguro que comprueba sesiones y claims con JWT real cuando se active el Custom Access Token Hook en `cotironda-dev`, sin persistir empresas. Esta verificación **aún no se ha ejecutado**; las pruebas automáticas actuales cubren preflight y SQL simulado. Procedimiento, cuentas de prueba, permisos y rollback en `docs/24-auth-e2e-seguridad.md`.
