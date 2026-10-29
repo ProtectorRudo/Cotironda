@@ -1,10 +1,11 @@
 import type { AltaEmpresaPort } from '../../../src/domain/onboarding.ts';
 
-/** Solo se usa con el cliente SSR del usuario autenticado.
- * La función SQL deriva su user_id del JWT firmado por Supabase/PostgREST. */
+/** La RPC valida un JWT auténtico y aplica una cuota transaccional por actor.
+ * No se expone user_id ni se usan claves de servicio desde el navegador.
+ * Los estados son públicos, acotados y NO contienen detalles SQL. */
 export function puertoRegistroRpc(cliente:{
  rpc(nombre:string,params:Record<string,unknown>):PromiseLike<{
-  data:unknown; error:{code?:string;message?:string}|null;
+  data:unknown; error:{code?:string;message?:string;status?:number}|null;
  }>
 }): AltaEmpresaPort {
  return {
@@ -16,16 +17,29 @@ export function puertoRegistroRpc(cliente:{
      p_trade_name:input.nombreComercial
    });
    if(error){
-     if(error.code==='23505')throw new Error('request_id_conflictivo');
-     if(error.message==='limite_registros' || error.code==='P0001')
+     // PostgREST permite 429 sin RAISE; así el incremento de cuota hace COMMIT.
+     const msg=error.message||'';
+     if(error.code==='429' || error.status===429 || /rate_limited/.test(msg))
+       throw new Error('limite_intentos');
+     if(/organization_quota/.test(msg) || error.code==='P0001')
        throw new Error('limite_registros');
      throw new Error('registro_rpc_no_disponible');
    }
    if(!Array.isArray(data)||data.length!==1)throw new Error('respuesta_rpc_invalida');
-   const row=data[0];
-   if(!row || typeof row.organization_id!=='string' ||
-     typeof row.replay!=='boolean')throw new Error('respuesta_rpc_invalida');
-   return {organizationId:row.organization_id,replay:row.replay};
+   const row=data[0] as {organization_id?:unknown;replay?:unknown;registration_status?:unknown}|null;
+   if(!row || typeof row.registration_status!=='string')
+     throw new Error('respuesta_rpc_invalida');
+   switch(row.registration_status){
+     case 'ok':
+       if(typeof row.organization_id!=='string'||typeof row.replay!=='boolean')
+         throw new Error('respuesta_rpc_invalida');
+       return {organizationId:row.organization_id,replay:row.replay};
+     case 'rate_limited': throw new Error('limite_intentos');
+     case 'organization_quota': throw new Error('limite_registros');
+     case 'idempotency_conflict': throw new Error('request_id_conflictivo');
+     case 'invalid_request': throw new Error('solicitud_invalida');
+     default: throw new Error('registro_rpc_no_disponible');
+   }
   }
  };
 }
