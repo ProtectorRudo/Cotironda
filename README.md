@@ -1,6 +1,6 @@
 # Cotironda
 
-**Estado: Etapa 00 — documentación para revisión. No hay producto desplegado.**
+**Estado: Etapa 01 — identidad y catálogos en desarrollo. Vista preliminar publicada (sin licitaciones reales).**
 
 Cotironda es una plataforma argentina B2B para solicitar cotizaciones privadas de **materiales de obra**. El comprador carga una lista una sola vez; la IA la interpreta y separa por rubro; el comprador revisa y confirma. Se invita a proveedores pertinentes según catálogo y cobertura geográfica; estos pueden responder desde WhatsApp (Whapi + IA) o por un portal opcional. El comprador compara ofertas anónimas, completas o parciales, y adjudica manualmente.
 
@@ -29,3 +29,7 @@ Cotironda es una plataforma argentina B2B para solicitar cotizaciones privadas d
 Issue → alcance y aceptación → rama → implementación → pruebas/auditoría → PR → revisión → integración → despliegue autorizado.
 
 > **Repositorio público por decisión del propietario.** No colocar aquí tokens, contraseñas, presupuestos reales, números de teléfono, datos personales, listas de clientes o información confidencial. Este material inicial es de diseño, no código funcional.
+
+> Desarrollo de Etapa 01 en rama: esquema SQL declarativo en `supabase/schema.sql`, selector en `src/domain/elegibilidad.ts` y pruebas. **No se ha aplicado ninguna migración real.**
+
+**Vista preliminar pública:** https://cotironda.vercel.app — sitio demostrativo con datos ficticios, aislado de Viralio. **Pruebas reales SQL/RLS:** `.github/workflows/postgres-rls.yml` sobre PostgreSQL efímero de GitHub Actions. No hay Supabase Cotironda en la nube.
