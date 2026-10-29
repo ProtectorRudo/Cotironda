@@ -3,7 +3,7 @@
 // Tokens, usuarios y contraseñas son FICTICIOS y nunca salen de este proceso.
 import assert from 'node:assert/strict';
 import {createServerClient} from '@supabase/ssr';
-import {NextRequest} from 'next/server';
+import {NextRequest} from 'next/server.js';
 import {proxy} from '../proxy.ts';
 
 const ref='qkercsoqhehbenbbncwk';
