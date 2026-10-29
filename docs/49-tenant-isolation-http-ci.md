@@ -16,14 +16,22 @@ Cotironda maneja catálogos, productos, zonas de reparto y membresías de múlti
 
 ## Criterios de aceptación
 
-- [ ] HTTP real A/B y lector/suspendido conforme, con pruebas positivas y negativas.
-- [ ] Catálogos, zonas y membresías no revelan datos de otras empresas.
-- [ ] Ningún PATCH/DELETE prohibido modifica filas aun si responde 200 vacío.
-- [ ] 0 empresas y sesiones tras limpiar; flag SQL sigue `false`.
-- [ ] Suite CI original, unitarias, portal y PostgreSQL sin regresiones.
+- [x] HTTP real A/B y lector/suspendido conforme, con pruebas positivas y negativas.
+- [x] Catálogos, zonas y membresías no revelan datos de otras empresas.
+- [x] Ningún PATCH/DELETE prohibido modifica filas aun si responde 200 vacío.
+- [x] 0 empresas y sesiones tras limpiar; flag SQL sigue `false`.
+- [x] Suite CI original, unitarias, portal y PostgreSQL sin regresiones.
 
 ## Límites
 
 Este E2E **no** usa Supabase Auth, Storage HTTP, HTTPS ni cookies reales; por lo tanto, siguen pendientes los ensayos remotos JWT revocado y HTTP 429 del gateway de Supabase, y el warning de protección de contraseñas filtradas. El portal y el registro comercial siguen apagados. No fusionar a `main` ni desplegar Vercel sin la autorización `Publicalo`.
 
 Documentación: [Issue #72](https://github.com/ProtectorRudo/Cotironda/issues/72) y [PR #71](https://github.com/ProtectorRudo/Cotironda/pull/71).
+
+## Evidencia ejecutada
+
+PR #73, commit `e488b83e762e55a2b366ce804ebe72ff0e9a3011`: **146/146 unitarias** y cinco workflows exitosos. HTTP RLS multiempresa y limpieza: https://github.com/ProtectorRudo/Cotironda/actions/runs/40971966742. Unitarias: https://github.com/ProtectorRudo/Cotironda/actions/runs/40971966766. Portal, PostgreSQL y sitio también verdes.
+
+La primera ejecución detectó una **simulación incompleta de `auth.uid()`** en el bootstrap PostgreSQL de CI: PostgREST entrega `request.jwt.claims` JSON y el mock leía solamente el GUC legado individual. Se corrigió el bootstrap usando la misma compatibilidad de la función oficial de Supabase. La corrección no modifica la base alojada.
+
+**Auditoría posterior:** este ensayo validó identidad/empresa/roles, pero encontró que las 17 RLS de cliente no verificaban sesión revocada. Seguimiento: [Issue #74](https://github.com/ProtectorRudo/Cotironda/issues/74), ensayo de mitigación en [PR #75](https://github.com/ProtectorRudo/Cotironda/pull/75), sin aplicar a Supabase real.
