@@ -248,3 +248,88 @@ create policy supplier_areas_delete_manager on public.supplier_delivery_areas
    where m.organization_id = supplier_delivery_areas.organization_id
      and m.user_id = (select auth.uid()) and m.status = 'active'
      and m.membership_role in ('owner','manager')));
+
+
+-- Registro de organizaciones: invocación exclusiva desde backend con service_role.
+-- El servidor DEBE verificar el token del usuario y obtener p_user_id de Supabase
+-- Auth, jamás del cuerpo enviado por el cliente. SECURITY INVOKER: sin bypass implícito.
+create table cotironda_private.organization_registration_requests (
+ user_id uuid not null references auth.users(id),
+ request_id uuid not null,
+ organization_id uuid not null unique references public.organizations(id),
+ request_payload jsonb not null check (jsonb_typeof(request_payload) = 'object'),
+ created_at timestamptz not null default now(),
+ primary key(user_id, request_id)
+);
+alter table cotironda_private.organization_registration_requests enable row level security;
+revoke all on cotironda_private.organization_registration_requests from public, anon, authenticated;
+grant select, insert on cotironda_private.organization_registration_requests to service_role;
+
+-- Servicio con privilegios mínimos necesarios para la transacción.
+grant insert on public.organizations, public.organization_members,
+ public.supplier_profiles to service_role;
+
+create function cotironda_private.register_company(
+ p_user_id uuid, p_request_id uuid, p_name text, p_type text, p_trade_name text default null
+) returns table(organization_id uuid, replay boolean)
+language plpgsql security invoker
+set search_path = ''
+as $$
+declare
+ v_org uuid;
+ v_name text;
+ v_trade text;
+ v_payload jsonb;
+ v_existing jsonb;
+begin
+ if p_user_id is null or p_request_id is null then
+   raise exception 'registro_identificadores_invalidos' using errcode='22023';
+ end if;
+ v_name := btrim(p_name);
+ if v_name is null or length(v_name) < 2 or length(v_name) > 160 then
+   raise exception 'nombre_invalido' using errcode='22023';
+ end if;
+ if p_type is null or p_type not in ('buyer','supplier','both') then
+   raise exception 'tipo_invalido' using errcode='22023';
+ end if;
+ if p_type in ('supplier','both') then
+   v_trade := btrim(p_trade_name);
+   if v_trade is null or length(v_trade) < 2 or length(v_trade) > 160 then
+     raise exception 'nombre_comercial_invalido' using errcode='22023';
+   end if;
+ elsif p_trade_name is not null then
+   raise exception 'nombre_comercial_no_aplica' using errcode='22023';
+ end if;
+ v_payload := jsonb_build_object('nombre',v_name,'tipo',p_type,'nombreComercial',v_trade);
+ -- Serializa reintentos concurrentes con misma pareja actor/request.
+ perform pg_catalog.pg_advisory_xact_lock(
+   pg_catalog.hashtextextended(p_user_id::text || ':' || p_request_id::text, 0));
+ select reg.organization_id, reg.request_payload into v_org, v_existing
+   from cotironda_private.organization_registration_requests reg
+   where reg.user_id = p_user_id and reg.request_id = p_request_id
+   for update;
+ if found then
+   if v_existing <> v_payload then
+     raise exception 'request_id_reutilizado_con_distinto_contenido' using errcode='23505';
+   end if;
+   return query select v_org, true;
+   return;
+ end if;
+ insert into public.organizations(display_name,organization_type)
+ values (v_name,p_type) returning id into v_org;
+ insert into public.organization_members(organization_id,user_id,membership_role)
+ values (v_org,p_user_id,'owner');
+ if p_type in ('supplier','both') then
+   insert into public.supplier_profiles(organization_id,trade_name,accepting_quotes)
+   values (v_org,v_trade,false);
+ end if;
+ insert into cotironda_private.organization_registration_requests(
+    user_id,request_id,organization_id,request_payload)
+ values(p_user_id,p_request_id,v_org,v_payload);
+ return query select v_org,false;
+end;
+$$;
+revoke all on function cotironda_private.register_company(uuid,uuid,text,text,text)
+ from public, anon, authenticated;
+grant execute on function cotironda_private.register_company(uuid,uuid,text,text,text)
+ to service_role;
