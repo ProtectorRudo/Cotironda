@@ -202,3 +202,7 @@
 - `src/server/documentos/inspeccion.ts`: comprueba firma/ZIP mediante preflight, requiere veredicto clean y calcula SHA-256 de bytes. Ningún objeto es cargado, promovido ni aprobado en Supabase.
 - 8 tests de socket Unix real **contra daemon ficticio**, incluyendo timeout, malware ficticio, respuestas erróneas, bytes malformados, hash, sin conectar AV auténtico.
 - No hay ClamAV real, freshclam, cola, endpoint, workers desplegados ni firmas verificadas. Sigue bloqueado todo upload directo. Ver `docs/46-clamav-worker-adapter.md`.
+
+## [Sin publicar — PR #67: prueba real del daemon ClamAV en CI aislada]
+- CI en Ubuntu 24.04 instala clamd 1.5.4 efímero y lo conecta por socket Unix 0600 al adaptador de #65. 6/6 pruebas de integración con base hash EICAR local, PDF inofensivo, SHA-256, ausencia de socket y archivo >10 MiB. Ver [informe](docs/47-clamav-real-ci.md).
+- EICAR es una firma controlada de ensayo: NO hay firmas de malware operativo en un worker de Cotironda, freshclam gestionado, subida ni promoción de archivos. Registro, Storage, Supabase, DNS y producción sin modificaciones. CI del PR hijo debe permanecer verde.
