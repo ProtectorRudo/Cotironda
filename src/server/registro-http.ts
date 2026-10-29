@@ -67,6 +67,12 @@ export async function procesarAlta(request: Request, deps: DependenciasRegistro)
     });
   } catch (e) {
     if (e instanceof ErrorRegistro) return json(400, { error: e.codigo });
+    if (e instanceof Error && (e.message === 'limite_intentos' || e.message === 'limite_registros')) {
+      return json(429, { error: 'demasiadas_solicitudes' });
+    }
+    if (e instanceof Error && e.message === 'solicitud_invalida') {
+      return json(400, { error: 'solicitud_invalida' });
+    }
     if (e instanceof Error && e.message === 'request_id_conflictivo') {
       return json(409, { error: 'request_id_conflictivo' });
     }
