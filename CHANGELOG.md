@@ -196,3 +196,9 @@
 - Tests `97_quarantine_ledger.sql` en 2 jobs PostgreSQL 17, 11 migraciones; test manual `13_quarantine_ledger_dev_rollback.sql` en Supabase real pasó y dejó 0 jobs, 0 empresas y 0 archivos. Sin datos comerciales ni Auth nuevo. `tests/unit/quarantine-ledger-safety.test.mjs` bloquea regresiones.
 - Hallazgo de arquitectura: Functions Vercel limitan el body a 4,5 MB frente al bucket de 10 MiB. Signed upload URLs de Supabase duran 2 horas sin nueva Auth. No emitirlas antes de resolver acceso a cuarentena, idempotencia, expiración, revocación y limpieza. Ver `docs/45-cuarentena-ledger-documentos.md`.
 - Todavía no existe antivirus, worker, backend de carga, promoción, cola ni borrado programado. No habilitar archivos reales.
+
+## [Sin publicar — PR #65: protocolo antivirus ClamAV en worker aislado]
+- Adaptador de Node `src/server/documentos/clamav.ts`: `clamd` por socket Unix local, protocolo INSTREAM con chunks 64 KiB, límites de 10 MiB, timeout y deadline absoluto, respuesta acotada. Sólo OK exacto=clean, FOUND=malicioso, errores y socket caído=fail-closed.
+- `src/server/documentos/inspeccion.ts`: comprueba firma/ZIP mediante preflight, requiere veredicto clean y calcula SHA-256 de bytes. Ningún objeto es cargado, promovido ni aprobado en Supabase.
+- 8 tests de socket Unix real **contra daemon ficticio**, incluyendo timeout, malware ficticio, respuestas erróneas, bytes malformados, hash, sin conectar AV auténtico.
+- No hay ClamAV real, freshclam, cola, endpoint, workers desplegados ni firmas verificadas. Sigue bloqueado todo upload directo. Ver `docs/46-clamav-worker-adapter.md`.
