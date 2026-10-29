@@ -1,6 +1,7 @@
 import { clienteSupabaseServidor } from '@/lib/supabase/server';
 import { puertoRegistroRpc } from '@/lib/registro-rpc';
 import { procesarAlta } from '../../../../../src/server/registro-http.ts';
+import { rechazarIntentosSinLimitador } from '../../../../../src/server/limite-intentos.ts';
 import { portalHabilitado } from '../../../../../src/server/portal-entorno.ts';
 
 export const runtime='nodejs';
@@ -22,7 +23,7 @@ export async function POST(req:Request): Promise<Response> {
       };
     },
     // La función RPC asigna user_id de los claims de Supabase, no del payload.
-    autorizarIntento:async()=>true,
+    autorizarIntento:rechazarIntentosSinLimitador,
     persistencia:{
       async crearEmpresaConPropietario(input){
         if(!cliente)throw new Error('sesion_no_disponible');
