@@ -35,3 +35,21 @@ jobs:
         env:
           COTIRONDA_REGISTRATION_ENABLED: 'false'
         run: node scripts/smoke-disabled.mjs
+      - name: Reconstruir desde cero con entorno productivo simulado y flag true
+        env:
+          VERCEL_ENV: production
+          COTIRONDA_REGISTRATION_ENABLED: 'true'
+          COTIRONDA_SUPABASE_PROJECT_REF: qkercsoqhehbenbbncwk
+          NEXT_PUBLIC_SUPABASE_URL: https://qkercsoqhehbenbbncwk.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_dummy_never_valid
+          COTIRONDA_SITE_ORIGIN: https://cotironda-ci.example
+        run: rm -rf .next && npm run build
+      - name: Smoke HTTP real bloqueado en Vercel Production simulado
+        env:
+          VERCEL_ENV: production
+          COTIRONDA_REGISTRATION_ENABLED: 'true'
+          COTIRONDA_SUPABASE_PROJECT_REF: qkercsoqhehbenbbncwk
+          NEXT_PUBLIC_SUPABASE_URL: https://qkercsoqhehbenbbncwk.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_dummy_never_valid
+          COTIRONDA_SITE_ORIGIN: https://cotironda-ci.example
+        run: node --experimental-strip-types scripts/smoke-production-guard.mjs
