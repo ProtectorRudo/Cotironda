@@ -61,6 +61,20 @@ begin
 end;
 $deny$;
 
+-- UPDATE and DELETE are denied even to an active owner; no upsert/replacement.
+do $readonly$
+declare affected integer;
+begin
+ update storage.objects set name='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/requests/cccccccc-cccc-4ccc-8ccc-cccccccccccc/ffffffff-ffff-4fff-8fff-ffffffffffff.pdf'
+ where name='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/requests/cccccccc-cccc-4ccc-8ccc-cccccccccccc/dddddddd-dddd-4ddd-8ddd-dddddddddddd.pdf';
+ get diagnostics affected=row_count;
+ if affected <> 0 then raise exception 'TEST_FAILED: owner pudo UPDATE';end if;
+ delete from storage.objects
+ where name='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/requests/cccccccc-cccc-4ccc-8ccc-cccccccccccc/dddddddd-dddd-4ddd-8ddd-dddddddddddd.pdf';
+ get diagnostics affected=row_count;
+ if affected <> 0 then raise exception 'TEST_FAILED: owner pudo DELETE';end if;
+end;$readonly$;
+
 -- B: 2nd existing test user, Auth JWT still emulated. Cannot read A.
 select set_config('request.jwt.claim.sub',current_setting('cotironda_test.user_b'),true);
 do $check$
