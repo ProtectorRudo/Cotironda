@@ -62,6 +62,10 @@ assert.ok(calls[0].path.endsWith('/'+path));
 
 const downloaded=await descargarBorrador(client,{
  organizationId:A,requestId:R,fileId:F,extension:'pdf'
+}).catch(err=>{
+ if(process.env.CI)console.log('CI Storage download routes (sin tokens)',
+  JSON.stringify(calls.map(({method,path})=>({method,path}))));
+ throw err;
 });
 assert.match(await downloaded.text(),/^%PDF-/);
 assert.equal(calls.length,2);
