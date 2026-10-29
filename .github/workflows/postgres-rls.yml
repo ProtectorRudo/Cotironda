@@ -78,3 +78,86 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/91_rate_limit.sql
       - name: "Cuarenta sesiones concurrentes: cuota ineludible"
         run: bash supabase/tests/ci/92_rate_limit_concurrency.sh
+
+  migrations-from-zero:
+    name: Reconstruir historial 7 migraciones en PostgreSQL limpio
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci_only_password
+          POSTGRES_DB: cotironda_ci_fresh
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci_fresh"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      PGPASSWORD: ci_only_password
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGDATABASE: cotironda_ci_fresh
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Emular solamente roles Supabase en PostgreSQL efímero
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/00_bootstrap.sql
+      - name: Aplicar las 7 migraciones HISTÓRICAS desde cero y en orden
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          migrations=(supabase/migrations/*.sql)
+          if [[ "${#migrations[@]}" -ne 7 ]]; then
+            echo 'ERROR: número de migraciones inesperado, revisar historial dev' >&2
+            exit 1
+          fi
+          for file in "${migrations[@]}"; do
+            echo "Aplicando ${file}"
+            psql -X -v ON_ERROR_STOP=1 -f "${file}" > /dev/null
+          done
+      - name: Comprobar guard y privilegios de la cadena reconstruida
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 <<'SQL'
+          select ci_helpers.assert_true(
+            (select enabled=false from cotironda_private.registration_settings where singleton=true),
+            'registro no debe estar habilitado tras migraciones');
+          select ci_helpers.assert_true(
+            not has_table_privilege('authenticated',
+              'cotironda_private.registration_attempt_quotas','SELECT'),
+            'usuario no puede leer cuota privada');
+          select ci_helpers.assert_true(
+            not has_function_privilege('anon',
+              'public.register_company_for_current_user(uuid,text,text,text)','EXECUTE'),
+            'usuario anonimo no puede ejecutar alta');
+          select ci_helpers.assert_true(
+            not (select prosecdef from pg_proc
+                 where oid='public.register_company_for_current_user(uuid,text,text,text)'::regprocedure),
+            'RPC publica debe ser invoker');
+          SQL
+      - name: Probar alta, idempotencia, sesión revocada y cuota sobre migraciones reales
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/91_rate_limit.sql
+      - name: Cuarenta intentos concurrentes sobre historial reconstruido
+        run: bash supabase/tests/ci/92_rate_limit_concurrency.sh
+      - name: Verificar limpieza final: flag apagado y cero datos de pruebas
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 <<'SQL'
+          select ci_helpers.assert_true(
+            (select enabled=false from cotironda_private.registration_settings where singleton=true),
+            'flag SQL debe quedar apagado tras test concurrente');
+          select ci_helpers.assert_true(
+            (select count(*) from auth.users)=0 and
+            (select count(*) from auth.sessions)=0 and
+            (select count(*) from public.organizations)=0 and
+            (select count(*) from cotironda_private.registration_attempt_quotas)=0,
+            'datos sintéticos de pruebas deben limpiarse');
+          SQL
