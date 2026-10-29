@@ -33,6 +33,12 @@ const fakeFetch=async(input,init={})=>{
   assert.equal(init.method,'POST');
   // Supabase Storage JS envía Blob vía FormData; el navegador define
   // el Content-Type multipart automáticamente, no en init.headers.
+  if(process.env.CI)console.log('CI FormData keys (sin datos)',JSON.stringify({
+   isFormData:init.body instanceof FormData,
+   keys:init.body instanceof FormData?[...init.body.keys()]:[],
+   fileType:init.body instanceof FormData?init.body.get('file')?.type:null,
+   contentType:init.body instanceof FormData?init.body.get('contentType'):null
+  }));
   assert.ok(init.body instanceof FormData,'SDK upload usa FormData');
   assert.equal(init.body.get('file')?.type,'application/pdf');
   assert.equal(init.body.get('contentType'),'application/pdf');
