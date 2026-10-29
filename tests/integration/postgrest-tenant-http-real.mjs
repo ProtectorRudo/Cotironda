@@ -53,7 +53,7 @@ const jwt=Object.fromEntries(
  Object.entries(USERS).map(([k,user])=>[k,token(user,SESSIONS[k])])
 );
 async function http(method,path,accessToken,body){
- assert.match(path,/^\/(?:organizations|organization_members|supplier_profiles|supplier_categories|supplier_products|supplier_delivery_areas)(?:\?[A-Za-z0-9%_.&,=-]+)?$/);
+ assert.match(path,/^\/(?:organizations|organization_members|supplier_profiles|supplier_categories|supplier_products|supplier_delivery_areas)(?:\?[A-Za-z0-9%_.*&,=-]+)?$/);
  const response=await fetch(HOST+path,{
   method,
   headers:{
