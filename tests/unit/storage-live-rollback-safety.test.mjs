@@ -7,7 +7,9 @@ test('ensayo real de Storage usa transacción única y rollback incondicional',(
  assert.match(sql,/^begin;$/m);
  assert.match(sql,/^rollback;$/m);
  assert.doesNotMatch(sql,/^\s*commit\s*;/mi);
- assert.doesNotMatch(sql,/^\s*delete\s+from\s+(auth\.users|storage\.)/mi);
+ assert.doesNotMatch(sql,/^\s*delete\s+from\s+auth\.users\b/mi);
+ assert.match(sql,/storage\.protect_delete\(\)/);
+ assert.match(sql,/Direct deletion from storage tables is not allowed/);
  assert.doesNotMatch(sql,/^\s*(create|alter|drop)\s+(table|policy|schema|role|function)\b/mi);
  const rollback=sql.lastIndexOf('rollback;');
  assert.ok(rollback>sql.lastIndexOf('set local role anon'));
