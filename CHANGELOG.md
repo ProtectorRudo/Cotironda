@@ -114,3 +114,9 @@
 - Nueva prueba de Next.js real (segundo build completo) con `VERCEL_ENV=production` y flag de registro `true`, con URL correcta de `cotironda-dev` y clave pública ficticia sólo para CI.
 - Preflight positivo de Preview evita falsos positivos por configuración inválida. En Production se exigen páginas sin formulario y POST de alta 503 sin conexión a Auth ni SQL.
 - No se tocó Supabase/Vercel ni se fusionó main; el guard no sustituye barrera de despliegue. Ver `docs/31-production-guard-http-ci.md`.
+
+## [Sin publicar — PR #39: reconstrucción segura desde migraciones]
+- Nuevo ensayo CI PostgreSQL 17 desde cero usando las siete migraciones SQL versionadas, sin atajos por `schema.sql`.
+- Test de integridad del historial y equivalencia del SQL efectivo de migración 1 con el esquema declarativo.
+- Hallazgo: la limpieza concurrente borraba un usuario con sesión hija todavía existente, violando FK. Corregido el orden (sesión → usuario) y agregado check final de 0 datos sintéticos.
+- Base real Supabase, GitHub `main` y Vercel producción sin modificaciones. Ver `docs/32-reconstruccion-migraciones.md`.
