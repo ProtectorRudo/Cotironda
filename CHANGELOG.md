@@ -109,3 +109,8 @@
 - No se alteró la cuota SQL de PR #30 ni el manejo del 429 de PR #32. No hay nueva migración, cambios a Auth ni producción.
 - Detectado riesgo de autodespliegue: proyecto `cotironda` de Vercel está enlazado a GitHub. Integración de PR en `main` **no autorizada** hasta confirmar barreras de despliegue.
 - Informe y lista de PR apilados: `docs/30-integracion-aislamiento-portal.md`.
+
+## [Sin publicar — PR #36: prueba HTTP de cierre en Vercel Production simulado]
+- Nueva prueba de Next.js real (segundo build completo) con `VERCEL_ENV=production` y flag de registro `true`, con URL correcta de `cotironda-dev` y clave pública ficticia sólo para CI.
+- Preflight positivo de Preview evita falsos positivos por configuración inválida. En Production se exigen páginas sin formulario y POST de alta 503 sin conexión a Auth ni SQL.
+- No se tocó Supabase/Vercel ni se fusionó main; el guard no sustituye barrera de despliegue. Ver `docs/31-production-guard-http-ci.md`.
