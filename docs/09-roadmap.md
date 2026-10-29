@@ -24,3 +24,8 @@ Se creó el PR #8, apilado sobre el PR #4: portal Next.js para alta de empresas 
 
 ### Auditoría de identidad (29/10/2026)
 La quinta migración aplicada a `cotironda-dev` movió el privilegio de la RPC pública a una función privada, eliminando la advertencia WARN. Se exige claim de correo confirmado emitido por Auth Hook basado en `auth.users` y la cerradura BD sigue `false`. La Etapa 01 **no está cerrada**: el Hook ya fue habilitado y se probó JWT real mediante Chrome; Storage privado ya configurado en desarrollo con revocación SQL, pero siguen pendientes AV, JWT revocado por HTTP real, 429 HTTP remoto y pruebas del portal completo con Auth real. Ver `docs/23-hook-correo-auditoria.md`.
+
+
+### Prueba HTTP de sesión y cuotas mediante PostgREST en CI (PR #71)
+
+Se ejecutó PostgREST real con PostgreSQL efímero y 11 migraciones, JWT HS256 de ensayo firmados dentro del runner: HTTP 429 en intento 21, JWT adulterado o expirado denegado y sesión revocada con token previo aún firmado rechazado con HTTP 403 incluso después de nuevo login. **5/5 CI SUCCESS, 142/142 unitarias.** No se usó Supabase Auth remoto, ni se habilitaron empresas, archivos ni producción. Quedan pendientes E2E con JWT emitido por Supabase Auth y cookies HTTPS, HTTP 429 remoto, WARN de contraseñas filtradas y revisión de PRs apilados. Ver `docs/48-postgrest-real-http-ci.md`.
