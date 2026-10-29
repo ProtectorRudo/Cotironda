@@ -90,6 +90,11 @@ jobs:
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261029202610_storage_session_revocation.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/95_storage_session_revocation.sql
+      - name: Bloquear INSERT directo de archivos sin antivirus (migracion 10)
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261029211609_storage_upload_fail_closed.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/96_storage_direct_upload_disabled.sql
 
   migrations-from-zero:
     name: Reconstruir historial 7 migraciones en PostgreSQL limpio
@@ -122,16 +127,21 @@ jobs:
           persist-credentials: false
       - name: Emular solamente roles Supabase en PostgreSQL efímero
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/00_bootstrap.sql
-      - name: Aplicar las 9 migraciones HISTÓRICAS desde cero y en orden
+      - name: Aplicar las 10 migraciones HISTÓRICAS desde cero y en orden
         run: |
           set -euo pipefail
           shopt -s nullglob
           migrations=(supabase/migrations/*.sql)
-          if [[ "${#migrations[@]}" -ne 9 ]]; then
+          if [[ "${#migrations[@]}" -ne 10 ]]; then
             echo 'ERROR: número de migraciones inesperado, revisar historial dev' >&2
             exit 1
           fi
           for file in "${migrations[@]}"; do
+            if [[ "${file}" == *"20261029211609_storage_upload_fail_closed.sql" ]]; then
+              echo 'Validando contratos históricos de carga antes del cierre de INSERT'
+              psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/94_storage_private_tenant.sql > /dev/null
+              psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/95_storage_session_revocation.sql > /dev/null
+            fi
             echo "Aplicando ${file}"
             psql -X -v ON_ERROR_STOP=1 -f "${file}" > /dev/null
           done
@@ -161,10 +171,8 @@ jobs:
         run: bash supabase/tests/ci/92_rate_limit_concurrency.sh
       - name: Revocacion y JWT antiguo con RPC estructurada
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/93_revoked_session_status.sql
-      - name: Storage privado por empresa en historial reconstruido
-        run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/94_storage_private_tenant.sql
-      - name: Revocacion de sesion Storage tras reconstruir 9 migraciones
-        run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/95_storage_session_revocation.sql
+      - name: Storage fail-closed tras reconstruir 10 migraciones
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/96_storage_direct_upload_disabled.sql
       - name: 'Verificar limpieza final: flag apagado y cero datos de pruebas'
         run: |
           set -euo pipefail
