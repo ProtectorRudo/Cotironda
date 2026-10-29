@@ -1,5 +1,7 @@
--- Cotironda: esquema declarativo de la Etapa 01 (NO aplicado a ninguna BD).
--- Generar migracion con Supabase CLI una vez habilitado entorno aislado.
+-- Cotironda: esquema declarativo de Etapa 01.
+-- Migración histórica aplicada en cotironda-dev: 20261029105736_initial_identity_catalog.
+-- Fuente versionada: supabase/migrations/20261029105736_initial_identity_catalog.sql.
+-- NO volver a ejecutar completo sobre la instancia ya migrada.
 -- Ningun permiso de escritura sobre empresas y miembros desde el navegador.
 
 create schema if not exists cotironda_private;

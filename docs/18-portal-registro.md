@@ -48,3 +48,8 @@ El código del portal se valida por CI con versiones de Next y React fijadas. `s
 - **PostgreSQL/RLS y concurrencia aprobados**: https://github.com/ProtectorRudo/Cotironda/actions/runs/40860533535
 - **TypeScript + Next build + smoke HTTP aprobados**: https://github.com/ProtectorRudo/Cotironda/actions/runs/40860533715
 - No se probaron sesiones reales ni navegador con credenciales. La activación sigue pendiente de un proyecto exclusivo de Cotironda y auditoría E2E.
+
+### Cambio de situación: Supabase Cotironda existe
+- Proyecto `cotironda-dev` (`qkercsoqhehbenbbncwk`) con migración inicial aplicada, validado por tests SQL reales. La referencia de Supabase está disponible, pero **no se configuraron secretos ni acceso del portal**.
+- El formulario sigue cerrado porque aún faltan credenciales segregadas de aplicación y E2E de Supabase Auth; la activación requiere auditoría y aprobación específica.
+- Nunca conectar el portal a las bases de Viralio ni TeHiceEsto. El proyecto de Vercel de desarrollo permanece protegido por SSO.
