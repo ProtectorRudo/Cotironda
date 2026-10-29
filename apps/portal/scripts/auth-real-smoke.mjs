@@ -1,7 +1,8 @@
 /**
  * E2E MANUAL: no crea usuarios ni empresas; nunca guarda tokens o contraseñas.
- * Requiere dos cuentas preparadas por separado, una con correo confirmado y
- * otra pendiente. El hook debe estar habilitado antes de iniciar la prueba.
+ * Requiere dos cuentas DEDICADAS de prueba, una confirmada y otra pendiente.
+ * El hook debe estar habilitado antes de iniciar la prueba. NO usar cuentas personales:
+ * el cierre global revoca todas las sesiones de las cuentas de ensayo.
  * Ejecutar en apps/portal: node scripts/auth-real-smoke.mjs
  */
 import {createClient} from '@supabase/supabase-js';
@@ -21,13 +22,16 @@ function makeClient(){
 function safeRpcParams(){return cargaRpcNoPersistente(randomUUID());}
 
 async function cerrarSesionComprobada(client,label){
- const {error:logoutError}=await client.auth.signOut({scope:'local'});
- assert(!logoutError,'Auth no pudo cerrar la sesión de '+label);
+ // scope global solicita al servidor Auth invalidar los refresh tokens
+ // de TODAS las sesiones de esta cuenta dedicada de ensayo.
+ const {error:logoutError}=await client.auth.signOut({scope:'global'});
+ assert(!logoutError,'Auth no pudo cerrar globalmente la sesión de '+label);
  const {data:{session},error:sessionError}=await client.auth.getSession();
- assert(!sessionError && session===null,'El cliente conserva la sesión después del cierre local');
- record('SDK eliminó la sesión local de '+label,'PASS');
- // IMPORTANTE: esto NO demuestra que PostgREST rechazará el JWT firmado
- // hasta su exp; la revocación efectiva se prueba aparte contra auth.sessions.
+ assert(!sessionError && session===null,'El cliente conserva la sesión después del cierre global');
+ record('Auth recibió signOut global y SDK borró sesión local de '+label,'PASS');
+ // Un JWT ya firmado puede seguir criptográficamente válido hasta exp.
+ // Esta comprobación NO demuestra rechazo directo por auth.sessions:
+ // requiere una prueba separada que no quede enmascarada por el flag SQL.
 }
 
 async function invalidSession(){

@@ -66,6 +66,54 @@ select ci_helpers.assert_true(
  )->'claims'->>'cotironda_email_verified')='false',
  'no habilita usuarios anónimos aunque haya fecha de confirmación');
 
+-- Ejecución real de SQL bajo el rol emulado que utiliza Supabase Auth.
+-- No basta con probar como postgres superuser: el hook es SECURITY INVOKER.
+set local role supabase_auth_admin;
+do $auth_role_hook$
+declare
+ v_output jsonb;
+ v_event jsonb;
+begin
+ v_event:=jsonb_build_object(
+  'user_id','11111111-7777-4777-8777-111111111111',
+  'claims',jsonb_build_object('sub','11111111-7777-4777-8777-111111111111',
+   'user_metadata',jsonb_build_object('email_verified',false)));
+ v_output:=cotironda_private.email_verified_access_token(v_event);
+ if (v_output->'claims'->>'cotironda_email_verified') is distinct from 'true'
+    or v_output->'claims'->>'sub' is distinct from '11111111-7777-4777-8777-111111111111' then
+   raise exception 'TEST FAILED: auth_admin no firma correo confirmado o altera sub';
+ end if;
+ if (v_output->'claims'->'user_metadata'->>'email_verified') is distinct from 'false' then
+   raise exception 'TEST FAILED: se alteró metadata del usuario';
+ end if;
+
+ v_event:=jsonb_build_object(
+  'user_id','22222222-7777-4777-8777-222222222222',
+  'claims',jsonb_build_object('user_metadata',jsonb_build_object('email_verified',true)));
+ v_output:=cotironda_private.email_verified_access_token(v_event);
+ if (v_output->'claims'->>'cotironda_email_verified') is distinct from 'false' then
+   raise exception 'TEST FAILED: auth_admin aceptó correo sin confirmar';
+ end if;
+
+ v_event:=jsonb_build_object(
+  'user_id','33333333-7777-4777-8777-333333333333',
+  'claims',jsonb_build_object('role','authenticated'));
+ v_output:=cotironda_private.email_verified_access_token(v_event);
+ if (v_output->'claims'->>'cotironda_email_verified') is distinct from 'false' then
+   raise exception 'TEST FAILED: auth_admin aceptó cuenta anónima';
+ end if;
+
+ v_event:=jsonb_build_object(
+  'user_id','99999999-7777-4777-8777-999999999999',
+  'claims',jsonb_build_object('role','authenticated'));
+ v_output:=cotironda_private.email_verified_access_token(v_event);
+ if (v_output->'claims'->>'cotironda_email_verified') is distinct from 'false' then
+   raise exception 'TEST FAILED: auth_admin aceptó usuario inexistente';
+ end if;
+end;
+$auth_role_hook$;
+reset role;
+
 set local role authenticated;
 select set_config('request.jwt.claims','{"role":"authenticated","is_anonymous":false,"sub":"11111111-7777-4777-8777-111111111111","cotironda_email_verified":true}',true);
 select set_config('request.jwt.claim.sub','11111111-7777-4777-8777-111111111111',true);
