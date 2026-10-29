@@ -1,5 +1,7 @@
 # 22 — Registro ligado al JWT y doble bloqueo de seguridad
 
+**Actualización:** este documento describe también riesgos detectados en la cuarta migración. La quinta migración resuelve la advertencia de función pública SECURITY DEFINER y añade confirmación de correo mediante hook firmado. Ver [`23 — auditoría actual`](23-hook-correo-auditoria.md). Los límites de E2E y el interruptor DB deshabilitado se mantienen.
+
 **Estado:** implementación en rama de desarrollo; migración aplicada en `cotironda-dev` con registro deshabilitado.
 
 ## Vulnerabilidad previa
