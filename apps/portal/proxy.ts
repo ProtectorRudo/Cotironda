@@ -1,5 +1,5 @@
 import { createServerClient } from '@supabase/ssr';
-import { NextResponse, type NextRequest } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server.js';
 import { portalHabilitado } from '../../src/server/portal-entorno.ts';
 
 export async function proxy(request: NextRequest) {
