@@ -36,3 +36,20 @@ Si falla la descarga de la imagen Docker fijada, el job debe fallar: no se susti
 - https://docs.postgrest.org/en/v12/references/auth.html
 - https://hub.docker.com/layers/postgrest/postgrest/v12.2.12/images/sha256-be3b6ab31a94e3e89f08edad40be0234ae0951e3297f2043d797c219165f5afa
 - https://github.com/ProtectorRudo/Cotironda/issues/70
+
+
+## Evidencia real cerrada — 29/10/2026
+
+**PR #71, commit probado `4e50478480134b9de15b7de539e2dd1e6ff39659`.**
+
+- **PostgREST HTTP REAL + Postgres 17 temporal: SUCCESS**, https://github.com/ProtectorRudo/Cotironda/actions/runs/40969448761
+- La consola de la prueba registra PASS para: anónimo bloqueado; token con firma manipulada rechazado antes del SQL; JWT inequívocamente expirado rechazado; 20 rechazos persistidos y 21º HTTP 429; antiguo JWT firmado con sesión borrada HTTP 403; token antiguo sigue invalidado después de crear nueva sesión; cuota independiente; cero empresas y limpieza final con registro deshabilitado.
+- **142/142 pruebas unitarias**: https://github.com/ProtectorRudo/Cotironda/actions/runs/40969448807
+- PostgreSQL RLS + reconstrucción de migraciones: https://github.com/ProtectorRudo/Cotironda/actions/runs/40969448813
+- Portal Next, SSR y HTTP con Auth simulado: https://github.com/ProtectorRudo/Cotironda/actions/runs/40969448738
+- Sitio: https://github.com/ProtectorRudo/Cotironda/actions/runs/40969448799
+- **5/5 workflows GitHub SUCCESS**, prueba permanente del código y guard del servidor. Status externo de Vercel continúa fallando por su límite de builds, no por estas suites. Sin publicar.
+
+**Correcciones durante la ejecución:** el primer intento usó un token vencido solo 20 segundos y PostgREST lo admitió dentro del margen de tolerancia del reloj; se cambió por un JWT vencido una hora antes, que ahora es rechazado de forma determinista. Un segundo fallo provenía del formato de salida de psql al devolver DELETE 1; se corrigió comprobando filas antes y después del borrado. Ambos casos se corrigieron y se volvió a ejecutar la suite completa hasta estar verde.
+
+Este E2E **no usó firmas, cuentas ni gateway de Supabase Auth**. La prueba de logout de un access token real firmado por Supabase y el HTTP 429 del servicio remoto siguen siendo bloqueantes de Etapa 01.
