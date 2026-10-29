@@ -1,4 +1,4 @@
--- PROPUESTA PARA CI: no aplicar a producción. SQL de la séptima migración.
+-- Migración 7 registrada en cotironda-dev (20261029140422). NO aplicar a producción.
 -- El corte comercial registration_settings.enabled=false permanece inalterado.
 -- Cuota fija de 20 peticiones firmadas por usuario cada 60 minutos,
 -- incluido rechazo de negocio: la función NO arroja tras consumir.
