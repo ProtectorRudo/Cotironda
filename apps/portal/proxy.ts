@@ -20,7 +20,13 @@ export async function proxy(request: NextRequest) {
         response=NextResponse.next({request});
         cookiesToSet.forEach(({name,value,options})=>response.cookies.set(name,value,options));
         // Supabase SSR >=0.10 passes response headers when tokens are refreshed.
-        headersToSet?.forEach((value,name)=>response.headers.set(name,value));
+        if (headersToSet instanceof Headers) {
+          headersToSet.forEach((value,name)=>response.headers.set(name,value));
+        } else {
+          for (const [name,value] of Object.entries(headersToSet ?? {})) {
+            response.headers.set(name,value);
+          }
+        }
         response.headers.set('Cache-Control','private, no-store');
       }
     }
