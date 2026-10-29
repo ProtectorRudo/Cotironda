@@ -21,3 +21,6 @@ Primero flujo pequeño con datos sintéticos. Activar WhatsApp real cuando base 
 
 ### Desarrollo paralelo de interfaz (sin desplegar backend)
 Se creó el PR #8, apilado sobre el PR #4: portal Next.js para alta de empresas e inicio de sesión, preparado para Supabase Auth. Pasó build de Next.js y los tests HTTP/SQL, pero queda **inactivo** hasta configurar las credenciales de aplicación y completar pruebas E2E con sesión real. La base Supabase dedicada y la migración ya existen. La etapa 01 continúa abierta.
+
+### Auditoría de identidad (29/10/2026)
+La quinta migración aplicada a `cotironda-dev` movió el privilegio de la RPC pública a una función privada, eliminando la advertencia WARN. Se exige claim de correo confirmado emitido por Auth Hook basado en `auth.users` y la cerradura BD sigue `false`. La Etapa 01 **no está cerrada**: falta habilitar/probar el Hook con JWT firmado, test E2E de Auth/cookies y mecanismos antiabuso. Ver `docs/23-hook-correo-auditoria.md`.

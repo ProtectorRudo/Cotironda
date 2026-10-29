@@ -54,3 +54,12 @@
 - Retirados adaptador `pg`, dependencias SQL y variables `DATABASE_URL` del portal; lockfile regenerado en CI.
 - Pruebas PostgreSQL, CI y Supabase real aprobadas, con fixtures revertidos.
 - Advertencia Supabase `authenticated_security_definer_function_executable` pendiente de resolución. E2E Auth y correo confirmado siguen bloqueantes; sin producción.
+
+## [Sin publicar — PR #18: correo confirmado y eliminación del WARN]
+- Migración `20261029122708_invoker_verified_email_hook` aplicada en `cotironda-dev` y versionada.
+- RPC pública pasó a `SECURITY INVOKER`; ejecución privilegiada relegada a función privada con propietario sin LOGIN/BYPASSRLS.
+- La nueva función privada exige claim firmado `cotironda_email_verified=true`; su ausencia o valor falso bloquean el alta, incluso si la bandera de BD se habilita.
+- Custom Access Token Hook `SECURITY INVOKER` obtiene confirmación de `auth.users.email_confirmed_at`, ignorando `user_metadata` manipulable. Hook no activado aún.
+- Tests de correo sin confirmar, anónimo, falta de claim, repetición, permisos, RLS y rollback aprobados en CI y en Supabase dev.
+- **Supabase Security Advisor: 0 WARN** tras aplicar la migración, queda solo observación INFO intencional.
+- Sin activación de registros ni despliegue comercial; E2E real de Auth Hook/JWT, límites de tasa y cookies siguen pendientes.

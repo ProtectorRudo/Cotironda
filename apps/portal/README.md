@@ -17,4 +17,4 @@ El interruptor se aplica tanto a páginas como a API, Proxy y acceso PostgreSQL;
 La ruta de registro ya no importa `pg` ni credenciales SQL; usa la RPC `register_company_for_current_user` desde el cliente SSR autenticado. `COTIRONDA_DATABASE_URL` está explícitamente prohibido por el validador de configuración.
 
 ### Aviso de seguridad actual
-El portal llama RPC con la sesión SSR del usuario, y nunca el adaptador SQL. La base dispone de un segundo interruptor `cotironda_private.registration_settings.enabled=false`, distinto de la variable web. No activar mientras falten comprobación de correo dentro de la RPC, JWT E2E y revisión del aviso SECURITY DEFINER.
+El portal llama RPC con la sesión SSR del usuario, y nunca el adaptador SQL. La base dispone de un segundo interruptor `cotironda_private.registration_settings.enabled=false`, distinto de la variable web. La quinta migración exige confirmación de correo mediante un claim respaldado por Auth Hook y eliminó el WARN de la RPC pública. Aun así, **NO activar** hasta habilitar/probar el Hook real, JWT E2E, rate limit y cookies.

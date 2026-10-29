@@ -48,4 +48,6 @@ Proyecto de desarrollo: `cotironda-dev` (`qkercsoqhehbenbbncwk`), versión de mi
 
 **Auditoría actual:** la tercera migración de Etapa 01 (`20261029112947_execute_only_registration`) deja al rol del backend sin permisos de inserción directos. Únicamente invoca la función privada auditada; falta autenticar el origen de `p_user_id` y habilitar conexión de servicio segura. Ver `docs/21-funcion-registro-privilegios.md`.
 
-**Registro por JWT (desarrollo):** cuarta migración `20261029120021_jwt_bound_registration_locked` aplicada en `cotironda-dev`. El portal y la base tienen interruptores independientes apagados. Sin conexión PostgreSQL directa. Sigue abierta una advertencia de SECURITY DEFINER y faltan pruebas JWT reales. Ver [auditoría](docs/22-jwt-registro.md).
+**Registro por JWT (desarrollo):** cuarta migración `20261029120021_jwt_bound_registration_locked` aplicada en `cotironda-dev`. El portal y la base tienen interruptores independientes apagados. Sin conexión PostgreSQL directa. La advertencia de SECURITY DEFINER pública fue corregida por la quinta migración; faltan hook Auth activado y E2E JWT real. Ver [auditoría](docs/22-jwt-registro.md).
+
+**Actualización de seguridad (PR #18):** la quinta migración `20261029122708_invoker_verified_email_hook` eliminó la alerta WARN del Security Advisor. RPC pública `SECURITY INVOKER`, función privilegiada en esquema privado y chequeo de correo mediante claim firmado por un Auth Hook aún **sin activar**. Registro cerrado en web y base. Ver [auditoría actual](docs/23-hook-correo-auditoria.md).

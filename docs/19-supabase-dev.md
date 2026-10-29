@@ -62,3 +62,11 @@
 - RPC `public.register_company_for_current_user` deriva usuario del contexto de JWT verificado por PostgREST. Rol `authenticated` tiene EXECUTE, `anon` no; `cotironda_app` perdió invocación de función privada con `p_user_id`.
 - Test reversible en Supabase dev con JWT simulado y dos identidades: aprobado. La prueba con token firmado real sigue pendiente.
 - Supabase Advisor informa WARN por función SECURITY DEFINER accesible a authenticated: **bloqueante antes de apertura**. Más detalle en `docs/22-jwt-registro.md`.
+
+## Quinta migración — público invoker y correo firmado (29/10/2026)
+- Versión aplicada: `20261029122708_invoker_verified_email_hook`. Archivo GitHub verificado exactamente contra el SQL aplicado.
+- `public.register_company_for_current_user` ahora SECURITY INVOKER; `cotironda_private.register_company_with_verified_claim` conserva SECURITY DEFINER bajo `cotironda_registrar` sin BYPASSRLS.
+- Hook privado `cotironda_private.email_verified_access_token(event jsonb)` emite `cotironda_email_verified` desde `auth.users.email_confirmed_at` y no puede ser invocado por clientes. **No fue habilitado en el panel de Auth**.
+- Pruebas sobre base real tras migración: flag false, correo falso, claim ausente, anónimo, correo confirmado (solo dentro de transacción que activa flag), idempotencia y permisos. Datos ficticios revertidos.
+- Advisor de seguridad después de migrar: **ningún WARN**. Persiste INFO de tablas privadas intencionalmente sin políticas y INFO por índices sin uso inicial.
+- Se mantiene bloqueado el registro público y no se probó aún emisión de JWT auténtico. Ver `docs/23-hook-correo-auditoria.md`.
