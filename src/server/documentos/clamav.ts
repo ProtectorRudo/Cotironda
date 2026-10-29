@@ -38,19 +38,22 @@ export function escanearConClamd(
   const socket=connect({path:socketPath});
   let done=false,waiting=false,at=-1;
   let output=Buffer.alloc(0);
+  const deadline=setTimeout(()=>failed(),timeoutMs);
   const failed=()=>{
    if(done)return;
    done=true;
+   clearTimeout(deadline);
    socket.destroy();
    reject(new AnalisisNoDisponible());
   };
   const success=(verdict:VeredictoClamAV)=>{
    if(done)return;
    done=true;
+   clearTimeout(deadline);
    socket.destroy();
    resolve(verdict);
   };
-  socket.setTimeout(timeoutMs,failed);
+  socket.setTimeout(timeoutMs,failed); // además de deadline absoluto
   socket.on('error',failed);
   socket.on('close',()=>{
    if(!done)failed();
