@@ -12,11 +12,12 @@ const expected=[
  '20261029122708_invoker_verified_email_hook.sql',
  '20261029130907_session_revocation_and_verified_user.sql',
  '20261029140422_registration_attempt_rate_limiter.sql',
- '20261029183835_storage_private_buyer_drafts.sql'
+ '20261029183835_storage_private_buyer_drafts.sql',
+ '20261029204400_storage_session_revocation.sql'
 ];
 const actual=readdirSync(migrationDir).filter(p=>p.endsWith('.sql')).sort();
 
-test('el historial de ocho migraciones de cotironda-dev está versionado completo y en orden',()=>{
+test('el historial de nueve migraciones de cotironda-dev está versionado completo y en orden',()=>{
  assert.deepEqual(actual,expected,'No agregar, borrar o renombrar migraciones sin revisar DB dev, CI y manifiesto');
  const versions=actual.map(path=>Number(path.slice(0,14)));
  assert.equal(new Set(versions).size,versions.length);
@@ -42,10 +43,14 @@ test('ninguna migración está vacía; registro sigue cerrado y Storage restring
  assert.match(rate,/registration_settings/);
  assert.match(rate,/enabled/);
  assert.match(rate,/registration_attempt_quotas/);
- const storage=readFileSync(join(migrationDir,expected.at(-1)),'utf8');
+ const storage=readFileSync(join(migrationDir,'20261029183835_storage_private_buyer_drafts.sql'),'utf8');
  assert.match(storage,/storage\.buckets/);
  assert.match(storage,/storage\.objects/);
  assert.match(storage,/for select to authenticated/);
  assert.match(storage,/for insert to authenticated/);
- assert.doesNotMatch(storage,/registration_settings\s+set\s+enabled\s*=\s*true/i);
+ const guard=readFileSync(join(migrationDir,expected.at(-1)),'utf8');
+ assert.match(guard,/storage_session_active/);
+ assert.match(guard,/is_session_verified/);
+ assert.match(guard,/drop policy cotironda_buyer_drafts/);
+ assert.doesNotMatch(guard,/registration_settings\s+set\s+enabled\s*=\s*true/i);
 });
