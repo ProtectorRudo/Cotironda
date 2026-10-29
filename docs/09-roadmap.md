@@ -1,6 +1,6 @@
 # 09 — Hoja de ruta y puertas de calidad
 
-**Estado actual:** Etapa 00 integrada en `main`; Etapa 01 en desarrollo por PR. Esquema SQL declarativo y selector inicial; nada desplegado.
+**Estado actual:** Etapa 00 integrada en `main`; sitio preliminar sin funcionalidades comerciales publicado. Etapa 01 en PR borrador: pruebas RLS y registro SQL aprobadas en PostgreSQL efímero; sigue pendiente la integración real Supabase Auth/HTTP y la instancia aislada de desarrollo.
 
 | Etapa | Entregable | Criterio de aprobación |
 | --- | --- | --- |

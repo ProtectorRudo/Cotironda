@@ -1,16 +1,15 @@
 # Registro de cambios
 
-## [Sin publicar] — Etapa 00
-- Diseño de producto, reglas de licitaciones, IA, mensajería, ranking y seguridad.
-- Roadmap y criterios de prueba iniciales documentados.
-- **No existe todavía una aplicación ni se han conectado servicios.**
+## [Sin publicar] — Etapa 01 / Seguridad y registro
+- Esquema multiempresa propuesto y RLS probadas en PostgreSQL 17 efímero mediante GitHub Actions.
+- Registro SQL atómico de organizaciones, propietarios y proveedores; datos privados e idempotencia persistente por usuario y solicitud.
+- Pruebas con A/B, usuario suspendido, rol miembro y acceso anónimo, incluido intento de escritura ajena.
+- Tests de alta duplicada, cambio de payload, rollback ante usuario inexistente y dos solicitudes simultáneas.
+- **50 pruebas unitarias** y pruebas reales SQL verificadas en CI. La versión final de ese conjunto aún no está integrada a main.
+- Pendiente: Supabase Auth real, backend HTTP, rate limits, interfaz y Supabase aislado de desarrollo.
 
-## [Etapa 01 en desarrollo]
-- Esquema SQL declarativo multiempresa y permisos RLS restrictivos (sin aplicación a bases).
-- Selector de proveedores por producto confirmado, consentimiento y zona.
-- Módulo de prevalidación de catálogos con confirmación humana, sin precios.
-- Nuevo núcleo de registro y autorización de empresas: **24 tests nuevos ejecutados y aprobados**, TypeScript correcto.
-- Pruebas SQL/pgTAP pendientes; no existe una BD Cotironda aislada ni se aplicaron migraciones.
-- Pendiente: sesión auténtica, transacción persistente idempotente, UI y despliegue.
+## Etapa 00 — Documentación
+- Documentación de visión, reglas, arquitectura, clasificación, mensajería, ranking y seguridad.
 
-- GitHub Actions con 50/50 pruebas unitarias y estáticas correctas (ejecución 40833901535). Aún faltan pruebas reales SQL/RLS.
+## Sitio preliminar público
+- Vista informativa con simulación ficticia en https://cotironda.vercel.app. NO habilita licitaciones, WhatsApp ni pagos.
