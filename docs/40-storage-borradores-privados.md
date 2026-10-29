@@ -1,6 +1,6 @@
 # 40 — Storage privado de borradores documentales del comprador (Etapa 01)
 
-**29/10/2026 · PR #52 draft hijo de #51.** Se habilitará sólo en el Supabase aislado de desarrollo después de aprobar CI y auditoría; nunca publicar en el entorno comercial por esta tarea.
+**29/10/2026 · PR #52 draft hijo de #51.** Migración aplicada y verificada **sólo en `cotironda-dev`** después de aprobar CI. El registro comercial y producción permanecen cerrados.
 
 ## Necesidad y decisión acotada
 La Etapa 02 interpretará PDFs, Excel, Word e imágenes. Antes de aceptar material real, hay que aislar cada documento por empresa compradora. Se crea **un bucket privado exclusivo para borradores de solicitudes del comprador**, no un bucket compartido para ofertas de proveedores. Las ofertas, adjuntos de WhatsApp, adjudicaciones y documentos públicos requerirán políticas separadas con permisos por ronda, plazos y anonimato.
@@ -19,6 +19,9 @@ Dos políticas **sobre `storage.objects`**, con `TO authenticated` y `bucket_id`
 - **Ninguna política** de `UPDATE`, `DELETE`, `ALL`, `anon` ni operaciones sobre otros buckets. No se tocan otras políticas de Storage; inicialmente no hay políticas existentes en desarrollo.
 
 No autorizar por `owner_id`, `metadata` ni `user_metadata` de JWT: esos campos podrían ser establecidos por el cliente. No hay uploads por `service_role` en el navegador.
+
+## Resultado de instalación real en desarrollo
+La primera tentativa con `ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY` falló con `42501: must be owner of table objects`. El servicio Supabase Storage ya tiene RLS activada y es propietario `supabase_storage_admin`; el rol `postgres` no debe adquirir ese ownership. Se quitó **solo** ese `ALTER TABLE` y la migración oficial se aplicó correctamente mediante la herramienta de migraciones. Supabase asignó la versión definitiva **`20261029183835_storage_private_buyer_drafts`**. La consulta posterior confirma `public=false`, `file_size_limit=10485760`, 6 MIME y políticas `SELECT`/`INSERT` limitadas a authenticated; 0 objetos, 0 empresas y registro SQL `false`. La creación de políticas sí funcionó sin cambiar propietario ni permisos administrativos. La prueba HTTP real del Storage API sigue pendiente.
 
 ## Pruebas automatizadas
 `supabase/tests/ci/00_bootstrap.sql` simula únicamente la estructura mínima de `storage.buckets` y `storage.objects` en PostgreSQL 17 efímero. **Este archivo nunca se aplica al Supabase real.**
