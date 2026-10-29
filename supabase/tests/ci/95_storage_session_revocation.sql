@@ -31,6 +31,14 @@ select ci_helpers.assert_true(
 set local role authenticated;
 select set_config('request.jwt.claims','{"role":"authenticated","is_anonymous":false,"cotironda_email_verified":true,"sub":"a1111111-1111-4111-8111-111111111111","session_id":"f1111111-1111-4111-8111-111111111111"}',true);
 select set_config('request.jwt.claim.sub','a1111111-1111-4111-8111-111111111111',true);
+-- Diagnóstico de fixture sintético CI (UUID falsos, sin secretos), retirar tras resolver.
+select auth.jwt() as ci_emulated_jwt,auth.uid() as ci_emulated_uid,
+ cotironda_private.storage_session_active() as ci_gate_value;
+reset role;
+select cotironda_private.is_session_verified(
+ 'a1111111-1111-4111-8111-111111111111',
+ 'f1111111-1111-4111-8111-111111111111') as ci_direct_session;
+set local role authenticated;
 -- A vigente
 select ci_helpers.assert_true((select cotironda_private.storage_session_active()) is true, 'A vigente: sesion helper');
 select ci_helpers.assert_true((select count(*) from storage.objects where bucket_id='cotironda-buyer-drafts')=0,'A vigente: RLS lectura');
