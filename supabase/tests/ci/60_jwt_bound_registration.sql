@@ -58,7 +58,7 @@ end $$;
 
 select pg_catalog.set_config('request.jwt.claims','{"role":"authenticated","is_anonymous":false}',true);
 -- La RPC pública debe seguir cerrada AUN si existe un JWT válido.
-do $
+do $$
 begin
  begin
   perform * from public.register_company_for_current_user(
@@ -66,7 +66,7 @@ begin
   raise exception 'TEST_FAILED: DB flag no bloqueó registro';
  exception when insufficient_privilege then null;
  end;
-end $;
+end $$;
 reset role;
 update cotironda_private.registration_settings set enabled=true where singleton=true;
 set local role authenticated;
