@@ -39,3 +39,20 @@ grant execute on function auth.jwt() to authenticated;
 -- Tabla mínima para probar revocación de sesiones en PostgreSQL efímero.
 -- Solo CI: el proyecto Supabase gestiona su propia tabla auth.sessions.
 create table auth.sessions (id uuid primary key,user_id uuid not null references auth.users(id),not_after timestamptz);
+
+-- Emulación MÍNIMA de la API Supabase Storage, exclusivamente PostgreSQL de CI.
+-- No copiar a la base remota; allí storage.* ya pertenece al servicio gestionado.
+create schema storage;
+create table storage.buckets (
+ id text primary key, name text not null, public boolean not null default false,
+ file_size_limit bigint, allowed_mime_types text[]
+);
+create table storage.objects (
+ id uuid primary key default gen_random_uuid(),
+ bucket_id text references storage.buckets(id), name text not null
+);
+alter table storage.objects enable row level security;
+grant usage on schema storage to anon,authenticated;
+grant select on storage.buckets to anon,authenticated;
+-- Emular permisos amplios del servicio para probar que RLS restringe la acción.
+grant select,insert,update,delete on storage.objects to anon,authenticated;
