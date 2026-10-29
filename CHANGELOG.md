@@ -102,3 +102,10 @@
 - CI ejecuta la librería auténtica `@supabase/supabase-js` con un `fetch` simulado, verificando 429/403/200 y ausencia de reintentos sin tráfico real.
 - 109/109 pruebas unitarias y cuatro CI verdes. No hay nuevas migraciones ni cambios de Auth y el portal permanece fail-closed.
 - Continúa pendiente el HTTP real PostgREST con JWT auténtico, las sesiones reales y la prueba de cookies.
+
+## [Sin publicar — Recuperación de aislamiento del portal, Issue #33]
+- Recuperado selectivamente el guard de PR #26: la configuración del portal de desarrollo solo acepta `cotironda-dev` y bloquea `VERCEL_ENV=production`.
+- Nuevas pruebas que rechazan URL/ref de otro Supabase coherentes entre sí y validan Preview, Development, Production, flag apagado y permisos de configuración.
+- No se alteró la cuota SQL de PR #30 ni el manejo del 429 de PR #32. No hay nueva migración, cambios a Auth ni producción.
+- Detectado riesgo de autodespliegue: proyecto `cotironda` de Vercel está enlazado a GitHub. Integración de PR en `main` **no autorizada** hasta confirmar barreras de despliegue.
+- Informe y lista de PR apilados: `docs/30-integracion-aislamiento-portal.md`.
