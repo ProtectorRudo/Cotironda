@@ -11,6 +11,11 @@ begin
  if (select count(*) from pg_policies
      where schemaname='storage' and tablename='objects'
        and policyname like 'cotironda_buyer_drafts_%') <> 1
+ or exists(
+    select 1 from pg_policies
+    where schemaname='storage' and tablename='objects'
+      and cmd in ('INSERT','UPDATE','DELETE','ALL')
+   )
  or not exists(
     select 1 from pg_policies where schemaname='storage'
     and tablename='objects'
