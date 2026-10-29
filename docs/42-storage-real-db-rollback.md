@@ -16,11 +16,12 @@ Archivo `supabase/tests/manual/10_storage_rls_dev_rollback.sql`. Diseñado y aud
 - La otra cuenta sólo ve sus propios metadatos. Repite la lectura con la primera para confirmar el aislamiento cruzado.
 - Cambia el rol de la primera membresía a `member`: puede leer pero no insertar. Cambia luego su estado a `suspended`: no lee ni escribe.
 - Con `SET LOCAL ROLE anon` e incluso un `sub` falsificado: no lee ni inserta.
+- Con propietario activo, un `UPDATE` SQL intenta modificar el objeto y afecta **0 filas** por las restricciones actuales. En un intento de `DELETE` SQL, Supabase Storage ejecuta el disparador `storage.protect_delete()` y arroja `42501` con texto `Direct deletion from storage tables is not allowed`. El script acepta únicamente ese error específico; **no desactiva el disparador**. Por eso el rechazo de DELETE directo no debe atribuirse exclusivamente a la RLS: la propia plataforma bloquea el borrado SQL.
 - Antes del `ROLLBACK` exige que existan exactamente las dos empresas, dos membresías y dos metadatos de objeto esperados. Después del `ROLLBACK` vuelve a consultar que organizaciones, membresías y objetos sean **0**, y que el registro siga apagado.
 - El ensayo solo simula claims SQL; **no prueba firmas criptográficas ni el gateway HTTP de Supabase Auth/Storage**, tampoco MIME/tamaño reales, validación antivirus ni sesiones revocadas. La segunda cuenta no confirmada sirve únicamente para impersonación SQL; no se ha comprobado que pueda iniciar sesión por Auth y no se pretende permitirlo.
 
 ## Evidencia de ejecución
-Se ejecutó con la conexión administrada Supabase al proyecto `cotironda-dev` usando el SQL versionado exacto. **Todas las aserciones pasaron**; la salida de la transacción cerrada fue:
+Se ejecutó con la conexión administrada Supabase al proyecto `cotironda-dev` usando el SQL versionado exacto. La versión ampliada encontró inicialmente el bloqueo nativo de eliminación SQL de Storage, lo documentó y añadió una aserción explícita para ese caso; tras la corrección **todas las aserciones pasaron**, incluida la denegación de UPDATE. La salida de la transacción cerrada fue:
 
 | Indicador | Resultado |
 | --- | ---: |
