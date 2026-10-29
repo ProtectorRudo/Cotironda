@@ -98,7 +98,7 @@ jobs:
       - name: Cuarentena no accesible y ledger de ingestión privado (migración 11)
         run: |
           set -euo pipefail
-          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261029224000_private_quarantine_ledger.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261029213755_private_quarantine_ledger.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/97_quarantine_ledger.sql
 
   migrations-from-zero:
