@@ -35,10 +35,8 @@ select ci_helpers.assert_true(
      'registrar_profiles_insert','registrar_profiles_read'))=6,
  'seis políticas privadas del registrador conservadas');
 select ci_helpers.assert_true(
- (select enabled=false from cotironda_private.registration_settings where singleton=true)
- and (select count(*) from public.organizations)=0
- and (select count(*) from auth.sessions)=0,
- 'registro sigue cerrado, sin organizaciones ni sesiones reales');
+ (select enabled=false from cotironda_private.registration_settings where singleton=true),
+ 'registro sigue cerrado en ambas rutas CI; limpieza total se verifica por separado en job fresh');
 select ci_helpers.assert_true(
  not exists(select 1 from pg_policies where schemaname='storage' and tablename='objects'
     and cmd in ('INSERT','UPDATE','DELETE','ALL')),
