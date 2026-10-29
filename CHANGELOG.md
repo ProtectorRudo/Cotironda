@@ -189,3 +189,10 @@
 - No se implementó escáner, cuarentena ni endpoint de ingreso. Ver `docs/44-storage-upload-fail-closed.md`; no habilitar carga comercial.
 
 - **Supabase real de desarrollo:** 10ª migración aplicada con versión oficial `20261029211609`; `pg_policies` confirma **solo SELECT** por sesión vigente y empresa, sin escrituras. Test SQL manual 12 sobre tablas reales: lectura permitida, INSERT denegado, lectura revocada; ROLLBACK y 0 objetos/organizaciones/sesiones. No se hicieron uploads HTTP ni se abrió registro.
+
+## [Sin publicar — PR #63: cuarentena privada y registro de ingestión idempotente]
+- Migración 11 `20261029213755_private_quarantine_ledger.sql` aplicada exclusivamente en `cotironda-dev`: nuevo bucket `cotironda-upload-quarantine` estrictamente privado, 10 MiB y seis MIME, **sin RLS para clientes**. El bucket de borradores conserva solo lectura privada y sesiones verificadas, **sin INSERT**.
+- Tabla privada `cotironda_private.document_intake_jobs` sin privilegios de usuarios, RLS activa, service_role con SELECT/INSERT/UPDATE pero no DELETE. Dedupe por empresa e idempotency key, máximo 10 MiB, estados de workflow y trigger de transiciones. `approved` exige veredicto limpio, versión de scanner, hora de análisis y hash SHA-256. No es garantía de análisis real hasta conectar scanner.
+- Tests `97_quarantine_ledger.sql` en 2 jobs PostgreSQL 17, 11 migraciones; test manual `13_quarantine_ledger_dev_rollback.sql` en Supabase real pasó y dejó 0 jobs, 0 empresas y 0 archivos. Sin datos comerciales ni Auth nuevo. `tests/unit/quarantine-ledger-safety.test.mjs` bloquea regresiones.
+- Hallazgo de arquitectura: Functions Vercel limitan el body a 4,5 MB frente al bucket de 10 MiB. Signed upload URLs de Supabase duran 2 horas sin nueva Auth. No emitirlas antes de resolver acceso a cuarentena, idempotencia, expiración, revocación y limpieza. Ver `docs/45-cuarentena-ledger-documentos.md`.
+- Todavía no existe antivirus, worker, backend de carga, promoción, cola ni borrado programado. No habilitar archivos reales.

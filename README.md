@@ -1,6 +1,6 @@
 # Cotironda
 
-**Estado al 29/10/2026: Etapa 01, identidad y catálogos en desarrollo. Siete migraciones aplicadas únicamente en `cotironda-dev`. El registro y las licitaciones comerciales NO están habilitados; el sitio público es demostrativo.**
+**Estado al 29/10/2026: Etapa 01, identidad y catálogos en desarrollo. Once migraciones aplicadas únicamente en `cotironda-dev`. El registro y las licitaciones comerciales NO están habilitados; el sitio público es demostrativo.**
 
 Cotironda es una plataforma argentina B2B para solicitar cotizaciones privadas de **materiales de obra**. El comprador carga una lista una sola vez; la IA la interpreta y separa por rubro; el comprador revisa y confirma. Se invita a proveedores pertinentes según catálogo y cobertura geográfica; estos pueden responder desde WhatsApp (Whapi + IA) o por un portal opcional. El comprador compara ofertas anónimas, completas o parciales, y adjudica manualmente.
 
@@ -30,13 +30,13 @@ Issue → alcance y aceptación → rama → implementación → pruebas/auditor
 
 > **Repositorio público por decisión del propietario.** No colocar aquí tokens, contraseñas, presupuestos reales, números de teléfono, datos personales, listas de clientes o información confidencial. Este material inicial es de diseño, no código funcional.
 
-> Desarrollo de Etapa 01 en ramas y PR apilados: esquema SQL, selector y pruebas. **Se aplicaron siete migraciones reales exclusivamente en Supabase `cotironda-dev`; producción permanece intacta.**
+> Desarrollo de Etapa 01 en ramas y PR apilados: esquema SQL, selector y pruebas. **Se aplicaron once migraciones reales exclusivamente en Supabase `cotironda-dev`; producción permanece intacta.**
 
 **Vista preliminar pública:** https://cotironda.vercel.app — sitio demostrativo con datos ficticios, aislado de Viralio. **Pruebas reales SQL/RLS:** `.github/workflows/postgres-rls.yml` sobre PostgreSQL efímero de GitHub Actions. El único Supabase de Cotironda utilizado para estas migraciones es el proyecto aislado de desarrollo `cotironda-dev`.
 
 **Prueba de Storage SQL REAL (PR #56, sin publicar):** validamos las políticas RLS en `cotironda-dev` con las tablas gestionadas del servicio y dos empresas ficticias **dentro de BEGIN/ROLLBACK**; lectura aislada, dueño/miembro/suspendido, anónimo y cargas cruzadas. Resultado final **0 empresas, 0 membresías, 0 metadatos de archivo; registro deshabilitado**. No se cargaron bytes ni se usó HTTP Storage con JWT auténtico. [Auditoría reversible](docs/42-storage-real-db-rollback.md).
 
-**Cargas documentales temporalmente cerradas (PR #60, migración 10 aplicada en dev):** detectamos que la validación de archivos en el navegador puede eludirse accediendo directamente a Storage. La migración 10 elimina el permiso INSERT del comprador y el adaptador cliente devuelve `carga_pendiente_revision_servidor` sin llamar a la red. Se mantiene lectura privada con sesión vigente. **Hasta instalar un pipeline servidor de cuarentena y antimalware no se pueden subir archivos**. Ver [auditoría](docs/44-storage-upload-fail-closed.md).
+**Infraestructura de cuarentena (PR #63, migración 11 aplicada solo a desarrollo):** bucket `cotironda-upload-quarantine` **privado y sin políticas para usuarios**, más `cotironda_private.document_intake_jobs` para registrar envíos por empresa con idempotencia, estados y evidencia obligatoria antes de aprobación. **No hay endpoint de carga, antivirus, worker ni URLs firmadas**: el bloqueo INSERT del bucket definitivo permanece. Ver [informe técnico](docs/45-cuarentena-ledger-documentos.md).\n\n**Cargas documentales temporalmente cerradas (PR #60, migración 10 aplicada en dev):** detectamos que la validación de archivos en el navegador puede eludirse accediendo directamente a Storage. La migración 10 elimina el permiso INSERT del comprador y el adaptador cliente devuelve `carga_pendiente_revision_servidor` sin llamar a la red. Se mantiene lectura privada con sesión vigente. **Hasta instalar un pipeline servidor de cuarentena y antimalware no se pueden subir archivos**. Ver [auditoría](docs/44-storage-upload-fail-closed.md).
 
 **Revocación Auth en Storage (PR #58, migración 9 aplicada sólo en dev):** los permisos RLS del bucket privado comprueban ahora que el JWT corresponde a una sesión existente y vigente en `auth.sessions` antes de leer o cargar. Pruebas tanto en PostgreSQL 17 como en `cotironda-dev` con transacciones revertidas: el token antiguo pierde acceso tras logout y no revive con un login nuevo. **Aún falta el E2E HTTP con JWT auténtico y el escaneo antimalware.** Ver [auditoría de revocación Storage](docs/43-storage-session-revocation.md).
 

@@ -95,6 +95,11 @@ jobs:
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261029211609_storage_upload_fail_closed.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/96_storage_direct_upload_disabled.sql
+      - name: Cuarentena no accesible y ledger de ingestión privado (migración 11)
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261029213755_private_quarantine_ledger.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/97_quarantine_ledger.sql
 
   migrations-from-zero:
     name: Reconstruir historial 7 migraciones en PostgreSQL limpio
@@ -127,12 +132,12 @@ jobs:
           persist-credentials: false
       - name: Emular solamente roles Supabase en PostgreSQL efímero
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/00_bootstrap.sql
-      - name: Aplicar las 10 migraciones HISTÓRICAS desde cero y en orden
+      - name: Aplicar las 11 migraciones HISTÓRICAS desde cero y en orden
         run: |
           set -euo pipefail
           shopt -s nullglob
           migrations=(supabase/migrations/*.sql)
-          if [[ "${#migrations[@]}" -ne 10 ]]; then
+          if [[ "${#migrations[@]}" -ne 11 ]]; then
             echo 'ERROR: número de migraciones inesperado, revisar historial dev' >&2
             exit 1
           fi
@@ -171,8 +176,11 @@ jobs:
         run: bash supabase/tests/ci/92_rate_limit_concurrency.sh
       - name: Revocacion y JWT antiguo con RPC estructurada
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/93_revoked_session_status.sql
-      - name: Storage fail-closed tras reconstruir 10 migraciones
-        run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/96_storage_direct_upload_disabled.sql
+      - name: Storage fail-closed y cuarentena privada tras 11 migraciones
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/96_storage_direct_upload_disabled.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/97_quarantine_ledger.sql
       - name: 'Verificar limpieza final: flag apagado y cero datos de pruebas'
         run: |
           set -euo pipefail
@@ -186,6 +194,8 @@ jobs:
             (select count(*) from public.organizations)=0 and
             (select count(*) from cotironda_private.registration_attempt_quotas)=0 and
             (select count(*) from storage.objects)=0 and
-            (select public=false from storage.buckets where id='cotironda-buyer-drafts'),
+            (select count(*) from cotironda_private.document_intake_jobs)=0 and
+            (select public=false from storage.buckets where id='cotironda-buyer-drafts') and
+            (select public=false from storage.buckets where id='cotironda-upload-quarantine'),
             'datos sintéticos de pruebas deben limpiarse');
           SQL

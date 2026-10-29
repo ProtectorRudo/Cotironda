@@ -14,11 +14,12 @@ const expected=[
  '20261029140422_registration_attempt_rate_limiter.sql',
  '20261029183835_storage_private_buyer_drafts.sql',
  '20261029202610_storage_session_revocation.sql',
- '20261029211609_storage_upload_fail_closed.sql'
+ '20261029211609_storage_upload_fail_closed.sql',
+ '20261029213755_private_quarantine_ledger.sql'
 ];
 const actual=readdirSync(migrationDir).filter(p=>p.endsWith('.sql')).sort();
 
-test('el historial de diez migraciones de cotironda-dev está versionado completo y en orden',()=>{
+test('el historial de once migraciones de cotironda-dev está versionado completo y en orden',()=>{
  assert.deepEqual(actual,expected,'No agregar, borrar o renombrar migraciones sin revisar DB dev, CI y manifiesto');
  const versions=actual.map(path=>Number(path.slice(0,14)));
  assert.equal(new Set(versions).size,versions.length);
@@ -54,7 +55,12 @@ test('ninguna migración está vacía; registro sigue cerrado y Storage restring
  assert.match(guard,/is_session_verified/);
  assert.match(guard,/drop policy cotironda_buyer_drafts/);
  assert.doesNotMatch(guard,/registration_settings\s+set\s+enabled\s*=\s*true/i);
- const final=readFileSync(join(migrationDir,expected.at(-1)),'utf8');
+ const final=readFileSync(join(migrationDir,'20261029211609_storage_upload_fail_closed.sql'),'utf8');
  assert.match(final,/drop policy if exists cotironda_buyer_drafts_insert_manager/);
  assert.doesNotMatch(final,/create policy.*insert/si);
+ const quarantine=readFileSync(join(migrationDir,expected.at(-1)),'utf8');
+ assert.match(quarantine,/cotironda-upload-quarantine/);
+ assert.match(quarantine,/document_intake_jobs/);
+ assert.match(quarantine,/document_intake_approved_scanned/);
+ assert.doesNotMatch(quarantine,/create policy/i);
 });
