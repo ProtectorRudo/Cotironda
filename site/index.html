@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1724">
+  <meta name="description" content="Cotironda: la forma simple de solicitar y comparar cotizaciones de materiales de obra. Vista preliminar de desarrollo.">
+  <title>Cotironda · Cotizaciones para tu obra</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <a class="skip" href="#contenido">Ir al contenido</a>
+  <header class="header">
+    <div class="container header-inner">
+      <a class="brand" href="./" aria-label="Cotironda, inicio"><span class="mark" aria-hidden="true">C</span><span>COTI<span class="accent">RONDA</span></span></a>
+      <span class="header-tag">VISTA PRELIMINAR · ETAPA 01</span>
+    </div>
+  </header>
+  <main id="contenido">
+    <section class="hero container">
+      <div>
+        <div class="eyebrow"><span class="dot"></span> COTIZACIONES B2B · ARGENTINA</div>
+        <h1>Una sola solicitud.<br><span>Muchas oportunidades</span> para tu obra.</h1>
+        <p class="lead">Subí tus materiales, compará ofertas equivalentes y elegí cómo comprar. Estamos construyendo una plataforma simple para compradores y proveedores de materiales.</p>
+        <div class="hero-actions">
+          <a class="primary" href="#comparador">Ver cómo compara ofertas <span aria-hidden="true">↗</span></a>
+          <a class="secondary" href="#funciona">Cómo va a funcionar</a>
+        </div>
+        <p class="transparency"><span aria-hidden="true">ⓘ</span> Esta es una demostración pública con <strong>datos ficticios</strong>. No admite licitaciones, usuarios ni presupuestos reales.</p>
+      </div>
+      <aside class="hero-panel" aria-label="Ejemplo del resultado de una ronda ficticia">
+        <div class="panel-header"><span>Ronda de materiales</span><span class="mock-label">SIMULACIÓN</span></div>
+        <div class="panel-title">Materiales para obra</div>
+        <div class="panel-sub">13 materiales · 3 presupuestos de ejemplo</div>
+        <div class="mini-stats"><div><small>Mejor compra completa</small><strong>$ 1.340.000</strong></div><div><small>Artículos cubiertos</small><strong>13 de 13</strong></div></div>
+        <div class="progress-head"><span>Cobertura de la mejor oferta</span><strong>100%</strong></div><div class="progress"><div></div></div>
+        <div class="offer-lines">
+          <div><span class="offer-dot complete"></span><span>Oferta A</span><strong>13/13</strong></div>
+          <div><span class="offer-dot partial"></span><span>Oferta B</span><strong>10/13</strong></div>
+          <div><span class="offer-dot partial"></span><span>Oferta C</span><strong>2/13</strong></div>
+        </div>
+        <div class="panel-foot">Nunca comparamos totales de pedidos incompletos como si fueran equivalentes.</div>
+      </aside>
+    </section>
+
+    <section class="section" id="funciona">
+      <div class="container">
+        <div class="section-header"><span class="eyebrow">CÓMO FUNCIONARÁ</span><h2>Más cotizaciones. Menos llamados.</h2><p>La idea es mantener simple todo lo que sucede entre un pedido de materiales y una decisión de compra.</p></div>
+        <div class="steps">
+          <article class="step"><span class="number">01</span><div class="step-icon">⇧</div><h3>Enviás tu lista</h3><p>PDF, Excel, imagen o texto. La IA preparará una lista ordenada por rubro, para que puedas revisarla antes de enviarla.</p></article>
+          <article class="step"><span class="number">02</span><div class="step-icon">◎</div><h3>Invitamos a proveedores</h3><p>Elegidos según materiales y zona. Podrán responder por WhatsApp o desde un portal opcional.</p></article>
+          <article class="step"><span class="number">03</span><div class="step-icon">≋</div><h3>Comparás correctamente</h3><p>Verás cobertura, precios de artículos equivalentes, fletes y opciones con hasta dos proveedores.</p></article>
+          <article class="step"><span class="number">04</span><div class="step-icon">✓</div><h3>Vos decidís</h3><p>Elegirás a quién adjudicar, sin posiciones engañosas y con reglas claras para revelar los contactos.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section demo-section" id="comparador">
+      <div class="container">
+        <div class="section-header"><span class="eyebrow">EJEMPLO INTERACTIVO</span><h2>Una comparación que no engaña.</h2><p>Imaginá un pedido con 13 materiales y tres proveedores. Probá las dos opciones de compra para ver por qué el menor subtotal no siempre es la mejor propuesta.</p></div>
+        <div class="demo-layout">
+          <div class="demo-card">
+            <div class="demo-title"><h3>Presupuestos recibidos</h3><span class="mock-label">FICTICIOS</span></div>
+            <div class="supplier"><span class="supplier-name">Proveedor A <small>Oferta completa</small></span><strong>13 / 13</strong><div class="bar"><i style="width:100%"></i></div><div class="supplier-price">Materiales <strong>$ 1.300.000</strong></div></div>
+            <div class="supplier"><span class="supplier-name">Proveedor B <small>Oferta parcial</small></span><strong>10 / 13</strong><div class="bar"><i style="width:76.9%"></i></div><div class="supplier-price">Materiales <strong>$ 950.000</strong></div></div>
+            <div class="supplier"><span class="supplier-name">Proveedor C <small>Oferta parcial</small></span><strong>2 / 13</strong><div class="bar"><i style="width:15.4%"></i></div><div class="supplier-price">Materiales <strong>$ 170.000</strong></div></div>
+            <p class="small-note">El total de C es menor porque solamente cotiza dos artículos. No corresponde declararlo ganador de toda la compra.</p>
+          </div>
+          <div class="demo-card results" aria-live="polite">
+            <h3>¿Cómo conviene comprar?</h3>
+            <div class="segmented" role="group" aria-label="Opciones de compra">
+              <button id="single" type="button" aria-pressed="true">Un proveedor</button>
+              <button id="combined" type="button" aria-pressed="false">Combinar dos</button>
+            </div>
+            <div class="result-top"><span id="result-type">Oferta A · Compra completa</span><span class="valid">13 / 13 cubiertos</span></div>
+            <div class="total" id="total">$ 1.340.000</div>
+            <div class="cost-line"><span>Materiales</span><strong id="materials">$ 1.300.000</strong></div>
+            <div class="cost-line"><span>Fletes</span><strong id="shipping">$ 40.000</strong></div>
+            <div class="summary" id="summary">Un solo proveedor abastece los 13 materiales. En este ejemplo resulta $ 10.000 más conveniente que dividir la compra.</div>
+            <p class="small-note">Esta simulación supone impuestos y condiciones equivalentes. Un sistema real debe comprobar disponibilidad, unidades, IVA, mínimos, pagos y plazos.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section supply">
+      <div class="container supply-layout">
+        <div><span class="eyebrow">PARA PROVEEDORES</span><h2>Participar debería ser así de simple.</h2><p>Sin comisiones ni abonos para quienes cotizan. La idea es que los comercios reciban pedidos pertinentes y puedan responder por WhatsApp, sin depender de aprender otra plataforma.</p></div>
+        <div class="chat" aria-label="Conversación ilustrativa de WhatsApp"><div class="chat-head">Cotironda <span>ejemplo, no conectado</span></div><div class="bubble incoming">Hola. Hay una solicitud de materiales en tu zona. ¿Querés participar?</div><div class="bubble outgoing">Sí, mandame la lista.</div><div class="bubble incoming">Perfecto. Podrás cotizar los artículos que trabajás y confirmar tu presupuesto.</div></div>
+      </div>
+    </section>
+    <section class="footer-info container">
+      <strong>Cotironda está en construcción.</strong><p>Actualmente estamos desarrollando el registro, catálogo y la seguridad de las empresas. La lectura de archivos, WhatsApp automático, licitaciones reales y cobros todavía no están habilitados.</p>
+      <a href="https://github.com/ProtectorRudo/Cotironda" rel="noopener noreferrer" target="_blank">Seguir el desarrollo en GitHub ↗</a>
+    </section>
+  </main>
+  <footer class="footer"><div class="container"><span class="brand footer-brand"><span class="mark" aria-hidden="true">C</span><span>COTI<span class="accent">RONDA</span></span></span><span>Demostración de desarrollo · Argentina · 2026</span></div></footer>
+  <script src="./app.js" defer></script>
+</body></html>
