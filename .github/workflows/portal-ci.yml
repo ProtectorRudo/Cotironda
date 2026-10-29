@@ -21,6 +21,8 @@ jobs:
           node-version: '22.16.0'
       - name: Instalar versiones exactas
         run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Verificar sintaxis del E2E sin red ni credenciales
+        run: node --check scripts/auth-real-smoke.mjs
       - name: TypeScript
         run: npm run typecheck
       - name: Compilar con registro deshabilitado
