@@ -127,3 +127,10 @@
 - El runner manual Auth E2E usará `signOut({scope:'global'})` para limpiar sesiones de **cuentas exclusivamente de ensayo**. JWT anteriormente emitido puede permanecer válido hasta exp; revocación por SQL Auth real no probada.
 - Registro comercial y plataforma productiva no habilitados. No se crean usuarios ni empresas; falta prueba E2E real con cuentas dedicadas y contraseñas privadas.
 - Ver `docs/33-auth-hook-rol-e2e.md` y `docs/24-auth-e2e-seguridad.md`.
+
+## [Sin publicar — Primer E2E Auth/JWT auténtico en Chrome, 29/10/2026]
+- El propietario ejecutó el diagnóstico local de Auth con dos cuentas exclusivas de `cotironda-dev`. La captura muestra login confirmado, claim de JWT verdadero, identidad reconocida por `/auth/v1/user`, RPC denegada por interruptor SQL, JWT con `sub` adulterado rechazado explícitamente por autenticación, cuenta pendiente bloqueada y logout global aceptado.
+- Auditoría del HTML ejecutado: SHA-256 `26c803472222efb274e94056e7a35dd5f453a822abe7cb659f432bc40f940f5f`. Se verificó qué condiciones exige cada resultado verde. **No se suben las credenciales ni el HTML al repositorio público**.
+- Verificación independiente posterior (SQL read-only en `cotironda-dev`): dos usuarios Auth (uno confirmado, uno pendiente), uno con login registrado, cero sesiones, organizaciones, membresías y cuotas persistidas; `registration_settings.enabled=false`.
+- Sigue sin probarse expiración legítima, cookies SSR/refresh, revocación efectiva de access token preexistente y HTTP 429 real sobre PostgREST. No representa habilitación comercial.
+- Documentación `docs/34-auth-jwt-navegador-real.md`. Ningún merge, ningún despliegue, ningún cambio Auth adicional en este commit.
