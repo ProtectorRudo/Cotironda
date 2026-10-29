@@ -3,7 +3,8 @@
  * La creación usa JWT PostgREST: no requiere contraseña ni conexión SQL.
  */
 export type VariablesPortal = Record<string,string|undefined>;
-const refValida=/^[a-z]{20}$/;
+/** Entorno exclusivo de desarrollo, nunca inferido de variables de otro negocio. */
+export const COTIRONDA_DEV_REF = 'qkercsoqhehbenbbncwk';
 export function origenSeguro(origin: string|undefined): boolean {
  if(!origin)return false;
  try{
@@ -14,13 +15,14 @@ export function origenSeguro(origin: string|undefined): boolean {
 }
 export function credencialesCotironda(env:VariablesPortal):boolean {
  const ref=env.COTIRONDA_SUPABASE_PROJECT_REF||'';
- return refValida.test(ref) &&
+ return ref===COTIRONDA_DEV_REF &&
    env.NEXT_PUBLIC_SUPABASE_URL==='https://'+ref+'.supabase.co' &&
    Boolean(env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.startsWith('sb_publishable_')) &&
    !env.COTIRONDA_DATABASE_URL && !env.SUPABASE_SERVICE_ROLE_KEY;
 }
 export function portalHabilitado(env:VariablesPortal):boolean {
  return env.COTIRONDA_REGISTRATION_ENABLED==='true' &&
+    env.VERCEL_ENV!=='production' &&
     origenSeguro(env.COTIRONDA_SITE_ORIGIN) &&
     credencialesCotironda(env);
 }
