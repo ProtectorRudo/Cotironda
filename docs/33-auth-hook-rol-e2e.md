@@ -5,7 +5,8 @@
 ## Evidencia confirmada
 - El propietario activó mediante dashboard **Authentication → Auth Hooks → Customize Access Token (JWT) Claims**, tipo Postgres, esquema `cotironda_private`, función `email_verified_access_token`, en proyecto de desarrollo **`cotironda-dev`**. La pantalla mostró **ENABLED** y notificación de creación exitosa.
 - Comprobación SQL de solo lectura sobre el Supabase real: `email_verified_access_token` devolvió `cotironda_email_verified=false` para un UUID inexistente. No se insertaron cuentas, sesiones ni empresas.
-- Supabase dev: 7 migraciones aplicadas, `registration_settings.enabled=false`, 0 usuarios, 0 sesiones y 0 empresas al comprobar; Security Advisor sin WARN/ERROR (único INFO conocido sobre tabla privada con RLS sin policy por diseño).
+- Supabase dev: 7 migraciones aplicadas y `registration_settings.enabled=false`. **Tras la creación manual de las cuentas por el propietario, hay 2 usuarios Auth: 1 con correo confirmado y 1 pendiente**, 0 sesiones, 0 empresas, 0 membresías y 0 filas de cuota. Security Advisor sin WARN/ERROR en la última auditoría (único INFO conocido sobre tabla privada con RLS sin policy por diseño).
+- Consulta SQL read-only del hook sobre ambos usuarios Auth existentes: 1 cuenta confirmada devolvió `cotironda_email_verified=true`; 1 no confirmada devolvió `false`; **2/2 coinciden, 0 discrepancias**. No se exponen IDs, emails ni contraseñas.
 - **No se probó aún la emisión de JWT por el servidor Auth ni la firma en un login real**. El estado ENABLED del dashboard y la función SQL aislada son evidencias diferentes.
 
 ## Prueba automatizada nueva
@@ -19,7 +20,7 @@ El runner manual `apps/portal/scripts/auth-real-smoke.mjs` ahora pide al servido
 Importante: JWT ya firmados pueden conservar validez criptográfica hasta exp; `signOut` **no demuestra** por sí solo que un JWT capturado no pueda usarse. La base tiene un guard SQL específico contra sesiones revocadas, probado con sesiones emuladas; falta la evidencia E2E sobre Auth real, cookies SSR y 429 auténtico de PostgREST.
 
 ## Próximo ensayo Auth real: preparación mínima y segura
-Este ensayo **no** se inició. Los conectores habilitados no ofrecen una acción de gestión de usuarios/Auth Hooks y no vamos a crear cuentas escribiendo directamente en `auth.users` con SQL. Hace falta preparar dos cuentas dedicadas en **Authentication → Users** de `cotironda-dev` mediante un flujo genuino de Supabase Auth: una cuenta confirmada y otra sin confirmar. Las contraseñas se cargan únicamente en entorno local privado, **nunca** en GitHub, Issues, capturas, chats ni logs de CI.
+El ensayo **todavía no se ejecutó**. El propietario **ya creó las dos cuentas dedicadas** desde Authentication → Users de `cotironda-dev`, una confirmada y otra pendiente. Los conectores habilitados no permiten iniciar sesión con la contraseña privada de esas cuentas, que no debe enviarse en GitHub, Issues, capturas, chats ni logs de CI. La próxima ejecución requiere iniciar sesión desde un entorno local controlado.
 
 Una vez preparadas y comprobadas las credenciales de ensayo:
 1. Confirmar proyecto dev y que `registration_settings.enabled=false`; mantener el portal cerrado.
