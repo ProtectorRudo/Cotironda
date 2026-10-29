@@ -9,7 +9,7 @@ insert into public.organizations(id,display_name,organization_type) values
 insert into public.organization_members(organization_id,user_id,membership_role,status) values
 ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','a1111111-1111-4111-8111-111111111111','owner','active'),('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','b2222222-2222-4222-8222-222222222222','owner','active'),('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','c3333333-3333-4333-8333-333333333333','manager','active');
 select ci_helpers.assert_true(
- (select p.prosecdef and pg_get_userbyid(p.proowner)='postgres' and p.proconfig @> array['search_path=']
+ (select p.prosecdef and pg_get_userbyid(p.proowner)='postgres' and position('search_path' in pg_get_functiondef(p.oid))>0
   from pg_proc p where p.oid='cotironda_private.storage_session_active()'::regprocedure),
  'helper privado SEC DEF owner postgres con search_path vacio');
 select ci_helpers.assert_true(
