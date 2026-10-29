@@ -98,7 +98,9 @@ async function main(){
 
  // El JWT firmado B es aceptado cuando existe su sesión vigente.
  await expectInvalid(jwtB,'sesión B activa');
- assert.equal(sql("delete from auth.sessions where id='"+SESSION_B+"' returning id"),SESSION_B);
+ assert.equal(sql("select count(*) from auth.sessions where id='"+SESSION_B+"'"),'1');
+ sql("delete from auth.sessions where id='"+SESSION_B+"'");
+ assert.equal(sql("select count(*) from auth.sessions where id='"+SESSION_B+"'"),'0');
  const revoked=await rpc(jwtB);
  assert.equal(revoked.status,403,'JWT aún firmado con sesión revocada: HTTP 403');
  assert.equal(row(revoked).registration_status,'session_invalid');
