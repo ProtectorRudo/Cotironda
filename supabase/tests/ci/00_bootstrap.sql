@@ -6,7 +6,8 @@ create role supabase_auth_admin nologin;
 create role service_role nologin bypassrls;
 create schema auth;
 create table auth.users (id uuid primary key,
- email_confirmed_at timestamptz, is_anonymous boolean not null default false);
+ email_confirmed_at timestamptz, is_anonymous boolean not null default false,
+ banned_until timestamptz, deleted_at timestamptz);
 grant usage on schema auth to supabase_auth_admin;
 grant select on auth.users to supabase_auth_admin;
 create function auth.uid() returns uuid

@@ -95,4 +95,25 @@ begin
  end;
 end;$$;
 reset role;
+-- Nueva sesión realmente existente de usuario A: la misma identidad puede
+-- registrar empresa mientras siga vigente y su correo esté confirmado.
+insert into auth.sessions(id,user_id,not_after) values
+ ('f7777777-7777-4777-8777-777777777777',
+ 'a1111111-1111-4111-8111-111111111111',null);
+set local role authenticated;
+select set_config('request.jwt.claims',
+'{"role":"authenticated","is_anonymous":false,"cotironda_email_verified":true,"sub":"a1111111-1111-4111-8111-111111111111","session_id":"f7777777-7777-4777-8777-777777777777"}',true);
+select ci_helpers.assert_true(
+ (select replay from public.register_company_for_current_user(
+ 'f8888888-8888-4888-8888-888888888888','Empresa desde sesión activa','buyer'))=false,
+ 'sesión activa permite alta con control de correo');
+select ci_helpers.assert_true(
+ (select replay from public.register_company_for_current_user(
+ 'f8888888-8888-4888-8888-888888888888','Empresa desde sesión activa','buyer'))=true,
+ 'reintento de sesión activa es idempotente');
+reset role;
+select ci_helpers.assert_true(
+ (select count(*) from public.organization_members where
+ user_id='a1111111-1111-4111-8111-111111111111')=1,
+ 'sesión activa crea solo su propio miembro');
 rollback;
