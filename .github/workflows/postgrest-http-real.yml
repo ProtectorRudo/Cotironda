@@ -37,7 +37,7 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '22.16.0'
-      - name: Instalar las 11 migraciones en base PostgreSQL efimera, NO Supabase
+      - name: Instalar las 12 migraciones en PostgreSQL efimero, NO Supabase
         shell: bash
         run: |
           set -euo pipefail
@@ -48,7 +48,7 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/00_bootstrap.sql > /dev/null
           shopt -s nullglob
           migrations=(supabase/migrations/*.sql)
-          if [[ "${#migrations[@]}" != 11 ]]; then
+          if [[ "${#migrations[@]}" != 12 ]]; then
             echo 'ERROR: migraciones inesperadas' >&2
             exit 1
           fi
@@ -96,8 +96,8 @@ jobs:
           fi
       - name: HTTP JWT autentico de PostgREST (NO Supabase Auth) 429 revocacion y limpieza
         run: node tests/integration/postgrest-http-real.mjs
-      - name: Endurecer RLS de forma experimental SOLO en PostgreSQL efimero
-        run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/100_session_rls_hardening_draft.sql
+      - name: Verificar migracion 12 RLS instalada y registro cerrado
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/98_commercial_session_guard.sql
       - name: Preparar empresas y roles ficticios para prueba HTTP de aislamiento
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/99_tenant_http_fixture.sql
       - name: Verificar RLS real via HTTP entre empresas y limpiar fixtures
