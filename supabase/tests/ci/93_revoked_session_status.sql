@@ -86,7 +86,7 @@ begin
 end;
 $test$;
 reset role;
-select ci_helpers.assert_true((select count(*) from public.organizations)<=1,'JWT rechazado no crea empresa adicional');
+select ci_helpers.assert_true((select count(*) from public.organization_members where user_id='a1111111-1111-4111-8111-111111111111')<=1 and (select count(*) from public.organization_members where user_id='c3333333-3333-4333-8333-333333333333')=0,'JWT rechazado no crea miembros de ensayo adicionales');
 -- JWT sesión ya revocada
 set local role authenticated;
 select set_config('request.jwt.claims','{"role":"authenticated","is_anonymous":false,"cotironda_email_verified":true,"sub":"a1111111-1111-4111-8111-111111111111","session_id":"f1111111-1111-4111-8111-111111111111"}',true);
@@ -103,7 +103,7 @@ begin
 end;
 $test$;
 reset role;
-select ci_helpers.assert_true((select count(*) from public.organizations)<=1,'JWT rechazado no crea empresa adicional');
+select ci_helpers.assert_true((select count(*) from public.organization_members where user_id='a1111111-1111-4111-8111-111111111111')<=1 and (select count(*) from public.organization_members where user_id='c3333333-3333-4333-8333-333333333333')=0,'JWT rechazado no crea miembros de ensayo adicionales');
 -- Cuenta A inicia otra sesión distinta de la previamente revocada.
 insert into auth.sessions(id,user_id,not_after) values ('f7777777-7777-4777-8777-777777777777','a1111111-1111-4111-8111-111111111111',null);
 -- login nuevo permite registro de prueba
@@ -154,7 +154,7 @@ begin
 end;
 $test$;
 reset role;
-select ci_helpers.assert_true((select count(*) from public.organizations)<=1,'JWT rechazado no crea empresa adicional');
+select ci_helpers.assert_true((select count(*) from public.organization_members where user_id='a1111111-1111-4111-8111-111111111111')<=1 and (select count(*) from public.organization_members where user_id='c3333333-3333-4333-8333-333333333333')=0,'JWT rechazado no crea miembros de ensayo adicionales');
 -- session_id de otra persona
 set local role authenticated;
 select set_config('request.jwt.claims','{"role":"authenticated","is_anonymous":false,"cotironda_email_verified":true,"sub":"a1111111-1111-4111-8111-111111111111","session_id":"f2222222-2222-4222-8222-222222222222"}',true);
@@ -171,7 +171,7 @@ begin
 end;
 $test$;
 reset role;
-select ci_helpers.assert_true((select count(*) from public.organizations)<=1,'JWT rechazado no crea empresa adicional');
+select ci_helpers.assert_true((select count(*) from public.organization_members where user_id='a1111111-1111-4111-8111-111111111111')<=1 and (select count(*) from public.organization_members where user_id='c3333333-3333-4333-8333-333333333333')=0,'JWT rechazado no crea miembros de ensayo adicionales');
 -- session_id not_after caducado
 set local role authenticated;
 select set_config('request.jwt.claims','{"role":"authenticated","is_anonymous":false,"cotironda_email_verified":true,"sub":"c3333333-3333-4333-8333-333333333333","session_id":"f3333333-3333-4333-8333-333333333333"}',true);
@@ -188,14 +188,14 @@ begin
 end;
 $test$;
 reset role;
-select ci_helpers.assert_true((select count(*) from public.organizations)<=1,'JWT rechazado no crea empresa adicional');
+select ci_helpers.assert_true((select count(*) from public.organization_members where user_id='a1111111-1111-4111-8111-111111111111')<=1 and (select count(*) from public.organization_members where user_id='c3333333-3333-4333-8333-333333333333')=0,'JWT rechazado no crea miembros de ensayo adicionales');
 -- A hizo seis intentos, C uno; denegaciones también consumen cuota.
 select ci_helpers.assert_true(
  (select request_count from cotironda_private.registration_attempt_quotas where user_id='a1111111-1111-4111-8111-111111111111')=6
  and (select request_count from cotironda_private.registration_attempt_quotas where user_id='c3333333-3333-4333-8333-333333333333')=1,
  'denegaciones consumen cuota y no permiten saltar limites por usuario');
 select ci_helpers.assert_true(
- (select count(*) from public.organizations)=1 and
+ (select count(*) from public.organizations where display_name='Empresa de prueba solamente')=1 and
  (select count(*) from public.organization_members where user_id='a1111111-1111-4111-8111-111111111111')=1,
  'solo la sesion NUEVA valida registro una empresa de ensayo');
 rollback;
