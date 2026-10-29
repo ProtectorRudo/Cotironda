@@ -17,13 +17,6 @@ const fakeFetch=async(input,init={})=>{
  assert.equal(uri.origin,url,'Nunca sale de entorno simulado');
  assert.ok(uri.pathname.startsWith('/storage/v1/'),'Solo Storage');
  const headers=new Headers(init.headers||{});
- if(process.env.CI)console.log('CI Storage wire (solo datos ficticios)',JSON.stringify({
-  method:init.method||'GET',path:uri.pathname,
-  authType:(headers.get('authorization')||'').startsWith('Bearer '),
-  authIsFake:(headers.get('authorization')||'')==='Bearer ci_only_fake_jwt',
-  contentType:headers.get('content-type')||'none',
-  upsert:headers.get('x-upsert')||'none'
- }));
  const auth=headers.get('authorization')||'';
  assert.ok(/^Bearer (ci_only_fake_jwt|sb_publishable_fake_ci)$/.test(auth),
   'La solicitud exige un bearer ficticio, nunca service role ni vacío');
@@ -38,9 +31,11 @@ const fakeFetch=async(input,init={})=>{
  if(uri.pathname.startsWith('/storage/v1/object/'+bucket+'/')){
   const requested=decodeURIComponent(uri.pathname.split('/'+bucket+'/')[1]);
   assert.equal(init.method,'POST');
-  const type=headers.get('content-type')||'';
-  assert.ok(type==='application/pdf'||type.startsWith('multipart/form-data'),
-   'El SDK envía MIME del PDF o multipart controlado');
+  // Supabase Storage JS envía Blob vía FormData; el navegador define
+  // el Content-Type multipart automáticamente, no en init.headers.
+  assert.ok(init.body instanceof FormData,'SDK upload usa FormData');
+  assert.equal(init.body.get('file')?.type,'application/pdf');
+  assert.equal(init.body.get('contentType'),'application/pdf');
   assert.notEqual(headers.get('x-upsert'),'true','Prohibida la sobreescritura');
   if(requested!==path)
    return new Response(JSON.stringify({statusCode:'403',error:'Forbidden',message:'RLS'}),{
