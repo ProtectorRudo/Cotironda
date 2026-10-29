@@ -22,5 +22,5 @@ begin
   end if;
 end
 $$;
-grant usage on schema ci_helpers to authenticated, anon;
-grant execute on function ci_helpers.assert_true(boolean,text) to authenticated, anon;
+grant usage on schema ci_helpers to authenticated, anon, service_role;
+grant execute on function ci_helpers.assert_true(boolean,text) to authenticated, anon, service_role;

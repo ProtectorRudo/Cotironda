@@ -266,7 +266,7 @@ revoke all on cotironda_private.organization_registration_requests from public, 
 grant select, insert on cotironda_private.organization_registration_requests to service_role;
 
 -- Servicio con privilegios mínimos necesarios para la transacción.
-grant insert on public.organizations, public.organization_members,
+grant select, insert on public.organizations, public.organization_members,
  public.supplier_profiles to service_role;
 
 create function cotironda_private.register_company(
