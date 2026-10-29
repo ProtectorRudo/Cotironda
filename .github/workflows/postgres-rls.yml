@@ -70,3 +70,9 @@ jobs:
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261029130907_session_revocation_and_verified_user.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/80_session_revocation.sql
+
+      - name: Cuotas por usuario con rechazo durable y RPC directa
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/90_rate_limit_proposal.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/91_rate_limit.sql
