@@ -55,3 +55,8 @@ jobs:
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261029112947_execute_only_registration.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/50_execute_only.sql
+      - name: Registro derivado de JWT, sin p_user_id
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/changes/04_jwt_bound_registration.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/60_jwt_bound_registration.sql
