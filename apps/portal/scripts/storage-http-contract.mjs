@@ -17,6 +17,13 @@ const fakeFetch=async(input,init={})=>{
  assert.equal(uri.origin,url,'Nunca sale de entorno simulado');
  assert.ok(uri.pathname.startsWith('/storage/v1/'),'Solo Storage');
  const headers=new Headers(init.headers||{});
+ if(process.env.CI)console.log('CI Storage wire (solo datos ficticios)',JSON.stringify({
+  method:init.method||'GET',path:uri.pathname,
+  authType:(headers.get('authorization')||'').startsWith('Bearer '),
+  authIsFake:(headers.get('authorization')||'')==='Bearer ci_only_fake_jwt',
+  contentType:headers.get('content-type')||'none',
+  upsert:headers.get('x-upsert')||'none'
+ }));
  const auth=headers.get('authorization')||'';
  assert.ok(/^Bearer (ci_only_fake_jwt|sb_publishable_fake_ci)$/.test(auth),
   'La solicitud exige un bearer ficticio, nunca service role ni vacío');
