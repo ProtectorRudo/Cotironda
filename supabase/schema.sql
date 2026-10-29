@@ -83,7 +83,7 @@ create table public.supplier_delivery_areas (
 -- Los numeros de WhatsApp y los consentimientos NO se exponen a la Data API.
 create table cotironda_private.supplier_contacts (
  organization_id uuid primary key references public.supplier_profiles(organization_id) on delete cascade,
- whatsapp_e164 text check (whatsapp_e164 ~ '^\\+[1-9][0-9]{6,14}$'),
+ whatsapp_e164 text check (whatsapp_e164 ~ '^[+][1-9][0-9]{6,14}$'),
  whatsapp_opt_in_at timestamptz,
  opt_out_at timestamptz,
  updated_at timestamptz not null default now(),
@@ -93,6 +93,28 @@ create table cotironda_private.supplier_contacts (
 alter table cotironda_private.supplier_contacts enable row level security;
 revoke all on cotironda_private.supplier_contacts from public, anon, authenticated;
 grant select, insert, update, delete on cotironda_private.supplier_contacts to service_role;
+
+-- Marcas de tiempo del servidor (clientes no pueden falsificarlas).
+create function cotironda_private.touch_updated_at()
+returns trigger
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+create trigger supplier_profiles_touch
+ before update on public.supplier_profiles for each row
+ execute function cotironda_private.touch_updated_at();
+create trigger supplier_products_touch
+ before update on public.supplier_products for each row
+ execute function cotironda_private.touch_updated_at();
+create trigger supplier_contacts_touch
+ before update on cotironda_private.supplier_contacts for each row
+ execute function cotironda_private.touch_updated_at();
 
 -- RLS siempre activa en tablas expuestas.
 alter table public.organizations enable row level security;
@@ -107,19 +129,19 @@ alter table public.supplier_delivery_areas enable row level security;
 revoke all on public.organizations, public.organization_members,
  public.catalog_categories, public.supplier_profiles,
  public.supplier_categories, public.supplier_products,
- public.supplier_delivery_areas from anon, authenticated;
+ public.supplier_delivery_areas from PUBLIC, anon, authenticated;
 
 grant select on public.organizations, public.organization_members,
  public.catalog_categories, public.supplier_profiles,
  public.supplier_categories, public.supplier_products,
  public.supplier_delivery_areas to authenticated;
-grant update (trade_name, accepting_quotes, updated_at)
+grant update (trade_name, accepting_quotes)
  on public.supplier_profiles to authenticated;
 grant insert, delete on public.supplier_categories to authenticated;
 grant update (is_enabled) on public.supplier_categories to authenticated;
 grant insert, delete on public.supplier_products to authenticated;
 grant update (product_name, manufacturer, manufacturer_sku, unit_code,
- attributes, source_type, is_active, updated_at) on public.supplier_products to authenticated;
+ attributes, source_type, is_active) on public.supplier_products to authenticated;
 grant insert, delete on public.supplier_delivery_areas to authenticated;
 grant update (province, city, is_enabled) on public.supplier_delivery_areas to authenticated;
 

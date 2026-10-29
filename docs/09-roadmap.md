@@ -1,6 +1,6 @@
 # 09 — Hoja de ruta y puertas de calidad
 
-**Estado actual:** Etapa 00 documentándose mediante PR. Nada implementado ni publicado.
+**Estado actual:** Etapa 00 integrada en `main`; Etapa 01 en desarrollo por PR. Esquema SQL declarativo y selector inicial; nada desplegado.
 
 | Etapa | Entregable | Criterio de aprobación |
 | --- | --- | --- |

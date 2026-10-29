@@ -20,3 +20,8 @@
 - No se probó un onboarding web ni una integración real.
 - Falta normalización técnica robusta, códigos de proveedores y cobertura geográfica.
 - GitHub es público: nada de secretos ni datos personales.
+
+## Auditoría estática adicional
+Se verificó directamente contra el blob GitHub del esquema corregido: 7 tablas RLS, 17 políticas únicas, acceso restringido a contactos, bloqueo de membresías desde cliente, ausencia de SECURITY DEFINER, privilegios PUBLIC revocados, regex E.164 completa y trigger intacto. **9/9 comprobaciones estáticas**; no equivalen a ejecutar SQL.
+
+Durante revisión se detectó una interpolación accidental de `$` al generar el SQL: se descartó el árbol incorrecto antes del commit y se regeneró el archivo íntegro. Versión corregida auditada con 17 políticas, sin duplicados.
