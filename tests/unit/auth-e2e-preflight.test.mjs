@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {validarEntornoE2E,cargaRpcNoPersistente,SUPABASE_COTIRONDA_DEV_URL} from '../../src/server/auth-e2e-preflight.ts';
+import {validarEntornoE2E,cargaRpcNoPersistente,validarClaimsSesionFirmada,SUPABASE_COTIRONDA_DEV_URL} from '../../src/server/auth-e2e-preflight.ts';
 const valid={
   COTIRONDA_E2E_SUPABASE_URL:SUPABASE_COTIRONDA_DEV_URL,
   COTIRONDA_E2E_PROJECT_REF:'qkercsoqhehbenbbncwk',
@@ -42,4 +42,24 @@ test('carga de prueba no puede producir registros incluso con DB abierta',()=>{
  assert.equal(out.p_name.length,1);
  assert.deepEqual(Object.keys(out).sort(),['p_name','p_request_id','p_trade_name','p_type']);
  assert.equal(out.p_type,'buyer');
+});
+
+const usuarioReal='123e4567-e89b-42d3-a456-426614174000';
+const claimsBien={
+  sub:usuarioReal,role:'authenticated',is_anonymous:false,
+  cotironda_email_verified:true,session_id:'123e4567-e89b-42d3-a456-426614174002'
+};
+test('exige session_id UUID y sujeto del usuario autenticado',()=>{
+ assert.equal(validarClaimsSesionFirmada(claimsBien,usuarioReal),claimsBien.session_id);
+ for(const claims of [
+  {...claimsBien,session_id:null},{...claimsBien,session_id:'falso'},
+  {...claimsBien,sub:'123e4567-e89b-42d3-a456-426614174005'},
+  {...claimsBien,is_anonymous:true},
+  {...claimsBien,cotironda_email_verified:false},
+  {...claimsBien,role:'anon'}
+ ])assert.throws(()=>validarClaimsSesionFirmada(claims,usuarioReal),/jwt_/);
+});
+test('no acepta claims ausentes, anónimos o enviados sin estructura',()=>{
+ for(const candidate of [null,undefined,[], 'texto',{}])
+  assert.throws(()=>validarClaimsSesionFirmada(candidate,usuarioReal),/jwt_/);
 });

@@ -43,3 +43,23 @@ export function cargaRpcNoPersistente(requestId:string) {
     p_trade_name:null
   };
 }
+
+
+/** Validación estructural adicional sobre getClaims() (firma verificada por SDK).
+ * No equivale a consultar auth.sessions ni a probar revocación del JWT.
+ */
+export function validarClaimsSesionFirmada(claims:unknown,userId:string):string {
+  if(!claims || typeof claims!=='object' || Array.isArray(claims)){
+    throw new Error('jwt_sin_claims');
+  }
+  const c=claims as Record<string,unknown>;
+  if(c.sub!==userId || c.role!=='authenticated' ||
+     c.is_anonymous!==false || c.cotironda_email_verified!==true){
+    throw new Error('jwt_identidad_no_verificada');
+  }
+  const id=c.session_id;
+  if(typeof id!=='string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)){
+    throw new Error('jwt_sin_session_id_valido');
+  }
+  return id;
+}
