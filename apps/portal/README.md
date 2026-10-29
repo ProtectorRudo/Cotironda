@@ -9,6 +9,9 @@
 **Bloqueos:** faltan credenciales de un Supabase exclusivo; no desplegar portal a producción ni usar las claves de Viralio/TeHiceEsto. No hay costos nuevos.
 
 ## Encendido deliberado del portal
-Configurar en un entorno aislado nuevo `COTIRONDA_SUPABASE_PROJECT_REF` (referencia de 20 letras), `NEXT_PUBLIC_SUPABASE_URL`, clave publicable, `COTIRONDA_DATABASE_URL` del MISMO proyecto, `COTIRONDA_SITE_ORIGIN` HTTPS y recién entonces `COTIRONDA_REGISTRATION_ENABLED=true`. No habilitar sin pruebas de Auth real, permisos, E2E y autorización de producción.
+Configurar el proyecto exclusivo de Cotironda: `COTIRONDA_SUPABASE_PROJECT_REF`, `NEXT_PUBLIC_SUPABASE_URL`, clave publicable y `COTIRONDA_SITE_ORIGIN`. El registro se efectúa con la sesión SSR mediante RPC, **sin DATABASE_URL ni service_role**. Para habilitarlo deberán aprobarse: sesión real, correo confirmado no salteable por RPC, control de tasa y el doble interruptor de Vercel y PostgreSQL.
 
 El interruptor se aplica tanto a páginas como a API, Proxy y acceso PostgreSQL; las credenciales públicas solas no habilitan formularios.
+
+## Modificación de seguridad de Etapa 01
+La ruta de registro ya no importa `pg` ni credenciales SQL; usa la RPC `register_company_for_current_user` desde el cliente SSR autenticado. `COTIRONDA_DATABASE_URL` está explícitamente prohibido por el validador de configuración.
