@@ -47,13 +47,13 @@ try{
  assert.equal(login.status,200);
  const html=await login.text();
  assert.match(html,/Acceso y registro cerrados temporalmente/);
- assert.doesNotMatch(html,/<form\\b/i,'Production no debe presentar formulario de autenticación');
+ assert.doesNotMatch(html,/<form\b/i,'Production no debe presentar formulario de autenticación');
 
  const alta=await request('/alta');
  assert.equal(alta.status,200);
  const altaHtml=await alta.text();
  assert.match(altaHtml,/Registro todavía deshabilitado/);
- assert.doesNotMatch(altaHtml,/<form\\b/i,'Production no debe permitir formulario de empresa');
+ assert.doesNotMatch(altaHtml,/<form\b/i,'Production no debe permitir formulario de empresa');
 
  const post=await request('/api/organizaciones',{
   method:'POST',
