@@ -82,7 +82,7 @@ async function main(){
   'El rechazo debe ser JWT de PostgREST, no el SQL ni el negocio');
  console.log('PASS HTTP: firma JWT adulterada rechazada antes del SQL');
 
- const expired=await rpc(token(USER_A,SESSION_A,{exp:Math.floor(Date.now()/1000)-20}));
+ const expired=await rpc(token(USER_A,SESSION_A,{iat:Math.floor(Date.now()/1000)-7200,exp:Math.floor(Date.now()/1000)-3600}));
  assert.equal(expired.status,401,'JWT vencido debe fallar por firma/expiración');
  assert.ok(['PGRST301','PGRST303'].includes(expired.body?.code),'expiración no fue JWT auth');
  console.log('PASS HTTP: expiración real de JWT verificada');
