@@ -71,7 +71,7 @@ try{
  });
  assert.equal(post.status,503,'El corte de producción debe detener la API antes de tocar Auth/DB');
  const cacheControl=post.headers.get('cache-control')||'';
- assert.match(cacheControl,/(^|[,\\s])no-store(,|$)/i,
+ assert.ok(cacheControl.split(',').map(item=>item.trim().toLowerCase()).includes('no-store'),
   'Una respuesta de rechazo nunca debe almacenarse en caché');
  const payload=await post.json();
  assert.deepEqual(payload,{error:'registro_no_disponible'});
