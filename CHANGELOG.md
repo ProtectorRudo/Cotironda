@@ -33,3 +33,10 @@
 - Migración inicial `20261029105736_initial_identity_catalog` aplicada en desarrollo; nueve tablas con RLS y cinco rubros.
 - Pruebas reales de aislamiento por organización y registro idempotente aprobadas y revertidas, sin filas de prueba persistentes.
 - Historial versionado en GitHub; continúan pendientes Supabase Auth en portal y E2E.
+
+## [Seguridad backend sin privilegios administrativos — desarrollo]
+- Rol `cotironda_app` creado en Supabase dev como NOLOGIN/NOINHERIT/NOBYPASSRLS.
+- RLS explícitas permiten sólo lectura e inserción mínimas para registrar empresa/propietario/perfil; sin UPDATE, DELETE, acceso a productos, contactos ni Auth.
+- Ejecución SQL `register_company` autorizada al rol propio y revocada a `service_role`.
+- Migración 20261029111731 aplicada, registrada y probada en PostgreSQL de CI y Supabase real; fixtures revertidos.
+- Portal rechaza conexiones con usuario `postgres` o `service_role`; el registro continúa deshabilitado.

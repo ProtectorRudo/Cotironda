@@ -43,3 +43,5 @@ Issue → alcance y aceptación → rama → implementación → pruebas/auditor
 
 ## Desarrollo: Supabase dedicado
 Proyecto de desarrollo: `cotironda-dev` (`qkercsoqhehbenbbncwk`), versión de migración `20261029105736`. RLS y registro SQL verificados directamente en Supabase con datos sintéticos revertidos. Ver [registro de verificación](docs/19-supabase-dev.md). Este entorno no debe usarse para cotizaciones reales.
+
+**Seguridad del registro:** existe segunda migración `20261029111731_backend_role_limited` aplicada en Supabase dev, con rol de backend NOLOGIN y sin bypass RLS. El portal sigue cerrado: falta credencial de backend y sesión de Auth validada E2E.

@@ -42,3 +42,11 @@
 - `COTIRONDA_REGISTRATION_ENABLED=false` permanece establecido en **todos los entornos** del proyecto de desarrollo, incluido `production` de ese proyecto.
 - No se configuró contraseña de PostgreSQL ni clave de servicio, ni se activó login/registro. El portal público de Cotironda es otro proyecto y no se modificó.
 - Próximo paso: diseñar credenciales de backend con permisos mínimos y verificar Auth real antes de habilitar el registro, incluso en entorno protegido.
+
+## Segunda migración de seguridad (29/10/2026)
+- `20261029111731_backend_role_limited` aplicada mediante Supabase en el proyecto `cotironda-dev`, y registrada en `supabase/migrations/20261029111731_backend_role_limited.sql` tras generación con CLI. No volver a aplicar el mismo SQL completo.
+- Nuevo rol `cotironda_app` (sin LOGIN, sin BYPASSRLS); permiso de registro bajo RLS con privilegios limitados.
+- Pruebas reales: registro de organización/miembro/proveedor con el rol, y rechazo de SELECT productos/contactos y de UPDATE/DELETE. Fixtures revertidos.
+- Evaluación de seguridad: una observación INFO de RLS sin política en `cotironda_private.supplier_contacts`, bloqueo deliberado; sin vulnerabilidades altas reportadas. Avisos de índices sin uso se esperan en una base nueva.
+- Se verificó cero organizaciones y cero solicitudes tras la prueba. Sigue pendiente la credencial privada de backend y la verificación de Supabase Auth real.
+- Detalle en `docs/20-backend-privilegios.md`.
