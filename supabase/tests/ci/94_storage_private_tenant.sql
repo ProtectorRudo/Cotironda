@@ -9,6 +9,14 @@ values ('11111111-1111-4111-8111-111111111111',now(),false),
 ('55555555-5555-4555-8555-555555555555',now(),false),
 ('66666666-6666-4666-8666-666666666666',now(),false),
 ('77777777-7777-4777-8777-777777777777',now(),false);
+insert into auth.sessions(id,user_id,not_after) values
+ ('81111111-1111-4111-8111-111111111111','11111111-1111-4111-8111-111111111111',null),
+ ('82222222-2222-4222-8222-222222222222','22222222-2222-4222-8222-222222222222',null),
+ ('83333333-3333-4333-8333-333333333333','33333333-3333-4333-8333-333333333333',null),
+ ('84444444-4444-4444-8444-444444444444','44444444-4444-4444-8444-444444444444',null),
+ ('85555555-5555-4555-8555-555555555555','55555555-5555-4555-8555-555555555555',null),
+ ('86666666-6666-4666-8666-666666666666','66666666-6666-4666-8666-666666666666',null),
+ ('87777777-7777-4777-8777-777777777777','77777777-7777-4777-8777-777777777777',null);
 insert into public.organizations(id,display_name,organization_type) values
  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','Compradora A','buyer'),
  ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','Compradora B','both'),
@@ -39,6 +47,7 @@ select ci_helpers.assert_true(
  'usuarios no pueden volver público el bucket');
 set local role authenticated;
 select set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',true);
+select set_config('request.jwt.claims','{"role":"authenticated","is_anonymous":false,"cotironda_email_verified":true,"sub":"11111111-1111-4111-8111-111111111111","session_id":"81111111-1111-4111-8111-111111111111"}',true);
 
 insert into storage.objects(bucket_id,name) values ('cotironda-buyer-drafts','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/requests/dddddddd-dddd-4ddd-8ddd-dddddddddddd/eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee.pdf');
 select ci_helpers.assert_true((select count(*) from storage.objects where name='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/requests/dddddddd-dddd-4ddd-8ddd-dddddddddddd/eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee.pdf')=1,'owner A puede cargar PDF');
@@ -118,6 +127,7 @@ $block$;
 reset role;
 set local role authenticated;
 select set_config('request.jwt.claim.sub','22222222-2222-4222-8222-222222222222',true);
+select set_config('request.jwt.claims','{"role":"authenticated","is_anonymous":false,"cotironda_email_verified":true,"sub":"22222222-2222-4222-8222-222222222222","session_id":"82222222-2222-4222-8222-222222222222"}',true);
 
 insert into storage.objects(bucket_id,name) values ('cotironda-buyer-drafts','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb/requests/dddddddd-dddd-4ddd-8ddd-dddddddddddd/eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee.xlsx');
 select ci_helpers.assert_true((select count(*) from storage.objects where name='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb/requests/dddddddd-dddd-4ddd-8ddd-dddddddddddd/eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee.xlsx')=1,'owner B puede cargar XLSX');
@@ -126,6 +136,7 @@ select ci_helpers.assert_true((select count(*) from storage.objects)=1,'B no ve 
 reset role;
 set local role authenticated;
 select set_config('request.jwt.claim.sub','33333333-3333-4333-8333-333333333333',true);
+select set_config('request.jwt.claims','{"role":"authenticated","is_anonymous":false,"cotironda_email_verified":true,"sub":"33333333-3333-4333-8333-333333333333","session_id":"83333333-3333-4333-8333-333333333333"}',true);
 
 select ci_helpers.assert_true((select count(*) from storage.objects)=1,'miembro de A puede leer A');
 do $block$
@@ -141,6 +152,7 @@ $block$;
 reset role;
 set local role authenticated;
 select set_config('request.jwt.claim.sub','44444444-4444-4444-8444-444444444444',true);
+select set_config('request.jwt.claims','{"role":"authenticated","is_anonymous":false,"cotironda_email_verified":true,"sub":"44444444-4444-4444-8444-444444444444","session_id":"84444444-4444-4444-8444-444444444444"}',true);
 
 select ci_helpers.assert_true((select count(*) from storage.objects)=0,'miembro suspendido no lee');
 do $block$
@@ -156,6 +168,7 @@ $block$;
 reset role;
 set local role authenticated;
 select set_config('request.jwt.claim.sub','55555555-5555-4555-8555-555555555555',true);
+select set_config('request.jwt.claims','{"role":"authenticated","is_anonymous":false,"cotironda_email_verified":true,"sub":"55555555-5555-4555-8555-555555555555","session_id":"85555555-5555-4555-8555-555555555555"}',true);
 
 select ci_helpers.assert_true((select count(*) from storage.objects)=0,'sin empresa no lee');
 do $block$
@@ -171,6 +184,7 @@ $block$;
 reset role;
 set local role authenticated;
 select set_config('request.jwt.claim.sub','66666666-6666-4666-8666-666666666666',true);
+select set_config('request.jwt.claims','{"role":"authenticated","is_anonymous":false,"cotironda_email_verified":true,"sub":"66666666-6666-4666-8666-666666666666","session_id":"86666666-6666-4666-8666-666666666666"}',true);
 
 insert into storage.objects(bucket_id,name) values ('cotironda-buyer-drafts','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/requests/dddddddd-dddd-4ddd-8ddd-dddddddddddd/99999999-9999-4999-8999-999999999999.docx');
 select ci_helpers.assert_true((select count(*) from storage.objects where name='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/requests/dddddddd-dddd-4ddd-8ddd-dddddddddddd/99999999-9999-4999-8999-999999999999.docx')=1,'manager puede subir DOCX');
@@ -179,6 +193,7 @@ select ci_helpers.assert_true((select count(*) from storage.objects)=2,'manager 
 reset role;
 set local role authenticated;
 select set_config('request.jwt.claim.sub','77777777-7777-4777-8777-777777777777',true);
+select set_config('request.jwt.claims','{"role":"authenticated","is_anonymous":false,"cotironda_email_verified":true,"sub":"77777777-7777-4777-8777-777777777777","session_id":"87777777-7777-4777-8777-777777777777"}',true);
 
 select ci_helpers.assert_true((select count(*) from storage.objects)=0,'proveedor no ve borradores compradores');
 do $block$
@@ -194,6 +209,7 @@ $block$;
 reset role;
 set local role anon;
 select set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',true);
+select set_config('request.jwt.claims','{"role":"authenticated","is_anonymous":false,"cotironda_email_verified":true,"sub":"11111111-1111-4111-8111-111111111111","session_id":"81111111-1111-4111-8111-111111111111"}',true);
 
 select ci_helpers.assert_true((select count(*) from storage.objects)=0,'anon no ve ni con sub falsificado');
 do $block$
