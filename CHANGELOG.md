@@ -134,3 +134,10 @@
 - Verificación independiente posterior (SQL read-only en `cotironda-dev`): dos usuarios Auth (uno confirmado, uno pendiente), uno con login registrado, cero sesiones, organizaciones, membresías y cuotas persistidas; `registration_settings.enabled=false`.
 - Sigue sin probarse expiración legítima, cookies SSR/refresh, revocación efectiva de access token preexistente y HTTP 429 real sobre PostgREST. No representa habilitación comercial.
 - Documentación `docs/34-auth-jwt-navegador-real.md`. Ningún merge, ningún despliegue, ningún cambio Auth adicional en este commit.
+
+## [Sin publicar — PR #43: contrato de cookies y refresh SSR]
+- Contrato automático del `@supabase/ssr` real: login simulado, cookie SSR, lectura en segunda request, renovación de access/refresh tokens, aislamiento entre visitantes y eliminación de cookies tras logout simulado. Todo con `fetch` local falso, sin usuarios ni claves reales.
+- Probado **`proxy.ts` de Next.js**: frente a JWT ficticio vencido, renueva en Auth simulado, transmite `Set-Cookie` con `SameSite=Lax` y exige `Cache-Control: private, no-store`. Flag false no hace requests Auth.
+- `getClaims` NO verifica revocación en servidor; `getUser` se prueba como control independiente. Se ajustó import `next/server.js` para ejecución del módulo Proxy también en Node ESM.
+- La CI Next ejecuta el contrato antes de typecheck y los dos builds. Sin migraciones, cambios remotos, merge ni despliegue.
+- Evidencia, alcances y riesgos restantes: `docs/35-ssr-cookies-refresh-proxy.md`.
