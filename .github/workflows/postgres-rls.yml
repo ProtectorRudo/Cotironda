@@ -50,3 +50,8 @@ jobs:
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261029111731_backend_role_limited.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/40_backend_role.sql
+      - name: Alta solo por función privada y rol sin DML
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/changes/03_execute_only_registration.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/50_execute_only.sql
