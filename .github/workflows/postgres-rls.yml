@@ -76,5 +76,5 @@ jobs:
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/90_rate_limit_proposal.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/91_rate_limit.sql
-      - name: Cuarenta sesiones concurrentes: cuota ineludible
+      - name: "Cuarenta sesiones concurrentes: cuota ineludible"
         run: bash supabase/tests/ci/92_rate_limit_concurrency.sh
