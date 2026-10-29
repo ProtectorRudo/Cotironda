@@ -96,3 +96,9 @@
 - Tests PostgreSQL con 40 conexiones (8 simultáneas), 20 aceptadas para validación y 20 bloqueadas; no hubo empresas creadas por esa prueba.
 - **108/108 tests unitarios** y cuatro GitHub Actions verdes. Supabase Advisor 0 WARN/ERROR, 0 usuarios/empresas/sesiones/cuotas persistidas.
 - **Bloqueantes vigentes:** Auth Hook auténtico, JWT/refresh/cookies E2E, verificación de HTTP 429 real y defensa contra abuso multi-cuenta/IP. Portal sigue fail-closed y producción intacta.
+
+## [Sin publicar — PR #32: contrato HTTP 429 del SDK]
+- Corregido el adaptador del registro para leer `PostgrestResponse.status`: 429 real deja de depender de `PostgrestError.status`, códigos o mensajes arbitrarios.
+- CI ejecuta la librería auténtica `@supabase/supabase-js` con un `fetch` simulado, verificando 429/403/200 y ausencia de reintentos sin tráfico real.
+- 109/109 pruebas unitarias y cuatro CI verdes. No hay nuevas migraciones ni cambios de Auth y el portal permanece fail-closed.
+- Continúa pendiente el HTTP real PostgREST con JWT auténtico, las sesiones reales y la prueba de cookies.
