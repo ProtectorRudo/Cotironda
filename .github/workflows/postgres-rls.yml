@@ -88,7 +88,7 @@ jobs:
       - name: Revocacion de sesion Auth en RLS Storage (migracion 9)
         run: |
           set -euo pipefail
-          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261029204400_storage_session_revocation.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261029202610_storage_session_revocation.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/95_storage_session_revocation.sql
 
   migrations-from-zero:
