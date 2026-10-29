@@ -13,7 +13,7 @@ const expected=[
  '20261029130907_session_revocation_and_verified_user.sql',
  '20261029140422_registration_attempt_rate_limiter.sql',
  '20261029183835_storage_private_buyer_drafts.sql',
- '20261029204400_storage_session_revocation.sql'
+ '20261029202610_storage_session_revocation.sql'
 ];
 const actual=readdirSync(migrationDir).filter(p=>p.endsWith('.sql')).sort();
 
