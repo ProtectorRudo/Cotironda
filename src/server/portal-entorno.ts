@@ -23,9 +23,9 @@ export function credencialesCotironda(env: VariablesPortal): boolean {
     const db = new URL(env.COTIRONDA_DATABASE_URL);
     if (!['postgres:', 'postgresql:'].includes(db.protocol) || !db.password) return false;
     const direct = db.hostname === 'db.' + ref + '.supabase.co' &&
-      decodeURIComponent(db.username) === 'postgres';
+      decodeURIComponent(db.username) === 'cotironda_app';
     const pooled = db.hostname.endsWith('.pooler.supabase.com') &&
-      decodeURIComponent(db.username) === 'postgres.' + ref;
+      decodeURIComponent(db.username) === 'cotironda_app.' + ref;
     return direct || pooled;
   } catch { return false; }
 }
