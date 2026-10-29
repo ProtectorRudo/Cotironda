@@ -141,3 +141,9 @@
 - `getClaims` NO verifica revocación en servidor; `getUser` se prueba como control independiente. Se ajustó import `next/server.js` para ejecución del módulo Proxy también en Node ESM.
 - La CI Next ejecuta el contrato antes de typecheck y los dos builds. Sin migraciones, cambios remotos, merge ni despliegue.
 - Evidencia, alcances y riesgos restantes: `docs/35-ssr-cookies-refresh-proxy.md`.
+
+## [Sin publicar — PR #46: revocación estructurada tras migración 7]
+- Auditoría detectó que el test histórico 80 esperaba excepciones, mientras la RPC actual devuelve `registration_status='session_invalid'` después de la séptima migración.
+- Se preservó el test 80 en su punto histórico y se añadió `93_revoked_session_status.sql`, ejecutado **en ambos jobs** de PostgreSQL después de migración 7.
+- Siete escenarios de JWT simulado: faltante, revocado, sesión nueva válida, idempotencia, sesión vieja tras nuevo login, ajena y vencida. Se exige estado y columnas exactas, ningún alta por rechazos y cuota por usuario.
+- Ejecución completa dentro de ROLLBACK sobre fixture CI. Sin cambios a las siete migraciones, Auth real o producción. `docs/36-revocacion-sesiones-rpc-actual.md`.
