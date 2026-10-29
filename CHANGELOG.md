@@ -76,3 +76,9 @@
 - Nueve pruebas nuevas evitan falsos positivos por errores de negocio o doble bloqueo; nombre inválido impide persistencia.
 - CI verifica sintaxis del runner E2E, sin enviar credenciales ni solicitudes Auth.
 - Firma real, expiración y revocación aún pendientes de E2E con el hook activado; sin producción ni registros.
+
+## [Sin publicar — PR #24: sesión actual comprobada]
+- Sexta migración `20261029130907_session_revocation_and_verified_user` aplicada y versionada en Supabase dev.
+- Alta exige session_id JWT y existencia de auth.sessions del mismo usuario; correo actual confirmado, no-anónimo, no-borrado y no-suspendido.
+- Helper booleano exclusivamente privado; AUTH no expuesto y sin permiso de ejecución por clientes; funcion pública INVOKER sin modificación de firma.
+- Pruebas PostgreSQL y Supabase reales reversibles, incluidos token sin session_id, sesión revocada, vencida y usuario suspendido. Sin producción ni usuarios reales.

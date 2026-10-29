@@ -6,7 +6,8 @@ create role supabase_auth_admin nologin;
 create role service_role nologin bypassrls;
 create schema auth;
 create table auth.users (id uuid primary key,
- email_confirmed_at timestamptz, is_anonymous boolean not null default false);
+ email_confirmed_at timestamptz, is_anonymous boolean not null default false,
+ banned_until timestamptz, deleted_at timestamptz);
 grant usage on schema auth to supabase_auth_admin;
 grant select on auth.users to supabase_auth_admin;
 create function auth.uid() returns uuid
@@ -34,3 +35,7 @@ create function auth.jwt() returns jsonb
 language sql stable
 as $$ select nullif(current_setting('request.jwt.claims',true),'')::jsonb $$;
 grant execute on function auth.jwt() to authenticated;
+
+-- Tabla mínima para probar revocación de sesiones en PostgreSQL efímero.
+-- Solo CI: el proyecto Supabase gestiona su propia tabla auth.sessions.
+create table auth.sessions (id uuid primary key,user_id uuid not null references auth.users(id),not_after timestamptz);
