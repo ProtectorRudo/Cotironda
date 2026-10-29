@@ -24,8 +24,24 @@ En `.github/workflows/portal-ci.yml`, después del build y smoke con flag false:
 - Conserva el rate limiter SQL de la migración 7, el guard HTTP fail-closed y la documentación del PR #34.
 
 ## Criterio de aceptación
-- [ ] CI del último commit: unitarias, PostgreSQL 17/40 concurrentes, sitio y Next.js con los DOS builds y smokes, 4/4 exitosos.
-- [ ] Verificación posterior de `cotironda-dev`: séptima migración registrada; registro SQL false, 0 usuarios y organizaciones.
-- [ ] PR #36 borrador; no se fusiona ni publica.
+- [x] CI con código del smoke corregido: 112/112 unitarias, PostgreSQL 17/40 concurrentes, sitio y Next.js con los DOS builds y smokes, 4/4 exitosos.
+- [x] Verificación de `cotironda-dev`: séptima migración registrada; registro SQL false, 0 usuarios y organizaciones.
+- [x] PR #36 borrador; no se fusiona ni publica.
 
 Evidencia: [PR #36](https://github.com/ProtectorRudo/Cotironda/pull/36) · [Issue #35](https://github.com/ProtectorRudo/Cotironda/issues/35) · [Guía anterior](30-integracion-aislamiento-portal.md).
+
+## Evidencia de ejecución sobre el commit de prueba `9ac6b8ef46bc1a43964706f31339984be30a362d`
+- **112/112 unitarias**: https://github.com/ProtectorRudo/Cotironda/actions/runs/40903484462 — SUCCESS
+- **PostgreSQL 17 y concurrencia**: https://github.com/ProtectorRudo/Cotironda/actions/runs/40903484828 — SUCCESS
+- **Next.js con segundo build production-like y HTTP REAL**: https://github.com/ProtectorRudo/Cotironda/actions/runs/40903484610 — SUCCESS. Log exacto: `PASS: HTTP REAL Next production-like + flag true => formularios cerrados y POST 503.`
+- **Sitio**: https://github.com/ProtectorRudo/Cotironda/actions/runs/40903484824 — SUCCESS
+- Se corrigió en la prueba una comparación estricta de cabecera: el proxy responde `private, no-store`, válido y más restrictivo que `no-store` aislado. Se exige la **directiva exacta** `no-store`, no el texto completo de la cabecera.
+- La CI verifica primero que la configuración alternativa `VERCEL_ENV=preview` sería válida (evita un falso positivo por un origen local inválido).
+- Importante: estos resultados corresponden al commit anterior a la última actualización documental.
+
+## Bloqueo administrativo de publicación detectado
+- GitHub informa `main.protected=false`, sin status checks obligatorios; GET de rulesets devuelve `[]`.
+- La integración de GitHub no permite consultar/modificar las reglas de branch protection con permisos de administración (403).
+- El proyecto Vercel público `cotironda` tuvo un despliegue de Production READY procedente de `main`. Por lo tanto **no es seguro fusionar a main solamente porque CI pasó**.
+- Issue de gestión de release: https://github.com/ProtectorRudo/Cotironda/issues/37
+- Requiere administrador GitHub configurar protección/enforcement y revisar Git/Production Branch en Vercel. Hasta entonces, **no fusionar a main**, no publicar.
