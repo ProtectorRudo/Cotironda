@@ -47,3 +47,5 @@ Proyecto de desarrollo: `cotironda-dev` (`qkercsoqhehbenbbncwk`), versión de mi
 **Seguridad del registro:** existe segunda migración `20261029111731_backend_role_limited` aplicada en Supabase dev, con rol de backend NOLOGIN y sin bypass RLS. El portal sigue cerrado: falta credencial de backend y sesión de Auth validada E2E.
 
 **Auditoría actual:** la tercera migración de Etapa 01 (`20261029112947_execute_only_registration`) deja al rol del backend sin permisos de inserción directos. Únicamente invoca la función privada auditada; falta autenticar el origen de `p_user_id` y habilitar conexión de servicio segura. Ver `docs/21-funcion-registro-privilegios.md`.
+
+**Registro por JWT (desarrollo):** cuarta migración `20261029120021_jwt_bound_registration_locked` aplicada en `cotironda-dev`. El portal y la base tienen interruptores independientes apagados. Sin conexión PostgreSQL directa. Sigue abierta una advertencia de SECURITY DEFINER y faltan pruebas JWT reales. Ver [auditoría](docs/22-jwt-registro.md).
