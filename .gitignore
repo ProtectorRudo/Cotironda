@@ -1,0 +1,24 @@
+# Secretos
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+service-account*.json
+*.sqlite
+# Dependencias / builds
+node_modules/
+.next/
+.vercel/
+dist/
+coverage/
+playwright-report/
+test-results/
+# Archivos de trabajo y presupuestos reales
+uploads/
+private/
+tmp/
+*.log
+.DS_Store
