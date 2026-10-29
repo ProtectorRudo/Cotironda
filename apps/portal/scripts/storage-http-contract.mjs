@@ -17,7 +17,9 @@ const fakeFetch=async(input,init={})=>{
  assert.equal(uri.origin,url,'Nunca sale de entorno simulado');
  assert.ok(uri.pathname.startsWith('/storage/v1/'),'Solo Storage');
  const headers=new Headers(init.headers||{});
- assert.equal(headers.get('authorization'),'Bearer ci_only_fake_jwt');
+ const auth=headers.get('authorization')||'';
+ assert.ok(/^Bearer (ci_only_fake_jwt|sb_publishable_fake_ci)$/.test(auth),
+  'La solicitud exige un bearer ficticio, nunca service role ni vacío');
  calls.push({method:init.method||'GET',path:uri.pathname,headers});
  if(uri.pathname.startsWith('/storage/v1/object/authenticated/'+bucket+'/')){
   const requested=decodeURIComponent(uri.pathname.split('/'+bucket+'/')[1]);
@@ -29,7 +31,9 @@ const fakeFetch=async(input,init={})=>{
  if(uri.pathname.startsWith('/storage/v1/object/'+bucket+'/')){
   const requested=decodeURIComponent(uri.pathname.split('/'+bucket+'/')[1]);
   assert.equal(init.method,'POST');
-  assert.equal(headers.get('content-type'),'application/pdf');
+  const type=headers.get('content-type')||'';
+  assert.ok(type==='application/pdf'||type.startsWith('multipart/form-data'),
+   'El SDK envía MIME del PDF o multipart controlado');
   assert.notEqual(headers.get('x-upsert'),'true','Prohibida la sobreescritura');
   if(requested!==path)
    return new Response(JSON.stringify({statusCode:'403',error:'Forbidden',message:'RLS'}),{
