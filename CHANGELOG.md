@@ -46,3 +46,11 @@
 - Revocados SELECT/INSERT directos del rol de API sobre empresas, membresías y solicitudes.
 - Alta permitida solo por función privada de propietario NOLOGIN, sin BYPASSRLS; nueva suite SQL contra PostgreSQL y Supabase real.
 - 79 unit tests, Next build y prueba SQL en CI aprobados; **sin activar usuarios reales ni publicar backend**.
+
+## [Etapa 01 — JWT y doble bloqueo, desarrollo]
+- Cuarta migración aplicada a Supabase dev: `20261029120021_jwt_bound_registration_locked`.
+- RPC usa identidad derivada de JWT PostgREST, sin parámetro `user_id`; se revocó el camino privado legado.
+- Interruptor adicional en PostgreSQL `registration_settings.enabled=false` impide altas por llamada directa.
+- Retirados adaptador `pg`, dependencias SQL y variables `DATABASE_URL` del portal; lockfile regenerado en CI.
+- Pruebas PostgreSQL, CI y Supabase real aprobadas, con fixtures revertidos.
+- Advertencia Supabase `authenticated_security_definer_function_executable` pendiente de resolución. E2E Auth y correo confirmado siguen bloqueantes; sin producción.

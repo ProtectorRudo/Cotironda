@@ -55,3 +55,10 @@
 - `20261029112947_execute_only_registration`: elimina acceso DML directo del backend, transfiere la función a un propietario privado NOLOGIN sin BYPASSRLS y conserva EXECUTE solo a `cotironda_app`.
 - Proceso probado con transacciones reversibles antes/después de aplicar. Cero empresas, membresías o solicitudes de prueba persistentes. Sin contraseñas configuradas.
 - Advisor sin advertencias altas. Evidencia: `docs/21-funcion-registro-privilegios.md` y CI 40866084063.
+
+## Cuarta migración — JWT vinculado, registro cerrado
+- Versión `20261029120021_jwt_bound_registration_locked` aplicada en `cotironda-dev`, réplica versionada en GitHub.
+- Tabla privada `registration_settings` con RLS y `enabled=false`; ninguna empresa o alta activa.
+- RPC `public.register_company_for_current_user` deriva usuario del contexto de JWT verificado por PostgREST. Rol `authenticated` tiene EXECUTE, `anon` no; `cotironda_app` perdió invocación de función privada con `p_user_id`.
+- Test reversible en Supabase dev con JWT simulado y dos identidades: aprobado. La prueba con token firmado real sigue pendiente.
+- Supabase Advisor informa WARN por función SECURITY DEFINER accesible a authenticated: **bloqueante antes de apertura**. Más detalle en `docs/22-jwt-registro.md`.

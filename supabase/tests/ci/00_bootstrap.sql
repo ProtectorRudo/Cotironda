@@ -24,3 +24,9 @@ end
 $$;
 grant usage on schema ci_helpers to authenticated, anon, service_role;
 grant execute on function ci_helpers.assert_true(boolean,text) to authenticated, anon, service_role;
+
+-- El JWT se emula sólo en CI; Supabase/PostgREST validará firma en producción.
+create function auth.jwt() returns jsonb
+language sql stable
+as $$ select nullif(current_setting('request.jwt.claims',true),'')::jsonb $$;
+grant execute on function auth.jwt() to authenticated;
