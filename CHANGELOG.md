@@ -13,3 +13,9 @@
 
 ## Sitio preliminar público
 - Vista informativa con simulación ficticia en https://cotironda.vercel.app. NO habilita licitaciones, WhatsApp ni pagos.
+
+## [Portal de registro en desarrollo - PR #8]
+- Login y alta Next.js con cookies Supabase SSR y validación de sesión contra Auth cuando exista un proyecto exclusivo.
+- API fail-closed: origen, contenido/tamaño, usuario verificado, campos, errores sin secretos.
+- Cuota SQL de 5 altas nuevas por usuario/24h con bloqueo por actor; reintentos anteriores permitidos.
+- 64 tests unitarios, PostgreSQL 17 con pruebas SQL y build de Next.js aprobados; producción sin modificaciones.

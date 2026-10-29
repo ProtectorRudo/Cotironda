@@ -24,3 +24,9 @@ El código del portal se valida por CI con versiones de Next y React fijadas. `s
 3. Crear proyecto Supabase exclusivo Cotironda; aplicar migración bajo pruebas y ejecutar advisors.
 4. Validar registro con usuarios de prueba y correo confirmado y comprobar permisos por empresa.
 5. Publicación solo tras autorización explícita y plan de reversión.
+
+### Verificación inicial del PR #8
+- Node 22.16 + 64 pruebas unitarias exitosas: https://github.com/ProtectorRudo/Cotironda/actions/runs/40858591761.
+- PostgreSQL 17 real (RLS, registro, cuota y concurrencia): https://github.com/ProtectorRudo/Cotironda/actions/runs/40858590551.
+- Next.js 16, TypeScript y build sin credenciales: https://github.com/ProtectorRudo/Cotironda/actions/runs/40858590465.
+- Archivos de registro de clientes reales: **ninguno**. Proyecto Supabase de Cotironda: **no creado**.
