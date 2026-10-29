@@ -57,6 +57,20 @@ begin
 end $$;
 
 select pg_catalog.set_config('request.jwt.claims','{"role":"authenticated","is_anonymous":false}',true);
+-- La RPC pública debe seguir cerrada AUN si existe un JWT válido.
+do $
+begin
+ begin
+  perform * from public.register_company_for_current_user(
+   'aaaaaaaa-5555-4555-8555-aaaaaaaaaaaa','No autorizado','buyer');
+  raise exception 'TEST_FAILED: DB flag no bloqueó registro';
+ exception when insufficient_privilege then null;
+ end;
+end $;
+reset role;
+update cotironda_private.registration_settings set enabled=true where singleton=true;
+set local role authenticated;
+-- Solo habilitado dentro de esta transacción reversible para ejecutar las pruebas.
 -- La RPC no tiene parámetro p_user_id: se deriva exclusivamente de auth.uid().
 select ci_helpers.assert_true(
  (select replay from public.register_company_for_current_user(

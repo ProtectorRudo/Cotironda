@@ -3,6 +3,23 @@
 -- auth.uid()/auth.jwt() se obtienen del contexto PostgreSQL del JWT de Supabase.
 -- Leemos los mismos claims del contexto ya verificado por PostgREST.
 -- Evitamos otorgar USAGE sobre el schema interno auth al propietario.
+-- Segundo interruptor independiente de Vercel. Solo administración PostgreSQL
+-- puede cambiarlo; authenticated/anon no tienen acceso a la tabla.
+create table cotironda_private.registration_settings (
+ singleton boolean primary key default true check(singleton),
+ enabled boolean not null default false,
+ updated_at timestamptz not null default now()
+);
+insert into cotironda_private.registration_settings(singleton,enabled)
+ values(true,false);
+alter table cotironda_private.registration_settings enable row level security;
+revoke all on cotironda_private.registration_settings from public,anon,authenticated,
+ service_role,cotironda_app;
+grant select on cotironda_private.registration_settings to cotironda_registrar;
+create policy registrar_read_registration_settings
+ on cotironda_private.registration_settings
+ for select to cotironda_registrar using (singleton=true);
+
 create function public.register_company_for_current_user(
  p_request_id uuid, p_name text, p_type text, p_trade_name text default null
 ) returns table(organization_id uuid, replay boolean)
@@ -13,6 +30,14 @@ declare
  v_user_id uuid;
  v_claims jsonb;
 begin
+ -- Defensa en profundidad: incluso llamando directamente a PostgREST la
+ -- operación queda bloqueada hasta habilitarla explícitamente en la BD.
+ if not coalesce(
+  (select enabled from cotironda_private.registration_settings where singleton=true),
+  false
+ ) then
+   raise exception 'registro_no_habilitado' using errcode='42501';
+ end if;
  -- PostgREST verifica la firma y fija el rol y los claims del JWT.
  -- La API de Cotironda invoca esta función con su sesión autenticada.
  v_claims := coalesce(
