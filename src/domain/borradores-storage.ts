@@ -66,10 +66,16 @@ function inspectZip(bytes:Uint8Array,required:string):void {
      rd32(localOff)!==0x04034b50)
    throw new DocumentoRechazado('zip_inseguro');
   const name=ascii(bytes,at+46,nameLength);
-  if(name.includes('\\')||name.startsWith('/')||name.includes('..')||
-     name.includes('vbaProject.bin')||name.includes('VbaProject.bin')||
-     name.includes('encryptedPackage')||name.includes('EncryptionInfo') ||
-     names.has(name))throw new DocumentoRechazado('zip_inseguro');
+  const lower=name.toLowerCase();
+  const localNameLength=rd16(localOff+26),localExtraLength=rd16(localOff+28);
+  const method=rd16(at+10);
+  if(![0,8].includes(method)||rd16(localOff+8)!==method||
+     localOff+30+localNameLength+localExtraLength>offset ||
+     ascii(bytes,localOff+30,localNameLength)!==name ||
+     name.includes('\\')||name.startsWith('/')||name.includes('..')||
+     lower.includes('vbaproject.bin')||lower.includes('encryptedpackage')||
+     lower.includes('encryptioninfo')||names.has(name))
+   throw new DocumentoRechazado('zip_inseguro');
   names.add(name);
   total+=unpacked;
   if(total>MAX_XML_UNPACKED_BYTES || (packed>0&&unpacked>packed*200))
