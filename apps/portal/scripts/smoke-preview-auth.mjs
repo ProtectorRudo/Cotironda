@@ -48,7 +48,7 @@ const forgedJar=new Map(jar);
 const entry=[...forgedJar].find(([,value])=>value.startsWith('base64-'));
 assert.ok(entry,'SSR debe serializar cookies con base64');
 const decoded=JSON.parse(Buffer.from(entry[1].slice(7),'base64url').toString('utf8'));
-decoded.access_token=decoded.access_token.replace(/\\.ci_not_a_real_signature$/i,'.tampered_signature');
+decoded.access_token=decoded.access_token.split('.').slice(0,2).join('.')+'.tampered_signature';
 assert.notEqual(decoded.access_token,token);
 forgedJar.set(entry[0],'base64-'+Buffer.from(JSON.stringify(decoded)).toString('base64url'));
 const fakeCookie=[...forgedJar].map(([name,value])=>
