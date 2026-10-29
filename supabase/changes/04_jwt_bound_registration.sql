@@ -45,10 +45,13 @@ grant create on schema public to cotironda_registrar;
 grant cotironda_registrar to postgres with set true, inherit false;
 alter function public.register_company_for_current_user(uuid,text,text,text)
  owner to cotironda_registrar;
+-- La función privada ya pertenece al registrar: revocar como su propietario.
+set role cotironda_registrar;
+revoke execute on function cotironda_private.register_company(uuid,uuid,text,text,text)
+ from cotironda_app;
+reset role;
 revoke cotironda_registrar from postgres;
 revoke create on schema public from cotironda_registrar;
 
--- El camino SQL con p_user_id queda inaccesible para cuentas de la API.
-revoke execute on function cotironda_private.register_company(uuid,uuid,text,text,text)
- from cotironda_app;
+-- El camino SQL legado queda sin acceso ni ejecución.
 revoke usage on schema cotironda_private from cotironda_app;
