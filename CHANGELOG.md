@@ -201,3 +201,10 @@
 - Consulta SQL reproducible de 17 controles de registro, sesiones, RLS/Storage, Auth Hook y permisos ejecutada con **17/17 PASS** en `cotironda-dev` usando solo lectura, sin cambios a la base ni a producción.
 - Contrato unitario verifica que el script no incluya DDL/DML y que los controles fail-closed sigan presentes. Ver `supabase/tests/manual/14_etapa01_guardrails_readonly.sql` y `docs/47-etapa01-readiness-auditoria.md`.
 - Auditoría Security Advisor: **1 WARN** de protección de contraseñas filtradas deshabilitada y **2 INFO** intencionales por RLS de tablas privadas sin policies. Siguen pendientes HTTP 429 real, JWT revocado por HTTP, cookies HTTPS reales, consolidación de PR. Registro y uploads deshabilitados.
+
+
+## [Sin publicar — PR #71: PostgREST HTTP real, cuota y revocación en CI]
+- Nuevo workflow aislado sobre PostgreSQL 17 con las **11 migraciones reales** y PostgREST Docker v12.2.12 por digest; JWT HS256 firmados con secreto aleatorio y temporal exclusivo del runner. Sin Supabase remoto ni credenciales reales.
+- Contraste de extremos vía HTTP verdadero: denegación anónima, firma JWT alterada, expiración, 20 rechazos que consumen cuota y **HTTP 429 en el intento 21**, JWT todavía firmado con sesión revocada responde **HTTP 403 session_invalid**, login nuevo no revive JWT anterior y cuotas separadas. Todos los nombres de empresa son inválidos por diseño; **0 empresas creadas**, cleanup verificado.
+- **5/5 workflows SUCCESS y 142/142 unitarias** sobre commit probado `4e50478480134b9de15b7de539e2dd1e6ff39659`. HTTP PostgREST: https://github.com/ProtectorRudo/Cotironda/actions/runs/40969448761
+- No confundir este E2E HTTP con un JWT auténtico Supabase Auth: faltan prueba remota de logout/429 y SSR HTTPS con cookies. No hay cambios al proyecto Supabase real, main, Storage ni producción. Ver `docs/48-postgrest-real-http-ci.md`.
