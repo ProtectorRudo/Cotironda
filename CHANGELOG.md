@@ -19,3 +19,5 @@
 - API fail-closed: origen, contenido/tamaño, usuario verificado, campos, errores sin secretos.
 - Cuota SQL de 5 altas nuevas por usuario/24h con bloqueo por actor; reintentos anteriores permitidos.
 - 64 tests unitarios, PostgreSQL 17 con pruebas SQL y build de Next.js aprobados; producción sin modificaciones.
+
+- Vista previa aislada y protegida en Vercel `cotironda-portal-dev`; build READY sin credenciales ni registros activos.
