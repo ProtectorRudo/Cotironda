@@ -85,13 +85,20 @@ create function cotironda_private.guard_document_intake_transition()
 returns trigger language plpgsql security invoker set search_path=''
 as $guard$
 begin
- if row(old.organization_id,old.requested_by,old.request_id,old.file_id,
+ if row(old.organization_id,old.request_id,old.file_id,
         old.idempotency_key,old.declared_mime,old.declared_size,old.created_at)
     is distinct from
-    row(new.organization_id,new.requested_by,new.request_id,new.file_id,
+    row(new.organization_id,new.request_id,new.file_id,
         new.idempotency_key,new.declared_mime,new.declared_size,new.created_at)
  then
     raise exception 'document_identity_immutable';
+ end if;
+ -- Permitimos quitar el identificador del usuario al eliminar su cuenta Auth.
+ -- No permitir reemplazarlo por otra persona sin crear un trabajo nuevo.
+ if old.requested_by is distinct from new.requested_by
+    and not (old.requested_by is not null and new.requested_by is null)
+ then
+    raise exception 'document_author_immutable';
  end if;
  if old.status is distinct from new.status and not (
     (old.status='pending' and new.status in ('quarantined','rejected','expired','failed'))
@@ -114,6 +121,11 @@ begin
  return new;
 end;
 $guard$;
+revoke all on function cotironda_private.guard_document_intake_transition()
+ from PUBLIC,anon,authenticated;
+grant execute on function cotironda_private.guard_document_intake_transition()
+ to service_role;
+
 create trigger document_intake_guard
  before update on cotironda_private.document_intake_jobs
  for each row execute function cotironda_private.guard_document_intake_transition();
