@@ -12,9 +12,14 @@ grant usage on schema auth to supabase_auth_admin;
 grant select on auth.users to supabase_auth_admin;
 create function auth.uid() returns uuid
 language sql stable
-as $$
-  select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
-$$;
+as $
+  -- Igual que el helper oficial: PostgREST moderno usa request.jwt.claims.
+  -- Los tests SQL históricos también admiten request.jwt.claim.sub por compatibilidad.
+  select coalesce(
+    nullif(current_setting('request.jwt.claim.sub', true), ''),
+    (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')
+  )::uuid
+$;
 grant usage on schema auth to authenticated;
 grant execute on function auth.uid() to authenticated;
 grant usage on schema public to anon, authenticated, service_role;
