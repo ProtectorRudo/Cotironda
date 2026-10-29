@@ -101,6 +101,37 @@ select ci_helpers.assert_true(
  (select count(*) from public.organizations where display_name='Extraña')=0,
  'FK invalida revierte alta completa');
 
+-- El límite de 5 altas por usuario y día se aplica atómicamente.
+do $
+declare idx integer;
+begin
+ for idx in 1..4 loop
+   perform * from cotironda_private.register_company(
+     '55555555-5555-4555-8555-555555555555',
+     ('00000000-0000-4000-8000-' || lpad(idx::text,12,'0'))::uuid,
+     'Constructora Extra ' || idx,'buyer');
+ end loop;
+ begin
+   perform * from cotironda_private.register_company(
+     '55555555-5555-4555-8555-555555555555',
+     '00000000-0000-4000-8000-000000000006', 'Empresa Sexta','buyer');
+   raise exception 'TEST FAILED: falta límite diario';
+ exception when raise_exception then
+   if sqlerrm='TEST FAILED: falta límite diario' then raise; end if;
+   if sqlerrm <> 'limite_registros' then raise; end if;
+ end;
+end
+$;
+select ci_helpers.assert_true(
+ (select count(*) from public.organizations where display_name='Empresa Sexta')=0,
+ 'cuota se aplica sin registros parciales');
+-- Los mismos request IDs siguen permitiendo replay aun luego del límite.
+select ci_helpers.assert_true(
+ (select replay from cotironda_private.register_company(
+  '55555555-5555-4555-8555-555555555555',
+  '11111111-aaaa-4111-8111-111111111111', 'Constructora Demo','buyer'))=true,
+  'replay después de cuota es válido');
+
 reset role;
 -- Un JWT autenticado no tiene uso del schema privado ni permisos de alta.
 select ci_helpers.assert_true(

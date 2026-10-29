@@ -303,7 +303,7 @@ begin
  v_payload := jsonb_build_object('nombre',v_name,'tipo',p_type,'nombreComercial',v_trade);
  -- Serializa reintentos concurrentes con misma pareja actor/request.
  perform pg_catalog.pg_advisory_xact_lock(
-   pg_catalog.hashtextextended(p_user_id::text || ':' || p_request_id::text, 0));
+   pg_catalog.hashtextextended(p_user_id::text, 0));
  select reg.organization_id, reg.request_payload into v_org, v_existing
    from cotironda_private.organization_registration_requests reg
    where reg.user_id = p_user_id and reg.request_id = p_request_id;
@@ -313,6 +313,11 @@ begin
    end if;
    return query select v_org, true;
    return;
+ end if;
+ -- Limite antiabuso, comprobado bajo lock por usuario para evitar carreras.
+ if (select count(*) from cotironda_private.organization_registration_requests
+     where user_id=p_user_id and created_at >= now()-interval '24 hours') >= 5 then
+   raise exception 'limite_registros' using errcode='P0001';
  end if;
  insert into public.organizations(display_name,organization_type)
  values (v_name,p_type) returning id into v_org;
