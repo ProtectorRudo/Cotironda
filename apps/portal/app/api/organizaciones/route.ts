@@ -1,5 +1,6 @@
 import { clienteSupabaseServidor } from '@/lib/supabase/server';
 import { puertoRegistroRpc } from '@/lib/registro-rpc';
+import { autorizarIntentoDeRegistro } from '../../../../../src/server/limite-intentos.ts';
 import { procesarAlta } from '../../../../../src/server/registro-http.ts';
 import { portalHabilitado } from '../../../../../src/server/portal-entorno.ts';
 
@@ -21,8 +22,9 @@ export async function POST(req:Request): Promise<Response> {
         anonimo:Boolean(user.is_anonymous)
       };
     },
+    // El adaptador de cuotas falla cerrado hasta existir límite persistente en la RPC.
     // La función RPC asigna user_id de los claims de Supabase, no del payload.
-    autorizarIntento:async()=>true,
+    autorizarIntento:autorizarIntentoDeRegistro,
     persistencia:{
       async crearEmpresaConPropietario(input){
         if(!cliente)throw new Error('sesion_no_disponible');
