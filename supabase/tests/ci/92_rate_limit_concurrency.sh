@@ -7,6 +7,8 @@ session='d9999999-9999-4999-8999-999999999999'
 cleanup() {
  psql -X -v ON_ERROR_STOP=1 -qAt <<'SQL' >/dev/null || true
 update cotironda_private.registration_settings set enabled=false where singleton=true;
+-- La sesión en CI tiene FK RESTRICT hacia auth.users; borrarla primero.
+delete from auth.sessions where id='d9999999-9999-4999-8999-999999999999';
 delete from auth.users where id='c9999999-9999-4999-8999-999999999999';
 SQL
  rm -rf "$temp"
