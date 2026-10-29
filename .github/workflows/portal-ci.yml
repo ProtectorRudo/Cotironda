@@ -27,6 +27,8 @@ jobs:
         run: node scripts/postgrest-429-contract.mjs
       - name: Contrato SSR cookies y refresh con Supabase SDK y Next Proxy sin red
         run: node --experimental-strip-types scripts/ssr-cookies-contract.mjs
+      - name: Contrato de carga/descarga privada Storage con SDK real y fetch simulado
+        run: node --experimental-strip-types scripts/storage-http-contract.mjs
       - name: TypeScript
         run: npm run typecheck
       - name: Compilar con registro deshabilitado
