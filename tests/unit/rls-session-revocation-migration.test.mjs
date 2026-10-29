@@ -40,7 +40,7 @@ test('exactamente 17 client policies endurecidas, seis registrar sin alteracion'
 
 test('migracion 12 reconstruida y verificada en dos jobs de PG17 y en HTTP real',()=>{
  assert.match(postgres,/Guard de sesion en 17 RLS comerciales \(migracion 12\)/);
- assert.match(postgres,/20261029233650_commercial_session_guard\.sql/);
+ assert.match(postgres,/20261029234236_commercial_session_guard\.sql/);
  assert.match(postgres,/98_commercial_session_guard\.sql/);
  assert.match(postgres,/Reconstruir historial 12 migraciones/);
  assert.match(postgres,/-ne 12/);
