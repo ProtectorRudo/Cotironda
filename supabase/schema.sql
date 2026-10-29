@@ -306,8 +306,7 @@ begin
    pg_catalog.hashtextextended(p_user_id::text || ':' || p_request_id::text, 0));
  select reg.organization_id, reg.request_payload into v_org, v_existing
    from cotironda_private.organization_registration_requests reg
-   where reg.user_id = p_user_id and reg.request_id = p_request_id
-   for update;
+   where reg.user_id = p_user_id and reg.request_id = p_request_id;
  if found then
    if v_existing <> v_payload then
      raise exception 'request_id_reutilizado_con_distinto_contenido' using errcode='23505';
