@@ -339,3 +339,10 @@
 - Salida exclusivamente PASS/FAIL/INCONCLUSO con códigos fijos; si Auth permite autorregistro directo (aunque empresas SQL sigan cerradas), la prueba remota termina con exit 1 y obliga a investigar. Timeout/errores/no verificable también quedan bloqueados, sin informar falso PASS.
 - `tests/unit/auth-settings-remote-probe.test.mjs` intercepta totalmente el transporte y prueba estados, contextos no autorizados, destino exacto, falta de filtraciones y no ejecución de red al importar el módulo.
 - **No se alteró** Auth real, SQL, usuarios, Vercel, DNS o main. Guía `docs/64-remote-gotrue-signup-audit.md`; ejecución remota pendiente de la corrida del PR.
+
+
+### Auditoría real del autorregistro Auth — 30/10/2026
+- En el PR #99 se verificó `GET /auth/v1/settings` auténtico en Supabase dev desde GitHub Actions, con publishable pública y sin credenciales/POST. El valor exacto `disable_signup=false` confirma que **Auth tiene habilitada la creación directa de usuarios**, aunque SQL impida registrar empresas. Es un hallazgo del entorno dev, no un ataque ni un usuario creado.
+- **245/245 unitarias PASS y 4/5 workflows SUCCESS; el quinto workflow falla deliberadamente** con `COTIRONDA_AUTH_SIGNUP=FAIL / autorregistro_auth_habilitado` (run 41060813027). No ocultar ni cambiar ese exit code sin corregir Auth remoto.
+- Logs Supabase confirman GET /auth/v1/settings HTTP 200; SQL read-only posterior: 2 usuarios de ensayo, 0 sesiones, organizaciones o Storage, flag comercial false. No se modificó el servicio Auth ni producción.
+- Issue #98 completo por evidencia; Issue #94 permanece bloqueado hasta deshabilitar en Dashboard «Allow new users to sign up» solo en dev y repetir GET PASS. Ver docs/64.

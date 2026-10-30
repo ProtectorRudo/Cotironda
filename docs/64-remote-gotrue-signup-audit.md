@@ -57,3 +57,23 @@ El gate **falla intencionalmente cuando detecta un riesgo real**. Un workflow ro
 - [docs/62](62-auth-signup-readonly-audit.md), diagnóstico de lectura de navegador.
 
 **Estado del resultado remoto real: PENDIENTE de la ejecución de GitHub Actions del PR exacto.** Dejar evidencia del resultado sin imprimir datos sensibles.
+
+## Resultado AUTÉNTICO de Supabase Auth — 30/10/2026
+
+**Riesgo confirmado: `disable_signup=false` en `cotironda-dev`.** GitHub Actions ejecutó el helper **una sola vez**, desde la rama y el repositorio previstos, con `GET /auth/v1/settings`. El resultado de su contrato booleano estricto fue `COTIRONDA_AUTH_SIGNUP=FAIL / autorregistro_auth_habilitado`, paso con `exitCode=1`: https://github.com/ProtectorRudo/Cotironda/actions/runs/41060813027
+
+**Corroboración independiente de Supabase Logs, UTC 12:50–13:25 del 30/10/2026:** 1 solicitud **GET /auth/v1/settings, HTTP 200**, sin POST Auth signup ni operaciones de escritura. Los logs de gateway corroboran método y estado HTTP, **no** el cuerpo; el booleano específico proviene del validador de GitHub ejecutado sobre la respuesta recibida. No se recuperaron ni compartieron claves privadas, emails, JWT, sesión o cuerpo JSON de Auth.
+
+**Regresión real al mismo momento, solo lectura:** `registration_settings.enabled=false`, 2 usuarios Auth existentes (1 con email confirmado), **0** sesiones, organizaciones y objetos Storage. No se creó ninguna cuenta nueva al realizar la auditoría. No se ha efectuado una llamada POST /signup: el resultado acredita **configuración que permite el registro**, no un alta efectiva probada con correo.
+
+**Pruebas y separación de resultados:** las **245/245 unitarias pasaron** en el mismo run, así como las otras cuatro workflows de Next, PG17, PostgREST y sitio. **1 de 5 workflows figura FAILURE a propósito** porque el gate de seguridad detectó la configuración insegura, no por una regresión de TypeScript/Node. No convertir este FAIL en verde artificialmente.
+
+### Decisión y remediación pendiente
+
+1. **Mantener abierto Issue #94** por autorregistro Auth permitido. El cierre del registro comercial en Cotironda SQL **continúa activo y es independiente**.
+2. Opción de mitigación preferida para `cotironda-dev`: en el [Dashboard del proyecto](https://supabase.com/dashboard/project/qkercsoqhehbenbbncwk/auth), ir a **Authentication → General**, desactivar **«Allow new users to sign up»**, guardar. La documentación oficial confirma que, al desactivarlo, **los usuarios existentes pueden continuar iniciando sesión**; las cuentas nuevas solo se habilitan por flujos administrativos autorizados. No desactivar email/password sign-in ni borrar/banear las dos cuentas.
+3. **Esta modificación NO se realizó**: el conector disponible permite lectura/SQL, pero no editar la configuración gestionada de GoTrue. No cambiar SQL, tablas del esquema Auth ni usar service_role como sustituto.
+4. Tras la intervención autorizada, volver a ejecutar el workflow fallido para demostrar `disable_signup=true` (PASS), corroborar 2 usuarios/0 empresas y, si se considera necesario, volver a comprobar el login de una cuenta de prueba. Mantener SSO en Vercel y registro comercial false.
+5. Mantener separado el aviso del Security Advisor: `auth_leaked_password_protection` todavía WARN, y dos INFO por RLS intencional deny-all en tablas privadas.
+
+**Conclusión de Issue #98 (evidencia): COMPLETADO. Conclusión de Issue #94 (protección efectiva): PENDIENTE.** Etapa 01 y PRs siguen abiertos hasta completar otras verificaciones y la aprobación de cambios.

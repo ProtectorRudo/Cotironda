@@ -111,3 +111,7 @@ Se incorporaron X-Frame-Options DENY, CSP documental sin directivas de scripts q
 
 ### 30/10/2026 — Verificación de `disable_signup` real SIN abrir registro (Issue #98)
 Se preparó un GET read-only único desde GitHub Actions hacia `/auth/v1/settings` del Supabase dev, con publishable pública, sin JWT/correo/contraseña ni mutaciones. El control se ejecuta solo en PR autorizado y devuelve PASS si `disable_signup=true`, FAIL si `false`, INCONCLUSO ante cualquier falta de evidencia. Un **FAIL corta el gate de seguridad** aunque los unit tests estén verdes, no un problema de código. No se intentan altas reales ni se cambia configuración de Auth. Estado de la lectura remota a actualizar con su workflow. Ver docs/64.
+
+
+### 30/10/2026 — Autorregistro Supabase Auth REAL habilitado: PENDIENTE CORRECCIÓN
+Desde GitHub Actions (Issue #98/PR #99), GET read-only `/auth/v1/settings` devolvió `disable_signup=false`, comprobado por validador estricto y corroborado con 1 GET HTTP 200 en logs Supabase. **Auth permite autorregistro directo**, aunque UI no tenga signup y el flag SQL de empresas permanezca false. **245/245 tests de código verdes, 4/5 workflows SUCCESS y 1 FAIL de seguridad INTENCIONAL**; 2 usuarios de ensayo, 0 sesiones/empresas/archivos. Siguiente intervención necesaria: Auth → General → desactivar «Allow new users to sign up» solo en cotironda-dev (el conector de Supabase no permite esta mutación); luego volver a verificar GET PASS y cuentas existentes. Mantener Issue #94 abierto, Vercel SSO, DNS, producción y empresas cerrados. Docs/64.
