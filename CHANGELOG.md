@@ -365,3 +365,10 @@
 - Primer módulo `src/domain/flujo-texto.ts`: texto explícito en español se valida y conecta con `prepararBorradorDocumental` y `planificarDespachoAutomatico`; conserva referencias y muestra líneas retenidas por incertidumbre y catálogo sin coincidencia.
 - Demo local `npm run demo:texto` con proveedores ficticios, sin llamadas externas; pruebas adversarias y de 100 líneas en `tests/unit/flujo-texto.test.mjs`. El estado de CI se confirma por ejecución, no por crear commits.
 - No OCR, IA remota, carga de documentos, WhatsApp, registro comercial, migraciones, cambios en producción ni DNS. Issue #104; doc/66.
+
+
+## [Sin publicar] — Etapa 02: lectura XLSX controlada en memoria (Issue #106)
+- `scripts/offline/xlsx-seguro.mjs`: ZIP/OOXML real pequeño con hojas/tablas explícitas; referencias `Hoja N, fila M`; no interpreta fórmulas, macros ni contenido activo.
+- Endurecimiento adversarial de archivos: validación central/local headers, CRC32, rutas, tamaño, descompresión, XML, relaciones externas, hojas ocultas, hasta 100 ítems.
+- `tests/helpers/xlsx-fixture.mjs`, `tests/unit/xlsx-offline.test.mjs`, `scripts/demo/xlsx-demo.mjs`, `npm run demo:xlsx` para simulación reproducible con catálogos ficticios.
+- Reutiliza pipeline de D013 y no realiza envíos ni abre endpoints públicos. Suite CI debe verificarse contra commit final del PR. Sin cambios Supabase/Whapi/Vercel/DNS.

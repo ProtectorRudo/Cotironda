@@ -131,3 +131,7 @@ El propietario anula el paso de aprobación manual por línea. Comprador autoriz
 
 ### 30/10/2026 — Siguiente etapa vertical de texto sintético (Issue #104)
 Se conecta el parser determinista de texto con el borrador documental y el planificador selectivo por proveedor: cantidades/unidades explícitas, catálogo exacto, zona/consentimiento, líneas retenidas y consolidación por proveedor. Se agrega demo ejecutable sin credenciales (`npm run demo:texto`). **Es un simulador sin WhatsApp, OpenAI ni subida de archivos.** No sustituye la IA de documentos reales ni los requisitos de backend para catálogos/permisos, antivirus y colas. Ver docs/66. Solo rama de desarrollo, PR draft hijo de #103.
+
+
+### 30/10/2026 — XLSX real de laboratorio (Issue #106)
+Etapa 02 sumó un primer flujo binario limitado: ZIP/OOXML `.xlsx` con columnas explícitas → hoja y fila trazables → línea estructurada → coincidencia exacta de catálogo → planes independientes sin envío. Controles de ZIP/deflate/XML y casos adversarios. **No** habilitar cargas públicas: Issue #61 (autorización, cuarentena, AV, worker, retención y backup) sigue bloqueando la entrada de archivos de clientes. El siguiente paso es cubrir formatos arbitrarios mediante parsers profesionales e IA con costo controlado, no extender regex caseras como solución general. Ver docs/67 y PR hijo de #105.
