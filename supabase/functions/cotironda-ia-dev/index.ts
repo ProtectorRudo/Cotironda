@@ -29,6 +29,9 @@ Deno.serve(withSupabase({auth:['secret:default','secret:cotironda_quality_lab']}
       tokens:{entrada:number;salida:number}|null;
       extraccion:{esperados:number;exactos:number;omitidos:number;alterados:number};
       invitaciones:{esperadas:number;correctas:number;omitidas:number;incorrectas:number};
+      diagnostico:{items_propuestos:number;items_con_aclaracion:number;
+        origen_no_verificado:number;cantidad_sin_evidencia:number;
+        segmentos_sin_extraccion:number;items_retenidos:number};
     };
     // Only synthetic score counters; never write source text, model outputs,
     // provider contacts, API keys, emails or document files.
@@ -49,7 +52,13 @@ Deno.serve(withSupabase({auth:['secret:default','secret:cotironda_quality_lab']}
         suppliers_omitted:audit.invitaciones.omitidas,
         suppliers_incorrect:audit.invitaciones.incorrectas,
         tokens_input:audit.tokens?.entrada??null,
-        tokens_output:audit.tokens?.salida??null
+        tokens_output:audit.tokens?.salida??null,
+        diag_items_propuestos:audit.diagnostico.items_propuestos,
+        diag_items_con_aclaracion:audit.diagnostico.items_con_aclaracion,
+        diag_origen_no_verificado:audit.diagnostico.origen_no_verificado,
+        diag_cantidad_sin_evidencia:audit.diagnostico.cantidad_sin_evidencia,
+        diag_segmentos_sin_extraccion:audit.diagnostico.segmentos_sin_extraccion,
+        diag_lineas_retenidas:audit.diagnostico.items_retenidos
       });
     return error===null;
   });
