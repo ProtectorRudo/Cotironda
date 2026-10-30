@@ -122,6 +122,11 @@ jobs:
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f supabase/sql/round_offer_atomic_write_d026.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/101_round_offer_atomic_write.sql
+      - name: D028 Inbox privado Whapi, opt-out y deduplicación (solo CI)
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_private_inbox_d028.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/102_whapi_private_inbox.sql
 
   migrations-from-zero:
     name: Reconstruir historial 12 migraciones en PostgreSQL limpio
