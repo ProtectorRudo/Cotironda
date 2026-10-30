@@ -21,3 +21,16 @@ jobs:
           cache: ''
       - name: Pruebas de dominio y estructura
         run: node --experimental-strip-types --test tests/unit/*.test.mjs
+
+      # Solo PR de la rama exacta en este repositorio. Una única consulta GET
+      # pública, sin usuarios/contraseñas/JWT. FAIL si Auth admite signup.
+      - name: Auditar Auth remoto de Cotironda DEV - solo lectura
+        if: >-
+          ${{ github.event_name == 'pull_request' &&
+              github.head_ref == 'security/01-auth-settings-remote-probe' &&
+              github.event.pull_request.head.repo.full_name == 'ProtectorRudo/Cotironda' }}
+        env:
+          COTIRONDA_CI_AUTH_REMOTE: 'true'
+          # Key publishable pública y ya presente en el cliente de prueba.
+          COTIRONDA_DEV_PUBLISHABLE_KEY: 'sb_publishable_7Hw2C8N5ga2-b4eHdXMa2Q_jKeSPhio'
+        run: node --experimental-strip-types scripts/ci/auth-settings-remote-probe.mjs
