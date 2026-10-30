@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {extraerMaterialesConIA,ESQUEMA_IA_MATERIALES,MODELO_IA_DOCUMENTAL}
+import {extraerMaterialesConIA,simularPlanesConIA,ESQUEMA_IA_MATERIALES,MODELO_IA_DOCUMENTAL}
   from '../../src/server/openai-extraccion.ts';
 import {planificarDespachoAutomatico} from '../../src/domain/despacho-automatico.ts';
 
@@ -178,4 +178,35 @@ test('orden de cantidad al final de la línea también se valida con origen comp
   const texto='Cemento CPC 50 kg - 20 bolsas';
   const r=await pedir(texto,fake(responseBody([item])).fetchImpl);
   assert.deepEqual(r.borrador.lineas[0].requiere_aclaracion,[]);
+});
+
+test('IA estructurada más catálogo confirmado prepara una única solicitud por producto',async()=>{
+  const p={id:'corralon_001',activo:true,consentimiento_whatsapp:true,opt_out:false,
+    zonas_entrega:['la_plata'],catalogo_confirmado:[{
+      descripcion:'Cemento CPC 50 kg',unidad:'bag',rubro:'corralon',marca:null
+    }]};
+  const solicitud={id:'ronda_010101',zona_entrega:'la_plata',
+    envio_autorizado_por_comprador:true};
+  const r=await simularPlanesConIA({
+    texto:linea,apiKey:secret,habilitarLlamadaExterna:true,
+    fetchImpl:fake(responseBody([item])).fetchImpl,solicitud,proveedores:[p]
+  });
+  assert.equal(r.estado,'simulacion_ia_sin_envio');
+  assert.equal(r.plan.estado,'plan_sin_envio_real');
+  assert.deepEqual(r.plan.solicitudes.map(x=>x.proveedor_id),['corralon_001']);
+  assert.equal(r.plan.solicitudes[0].items[0].cantidad,'20');
+});
+test('sin autorización de comprador no consume tokens ni siquiera en mock',async()=>{
+  let llamadas=0;
+  const p={id:'corralon_001',activo:true,consentimiento_whatsapp:true,opt_out:false,
+    zonas_entrega:['la_plata'],catalogo_confirmado:[{
+      descripcion:'Cemento CPC 50 kg',unidad:'bag',rubro:'corralon',marca:null
+    }]};
+  await assert.rejects(simularPlanesConIA({
+    texto:linea,apiKey:secret,habilitarLlamadaExterna:true,
+    fetchImpl:async()=>{llamadas++;return new Response('{}');},
+    solicitud:{id:'ronda_010101',zona_entrega:'la_plata',
+      envio_autorizado_por_comprador:false},proveedores:[p]
+  }),/solicitud_sin_autorizacion/);
+  assert.equal(llamadas,0);
 });
