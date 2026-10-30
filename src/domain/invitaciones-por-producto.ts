@@ -147,7 +147,7 @@ function evaluarSku(l:LineaDocumental,req:RequisitoInvitacion,sku:SkuPorProducto
   const mismabase=req.unidad_base!==null&&req.unidad_base===sku.unidad_base;
   const relacion:OpcionInvitacion['relacion']=diferencias.length?
     'diferencia_tecnica_declarada':
-    pendientes.length||!mismabase||!sku.especificaciones_verificadas?
+    pendientes.length||pedidos.size===0||!mismabase||!sku.especificaciones_verificadas?
       'verificar_especificacion':'mismo_producto';
 
   // Nunca sugerir cantidad para una opción con diferencia técnica conocida.
