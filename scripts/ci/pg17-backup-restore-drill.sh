@@ -75,8 +75,9 @@ sha256sum -c "$workdir/data.sha256" >/dev/null
 # Prueba adversarial sin tocar el backup bueno: una copia alterada no pasa el hash.
 cp "$workdir/data.backup" "$workdir/data.corrupt"
 printf 'corrupt_test' >> "$workdir/data.corrupt"
-[[ "$(sha256sum "$workdir/data.corrupt" | cut -d ' ' -f 1)" !=
-   "$(cut -d ' ' -f 1 "$workdir/data.sha256")" ]] ||
+corrupt_sha="$(sha256sum "$workdir/data.corrupt" | cut -d ' ' -f 1)"
+original_sha="$(cut -d ' ' -f 1 "$workdir/data.sha256")"
+[[ "$corrupt_sha" != "$original_sha" ]] ||
   { echo 'ERROR: checksum_corrupto_aceptado' >&2; exit 1; }
 rm -f "$workdir/data.corrupt"
 echo 'PASS: detección de alteración del backup por SHA-256'
