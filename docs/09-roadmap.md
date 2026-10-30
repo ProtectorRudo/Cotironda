@@ -73,3 +73,8 @@ Se detectó y documentó que el READY anterior pertenecía a la **demo** (`cotir
 ### 30/10/2026 — modo Auth Preview sin registro, pendiente validación de navegador (Issue #88)
 
 Separación del login y del registro comercial por banderas independientes: Auth solo para cuentas previamente creadas de ensayo, Vercel Preview con SSO, registro SQL y de portal false, nada de signUp/alta empresarial en la interfaz. /api/organizaciones sigue 503 fail-closed. TLS/SSR en CI con Auth sintético prueba cookies Secure y no-store; **falta la ejecución real de login/logout en el Preview** para cerrar ese control. No se conecta dominio ni producción. docs/58-preview-login-only-auth.md.
+
+
+### Puerta de calidad — Preview SSO login-only ya desplegada, E2E real pendiente
+
+Compilación real de `cotironda-portal-dev` en `dpl_6X6o3xzgP1aRDRVpjdUtQ9p36tyM`, commit `1c0c8b82`, target Preview y `READY`, Next/Proxy compilados; Vercel reportó `COTIRONDA_AUTH_PREVIEW_BRANCH_GUARD=ALLOW`. Por ausencia de Git conectado al proyecto no se pudo limitar la variable a una rama: se usa env Preview + verificación **server-only** de rama exacta, bloqueando cualquier otra referencia y production. SSO activo para todo deployment. 190/190 unit y 5/5 GitHub Actions. Flag comercial **false** en Vercel y SQL; 0 sesiones/empresas/archivos. **Falta navegador real con SSO y cuentas de ensayo para validar login/logout, cookies Secure y redirecciones**, HTTP 429 remoto, backup/restauración y decisión WARN de contraseñas filtradas. Etapa 01 y PRs siguen abiertos sin publicar `main` ni dominio. docs/58-preview-login-only-auth.md.
