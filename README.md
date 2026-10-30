@@ -209,3 +209,7 @@ La clave API se configura en **Supabase `cotironda-dev` → Edge Function Secret
 
 
 **Actualización de infraestructura 30/10/2026:** la versión 1 de `cotironda-ia-dev` se desplegó **solo en Supabase `cotironda-dev`** y figura ACTIVE. La función requiere `apikey` secreta de Supabase (`withSupabase auth:'secret'`) y sus llamadas pagas están bloqueadas por defecto. **El secreto OpenAI fue guardado por el propietario, pero falta confirmar su lectura mediante el modo `status` autenticado**. Guía sin exponer claves: [docs/79](docs/79-supabase-openai-secret-dev.md). Ningún cambio en producción ni backend comercial completo.
+
+
+### 30/10/2026 — laboratorio de calidad real en Supabase DEV (Issue #133)
+El primer smoke pagado de OpenAI fue correcto, pero **no mide calidad de materiales**. El nuevo modo de código `quality_case`, todavía **SIN desplegar**, ejecuta el motor D015/D016 y gold sintético para seis casos; exige bandera distinta `COTIRONDA_IA_DEV_QUALITY_ENABLED=AUTORIZADO_DEV`, deshabilitada por defecto. No acepta prompts de clientes ni habilita mensajes. Una copia byte-exacta de `src/` se empaqueta para la función y CI comprueba paridad (`npm run sync:edge-quality-core`). [Detalles y límites](docs/80-lab-calidad-supabase-dev.md). El propietario confirmó haber eliminado el flag antiguo `COTIRONDA_IA_DEV_SMOKE_ENABLED`, pendiente de verificación HTTP `status`.
