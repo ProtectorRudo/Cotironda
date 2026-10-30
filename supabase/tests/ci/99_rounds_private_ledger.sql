@@ -141,6 +141,15 @@ select pg_temp.must_fail(
      "net_unit_price":"2500.00","vat_rate":"21"}]'::jsonb)$$,
  'quote_draft_initial_revision_invalid');
 
+select pg_temp.must_fail(
+ $cmd$insert into cotironda_private.offer_events_v1
+  (round_id,event_id,supplier_org_id,event_kind,revision,payload_sha256)
+  values ('dddddddd-0000-0000-0000-000000000004',
+   'ffffffff-0000-0000-0000-000000000099',
+   'bbbbbbbb-0000-0000-0000-000000000002',
+   'offer_confirmed',99,repeat('a',64))$cmd$,
+ 'offer_event_revision_missing');
+
 insert into cotironda_private.offer_events_v1
 (round_id,event_id,supplier_org_id,event_kind,revision,payload_sha256)
 values ('dddddddd-0000-0000-0000-000000000004',
@@ -218,6 +227,8 @@ values ('dddddddd-0000-0000-0000-000000000007',
  'aaaaaaaa-0000-0000-0000-000000000001',now()-interval '1 hour',now()+interval '1 hour');
 update cotironda_private.rounds_v1 set status='cancelada'
  where id='dddddddd-0000-0000-0000-000000000007';
+-- Evento tardío se rechaza aun cuando la invitación exista.
+-- La ronda 7 ya fue cancelada y no puede aceptar eventos.
 select pg_temp.must_fail(
  $$update cotironda_private.rounds_v1 set status='abierta'
    where id='dddddddd-0000-0000-0000-000000000007'$$,
