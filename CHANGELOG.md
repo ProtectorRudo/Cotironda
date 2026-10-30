@@ -456,3 +456,9 @@
 ### 30/10/2026 — Verificación del despliegue DEV del gateway (Issue #131)
 - Supabase `cotironda-dev` ref `qkercsoqhehbenbbncwk`: Edge Function `cotironda-ia-dev` versión 1 **ACTIVE**; `verify_jwt=false` + `withSupabase(auth:'secret')` según esquema oficial de API keys modernas. Archivos verificados vía conector; **ninguna otra instancia ni producción tocada**.
 - El propietario confirmó haber guardado `OPENAI_API_KEY`, pero el **runtime status** aún no pudo invocarse con la key privada Supabase desde las herramientas: no se verificó el booleano del secreto ni se realizó inferencia real. Ver procedimiento Dashboard en docs/79.
+
+
+## [Sin publicar] — Etapa 02: laboratorio D015/D016 con motor real en Edge DEV (Issue #133)
+- Prepara modo `quality_case` por ID sintético allowlisted y autorización separada, deshabilitado por defecto. Motor original de OpenAI + verificador de evidencia + taxonomía y selección D015 + benchmark independiente de cobertura. Nunca entrega texto/respuesta IA cruda ni envía solicitudes.
+- `supabase/functions/cotironda-ia-dev/core` empaqueta copias byte-exactas de módulos `src` y corpus gold; script de regeneración y test de paridad para impedir deriva.
+- Nuevos tests offline de casos múltiples, cantidad inventada, permisos independientes y rechazo 429. Docs/80. **NO se desplegó ni llamó OpenAI desde este modo**.
