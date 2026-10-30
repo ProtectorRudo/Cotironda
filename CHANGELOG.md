@@ -542,3 +542,8 @@
 - Nuevo `src/server/whapi-crypto-broker.ts`: HMAC-SHA256 para chat y mensaje con claves server-only separadas, huella HMAC de contenido, AES-256-GCM con nonce/tag/AAD y adaptadores hacia los puertos privados de D028. Identidad/invitación solo de almacenamiento confiable. BAJA protegida sin ronda activa.
 - Suite `tests/unit/whapi-crypto-broker.test.mjs`: tampering, clave equivocada, aislamiento de canales, duplicación/colisión, baja, revocación, mensajes multimedia sin descarga, rechazo de recibos falsos y claves inválidas. Sin modificar scripts de IA ni historial de migraciones.
 - D029 **no** habilita almacenamiento PostgreSQL desde Node ni rutas HTTP. Falta gestor de claves con rotación, worker SQL autorizado, configuración Whapi y pruebas E2E. Docs/93; PR #160 en borrador, sin instalación DEV/producción ni mensajes reales.
+
+## [Sin publicar — D030 / Issue #161: gateway Whapi→PostgreSQL privado]
+- Nueva función privada `whapi_resolve_active_contact_v1` bajo rol limitado D028, selecciona vínculo validado por HMAC+consentimiento y **una única** invitación abierta. Nuevo rol gateway NOLOGIN/NOBYPASSRLS con exclusivamente EXECUTE de resolver, inbox y BAJA, sin SELECT directo ni permisos de Data API.
+- Adaptador Node `src/server/whapi-postgres-gateway.ts` con SQL parametrizado, validación estricta de HMAC, bytea/nonce/tag y respuestas, errores genéricos sin filtrar credenciales. Pruebas unitarias con driver simulado, pruebas SQL PostgreSQL17 reales en `103_whapi_gateway_private.sql`, documentación docs/94.
+- No hay driver SQL conectado a DEV, ni configuración Whapi, ni despliegues, secretos, uso de IA o llamadas comerciales. PR #162 en borrador.

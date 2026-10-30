@@ -127,6 +127,11 @@ jobs:
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_private_inbox_d028.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/102_whapi_private_inbox.sql
+      - name: D030 gateway SQL privado con rol EXECUTE-only (sin desplegar)
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_gateway_private_d030.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/103_whapi_gateway_private.sql
 
   migrations-from-zero:
     name: Reconstruir historial 12 migraciones en PostgreSQL limpio
