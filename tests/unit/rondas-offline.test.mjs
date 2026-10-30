@@ -154,7 +154,12 @@ test('dos proveedores: el cierre usa la última versión confirmada por cada uno
   s=confirmar(s,'anon_bbb',1,D,'ev_bconfirm');
   s=cerrar(s);
   assert.deepEqual(s.comparacionCierre.cobertura.map(x=>x.anonId),['anon_aaa','anon_bbb']);
-  assert.equal(s.comparacionCierre.opcionesCompletas[0].proveedoresAnonimos[0],'anon_bbb');
+  assert.deepEqual(s.comparacionCierre.opcionesCompletas[0].proveedoresAnonimos,['anon_aaa','anon_bbb']);
+  assert.equal(s.comparacionCierre.opcionesCompletas[0].totalFinal,'988.00');
+  assert.deepEqual(s.comparacionCierre.opcionesCompletas[0].asignacion,[
+    {itemId:'cemento_001',anonId:'anon_bbb'},
+    {itemId:'pintura_001',anonId:'anon_aaa'}
+  ]);
 });
 test('precio incompleto no se inventa: oferta confirmada puede quedar sin total',()=>{
   let s=guardar(abrir(iniciar()),'anon_aaa',0,B,
