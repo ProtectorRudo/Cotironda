@@ -44,3 +44,6 @@ Cada opción es **`producto_compatible`** cuando la identidad y todos los atribu
 Referencias técnicas: [Durlock, placas RH/RF/estándar](https://durlock.com/files/biblioteca/archivos/creditosleedplacasest-rh-rf.pdf); [Durlock, aplicaciones RH](https://durlock.com/files/biblioteca/archivos/ambientes-h%C3%BAmedos-durlock.pdf).
 
 **Nota de alcance:** esta decisión D014 sobre identidad precede y limita la futura política P007 de alternativas funcionales. P007, sus criterios de homologación real, UI/ranking y trazabilidad de catálogos permanecen pendientes. El estado CI del commit final se registrará después de ejecutar GitHub Actions.
+
+## Rectificación posterior D015 (30/10/2026)
+El propietario aclara que el **derecho a cotizar** no puede exigir identidad de marca, envase ni especificaciones que el comprador no haya indicado. El motor de este documento evalúa **compatibilidad técnico-comercial** de variantes y es demasiado exigente como puerta única de invitación. D015 añade un contrato independiente (`src/domain/invitaciones-por-producto.ts`) que invita por producto canónico confirmado en el catálogo, mostrando diferencias conocidas sin homologarlas. El futuro circuito usa D015 para consultar proveedores y este control D014 para evaluar ofertas confirmadas. Ver [docs/72](72-invitacion-producto-primero.md). Ambos módulos siguen offline.
