@@ -480,3 +480,6 @@
 - Un caso por despachador; lock de concurrencia; avanza solo tras PASS real persistido; falla/timeout/resultado ausente detienen la secuencia sin reintento.
 - Clave Supabase para invocar Edge almacenada en Vault (pendiente configuración única), no se mueve OPENAI_API_KEY de Edge Secrets. Tablas privadas RLS y función administrativa restringida.
 - Pendiente CI, prueba SQL runtime DEV con interruptor OFF y activación posterior con aprobación/credencial. No se instaló cron ni se consumieron reservas para preparar este código. Ver docs/83.
+
+- **Verificación remota D020:** migración instalada solo en Supabase DEV, dispatcher devuelve `disabled` y, al habilitarse transaccionalmente sin Vault, `blocked_missing_dev_invoker`; rollback verificó 0 cron jobs, 1/6 claims consumidos y 5 pendientes. Permisos SQL y RLS cerrados.
+- **Corrección de seguridad:** pg_net se reinstaló en esquema `extensions` (sin tráfico, trabajos ni dependencias) y desapareció el WARN nuevo `extension_in_public`. Persisten observaciones RLS informativas y advertencia Auth previa independiente. **Automatización live aún desactivada** hasta almacenar credential de invocación y activar el cron.
