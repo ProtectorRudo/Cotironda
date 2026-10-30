@@ -99,7 +99,7 @@ export const escenariosProducto=[
   },
   {
     id:'RH_pedido_RF_cotizacion_diferente_no_homologada',
-    texto:'15 placas de yeso RH 12,5 mm',
+    texto:'15 unidades de placas de yeso RH 12,5 mm',
     items:[row(1,'placas de yeso RH 12,5 mm','15','unit','construccion_seco')],
     esperados:[G(1,'placas de yeso RH 12,5 mm','15','unit',
       'construccion_seco','placa_yeso',['seco_00001'])],
