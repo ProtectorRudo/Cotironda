@@ -41,7 +41,7 @@ El modelo devuelve extracción estructurada y se ejecuta el coordinador IA-first
 **Solo los pasos externos de cuenta, si no están hechos:**
 
 1. Ingresar a https://platform.openai.com/ con la cuenta/organización que facturará Cotironda. Verificar proyecto de API y facturación; si no existe, crear un proyecto dedicado a **Cotironda DEV**.
-2. Establecer dentro de la plataforma un **presupuesto o alerta bajo** para ese proyecto; conviene comenzar con USD 2 (verificar qué controles son límites efectivos y cuáles solo notificaciones). No se debe confundir ese presupuesto de proyecto con el límite soft USD 0,02 del script de una corrida.
+2. En la configuración del proyecto OpenAI → **Límites**, establecer un límite de gasto mensual bajo (por ejemplo, USD 2 para comenzar), alertas y activar **«Aplicar un límite estricto»** si aparece. OpenAI aclara que los límites estrictos no son instantáneos y pueden excederse ligeramente; no confundirlos con el soft USD 0,02 del script. [Guía oficial](https://help.openai.com/es-419/articles/9186755-managing-projects-in-the-api-platform).
 3. Crear una **API key restringida al proyecto DEV**, guardarla como secreto privado en el entorno donde se ejecutará el benchmark. NO pegar la clave en el chat ni colocarla en archivos del repositorio. La variable en Vercel Preview podrá servir para la futura integración del portal, pero **no ejecuta este script local** ni activa automáticamente pruebas. Un runner autorizado/aislado deberá poder recibirla de manera segura.
 4. Avisar **solo** que la credencial y la facturación DEV quedaron configuradas; no compartir el valor de la clave.
 
