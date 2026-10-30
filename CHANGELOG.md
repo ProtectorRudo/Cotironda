@@ -388,3 +388,9 @@
 - Sin cambios de base, precios, Whapi, usuarios, producción ni DNS; PR draft apilado sobre #109.
 
 - Se actualizó el script opt-in `scripts/eval/openai-texto.mjs` para cotejar 3 casos live futuros contra gold (destinatarios, artículos y cantidades) con reporte de tokens/costo estimado y bloqueo CI/producción. No se ejecutó ningún request real.
+
+
+## [Sin publicar] — Etapa 02: propuestas de cotización alternativas (Issue #113)
+- `src/domain/alternativas-cotizacion.ts`: cálculo decimal exacto de envases alternativos y excedentes; consultas funcionales solamente por relación curada, sin homologar ni enviar.
+- `tests/unit/alternativas-cotizacion.test.mjs`: pruebas de cemento 25/50, hidrófugo 4/5 L, látex 20/18 L, familias, especificaciones, opt-in, zonas, marcas, duplicados y retenciones.
+- Docs/70 y alineación de README con la decisión D013 de distribución automática. No se modificó el matcher exacto, base Supabase, Whapi ni producción; cambios en PR borrador apilado sobre #111.
