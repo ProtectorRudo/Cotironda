@@ -451,3 +451,8 @@
 - Se añadió gateway Deno protegido `supabase/functions/cotironda-ia-dev`, con autenticación servidor `@supabase/server` y proyecto DEV exacto, lectura exclusiva de `OPENAI_API_KEY` desde Edge Secrets, estado seguro y smoke sintético con flag explícito.
 - Tests en Node22 para bloquear producción, ausencia de secreto/flag, prompts arbitrarios, rate limits, errores y filtraciones; documentación docs/79.
 - **Pendiente** propietario configure secreto en Supabase DEV, despliegue DEV autorizado y smoke real, y conectar adaptador Next al gateway para extracción completa. Sin migración SQL, despliegue, llamadas pagadas, WhatsApp ni cambios a `main`.
+
+
+### 30/10/2026 — Verificación del despliegue DEV del gateway (Issue #131)
+- Supabase `cotironda-dev` ref `qkercsoqhehbenbbncwk`: Edge Function `cotironda-ia-dev` versión 1 **ACTIVE**; `verify_jwt=false` + `withSupabase(auth:'secret')` según esquema oficial de API keys modernas. Archivos verificados vía conector; **ninguna otra instancia ni producción tocada**.
+- El propietario confirmó haber guardado `OPENAI_API_KEY`, pero el **runtime status** aún no pudo invocarse con la key privada Supabase desde las herramientas: no se verificó el booleano del secreto ni se realizó inferencia real. Ver procedimiento Dashboard en docs/79.
