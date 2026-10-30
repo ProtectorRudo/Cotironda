@@ -183,3 +183,7 @@ Se prepara una corrida manual de seis escenarios positivos con GPT-6 Luna, score
 
 ### 30/10/2026 — OpenAI mediante Supabase Edge Secrets (Issue #131)
 Se creó la fuente de un gateway **Cotironda DEV** exclusivo, protegido con `@supabase/server` autenticación `secret` y `verify_jwt=false` conforme a claves modernas sb_secret. OpenAI API key via `Deno.env.get('OPENAI_API_KEY')`, jamás en base, cliente o logs. Modo de estado sin gasto; smoke sintético bloqueado por defecto. Falta que propietario pegue clave en Edge Function Secrets, verificar ese hecho mediante función desplegada y completar el adaptador comercial/aislamiento empresarial. Docs/79. **No se desplegó ni gastaron créditos**.
+
+
+### 30/10/2026 — laboratorio IA-first Supabase DEV (Issue #133)
+Se implementa modo cerrado `quality_case` con seis casos sintéticos, motor D015/D016 compartido, verificación de módulos byte-exactos, scoring de productos/proveedores y controles de permisos separados. Todavía NO desplegado. El propietario quitó `COTIRONDA_IA_DEV_SMOKE_ENABLED` según confirmó; falta verificar vía status. Próximo paso validación Deno/CI, autorización de ensayo acotado y luego integración comercial por empresa. Docs/80.
