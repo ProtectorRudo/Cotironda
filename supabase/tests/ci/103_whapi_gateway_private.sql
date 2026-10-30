@@ -1,5 +1,10 @@
 -- D030 / Issue #161 - PostgreSQL17 REAL; fixtures synthetic / ROLLBACK.
 begin;
+-- Exclusivo test de CI: helper de aserciones sin acceso a datos de negocio.
+-- Estos grants se revierten con ROLLBACK y JAMÁS van en D030 real.
+grant usage on schema ci_helpers to cotironda_whapi_gateway;
+grant execute on function ci_helpers.assert_true(boolean,text)
+ to cotironda_whapi_gateway;
 do $check$ begin
  if not exists(select 1 from pg_roles
    where rolname='cotironda_whapi_gateway' and not rolcanlogin
