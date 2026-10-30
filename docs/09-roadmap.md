@@ -13,6 +13,9 @@
 | 06 Pagos y protección | Suscripciones, webhooks, gastos, auditoría, backups | Pagos idempotentes y restauración/pruebas de seguridad |
 | 07 Piloto | Primeros compradores y proveedores voluntarios | Rondas completas, costos medidos y retroalimentación |
 
+## Criterio transversal de aceptación UX-001 (todas las etapas)
+**No basta con una función técnicamente correcta: tiene que ser fácil de usar sin capacitación.** Al especificar, desarrollar, probar y pilotear cada etapa comprobar el recorrido por WhatsApp de compradores y proveedores, reducir pasos y retrabajo, permitir portal opcional, usar lenguaje cotidiano y estados verificables. Validar con personas reales no técnicas antes de piloto, registrando tiempo, acciones, ayuda necesaria y abandonos. UX se evalúa desde Etapa 01, **no se posterga hasta la Etapa 05**. La seguridad, opt-in, confirmaciones económicas y adjudicación manual son límites que nunca se omiten. Ver [docs/89](89-ux-cero-friccion-whatsapp-first.md) y Issue #151.
+
 ## Secuencia profesional por Issue
 Inspección de situación actual → impacto y aceptación → rama → implementar → pruebas → auditoría → PR → revisión → merge → producción sólo autorizada.
 
