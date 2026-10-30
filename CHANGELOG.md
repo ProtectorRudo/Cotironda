@@ -400,3 +400,9 @@
 - Se aprobó priorizar identidad canónica del producto con atributos críticos verificables antes de filtrar marcas y presentaciones; marca flexible por defecto, restrictiva únicamente si el comprador la exige.
 - Nuevo planificador puro `src/domain/identidad-producto.ts`: una sola solicitud por proveedor con varias opciones de marca/envase, cantidades y excedentes decimales exactos (BigInt); datos técnicos inciertos solo como consulta, incompatibilidades excluidas.
 - Pruebas `tests/unit/identidad-producto.test.mjs` y docs/71. **Sin integración con despachador existente, bases reales ni WhatsApp**; sigue pendiente P007 y evaluación IA real. Issue #115.
+
+
+## [Sin publicar] — D015: invitaciones amplias por producto (Issue #117)
+- `src/domain/invitaciones-por-producto.ts`: consultas offline a proveedores con producto canónico confirmado, marca y presentación flexibles; diferencia técnica explícita es consulta, nunca oferta conforme. Marca obligatoria solo cuando comprador la exige expresamente.
+- Se conservan requisitos, cantidades, unidades y origen; no se infieren kg de bolsas sin tamaño ni precios; una invitación por proveedor con varios SKUs agrupados. Zona, consentimiento, baja, duplicados y seguridad documental conservados.
+- Se documentó separación fase de invitación D015 vs compatibilidad D014/Oferta posterior. Tests para «cemento» genérico, Loma Negra→Avellaneda 25/35kg, pintura, placas, electricidad, envases, exclusividad. Documentación docs/72. No conexión a catálogos Supabase ni envío Whapi/producción.
