@@ -13,7 +13,8 @@
     "demo:productos": "node --experimental-strip-types scripts/demo/productos-canonicos.mjs",
     "demo:sin-ia": "node --experimental-strip-types scripts/demo/entrada-economica.mjs",
     "benchmark:producto:offline": "node --experimental-strip-types scripts/eval/producto-quality-offline.mjs",
-    "benchmark:producto:live": "node --experimental-strip-types scripts/eval/producto-quality-live.mjs"
+    "benchmark:producto:live": "node --experimental-strip-types scripts/eval/producto-quality-live.mjs",
+    "sync:edge-quality-core": "node scripts/dev/sync-edge-quality-core.mjs"
   },
   "engines": {
     "node": ">=22.16.0"

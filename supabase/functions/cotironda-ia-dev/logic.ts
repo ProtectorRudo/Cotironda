@@ -13,6 +13,7 @@ type SafeEnv = Readonly<{
   supabaseUrl: string | undefined;
   openaiKey: string | undefined;
   smokeEnabled: string | undefined;
+  qualityEnabled?: string | undefined;
 }>;
 type Fetcher = typeof fetch;
 
@@ -52,10 +53,10 @@ export async function handleCotirondaDevAi(
     return output(400,{status:'rejected',code:'invalid_json'});
   }
   if(!body || typeof body!=='object' || Array.isArray(body) ||
-    Object.keys(body).length!==1 || !Object.hasOwn(body,'mode'))
+    !Object.hasOwn(body,'mode') || Object.keys(body).length>2)
     return output(400,{status:'rejected',code:'unsupported_request'});
   const mode=(body as {mode?:unknown}).mode;
-  if(mode==='status'){
+  if(mode==='status' && Object.keys(body).length===1){
     return output(200,{
       status:'ready_for_dev',
       environment:'cotironda-dev',
@@ -63,7 +64,34 @@ export async function handleCotirondaDevAi(
       smoke_enabled:env.smokeEnabled==='AUTORIZADO_DEV'
     });
   }
-  if(mode!=='smoke')return output(400,{status:'rejected',code:'unsupported_mode'});
+  if(mode==='quality_case') {
+    if(Object.keys(body).length!==2 ||
+      !Object.hasOwn(body,'case_id') ||
+      typeof (body as {case_id?:unknown}).case_id!=='string')
+      return output(400,{status:'rejected',code:'unsupported_request'});
+    if(env.qualityEnabled!=='AUTORIZADO_DEV')
+      return output(403,{status:'disabled',code:'quality_lab_not_authorized'});
+    if(!env.openaiKey?.startsWith('sk-'))
+      return output(503,{status:'disabled',code:'openai_secret_missing'});
+    const caseId=(body as {case_id:string}).case_id;
+    // Synthetic allowlist before importing or contacting OpenAI.
+    const {CASOS_LAB,evaluarCasoCalidadDev}=await import('./lab.ts');
+    if(!CASOS_LAB.includes(caseId))
+      return output(400,{status:'rejected',code:'unsupported_case'});
+    try {
+      const data=await evaluarCasoCalidadDev(caseId,env.openaiKey,fetcher);
+      return output(200,data as Record<string,unknown>);
+    }catch(e){
+      // Never return prompts, source content, API responses or credentials.
+      const err=e instanceof Error?e.message:'';
+      const code=/^ia_[a-z_]+$/.test(err)?err:'quality_lab_error';
+      return output(502,{status:'error',code});
+    }
+  }
+  if(Object.keys(body).length!==1)
+    return output(400,{status:'rejected',code:'unsupported_request'});
+  if(mode!=='smoke')
+    return output(400,{status:'rejected',code:'unsupported_mode'});
   if(env.smokeEnabled!=='AUTORIZADO_DEV')
     return output(403,{status:'disabled',code:'live_not_authorized'});
   if(!env.openaiKey?.startsWith('sk-'))
