@@ -527,3 +527,8 @@
 - Funciones SQL privadas `save_offer_draft_atomic_v1` y `confirm_offer_atomic_v1` para crear borradores, controlar versiones, confirmar explícitamente y preservar ofertas anteriores sin ejecutar IA. Operan con lock de ronda, CAS, SHA-256 del evento generado en la BD y reintento idéntico sin duplicados.
 - Rol `cotironda_rounds_writer` NOLOGIN/NOBYPASSRLS; no se concede acceso a la API pública ni a proveedores. La futura capa WhatsApp deberá comprobar identidad/consentimiento y ofrecer confirmación breve y sin portal, según UX-001.
 - Suite `supabase/tests/ci/101_round_offer_atomic_write.sql` con datos de prueba y rollback, conectada a GitHub PostgreSQL17. Sin instalación ni despliegue, WhatsApp, IA o nuevos gastos; documento docs/90 y PR #154.
+
+## [Sin publicar — D027 / Etapa 04: adaptador Whapi inbound aislado]
+- Se preparó `src/server/whapi-inbound-offline.ts` para el formato Whapi `messages.post`: secreto compartido en header privado, validación de canal, mensajes directos, opt-in/invitación verificables desde backend, lotes limitados, huella y clave de idempotencia, puerto de persistencia. HTTP 200 solo tras éxito de todo el lote; errores 503 permiten reintentar sin duplicar mediante sink transaccional futuro.
+- Los mensajes de texto/imagen/documento/audio/voz solo generan `pendiente_interpretacion`; no leen URLs ni ejecutan IA o confirmación de precio. `Confirmo` nunca autoriza D026 sin vinculación de conversación/revisión.
+- Suite `tests/unit/whapi-inbound-offline.test.mjs` con casos adversariales y docs/91. **Sin webhook publicado, secrets, almacenamiento real, Whapi conectado ni producción**, y no se gastaron créditos IA.
