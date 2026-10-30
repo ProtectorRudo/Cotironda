@@ -59,3 +59,24 @@ La consulta SQL de lectura `SELECT count(*) FROM auth.sessions` arrojó **0 sesi
 - **PENDIENTE GENERAL:** HTTP 429 remoto, protección de contraseñas filtradas, backup/restauración y revisión de PR apilados. Etapa 01 no concluida.
 
 **Sin cambios SQL, Auth, secretos, DNS ni producción:** se consultaron datos y se registró evidencia. El PR sigue draft y el Issue #88 permanece abierto hasta completar la prueba de reingreso directo.
+
+## Tercera evidencia real — acceso directo denegado después de logout (30/10/2026)
+
+El propietario recibió el enlace directo a la página privada `/alta` de la **misma Preview** de Vercel, después de cerrar sesión, y compartió una captura de Chrome de escritorio. En la ventana de Cotironda se ve el formulario **«Ingresá a tu empresa»** (correo electrónico, contraseña y botón «Ingresar a prueba»), **no** la pantalla «Sesión de prueba activa». Esta es precisamente la comprobación adversarial pendiente: el portal no volvió a mostrar la vista protegida sin una nueva autenticación.
+
+La URL completa de la ruta no está visible en la captura por el ancho de la barra de direcciones; la asociación con el enlace `/alta` se fundamenta en la secuencia de la prueba solicitada al propietario. El código auditado de `apps/portal/app/alta/page.tsx` ejecuta `auth.getUser()` en el servidor y redirige a `/ingresar` cuando no recibe un usuario autenticado. **No se inspeccionaron las cookies con herramientas de desarrollador ni se capturaron códigos HTTP de redirección.**
+
+Se consultó nuevamente el estado de `cotironda-dev` mediante SQL **de solo lectura** después de recibir la imagen: **0 filas en `auth.sessions`, registro empresarial `false`, 0 empresas y 0 objetos Storage**. Una consulta de auditoría agregada en la ventana UTC 09:40–11:00 registró login y logout de Auth. No se recopilaron identificadores personales.
+
+### Cierre del criterio del Issue #88
+
+**VERIFICADOS EN PREVIEW HTTPS REAL:**
+1. Inicio de sesión genuino de la cuenta de ensayo confirmada.
+2. Renderizado de pantalla privada solo tras `getUser()` de Supabase Auth, sin formulario comercial.
+3. Logout global de Supabase (POST HTTP 204, evento Audit logout) y retorno al ingreso.
+4. **Acceso directo a la vista privada tras logout: se presenta ingreso, no se revela la sesión**.
+5. SQL dev permanece sin sesiones ni datos comerciales.
+
+**NO incluidos en este cierre:** inspección de atributos de cookies en el navegador real, `HTTP 429` del gateway remoto, alta directa en Supabase Auth, respaldo/restauración y la consolidación de PRs. Estos temas continúan en el backlog de Etapa 01. Los tests automatizados con TLS de loopback y Auth ficticio no sustituyen las verificaciones remotas.
+
+**Decisión:** cerrar Issue #88 por completar su objetivo funcional de **login-only protegido y logout real de Preview**. Mantener PR #89 como **draft**, sin fusionarlo a `main` ni promoverlo a producción; Etapa 01 **todavía abierta**. Nunca subir la captura completa a GitHub: incluye otra aplicación privada ajena al portal.
