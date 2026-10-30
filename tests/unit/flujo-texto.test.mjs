@@ -54,13 +54,15 @@ test('un proveedor con varias categorías recibe solo UNA solicitud consolidada'
   const r=simular(ejemplo,multi);
   assert.equal(r.plan.solicitudes.length,1);
   assert.deepEqual(r.plan.solicitudes[0].items.map(x=>x.fila),[1,2]);
-  assert.deepEqual(r.plan.lineas_sin_destinatario,[3]);
+  assert.deepEqual(r.plan.lineas_sin_destinatario,[]);
+  assert.deepEqual(r.lineas_sin_catalogo,[3]);
 });
 test('producto inexistente queda retenido pero otras líneas continúan',()=>{
   const r=simular('20 bolsas de Cemento CPC 25 kg\n3 unidades de Pintura látex interior 20 l');
   assert.deepEqual(r.plan.solicitudes.map(x=>x.proveedor_id),['pinturer_001']);
   assert.equal(r.resumen.lineas_retenidas,1);
   assert.deepEqual(r.plan.retenidas.map(x=>x.fila),[1]);
+  assert.deepEqual(r.lineas_sin_catalogo,[1]);
 });
 test('producto con categoría inconsistente en catálogos se retiene',()=>{
   const ambiguos=[prov('rubro_a_0001',[productos.cemento]),
@@ -68,6 +70,7 @@ test('producto con categoría inconsistente en catálogos se retiene',()=>{
   const r=simular('20 bolsas de Cemento CPC 50 kg',ambiguos);
   assert.equal(r.resumen.lineas_preparadas,0);
   assert.equal(r.borrador.lineas[0].rubro,null);
+  assert.deepEqual(r.lineas_con_rubro_ambiguo,[1]);
 });
 test('cantidades con mil ambiguo quedan retenidas',()=>{
   for(const cantidad of ['1.000','1,000','0','-5','1000000']){
