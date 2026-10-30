@@ -30,3 +30,32 @@ Nuevo `apps/portal/scripts/smoke-https-ssr.mjs`, llamado en `.github/workflows/p
 - Se mantiene una advertencia de Supabase por `auth_leaked_password_protection` deshabilitada, posiblemente sujeta al plan. No se cambian ajustes comerciales ni se generan cargos.
 
 **Documentación de referencia:** `docs/35-ssr-cookies-refresh-proxy.md`, `docs/52-auth-real-revoked-catalog-e2e.md` y guía oficial https://supabase.com/docs/guides/auth/server-side/advanced-guide.
+
+## Hallazgo concreto y corrección verificada
+
+La primera prueba TLS confirmó que un certificado autofirmado **no confiable** se rechaza, pero la aserción de certificado autorizado consultaba la referencia a `response.socket` después del `end` del stream. Node ya puede liberarla: se corrigió capturando `authorized` en el callback inicial `response`. **Eso fue un fallo del banco de prueba, no del handshake.**
+
+La siguiente ejecución, esta vez con TLS verificado correctamente, **detectó una falla real del portal**: la cookie renovada por `proxy.ts` carecía del atributo `Secure`. No se ocultó ni se debilitó la aserción.
+
+Se corrigieron **los tres clientes de `@supabase/ssr`**:
+- `apps/portal/proxy.ts`: `createServerClient`.
+- `apps/portal/lib/supabase/server.ts`: cliente del servidor SSR.
+- `apps/portal/lib/supabase/browser.ts`: cliente de navegador.
+
+Todos configuran `cookieOptions: { secure: process.env.NODE_ENV==='production', sameSite:'lax', path:'/' }`, sin derivar `Secure` de `X-Forwarded-Proto` o de cabeceras controladas por clientes. Los builds **Preview y Production** usan `NODE_ENV=production` y exigen cookie `Secure`; el desarrollo local con `next dev` sobre HTTP sigue pudiendo autenticar sin forzar HTTPS. No se agregó `HttpOnly`, porque el navegador SSR debe leer y rotar el refresh token de acuerdo con Supabase.
+
+### Evidencia técnica concreta
+
+**Último commit de seguridad + pruebas exitoso antes de documentación: `a089be6545e3dcea905ab544ca788cc4d3c705f6`.**
+
+- **HTTPS Next.js real con certificado temporal, refresh de SDK y cookies Secure**: https://github.com/ProtectorRudo/Cotironda/actions/runs/40981858700. Log: `PASS TLS`, `PASS HTTPS` de login anónimo, `Set-Cookie Secure/SameSite=Lax`, roundtrip de cookies, aislamiento y registro 503.
+- **161/161 pruebas unitarias**: https://github.com/ProtectorRudo/Cotironda/actions/runs/40981858701.
+- **PostgreSQL 17 + reconstrucción de 12 migraciones**: https://github.com/ProtectorRudo/Cotironda/actions/runs/40981858705.
+- **PostgREST HTTP real + JWT de CI + RLS**: https://github.com/ProtectorRudo/Cotironda/actions/runs/40981858711.
+- **Sitio sin regresiones**: https://github.com/ProtectorRudo/Cotironda/actions/runs/40981858752.
+
+**5/5 workflows GitHub Actions exitosos.** Ninguna prueba entró a `cotironda-dev` ni creó empresas. El estado `Vercel` externo continúa marcado como failure por límite de compilaciones de cuenta, **no** por fallo de estas pruebas.
+
+### Lo que esto NO certifica
+
+No hubo navegación de un navegador Chrome o Firefox completo, ni un certificado público en Vercel/CDN, ni una cookie real bajo `cotironda.com`, ni refresh con credenciales auténticas de Supabase Auth. Es **HTTPS verdadero de loopback**, con SDK/Next reales y servidor de identidad simulado. Para cerrar la Etapa 01 faltan las comprobaciones con JWT auténtico en desarrollo (Issue #78), HTTPS del despliegue Preview cuando se autorice, HTTP 429 en gateway remoto y decisión sobre `auth_leaked_password_protection` según plan. `main` y producción permanecen sin cambios.
