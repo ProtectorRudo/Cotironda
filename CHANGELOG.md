@@ -494,3 +494,5 @@
 - Prompt de extracción precisa cómo separar producto de cantidad/unidad, sin dar el gold a la IA y sin relajar validación de evidencia de origen.
 - Métricas numéricas privadas por etapa (ítems propuestos, aclaraciones, origen/cantidad no verificables, segmentos sin extracción y líneas retenidas); migración DEV opcional y writer Edge, sin almacenar respuestas del modelo.
 - Continúan bloqueados los 2 casos pendientes. En el FAIL histórico no se puede determinar la causa precisa porque no se guardó la respuesta cruda. Ver docs/84 y PR #142.
+
+- **Verificación DEV D021 completada:** 6/6 checks del código `e22206aa` SUCCESS, migración `dev_quality_numeric_diagnostics_d021` aplicada únicamente en Supabase DEV, seis columnas confirmadas, cuatro registros históricos sin modificar. Edge Function DEV actualizada a v9 ACTIVE y status autenticado HTTP 200 sin llamada paga. Postflight: 4/6 claims, 2 pendientes, 1 `needs_review`, despachador OFF, 0 cron jobs. Las columnas de diagnóstico aún no fueron validadas en un nuevo `quality_case` real; investigar error histórico sigue abierto.
