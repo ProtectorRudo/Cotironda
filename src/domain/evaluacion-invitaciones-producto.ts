@@ -84,7 +84,7 @@ function comprobar(gold:readonly GoldProducto[],r:PlanCalidadPrioritaria,
       !(e.producto_id===null||id(e.producto_id))||
       !Array.isArray(e.proveedores_esperados)||
       e.proveedores_esperados.length>100||
-      e.proveedores_esperados.some(v=>!id(v))||
+      e.proveedores_esperados.some((v:string)=>!id(v))||
       new Set(e.proveedores_esperados).size!==e.proveedores_esperados.length)
       throw new TypeError('benchmark_gold_invalido');
   }
