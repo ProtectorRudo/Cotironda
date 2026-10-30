@@ -15,6 +15,8 @@ export type ResultadoSimulacionTexto = Readonly<{
   borrador: BorradorDocumental;
   plan: PlanDespachoAutomatico;
   lineas_no_interpretadas: {fila: number; motivo: 'sintaxis_no_admitida' | 'linea_demasiado_larga'}[];
+  lineas_sin_catalogo: number[];
+  lineas_con_rubro_ambiguo: number[];
   resumen: {lineas_recibidas: number; lineas_preparadas: number; lineas_retenidas: number; proveedores_preparados: number};
 }>;
 
@@ -86,6 +88,8 @@ export function simularDespachoDesdeTexto(
   if (filas.length===0 || filas.length>100) throw new RangeError('cantidad_de_lineas_invalida');
   const categorias=categoriasPorProducto(proveedores);
   const lineas_no_interpretadas: ResultadoSimulacionTexto['lineas_no_interpretadas']=[];
+  const lineas_sin_catalogo: number[]=[];
+  const lineas_con_rubro_ambiguo: number[]=[];
   const items=filas.map(({raw,numero},indice)=>{
     const ubicacion='Texto, línea '+numero;
     const original=raw.replace(/^(?:[-*•]\s+|\d{1,3}[).]\s+)/u,'').trim();
@@ -98,6 +102,8 @@ export function simularDespachoDesdeTexto(
     const descripcion=parsed?.producto??(limpia.length<=300?limpia:'Línea sin lectura segura');
     const matches=parsed?categorias.get(canonico(parsed.producto)+'\u0000'+parsed.unidad):undefined;
     const rubro=matches?.size===1?[...matches][0]:null;
+    if (parsed && !matches) lineas_sin_catalogo.push(indice+1);
+    if (parsed && matches && matches.size!==1) lineas_con_rubro_ambiguo.push(indice+1);
     return {
       ubicacion,descripcion_original:descripcion,
       producto_normalizado:parsed?.producto??null,
@@ -116,6 +122,7 @@ export function simularDespachoDesdeTexto(
   const retenidas=new Set([...plan.retenidas.map(x=>x.fila),...borrador.errores.map(x=>x.fila)]);
   return {
     estado:'simulacion_sin_envio',borrador,plan,lineas_no_interpretadas,
+    lineas_sin_catalogo,lineas_con_rubro_ambiguo,
     resumen: {
       lineas_recibidas:filas.length,
       lineas_preparadas:preparados.size,
