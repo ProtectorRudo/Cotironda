@@ -31,4 +31,17 @@ Se detectó que el diagnóstico manual de `cotironda-dev` permitía usar **la mi
 - La warning de protección de contraseñas filtradas permanece pendiente de decisión sobre el plan; el preflight no reemplaza ese control ni justifica activar registro.
 - Los PRs siguen apilados y en borrador; sin `Publicalo` no realizar integración/despliegue.
 
-**Evidencia de tests CI y commit final:** registrar solo después de verificación real de los cinco workflows.
+## Evidencia GitHub Actions verificada
+
+Commit `bfebae25a2a6d90cf983dbb5aee79a27581c9fc6`:
+
+- **166/166 pruebas unitarias, 0 fallidas:** https://github.com/ProtectorRudo/Cotironda/actions/runs/40983356845
+- **Portal Next.js, HTTPS/TLS real y bloqueo deliberado de Auth remoto PASS:** https://github.com/ProtectorRudo/Cotironda/actions/runs/40983357026
+- **PostgreSQL y migraciones completas:** https://github.com/ProtectorRudo/Cotironda/actions/runs/40983356996
+- **PostgREST verdadero con tokens solo CI:** https://github.com/ProtectorRudo/Cotironda/actions/runs/40983356968
+- **Sitio sin regresiones:** https://github.com/ProtectorRudo/Cotironda/actions/runs/40983356834
+
+**5/5 workflows SUCCESS.** En el log de Next aparece: `PASS: E2E Auth genuino denegado antes de la red en GitHub Actions`. Esta evidencia **no equivale** a ejecutar el diagnóstico con las dos cuentas auténticas: ese ensayo sigue pendiente de rotación de contraseñas y ejecución privada.
+
+**Vercel sigue sin autorizar nuevas compilaciones de la cuenta por cuota**, independiente de las cinco pruebas exitosas. No se publicó ni se modificó producción.
+
