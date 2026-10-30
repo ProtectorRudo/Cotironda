@@ -66,3 +66,8 @@ El alta también consulta la fila actual de `auth.sessions` y el estado actual d
 
 ## Higiene de cierre de sesión — actualización
 El runner ahora solicita `signOut({scope:'global'})` sobre las cuentas dedicadas de prueba, en lugar de borrar únicamente el estado local. Eso revoca refresh tokens de esas cuentas, **no equivale a probar rechazo del JWT original** en un endpoint SQL sensible; esa prueba sigue pendiente. No reutilizar cuentas personales ni comerciales.
+
+
+## Corrección posterior — credenciales independientes y comando Node (PR #83)
+
+**No reutilizar la misma contraseña para las dos cuentas de ensayo, especialmente si alguna se compartió por chat.** Cambiar ambas por valores nuevos y distintos desde el entorno Auth de desarrollo, no copiar secretos al repositorio ni a la conversación. El preflight exige ahora contraseñas distintas con **mínimo 12 caracteres** y prohíbe ejecutar este E2E con cuentas auténticas desde GitHub Actions/CI/Vercel. El diagnóstico manual se ejecuta desde `apps/portal` mediante **`npm run e2e:auth:dev`**, que utiliza Node 22 y `--experimental-strip-types`. La salida de errores externos se sanitiza; los tests del runner comprueban en CI que no puede ejecutar el flujo real. Las instrucciones anteriores que indican `node scripts/auth-real-smoke.mjs` deben considerarse sustituidas. Ver `docs/54-e2e-auth-secret-preflight.md`. El E2E con JWT genuino tras logout sigue pendiente de ejecución privada.
