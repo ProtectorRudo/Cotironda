@@ -286,3 +286,8 @@
 ### Ingreso auténtico verificado en Preview Android — 30/10/2026
 - El propietario compartió pantalla «Sesión de prueba activa» sin formulario de alta. Supabase registra 1 login por Auth HTTP 200 y 2 comprobaciones `GET /auth/v1/user` HTTP 200.
 - Login de ensayo real al portal Next y vista privada **verificados**. Pendiente pulsar logout y verificar que `/alta` redirige sin sesión; no se han inspeccionado atributos de cookies de esa Preview. Registro en `docs/59-preview-auth-real-mobile-login.md`. Sin producción ni secretos.
+
+
+### Auth real de Preview — logout verificado el 30/10/2026
+- Captura de Chrome confirma retorno al formulario «Ingresá a tu empresa» tras pulsar «Cerrar sesión de prueba».
+- Supabase Auth gateway registra 1 POST `/auth/v1/logout` **HTTP 204** y Audit 1 `logout`. Consulta read-only: **0 sesiones Auth**, bandera de registro false, 0 empresas y 0 Storage. Esto acredita logout remoto y redirección real, pero **no** que reabrir directamente `/alta` esté protegido después; tampoco se inspeccionaron cookies de la Preview. Ver docs/59.
