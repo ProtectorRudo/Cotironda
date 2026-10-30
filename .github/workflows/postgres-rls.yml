@@ -205,3 +205,8 @@ jobs:
             (select public=false from storage.buckets where id='cotironda-upload-quarantine'),
             'datos sintéticos de pruebas deben limpiarse');
           SQL
+
+      - name: Restaurar backup PG17 en base aislada sin datos ni secretos reales
+        env:
+          COTIRONDA_CI_BACKUP_RESTORE: 'true'
+        run: bash scripts/ci/pg17-backup-restore-drill.sh
