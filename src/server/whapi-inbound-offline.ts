@@ -75,6 +75,7 @@ type Candidato={
 function extraer(x:unknown,ahora:number):Candidato|null{
   if(!objeto(x))throw new TypeError('mensaje_invalido');
   if(x.from_me===true)return null;
+  if(x.from_me!==false)throw new TypeError('origen_de_mensaje_no_verificado');
   if(typeof x.chat_id!=='string')throw new TypeError('chat_invalido');
   // Solo mensajes de chat directo; no @g.us, @lid, broadcast ni grupos.
   const match=/^([1-9][0-9]{7,16})@s\.whatsapp\.net$/.exec(x.chat_id);
