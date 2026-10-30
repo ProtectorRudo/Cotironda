@@ -21,5 +21,34 @@ Deno.serve(withSupabase({auth:'secret'}, async (req, ctx) => {
       .from('dev_ia_quality_claims')
       .insert({case_id:caseId});
     return error===null;
+  },async(result)=>{
+    const audit=result as {
+      caso:string;modelo:string;seguridad:string;cobertura:string;
+      tokens:{entrada:number;salida:number}|null;
+      extraccion:{esperados:number;exactos:number;omitidos:number;alterados:number};
+      invitaciones:{esperadas:number;correctas:number;omitidas:number;incorrectas:number};
+    };
+    // Only synthetic score counters; never write source text, model outputs,
+    // provider contacts, API keys, emails or document files.
+    const {error}=await ctx.supabaseAdmin
+      .from('dev_ia_quality_results')
+      .insert({
+        case_id:audit.caso,
+        source:'edge_runtime',
+        model:audit.modelo,
+        security_pass:audit.seguridad==='PASS',
+        coverage_pass:audit.cobertura==='PASS',
+        products_expected:audit.extraccion.esperados,
+        products_exact:audit.extraccion.exactos,
+        products_omitted:audit.extraccion.omitidos,
+        products_altered:audit.extraccion.alterados,
+        suppliers_expected:audit.invitaciones.esperadas,
+        suppliers_correct:audit.invitaciones.correctas,
+        suppliers_omitted:audit.invitaciones.omitidas,
+        suppliers_incorrect:audit.invitaciones.incorrectas,
+        tokens_input:audit.tokens?.entrada??null,
+        tokens_output:audit.tokens?.salida??null
+      });
+    return error===null;
   });
 }));
