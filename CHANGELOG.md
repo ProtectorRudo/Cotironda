@@ -474,3 +474,9 @@
 - Nueva tabla privada `dev_ia_quality_results` con RLS, FK a reservas D018, métricas de productos y proveedores y tokens; sin texto de clientes/credenciales.
 - Edge `quality_case`: después de consumir una reserva guarda el resultado y devuelve `auditoria_persistida`; error DB jamás desencadena nuevo gasto. Source `edge_runtime` o `reported_by_owner` para distinguir evidencias.
 - Nuevos tests de denegación sin auditoría, guardado correcto, fallo de DB y caso FAIL. Docs/82. Sin despliegues productivos ni WhatsApp.
+
+## [Sin publicar — D020 / Issue #139: automatización controlada del laboratorio]
+- Se preparó dispatcher cron/pg_net **solo DEV**, configuración deshabilitada de fábrica, cola de los cinco casos sintéticos pendientes, sin consumo OpenAI en GitHub CI ni en la migración.
+- Un caso por despachador; lock de concurrencia; avanza solo tras PASS real persistido; falla/timeout/resultado ausente detienen la secuencia sin reintento.
+- Clave Supabase para invocar Edge almacenada en Vault (pendiente configuración única), no se mueve OPENAI_API_KEY de Edge Secrets. Tablas privadas RLS y función administrativa restringida.
+- Pendiente CI, prueba SQL runtime DEV con interruptor OFF y activación posterior con aprobación/credencial. No se instaló cron ni se consumieron reservas para preparar este código. Ver docs/83.
