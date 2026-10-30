@@ -9,7 +9,8 @@
     "demo:texto": "node --experimental-strip-types scripts/demo/flujo-texto.mjs",
     "demo:xlsx": "node --experimental-strip-types scripts/demo/xlsx-demo.mjs",
     "eval:ia": "node --experimental-strip-types scripts/eval/openai-texto.mjs",
-    "benchmark:ia:offline": "node --experimental-strip-types scripts/eval/quality-gold-offline.mjs"
+    "benchmark:ia:offline": "node --experimental-strip-types scripts/eval/quality-gold-offline.mjs",
+    "demo:productos": "node --experimental-strip-types scripts/demo/productos-canonicos.mjs"
   },
   "engines": {
     "node": ">=22.16.0"
