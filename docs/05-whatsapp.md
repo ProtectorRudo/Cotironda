@@ -34,3 +34,6 @@ Invitación pertinente, recordatorio neutral cercano al vencimiento cuando proce
 
 ## D013 — envío selectivo automático
 Al enviar la lista, el comprador autoriza el contacto automático. Una sola solicitud idempotente por proveedor y ronda, con únicamente los materiales concretos que confirmó trabajar y que puede entregar en la zona, sin difundir archivo original completo. Respetar opt-in, exclusiones, baja, límite de frecuencia y costos; producto con duda queda retenido, el resto avanza. La confirmación del proveedor para precios y cambios sigue siendo obligatoria.
+
+## D028 — Baja por WhatsApp sin fricción y buzón durable (propuesta en código)
+Un proveedor que escriba **BAJA** debe quedar desuscripto sin ir al portal ni tener una ronda activa; las invitaciones futuras quedan bloqueadas. Debe registrarse en una base privada sin almacenar teléfono ni texto en claro. Se exige asociación segura del chat con proveedor, reintentos idempotentes, consentimiento comprobable y respuestas de estado honestas. El módulo D028 todavía está probado solo en CI sintética, **no en Whapi real**. Ver [docs/92](92-whapi-buzon-privado-y-baja.md).
