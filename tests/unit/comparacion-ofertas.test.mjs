@@ -36,9 +36,11 @@ test('una cotización parcial baratísima no aparece como ganadora general',()=>
   assert.equal(r.cobertura[1].lineasCompletas,1);
   assert.equal(r.cobertura[1].totalComparable,null);
   assert.deepEqual(r.cobertura[1].motivos,['cobertura_incompleta']);
-  assert.equal(r.opcionesCompletas.length,1);
-  assert.deepEqual(r.opcionesCompletas[0].proveedoresAnonimos,['anon_full']);
-  assert.equal(r.opcionesCompletas[0].puestoDentroDeCondiciones,null);
+  // La oferta parcial nunca compite SOLA; sí puede integrar una compra completa.
+  assert.equal(r.opcionesCompletas.length,2);
+  assert.ok(r.opcionesCompletas.some(x=>x.proveedoresAnonimos.length===2));
+  assert.ok(r.opcionesCompletas.some(x=>x.proveedoresAnonimos.length===1 && x.proveedoresAnonimos[0]==='anon_full'));
+  assert.ok(r.opcionesCompletas.every(x=>x.asignacion.length===2));
 });
 
 test('dos proveedores pueden cubrir ítems íntegros más barato que uno, fletes por proveedor',()=>{
@@ -123,9 +125,10 @@ test('mínimo final de compra del proveedor se verifica con subtotal IVA incluid
 test('mínimos en par de proveedores se comprueban por separado',()=>{
   const p=pedido(['bolsa_001','10'],['placa_001','10']);
   const a=oferta('anon_aaa',[linea('bolsa_001','20.00',{ivaPorcentaje:'0'}),linea('placa_001','60.00',{ivaPorcentaje:'0'})],{minimoCompraFinal:'300.00'});
-  const b=oferta('anon_bbb',[linea('bolsa_001','30.00',{ivaPorcentaje:'0'}),linea('placa_001','20.00',{ivaPorcentaje:'0'})]);
+  const b=oferta('anon_bbb',[linea('bolsa_001','30.00',{ivaPorcentaje:'0'}),linea('placa_001','20.00',{ivaPorcentaje:'0'})],{minimoCompraFinal:'700.00'});
   const r=run(p,[a,b]);
-  assert.ok(r.opcionesCompletas.every(x=>x.proveedoresAnonimos.length===1));
+  assert.equal(r.opcionesCompletas.length,1);
+  assert.deepEqual(r.opcionesCompletas[0].proveedoresAnonimos,['anon_aaa']);
 });
 
 test('ofertas con diferentes formas de pago o plazo jamás comparten ranking',()=>{
