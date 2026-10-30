@@ -226,6 +226,9 @@ export async function extraerMaterialesConIA(args:{
   for(const linea of borrador.lineas){
     const idx=Number(linea.ubicacion.slice('Texto, línea '.length))-1;
     const source=segmentosPorLinea[idx];
+    if(!canon(lineas[idx]).includes(canon(linea.descripcion_original)) &&
+      !linea.requiere_aclaracion.includes('origen_no_verificado'))
+      linea.requiere_aclaracion.push('origen_no_verificado');
     // No basta con hallar el producto en algún lugar de la línea: debe
     // coincidir exactamente con una sola subsolicitud delimitada.
     const candidatos=source.flatMap((segmento,index)=>
