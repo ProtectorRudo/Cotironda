@@ -318,3 +318,10 @@
 - Vercel rechazó una **nueva Preview** de `security/01-browser-cookie-cache-audit` con HTTP 402 `api-deployments-free-per-day` (límite de despliegues Free; `retryAfter=86400`). La operación **NO creó un deployment**; no se promocionó producción, no se modificó SSO ni se contrató un plan pago.
 - Los tests GitHub del código previo aprobaron **217/217 unitarias y 5/5 workflows**, incluyendo Next 16 + SSR HTTPS con Auth sintético. La prueba de atributos reales de cookies en navegador **NO fue realizada** porque la versión nueva no está desplegada.
 - La documentación 61 registra exactamente qué se comprobó y cómo proceder cuando exista cuota de despliegues, sin generar enlaces temporales que omitan SSO.
+
+
+## [Sin publicar — Issue #94 / PR #95: observador Auth signup público]
+- Auditoría read-only detecta distinción de seguridad: el cierre de registro de **empresas** no impide necesariamente la creación de **usuarios Auth** por llamada directa a `/auth/v1/signup`. No se afirmó una configuración remota no verificada ni se intentó un POST de alta.
+- Nueva rutina `comprobarRegistroAuthSoloLectura`: **GET** fijo `/auth/v1/settings` de cotironda-dev con apikey publicable, sin sesión/secretos/cookies, timeout y límite de respuesta, aceptando únicamente `disable_signup` booleano; resultados PASS/FAIL/INCONCLUSO sanitizados.
+- Vista independiente `AuditoriaRegistroAuth` solo bajo `auth.getUser()` en Preview SSO de cuenta existente; agrega rama de ensayo exacta al guard del servidor y test HTTPS en Next con Auth sintético. No altera registro SQL, RPC, Storage ni producción.
+- Pruebas unitarias adversarias de transportes falso, HTTP erróneo, JSON anómalo, CORS/timeout, otros proyectos, claves privadas y ruta protegida. Informe docs/62. No hay nueva Preview Vercel por cuota diaria 402; estado Auth remoto pendiente.

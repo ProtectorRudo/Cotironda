@@ -201,6 +201,8 @@ try{
   assert.match(refreshed.body,/Sesión de prueba activa/);
   assert.match(refreshed.body,/Comprobar cookies y caché/,
     'Diagnóstico seguro solo dentro de la vista Auth privada de Preview');
+  assert.match(refreshed.body,/Comprobar autorregistro Auth/,
+    'Consulta Auth solo lectura existe únicamente en vista privada autenticada');
   assert.doesNotMatch(refreshed.body,/Nombre de empresa|Registrar empresa/);
  } else assert.match(refreshed.body,/Nombre de empresa/);
  noStore(refreshed);

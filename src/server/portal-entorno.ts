@@ -38,7 +38,8 @@ export function autenticacionPreviewSoloIngreso(env:VariablesPortal):boolean {
    // Vercel aún no tiene repositorio Git vinculado: el flag no se puede
    // limitar por rama. Exigir la referencia REAL del deployment en servidor.
    (env.VERCEL_GIT_COMMIT_REF==='test/01-auth-only-preview' ||
-    env.VERCEL_GIT_COMMIT_REF==='security/01-browser-cookie-cache-audit') &&
+    env.VERCEL_GIT_COMMIT_REF==='security/01-browser-cookie-cache-audit' ||
+    env.VERCEL_GIT_COMMIT_REF==='security/01-auth-signup-readonly-check') &&
    env.VERCEL_ENV==='preview' &&
    env.COTIRONDA_REGISTRATION_ENABLED==='false' &&
    credencialesCotironda(env) &&
