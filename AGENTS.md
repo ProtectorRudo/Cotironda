@@ -26,6 +26,15 @@ Actuar como director técnico, desarrollador, analista de producto y auditor. Pr
 7. Informar hecho/probado/pendiente/commit/PR/enlace verificado.
 8. No integrar o desplegar por suposición; mantener producción aislada.
 
+## Fundamento del producto — UX-001 (APROBADO)
+**Cotironda debe ser hiperintuitiva, de cero fricción innecesaria y sumamente amigable para compradores, corralones y demás proveedores. Deben poder utilizarla sin curso ni obligación de entrar regularmente al portal.** WhatsApp es la conversación principal para AMBOS lados; el portal complementa con seguimiento, comparación y adjudicación, no impone carga manual.
+- Enviar una sola vez el pedido por WhatsApp o portal; Cotironda clasifica y distribuye sin obligar revisión previa por línea clara (D013). Aclaraciones solo si hacen falta.
+- El proveedor responde, corrige y confirma la cotización por WhatsApp; Cotironda la interpreta y registra, con estado honesto sincronizado. El portal es opcional.
+- Antes de aprobar cada interacción, auditar: pasos, necesidad de registro/capacitación, repeticiones, accesibilidad móvil, mensajes y dudas innecesarios. Probar con una persona no técnica de cada rol antes de piloto.
+- Fricción cero **no** elimina consentimiento, baja, autenticación, privacidad, precisión, confirmación de precios o adjudicación manual. Eliminar la complejidad visible sin saltar salvaguardas.
+- Esta experiencia WhatsApp-first es el OBJETIVO, no una integración ya implementada. No atribuir funcionamiento real a Whapi antes de pruebas E2E.
+Ver [docs/89](docs/89-ux-cero-friccion-whatsapp-first.md), decisión UX-001, Issue #151.
+
 ## Invariantes de negocio
 - Proveedores gratuitos sin comisiones; compradores por suscripción prevista.
 - Productos materiales de obra, no servicios de precio subjetivo.
