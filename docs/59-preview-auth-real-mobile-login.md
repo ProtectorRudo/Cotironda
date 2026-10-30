@@ -33,3 +33,29 @@ Estos resultados concuerdan con la captura y corroboran un **inicio de sesión a
 Protocolo de cierre: tocar «Cerrar sesión de prueba», comprobar regreso a ingreso, volver a `/alta` y verificar que no se muestre la sesión. Compartir únicamente el resultado, sin credenciales ni datos del dispositivo.
 
 No se modificaron Supabase Auth, SQL, producción, DNS o proyectos comerciales para generar esta documentación.
+
+## Segunda evidencia real — salida global y redirección de la Preview (30/10/2026)
+
+El propietario compartió una **segunda captura desde Chrome de escritorio**, correspondiente a la misma Preview del portal. Tras pulsar «Cerrar sesión de prueba», la página visible es **«Ingresá a tu empresa»**, con los campos de correo, contraseña y botón «Ingresar a prueba». No se ven datos privados de la sesión anterior ni formulario empresarial. **La captura completa no se sube a GitHub**, porque incluye contenido privado de otra ventana que es ajeno al ensayo.
+
+### Corroboración independiente en Auth, exclusivamente agregada
+
+Consulta de logs de Supabase dev, ventana UTC **2026-10-30 09:45–10:40**:
+
+| Evidencia | Resultado |
+| --- | --- |
+| POST `/auth/v1/logout` | **1 × HTTP 204** |
+| Auth Audit `logout` | **1** |
+| POST `/auth/v1/token` | **1 × HTTP 200** |
+| GET `/auth/v1/user` | **2 × HTTP 200** |
+
+La consulta SQL de lectura `SELECT count(*) FROM auth.sessions` arrojó **0 sesiones restantes**. Otra consulta de lectura confirmó `registration_settings.enabled=false`, **0 organizaciones** y **0 objetos Storage**. No se solicitaron, almacenaron ni versionaron correos de los usuarios, contraseñas, JWT, refresh tokens, IDs o IP.
+
+### Decisión de auditoría
+
+- **ACEPTADO:** login genuino en Preview, acceso a vista privada sin alta empresarial, logout global ejecutado por Auth (**HTTP 204** y evento de auditoría), regreso del navegador al formulario de ingreso y **0 sesiones** en `auth.sessions`.
+- **PENDIENTE:** comprobar que escribir directamente `/alta` nuevamente después del cierre fuerza `/ingresar` en la **misma Preview**, sin volver a introducir contraseña. La captura de retorno al login **no prueba por sí sola** esta protección contra acceso directo, por lo que no se declara terminada.
+- **PENDIENTE:** inspección efectiva de atributos de cookies en HTTPS público del Preview. GitHub CI ya comprobó `Secure`, `SameSite=Lax`, `no-store` y refresh usando Auth sintético, pero no sustituye a una inspección remota.
+- **PENDIENTE GENERAL:** HTTP 429 remoto, protección de contraseñas filtradas, backup/restauración y revisión de PR apilados. Etapa 01 no concluida.
+
+**Sin cambios SQL, Auth, secretos, DNS ni producción:** se consultaron datos y se registró evidencia. El PR sigue draft y el Issue #88 permanece abierto hasta completar la prueba de reingreso directo.
