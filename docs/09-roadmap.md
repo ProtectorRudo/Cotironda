@@ -155,3 +155,7 @@ Se aprueba el orden comercial identidad de producto → atributos técnicos nece
 
 ### 30/10/2026 — D015: familia de producto como puerta de invitación (Issue #117)
 Se refinó D014: los proveedores que **confirmen comercializar el producto canónico** tienen oportunidad de cotizar aun con marcas/envases distintos, sin exigir tipo/clase de cemento u otros atributos que el arquitecto no escribió. La comprobación de especificación se separa de la invitación. Se añadió módulo puro que envía cero mensajes, conserva datos originales, muestra variaciones técnicas y agrupa por proveedor. Faltan catálogo canónico auténtico, backend que compruebe SKU y restricciones exclusivas, integración WhatsApp, medición recall de proveedores válidos y validación de ofertas. Docs/72 / Issue #117.
+
+
+### 30/10/2026 — Taxonomía argentina y enlace salida IA → selección D015 (Issue #119)
+Se agregó un diccionario curado inicial de 6 familias en 5 rubros y un orquestador aislado que vincula extracción IA validada con invitaciones por producto. Reglas negativas distinguen cemento de contacto/adhesivos, cables no eléctricos, etc.; marcas preferidas no se convierten en exclusividad automática, atributos críticos solo explícitos. Demo `npm run demo:productos` con SKU ficticios; pruebas de API MOCK (sin precisión medida). Pendientes corpus amplios de nombres argentinos, catálogo real SKU por empresa, OpenAI dev live, ingesta segura de documentos, Whapi/cola y costes. Docs/73.
