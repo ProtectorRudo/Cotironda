@@ -21,7 +21,8 @@ jobs:
         with:
           deno-version: v2.x
       - name: Verificar tipos y resolucion de imports Edge
-        run: deno check supabase/functions/cotironda-ia-dev/index.ts
+        working-directory: supabase/functions/cotironda-ia-dev
+        run: deno check --config deno.json index.ts
       - name: Controlar que las pruebas de mock no accedan a red real
         run: |
           if grep -R -E 'Deno\\.env\\.get\\(.*(SERVICE_ROLE|SUPABASE_SECRET)' supabase/functions/cotironda-ia-dev; then
