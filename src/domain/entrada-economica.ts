@@ -77,13 +77,19 @@ export function simularInvitacionesEconomicasDesdeTexto(args:{
   const datos=entradas.map(({raw,n})=>{
     const limpio=raw.replace(/^(?:[-*•]\s+|\d{1,3}[).]\s+)/u,'').trim();
     const parsed=limpio.length<=350?extraerLinea(limpio):null;
-    const hallazgo=parsed?identificarProducto(parsed.producto):null;
+    // «15 placas de yeso»: placas es cantidad contable Y parte del nombre
+    // técnico del producto. Preservar el fragmento LITERAL de la fuente.
+    const placa=parsed&&parsed.unidad==='unit'?
+      limpio.match(/^\d{1,6}(?:[,.]\d{1,3})?\s+(placas?)\s+(de\s+)?(.+)$/iu):null;
+    const producto=placa?(placa[1]+' '+(placa[2]??'')+placa[3]).trim():
+      (parsed?.producto??null);
+    const hallazgo=producto?identificarProducto(producto):null;
     const cantidad=parsed?.cantidad??null;
     const ambigua=typeof cantidad==='string'&&
       /^\d{1,6}[,.]\d{3}$/u.test(cantidad);
-    const marca=hallazgo&&parsed?marcaConocida(parsed.producto):null;
-    const expreso=parsed&&exclusividad.test(canon(parsed.producto));
-    const simple=hallazgo&&parsed?descripcionSimple(parsed.producto,hallazgo.producto_id):false;
+    const marca=hallazgo&&producto?marcaConocida(producto):null;
+    const expreso=producto&&exclusividad.test(canon(producto));
+    const simple=hallazgo&&producto?descripcionSimple(producto,hallazgo.producto_id):false;
     let motivo:LineaPendienteIA['motivo']|null=null;
     if(!parsed)motivo='sintaxis_no_segura';
     else if(ambigua)motivo='cantidad_ambigua';
@@ -93,8 +99,8 @@ export function simularInvitacionesEconomicasDesdeTexto(args:{
     if(motivo)pendientes.push({numero_linea:n,motivo});
     return {
       ubicacion:'Texto, línea '+n,
-      descripcion_original:parsed?.producto??(limpio.slice(0,300)||'Línea no interpretable'),
-      producto_normalizado:parsed?.producto??null,
+      descripcion_original:producto??(limpio.slice(0,300)||'Línea no interpretable'),
+      producto_normalizado:producto,
       cantidad,unidad:parsed?.unidad??null,
       rubro:(!motivo&&hallazgo)?hallazgo.rubro:null,
       marca,marca_obligatoria:false,
