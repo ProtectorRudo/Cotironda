@@ -325,3 +325,10 @@
 - Nueva rutina `comprobarRegistroAuthSoloLectura`: **GET** fijo `/auth/v1/settings` de cotironda-dev con apikey publicable, sin sesión/secretos/cookies, timeout y límite de respuesta, aceptando únicamente `disable_signup` booleano; resultados PASS/FAIL/INCONCLUSO sanitizados.
 - Vista independiente `AuditoriaRegistroAuth` solo bajo `auth.getUser()` en Preview SSO de cuenta existente; agrega rama de ensayo exacta al guard del servidor y test HTTPS en Next con Auth sintético. No altera registro SQL, RPC, Storage ni producción.
 - Pruebas unitarias adversarias de transportes falso, HTTP erróneo, JSON anómalo, CORS/timeout, otros proyectos, claves privadas y ruta protegida. Informe docs/62. No hay nueva Preview Vercel por cuota diaria 402; estado Auth remoto pendiente.
+
+
+## [Sin publicar — Issue #96: headers anti-clickjacking en portal Next]
+- `apps/portal/next.config.ts` agrega seis cabeceras explícitas: X-Frame-Options DENY, CSP documental `frame-ancestors 'none'` + base/form/object restrictions, X-Content-Type-Options nosniff, Referrer-Policy no-referrer, Permissions-Policy sin sensores/pagos y X-Robots-Tag noindex para el portal privado.
+- `apps/portal/scripts/smoke-https-ssr.mjs` verifica estos headers con **Next compilado sobre HTTPS real de loopback**, incluso en redirect anónimo, refresh de token SSR con `Set-Cookie`, GET con sesión renovada y POST de alta bloqueado. Auth sigue completamente sintético e interceptado.
+- `tests/unit/http-security-headers.test.mjs` agrega regresiones para impedir CSP de scripts sin nonces, HSTS amplio, CORS público o caché global de assets. **No se proclama CSP completa/XSS ni se reemplazan los permisos SQL.** Ver `docs/63-next-http-security-headers.md`.
+- Cambio exclusivo GitHub branch/PR draft, no desplegado en Vercel ni production, sin tocar Supabase, DNS ni registro comercial.
