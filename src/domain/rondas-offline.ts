@@ -14,7 +14,9 @@ export type AutoridadRonda=
   Readonly<{rol:'comprador'|'sistema'}>|
   Readonly<{rol:'proveedor';anonId:string}>;
 export type EventoRonda=
-  Readonly<{id:string;tipo:'abrir'|'cerrar'|'cancelar';fecha:string}>|
+  Readonly<{id:string;tipo:'abrir';fecha:string}>|
+  Readonly<{id:string;tipo:'cerrar';fecha:string}>|
+  Readonly<{id:string;tipo:'cancelar';fecha:string}>|
   Readonly<{id:string;tipo:'guardar_borrador';fecha:string;anonId:string;
     revisionEsperada:number;borrador:BorradorOferta}>|
   Readonly<{id:string;tipo:'confirmar_oferta';fecha:string;anonId:string;
