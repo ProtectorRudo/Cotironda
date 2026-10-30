@@ -24,6 +24,7 @@ const unidadEquivalente: Readonly<Record<string, Unidad>> = {
   bolsa:'bag',bolsas:'bag',saco:'bag',sacos:'bag',
   caja:'box',cajas:'box',
   unidad:'unit',unidades:'unit',un:'unit',pieza:'unit',piezas:'unit',u:'unit',
+  placa:'unit',placas:'unit',lata:'unit',latas:'unit',bidon:'unit',bidones:'unit',
   kilogramo:'kg',kilogramos:'kg',kilo:'kg',kilos:'kg',kg:'kg',
   gramo:'g',gramos:'g',g:'g',
   litro:'l',litros:'l',l:'l',
@@ -38,7 +39,7 @@ function canonico(s: string): string {
   return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'')
     .toLocaleLowerCase('es-AR').replace(/\s+/g,' ').trim();
 }
-function extraerLinea(s: string): {cantidad: string; unidad: Unidad; producto: string} | null {
+export function extraerLinea(s: string): {cantidad: string; unidad: Unidad; producto: string} | null {
   // Ej: "20 bolsas de Cemento CPC 50 kg" o "Cemento CPC 50 kg - 20 bolsas".
   const n = '\\d{1,6}(?:[,.]\\d{1,3})?';
   const unidad = '[\\p{L}\\p{N}²³]+';
