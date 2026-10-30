@@ -245,3 +245,6 @@ PR #156 crea un adaptador **offline** para recibir mensajes de proveedores con c
 
 ### 30/10/2026 — Etapa 04: buzón privado Whapi y BAJA
 El PR #158 prepara `cotironda_private.whapi_inbox_v1` y `whapi_contacts_v1` con deduplicación de mensajes, contenido cifrado por un futuro broker autorizado, permisos cerrados, consentimiento y baja irreversible. El receptor offline acepta «BAJA» sin exigir una ronda abierta. **Todavía no está conectado a Whapi, no almacena mensajes reales ni existe endpoint público**, y el cifrado HMAC/AES-GCM del broker sigue pendiente. Ver [docs/92](docs/92-whapi-buzon-privado-y-baja.md).
+
+### 30/10/2026 — Etapa 04: broker criptográfico offline WhatsApp
+El PR #160 suma un broker Node server-only que pseudonimiza chat/mensaje con HMAC, cifra contenido con AES-256-GCM autenticado y adapta el receptor Whapi D027 al contrato privado D028 con puertos confiables. La BAJA se registra sin ronda activa y sin introducir pasos para el proveedor. **Todavía no hay backend SQL conectado, webhook público, secretos instalados ni Whapi real**; pruebas integradas offline con datos sintéticos. Ver [docs/93](docs/93-whapi-broker-hmac-aes-offline.md).
