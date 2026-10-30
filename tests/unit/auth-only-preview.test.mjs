@@ -10,6 +10,7 @@ import {
 
 const env={
  VERCEL_ENV:'preview',
+ VERCEL_GIT_COMMIT_REF:'test/01-auth-only-preview',
  COTIRONDA_AUTH_PREVIEW_ENABLED:'true',
  COTIRONDA_REGISTRATION_ENABLED:'false',
  COTIRONDA_SUPABASE_PROJECT_REF:COTIRONDA_DEV_REF,
@@ -31,6 +32,9 @@ test('fail-closed: falta flag, falta registro false, falta ref o Vercel no es pr
   {COTIRONDA_REGISTRATION_ENABLED:'true'},
   {COTIRONDA_REGISTRATION_ENABLED:undefined},
   {VERCEL_ENV:'production'},
+  {VERCEL_GIT_COMMIT_REF:'main'},
+  {VERCEL_GIT_COMMIT_REF:'audit/01-vercel-correct-portal-preview'},
+  {VERCEL_GIT_COMMIT_REF:undefined},
   {VERCEL_ENV:'development'},
   {VERCEL_ENV:undefined},
   {COTIRONDA_SUPABASE_PROJECT_REF:'other-project'},
