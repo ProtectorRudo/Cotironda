@@ -47,3 +47,8 @@ Las categorías activas son un **marcador de lectura segura**, sin crear una emp
 - [Guía avanzada SSR](https://supabase.com/docs/guides/auth/server-side/advanced-guide).
 - [Migración 12 aplicada en dev](51-commercial-session-migration.md).
 - [Issue #78](https://github.com/ProtectorRudo/Cotironda/issues/78).
+
+
+## Requisito adicional de seguridad de cuentas (PR #83)
+
+El E2E auténtico **no debe ejecutarse con contraseñas compartidas o divulgadas**. Rotar ambas cuentas de ensayo con secretos **nuevos y diferentes**; longitud mínima 12. En lugar del comando `node scripts/auth-real-smoke.mjs` indicado arriba, usar **`npm run e2e:auth:dev`** desde `apps/portal` (Node 22, importaciones TypeScript). GitHub Actions/CI/Vercel deniegan ese comando de forma intencional. Para detalles de preflight y rotación, ver `docs/54-e2e-auth-secret-preflight.md`. La ejecución real sigue **pendiente**.
