@@ -386,3 +386,5 @@
 - `tests/fixtures/gold-despacho-ia-v1.json`: 12 casos sintéticos con salidas mock, incluidos falsos productos, cantidades inventadas, materiales omitidos, duplicados, opt-out y zonas ajenas; simulador `tests/helpers/evaluador-gold.mjs`.
 - `npm run benchmark:ia:offline` y test de regresión que detecta cambios en clasificación. **Nunca invoca API real**; no mide precisión del modelo ni consume créditos. Docs/69 y Issue #110.
 - Sin cambios de base, precios, Whapi, usuarios, producción ni DNS; PR draft apilado sobre #109.
+
+- Se actualizó el script opt-in `scripts/eval/openai-texto.mjs` para cotejar 3 casos live futuros contra gold (destinatarios, artículos y cantidades) con reporte de tokens/costo estimado y bloqueo CI/producción. No se ejecutó ningún request real.
