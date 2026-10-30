@@ -168,3 +168,14 @@ test('captura prompt injection como texto sin ejecutarlo',async()=>{
   assert.ok(f.llamadas[0].request.input[0].content[0].text.includes('NO CONFIABLE'));
   assert.deepEqual(f.llamadas[0].request.tools,[]);
 });
+
+test('un material recortado pierde especificaciones y queda retenido',async()=>{
+  const salida={...item,descripcion_original:'Cemento',producto_normalizado:'Cemento'};
+  const r=await pedir(linea,fake(responseBody([salida])).fetchImpl);
+  assert.ok(r.borrador.lineas[0].requiere_aclaracion.includes('cantidad_sin_evidencia'));
+});
+test('orden de cantidad al final de la línea también se valida con origen completo',async()=>{
+  const texto='Cemento CPC 50 kg - 20 bolsas';
+  const r=await pedir(texto,fake(responseBody([item])).fetchImpl);
+  assert.deepEqual(r.borrador.lineas[0].requiere_aclaracion,[]);
+});
