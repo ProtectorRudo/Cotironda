@@ -152,7 +152,7 @@ begin
  -- Recheck bajo row lock, al igual que D026, para impedir carrera con cierre.
  perform 1 from cotironda_private.rounds_v1 r where r.id=v_round
    and r.status='abierta' and pg_catalog.clock_timestamp()>=r.begins_at
-   and pg_catalog.clock_timestamp()<r.ends_at for update;
+   and pg_catalog.clock_timestamp()<r.ends_at for share;
  if not found then
   raise exception 'inbox_round_not_active' using errcode='42501'; end if;
  insert into cotironda_private.whapi_inbox_v1
