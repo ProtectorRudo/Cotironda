@@ -2,7 +2,7 @@
 
 **Estado al 30/10/2026: Etapa 01 con controles de Auth/RLS verificados en desarrollo, integración de PRs aún pendiente; Etapa 02 INICIADA en PR #101 con validador documental offline. El registro y las licitaciones comerciales NO están habilitados; el sitio público es demostrativo.**
 
-Cotironda es una plataforma argentina B2B para solicitar cotizaciones privadas de **materiales de obra**. El comprador carga una lista una sola vez; la IA la interpreta y separa por rubro; el comprador revisa y confirma. Se invita a proveedores pertinentes según catálogo y cobertura geográfica; estos pueden responder desde WhatsApp (Whapi + IA) o por un portal opcional. El comprador compara ofertas anónimas, completas o parciales, y adjudica manualmente.
+Cotironda es una plataforma argentina B2B para solicitar cotizaciones privadas de **materiales de obra**. El comprador envía su lista una sola vez y autoriza la distribución; la IA propone la interpretación y un motor verificable decide qué proveedores pueden cotizar. **No se exige revisión previa por línea al comprador**. Se invita a proveedores pertinentes según catálogo y cobertura geográfica; estos pueden responder desde WhatsApp (Whapi + IA) o por un portal opcional. El comprador compara ofertas anónimas, completas o parciales, y adjudica manualmente.
 
 ## Modelo
 - Proveedores: **gratuitos, sin comisiones ni abonos**.
@@ -11,7 +11,7 @@ Cotironda es una plataforma argentina B2B para solicitar cotizaciones privadas d
 - MVP: Cotironda no compra materiales, no procesa pagos de esas compras ni garantiza su entrega.
 
 ## Invariantes
-1. Revisión del pedido por el comprador antes de publicar.
+1. El comprador autoriza distribución al enviar la lista; las líneas dudosas se retienen sin bloquear las claras. No se exige revisión manual por cada artículo.
 2. IA interpreta; cálculos de precios y comparaciones son deterministas.
 3. Cobertura y competitividad separadas; nunca enfrentar totales de canastas diferentes.
 4. Identidad y contacto de oferentes protegidos durante la ronda y revelados según adjudicación.
@@ -166,3 +166,7 @@ Etapa 02 sumó un adaptador **servidor** para `POST /v1/responses` (modelo candi
 
 ### Etapa 02 — Banco de precisión y seguridad de IA (Issue #110)
 `src/domain/evaluacion-ia-documental.ts` mide **precisión/cobertura de materiales y de destinatarios por separado**, con una puerta de seguridad de **cero solicitudes incorrectas** y una de cobertura parametrizable. Corpus sintético de 12 escenarios y comando reproducible `npm run benchmark:ia:offline` (Node 22+, **NO usa OpenAI real ni Whapi**). Una retención segura no cuenta como cotización procesada. Este paso prepara la evaluación efectiva posterior, sin atribuirle precisión real al modelo; ver [docs/69](docs/69-evaluacion-ia-calidad.md). Sin merge ni producción.
+
+
+### Etapa 02 — alternativas de envases y consultas técnicas (Issue #113)
+[Primer motor offline](docs/70-alternativas-cotizacion.md) para **propuestas de cotización**, no envíos ni homologaciones: 20 bolsas de cemento de 50 kg → 40 de 25 kg cuando familia y clase verificadas; hidrófugo 4 L → envase de 5 L (1 L sobrante). Ceresita/hidrófugo y ligante/Tacurú solo como **consultas curadas sujetas a ficha/uso**, nunca equivalentes automáticos. Respeta marca exigida, opt-in, zona y duplicados. No modifica aún el matcher exacto, no integra Whapi ni valida productos reales de empresas. PR draft hijo de #111.
