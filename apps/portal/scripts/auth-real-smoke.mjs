@@ -8,7 +8,7 @@
 import {createClient} from '@supabase/supabase-js';
 import {randomUUID} from 'node:crypto';
 import {verificarFirmaContraPostgrest} from '../../../src/server/auth-e2e-adversarial.ts';
-import {validarEntornoE2E,cargaRpcNoPersistente,validarClaimsSesionFirmada} from '../../../src/server/auth-e2e-preflight.ts';
+import {validarEntornoE2E,cargaRpcNoPersistente,validarClaimsSesionFirmada,codigoSeguroE2E} from '../../../src/server/auth-e2e-preflight.ts';
 import {consultarCategoriasConJwt,comprobarCategoriasConSesionVigente,comprobarCategoriasConSesionRevocada,comprobarVigenciaTokenParaRevocacion} from '../../../src/server/auth-e2e-catalog-revocation.ts';
 
 const args=validarEntornoE2E(process.env);
@@ -125,6 +125,6 @@ try{
  console.log(JSON.stringify({checks:events}));
 }catch(e){
  console.error('E2E REAL COTIRONDA DEV: FAIL');
- console.error(e instanceof Error ? e.message : 'Error no reconocido');
+ console.error(codigoSeguroE2E(e));
  process.exitCode=1;
 }
