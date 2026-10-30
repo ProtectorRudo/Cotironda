@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation';
 import { clienteSupabaseServidor, entornoAuthConfigurado, entornoAuthSoloIngresoPreview } from '@/lib/supabase/server';
 import { CerrarSesionPrueba } from './cerrar-sesion-prueba';
+import { AuditoriaSeguridadSesion } from './auditoria-seguridad-sesion';
+import { COTIRONDA_DEV_REF } from '../../../../src/server/portal-entorno.ts';
 import { FormularioEmpresa } from './formulario';
 export const dynamic='force-dynamic';
 export default async function Alta(){
@@ -17,6 +19,7 @@ export default async function Alta(){
       <p>La identidad fue verificada por Supabase Auth desde el portal Next.js.
       El registro de empresas y las cargas documentales siguen deshabilitados.</p>
       <CerrarSesionPrueba/>
+      <AuditoriaSeguridadSesion projectRef={COTIRONDA_DEV_REF}/>
     </main>;
   }
   return <main className="panel"><span className="eyebrow">TU EMPRESA</span><h1>Crear empresa</h1><p>Configurá tu perfil como comprador o proveedor. No se enviarán invitaciones hasta confirmar el catálogo y la zona.</p>
