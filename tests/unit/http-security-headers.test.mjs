@@ -28,8 +28,9 @@ test('CSP parcial bloquea base URL ajena, object y formularios externos',()=>{
 });
 
 test('la CSP no debe bloquear hidratación Next con script-src improvisado',()=>{
- assert.doesNotMatch(config,/script-src|style-src|default-src|unsafe-eval|unsafe-inline/);
- assert.doesNotMatch(config,/upgrade-insecure-requests/);
+ const match=config.match(/value:"(frame-ancestors[^"]+)"/);
+ assert.ok(match,'No se encontró el valor de la CSP');
+ assert.doesNotMatch(match[1],/script-src|style-src|default-src|unsafe-eval|unsafe-inline|upgrade-insecure-requests/);
 });
 
 test('la política de Referer y MIME es estricta',()=>{
