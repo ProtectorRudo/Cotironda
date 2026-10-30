@@ -44,3 +44,8 @@ Se cerró en SQL de `cotironda-dev` la ventana detectada en las siete tablas com
 ### JWT real tras logout — protocolo reproducible, no certificado todavía (Issue #78)
 
 La migración 12 protege `catalog_categories` mediante sesión vigente y el entorno `cotironda-dev` tiene cinco categorías activas, visibles con sesión correcta sin crear empresa. El runner local de Auth se amplió para demostrar el escenario **positivo/negativo real**: GET categorías con JWT auténtico y aún vigente **antes** del signOut y GET 200/[] **con el mismo JWT** tras signOut. No requiere levantar ninguna bandera de registro. La suite CI cubre la estructura y transporte simulado, pero **no ejecutó login real** porque los secretos de dos cuentas dedicadas permanecen fuera del repositorio. No cerrar Etapa 01 hasta tener ejecución y evidencia real, E2E HTTPS/cookies, HTTP 429 remoto y decisión sobre password protection. Ver `docs/52-auth-real-revoked-catalog-e2e.md`.
+
+
+### Cookies HTTPS del portal: guard Secure corregido y CI verificadas (Issue #80 / PR #81)
+
+La prueba HTTPS verdadera de Next.js Preview **en loopback CI** descubrió que el refresh de `@supabase/ssr` emitía cookies sin `Secure`. Se corrigieron los clientes Proxy, SSR y navegador para exigirlo en `NODE_ENV=production`, con `SameSite=Lax`, `Path=/`, verificación TLS y `no-store`. La suite pasó con **161/161 unitarias, 5/5 GitHub Actions**, incluyendo roundtrip de cookie renovada, visitante anónimo, Origin 403 y alta 503. **No significa prueba de navegador contra `cotironda.com` ni Supabase Auth genuino.** Queda pendiente E2E autenticado real, HTTPS real en despliegue autorizado, 429 remoto, WARN de contraseñas filtradas y consolidación de PRs. Ver `docs/53-https-ssr-loopback-ci.md`.

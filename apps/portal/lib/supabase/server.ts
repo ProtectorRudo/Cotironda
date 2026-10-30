@@ -12,6 +12,11 @@ export async function clienteSupabaseServidor() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
+      cookieOptions:{
+        secure:process.env.NODE_ENV==='production',
+        sameSite:'lax',
+        path:'/'
+      },
       cookies: {
         getAll() { return store.getAll(); },
         setAll(valores) {

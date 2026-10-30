@@ -234,3 +234,10 @@
 - Se agregó `src/server/auth-e2e-catalog-revocation.ts` con URL exacta, GET único, sin caché, clave exclusivamente publicable, margen de expiración, validación de formato y fallas cerradas. Tests unitarios offline adversariales en `tests/unit/auth-real-revoked-catalog.test.mjs`.
 - SQL read-only de `cotironda-dev`: **5 categorías activas**, guard RLS de sesión presente, registro false, 0 empresas, 0 sesiones y 0 objetos Storage. No se enviaron credenciales ni se iniciaron sesiones reales con herramientas de CI.
 - **Falta ejecutar** el flujo con credenciales privadas en un entorno controlado; la CI verifica solo el código y mocks HTTP. No se declara E2E real exitoso. Ver `docs/52-auth-real-revoked-catalog-e2e.md`.
+
+
+## [Sin publicar — PR #81: cookie Secure obligatoria en HTTPS SSR]
+- Prueba Next.js compilado **sobre HTTPS verdadero loopback** con CA temporal del runner (sin `rejectUnauthorized:false`), SDK SSR real y Auth enteramente ficticio. Encontró que el Proxy renovaba cookies sin atributo `Secure`. El problema quedó reproducido mediante un test que **falló**; no se debilitó la expectativa.
+- Corrección de `cookieOptions` en los tres clientes Supabase (`proxy.ts`, servidor, navegador): `secure` en `NODE_ENV=production` (Preview y Production), `sameSite=lax`, `path=/`, sin activar `HttpOnly` que impediría refresh del lado navegador. `next dev` local sigue compatible con HTTP.
+- Test HTTPS completo demuestra certificación CA, rechazo de certificado sin confianza, Set-Cookie Secure, no-store, rotación y reutilización de cookie, segundo visitante anónimo, origen adversarial 403 y registro autorizado aún 503 fail-closed. **161/161 unitarias y cinco workflows CI SUCCESS** en HEAD `a089be6545e3dcea905ab544ca788cc4d3c705f6`. Ver `docs/53-https-ssr-loopback-ci.md`.
+- Este test no usa Supabase Auth real, ni navegadores completos ni certificado Vercel; no se hizo merge, cambió DB ni publicó producción.

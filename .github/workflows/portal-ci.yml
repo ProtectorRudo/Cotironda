@@ -68,6 +68,30 @@ jobs:
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_dummy_never_valid
           COTIRONDA_SITE_ORIGIN: https://cotironda-ci.example
         run: rm -rf .next && npm run build
+      - name: Generar certificado TLS efimero para HTTPS local de CI
+        shell: bash
+        run: |
+          set -euo pipefail
+          CERT="$RUNNER_TEMP/cotironda-ci-https.crt"
+          KEY="$RUNNER_TEMP/cotironda-ci-https.key"
+          openssl req -x509 -newkey rsa:2048 -sha256 -nodes -days 1 \
+            -keyout "$KEY" -out "$CERT" \
+            -subj '/CN=localhost' \
+            -addext 'subjectAltName=DNS:localhost,IP:127.0.0.1' \
+            > /dev/null 2>&1
+          chmod 600 "$KEY" "$CERT"
+          echo "COTIRONDA_CI_TLS_CERT=$CERT" >> "$GITHUB_ENV"
+          echo "COTIRONDA_CI_TLS_KEY=$KEY" >> "$GITHUB_ENV"
+      - name: HTTPS real loopback con refresh SSR, cookies seguras y prohibicion de cache
+        env:
+          VERCEL_ENV: preview
+          COTIRONDA_REGISTRATION_ENABLED: 'true'
+          COTIRONDA_SUPABASE_PROJECT_REF: qkercsoqhehbenbbncwk
+          NEXT_PUBLIC_SUPABASE_URL: https://qkercsoqhehbenbbncwk.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_dummy_never_valid
+          COTIRONDA_SITE_ORIGIN: https://cotironda-ci.example
+          COTIRONDA_CI_TLS_LOOPBACK: 'true'
+        run: node scripts/smoke-https-ssr.mjs
       - name: Smoke HTTP Next Preview con identidad y cookies totalmente ficticias
         env:
           VERCEL_ENV: preview
