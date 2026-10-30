@@ -217,3 +217,7 @@ El primer smoke pagado de OpenAI fue correcto, pero **no mide calidad de materia
 
 ### D018 — evaluaciones IA seguras: un intento por caso (Issue #135)
 Antes de permitir ensayos pagados desde Supabase DEV, se agregó una **reserva de uso persistente**: cada uno de los seis casos sintéticos `quality_case` se puede ejecutar **una sola vez**, incluso si dos solicitudes llegan al mismo tiempo. La BD deniega repeticiones y el handler no llama a OpenAI si falla la reserva. Los 6 casos usan IDs fijos y no hay envíos ni datos reales. Se requiere aplicar el SQL solamente en `cotironda-dev`, revisar RLS/grants y desplegar la función en DEV con su permiso de calidad **desactivado por defecto**. No equivale a límite absoluto de facturación. [Reglas](docs/81-reserva-unica-calidad-ia-dev.md).
+
+
+### Etapa 02 — resultados de evaluación IA auditables (Issue #137)
+Se registra en Supabase DEV un **resumen numérico por caso sintético** de extracción, proveedores y tokens, sin almacenar prompts, material original ni secretos. Cada resultado identifica su origen (`edge_runtime` o `reported_by_owner`), y el gateway indica `auditoria_persistida` para no atribuir a DB un guardado que falló. Se mantiene la reserva de **un único intento por caso**, independientemente de que el propietario conserve habilitado el flag DEV entre pruebas. [Controles y límites](docs/82-registro-calidad-real.md). Sin Whapi ni producción.
