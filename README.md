@@ -239,3 +239,6 @@ El PR #150 prepara la consulta `GET /api/rondas/[rondaId]` para que un comprador
 
 ### 30/10/2026 — Etapa 03: guardar y confirmar cotizaciones, núcleo SQL privado
 El PR #154 desarrolla dos funciones internas PostgreSQL para que futuras respuestas de WhatsApp o web se guarden primero como **borrador**, y solo la confirmación expresa cree una versión inmutable. La operación usa idempotencia y revisión esperada para impedir duplicados y pérdidas de cambios. **No es todavía una ruta operativa para proveedores**, ni hay conexión Whapi: el SQL se prueba únicamente en PostgreSQL efímero de CI y no se instala en Supabase DEV/producción. Ver [docs/90](docs/90-ofertas-atomicas-privadas.md).
+
+### 30/10/2026 — Etapa 04: receptor Whapi aislado, sin webhook público
+PR #156 crea un adaptador **offline** para recibir mensajes de proveedores con credencial por canal, resolver invitación/opt-in desde backend confiable, proteger contra duplicados y registrar contenido pendiente sin confirmar ofertas. Incluye pruebas de grupos, mensajes salientes, multimedia no descargada y errores parciales. **El almacenamiento permanente y la vinculación real con WhatsApp aún faltan**: no existe ruta HTTP habilitada, conexión a Whapi ni despliegue. Ver [docs/91](docs/91-whapi-inbound-offline.md).
