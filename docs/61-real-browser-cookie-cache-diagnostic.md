@@ -50,3 +50,19 @@ El botón no existe en `/ingresar`, en producción, en páginas anónimas ni en 
 - `apps/portal/app/alta/page.tsx`: `dynamic='force-dynamic'` y protección con `auth.getUser()`.
 
 **No se realiza navegación privilegiada con credenciales, ni despliegue de producción, ni modificación de Auth/SQL remoto.**
+
+## Resultado de la primera verificación y bloqueo real de Vercel (30/10/2026)
+
+El **código** se compiló y probó en GitHub Actions, pero el despliegue solicitado de una **nueva Preview** de la rama `security/01-browser-cookie-cache-audit` **NO se creó**. La API de Vercel respondió HTTP **402 `payment_required`**, con código específico **`api-deployments-free-per-day`**: límite diario de más de 100 despliegues para el plan actual, indicación `retryAfter=86400` segundos. No fue un error de Next.js ni de las pruebas.
+
+- **No** se utilizó un bypass de SSO, share link ni un upgrade de plan. Tampoco se creó un proyecto alternativo.
+- **No** hay URL de Preview nueva disponible para probar el botón con una cuenta real. La Preview anterior continúa siendo la última versión de pruebas auténticamente accesible; no contiene este botón.
+- El conector sugirió CLI como fallback, pero no hay sesión autenticada ni un proyecto Vercel vinculado a la CLI en el entorno de trabajo actual. No se pidieron credenciales ni se reintentó el mismo endpoint agotando cuota.
+- Al reanudarse los despliegues, el paso permitido es **únicamente** crear una Preview del proyecto `cotironda-portal-dev` con la **rama exacta y commit GitHub verificado**, `target=null`, SSO `all`, guard `ALLOW`, y comparar el build Next real con el CI.
+- Hasta entonces, **Issue #80 y #92 siguen abiertos** para la evidencia HTTPS real. La CI con Auth sintético no equivale a haber observado cookies de una sesión verdadera desde el navegador.
+
+### Validación inicial en GitHub (antes del bloqueo de Vercel)
+
+El HEAD de código `084e2d571f3ebc5b9f33d8176dd77a731cbf82dd` aprobó **217/217 unitarias y cinco workflows**: Next.js con build/TypeScript y HTTPS loopback de 3 escenarios, PG17 y recovery, PostgREST HTTP con JWT CI y sitio. La primera compilación detectó una intersección de tipos de CookieStore en TypeScript; se corrigió explícitamente antes de estos PASS.
+
+**No anunciar estado READY ni URL para esta versión hasta que Vercel confirme un deployment real.**
