@@ -14,6 +14,7 @@ export const MODELO_IA_DOCUMENTAL = 'gpt-6-luna' as const;
 const URL_OPENAI = 'https://api.openai.com/v1/responses';
 const MAX_TEXTO = 9000;
 const MAX_LINEAS = 25;
+const MAX_ITEMS = 75; // Hasta tres materiales por línea media; la cuota de salida sigue limitada.
 const MAX_OUTPUT_TOKENS = 3500;
 const MAX_RESPUESTA_BYTES = 240000;
 // Separadores inequívocos SOLAMENTE antes de otra cantidad+unidad. «50 kg»
@@ -204,7 +205,7 @@ export async function extraerMaterialesConIA(args:{
   catch{throw new Error('ia_json_invalido');}
   const payload=mensajeJSON(remoto);
   if(!objetoSeguro(payload)||!Array.isArray(payload.items)||
-    payload.items.length>MAX_LINEAS)throw new Error('ia_esquema_invalido');
+    payload.items.length>MAX_ITEMS)throw new Error('ia_esquema_invalido');
   const segmentosPorLinea=lineas.map(separarMaterialesExplicitos);
   const segmentosVerificados=new Map<number,Map<number,number[]>>();
   const vistos=new Set<number>();
