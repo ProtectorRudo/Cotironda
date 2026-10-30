@@ -76,7 +76,8 @@ function categoriasPorProducto(proveedores: readonly ProveedorConfirmado[]): Map
  * que matchean un producto confirmado de proveedor, unidad y rubro únicos.
  */
 export function simularDespachoDesdeTexto(
-  texto: string, solicitud: SolicitudAutomatica, proveedores: readonly ProveedorConfirmado[]
+  texto: string, solicitud: SolicitudAutomatica, proveedores: readonly ProveedorConfirmado[],
+  ubicaciones?: readonly string[]
 ): ResultadoSimulacionTexto {
   if (typeof texto!=='string' || texto.length===0 || texto.length>15000 ||
     /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(texto)) {
@@ -86,12 +87,17 @@ export function simularDespachoDesdeTexto(
   const filas=texto.split(/\r\n|\n|\r/).map((raw,n)=>({raw:raw.trim(),numero:n+1}))
     .filter(x=>x.raw.length>0);
   if (filas.length===0 || filas.length>100) throw new RangeError('cantidad_de_lineas_invalida');
+  if (ubicaciones !== undefined && (!Array.isArray(ubicaciones) ||
+    ubicaciones.length!==filas.length || ubicaciones.some(u=>typeof u!=='string' ||
+      u.length<2 || u.length>100 || /[\u0000-\u001f]/.test(u)))) {
+    throw new TypeError('ubicaciones_invalidas');
+  }
   const categorias=categoriasPorProducto(proveedores);
   const lineas_no_interpretadas: ResultadoSimulacionTexto['lineas_no_interpretadas']=[];
   const lineas_sin_catalogo: number[]=[];
   const lineas_con_rubro_ambiguo: number[]=[];
   const items=filas.map(({raw,numero},indice)=>{
-    const ubicacion='Texto, línea '+numero;
+    const ubicacion=ubicaciones?.[indice]??'Texto, línea '+numero;
     const original=raw.replace(/^(?:[-*•]\s+|\d{1,3}[).]\s+)/u,'').trim();
     const limpia=original.length<500?original:'';
     const parsed=extraerLinea(limpia);
