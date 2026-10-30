@@ -312,3 +312,9 @@
 - La lista cerrada de ramas de solo ingreso ahora autoriza exactamente `test/01-auth-only-preview` y `security/01-browser-cookie-cache-audit`, manteniendo SSO, registro=false, tenant Supabase dev exacto y production bloqueada. No se agrega API, tráfico a terceros ni secretos.
 - La primera ejecución del PR detectó discrepancia entre la definición DOM TypeScript de CookieStore y los metadatos de la API del navegador; corregida la conversión tipada, sin deshabilitar verificaciones.
 - Doc `docs/61-real-browser-cookie-cache-diagnostic.md` explica limitación de `Set-Cookie` y `HttpOnly`, prueba real pendiente en navegador, sin enlace temporal que omita SSO.
+
+ 
+### Bloqueo de despliegue de diagnóstico privado — 30/10/2026
+- Vercel rechazó una **nueva Preview** de `security/01-browser-cookie-cache-audit` con HTTP 402 `api-deployments-free-per-day` (límite de despliegues Free; `retryAfter=86400`). La operación **NO creó un deployment**; no se promocionó producción, no se modificó SSO ni se contrató un plan pago.
+- Los tests GitHub del código previo aprobaron **217/217 unitarias y 5/5 workflows**, incluyendo Next 16 + SSR HTTPS con Auth sintético. La prueba de atributos reales de cookies en navegador **NO fue realizada** porque la versión nueva no está desplegada.
+- La documentación 61 registra exactamente qué se comprobó y cómo proceder cuando exista cuota de despliegues, sin generar enlaces temporales que omitan SSO.
