@@ -56,3 +56,17 @@ El propietario confirmó haber guardado `OPENAI_API_KEY` en **Edge Function Secr
 **Prueba sin gasto desde el Dashboard**: abrir `cotironda-dev` → Edge Functions → `cotironda-ia-dev` → **Test**, método POST, header `Content-Type: application/json`, otro header `apikey` con el **valor secreto de API de Supabase para el backend** (en Settings → API Keys; nunca la clave OpenAI ni una clave publishable), body `{"mode":"status"}`. La respuesta esperada será HTTP 200 con `{"status":"ready_for_dev","environment":"cotironda-dev","openai_secret_configured":true,"smoke_enabled":false}` si la función logra inicializarse y el secreto está disponible. No compartir `apikey` ni claves por el chat; informar solo el HTTP y booleanos. Una respuesta 401 significa revisar `apikey` (secret keys modernas en el header `apikey`, no `Authorization: Bearer`). Un 500 significa revisar los logs de la función antes de cualquier smoke.
 
 **Próximo paso**: después del estado verificado, completar la invocación segura Next servidor → Edge y guardas de cuotas por empresa, sin activar `smoke` ni envío comercial todavía. **Nunca publicar esta función de laboratorio como endpoint de IA de usuario.**
+
+## Actualización 30/10/2026 — Primer smoke LIVE de OpenAI confirmado
+
+**Evidencia aportada por el propietario**: desde Dashboard Supabase `cotironda-dev`, función `cotironda-ia-dev`, POST autenticado al modo `smoke`:
+```json
+{"status":"smoke_completed","model":"gpt-6-luna","tokens":{"input":43,"output":36},"messages_sent":0}
+```
+**Corroboración independiente en logs de Supabase**: `function_edge_logs` tiene `POST | 200 | https://qkercsoqhehbenbbncwk.supabase.co/functions/v1/cotironda-ia-dev` a las `2026-10-30T17:48:11.147000Z` (también consta el anterior `status` 200 a las `17:42:12.092000Z`). La función continúa **ACTIVE** en Supabase DEV; versión observada después de actualizar Secrets: **v2**. El cuerpo de respuesta no se obtiene mediante el conector, sino de la salida compartida por el propietario. No se leyó secreto alguno.
+
+**Qué demuestra**: Supabase Edge pudo utilizar `OPENAI_API_KEY` y recibió una respuesta completada de OpenAI para una entrada **ficticia**. No hubo envío de mensajes y no se procesaron datos de empresas reales. Uso informado por OpenAI: **43 tokens de entrada y 36 de salida**. Referencia económica indicativa usando la tarifa estándar previamente documentada para `gpt-6-luna`: `(43 × 0,10 + 36 × 0,50) / 1.000.000 = USD 0,0000223`; esto **no equivale a cargo facturado confirmado**.
+
+**Acción de seguridad inmediata**: eliminar de los Edge Secrets del proyecto DEV únicamente `COTIRONDA_IA_DEV_SMOKE_ENABLED`, conservar `OPENAI_API_KEY`. **Desactivación todavía NO verificada**. La presencia de un permiso de prueba persistente permitiría repetir llamadas sintéticas autenticadas (aunque el endpoint solo acepta input fijo). No se ha autorizado el envío comercial ni conexión Next→Edge.
+
+**Pendiente de la Etapa 02**: conectar de forma autenticada el extractor completo a un servidor que valida empresa, RLS, presupuestos y límites por cliente, probar con corpus independiente comercial, prohibir que mensajes devueltos por IA se conviertan directamente en despachos. Este smoke confirma infraestructura real, **no precisión de extracción ni de selección de proveedores**.
