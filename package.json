@@ -6,7 +6,8 @@
   "scripts": {
     "test:unit": "node --experimental-strip-types --test tests/unit/*.test.mjs",
     "typecheck": "tsc --project tsconfig.json",
-    "demo:texto": "node --experimental-strip-types scripts/demo/flujo-texto.mjs"
+    "demo:texto": "node --experimental-strip-types scripts/demo/flujo-texto.mjs",
+    "demo:xlsx": "node --experimental-strip-types scripts/demo/xlsx-demo.mjs"
   },
   "engines": {
     "node": ">=22.16.0"
