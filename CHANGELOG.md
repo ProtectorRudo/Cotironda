@@ -248,3 +248,9 @@
 - Se incorporó `npm run e2e:auth:dev` con Node 22 `--experimental-strip-types`, evitando fallas de importación `.ts`. La CI ejecuta deliberadamente el comando y requiere el rechazo antes de la red; **no dispone de claves ni contraseñas reales**.
 - Se blindó el diagnóstico para imprimir solo códigos de error permitidos de Cotironda, nunca respuestas arbitrarias de SDK/red ni secretos. Tests adversariales nuevos y `docs/54-e2e-auth-secret-preflight.md`.
 - Cuentas de ensayo que reutilizaron una contraseña ya divulgada deben rotarse localmente con dos secretos nuevos y distintos; **no se incluyeron valores sensibles en código ni documentación**. No se alteraron Supabase, producción, Vercel, DNS ni `main`. Pendiente de ejecutar JWT genuino tras logout.
+
+
+## [Sin publicar — PR #85: prueba remota de Auth desde navegador]
+- Se incorporó `tests/manual/cotironda-auth-dev-browser.html` autocontenido y sin dependencias; permite ensayo de dos usuarios de desarrollo con entrada de credenciales solo en navegador, clave `sb_publishable_` pública y conexión restringida por CSP al origen HTTPS de `cotironda-dev`.
+- Contrasta JWT emitido por Auth, `/auth/v1/user`, catálogo RLS visible antes de logout y **200 con [] tras logout** con el mismo JWT original y no vencido; prueba bloqueo de correo no confirmado. Borra campos de contraseña, hace logout de emergencia y solo copia un reporte PASS/FAIL sin JWT, emails ni contraseñas.
+- `tests/unit/browser-auth-dev-diagnostic.test.mjs` ejecuta el JavaScript real en entorno simulado y valida escenarios normales y adversariales. El E2E auténtico del navegador sigue **pendiente de ejecución**, sin secretos en GitHub y sin cambios de Supabase/producción. Documentación en `docs/55-browser-auth-dev-diagnostic.md`.
