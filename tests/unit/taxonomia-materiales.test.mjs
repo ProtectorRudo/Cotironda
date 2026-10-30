@@ -220,3 +220,15 @@ test('servicio bloquea solicitud sin autorización ANTES de consumir tokens',asy
   }),/solicitud_sin_autorizacion/);
   assert.equal(calls,0);
 });
+
+test('demo reproducible de familias con proveedores ficticios no ejecuta envíos',async()=>{
+  const {execFileSync}=await import('node:child_process');
+  const output=execFileSync(process.execPath,[
+    '--experimental-strip-types','scripts/demo/productos-canonicos.mjs'
+  ],{encoding:'utf8',timeout:10000,stdio:['ignore','pipe','pipe']});
+  const r=JSON.parse(output);
+  assert.match(r.demo,/sin OpenAI real ni WhatsApp/);
+  assert.equal(r.proveedor_por_linea.length,2);
+  assert.deepEqual(r.falsas_exclusividades_corregidas,[2]);
+  assert.deepEqual(r.lineas_no_identificadas.map(x=>x.fila),[4]);
+});
