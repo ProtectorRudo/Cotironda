@@ -23,6 +23,22 @@ jobs:
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Verificar sintaxis del E2E sin red ni credenciales
         run: node --check scripts/auth-real-smoke.mjs
+      - name: E2E con Auth autentico NO puede correr con credenciales en GitHub Actions
+        shell: bash
+        run: |
+          set -euo pipefail
+          LOG="$RUNNER_TEMP/cotironda-auth-guard.log"
+          if npm run e2e:auth:dev > "$LOG" 2>&1; then
+            echo 'ERROR: el E2E autentico se ejecuto donde debe bloquearse'
+            exit 1
+          fi
+          if ! grep -q 'auth_e2e_entorno_remoto_bloqueado' "$LOG"; then
+            echo 'ERROR: el runner no llego al guard; revisar dependencias/Node'
+            exit 1
+          fi
+          rm -f "$LOG"
+          echo 'PASS: E2E Auth genuino denegado antes de la red en GitHub Actions'
+
       - name: Contrato HTTP de supabase-js con fetch simulado
         run: node scripts/postgrest-429-contract.mjs
       - name: Contrato SSR cookies y refresh con Supabase SDK y Next Proxy sin red
