@@ -468,3 +468,9 @@
 - Edge `quality_case` exige reserva de DB antes de consumir OpenAI, con PK por caso (máximo seis) y denegación ante repetidos, carreras, fallos de BD o falta de cliente de cuota. Ni 429 ni error de red permiten liberar/reintentar la reserva.
 - SQL versionado para registro sintético en Supabase DEV, RLS y permisos solo backend `service_role`; nuevos tests de concurrencia, 429 y permisos; docs/81.
 - Sin publicación de producción, sin envíos reales. Medición del modelo real pendiente de permiso y acceso privado para invocar.
+
+
+## [Sin publicar] — D019: persistencia de métricas de IA, solo laboratorio DEV (Issue #137)
+- Nueva tabla privada `dev_ia_quality_results` con RLS, FK a reservas D018, métricas de productos y proveedores y tokens; sin texto de clientes/credenciales.
+- Edge `quality_case`: después de consumir una reserva guarda el resultado y devuelve `auditoria_persistida`; error DB jamás desencadena nuevo gasto. Source `edge_runtime` o `reported_by_owner` para distinguir evidencias.
+- Nuevos tests de denegación sin auditoría, guardado correcto, fallo de DB y caso FAIL. Docs/82. Sin despliegues productivos ni WhatsApp.
