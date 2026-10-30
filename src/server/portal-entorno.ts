@@ -35,6 +35,9 @@ export function portalHabilitado(env:VariablesPortal):boolean {
  */
 export function autenticacionPreviewSoloIngreso(env:VariablesPortal):boolean {
  return env.COTIRONDA_AUTH_PREVIEW_ENABLED==='true' &&
+   // Vercel aún no tiene repositorio Git vinculado: el flag no se puede
+   // limitar por rama. Exigir la referencia REAL del deployment en servidor.
+   env.VERCEL_GIT_COMMIT_REF==='test/01-auth-only-preview' &&
    env.VERCEL_ENV==='preview' &&
    env.COTIRONDA_REGISTRATION_ENABLED==='false' &&
    credencialesCotironda(env) &&
