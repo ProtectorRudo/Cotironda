@@ -164,7 +164,10 @@ export async function extraerMaterialesConIA(args:{
   let raw:string;
   try{raw=await respuesta.text();}catch{throw new Error('ia_transporte_no_disponible');}
   if(raw.length>MAX_RESPUESTA_BYTES)throw new Error('ia_respuesta_extensa');
-  const payload=mensajeJSON(JSON.parse(raw));
+  let remoto:Record<string,unknown>;
+  try{remoto=JSON.parse(raw) as Record<string,unknown>;}
+  catch{throw new Error('ia_json_invalido');}
+  const payload=mensajeJSON(remoto);
   if(!objetoSeguro(payload)||!Array.isArray(payload.items)||
     payload.items.length>MAX_LINEAS)throw new Error('ia_esquema_invalido');
   const vistos=new Set<number>();
@@ -190,7 +193,6 @@ export async function extraerMaterialesConIA(args:{
     if(!fuenteCantidadUnidad(original,linea.cantidad,linea.unidad))
       linea.requiere_aclaracion.push('cantidad_sin_evidencia');
   }
-  const remoto=JSON.parse(raw) as Record<string,unknown>;
   const usage=objetoSeguro(remoto.usage)?remoto.usage:null;
   const entrada=usage?.input_tokens, salida=usage?.output_tokens;
   return{
