@@ -82,3 +82,7 @@ Commit `1c0c8b82dca326eed50339d68d4bd7ba1aa8d71b`:
 **Cinco workflows SUCCESS.** El test HTTPS de login-only comprobó la pantalla sin signup, SSR autenticado sin formulario empresarial, cookie renovada Secure/SameSite Lax, no-store, visitantes aislados y ambos orígenes de POST devolviendo 503.
 
 **PENDIENTE:** abrir esta Preview con acceso Vercel SSO y comprobar login y logout genuinos con cuenta exclusiva de ensayo, cookies del navegador y comportamiento de /alta. No declarar E2E Next/Preview completado antes de esa evidencia. No deshabilitar SSO ni abrir la bandera de registro para facilitar el ensayo.
+
+
+## Evidencia de navegación real del 30/10/2026
+El propietario compartió una captura de la página privada «Sesión de prueba activa», sin formulario empresarial. Los registros agregados de Supabase muestran inicio de sesión auténtico HTTP 200 y dos validaciones de identidad HTTP 200. **Ingreso y página protegida validados en Preview.** Falta comprobar logout real, denegación al reabrir `/alta` y atributos remotos de cookies. Ver docs/59-preview-auth-real-mobile-login.md.
