@@ -74,3 +74,16 @@ from public.dev_ia_quality_results order by created_at;
 - Primer POST `mode:status` sin consumo OpenAI: respuesta real HTTP **401 INVALID_API_KEY** con pista explícita de `@supabase/server`: la credencial corresponde a la clave nombrada `cotironda_quality_lab`, pero la autenticación `auth:'secret'` de la versión 7 aceptaba solamente `default`.
 - Corrección versionada en `index.ts`: `auth:['secret:default','secret:cotironda_quality_lab']`. Evita `secret:*` y conserva la clave previa usada por las pruebas manuales. Se comprueba por test estático y luego una nueva invocación `mode:status` autenticada; **ninguna prueba pagada hasta HTTP 200**.
 - El permiso `COTIRONDA_IA_DEV_QUALITY_ENABLED`, la cuota SQL D018 y el writer D019 no cambian. Ninguna clave se copia a GitHub, al chat o a Vercel.
+
+## Actualización 30/10/2026 — Primera corrida LIVE y detención por FAIL (Issue #141)
+**Este apartado sustituye el estado histórico de “sin secreto” y “sin invocaciones” indicado más arriba.**
+- El propietario creó en Vault el secreto `cotironda_quality_dev_invoker`. El formato privado se comprobó mediante booleanos (sin copiar ni leer la clave).
+- Primer `status` respondió 401 porque `auth:'secret'` de `@supabase/server` aceptaba solo la key `default`, mientras la nueva key se llamaba `cotironda_quality_lab`. Corregido a la lista `['secret:default','secret:cotironda_quality_lab']`, evitando `secret:*`. Tests actualizados; 6/6 workflows aprobados en SHA `57998292805147e787a04e67be89b08787380222`.
+- Despliegue exclusivamente Supabase DEV de `cotironda-ia-dev` **v8 ACTIVE**. Nuevo `status` mediante pg_net: HTTP 200, `openai_secret_configured:true`, `smoke_enabled:false`, 0 tokens.
+- El despachador se habilitó **solo dentro de cada transacción de envío, sin cron** y se volvió a apagar antes del commit. Los resultados se cruzaron en PostgreSQL con `edge_runtime` y respuesta `auditoria_persistida:true`:
+  1. `dos_productos_misma_linea`: PASS/PASS; 2/2 artículos, 2/2 proveedores, 560+325 tokens.
+  2. `marca_mencionada_y_presentacion_distinta`: PASS/PASS; 1/1, 1/1, 553+160 tokens.
+  3. `cemento_generico_sin_especificacion_inventada`: **FAIL/FAIL**; 0/1 extracción exacta, 1/1 omitido según scorer, 1 alterado/no reconocido, 0/1 proveedores, línea retenida y 1 segmento sin extracción, 547+138 tokens. HTTP200 **no equivale a PASS**.
+- Se invocó el despachador después del FAIL para corroborar el cierre: `halted_needs_review`; se marcó el caso `needs_review` y `enabled=false`. **4/6 reservas usadas, 4 registros, 2 pendientes, 0 cron jobs.** No se ejecutarán los dos restantes hasta auditar el problema.
+- La respuesta OpenAI cruda no se conserva por privacidad. La evidencia actual **no permite distinguir** si el modelo emitió una descripción inexacta o si el validador `fuenteCantidadUnidad` y/o scorer estricto causaron el rechazo. Se investigará con mocks y códigos de motivo no sensibles, **sin reintentar el caso real reservado**. Issue #141.
+- Ningún proveedor real, WhatsApp, Vercel comercial, producción ni mezcla de credenciales. Clave OpenAI permanece exclusivamente en Edge Secrets y Supabase invoker solo en Vault.
