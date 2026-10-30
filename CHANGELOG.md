@@ -379,3 +379,12 @@
 - `simularPlanesConIA`: consume borrador IA validado y lo cruza con catálogo confirmado/consentimiento, únicamente plan offline. Autorización de solicitud antes de gasto, sin exposición de API key.
 - `tests/unit/openai-extraccion.test.mjs`: casos mock positivos/adversarios. `tests/fixtures/materiales-argentinos-ia-v1.json`: corpus sintético inicial de 12 ejemplos. `npm run eval:ia` falla cerrado/offline; modo real requiere doble autorización y secreto en DEV.
 - NO se conectó una clave real ni se llamó al modelo. NO hay precisión medida ni gasto real: no confundir mocks con pruebas del modelo. Docs/68 y Issue #108. Sin merge, despliegue, WhatsApp ni cambios Supabase.
+
+
+## [Sin publicar] — Etapa 02: evaluación de calidad de IA sin red (Issue #110)
+- Nuevo scorer determinista `src/domain/evaluacion-ia-documental.ts` con métricas separadas de exactitud de líneas y destinatarios; puerta FAIL por cantidades/unidades incorrectas, artículos inventados o proveedores ajenos.
+- `tests/fixtures/gold-despacho-ia-v1.json`: 12 casos sintéticos con salidas mock, incluidos falsos productos, cantidades inventadas, materiales omitidos, duplicados, opt-out y zonas ajenas; simulador `tests/helpers/evaluador-gold.mjs`.
+- `npm run benchmark:ia:offline` y test de regresión que detecta cambios en clasificación. **Nunca invoca API real**; no mide precisión del modelo ni consume créditos. Docs/69 y Issue #110.
+- Sin cambios de base, precios, Whapi, usuarios, producción ni DNS; PR draft apilado sobre #109.
+
+- Se actualizó el script opt-in `scripts/eval/openai-texto.mjs` para cotejar 3 casos live futuros contra gold (destinatarios, artículos y cantidades) con reporte de tokens/costo estimado y bloqueo CI/producción. No se ejecutó ningún request real.

@@ -38,3 +38,6 @@ Para una evaluación real **solo tras autorización de gasto y configuración pr
 `tests/unit/openai-extraccion.test.mjs`: mocks de Responses, encabezados y schema, permisos/clave, referencias, omisiones, rechazo, 401/429, JSON inválido, límites, duplicados, instrucciones adversarias, descripciones parciales, peso de envase vs cantidad y el plan con catálogo. No existe endpoint accesible al navegador ni conexión WhatsApp.
 
 Al revisar PR y GitHub Actions del commit final registrar CI real; la creación de código no equivale a ejecutar IA remota. El PR debe permanecer borrador apilado sobre #107, **sin merge, despliegue ni tráfico externo automático**.
+
+## Actualización posterior (Issue #110): evaluación de calidad por proveedor
+El evaluador de laboratorio `npm run eval:ia` incorporó la medición del gold set de 3 escenarios en modo live mediante el scorer de `docs/69-evaluacion-ia-calidad.md`, incluyendo falsos destinatarios y cobertura separada. El comando sigue **OFFLINE por defecto** y bloqueado en CI. La ejecución `npm run benchmark:ia:offline` comprueba 12 escenarios con MOCK y no consume créditos. La prueba remota aún exige aprobación de presupuesto y secret privado; ni el benchmark sintético ni este adaptador certifican precisión real.

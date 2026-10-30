@@ -1,49 +1,92 @@
 /**
- * Evaluador de IA REAL, pero BLOQUEADO por defecto.
- * Con credenciales autorizadas en entorno DEV privado:
- * COTIRONDA_IA_LIVE_EVAL=AUTORIZADO_DEV OPENAI_API_KEY=(secret)
- * node --experimental-strip-types scripts/eval/openai-texto.mjs --live
+ * Evaluación REAL opt-in de OpenAI en DEV: hasta tres casos sintéticos
+ * para medir precisión de extracción Y destinos incorrectos, sin WhatsApp.
  *
- * Solo 3 casos sintéticos y máximo 3500 tokens de salida por caso.
- * NUNCA se ejecuta desde GitHub Actions ni desde CI predeterminada.
+ * Desactivada por defecto y expresamente prohibida en CI y producción.
+ * Los límites locales no sustituyen presupuestos de la cuenta OpenAI.
  */
-import {readFileSync} from 'node:fs';
-import {extraerMaterialesConIA} from '../../src/server/openai-extraccion.ts';
+import {simularPlanesConIA,MODELO_IA_DOCUMENTAL} from '../../src/server/openai-extraccion.ts';
+import {evaluarCalidadDocumental} from '../../src/domain/evaluacion-ia-documental.ts';
+import {corpusGold} from '../../tests/helpers/evaluador-gold.mjs';
 
-if(process.argv[2]!=='--live'){
-  console.log('MODO OFFLINE: no se llamó a OpenAI. Usá la prueba unitaria con mocks.');
+const LIVE=process.argv.includes('--live');
+if(!LIVE){
+  console.log('OFFLINE: no se llamó a OpenAI. Ejecutá npm run benchmark:ia:offline para 12 casos con mock.');
   process.exit(0);
 }
-if(process.env.COTIRONDA_IA_LIVE_EVAL!=='AUTORIZADO_DEV'||
-  process.env.GITHUB_ACTIONS==='true'||
-  !process.env.OPENAI_API_KEY){
-  console.error('EVALUACION BLOQUEADA: requiere autorización explícita y clave privada DEV.');
+if(process.env.GITHUB_ACTIONS==='true'||process.env.CI==='true'||
+   process.env.VERCEL_ENV==='production' ||
+   process.env.COTIRONDA_IA_LIVE_EVAL!=='AUTORIZADO_DEV' ||
+   typeof process.env.OPENAI_API_KEY!=='string'){
+  console.error('BLOQUEADO: evaluación live solo en DEV privado, con aprobación y clave de servidor.');
   process.exit(2);
 }
-const corpus=JSON.parse(readFileSync(
-  new URL('../../tests/fixtures/materiales-argentinos-ia-v1.json',import.meta.url),'utf8'));
-const resultados=[];
-for(const ejemplo of corpus.cases.slice(0,3)){
+// En esta evaluación se opera con un máximo de 3 requests * 3.500 tokens de
+// salida. Costos ilustrativos de GPT-6 Luna Standard a 30/10/2026;
+// verificar las tarifas oficiales antes de autorizar presupuesto.
+const PRECIO_ENTRADA_POR_MILLON=0.10;
+const PRECIO_SALIDA_POR_MILLON=0.50;
+const LIMITE_SOFT_DOLARES=0.02;
+const corpus=corpusGold();
+const seleccion=['normal_cemento','tres_rubros','numero_ambiguo_retenido'];
+let totalUSD=0;
+const salida=[];
+for(const id of seleccion){
+  if(totalUSD>=LIMITE_SOFT_DOLARES)break;
+  const caso=corpus.scenarios.find(c=>c.id===id);
+  if(!caso)throw new Error('corpus_no_compatible');
   try{
-    const r=await extraerMaterialesConIA({
-      texto:ejemplo.texto,apiKey:process.env.OPENAI_API_KEY,
-      habilitarLlamadaExterna:true
+    const r=await simularPlanesConIA({
+      texto:caso.texto,
+      apiKey:process.env.OPENAI_API_KEY,
+      habilitarLlamadaExterna:true,
+      solicitud:{
+        id:'ronda_eval_0001',zona_entrega:'la_plata',
+        envio_autorizado_por_comprador:true
+      },
+      // Fixtures verificados, no direcciones ni teléfonos auténticos.
+      proveedores:caso.proveedores
     });
-    const cantidades=r.borrador.lineas.map(x=>x.cantidad);
-    resultados.push({
-      id:ejemplo.id,elementos_esperados:ejemplo.esperados.length,
-      elementos_extraidos:r.borrador.lineas.length,
-      cantidades_correctas:ejemplo.esperados.length===cantidades.length &&
-        ejemplo.esperados.every((x,i)=>x.cantidad===cantidades[i]),
-      referencias_no_cubiertas:r.lineas_sin_extraccion.length,
-      lineas_con_advertencias:r.borrador.lineas.filter(x=>x.requiere_aclaracion.length).length,
-      tokens:r.tokens
+    const metrics=evaluarCalidadDocumental({
+      esperados:caso.esperados,destinos_esperados:caso.destinos_esperados,
+      borrador:r.extraccion.borrador,plan:r.plan
+    });
+    const t=r.extraccion.tokens;
+    const usd=t?
+      (t.entrada*PRECIO_ENTRADA_POR_MILLON+
+       t.salida*PRECIO_SALIDA_POR_MILLON)/1_000_000:null;
+    if(usd===null)throw new Error('ia_usage_no_disponible');
+    totalUSD+=usd;
+    salida.push({
+      caso:id,seguridad:metrics.puerta_seguridad,
+      cobertura:metrics.puerta_cobertura,
+      exactos:metrics.extraccion.exactos,
+      omitidos:metrics.extraccion.omitidos,
+      inventados:metrics.extraccion.inventados,
+      destinatarios_incorrectos:metrics.distribucion.incorrectos,
+      destinatarios_correctos:metrics.distribucion.correctos,
+      lineas_retenidas:metrics.distribucion.lineas_retenidas,
+      tokens:t,
+      costo_estimado_usd:Math.round(usd*1000000)/1000000
     });
   }catch(e){
-    // Nunca imprimir errores crudos del proveedor, prompt, token ni documentos.
-    resultados.push({id:ejemplo.id,estado:'fallo_controlado',
-      codigo:e instanceof Error?e.message:'ia_error_no_clasificado'});
+    const msg=e instanceof Error?e.message:'ia_error_no_clasificado';
+    const codigo=/^ia_[a-z_]+$/.test(msg)?msg:'ia_error_no_clasificado';
+    salida.push({caso:id,estado:'ERROR',codigo});
+    break; // Ante error/usage faltante, no insistir ni gastar en reintentos.
   }
 }
-console.log(JSON.stringify({modelo:'gpt-6-luna',corpus:corpus.version,
-  casos_evaluados:resultados.length,resultado:resultados},null,2));
+const exitos=salida.filter(x=>x.seguridad==='PASS'&&x.cobertura==='PASS').length;
+console.log(JSON.stringify({
+  modo:'live_DEV_sin_envio',
+  modelo:MODELO_IA_DOCUMENTAL,
+  pruebas_ejecutadas:salida.length,
+  pruebas_aprobadas:exitos,
+  seguridad_aprobada:salida.every(x=>x.seguridad==='PASS'),
+  cobertura_aprobada:salida.every(x=>x.cobertura==='PASS'),
+  costo_estimado_usd:Math.round(totalUSD*1000000)/1000000,
+  maximo_soft_usd:LIMITE_SOFT_DOLARES,
+  advertencia:'Costo estimado, no tope de facturación ni precisión general. No habilita producción.',
+  resultados:salida
+},null,2));
+if(exitos!==seleccion.length||totalUSD>LIMITE_SOFT_DOLARES)process.exitCode=1;
