@@ -394,3 +394,9 @@
 - `src/domain/alternativas-cotizacion.ts`: cálculo decimal exacto de envases alternativos y excedentes; consultas funcionales solamente por relación curada, sin homologar ni enviar.
 - `tests/unit/alternativas-cotizacion.test.mjs`: pruebas de cemento 25/50, hidrófugo 4/5 L, látex 20/18 L, familias, especificaciones, opt-in, zonas, marcas, duplicados y retenciones.
 - Docs/70 y alineación de README con la decisión D013 de distribución automática. No se modificó el matcher exacto, base Supabase, Whapi ni producción; cambios en PR borrador apilado sobre #111.
+
+
+## [Sin publicar] — Etapa 02 / D014: identidad de producto, variantes de marca/envase
+- Se aprobó priorizar identidad canónica del producto con atributos críticos verificables antes de filtrar marcas y presentaciones; marca flexible por defecto, restrictiva únicamente si el comprador la exige.
+- Nuevo planificador puro `src/domain/identidad-producto.ts`: una sola solicitud por proveedor con varias opciones de marca/envase, cantidades y excedentes decimales exactos (BigInt); datos técnicos inciertos solo como consulta, incompatibilidades excluidas.
+- Pruebas `tests/unit/identidad-producto.test.mjs` y docs/71. **Sin integración con despachador existente, bases reales ni WhatsApp**; sigue pendiente P007 y evaluación IA real. Issue #115.
