@@ -261,3 +261,10 @@
 - Se corroboró **independientemente** con logs agregados Auth (login y logout), gateway (GET catálogo 2 × HTTP 200, logout POST 204, login POST 200 y 400), y SQL dev (registro falso, dos usuarios, cero sesiones/empresas/objetos, cinco categorías y política SELECT con guard de sesión). No se consultó ni guardó ningún secreto o identificador personal.
 - **Control específico de revocación RLS por sesión: aceptado en cotironda-dev**, sin confundir expiración JWT/HTTP 401 con revocación. Evidencia y limitaciones: docs/56-auth-real-mobile-rls-proof.md.
 - Pendientes fuera de este control: cookies HTTPS del portal desplegado con Auth auténtico, HTTP 429 remoto, decisión sobre WARN password leakage, backup/recovery y revisión de PRs. Sin publicaciones ni cambios de Supabase por esta anotación.
+
+
+## [Sin publicar — Issue #86: Preview Next real en proyecto Vercel correcto]
+- Se auditó `cotironda` demo: Vercel status `READY` sobre build vacío de 46 ms, framework=null. Se evitó tomarlo como prueba del portal.
+- Se inspeccionó el proyecto separado `cotironda-portal-dev`: framework Next.js, SSO habilitado para todos los despliegues, proyecto `live=false`, versión antigua con target production **no tocada**.
+- Se creó un **nuevo Preview protegido** del portal sobre commit `31a8bd22`, deployment `dpl_EFo5qxksdsaUnUQn5cG7CEj87i3i`, `target=null`, Next.js 16.4.3 compilado realmente y rutas /ingresar, /alta y /api/organizaciones con Proxy presente. No se habilitó registro ni se publicaron cambios.
+- Guard puro `src/server/vercel-preview-audit.ts` y tests adversariales: exigen proyecto, commit, SSO, target Preview y evidencia real de `next build`; rechazan una demo READY sin Next. Detalles docs/57-vercel-portal-preview-audit.md.
