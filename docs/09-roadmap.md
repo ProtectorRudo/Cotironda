@@ -6,7 +6,7 @@
 | --- | --- | --- |
 | 00 Documentación | Visión, reglas, arquitectura, pruebas, decisiones, riesgos | Documentos coherentes, abiertos registrados y revisión comercial |
 | 01 Usuarios y base | Organizaciones, roles, rubros, catálogos, zonas, Storage privado | Autorización cruzada y RLS probadas con varias empresas |
-| 02 IA documental | Extracción por archivo, trazabilidad, aclaraciones y confirmación | Corpus realista y casos extremos aprobados |
+| 02 IA documental | Extracción, trazabilidad y validación para distribución automática sin aprobación por línea | Corpus realista y filtros por producto confirmado probados |
 | 03 Licitaciones | Rondas, invitaciones, ofertas versionadas, rankings y adjudicación | Matemática determinista y casos parciales aprobados |
 | 04 WhatsApp | Adaptador Whapi, webhooks, IA conversacional, colas y opt-out | Ciclo real probado con números autorizados, sin duplicados |
 | 05 UX | Portales comprador/proveedor/admin, móvil y escritorio | Flujos completos usables, pruebas end-to-end |
@@ -123,3 +123,7 @@ La incidencia de autorregistro Auth (#94) se resolvió al desactivar `Allow new 
 Se inició **trabajo de código de Etapa 02** en Issue #100 / PR #101, rama hija de PR #99: validación pura de líneas propuestas por IA, cantidades decimales como string, incertidumbre por unidad/rubro/marca, referencias y duplicados conservados; datos extra y precios descartados. **13 pruebas nuevas: 258/258 unitarias PASS; 5/5 workflows exitosos** en HEAD inicial del PR #101 `7895b748fd6a5cf24e60ab213b2a73fc8b07070a`. Esto **no** cierra Etapa 01, no procesa archivos, no activa cargas o empresas, no habilita WhatsApp/pagos ni publica. [Detalles](65-etapa02-borrador-documental.md).
 
 **Puertas separadas:** (A) desarrollo de Etapa 02: permitido en rama aislada y con corpus sintético; (B) piloto real: requiere integración/revisión de PR apilados, respaldo offsite/restauración efectiva, cookies y Auth remoto de Preview, antivirus y cuarentena E2E, revisión de contraseñas filtradas, cuotas/costos y permiso de publicación explícito. No tratar problemas de piloto como bloqueos absolutos para escribir y probar código offline de Etapa 02.
+
+
+### 30/10/2026 — Decisión D013: distribución automática sin revisión previa
+El propietario anula el paso de aprobación manual por línea. Comprador autoriza al ENVIAR la lista; Cotironda distribuye automáticamente solo ítems seguros a proveedores con catálogo confirmado por producto, zona y opt-in. Dudas se retienen sin bloquear otros artículos. Primer desarrollo: planificador determinista OFFLINE en rama hija de #101; sin Whapi ni producción. Issue #102. Requisitos de antivirus, respaldo y seguridad reales siguen bloqueando piloto, no desarrollo aislado.
