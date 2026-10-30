@@ -3,6 +3,9 @@
 -- NO SELECT directo de identidades, invitaciones, cotizaciones ni contactos.
 create role cotironda_rounds_reader nologin noinherit nobypassrls;
 grant usage on schema public,cotironda_private to cotironda_rounds_reader;
+-- Necesario para auth.uid() en política RLS, sin SELECT de auth.users/sessions.
+grant usage on schema auth to cotironda_rounds_reader;
+grant execute on function auth.uid() to cotironda_rounds_reader;
 grant select on public.organizations,public.organization_members to cotironda_rounds_reader;
 grant select on cotironda_private.rounds_v1,cotironda_private.round_items_v1
   to cotironda_rounds_reader;
