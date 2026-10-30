@@ -32,3 +32,23 @@ El código debe pasar:
 
 ## Referencias
 Supabase [Edge Functions auth](https://supabase.com/docs/guides/functions/auth), [Edge Secrets](https://supabase.com/docs/guides/functions/secrets), [RLS](https://supabase.com/docs/guides/database/postgres/row-level-security).
+
+## Verificación REAL de DEV y despliegue (30/10/2026)
+
+Se ejecutó la migración de Supabase **solo en proyecto `cotironda-dev` ref `qkercsoqhehbenbbncwk`** mediante `apply_migration(name=dev_quality_once_only)`. Está registrada con versión **`20261030182413`**. SQL confirmado desde GitHub.
+
+Consulta directa a catálogos y permisos PostgreSQL: `rls_enabled=true`, `has_primary_key=true`, `has_allowlist=true`, `anon_can_insert=false`, `authenticated_can_insert=false`, `service_role_can_insert=true`, `claims_used=0`. Es una **comprobación del esquema y grants**, no una invocación real de consumo concurrente.
+
+Los **6/6 GitHub Actions** del commit de código `9d792201ea4d9d15864d598cc03b43046d8cd77e` finalizaron con SUCCESS, incluyendo **534/534 unitarias**, Deno 2, Next/TypeScript, PostgreSQL17, PostgREST HTTP y sitio.
+
+**Edge Function REAL**: `cotironda-ia-dev` se actualizó solamente en proyecto Supabase DEV con los **14 archivos versionados**, autenticación server-to-server `withSupabase({auth:'secret'})` y `verify_jwt=false` porque Supabase usa claves secret que no son JWT. En el primer intento de deploy Supabase conservaba un import map temporal de una versión previa y falló; se reintentó **especificando `import_map_path:"deno.json"`**, que corrigió la importación. La función figura **versión 4, ACTIVE, hash `3ee5e7b2...`**, y el código recuperado confirma la llamada a `ctx.supabaseAdmin.from('dev_ia_quality_claims').insert({case_id:caseId})`.
+
+**IMPORTANTE:** la función **NO ha sido invocada con `quality_case`**, no se habilitó `COTIRONDA_IA_DEV_QUALITY_ENABLED`, no se gastaron nuevos tokens, y el contador real sigue en `0`. Aunque el usuario confirmó eliminar el permiso del smoke, todavía no hay respuesta `status` posterior que verifique `smoke_enabled:false`. El último log de llamada real a Edge es el smoke anterior HTTP 200, no el laboratorio nuevo. Deploy/CI/ledger confirmado **no** equivale a ejecución del modelo real de extracción.
+
+Asesores Supabase: aparece `rls_enabled_no_policy` nivel INFO para tres tablas (incluida la nueva), por diseño: ninguna política para anon/authenticated; service_role es el único con grants. Permanece un aviso **WARN anterior** sobre protección de contraseñas filtradas deshabilitada, a evaluar separadamente: [referencia](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection).
+
+**Bloqueo técnico restante**: el conector Supabase disponible permite desplegar/consultar esquema pero NO invocar la Edge Function con `apikey` de servicio ni gestionar Edge Secrets. El contenedor del asistente tampoco tiene DNS hacia Supabase. La cuenta del propietario debe proporcionar la invocación protegida en su Dashboard o autorizar un runner server-side conectado con clave guardada, sin enviar secretos por chat.
+
+### Primera prueba de calidad real, todavía pendiente
+
+En Supabase DEV, antes de habilitar el laboratorio, `POST {"mode":"status"}` debería responder `smoke_enabled:false`. Con el control dev y el límite real de OpenAI confirmados, se habilitaría **temporalmente** `COTIRONDA_IA_DEV_QUALITY_ENABLED=AUTORIZADO_DEV` en Edge Function Secrets. Una llamada autorizada al `quality_case` sintético `cemento_cpc_50_a_avellaneda_25` consumiría **para siempre esa reserva**, y la respuesta entregaría cantidad de artículos exactos, omitidos, proveedores correctos/falsos, tokens y PASS/FAIL sin exponer el texto. Luego se elimina el flag. **No repetir el mismo case_id, incluso ante error de OpenAI.**
