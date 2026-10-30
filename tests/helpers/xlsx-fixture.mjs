@@ -50,7 +50,7 @@ export function crearXlsxFixture({
   const compartidas=[],indices=new Map();
   const celda=(val,col,row)=>{
     if(val===null||val===undefined)return '';
-    const addr='ABC'[col]+row;
+    const addr='ABCDEFGHIJKLMNOPQRSTUVWXYZ'[col]+row;
     if(sharedStrings){
       const s=String(val);
       if(!indices.has(s)){indices.set(s,compartidas.length);compartidas.push(s);}
