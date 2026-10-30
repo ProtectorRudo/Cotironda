@@ -16,6 +16,12 @@ Estados: **Aprobado**, **Propuesto**, **Pendiente**. Toda nueva decisión lleva 
 - D011 Repositorio inicialmente **público por instrucción del propietario (29-10-2026)**; prohibido incluir datos/secretos sensibles.
 - D012 El propietario informó haber comprado **cotironda.com** en Hostinger (29-10-2026). El dominio pertenece a su registro; no equivale a aprobar publicación inmediata ni cambiar DNS.
 
+## UX-001 (APROBADA 30/10/2026): simplicidad radical para ambos roles
+**Contexto:** el propietario declara que Cotironda debe ser hiperintuitiva, cero fricción innecesaria y muy amigable tanto para el comprador como para el corralón y demás proveedores. Ninguno debe necesitar un curso o ingresar a la plataforma para tareas cotidianas.
+**Decisión:** WhatsApp-first en ambos lados. El comprador manda una sola lista por WhatsApp o portal; autoriza distribución automática (D013), sin revisar cada material claro. Los proveedores reciben solo lo pertinente y pueden responder con texto, archivos o audios por WhatsApp; la IA prepara un borrador, pide dudas puntuales y el proveedor **confirma** precio/cambios por conversación. Cotironda sincroniza y registra el presupuesto; el portal sirve para ver estados, ofertas, comparaciones y adjudicación, siendo opcional para cotizar. El plazo de siete días es un ejemplo configurable: el cierre **no** selecciona ganador; adjudica el comprador.
+**Reglas:** prohibir repetir datos, registro/curso forzado, mensajes confusos y pasos no justificados; exigir pruebas de usabilidad con personas no técnicas de ambos roles antes de piloto. Mantener opt-in, privacidad, permisos, confirmación económica, controles técnicos y adjudicación manual. El objetivo se documenta ahora y **no afirma conexión Whapi implementada**.
+**Impacto:** AGENTS, README, producto, reglas, WhatsApp, pruebas, roadmap y contrato [docs/89](89-ux-cero-friccion-whatsapp-first.md). Issue #151; PR de documentación en revisión.
+
 ## Propuestas pendientes de confirmar
 - P001 Prueba gratis de 30 días y posible extensión si no hubo cotizaciones válidas.
 - P002 Plazos configurables 24/48 horas, 3/5/7/10 días.
