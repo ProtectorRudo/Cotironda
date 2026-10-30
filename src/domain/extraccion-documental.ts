@@ -15,7 +15,9 @@ export type AvisoExtraccion =
   | 'marca_obligatoria_sin_marca'
   | 'confianza_no_verificable'
   | 'campos_descartados'
-  | 'posible_duplicado';
+  | 'posible_duplicado'
+  | 'origen_no_verificado'
+  | 'cantidad_sin_evidencia';
 export type LineaDocumental = {
   fila: number;
   ubicacion: string;

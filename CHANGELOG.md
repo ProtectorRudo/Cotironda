@@ -372,3 +372,10 @@
 - Endurecimiento adversarial de archivos: validación central/local headers, CRC32, rutas, tamaño, descompresión, XML, relaciones externas, hojas ocultas, hasta 100 ítems.
 - `tests/helpers/xlsx-fixture.mjs`, `tests/unit/xlsx-offline.test.mjs`, `scripts/demo/xlsx-demo.mjs`, `npm run demo:xlsx` para simulación reproducible con catálogos ficticios.
 - Reutiliza pipeline de D013 y no realiza envíos ni abre endpoints públicos. Suite CI debe verificarse contra commit final del PR. Sin cambios Supabase/Whapi/Vercel/DNS.
+
+
+## [Sin publicar] — Etapa 02 OpenAI Responses adapter / 30-10-2026
+- `src/server/openai-extraccion.ts`: llamada preparada a Responses API (`gpt-6-luna` candidato) con schema estricto, input no confiable, validación del origen, de cantidad fuera de medidas de envase y retención de líneas dudosas, sin acciones de envío.
+- `simularPlanesConIA`: consume borrador IA validado y lo cruza con catálogo confirmado/consentimiento, únicamente plan offline. Autorización de solicitud antes de gasto, sin exposición de API key.
+- `tests/unit/openai-extraccion.test.mjs`: casos mock positivos/adversarios. `tests/fixtures/materiales-argentinos-ia-v1.json`: corpus sintético inicial de 12 ejemplos. `npm run eval:ia` falla cerrado/offline; modo real requiere doble autorización y secreto en DEV.
+- NO se conectó una clave real ni se llamó al modelo. NO hay precisión medida ni gasto real: no confundir mocks con pruebas del modelo. Docs/68 y Issue #108. Sin merge, despliegue, WhatsApp ni cambios Supabase.

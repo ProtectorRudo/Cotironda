@@ -135,3 +135,7 @@ Se conecta el parser determinista de texto con el borrador documental y el plani
 
 ### 30/10/2026 — XLSX real de laboratorio (Issue #106)
 Etapa 02 sumó un primer flujo binario limitado: ZIP/OOXML `.xlsx` con columnas explícitas → hoja y fila trazables → línea estructurada → coincidencia exacta de catálogo → planes independientes sin envío. Controles de ZIP/deflate/XML y casos adversarios. **No** habilitar cargas públicas: Issue #61 (autorización, cuarentena, AV, worker, retención y backup) sigue bloqueando la entrada de archivos de clientes. El siguiente paso es cubrir formatos arbitrarios mediante parsers profesionales e IA con costo controlado, no extender regex caseras como solución general. Ver docs/67 y PR hijo de #105.
+
+
+### 30/10/2026 — Primer adaptador de OpenAI con contrato y seguridad (Issue #108)
+La nueva rama hija de PR #107 implementa Responses API con modelo candidato `gpt-6-luna`, JSON Schema estricto, parámetro explícito para tráfico remoto, secreto solo servidor, `store:false`, límites de cantidad de líneas, longitud, output tokens y tiempo; prueba evidencia de cantidad y origen antes de planificar con catálogos. El corpus argentino sintético inicia evaluación de calidad. **CI usa únicamente mocks**; no ha habido inferencia real ni costo observado. El modo live se habilitará SOLO en dev privado, con credencial segura y presupuesto expresamente autorizado. Debe seguir pendiente la integración segura de archivos reales (Issue #61) y el aval para envíos WhatsApp. Detalles docs/68.

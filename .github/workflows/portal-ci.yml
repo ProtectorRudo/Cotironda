@@ -47,6 +47,8 @@ jobs:
         run: node --experimental-strip-types scripts/storage-http-contract.mjs
       - name: TypeScript
         run: npm run typecheck
+      - name: TypeScript dominio y adaptadores servidor
+        run: ./node_modules/.bin/tsc --noEmit --project ../../tsconfig.json --typeRoots ./node_modules/@types
       - name: Compilar con registro deshabilitado
         env:
           COTIRONDA_REGISTRATION_ENABLED: 'false'
