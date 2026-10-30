@@ -483,3 +483,8 @@
 
 - **Verificación remota D020:** migración instalada solo en Supabase DEV, dispatcher devuelve `disabled` y, al habilitarse transaccionalmente sin Vault, `blocked_missing_dev_invoker`; rollback verificó 0 cron jobs, 1/6 claims consumidos y 5 pendientes. Permisos SQL y RLS cerrados.
 - **Corrección de seguridad:** pg_net se reinstaló en esquema `extensions` (sin tráfico, trabajos ni dependencias) y desapareció el WARN nuevo `extension_in_public`. Persisten observaciones RLS informativas y advertencia Auth previa independiente. **Automatización live aún desactivada** hasta almacenar credential de invocación y activar el cron.
+
+## [Sin publicar — D020, evaluación LIVE real y bloqueo seguro, 30/10/2026]
+- Vault guarda nueva credencial de invocación DEV. Edge v8 acepta solo secret keys de nombres `default` y `cotironda_quality_lab`; se corrigió HTTP 401 de auth:'secret' y se comprobó estado HTTP 200 sin gasto. 6/6 controles CI aprobaron el commit de código `57998292805147e787a04e67be89b08787380222`.
+- Mediante Supabase pg_net y dispatcher SQL privado se ejecutaron tres nuevos benchmarks reales, **uno por transacción, sin cron**. Dos PASS/PASS con 2/2 y 1/1 materiales/proveedores; el tercero `cemento_generico_sin_especificacion_inventada` dio FAIL/FAIL, retuvo línea y omitió proveedor (ver Issue #141 y docs/83).
+- Detención confirmada `halted_needs_review`; control OFF, 0 cron jobs, 4/6 reservas consumidas y 2 casos sin ejecutar. No hay reintentos y no se inventa causa raíz sin respuesta IA cruda. Sin Whapi, producción, secretos expuestos ni datos comerciales.
