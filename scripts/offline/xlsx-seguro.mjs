@@ -54,7 +54,7 @@ function zipSeguro(buffer){
     const expanded=leer32(buffer,pos+24),nameLen=leer16(buffer,pos+28);
     const extra=leer16(buffer,pos+30),comment=leer16(buffer,pos+32);
     const local=leer32(buffer,pos+42);
-    if(flags&0x1||flags&0x8||method!==0&&method!==8)falla('compresion_no_admitida');
+    if((flags & ~0x800)!==0 || (method!==0&&method!==8))falla('compresion_no_admitida');
     if([compressed,expanded,local].includes(0xffffffff)||expanded>MAX_XML ||
       compressed>MAX_XML || (expanded>200*compressed && expanded>8192))falla('zip_limites');
     const fin=pos+46+nameLen+extra+comment;
@@ -141,6 +141,7 @@ function filasHoja(xml,compartidos,hoja){
   for(const m of xml.matchAll(/<row\b([^>]*?)>([\s\S]*?)<\/row\s*>/g)){
     const a=atributos(m[1]),n=Number(a.r);
     if(!Number.isInteger(n)||n<=anterior||n>1000000)falla('fila_invalida');
+    if(a.hidden==='1'||a.hidden==='true')falla('fila_oculta');
     anterior=n;
     const celdas=new Map();
     for(const cell of m[2].matchAll(/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c\s*>)/g)){
@@ -180,14 +181,20 @@ export function extraerTablaXlsx(bytes){
   const tipos=xmlTexto(zip,'[Content_Types].xml');
   if(!/spreadsheetml\.sheet\.main\+xml/.test(tipos) ||
     /macroEnabled|vnd\.ms-office\.vbaProject/i.test(tipos))falla('tipo_archivo');
-  xmlTexto(zip,'xl/workbook.xml');
+  const workbook=xmlTexto(zip,'xl/workbook.xml');
+  const sheetMetadata=[...workbook.matchAll(/<sheet\b([^>]*?)(?:\/>|>)/g)].map(m=>atributos(m[1]));
+  if(sheetMetadata.length===0||sheetMetadata.length>MAX_HOJAS ||
+    sheetMetadata.some(s=>!/^\d+$/.test(s.sheetId??'') ||
+      s.state==='hidden'||s.state==='veryHidden'))falla('hojas_no_admitidas');
   // Se inspeccionan TODAS las relaciones para rechazar referencias externas.
   for(const nombre of zip.keys())if(nombre.endsWith('.rels'))xmlTexto(zip,nombre);
   const shared=leerCompartidos(zip);
   const hojas=[...zip.keys()].filter(n=>/^xl\/worksheets\/sheet[1-9]\d*\.xml$/.test(n)).sort((a,b)=>{
     const n=x=>Number(x.match(/sheet(\d+)\.xml/)[1]);return n(a)-n(b);
   });
-  if(hojas.length===0||hojas.length>MAX_HOJAS||!hojas.includes('xl/worksheets/sheet1.xml'))
+  if(hojas.length===0||hojas.length!==sheetMetadata.length||hojas.length>MAX_HOJAS||
+    sheetMetadata.some((s,i)=>Number(s.sheetId)!==i+1)||
+    !hojas.every((name,i)=>name==='xl/worksheets/sheet'+(i+1)+'.xml'))
     falla('hojas_no_admitidas');
   const lineas=[],ubicaciones=[],filas_incompletas=[];
   for(const path of hojas){
