@@ -92,7 +92,7 @@ test('tres líneas: una omitida no se esconde detrás de dos correctas',async()=
   assert.equal(r.resumen.omitidas,1);
   assert.equal(r.resumen.proveedores_preparados,2);
   assert.equal(r.resumen.pedido_totalmente_cubierto,false);
-  assert.deepEqual(r.lineas[2].motivos,['linea_sin_extraccion']);
+  assert.deepEqual(r.lineas[2].motivos,['linea_sin_extraccion','segmento_sin_extraccion']);
 });
 test('producto fuera del diccionario queda retenido, pero líneas válidas continúan',async()=>{
   const txt='20 bolsas de Cemento CPC 50 kg\n4 unidades de Producto desconocido';
