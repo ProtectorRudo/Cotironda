@@ -353,3 +353,9 @@
 - Nuevo validador TypeScript `src/domain/extraccion-documental.ts` para salida IA no confiable: genera exclusivamente `pendiente_confirmacion_comprador`, mantiene trazabilidad de líneas, marca incertidumbres y duplicados, jamás inventa cantidades ni devuelve precios arbitrarios.
 - `tests/unit/extraccion-documental.test.mjs`: 13 casos; 258/258 unitarias y 5/5 GitHub Actions SUCCESS en PR #101 commit `7895b748fd6a5cf24e60ab213b2a73fc8b07070a`. No se ejecutaron OCR, IA remota, AV ni uploads. Documento de alcance `docs/65-etapa02-borrador-documental.md`.
 - Stage 01 permanece en PRs apilados; no merge ni deploy ni registro habilitado. El próximo objetivo es extraer un corpus sintético, después conectar IA bajo contrato y controles de ingreso de archivos.
+
+
+## [Sin publicar] — D013: despacho automático sin revisión por línea, 30-10-2026
+- El propietario modifica el flujo: enviar lista + autorización de distribución, sin corrección/confirmación previa de cada ítem. Las dudas se retienen y se notifican, las líneas claras se encaminan automáticamente.
+- Nuevo módulo puro src/domain/despacho-automatico.ts: solo selecciona productos exactos del catálogo confirmado de proveedores activos con consentimiento WhatsApp y cobertura de zona, con claves de idempotencia por ronda/proveedor. No envía nada; proveedores sin coincidencia no reciben solicitudes. Mantiene confirmación posterior de precios por proveedor y adjudicación manual.
+- Se actualizó la especificación de extracción, pruebas adversariales y documentación comercial/técnica, sin cambios en Supabase, producción, Auth, pagos, DNS o WhatsApp. Issue #102.
