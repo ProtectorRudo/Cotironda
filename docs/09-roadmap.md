@@ -91,3 +91,11 @@ El propietario abrió `/alta` **sin volver a ingresar** tras logout global; la t
  
 ### 30/10/2026 — Backup/restore: mecánica SQL PG17 verificada, continuidad REAL aún bloqueante (Issue #90)
 Supabase `cotironda-dev` pertenece a organización Free: no presumir backups diarios gestionados. Se ejecutó correctamente **dump custom PostgreSQL 17 de base CI sintética**, eliminación de categoría de prueba y restore transaccional en **otra base**; SHA-256 y TOC obligatorios, seed y RLS/guard/session/buckets/grants recuperados. Sin acceso ni exportación de la base dev, sin artifacts, cero cambios de producción. **Queda pendiente una copia externa cifrada de datos reales y una prueba de restauración en entorno separado**, con cobertura explícita de Auth gestionado y bytes de Storage (excluidos del backup DB); resolver costo/plan antes de piloto. Ver docs/60-backup-recovery-free-plan.md. Etapa 01 todavía abierta.
+
+ 
+### 30/10/2026 — Diagnóstico privado de CookieStore/Cache-Control en Preview SSO (Issue #92)
+Se agregó a `/alta` de sesión real un botón de auditoría **local**, sin leer ni enviar valores de cookies: solo atributos `Secure`, `SameSite=Lax`, `Path=/`, HTTP200 same-origin, `private,no-store`, ausencia de CDN HIT. CookieStore no soportado o atributo no observado = **INCONCLUSO**; never PASS simulado. Guard de rama Preview explícitamente limitado a la rama original y una nueva rama de ensayo. La CI hace dos builds Next con Auth simulado y pruebas adversarias; **la evidencia HTTPS de navegador auténtico todavía se debe obtener** para cerrar Issue #80. Sin modificar registro, SQL, SSO, producción, backups ni dominio. Docs/61.
+
+ 
+### 30/10/2026 — El diagnóstico de cookies está probado en CI, pero aún NO desplegado
+PR #93 incorpora auditoría local privada con CookieStore y cache-control, test adversarial, 217 unitarias PASS y 5 workflows GitHub verdes en revisión de código. **Vercel respondió 402 `api-deployments-free-per-day`** al intentar la Preview adicional, con espera indicada de 86400 segundos. No existe URL nueva ni resultado real de navegador para ese cambio. Mantener Issue #80 y #92 abiertos, conservar SSO, no promocionar producción. El próximo deploy permitido será **solo Preview** del proyecto correcto después de que Vercel habilite cuota y de que CI del commit exacto esté verde. Reglas/docs/61.

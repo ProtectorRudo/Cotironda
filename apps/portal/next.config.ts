@@ -5,7 +5,8 @@ import path from 'node:path';
 // debe quedar sin login aunque el flag global Preview exista por el proyecto.
 if(process.env.COTIRONDA_AUTH_PREVIEW_ENABLED==='true' && process.env.VERCEL_ENV==='preview'){
   console.log('COTIRONDA_AUTH_PREVIEW_BRANCH_GUARD='+
-    (process.env.VERCEL_GIT_COMMIT_REF==='test/01-auth-only-preview'?'ALLOW':'DENY'));
+    (['test/01-auth-only-preview','security/01-browser-cookie-cache-audit'].includes(
+      process.env.VERCEL_GIT_COMMIT_REF||'')?'ALLOW':'DENY'));
 }
 const config: NextConfig = { outputFileTracingRoot: path.resolve(__dirname, '../..'), poweredByHeader: false };
 export default config;

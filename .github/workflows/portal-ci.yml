@@ -140,3 +140,26 @@ jobs:
           COTIRONDA_CI_TLS_LOOPBACK: 'true'
           COTIRONDA_CI_AUTH_ONLY: 'true'
         run: node scripts/smoke-https-ssr.mjs
+
+      - name: Compilar Preview SSO dedicada a auditoría de cookies, con registro false
+        env:
+          VERCEL_ENV: preview
+          VERCEL_GIT_COMMIT_REF: security/01-browser-cookie-cache-audit
+          COTIRONDA_REGISTRATION_ENABLED: 'false'
+          COTIRONDA_AUTH_PREVIEW_ENABLED: 'true'
+          COTIRONDA_SUPABASE_PROJECT_REF: qkercsoqhehbenbbncwk
+          NEXT_PUBLIC_SUPABASE_URL: https://qkercsoqhehbenbbncwk.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_dummy_never_valid
+        run: rm -rf .next && npm run build
+      - name: HTTPS real loopback de diagnóstico privado, Auth ficticio sin red
+        env:
+          VERCEL_ENV: preview
+          VERCEL_GIT_COMMIT_REF: security/01-browser-cookie-cache-audit
+          COTIRONDA_REGISTRATION_ENABLED: 'false'
+          COTIRONDA_AUTH_PREVIEW_ENABLED: 'true'
+          COTIRONDA_SUPABASE_PROJECT_REF: qkercsoqhehbenbbncwk
+          NEXT_PUBLIC_SUPABASE_URL: https://qkercsoqhehbenbbncwk.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_dummy_never_valid
+          COTIRONDA_CI_TLS_LOOPBACK: 'true'
+          COTIRONDA_CI_AUTH_ONLY: 'true'
+        run: node scripts/smoke-https-ssr.mjs
