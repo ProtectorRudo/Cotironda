@@ -143,3 +143,7 @@ La nueva rama hija de PR #107 implementa Responses API con modelo candidato `gpt
 
 ### 30/10/2026 — Evaluación medible de IA (Issue #110)
 Se añadió una puerta de **seguridad comercial** separada de la **cobertura** en la Etapa 02: el scorer audita productos y sus cantidades/unidades, destinatarios por proveedor, omisiones, retenciones y multiplicidades. El comando offline `npm run benchmark:ia:offline` clasifica 12 casos sintéticos de mock API; sus resultados NO miden la precisión de GPT-6 Luna. Antes de IA live y piloto: secret DEV y presupuesto autorizados, prueba de verdad con corpus gold, luego alias de materiales y catálogos reales con autorización servidor. Sin mensajes ni datos de clientes. Docs/69.
+
+
+### 30/10/2026 — Candidatos por envases alternativos (Issue #113)
+Sobre PR #111 se agregó un planificador **independiente y offline** que calcula envases enteros por BigInt, verifica misma familia/especificaciones/unidades de magnitud y propone consultas funcionales solo con relación curada. No altera el matcher exacto ni invita a proveedores ni certifica producto. Faltan SKU de proveedor reales, manual de equivalencias por rubro, UI de alternativas, decisión de política de comunicación, métricas recall/seguridad integradas y costos del envase completo. Docs/70. No habilita piloto.
