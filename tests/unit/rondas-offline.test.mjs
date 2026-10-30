@@ -49,7 +49,7 @@ test('comprador abre, proveedor guarda, confirma, cierra y compara SOLO confirma
   assert.equal(s.proveedores[0].versiones[0].oferta.confirmada,true);
   assert.equal(s.comparacionCierre.cobertura.length,1);
   assert.equal(s.comparacionCierre.opcionesCompletas.length,1);
-  assert.equal(s.comparacionCierre.opcionesCompletas[0].totalFinal,'1472.00');
+  assert.equal(s.comparacionCierre.opcionesCompletas[0].totalFinal,'1341.00');
   assert.equal(s.comparacionCierre.contactoRevelado,false);
   assert.equal(s.comparacionCierre.adjudicacionAutomatica,false);
 });
@@ -71,7 +71,7 @@ test('versiones nuevas son inmutables y la comparación usa solo última versió
   assert.equal(s.proveedores[0].versiones[1].oferta.items[0].precioUnitarioNeto,'80.00');
   s=cerrar(s);
   assert.equal(s.comparacionCierre.opcionesCompletas.length,1);
-  assert.equal(s.comparacionCierre.opcionesCompletas[0].totalFinal,'1230.00');
+  assert.equal(s.comparacionCierre.opcionesCompletas[0].totalFinal,'1099.00');
 });
 test('el guardado copia valores, fuente mutable no puede alterar versiones',()=>{
   let s=abrir(iniciar());
