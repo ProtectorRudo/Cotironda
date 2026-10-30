@@ -171,3 +171,7 @@ Se reorienta la Etapa 02: el recorrido preferido de laboratorio es IA → eviden
 
 ### 30/10/2026 — detectar omisiones intralínea de IA (Issue #125)
 Se incorpora segmentación explícita y trazabilidad de cada artículo dentro de una misma línea. El modelo no podrá recibir estado de éxito por reconocer cemento y omitir pintura en una línea de dos productos. Nuevos campos `segmentos_fuente` y `segmentos_sin_extraccion`; cobertura D016 distingue parciales. Pruebas sintéticas mediante MOCK, falta evaluación real y listas sin delimitadores. Docs/76.
+
+
+### 30/10/2026 — benchmark comercial por producto (Issue #127)
+Se creó un scorer independiente para D015/D016 que mide **recall de destinatarios comerciales correctos**, falsos proveedores y cobertura de extracción, en vez de limitarse a coincidencias exactas de marcas/envases. Corpus inicial de 12 casos sintéticos; CLI `npm run benchmark:producto:offline`; sin llamada real a OpenAI. Pendiente test live autorizado con presupuesto DEV y dataset independiente amplio por rubro. Ver docs/77.
