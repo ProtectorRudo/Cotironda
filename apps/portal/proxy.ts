@@ -13,6 +13,13 @@ export async function proxy(request: NextRequest) {
   const key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
   let response=NextResponse.next({request});
   const supabase=createServerClient(url,key,{
+    // El proxy corre detrás de HTTPS en producción. No derivar Secure de
+    // headers X-Forwarded-* aportados por el usuario.
+    cookieOptions:{
+      secure:process.env.NODE_ENV==='production',
+      sameSite:'lax',
+      path:'/'
+    },
     cookies:{
       getAll(){return request.cookies.getAll();},
       setAll(cookiesToSet, headersToSet){
