@@ -7,9 +7,9 @@ const valid={
   COTIRONDA_E2E_PUBLISHABLE_KEY:'sb_publishable_test_not_a_real_key',
   COTIRONDA_E2E_ALLOW_AUTH_REQUESTS:'true',
   COTIRONDA_E2E_VERIFIED_EMAIL:'verified@cotironda-test.invalid.local',
-  COTIRONDA_E2E_VERIFIED_PASSWORD:'pass1234567',
+  COTIRONDA_E2E_VERIFIED_PASSWORD:'ci-only-verified-demo-secret-01',
   COTIRONDA_E2E_UNVERIFIED_EMAIL:'unverified@cotironda-test.invalid.local',
-  COTIRONDA_E2E_UNVERIFIED_PASSWORD:'pass1234567'
+  COTIRONDA_E2E_UNVERIFIED_PASSWORD:'ci-only-unverified-demo-secret-02'
 };
 test('preflight válido devuelve entorno Cotironda y no inventa credenciales',()=>{
  const out=validarEntornoE2E(valid);
@@ -34,6 +34,55 @@ test('requiere dos correos distintos',()=>{
 test('requiere contraseñas mínimas sin imprimirlas',()=>{
  assert.throws(()=>validarEntornoE2E({...valid,COTIRONDA_E2E_VERIFIED_PASSWORD:'a'}),/passwords_prueba/);
 });
+test('bloquea reutilización de contraseñas entre las dos cuentas de prueba',()=>{
+ const mismo=valid.COTIRONDA_E2E_VERIFIED_PASSWORD;
+ assert.throws(
+  ()=>validarEntornoE2E({...valid,COTIRONDA_E2E_UNVERIFIED_PASSWORD:mismo}),
+  e=>e.message==='passwords_prueba_reutilizados'&&!e.message.includes(mismo)
+ );
+});
+
+test('rechaza contraseñas demasiado cortas de cualquiera de las cuentas',()=>{
+ for(const patch of [
+  {COTIRONDA_E2E_VERIFIED_PASSWORD:'demo-short'},
+  {COTIRONDA_E2E_UNVERIFIED_PASSWORD:'demo-short'}
+ ]){
+  assert.throws(()=>validarEntornoE2E({...valid,...patch}),/passwords_prueba_invalidos/);
+ }
+});
+
+test('nunca realiza preflight con secretos auténticos en GitHub Actions/CI/Vercel',()=>{
+ for(const patch of [
+  {GITHUB_ACTIONS:'true'},
+  {CI:'true'},
+  {VERCEL:'1'}
+ ]){
+  assert.throws(
+   ()=>validarEntornoE2E({...valid,...patch}),
+   e=>e.message==='auth_e2e_entorno_remoto_bloqueado'
+  );
+ }
+});
+
+test('errores de preflight nunca incluyen correos, passwords ni keys',()=>{
+ const sensitive=[
+  valid.COTIRONDA_E2E_VERIFIED_EMAIL,
+  valid.COTIRONDA_E2E_UNVERIFIED_EMAIL,
+  valid.COTIRONDA_E2E_VERIFIED_PASSWORD,
+  valid.COTIRONDA_E2E_UNVERIFIED_PASSWORD,
+  valid.COTIRONDA_E2E_PUBLISHABLE_KEY
+ ];
+ for(const patch of [
+  {COTIRONDA_E2E_VERIFIED_PASSWORD:'demo-short'},
+  {COTIRONDA_E2E_UNVERIFIED_PASSWORD:valid.COTIRONDA_E2E_VERIFIED_PASSWORD},
+  {COTIRONDA_E2E_PROJECT_REF:'unknown'},
+  {COTIRONDA_E2E_ALLOW_AUTH_REQUESTS:'false'}
+ ]){
+  try{validarEntornoE2E({...valid,...patch});assert.fail('debe fallar cerrado')}
+  catch(e){for(const secret of sensitive)assert.ok(!e.message.includes(secret))}
+ }
+});
+
 test('bloquea cuentas de relleno example.invalid',()=>{
  assert.throws(()=>validarEntornoE2E({...valid,COTIRONDA_E2E_VERIFIED_EMAIL:'mock@example.invalid'}),/ficticias/);
 });
