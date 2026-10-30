@@ -32,3 +32,15 @@ La métrica es cobertura exacta por caso en un dataset **sintético pequeño**. 
 Tests Node/Edge de guardado después del request, fallos de DB sin retry, fallo OpenAI sin datos falsos, FAIL cobertura persistido y permisos SQL. GitHub CI incluye Deno check, Next/TS, Postgres17, PostgREST y sitio. Ningún deploy de producción ni WhatsApp; la integración de extracción con compradores reales continúa pendiente.
 
 **Siguiente prueba recomendada:** `dos_productos_misma_linea`. Es un caso difícil con dos materiales y dos proveedores sintéticos. Una vez habilitado y desplegado el registro de métricas en **DEV**, el propietario solo tendrá que reemplazar `Request Body` en su panel de Supabase; **no debe copiar claves ni reconfigurar Secrets**.
+
+## Implementación verificada en Cotironda DEV (30/10/2026)
+
+Los **6/6 workflows GitHub Actions** del código de D019 (`b8f53dfadfe72db0ce3bd77de0787d974e49e8a0`) finalizaron SUCCESS, incluyendo **540/540 unitarias** y `deno check` de la Edge Function: [PR #138](https://github.com/ProtectorRudo/Cotironda/pull/138).
+
+La migración `dev_quality_results_ledger` se aplicó **exclusivamente** al proyecto `cotironda-dev` (`qkercsoqhehbenbbncwk`). Consulta real: RLS=true, PK=true, FK a claims=true, `anon` sin SELECT, `authenticated` sin INSERT, `service_role` con INSERT. La advertencia `rls_enabled_no_policy` del asesor Supabase para tablas servidor-only es INFO deliberada; no se agregó política pública.
+
+Se cargó un único registro histórico `cemento_cpc_50_a_avellaneda_25`, proveniencia `reported_by_owner`, PASS/PASS, 1/1 productos, 1/1 proveedores **ficticios**, tokens 551/189, coincidente con el JSON del propietario y una reserva+HTTP200 de Supabase. No se hizo inferencia ni gasto para registrarlo.
+
+**Edge Function DEV actualizada a versión 6, ACTIVE**, con 14 archivos versionados y `deno.json`, sin cambios en Vercel/producción ni WhatsApp. Verificación SQL posterior: **1 claim utilizado, 1 resultado guardado, 5 casos disponibles**. No hubo invocación nueva del modelo durante la migración o el deploy. El código D019 compiló en CI, pero **todavía falta un ensayo live posterior al despliegue para demostrar que el nuevo writer persiste métricas desde el propio runtime**, sin intervención del propietario en la base.
+
+Por pedido expreso del propietario **no se retiró la bandera temporal de evaluación**. Se mantiene la cuota persistente D018 de un intento máximo por caso. Próximo ensayo para validar writer + calidad real: `dos_productos_misma_linea`; si responde `auditoria_persistida:true`, comparar sus métricas con la segunda fila en Supabase. No volver a ejecutar el mismo caso si falla.
