@@ -54,3 +54,8 @@ La prueba HTTPS verdadera de Next.js Preview **en loopback CI** descubrió que e
 ### Credenciales de ensayo aisladas y diagnóstico reproducible (PR #83)
 
 Ante la posibilidad de dos cuentas de ensayo con contraseña reutilizada, el runner Auth ahora falla cerrado si se usa un secreto idéntico, corto (menos de 12 caracteres) o se intenta ejecutar desde GitHub Actions/CI/Vercel. Comando local Node 22 `npm run e2e:auth:dev`; CI comprueba que se niega a usar Auth real y los mensajes de errores son una lista blanca sin datos privados. **Es necesario rotar los dos secretos de prueba fuera del chat**, antes de ejecutar la comprobación pendiente de JWT auténtico tras logout. Ver `docs/54-e2e-auth-secret-preflight.md`. Etapa 01 aún abierta; sin publicación.
+
+
+### Diagnóstico Auth real sin dependencia de Node, listo para ejecución (Issue #84/PR #85)
+
+Un HTML estático descargable permite desde un navegador de confianza probar las dos cuentas de desarrollo sin transferir contraseñas al asistente ni a GitHub: login verificado, JWT original, RLS de categorías antes y después de logout y correo sin confirmar. El código se valida automáticamente con transporte simulado, incluyendo errores que deben ser FAIL; sin embargo **todavía no hay ejecución real en navegador**. La Etapa 01 sigue abierta hasta recibir el informe PASS/FAIL auténtico, HTTP429 remoto y autorización para probar cookies en HTTPS desplegado. `docs/55-browser-auth-dev-diagnostic.md`.
