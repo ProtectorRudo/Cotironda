@@ -79,13 +79,20 @@ const canon = (s:string):string => s.normalize('NFD').replace(/[\u0300-\u036f]/g
   .toLocaleLowerCase('es-AR').replace(/\s+/g,' ').trim();
 const escapeRe=(s:string):string=>s.replace(/[.*+?^$()|[\]{}\\]/g,'\\$&');
 
-function fuenteCantidadUnidad(linea:string,cantidad:string|null,unidad:string|null):boolean {
+function fuenteCantidadUnidad(linea:string,cantidad:string|null,unidad:string|null,
+  descripcion:string):boolean {
   if(!cantidad || !unidad || !Object.hasOwn(unidadEnFuente,unidad))return false;
   if(!/^\d{1,6}(?:[,.]\d{1,2})?$/.test(cantidad))return false;
   const numero = cantidad.includes('.') ? cantidad.replace('.', '[,.]') : escapeRe(cantidad);
   const palabras = unidadEnFuente[unidad].map(canon).map(escapeRe).join('|');
   const re = new RegExp('(?:^|[^\\d\\w])'+numero+'\\s*(?:'+palabras+')(?![\\p{L}\\p{N}])','iu');
-  return re.test(canon(linea));
+  // La cantidad solicitada debe quedar FUERA del nombre del producto.
+  // Evita usar los 50 kg de «20 bolsas de Cemento CPC 50 kg» como 50 kg pedidos.
+  const fuente=canon(linea),producto=canon(descripcion);
+  const indice=fuente.indexOf(producto);
+  if(indice<0)return false;
+  return re.test(fuente.slice(0,indice)) ||
+    re.test(fuente.slice(indice+producto.length));
 }
 function mensajeJSON(remoto:unknown):unknown {
   if(!remoto || typeof remoto!=='object')throw new Error('ia_respuesta_invalida');
@@ -190,7 +197,7 @@ export async function extraerMaterialesConIA(args:{
     const original=lineas[idx];
     if(!canon(original).includes(canon(linea.descripcion_original)))
       linea.requiere_aclaracion.push('origen_no_verificado');
-    if(!fuenteCantidadUnidad(original,linea.cantidad,linea.unidad))
+    if(!fuenteCantidadUnidad(original,linea.cantidad,linea.unidad,linea.descripcion_original))
       linea.requiere_aclaracion.push('cantidad_sin_evidencia');
   }
   const usage=objetoSeguro(remoto.usage)?remoto.usage:null;
