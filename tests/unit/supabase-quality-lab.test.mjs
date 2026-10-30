@@ -166,7 +166,7 @@ test('quality autorizado ejecuta solo una llamada y retorna informe reducido',as
   const f=mock(caso.items);
   const r=await handleCotirondaDevAi(req({
     mode:'quality_case',case_id:caso.id
-  }),env({qualityEnabled:'AUTORIZADO_DEV'}),f.impl,async()=>true);
+  }),env({qualityEnabled:'AUTORIZADO_DEV'}),f.impl,async()=>true,async()=>true);
   const data=await r.json();
   assert.equal(r.status,200);
   assert.equal(data.status,'quality_case_completed');
@@ -180,7 +180,7 @@ test('fallo 429 OpenAI no reintenta ni filtra secreto',async()=>{
   const f=mock(caso.items,429);
   const r=await handleCotirondaDevAi(req({
     mode:'quality_case',case_id:caso.id
-  }),env({qualityEnabled:'AUTORIZADO_DEV'}),f.impl,async()=>true);
+  }),env({qualityEnabled:'AUTORIZADO_DEV'}),f.impl,async()=>true,async()=>true);
   const data=await r.json();
   assert.equal(r.status,502);
   assert.equal(data.code,'ia_cuota_o_rate_limit');
@@ -191,7 +191,7 @@ test('error de IA no autorizado jamás se informa con datos internos',async()=>{
   const resp=await handleCotirondaDevAi(
     req({mode:'quality_case',case_id:CASOS_LAB[0]}),
     env({qualityEnabled:'AUTORIZADO_DEV'}),
-    async()=>{throw Error('CLAVE PRIVADA: '+key)},async()=>true);
+    async()=>{throw Error('CLAVE PRIVADA: '+key)},async()=>true,async()=>true);
   assert.equal(resp.status,502);
   const data=await resp.json();
   assert.equal(data.code,'ia_transporte_no_disponible');
@@ -223,7 +223,7 @@ test('fallo de base de datos antes de reservar impide gastar',async()=>{
   const resp=await handleCotirondaDevAi(
     req({mode:'quality_case',case_id:caso.id}),
     env({qualityEnabled:'AUTORIZADO_DEV'}),f.impl,
-    async()=>{throw Error('No disponible')}
+    async()=>{throw Error('No disponible')},async()=>true
   );
   assert.equal(resp.status,503);
   assert.equal(f.getCalls(),0);
@@ -233,7 +233,7 @@ test('reserva rechazada por unicidad impide gastar sin revelar causa interna',as
   const f=mock(caso.items);
   const resp=await handleCotirondaDevAi(
     req({mode:'quality_case',case_id:caso.id}),
-    env({qualityEnabled:'AUTORIZADO_DEV'}),f.impl,async()=>false
+    env({qualityEnabled:'AUTORIZADO_DEV'}),f.impl,async()=>false,async()=>true
   );
   assert.equal(resp.status,409);
   assert.equal((await resp.json()).code,'quality_case_reserved_or_unavailable');
@@ -252,7 +252,7 @@ test('dos solicitudes simultáneas para mismo caso gastan una sola vez',async()=
   };
   const responses=await Promise.all(Array.from({length:2},()=>handleCotirondaDevAi(
     req({mode:'quality_case',case_id:caso.id}),
-    env({qualityEnabled:'AUTORIZADO_DEV'}),f.impl,claim
+    env({qualityEnabled:'AUTORIZADO_DEV'}),f.impl,claim,async()=>true
   )));
   assert.deepEqual(responses.map(x=>x.status).sort(),[200,409]);
   assert.equal(claims,2);
@@ -266,7 +266,7 @@ test('dos casos distintos consumen su propia reserva, nunca comparten cupo',asyn
     const f=mock(caso.items);
     const response=await handleCotirondaDevAi(
       req({mode:'quality_case',case_id:caso.id}),
-      env({qualityEnabled:'AUTORIZADO_DEV'}),f.impl,claim
+      env({qualityEnabled:'AUTORIZADO_DEV'}),f.impl,claim,async()=>true
     );
     resultados.push(response.status);
     assert.equal(f.getCalls(),1);
@@ -281,10 +281,10 @@ test('después de error OpenAI 429 la reserva NO se devuelve para reintento',asy
   const f=mock(caso.items,429);
   const uno=await handleCotirondaDevAi(req({
     mode:'quality_case',case_id:caso.id
-  }),env({qualityEnabled:'AUTORIZADO_DEV'}),f.impl,claim);
+  }),env({qualityEnabled:'AUTORIZADO_DEV'}),f.impl,claim,async()=>true);
   const dos=await handleCotirondaDevAi(req({
     mode:'quality_case',case_id:caso.id
-  }),env({qualityEnabled:'AUTORIZADO_DEV'}),f.impl,claim);
+  }),env({qualityEnabled:'AUTORIZADO_DEV'}),f.impl,claim,async()=>true);
   assert.equal(uno.status,502);
   assert.equal(dos.status,409);
   assert.equal(f.getCalls(),1);
