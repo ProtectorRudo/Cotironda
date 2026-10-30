@@ -275,3 +275,9 @@
 - UI de ingreso independiente para cuentas existentes en SSO Preview; no incluye signUp ni botón Crear cuenta. /alta validada con getUser muestra únicamente confirmación de sesión y salida global; no muestra formulario de empresa.
 - Proxy de Next mantiene /api/organizaciones bajo puerta comercial previa (modo login-only API continúa HTTP 503); no se expone SQL, Storage ni alta por habilitar login.
 - CI prueba escenarios de producción/flag/tenant, HTTP SSR y TLS real con renovación de cookie Secure, anti-cache y separación entre sesiones, para modo completo y modo login-only. Véase docs/58-preview-login-only-auth.md; no es una certificación Auth real Vercel.
+
+
+### Verificación operativa del modo Preview login-only — 30/10/2026
+- Las 5 workflows GitHub Actions aprobaron el commit de código `1c0c8b82dca326eed50339d68d4bd7ba1aa8d71b` con **190/190 unitarias**, Next Full y login-only en HTTPS TLS real CI con Auth simulado, RLS/Pg17, PostgREST y sitio.
+- Vercel rechazó variable de entorno restringida por rama por no existir conexión Git a nivel proyecto. Solución fail-closed: flag en **Preview solamente** y guard adicional `VERCEL_GIT_COMMIT_REF` exacto a `test/01-auth-only-preview`; prueba unitaria adversarial y build remoto mostraron `COTIRONDA_AUTH_PREVIEW_BRANCH_GUARD=ALLOW`. No se conectó Git para evitar promover código inesperadamente.
+- Nuevo deployment del proyecto correcto `cotironda-portal-dev` (`dpl_6X6o3xzgP1aRDRVpjdUtQ9p36tyM`) compiló Next 16.4.3, rutas y Proxy. `READY`, target Preview y SSO habilitado para todo despliegue; variables de Supabase verificadas por igualdad, registro false y SQL dev con 0 empresas/sesiones/archivos. **No significa E2E Auth real de Next bajo SSO verificado**. Ver docs/58.
