@@ -67,6 +67,8 @@ const INSTRUCCIONES = [
   'sin la cantidad solicitada, sin la unidad de compra y sin el conector «de» anterior.',
   'Ejemplo ajeno al pedido: «7 bolsas de arena gruesa» se extrae con',
   'descripcion_original «arena gruesa», cantidad «7», unidad «bag», rubro «corralon».',
+  'Conservá especificaciones y tamaño de envase SI ESTÁN escritos, por ejemplo',
+  '«cemento CPC 25 kg» o «placa RH 12,5 mm»: no son la unidad de compra.',
   'Si el pedido solo nombra un material genérico, conservar ese nombre: jamás agregar',
   '«común», CPC, CPN, marca, peso, uso o clase si no figuran expresamente.',
   'producto_normalizado: usar la misma descripción literal si no está demostrada una equivalencia;',
