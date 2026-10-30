@@ -161,7 +161,7 @@ select pg_temp.must_fail(
     (round_id,event_id,supplier_org_id,event_kind,revision,payload_sha256)
    values ('dddddddd-0000-0000-0000-000000000004',
     'eeeeeeee-0000-0000-0000-000000000005',
-    'cccccccc-0000-0000-0000-000000000003',
+    'bbbbbbbb-0000-0000-0000-000000000002',
     'offer_confirmed',1,repeat('b',64))$$,
  'duplicate key');
 select pg_temp.must_fail(
