@@ -154,3 +154,7 @@ El comprador envía una lista PDF/Excel/Word/imagen/texto y autoriza distribuci�
 
 ### Etapa 02 — Primer recorrido de texto a planes de cotización (Issue #104)
 En [docs/66](docs/66-flujo-texto-proveedor.md) se documenta una simulación determinista desde texto del comprador, pasando por validación estricta hasta subconjuntos de solicitudes para proveedores con catálogo y zona coincidentes. Comando en rama `feat/02-text-to-supplier-plans`: `npm run demo:texto` (Node 22+, fixtures sintéticos, sin red ni WhatsApp). **NO recibe aún PDF/Excel/fotos, no usa IA remota ni ejecuta envío**. Esta es una prueba vertical aislada para poder auditar matching, trazabilidad y retenciones antes de integraciones reales. PR hijo de #103.
+
+
+### Etapa 02 — primer archivo Excel XLSX en pruebas (Issue #106)
+Se incorporó un **lector offline de XLSX/OpenXML** para planillas pequeñas con tres columnas explícitas de material, cantidad y unidad. Conserva referencias hoja/fila y reutiliza el plan de distribución selectivo por proveedor de PR #105. Genera 3 solicitudes sintéticas y retiene líneas dudosas en la demo `npm run demo:xlsx` (Node 22+). **No es un upload público**, ni procesa cualquier Excel, PDF o foto, ni usa IA o Whapi real. La prueba, las restricciones ZIP y los riesgos se documentan en [docs/67](docs/67-xlsx-offline-ingestion.md). Sin merge ni producción.
