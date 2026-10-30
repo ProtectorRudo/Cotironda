@@ -150,3 +150,7 @@ El [módulo de borrador documental](docs/65-etapa02-borrador-documental.md) vali
 
 ### Cambio de producto D013: distribución automática por producto (30/10/2026)
 El comprador envía una lista PDF/Excel/Word/imagen/texto y autoriza distribución **en ese mismo acto**: no revisa cada línea que extrae IA. Cotironda debe separar por **productos específicos confirmados en catálogo del proveedor**, unidades/especificaciones, zona y consentimiento, agrupar en una invitación por proveedor/ronda, retener líneas dudosas y mostrar resumen posterior. La oferta de precios continúa confirmada por el proveedor y la adjudicación es manual. La primera prueba del planificador exacto está en la rama/PR hija de #101 (Issue #102): **solo código offline, no se enviaron mensajes ni se conectó OpenAI o Whapi**.
+
+
+### Etapa 02 — Primer recorrido de texto a planes de cotización (Issue #104)
+En [docs/66](docs/66-flujo-texto-proveedor.md) se documenta una simulación determinista desde texto del comprador, pasando por validación estricta hasta subconjuntos de solicitudes para proveedores con catálogo y zona coincidentes. Comando en rama `feat/02-text-to-supplier-plans`: `npm run demo:texto` (Node 22+, fixtures sintéticos, sin red ni WhatsApp). **NO recibe aún PDF/Excel/fotos, no usa IA remota ni ejecuta envío**. Esta es una prueba vertical aislada para poder auditar matching, trazabilidad y retenciones antes de integraciones reales. PR hijo de #103.
