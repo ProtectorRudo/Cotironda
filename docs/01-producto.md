@@ -12,6 +12,15 @@ Proveedor $0, sin comisión. Comprador con prueba gratuita por definir y suscrip
 ## Rubros iniciales
 Corralones; pinturerías; electricidad; construcción en seco; sanitarios/plomería. Posteriores: ferretería, hierros, revestimientos, techos/aislaciones. Productos físicos especificables, no mano de obra subjetiva.
 
+## Mandato de experiencia — UX-001
+**Hiperintuitivo, cero fricción innecesaria, amigable con compradores y proveedores, sin capacitación.** La operación cotidiana se resuelve prioritariamente por WhatsApp en ambos extremos; la web es una alternativa y un tablero de consulta/decisión.
+- Comprador: enviar la lista una vez desde WhatsApp o web; Cotironda distribuye lo seguro por rubro/producto y zona, sin copiar ni revisar línea por línea. Si un artículo necesita aclaración, preguntar solo eso.
+- Proveedor: recibir por WhatsApp, contestar con su forma habitual (texto/archivo/audio compatible), resolver dudas puntuales y confirmar el resumen; Cotironda registra el presupuesto en el portal automáticamente. Ningún paso rutinario debe exigir login.
+- El comprador consulta progreso y compara al cierre; adjudica manualmente. **Siete días es un ejemplo de plazo configurable, no una selección automática de ganador**.
+- El estado mostrado debe distinguir mensaje recibido, borrador detectado, oferta confirmada, ronda cerrada y adjudicación. No dar por entregado o confirmado lo que está pendiente.
+- Mantener controles de consentimiento, seguridad, exactitud y privacidad sin trasladar complejidad al usuario. Antes del piloto se exigirán pruebas sin capacitación con compradores y corralones reales.
+[Contrato UX-001](89-ux-cero-friccion-whatsapp-first.md). Este diseño de WhatsApp todavía no está conectado al MVP.
+
 ## Experiencia esencial
 Comprador: **enviar lista → distribución automática → comparar → adjudicar**.
 Proveedor: **recibir → cotizar → confirmar → ajustar opcionalmente → resultado**.

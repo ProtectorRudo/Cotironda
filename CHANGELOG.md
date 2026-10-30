@@ -516,3 +516,9 @@
 - Endpoint `GET /api/rondas/[rondaId]` protegido con cookies SSR, `getUser`, bandera propia apagada, no-store, validación de UUID y proyección estricta sin PII. Adaptador invoca solo `buyer_round_overview_v1(p_round_id)` sin user_id/tenant inyectados.
 - SQL privado de lectura con rol NOLOGIN/NOBYPASSRLS, sesión `auth.sessions` vigente y membresía activa verificada en PostgreSQL, con RLS y wrapper público invoker; no grants de contacto, invitaciones ni ofertas.
 - Tests unitarios adversariales y PostgreSQL 17 de empresas cruzadas, sesión revocada y permisos; esquema SQL pendiente solo en CI, sin migración ni instalación Supabase DEV. Ver docs/88 y PR #150.
+
+## [Sin publicar — UX-001: fundamento WhatsApp-first y cero fricción, 30/10/2026]
+- Decisión aprobada por el propietario: Cotironda será **hiperintuitiva, sin cursos y con cero fricción innecesaria** para compradores, corralones y demás proveedores. WhatsApp es el canal habitual para ambos; la web complementa con seguimiento, comparación y adjudicación sin obligar al proveedor a cargar su presupuesto otra vez.
+- Se agregó [docs/89](docs/89-ux-cero-friccion-whatsapp-first.md) con recorridos ideales, textos claros, estados honestos, filtro UX por PR, métricas de piloto y pruebas con personas no técnicas.
+- Se elevaron las reglas de UX a **AGENTS.md**, README, docs/01, docs/02, docs/05, docs/08, docs/09 y la decisión UX-001 en docs/10, manteniendo D013 (autorización inicial sin revisión de cada línea clara), confirmación de precios por proveedor y adjudicación manual.
+- No confundir esta decisión documentada con integración Whapi lista. **No hay cambios de código, base, producción, mensajes WhatsApp ni costos de IA**. Seguimiento: Issue #151.

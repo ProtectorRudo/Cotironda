@@ -4,6 +4,9 @@
 
 Cotironda es una plataforma argentina B2B para solicitar cotizaciones privadas de **materiales de obra**. El comprador envía su lista una sola vez y autoriza la distribución; la IA propone la interpretación y un motor verificable decide qué proveedores pueden cotizar. **No se exige revisión previa por línea al comprador**. Se invita a proveedores pertinentes según catálogo y cobertura geográfica; estos pueden responder desde WhatsApp (Whapi + IA) o por un portal opcional. El comprador compara ofertas anónimas, completas o parciales, y adjudica manualmente.
 
+## Fundamento UX-001: hiperintuitiva y sin fricción
+**La plataforma se adapta a las personas, no las personas a la plataforma.** Cotironda debe ser tan sencilla que un comprador y un proveedor puedan pedir y responder presupuestos sin curso, aplicación adicional ni obligación de entrar al portal. **WhatsApp es el canal cotidiano de ambos roles; el portal es un tablero opcional.** Automatizar segmentación por rubros, carga de respuestas y seguimiento sin pedir dos veces los mismos datos. Toda fricción agregada requiere justificación y prueba con usuarios no técnicos. Seguridad, consentimientos, confirmación de precios y adjudicación humana permanecen. **Diseño aprobado, integración WhatsApp real todavía pendiente.** [Decisión UX-001](docs/89-ux-cero-friccion-whatsapp-first.md).
+
 ## Modelo
 - Proveedores: **gratuitos, sin comisiones ni abonos**.
 - Compradores: suscripción proyectada de **ARS 10.000/mes**, sujeta a validación económica; duración de prueba gratuita pendiente.

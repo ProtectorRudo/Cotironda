@@ -1,5 +1,8 @@
 # 02 — Reglas funcionales
 
+## UX-001 — regla transversal de simplicidad radical
+No construir un sistema que obligue al comprador o al corralón a aprender un portal: **WhatsApp primero para ambos, web opcional para seguimiento y decisiones**. El usuario no transcribe ni separa rubros ni repite datos enviados. Mensajes con lenguaje claro, contexto, próximo paso y errores accionables; estados siempre honestos. Aclaraciones acotadas, sin interrumpir materiales seguros. Precio/cambios requieren confirmación breve; adjudicación siempre por comprador. Cada interacción que añada pasos, pantallas o capacitación requiere justificación, tests móviles y prueba de usabilidad. **No confundir objetivo UX con WhatsApp ya funcionando.** Ver [docs/89](89-ux-cero-friccion-whatsapp-first.md).
+
 ## Pedido
 - Empresa compradora autenticada carga documento o texto, datos de entrega, urgencia, condiciones y plazo.
 - IA extrae líneas con cantidades, unidades, rubros, marca y especificaciones; dudas visibles. Nada inventado.
