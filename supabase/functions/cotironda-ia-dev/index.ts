@@ -12,6 +12,7 @@ Deno.serve(withSupabase({auth:'secret'}, async (req) => {
   return handleCotirondaDevAi(req,{
     supabaseUrl:Deno.env.get('SUPABASE_URL'),
     openaiKey:Deno.env.get('OPENAI_API_KEY'),
-    smokeEnabled:Deno.env.get('COTIRONDA_IA_DEV_SMOKE_ENABLED')
+    smokeEnabled:Deno.env.get('COTIRONDA_IA_DEV_SMOKE_ENABLED'),
+    qualityEnabled:Deno.env.get('COTIRONDA_IA_DEV_QUALITY_ENABLED')
   });
 }));
