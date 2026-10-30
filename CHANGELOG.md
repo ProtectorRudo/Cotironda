@@ -291,3 +291,9 @@
 ### Auth real de Preview — logout verificado el 30/10/2026
 - Captura de Chrome confirma retorno al formulario «Ingresá a tu empresa» tras pulsar «Cerrar sesión de prueba».
 - Supabase Auth gateway registra 1 POST `/auth/v1/logout` **HTTP 204** y Audit 1 `logout`. Consulta read-only: **0 sesiones Auth**, bandera de registro false, 0 empresas y 0 Storage. Esto acredita logout remoto y redirección real, pero **no** que reabrir directamente `/alta` esté protegido después; tampoco se inspeccionaron cookies de la Preview. Ver docs/59.
+
+ 
+### Control funcional de sesión de Preview validado (30/10/2026)
+- Tras logout global y retorno al formulario de ingreso, el propietario volvió a navegar al enlace directo **`/alta`**. Captura Chrome de escritorio muestra únicamente «Ingresá a tu empresa», sin contenido de la sesión anterior. El código de /alta protege acceso mediante `auth.getUser()` y redirección al ingreso.
+- Supabase dev por SQL read-only posterior: 0 sesiones Auth, registro false, 0 empresas, 0 archivos. Se documenta **subcontrol login/logout/denegación posterior APROBADO**, con límite de que no se inspeccionaron headers/cookies en el navegador ni status HTTP exacto de redirección.
+- Registrar cierre de Issue #88 sin declarar Etapa 01 finalizada. PR #89 permanece draft, sin publicación ni cambios SQL. Referencia: `docs/59-preview-auth-real-mobile-login.md`.
