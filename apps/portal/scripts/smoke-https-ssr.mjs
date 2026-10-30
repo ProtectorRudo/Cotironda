@@ -52,13 +52,16 @@ async function tlsHit(path,{headers={},body,method='GET'}={}){
    headers:{...headers,...(body?{'content-type':'application/json'}:{})},
    timeout:7500
   },response=>{
+   // Node puede liberar response.socket al terminar el stream: capturar
+   // la autorización TLS durante el evento de respuesta, antes de 'end'.
+   const tlsVerified=response.socket?.authorized===true;
    const chunks=[];
    response.on('data',c=>chunks.push(c));
    response.on('end',()=>done({
     status:response.statusCode,
     headers:response.headers,
     body:Buffer.concat(chunks).toString('utf8'),
-    tlsVerified:response.socket?.authorized===true
+    tlsVerified
    }));
   });
   request.on('timeout',()=>request.destroy(new Error('https_ci_timeout')));
