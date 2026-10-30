@@ -198,3 +198,24 @@ test('hasta 10 invitados, no se incluyen contactos ni acciones de red',()=>{
   assert.equal(JSON.stringify(s).includes('telefono'),false);
   assert.equal(JSON.stringify(s).includes('whatsapp'),false);
 });
+
+test('payload null y autoridad ausente se rechazan con error controlado',()=>{
+  const s=abrir(iniciar());
+  fail(()=>aplicarEventoRondaOffline(s,null,comprador));
+  fail(()=>aplicarEventoRondaOffline(s,ev('ev_sin_rol','cancelar',B),null));
+  fail(()=>aplicarEventoRondaOffline(s,ev('ev_sin_rol','cancelar',B),{}));
+});
+test('el mismo evento de cierre repetido se deduplica sin cambiar el snapshot',()=>{
+  const s=cerrar(confirmar(guardar(abrir(iniciar()))));
+  const repeat=ev('ev_cerrar','cerrar',Z);
+  assert.equal(aplicarEventoRondaOffline(s,repeat,sistema),s);
+  assert.equal(s.eventos.length,4);
+});
+test('corrección pendiente al cierre no reemplaza la última oferta confirmada',()=>{
+  let s=confirmar(guardar(abrir(iniciar())));
+  s=guardar(s,'anon_aaa',1,D,draft('1.00'),'ev_corregir_sin_confirmar');
+  s=cerrar(s);
+  assert.equal(s.proveedores[0].versiones.length,1);
+  assert.equal(s.proveedores[0].borrador.items[0].precioUnitarioNeto,'1.00');
+  assert.equal(s.comparacionCierre.opcionesCompletas[0].totalFinal,'1341.00');
+});
