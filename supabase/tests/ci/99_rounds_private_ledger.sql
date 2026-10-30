@@ -61,6 +61,11 @@ insert into cotironda_private.round_items_v1(round_id,line_no,product_code,quant
 insert into cotironda_private.round_invites_v1(round_id,supplier_org_id,anon_id,invite_position) values
  ('dddddddd-0000-0000-0000-000000000004','bbbbbbbb-0000-0000-0000-000000000002','anon_aaa',1),
  ('dddddddd-0000-0000-0000-000000000004','cccccccc-0000-0000-0000-000000000003','anon_bbb',2);
+select pg_temp.must_fail(
+ $insert into cotironda_private.round_invites_v1(round_id,supplier_org_id,anon_id,invite_position)
+   values ('dddddddd-0000-0000-0000-000000000004',
+    'bbbbbbbb-0000-0000-0000-000000000002','anon_other',3)$,
+ 'duplicate key');
 update cotironda_private.rounds_v1 set status='abierta'
  where id='dddddddd-0000-0000-0000-000000000004';
 do $test$ begin
@@ -87,11 +92,7 @@ select pg_temp.must_fail(
     and anon_id='anon_bbb'$cmd$,
  'round_setup_is_frozen');
 
-select pg_temp.must_fail(
- $$insert into cotironda_private.round_invites_v1(round_id,supplier_org_id,anon_id,invite_position)
-   values ('dddddddd-0000-0000-0000-000000000004',
-    'bbbbbbbb-0000-0000-0000-000000000002','anon_other',3)$$,
- 'duplicate key');
+
 
 -- Formato cerrado de snapshot, sin campos de texto arbitrarios ni teléfonos.
 do $test$ begin
