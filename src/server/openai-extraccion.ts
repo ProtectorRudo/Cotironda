@@ -91,8 +91,14 @@ function fuenteCantidadUnidad(linea:string,cantidad:string|null,unidad:string|nu
   const fuente=canon(linea),producto=canon(descripcion);
   const indice=fuente.indexOf(producto);
   if(indice<0)return false;
-  return re.test(fuente.slice(0,indice)) ||
-    re.test(fuente.slice(indice+producto.length));
+  if(!(re.test(fuente.slice(0,indice)) ||
+    re.test(fuente.slice(indice+producto.length))))return false;
+  // Una IA podría devolver «Cemento» y omitir «CPC 50 kg» para que coincida
+  // con un catálogo genérico. Exigimos que TODO el producto esté representado:
+  // lo único descartable del origen es cantidad + unidad y «de»/puntuación.
+  const restante=fuente.replace(re,'').replace(/^\s*de\s+/,'')
+    .replace(/^[-*•:;()\s]+|[-*•:;()\s]+$/g,'').trim();
+  return restante===producto;
 }
 function mensajeJSON(remoto:unknown):unknown {
   if(!remoto || typeof remoto!=='object')throw new Error('ia_respuesta_invalida');
