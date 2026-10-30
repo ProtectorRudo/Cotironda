@@ -129,6 +129,28 @@ exception when others then
 end;
 $fn$;
 
+-- Una ronda abierta congela el pedido y la lista de invitaciones.
+create function cotironda_private.guard_round_setup_v1()
+returns trigger language plpgsql security invoker set search_path='' as $fn$
+declare v_id uuid; v_status text;
+begin
+ v_id:=case when tg_op='DELETE' then old.round_id else new.round_id end;
+ select status into v_status from cotironda_private.rounds_v1 where id=v_id for update;
+ if v_status is distinct from 'programada' then
+   raise exception 'round_setup_is_frozen'; end if;
+ if tg_op='UPDATE' and old.round_id<>new.round_id then
+   raise exception 'round_setup_round_id_immutable'; end if;
+ if tg_op='DELETE' then return old; end if;
+ return new;
+end;
+$fn$;
+create trigger round_items_setup_v1
+ before insert or update or delete on cotironda_private.round_items_v1
+ for each row execute function cotironda_private.guard_round_setup_v1();
+create trigger round_invites_setup_v1
+ before insert or update or delete on cotironda_private.round_invites_v1
+ for each row execute function cotironda_private.guard_round_setup_v1();
+
 create table cotironda_private.offer_drafts_v1 (
   round_id uuid not null,
   supplier_org_id uuid not null,
@@ -197,12 +219,15 @@ declare
  v_kind text;
  v_event_revision integer;
  v_status text;
+ v_start timestamptz;
+ v_end timestamptz;
  v_last integer;
 begin
- select r.status into v_status
+ select r.status,r.begins_at,r.ends_at into v_status,v_start,v_end
  from cotironda_private.rounds_v1 r where r.id=new.round_id
  for update; -- serializa confirmaciones de toda la ronda (en CI y futuro backend).
- if v_status is distinct from 'abierta' then
+ if v_status is distinct from 'abierta' or
+    clock_timestamp()<v_start or clock_timestamp()>=v_end then
   raise exception 'quote_confirmation_round_not_open'; end if;
  select * into v_d from cotironda_private.offer_drafts_v1 d
   where d.round_id=new.round_id and d.supplier_org_id=new.supplier_org_id;
@@ -234,11 +259,12 @@ create trigger guard_offer_version_insert_v1
 
 create function cotironda_private.guard_draft_revision_v1()
 returns trigger language plpgsql security invoker set search_path='' as $fn$
-declare v_status text;
+declare v_status text; v_start timestamptz; v_end timestamptz;
 begin
- select status into v_status from cotironda_private.rounds_v1 where id=new.round_id
- for update;
- if v_status is distinct from 'abierta' then
+ select status,begins_at,ends_at into v_status,v_start,v_end
+ from cotironda_private.rounds_v1 where id=new.round_id for update;
+ if v_status is distinct from 'abierta' or
+    clock_timestamp()<v_start or clock_timestamp()>=v_end then
    raise exception 'quote_draft_round_not_open'; end if;
  if tg_op='INSERT' and new.revision<>1 then
    raise exception 'quote_draft_initial_revision_invalid'; end if;
@@ -282,7 +308,8 @@ revoke all on function cotironda_private.check_quote_lines_v1(jsonb,uuid),
  cotironda_private.guard_offer_version_v1(),
  cotironda_private.guard_draft_revision_v1(),
  cotironda_private.reject_immutable_quote_v1(),
- cotironda_private.guard_round_transition_v1()
+ cotironda_private.guard_round_transition_v1(),
+ cotironda_private.guard_round_setup_v1()
  from public, anon, authenticated, service_role;
 -- Sin policies: RLS cierra acceso; solo owner/postgres podrá probarlo.
 comment on table cotironda_private.offer_versions_v1 is
