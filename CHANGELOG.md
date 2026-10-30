@@ -496,3 +496,8 @@
 - Continúan bloqueados los 2 casos pendientes. En el FAIL histórico no se puede determinar la causa precisa porque no se guardó la respuesta cruda. Ver docs/84 y PR #142.
 
 - **Verificación DEV D021 completada:** 6/6 checks del código `e22206aa` SUCCESS, migración `dev_quality_numeric_diagnostics_d021` aplicada únicamente en Supabase DEV, seis columnas confirmadas, cuatro registros históricos sin modificar. Edge Function DEV actualizada a v9 ACTIVE y status autenticado HTTP 200 sin llamada paga. Postflight: 4/6 claims, 2 pendientes, 1 `needs_review`, despachador OFF, 0 cron jobs. Las columnas de diagnóstico aún no fueron validadas en un nuevo `quality_case` real; investigar error histórico sigue abierto.
+
+## [Sin publicar — Etapa 03 / D022 prototipo de comparación justa]
+- Se incorporó `src/domain/comparacion-ofertas.ts`: evaluación determinista de cobertura por artículo y cantidad, precios con BigInt/IVA explícito, fletes y mínimos por proveedor, opciones completas con hasta dos proveedores y ranking solo dentro de mismas condiciones.
+- Bloqueos: sin inferencia de IVA/flete/tipo de cambio, sin equivalencias técnicas IA, sin suma engañosa de presupuestos parciales, sin contactos, sin adjudicación. Rango acotado de laboratorio 8 renglones/10 cotizaciones y asignaciones por renglón íntegro; fraccionamiento aún fuera de alcance.
+- Nueva suite adversarial de 18 tests y contrato docs/85. Sin cambios de Supabase, OpenAI, WhatsApp, Vercel ni producción. PR #144 draft apilado sobre #142; pendiente revisión final.
