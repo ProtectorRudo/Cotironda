@@ -230,3 +230,6 @@ El PR #146 suma el núcleo de estados de una licitación: apertura por comprador
 
 ### 30/10/2026 — Etapa 03: persistencia privada de rondas en preparación
 El PR #148 propone el primer ledger PostgreSQL de rondas, invitaciones, borradores y versiones confirmadas, guardado bajo `cotironda_private`. El SQL tiene controles de estado, integridad y privilegios, probado en la CI independiente, **pero no es una migración instalada ni habilita operaciones comerciales**. Se conserva intacto el historial de 12 migraciones y la integración se hará con backend transaccional autenticado, RLS y validación de equivalencia. Ver [docs/87](docs/87-rounds-ledger-privado.md).
+
+### 30/10/2026 — Etapa 03: acceso comprador read-only protegido (en desarrollo)
+El PR #150 prepara la consulta `GET /api/rondas/[rondaId]` para que un comprador autenticado lea solo sus fechas, estado y renglones, con validación de sesión vigente y membresía activa en PostgreSQL. **Deshabilitado por defecto y sin despliegue**: requiere instalar y probar SQL D024/D025 con una conexión Auth autorizada antes de activarlo. No crea rondas ni recibe cotizaciones; ver [docs/88](docs/88-rondas-lectura-segura.md).
