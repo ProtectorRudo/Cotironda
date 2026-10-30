@@ -148,3 +148,16 @@ test('una línea ilegible larga queda contabilizada como retenida',()=>{
   assert.equal(r.resumen.lineas_retenidas,1);
   assert.deepEqual(r.lineas_no_interpretadas,[{fila:2,motivo:'linea_demasiado_larga'}]);
 });
+
+test('demo CLI usa el mismo motor y no realiza envíos reales',async()=>{
+  const {execFileSync}=await import('node:child_process');
+  const out=execFileSync(process.execPath,['--experimental-strip-types','scripts/demo/flujo-texto.mjs'],{
+    cwd:process.cwd(),encoding:'utf8',timeout:10000,stdio:['ignore','pipe','pipe']
+  });
+  const demo=JSON.parse(out);
+  assert.equal(demo.simulacion,true);
+  assert.equal(demo.no_se_envio_whatsapp,true);
+  assert.equal(demo.resumen.lineas_preparadas,3);
+  assert.equal(demo.resumen.lineas_retenidas,2);
+  assert.equal(demo.solicitudes.length,3);
+});
