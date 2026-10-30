@@ -7,6 +7,8 @@
  */
 import {RUBROS, UNIDADES} from '../domain/catalogo.ts';
 import {prepararBorradorDocumental, type BorradorDocumental} from '../domain/extraccion-documental.ts';
+import {planificarDespachoAutomatico, type ProveedorConfirmado, type SolicitudAutomatica}
+  from '../domain/despacho-automatico.ts';
 
 export const MODELO_IA_DOCUMENTAL = 'gpt-6-luna' as const;
 const URL_OPENAI = 'https://api.openai.com/v1/responses';
@@ -215,4 +217,29 @@ export async function extraerMaterialesConIA(args:{
     tokens:typeof entrada==='number'&&Number.isFinite(entrada)&&
       typeof salida==='number'&&Number.isFinite(salida)?{entrada,salida}:null
   };
+}
+
+
+/**
+ * Primera costura real IA → matcher selectivo, todavía SIN ENVIAR.
+ * Validación previa de autorización y datos de proveedor para no gastar tokens
+ * frente a una solicitud evidentemente no autorizada. El caller/worker deberá
+ * obtener estos datos del backend autenticado; jamás del documento del cliente.
+ */
+export async function simularPlanesConIA(args:{
+  texto:string; apiKey:string; habilitarLlamadaExterna:boolean;
+  fetchImpl?:typeof fetch;
+  solicitud:SolicitudAutomatica;
+  proveedores:readonly ProveedorConfirmado[];
+}) {
+  // El borrador vacío solo sirve para ejecutar las mismas guardas de entrada
+  // antes de cualquier llamada externa y gasto de tokens.
+  const vacio:BorradorDocumental={
+    estado:'pendiente_despacho_automatico',formato:'texto',
+    lineas:[],errores:[],posibles_duplicados:[]
+  };
+  planificarDespachoAutomatico(args.solicitud,vacio,args.proveedores);
+  const extraccion=await extraerMaterialesConIA(args);
+  const plan=planificarDespachoAutomatico(args.solicitud,extraccion.borrador,args.proveedores);
+  return {estado:'simulacion_ia_sin_envio' as const,extraccion,plan};
 }
