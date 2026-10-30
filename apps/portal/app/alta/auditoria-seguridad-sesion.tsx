@@ -16,7 +16,7 @@ type CookieStoreMinimo={
   name:string; secure?:boolean; sameSite?:string; path?:string;
  }[]>;
 };
-type VentanaCookies=Window & {cookieStore?: CookieStoreMinimo};
+type VentanaCookies={cookieStore?: CookieStoreMinimo};
 
 export function AuditoriaSeguridadSesion({projectRef}:{projectRef:string}) {
   const [revisando,setRevisando]=useState(false);
