@@ -191,3 +191,7 @@ Se implementa modo cerrado `quality_case` con seis casos sintéticos, motor D015
 
 ### 30/10/2026 — D018: calidad real con máximo de seis intentos (Issue #135)
 Se agrega límite persistente y atómico de una reserva por ID de caso de benchmark, para evitar que el secreto `quality` habilitado permita gasto repetitivo. Se usa registro sintético en Supabase DEV, sin documentos ni empresas; privilegios solamente para `service_role` y RLS. Antes de ensayo vivo: aplicar SQL, controlar advisors/grants, desplegar únicamente DEV con flag OFF, luego probar el modelo tras habilitación separada. Ver docs/81.
+
+
+### 30/10/2026 — D019: trazabilidad persistente de benchmark real (Issue #137)
+Se incorpora ledger privado de resultados de extracción y proveedor por caso, vinculado a las reservas D018; registra errores comerciales medibles y tokens, incluyendo origen de datos. El gateway registra luego de la inferencia y no reintenta si falla DB. Aún se requieren ensayos sobre cinco casos restantes y corpus diverso para validar calidad. Docs/82.
