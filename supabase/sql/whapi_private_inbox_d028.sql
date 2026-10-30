@@ -103,6 +103,10 @@ create policy d028_inbox_insert on cotironda_private.whapi_inbox_v1
  for insert to cotironda_whapi_inbox_writer with check(true);
 create policy d028_rounds_select on cotironda_private.rounds_v1
  for select to cotironda_whapi_inbox_writer using(true);
+-- SELECT ... FOR SHARE consulta también RLS UPDATE. Permitir localizar la fila
+-- para bloquearla pero WITH CHECK(false) impide TODA modificación real.
+create policy d028_round_lock_without_write on cotironda_private.rounds_v1
+ for update to cotironda_whapi_inbox_writer using(true) with check(false);
 create policy d028_invites_select on cotironda_private.round_invites_v1
  for select to cotironda_whapi_inbox_writer using(true);
 
