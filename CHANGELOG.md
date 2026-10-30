@@ -532,3 +532,8 @@
 - Se preparó `src/server/whapi-inbound-offline.ts` para el formato Whapi `messages.post`: secreto compartido en header privado, validación de canal, mensajes directos, opt-in/invitación verificables desde backend, lotes limitados, huella y clave de idempotencia, puerto de persistencia. HTTP 200 solo tras éxito de todo el lote; errores 503 permiten reintentar sin duplicar mediante sink transaccional futuro.
 - Los mensajes de texto/imagen/documento/audio/voz solo generan `pendiente_interpretacion`; no leen URLs ni ejecutan IA o confirmación de precio. `Confirmo` nunca autoriza D026 sin vinculación de conversación/revisión.
 - Suite `tests/unit/whapi-inbound-offline.test.mjs` con casos adversariales y docs/91. **Sin webhook publicado, secrets, almacenamiento real, Whapi conectado ni producción**, y no se gastaron créditos IA.
+
+## [Sin publicar — D028 / Issue #157: inbox durable privado de WhatsApp]
+- Se crearon SQL de `whapi_contacts_v1` (canal + chat HMAC, verificación, consentimiento, baja) y `whapi_inbox_v1` (mensajes HMAC, contenido cifrado, huellas, estado y deduplicación), solo en GitHub CI. Rol NOLOGIN/NOBYPASSRLS, RLS y grants denegados a roles de API; funciones internas sin ejecución pública.
+- Recibir mensaje requiere una invitación única vigente y consentimiento. «BAJA» exacta tiene camino propio sin invitación, persiste de forma idempotente y no se puede reactivar silenciosamente. Tests PostgreSQL17 + casos offline de baja, reintentos, colisiones y persistencia fallida; documentación docs/92.
+- No se modifica Supabase DEV, producción, Whapi real ni las reservas de IA. Se necesita broker seguro que genere HMAC/AES-GCM, autentique el canal y autorice contacto antes de habilitar HTTP. PR #158 draft.
