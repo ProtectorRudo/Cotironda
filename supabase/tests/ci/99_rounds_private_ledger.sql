@@ -53,6 +53,14 @@ select pg_temp.must_fail(
  $$update cotironda_private.rounds_v1 set status='cerrada'
    where id='dddddddd-0000-0000-0000-000000000004'$$,
  'round_transition_not_allowed');
+
+
+insert into cotironda_private.round_items_v1(round_id,line_no,product_code,quantity,unit) values
+ ('dddddddd-0000-0000-0000-000000000004',1,'cemento_001',10,'bag'),
+ ('dddddddd-0000-0000-0000-000000000004',2,'pintura_001',5,'l');
+insert into cotironda_private.round_invites_v1(round_id,supplier_org_id,anon_id,invite_position) values
+ ('dddddddd-0000-0000-0000-000000000004','bbbbbbbb-0000-0000-0000-000000000002','anon_aaa',1),
+ ('dddddddd-0000-0000-0000-000000000004','cccccccc-0000-0000-0000-000000000003','anon_bbb',2);
 update cotironda_private.rounds_v1 set status='abierta'
  where id='dddddddd-0000-0000-0000-000000000004';
 do $test$ begin
@@ -61,20 +69,24 @@ do $test$ begin
  then raise exception 'opening_timestamp_missing'; end if;
 end;$test$;
 select pg_temp.must_fail(
- $$update cotironda_private.rounds_v1 set status='programada'
-   where id='dddddddd-0000-0000-0000-000000000004'$$,
+ $update cotironda_private.rounds_v1 set status='programada'
+   where id='dddddddd-0000-0000-0000-000000000004'$,
  'round_transition_not_allowed');
 select pg_temp.must_fail(
- $$update cotironda_private.rounds_v1 set status='cerrada'
-   where id='dddddddd-0000-0000-0000-000000000004'$$,
+ $update cotironda_private.rounds_v1 set status='cerrada'
+   where id='dddddddd-0000-0000-0000-000000000004'$,
  'round_transition_not_allowed');
 
-insert into cotironda_private.round_items_v1(round_id,line_no,product_code,quantity,unit) values
- ('dddddddd-0000-0000-0000-000000000004',1,'cemento_001',10,'bag'),
- ('dddddddd-0000-0000-0000-000000000004',2,'pintura_001',5,'l');
-insert into cotironda_private.round_invites_v1(round_id,supplier_org_id,anon_id,invite_position) values
- ('dddddddd-0000-0000-0000-000000000004','bbbbbbbb-0000-0000-0000-000000000002','anon_aaa',1),
- ('dddddddd-0000-0000-0000-000000000004','cccccccc-0000-0000-0000-000000000003','anon_bbb',2);
+select pg_temp.must_fail(
+ $insert into cotironda_private.round_items_v1(round_id,line_no,product_code,quantity,unit)
+  values ('dddddddd-0000-0000-0000-000000000004',3,'cable_001',1,'m')$,
+ 'round_setup_is_frozen');
+select pg_temp.must_fail(
+ $delete from cotironda_private.round_invites_v1
+  where round_id='dddddddd-0000-0000-0000-000000000004'
+    and anon_id='anon_bbb'$,
+ 'round_setup_is_frozen');
+
 select pg_temp.must_fail(
  $$insert into cotironda_private.round_invites_v1(round_id,supplier_org_id,anon_id,invite_position)
    values ('dddddddd-0000-0000-0000-000000000004',
