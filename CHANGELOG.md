@@ -537,3 +537,8 @@
 - Se crearon SQL de `whapi_contacts_v1` (canal + chat HMAC, verificación, consentimiento, baja) y `whapi_inbox_v1` (mensajes HMAC, contenido cifrado, huellas, estado y deduplicación), solo en GitHub CI. Rol NOLOGIN/NOBYPASSRLS, RLS y grants denegados a roles de API; funciones internas sin ejecución pública.
 - Recibir mensaje requiere una invitación única vigente y consentimiento. «BAJA» exacta tiene camino propio sin invitación, persiste de forma idempotente y no se puede reactivar silenciosamente. Tests PostgreSQL17 + casos offline de baja, reintentos, colisiones y persistencia fallida; documentación docs/92.
 - No se modifica Supabase DEV, producción, Whapi real ni las reservas de IA. Se necesita broker seguro que genere HMAC/AES-GCM, autentique el canal y autorice contacto antes de habilitar HTTP. PR #158 draft.
+
+## [Sin publicar — D029 / Etapa 04: broker criptográfico Whapi offline]
+- Nuevo `src/server/whapi-crypto-broker.ts`: HMAC-SHA256 para chat y mensaje con claves server-only separadas, huella HMAC de contenido, AES-256-GCM con nonce/tag/AAD y adaptadores hacia los puertos privados de D028. Identidad/invitación solo de almacenamiento confiable. BAJA protegida sin ronda activa.
+- Suite `tests/unit/whapi-crypto-broker.test.mjs`: tampering, clave equivocada, aislamiento de canales, duplicación/colisión, baja, revocación, mensajes multimedia sin descarga, rechazo de recibos falsos y claves inválidas. Sin modificar scripts de IA ni historial de migraciones.
+- D029 **no** habilita almacenamiento PostgreSQL desde Node ni rutas HTTP. Falta gestor de claves con rotación, worker SQL autorizado, configuración Whapi y pruebas E2E. Docs/93; PR #160 en borrador, sin instalación DEV/producción ni mensajes reales.
