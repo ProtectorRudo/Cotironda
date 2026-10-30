@@ -185,6 +185,29 @@ create table cotironda_private.offer_events_v1 (
     on delete restrict
 );
 
+-- Los eventos de proveedor tampoco se pueden registrar después del cierre,
+-- ni antes de abrir. Este control no sustituye autenticar al actor que los envía.
+create function cotironda_private.guard_offer_event_insert_v1()
+returns trigger language plpgsql security invoker set search_path='' as $fn$
+declare v_status text; v_start timestamptz; v_end timestamptz;
+begin
+ select status,begins_at,ends_at into v_status,v_start,v_end
+ from cotironda_private.rounds_v1 where id=new.round_id for update;
+ if v_status is distinct from 'abierta'
+    or clock_timestamp()<v_start or clock_timestamp()>=v_end then
+   raise exception 'offer_event_outside_round_window'; end if;
+ if not exists (
+   select 1 from cotironda_private.offer_drafts_v1 d
+   where d.round_id=new.round_id and d.supplier_org_id=new.supplier_org_id
+     and d.revision=new.revision
+ ) then raise exception 'offer_event_revision_missing'; end if;
+ return new;
+end;
+$fn$;
+create trigger offer_event_insert_v1
+ before insert on cotironda_private.offer_events_v1
+ for each row execute function cotironda_private.guard_offer_event_insert_v1();
+
 create table cotironda_private.offer_versions_v1 (
   round_id uuid not null,
   supplier_org_id uuid not null,
@@ -309,7 +332,8 @@ revoke all on function cotironda_private.check_quote_lines_v1(jsonb,uuid),
  cotironda_private.guard_draft_revision_v1(),
  cotironda_private.reject_immutable_quote_v1(),
  cotironda_private.guard_round_transition_v1(),
- cotironda_private.guard_round_setup_v1()
+ cotironda_private.guard_round_setup_v1(),
+ cotironda_private.guard_offer_event_insert_v1()
  from public, anon, authenticated, service_role;
 -- Sin policies: RLS cierra acceso; solo owner/postgres podrá probarlo.
 comment on table cotironda_private.offer_versions_v1 is
