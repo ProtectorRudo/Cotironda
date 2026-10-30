@@ -36,7 +36,8 @@ export const PRODUCTOS_CANONICOS:readonly Regla[]=[
       'cable de datos','cable usb']},
   {producto_id:'cano_pvc',rubro:'sanitarios',
     aliases:['cano pvc','canos pvc','cano de pvc','canos de pvc','tubo pvc','tubos pvc'],
-    excluye:['cano de pvc electrico','conduit pvc','cano corrugado electrico']}
+    excluye:['cano de pvc electrico','cano pvc electrico','canos pvc electricos',
+      'tubo pvc electrico','conduit pvc','cano corrugado electrico']}
 ];
 const canon=(s:string):string=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'')
   .toLocaleLowerCase('es-AR').replace(/\s+/g,' ').trim();
