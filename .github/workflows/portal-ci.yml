@@ -123,6 +123,7 @@ jobs:
           VERCEL_ENV: preview
           COTIRONDA_REGISTRATION_ENABLED: 'false'
           COTIRONDA_AUTH_PREVIEW_ENABLED: 'true'
+          VERCEL_GIT_COMMIT_REF: test/01-auth-only-preview
           COTIRONDA_SUPABASE_PROJECT_REF: qkercsoqhehbenbbncwk
           NEXT_PUBLIC_SUPABASE_URL: https://qkercsoqhehbenbbncwk.supabase.co
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_dummy_never_valid
@@ -132,6 +133,7 @@ jobs:
           VERCEL_ENV: preview
           COTIRONDA_REGISTRATION_ENABLED: 'false'
           COTIRONDA_AUTH_PREVIEW_ENABLED: 'true'
+          VERCEL_GIT_COMMIT_REF: test/01-auth-only-preview
           COTIRONDA_SUPABASE_PROJECT_REF: qkercsoqhehbenbbncwk
           NEXT_PUBLIC_SUPABASE_URL: https://qkercsoqhehbenbbncwk.supabase.co
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_dummy_never_valid
