@@ -187,3 +187,73 @@ test('proveedor sin opt-in o fuera de zona no recibe ninguna invitación',async(
   assert.equal(r.resumen.sin_proveedor,1);
   assert.equal(r.resumen.proveedores_preparados,0);
 });
+
+test('dos materiales en una misma línea separados por punto y coma quedan completos con 2 evidencias',async()=>{
+  const texto='20 bolsas de Cemento CPC 50 kg; 5 litros de pintura látex interior';
+  const segundo=item(1,'pintura látex interior','5','l','pintureria');
+  const r=await run(texto,[cemento,segundo]);
+  assert.equal(r.resumen.completas,1);
+  assert.equal(r.resumen.segmentos_fuente_estimados,2);
+  assert.equal(r.resumen.segmentos_sin_extraccion,0);
+  assert.equal(r.lineas[0].articulos_detectados,2);
+  assert.equal(r.lineas[0].articulos_preparados,2);
+  assert.equal(r.resumen.proveedores_preparados,2);
+  assert.equal(r.resumen.pedido_totalmente_cubierto,true);
+});
+test('cuando IA omite la pintura de la MISMA línea, reporta parcial y no completo',async()=>{
+  const texto='20 bolsas de Cemento CPC 50 kg; 5 litros de pintura látex interior';
+  const r=await run(texto,[cemento]);
+  assert.equal(r.lineas[0].estado,'parcial');
+  assert.equal(r.lineas[0].segmentos_fuente_estimados,2);
+  assert.equal(r.lineas[0].segmentos_sin_extraccion,1);
+  assert.equal(r.resumen.completas,0);
+  assert.equal(r.resumen.parciales,1);
+  assert.equal(r.resumen.pedido_totalmente_cubierto,false);
+  assert.ok(r.lineas[0].motivos.includes('segmento_sin_extraccion'));
+  assert.deepEqual(r.resultado.extraccion.segmentos_sin_extraccion,
+    [{linea_fuente:1,segmento:2}]);
+});
+test('si omite el primer material de una línea, la segunda consulta no oculta la falta',async()=>{
+  const texto='20 bolsas de Cemento CPC 50 kg; 5 litros de pintura látex interior';
+  const r=await run(texto,[item(1,'pintura látex interior','5','l','pintureria')]);
+  assert.equal(r.lineas[0].estado,'parcial');
+  assert.deepEqual(r.resultado.extraccion.segmentos_sin_extraccion,
+    [{linea_fuente:1,segmento:1}]);
+  assert.equal(r.resumen.proveedores_preparados,1);
+});
+test('separador «y» seguido de otra cantidad+unidad reconoce dos materiales',async()=>{
+  const texto='20 bolsas de Cemento CPC 50 kg y 5 litros de pintura látex interior';
+  const r=await run(texto,[cemento,item(1,'pintura látex interior','5','l','pintureria')]);
+  assert.equal(r.resumen.segmentos_fuente_estimados,2);
+  assert.equal(r.resumen.segmentos_sin_extraccion,0);
+  assert.equal(r.resumen.pedido_totalmente_cubierto,true);
+});
+test('el peso 50 kg de una bolsa NO es un segundo material',async()=>{
+  const r=await run('20 bolsas de Cemento CPC 50 kg',[cemento]);
+  assert.deepEqual(r.resultado.extraccion.segmentos_fuente,
+    [{linea_fuente:1,segmentos:1}]);
+  assert.equal(r.resumen.segmentos_sin_extraccion,0);
+});
+test('una respuesta duplicada para un solo segmento no puede duplicar invitaciones',async()=>{
+  const r=await run('20 bolsas de Cemento CPC 50 kg',[cemento,{...cemento}]);
+  assert.equal(r.resumen.completas,0);
+  assert.equal(r.resumen.proveedores_preparados,0);
+  assert.equal(r.lineas[0].segmentos_sin_extraccion,1);
+  assert.ok(r.lineas[0].motivos.includes('origen_no_verificado'));
+});
+test('dos líneas, una con dos productos y otro artículo separado, exponen cobertura parcial',async()=>{
+  const texto='20 bolsas de Cemento CPC 50 kg; 5 litros de pintura látex interior\n10 bolsas de Cemento CPC 50 kg';
+  const tercero=item(2,'Cemento CPC 50 kg','10','bag','corralon');
+  const r=await run(texto,[cemento,tercero]);
+  assert.deepEqual(r.lineas.map(x=>x.estado),['parcial','preparada_para_consultar']);
+  assert.equal(r.resumen.segmentos_fuente_estimados,3);
+  assert.equal(r.resumen.segmentos_sin_extraccion,1);
+  assert.equal(r.resumen.pedido_totalmente_cubierto,false);
+});
+test('un segundo material separado que no tiene cantidad explícita nunca se da por cubierto',async()=>{
+  const texto='20 bolsas de Cemento CPC 50 kg; pintura látex interior';
+  const r=await run(texto,[cemento]);
+  assert.equal(r.resumen.completas,0);
+  assert.equal(r.lineas[0].estado,'retenida');
+  assert.ok(r.lineas[0].motivos.includes('cantidad_sin_evidencia'));
+});
