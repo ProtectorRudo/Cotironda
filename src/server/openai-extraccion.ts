@@ -98,8 +98,15 @@ function fuenteCantidadUnidad(linea:string,cantidad:string|null,unidad:string|nu
   // Una IA podría devolver «Cemento» y omitir «CPC 50 kg» para que coincida
   // con un catálogo genérico. Exigimos que TODO el producto esté representado:
   // lo único descartable del origen es cantidad + unidad y «de»/puntuación.
-  const restante=fuente.replace(re,'').replace(/^\s*de\s+/,'')
-    .replace(/^[-*•:;()\s]+|[-*•:;()\s]+$/g,'').trim();
+  // Admitimos expresiones coloquiales muy delimitadas, no texto arbitrario.
+  // «Necesito 20 bolsas de Cemento CPC 50 kg» conserva la misma evidencia;
+  // «Necesito 20 bolsas de cemento CPC 50 kg» NO puede pasar por «cemento».
+  let restante=fuente.replace(re,'').trim();
+  restante=restante.replace(
+    /^(?:(?:necesito|preciso|solicito|solicitamos|quiero|queremos|pedimos|cotizar)\s+(?:para\s+la\s+obra\s+)?|(?:para\s+la\s+obra\s+)?necesitamos\s+)/u,''
+  );
+  restante=restante.replace(/^(?:de|del)\s+/u,'')
+    .replace(/^[-*•:;()\s]+|[-*•:;()\s]+$/gu,'').trim();
   return restante===producto;
 }
 function mensajeJSON(remoto:unknown):unknown {

@@ -163,3 +163,7 @@ Se agregó un diccionario curado inicial de 6 familias en 5 rubros y un orquesta
 
 ### 30/10/2026 — ruta económica de extracción para listas simples (Issue #121)
 Se reutilizó el parser de texto básico y taxonomía D015 para evitar pagar IA en listas muy claras: token usage local 0, selección de proveedores ficticios por producto confirmado y zona; dudas en `pendientes_ia`, sin gastar tokens ni inventar. Controles estrictos de gramática, términos, cantidad y marca exclusiva. Más adelante, solo las líneas pendientes podrán enviarse a un modelo pequeño bajo presupuesto, deduplicación y medición de precisión/costo. Docs/74, demo `npm run demo:sin-ia`.
+
+
+### 30/10/2026 — D016: calidad > tokens (Issue #123)
+Se reorienta la Etapa 02: el recorrido preferido de laboratorio es IA → evidencia y taxonomía curada → selección de proveedores, con línea fuente trazada, retenciones y omisiones visibles. La ruta económica #121 es candidata secundaria hasta demostrar igualdad en benchmark real. No hay inferencia remota aún; falta secret DEV, presupuesto, dataset independiente, medición por rubro y catálogos reales. Docs/75 y PR draft sobre #122.

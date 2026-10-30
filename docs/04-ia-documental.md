@@ -31,3 +31,7 @@ La IA debe interpretar solicitudes corrientes sin exigir nomenclatura técnica: 
 
 ## Etapa 02 — puente taxonómico D015 para IA
 Se implementó una taxonomía argentina local y versionada con seis familias piloto de cinco rubros (`src/domain/taxonomia-materiales.ts`). El modelo debe extraer literalmente texto, cantidad, unidad, atributos y marca; el **resolvedor controlado** mapea a producto canónico y analiza marcas exclusivas expresas. No se presupone CPC, resistencia ni presentación cuando el pedido solo dice «cemento». Sin coincidencia exacta en la taxonomía o rubro incoherente, se retiene esa línea. Los SKU del proveedor confirmados, zona y consentimiento se controlan luego en el planificador D015. Ver docs/73; no es aún una evaluación real de GPT ni un catálogo exhaustivo.
+
+
+## D016 — pruebas de calidad end-to-end y omisiones visibles
+El nuevo coordinador `simularRondaConCalidadIA` prioriza IA por defecto (solo cuando esté autorizada en entorno DEV), y después aplica validación de evidencia, taxonomía y D015. Resume cada línea no vacía como preparada, parcial, retenida, omitida o sin proveedor; no declara procesamiento completo cuando faltan líneas. Textos como «Necesito 20 bolsas de Cemento CPC 50 kg» pueden verificarse sin descartar el prefijo coloquial, pero «Cemento CPC 50 kg» no puede recortarse a «Cemento». La ruta local sin tokens permanece secundaria hasta medición independiente. Ver docs/75.

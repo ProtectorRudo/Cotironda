@@ -186,3 +186,7 @@ Ya existe un prototipo **offline** que relaciona textos cotidianos («cemento»,
 
 ### Etapa 02 — ruta económica de listas claras (Issue #121)
 `src/domain/entrada-economica.ts` permite preparar **planes simulados** sin consumir tokens de OpenAI cuando el comprador escribe de forma explícita «10 bolsas cemento», «20 bolsas Cemento CPC Loma Negra 50 kg», «5 litros pintura látex interior» u otras expresiones acotadas. Clasifica por producto canónico, marca flexible y catálogo de SKU ficticio; lo complejo queda en `pendientes_ia` **sin llamarlo todavía a OpenAI**. Demo `npm run demo:sin-ia`, Node 22+. [Limitaciones y riesgos](docs/74-entrada-economica-sin-tokens.md). Sin envíos, catálogos comerciales, IA real, cambios de base o publicación.
+
+
+### D016 — calidad antes que ahorro de tokens (Issue #123)
+El circuito preferido para futuros documentos utiliza **IA primero**, con validaciones deterministas de evidencia, producto canónico y catálogo; **no se da por completo un pedido con líneas omitidas**. La ruta económica local sigue siendo experimental y no reemplaza IA hasta demostrar calidad equivalente en pruebas independientes. Nuevo contrato `src/server/flujo-calidad-ia.ts` con 5 estados de cobertura por línea y errores controlados de API. [Reglas y límites](docs/75-calidad-primero-ia.md). El código está en PR draft, sin inferencia OpenAI real, sin Whapi ni despliegue.
