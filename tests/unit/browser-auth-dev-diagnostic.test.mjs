@@ -110,7 +110,7 @@ test('CSP prohíbe conexión a terceros y formulario no persiste ni envía contr
  assert.doesNotMatch(script,/localStorage\.|sessionStorage\.|indexedDB\.|sendBeacon\(|XMLHttpRequest\(|document\.cookie|innerHTML\s*=/);
  assert.doesNotMatch(script,/github\.com|vercel\.app|whapi|mercadopago/i);
  assert.doesNotMatch(html,/sb_secret_|SUPABASE_SERVICE_ROLE_KEY|<script src=/);
- assert.match(script,/get\('verifiedPassword'\)\.value=''/);
+ assert.match(script,/for\(const id of \['verifiedPassword','pendingPassword'\]\)get\(id\)\.value=''/);
  assert.match(script,/get\('samePassword'\)\.checked\?password/);
 });
 
