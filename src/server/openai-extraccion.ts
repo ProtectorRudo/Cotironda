@@ -16,6 +16,15 @@ const MAX_TEXTO = 9000;
 const MAX_LINEAS = 25;
 const MAX_OUTPUT_TOKENS = 3500;
 const MAX_RESPUESTA_BYTES = 240000;
+// Separadores inequívocos SOLAMENTE antes de otra cantidad+unidad. «50 kg»
+// dentro de «20 bolsas de cemento 50 kg» no es otro artículo.
+const INICIO_ARTICULO = String.raw`\d{1,6}(?:[.,]\d{1,2})?\s*(?:bolsas?|sacos?|unidades?|placas?|latas?|bidones?|cajas?|piezas?|rollos?|paquetes?|litros?|kilos?|kilogramos?|metros?|kg|ml|mm|m2|m3|l|m)(?=$|[^\p{L}\p{N}])`;
+const SEPARADOR_ARTICULOS = new RegExp(
+  String.raw`\s*(?:;|\+)\s*|\s+\by\b\s+|,\s+` + '(?=' + INICIO_ARTICULO + ')', 'giu'
+);
+function separarMaterialesExplicitos(linea:string):string[]{
+  return linea.split(SEPARADOR_ARTICULOS).map(s=>s.trim()).filter(Boolean);
+}
 
 const esquemaNullable = (tipo: string) => ({type:[tipo,'null']});
 const esquemaItem = {
@@ -51,6 +60,8 @@ const INSTRUCCIONES = [
   'Extraé únicamente materiales explícitamente presentes. NO agregues precios, proveedores,',
   'contactos, IVA, marcas, unidades, cantidades ni especificaciones por inferencia.',
   'Cada item debe citar su línea: Texto, línea N, contando solo líneas no vacías.',
+  'Si una línea contiene varios materiales separados por ;, +, o «y» seguida de otra cantidad y unidad,',
+  'devolvé un item por material, citando la MISMA ubicación Texto, línea N.',
   'descripcion_original: copiar literalmente un fragmento contiguo que identifique el producto.',
   'producto_normalizado: usar la misma descripción literal si no está demostrada una equivalencia;',
   'si no hay seguridad técnica, usar null. No convertir espesores ni unidades arbitrariamente.',
@@ -134,6 +145,8 @@ export type ResultadoExtraccionIA = Readonly<{
   modelo:typeof MODELO_IA_DOCUMENTAL;
   borrador:BorradorDocumental;
   lineas_sin_extraccion:number[];
+  segmentos_fuente:{linea_fuente:number;segmentos:number}[];
+  segmentos_sin_extraccion:{linea_fuente:number;segmento:number}[];
   tokens:{entrada:number;salida:number}|null;
 }>;
 
@@ -192,6 +205,8 @@ export async function extraerMaterialesConIA(args:{
   const payload=mensajeJSON(remoto);
   if(!objetoSeguro(payload)||!Array.isArray(payload.items)||
     payload.items.length>MAX_LINEAS)throw new Error('ia_esquema_invalido');
+  const segmentosPorLinea=lineas.map(separarMaterialesExplicitos);
+  const segmentosVerificados=new Map<number,Map<number,number[]>>();
   const vistos=new Set<number>();
   for(const item of payload.items){
     if(!objetoSeguro(item) ||
@@ -209,18 +224,51 @@ export async function extraerMaterialesConIA(args:{
     throw new Error('ia_esquema_invalido');
   for(const linea of borrador.lineas){
     const idx=Number(linea.ubicacion.slice('Texto, línea '.length))-1;
-    const original=lineas[idx];
-    if(!canon(original).includes(canon(linea.descripcion_original)))
-      linea.requiere_aclaracion.push('origen_no_verificado');
-    if(!fuenteCantidadUnidad(original,linea.cantidad,linea.unidad,linea.descripcion_original))
+    const source=segmentosPorLinea[idx];
+    // No basta con hallar el producto en algún lugar de la línea: debe
+    // coincidir exactamente con una sola subsolicitud delimitada.
+    const candidatos=source.flatMap((segmento,index)=>
+      fuenteCantidadUnidad(segmento,linea.cantidad,linea.unidad,linea.descripcion_original)?
+        [index]:[]);
+    if(candidatos.length!==1){
       linea.requiere_aclaracion.push('cantidad_sin_evidencia');
+      if(candidatos.length>1)linea.requiere_aclaracion.push('origen_no_verificado');
+      continue;
+    }
+    const porLinea=segmentosVerificados.get(idx+1)??new Map<number,number[]>();
+    const segmentos=porLinea.get(candidatos[0])??[];
+    segmentos.push(linea.fila);
+    porLinea.set(candidatos[0],segmentos);
+    segmentosVerificados.set(idx+1,porLinea);
   }
+  // Una respuesta que declara DOS productos a partir de un único segmento
+  // no puede duplicar solicitudes; la evidencia debe ser unívoca.
+  for(const porLinea of segmentosVerificados.values()){
+    for(const filas of porLinea.values()){
+      if(filas.length<2)continue;
+      for(const fila of filas){
+        const articulo=borrador.lineas.find(x=>x.fila===fila);
+        if(articulo && !articulo.requiere_aclaracion.includes('origen_no_verificado'))
+          articulo.requiere_aclaracion.push('origen_no_verificado');
+      }
+    }
+  }
+  const segmentos_sin_extraccion=segmentosPorLinea.flatMap((segments,idx)=>
+    segments.flatMap((_,j)=>{
+      const usados=segmentosVerificados.get(idx+1)?.get(j)??[];
+      const valido=usados.length===1 &&
+        !borrador.lineas.find(x=>x.fila===usados[0])?.requiere_aclaracion.length;
+      return valido?[]:[{linea_fuente:idx+1,segmento:j+1}];
+    }));
+
   const usage=objetoSeguro(remoto.usage)?remoto.usage:null;
   const entrada=usage?.input_tokens, salida=usage?.output_tokens;
   return{
     estado:'extraccion_ia_sin_envio',modelo:MODELO_IA_DOCUMENTAL,
     borrador,
     lineas_sin_extraccion:lineas.map((_,i)=>i+1).filter(i=>!vistos.has(i)),
+    segmentos_fuente:segmentosPorLinea.map((items,i)=>({linea_fuente:i+1,segmentos:items.length})),
+    segmentos_sin_extraccion,
     tokens:typeof entrada==='number'&&Number.isFinite(entrada)&&
       typeof salida==='number'&&Number.isFinite(salida)?{entrada,salida}:null
   };
