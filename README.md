@@ -251,3 +251,6 @@ El PR #160 suma un broker Node server-only que pseudonimiza chat/mensaje con HMA
 
 ### 30/10/2026 — Etapa 04: gateway PostgreSQL privado WhatsApp
 El PR #162 agrega un gateway de base con rol interno sin inicio de sesión y EXECUTE limitado para resolver un chat verificado, registrar mensaje cifrado o BAJA. El adaptador Node usa sentencias SQL parametrizadas y respuestas cerradas; PostgreSQL17 comprueba permisos, ronda única, baja y reintentos con datos ficticios. **No instalado en DEV, sin driver/credencial real ni webhook activo**. Ver [docs/94](docs/94-whapi-postgres-gateway-private.md).
+
+### 30/10/2026 — Etapa 04: E2E Node ↔ PostgreSQL 17 real en CI
+PR #164 prepara una prueba integral con `pg@8.23.1`, un usuario SQL temporal de permisos mínimos y mensajes Whapi sintéticos. Se verifican guardado cifrado real, reenvíos sin duplicar y BAJA sin invitación, entre conexiones distintas. **Solo base efímera GitHub Actions**: no se instala D024–D030 en Supabase DEV, ni se configura Whapi real, ni se despliega producción. Ver [docs/95](docs/95-whapi-node-postgres-e2e.md).

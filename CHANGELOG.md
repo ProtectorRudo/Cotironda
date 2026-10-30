@@ -547,3 +547,9 @@
 - Nueva función privada `whapi_resolve_active_contact_v1` bajo rol limitado D028, selecciona vínculo validado por HMAC+consentimiento y **una única** invitación abierta. Nuevo rol gateway NOLOGIN/NOBYPASSRLS con exclusivamente EXECUTE de resolver, inbox y BAJA, sin SELECT directo ni permisos de Data API.
 - Adaptador Node `src/server/whapi-postgres-gateway.ts` con SQL parametrizado, validación estricta de HMAC, bytea/nonce/tag y respuestas, errores genéricos sin filtrar credenciales. Pruebas unitarias con driver simulado, pruebas SQL PostgreSQL17 reales en `103_whapi_gateway_private.sql`, documentación docs/94.
 - No hay driver SQL conectado a DEV, ni configuración Whapi, ni despliegues, secretos, uso de IA o llamadas comerciales. PR #162 en borrador.
+
+## [Sin publicar — D031 / Issue #163: E2E real Node a PostgreSQL 17]
+- Dependencia aislada `pg@8.23.1` para CI con driver PostgreSQL auténtico, sin añadir carga al portal.
+- Job PostgreSQL17 prepara login CI de mínimo privilegio y claves HMAC/AES y webhook efímeras; prueba con Node el recorrido completo D027→D029→D030→D028 y reenvíos/bajas entre conexiones.
+- Prueba que rol gateway no puede SELECT de tablas ni UPDATE de rondas; SQL administrador inspecciona registros cifrados y BAJA. Datos sintéticos eliminados al destruir el contenedor de CI, sin alterar historial de 12 migraciones ni DEV/producción.
+- Requiere cerrar package-lock, CI verde y auditoría antes de habilitar nada. Docs/95, PR #164.
