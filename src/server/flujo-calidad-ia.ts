@@ -18,6 +18,8 @@ export type InformeLineaCalidad=Readonly<{
   articulos_detectados:number;
   articulos_preparados:number;
   proveedores_candidatos:number;
+  segmentos_fuente_estimados:number;
+  segmentos_sin_extraccion:number;
   motivos:readonly string[];
 }>;
 
@@ -35,6 +37,8 @@ export type PlanCalidadPrioritaria=Readonly<{
     omitidas:number;
     sin_proveedor:number;
     proveedores_preparados:number;
+    segmentos_fuente_estimados:number;
+    segmentos_sin_extraccion:number;
     pedido_totalmente_cubierto:boolean;
   };
   // Solo consulta; jamás envío real. Mantiene la estructura completa del
@@ -88,10 +92,18 @@ export async function simularRondaConCalidadIA(args:{
   for(const r of plan.retenidas)agregar(r.fila,r.motivo);
 
   const omitidas=new Set(r.extraccion.lineas_sin_extraccion);
+  const totalSegmentos=new Map(r.extraccion.segmentos_fuente.map(s=>
+    [s.linea_fuente,s.segmentos]));
+  const segmentosPendientes=new Map<number,number>();
+  for(const s of r.extraccion.segmentos_sin_extraccion)
+    segmentosPendientes.set(s.linea_fuente,
+      (segmentosPendientes.get(s.linea_fuente)??0)+1);
   const lineas:InformeLineaCalidad[]=original.map((_,i)=>{
     const fuente=i+1;
     const items=extraidos.filter(x=>indiceFuente(x.ubicacion)===fuente);
     const ids=new Set(items.map(x=>x.fila));
+    const pendientes=segmentosPendientes.get(fuente)??0;
+    const segmentos=totalSegmentos.get(fuente)??1;
     const proveedores=new Set<string>();
     let preparados=0;
     const razones=new Set<string>();
@@ -100,12 +112,13 @@ export async function simularRondaConCalidadIA(args:{
       if(p?.size){preparados++;for(const pr of p)proveedores.add(pr);}
       for(const x of motivosPorItem.get(item.fila)??[])razones.add(x);
     }
+    if(pendientes>0)razones.add('segmento_sin_extraccion');
     let estado:EstadoLineaCalidad;
     if(!items.length||omitidas.has(fuente)){
       estado='omitida_por_ia';razones.add('linea_sin_extraccion');
     }else if(preparados>0&&preparados<items.length){
       estado='parcial';
-    }else if(preparados>0&&razones.size){
+    }else if(preparados>0&&(pendientes>0||razones.size)){
       estado='parcial';
     }else if(preparados===items.length){
       estado='preparada_para_consultar';
@@ -121,6 +134,8 @@ export async function simularRondaConCalidadIA(args:{
       linea_fuente:fuente,estado,
       articulos_detectados:items.length,articulos_preparados:preparados,
       proveedores_candidatos:proveedores.size,
+      segmentos_fuente_estimados:segmentos,
+      segmentos_sin_extraccion:pendientes,
       motivos:[...razones].sort()
     };
   });
@@ -140,6 +155,8 @@ export async function simularRondaConCalidadIA(args:{
       omitidas:count('omitida_por_ia'),
       sin_proveedor:count('sin_proveedor_confirmado'),
       proveedores_preparados:plan.invitaciones.length,
+      segmentos_fuente_estimados:lineas.reduce((n,l)=>n+l.segmentos_fuente_estimados,0),
+      segmentos_sin_extraccion:lineas.reduce((n,l)=>n+l.segmentos_sin_extraccion,0),
       pedido_totalmente_cubierto:
         lineas.length>0&&lineas.every(l=>l.estado==='preparada_para_consultar')
     },
