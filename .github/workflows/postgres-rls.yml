@@ -112,6 +112,11 @@ jobs:
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f supabase/sql/rounds_private_ledger_d024.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/99_rounds_private_ledger.sql
+      - name: D025 RPC lectura comprador con sesión vigente y aislamiento por empresa
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/round_buyer_overview_d025.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/100_round_buyer_overview.sql
 
   migrations-from-zero:
     name: Reconstruir historial 12 migraciones en PostgreSQL limpio
