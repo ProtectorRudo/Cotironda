@@ -43,3 +43,16 @@ El primer despliegue de la función deberá dirigirse **únicamente** a `qkercso
 - No hay ningún deploy de Edge Function en este PR, ninguna inferencia OpenAI real, factura, mutación de base ni envío. La clave tampoco fue transferida o leída por esta sesión.
 
 **Siguientes hitos:** confirmar el secreto en DEV; verificar prueba de estado con función protegida; habilitar smoke tras permiso; después portar el adaptador real con autorización por empresa, guardas de costo y evaluación de calidad. No modificar producción ni fusionar PRs apilados sin autorización.
+
+
+## Actualización 30/10/2026 — Instalación REAL en Supabase DEV
+
+El propietario confirmó haber guardado `OPENAI_API_KEY` en **Edge Function Secrets**. La versión **1** de `cotironda-ia-dev` se desplegó mediante conector Supabase en `cotironda-dev`, project ref `qkercsoqhehbenbbncwk`; el resultado y posteriores lecturas `list_edge_functions` / `get_edge_function` confirmaron **status ACTIVE, version 1, verify_jwt=false**, con los tres archivos de la rama (`index.ts`, `logic.ts`, `deno.json`). Supabase confirmó que el código de la función coincide con el origen versionado en GitHub.
+
+**Control de acceso**: el SDK `withSupabase({auth:'secret'})` verifica `apikey` con la key secreta del proyecto. Que `verify_jwt=false` conste en metadata no equivale a función abierta: la verificación queda a cargo del SDK, según [docs oficiales](https://supabase.com/docs/guides/functions/auth). El `smoke` sigue desactivado si no se crea el flag de habilitación adicional.
+
+**Limitación de verificación**: el conector sí permite desplegar y consultar metadatos/código, pero **no tiene acción para invocar una Edge Function con la clave secreta de Supabase ni para consultar el valor/nombre de secretos Edge**. Por lo tanto, todavía no se comprobó en tiempo de ejecución que `OPENAI_API_KEY` esté disponible (no marcarla como verificada solo por la confirmación del usuario), ni el comportamiento HTTP real del runtime Deno. El intento de prueba HTTP desde el entorno de herramientas no pudo resolver DNS externo, y no se ejecutó ningún request OpenAI. Cero tokens gastados.
+
+**Prueba sin gasto desde el Dashboard**: abrir `cotironda-dev` → Edge Functions → `cotironda-ia-dev` → **Test**, método POST, header `Content-Type: application/json`, otro header `apikey` con el **valor secreto de API de Supabase para el backend** (en Settings → API Keys; nunca la clave OpenAI ni una clave publishable), body `{"mode":"status"}`. La respuesta esperada será HTTP 200 con `{"status":"ready_for_dev","environment":"cotironda-dev","openai_secret_configured":true,"smoke_enabled":false}` si la función logra inicializarse y el secreto está disponible. No compartir `apikey` ni claves por el chat; informar solo el HTTP y booleanos. Una respuesta 401 significa revisar `apikey` (secret keys modernas en el header `apikey`, no `Authorization: Bearer`). Un 500 significa revisar los logs de la función antes de cualquier smoke.
+
+**Próximo paso**: después del estado verificado, completar la invocación segura Next servidor → Edge y guardas de cuotas por empresa, sin activar `smoke` ni envío comercial todavía. **Nunca publicar esta función de laboratorio como endpoint de IA de usuario.**
