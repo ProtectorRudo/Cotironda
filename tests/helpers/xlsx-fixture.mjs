@@ -64,7 +64,7 @@ export function crearXlsxFixture({
       '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/></Types>',
     'xl/workbook.xml':'<?xml version="1.0"?>'+
       '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
-      '<sheets><sheet name="Hoja1" sheetId="1"/></sheets></workbook>'
+      '<sheets>'+hojas.map((_,i)=>'<sheet name="Hoja'+(i+1)+'" sheetId="'+(i+1)+'"/>').join('')+'</sheets></workbook>'
   };
   hojas.forEach((rows,i)=>{
     const body=rows.map((cells,j)=>'<row r="'+(j+1)+'">'+
