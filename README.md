@@ -1,6 +1,6 @@
 # Cotironda
 
-**Estado al 29/10/2026: Etapa 01, identidad y catálogos en desarrollo. Once migraciones aplicadas únicamente en `cotironda-dev`. El registro y las licitaciones comerciales NO están habilitados; el sitio público es demostrativo.**
+**Estado al 29/10/2026: Etapa 01, identidad y catálogos en desarrollo. Doce migraciones aplicadas únicamente en `cotironda-dev`. El registro y las licitaciones comerciales NO están habilitados; el sitio público es demostrativo.**
 
 Cotironda es una plataforma argentina B2B para solicitar cotizaciones privadas de **materiales de obra**. El comprador carga una lista una sola vez; la IA la interpreta y separa por rubro; el comprador revisa y confirma. Se invita a proveedores pertinentes según catálogo y cobertura geográfica; estos pueden responder desde WhatsApp (Whapi + IA) o por un portal opcional. El comprador compara ofertas anónimas, completas o parciales, y adjudica manualmente.
 
@@ -88,3 +88,6 @@ Proyecto de desarrollo: `cotironda-dev` (`qkercsoqhehbenbbncwk`), última migrac
 
 
 **Migración 12 aplicada SOLO en Supabase `cotironda-dev` (PR #77, sin publicar):** las **17 políticas comerciales de usuarios** ahora exigen sesión vigente en Auth; las seis políticas internas del registrador conservan sus expresiones originales. Preflight y verificación real SQL: 23 políticas, 17 guardadas, registro=false, cero empresas/sesiones/archivos/trabajos y Storage sin escritura. El historial Supabase es `20261029234236_commercial_session_guard`, reconciliado con el archivo de GitHub y probado con las doce migraciones en CI. Aún faltan E2E con **JWT genuino de Supabase Auth** tras logout, cookies HTTPS/SSR, 429 remoto y advertencia de contraseñas filtradas. [Informe de migración y límites](docs/51-commercial-session-migration.md). No hay apertura comercial ni despliegue.
+
+
+**Prueba de JWT auténtico revocado preparada (Issue #78, sin publicar):** `auth-real-smoke.mjs` ahora comprueba que un JWT **emitido por Supabase Auth real** lea las categorías activas de Cotironda antes del logout global y que, usando **el mismo JWT original todavía vigente**, PostgREST devuelva **HTTP 200 y []** por RLS tras cerrar la sesión. Solo GET a `catalog_categories`, ningún alta/archivo; exige contraseñas privadas de cuentas exclusivas de ensayo **que no existen en GitHub ni en este chat**. Esta parte **aún no fue ejecutada contra Auth remoto**, aunque su contrato cuenta con pruebas offline. [Protocolo, pruebas y límites](docs/52-auth-real-revoked-catalog-e2e.md).

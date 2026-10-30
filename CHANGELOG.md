@@ -227,3 +227,10 @@
 - **Aplicada solo en `cotironda-dev`** mediante migración Supabase; backend registró versión `20261029234236`. Archivo local y referencias CI renombrados a la misma versión para evitar drift frente al timestamp CLI inicial `20261029233650`.
 - Verificación SQL remota: 23 policies totales, **17 client policies con guard de sesión**, seis policies registrador intactas (misma huella MD5), registro=false, 0 empresas, 0 sesiones, 0 objetos, 0 trabajos, 0 policies Storage de escritura. Security Advisor conserva 1 WARN previo por contraseña filtrada y 2 INFO intencionales.
 - Queda sin probar con JWT genuino Supabase Auth el efecto real de logout; sin cookies HTTPS, 429 remoto, permiso de subir, merge a main, producción ni cambios de Vercel/Hostinger. Ver `docs/51-commercial-session-migration.md`.
+
+
+## [Sin publicar — Issue #78: diagnóstico real de revocación JWT por catálogo]
+- Se amplió `apps/portal/scripts/auth-real-smoke.mjs` para un ensayo **manual seguro** con las cuentas exclusivas de Auth dev: JWT original validado, GET de categorías activas con 200 y filas **antes** de signOut global, y 200/[] con **el mismo JWT que aún no expiró** tras signOut. El objetivo es diferenciar revocación RLS real de bloqueo global de registro.
+- Se agregó `src/server/auth-e2e-catalog-revocation.ts` con URL exacta, GET único, sin caché, clave exclusivamente publicable, margen de expiración, validación de formato y fallas cerradas. Tests unitarios offline adversariales en `tests/unit/auth-real-revoked-catalog.test.mjs`.
+- SQL read-only de `cotironda-dev`: **5 categorías activas**, guard RLS de sesión presente, registro false, 0 empresas, 0 sesiones y 0 objetos Storage. No se enviaron credenciales ni se iniciaron sesiones reales con herramientas de CI.
+- **Falta ejecutar** el flujo con credenciales privadas en un entorno controlado; la CI verifica solo el código y mocks HTTP. No se declara E2E real exitoso. Ver `docs/52-auth-real-revoked-catalog-e2e.md`.
