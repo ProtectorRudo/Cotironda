@@ -144,7 +144,7 @@ begin
   where round_id=r and supplier_org_id=b and version=1)<>100
  then raise exception 'old_version_corrupted_before_confirmation';end if;
  receipt:=cotironda_private.confirm_offer_atomic_v1(r,b,ev5,2);
- if (receipt->>'version'<>'2' then raise exception 'version_increment_invalid';end if;
+ if (receipt->>'version')<>'2' then raise exception 'version_increment_invalid';end if;
  if (select count(*) from cotironda_private.offer_versions_v1
   where round_id=r and supplier_org_id=b)<>2 or
   (select freight_gross from cotironda_private.offer_versions_v1
