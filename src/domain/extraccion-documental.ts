@@ -1,7 +1,8 @@
 /**
  * Etapa 02: contrato puro para convertir una salida IA NO confiable en borrador.
  * No ejecuta acciones, interpreta archivos, crea solicitudes ni envía mensajes.
- * Los datos devueltos SIEMPRE requieren confirmación explícita del comprador.
+ * El comprador autoriza distribuir al ENVIAR la lista, sin revisar cada línea.
+ * Líneas ambiguas/duplicadas se retienen; solo el matcher seguro selecciona proveedores.
  */
 import { RUBROS, UNIDADES, type Rubro, type Unidad } from './catalogo.ts';
 
@@ -29,7 +30,7 @@ export type LineaDocumental = {
   requiere_aclaracion: AvisoExtraccion[];
 };
 export type BorradorDocumental = {
-  estado: 'pendiente_confirmacion_comprador';
+  estado: 'pendiente_despacho_automatico';
   formato: FormatoDocumento;
   lineas: LineaDocumental[];
   errores: { fila: number; codigo: 'linea_invalida' | 'referencia_invalida' | 'descripcion_invalida' }[];
@@ -128,5 +129,5 @@ export function prepararBorradorDocumental(formato: FormatoDocumento, salidaIA: 
     } else vistas.set(clave, fila);
     lineas.push(linea);
   }
-  return {estado: 'pendiente_confirmacion_comprador', formato, lineas, errores, posibles_duplicados};
+  return {estado: 'pendiente_despacho_automatico', formato, lineas, errores, posibles_duplicados};
 }

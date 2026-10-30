@@ -22,3 +22,6 @@ Validar autenticidad webhook según posibilidades reales del proveedor; deduplic
 
 ## Comunicación
 Invitación pertinente, recordatorio neutral cercano al vencimiento cuando proceda, aviso de resultado. No presionar para bajar precios ni exponer datos ajenos. Controlar costos por cliente.
+
+## D013 — envío selectivo automático
+Al enviar la lista, el comprador autoriza el contacto automático. Una sola solicitud idempotente por proveedor y ronda, con únicamente los materiales concretos que confirmó trabajar y que puede entregar en la zona, sin difundir archivo original completo. Respetar opt-in, exclusiones, baja, límite de frecuencia y costos; producto con duda queda retenido, el resto avanza. La confirmación del proveedor para precios y cambios sigue siendo obligatoria.

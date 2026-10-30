@@ -29,7 +29,7 @@ Actuar como director técnico, desarrollador, analista de producto y auditor. Pr
 ## Invariantes de negocio
 - Proveedores gratuitos sin comisiones; compradores por suscripción prevista.
 - Productos materiales de obra, no servicios de precio subjetivo.
-- Comprador confirma toda solicitud interpretada por IA antes de distribuir.
+- El comprador autoriza la distribución al enviar la lista; NO revisa ni confirma cada línea antes del despacho. Los ítems ambiguos se retienen; el resto continúa automáticamente.
 - Proveedores elegidos por catálogo confirmado y zona, no por rubro genérico solamente.
 - Marcas flexibles salvo exigencia de marca obligatoria; equivalencia técnica comprobable.
 - Ofertas parciales nunca ganan un ranking general por su total menor.
@@ -51,3 +51,5 @@ Actuar como director técnico, desarrollador, analista de producto y auditor. Pr
 
 ## Fuente de verdad
 GitHub: README, docs, AGENTS, Issues, PRs, migraciones, tests y CHANGELOG. Si existe conflicto entre chat y GitHub, revisar y documentar antes de implementar.
+
+- El consentimiento de distribución del comprador se solicita al enviar su lista. Proveedores elegibles solo si catálogo por producto confirmado, zona compatible, opt-in vigente, sin baja; mensajes idempotentes por ronda/proveedor.
