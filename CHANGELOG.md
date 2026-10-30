@@ -462,3 +462,9 @@
 - Prepara modo `quality_case` por ID sintético allowlisted y autorización separada, deshabilitado por defecto. Motor original de OpenAI + verificador de evidencia + taxonomía y selección D015 + benchmark independiente de cobertura. Nunca entrega texto/respuesta IA cruda ni envía solicitudes.
 - `supabase/functions/cotironda-ia-dev/core` empaqueta copias byte-exactas de módulos `src` y corpus gold; script de regeneración y test de paridad para impedir deriva.
 - Nuevos tests offline de casos múltiples, cantidad inventada, permisos independientes y rechazo 429. Docs/80. **NO se desplegó ni llamó OpenAI desde este modo**.
+
+
+## [Sin publicar] — D018: una única consulta IA de laboratorio por caso (Issue #135)
+- Edge `quality_case` exige reserva de DB antes de consumir OpenAI, con PK por caso (máximo seis) y denegación ante repetidos, carreras, fallos de BD o falta de cliente de cuota. Ni 429 ni error de red permiten liberar/reintentar la reserva.
+- SQL versionado para registro sintético en Supabase DEV, RLS y permisos solo backend `service_role`; nuevos tests de concurrencia, 429 y permisos; docs/81.
+- Sin publicación de producción, sin envíos reales. Medición del modelo real pendiente de permiso y acceso privado para invocar.
