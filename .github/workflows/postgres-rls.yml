@@ -117,6 +117,11 @@ jobs:
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f supabase/sql/round_buyer_overview_d025.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/100_round_buyer_overview.sql
+      - name: D026 ofertas atómicas privadas (no se habilitan canales ni RPC públicas)
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/round_offer_atomic_write_d026.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/101_round_offer_atomic_write.sql
 
   migrations-from-zero:
     name: Reconstruir historial 12 migraciones en PostgreSQL limpio

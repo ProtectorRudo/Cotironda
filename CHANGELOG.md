@@ -522,3 +522,8 @@
 - Se agregó [docs/89](docs/89-ux-cero-friccion-whatsapp-first.md) con recorridos ideales, textos claros, estados honestos, filtro UX por PR, métricas de piloto y pruebas con personas no técnicas.
 - Se elevaron las reglas de UX a **AGENTS.md**, README, docs/01, docs/02, docs/05, docs/08, docs/09 y la decisión UX-001 en docs/10, manteniendo D013 (autorización inicial sin revisión de cada línea clara), confirmación de precios por proveedor y adjudicación manual.
 - No confundir esta decisión documentada con integración Whapi lista. **No hay cambios de código, base, producción, mensajes WhatsApp ni costos de IA**. Seguimiento: Issue #151.
+
+## [Sin publicar — D026 / Issue #153: borradores y confirmación transaccional privada]
+- Funciones SQL privadas `save_offer_draft_atomic_v1` y `confirm_offer_atomic_v1` para crear borradores, controlar versiones, confirmar explícitamente y preservar ofertas anteriores sin ejecutar IA. Operan con lock de ronda, CAS, SHA-256 del evento generado en la BD y reintento idéntico sin duplicados.
+- Rol `cotironda_rounds_writer` NOLOGIN/NOBYPASSRLS; no se concede acceso a la API pública ni a proveedores. La futura capa WhatsApp deberá comprobar identidad/consentimiento y ofrecer confirmación breve y sin portal, según UX-001.
+- Suite `supabase/tests/ci/101_round_offer_atomic_write.sql` con datos de prueba y rollback, conectada a GitHub PostgreSQL17. Sin instalación ni despliegue, WhatsApp, IA o nuevos gastos; documento docs/90 y PR #154.

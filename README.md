@@ -236,3 +236,6 @@ El PR #148 propone el primer ledger PostgreSQL de rondas, invitaciones, borrador
 
 ### 30/10/2026 — Etapa 03: acceso comprador read-only protegido (en desarrollo)
 El PR #150 prepara la consulta `GET /api/rondas/[rondaId]` para que un comprador autenticado lea solo sus fechas, estado y renglones, con validación de sesión vigente y membresía activa en PostgreSQL. **Deshabilitado por defecto y sin despliegue**: requiere instalar y probar SQL D024/D025 con una conexión Auth autorizada antes de activarlo. No crea rondas ni recibe cotizaciones; ver [docs/88](docs/88-rondas-lectura-segura.md).
+
+### 30/10/2026 — Etapa 03: guardar y confirmar cotizaciones, núcleo SQL privado
+El PR #154 desarrolla dos funciones internas PostgreSQL para que futuras respuestas de WhatsApp o web se guarden primero como **borrador**, y solo la confirmación expresa cree una versión inmutable. La operación usa idempotencia y revisión esperada para impedir duplicados y pérdidas de cambios. **No es todavía una ruta operativa para proveedores**, ni hay conexión Whapi: el SQL se prueba únicamente en PostgreSQL efímero de CI y no se instala en Supabase DEV/producción. Ver [docs/90](docs/90-ofertas-atomicas-privadas.md).
