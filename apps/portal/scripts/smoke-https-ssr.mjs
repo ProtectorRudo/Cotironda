@@ -199,6 +199,8 @@ try{
  assert.ok(refreshed.tlsVerified);
  if(authOnly){
   assert.match(refreshed.body,/Sesión de prueba activa/);
+  assert.match(refreshed.body,/Comprobar cookies y caché/,
+    'Diagnóstico seguro solo dentro de la vista Auth privada de Preview');
   assert.doesNotMatch(refreshed.body,/Nombre de empresa|Registrar empresa/);
  } else assert.match(refreshed.body,/Nombre de empresa/);
  noStore(refreshed);
