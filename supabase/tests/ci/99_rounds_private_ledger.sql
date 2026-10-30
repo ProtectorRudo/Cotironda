@@ -62,9 +62,9 @@ insert into cotironda_private.round_invites_v1(round_id,supplier_org_id,anon_id,
  ('dddddddd-0000-0000-0000-000000000004','bbbbbbbb-0000-0000-0000-000000000002','anon_aaa',1),
  ('dddddddd-0000-0000-0000-000000000004','cccccccc-0000-0000-0000-000000000003','anon_bbb',2);
 select pg_temp.must_fail(
- $insert into cotironda_private.round_invites_v1(round_id,supplier_org_id,anon_id,invite_position)
+ $cmd$insert into cotironda_private.round_invites_v1(round_id,supplier_org_id,anon_id,invite_position)
    values ('dddddddd-0000-0000-0000-000000000004',
-    'bbbbbbbb-0000-0000-0000-000000000002','anon_other',3)$,
+    'bbbbbbbb-0000-0000-0000-000000000002','anon_other',3)$cmd$,
  'duplicate key');
 update cotironda_private.rounds_v1 set status='abierta'
  where id='dddddddd-0000-0000-0000-000000000004';
