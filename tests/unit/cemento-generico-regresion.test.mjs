@@ -88,6 +88,8 @@ test('el prompt aclara la separación sin incluir gold ni inventar atributos',()
   assert.match(s,/sin la cantidad solicitada, sin la unidad de compra/);
   assert.match(s,/Ejemplo ajeno al pedido/);
   assert.match(s,/jamás agregar/);
+  assert.match(s,/no son la unidad de compra/);
+  assert.match(s,/cemento CPC 25 kg/);
   assert.ok(!s.includes('«10 bolsas de Cemento» se extrae'));
 });
 test('el SQL solo agrega métricas privadas y conserva reserva idempotente',()=>{
