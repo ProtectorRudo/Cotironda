@@ -23,7 +23,7 @@ function setup(overrides={}){
    attempts:0,linkRequests:[],writeRequests:[],bajaRequests:[]};
  state.links.set('default',{supplierOrgId:ORG,roundId:ROUND,
    consentimientoVigente:true,invitacionVigente:true});
- const almac={
+ const almacen={
   resolverVinculo:async(channel,chatKey)=>{
     state.linkRequests.push({channel,chatKey});
     return state.links.get('default')??null;
