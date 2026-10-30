@@ -147,3 +147,16 @@ test('producción de opciones jamás confirma equivalencia técnica ni precio',(
     x.comparable_como_identico===false&&x.cotizacion_requiere_confirmacion===true));
   assert.equal(r.estado,'plan_texto_economico_sin_envio');
 });
+
+test('CLI sin IA devuelve resumen verificable, incluye pendientes y nunca envía',async()=>{
+  const {execFileSync}=await import('node:child_process');
+  const raw=execFileSync(process.execPath,[
+    '--experimental-strip-types','scripts/demo/entrada-economica.mjs'
+  ],{encoding:'utf8',timeout:12000,stdio:['ignore','pipe','pipe']});
+  const r=JSON.parse(raw);
+  assert.equal(r.tokens_consumidos,0);
+  assert.equal(r.llamadas_ia,0);
+  assert.equal(r.resumen.lineas,6);
+  assert.equal(r.resumen.proveedores,3);
+  assert.deepEqual(r.pendientes_para_ia.map(x=>x.numero_linea),[5,6]);
+});
