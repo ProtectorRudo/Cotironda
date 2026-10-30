@@ -83,3 +83,7 @@ Compilación real de `cotironda-portal-dev` en `dpl_6X6o3xzgP1aRDRVpjdUtQ9p36tyM
 ### 30/10/2026 — logout de Preview comprobado en Auth real
 
 Después de pulsar «Cerrar sesión de prueba», el navegador mostró nuevamente la pantalla de ingreso (captura del propietario). Logs Supabase agregados: POST `/auth/v1/logout` 204 y evento Audit logout; SQL read-only: 0 sesiones, registro false, 0 empresas y archivos. **Ingreso, vista protegida, logout remoto y retorno al ingreso acreditados.** Restan: visita directa a `/alta` tras logout para probar denegación, inspección de cookies remotas, HTTP 429, backups y control de contraseñas filtradas. Issue #88 abierto, PR #89 draft, sin producción. Docs/59.
+
+ 
+### 30/10/2026 — Acceso privado post-logout: prueba real COMPLETADA
+El propietario abrió `/alta` **sin volver a ingresar** tras logout global; la tercera captura real de Chrome mostró el formulario de ingreso y no el área privada. Ya existía evidencia Auth servidor POST logout HTTP 204 y evento Audit logout, y SQL dev continuó con 0 sesiones, 0 empresas, 0 Storage y registro false. **Se valida el circuito completo login → vista privada → logout → intento de acceso directo denegado en Preview**, criterio funcional de Issue #88. No equivale a inspección de cookies en navegador ni cierre de Etapa 01. Quedan HTTP 429 remoto, verificación de atributos HTTP reales, Auth signup remoto, backups/recuperación y consolidación de PRs. PR #89 sigue draft sin producción. Ver docs/59.
