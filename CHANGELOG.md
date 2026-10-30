@@ -332,3 +332,17 @@
 - `apps/portal/scripts/smoke-https-ssr.mjs` verifica estos headers con **Next compilado sobre HTTPS real de loopback**, incluso en redirect anónimo, refresh de token SSR con `Set-Cookie`, GET con sesión renovada y POST de alta bloqueado. Auth sigue completamente sintético e interceptado.
 - `tests/unit/http-security-headers.test.mjs` agrega regresiones para impedir CSP de scripts sin nonces, HSTS amplio, CORS público o caché global de assets. **No se proclama CSP completa/XSS ni se reemplazan los permisos SQL.** Ver `docs/63-next-http-security-headers.md`.
 - Cambio exclusivo GitHub branch/PR draft, no desplegado en Vercel ni production, sin tocar Supabase, DNS ni registro comercial.
+
+
+## [Sin publicar — Issue #98: prueba pública GET de Auth remoto desde GitHub Actions]
+- Nuevo script `scripts/ci/auth-settings-remote-probe.mjs` reutiliza el helper de validación `disable_signup` y ejecuta **un único GET** autenticado solo con clave publishable, sin usuarios/cookies/JWT ni POST. CI acepta la ejecución únicamente en PR de rama exacta, repo propio y flag privado explícito.
+- Salida exclusivamente PASS/FAIL/INCONCLUSO con códigos fijos; si Auth permite autorregistro directo (aunque empresas SQL sigan cerradas), la prueba remota termina con exit 1 y obliga a investigar. Timeout/errores/no verificable también quedan bloqueados, sin informar falso PASS.
+- `tests/unit/auth-settings-remote-probe.test.mjs` intercepta totalmente el transporte y prueba estados, contextos no autorizados, destino exacto, falta de filtraciones y no ejecución de red al importar el módulo.
+- **No se alteró** Auth real, SQL, usuarios, Vercel, DNS o main. Guía `docs/64-remote-gotrue-signup-audit.md`; ejecución remota pendiente de la corrida del PR.
+
+
+### Auditoría real del autorregistro Auth — 30/10/2026
+- En el PR #99 se verificó `GET /auth/v1/settings` auténtico en Supabase dev desde GitHub Actions, con publishable pública y sin credenciales/POST. El valor exacto `disable_signup=false` confirma que **Auth tiene habilitada la creación directa de usuarios**, aunque SQL impida registrar empresas. Es un hallazgo del entorno dev, no un ataque ni un usuario creado.
+- **245/245 unitarias PASS y 4/5 workflows SUCCESS; el quinto workflow falla deliberadamente** con `COTIRONDA_AUTH_SIGNUP=FAIL / autorregistro_auth_habilitado` (run 41060813027). No ocultar ni cambiar ese exit code sin corregir Auth remoto.
+- Logs Supabase confirman GET /auth/v1/settings HTTP 200; SQL read-only posterior: 2 usuarios de ensayo, 0 sesiones, organizaciones o Storage, flag comercial false. No se modificó el servicio Auth ni producción.
+- Issue #98 completo por evidencia; Issue #94 permanece bloqueado hasta deshabilitar en Dashboard «Allow new users to sign up» solo en dev y repetir GET PASS. Ver docs/64.
