@@ -254,3 +254,10 @@
 - Se incorporó `tests/manual/cotironda-auth-dev-browser.html` autocontenido y sin dependencias; permite ensayo de dos usuarios de desarrollo con entrada de credenciales solo en navegador, clave `sb_publishable_` pública y conexión restringida por CSP al origen HTTPS de `cotironda-dev`.
 - Contrasta JWT emitido por Auth, `/auth/v1/user`, catálogo RLS visible antes de logout y **200 con [] tras logout** con el mismo JWT original y no vencido; prueba bloqueo de correo no confirmado. Borra campos de contraseña, hace logout de emergencia y solo copia un reporte PASS/FAIL sin JWT, emails ni contraseñas.
 - `tests/unit/browser-auth-dev-diagnostic.test.mjs` ejecuta el JavaScript real en entorno simulado y valida escenarios normales y adversariales. El E2E auténtico del navegador sigue **pendiente de ejecución**, sin secretos en GitHub y sin cambios de Supabase/producción. Documentación en `docs/55-browser-auth-dev-diagnostic.md`.
+
+ 
+## [Sin publicar — 30/10/2026: prueba auténtica JWT/RLS desde Chrome Android]
+- Propietario ejecutó diagnóstico de dos cuentas dev con **8/8 PASS** (captura aportada directamente, no incorporada a GitHub): JWT confirmado, identidad, catálogo visible, logout global, JWT aún vigente, **mismo JWT tras logout con HTTP 200 + []**, cuenta sin confirmar rechazada, diagnóstico sin errores.
+- Se corroboró **independientemente** con logs agregados Auth (login y logout), gateway (GET catálogo 2 × HTTP 200, logout POST 204, login POST 200 y 400), y SQL dev (registro falso, dos usuarios, cero sesiones/empresas/objetos, cinco categorías y política SELECT con guard de sesión). No se consultó ni guardó ningún secreto o identificador personal.
+- **Control específico de revocación RLS por sesión: aceptado en cotironda-dev**, sin confundir expiración JWT/HTTP 401 con revocación. Evidencia y limitaciones: docs/56-auth-real-mobile-rls-proof.md.
+- Pendientes fuera de este control: cookies HTTPS del portal desplegado con Auth auténtico, HTTP 429 remoto, decisión sobre WARN password leakage, backup/recovery y revisión de PRs. Sin publicaciones ni cambios de Supabase por esta anotación.
