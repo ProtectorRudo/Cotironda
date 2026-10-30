@@ -501,3 +501,7 @@
 - Se incorporó `src/domain/comparacion-ofertas.ts`: evaluación determinista de cobertura por artículo y cantidad, precios con BigInt/IVA explícito, fletes y mínimos por proveedor, opciones completas con hasta dos proveedores y ranking solo dentro de mismas condiciones.
 - Bloqueos: sin inferencia de IVA/flete/tipo de cambio, sin equivalencias técnicas IA, sin suma engañosa de presupuestos parciales, sin contactos, sin adjudicación. Rango acotado de laboratorio 8 renglones/10 cotizaciones y asignaciones por renglón íntegro; fraccionamiento aún fuera de alcance.
 - Nueva suite adversarial de 18 tests y contrato docs/85. Sin cambios de Supabase, OpenAI, WhatsApp, Vercel ni producción. PR #144 draft apilado sobre #142; pendiente revisión final.
+
+## [Sin publicar — Etapa 03 / D023: rondas y ofertas versionadas OFFLINE]
+- Núcleo `src/domain/rondas-offline.ts`: programada, abierta, cerrada, cancelada; invitaciones anónimas y autorización de distribución, borradores por revisión, confirmación por proveedor con versiones históricas inmutables, idempotencia de eventos y expiración UTC.
+- Cierre compone comparador D022 solo con últimas versiones confirmadas; no admite drafts como precios, contacto, adjudicación o equivalencias no verificadas. Tests de roles, stale revisions, duplicados, plazos y datos desconocidos. Sin infraestructura ni producción. PR #146 draft sobre #144.
