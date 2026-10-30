@@ -166,7 +166,7 @@ test('quality autorizado ejecuta solo una llamada y retorna informe reducido',as
   const f=mock(caso.items);
   const r=await handleCotirondaDevAi(req({
     mode:'quality_case',case_id:caso.id
-  }),env({qualityEnabled:'AUTORIZADO_DEV'}),f.impl);
+  }),env({qualityEnabled:'AUTORIZADO_DEV'}),f.impl,async()=>true);
   const data=await r.json();
   assert.equal(r.status,200);
   assert.equal(data.status,'quality_case_completed');
@@ -180,7 +180,7 @@ test('fallo 429 OpenAI no reintenta ni filtra secreto',async()=>{
   const f=mock(caso.items,429);
   const r=await handleCotirondaDevAi(req({
     mode:'quality_case',case_id:caso.id
-  }),env({qualityEnabled:'AUTORIZADO_DEV'}),f.impl);
+  }),env({qualityEnabled:'AUTORIZADO_DEV'}),f.impl,async()=>true);
   const data=await r.json();
   assert.equal(r.status,502);
   assert.equal(data.code,'ia_cuota_o_rate_limit');
@@ -191,7 +191,7 @@ test('error de IA no autorizado jamás se informa con datos internos',async()=>{
   const resp=await handleCotirondaDevAi(
     req({mode:'quality_case',case_id:CASOS_LAB[0]}),
     env({qualityEnabled:'AUTORIZADO_DEV'}),
-    async()=>{throw Error('CLAVE PRIVADA: '+key)});
+    async()=>{throw Error('CLAVE PRIVADA: '+key)},async()=>true);
   assert.equal(resp.status,502);
   const data=await resp.json();
   assert.equal(data.code,'ia_transporte_no_disponible');
