@@ -26,3 +26,25 @@ export function portalHabilitado(env:VariablesPortal):boolean {
     origenSeguro(env.COTIRONDA_SITE_ORIGIN) &&
     credencialesCotironda(env);
 }
+
+/**
+ * Ensayo de login/logout en Vercel Preview, sin habilitar ni Auth signup desde UI
+ * ni altas comerciales. Requiere bandera server-only, registro apagado
+ * explícitamente, ref exacta de cotironda-dev y entorno NO productivo.
+ * La autorización real de lectura permanece en Supabase Auth + RLS.
+ */
+export function autenticacionPreviewSoloIngreso(env:VariablesPortal):boolean {
+ return env.COTIRONDA_AUTH_PREVIEW_ENABLED==='true' &&
+   // Vercel aún no tiene repositorio Git vinculado: el flag no se puede
+   // limitar por rama. Exigir la referencia REAL del deployment en servidor.
+   env.VERCEL_GIT_COMMIT_REF==='test/01-auth-only-preview' &&
+   env.VERCEL_ENV==='preview' &&
+   env.COTIRONDA_REGISTRATION_ENABLED==='false' &&
+   credencialesCotironda(env) &&
+   (!env.COTIRONDA_SITE_ORIGIN||origenSeguro(env.COTIRONDA_SITE_ORIGIN));
+}
+
+/** Credenciales reales habilitadas para prueba de Auth sin activar empresas. */
+export function autenticacionPortalHabilitada(env:VariablesPortal):boolean {
+ return portalHabilitado(env)||autenticacionPreviewSoloIngreso(env);
+}

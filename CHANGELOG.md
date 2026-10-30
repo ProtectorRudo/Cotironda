@@ -268,3 +268,32 @@
 - Se inspeccionó el proyecto separado `cotironda-portal-dev`: framework Next.js, SSO habilitado para todos los despliegues, proyecto `live=false`, versión antigua con target production **no tocada**.
 - Se creó un **nuevo Preview protegido** del portal sobre commit `31a8bd22`, deployment `dpl_EFo5qxksdsaUnUQn5cG7CEj87i3i`, `target=null`, Next.js 16.4.3 compilado realmente y rutas /ingresar, /alta y /api/organizaciones con Proxy presente. No se habilitó registro ni se publicaron cambios.
 - Guard puro `src/server/vercel-preview-audit.ts` y tests adversariales: exigen proyecto, commit, SSO, target Preview y evidencia real de `next build`; rechazan una demo READY sin Next. Detalles docs/57-vercel-portal-preview-audit.md.
+
+
+## [Sin publicar — Issue #88: separación de login Preview / registro comercial]
+- Nueva compuerta server-only autenticacionPreviewSoloIngreso: solo cuando VERCEL_ENV=preview, bandera explícita, registro=false, cotironda-dev exacto y publishable key, sin heredar secretos ni habilitar production.
+- UI de ingreso independiente para cuentas existentes en SSO Preview; no incluye signUp ni botón Crear cuenta. /alta validada con getUser muestra únicamente confirmación de sesión y salida global; no muestra formulario de empresa.
+- Proxy de Next mantiene /api/organizaciones bajo puerta comercial previa (modo login-only API continúa HTTP 503); no se expone SQL, Storage ni alta por habilitar login.
+- CI prueba escenarios de producción/flag/tenant, HTTP SSR y TLS real con renovación de cookie Secure, anti-cache y separación entre sesiones, para modo completo y modo login-only. Véase docs/58-preview-login-only-auth.md; no es una certificación Auth real Vercel.
+
+
+### Verificación operativa del modo Preview login-only — 30/10/2026
+- Las 5 workflows GitHub Actions aprobaron el commit de código `1c0c8b82dca326eed50339d68d4bd7ba1aa8d71b` con **190/190 unitarias**, Next Full y login-only en HTTPS TLS real CI con Auth simulado, RLS/Pg17, PostgREST y sitio.
+- Vercel rechazó variable de entorno restringida por rama por no existir conexión Git a nivel proyecto. Solución fail-closed: flag en **Preview solamente** y guard adicional `VERCEL_GIT_COMMIT_REF` exacto a `test/01-auth-only-preview`; prueba unitaria adversarial y build remoto mostraron `COTIRONDA_AUTH_PREVIEW_BRANCH_GUARD=ALLOW`. No se conectó Git para evitar promover código inesperadamente.
+- Nuevo deployment del proyecto correcto `cotironda-portal-dev` (`dpl_6X6o3xzgP1aRDRVpjdUtQ9p36tyM`) compiló Next 16.4.3, rutas y Proxy. `READY`, target Preview y SSO habilitado para todo despliegue; variables de Supabase verificadas por igualdad, registro false y SQL dev con 0 empresas/sesiones/archivos. **No significa E2E Auth real de Next bajo SSO verificado**. Ver docs/58.
+
+
+### Ingreso auténtico verificado en Preview Android — 30/10/2026
+- El propietario compartió pantalla «Sesión de prueba activa» sin formulario de alta. Supabase registra 1 login por Auth HTTP 200 y 2 comprobaciones `GET /auth/v1/user` HTTP 200.
+- Login de ensayo real al portal Next y vista privada **verificados**. Pendiente pulsar logout y verificar que `/alta` redirige sin sesión; no se han inspeccionado atributos de cookies de esa Preview. Registro en `docs/59-preview-auth-real-mobile-login.md`. Sin producción ni secretos.
+
+
+### Auth real de Preview — logout verificado el 30/10/2026
+- Captura de Chrome confirma retorno al formulario «Ingresá a tu empresa» tras pulsar «Cerrar sesión de prueba».
+- Supabase Auth gateway registra 1 POST `/auth/v1/logout` **HTTP 204** y Audit 1 `logout`. Consulta read-only: **0 sesiones Auth**, bandera de registro false, 0 empresas y 0 Storage. Esto acredita logout remoto y redirección real, pero **no** que reabrir directamente `/alta` esté protegido después; tampoco se inspeccionaron cookies de la Preview. Ver docs/59.
+
+ 
+### Control funcional de sesión de Preview validado (30/10/2026)
+- Tras logout global y retorno al formulario de ingreso, el propietario volvió a navegar al enlace directo **`/alta`**. Captura Chrome de escritorio muestra únicamente «Ingresá a tu empresa», sin contenido de la sesión anterior. El código de /alta protege acceso mediante `auth.getUser()` y redirección al ingreso.
+- Supabase dev por SQL read-only posterior: 0 sesiones Auth, registro false, 0 empresas, 0 archivos. Se documenta **subcontrol login/logout/denegación posterior APROBADO**, con límite de que no se inspeccionaron headers/cookies en el navegador ni status HTTP exacto de redirección.
+- Registrar cierre de Issue #88 sin declarar Etapa 01 finalizada. PR #89 permanece draft, sin publicación ni cambios SQL. Referencia: `docs/59-preview-auth-real-mobile-login.md`.

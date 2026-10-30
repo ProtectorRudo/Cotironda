@@ -68,3 +68,22 @@ El propietario ejecutó el archivo de prueba desde Chrome Android y compartió e
 ### 30/10/2026 — Preview Next real del portal en Vercel: compilación verificada (Issue #86)
 
 Se detectó y documentó que el READY anterior pertenecía a la **demo** (`cotironda`, build vacío 46 ms) y no al portal. Nueva Preview protegida SSO del proyecto separado `cotironda-portal-dev` (deployment `dpl_EFo5qxksdsaUnUQn5cG7CEj87i3i`, target no-production, commit `31a8bd22`) ejecutó `next build` y empaquetó todas las rutas Next y el Proxy. El ambiente tiene variables de Auth dev pero no `COTIRONDA_SITE_ORIGIN`, y el código todavía liga login a apertura de registro; la compilación no equivale a prueba real de cookies. Siguiente hito: login-only Preview separado de registro empresarial, y luego E2E del navegador. Docs/57-vercel-portal-preview-audit.md.
+
+
+### 30/10/2026 — modo Auth Preview sin registro, pendiente validación de navegador (Issue #88)
+
+Separación del login y del registro comercial por banderas independientes: Auth solo para cuentas previamente creadas de ensayo, Vercel Preview con SSO, registro SQL y de portal false, nada de signUp/alta empresarial en la interfaz. /api/organizaciones sigue 503 fail-closed. TLS/SSR en CI con Auth sintético prueba cookies Secure y no-store; **falta la ejecución real de login/logout en el Preview** para cerrar ese control. No se conecta dominio ni producción. docs/58-preview-login-only-auth.md.
+
+
+### Puerta de calidad — Preview SSO login-only ya desplegada, E2E real pendiente
+
+Compilación real de `cotironda-portal-dev` en `dpl_6X6o3xzgP1aRDRVpjdUtQ9p36tyM`, commit `1c0c8b82`, target Preview y `READY`, Next/Proxy compilados; Vercel reportó `COTIRONDA_AUTH_PREVIEW_BRANCH_GUARD=ALLOW`. Por ausencia de Git conectado al proyecto no se pudo limitar la variable a una rama: se usa env Preview + verificación **server-only** de rama exacta, bloqueando cualquier otra referencia y production. SSO activo para todo deployment. 190/190 unit y 5/5 GitHub Actions. Flag comercial **false** en Vercel y SQL; 0 sesiones/empresas/archivos. **Falta navegador real con SSO y cuentas de ensayo para validar login/logout, cookies Secure y redirecciones**, HTTP 429 remoto, backup/restauración y decisión WARN de contraseñas filtradas. Etapa 01 y PRs siguen abiertos sin publicar `main` ni dominio. docs/58-preview-login-only-auth.md.
+
+
+### 30/10/2026 — logout de Preview comprobado en Auth real
+
+Después de pulsar «Cerrar sesión de prueba», el navegador mostró nuevamente la pantalla de ingreso (captura del propietario). Logs Supabase agregados: POST `/auth/v1/logout` 204 y evento Audit logout; SQL read-only: 0 sesiones, registro false, 0 empresas y archivos. **Ingreso, vista protegida, logout remoto y retorno al ingreso acreditados.** Restan: visita directa a `/alta` tras logout para probar denegación, inspección de cookies remotas, HTTP 429, backups y control de contraseñas filtradas. Issue #88 abierto, PR #89 draft, sin producción. Docs/59.
+
+ 
+### 30/10/2026 — Acceso privado post-logout: prueba real COMPLETADA
+El propietario abrió `/alta` **sin volver a ingresar** tras logout global; la tercera captura real de Chrome mostró el formulario de ingreso y no el área privada. Ya existía evidencia Auth servidor POST logout HTTP 204 y evento Audit logout, y SQL dev continuó con 0 sesiones, 0 empresas, 0 Storage y registro false. **Se valida el circuito completo login → vista privada → logout → intento de acceso directo denegado en Preview**, criterio funcional de Issue #88. No equivale a inspección de cookies en navegador ni cierre de Etapa 01. Quedan HTTP 429 remoto, verificación de atributos HTTP reales, Auth signup remoto, backups/recuperación y consolidación de PRs. PR #89 sigue draft sin producción. Ver docs/59.

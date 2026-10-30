@@ -117,3 +117,26 @@ jobs:
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_dummy_never_valid
           COTIRONDA_SITE_ORIGIN: https://cotironda-ci.example
         run: node scripts/smoke-preview-auth.mjs
+
+      - name: Reconstruir desde cero Preview SSO de solo login (registro false)
+        env:
+          VERCEL_ENV: preview
+          COTIRONDA_REGISTRATION_ENABLED: 'false'
+          COTIRONDA_AUTH_PREVIEW_ENABLED: 'true'
+          VERCEL_GIT_COMMIT_REF: test/01-auth-only-preview
+          COTIRONDA_SUPABASE_PROJECT_REF: qkercsoqhehbenbbncwk
+          NEXT_PUBLIC_SUPABASE_URL: https://qkercsoqhehbenbbncwk.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_dummy_never_valid
+        run: rm -rf .next && npm run build
+      - name: HTTPS real Preview login-only sin signup ni registro empresarial
+        env:
+          VERCEL_ENV: preview
+          COTIRONDA_REGISTRATION_ENABLED: 'false'
+          COTIRONDA_AUTH_PREVIEW_ENABLED: 'true'
+          VERCEL_GIT_COMMIT_REF: test/01-auth-only-preview
+          COTIRONDA_SUPABASE_PROJECT_REF: qkercsoqhehbenbbncwk
+          NEXT_PUBLIC_SUPABASE_URL: https://qkercsoqhehbenbbncwk.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_dummy_never_valid
+          COTIRONDA_CI_TLS_LOOPBACK: 'true'
+          COTIRONDA_CI_AUTH_ONLY: 'true'
+        run: node scripts/smoke-https-ssr.mjs
