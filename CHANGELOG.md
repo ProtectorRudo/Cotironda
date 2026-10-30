@@ -420,3 +420,10 @@
 - `src/domain/flujo-texto.ts`: parser reutilizable y unidades contables adicionales (placas, latas, bidones), sin inventar tamaños de presentación.
 - `tests/unit/entrada-economica.test.mjs`: pruebas de textos argentinos, varias marcas y rubros, líneas ambiguas, exclusividad, duplicados, instrucciones adversarias, opt-in y límites. `npm run demo:sin-ia` es una simulación sin red.
 - 0 tokens consumidos por esta ruta local; no afirmar ahorro real antes de comparar con inferencias OpenAI. Docs/74 y PR draft hija #120; sin Supabase/Whapi/producción.
+
+
+## [Sin publicar] — Etapa 02 D016: calidad y cobertura antes que ahorro de IA
+- `src/server/flujo-calidad-ia.ts`: primer coordinador IA-first (mockeado en tests) con estados y contadores por línea del documento, distinguiendo omisiones, retenciones, falta de proveedor y artículos preparados.
+- Verificador OpenAI admite envoltorios coloquiales seguros («Necesito 20 bolsas de…») pero mantiene evidencia textual completa de cantidad/material; no acepta peso de envase como cantidad ni descripciones recortadas.
+- `tests/unit/flujo-calidad-ia.test.mjs`: normal, extremo y rechazo remoto. El camino local de Issue #121 no se adopta por defecto sin evaluación comparativa. Docs/75 y D016.
+- Sin mensajes reales ni inferencia OpenAI live; sin cambios Supabase, producción ni main.
