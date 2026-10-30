@@ -88,7 +88,9 @@ export async function handleCotirondaDevAi(
       return output(502,{status:'error',code});
     }
   }
-  if(mode!=='smoke'||Object.keys(body).length!==1)
+  if(Object.keys(body).length!==1)
+    return output(400,{status:'rejected',code:'unsupported_request'});
+  if(mode!=='smoke')
     return output(400,{status:'rejected',code:'unsupported_mode'});
   if(env.smokeEnabled!=='AUTORIZADO_DEV')
     return output(403,{status:'disabled',code:'live_not_authorized'});
