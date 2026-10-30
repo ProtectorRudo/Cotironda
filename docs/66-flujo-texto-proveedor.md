@@ -10,7 +10,7 @@ La decisión D013 establece que el comprador **no revisa artículo por artículo
 - Catálogo de test/de servidor: busca igualdad conservadora de **descripción de producto confirmada + unidad**; el rubro solo se determina si es único entre productos del catálogo. No inventa rubros; sin coincidencia el artículo queda retenido.
 - Reutiliza `prepararBorradorDocumental('texto',...)`: validación determinista, decimales como texto, líneas repetidas y dudas preservadas.
 - Reutiliza `planificarDespachoAutomatico(...)`: filtra zona de entrega, consentimiento del proveedor, baja, catálogo confirmado, marca obligatoria y exclusión de líneas inseguras. Devuelve **un subconjunto por proveedor**, no el documento entero.
-- Devuelve `lineas_no_interpretadas`, `plan.retenidas`, ubicación, cantidad de recibidas y preparadas. **Ninguna línea desconocida se elimina en silencio.**
+- Devuelve `lineas_no_interpretadas`, `lineas_sin_catalogo`, `lineas_con_rubro_ambiguo`, `plan.retenidas`, ubicación, cantidad de recibidas y preparadas. **Ninguna línea desconocida se elimina en silencio.**
 
 ## Ejemplo
 Entrada: `20 bolsas de Cemento CPC 50 kg`, `3 unidades de Pintura látex interior 20 l`, `15 unidades de Placa yeso 12,5 mm`.
