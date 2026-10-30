@@ -146,7 +146,7 @@ test('respuestas anómalas de la BD se rechazan: nunca crear recibo falso',async
 test('puerto rechaza bytea truncado o inválido antes de ejecutar SQL',async()=>{
  let calls=0;
  const gateway=crearPuertoPostgresWhapiD030({query:async()=>{
-   calls++;return {rows:[{payload:{estado:'entrada_persistida',repetido:false}}]}};
+   calls++;return {rows:[{payload:{estado:'entrada_persistida',repetido:false}}]};
  }});
  const data={channel:CHANNEL,chatKey:IDKEY,messageKey:IDKEY,
  fingerprint:IDKEY,kind:'text',ciphertext:Buffer.from('x'),
