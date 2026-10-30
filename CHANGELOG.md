@@ -427,3 +427,9 @@
 - Verificador OpenAI admite envoltorios coloquiales seguros («Necesito 20 bolsas de…») pero mantiene evidencia textual completa de cantidad/material; no acepta peso de envase como cantidad ni descripciones recortadas.
 - `tests/unit/flujo-calidad-ia.test.mjs`: normal, extremo y rechazo remoto. El camino local de Issue #121 no se adopta por defecto sin evaluación comparativa. Docs/75 y D016.
 - Sin mensajes reales ni inferencia OpenAI live; sin cambios Supabase, producción ni main.
+
+
+## [Sin publicar] — Etapa 02: cobertura multimaterial por línea (Issue #125)
+- Verificador de evidencia IA detecta separadores inequívocos y coteja **cada segmento de producto**. Añade campos `segmentos_fuente` / `segmentos_sin_extraccion` sin cambiar el contrato de envíos (sigue desactivado).
+- Coordinador D016 informa cobertura parcial cuando un material se omite dentro de la misma línea; contadores y alertas visibles, sin confundir contenido de envase con artículo.
+- Tests de regresión con dos materiales en una línea, uno omitido, duplicados y separador incompleto. Documentación docs/76. Sin IA live, WhatsApp, producción ni merge.
