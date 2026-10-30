@@ -248,3 +248,6 @@ El PR #158 prepara `cotironda_private.whapi_inbox_v1` y `whapi_contacts_v1` con 
 
 ### 30/10/2026 — Etapa 04: broker criptográfico offline WhatsApp
 El PR #160 suma un broker Node server-only que pseudonimiza chat/mensaje con HMAC, cifra contenido con AES-256-GCM autenticado y adapta el receptor Whapi D027 al contrato privado D028 con puertos confiables. La BAJA se registra sin ronda activa y sin introducir pasos para el proveedor. **Todavía no hay backend SQL conectado, webhook público, secretos instalados ni Whapi real**; pruebas integradas offline con datos sintéticos. Ver [docs/93](docs/93-whapi-broker-hmac-aes-offline.md).
+
+### 30/10/2026 — Etapa 04: gateway PostgreSQL privado WhatsApp
+El PR #162 agrega un gateway de base con rol interno sin inicio de sesión y EXECUTE limitado para resolver un chat verificado, registrar mensaje cifrado o BAJA. El adaptador Node usa sentencias SQL parametrizadas y respuestas cerradas; PostgreSQL17 comprueba permisos, ronda única, baja y reintentos con datos ficticios. **No instalado en DEV, sin driver/credencial real ni webhook activo**. Ver [docs/94](docs/94-whapi-postgres-gateway-private.md).
