@@ -11,6 +11,7 @@ El portal Next compartía la misma compuerta para login y alta comercial. Esa co
 La función autenticacionPreviewSoloIngreso únicamente puede habilitarse con:
 - COTIRONDA_AUTH_PREVIEW_ENABLED=true, bandera de **servidor**, nunca NEXT_PUBLIC.
 - VERCEL_ENV=preview, nunca production ni development.
+- VERCEL_GIT_COMMIT_REF debe ser exactamente test/01-auth-only-preview. El proyecto Vercel aún no tiene un repositorio Git vinculado: no acepta variables limitadas por rama. El servidor debe **fallar cerrado** en cualquier otra rama, aunque la variable Preview exista. Si Vercel no expone la referencia, no se habilita login.
 - COTIRONDA_REGISTRATION_ENABLED=false, literalmente. Si falta, no funciona.
 - URL y referencia exactas de Supabase cotironda-dev con clave publishable; ningún service role ni contraseña SQL heredada.
 - Si se configuró COTIRONDA_SITE_ORIGIN, debe ser un origen HTTPS seguro. No es necesario para una prueba sin escrituras empresariales.
@@ -37,7 +38,7 @@ La compuerta comercial portalHabilitado se conserva sin cambios, mientras que au
 
 ## Preview autorizada de desarrollo
 
-El proyecto Vercel correcto es cotironda-portal-dev, no cotironda (demo). Su protección SSO cubre todos los despliegues. La variable COTIRONDA_AUTH_PREVIEW_ENABLED=true debe configurarse **solo para target=preview y gitBranch=test/01-auth-only-preview**, dejando COTIRONDA_REGISTRATION_ENABLED=false para todos los targets. No modificar el origen del dominio público ni production.
+El proyecto Vercel correcto es cotironda-portal-dev, no cotironda (demo). Su protección SSO cubre todos los despliegues. Vercel rechazó una variable limitada por gitBranch debido a que este proyecto no tiene conexión Git configurada. Se define por tanto COTIRONDA_AUTH_PREVIEW_ENABLED=true **solo para target=preview** y se exige adicionalmente en el código que VERCEL_GIT_COMMIT_REF coincida con test/01-auth-only-preview. No se crea acceso fuera de esa rama. Se conserva COTIRONDA_REGISTRATION_ENABLED=false y SSO en todos los despliegues. Se requiere comprobar la disponibilidad de VERCEL_GIT_COMMIT_REF en el build real antes de afirmar Auth habilitado. No modificar el origen del dominio público ni production.
 
 **Pendiente para cerrar el control:** que un usuario autorizado por Vercel SSO pruebe con cuenta dedicada el flujo Auth real de navegador, valide las cookies del Preview HTTPS y cierre sesión. No declarar E2E real de Next acreditado solo por CI.
 
