@@ -20,7 +20,7 @@ const MAX_RESPUESTA_BYTES = 240000;
 // dentro de «20 bolsas de cemento 50 kg» no es otro artículo.
 const INICIO_ARTICULO = String.raw`\d{1,6}(?:[.,]\d{1,2})?\s*(?:bolsas?|sacos?|unidades?|placas?|latas?|bidones?|cajas?|piezas?|rollos?|paquetes?|litros?|kilos?|kilogramos?|metros?|kg|ml|mm|m2|m3|l|m)(?=$|[^\p{L}\p{N}])`;
 const SEPARADOR_ARTICULOS = new RegExp(
-  String.raw`\s*(?:;|\+)\s*|\s+\by\b\s+|,\s+` + '(?=' + INICIO_ARTICULO + ')', 'giu'
+  String.raw`(?:\s*(?:;|\+)\s*|\s+\by\b\s+|,\s+)` + '(?=' + INICIO_ARTICULO + ')', 'giu'
 );
 function separarMaterialesExplicitos(linea:string):string[]{
   return linea.split(SEPARADOR_ARTICULOS).map(s=>s.trim()).filter(Boolean);
