@@ -281,3 +281,8 @@
 - Las 5 workflows GitHub Actions aprobaron el commit de código `1c0c8b82dca326eed50339d68d4bd7ba1aa8d71b` con **190/190 unitarias**, Next Full y login-only en HTTPS TLS real CI con Auth simulado, RLS/Pg17, PostgREST y sitio.
 - Vercel rechazó variable de entorno restringida por rama por no existir conexión Git a nivel proyecto. Solución fail-closed: flag en **Preview solamente** y guard adicional `VERCEL_GIT_COMMIT_REF` exacto a `test/01-auth-only-preview`; prueba unitaria adversarial y build remoto mostraron `COTIRONDA_AUTH_PREVIEW_BRANCH_GUARD=ALLOW`. No se conectó Git para evitar promover código inesperadamente.
 - Nuevo deployment del proyecto correcto `cotironda-portal-dev` (`dpl_6X6o3xzgP1aRDRVpjdUtQ9p36tyM`) compiló Next 16.4.3, rutas y Proxy. `READY`, target Preview y SSO habilitado para todo despliegue; variables de Supabase verificadas por igualdad, registro false y SQL dev con 0 empresas/sesiones/archivos. **No significa E2E Auth real de Next bajo SSO verificado**. Ver docs/58.
+
+
+### Ingreso auténtico verificado en Preview Android — 30/10/2026
+- El propietario compartió pantalla «Sesión de prueba activa» sin formulario de alta. Supabase registra 1 login por Auth HTTP 200 y 2 comprobaciones `GET /auth/v1/user` HTTP 200.
+- Login de ensayo real al portal Next y vista privada **verificados**. Pendiente pulsar logout y verificar que `/alta` redirige sin sesión; no se han inspeccionado atributos de cookies de esa Preview. Registro en `docs/59-preview-auth-real-mobile-login.md`. Sin producción ni secretos.
