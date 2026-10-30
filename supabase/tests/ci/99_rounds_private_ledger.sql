@@ -69,22 +69,22 @@ do $test$ begin
  then raise exception 'opening_timestamp_missing'; end if;
 end;$test$;
 select pg_temp.must_fail(
- $update cotironda_private.rounds_v1 set status='programada'
-   where id='dddddddd-0000-0000-0000-000000000004'$,
+ $cmd$update cotironda_private.rounds_v1 set status='programada'
+   where id='dddddddd-0000-0000-0000-000000000004'$cmd$,
  'round_transition_not_allowed');
 select pg_temp.must_fail(
- $update cotironda_private.rounds_v1 set status='cerrada'
-   where id='dddddddd-0000-0000-0000-000000000004'$,
+ $cmd$update cotironda_private.rounds_v1 set status='cerrada'
+   where id='dddddddd-0000-0000-0000-000000000004'$cmd$,
  'round_transition_not_allowed');
 
 select pg_temp.must_fail(
- $insert into cotironda_private.round_items_v1(round_id,line_no,product_code,quantity,unit)
-  values ('dddddddd-0000-0000-0000-000000000004',3,'cable_001',1,'m')$,
+ $cmd$insert into cotironda_private.round_items_v1(round_id,line_no,product_code,quantity,unit)
+  values ('dddddddd-0000-0000-0000-000000000004',3,'cable_001',1,'m')$cmd$,
  'round_setup_is_frozen');
 select pg_temp.must_fail(
- $delete from cotironda_private.round_invites_v1
+ $cmd$delete from cotironda_private.round_invites_v1
   where round_id='dddddddd-0000-0000-0000-000000000004'
-    and anon_id='anon_bbb'$,
+    and anon_id='anon_bbb'$cmd$,
  'round_setup_is_frozen');
 
 select pg_temp.must_fail(
