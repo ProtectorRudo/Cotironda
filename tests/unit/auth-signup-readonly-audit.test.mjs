@@ -140,3 +140,27 @@ test('ningún test ni UI POSTea signup, crea emails o persiste información priv
  assert.doesNotMatch(code,/signUp\(|localStorage|sessionStorage|sendBeacon|createUser|\.password|\.email/);
  assert.doesNotMatch(helper,/\/signup['"`]|method:'POST'|Authorization:|Bearer |token:|console\.log|console\.error/);
 });
+
+test('rama del diagnóstico público solo se habilita en Preview SSO exacta, no main',async()=>{
+ const {autenticacionPreviewSoloIngreso}=await import('../../src/server/portal-entorno.ts');
+ const env={
+  VERCEL_ENV:'preview',
+  VERCEL_GIT_COMMIT_REF:'security/01-auth-signup-readonly-check',
+  COTIRONDA_AUTH_PREVIEW_ENABLED:'true',
+  COTIRONDA_REGISTRATION_ENABLED:'false',
+  COTIRONDA_SUPABASE_PROJECT_REF:ref,
+  NEXT_PUBLIC_SUPABASE_URL:'https://'+ref+'.supabase.co',
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:'sb_publishable_ci_only_testing'
+ };
+ assert.equal(autenticacionPreviewSoloIngreso(env),true);
+ for(const patch of [
+  {VERCEL_ENV:'production'},
+  {VERCEL_GIT_COMMIT_REF:'main'},
+  {VERCEL_GIT_COMMIT_REF:'security/01-auth-signup-readonly-check-copy'},
+  {VERCEL_GIT_COMMIT_REF:undefined},
+  {COTIRONDA_REGISTRATION_ENABLED:'true'},
+  {COTIRONDA_AUTH_PREVIEW_ENABLED:undefined}
+ ]){
+  assert.equal(autenticacionPreviewSoloIngreso({...env,...patch}),false);
+ }
+});
