@@ -35,3 +35,7 @@ Se implementó una taxonomía argentina local y versionada con seis familias pil
 
 ## D016 — pruebas de calidad end-to-end y omisiones visibles
 El nuevo coordinador `simularRondaConCalidadIA` prioriza IA por defecto (solo cuando esté autorizada en entorno DEV), y después aplica validación de evidencia, taxonomía y D015. Resume cada línea no vacía como preparada, parcial, retenida, omitida o sin proveedor; no declara procesamiento completo cuando faltan líneas. Textos como «Necesito 20 bolsas de Cemento CPC 50 kg» pueden verificarse sin descartar el prefijo coloquial, pero «Cemento CPC 50 kg» no puede recortarse a «Cemento». La ruta local sin tokens permanece secundaria hasta medición independiente. Ver docs/75.
+
+
+## Etapa 02 — cobertura de varios materiales en la misma línea (Issue #125)
+Se detectó que una ubicación “Texto, línea N” podía tener múltiples materiales; marcar como completa la línea al ver uno generaba falsas coberturas. El verificador ahora segmenta delimitadores explícitos **solo antes de una cantidad+unidad nuevas**, coteja la evidencia de cada material y reporta segmentos omitidos en el coordinador D016. No dividir peso de presentación “50 kg” ni decimales técnicos. No hay garantía general para listas escritas sin delimitadores inequívocos; quedan para evaluación avanzada de IA. Docs/76.
