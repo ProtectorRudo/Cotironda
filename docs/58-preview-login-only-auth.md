@@ -43,3 +43,42 @@ El proyecto Vercel correcto es cotironda-portal-dev, no cotironda (demo). Su pro
 **Pendiente para cerrar el control:** que un usuario autorizado por Vercel SSO pruebe con cuenta dedicada el flujo Auth real de navegador, valide las cookies del Preview HTTPS y cierre sesión. No declarar E2E real de Next acreditado solo por CI.
 
 No se modifica SQL, Supabase Auth, Storage, proyecto demo, GitHub main, DNS Hostinger ni Vercel production.
+
+## Evidencia de configuración Vercel y despliegue real (30/10/2026)
+
+**Observación inesperada:** al intentar crear una variable limitada por gitBranch, la API de Vercel respondió 400: el proyecto `cotironda-portal-dev` no tiene el repositorio Git conectado en la configuración del proyecto, aunque permite despliegues a partir de `gitSource` autenticado. **No se conectó el repositorio** para evitar activar despliegues automáticos o alterar la rama de producción del proyecto.
+
+Alternativa segura y aplicada: la variable `COTIRONDA_AUTH_PREVIEW_ENABLED=true` se configuró **solo en target=preview** (jamás producción) y se añadió una segunda barrera, completamente en el servidor, que exige `VERCEL_GIT_COMMIT_REF==='test/01-auth-only-preview'`. Otras ramas, ambientes de producción y referencias de Git ausentes continúan bloqueados. No hay variables NEXT_PUBLIC nuevas para controlar la seguridad.
+
+**Despliegue verificable:**
+
+| Propiedad | Evidencia |
+|---|---|
+| Proyecto | `cotironda-portal-dev` (`prj_d13rTHxJADvP2K9PcrM0CJQD9Zok`) |
+| Deployment | `dpl_6X6o3xzgP1aRDRVpjdUtQ9p36tyM` |
+| URL | `https://cotironda-portal-e6u3p64sl-protector-rudo-s-projects.vercel.app` |
+| Commit de código desplegado | `1c0c8b82dca326eed50339d68d4bd7ba1aa8d71b` |
+| Rama | `test/01-auth-only-preview` |
+| Target | `null` (Preview, no producción) |
+| Vercel SSO | `enabled=true`, `deploymentType=all` |
+| Framework | Next.js 16.4.3 |
+| Build | `next build`, `Compiled successfully`, rutas Next/Proxy; `READY` |
+| Guard de rama | **`COTIRONDA_AUTH_PREVIEW_BRANCH_GUARD=ALLOW`** (mensaje booleano, sin secretos) |
+| Proyecto Vercel live | `false` |
+
+Las variables preexistentes de Vercel `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` y `COTIRONDA_SUPABASE_PROJECT_REF` fueron contrastadas con la clave publishable de `cotironda-dev` por **igualdad booleana**, sin revelar valores; las tres coincidieron. `COTIRONDA_REGISTRATION_ENABLED` sigue **false** también en Vercel y SQL.
+
+Auditoría SQL read-only posterior: **cero sesiones, empresas y objetos de Storage; cinco categorías semilla**. Vercel runtime logs de severidad error/fatal en esa Preview: **sin entradas en la ventana consultada**. Eso no prueba navegación ni login; la URL está protegida por SSO y no se ejecutaron requests de navegador a la app desde el asistente.
+
+## CI final del código desplegado
+
+Commit `1c0c8b82dca326eed50339d68d4bd7ba1aa8d71b`:
+- **190/190 pruebas unitarias**: https://github.com/ProtectorRudo/Cotironda/actions/runs/41033887885
+- **Portal Next, TLS real modo completo + login-only, cookies Secure y alta 503**: https://github.com/ProtectorRudo/Cotironda/actions/runs/41033887838
+- PostgreSQL17 y RLS: https://github.com/ProtectorRudo/Cotironda/actions/runs/41033888078
+- PostgREST HTTP con JWT ficticio CI: https://github.com/ProtectorRudo/Cotironda/actions/runs/41033887914
+- Sitio sin regresiones: https://github.com/ProtectorRudo/Cotironda/actions/runs/41033887880
+
+**Cinco workflows SUCCESS.** El test HTTPS de login-only comprobó la pantalla sin signup, SSR autenticado sin formulario empresarial, cookie renovada Secure/SameSite Lax, no-store, visitantes aislados y ambos orígenes de POST devolviendo 503.
+
+**PENDIENTE:** abrir esta Preview con acceso Vercel SSO y comprobar login y logout genuinos con cuenta exclusiva de ensayo, cookies del navegador y comportamiento de /alta. No declarar E2E Next/Preview completado antes de esa evidencia. No deshabilitar SSO ni abrir la bandera de registro para facilitar el ensayo.
