@@ -3,6 +3,11 @@ export const SUPABASE_COTIRONDA_DEV_REF = 'qkercsoqhehbenbbncwk';
 export const SUPABASE_COTIRONDA_DEV_URL = 'https://' + SUPABASE_COTIRONDA_DEV_REF + '.supabase.co';
 
 export function validarEntornoE2E(env: Record<string,string|undefined>) {
+  // Cuentas de ensayo autenticas solo en equipo privado y entorno local.
+  // Nunca habilitar credenciales reales en runners, Preview ni Vercel.
+  if (env.GITHUB_ACTIONS==='true' || env.CI==='true' || env.VERCEL==='1') {
+    throw new Error('auth_e2e_entorno_remoto_bloqueado');
+  }
   if (env.COTIRONDA_E2E_SUPABASE_URL !== SUPABASE_COTIRONDA_DEV_URL ||
       env.COTIRONDA_E2E_PROJECT_REF !== SUPABASE_COTIRONDA_DEV_REF) {
     throw new Error('proyecto_fuera_de_entorno_cotironda_dev');
@@ -21,7 +26,9 @@ export function validarEntornoE2E(env: Record<string,string|undefined>) {
   if(!emailValido(vEmail)||!emailValido(uEmail)||vEmail.toLowerCase()===uEmail.toLowerCase()) {
     throw new Error('cuentas_prueba_invalidas');
   }
-  if(vPassword.length<8||uPassword.length<8)throw new Error('passwords_prueba_invalidos');
+  if(vPassword.length<12||uPassword.length<12)throw new Error('passwords_prueba_invalidos');
+  // Dos cuentas con un mismo secreto crean riesgo de exposición cruzada.
+  if(vPassword===uPassword)throw new Error('passwords_prueba_reutilizados');
   if(vEmail.endsWith('@example.invalid')||uEmail.endsWith('@example.invalid')) {
     throw new Error('cuentas_ficticias_no_utilizables');
   }
