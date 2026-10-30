@@ -146,7 +146,7 @@ test('respuesta completada sin usage no inventa tokens',async()=>{
 });
 test('Edge entrypoint valida apikey secret server-to-server antes de llegar al handler',()=>{
   const code=readFileSync('supabase/functions/cotironda-ia-dev/index.ts','utf8');
-  assert.match(code,/withSupabase\(\{auth:'secret'\}/);
+  assert.match(code,/withSupabase\(\{auth:\['secret:default','secret:cotironda_quality_lab'\]\}/);
   assert.match(code,/Deno\.serve/);
   assert.match(code,/Deno\.env\.get\('OPENAI_API_KEY'\)/);
   assert.ok(!code.includes("auth:'none'"));
