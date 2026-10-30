@@ -49,3 +49,8 @@ La migración 12 protege `catalog_categories` mediante sesión vigente y el ento
 ### Cookies HTTPS del portal: guard Secure corregido y CI verificadas (Issue #80 / PR #81)
 
 La prueba HTTPS verdadera de Next.js Preview **en loopback CI** descubrió que el refresh de `@supabase/ssr` emitía cookies sin `Secure`. Se corrigieron los clientes Proxy, SSR y navegador para exigirlo en `NODE_ENV=production`, con `SameSite=Lax`, `Path=/`, verificación TLS y `no-store`. La suite pasó con **161/161 unitarias, 5/5 GitHub Actions**, incluyendo roundtrip de cookie renovada, visitante anónimo, Origin 403 y alta 503. **No significa prueba de navegador contra `cotironda.com` ni Supabase Auth genuino.** Queda pendiente E2E autenticado real, HTTPS real en despliegue autorizado, 429 remoto, WARN de contraseñas filtradas y consolidación de PRs. Ver `docs/53-https-ssr-loopback-ci.md`.
+
+
+### Credenciales de ensayo aisladas y diagnóstico reproducible (PR #83)
+
+Ante la posibilidad de dos cuentas de ensayo con contraseña reutilizada, el runner Auth ahora falla cerrado si se usa un secreto idéntico, corto (menos de 12 caracteres) o se intenta ejecutar desde GitHub Actions/CI/Vercel. Comando local Node 22 `npm run e2e:auth:dev`; CI comprueba que se niega a usar Auth real y los mensajes de errores son una lista blanca sin datos privados. **Es necesario rotar los dos secretos de prueba fuera del chat**, antes de ejecutar la comprobación pendiente de JWT auténtico tras logout. Ver `docs/54-e2e-auth-secret-preflight.md`. Etapa 01 aún abierta; sin publicación.
