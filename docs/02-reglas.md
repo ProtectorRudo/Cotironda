@@ -3,7 +3,7 @@
 ## Pedido
 - Empresa compradora autenticada carga documento o texto, datos de entrega, urgencia, condiciones y plazo.
 - IA extrae líneas con cantidades, unidades, rubros, marca y especificaciones; dudas visibles. Nada inventado.
-- Comprador revisa y **confirma** antes de publicar. El envío automático sin confirmación está prohibido.
+- Al **enviar la lista**, el comprador autoriza explícitamente la distribución automática; NO revisa ni confirma cada línea. Los ítems seguros se derivan sin intervención; los dudosos se retienen para aclaración puntual sin detener el resto.
 - Plazos candidatos: 24/48 horas; 3, 5, 7 o 10 días. Vigencia y zona horaria se verifican antes del piloto.
 
 ## Proveedores
@@ -30,3 +30,6 @@
 
 ## Casos antiabuso
 Pedidos falsos, invitaciones duplicadas por rubro compartido, cambios fuera de plazo, modificación de oferta ajena, proveedor sin consentimiento, archivos maliciosos y spam.
+
+## Distribución automática D013
+No alcanza pertenecer al rubro: coincidir producto específico confirmado en catálogo, unidad, dimensiones, marca si obligatoria y cobertura geográfica. La similitud semántica por IA sola no demuestra equivalencia técnica. Sin coincidencia verificable, retener esa línea y avisar, no inventar. Enviar una sola solicitud por proveedor/ronda con su subconjunto; no compartir documento completo, precios objetivo ni información innecesaria. Exigir autorización de envío del comprador, opt-in proveedor, baja respetada, anti-spam, cuotas e idempotencia. Informar al comprador DESPUÉS, no pedir aprobación previa por línea.
