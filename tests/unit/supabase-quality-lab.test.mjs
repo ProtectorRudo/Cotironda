@@ -205,3 +205,103 @@ test('status no muestra la clave ni habilita quality en respuesta de cliente',as
   assert.ok(!JSON.stringify(body).includes(key));
   assert.ok(!Object.hasOwn(body,'qualityEnabled'));
 });
+
+test('sin registro de cuota persistente jamás se hace consulta paga',async()=>{
+  const caso=escenariosProducto.find(x=>x.id===CASOS_LAB[0]);
+  const f=mock(caso.items);
+  const resp=await handleCotirondaDevAi(
+    req({mode:'quality_case',case_id:caso.id}),
+    env({qualityEnabled:'AUTORIZADO_DEV'}),f.impl
+  );
+  assert.equal(resp.status,503);
+  assert.equal((await resp.json()).code,'quality_gate_unavailable');
+  assert.equal(f.getCalls(),0);
+});
+test('fallo de base de datos antes de reservar impide gastar',async()=>{
+  const caso=escenariosProducto.find(x=>x.id===CASOS_LAB[0]);
+  const f=mock(caso.items);
+  const resp=await handleCotirondaDevAi(
+    req({mode:'quality_case',case_id:caso.id}),
+    env({qualityEnabled:'AUTORIZADO_DEV'}),f.impl,
+    async()=>{throw Error('No disponible')}
+  );
+  assert.equal(resp.status,503);
+  assert.equal(f.getCalls(),0);
+});
+test('reserva rechazada por unicidad impide gastar sin revelar causa interna',async()=>{
+  const caso=escenariosProducto.find(x=>x.id===CASOS_LAB[0]);
+  const f=mock(caso.items);
+  const resp=await handleCotirondaDevAi(
+    req({mode:'quality_case',case_id:caso.id}),
+    env({qualityEnabled:'AUTORIZADO_DEV'}),f.impl,async()=>false
+  );
+  assert.equal(resp.status,409);
+  assert.equal((await resp.json()).code,'quality_case_reserved_or_unavailable');
+  assert.equal(f.getCalls(),0);
+});
+test('dos solicitudes simultáneas para mismo caso gastan una sola vez',async()=>{
+  const caso=escenariosProducto.find(x=>x.id===CASOS_LAB[0]);
+  const f=mock(caso.items);
+  const casos=new Set();
+  let claims=0;
+  const claim=async(id)=>{
+    claims++;
+    if(casos.has(id))return false;
+    casos.add(id);
+    return true;
+  };
+  const responses=await Promise.all(Array.from({length:2},()=>handleCotirondaDevAi(
+    req({mode:'quality_case',case_id:caso.id}),
+    env({qualityEnabled:'AUTORIZADO_DEV'}),f.impl,claim
+  )));
+  assert.deepEqual(responses.map(x=>x.status).sort(),[200,409]);
+  assert.equal(claims,2);
+  assert.equal(f.getCalls(),1);
+});
+test('dos casos distintos consumen su propia reserva, nunca comparten cupo',async()=>{
+  const vistos=new Set();
+  const claim=async(id)=>!vistos.has(id)&&(vistos.add(id),true);
+  const resultados=[];
+  for(const caso of [escenariosProducto[0],escenariosProducto[1]]){
+    const f=mock(caso.items);
+    const response=await handleCotirondaDevAi(
+      req({mode:'quality_case',case_id:caso.id}),
+      env({qualityEnabled:'AUTORIZADO_DEV'}),f.impl,claim
+    );
+    resultados.push(response.status);
+    assert.equal(f.getCalls(),1);
+  }
+  assert.deepEqual(resultados,[200,200]);
+  assert.equal(vistos.size,2);
+});
+test('después de error OpenAI 429 la reserva NO se devuelve para reintento',async()=>{
+  const caso=escenariosProducto.find(x=>x.id===CASOS_LAB[0]);
+  const vistos=new Set();
+  const claim=async(id)=>!vistos.has(id)&&(vistos.add(id),true);
+  const f=mock(caso.items,429);
+  const uno=await handleCotirondaDevAi(req({
+    mode:'quality_case',case_id:caso.id
+  }),env({qualityEnabled:'AUTORIZADO_DEV'}),f.impl,claim);
+  const dos=await handleCotirondaDevAi(req({
+    mode:'quality_case',case_id:caso.id
+  }),env({qualityEnabled:'AUTORIZADO_DEV'}),f.impl,claim);
+  assert.equal(uno.status,502);
+  assert.equal(dos.status,409);
+  assert.equal(f.getCalls(),1);
+});
+test('source de Edge usa admin sólo para INSERT del caso permitido',()=>{
+  const src=readFileSync('supabase/functions/cotironda-ia-dev/index.ts','utf8');
+  assert.match(src,/ctx\.supabaseAdmin/);
+  assert.match(src,/\.from\('dev_ia_quality_claims'\)/);
+  assert.match(src,/\.insert\(\{case_id:caseId\}\)/);
+  assert.ok(!src.includes('NEXT_PUBLIC_OPENAI'));
+});
+test('DDL de cuota: RLS, case_id único, privilegios solamente del backend',()=>{
+  const sql=readFileSync('supabase/sql/dev_quality_once_only.sql','utf8');
+  assert.match(sql,/case_id text PRIMARY KEY/);
+  assert.match(sql,/ENABLE ROW LEVEL SECURITY/);
+  assert.match(sql,/REVOKE ALL ON TABLE public\.dev_ia_quality_claims FROM PUBLIC, anon, authenticated/);
+  assert.match(sql,/GRANT SELECT, INSERT ON TABLE public\.dev_ia_quality_claims TO service_role/);
+  for(const id of CASOS_LAB)assert.ok(sql.includes(id));
+  assert.ok(!sql.includes('SECURITY DEFINER'));
+});
