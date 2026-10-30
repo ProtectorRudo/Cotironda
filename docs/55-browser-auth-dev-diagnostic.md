@@ -26,3 +26,7 @@ La herramienta utiliza únicamente la clave **publicable** del proyecto y conexi
 GitHub: [archivo de diagnóstico](https://github.com/ProtectorRudo/Cotironda/blob/test/01-browser-real-auth-diagnostic/tests/manual/cotironda-auth-dev-browser.html) · [PR #85](https://github.com/ProtectorRudo/Cotironda/pull/85) · [Issue #84](https://github.com/ProtectorRudo/Cotironda/issues/84).
 
 **Sin merge, despliegue, cambios de producción, DNS o permisos de registro.**
+
+ 
+## Resultado real del diagnóstico — 30/10/2026
+El propietario logró abrir el HTML directamente desde su Motorola, **sin ZIP ni instalación**, y ejecutó la prueba con sus dos cuentas dev. Captura: **8 PASS / 0 FAIL**, inclusive JWT original aún válido y **lectura HTTP 200 + [] tras cerrar sesión**. Se corroboraron 2 GET de categorías HTTP 200, POST Auth logout 204, login Auth 200 y rechazo de login pendiente 400, además de eventos de auditoría login/logout. SQL posterior: 0 sesiones y registro cerrado. Ver [evidencia independiente y límites](56-auth-real-mobile-rls-proof.md). **El test real ya se ejecutó; las notas previas indicando pendiente son históricas.** La prueba no incluye la web Next pública ni cookies desplegadas.
