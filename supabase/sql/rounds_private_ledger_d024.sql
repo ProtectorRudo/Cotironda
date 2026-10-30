@@ -23,6 +23,41 @@ create table cotironda_private.rounds_v1 (
     or (status='cancelada' and closed_at is not null and closed_at<ends_at))
 );
 
+-- El reloj lo controla PostgreSQL: no se aceptan cambios arbitrarios de estado.
+-- Cada operación futura debe pasar por una RPC server-only transaccional.
+create function cotironda_private.guard_round_transition_v1()
+returns trigger language plpgsql security invoker set search_path='' as $fn$
+declare v_now timestamptz:=clock_timestamp();
+begin
+ if tg_op='INSERT' then
+   if new.status<>'programada' or new.opened_at is not null
+      or new.closed_at is not null then
+     raise exception 'round_must_begin_programmed'; end if;
+   return new;
+ end if;
+ if new.id<>old.id or new.buyer_org_id<>old.buyer_org_id
+    or new.begins_at<>old.begins_at or new.ends_at<>old.ends_at
+    or new.created_at<>old.created_at then
+   raise exception 'round_identity_immutable'; end if;
+ if old.status='programada' and new.status='abierta'
+    and v_now>=old.begins_at and v_now<old.ends_at then
+    new.opened_at:=v_now;new.closed_at:=null;
+ elsif old.status='abierta' and new.status='cerrada'
+    and v_now>=old.ends_at then
+    new.opened_at:=old.opened_at;new.closed_at:=v_now;
+ elsif old.status in ('programada','abierta') and new.status='cancelada'
+    and v_now<old.ends_at then
+    new.opened_at:=old.opened_at;new.closed_at:=v_now;
+ else
+    raise exception 'round_transition_not_allowed';
+ end if;
+ return new;
+end;
+$fn$;
+create trigger round_transition_v1
+  before insert or update on cotironda_private.rounds_v1
+  for each row execute function cotironda_private.guard_round_transition_v1();
+
 create table cotironda_private.round_items_v1 (
   round_id uuid not null references cotironda_private.rounds_v1(id) on delete restrict,
   line_no smallint not null check(line_no between 1 and 8),
@@ -246,7 +281,8 @@ revoke all on cotironda_private.rounds_v1,
 revoke all on function cotironda_private.check_quote_lines_v1(jsonb,uuid),
  cotironda_private.guard_offer_version_v1(),
  cotironda_private.guard_draft_revision_v1(),
- cotironda_private.reject_immutable_quote_v1()
+ cotironda_private.reject_immutable_quote_v1(),
+ cotironda_private.guard_round_transition_v1()
  from public, anon, authenticated, service_role;
 -- Sin policies: RLS cierra acceso; solo owner/postgres podrá probarlo.
 comment on table cotironda_private.offer_versions_v1 is
