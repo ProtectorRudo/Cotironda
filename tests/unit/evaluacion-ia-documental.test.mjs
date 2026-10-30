@@ -158,3 +158,16 @@ test('un falso extra enviado sin gold se cuenta como incorrecto',()=>{
   assert.equal(r.distribucion.incorrectos,1);
   assert.equal(r.puerta_seguridad,'FAIL');
 });
+
+test('benchmark CLI produce salida JSON reproducible y falla si alguna clasificación cambia',async()=>{
+  const {execFileSync}=await import('node:child_process');
+  const out=execFileSync(process.execPath,[
+    '--experimental-strip-types','scripts/eval/quality-gold-offline.mjs'
+  ],{encoding:'utf8',timeout:12000,stdio:['ignore','pipe','pipe']});
+  const r=JSON.parse(out);
+  assert.equal(r.modo,'mock_offline_sin_costos');
+  assert.equal(r.casos,12);
+  assert.equal(r.correctamente_clasificados,12);
+  assert.equal(r.llamadas_openai_real,0);
+  assert.equal(r.mensajes_whatsapp_reales,0);
+});
