@@ -346,3 +346,10 @@
 - **245/245 unitarias PASS y 4/5 workflows SUCCESS; el quinto workflow falla deliberadamente** con `COTIRONDA_AUTH_SIGNUP=FAIL / autorregistro_auth_habilitado` (run 41060813027). No ocultar ni cambiar ese exit code sin corregir Auth remoto.
 - Logs Supabase confirman GET /auth/v1/settings HTTP 200; SQL read-only posterior: 2 usuarios de ensayo, 0 sesiones, organizaciones o Storage, flag comercial false. No se modificó el servicio Auth ni producción.
 - Issue #98 completo por evidencia; Issue #94 permanece bloqueado hasta deshabilitar en Dashboard «Allow new users to sign up» solo en dev y repetir GET PASS. Ver docs/64.
+
+
+## [Sin publicar] — Inicio de Etapa 02 / 30-10-2026 / PR #101
+- La configuración alojada de Supabase Auth dev fue corregida por el propietario: `Allow new users to sign up=OFF`; CI remota reejecutada confirmó `COTIRONDA_AUTH_SIGNUP=PASS` ([run 41061840605](https://github.com/ProtectorRudo/Cotironda/actions/runs/41061840605)). Issue #94 cerrado; 2 cuentas y 0 empresas preservadas. Sin publicación.
+- Nuevo validador TypeScript `src/domain/extraccion-documental.ts` para salida IA no confiable: genera exclusivamente `pendiente_confirmacion_comprador`, mantiene trazabilidad de líneas, marca incertidumbres y duplicados, jamás inventa cantidades ni devuelve precios arbitrarios.
+- `tests/unit/extraccion-documental.test.mjs`: 13 casos; 258/258 unitarias y 5/5 GitHub Actions SUCCESS en PR #101 commit `7895b748fd6a5cf24e60ab213b2a73fc8b07070a`. No se ejecutaron OCR, IA remota, AV ni uploads. Documento de alcance `docs/65-etapa02-borrador-documental.md`.
+- Stage 01 permanece en PRs apilados; no merge ni deploy ni registro habilitado. El próximo objetivo es extraer un corpus sintético, después conectar IA bajo contrato y controles de ingreso de archivos.
