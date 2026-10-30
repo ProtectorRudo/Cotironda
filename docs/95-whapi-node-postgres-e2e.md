@@ -9,7 +9,7 @@ Probar por primera vez la secuencia **D027 receptor simulado de Whapi → D029 c
 ## Driver y credenciales
 
 - `scripts/ci/whapi-pg/package.json` declara exactamente **`pg@8.23.1`**, seleccionado tras verificar la versión en npm. Es dependencia exclusiva del test E2E, no del portal ni del runtime de producción.
-- GitHub Actions configura Node 22.16.0 y instala la dependencia exclusivamente en el job efímero. Se debe **commitear package-lock.json y cambiar a `npm ci`** antes de cerrar el PR.
+- GitHub Actions configura Node 22.16.0 e instala la dependencia **con `npm ci` y `scripts/ci/whapi-pg/package-lock.json` comprometido**. El archivo de bloqueo se generó con `npm install` en el contenedor CI y se validó antes de incorporarlo al repositorio; no se instalan dependencias en el portal.
 - Las tres claves HMAC/AES y el secreto de webhook se generan aleatoriamente por ejecución con `openssl rand` y se enmascaran en los logs. La contraseña de prueba PostgreSQL es distinta de la del superusuario y también se genera aleatoriamente y enmascara.
 - El rol `cotironda_whapi_ci_login` existe **solo en PostgreSQL17 descartable**, no posee BYPASSRLS ni puede asumir postgres. Hereda únicamente los EXECUTE del rol `cotironda_whapi_gateway`. El test exige que fallen SELECT en contactos/inbox, UPDATE de ronda y SET ROLE postgres.
 - PostgreSQL17 de CI corre sobre 127.0.0.1, por eso este test permite `ssl:false` **exclusivamente con triple guard local+nombre BD exacto+flag CI**. Ningún código de conexión a Supabase DEV o producción existe aquí. Fuera del CI se requerirá TLS con validación del certificado CA para evitar MITM y administrar el pool de conexiones según el entorno.
