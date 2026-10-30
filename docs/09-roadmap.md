@@ -147,3 +147,7 @@ Se añadió una puerta de **seguridad comercial** separada de la **cobertura** e
 
 ### 30/10/2026 — Candidatos por envases alternativos (Issue #113)
 Sobre PR #111 se agregó un planificador **independiente y offline** que calcula envases enteros por BigInt, verifica misma familia/especificaciones/unidades de magnitud y propone consultas funcionales solo con relación curada. No altera el matcher exacto ni invita a proveedores ni certifica producto. Faltan SKU de proveedor reales, manual de equivalencias por rubro, UI de alternativas, decisión de política de comunicación, métricas recall/seguridad integradas y costos del envase completo. Docs/70. No habilita piloto.
+
+
+### 30/10/2026 — D014: producto primero (Issue #115)
+Se aprueba el orden comercial identidad de producto → atributos técnicos necesarios → marca flexible → presentaciones alternativas, con marca obligatoria como restricción. Se creó `planificarPorProducto` offline como contrato nuevo que agrupa marcas/envases de SKU confirmados por proveedor bajo una sola línea, retiene dudas y calcula envases con BigInt. No cambia aún el matcher exacto ni el servicio Whapi. Antes de piloto integrar catálogo canónico y atributos auditados en backend (no confiar en IA), cotejar recall/falsos envíos, ofertas/ranking y política P007. Docs/71.

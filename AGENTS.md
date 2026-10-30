@@ -53,3 +53,5 @@ Actuar como director técnico, desarrollador, analista de producto y auditor. Pr
 GitHub: README, docs, AGENTS, Issues, PRs, migraciones, tests y CHANGELOG. Si existe conflicto entre chat y GitHub, revisar y documentar antes de implementar.
 
 - El consentimiento de distribución del comprador se solicita al enviar su lista. Proveedores elegibles solo si catálogo por producto confirmado, zona compatible, opt-in vigente, sin baja; mensajes idempotentes por ronda/proveedor.
+
+- D014: seleccionar por identidad canónica del producto y compatibilidad de características críticas; marca y presentación son variantes por defecto, salvo marca exigida o características técnicas obligatorias. Sin equivalencia técnica inventada ni ranking económico de variantes sin validación.

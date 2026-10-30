@@ -170,3 +170,7 @@ Etapa 02 sumó un adaptador **servidor** para `POST /v1/responses` (modelo candi
 
 ### Etapa 02 — alternativas de envases y consultas técnicas (Issue #113)
 [Primer motor offline](docs/70-alternativas-cotizacion.md) para **propuestas de cotización**, no envíos ni homologaciones: 20 bolsas de cemento de 50 kg → 40 de 25 kg cuando familia y clase verificadas; hidrófugo 4 L → envase de 5 L (1 L sobrante). Ceresita/hidrófugo y ligante/Tacurú solo como **consultas curadas sujetas a ficha/uso**, nunca equivalentes automáticos. Respeta marca exigida, opt-in, zona y duplicados. No modifica aún el matcher exacto, no integra Whapi ni valida productos reales de empresas. PR draft hijo de #111.
+
+
+### D014 — identidad del producto antes que marca y presentación (Issue #115)
+El comprador **no queda limitado a la marca o al envase escrito**: Cotironda debe buscar proveedores por producto canónico y **especificaciones técnicas críticas compatibles**. Por defecto se permiten marcas alternativas, salvo que una marca sea obligatoria. El tamaño de envase se calcula por unidad base y se muestran excedentes. Atributos incompatibles bloquean equivalencias; si son insuficientes se permite solamente una consulta técnica, nunca una oferta comparable automática. Nuevo contrato [docs/71](docs/71-identidad-producto-primero.md) y `src/domain/identidad-producto.ts`: **OFFLINE**, todavía separado del despachador actual, sin Whapi/IA live y sin merge a main.
