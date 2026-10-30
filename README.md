@@ -227,3 +227,6 @@ El PR #144 (rama de desarrollo hija de #142) suma el primer motor puro de **comp
 
 ### 30/10/2026 — Etapa 03: máquina de rondas con versiones OFFLINE
 El PR #146 suma el núcleo de estados de una licitación: apertura por comprador, borradores por proveedor invitado, confirmación explícita y nuevas versiones preservando históricas, cierre al vencimiento con snapshot D022 de ofertas confirmadas. No habilita invitaciones reales, WhatsApp, datos de usuarios, rondas persistentes ni adjudicación. Backend con Auth/RLS, reloj confiable y deduplicación SQL es **requisito pendiente**. Ver [docs/86](docs/86-rondas-versiones-offline.md).
+
+### 30/10/2026 — Etapa 03: persistencia privada de rondas en preparación
+El PR #148 propone el primer ledger PostgreSQL de rondas, invitaciones, borradores y versiones confirmadas, guardado bajo `cotironda_private`. El SQL tiene controles de estado, integridad y privilegios, probado en la CI independiente, **pero no es una migración instalada ni habilita operaciones comerciales**. Se conserva intacto el historial de 12 migraciones y la integración se hará con backend transaccional autenticado, RLS y validación de equivalencia. Ver [docs/87](docs/87-rounds-ledger-privado.md).
