@@ -224,3 +224,6 @@ Se registra en Supabase DEV un **resumen numérico por caso sintético** de extr
 
 ### 30/10/2026 — Etapa 03 iniciada en código, sin licitaciones operativas
 El PR #144 (rama de desarrollo hija de #142) suma el primer motor puro de **comparación económica justa**: datos sintéticos de ofertas confirmadas, cobertura por cantidades, IVA/flete/mínimos explicitados, cálculo con centavos exactos, opción de uno o dos proveedores por renglones íntegros y ausencia de ranking engañoso para ofertas parciales. No hay adjudicación ni exposición de datos de proveedores. **No** optimiza fracciones de un mismo artículo, no cubre descuentos/cotizaciones reales ni habilita portal/rondas comerciales. Ver [docs/85](docs/85-etapa03-comparador-offline.md). La Etapa 01 sigue abierta y los controles de IA D021 no se modificaron.
+
+### 30/10/2026 — Etapa 03: máquina de rondas con versiones OFFLINE
+El PR #146 suma el núcleo de estados de una licitación: apertura por comprador, borradores por proveedor invitado, confirmación explícita y nuevas versiones preservando históricas, cierre al vencimiento con snapshot D022 de ofertas confirmadas. No habilita invitaciones reales, WhatsApp, datos de usuarios, rondas persistentes ni adjudicación. Backend con Auth/RLS, reloj confiable y deduplicación SQL es **requisito pendiente**. Ver [docs/86](docs/86-rondas-versiones-offline.md).
