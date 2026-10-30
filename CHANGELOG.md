@@ -505,3 +505,9 @@
 ## [Sin publicar — Etapa 03 / D023: rondas y ofertas versionadas OFFLINE]
 - Núcleo `src/domain/rondas-offline.ts`: programada, abierta, cerrada, cancelada; invitaciones anónimas y autorización de distribución, borradores por revisión, confirmación por proveedor con versiones históricas inmutables, idempotencia de eventos y expiración UTC.
 - Cierre compone comparador D022 solo con últimas versiones confirmadas; no admite drafts como precios, contacto, adjudicación o equivalencias no verificadas. Tests de roles, stale revisions, duplicados, plazos y datos desconocidos. Sin infraestructura ni producción. PR #146 draft sobre #144.
+
+## [Sin publicar — D024: ledger privado SQL de rondas, Issue #147]
+- Se preparó `supabase/sql/rounds_private_ledger_d024.sql` con seis tablas exclusivamente en esquema privado: rondas, renglones, invitaciones, borradores, eventos y versiones confirmadas. RLS activa sin políticas cliente y privilegios revocados incluso a `service_role` sobre nuevas tablas.
+- Triggers: transiciones irreversibles, clock server, freeze de ítems e invitados, revisiones incrementales, confirmación igual al borrador, versiones secuenciales y confirmaciones/eventos que no pueden actualizarse ni borrarse.
+- Validador JSON de líneas cerrado (cinco campos, cantidades/IVA/precios explícitos, sin texto libre ni contactos). Prueba aislada PG17 en `supabase/tests/ci/99_rounds_private_ledger.sql` con `ROLLBACK`. CI incorpora paso adicional sin alterar historial de 12 migraciones.
+- No es backend operativo: falta autorización real de actor/empresa, funciones de escritura transaccionales, verificación de equivalencia y API. Sin aplicar en Supabase DEV ni despliegues, IA, Whapi o producción. Ver docs/87, PR #148.
