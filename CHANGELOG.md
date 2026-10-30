@@ -406,3 +406,10 @@
 - `src/domain/invitaciones-por-producto.ts`: consultas offline a proveedores con producto canónico confirmado, marca y presentación flexibles; diferencia técnica explícita es consulta, nunca oferta conforme. Marca obligatoria solo cuando comprador la exige expresamente.
 - Se conservan requisitos, cantidades, unidades y origen; no se infieren kg de bolsas sin tamaño ni precios; una invitación por proveedor con varios SKUs agrupados. Zona, consentimiento, baja, duplicados y seguridad documental conservados.
 - Se documentó separación fase de invitación D015 vs compatibilidad D014/Oferta posterior. Tests para «cemento» genérico, Loma Negra→Avellaneda 25/35kg, pintura, placas, electricidad, envases, exclusividad. Documentación docs/72. No conexión a catálogos Supabase ni envío Whapi/producción.
+
+
+## [Sin publicar] — Etapa 02: puente de taxonomía argentina a invitaciones D015 (Issue #119)
+- `src/domain/taxonomia-materiales.ts`: diccionario local curado de 6 familias iniciales de 5 rubros, exclusiones para falsos positivos y atributos explícitos para cemento/placas/látex/cables; retención de artículos no identificables.
+- Resolver de marcas expresamente exclusivas vs mencionadas, corrigiendo falsa exclusividad de IA y conservando originales. No inventa peso de bolsas de cemento sin tamaño especificado.
+- `simularInvitacionesConIA` conecta extractor OpenAI validado → taxonomía curada → matcher de catálogo producto confirmado/consentimiento; no hace envíos y usa fetch MOCK en pruebas.
+- `npm run demo:productos`, tests unitarios de terminología argentina y docs/73. Sin OpenAI real, WhatsApp, Supabase, DNS ni publicación. PR draft hijo de #118.
