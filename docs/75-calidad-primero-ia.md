@@ -38,3 +38,6 @@ El módulo `entrada-economica.ts` sigue siendo útil como **comparador**, prepro
 
 ## Condiciones antes del piloto
 Revisión de factibilidad con documentos de clientes anonimizados/autorizados, antimalware/cuarentena (Issue #61), validación contra catálogos reales aislados por empresa, pruebas de captura de cada artículo, costo por solicitud/cliente, seguridad y reintentos de Whapi. No publicar ni hacer merge hasta integrar en orden los PRs apilados.
+
+## Mejora posterior (Issue #125)
+La cobertura del coordinador ahora no depende solamente de que exista al menos una extracción por línea. El extractor crea segmentos **únicamente con separadores explícitos y una nueva cantidad/unidad**, valida cada evidencia y reporta segmentos ausentes. Por ejemplo, una línea con 20 bolsas de cemento y 5 litros de látex no se considera completa cuando la IA devuelve solo el cemento. Esto reduce un falso éxito detectado, pero **no asegura descubrir listas con redacciones sin delimitadores**. Ver docs/76 y su suite de pruebas.
