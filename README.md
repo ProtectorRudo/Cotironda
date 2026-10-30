@@ -115,3 +115,6 @@ Proyecto de desarrollo: `cotironda-dev` (`qkercsoqhehbenbbncwk`), última migrac
 
 
 **Evidencia del navegador real en Preview (30/10/2026):** el responsable ingresó desde Android a `cotironda-portal-dev` y mostró la página privada **«Sesión de prueba activa»**, sin formulario de empresas. Logs Supabase agregados corroboran 1 POST Auth token 200, 2 GET `/auth/v1/user` 200 y 1 evento Audit login. **Login y vista protegida validados; logout y bloqueo al reabrir `/alta` siguen pendientes**. Tampoco se verificaron los atributos remotos de cookies. Ver [docs/59](docs/59-preview-auth-real-mobile-login.md).
+
+
+**30/10/2026 — logout global auténtico en Preview VERIFICADO:** el propietario pulsó «Cerrar sesión de prueba» y compartió pantalla de regreso a «Ingresá a tu empresa». Registros agregados Supabase corroboran POST `/auth/v1/logout` HTTP **204** y evento Audit `logout`; SQL de lectura confirmó **0 sesiones**, registro cerrado, 0 organizaciones y 0 archivos. **Login real, vista privada, logout y retorno al ingreso ya aprobados.** Falta intentar la URL `/alta` nuevamente sin autenticar, y auditar atributos de cookies remotas. Evidencia: [docs/59](docs/59-preview-auth-real-mobile-login.md). Etapa 01 general sigue abierta.
