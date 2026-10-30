@@ -163,7 +163,8 @@ export function aplicarEventoRondaOffline(
       ev.fecha>=estado.cierreEn)reject();
     nuevo='abierta';
   }else if(ev.tipo==='cancelar'){
-    if(!['programada','abierta'].includes(estado.estado))reject();
+    if(!['programada','abierta'].includes(estado.estado)||
+      ev.fecha>=estado.cierreEn)reject();
     nuevo='cancelada';
   }else if(ev.tipo==='cerrar'){
     if(estado.estado!=='abierta'||ev.fecha<estado.cierreEn)reject();
