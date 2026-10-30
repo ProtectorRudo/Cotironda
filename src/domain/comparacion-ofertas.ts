@@ -111,7 +111,7 @@ function buildOffer(raw:OfertaComparable,items:Item[],ids:Set<string>):Q{
     const q=dec(v.cantidadDisponible,3);
     const neto=v.precioUnitarioNeto===null?null:dec(v.precioUnitarioNeto,2);
     lines.set(v.itemId,{id:v.itemId,unidad:v.unidad,disponible:q,
-      equivalencia:v.equivalencia,neto,iva:v.ivaPorcentaje===null?null:IVA[v.ivaPorcentaje]});
+      equivalencia:v.equivalencia,neto,iva:v.ivaPorcentaje===null?null:IVA[v.ivaPorcentaje as IvaExplicito]});
   }
   return {src:raw,lines,flete:raw.fleteFinal===null?null:dec(raw.fleteFinal,2),
     minimo:raw.minimoCompraFinal===null?null:dec(raw.minimoCompraFinal,2)};
