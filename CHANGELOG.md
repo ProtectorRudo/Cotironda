@@ -241,3 +241,10 @@
 - Corrección de `cookieOptions` en los tres clientes Supabase (`proxy.ts`, servidor, navegador): `secure` en `NODE_ENV=production` (Preview y Production), `sameSite=lax`, `path=/`, sin activar `HttpOnly` que impediría refresh del lado navegador. `next dev` local sigue compatible con HTTP.
 - Test HTTPS completo demuestra certificación CA, rechazo de certificado sin confianza, Set-Cookie Secure, no-store, rotación y reutilización de cookie, segundo visitante anónimo, origen adversarial 403 y registro autorizado aún 503 fail-closed. **161/161 unitarias y cinco workflows CI SUCCESS** en HEAD `a089be6545e3dcea905ab544ca788cc4d3c705f6`. Ver `docs/53-https-ssr-loopback-ci.md`.
 - Este test no usa Supabase Auth real, ni navegadores completos ni certificado Vercel; no se hizo merge, cambió DB ni publicó producción.
+
+
+## [Sin publicar — PR #83: no reutilización de credenciales y ejecución Auth aislada]
+- Preflight de E2E manual Auth niega contraseñas iguales en las dos cuentas de ensayo, exige mínimo 12 caracteres y bloquea pruebas con credenciales genuinas en `GITHUB_ACTIONS`, `CI` y `VERCEL`.
+- Se incorporó `npm run e2e:auth:dev` con Node 22 `--experimental-strip-types`, evitando fallas de importación `.ts`. La CI ejecuta deliberadamente el comando y requiere el rechazo antes de la red; **no dispone de claves ni contraseñas reales**.
+- Se blindó el diagnóstico para imprimir solo códigos de error permitidos de Cotironda, nunca respuestas arbitrarias de SDK/red ni secretos. Tests adversariales nuevos y `docs/54-e2e-auth-secret-preflight.md`.
+- Cuentas de ensayo que reutilizaron una contraseña ya divulgada deben rotarse localmente con dos secretos nuevos y distintos; **no se incluyeron valores sensibles en código ni documentación**. No se alteraron Supabase, producción, Vercel, DNS ni `main`. Pendiente de ejecutar JWT genuino tras logout.
