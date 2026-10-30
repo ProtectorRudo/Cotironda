@@ -1,10 +1,14 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server.js';
-import { portalHabilitado } from '../../src/server/portal-entorno.ts';
+import { portalHabilitado, autenticacionPortalHabilitada } from '../../src/server/portal-entorno.ts';
 
 export async function proxy(request: NextRequest) {
   // Inactive environments never contact an unrelated Supabase installation.
-  if (!portalHabilitado(process.env)) {
+  // No consultar Auth para la API de altas cuando el registro comercial está cerrado.
+  const permitida=request.nextUrl.pathname==='/api/organizaciones'
+    ? portalHabilitado(process.env)
+    : autenticacionPortalHabilitada(process.env);
+  if (!permitida) {
     const disabled = NextResponse.next({request});
     disabled.headers.set('Cache-Control','private, no-store');
     return disabled;
