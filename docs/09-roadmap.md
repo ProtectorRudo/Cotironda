@@ -151,3 +151,7 @@ Sobre PR #111 se agregó un planificador **independiente y offline** que calcula
 
 ### 30/10/2026 — D014: producto primero (Issue #115)
 Se aprueba el orden comercial identidad de producto → atributos técnicos necesarios → marca flexible → presentaciones alternativas, con marca obligatoria como restricción. Se creó `planificarPorProducto` offline como contrato nuevo que agrupa marcas/envases de SKU confirmados por proveedor bajo una sola línea, retiene dudas y calcula envases con BigInt. No cambia aún el matcher exacto ni el servicio Whapi. Antes de piloto integrar catálogo canónico y atributos auditados en backend (no confiar en IA), cotejar recall/falsos envíos, ofertas/ranking y política P007. Docs/71.
+
+
+### 30/10/2026 — D015: familia de producto como puerta de invitación (Issue #117)
+Se refinó D014: los proveedores que **confirmen comercializar el producto canónico** tienen oportunidad de cotizar aun con marcas/envases distintos, sin exigir tipo/clase de cemento u otros atributos que el arquitecto no escribió. La comprobación de especificación se separa de la invitación. Se añadió módulo puro que envía cero mensajes, conserva datos originales, muestra variaciones técnicas y agrupa por proveedor. Faltan catálogo canónico auténtico, backend que compruebe SKU y restricciones exclusivas, integración WhatsApp, medición recall de proveedores válidos y validación de ofertas. Docs/72 / Issue #117.
