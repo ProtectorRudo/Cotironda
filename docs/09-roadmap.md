@@ -68,3 +68,8 @@ El propietario ejecutó el archivo de prueba desde Chrome Android y compartió e
 ### 30/10/2026 — Preview Next real del portal en Vercel: compilación verificada (Issue #86)
 
 Se detectó y documentó que el READY anterior pertenecía a la **demo** (`cotironda`, build vacío 46 ms) y no al portal. Nueva Preview protegida SSO del proyecto separado `cotironda-portal-dev` (deployment `dpl_EFo5qxksdsaUnUQn5cG7CEj87i3i`, target no-production, commit `31a8bd22`) ejecutó `next build` y empaquetó todas las rutas Next y el Proxy. El ambiente tiene variables de Auth dev pero no `COTIRONDA_SITE_ORIGIN`, y el código todavía liga login a apertura de registro; la compilación no equivale a prueba real de cookies. Siguiente hito: login-only Preview separado de registro empresarial, y luego E2E del navegador. Docs/57-vercel-portal-preview-audit.md.
+
+
+### 30/10/2026 — modo Auth Preview sin registro, pendiente validación de navegador (Issue #88)
+
+Separación del login y del registro comercial por banderas independientes: Auth solo para cuentas previamente creadas de ensayo, Vercel Preview con SSO, registro SQL y de portal false, nada de signUp/alta empresarial en la interfaz. /api/organizaciones sigue 503 fail-closed. TLS/SSR en CI con Auth sintético prueba cookies Secure y no-store; **falta la ejecución real de login/logout en el Preview** para cerrar ese control. No se conecta dominio ni producción. docs/58-preview-login-only-auth.md.
