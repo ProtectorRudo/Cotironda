@@ -52,3 +52,8 @@ Las categorías activas son un **marcador de lectura segura**, sin crear una emp
 ## Requisito adicional de seguridad de cuentas (PR #83)
 
 El E2E auténtico **no debe ejecutarse con contraseñas compartidas o divulgadas**. Rotar ambas cuentas de ensayo con secretos **nuevos y diferentes**; longitud mínima 12. En lugar del comando `node scripts/auth-real-smoke.mjs` indicado arriba, usar **`npm run e2e:auth:dev`** desde `apps/portal` (Node 22, importaciones TypeScript). GitHub Actions/CI/Vercel deniegan ese comando de forma intencional. Para detalles de preflight y rotación, ver `docs/54-e2e-auth-secret-preflight.md`. La ejecución real sigue **pendiente**.
+
+ 
+## RESULTADO posterior — 30/10/2026: prueba real finalmente ejecutada
+
+Este protocolo, anteriormente pendiente, **fue satisfecho mediante el diagnóstico HTML de navegador** ejecutado por el propietario en Chrome Android. No se ejecutó el runner Node con contraseñas en CI. **8 PASS**, incluido **JWT original vigente que después de logout global recibe HTTP 200 + [] por RLS**. Se corroboraron eventos login/logout y peticiones HTTP contra Supabase real mediante logs agregados y SQL read-only (0 sesiones y empresas, flag cerrado). La evidencia completa y sus límites se encuentran en [docs/56](56-auth-real-mobile-rls-proof.md). Las frases anteriores de «no ejecutado» corresponden al estado previo a esta prueba; **el control de revocación real está aceptado en dev**, pero HTTPS Preview y Etapa 01 general siguen pendientes.

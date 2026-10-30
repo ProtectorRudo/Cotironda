@@ -54,3 +54,12 @@ La prueba HTTPS verdadera de Next.js Preview **en loopback CI** descubrió que e
 ### Credenciales de ensayo aisladas y diagnóstico reproducible (PR #83)
 
 Ante la posibilidad de dos cuentas de ensayo con contraseña reutilizada, el runner Auth ahora falla cerrado si se usa un secreto idéntico, corto (menos de 12 caracteres) o se intenta ejecutar desde GitHub Actions/CI/Vercel. Comando local Node 22 `npm run e2e:auth:dev`; CI comprueba que se niega a usar Auth real y los mensajes de errores son una lista blanca sin datos privados. **Es necesario rotar los dos secretos de prueba fuera del chat**, antes de ejecutar la comprobación pendiente de JWT auténtico tras logout. Ver `docs/54-e2e-auth-secret-preflight.md`. Etapa 01 aún abierta; sin publicación.
+
+
+### Diagnóstico Auth real sin dependencia de Node, listo para ejecución (Issue #84/PR #85)
+
+Un HTML estático descargable permite desde un navegador de confianza probar las dos cuentas de desarrollo sin transferir contraseñas al asistente ni a GitHub: login verificado, JWT original, RLS de categorías antes y después de logout y correo sin confirmar. El código se valida automáticamente con transporte simulado, incluyendo errores que deben ser FAIL; sin embargo **todavía no hay ejecución real en navegador**. La Etapa 01 sigue abierta hasta recibir el informe PASS/FAIL auténtico, HTTP429 remoto y autorización para probar cookies en HTTPS desplegado. `docs/55-browser-auth-dev-diagnostic.md`.
+
+ 
+### 30/10/2026 — JWT real revocado por RLS: control COMPLETADO en cotironda-dev
+El propietario ejecutó el archivo de prueba desde Chrome Android y compartió evidencia con **8 PASS / 0 FAIL**. Logout global aceptado; JWT firmado original **no vencido** pierde acceso a cinco rubros: GET catálogo **HTTP 200 + []** donde antes daba HTTP 200 con filas. Logs reales de Supabase corroboran login/logout, dos GET categoría 200, POST logout 204 y login pendiente rechazado 400. SQL read-only posterior: 0 sesiones, empresas o archivos, bandera de registro apagada, política de sesión presente. **Cierre del riesgo concreto de JWT post-logout dev**, no de toda la Etapa 01. Persisten: navegador Next Preview con cookies reales sobre HTTPS autorizado, gateway remoto 429, WARN de contraseñas filtradas, backups y consolidación de PRs. Ver docs/56-auth-real-mobile-rls-proof.md. Las menciones previas de «no ejecutado» para este test son históricas y quedan reemplazadas.
