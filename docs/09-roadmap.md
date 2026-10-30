@@ -179,3 +179,7 @@ Se creó un scorer independiente para D015/D016 que mide **recall de destinatari
 
 ### 30/10/2026 — Primer runner privado para benchmark LIVE D015 (Issue #129)
 Se prepara una corrida manual de seis escenarios positivos con GPT-6 Luna, scorer D015/D016, costos por tokens y guardas de no ejecución en CI/producción/preview. El presupuesto soft USD 0,02 exige activación explícita y NO sustituye límite en cuenta OpenAI. Sin clave `OPENAI_API_KEY` verificada en el proyecto DEV Vercel, todavía no se han hecho inferencias ni mediciones. Falta configuración externa de OpenAI (proyecto/facturación/clave privada), runner DEV seguro y autorización de gastos. Docs/78.
+
+
+### 30/10/2026 — OpenAI mediante Supabase Edge Secrets (Issue #131)
+Se creó la fuente de un gateway **Cotironda DEV** exclusivo, protegido con `@supabase/server` autenticación `secret` y `verify_jwt=false` conforme a claves modernas sb_secret. OpenAI API key via `Deno.env.get('OPENAI_API_KEY')`, jamás en base, cliente o logs. Modo de estado sin gasto; smoke sintético bloqueado por defecto. Falta que propietario pegue clave en Edge Function Secrets, verificar ese hecho mediante función desplegada y completar el adaptador comercial/aislamiento empresarial. Docs/79. **No se desplegó ni gastaron créditos**.

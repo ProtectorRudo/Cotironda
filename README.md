@@ -202,3 +202,10 @@ Nuevo evaluador **offline** compara productos detectados y proveedores invitados
 
 ### Ensayo OpenAI real DEV preparado (Issue #129, no ejecutado)
 El nuevo script `npm run benchmark:producto:live -- --live` evalúa **seis escenarios positivos de producto y proveedor** de D015/D016 contra OpenAI, únicamente desde un runner privado DEV con clave API y autorización de presupuesto explícitas. Siempre bloqueado por defecto, en CI, Vercel o producción; no genera mensajes ni registra datos privados. En Vercel `cotironda`/`cotironda-portal-dev` **no se observó `OPENAI_API_KEY` entre los nombres de variables de entorno**, por lo que no hay todavía inferencias reales ni costo medido. [Guía, limitaciones y pasos externos mínimos](docs/78-evaluacion-live-dev.md). Los resultados MOCK del benchmark offline no representan exactitud del modelo.
+
+
+### Supabase DEV — credencial OpenAI protegida (Issue #131)
+La clave API se configura en **Supabase `cotironda-dev` → Edge Function Secrets**, bajo `OPENAI_API_KEY`; no se guarda en SQL, navegador, GitHub ni se comparte por chat. Existe un primer gateway **solo en rama de desarrollo**, protegido por autenticación de servidor de Supabase, para comprobar si el secreto está configurado y realizar después un smoke sintético deshabilitado por defecto. **Guardar la clave en Supabase no la vuelve automáticamente disponible en el backend Next.js de Vercel:** la llamada real debe vivir en Edge Function y el flujo comercial todavía necesita integración. [Pasos, controles y límites](docs/79-supabase-openai-secret-dev.md). Sin despliegue, inferencia real ni envío.
+
+
+**Actualización de infraestructura 30/10/2026:** la versión 1 de `cotironda-ia-dev` se desplegó **solo en Supabase `cotironda-dev`** y figura ACTIVE. La función requiere `apikey` secreta de Supabase (`withSupabase auth:'secret'`) y sus llamadas pagas están bloqueadas por defecto. **El secreto OpenAI fue guardado por el propietario, pero falta confirmar su lectura mediante el modo `status` autenticado**. Guía sin exponer claves: [docs/79](docs/79-supabase-openai-secret-dev.md). Ningún cambio en producción ni backend comercial completo.

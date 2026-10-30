@@ -1,0 +1,8 @@
+# Cotironda — solo configuración local y por función.
+# El deploy en cotironda-dev debe elegir explícitamente el project ref.
+project_id = "cotironda"
+
+[functions.cotironda-ia-dev]
+# La función es exclusiva para backend con apikey sb_secret_*;
+# estas keys no son JWT. withSupabase auth:'secret' verifica el caller.
+verify_jwt = false
