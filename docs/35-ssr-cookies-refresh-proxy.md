@@ -47,3 +47,8 @@ No forzar `HttpOnly` en los cookies manejados por `@supabase/ssr`: la guía ofic
 4. Revisar CSP y WAF antes de invitar terceros.
 
 **Referencias:** [PR #43](https://github.com/ProtectorRudo/Cotironda/pull/43), [Issue #42](https://github.com/ProtectorRudo/Cotironda/issues/42), [guía Supabase SSR avanzada](https://supabase.com/docs/guides/auth/server-side/advanced-guide), [creación de clientes SSR](https://supabase.com/docs/guides/auth/server-side/creating-a-client).
+
+
+## Actualización de seguridad posterior — PR #81 (HTTPS real en CI)
+
+El ensayo anterior usaba `NextRequest('https://...')` ficticia y comprobaba atributos `SameSite`, pero no una conexión TLS real ni `Secure` de respuesta. El nuevo test en `docs/53-https-ssr-loopback-ci.md` levantó Next compilado sobre HTTPS loopback con certificado temporal y descubrió una **cookie renovada sin Secure**. Quedó corregida con `cookieOptions.secure=true` para builds Preview/Production en los tres clientes Supabase. El runner HTTPS comprueba `Secure`, `SameSite=Lax`, `Cache-Control:no-store`, reutilización/aislamiento de cookies y registro fail-closed; **161 unitarias y cinco workflows CI SUCCESS**. La prueba sigue usando Auth ficticio, no un navegador real ni Supabase Auth genuino. No se publicó el portal.
