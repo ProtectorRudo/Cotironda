@@ -78,3 +78,8 @@ Separación del login y del registro comercial por banderas independientes: Auth
 ### Puerta de calidad — Preview SSO login-only ya desplegada, E2E real pendiente
 
 Compilación real de `cotironda-portal-dev` en `dpl_6X6o3xzgP1aRDRVpjdUtQ9p36tyM`, commit `1c0c8b82`, target Preview y `READY`, Next/Proxy compilados; Vercel reportó `COTIRONDA_AUTH_PREVIEW_BRANCH_GUARD=ALLOW`. Por ausencia de Git conectado al proyecto no se pudo limitar la variable a una rama: se usa env Preview + verificación **server-only** de rama exacta, bloqueando cualquier otra referencia y production. SSO activo para todo deployment. 190/190 unit y 5/5 GitHub Actions. Flag comercial **false** en Vercel y SQL; 0 sesiones/empresas/archivos. **Falta navegador real con SSO y cuentas de ensayo para validar login/logout, cookies Secure y redirecciones**, HTTP 429 remoto, backup/restauración y decisión WARN de contraseñas filtradas. Etapa 01 y PRs siguen abiertos sin publicar `main` ni dominio. docs/58-preview-login-only-auth.md.
+
+
+### 30/10/2026 — logout de Preview comprobado en Auth real
+
+Después de pulsar «Cerrar sesión de prueba», el navegador mostró nuevamente la pantalla de ingreso (captura del propietario). Logs Supabase agregados: POST `/auth/v1/logout` 204 y evento Audit logout; SQL read-only: 0 sesiones, registro false, 0 empresas y archivos. **Ingreso, vista protegida, logout remoto y retorno al ingreso acreditados.** Restan: visita directa a `/alta` tras logout para probar denegación, inspección de cookies remotas, HTTP 429, backups y control de contraseñas filtradas. Issue #88 abierto, PR #89 draft, sin producción. Docs/59.
