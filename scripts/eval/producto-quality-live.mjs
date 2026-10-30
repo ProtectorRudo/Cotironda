@@ -6,10 +6,6 @@
  * La reserva es un límite preventivo SOFTWARE, no límite de gasto de OpenAI:
  * configurar presupuesto/cupo en la cuenta antes de activar este archivo.
  */
-import {escenariosProducto} from '../../tests/fixtures/gold-invitaciones-producto-v1.mjs';
-import {simularRondaConCalidadIA} from '../../src/server/flujo-calidad-ia.ts';
-import {evaluarCalidadInvitacionesPorProducto}
-  from '../../src/domain/evaluacion-invitaciones-producto.ts';
 import {
   CASOS_LIVE,MAX_CASOS,MODELO_EVAL,PRECIO_USD_MTOK,
   RESERVA_POR_REQUEST_USD,PRESUPUESTO_SOFT_USD,validarGuardiaLive,
@@ -26,6 +22,12 @@ if(!guardia.habilitado){
   },null,2));
   if(process.argv.includes('--live'))process.exitCode=2;
 }else{
+  // Importar evaluador y código de IA SOLO tras validar las guardas. Así
+  // el modo bloqueado ni siquiera carga el motor ni prepara un request.
+  const {escenariosProducto}=await import('../../tests/fixtures/gold-invitaciones-producto-v1.mjs');
+  const {simularRondaConCalidadIA}=await import('../../src/server/flujo-calidad-ia.ts');
+  const {evaluarCalidadInvitacionesPorProducto}=
+    await import('../../src/domain/evaluacion-invitaciones-producto.ts');
   const resultados=[];
   let gasto=0;
   let fallo=false;
