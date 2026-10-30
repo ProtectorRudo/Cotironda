@@ -19,7 +19,7 @@ Criterios de aceptación observables por Issue; casos habituales, extremos y reg
 - T11: Archivos PDF, Excel, Word, imagen y texto de 50–100 líneas con trazabilidad.
 - T12: Manuscrito ilegible: revisión requerida, nada inventado.
 - T13: Instrucciones maliciosas en archivos no ejecutan acciones.
-- T14: Un mismo proveedor en dos rubros no recibe doble invitación por el mismo ítem.
+- T14: Un proveedor en dos rubros recibe UNA solicitud idempotente con su subconjunto de productos confirmados; ningún artículo que no comercialice.
 
 ## WhatsApp
 - T15: Webhook duplicado → único evento/acción.
@@ -37,3 +37,7 @@ Criterios de aceptación observables por Issue; casos habituales, extremos y reg
 
 ## Secuencia de pruebas
 Unitarias → integración con BD aislada → browser end-to-end → WhatsApp con números autorizados → piloto comercial. Definir objetivos medibles de error, latencia y costo antes del piloto.
+
+
+## D013 — verificación del planificador automático
+El envío del comprador incluye autorización explícita; no hay confirmación por línea. El proveedor solo recibe artículos confirmados de su catálogo exacto y dentro de su zona, con opt-in y sin baja. Los artículos ambiguos, unidades distintas, especificaciones no equivalentes y duplicados no se envían; el resto sigue. Un único plan por ronda/proveedor con clave idempotente. Validación offline no equivale a WhatsApp real ni PDF procesado.
