@@ -439,3 +439,9 @@
 - Nuevo `src/domain/evaluacion-invitaciones-producto.ts` que evalúa contra gold independiente extracción, recall de invitaciones, falsos proveedores, duplicados y cantidad/unidad alteradas con dos puertas de calidad.
 - Doce casos sintéticos `tests/fixtures/gold-invitaciones-producto-v1.mjs` y tests adversariales de scoring; `npm run benchmark:producto:offline` usa Responses API MOCK y cero mensajes reales.
 - No atribuir resultados al desempeño de GPT-6 Luna ni autorizar envío; docs/77 y PR draft hija de #126. Sin merge, base, WhatsApp ni producción.
+
+
+## [Sin publicar] — Etapa 02: evaluación LIVE por producto preparada (Issue #129)
+- Nuevo runner `scripts/eval/producto-quality-live.mjs` con seis casos sintéticos positivos del gold D015, ejecución manual DEV, scorer independiente, métricas de proveedor, tokens y costo estimado. **Ninguna llamada real ejecutada**.
+- `scripts/eval/guardia-live-producto.mjs` exige `--live`, autorización exacta, clave de servidor, evita GitHub Actions/CI/Vercel/producción, sin reintentos ni logs de clave/prompt. Presupuesto soft USD 0,02 **no sustituye** control de gasto en OpenAI.
+- Pruebas unitarias de guardas, estimación monetaria y bloqueo CLI. Documentación docs/78 sobre configuración externa mínima y límites. Sin WhatsApp, Supabase, deploy, merge ni datos reales.

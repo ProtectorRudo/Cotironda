@@ -175,3 +175,7 @@ Se incorpora segmentación explícita y trazabilidad de cada artículo dentro de
 
 ### 30/10/2026 — benchmark comercial por producto (Issue #127)
 Se creó un scorer independiente para D015/D016 que mide **recall de destinatarios comerciales correctos**, falsos proveedores y cobertura de extracción, en vez de limitarse a coincidencias exactas de marcas/envases. Corpus inicial de 12 casos sintéticos; CLI `npm run benchmark:producto:offline`; sin llamada real a OpenAI. Pendiente test live autorizado con presupuesto DEV y dataset independiente amplio por rubro. Ver docs/77.
+
+
+### 30/10/2026 — Primer runner privado para benchmark LIVE D015 (Issue #129)
+Se prepara una corrida manual de seis escenarios positivos con GPT-6 Luna, scorer D015/D016, costos por tokens y guardas de no ejecución en CI/producción/preview. El presupuesto soft USD 0,02 exige activación explícita y NO sustituye límite en cuenta OpenAI. Sin clave `OPENAI_API_KEY` verificada en el proyecto DEV Vercel, todavía no se han hecho inferencias ni mediciones. Falta configuración externa de OpenAI (proyecto/facturación/clave privada), runner DEV seguro y autorización de gastos. Docs/78.

@@ -198,3 +198,7 @@ El extractor IA ahora verifica por separado materiales delimitados explícitamen
 
 ### Etapa 02 — Benchmark de calidad comercial D015/D016 (Issue #127)
 Nuevo evaluador **offline** compara productos detectados y proveedores invitados contra un gold de destinatarios **por producto**, sin exigir misma marca ni envase. Métricas separadas: artículos correctos/omitidos/alterados y proveedores correctos/incorrectos/omitidos. Incluye 12 escenarios sintéticos, errores deliberados, duplicados y casos intralínea. Ejecutar `npm run benchmark:producto:offline` (Node 22+). [Ver criterios y límites](docs/77-benchmark-invitaciones-producto.md). **MOCK no mide precisión de OpenAI**, y no activa mensajes ni producción.
+
+
+### Ensayo OpenAI real DEV preparado (Issue #129, no ejecutado)
+El nuevo script `npm run benchmark:producto:live -- --live` evalúa **seis escenarios positivos de producto y proveedor** de D015/D016 contra OpenAI, únicamente desde un runner privado DEV con clave API y autorización de presupuesto explícitas. Siempre bloqueado por defecto, en CI, Vercel o producción; no genera mensajes ni registra datos privados. En Vercel `cotironda`/`cotironda-portal-dev` **no se observó `OPENAI_API_KEY` entre los nombres de variables de entorno**, por lo que no hay todavía inferencias reales ni costo medido. [Guía, limitaciones y pasos externos mínimos](docs/78-evaluacion-live-dev.md). Los resultados MOCK del benchmark offline no representan exactitud del modelo.
