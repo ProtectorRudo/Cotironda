@@ -99,7 +99,7 @@ export function planificarDespachoAutomatico(
   }
   const elegibles = proveedores.filter(p => p.activo===true &&
     p.consentimiento_whatsapp===true && p.opt_out===false &&
-    p.zonas_entrega.some(z=>zonaValida(z)&&canonico(z)===canonico(solicitud.zona_entrega)));
+    p.zonas_entrega.some((z:string)=>zonaValida(z)&&canonico(z)===canonico(solicitud.zona_entrega)));
   const porProveedor = new Map<string, ItemParaProveedor[]>();
   const retenidas: PlanDespachoAutomatico['retenidas'] = [];
   const lineas_sin_destinatario: number[] = [];
@@ -112,7 +112,7 @@ export function planificarDespachoAutomatico(
     }
     let destinatarios=0;
     for (const p of elegibles) {
-      if (!p.catalogo_confirmado.some(prod=>productoCorresponde(linea,prod))) continue;
+      if (!p.catalogo_confirmado.some((prod:ProductoConfirmado)=>productoCorresponde(linea,prod))) continue;
       const subset=porProveedor.get(p.id)??[];
       subset.push({
         fila:linea.fila,ubicacion:linea.ubicacion,
