@@ -18,7 +18,7 @@ Se limita a una ejecución de PR con **todas** estas barreras:
 - `COTIRONDA_CI_AUTH_REMOTE=true` y una clave pública de formato `sb_publishable_...`. Se usa la publishable existente de Cotironda dev, **no** una clave secret ni `service_role`.
 - Método GET solamente, `Accept: application/json`, `credentials: omit`, cache no-store, redirects prohibidos, referer omitido, timeout de 6,5 s, URL exacta y límite de tamaño de respuesta.
 - **Nunca** se usa email, password, JWT, refresh token, sesión, datos de otras empresas, ni se envía `POST signup`.
-- Solo loguea el estado sanitizado `COTIRONDA_AUTH_SIGNUP=PASS|FAIL|INCONCLUSO` y un código de motivo fijo. No guarda body JSON, headers completos, ni la apikey en un artifact o un log.
+- El script solo imprime el estado sanitizado `COTIRONDA_AUTH_SIGNUP=PASS|FAIL|INCONCLUSO` y un código de motivo fijo; no guarda body JSON ni headers completos. **Aclaración importante de auditoría:** GitHub Actions muestra las variables `env` del paso, incluida la `sb_publishable_` utilizada. Esa key es expresamente **pública** por diseño, no es una clave secret ni service_role. Si se exigiera ocultar incluso las claves publicables del log, habría que cambiar cómo se inyecta esa variable. No se expusieron credenciales privadas, JWT ni correos.
 
 `tests/unit/auth-settings-remote-probe.test.mjs` intercepta el transporte y prueba respuestas `true`, `false`, ausente, HTTP 503, HTML, fallo de conexión, contextos no autorizados, ramas equivocadas y claves secretas. Importar el módulo en CI **no realiza red** por el guard de ejecución del script.
 
