@@ -511,3 +511,8 @@
 - Triggers: transiciones irreversibles, clock server, freeze de ítems e invitados, revisiones incrementales, confirmación igual al borrador, versiones secuenciales y confirmaciones/eventos que no pueden actualizarse ni borrarse.
 - Validador JSON de líneas cerrado (cinco campos, cantidades/IVA/precios explícitos, sin texto libre ni contactos). Prueba aislada PG17 en `supabase/tests/ci/99_rounds_private_ledger.sql` con `ROLLBACK`. CI incorpora paso adicional sin alterar historial de 12 migraciones.
 - No es backend operativo: falta autorización real de actor/empresa, funciones de escritura transaccionales, verificación de equivalencia y API. Sin aplicar en Supabase DEV ni despliegues, IA, Whapi o producción. Ver docs/87, PR #148.
+
+## [Sin publicar — D025 / Issue #149: lectura compradora de rondas]
+- Endpoint `GET /api/rondas/[rondaId]` protegido con cookies SSR, `getUser`, bandera propia apagada, no-store, validación de UUID y proyección estricta sin PII. Adaptador invoca solo `buyer_round_overview_v1(p_round_id)` sin user_id/tenant inyectados.
+- SQL privado de lectura con rol NOLOGIN/NOBYPASSRLS, sesión `auth.sessions` vigente y membresía activa verificada en PostgreSQL, con RLS y wrapper público invoker; no grants de contacto, invitaciones ni ofertas.
+- Tests unitarios adversariales y PostgreSQL 17 de empresas cruzadas, sesión revocada y permisos; esquema SQL pendiente solo en CI, sin migración ni instalación Supabase DEV. Ver docs/88 y PR #150.
