@@ -18,15 +18,18 @@ const {projectRef,token,user,session}=require('./ci-auth-fixture.cjs');
 const nextPort=4176, tlsPort=4177, host='127.0.0.1';
 const fakeUrl='https://'+projectRef+'.supabase.co';
 const expectedOrigin='https://cotironda-ci.example';
+const authOnly=process.env.COTIRONDA_CI_AUTH_ONLY==='true';
 
 if(process.env.GITHUB_ACTIONS!=='true'||
    process.env.COTIRONDA_CI_TLS_LOOPBACK!=='true'||
    process.env.VERCEL_ENV!=='preview'||
-   process.env.COTIRONDA_REGISTRATION_ENABLED!=='true'||
+   process.env.COTIRONDA_REGISTRATION_ENABLED!==(authOnly?'false':'true')||
+   (authOnly && process.env.COTIRONDA_AUTH_PREVIEW_ENABLED!=='true')||
+   (authOnly && process.env.COTIRONDA_SITE_ORIGIN!==undefined)||
    process.env.COTIRONDA_SUPABASE_PROJECT_REF!==projectRef||
    process.env.NEXT_PUBLIC_SUPABASE_URL!==fakeUrl||
    !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.startsWith('sb_publishable_ci_dummy_')||
-   process.env.COTIRONDA_SITE_ORIGIN!==expectedOrigin||
+   (!authOnly && process.env.COTIRONDA_SITE_ORIGIN!==expectedOrigin)||
    !process.env.COTIRONDA_CI_TLS_CERT?.startsWith(process.env.RUNNER_TEMP+'/')||
    !process.env.COTIRONDA_CI_TLS_KEY?.startsWith(process.env.RUNNER_TEMP+'/')){
  throw new Error('https_ci_no_autorizado');
@@ -158,6 +161,10 @@ try{
  assert.equal(login.status,200);
  assert.ok(login.tlsVerified);
  assert.match(login.body,/Correo electrónico/);
+ if(authOnly){
+  assert.match(login.body,/Ingresar a prueba/);
+  assert.doesNotMatch(login.body,/>Crear cuenta</);
+ } else assert.match(login.body,/>Crear cuenta</);
  noStore(login);
  const anon=await tlsHit('/alta');
  assert.ok([303,307,308].includes(anon.status),'No se rechazó visitante anónimo');
@@ -190,7 +197,10 @@ try{
  const refreshed=await tlsHit('/alta',{headers:{cookie:cookieForOldSession}});
  assert.equal(refreshed.status,200,'La página SSR debe renovar sesión sintética');
  assert.ok(refreshed.tlsVerified);
- assert.match(refreshed.body,/Nombre de empresa/);
+ if(authOnly){
+  assert.match(refreshed.body,/Sesión de prueba activa/);
+  assert.doesNotMatch(refreshed.body,/Nombre de empresa|Registrar empresa/);
+ } else assert.match(refreshed.body,/Nombre de empresa/);
  noStore(refreshed);
  const newSetCookies=cookieValues(refreshed);
  assert.ok(newSetCookies.length>0,'Proxy debe transmitir Set-Cookie tras refresh');
@@ -214,7 +224,10 @@ try{
   'Cookie de refresh fuera del proyecto');
  const nextRequest=await tlsHit('/alta',{headers:{cookie:refreshedCookie}});
  assert.equal(nextRequest.status,200,'Cookie renovada no funcionó en request siguiente');
- assert.match(nextRequest.body,/Nombre de empresa/);
+ if(authOnly){
+  assert.match(nextRequest.body,/Sesión de prueba activa/);
+  assert.doesNotMatch(nextRequest.body,/Nombre de empresa|Registrar empresa/);
+ } else assert.match(nextRequest.body,/Nombre de empresa/);
  noStore(nextRequest);
  console.log('PASS HTTPS: roundtrip de cookie renovada, aislamiento del anónimo');
 
@@ -222,17 +235,24 @@ try{
   nombre:'Empresa CI',tipo:'buyer'};
  const wrongOrigin=await tlsHit('/api/organizaciones',{
   method:'POST',headers:{origin:'https://atacante-ci.example',cookie:refreshedCookie},body:payload});
- assert.equal(wrongOrigin.status,403);
- assert.deepEqual(JSON.parse(wrongOrigin.body),{error:'origen_no_permitido'});
+ if(authOnly){
+  assert.equal(wrongOrigin.status,503);
+  assert.deepEqual(JSON.parse(wrongOrigin.body),{error:'registro_no_disponible'});
+ }else{
+  assert.equal(wrongOrigin.status,403);
+  assert.deepEqual(JSON.parse(wrongOrigin.body),{error:'origen_no_permitido'});
+ }
  noStore(wrongOrigin);
  const validOrigin=await tlsHit('/api/organizaciones',{
   method:'POST',headers:{origin:expectedOrigin,cookie:refreshedCookie},body:payload});
  assert.equal(validOrigin.status,503,'Ni con cookie renovada puede habilitar registro');
- assert.deepEqual(JSON.parse(validOrigin.body),{error:'limite_no_disponible'});
+ assert.deepEqual(JSON.parse(validOrigin.body),
+  authOnly?{error:'registro_no_disponible'}:{error:'limite_no_disponible'});
  noStore(validOrigin);
  console.log('PASS HTTPS: Origin adversarial bloqueado y alta 503 fail-closed');
 
- console.log('PASS CI: HTTPS/TLS de loopback + Next real + Supabase SSR real + Auth ficticio');
+ console.log('PASS CI: HTTPS/TLS de loopback + Next real + Supabase SSR real + Auth ficticio'+
+  (authOnly?' (login-only, sin signup ni alta)':''));
 }finally{
  await new Promise(ok=>tlsServer.close(()=>ok()));
  child.kill('SIGTERM');
