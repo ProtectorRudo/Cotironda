@@ -107,3 +107,7 @@ PR #93 incorpora auditoría local privada con CookieStore y cache-control, test 
 
 ### 30/10/2026 — Defensa HTTP del portal: cabeceras anti-clickjacking en prueba CI (Issue #96)
 Se incorporaron X-Frame-Options DENY, CSP documental sin directivas de scripts que requieran nonces, nosniff, no-referrer, Permissions-Policy y noindex en `next.config.ts` del portal. El contrato HTTPS Next comprueba ahora estas cabeceras en login, redirecciones, sesiones con refresh cookie y API empresarial bloqueada, además de preservar no-store y Secure/SameSite. Se mantiene CSP completa de scripts como trabajo posterior y **no se afirmó haber observado estos headers en Preview remota**. Vercel quota 402 persiste como bloqueante anterior; mantener SSO y registro cerrado. Docs/63; sin publicación de producción.
+
+
+### 30/10/2026 — Verificación de `disable_signup` real SIN abrir registro (Issue #98)
+Se preparó un GET read-only único desde GitHub Actions hacia `/auth/v1/settings` del Supabase dev, con publishable pública, sin JWT/correo/contraseña ni mutaciones. El control se ejecuta solo en PR autorizado y devuelve PASS si `disable_signup=true`, FAIL si `false`, INCONCLUSO ante cualquier falta de evidencia. Un **FAIL corta el gate de seguridad** aunque los unit tests estén verdes, no un problema de código. No se intentan altas reales ni se cambia configuración de Auth. Estado de la lectura remota a actualizar con su workflow. Ver docs/64.
