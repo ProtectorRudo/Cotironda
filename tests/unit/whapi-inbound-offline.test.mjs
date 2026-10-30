@@ -197,3 +197,51 @@ test('error al resolver deja lote sin ACK ni datos; no revela chat',async()=>{
  assert.equal((await res.text()).includes('221123'),false);
  assert.equal(s.entries.length,0);
 });
+
+test('BAJA corta por canal, sin exigir invitación ni guardar presupuestos',async()=>{
+ const s=deps({resolverProveedor:async()=>{throw Error('no resolver BAJA')}});
+ const dados=new Map();
+ s.dep.registrarBaja=async(canal,chat,id,hash,timestamp)=>{
+   assert.equal(canal,CHANNEL);assert.equal(chat,CHAT);assert.equal(timestamp,NOW);
+   const k=canal+'|'+id;
+   if(dados.has(k)){assert.equal(dados.get(k),hash);return 'duplicada'}
+   dados.set(k,hash);return 'registrada';
+ };
+ const msg={...PAYLOAD,messages:[{...M,text:{body:'  baja  '}}]};
+ const r=await status(await procesarWebhookWhapiAislado(req(msg),s.dep));
+ assert.equal(r.code,200);assert.equal(r.body.bajasRegistradas,1);
+ assert.equal(r.body.presupuestosConfirmados,0);
+ assert.equal(s.entries.length,0);
+ const r2=await status(await procesarWebhookWhapiAislado(req(msg),s.dep));
+ assert.equal(r2.code,200);assert.equal(r2.body.duplicadas,1);
+ assert.equal(dados.size,1);
+});
+test('BAJA exige persistencia real; sin adaptador no confirma recepción',async()=>{
+ const s=deps();
+ const msg={...PAYLOAD,messages:[{...M,text:{body:'BAJA'}}]};
+ assert.equal((await procesarWebhookWhapiAislado(req(msg),s.dep)).status,503);
+ assert.equal(s.entries.length,0);
+});
+test('BAJA no se ejecuta si el webhook no supera autenticación',async()=>{
+ let count=0;
+ const s=deps({registrarBaja:async()=>{count++;return 'registrada'}});
+ const payload={...PAYLOAD,messages:[{...M,text:{body:'BAJA'}}]};
+ const r=await procesarWebhookWhapiAislado(req(payload,
+  {'x-cotironda-webhook-key':'invalid'}),s.dep);
+ assert.equal(r.status,401);assert.equal(count,0);
+});
+test('una frase que menciona BAJA no desuscribe por accidente',async()=>{
+ let count=0;
+ const s=deps({registrarBaja:async()=>{count++;return 'registrada'}});
+ const payload={...PAYLOAD,messages:[{...M,text:{body:'¿Cómo doy de BAJA una línea?' }}]};
+ const r=await status(await procesarWebhookWhapiAislado(req(payload),s.dep));
+ assert.equal(r.code,200);assert.equal(r.body.guardadas,1);
+ assert.equal(count,0);assert.equal(s.entries.length,1);
+});
+test('fallo al registrar BAJA no devuelve un ACK falso',async()=>{
+ const s=deps({registrarBaja:async()=>{throw Error('db_fail')}});
+ const msg={...PAYLOAD,messages:[{...M,text:{body:'BAJA'}}]};
+ const r=await status(await procesarWebhookWhapiAislado(req(msg),s.dep));
+ assert.equal(r.code,503);assert.equal(r.body.error,'baja_no_disponible');
+ assert.equal(s.entries.length,0);
+});

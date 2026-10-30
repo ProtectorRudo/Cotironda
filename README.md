@@ -242,3 +242,6 @@ El PR #154 desarrolla dos funciones internas PostgreSQL para que futuras respues
 
 ### 30/10/2026 — Etapa 04: receptor Whapi aislado, sin webhook público
 PR #156 crea un adaptador **offline** para recibir mensajes de proveedores con credencial por canal, resolver invitación/opt-in desde backend confiable, proteger contra duplicados y registrar contenido pendiente sin confirmar ofertas. Incluye pruebas de grupos, mensajes salientes, multimedia no descargada y errores parciales. **El almacenamiento permanente y la vinculación real con WhatsApp aún faltan**: no existe ruta HTTP habilitada, conexión a Whapi ni despliegue. Ver [docs/91](docs/91-whapi-inbound-offline.md).
+
+### 30/10/2026 — Etapa 04: buzón privado Whapi y BAJA
+El PR #158 prepara `cotironda_private.whapi_inbox_v1` y `whapi_contacts_v1` con deduplicación de mensajes, contenido cifrado por un futuro broker autorizado, permisos cerrados, consentimiento y baja irreversible. El receptor offline acepta «BAJA» sin exigir una ronda abierta. **Todavía no está conectado a Whapi, no almacena mensajes reales ni existe endpoint público**, y el cifrado HMAC/AES-GCM del broker sigue pendiente. Ver [docs/92](docs/92-whapi-buzon-privado-y-baja.md).
