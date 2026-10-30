@@ -139,11 +139,7 @@ jobs:
       - name: D031 Node real pg a PostgreSQL17 con identidad efimera (solo CI)
         run: |
           set -euo pipefail
-          npm install --prefix scripts/ci/whapi-pg --ignore-scripts --no-audit --no-fund
-          echo 'COTIRONDA_D031_LOCK_BEGIN'
-          base64 -w0 scripts/ci/whapi-pg/package-lock.json
-          echo
-          echo 'COTIRONDA_D031_LOCK_END'
+          npm ci --prefix scripts/ci/whapi-pg --ignore-scripts --no-audit --no-fund
           export COTIRONDA_CI_HMAC_ID="$(openssl rand -hex 32)"
           export COTIRONDA_CI_HMAC_PAYLOAD="$(openssl rand -hex 32)"
           export COTIRONDA_CI_AES_KEY="$(openssl rand -hex 32)"
