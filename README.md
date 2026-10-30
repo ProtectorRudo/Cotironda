@@ -213,3 +213,7 @@ La clave API se configura en **Supabase `cotironda-dev` → Edge Function Secret
 
 ### 30/10/2026 — laboratorio de calidad real en Supabase DEV (Issue #133)
 El primer smoke pagado de OpenAI fue correcto, pero **no mide calidad de materiales**. El nuevo modo de código `quality_case`, todavía **SIN desplegar**, ejecuta el motor D015/D016 y gold sintético para seis casos; exige bandera distinta `COTIRONDA_IA_DEV_QUALITY_ENABLED=AUTORIZADO_DEV`, deshabilitada por defecto. No acepta prompts de clientes ni habilita mensajes. Una copia byte-exacta de `src/` se empaqueta para la función y CI comprueba paridad (`npm run sync:edge-quality-core`). [Detalles y límites](docs/80-lab-calidad-supabase-dev.md). El propietario confirmó haber eliminado el flag antiguo `COTIRONDA_IA_DEV_SMOKE_ENABLED`, pendiente de verificación HTTP `status`.
+
+
+### D018 — evaluaciones IA seguras: un intento por caso (Issue #135)
+Antes de permitir ensayos pagados desde Supabase DEV, se agregó una **reserva de uso persistente**: cada uno de los seis casos sintéticos `quality_case` se puede ejecutar **una sola vez**, incluso si dos solicitudes llegan al mismo tiempo. La BD deniega repeticiones y el handler no llama a OpenAI si falla la reserva. Los 6 casos usan IDs fijos y no hay envíos ni datos reales. Se requiere aplicar el SQL solamente en `cotironda-dev`, revisar RLS/grants y desplegar la función en DEV con su permiso de calidad **desactivado por defecto**. No equivale a límite absoluto de facturación. [Reglas](docs/81-reserva-unica-calidad-ia-dev.md).
