@@ -95,6 +95,7 @@ begin
 
   if exists (select 1 from cotironda_private.dev_quality_auto_runs
              where state = 'needs_review') then
+    update cotironda_private.dev_quality_auto_control set enabled = false where singleton = true;
     return 'halted_needs_review';
   end if;
   if exists (select 1 from cotironda_private.dev_quality_auto_runs
@@ -109,6 +110,7 @@ begin
   limit 1
   for update;
   if v_case is null then
+    update cotironda_private.dev_quality_auto_control set enabled = false where singleton = true;
     return 'all_complete';
   end if;
 
