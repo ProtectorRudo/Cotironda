@@ -127,3 +127,7 @@ Se inició **trabajo de código de Etapa 02** en Issue #100 / PR #101, rama hija
 
 ### 30/10/2026 — Decisión D013: distribución automática sin revisión previa
 El propietario anula el paso de aprobación manual por línea. Comprador autoriza al ENVIAR la lista; Cotironda distribuye automáticamente solo ítems seguros a proveedores con catálogo confirmado por producto, zona y opt-in. Dudas se retienen sin bloquear otros artículos. Primer desarrollo: planificador determinista OFFLINE en rama hija de #101; sin Whapi ni producción. Issue #102. Requisitos de antivirus, respaldo y seguridad reales siguen bloqueando piloto, no desarrollo aislado.
+
+
+### 30/10/2026 — Siguiente etapa vertical de texto sintético (Issue #104)
+Se conecta el parser determinista de texto con el borrador documental y el planificador selectivo por proveedor: cantidades/unidades explícitas, catálogo exacto, zona/consentimiento, líneas retenidas y consolidación por proveedor. Se agrega demo ejecutable sin credenciales (`npm run demo:texto`). **Es un simulador sin WhatsApp, OpenAI ni subida de archivos.** No sustituye la IA de documentos reales ni los requisitos de backend para catálogos/permisos, antivirus y colas. Ver docs/66. Solo rama de desarrollo, PR draft hijo de #103.

@@ -359,3 +359,9 @@
 - El propietario modifica el flujo: enviar lista + autorización de distribución, sin corrección/confirmación previa de cada ítem. Las dudas se retienen y se notifican, las líneas claras se encaminan automáticamente.
 - Nuevo módulo puro src/domain/despacho-automatico.ts: solo selecciona productos exactos del catálogo confirmado de proveedores activos con consentimiento WhatsApp y cobertura de zona, con claves de idempotencia por ronda/proveedor. No envía nada; proveedores sin coincidencia no reciben solicitudes. Mantiene confirmación posterior de precios por proveedor y adjudicación manual.
 - Se actualizó la especificación de extracción, pruebas adversariales y documentación comercial/técnica, sin cambios en Supabase, producción, Auth, pagos, DNS o WhatsApp. Issue #102.
+
+
+## [Sin publicar] — Etapa 02: texto → plan de solicitudes, 30-10-2026
+- Primer módulo `src/domain/flujo-texto.ts`: texto explícito en español se valida y conecta con `prepararBorradorDocumental` y `planificarDespachoAutomatico`; conserva referencias y muestra líneas retenidas por incertidumbre y catálogo sin coincidencia.
+- Demo local `npm run demo:texto` con proveedores ficticios, sin llamadas externas; pruebas adversarias y de 100 líneas en `tests/unit/flujo-texto.test.mjs`. El estado de CI se confirma por ejecución, no por crear commits.
+- No OCR, IA remota, carga de documentos, WhatsApp, registro comercial, migraciones, cambios en producción ni DNS. Issue #104; doc/66.
