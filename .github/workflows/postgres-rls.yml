@@ -132,6 +132,53 @@ jobs:
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_gateway_private_d030.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/103_whapi_gateway_private.sql
+      - name: Preparar Node para E2E real PostgreSQL
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22.16.0'
+      - name: D031 Node real pg a PostgreSQL17 con identidad efimera (solo CI)
+        run: |
+          set -euo pipefail
+          npm install --prefix scripts/ci/whapi-pg --ignore-scripts --no-audit --no-fund
+          echo 'COTIRONDA_D031_LOCK_BEGIN'
+          base64 -w0 scripts/ci/whapi-pg/package-lock.json
+          echo
+          echo 'COTIRONDA_D031_LOCK_END'
+          export COTIRONDA_CI_HMAC_ID="$(openssl rand -hex 32)"
+          export COTIRONDA_CI_HMAC_PAYLOAD="$(openssl rand -hex 32)"
+          export COTIRONDA_CI_AES_KEY="$(openssl rand -hex 32)"
+          export COTIRONDA_CI_WEBHOOK_SECRET="$(openssl rand -hex 32)"
+          ci_pass="$(openssl rand -hex 24)"
+          for value in "$COTIRONDA_CI_HMAC_ID" "$COTIRONDA_CI_HMAC_PAYLOAD" "$COTIRONDA_CI_AES_KEY" "$COTIRONDA_CI_WEBHOOK_SECRET" "$ci_pass"; do
+            echo "::add-mask::$value"
+          done
+          compute_chat_key() {
+            CHAT="$1" node --input-type=module -e 'import {createHmac} from "node:crypto";process.stdout.write(createHmac("sha256",Buffer.from(process.env.COTIRONDA_CI_HMAC_ID,"hex")).update(JSON.stringify(["cotironda","chat",1,"whapi_ci",process.env.CHAT])).digest("hex"))'
+          }
+          chat_b="$(compute_chat_key '5492211234567@s.whatsapp.net')"
+          chat_c="$(compute_chat_key '5492211234568@s.whatsapp.net')"
+          psql -X -v ON_ERROR_STOP=1 -v ci_password="$ci_pass" -v chat_key_b="$chat_b" -v chat_key_c="$chat_c" -f scripts/ci/whapi-pg/seed.sql > /dev/null
+          COTIRONDA_CI_WHAPI_PG_E2E=true COTIRONDA_CI_PG_USER=cotironda_whapi_ci_login COTIRONDA_CI_PG_PASSWORD="$ci_pass" node --experimental-strip-types scripts/ci/whapi-pg/e2e.mjs
+          psql -X -v ON_ERROR_STOP=1 <<'SQL'
+          select ci_helpers.assert_true(
+            (select count(*)=3 from cotironda_private.whapi_inbox_v1
+             where channel_id='whapi_ci'), 'inbox_rows_d031');
+          select ci_helpers.assert_true(
+            (select count(*)=1 from cotironda_private.whapi_inbox_v1
+             where channel_id='whapi_ci' and kind='text'
+               and payload_ciphertext is not null
+               and octet_length(payload_nonce)=12 and octet_length(payload_tag)=16),
+             'aes_gcm_ciphertext_durable');
+          select ci_helpers.assert_true(
+            (select count(*)=2 from cotironda_private.whapi_inbox_v1
+             where channel_id='whapi_ci' and kind='opt_out'
+               and payload_ciphertext is null), 'optout_two_contacts_d031');
+          select ci_helpers.assert_true(
+            (select count(*)=2 from cotironda_private.whapi_contacts_v1
+              where channel_id='whapi_ci' and opted_out_at is not null),
+             'optout_contacts_locked_d031');
+          SQL
+
 
   migrations-from-zero:
     name: Reconstruir historial 12 migraciones en PostgreSQL limpio
