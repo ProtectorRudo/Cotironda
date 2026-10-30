@@ -57,7 +57,7 @@ El token original seguía dentro de su período de validez. Al revocar la sesió
 - Issue #84, diagnóstico navegador con credenciales solo locales: **ejecutado y corroborado**; cerrar después de registrar evidencia.
 - **Etapa 01 general todavía abierta**: faltan pruebas de navegador/Next bajo HTTPS Preview autorizado, HTTP 429 remoto sin abrir registro, decisión sobre WARN de password leakage, auditoría de backup/recuperación y consolidar PRs apilados.
 - Ninguna imagen de dispositivo ni datos de cuentas se subirán al repositorio. Se conserva evidencia técnica agregada.
-- Sin cambiar Supabase, usuarios, passwords, migraciones, Storage, DNS, Vercel, main ni producción por esta documentación. PR draft sin merge.
+- Sin cambiar Supabase, usuarios, contraseñas, migraciones, Storage, DNS, main ni producción por esta documentación; PR draft sin merge. **Vercel compiló automáticamente un Preview de la rama**, verificado como READY, target nulo, proyecto live=false y SSO de Preview habilitado. Esa compilación automática **no fue promovida a producción ni equivale a haber probado el portal Next públicamente**.
 
 Documentos antecedentes: docs/52-auth-real-revoked-catalog-e2e.md y docs/55-browser-auth-dev-diagnostic.md.
 
