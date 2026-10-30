@@ -159,3 +159,7 @@ Se refinó D014: los proveedores que **confirmen comercializar el producto canó
 
 ### 30/10/2026 — Taxonomía argentina y enlace salida IA → selección D015 (Issue #119)
 Se agregó un diccionario curado inicial de 6 familias en 5 rubros y un orquestador aislado que vincula extracción IA validada con invitaciones por producto. Reglas negativas distinguen cemento de contacto/adhesivos, cables no eléctricos, etc.; marcas preferidas no se convierten en exclusividad automática, atributos críticos solo explícitos. Demo `npm run demo:productos` con SKU ficticios; pruebas de API MOCK (sin precisión medida). Pendientes corpus amplios de nombres argentinos, catálogo real SKU por empresa, OpenAI dev live, ingesta segura de documentos, Whapi/cola y costes. Docs/73.
+
+
+### 30/10/2026 — ruta económica de extracción para listas simples (Issue #121)
+Se reutilizó el parser de texto básico y taxonomía D015 para evitar pagar IA en listas muy claras: token usage local 0, selección de proveedores ficticios por producto confirmado y zona; dudas en `pendientes_ia`, sin gastar tokens ni inventar. Controles estrictos de gramática, términos, cantidad y marca exclusiva. Más adelante, solo las líneas pendientes podrán enviarse a un modelo pequeño bajo presupuesto, deduplicación y medición de precisión/costo. Docs/74, demo `npm run demo:sin-ia`.

@@ -413,3 +413,10 @@
 - Resolver de marcas expresamente exclusivas vs mencionadas, corrigiendo falsa exclusividad de IA y conservando originales. No inventa peso de bolsas de cemento sin tamaño especificado.
 - `simularInvitacionesConIA` conecta extractor OpenAI validado → taxonomía curada → matcher de catálogo producto confirmado/consentimiento; no hace envíos y usa fetch MOCK en pruebas.
 - `npm run demo:productos`, tests unitarios de terminología argentina y docs/73. Sin OpenAI real, WhatsApp, Supabase, DNS ni publicación. PR draft hijo de #118.
+
+
+## [Sin publicar] — Etapa 02: vía local sin tokens para textos simples (Issue #121)
+- `src/domain/entrada-economica.ts`: interpretación determinista de pedidos simples, clasificación por producto D015, propuestas sin envíos y registro de líneas pendientes para IA.
+- `src/domain/flujo-texto.ts`: parser reutilizable y unidades contables adicionales (placas, latas, bidones), sin inventar tamaños de presentación.
+- `tests/unit/entrada-economica.test.mjs`: pruebas de textos argentinos, varias marcas y rubros, líneas ambiguas, exclusividad, duplicados, instrucciones adversarias, opt-in y límites. `npm run demo:sin-ia` es una simulación sin red.
+- 0 tokens consumidos por esta ruta local; no afirmar ahorro real antes de comparar con inferencias OpenAI. Docs/74 y PR draft hija #120; sin Supabase/Whapi/producción.

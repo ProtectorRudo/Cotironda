@@ -10,7 +10,8 @@
     "demo:xlsx": "node --experimental-strip-types scripts/demo/xlsx-demo.mjs",
     "eval:ia": "node --experimental-strip-types scripts/eval/openai-texto.mjs",
     "benchmark:ia:offline": "node --experimental-strip-types scripts/eval/quality-gold-offline.mjs",
-    "demo:productos": "node --experimental-strip-types scripts/demo/productos-canonicos.mjs"
+    "demo:productos": "node --experimental-strip-types scripts/demo/productos-canonicos.mjs",
+    "demo:sin-ia": "node --experimental-strip-types scripts/demo/entrada-economica.mjs"
   },
   "engines": {
     "node": ">=22.16.0"
