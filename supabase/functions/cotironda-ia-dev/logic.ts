@@ -16,6 +16,7 @@ type SafeEnv = Readonly<{
   qualityEnabled?: string | undefined;
 }>;
 type Fetcher = typeof fetch;
+export type QualityCaseClaim = (caseId:string)=>Promise<boolean>;
 
 function output(status:number, data:Record<string,unknown>):Response {
   return Response.json(data,{
@@ -36,7 +37,8 @@ function inDev(url:string|undefined):boolean {
  * call it. Never expose this function directly from the browser.
  */
 export async function handleCotirondaDevAi(
-  req:Request, env:SafeEnv, fetcher:Fetcher=fetch
+  req:Request, env:SafeEnv, fetcher:Fetcher=fetch,
+  claimCase?:QualityCaseClaim
 ):Promise<Response>{
   if(!inDev(env.supabaseUrl))return output(503,{status:'disabled',code:'dev_only'});
   if(req.method!=='POST')return output(405,{status:'rejected',code:'method_not_allowed'});
@@ -78,6 +80,17 @@ export async function handleCotirondaDevAi(
     const {CASOS_LAB,evaluarCasoCalidadDev}=await import('./lab.ts');
     if(!CASOS_LAB.includes(caseId))
       return output(400,{status:'rejected',code:'unsupported_case'});
+    // Persistent and atomic ONE-TIME reservation before any paid request.
+    // Database errors MUST fail closed. A failed 429/network request still
+    // consumes the reservation to avoid uncertain billing/retries.
+    if(!claimCase)
+      return output(503,{status:'disabled',code:'quality_gate_unavailable'});
+    try{
+      if(!await claimCase(caseId))
+        return output(409,{status:'disabled',code:'quality_case_reserved_or_unavailable'});
+    }catch{
+      return output(503,{status:'disabled',code:'quality_gate_unavailable'});
+    }
     try {
       const data=await evaluarCasoCalidadDev(caseId,env.openaiKey,fetcher);
       return output(200,data as Record<string,unknown>);

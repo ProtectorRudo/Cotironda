@@ -187,3 +187,7 @@ Se creó la fuente de un gateway **Cotironda DEV** exclusivo, protegido con `@su
 
 ### 30/10/2026 — laboratorio IA-first Supabase DEV (Issue #133)
 Se implementa modo cerrado `quality_case` con seis casos sintéticos, motor D015/D016 compartido, verificación de módulos byte-exactos, scoring de productos/proveedores y controles de permisos separados. Todavía NO desplegado. El propietario quitó `COTIRONDA_IA_DEV_SMOKE_ENABLED` según confirmó; falta verificar vía status. Próximo paso validación Deno/CI, autorización de ensayo acotado y luego integración comercial por empresa. Docs/80.
+
+
+### 30/10/2026 — D018: calidad real con máximo de seis intentos (Issue #135)
+Se agrega límite persistente y atómico de una reserva por ID de caso de benchmark, para evitar que el secreto `quality` habilitado permita gasto repetitivo. Se usa registro sintético en Supabase DEV, sin documentos ni empresas; privilegios solamente para `service_role` y RLS. Antes de ensayo vivo: aplicar SQL, controlar advisors/grants, desplegar únicamente DEV con flag OFF, luego probar el modelo tras habilitación separada. Ver docs/81.
