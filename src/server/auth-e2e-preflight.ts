@@ -70,3 +70,31 @@ export function validarClaimsSesionFirmada(claims:unknown,userId:string):string 
   }
   return id;
 }
+
+/** Nunca imprimir errores externos (SDK/red) o variables del entorno del E2E.
+ * Mantener solo códigos controlados por Cotironda; sin secretos ni respuestas Auth. */
+const ERRORES_SEGUROS_E2E=new Set([
+  'proyecto_fuera_de_entorno_cotironda_dev',
+  'clave_publicable_invalida',
+  'pruebas_auth_no_habilitadas',
+  'cuentas_prueba_invalidas',
+  'passwords_prueba_invalidos',
+  'passwords_prueba_reutilizados',
+  'cuentas_ficticias_no_utilizables',
+  'auth_e2e_entorno_remoto_bloqueado',
+  'catalogo_no_disponible',
+  'catalogo_http_inesperado',
+  'catalogo_respuesta_invalida',
+  'catalogo_vigente_no_visible',
+  'catalogo_formato_incorrecto',
+  'catalogo_categoria_invalida',
+  'jwt_revocado_todavia_lee_catalogo',
+  'jwt_no_valido_para_prueba',
+  'jwt_no_apto_para_comparar_revocacion',
+  'token_jwt_ausente',
+  'entorno_cotironda_dev_incorrecto'
+]);
+export function codigoSeguroE2E(error:unknown):string {
+  const codigo=error instanceof Error ? error.message : '';
+  return ERRORES_SEGUROS_E2E.has(codigo) ? codigo : 'fallo_e2e_revisar_entorno_privado';
+}
