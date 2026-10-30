@@ -167,3 +167,7 @@ Se reutilizó el parser de texto básico y taxonomía D015 para evitar pagar IA 
 
 ### 30/10/2026 — D016: calidad > tokens (Issue #123)
 Se reorienta la Etapa 02: el recorrido preferido de laboratorio es IA → evidencia y taxonomía curada → selección de proveedores, con línea fuente trazada, retenciones y omisiones visibles. La ruta económica #121 es candidata secundaria hasta demostrar igualdad en benchmark real. No hay inferencia remota aún; falta secret DEV, presupuesto, dataset independiente, medición por rubro y catálogos reales. Docs/75 y PR draft sobre #122.
+
+
+### 30/10/2026 — detectar omisiones intralínea de IA (Issue #125)
+Se incorpora segmentación explícita y trazabilidad de cada artículo dentro de una misma línea. El modelo no podrá recibir estado de éxito por reconocer cemento y omitir pintura en una línea de dos productos. Nuevos campos `segmentos_fuente` y `segmentos_sin_extraccion`; cobertura D016 distingue parciales. Pruebas sintéticas mediante MOCK, falta evaluación real y listas sin delimitadores. Docs/76.
