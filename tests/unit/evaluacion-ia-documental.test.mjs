@@ -171,3 +171,22 @@ test('benchmark CLI produce salida JSON reproducible y falla si alguna clasifica
   assert.equal(r.llamadas_openai_real,0);
   assert.equal(r.mensajes_whatsapp_reales,0);
 });
+
+test('evaluador OpenAI nunca hace llamadas live por defecto y bloquea ejecución en CI',async()=>{
+  const {spawnSync}=await import('node:child_process');
+  const local=spawnSync(process.execPath,[
+    '--experimental-strip-types','scripts/eval/openai-texto.mjs'
+  ],{encoding:'utf8',timeout:10000,env:{...process.env,GITHUB_ACTIONS:'true'}});
+  assert.equal(local.status,0);
+  assert.match(local.stdout,/OFFLINE: no se llamó a OpenAI/);
+  const live=spawnSync(process.execPath,[
+    '--experimental-strip-types','scripts/eval/openai-texto.mjs','--live'
+  ],{encoding:'utf8',timeout:10000,env:{
+    ...process.env,GITHUB_ACTIONS:'true',CI:'true',
+    COTIRONDA_IA_LIVE_EVAL:'AUTORIZADO_DEV',
+    OPENAI_API_KEY:'sk-clave_falsa_solo_test_123456789'
+  }});
+  assert.equal(live.status,2);
+  assert.match(live.stderr,/BLOQUEADO/);
+  assert.ok(!live.stderr.includes('clave_falsa'));
+});
