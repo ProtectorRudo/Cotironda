@@ -35,5 +35,7 @@ console.log(JSON.stringify({
     items:p.items.map(i=>({linea:i.fila,cantidad:i.cantidad,unidad:i.unidad,material:i.descripcion}))
   })),
   retenidas:r.plan.retenidas,
+  sin_catalogo:r.lineas_sin_catalogo,
+  rubro_ambiguo:r.lineas_con_rubro_ambiguo,
   texto_no_interpretado:r.lineas_no_interpretadas
 },null,2));
