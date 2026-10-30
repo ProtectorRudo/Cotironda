@@ -243,3 +243,30 @@ export async function simularPlanesConIA(args:{
   const plan=planificarDespachoAutomatico(args.solicitud,extraccion.borrador,args.proveedores);
   return {estado:'simulacion_ia_sin_envio' as const,extraccion,plan};
 }
+
+/**
+ * D015: OpenAI solo propone materiales; resolver CURADO determina producto_id;
+ * invitaciones basadas en catálogo proveedor confirmado y diferencias visibles.
+ * No se envían mensajes. El servidor caller autentica tenant y cuota.
+ */
+export async function simularInvitacionesConIA(args:{
+  texto:string; apiKey:string; habilitarLlamadaExterna:boolean;
+  fetchImpl?:typeof fetch;
+  solicitud:SolicitudAutomatica;
+  proveedores:readonly import('../domain/identidad-producto.ts').ProveedorPorProducto[];
+}) {
+  const {planificarInvitacionesPorProducto}=await import('../domain/invitaciones-por-producto.ts');
+  const {simularInvitacionesDesdeBorrador}=await import('../domain/taxonomia-materiales.ts');
+  const vacio=prepararBorradorDocumental('texto',{items:[]});
+  // Validar autorización, zona, consentimiento y catálogos ANTES de gastar tokens.
+  planificarInvitacionesPorProducto({
+    solicitud:args.solicitud,borrador:vacio,requisitos:[],proveedores:args.proveedores
+  });
+  const extraccion=await extraerMaterialesConIA(args);
+  const distribucion=simularInvitacionesDesdeBorrador({
+    solicitud:args.solicitud,
+    borrador:extraccion.borrador,
+    proveedores:args.proveedores
+  });
+  return {estado:'simulacion_ia_productos_sin_envio' as const,extraccion,distribucion};
+}
