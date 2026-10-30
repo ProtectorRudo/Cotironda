@@ -33,6 +33,9 @@ export type DependenciasWhapiEntrada={
   ahoraUnix:()=>number;
   resolverProveedor:(canalId:string,chatId:string)=>Promise<VinculoProveedorVerificado|null>;
   persistirEntrada:(entrada:MensajeEntrantePendiente)=>Promise<'guardada'|'duplicada'>;
+  // BAJA no depende de invitación ni opt-in vigente, pero sí de vínculo verificado.
+  registrarBaja?:(canalId:string,chatId:string,mensajeId:string,
+    huellaSha256:string,marcaTiempoUnix:number)=>Promise<'registrada'|'duplicada'>;
 };
 function resultado(status:number,data:Record<string,unknown>={}):Response{
   return new Response(status===204?null:JSON.stringify(data),{
@@ -142,8 +145,24 @@ export async function procesarWebhookWhapiAislado(
   // Resolver desde datos verificados del servidor, nunca del body de Whapi.
   // Los mensajes del lote se guardan de uno en uno. Si falla uno, HTTP 503
   // para reenvío completo; el sink transaccional debe deduplicar los ya guardados.
-  let guardadas=0,duplicadas=0;
+  let guardadas=0,duplicadas=0,bajasRegistradas=0;
   for(const c of candidatos){
+    // BAJA explícita y exacta. No intentar interpretar intención ni ejecutar SQL
+    // desde texto arbitrario; un broker verificará el chat y registrará la baja.
+    if(c.tipo==='text'&&c.texto?.toLocaleUpperCase('es-AR')==='BAJA'){
+      if(!dep.registrarBaja)return resultado(503,{error:'bajas_no_configuradas'});
+      const hash=createHash('sha256').update(JSON.stringify([
+        dep.canalId,c.chatId,c.mensajeId,c.texto,c.marcaTiempoUnix,'BAJA'
+      ])).digest('hex');
+      try{
+        const done=await dep.registrarBaja(
+          dep.canalId,c.chatId,c.mensajeId,hash,c.marcaTiempoUnix);
+        if(done==='registrada')bajasRegistradas++;
+        else if(done==='duplicada')duplicadas++;
+        else throw new Error('respuesta_baja_invalida');
+      }catch{return resultado(503,{error:'baja_no_disponible'})}
+      continue;
+    }
     let vinculo:VinculoProveedorVerificado|null;
     try{vinculo=await dep.resolverProveedor(dep.canalId,c.chatId)}
     catch{return resultado(503,{error:'resolucion_no_disponible'})}
@@ -170,6 +189,7 @@ export async function procesarWebhookWhapiAislado(
     }
   }
   return resultado(200,{estado:'entradas_persistidas',guardadas,duplicadas,
+    ...(bajasRegistradas>0?{bajasRegistradas}:{}),
     // Nunca 'cotizacion_recibida' ni 'precio_confirmado'.
     presupuestosConfirmados:0,mensajesEnviados:0});
 }
