@@ -118,6 +118,8 @@ export function aplicarEventoRondaOffline(
   // El caller debe obtener la autoridad del contexto autenticado, NO del evento.
   const ev=copia(evento);
   const auth=copia(autoridad);
+  if(!ev||typeof ev!=='object'||Array.isArray(ev)||
+    !auth||typeof auth!=='object'||Array.isArray(auth)||!('rol' in auth))reject();
   if(!validId(ev.id)||!fechaUtc(ev.fecha)||
     !['abrir','cerrar','cancelar','guardar_borrador','confirmar_oferta'].includes(ev.tipo))reject();
   if(auth.rol==='proveedor'){
@@ -147,6 +149,8 @@ export function aplicarEventoRondaOffline(
     if(previo.huella!==huella)reject();
     return estado; // reenvío idéntico: ninguna transición ni versión extra.
   }
+  // Límite conservador de laboratorio. Persistencia real requerirá límites por empresa.
+  if(estado.eventos.length>=500)reject();
   if(estado.ultimaFecha!==null&&ev.fecha<estado.ultimaFecha)reject();
   const proveedores:ProveedorRonda[]=estado.proveedores.map(x=>({
     anonId:x.anonId,revisionBorrador:x.revisionBorrador,
