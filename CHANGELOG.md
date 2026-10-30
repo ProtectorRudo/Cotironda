@@ -445,3 +445,9 @@
 - Nuevo runner `scripts/eval/producto-quality-live.mjs` con seis casos sintéticos positivos del gold D015, ejecución manual DEV, scorer independiente, métricas de proveedor, tokens y costo estimado. **Ninguna llamada real ejecutada**.
 - `scripts/eval/guardia-live-producto.mjs` exige `--live`, autorización exacta, clave de servidor, evita GitHub Actions/CI/Vercel/producción, sin reintentos ni logs de clave/prompt. Presupuesto soft USD 0,02 **no sustituye** control de gasto en OpenAI.
 - Pruebas unitarias de guardas, estimación monetaria y bloqueo CLI. Documentación docs/78 sobre configuración externa mínima y límites. Sin WhatsApp, Supabase, deploy, merge ni datos reales.
+
+
+## [Sin publicar] — Etapa 02: Supabase Edge Secrets para OpenAI (Issue #131)
+- Se añadió gateway Deno protegido `supabase/functions/cotironda-ia-dev`, con autenticación servidor `@supabase/server` y proyecto DEV exacto, lectura exclusiva de `OPENAI_API_KEY` desde Edge Secrets, estado seguro y smoke sintético con flag explícito.
+- Tests en Node22 para bloquear producción, ausencia de secreto/flag, prompts arbitrarios, rate limits, errores y filtraciones; documentación docs/79.
+- **Pendiente** propietario configure secreto en Supabase DEV, despliegue DEV autorizado y smoke real, y conectar adaptador Next al gateway para extracción completa. Sin migración SQL, despliegue, llamadas pagadas, WhatsApp ni cambios a `main`.
