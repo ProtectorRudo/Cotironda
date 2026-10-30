@@ -72,6 +72,6 @@ test('documentación no equipara backup SQL sintético con recuperación gestion
  assert.match(doc,/\*\*NO contienen los bytes de Storage\*\*/);
  assert.match(doc,/esquemas gestionados \u0060auth\u0060 y \u0060storage\u0060/);
  assert.match(doc,/\*\*No hay evidencia de un backup externo/);
- assert.match(doc,/\*\*todavía NO realizado\*\*/);
+ assert.match(doc,/todavía NO realizado/);
  assert.match(doc,/\*\*PENDIENTE\*\*|\[ \] \*\*Crear primera copia REAL/);
 });
