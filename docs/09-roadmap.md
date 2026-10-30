@@ -139,3 +139,7 @@ Etapa 02 sumó un primer flujo binario limitado: ZIP/OOXML `.xlsx` con columnas 
 
 ### 30/10/2026 — Primer adaptador de OpenAI con contrato y seguridad (Issue #108)
 La nueva rama hija de PR #107 implementa Responses API con modelo candidato `gpt-6-luna`, JSON Schema estricto, parámetro explícito para tráfico remoto, secreto solo servidor, `store:false`, límites de cantidad de líneas, longitud, output tokens y tiempo; prueba evidencia de cantidad y origen antes de planificar con catálogos. El corpus argentino sintético inicia evaluación de calidad. **CI usa únicamente mocks**; no ha habido inferencia real ni costo observado. El modo live se habilitará SOLO en dev privado, con credencial segura y presupuesto expresamente autorizado. Debe seguir pendiente la integración segura de archivos reales (Issue #61) y el aval para envíos WhatsApp. Detalles docs/68.
+
+
+### 30/10/2026 — Evaluación medible de IA (Issue #110)
+Se añadió una puerta de **seguridad comercial** separada de la **cobertura** en la Etapa 02: el scorer audita productos y sus cantidades/unidades, destinatarios por proveedor, omisiones, retenciones y multiplicidades. El comando offline `npm run benchmark:ia:offline` clasifica 12 casos sintéticos de mock API; sus resultados NO miden la precisión de GPT-6 Luna. Antes de IA live y piloto: secret DEV y presupuesto autorizados, prueba de verdad con corpus gold, luego alias de materiales y catálogos reales con autorización servidor. Sin mensajes ni datos de clientes. Docs/69.
