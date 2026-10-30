@@ -14,7 +14,7 @@ Cada elemento de `items` puede proporcionar:
 - `unidad` y `rubro`: códigos del catálogo compartido;
 - `marca`, `marca_obligatoria`, `confianza`.
 
-La salida contiene solamente campos autorizados, incidencias por fila, referencias y posibles duplicados. Estado único: **`pendiente_confirmacion_comprador`**. Aun sin incidencias no equivale a aprobación automática.
+La salida contiene solamente campos autorizados, incidencias por fila, referencias y posibles duplicados. Estado único: **`pendiente_despacho_automatico`**. El comprador no revisa cada línea: autoriza distribución al enviar su lista. El estado NO implica envío real: un matcher debe filtrar catálogos específicos, zona y consentimiento.
 
 ## Invariantes de calidad y seguridad
 1. Conservar descripción original y localización; no inventar cantidades, rubros ni unidades.
@@ -32,3 +32,6 @@ Estas son pruebas de contrato con **datos sintéticos**, no validación de preci
 
 ## Condiciones antes de piloto
 Sin fusionar PRs apilados, comprobar backup real offsite, controles HTTPS de Auth, antivirus con cuarentena, costos y autorización por organización. No publicar un portal comercial ni conectar WhatsApp en esta fase.
+
+## Rectificación D013 — 30/10/2026
+La confirmación manual del comprador se RETIRA. La extracción queda pendiente de distribución automática y se pasa al planificador puro despacho-automatico.ts, que devuelve exclusivamente subconjuntos por proveedor de catálogo confirmado, zona y consentimiento; nunca envía. MVP matcher estricto: descripción original y normalizada idénticas (sin inventar especificaciones), producto exacto en catálogo confirmado, unidad/rubro iguales, cantidad segura, marca obligatoria compatible, alta confianza como filtro negativo y sin duplicados/dudas. Sinónimos/equivalencias requieren verificación técnica futura, no la afirmación de IA. Catálogos y consentimiento provienen exclusivamente del backend confiable, no del archivo. Los proveedores cotizan y confirman sus precios después.
