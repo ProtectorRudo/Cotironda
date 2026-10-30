@@ -27,3 +27,12 @@ La nueva respuesta de Edge incluirá el bloque numérico. La misma función de p
 5. Probar `mode:status` sin gasto y verificar cuota sigue 4/6. No reintentar caso consumido; quedan dos casos sin ejecutar.
 
 **Interpretación:** mayor claridad del prompt y diagnósticos mejores NO constituyen prueba de haber corregido la falla real. Debe mantenerse abierta la investigación hasta nueva evidencia independiente.
+
+## Implementación y pruebas reales en DEV — 30/10/2026
+- 9 pruebas MOCK nuevas del caso genérico ejecutadas en GitHub, con caso gold positivo, minúsculas y seis escenarios adversariales/estructurales. Toda la suite unitaria, chequeo Deno Edge, Postgres17, Next.js, PostgREST y sitio culminaron en **6/6 SUCCESS** para commit `e22206aa008b2d1e6b43fd9827d558ef240fd8a9`. Es una prueba **sin OpenAI real**.
+- Migración `dev_quality_numeric_diagnostics_d021` aplicada a **Supabase cotironda-dev** exclusivamente; verificación SQL: seis columnas, cuatro resultados históricos con columnas NULL, cuatro reservas usadas, dos pendientes, esquema con RLS, anon sin INSERT, authenticated sin SELECT y sin nuevas advertencias de seguridad. WARN preexistente por contraseñas filtradas sin protección, ajeno a D021.
+- Se compararon los 13 archivos del Edge ya instalado versión 8 con los de GitHub. Solo cambiaron `index.ts`, `lab.ts` y `core/server/openai-extraccion.ts`, como estaba previsto. Despliegue DEV v9 ACTIVE con `verify_jwt=false` y autenticación `secret:default` + `secret:cotironda_quality_lab` dentro del SDK.
+- Prueba **sin costo** vía Vault + pg_net de `POST {"mode":"status"}`: HTTP **200**, `ready_for_dev`, `openai_secret_configured:true`, `smoke_enabled:false`.
+- Postflight verificado: **4 claims, 4 resultados, 1 caso en `needs_review`, 2 pendientes, flag del despachador OFF, 0 jobs cron, 0 inferencias nuevas**. No se hizo `quality_case` después del cambio.
+- El writer de las seis columnas nuevas **todavía no tiene una prueba live de persistencia posterior al deploy**. Los tests unitarios comprueban su estructura y el ledger SQL, pero no equivalen a observación del runtime de un caso nuevo. Mantener dos reservas hasta decidir una nueva validación independiente.
+- **Issue #141 permanece abierto**: el caso histórico ya consumido no se puede explicar inequívocamente ni volver a ejecutar. No anunciar error del modelo corregido.
