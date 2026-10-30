@@ -146,7 +146,7 @@ begin
  where i.supplier_org_id=v_contact.supplier_org_id and
  r.status='abierta' and pg_catalog.clock_timestamp()>=r.begins_at
  and pg_catalog.clock_timestamp()<r.ends_at;
- if pg_catalog.coalesce(pg_catalog.array_length(v_rounds,1),0)<>1
+ if coalesce(pg_catalog.array_length(v_rounds,1),0)<>1
  then raise exception 'inbox_invitation_missing_or_ambiguous' using errcode='42501'; end if;
  v_round:=v_rounds[1];
  -- Recheck bajo row lock, al igual que D026, para impedir carrera con cierre.
