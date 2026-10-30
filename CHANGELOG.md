@@ -268,3 +268,10 @@
 - Se inspeccionó el proyecto separado `cotironda-portal-dev`: framework Next.js, SSO habilitado para todos los despliegues, proyecto `live=false`, versión antigua con target production **no tocada**.
 - Se creó un **nuevo Preview protegido** del portal sobre commit `31a8bd22`, deployment `dpl_EFo5qxksdsaUnUQn5cG7CEj87i3i`, `target=null`, Next.js 16.4.3 compilado realmente y rutas /ingresar, /alta y /api/organizaciones con Proxy presente. No se habilitó registro ni se publicaron cambios.
 - Guard puro `src/server/vercel-preview-audit.ts` y tests adversariales: exigen proyecto, commit, SSO, target Preview y evidencia real de `next build`; rechazan una demo READY sin Next. Detalles docs/57-vercel-portal-preview-audit.md.
+
+
+## [Sin publicar — Issue #88: separación de login Preview / registro comercial]
+- Nueva compuerta server-only autenticacionPreviewSoloIngreso: solo cuando VERCEL_ENV=preview, bandera explícita, registro=false, cotironda-dev exacto y publishable key, sin heredar secretos ni habilitar production.
+- UI de ingreso independiente para cuentas existentes en SSO Preview; no incluye signUp ni botón Crear cuenta. /alta validada con getUser muestra únicamente confirmación de sesión y salida global; no muestra formulario de empresa.
+- Proxy de Next mantiene /api/organizaciones bajo puerta comercial previa (modo login-only API continúa HTTP 503); no se expone SQL, Storage ni alta por habilitar login.
+- CI prueba escenarios de producción/flag/tenant, HTTP SSR y TLS real con renovación de cookie Secure, anti-cache y separación entre sesiones, para modo completo y modo login-only. Véase docs/58-preview-login-only-auth.md; no es una certificación Auth real Vercel.
