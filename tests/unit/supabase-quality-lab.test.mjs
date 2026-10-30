@@ -305,3 +305,97 @@ test('DDL de cuota: RLS, case_id único, privilegios solamente del backend',()=>
   for(const id of CASOS_LAB)assert.ok(sql.includes(id));
   assert.ok(!sql.includes('SECURITY DEFINER'));
 });
+
+test('sin registrador de métricas no se reserva ni se consumen tokens',async()=>{
+  const caso=escenariosProducto.find(x=>x.id===CASOS_LAB[1]);
+  const f=mock(caso.items);
+  let reservas=0;
+  const resp=await handleCotirondaDevAi(
+    req({mode:'quality_case',case_id:caso.id}),
+    env({qualityEnabled:'AUTORIZADO_DEV'}),f.impl,
+    async()=>{reservas++;return true}
+  );
+  assert.equal(resp.status,503);
+  assert.equal((await resp.json()).code,'quality_audit_unavailable');
+  assert.equal(reservas,0);
+  assert.equal(f.getCalls(),0);
+});
+test('resultado correcto se registra UNA vez, solo después de OpenAI',async()=>{
+  const caso=escenariosProducto.find(x=>x.id===CASOS_LAB[1]);
+  const f=mock(caso.items);
+  const eventos=[];
+  const response=await handleCotirondaDevAi(
+    req({mode:'quality_case',case_id:caso.id}),
+    env({qualityEnabled:'AUTORIZADO_DEV'}),f.impl,
+    async()=>{eventos.push('claim');return true},
+    async(data)=>{
+      eventos.push('audit');
+      assert.equal(data.caso,caso.id);
+      assert.equal(data.seguridad,'PASS');
+      assert.equal(data.extraccion.exactos,1);
+      assert.deepEqual(data.tokens,{entrada:123,salida:75});
+      return true;
+    }
+  );
+  const body=await response.json();
+  assert.equal(response.status,200);
+  assert.equal(body.auditoria_persistida,true);
+  assert.equal(f.getCalls(),1);
+  assert.deepEqual(eventos,['claim','audit']);
+  assert.ok(!JSON.stringify(body).includes(key));
+});
+test('si falla almacenamiento de auditoría, no reintenta ni oculta fallo',async()=>{
+  const caso=escenariosProducto.find(x=>x.id===CASOS_LAB[1]);
+  const f=mock(caso.items);
+  const response=await handleCotirondaDevAi(
+    req({mode:'quality_case',case_id:caso.id}),
+    env({qualityEnabled:'AUTORIZADO_DEV'}),f.impl,
+    async()=>true,
+    async()=>{throw Error('secret '+key)}
+  );
+  const body=await response.json();
+  assert.equal(response.status,200);
+  assert.equal(body.auditoria_persistida,false);
+  assert.equal(f.getCalls(),1);
+  assert.ok(!JSON.stringify(body).includes(key));
+});
+test('caso con cobertura FAIL se registra sin declararlo aprobado',async()=>{
+  const caso=escenariosProducto.find(x=>x.id==='dos_productos_misma_linea');
+  const f=mock(caso.items.slice(0,1));
+  let persistido;
+  const response=await handleCotirondaDevAi(
+    req({mode:'quality_case',case_id:caso.id}),
+    env({qualityEnabled:'AUTORIZADO_DEV'}),f.impl,async()=>true,
+    async(d)=>{persistido=d;return true}
+  );
+  assert.equal(response.status,200);
+  assert.equal(persistido.cobertura,'FAIL');
+  assert.equal(persistido.extraccion.omitidos,1);
+  assert.equal((await response.json()).auditoria_persistida,true);
+});
+test('en error OpenAI no se inventan métricas ni se escribe resultado',async()=>{
+  const caso=escenariosProducto.find(x=>x.id===CASOS_LAB[1]);
+  const f=mock(caso.items,429);
+  let guardados=0;
+  const resp=await handleCotirondaDevAi(
+    req({mode:'quality_case',case_id:caso.id}),
+    env({qualityEnabled:'AUTORIZADO_DEV'}),f.impl,async()=>true,
+    async()=>{guardados++;return true}
+  );
+  assert.equal(resp.status,502);
+  assert.equal(guardados,0);
+  assert.equal(f.getCalls(),1);
+});
+test('migración de resultados privada con foreign key y sin columnas sensibles',()=>{
+  const sql=readFileSync('supabase/sql/dev_quality_results_ledger.sql','utf8');
+  assert.match(sql,/REFERENCES public\.dev_ia_quality_claims\(case_id\)/);
+  assert.match(sql,/ENABLE ROW LEVEL SECURITY/);
+  assert.match(sql,/REVOKE ALL ON public\.dev_ia_quality_results FROM PUBLIC, anon, authenticated/);
+  assert.match(sql,/GRANT INSERT, SELECT ON public\.dev_ia_quality_results TO service_role/);
+  assert.ok(!/API_KEY|password|phone_number|email_address|prompt_text|raw_response/.test(sql));
+  assert.match(sql,/reported_by_owner/);
+  const src=readFileSync('supabase/functions/cotironda-ia-dev/index.ts','utf8');
+  assert.match(src,/\.from\('dev_ia_quality_results'\)/);
+  assert.match(src,/source:'edge_runtime'/);
+  assert.ok(!src.includes("auth:'none'"));
+});
