@@ -62,7 +62,8 @@ function cantidadExacta(x: unknown): string | null {
   if (!Number.isSafeInteger(entero) || entero > 999999) return null;
   const fraccion = partes[1] ?? '';
   if (entero === 0 && (!fraccion || Number(fraccion) === 0)) return null;
-  return String(entero) + (fraccion ? '.' + fraccion.replace(/0+$/, '') : '') .replace(/\.$/, '');
+  const decimales = fraccion.replace(/0+$/, '');
+  return String(entero) + (decimales ? '.' + decimales : '');
 }
 function codigoValido<T extends string>(x: unknown, codigos: readonly T[]): T | null {
   return typeof x === 'string' && codigos.includes(x as T) ? x as T : null;
