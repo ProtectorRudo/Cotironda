@@ -33,7 +33,7 @@ export function AuditoriaSeguridadSesion({projectRef}:{projectRef:string}) {
       // CookieStore no está disponible en todos los navegadores: ausencia
       // significa INCONCLUSO, nunca una aprobación.
       let atributos: AtributosCookie[] | null = null;
-      const store=(window as VentanaCookies).cookieStore;
+      const store=(window as unknown as VentanaCookies).cookieStore;
       if(store && typeof store.getAll==='function'){
         try {
           const all=await store.getAll();
