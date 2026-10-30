@@ -43,6 +43,27 @@ const noStore=r=>{
  assert.ok(cc.split(',').map(s=>s.trim()).includes('no-store'),'Respuesta potencialmente cacheable');
  assert.ok(!/\bpublic\b|\bs-maxage\b/.test(cc),'No permitir cache pública');
 };
+const assertSecureHeaders=(r)=>{
+ const h=r.headers;
+ assert.equal(h['x-frame-options'],'DENY','No permitir iframes de login');
+ assert.equal(h['x-content-type-options'],'nosniff','Sin sniff de contenidos');
+ assert.equal(h['referrer-policy'],'no-referrer','No revelar rutas ni parámetros por Referer');
+ assert.equal(h['x-robots-tag'],'noindex, nofollow, noarchive','No indexar portal privado');
+ const permissions=h['permissions-policy']||'';
+ for(const feature of ['camera','microphone','geolocation','payment']){
+  assert.ok(permissions.includes(feature+'=()'),'Permiso del navegador no bloqueado: '+feature);
+ }
+ const csp=h['content-security-policy']||'';
+ const directives=csp.split(';').map(x=>x.trim());
+ for(const directive of [
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+  "object-src 'none'",
+  "form-action 'self'"
+ ]) assert.ok(directives.includes(directive),'CSP incompleta: '+directive);
+ assert.ok(!csp.includes('unsafe-inline')&&!csp.includes('unsafe-eval'),'CSP no segura');
+ assert.equal(h['x-powered-by'],undefined,'No divulgar el framework');
+};
 const cookieValues=(r)=>r.headers['set-cookie']||[];
 const cookieHeaderFromSetCookie=(cookies)=>cookies.map(line=>line.split(';')[0]).join('; ');
 
@@ -157,7 +178,11 @@ try{
  }),/self.signed|certificate|unable.to.verify/i);
  console.log('PASS TLS: certificado aislado desconocido rechazado');
 
+ const home=await tlsHit('/');
+ assert.equal(home.status,200);
+ assertSecureHeaders(home);
  const login=await tlsHit('/ingresar');
+ assertSecureHeaders(login);
  assert.equal(login.status,200);
  assert.ok(login.tlsVerified);
  assert.match(login.body,/Correo electrónico/);
@@ -167,6 +192,7 @@ try{
  } else assert.match(login.body,/>Crear cuenta</);
  noStore(login);
  const anon=await tlsHit('/alta');
+ assertSecureHeaders(anon);
  assert.ok([303,307,308].includes(anon.status),'No se rechazó visitante anónimo');
  assert.ok(anon.tlsVerified);
  assert.match(anon.headers.location||'',/\/ingresar/);
@@ -195,6 +221,7 @@ try{
   .map(([name,value])=>encodeURIComponent(name)+'='+encodeURIComponent(value)).join('; ');
 
  const refreshed=await tlsHit('/alta',{headers:{cookie:cookieForOldSession}});
+ assertSecureHeaders(refreshed);
  assert.equal(refreshed.status,200,'La página SSR debe renovar sesión sintética');
  assert.ok(refreshed.tlsVerified);
  if(authOnly){
@@ -218,6 +245,7 @@ try{
 
  // Otro usuario sin cookies nunca recibe la página ni la sesión de A.
  const anonymousAgain=await tlsHit('/alta');
+ assertSecureHeaders(anonymousAgain);
  assert.ok([303,307,308].includes(anonymousAgain.status));
  assert.doesNotMatch(anonymousAgain.body,/Nombre de empresa/);
  assert.equal(cookieValues(anonymousAgain).length,0,'Sin cookies no puede recibir sesión ajena');
@@ -227,6 +255,7 @@ try{
  assert.ok(refreshedCookie.includes('sb-'+projectRef+'-auth-token'),
   'Cookie de refresh fuera del proyecto');
  const nextRequest=await tlsHit('/alta',{headers:{cookie:refreshedCookie}});
+ assertSecureHeaders(nextRequest);
  assert.equal(nextRequest.status,200,'Cookie renovada no funcionó en request siguiente');
  if(authOnly){
   assert.match(nextRequest.body,/Sesión de prueba activa/);
@@ -239,6 +268,7 @@ try{
   nombre:'Empresa CI',tipo:'buyer'};
  const wrongOrigin=await tlsHit('/api/organizaciones',{
   method:'POST',headers:{origin:'https://atacante-ci.example',cookie:refreshedCookie},body:payload});
+ assertSecureHeaders(wrongOrigin);
  if(authOnly){
   assert.equal(wrongOrigin.status,503);
   assert.deepEqual(JSON.parse(wrongOrigin.body),{error:'registro_no_disponible'});
@@ -249,11 +279,13 @@ try{
  noStore(wrongOrigin);
  const validOrigin=await tlsHit('/api/organizaciones',{
   method:'POST',headers:{origin:expectedOrigin,cookie:refreshedCookie},body:payload});
+ assertSecureHeaders(validOrigin);
  assert.equal(validOrigin.status,503,'Ni con cookie renovada puede habilitar registro');
  assert.deepEqual(JSON.parse(validOrigin.body),
   authOnly?{error:'registro_no_disponible'}:{error:'limite_no_disponible'});
  noStore(validOrigin);
  console.log('PASS HTTPS: Origin adversarial bloqueado y alta 503 fail-closed');
+ console.log('PASS HTTPS: DENY iframe, CSP documental, nosniff, no-referrer y privacy headers');
 
  console.log('PASS CI: HTTPS/TLS de loopback + Next real + Supabase SSR real + Auth ficticio'+
   (authOnly?' (login-only, sin signup ni alta)':''));
