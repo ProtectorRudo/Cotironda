@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {validarEntornoE2E,cargaRpcNoPersistente,validarClaimsSesionFirmada,SUPABASE_COTIRONDA_DEV_URL} from '../../src/server/auth-e2e-preflight.ts';
+import {validarEntornoE2E,cargaRpcNoPersistente,validarClaimsSesionFirmada,codigoSeguroE2E,SUPABASE_COTIRONDA_DEV_URL} from '../../src/server/auth-e2e-preflight.ts';
 const valid={
   COTIRONDA_E2E_SUPABASE_URL:SUPABASE_COTIRONDA_DEV_URL,
   COTIRONDA_E2E_PROJECT_REF:'qkercsoqhehbenbbncwk',
@@ -86,6 +86,25 @@ test('errores de preflight nunca incluyen correos, passwords ni keys',()=>{
 test('bloquea cuentas de relleno example.invalid',()=>{
  assert.throws(()=>validarEntornoE2E({...valid,COTIRONDA_E2E_VERIFIED_EMAIL:'mock@example.invalid'}),/ficticias/);
 });
+test('códigos de errores públicos nunca reflejan respuestas Auth externas',()=>{
+ const sensitive=[
+  valid.COTIRONDA_E2E_VERIFIED_PASSWORD,
+  valid.COTIRONDA_E2E_UNVERIFIED_PASSWORD,
+  valid.COTIRONDA_E2E_PUBLISHABLE_KEY
+ ];
+ assert.equal(codigoSeguroE2E(new Error('passwords_prueba_reutilizados')),
+  'passwords_prueba_reutilizados');
+ for(const value of sensitive){
+  assert.equal(codigoSeguroE2E(new Error('Error de API: '+value)),
+   'fallo_e2e_revisar_entorno_privado');
+  assert.equal(codigoSeguroE2E(new Error(value)),
+   'fallo_e2e_revisar_entorno_privado');
+ }
+ assert.equal(codigoSeguroE2E(null),'fallo_e2e_revisar_entorno_privado');
+ assert.equal(codigoSeguroE2E(new Error('401 Authentication failed: password leaked')),
+  'fallo_e2e_revisar_entorno_privado');
+});
+
 test('carga de prueba no puede producir registros incluso con DB abierta',()=>{
  const out=cargaRpcNoPersistente('123e4567-e89b-42d3-a456-426614174999');
  assert.equal(out.p_name.length,1);
