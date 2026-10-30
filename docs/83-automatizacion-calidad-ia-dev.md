@@ -59,3 +59,12 @@ from public.dev_ia_quality_results order by created_at;
 - Una respuesta HTTP enviada por pg_net no garantiza inferencia: registrar y cruzar `request_id`, reserva, resultado Edge, logs y cuota OpenAI. Si un resultado queda pendiente después de 12 minutos se detiene toda la cola.
 - Seis casos no prueban calidad comercial general. **No habilita** PDF comercial, WhatsApp, proveedores reales, sitio Vercel, pagos ni producción.
 - El flujo autónomo exige una **única configuración privada en Vault**; el conector actual no puede crear ni leer secretos de forma segura ni invocar directamente una Edge protegida. No ocultar esta limitación.
+
+## Verificación real sin tráfico pagado (30/10/2026)
+- Migración `dev_quality_auto_dispatch_d020` aplicada **solo** a `qkercsoqhehbenbbncwk`. Se instalaron `pg_cron` y `pg_net`, tablas y función de control, **sin programar ningún job**.
+- Primera prueba en PostgreSQL: `enabled=false`; `dev_quality_dispatch_next()` respondió `disabled`, sin invocar Edge.
+- Segunda prueba con `BEGIN; UPDATE enabled=true; SELECT dispatch_next(); ROLLBACK;`, previamente comprobado Vault vacío: respondió `blocked_missing_dev_invoker`; la transacción revertida dejó `enabled=false`.
+- Postflight: 0 jobs en `cron.job`, 1 claim, 1 resultado y 5 casos `pending`. Permisos reales: `anon_exec=false`, `auth_exec=false`, `service_exec=false`, `anon_read=false`, `auth_change=false`, RLS de cola activa.
+- La instalación inicial de `pg_net` sin esquema explícito produjo un WARN `extension_in_public`. Se comprobó extensión no relocatable, **cero jobs, cero colas/respuestas HTTP y cero dependencias externas**, se reinstaló **exclusivamente en DEV** mediante `dev_quality_pg_net_nonpublic_d020` en esquema `extensions` y se verificó con catálogo. El advisor dejó de listar `extension_in_public`. Se versionó corrección en `supabase/sql/dev_quality_pg_net_nonpublic.sql`; nueva instalación ya emplea `WITH SCHEMA extensions`.
+- Queda un WARN anterior de Auth por protección de contraseñas filtradas desactivada, independiente de D020. Las observaciones `rls_enabled_no_policy` son INFO intencional de tablas server-only con grants revocados: [linter de Supabase](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy).
+- **No existe todavía secreto `cotironda_quality_dev_invoker` en Vault**, no se programó cron y **no se probó** envío de POST real ni ejecución desatendida. Eso exige una configuración privada inicial por el propietario; no solicitar el valor por chat.
