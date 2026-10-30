@@ -18,3 +18,8 @@ La ruta de registro ya no importa `pg` ni credenciales SQL; usa la RPC `register
 
 ### Aviso de seguridad actual
 El portal llama RPC con la sesión SSR del usuario, y nunca el adaptador SQL. La base dispone de un segundo interruptor `cotironda_private.registration_settings.enabled=false`, distinto de la variable web. La quinta migración exige confirmación de correo mediante un claim respaldado por Auth Hook y eliminó el WARN de la RPC pública. Aun así, **NO activar** hasta habilitar/probar el Hook real, JWT E2E, rate limit y cookies.
+
+
+### Diagnóstico manual de Auth real (solo cuentas privadas de ensayo)
+
+Tras crear **dos cuentas de prueba con contraseñas distintas, nuevas y de al menos 12 caracteres** (no reutilizar claves que hayan aparecido en chats), configurá las variables locales descritas en `docs/24-auth-e2e-seguridad.md` y ejecutá desde `apps/portal` **`npm run e2e:auth:dev`** en tu equipo privado. Este comando usa Node 22 con `--experimental-strip-types` para los imports TS del diagnóstico. El runner se niega a trabajar en GitHub Actions/CI/Vercel y no imprime secretos ni errores sin filtrar. Nunca enviar contraseñas/JWT en mensajes, archivos versionados o PRs. **Todavía no se ejecutó el diagnóstico de revocación con JWT genuino tras logout.** Ver `docs/54-e2e-auth-secret-preflight.md`.
