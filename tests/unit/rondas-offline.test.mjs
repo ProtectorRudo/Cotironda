@@ -219,3 +219,7 @@ test('corrección pendiente al cierre no reemplaza la última oferta confirmada'
   assert.equal(s.proveedores[0].borrador.items[0].precioUnitarioNeto,'1.00');
   assert.equal(s.comparacionCierre.opcionesCompletas[0].totalFinal,'1341.00');
 });
+test('no se cancela luego del vencimiento aunque un worker todavía no cerró',()=>{
+  const s=abrir(iniciar());
+  fail(()=>aplicarEventoRondaOffline(s,ev('ev_cancelar_tarde','cancelar',E),comprador));
+});
