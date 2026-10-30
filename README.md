@@ -1,6 +1,6 @@
 # Cotironda
 
-**Estado al 29/10/2026: Etapa 01, identidad y catálogos en desarrollo. Doce migraciones aplicadas únicamente en `cotironda-dev`. El registro y las licitaciones comerciales NO están habilitados; el sitio público es demostrativo.**
+**Estado al 30/10/2026: Etapa 01 con controles de Auth/RLS verificados en desarrollo, integración de PRs aún pendiente; Etapa 02 INICIADA en PR #101 con validador documental offline. El registro y las licitaciones comerciales NO están habilitados; el sitio público es demostrativo.**
 
 Cotironda es una plataforma argentina B2B para solicitar cotizaciones privadas de **materiales de obra**. El comprador carga una lista una sola vez; la IA la interpreta y separa por rubro; el comprador revisa y confirma. Se invita a proveedores pertinentes según catálogo y cobertura geográfica; estos pueden responder desde WhatsApp (Whapi + IA) o por un portal opcional. El comprador compara ofertas anónimas, completas o parciales, y adjudica manualmente.
 
@@ -142,3 +142,7 @@ Proyecto de desarrollo: `cotironda-dev` (`qkercsoqhehbenbbncwk`), última migrac
 
 
 **Hallazgo de seguridad CONFIRMADO 30/10/2026 — Auth directo permite nuevos usuarios:** una petición GET pública auténtica desde GitHub Actions contra `cotironda-dev/auth/v1/settings` devolvió `disable_signup=false`; el gate de [CI](https://github.com/ProtectorRudo/Cotironda/actions/runs/41060813027) marcó **FAIL intencional**, con **245/245 unitarias PASS** y 4/5 workflows verdes. Logs Supabase corroboran GET 200; SQL read-only confirmó 2 usuarios, 0 empresas/sesiones/archivos y registro comercial false. **No se hizo POST /signup ni se creó cuenta nueva**. Mitigación pendiente: desactivar «Allow new users to sign up» para el proyecto de desarrollo desde Authentication → General, sin apagar el ingreso de cuentas existentes. El conector no permite editar esa configuración gestionada; no se tocó. [Prueba y procedimiento](docs/64-remote-gotrue-signup-audit.md). Issue #94 abierto.
+
+
+### Etapa 02 — primer contrato documental en desarrollo (PR #101)
+El [módulo de borrador documental](docs/65-etapa02-borrador-documental.md) valida de modo determinista una salida estructurada de IA sin confiar en sus instrucciones: conserva origen y líneas duplicadas, normaliza decimales claros como texto, marca incertidumbres y **requiere revisión del comprador**. **258/258 pruebas unitarias y 5/5 workflows CI exitosos** sobre commit `7895b748fd6a5cf24e60ab213b2a73fc8b07070a`. El PR es borrador sobre #99: sin backend de archivos, sin API OpenAI, sin Supabase/WhatsApp, sin merge ni publicación. El 30/10 se desactivó el autorregistro Auth en Supabase dev y la repetición remota del control confirmó `COTIRONDA_AUTH_SIGNUP=PASS` ([CI](https://github.com/ProtectorRudo/Cotironda/actions/runs/41061840605)); Issue #94 cerrado. Resta integración de PRs y pruebas/medidas de pilotaje antes de datos comerciales.
