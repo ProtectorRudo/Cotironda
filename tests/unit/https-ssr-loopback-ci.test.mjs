@@ -52,3 +52,18 @@ test('workflow HTTPS corre después del build Preview y antes del smoke HTTP exi
  assert.match(workflow,/on:\s*\n\s*pull_request:/);
  assert.match(workflow,/permissions:\s*\n\s*contents: read/);
 });
+
+test('cookies SSR y de navegador fuerzan Secure en builds de producción sin headers spoofeables',()=>{
+ for(const path of [
+  '../../apps/portal/proxy.ts',
+  '../../apps/portal/lib/supabase/server.ts',
+  '../../apps/portal/lib/supabase/browser.ts'
+ ]){
+  const content=readFileSync(new URL(path,import.meta.url),'utf8');
+  assert.match(content,/cookieOptions:\s*\{/,'Cookie options ausentes: '+path);
+  assert.match(content,/secure:process\.env\.NODE_ENV==='production'/,'Sin Secure en producción: '+path);
+  assert.match(content,/sameSite:'lax'/,'SameSite no explícito: '+path);
+  assert.match(content,/path:'\/'/,'Path no restringido: '+path);
+  assert.doesNotMatch(content,/secure:\s*false|httpOnly:\s*true/,'Configuración SSR incompatible: '+path);
+ }
+});
