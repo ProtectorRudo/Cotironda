@@ -60,3 +60,10 @@ El token original seguía dentro de su período de validez. Al revocar la sesió
 - Sin cambiar Supabase, usuarios, passwords, migraciones, Storage, DNS, Vercel, main ni producción por esta documentación. PR draft sin merge.
 
 Documentos antecedentes: docs/52-auth-real-revoked-catalog-e2e.md y docs/55-browser-auth-dev-diagnostic.md.
+
+## Trazabilidad de la captura (sin subir imagen)
+
+- Captura PNG aportada en la conversación del proyecto, resolución 1080 × 2400, muestra los ocho resultados PASS.
+- Huella SHA-256 del PNG original: `805eda43d6ed25360d528e2a64aee2baffdaef21f00f825dc1c6b9864e2e2d6d`.
+- No se versiona la imagen para evitar divulgar detalles del dispositivo; la huella solo permite comprobar su integridad si se conserva el original.
+- Los datos de logs agregados están reflejados en la tabla anterior. Un log HTTP 200 no prueba por sí solo que la respuesta haya sido `[]`.
