@@ -488,3 +488,11 @@
 - Vault guarda nueva credencial de invocación DEV. Edge v8 acepta solo secret keys de nombres `default` y `cotironda_quality_lab`; se corrigió HTTP 401 de auth:'secret' y se comprobó estado HTTP 200 sin gasto. 6/6 controles CI aprobaron el commit de código `57998292805147e787a04e67be89b08787380222`.
 - Mediante Supabase pg_net y dispatcher SQL privado se ejecutaron tres nuevos benchmarks reales, **uno por transacción, sin cron**. Dos PASS/PASS con 2/2 y 1/1 materiales/proveedores; el tercero `cemento_generico_sin_especificacion_inventada` dio FAIL/FAIL, retuvo línea y omitió proveedor (ver Issue #141 y docs/83).
 - Detención confirmada `halted_needs_review`; control OFF, 0 cron jobs, 4/6 reservas consumidas y 2 casos sin ejecutar. No hay reintentos y no se inventa causa raíz sin respuesta IA cruda. Sin Whapi, producción, secretos expuestos ni datos comerciales.
+
+## [Sin publicar — D021: investigación de cemento genérico, Issue #141]
+- Se agregó suite MOCK de regresión para «10 bolsas de Cemento», incluyendo respuestas buenas, descripción con cantidad, unidad equivocada, material y cantidad inventados y omisiones. No hay llamadas externas.
+- Prompt de extracción precisa cómo separar producto de cantidad/unidad, sin dar el gold a la IA y sin relajar validación de evidencia de origen.
+- Métricas numéricas privadas por etapa (ítems propuestos, aclaraciones, origen/cantidad no verificables, segmentos sin extracción y líneas retenidas); migración DEV opcional y writer Edge, sin almacenar respuestas del modelo.
+- Continúan bloqueados los 2 casos pendientes. En el FAIL histórico no se puede determinar la causa precisa porque no se guardó la respuesta cruda. Ver docs/84 y PR #142.
+
+- **Verificación DEV D021 completada:** 6/6 checks del código `e22206aa` SUCCESS, migración `dev_quality_numeric_diagnostics_d021` aplicada únicamente en Supabase DEV, seis columnas confirmadas, cuatro registros históricos sin modificar. Edge Function DEV actualizada a v9 ACTIVE y status autenticado HTTP 200 sin llamada paga. Postflight: 4/6 claims, 2 pendientes, 1 `needs_review`, despachador OFF, 0 cron jobs. Las columnas de diagnóstico aún no fueron validadas en un nuevo `quality_case` real; investigar error histórico sigue abierto.

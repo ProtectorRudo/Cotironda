@@ -32,6 +32,17 @@ export async function evaluarCasoCalidadDev(
     proveedores:caso.proveedores,
     apiKey,habilitarLlamadaExterna:true,fetchImpl:fetcher
   });
+  // Numeric diagnostics only, computed from already-validated extraction.
+  // Never persist text, model responses, product descriptions or credentials.
+  const extraidos=plan.resultado.extraccion.borrador.lineas;
+  const diagnostico={
+    items_propuestos:extraidos.length,
+    items_con_aclaracion:extraidos.filter(x=>x.requiere_aclaracion.length>0).length,
+    origen_no_verificado:extraidos.filter(x=>x.requiere_aclaracion.includes('origen_no_verificado')).length,
+    cantidad_sin_evidencia:extraidos.filter(x=>x.requiere_aclaracion.includes('cantidad_sin_evidencia')).length,
+    segmentos_sin_extraccion:plan.resumen.segmentos_sin_extraccion,
+    items_retenidos:plan.lineas.reduce((n,x)=>n+(x.estado==='retenida'?1:0),0)
+  };
   // Gold is compared *after* model inference; never passed to OpenAI.
   const medicion=evaluarCalidadInvitacionesPorProducto({
     esperados:caso.esperados,
@@ -42,6 +53,7 @@ export async function evaluarCasoCalidadDev(
     caso:caseId,
     modelo:plan.modelo,
     tokens:plan.tokens,
+    diagnostico,
     seguridad:medicion.puerta_seguridad,
     cobertura:medicion.puerta_cobertura,
     extraccion:{
