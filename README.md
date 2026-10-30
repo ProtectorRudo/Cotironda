@@ -194,3 +194,7 @@ El circuito preferido para futuros documentos utiliza **IA primero**, con valida
 
 ### Etapa 02 — no perder productos dentro de una misma línea (Issue #125)
 El extractor IA ahora verifica por separado materiales delimitados explícitamente en una línea (por ejemplo, “20 bolsas cemento CPC 50 kg; 5 litros de látex interior”). Si solo reconoce uno, marca la línea **parcial**, registra un segmento no extraído y **no declara el pedido completo**. El peso de envase no se interpreta como otro material. Alcance y límites: [docs/76](docs/76-cobertura-multimaterial-ia.md). Simulación con respuestas de API MOCK, **sin inferencias reales ni Whapi**.
+
+
+### Etapa 02 — Benchmark de calidad comercial D015/D016 (Issue #127)
+Nuevo evaluador **offline** compara productos detectados y proveedores invitados contra un gold de destinatarios **por producto**, sin exigir misma marca ni envase. Métricas separadas: artículos correctos/omitidos/alterados y proveedores correctos/incorrectos/omitidos. Incluye 12 escenarios sintéticos, errores deliberados, duplicados y casos intralínea. Ejecutar `npm run benchmark:producto:offline` (Node 22+). [Ver criterios y límites](docs/77-benchmark-invitaciones-producto.md). **MOCK no mide precisión de OpenAI**, y no activa mensajes ni producción.
