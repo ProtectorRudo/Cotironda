@@ -25,7 +25,7 @@ begin
     and c.consented_at<=pg_catalog.clock_timestamp()
     and c.opted_out_at is null;
  if not found then return null; end if;
- select count(*), min(r.id) into v_count,v_round
+ select count(*), min(r.id::text)::uuid into v_count,v_round
  from cotironda_private.round_invites_v1 i
  join cotironda_private.rounds_v1 r on r.id=i.round_id
  where i.supplier_org_id=v_contact.supplier_org_id
