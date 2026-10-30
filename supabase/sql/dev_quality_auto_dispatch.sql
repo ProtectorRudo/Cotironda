@@ -1,7 +1,7 @@
 -- D020: dispatcher secuencial EXCLUSIVO Cotironda DEV.
 -- Instalacion aislada; NO crea cron job ni ejecuta HTTP por defecto.
 -- La credencial de invocacion es una Supabase sb_secret_ de DEV en Vault, NUNCA OPENAI_API_KEY.
-create extension if not exists pg_net;
+create extension if not exists pg_net with schema extensions;
 create extension if not exists pg_cron;
 
 create table if not exists cotironda_private.dev_quality_auto_control (
