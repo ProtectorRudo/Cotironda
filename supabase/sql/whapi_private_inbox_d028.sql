@@ -81,6 +81,10 @@ revoke all on cotironda_private.whapi_contacts_v1,cotironda_private.whapi_inbox_
 
 create role cotironda_whapi_inbox_writer nologin noinherit nobypassrls;
 grant usage on schema cotironda_private to cotironda_whapi_inbox_writer;
+-- PostgreSQL exige UPDATE privilege para SELECT ... FOR SHARE;
+-- SIN política RLS FOR UPDATE, el rol no puede actualizar la ronda.
+grant update(status) on cotironda_private.rounds_v1
+ to cotironda_whapi_inbox_writer;
 grant select on cotironda_private.whapi_contacts_v1,
  cotironda_private.whapi_inbox_v1,
  cotironda_private.rounds_v1,cotironda_private.round_invites_v1
