@@ -190,3 +190,7 @@ Ya existe un prototipo **offline** que relaciona textos cotidianos («cemento»,
 
 ### D016 — calidad antes que ahorro de tokens (Issue #123)
 El circuito preferido para futuros documentos utiliza **IA primero**, con validaciones deterministas de evidencia, producto canónico y catálogo; **no se da por completo un pedido con líneas omitidas**. La ruta económica local sigue siendo experimental y no reemplaza IA hasta demostrar calidad equivalente en pruebas independientes. Nuevo contrato `src/server/flujo-calidad-ia.ts` con 5 estados de cobertura por línea y errores controlados de API. [Reglas y límites](docs/75-calidad-primero-ia.md). El código está en PR draft, sin inferencia OpenAI real, sin Whapi ni despliegue.
+
+
+### Etapa 02 — no perder productos dentro de una misma línea (Issue #125)
+El extractor IA ahora verifica por separado materiales delimitados explícitamente en una línea (por ejemplo, “20 bolsas cemento CPC 50 kg; 5 litros de látex interior”). Si solo reconoce uno, marca la línea **parcial**, registra un segmento no extraído y **no declara el pedido completo**. El peso de envase no se interpreta como otro material. Alcance y límites: [docs/76](docs/76-cobertura-multimaterial-ia.md). Simulación con respuestas de API MOCK, **sin inferencias reales ni Whapi**.
