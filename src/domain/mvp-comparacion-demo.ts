@@ -21,7 +21,7 @@ const linea=(itemId:'cemento_001'|'latex_001'|'placa_001',
   itemId,unidad,cantidadDisponible,
   equivalencia:'verificada' as const,precioUnitarioNeto,ivaPorcentaje:'21' as const
 });
-const oferta=(anonId:string,items:OfertaComparable['items'],fleteFinal:string,
+const oferta=(anonId:string,items:OfertaComparable['items'],fleteFinal:string|null,
   confirmada=true):OfertaComparable=>({
   anonId,version:1,confirmada,moneda:'ARS',
   formaPago:'transferencia',plazoEntregaDias:3,
@@ -47,7 +47,7 @@ export const OFERTAS_DEMO:readonly OfertaComparable[]=Object.freeze([
     {...linea('cemento_001','bag','20','1000.00'),ivaPorcentaje:null},
     {...linea('latex_001','l','5','1000.00'),ivaPorcentaje:null},
     {...linea('placa_001','unit','15','1000.00'),ivaPorcentaje:null}
-  ],null as unknown as string,false)
+  ],null,false)
 ]);
 
 export type DemoComparacion = Readonly<{
