@@ -13,6 +13,8 @@ const MAX_BATCH=10;
 const CHANNEL=/^[a-zA-Z0-9_-]{4,64}$/;
 const PHONE=/^[1-9][0-9]{7,16}$/;
 const MESSAGE=/^[a-zA-Z0-9._:-]{8,160}$/;
+// Contexto de cita Whapi.Cloud, nunca autenticación por sí mismo.
+const QUOTED=/^[a-zA-Z0-9._:-]{8,160}$/;
 const ACCEPTED=new Set(['text','image','document','audio','voice']);
 
 export type VinculoProveedorVerificado=Readonly<{
@@ -23,6 +25,7 @@ export type MensajeEntrantePendiente=Readonly<{
   canalId:string;chatId:string;mensajeId:string;proveedorOrgId:string;
   rondaId:string;tipo:'text'|'image'|'document'|'audio'|'voice';
   texto:string|null;marcaTiempoUnix:number;
+  quotedMessageId?:string;
   huellaSha256:string;claveIdempotencia:string;
   estado:'pendiente_interpretacion';
 }>;
@@ -73,7 +76,7 @@ async function leerJsonAcotado(req:Request):Promise<unknown>{
 }
 type Candidato={
   mensajeId:string;chatId:string;tipo:MensajeEntrantePendiente['tipo'];
-  texto:string|null;marcaTiempoUnix:number;
+  texto:string|null;marcaTiempoUnix:number;quotedMessageId?:string;
 };
 function extraer(x:unknown,ahora:number):Candidato|null{
   if(!objeto(x))throw new TypeError('mensaje_invalido');
@@ -97,9 +100,23 @@ function extraer(x:unknown,ahora:number):Candidato|null{
        throw new TypeError('mensaje_texto_invalido');
     texto=x.text.body.trim();
   }
+  // D050: sólo el ID del mensaje citado, jamás quoted_content/quoted_author.
+  // No transformamos un ID de Whapi en referencia autorizada; el broker debe
+  // cruzarlo luego con el acuse HMAC del outbox del MISMO contacto y ronda.
+  let quotedMessageId:string|undefined;
+  if(x.context!==undefined){
+    if(!objeto(x.context))throw new TypeError('contexto_cita_invalido');
+    const quoted=x.context.quoted_id;
+    if(quoted!==undefined&&quoted!==null){
+      if(tipo!=='text'||typeof quoted!=='string'||!QUOTED.test(quoted))
+        throw new TypeError('contexto_cita_invalido');
+      quotedMessageId=quoted;
+    }
+  }
   // Media: no leer links, captions, URLs ni datos base64.
   // Descargar, antivirus, tamaño y almacenamiento seguro = iteración posterior.
-  return {mensajeId:x.id,chatId:x.chat_id,tipo,texto,marcaTiempoUnix:x.timestamp};
+  return {mensajeId:x.id,chatId:x.chat_id,tipo,texto,marcaTiempoUnix:x.timestamp,
+    ...(quotedMessageId?{quotedMessageId}:{})};
 }
 function uuid(x:unknown):x is string{
   return typeof x==='string'&&
@@ -173,12 +190,14 @@ export async function procesarWebhookWhapiAislado(
       .update(JSON.stringify([dep.canalId,c.mensajeId])).digest('hex');
     const huellaSha256=createHash('sha256')
       .update(JSON.stringify([dep.canalId,c.mensajeId,c.chatId,c.tipo,
-        c.texto,c.marcaTiempoUnix,vinculo.supplierOrgId,vinculo.roundId])).digest('hex');
+        c.texto,c.marcaTiempoUnix,vinculo.supplierOrgId,vinculo.roundId,
+        ...(c.quotedMessageId?[c.quotedMessageId]:[])] )).digest('hex');
     try{
       const result=await dep.persistirEntrada({
         canalId:dep.canalId,chatId:c.chatId,mensajeId:c.mensajeId,
         proveedorOrgId:vinculo.supplierOrgId,rondaId:vinculo.roundId,
         tipo:c.tipo,texto:c.texto,marcaTiempoUnix:c.marcaTiempoUnix,
+        ...(c.quotedMessageId?{quotedMessageId:c.quotedMessageId}:{}),
         huellaSha256,claveIdempotencia,estado:'pendiente_interpretacion'
       });
       if(result==='guardada')guardadas++;
