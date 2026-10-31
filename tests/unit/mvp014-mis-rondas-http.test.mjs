@@ -70,6 +70,6 @@ test('MVP-014 list is independent of quote RPC and never activates on production
  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:'sb_publishable_dummy'};
  assert.equal(misRondasHabilitado(env),true);
  assert.equal(misRondasHabilitado({...env,VERCEL_ENV:'production'}),false);
- assert.equal(misRondasHabilitado({...env,COTIRONDA_QUOTES_READ_ENABLED:'false'}),false);
+ assert.equal(misRondasHabilitado({...env,COTIRONDA_QUOTES_READ_ENABLED:'false'}),true);
  assert.equal(misRondasHabilitado({...env,SUPABASE_SERVICE_ROLE_KEY:'key'}),false);
 });
