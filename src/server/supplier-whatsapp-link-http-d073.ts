@@ -27,7 +27,7 @@ export function habilitarPantallaAltaWhatsAppD073(
 ):boolean{
  return env.COTIRONDA_SUPPLIER_WA_UI_ENABLED==='true'&&
   env.VERCEL_ENV==='preview'&&
-  autenticacionPortalHabilitada(env)&&
+  autenticacionPreviewProveedorD074(env)&&
   origenSeguro(env.COTIRONDA_SITE_ORIGIN)&&
   typeof env.COTIRONDA_SUPPLIER_WA_CHANNEL==='string'&&
   CHANNEL.test(env.COTIRONDA_SUPPLIER_WA_CHANNEL)&&
