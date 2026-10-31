@@ -101,7 +101,7 @@ begin
  if v_source~'(^|[^[:alnum:]])placas? (de )?(yeso|durlock)([^[:alnum:]]|$)' and
    v_source!~'(tornillo para placa|masilla para placa|perfil para placa|adhesivo para placa)'
  then v_found:=pg_catalog.array_append(v_found,'placa_yeso');end if;
- if v_source~'(^|[^[:alnum:]])cables? (unipolares?|eléctricos?|electricos?)([^[:alnum:]]|$)' and
+ if v_source~'(^|[^[:alnum:]])cables? (unipolar(es)?|eléctricos?|electricos?)([^[:alnum:]]|$)' and
    v_source!~'(cable de acero|cable de freno|cable coaxial|cable de red|cable de datos|cable usb)'
  then v_found:=pg_catalog.array_append(v_found,'cable_unipolar');end if;
  if v_source~'(^|[^[:alnum:]])(caños?|canos?|tubos?) (de )?pvc([^[:alnum:]]|$)' and
