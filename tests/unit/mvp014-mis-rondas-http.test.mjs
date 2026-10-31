@@ -61,7 +61,7 @@ test('MVP-014 invalid SQL response, cross-tenant identity or duplicates rejected
   assert.deepEqual(await res.json(),{error:'rondas_no_disponibles'});
  }
 });
-test('MVP-014 list flag never activates on production or without quote RPC',()=>{
+test('MVP-014 list is independent of quote RPC and never activates on production',()=>{
  const env={COTIRONDA_ROUNDS_READ_ENABLED:'true',
  COTIRONDA_QUOTES_READ_ENABLED:'true',
  COTIRONDA_REGISTRATION_ENABLED:'false',VERCEL_ENV:'preview',
