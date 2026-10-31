@@ -46,6 +46,11 @@ export type ConfigBrokerWhapi=Readonly<{
   enroladorContacto?:Readonly<{registrarContactoVerificado:
     (contact:Readonly<{channel:string;supplierOrgId:string;to:string}>)=>
       Promise<unknown>}>;
+  // First opt-in BEFORE any active invitation, through authenticated
+  // D027 direct chat; validates a one-time code issued to supplier manager.
+  enroladorAlta?:Readonly<{registrarAlta:
+    (canalId:string,chatId:string,mensajeId:string,
+     texto:string,marcaTiempoUnix:number)=>Promise<'registrada'|'duplicada'>}>;
 }>;
 const CHANNEL=/^[A-Za-z0-9_-]{4,64}$/;
 const CHAT=/^[1-9][0-9]{7,16}@s\.whatsapp\.net$/;
@@ -91,7 +96,9 @@ export function construirBrokerWhapiPrivado(config:ConfigBrokerWhapi):{
     typeof config.almacen.registrarBaja!=='function'||
     typeof config.ahoraUnix!=='function'||typeof config.habilitado!=='boolean'||
     (config.enroladorContacto!==undefined&&
-     typeof config.enroladorContacto?.registrarContactoVerificado!=='function'))
+     typeof config.enroladorContacto?.registrarContactoVerificado!=='function')||
+    (config.enroladorAlta!==undefined&&
+     typeof config.enroladorAlta?.registrarAlta!=='function'))
     rechazar();
   const keys=autenticarClaves(config.claves);
   const keyId=config.contenidoKeyId??'legacy_d029';
@@ -121,6 +128,12 @@ export function construirBrokerWhapiPrivado(config:ConfigBrokerWhapi):{
   }
   const dependencias:DependenciasWhapiEntrada={
     habilitado:config.habilitado,canalId:config.channel,
+    ...(config.enroladorAlta?{registrarAlta:async(channel,chatId,messageId,texto,when)=>{
+      if(channel!==config.channel||!CHAT.test(chatId)||!MSG.test(messageId)||
+       !/^COTI ALTA [a-f0-9]{32}$/u.test(texto))rechazar();
+      return config.enroladorAlta!.registrarAlta(
+       channel,chatId,messageId,texto,when);
+    }}:{}),
     secretoWebhook:config.secretoWebhook,ahoraUnix:config.ahoraUnix,
     resolverProveedor:async(channel,chatId):Promise<VinculoProveedorVerificado|null>=>{
       if(channel!==config.channel||!CHAT.test(chatId))rechazar();
