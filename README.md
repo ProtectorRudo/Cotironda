@@ -257,3 +257,6 @@ PR #164 prepara una prueba integral con `pg@8.23.1`, un usuario SQL temporal de 
 
 ### 30/10/2026 — Etapa 04: versión de clave AES por presupuesto (D032)
 El PR #166 agrega `crypto_key_id` a mensajes cifrados del inbox privado, con compatibilidad hacia atrás y claves históricas disponibles solo para descifrar; el key-id se autentica dentro del AES-GCM. La base rechaza reutilizar la misma ID de mensaje con otra versión de clave. Las claves HMAC permanecen estables para no romper deduplicación ni consentimiento. **No instalado en Supabase DEV ni producción, sin Whapi conectado ni llaves reales**. Ver [docs/96](docs/96-whapi-aes-key-id-rotation.md).
+
+### 30/10/2026 — Etapa 04: cargador de claves Whapi por entorno (D033)
+El PR #170 incorpora un cargador privado de configuración que **falla cerrado** cuando faltan secretos, se mezclan entornos, hay material repetido/débil o se intenta publicar una clave con `NEXT_PUBLIC_`. Permite clave AES activa y claves históricas de lectura, y rechaza retirar claves todavía utilizadas. No crea secretos reales ni habilita webhook; se alimentará desde un gestor de secretos de servidor futuro. **Pendiente rotación sin error en reenvíos**, Issue #169. Se auditó el bloqueo de permisos Supabase D025, Issue #167, sin tocar DEV. Ver [docs/97](docs/97-whapi-secret-config-preflight.md).
