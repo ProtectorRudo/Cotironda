@@ -38,7 +38,7 @@ test('D060 integración: receptor guarda literal citado con la versión y sin Co
   }});
  const result=await port.registrarConPrecios({
   channel:'whapi_ci',messageKey:'a'.repeat(64),expectedRevision:0,
-  ...prepared
+  quote:prepared.quote,prices:prepared.prices
  });
  assert.equal(result.estado,'cotizacion_recibida_sin_confirmacion_extra');
 });
