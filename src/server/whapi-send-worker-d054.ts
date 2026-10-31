@@ -41,7 +41,7 @@ export type PuertosEnvioD054=Readonly<{
   }>)=>Promise<unknown>}>;
 }>;
 export type ResultadoEnvioD054=Readonly<{
-  estado:'sin_trabajo'|'reintento_preenvio'|'cancelado_preenvio'|
+  estado:'sin_trabajo'|'reintento_preenvio'|'agotado_preenvio'|'cancelado_preenvio'|
     'aceptado_por_transporte'|'incierto_sin_reenvio'|'sin_envio_estado_desconocido';
 }>;
 function record(x:unknown):x is Record<string,unknown>{
@@ -105,7 +105,8 @@ export function crearTrabajadorSalidaD054(ports:PuertosEnvioD054,ackKey:Buffer){
       try{
         const result=await rpc(PREFLIGHT,[c.jobId,c.leaseToken]);
         if(!record(result)||!['queued','exhausted'].includes(String(result.state)))invalid();
-        return Object.freeze({estado:'reintento_preenvio'});
+        return Object.freeze({estado:result.state==='exhausted'?
+          'agotado_preenvio':'reintento_preenvio'});
       }catch{return Object.freeze({estado:'sin_envio_estado_desconocido'});}
     }
     // An isolated DB transaction MUST be committed before sendText() is called.
