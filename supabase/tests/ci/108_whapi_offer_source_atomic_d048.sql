@@ -56,7 +56,9 @@ values('dddddddd-0000-4000-8000-000000000484',1,'cemento_001',10,'bag');
 insert into cotironda_private.round_invites_v1
  (round_id,supplier_org_id,anon_id,invite_position)
 values('dddddddd-0000-4000-8000-000000000484',
-       'bbbbbbbb-0000-4000-8000-000000000482','anon_d048_ensayo',1);
+       'bbbbbbbb-0000-4000-8000-000000000482','anon_d048_ensayo',1),
+      ('dddddddd-0000-4000-8000-000000000484',
+       'cccccccc-0000-4000-8000-000000000483','anon_d048_otro',2);
 update cotironda_private.rounds_v1 set status='abierta'
 where id='dddddddd-0000-4000-8000-000000000484';
 insert into cotironda_private.whapi_contacts_v1
@@ -65,6 +67,8 @@ insert into cotironda_private.whapi_contacts_v1
   now()-interval '1 day',now()-interval '1 day'),
  ('d048_ci',repeat('b',64),'cccccccc-0000-4000-8000-000000000483',
   now()-interval '1 day',now()-interval '1 day');
+update cotironda_private.whapi_contacts_v1 set opted_out_at=clock_timestamp()
+ where channel_id='d048_ci' and chat_key=repeat('b',64);
 insert into cotironda_private.whapi_inbox_v1
  (channel_id,message_key,chat_key,supplier_org_id,round_id,payload_fingerprint,
   kind,payload_ciphertext,payload_nonce,payload_tag,source_unix)
@@ -106,7 +110,7 @@ begin
  perform pg_temp.d048_fails(format(
   'select cotironda_private.whapi_save_draft_from_inbox_d048(%L,%L,%L::uuid,%s,%L::jsonb)',
   'd048_ci',repeat('4',64),'eeeeeeee-0000-4000-8000-000000000481',
-  0,offer::text),'supplier_not_invited');
+  0,offer::text),'d048_contact_not_active');
 
  -- Before D048 linkage, the D047 outbox must reject ANY inbox text event.
  perform cotironda_private.save_offer_draft_atomic_v1(
