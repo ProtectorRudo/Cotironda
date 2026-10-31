@@ -1,10 +1,8 @@
 'use client';
 import {useState} from 'react';
 import Link from 'next/link';
-import {
-  EJEMPLO_PEDIDO_MVP,generarVistaCompradorMvp,
-  type VistaCompradorMvp
-} from '../../../../src/domain/mvp-vista-comprador-d057.ts';
+import {EJEMPLO_PEDIDO_MVP,type VistaCompradorMvp} from '../../../../src/domain/mvp-vista-comprador-d057.ts';
+import {prepararPedidoSinFriccionMvp008} from '../../../../src/domain/pedido-sin-friccion-mvp008.ts';
 
 const LIMITE=9000;
 type Pestaña='materiales'|'proveedores';
@@ -13,6 +11,9 @@ export function DemostracionComprador(){
   const [resultado,setResultado]=useState<VistaCompradorMvp|null>(null);
   const [error,setError]=useState('');
   const [pestana,setPestana]=useState<Pestaña>('materiales');
+  const [preguntarZona,setPreguntarZona]=useState(false);
+  const [zona,setZona]=useState('');
+  const [zonaUsada,setZonaUsada]=useState('');
   function analizar(){
     setError('');
     setResultado(null);
@@ -23,11 +24,21 @@ export function DemostracionComprador(){
       setError('La demostración admite hasta 9.000 caracteres. Dividí el pedido para probarlo.');return;
     }
     try{
-      const calculado=generarVistaCompradorMvp(texto);
-      setResultado(calculado);
+      const preparada=prepararPedidoSinFriccionMvp008({
+        texto,zonaRespondida:zona.trim()||null
+      });
+      if(preparada.estado==='falta_zona_entrega'){
+        setPreguntarZona(true);
+        return;
+      }
+      setPreguntarZona(false);
+      setZonaUsada(preparada.zonaEntrega);
+      setResultado(preparada.vista);
       setPestana('materiales');
-    }catch{
-      setError('No pudimos interpretar esa lista con seguridad. Probá con cantidades y unidades por línea (por ejemplo: 10 bolsas cemento).');
+    }catch(e){
+      setError(e instanceof Error && e.message==='mvp008_zona_invalida'
+        ?'Revisá la zona de entrega. Escribí solo la localidad (por ejemplo: La Plata).'
+        :'No pudimos interpretar esa lista con seguridad. Probá con cantidades y unidades por línea (por ejemplo: 10 bolsas cemento).');
     }
   }
   function reiniciar(){
@@ -35,6 +46,9 @@ export function DemostracionComprador(){
     setResultado(null);
     setError('');
     setPestana('materiales');
+    setPreguntarZona(false);
+    setZona('');
+    setZonaUsada('');
   }
   const listaVacia=resultado!==null&&resultado.proveedores.length===0;
   return <section className="mvp-shell" aria-label="Demostración del comprador">
@@ -48,7 +62,7 @@ export function DemostracionComprador(){
         <div>
           <p className="mvp-overline">TU PEDIDO</p>
           <h2>Escribí o pegá tus materiales</h2>
-          <p>Una línea por material. No hace falta elegir rubros ni cargar un formulario.</p>
+          <p>Una línea por material. Cotironda prepara las consultas sin pedirte confirmaciones. Si falta la zona de entrega, te la preguntamos.</p>
         </div>
         <span className="mvp-tag">Prueba local</span>
       </div>
@@ -58,6 +72,8 @@ export function DemostracionComprador(){
         value={texto} onChange={event=>{
           setTexto(event.target.value);
           if(resultado!==null)setResultado(null);
+          setPreguntarZona(false);
+          setZona('');
           if(error)setError('');
         }}
         maxLength={LIMITE+1}
@@ -70,10 +86,17 @@ export function DemostracionComprador(){
         <span id="mvp-privacidad">Se procesa en este navegador. No se guarda ni se envía.</span>
         <span>{texto.length.toLocaleString('es-AR')} / {LIMITE.toLocaleString('es-AR')}</span>
       </div>
+      {preguntarZona&&<div className="mvp-zone-required" role="group" aria-labelledby="mvp-zone-prompt">
+        <label id="mvp-zone-prompt" htmlFor="mvp-zone">¿En qué localidad o zona entregamos los materiales?</label>
+        <input id="mvp-zone" className="mvp-zone-input" autoComplete="address-level2"
+          placeholder="Ejemplo: La Plata" value={zona} maxLength={65}
+          onChange={e=>setZona(e.target.value)} />
+        <small>Es el único dato que necesitamos ahora para buscar comercios que entreguen en esa zona.</small>
+      </div>}
       {error&&<p className="mvp-error" role="alert">{error}</p>}
       <div className="mvp-cta">
         <button className="mvp-primary" type="button" onClick={analizar}>
-          Analizar pedido <span aria-hidden="true">→</span>
+          {preguntarZona?'Continuar con la zona':'Analizar pedido'} <span aria-hidden="true">→</span>
         </button>
         <button className="mvp-secondary" type="button" onClick={reiniciar}>
           Restaurar ejemplo
@@ -84,7 +107,7 @@ export function DemostracionComprador(){
       <div className="mvp-result-header">
         <div><p className="mvp-overline">ANÁLISIS TERMINADO</p>
           <h2>Así quedaría tu solicitud</h2>
-          <p>Este resultado reutiliza el motor de clasificación de Cotironda, con catálogos ficticios.</p>
+          <p>Entrega: <strong>{zonaUsada}</strong>. Consultas preparadas con catálogos ficticios; sin aprobaciones extra.</p>
         </div>
         <span className="mvp-check">Vista de prueba</span>
       </div>
@@ -129,11 +152,11 @@ export function DemostracionComprador(){
             <div><span className="mvp-supplier-icon" aria-hidden="true">▣</span>
               <strong>{p.nombre}</strong><span className="mvp-supplier-category">{p.rubro}</span>
             </div>
-            <span className="mvp-line-good">Invitación simulada</span>
+            <span className="mvp-line-good">Solicitud preparada</span>
           </div>
           <ul>{p.items.map((item,i)=><li key={i}>{item}</li>)}</ul>
           <details>
-            <summary>Ver el mensaje de ejemplo que recibiría</summary>
+            <summary>Ver solicitud con zona de entrega</summary>
             <div className="mvp-message">
               {p.mensajes.map((mensaje,i)=><p key={i}>{mensaje}</p>)}
             </div>
@@ -145,7 +168,7 @@ export function DemostracionComprador(){
       </div>
       <div className="mvp-bottom-note">
         <strong>Lo que falta para una ronda verdadera</strong>
-        <p>Los proveedores todavía no reciben mensajes. En una ronda real, las ofertas aparecen solo después de que cada proveedor confirma sus precios. Mientras tanto, podés explorar un ejemplo con ofertas completamente inventadas.</p>
+        <p>Los proveedores todavía no reciben mensajes en esta demo. En el flujo real, envías el pedido una sola vez y cada comercio responde por WhatsApp; su cotización se registra al recibirla y puede corregirla cuando lo necesite, sin responder «Confirmo». Mientras tanto, podés explorar ofertas inventadas.</p>
         <Link className="mvp-compare-link" href="/probar/ofertas">Ver cómo se comparan las ofertas ficticias →</Link>
       </div>
     </section>}

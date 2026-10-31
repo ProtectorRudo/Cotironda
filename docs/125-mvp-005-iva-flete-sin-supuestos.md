@@ -25,3 +25,6 @@ Un mensaje o PDF comercial puede expresar «precio final IVA incluido», «más 
 
 ## Complemento MVP-006
 El proveedor no siempre declara IVA/flete junto a cada precio: la lectura de presupuesto buscará **también** notas, comentarios y texto acompañante; ver [docs/126](126-mvp-006-condiciones-iva-flete-documentales.md). Sin evidencia, la etiqueta operativa es «no informado» y el importe visible no acredita IVA/flete, **no** una afirmación de exclusión fiscal. Si el comprador exige IVA incluido, debe comunicarse expresamente a los proveedores.
+
+## Corrección UX posterior MVP-008
+La ausencia de IVA/flete **nunca bloquea que se reciba o visualice la oferta** de un proveedor autenticado. Solo impide declarar un total comparable que necesitaría dichos datos. No exigir un mensaje separado «Confirmo»; el proveedor ya presentó la oferta al enviarla y puede corregirla. Ver [docs/128](128-mvp-008-flujo-sin-friccion.md).
