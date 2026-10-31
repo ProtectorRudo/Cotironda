@@ -394,14 +394,12 @@ jobs:
              where round_id='dddddddd-0013-4013-8013-000000000633'),
             'd063_original_prices_evidenced');
           select ci_helpers.assert_true(
-            (select count(*)=1 from cotironda_private.whapi_price_lines_d060
-             where message_key in (select message_key
-               from cotironda_private.whapi_inbox_v1
-               where channel_id='whapi_d063_ci' and kind='text'
-                 and message_key in (select message_key
-                   from cotironda_private.whapi_received_offers_d059
-                   where offer_version=1))
-               and quoted_unit_price=121 and vat_basis='no_informado'),
+            (select count(*)=1
+             from cotironda_private.whapi_price_lines_d060 l
+             join cotironda_private.whapi_price_sources_d060 s
+               on s.channel_id=l.channel_id and s.message_key=l.message_key
+             where s.channel_id='whapi_d063_ci' and s.offer_version=1
+               and l.quoted_unit_price=121 and l.vat_basis='no_informado'),
             'd063_original_price_without_iva_kept');
           select ci_helpers.assert_true(
             (select count(*)=1 from cotironda_private.whapi_price_lines_d060
