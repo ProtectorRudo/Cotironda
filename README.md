@@ -297,3 +297,5 @@ El PR D038 agrega un ensayo restringido en PG17 para la lógica de despachador I
 > **MVP-010 en desarrollo:** D060 conserva el precio unitario tal como lo escribió el proveedor, aunque no haya IVA informado, en un registro inmutable vinculado a su cotización y la fuente cifrada. El comprador autenticado podría consultar la última versión por **alias anónimo**, con condición de IVA explícita o `no informado`. SQL probado solo en PG17 descartable; falta el broker real y portal productivo. Ver [docs/130](docs/130-mvp-010-precio-declarado-versionado.md).
 
 > **MVP-011:** se conectó el inbox cifrado con la normalización de precios y versiones de cotizaciones mediante un broker server-only probado con AES-GCM real y PostgreSQL17 descartable; no hay interpretador IA/WhatsApp conectado en producción. [docs/131](docs/131-mvp-011-broker-inbox-cotizacion.md).
+
+> **MVP-012 (solo ensayos):** cola privada para texto de WhatsApp cifrado y worker que consume mensajes, con reintentos y deduplicación, orden por proveedor y límite de intentos. No hay job cloud activado ni mensajes reales. Ver [docs/132](docs/132-mvp-012-cola-cotizaciones.md).
