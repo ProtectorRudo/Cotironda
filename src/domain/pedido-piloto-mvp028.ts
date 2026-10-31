@@ -57,8 +57,12 @@ export function prepararPedidoTextoMvp028(
  const typed=typeof deliveryZone==='string'&&deliveryZone.trim()?
    deliveryZone.trim():null;
  const foundZones=[...new Set(zonas.map(z=>z.toLocaleLowerCase('es-AR')))];
- const zone=typed??(foundZones.length===1?zonas[0]:null);
- if(!zone||!safeZone(zone)||foundZones.length>1&&typed===null)
+ // An old field value must never silently override a different delivery
+ // location in the buyer's edited text. Multiple source zones also fail closed.
+ const zoneConflict=foundZones.length>1||typed!==null&&foundZones.length===1&&
+  foundZones[0]!==typed.toLocaleLowerCase('es-AR');
+ const zone=zoneConflict?null:(typed??(foundZones.length===1?zonas[0]:null));
+ if(!zone||!safeZone(zone))
   pend.push({linea:0,texto:'Zona de entrega',motivo:REASON.zone});
  if(cond.iva==='contradictorio')
   pend.push({linea:0,texto:'IVA',motivo:REASON.vat});
