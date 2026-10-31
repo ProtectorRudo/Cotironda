@@ -25,7 +25,7 @@ const freeze=x=>{
   return x;
 };
 /** Vinculación ya resuelta por servidor; nunca tomar identificadores del cuerpo WhatsApp. */
-export function iniciarCotizacionChatD046(vinculo,pedido){
+export function iniciarCotizacionChatD046(vinculo,pedido,etiquetas=null){
   if(!exact(vinculo,['channelId','chatHmac','supplierOrgId','roundId','anonId'])||
      !CHAN.test(vinculo.channelId)||!HEX.test(vinculo.chatHmac)||
      !UUID.test(vinculo.supplierOrgId)||!UUID.test(vinculo.roundId)||
@@ -38,9 +38,15 @@ export function iniciarCotizacionChatD046(vinculo,pedido){
       ids.has(item.id)||!UNIDADES.has(item.unidad))fail();
     ids.add(item.id);
   }
+  // Los nombres son de un catálogo/backend confiable, no del mensaje del proveedor.
+  if(etiquetas!==null&&(!exact(etiquetas,pedido.items.map(x=>x.id))||
+    Object.values(etiquetas).some(v=>typeof v!=='string'||v.trim().length<3||
+      v.length>120||/[\u0000-\u001f]/.test(v))))fail();
+  const nombres=etiquetas?{...etiquetas}:Object.fromEntries(
+    pedido.items.map((x,i)=>[x.id,'Artículo '+(i+1)]));
   // Usamos el comparador existente para validar también cantidades estrictas.
   compararCotizacionesOffline(pedido,[]);
-  return freeze({estado:'sin_borrador',vinculo:{...vinculo},
+  return freeze({estado:'sin_borrador',vinculo:{...vinculo},etiquetas:nombres,
     pedido:{items:pedido.items.map(i=>({...i}))},
     procesados:[],borrador:null,confirmadas:[]});
 }
@@ -114,7 +120,7 @@ export function prepararBorradorCotizacionD046(sesion,evento,propuesta){
     evento.messageKey,oferta.version,oferta.items,oferta.fleteFinal,
     oferta.minimoCompraFinal,oferta.formaPago,oferta.plazoEntregaDias]).slice(0,16);
   const codigo=draftId.slice(0,6).toUpperCase();
-  const detalles=oferta.items.map(i=>i.itemId+': '+i.cantidadDisponible+
+  const detalles=oferta.items.map(i=>sesion.etiquetas[i.itemId]+': '+i.cantidadDisponible+
     ' '+i.unidad+', $'+(i.precioUnitarioNeto??'SIN PRECIO')+
     ' netos por unidad, IVA '+(i.ivaPorcentaje??'SIN INFORMAR')+'%');
   const resumen='Preparé este borrador (todavía NO está confirmado):\n'+
