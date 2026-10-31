@@ -35,7 +35,7 @@ function exigenciaLinea(s:string):'con_iva'|'sin_iva'|null{
 }
 export function separarCondicionesComprador(texto:string):CondicionPedido{
  if(typeof texto!=='string'||texto.length>9000||/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/u.test(texto))
-  throw new TypeError('pedido_condiciones_invalido');
+  throw new TypeError('texto_economico_invalido');
  const fuentes=texto.split(/\r\n|\n|\r/u).map((s,i)=>({texto:s.trim(),numero:i+1}))
   .filter(x=>x.texto.length>0);
  const conditions:CondicionPedido['lineasCondicion'][number][]=[];
