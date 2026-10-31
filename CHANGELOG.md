@@ -694,3 +694,7 @@
 ### 31/10/2026 — MVP-006: aclaraciones documentales e IVA solicitado por comprador
 - Lector offline con citas/fila para detectar condiciones expresas de IVA y transporte en notas de presupuestos, validar propuestas IA contra evidencia y conservar «no informado» o «contradictorio» sin inventar impuestos. IA real, PDF, WhatsApp y normalización bruto/neto no conectados.
 - Solicitud de comprador con exigencia textual explícita de IVA en línea independiente: se separa del listado de materiales y se incorpora una sola vez por proveedor en el mensaje de ejemplo, preservando elegibilidad/idempotencia. No envío real, sin DEV/producción.
+
+### 31/10/2026 — MVP-007: presupuesto con evidencia → borrador D046
+- Nuevo adaptador económico offline de precio citado y condiciones IVA/flete a campos estrictos del borrador D046. No netear importes brutos si la alícuota y el redondeo no están comprobados. Flete omitido permanece `null`; solo es cero cuando está expresamente incluido o sin cargo.
+- Casos de regresión integrados de cita de fuente, IVA bruto/neto, alícuota faltante, importe en pesos argentinos, requisito IVA de comprador, flete adicional y confirmación D046. Sin nuevas APIs, Whapi, SQL DEV ni producción; ver docs/127.
