@@ -3,7 +3,7 @@
  * The server alone runs the user's SSR RPC; SQL D072 revalidates live Auth,
  * membership and quotas. No webhook, messaging, recipient or secret here.
  */
-import {autenticacionPortalHabilitada,origenSeguro}
+import {autenticacionPreviewProveedorD074,origenSeguro}
  from './portal-entorno.ts';
 import {crearEmisorEnlaceProveedorD072}
  from './whapi-supplier-self-enroll-d072.ts';
@@ -27,7 +27,7 @@ export function habilitarPantallaAltaWhatsAppD073(
 ):boolean{
  return env.COTIRONDA_SUPPLIER_WA_UI_ENABLED==='true'&&
   env.VERCEL_ENV==='preview'&&
-  autenticacionPortalHabilitada(env)&&
+  autenticacionPreviewProveedorD074(env)&&
   origenSeguro(env.COTIRONDA_SITE_ORIGIN)&&
   typeof env.COTIRONDA_SUPPLIER_WA_CHANNEL==='string'&&
   CHANNEL.test(env.COTIRONDA_SUPPLIER_WA_CHANNEL)&&

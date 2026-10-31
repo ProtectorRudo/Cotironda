@@ -1,12 +1,12 @@
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
-import { autenticacionPortalHabilitada, autenticacionPreviewSoloIngreso } from '../../../../src/server/portal-entorno.ts';
+import { autenticacionPortalHabilitada, autenticacionPreviewSoloIngreso, autenticacionPreviewProveedorD074 } from '../../../../src/server/portal-entorno.ts';
 
 export function entornoAuthConfigurado(): boolean {
   return autenticacionPortalHabilitada(process.env);
 }
 export function entornoAuthSoloIngresoPreview(): boolean {
-  return autenticacionPreviewSoloIngreso(process.env);
+  return autenticacionPreviewSoloIngreso(process.env)||autenticacionPreviewProveedorD074(process.env);
 }
 export async function clienteSupabaseServidor() {
   if (!entornoAuthConfigurado()) throw new Error('auth_no_configurada');

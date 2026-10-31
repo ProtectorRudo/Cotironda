@@ -9,7 +9,9 @@ const ACTOR={userId:'11111111-0024-4024-8024-000000000661',
  emailVerificado:true,anonimo:false};
 const CODE='a'.repeat(32);
 const ENV={
- VERCEL_ENV:'preview',COTIRONDA_REGISTRATION_ENABLED:'true',
+ VERCEL_ENV:'preview',COTIRONDA_REGISTRATION_ENABLED:'false',
+ COTIRONDA_AUTH_PREVIEW_ENABLED:'true',
+ VERCEL_GIT_COMMIT_REF:'integration/mvp-piloto-20261031',
  COTIRONDA_SUPABASE_PROJECT_REF:'qkercsoqhehbenbbncwk',
  COTIRONDA_SITE_ORIGIN:ORIGIN,
  NEXT_PUBLIC_SUPABASE_URL:'https://qkercsoqhehbenbbncwk.supabase.co',
@@ -40,7 +42,10 @@ test('D073: únicamente Preview exacto con Auth y flag explícito habilita',()=>
   {COTIRONDA_SUPPLIER_WA_UI_ENABLED:'false'},
   {VERCEL_ENV:'production'},
   {VERCEL_ENV:'development'},
-  {COTIRONDA_REGISTRATION_ENABLED:'false'},
+  {COTIRONDA_REGISTRATION_ENABLED:'true'},
+  {COTIRONDA_AUTH_PREVIEW_ENABLED:'false'},
+  {VERCEL_GIT_COMMIT_REF:'main'},
+  {VERCEL_GIT_COMMIT_REF:'feat/mvp-026-auth-proveedor-preview-aislada'},
   {COTIRONDA_SUPPLIER_WA_CHANNEL:'invalid channel'},
   {COTIRONDA_SUPPLIER_WA_BOT_NUMBER:'invalid'},
   {SUPABASE_SERVICE_ROLE_KEY:'secret'},
