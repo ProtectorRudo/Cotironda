@@ -89,13 +89,13 @@ export type VistaCompradorMvp=Readonly<{
     requiereValidarAlternativas:boolean;
   }>[];
 }>;
-export function generarVistaCompradorMvp(texto:string):VistaCompradorMvp{
+export function generarVistaCompradorMvp(texto:string,zonaEntrega='la_plata'):VistaCompradorMvp{
   if(typeof texto!=='string'||texto.trim().length===0)throw new TypeError('pedido_vacio');
   const condiciones=separarCondicionesComprador(texto);
   if(!condiciones.materiales.length)throw new TypeError('pedido_sin_materiales');
   const result=simularInvitacionesEconomicasDesdeTexto({
     texto:condiciones.textoMateriales,
-    solicitud:{id:'ronda_mvp_demostracion',zona_entrega:'la_plata',
+    solicitud:{id:'ronda_mvp_demostracion',zona_entrega:zonaEntrega,
       envio_autorizado_por_comprador:true},
     proveedores:FIXTURES
   });
