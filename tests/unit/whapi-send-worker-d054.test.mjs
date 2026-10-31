@@ -150,3 +150,14 @@ test('D054: ningún método real de envío se implementa en el módulo',()=>{
  assert.deepEqual(Object.keys(x.worker),['procesarUno']);
  assert.ok(Object.isFrozen(x.worker));
 });
+
+test('D054: agotamiento de presupuesto PRE-HTTP no se informa como nuevo reintento',async()=>{
+ const x=mock();
+ x.ports.resolverMensaje=async()=>{throw Error('known_failure_before_http')};
+ const original=x.ports.committedRpc;
+ x.ports.committedRpc=(sql,args)=>sql.includes('_finish_reply_d047')?
+  Promise.resolve({payload:{state:'exhausted'}}):original(sql,args);
+ const out=await crearTrabajadorSalidaD054(x.ports,KEY).procesarUno();
+ assert.deepEqual(out,{estado:'agotado_preenvio'});
+ assert.equal(x.state.sent,0);
+});
