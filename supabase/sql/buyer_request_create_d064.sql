@@ -137,6 +137,79 @@ begin
    or pg_catalog.jsonb_typeof(v_line->'unit') is distinct from 'string'
    or v_line->>'unit' not in ('unit','bag','box','kg','g','l','ml',
                               'm','m2','m3','roll','pack')
+   or (v_line ? 'source_description' and (
+      pg_catalog.jsonb_typeof(v_line->'source_description') is distinct from 'string'
+      or pg_catalog.char_length(v_line->>'source_description') not between 3 and 90
+      or v_line->>'source_description' !~
+         '^[[:alnum:] ÁÉÍÓÚÜÑáéíóúüñ.,()/+²³-]+
+  if exists(select 1 from pg_catalog.jsonb_array_elements(p_items) x(value)
+     where x.value->>'product_code'=v_line->>'product_code'
+     having count(*)>1)
+  then raise exception 'd064_duplicate_product' using errcode='22023';end if;
+ end loop;
+ v_zone:=pg_catalog.btrim(p_zone);
+ v_hash:=pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(
+  pg_catalog.jsonb_build_object('org',v_buyer,'zone',v_zone,'iva',p_iva,
+    'items',p_items)::text,'UTF8')),'hex');
+ -- Secure and deterministic serialization of double clicks and concurrent
+ -- requests from the SAME buyer+idempotency key. No orphan round on replay.
+ perform pg_catalog.pg_advisory_xact_lock(
+  pg_catalog.hashtextextended(v_buyer::text||':'||v_uid::text||':'||p_key::text,0));
+ select * into v_previous from cotironda_private.round_requests_d064
+  where buyer_org_id=v_buyer and created_by=v_uid and request_key=p_key;
+ if found then
+  if v_previous.content_sha256<>v_hash then
+   raise exception 'd064_request_conflict' using errcode='23505';end if;
+  return pg_catalog.jsonb_build_object('roundId',v_previous.round_id,
+   'status','programada','repeated',true);
+ end if;
+ -- The buyer does NOT select supplier IDs or request sending: no invitations
+ -- are manufactured. A separate vetted geographic matcher will distribute.
+ insert into cotironda_private.rounds_v1(buyer_org_id,begins_at,ends_at)
+  values(v_buyer,v_now+interval '30 seconds',v_now+interval '2 days')
+  returning id into v_round;
+ for v_number in 0..v_count-1 loop
+  v_line:=p_items->v_number;
+  insert into cotironda_private.round_items_v1
+    (round_id,line_no,product_code,quantity,unit)
+   values(v_round,(v_line->>'line_no')::smallint,
+    v_line->>'product_code',(v_line->>'quantity')::numeric(18,3),
+    v_line->>'unit');
+ end loop;
+ insert into cotironda_private.round_requests_d064
+  (round_id,buyer_org_id,created_by,request_key,content_sha256,
+   delivery_zone,buyer_iva_request)
+  values(v_round,v_buyer,v_uid,p_key,v_hash,v_zone,p_iva);
+ return pg_catalog.jsonb_build_object('roundId',v_round,
+  'status','programada','repeated',false);
+end;$fn$;
+grant create on schema cotironda_private to cotironda_buyer_writer_d064;
+grant cotironda_buyer_writer_d064 to postgres with set true,inherit false;
+alter function cotironda_private.create_buyer_round_d064(
+ uuid,uuid,text,text,jsonb) owner to cotironda_buyer_writer_d064;
+revoke cotironda_buyer_writer_d064 from postgres;
+revoke create on schema cotironda_private from cotironda_buyer_writer_d064;
+revoke all on function cotironda_private.create_buyer_round_d064(
+ uuid,uuid,text,text,jsonb) from public,anon,authenticated,service_role,cotironda_app;
+grant execute on function cotironda_private.create_buyer_round_d064(
+ uuid,uuid,text,text,jsonb) to authenticated;
+create function public.create_buyer_round_d064(
+ p_buyer uuid,p_key uuid,p_zone text,p_iva text,p_items jsonb
+) returns jsonb
+language sql volatile security invoker set search_path='' as $fn$
+ select cotironda_private.create_buyer_round_d064(
+ p_buyer,p_key,p_zone,p_iva,p_items);
+$fn$;
+revoke all on function public.create_buyer_round_d064(uuid,uuid,text,text,jsonb)
+ from public,anon,authenticated,service_role,cotironda_app;
+grant execute on function public.create_buyer_round_d064(uuid,uuid,text,text,jsonb)
+ to authenticated;
+comment on function public.create_buyer_round_d064(uuid,uuid,text,text,jsonb)
+ is 'MVP-015: only verified buyer manager; exact structured items+delivery zone; no supplier invitation or extra confirmation';
+
+      or v_line->>'source_description' ~*
+         '(https?://|www[.]|[0-9]{10,})'
+   ))
   then raise exception 'd064_invalid_line' using errcode='22023';end if;
   if exists(select 1 from pg_catalog.jsonb_array_elements(p_items) x(value)
      where x.value->>'product_code'=v_line->>'product_code'
