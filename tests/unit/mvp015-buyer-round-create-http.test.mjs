@@ -10,7 +10,8 @@ const BODY={requestId:ID,deliveryZone:'La Plata',vatRequest:'con_iva',
  items:[{line_no:1,product_code:'cemento_001',quantity:'10',unit:'bag',source_description:'Cemento CPC 50 kg'}]};
 const make=(input=BODY,opts={})=>{
  const calls=[];
- const deps={habilitado:true,verificarSesion:async()=>ACTOR,
+ const deps={habilitado:true,originPermitido:'https://cotironda.invalid',
+  verificarSesion:async()=>ACTOR,
   crear:async body=>{calls.push(body);return{
    roundId:ROUND,status:'programada',repeated:false}},...opts};
  const req=new Request('https://cotironda.invalid/api/rondas',{
