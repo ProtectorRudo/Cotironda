@@ -78,3 +78,6 @@ Cotironda prepara cada solicitud WhatsApp desde la lista D065 específica del pr
 
 ## MVP-018 — Proveedores solo cotizan artículos invitados
 Una invitación parcial no autoriza cotizar otros artículos del pedido. D061 debe entregar al intérprete exclusivamente el scope D065 del proveedor. La BD valida nuevamente el scope al guardar cada oferta D064, también si se saltea la IA. El incumplimiento bloquea toda la operación sin crear versión. La BAJA posterior detiene nuevas lecturas. No modificar permisos para eludir tests; no permitir flujos históricos sin scope en el piloto. Ver docs/138.
+
+## MVP-019 — Recuperación segura del destinatario Whapi
+El número WhatsApp que una persona consintió no puede reconstruirse a partir de HMAC D028. El backend debe enrolarlo de forma verificada y cifrarlo AES-256-GCM con identidad, empresa, canal y versión atados mediante AAD, separados de la clave HMAC. Solo el worker puede descifrar, después de validar scope/catálogo/zona y consentimiento actual, y **otra vez** justo antes del futuro envío real. El vault no autoriza ningún mensaje por sí mismo. Reintentos inciertos nunca se despachan automáticamente. Ver docs/139.
