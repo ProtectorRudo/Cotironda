@@ -101,6 +101,19 @@ begin
   'cotironda_private.whapi_reply_jobs_d047','INSERT')
  or not (select relrowsecurity from pg_class
   where oid='cotironda_private.round_supplier_lines_d065'::regclass)
+ -- Category evidence is private and editable ONLY by a trusted curator.
+ or has_table_privilege('authenticated',
+  'cotironda_private.supplier_catalog_capabilities_d080','SELECT')
+ or has_table_privilege('authenticated',
+  'cotironda_private.supplier_catalog_capabilities_d080','INSERT')
+ or has_table_privilege('service_role',
+  'cotironda_private.supplier_catalog_capabilities_d080','INSERT')
+ or has_table_privilege('cotironda_matcher_d065',
+  'cotironda_private.supplier_catalog_capabilities_d080','INSERT')
+ or not has_table_privilege('cotironda_matcher_d065',
+  'cotironda_private.supplier_catalog_capabilities_d080','SELECT')
+ or has_function_privilege('authenticated',
+  'cotironda_private.catalog_fingerprint_d080(uuid)','EXECUTE')
  then raise exception 'd065_security_invariant_failed';end if;
 end;$security$;
 -- Gateway can only execute; not directly read contacts or other buyers.
