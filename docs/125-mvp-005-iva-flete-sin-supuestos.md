@@ -22,3 +22,6 @@ Un mensaje o PDF comercial puede expresar «precio final IVA incluido», «más 
 - `null` IVA y `null` flete bloquean importe comparable y ranking; `0` explícito **no** es lo mismo que dato ausente.
 - Alternativas de hasta dos proveedores solo si ambos aportan datos claros y confirmados; no inventar descuentos, equivalencias ni impuestos.
 - Regresión unitaria, smoke HTTP real y compilación Next.js; sin deploy, Whapi, Supabase DEV ni producción. El bloqueo backup #175 continúa abierto.
+
+## Complemento MVP-006
+El proveedor no siempre declara IVA/flete junto a cada precio: la lectura de presupuesto buscará **también** notas, comentarios y texto acompañante; ver [docs/126](126-mvp-006-condiciones-iva-flete-documentales.md). Sin evidencia, la etiqueta operativa es «no informado» y el importe visible no acredita IVA/flete, **no** una afirmación de exclusión fiscal. Si el comprador exige IVA incluido, debe comunicarse expresamente a los proveedores.
