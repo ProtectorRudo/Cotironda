@@ -73,22 +73,23 @@ begin
      where round_id=v_round)<>0
  or (select count(*) from cotironda_private.whapi_reply_jobs_d047
      where round_id=v_round)<>0 then raise exception 'd064_fake_invites_sent';end if;
- -- Explicit zone and requested IVA are immutable and no assumptions.
- reset role;
- if (select delivery_zone<>'La Plata' or buyer_iva_request<>'con_iva'
-     from cotironda_private.round_requests_d064 where round_id=v_round)
- then raise exception 'd064_context_lost';end if;
- if (select count(*) from cotironda_private.round_items_v1 where round_id=v_round)<>2
- then raise exception 'd064_items_missing';end if;
- if (select count(*) from cotironda_private.rounds_v1 where buyer_org_id=
-  'aaaaaaaa-0015-4015-8015-000000000655')<>1
- then raise exception 'd064_duplicate_round';end if;
- set role authenticated;
- -- SQL performs one transaction and rejects all-or-nothing inputs.
- for v_bad in select true loop
-  exit; -- status resets for next validations
- end loop;
 end;$case$;
+reset role;
+select ci_helpers.assert_true(
+ (select count(*)=1 from cotironda_private.round_requests_d064
+  where buyer_org_id='aaaaaaaa-0015-4015-8015-000000000655'
+    and delivery_zone='La Plata' and buyer_iva_request='con_iva'),
+ 'd064_preserves_delivery_zone_and_iva');
+select ci_helpers.assert_true(
+ (select count(*)=2 from cotironda_private.round_items_v1
+  where round_id=(select round_id from cotironda_private.round_requests_d064
+    where request_key='cccccccc-0015-4015-8015-000000000657')),
+ 'd064_two_ordered_items');
+select ci_helpers.assert_true(
+ (select count(*)=1 from cotironda_private.rounds_v1
+  where buyer_org_id='aaaaaaaa-0015-4015-8015-000000000655'),
+ 'd064_no_duplicate_round');
+set local role authenticated;
 -- invalid and forged values do not create rounds and return SQLSTATEs.
 create function pg_temp.fail_d064(cmd text,expected text)
 returns void language plpgsql as $fn$
