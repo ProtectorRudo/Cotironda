@@ -146,6 +146,12 @@ jobs:
         run: |
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/106_dev_rollout_security_gate.sql
+      - name: D047 outbox privada de respuestas pendientes (solo PostgreSQL CI)
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_reply_outbox_d047.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/107_whapi_reply_outbox_d047.sql
+
       - name: Preparar Node para E2E real PostgreSQL
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
