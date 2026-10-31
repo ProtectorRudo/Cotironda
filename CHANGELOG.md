@@ -553,3 +553,9 @@
 - Job PostgreSQL17 prepara login CI de mínimo privilegio y claves HMAC/AES y webhook efímeras; prueba con Node el recorrido completo D027→D029→D030→D028 y reenvíos/bajas entre conexiones.
 - Prueba que rol gateway no puede SELECT de tablas ni UPDATE de rondas; SQL administrador inspecciona registros cifrados y BAJA. Datos sintéticos eliminados al destruir el contenedor de CI, sin alterar historial de 12 migraciones ni DEV/producción.
 - Requiere cerrar package-lock, CI verde y auditoría antes de habilitar nada. Docs/95, PR #164.
+
+## [Sin publicar — D032 / Issue #165: AES-GCM con key-id persistente]
+- Nueva columna privada `crypto_key_id` con etiqueta `legacy_d029` para filas antiguas, función keyed NOLOGIN con permisos EXECUTE-only y colisión de replay si cambia key-id; la ruta D028 legacy no se elimina.
+- Broker D029 acepta clave activa y clave(s) antiguas solo de lectura; el nuevo key-id queda autenticado en AAD. Gateway usa sentencia SQL parametrizada distinta para inserciones versionadas.
+- Pruebas Node de rotación entre generaciones, tampering AAD, IDs inválidos y lectura histórica; SQL PG17 y E2E Node→PG con dos generaciones, sin cambiar HMAC de identidad ni clave de huella.
+- Sin instalación DEV, Whapi, OpenAI, secretos ni despliegue de producción. Ver docs/96, PR #166.
