@@ -656,3 +656,7 @@
 ## [Sin publicar — D054 / Issue #211: worker Whapi server-only y prueba fake transport]
 - Orquestador `src/server/whapi-send-worker-d054.ts` para reclamar D047, resolver mensaje desde backend confiable, confirmar D053 `begin_send` con commit antes de ejecutar un transporte inyectado, registrar HMAC del ID de salida o marcar `uncertain` sin duplicar. No se implementa cliente HTTP ni existe ruta de producción.
 - Rol sender `cotironda_reply_sender_d054` NOLOGIN con permiso mínimo y sin reconciliación/SELECT, 11 casos unitarios adversariales y E2E Node/PostgreSQL17 con transporte simulado, tres escenarios e inspección SQL. Docs/117; Whapi/IA real y backup/restore DEV #175 aún pendientes.
+
+## [Sin publicar — D055 / Issue #213: Whapi.Cloud HTTP preparado, bloqueado por defecto]
+- Adaptador server-only para POST /messages/text HTTPS, Authorization Bearer inyectada, destinatarios allowlist, autorizador de cupo obligatorio, sin global fetch ni retries, deadline 5 s, redirects prohibidos, JSON respuesta limitada a 16 KiB. Acepta `sent:true` + ID externo válido de Whapi y `pending/sent/delivered/read` como acuse de transporte **sin** inferir lectura; D054 registra HMAC o `uncertain` ante timeout/ambigüedad.
+- Pruebas con fetch fake de credenciales, allowlist, límites, status, HTTP 429/errores, JSON malformado y composición con D054. Ningún token, envío ni migración real. Docs/118. Gate backup/restore DEV #175 vigente.
