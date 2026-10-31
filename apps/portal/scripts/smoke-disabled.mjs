@@ -54,6 +54,14 @@ try{
  assert.match(ofertasHtml,/Datos inventados para probar la interfaz/);
  assert.match(ofertasHtml,/Cotizaciones claras/);
  assert.match(ofertasHtml,/Sin compras|SIN COMPRAS|no realiza compras/i);
+ assert.doesNotMatch(ofertasHtml,/IVA y flete incluidos|IVA incluido|flete incluido/i,
+   'No atribuir IVA ni flete incluido por defecto');
+ assert.match(ofertasHtml,/Ver aclaraciones de IVA y flete/,
+   'IVA y transporte se muestran solo en detalles');
+ assert.match(ofertasHtml,/IVA: sin aclarar/,
+   'Si falta IVA debe avisar que no fue aclarado');
+ assert.match(ofertasHtml,/Flete: sin aclarar/,
+   'Si falta flete no debe anunciar transporte gratis');
  assert.doesNotMatch(ofertasHtml,/action="\/api\//,'La comparación no debe enviar un formulario');
  assert.equal((await get('/probar/ofertas',{method:'POST'})).status,405,
    'El ejemplo de ofertas no debe aceptar adjudicaciones HTTP');
