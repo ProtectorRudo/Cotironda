@@ -150,6 +150,73 @@ begin
   or cotironda_private.whapi_authorize_invite_d070(
   v_id,'d065_ci',repeat('b',64))
  then raise exception 'd070_prehttp_identity_incorrect';end if;
+ -- CI-only transaction-local identifiers; no plaintext phone or secrets.
+ perform pg_catalog.set_config('cotironda.ci_d081_job',v_id::text,true);
+ perform pg_catalog.set_config('cotironda.ci_d081_lease',v_lease::text,true);
+end;$start$;
+reset role;
+
+-- MVP-032: after D070 BEGIN has committed conceptually, the final
+-- authorize RPC MUST notice catalog changes and opt-out BEFORE Whapi HTTP.
+-- The production sender calls this RPC in a separate transaction.
+update public.supplier_products set product_name='Cemento CPN 25 kg'
+ where id='eeeeeeee-0016-4016-8016-000000000662';
+set local role cotironda_invite_gateway_d070;
+do $catalog_changed_prehttp$
+begin
+ if cotironda_private.whapi_authorize_invite_d070(
+    pg_catalog.current_setting('cotironda.ci_d081_job')::uuid,
+    'd065_ci',repeat('a',64))
+ then raise exception 'd081_stale_catalog_authorized_after_begin';end if;
+end;$catalog_changed_prehttp$;
+reset role;
+update public.supplier_products set product_name='Cemento CPC 50 kg'
+ where id='eeeeeeee-0016-4016-8016-000000000662';
+set local role cotironda_invite_gateway_d070;
+do $catalog_restored_prehttp$
+begin
+ if not cotironda_private.whapi_authorize_invite_d070(
+    pg_catalog.current_setting('cotironda.ci_d081_job')::uuid,
+    'd065_ci',repeat('a',64))
+ then raise exception 'd081_valid_catalog_not_authorized';end if;
+end;$catalog_restored_prehttp$;
+reset role;
+update public.supplier_products set is_active=false
+ where id='eeeeeeee-0016-4016-8016-000000000662';
+set local role cotironda_invite_gateway_d070;
+do $catalog_deactivated_prehttp$
+begin
+ if cotironda_private.whapi_authorize_invite_d070(
+    pg_catalog.current_setting('cotironda.ci_d081_job')::uuid,
+    'd065_ci',repeat('a',64))
+ then raise exception 'd081_inactive_catalog_authorized_after_begin';end if;
+end;$catalog_deactivated_prehttp$;
+reset role;
+update public.supplier_products set is_active=true
+ where id='eeeeeeee-0016-4016-8016-000000000662';
+update cotironda_private.whapi_contacts_v1
+ set opted_out_at=pg_catalog.clock_timestamp()
+ where channel_id='d065_ci' and chat_key=repeat('a',64);
+set local role cotironda_invite_gateway_d070;
+do $contact_optout_prehttp$
+begin
+ if cotironda_private.whapi_authorize_invite_d070(
+    pg_catalog.current_setting('cotironda.ci_d081_job')::uuid,
+    'd065_ci',repeat('a',64))
+ then raise exception 'd081_late_optout_authorized_after_begin';end if;
+end;$contact_optout_prehttp$;
+reset role;
+update cotironda_private.whapi_contacts_v1 set opted_out_at=null
+ where channel_id='d065_ci' and chat_key=repeat('a',64);
+set local role cotironda_invite_gateway_d070;
+do $resume_and_finish$
+declare v_id uuid;v_lease uuid;r jsonb;
+begin
+ v_id:=pg_catalog.current_setting('cotironda.ci_d081_job')::uuid;
+ v_lease:=pg_catalog.current_setting('cotironda.ci_d081_lease')::uuid;
+ if not cotironda_private.whapi_authorize_invite_d070(
+    v_id,'d065_ci',repeat('a',64))
+ then raise exception 'd081_optout_reset_does_not_restore_authorization';end if;
  if cotironda_private.whapi_claim_invite_d070() is not null then
   raise exception 'd070_inflight_released';end if;
  begin
@@ -161,7 +228,7 @@ begin
  if r->>'state'<>'uncertain' then raise exception 'd070_uncertain_failed';end if;
  if cotironda_private.whapi_claim_invite_d070() is not null then
   raise exception 'd070_uncertain_requeued';end if;
-end;$start$;
+end;$resume_and_finish$;
 reset role;
 select ci_helpers.assert_true(
  (select count(*)=1 and coalesce(sum(reserved_units),0)=1
