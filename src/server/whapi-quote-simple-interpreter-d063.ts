@@ -81,7 +81,7 @@ export const interpretarCotizacionSimpleD063:InterpreteCotizacionD061=
        typeof it.unit!=='string'||!names[it.unit]?.includes(unit))return false;
     const tokens=it.itemId.split('_').filter((w:string)=>
       /^[a-z]{4,}$/u.test(w)&&!['item','producto','material','generico'].includes(w));
-    return tokens.some(w=>contents.has(w));
+    return tokens.some((w:string)=>contents.has(w));
    });
    // With multiple cement products, a generic token is insufficient.
    // A brand/product-specific token may disambiguate, but cannot infer it.
