@@ -231,3 +231,6 @@ Se crea orquestador de servidor para reservar respuesta D047, confirmar estado D
 
 ### 31/10/2026 — D055 adaptador HTTP Whapi preparado sin activación
 Implementada interfaz POST Whapi.Cloud con token, lista de destinatarios, cupo y consentimiento inyectados desde futuro backend, guardado por D054/D053 para no reenviar ante timeout. La respuesta `pending` es aceptación del transporte, nunca entrega. Se probó con `fetcher` ficticio y sin red. Para piloto faltan workers de secretos, permisos, presupuesto durable por empresa, verificación con teléfonos consentidos y copia/restore real DEV (#175). Ver docs/118.
+
+### 31/10/2026 — D056 autorización persistente de costos y consentimiento, solo CI
+Cupo diario, mensual y presupuesto conservador por empresa compradora/canal, política inicialmente desactivada y ledger único por trabajo. La transición D053 `not_started→in_flight` se rechaza si no puede reservar costo en la misma transacción; autorización de destinatario compara el HMAC D029 contra el chat de D028 y revalida BAJA justo antes de HTTP D055. No equivale a facturación real de Whapi. Falta calibrar precios, proveedor de secretos, política admin auditada, piloto consentido y backup/restore DEV #175. Ver docs/119.
