@@ -7,12 +7,12 @@ import { spawn } from 'node:child_process';
 import { createWriteStream } from 'node:fs';
 import { mkdir, lstat, readdir, unlink } from 'node:fs/promises';
 import { dirname, isAbsolute, join, parse, relative, resolve, sep } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { pathToFileURL, fileURLToPath } from 'node:url';
 import { pipeline } from 'node:stream/promises';
 import { checkBundle, PIECES, PROJECT_REF } from './verify-encrypted-dev-backup-d039.mjs';
 import { validateDevDsn } from './check-local-dev-backup-d041.mjs';
 
-const REPO_ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..', '..');
+const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const AGE_RECIPIENT = /^age1[023456789acdefghjklmnpqrstuvwxyz]{58}$/;
 const fail = code => { throw new Error('MVP003_' + code); };
 const EXPORTS = Object.freeze([
