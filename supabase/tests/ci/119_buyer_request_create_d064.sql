@@ -68,11 +68,8 @@ begin
    'Rosario','con_iva',v_input);
  exception when unique_violation then v_bad:=true;end;
  if not v_bad then raise exception 'd064_changed_replay_accepted';end if;
- -- The buyer is not asked to choose suppliers, and no Whapi is sent.
- if (select count(*) from cotironda_private.round_invites_v1
-     where round_id=v_round)<>0
- or (select count(*) from cotironda_private.whapi_reply_jobs_d047
-     where round_id=v_round)<>0 then raise exception 'd064_fake_invites_sent';end if;
+ -- Buyer cannot SELECT the private invitation/outbox tables:
+ -- a privileged CI assertion after RESET ROLE proves no invitation exists.
 end;$case$;
 reset role;
 select ci_helpers.assert_true(
@@ -89,6 +86,16 @@ select ci_helpers.assert_true(
  (select count(*)=1 from cotironda_private.rounds_v1
   where buyer_org_id='aaaaaaaa-0015-4015-8015-000000000655'),
  'd064_no_duplicate_round');
+select ci_helpers.assert_true(
+ (select count(*)=0 from cotironda_private.round_invites_v1
+  where round_id=(select round_id from cotironda_private.round_requests_d064
+    where request_key='cccccccc-0015-4015-8015-000000000657')),
+ 'd064_no_supplier_invites_sent');
+select ci_helpers.assert_true(
+ (select count(*)=0 from cotironda_private.whapi_reply_jobs_d047
+  where round_id=(select round_id from cotironda_private.round_requests_d064
+    where request_key='cccccccc-0015-4015-8015-000000000657')),
+ 'd064_no_whatsapp_side_effects');
 set local role authenticated;
 -- invalid and forged values do not create rounds and return SQLSTATEs.
 create function pg_temp.fail_d064(cmd text,expected text)
