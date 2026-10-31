@@ -76,7 +76,7 @@ function autenticarClaves(keys:ClavesPrivadasWhapi):ClavesPrivadasWhapi{
 export function construirBrokerWhapiPrivado(config:ConfigBrokerWhapi):{
   dependencias:DependenciasWhapiEntrada;
   verificarContenido:(d:EntradaCifradaD028)=>Readonly<{
-    tipo:Tipo;texto:string|null;marcaTiempoUnix:number;
+    tipo:Tipo;texto:string|null;marcaTiempoUnix:number;quotedMessageId?:string;
   }>;
 }{
   if(!config||!CHANNEL.test(config.channel)||
@@ -106,9 +106,11 @@ export function construirBrokerWhapiPrivado(config:ConfigBrokerWhapi):{
     return mac(keys.identidadHmac,['cotironda','msg',1,config.channel,messageId]);
   }
   function fingerprint(chatId:string,msgId:string,tipo:string,
-    texto:string|null,when:number):string{
+    texto:string|null,when:number,quotedMessageId?:string):string{
+    // Legado D029 conserva el HMAC anterior para entradas SIN cita.
     return mac(keys.huellaHmac,['cotironda','payload',1,config.channel,
-      chatId,msgId,tipo,texto,when]);
+      chatId,msgId,tipo,texto,when,
+      ...(quotedMessageId?['quoted',quotedMessageId]:[])]);
   }
   const dependencias:DependenciasWhapiEntrada={
     habilitado:config.habilitado,canalId:config.channel,
@@ -133,8 +135,12 @@ export function construirBrokerWhapiPrivado(config:ConfigBrokerWhapi):{
       // El proveedor y ronda del callback D027 NO son una autorización SQL.
       // D028 los deduce de su vínculo privado + invitación única vigente.
       const cKey=chatKey(msg.chatId),mKey=messageKey(msg.mensajeId);
+      if(msg.quotedMessageId!==undefined&&
+        (msg.tipo!=='text'||typeof msg.quotedMessageId!=='string'||
+         !MSG.test(msg.quotedMessageId)))rechazar();
       const plain=Buffer.from(JSON.stringify({tipo:msg.tipo,texto:msg.texto,
-        marcaTiempoUnix:msg.marcaTiempoUnix}),'utf8');
+        marcaTiempoUnix:msg.marcaTiempoUnix,
+        ...(msg.quotedMessageId?{quotedMessageId:msg.quotedMessageId}:{})}),'utf8');
       if(plain.length>8192)rechazar();
       const nonce=randomBytes(12);
       const cipher=createCipheriv('aes-256-gcm',keys.contenidoAes,nonce);
@@ -144,7 +150,7 @@ export function construirBrokerWhapiPrivado(config:ConfigBrokerWhapi):{
       const result=await config.almacen.registrarEntrada({
         channel:config.channel,chatKey:cKey,messageKey:mKey,
         fingerprint:fingerprint(msg.chatId,msg.mensajeId,msg.tipo,
-          msg.texto,msg.marcaTiempoUnix),
+          msg.texto,msg.marcaTiempoUnix,msg.quotedMessageId),
         kind:msg.tipo,ciphertext,nonce,tag,sourceUnix:msg.marcaTiempoUnix,
         cryptoKeyId:keyId
       });
@@ -187,11 +193,17 @@ export function construirBrokerWhapiPrivado(config:ConfigBrokerWhapi):{
     const obj:unknown=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(out));
     if(!obj||typeof obj!=='object'||Array.isArray(obj))rechazar();
     const v=obj as Record<string,unknown>;
-    if(Object.keys(v).sort().join(',')!=='marcaTiempoUnix,texto,tipo'||
+    const props=Object.keys(v).sort().join(',');
+    if(!['marcaTiempoUnix,texto,tipo',
+      'marcaTiempoUnix,quotedMessageId,texto,tipo'].includes(props)||
       v.tipo!==d.kind||v.marcaTiempoUnix!==d.sourceUnix||
       !(v.texto===null||typeof v.texto==='string'))rechazar();
+    if('quotedMessageId' in v&&
+      (d.kind!=='text'||typeof v.quotedMessageId!=='string'||
+       !MSG.test(v.quotedMessageId)))rechazar();
     return {tipo:d.kind,texto:v.texto as string|null,
-      marcaTiempoUnix:d.sourceUnix};
+      marcaTiempoUnix:d.sourceUnix,
+      ...('quotedMessageId' in v?{quotedMessageId:v.quotedMessageId as string}:{})};
   }
   return {dependencias,verificarContenido};
 }
