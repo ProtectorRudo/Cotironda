@@ -314,6 +314,13 @@ jobs:
           SQL
 
 
+      - name: D056 cupos y reserva económica atomica antes de HTTP (solo PG17 CI)
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_send_limits_atomic_d056.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/112_whapi_send_limits_atomic_d056.sql
+
+
   migrations-from-zero:
     name: Reconstruir historial 12 migraciones en PostgreSQL limpio
     runs-on: ubuntu-latest
