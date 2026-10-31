@@ -46,7 +46,26 @@ export function autenticacionPreviewSoloIngreso(env:VariablesPortal):boolean {
    (!env.COTIRONDA_SITE_ORIGIN||origenSeguro(env.COTIRONDA_SITE_ORIGIN));
 }
 
+/**
+ * MVP-026 / D074: a voluntary supplier may log in on the integrated
+ * Preview branch while GENERAL COMPANY REGISTRATION STAYS CLOSED.
+ *
+ * No browser/backend token grants access to another supplier. D072 SQL
+ * separately rechecks the live session and manager/owner membership.
+ * All toggles must be server-side, explicit and restricted to the integrated
+ * candidate branch; never authorizes public signup or a production deploy.
+ */
+export function autenticacionPreviewProveedorD074(env:VariablesPortal):boolean {
+ return env.COTIRONDA_SUPPLIER_WA_UI_ENABLED==='true' &&
+   env.COTIRONDA_AUTH_PREVIEW_ENABLED==='true' &&
+   env.VERCEL_GIT_COMMIT_REF==='integration/mvp-piloto-20261031' &&
+   env.VERCEL_ENV==='preview' &&
+   env.COTIRONDA_REGISTRATION_ENABLED==='false' &&
+   origenSeguro(env.COTIRONDA_SITE_ORIGIN) &&
+   credencialesCotironda(env);
+}
 /** Credenciales reales habilitadas para prueba de Auth sin activar empresas. */
 export function autenticacionPortalHabilitada(env:VariablesPortal):boolean {
- return portalHabilitado(env)||autenticacionPreviewSoloIngreso(env);
+ return portalHabilitado(env)||autenticacionPreviewSoloIngreso(env)||
+   autenticacionPreviewProveedorD074(env);
 }
