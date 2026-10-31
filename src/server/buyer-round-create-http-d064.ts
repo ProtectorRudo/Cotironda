@@ -5,6 +5,7 @@
  * The SQL RPC rechecks live Auth session and active company membership.
  */
 import {rondasLecturaHabilitada,type ActorLectura} from './rondas-lectura-http.ts';
+import {origenSeguro} from './portal-entorno.ts';
 
 export type BuyerRoundInputD064=Readonly<{
  requestId:string;companyId?:string|null;deliveryZone:string;
