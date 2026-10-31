@@ -67,6 +67,9 @@ begin
  if r->>'status'<>'programada' or r->>'repeated'<>'false' or
     r->>'roundId' is null
  then raise exception 'd079_buyer_round_not_created: %',r;end if;
+ -- Preserve the result as a transaction-local CI-only setting. The private
+ -- matcher gateway receives the round ID; it must never SELECT buyer ledger.
+ perform pg_catalog.set_config('cotironda.ci_round_id',r->>'roundId',true);
 end;$buyer$;
 reset role;
 
@@ -75,8 +78,7 @@ set local role cotironda_match_gateway_d065;
 do $before_dictionary$
 declare r jsonb;v_round uuid;
 begin
- select round_id into v_round from cotironda_private.round_requests_d064
-  where request_key='cccccccc-0030-4030-8030-000000000701';
+ v_round:=pg_catalog.current_setting('cotironda.ci_round_id')::uuid;
  r:=cotironda_private.prepare_supplier_invites_d065(v_round,'d079_ci');
  if r->>'state'<>'needs_verified_location' or r->>'invited'<>'0'
  then raise exception 'd079_routed_without_trusted_dictionary: %',r;end if;
@@ -114,8 +116,7 @@ set local role cotironda_match_gateway_d065;
 do $two_corralones$
 declare r jsonb;v_round uuid;
 begin
- select round_id into v_round from cotironda_private.round_requests_d064
-  where request_key='cccccccc-0030-4030-8030-000000000701';
+ v_round:=pg_catalog.current_setting('cotironda.ci_round_id')::uuid;
  r:=cotironda_private.prepare_supplier_invites_d065(v_round,'d079_ci');
  if r->>'state'<>'prepared' or r->>'invited'<>'2' or r->>'messagesSent'<>'0'
  then raise exception 'd079_two_corralones_failed: %',r;end if;
@@ -145,8 +146,7 @@ set local role cotironda_match_gateway_d065;
 do $packet_exact_buyer_text$
 declare v_round uuid;v_packet jsonb;v_supplier uuid;
 begin
- select round_id into v_round from cotironda_private.round_requests_d064
-  where request_key='cccccccc-0030-4030-8030-000000000701';
+ v_round:=pg_catalog.current_setting('cotironda.ci_round_id')::uuid;
  foreach v_supplier in array array[
   'bbbbbbbb-0030-4030-8030-000000000702'::uuid,
   'bbbbbbbb-0030-4030-8030-000000000703'::uuid] loop
@@ -170,8 +170,7 @@ set local role cotironda_invite_gateway_d070;
 do $dry_queue$
 declare r jsonb;v_round uuid;
 begin
- select round_id into v_round from cotironda_private.round_requests_d064
-  where request_key='cccccccc-0030-4030-8030-000000000701';
+ v_round:=pg_catalog.current_setting('cotironda.ci_round_id')::uuid;
  r:=cotironda_private.whapi_prepare_commercial_round_d071(v_round,'d079_ci');
  if r->>'state'<>'queued_without_sending'
   or r->>'matchedSuppliers'<>'2'
