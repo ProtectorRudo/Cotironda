@@ -640,3 +640,7 @@
 ## [Sin publicar — D050 / Issue #203: cita Whapi cifrada y verificación de respuesta]
 - Receptor D027 conserva únicamente `context.quoted_id` de mensajes de texto, con validación estricta, y broker D029 lo guarda cifrado AES-256-GCM y lo liga a fingerprint HMAC sin cambiar tablas ni romper mensajes legacy. No confía en quoted_content ni quoted_author.
 - Nuevo módulo offline prepara intención de confirmación D049 solo si texto es `Confirmo`, el mensaje ya fue persistido, el ID citado corresponde por HMAC a una salida aceptada D047 de igual canal/chat/proveedor/ronda, y el evento de confirmación es determinista/antiduplicado. Pruebas adversariales en tests/unit/whapi-quoted-confirmation-d050.test.mjs; docs/113. Sin worker real, sin llamadas Whapi/IA, sin merge ni despliegue, recuperación DEV #175 pendiente.
+
+## [Sin publicar — D051 / Issue #205: puerto PostgreSQL privado de confirmación]
+- Dos RPC internas SECURITY DEFINER NOLOGIN/RLS para leer mensaje entrante AES-GCM cifrado y acuse D047 aceptado más origen D048, sin texto/chat/teléfono claro; índice único de acuse por canal evita asociar un mensaje saliente a dos jobs.
+- Adaptador server-only SQL parametrizado con comprobación de tipos/buffers y conexión inyectada para D029/D050/D049. Nuevas pruebas unitarias adversariales y SQL en PostgreSQL17 CI, sin worker ni conector Whapi real, sin Supabase DEV/producción ni consumo IA. Ver docs/114; recuperación real #175 sigue abierta.
