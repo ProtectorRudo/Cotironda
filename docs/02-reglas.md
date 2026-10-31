@@ -63,3 +63,6 @@ El importe declarado por un proveedor **SIEMPRE debe preservarse y quedar visibl
 
 ## MVP-012 — Reintentos internos sin fricción
 Cada texto de proveedor guardado en el inbox cifrado genera un trabajo privado. Se procesa por proveedor y ronda en orden (una corrección no debe adelantarse a la primera cotización); si falla la infraestructura, retry máximo cuatro intentos y pausa acotada, sin duplicar una versión ya persistida. Si no se puede atribuir precio con evidencia, revisión **interna**; no pedir «Confirmo», no inventar monto. Sólo marcar recibida cuando PostgreSQL comprueba que D060 guardó la evidencia. Aún laboratorio PG17, ver docs/132.
+
+## MVP-014 — Visibilidad real con cero fricción
+La pantalla del comprador debe mostrar **ofertas realmente registradas** de sus rondas, no sustituirlas por demos. Se entra desde «Mis solicitudes», sin copiar UUIDs, y se muestran alias anónimos, artículos con y sin precio, moneda, unidad, cantidades y condiciones comerciales declaradas o «no informado». No publicar un total, ranking ni adjudicación si falta equivalencia/cobertura/IVA/flete. La lectura exige sesión Supabase vigente, membresía actual y flags exclusivos de Preview. Hasta backup real DEV #175, SQL y rutas inhabilitados en entorno alojado. Ver docs/134.
