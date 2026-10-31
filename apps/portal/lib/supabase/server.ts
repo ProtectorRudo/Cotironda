@@ -6,7 +6,7 @@ export function entornoAuthConfigurado(): boolean {
   return autenticacionPortalHabilitada(process.env);
 }
 export function entornoAuthSoloIngresoPreview(): boolean {
-  return autenticacionPreviewSoloIngreso(process.env);
+  return autenticacionPreviewSoloIngreso(process.env)||autenticacionPreviewProveedorD074(process.env);
 }
 export async function clienteSupabaseServidor() {
   if (!entornoAuthConfigurado()) throw new Error('auth_no_configurada');
