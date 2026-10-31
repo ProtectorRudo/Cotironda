@@ -652,3 +652,7 @@
 ## [Sin publicar — D053 / Issue #209: evitar duplicación de salida tras timeout]
 - Hallazgo: D047 reclamaba lease expirado aunque el worker podía haber comenzado HTTP, arriesgando WhatsApp duplicado. Migración D053 en PG17 CI suma fase de envío iniciada antes de red, marca incertidumbre si crash/timeout, excluye esos trabajos de reclamos automáticos, concilia por acuse/evidencia HMAC o cancela sin reenviar.
 - D047 finish(true) ya no es permitido tras D053; un fallo pre-HTTP conocido puede reintentarse bajo presupuesto. SQL privado roles NOLOGIN RLS, pruebas de expiración, token incorrecto, BAJA, rollback, estado incierto y reintento sin envío. Docs/116. No conectado a Whapi real; sin cambios DEV/prod, gate #175 pendiente.
+
+## [Sin publicar — D054 / Issue #211: worker Whapi server-only y prueba fake transport]
+- Orquestador `src/server/whapi-send-worker-d054.ts` para reclamar D047, resolver mensaje desde backend confiable, confirmar D053 `begin_send` con commit antes de ejecutar un transporte inyectado, registrar HMAC del ID de salida o marcar `uncertain` sin duplicar. No se implementa cliente HTTP ni existe ruta de producción.
+- Rol sender `cotironda_reply_sender_d054` NOLOGIN con permiso mínimo y sin reconciliación/SELECT, 11 casos unitarios adversariales y E2E Node/PostgreSQL17 con transporte simulado, tres escenarios e inspección SQL. Docs/117; Whapi/IA real y backup/restore DEV #175 aún pendientes.
