@@ -72,3 +72,6 @@ Con datos estructurados fiables, la solicitud del comprador puede crear una rond
 
 ## MVP-016 — proveedores por rubro, zona y opt-in
 El comprador no elige proveedores manualmente. Cotironda comprueba rubro registrado (no inferido de nombres), zona de entrega con provincia/ciudad verificada, comercio habilitado, consentimiento Whapi actual y ausencia de BAJA. No invitar negocios fuera de zona; las ofertas parciales son válidas y se rotulan. Cada proveedor recibe solo artículos de sus rubros. Las invitaciones preparadas NO son WhatsApp enviado; al momento del envío se revalidarán consentimiento y cobertura. Ver docs/136.
+
+## MVP-017 — Mensaje por proveedor, sin envío prematuro
+Cotironda prepara cada solicitud WhatsApp desde la lista D065 específica del proveedor, usando descripciones de producto curadas, cantidades, unidad y zona. Solo añade requerimiento de IVA cuando el comprador lo aclaró; no pide «Confirmo». Antes de preparar debe revalidar rubro habilitado, aceptación, zona y consentimiento/BAJA, y antes de ENVIAR debe volver a comprobarlos (la vista previa no es una autorización de envío). Nunca exponer teléfonos a clientes ni enviar solicitudes a proveedores de otro rubro. Hasta backup #175 y sender seguro, no hacer llamadas externas. Ver docs/137.

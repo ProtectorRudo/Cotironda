@@ -736,3 +736,6 @@
 
 ### 31/10/2026 — MVP-016: preparación de proveedores aptos sin mensajes
 - PostgreSQL17 D065 curado rubro→producto y localidad→provincia/ciudad, proveedores por categoría habilitada, área, aceptación y opt-in Whapi sin BAJA, cada invitación con scope de líneas, alias anónimo y máximo 10. Idempotencia transaccional por ronda/canal, no apertura ni WhatsApp, controles RLS y test PG17. Backup real DEV #175 sigue pendiente. Ver docs/136.
+
+### 31/10/2026 — MVP-017: paquetes WhatsApp por proveedor con rubro y consentimiento, SIN ENVÍO
+- Función privada D066 de vista previa con scope D065, etiqueta curada, zona, cantidad, IVA explícito y revalidación de contacto/BAJA, rubro y área. Generador TS sin red. Tests PostgreSQL17 con BAJA posterior y zona revocada + casos maliciosos en unitarias. No envío, no nuevas tablas en Supabase DEV, #175 pendiente. Ver docs/137.
