@@ -188,4 +188,6 @@ begin
  if not failed then raise exception 'd065_cross_channel_replay_accepted';end if;
 end;$wrong_channel$;
 reset role;
+-- D066 tests reuse this synthetic transaction (no DEV).
+\ir 121_supplier_packet_d066.sql
 rollback;
