@@ -30,7 +30,7 @@ const negated=/\b(?:consultar|preguntar|confirmar|consultanos|verificar|duda|dud
 const uncertainty=/\b(?:si incluye|si esta incluido|si esta incluido|puede incluir|podria incluir|tal vez|quizas|pendiente de confirmar)\b/u;
 function estadoLineaIva(original:string):'incluido'|'no_incluido'|null{
  const s=normal(original);
- if(!/\biva\b/u.test(s)||negated.test(s)||uncertainty.test(s))return null;
+ if(/[¿?]/u.test(original)||!/\biva\b/u.test(s)||negated.test(s)||uncertainty.test(s))return null;
  const excl=/(?:\b(?:sin|no incluye|no incluido|no se incluye|excluye|excluido|mas|adicional)\s+(?:el\s+)?iva\b|\biva\s+(?:no incluido|no se incluye|excluido|aparte|adicional)\b)/u;
  const incl=/(?:\biva\s+(?:incluido|incluida|incl\.)\b|\b(?:incluye|incluyen|incluido|incluida|con)\s+(?:el\s+)?iva\b|\bprecio(?:s)?\s+(?:final(?:es)?\s+)?(?:con|c\/)\s*iva\b)/u;
  const hasExcl=excl.test(s),hasIncl=incl.test(s);
@@ -38,7 +38,7 @@ function estadoLineaIva(original:string):'incluido'|'no_incluido'|null{
 }
 function estadoLineaFlete(original:string):'incluido'|'sin_cargo'|'adicional'|'a_convenir'|null{
  const s=normal(original);
- if(!/\b(?:flete|envio|entrega|transporte)\b/u.test(s))return null;
+ if(/[¿?]/u.test(original)||!/\b(?:flete|envio|entrega|transporte)\b/u.test(s))return null;
  if(uncertainty.test(s)||/\b(?:no se sabe|sin aclarar|no aclarado|no informado|por definir)\b/u.test(s))return null;
  if(/\b(?:a convenir|a cotizar|a confirmar|consultar|consultanos|sujeto a cotizacion)\b/u.test(s))return 'a_convenir';
  const free=/(?:\b(?:flete|envio|transporte|entrega)\s+(?:sin cargo|gratis|gratuito|gratuita)\b|\b(?:sin cargo|gratis|gratuito|gratuita)\s+(?:el\s+)?(?:flete|envio|transporte|entrega)\b|\b(?:flete|envio)\s*:\s*(?:\$|ars\s*)?0(?:[.,]00)?\b)/u;
