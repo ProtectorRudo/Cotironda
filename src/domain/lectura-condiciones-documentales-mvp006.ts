@@ -33,7 +33,8 @@ function estadoLineaIva(original:string):'incluido'|'no_incluido'|null{
  if(/[¿?]/u.test(original)||!/\biva\b/u.test(s)||negated.test(s)||uncertainty.test(s))return null;
  const excl=/(?:\b(?:sin|no incluye|no incluido|no se incluye|excluye|excluido|mas|adicional)\s+(?:el\s+)?iva\b|\biva\s+(?:no incluido|no se incluye|excluido|aparte|adicional)\b)/u;
  const incl=/(?:\biva\s+(?:incluido|incluida|incl\.)\b|\b(?:incluye|incluyen|incluido|incluida|con)\s+(?:el\s+)?iva\b|\bprecio(?:s)?\s+(?:final(?:es)?\s+)?(?:con|c\/)\s*iva\b)/u;
- const hasExcl=excl.test(s),hasIncl=incl.test(s);
+ const sinNegacionDuplicada=s.replace(/\bno\s+(?:incluye|incluyen|incluido|incluida)\s+(?:el\s+)?iva\b/gu,'');
+ const hasExcl=excl.test(s),hasIncl=incl.test(sinNegacionDuplicada);
  return hasExcl===hasIncl?null:hasExcl?'no_incluido':'incluido';
 }
 function estadoLineaFlete(original:string):'incluido'|'sin_cargo'|'adicional'|'a_convenir'|null{
@@ -44,7 +45,8 @@ function estadoLineaFlete(original:string):'incluido'|'sin_cargo'|'adicional'|'a
  const free=/(?:\b(?:flete|envio|transporte|entrega)\s+(?:sin cargo|gratis|gratuito|gratuita)\b|\b(?:sin cargo|gratis|gratuito|gratuita)\s+(?:el\s+)?(?:flete|envio|transporte|entrega)\b|\b(?:flete|envio)\s*:\s*(?:\$|ars\s*)?0(?:[.,]00)?\b)/u;
  const excl=/(?:\b(?:flete|envio|transporte)\s+(?:aparte|adicional|no incluido|excluido|a cargo del comprador)\b|\b(?:sin|no incluye|no incluido|excluye)\s+(?:el\s+)?(?:flete|envio|transporte)\b)/u;
  const incl=/(?:\b(?:flete|envio|transporte)\s+(?:incluido|incluida)\b|\b(?:incluye|incluyen|incluido|incluida|con)\s+(?:el\s+)?(?:flete|envio|transporte)\b)/u;
- const matches=[free.test(s),excl.test(s),incl.test(s)];
+ const sinNegacionDuplicada=s.replace(/\bno\s+(?:incluye|incluyen|incluido|incluida)\s+(?:el\s+)?(?:flete|envio|transporte)\b/gu,'');
+ const matches=[free.test(s),excl.test(s),incl.test(sinNegacionDuplicada)];
  if(matches.filter(Boolean).length!==1)return null;
  return matches[0]?'sin_cargo':matches[1]?'adicional':'incluido';
 }
