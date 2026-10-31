@@ -632,3 +632,7 @@
 ## [Sin publicar — D048 / Issue #199: procedencia inbox→oferta para bloquear respuestas equivocadas]
 - SQL PostgreSQL CI con enlace de origen D028, evento de guardado D026, revisión y proveedor/ronda en la MISMA transacción; idempotencia y rechazo de replay distinto. Un trigger en outbox D047 rechaza respuesta si sólo comparte proveedor/ronda sin vínculo causal. Seguridad de funciones con roles NOLOGIN/RLS y sin acceso cliente ni secretos en datos.
 - Pruebas PG17 de falso origen, retroasociación indebida, empresa ajena, distinta revisión, opt-out y replay; documentación docs/111. No se conecta Whapi, no hay validación semántica de IA ni publicación DEV. Gate backup #175 permanece.
+
+## [Sin publicar — D049 / Issue #201: confirmación WhatsApp durable y versionada, solo CI]
+- Se añade transacción privada PostgreSQL que valida mensaje inbox, aceptación del transporte del borrador correcto, correlación con revisión D048, términos completos e idempotencia y llama al confirmador inmutable D026. Evidencia de mensaje→evento→versión bajo RLS, sin teléfonos ni texto; el hash de intención depende de futuro broker de confianza.
+- Pruebas PG17 de replay, otra empresa/chat, hash diferente, intento de confirmar antes de enviar, IVA desconocido, corrección, versión obsoleta y opt-out. **No significa que WhatsApp ya esté integrado, ni que SQL compruebe que alguien escribió «Confirmo» o que la oferta sea técnicamente equivalente.** Sin DB DEV ni producción, sin IA/Whapi, backup real #175 pendiente. Docs/112.
