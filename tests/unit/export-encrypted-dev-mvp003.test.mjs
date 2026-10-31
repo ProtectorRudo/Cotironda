@@ -94,3 +94,12 @@ test('MVP003 denies output directory that is readable by others', async () => fi
 test('MVP003 requires absolute output directory', async () => {
   await assert.rejects(exportDevEncrypted({directory:'backup',connectionUrl:url,recipient,spawnCommand:syntheticTools([])}), /MVP003_ABSOLUTE_DESTINATION_REQUIRED/);
 });
+test('MVP003 rejects any destination within repository checkout', async () => {
+  const { fileURLToPath } = await import('node:url');
+  const { dirname, resolve } = await import('node:path');
+  const repo = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
+  await assert.rejects(exportDevEncrypted({
+    directory:join(repo,'backup-should-not-exist'),connectionUrl:url,
+    recipient,spawnCommand:syntheticTools([]),
+  }), /MVP003_DESTINATION_INSIDE_REPOSITORY/);
+});
