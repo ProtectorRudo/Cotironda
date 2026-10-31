@@ -3,7 +3,7 @@
  * The server alone runs the user's SSR RPC; SQL D072 revalidates live Auth,
  * membership and quotas. No webhook, messaging, recipient or secret here.
  */
-import {autenticacionPortalHabilitada,origenSeguro}
+import {autenticacionPreviewProveedorD074,origenSeguro}
  from './portal-entorno.ts';
 import {crearEmisorEnlaceProveedorD072}
  from './whapi-supplier-self-enroll-d072.ts';
