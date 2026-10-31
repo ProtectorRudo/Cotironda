@@ -23,3 +23,11 @@ Los scripts `restore-mvp003-fingerprint.sql` y `restore-mvp003-assertions.sql` c
 **El Issue #175 sigue abierto** hasta: exportar un dump lógico auténtico de Supabase DEV a un destino cifrado fuera de GitHub; separar roles/esquema/datos y verificar el inventario de Auth/Storage/Vault, extensiones y Edge; restaurar en una instancia separada (sin activar jobs/red); comparar el esquema/datos con origen y evidencias RLS; documentar plan de reversión; verificar que el backup puede reproducir DEV y conservar su custodia.
 
 No significa que el cliente ya pueda comprar o cotizar por WhatsApp. No se fusiona, publica ni activa ninguna integración.
+
+## Hallazgo durante la primera ejecución y corrección segura
+
+La primera restauración real del CI falló en `COPY cotironda_private.offer_drafts_v1`: violación de `offer_drafts_v1_check`. La definición D024 incluye un `CHECK (check_quote_lines_v1(lines_snapshot,round_id))` y su función consulta otra tabla (`round_items_v1`). **Los CHECK que consultan filas de otra tabla no son seguros para dump/restore** porque el orden de carga puede ejecutar la validación antes de cargar las líneas referenciadas. La misma definición se había usado en `offer_versions_v1`.
+
+La corrección **únicamente dentro del entorno CI**, en `supabase/sql/round_offer_restore_safe_mvp003.sql`, reemplaza esos dos CHECK cruzados por dos triggers `BEFORE INSERT OR UPDATE` que invocan **la misma función de validación**. No relaja la verificación comercial: `supabase/tests/ci/113_restore_safe_offer_guards_mvp003.sql` intenta modificar un borrador y una versión con líneas vacías y exige que ambos sean rechazados; también valida todas las ofertas persistidas. PostgreSQL realiza `COPY` de datos antes de volver a instalar triggers en la restauración y la prueba posterior valida cada relación con las líneas de su ronda.
+
+**Importante:** la corrección **no está instalada en Supabase DEV/producción** y requiere revisión de migración antes del piloto; la diferencia y prueba aquí son un candidato de solución. No equivale a activar el circuito comercial ni a restaurar DEV real.
