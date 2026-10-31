@@ -171,10 +171,10 @@ begin
  for v_number in 0..v_count-1 loop
   v_line:=p_items->v_number;
   insert into cotironda_private.round_items_v1
-    (round_id,line_no,product_code,quantity,unit)
+    (round_id,line_no,product_code,quantity,unit,source_description)
    values(v_round,(v_line->>'line_no')::smallint,
     v_line->>'product_code',(v_line->>'quantity')::numeric(18,3),
-    v_line->>'unit');
+    v_line->>'unit',v_line->>'source_description');
  end loop;
  insert into cotironda_private.round_requests_d064
   (round_id,buyer_org_id,created_by,request_key,content_sha256,
