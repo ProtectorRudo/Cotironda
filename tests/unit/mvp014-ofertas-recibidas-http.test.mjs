@@ -113,10 +113,8 @@ test('MVP014 no mezcla dos versiones de proveedor ni repite mismo articulo',asyn
   [QUOTE,QUOTE],
   [QUOTE,{...QUOTE,line_no:2,quoted_unit_price:'200.00',currency:'USD'}],
  ]){
-  // Different currency in a single version is inconsistent; currently
-  // currency across lines must be checked by the next control.
+  // All rows of the same offer version must agree about currency/terms.
   const r=await get({leerOfertas:async()=>rows});
-  if(rows[1].currency==='USD')continue;
   assert.equal(r.status,503);
  }
 });
