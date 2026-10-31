@@ -198,3 +198,6 @@ Se agrega límite persistente y atómico de una reserva por ID de caso de benchm
 
 ### 30/10/2026 — D019: trazabilidad persistente de benchmark real (Issue #137)
 Se incorpora ledger privado de resultados de extracción y proveedor por caso, vinculado a las reservas D018; registra errores comerciales medibles y tokens, incluyendo origen de datos. El gateway registra luego de la inferencia y no reintenta si falla DB. Aún se requieren ensayos sobre cinco casos restantes y corpus diverso para validar calidad. Docs/82.
+
+### 31/10/2026 — D045 integración comercial solo simulada
+Se añadió un ensayo de comprador → tres rubros → proveedores seleccionados por catálogo/opt-in/zona → 3 cotizaciones ficticias con IVA/fletes → opciones completas con uno o dos proveedores. La línea de servicio no clasificada se retiene; presentación CPC de 25kg ante pedido 50kg se invita como consulta **nunca homologada automáticamente**. Las ofertas de ejemplo se declaran expresamente confirmadas y verificadas por el fixture, no por WhatsApp/IA. No se envían mensajes ni se adjudican compras. Etapas 02 y 03 siguen como desarrollo offline, sin desbloquear Etapa 01 o instalar D024 en DEV. Ver docs/108 y Issue #193.
