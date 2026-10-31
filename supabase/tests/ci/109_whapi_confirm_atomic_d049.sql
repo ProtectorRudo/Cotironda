@@ -8,7 +8,7 @@ begin
  begin execute p_query;
  exception when others then
    get stacked diagnostics v_msg=message_text;
-   if pg_catalog.position(p_fragment in v_msg)=0 then
+   if pg_catalog.strpos(v_msg,p_fragment)=0 then
      raise exception 'd049_wrong_error expected=% observed=%',p_fragment,v_msg;
    end if;
    v_did:=true;
