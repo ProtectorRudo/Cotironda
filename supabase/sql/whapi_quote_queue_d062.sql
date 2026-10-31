@@ -85,6 +85,27 @@ declare j cotironda_private.whapi_quote_queue_d062%rowtype;
  v_token uuid;
  v_now timestamptz:=pg_catalog.clock_timestamp();
 begin
+ -- Expired fourth lease cannot be claimed again; close it so it never blocks
+ -- later supplier messages. If D060 did commit, record DONE instead of DEAD.
+ with expired as (
+   select q.channel_id,q.message_key
+   from cotironda_private.whapi_quote_queue_d062 q
+   where q.status='leased' and q.attempts=4 and q.lease_until<=v_now
+   order by q.queued_at,q.channel_id,q.message_key
+   for update of q skip locked limit 20
+ )
+ update cotironda_private.whapi_quote_queue_d062 q
+ set status=case when exists(
+    select 1 from cotironda_private.whapi_price_sources_d060 s
+    where s.channel_id=q.channel_id and s.message_key=q.message_key
+   ) then 'done' else 'dead' end,
+   result_code=case when exists(
+    select 1 from cotironda_private.whapi_price_sources_d060 s
+    where s.channel_id=q.channel_id and s.message_key=q.message_key
+   ) then 'received' else 'max_attempts' end,
+   lease_token=null,lease_until=null,finished_at=v_now
+ from expired e
+ where q.channel_id=e.channel_id and q.message_key=e.message_key;
  select * into j from cotironda_private.whapi_quote_queue_d062 q
  where q.attempts<4
   and ((q.status='pending' and q.ready_at<=v_now)
@@ -136,7 +157,9 @@ begin
  if (p_result='received' and not v_has_offer)
  or (p_result in('no_price','not_eligible') and v_has_offer)
  then raise exception 'd062_receipt_state_mismatch' using errcode='42501';end if;
- if p_result='received' then
+ if p_result='received' or (p_result='retry' and v_has_offer) then
+  -- The write might have committed before a transport timeout.
+  -- Do not bill IA again or exhaust retries on an already recorded offer.
   v_status:='done';v_code:='received';
  elsif p_result='no_price' then
   v_status:='manual_review';v_code:='no_price';
