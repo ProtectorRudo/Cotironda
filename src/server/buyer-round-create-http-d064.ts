@@ -6,6 +6,7 @@
  */
 import {rondasLecturaHabilitada,type ActorLectura} from './rondas-lectura-http.ts';
 import {origenSeguro} from './portal-entorno.ts';
+import {identificarProducto} from '../domain/taxonomia-materiales.ts';
 
 export type BuyerRoundInputD064=Readonly<{
  requestId:string;companyId?:string|null;deliveryZone:string;
@@ -46,17 +47,17 @@ function validate(input:unknown):input is BuyerRoundInputD064{
  const seen=new Set<string>();
  for(let i=0;i<input.items.length;i++){
   const line:unknown=input.items[i];
-  if(!exact(line,ITEM_FIELDS,['source_description'])||
+  if(!exact(line,ITEM_FIELDS)||
     line.line_no!==i+1||typeof line.product_code!=='string'||
     !CODE.test(line.product_code)||seen.has(line.product_code)||
     typeof line.quantity!=='string'||!QTY.test(line.quantity)||
     typeof line.unit!=='string'||!UNITS.has(line.unit)||
-    (line.source_description!==undefined&&(
-     typeof line.source_description!=='string'||
+    (typeof line.source_description!=='string'||
      !SOURCE.test(line.source_description)||
      line.source_description.trim()!==line.source_description||
-     /https?:|www\.|\d{10,}/iu.test(line.source_description)
-    )))return false;
+     /https?:|www\.|\d{10,}/iu.test(line.source_description)||
+     identificarProducto(line.source_description)?.producto_id!==line.product_code
+    ))return false;
   seen.add(line.product_code);
  }
  return true;
