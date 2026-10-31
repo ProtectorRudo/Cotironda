@@ -364,6 +364,12 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_quote_inbox_read_d061.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/116_whapi_quote_read_d061.sql
 
+      - name: MVP-012 D062 cola durable con leases y reintentos (PG17 CI)
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_quote_queue_d062.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/117_whapi_quote_queue_d062.sql
+
       - name: MVP-003 restauracion PG17 de laboratorio a segunda base efimera sin DEV
         env:
           COTIRONDA_RESTORE_CI: 'true'
