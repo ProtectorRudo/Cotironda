@@ -599,3 +599,7 @@
 ## [Sin publicar — D040 / Issue #182: privacidad local del paquete de backup]
 - Auditoría de D039 halló falso nivel de confianza posible: ficheros cifrados o directorios con permisos públicos podían pasar las comprobaciones SHA256. D040 exige propiedad POSIX y modos privados 0700/0600, rechaza hardlinks y symlinks en cualquier ancestro y detecta cambios de inodo/tamaño/modo/marca temporal durante lectura. Rechazo en Windows nativo sin controles POSIX equivalentes.
 - Seis pruebas adversariales nuevas (total 18 sintéticas), docs/103 corregido, sin acceso a secretos ni SQL alojado, sin backup real, sin despliegue o cambios en Supabase DEV/producción. Estado de recuperación #175 bloqueante.
+
+## [Sin publicar — D041 / Issue #184: preflight de destino DEV y comprobación offline de descifrado]
+- Nuevo script local scripts/ops/check-local-dev-backup-d041.mjs: valida destino Supabase DEV estricto sin conexiones ni secretos impresos, y confirma por CLI age real que cinco archivos cifrados verificados por D039/D040 se pueden descifrar con identidad privada local. El SQL descifrado se drena sin persistencia ni salida; valida nuevamente hash tras concluir.
+- Tests con URL y procesos age SIMULADOS (no pruebas criptográficas en CI). Documentación docs/104 y restricciones de claves/cobertura de Auth, Storage, Vault y extensiones. Backup real, restauración aislada y bloqueo #175 permanecen PENDIENTES. No cambios Supabase DEV ni producción, sin IA/Whapi.
