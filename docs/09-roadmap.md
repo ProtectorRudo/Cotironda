@@ -237,3 +237,6 @@ Cupo diario, mensual y presupuesto conservador por empresa compradora/canal, pol
 
 ### 31/10/2026 — MVP-001: priorizar primera experiencia real de uso, sin enviar nada
 Se detectó que más de 85 PRs estaban abiertos sin integración a main. Se frena la secuencia de nuevas capas y se agrega `/probar` en apps/portal: comprador pega lista, motor D021 procesa localmente, se ven materiales, dudas y proveedores ficticios seleccionados con catálogo/opt-in/zona. No hay precios, WhatsApp o IA externa. Siguiente hito: consolidación revisada + Preview aislada, restore de Supabase DEV #175, y luego un ciclo comercial con compradores/proveedores voluntarios. Ver docs/120 y Issue #217.
+
+### 31/10/2026 — MVP-002: integrar sin publicar
+Rama candidata `integration/mvp-piloto-20261031` basada en el estado aprobado de MVP-001; 1145 commits por delante de `main`, 0 detrás. Se prepara PR **draft** hacia `main` con nueva prueba de aceptación cruzando vista comprador, selección por producto y comparador de cobertura/IVA/flete/adjudicación manual. **No fusionar sin revisión de la diferencia grande y de la vinculación Vercel**. Próximo trabajo real: cerrar backup/restore DEV #175, aplicar migraciones auditadas y un piloto WhatsApp consentido. Ver docs/121.
