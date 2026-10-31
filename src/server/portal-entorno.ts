@@ -64,8 +64,23 @@ export function autenticacionPreviewProveedorD074(env:VariablesPortal):boolean {
    origenSeguro(env.COTIRONDA_SITE_ORIGIN) &&
    credencialesCotironda(env);
 }
+/**
+ * MVP-028: buyer login on the integrated pilot Preview without signup or
+ * supplier WhatsApp activation. Real read/create requires separate OFF flags
+ * and the SQL RPC verifies session + buyer organization independently.
+ */
+export function autenticacionPreviewCompradorMvp028(env:VariablesPortal):boolean{
+ return env.COTIRONDA_AUTH_PREVIEW_ENABLED==='true' &&
+   env.COTIRONDA_ROUNDS_READ_ENABLED==='true' &&
+   env.COTIRONDA_ROUNDS_CREATE_ENABLED==='true' &&
+   env.COTIRONDA_REGISTRATION_ENABLED==='false' &&
+   env.VERCEL_ENV==='preview' &&
+   env.VERCEL_GIT_COMMIT_REF==='integration/mvp-piloto-20261031' &&
+   origenSeguro(env.COTIRONDA_SITE_ORIGIN) &&
+   credencialesCotironda(env);
+}
 /** Credenciales reales habilitadas para prueba de Auth sin activar empresas. */
 export function autenticacionPortalHabilitada(env:VariablesPortal):boolean {
  return portalHabilitado(env)||autenticacionPreviewSoloIngreso(env)||
-   autenticacionPreviewProveedorD074(env);
+   autenticacionPreviewProveedorD074(env)||autenticacionPreviewCompradorMvp028(env);
 }
