@@ -3,7 +3,7 @@
 \set ON_ERROR_STOP on
 create role cotironda_send_d054_ci login inherit nobypassrls
  password :'d054_password';
-grant cotironda_reply_gateway to cotironda_send_d054_ci
+grant cotironda_reply_sender_d054 to cotironda_send_d054_ci
  with inherit true,set false,admin false;
 grant connect on database cotironda_ci to cotironda_send_d054_ci;
 do $audit$
@@ -14,6 +14,10 @@ begin
   'cotironda_private.whapi_record_send_outcome_d053(uuid,uuid,text,text)','EXECUTE')
  or has_function_privilege('cotironda_send_d054_ci',
   'cotironda_private.whapi_save_draft_from_inbox_d048(text,text,uuid,integer,jsonb)','EXECUTE')
+ or has_function_privilege('cotironda_send_d054_ci',
+  'cotironda_private.whapi_reconcile_uncertain_d053(uuid,text,text,text)','EXECUTE')
+ or has_function_privilege('cotironda_send_d054_ci',
+  'cotironda_private.whapi_sweep_uncertain_d053()','EXECUTE')
  or has_table_privilege('cotironda_send_d054_ci',
   'cotironda_private.whapi_reply_jobs_d047','SELECT')
  or exists(select 1 from pg_roles where rolname='cotironda_send_d054_ci'
