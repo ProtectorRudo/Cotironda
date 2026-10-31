@@ -243,3 +243,6 @@ Rama candidata `integration/mvp-piloto-20261031` basada en el estado aprobado de
 
 ### 31/10/2026 — MVP-003 restauración lógica en CI, no backup de DEV
 La nueva prueba CI usa `pg_dump`/`pg_restore` PostgreSQL 17 en dos bases efímeras del mismo clúster, verifica datos ficticios/RLS/ACL y ausencia de cambios en la base fuente. Esto comprueba parcialmente el mecanismo de recuperación; **no** verifica un dump auténtico de DEV ni recuperación de secretos/Storage/Auth. #175 sigue como puerta antes de instalar rondas, pruebas comerciales y Whapi reales. Ver docs/122.
+
+### 31/10/2026 — Prioridad piloto, extracción DEV MVP-003
+La exportación cifrada **real** de Supabase DEV requiere ejecución local del propietario con conexión segura y clave age privada (guía `docs/123-mvp-003-exportacion-cifrada-dev-local.md`). El script y tests sintéticos están en PR #221, **sin dump real ni restauración verificable todavía**. Después, restauración aislada y E2E comercial mínimo; no seguir ampliando el laboratorio de WhatsApp mientras #175 bloquee DEV.
