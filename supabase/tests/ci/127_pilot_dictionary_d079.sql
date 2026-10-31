@@ -244,6 +244,13 @@ begin
  then raise exception 'd080_catalog_disabled_but_packet_open';end if;
 end;$inactive_catalog_blocks_packet$;
 reset role;
+-- Deleting a supplier product must remain usable and revoke its curated link.
+delete from public.supplier_products
+ where id='eeeeeeee-0031-4031-8031-000000000703';
+select ci_helpers.assert_true(
+ not exists(select 1 from cotironda_private.supplier_catalog_capabilities_d080
+  where catalog_product_id='eeeeeeee-0031-4031-8031-000000000703'),
+ 'd080_supplier_product_delete_cascades_capability');
 select ci_helpers.assert_true(
  (select count(*)=0 from cotironda_private.whapi_invite_jobs_d070
   where channel_id='d079_ci')
