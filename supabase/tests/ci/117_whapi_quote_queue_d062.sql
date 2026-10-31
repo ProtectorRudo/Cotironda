@@ -158,11 +158,15 @@ begin
  set ready_at=now()-interval '5 seconds' where message_key=repeat('3',64);
  b:=cotironda_private.whapi_claim_quote_d062();
  if b->>'attempt'<>'4' then raise exception 'd062_final_attempt_missing';end if;
- res:=cotironda_private.whapi_finish_quote_d062(
-  'd062_ci',repeat('3',64),(b->>'leaseToken')::uuid,'retry');
- if res->>'state'<>'dead' then raise exception 'd062_dead_letter_missing';end if;
- -- Once earlier message DEAD, next supplier message may be leased.
+ -- Crash during fourth attempt: expired lease must NOT block later quotes.
+ update cotironda_private.whapi_quote_queue_d062
+ set lease_until=now()-interval '5 seconds' where message_key=repeat('3',64);
  b:=cotironda_private.whapi_claim_quote_d062();
+ if (select status from cotironda_private.whapi_quote_queue_d062
+     where message_key=repeat('3',64))<>'dead'
+ then raise exception 'd062_exhausted_lease_not_recovered';end if;
+ -- Once earlier message DEAD, next supplier message may be leased.
+
  if b->>'messageKey'<>repeat('4',64) then
   raise exception 'd062_next_message_after_dead_blocked';end if;
  update cotironda_private.whapi_contacts_v1
