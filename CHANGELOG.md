@@ -611,3 +611,7 @@
 ## [Sin publicar — D043 / Issue #188: inventario alojado y comparador de recovery]
 - Auditoría SELECT-only real sobre cotironda-dev: PG17.11, 17 migraciones, 2 cuentas Auth, 2 identidades, 0 sesiones, 2 buckets privados/0 objetos, 1 entrada Vault (sin leer su contenido), 4 claims IA, cron=0 y automatizaciones/registro OFF. Edge Function IA desplegada identificada para revisión independiente de auth Issue #189 (`verify_jwt=false` no equivale a prueba de explotación).
 - Nuevo SQL D043 de solo lectura, comparador offline fail-closed de inventarios origen/restaurado, pruebas adversariales sintéticas y runbook docs/106. **No se ha tomado backup ni ensayado restauración real.** El comparador nunca abre D024 ni cierra bloqueo #175; sin cambios de DEV/producción.
+
+## [Sin publicar — D044 / Issue #191: clave de laboratorio dedicada en Edge DEV]
+- Auditoría de 13 archivos de `cotironda-ia-dev` contra despliegue v9 confirmó paridad exacta previo a cambios; `verify_jwt=false` respaldado por documentación oficial Supabase para auth secret key no JWT. Hallazgo de superficie innecesaria: también acepta `secret:default`.
+- Rama D044 cambia únicamente fuente `index.ts` a `secret:cotironda_quality_lab` (whitelist mínima), agrega pruebas adversariales del handler con fetch/DB de CI bloqueados y contrato estático de wrapper; docs/107. **El despliegue alojado v9 NO cambia**, validación real de llamadas y migración desde default quedan pendientes. Sin IA, sin cambios en Vault/DEV/producción; #175 y D024 bloqueados.
