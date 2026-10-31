@@ -311,3 +311,5 @@ El PR D038 agrega un ensayo restringido en PG17 para la lógica de despachador I
 > **MVP-017 (solo desarrollo):** preparación del texto WhatsApp por proveedor desde invitación D065: solo materiales de su rubro y zona de entrega; BAJA, categoría o cobertura revocadas bloquean la vista. No existe un sender Whapi activo ni destinatario real, y la vista previa no autoriza envíos. [docs/137](docs/137-mvp-017-mensajes-scoped-whapi.md).
 
 > **MVP-018 (en pruebas):** el lector de cotización entrante D061 queda acotado a los artículos que recibió cada proveedor según D065. El guard D067 de PostgreSQL rechaza persistir artículos de otros rubros incluso con acceso directo al RPC D060, sin inventar ni duplicar presupuestos. No instalado en DEV/prod. [docs/138](docs/138-mvp-018-scope-cotizacion-entrante.md).
+
+> **MVP-019 (solo laboratorio):** vault privado AES-256-GCM para poder recuperar un número de destinatario Whapi desde contacto consentido y HMAC sin guardar el número abierto, más vista previa del pedido limitado por rubro D066. No realiza envíos ni despliegues. [docs/139](docs/139-mvp-019-destinatario-cifrado-whapi.md).
