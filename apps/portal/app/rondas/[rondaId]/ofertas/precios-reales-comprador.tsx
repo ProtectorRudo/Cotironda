@@ -1,8 +1,8 @@
 'use client';
 import {useCallback,useEffect,useState} from 'react';
 import type {PrecioRecibidoMvp014}
- from '../../../../../src/server/cotizaciones-recibidas-http-mvp014.ts';
-import type {ResumenRonda} from '../../../../../src/server/rondas-lectura-http.ts';
+ from '../../../../../../src/server/cotizaciones-recibidas-http-mvp014.ts';
+import type {ResumenRonda} from '../../../../../../src/server/rondas-lectura-http.ts';
 import './ofertas-recibidas.css';
 
 type Datos=Readonly<{ronda:ResumenRonda;ofertas:readonly PrecioRecibidoMvp014[]}>;
