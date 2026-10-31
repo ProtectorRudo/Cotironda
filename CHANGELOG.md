@@ -719,3 +719,7 @@
 ### 31/10/2026 — MVP-011: conectar recepción cifrada a cotización directa
 - Nuevo puerto de lectura PG17 privado D061 verifica contacto, invitación, ventana y snapshot por ronda; entrega cifrado AES-GCM sin exponer datos personales, y revisión correcta de versiones/replays.
 - Nuevo coordinador Node/TypeScript toma mensajes de inbox D028, comprueba autenticidad del cifrado y citas del importe, confronta artículos/unidades con ledger y ejecuta escritura atómica D060 sin «Confirmo». Tests crypto real + casos malos y pruebas SQL PG17; aún sin Whapi/API IA live ni workers. Ver docs/131.
+
+### 31/10/2026 — MVP-012: cola durable de cotizaciones entrantes
+- D062 en PostgreSQL17 efímero: trigger de inbox texto a cola privada, claim concurrente con `SKIP LOCKED`, lease y recuperación, orden por proveedor/ronda, ACK sólo tras escritura D060 real, revisión interna y máximo 4 reintentos sin revelar texto. Worker Node inyectado, sin cron/Whapi/IA live.
+- Pruebas SQL normales/extremas y Node; documento 132 y auditoría. Sin instalación en Supabase DEV/prod ni merge.
