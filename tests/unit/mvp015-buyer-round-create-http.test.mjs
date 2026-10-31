@@ -125,3 +125,11 @@ test('D064: flags de Preview restringen alta y dejan producción cerrada',()=>{
   {COTIRONDA_DATABASE_URL:'private'}])
   assert.equal(habilitarCreacionRondaD064({...env,...change}),false);
 });
+test('D064: Origin canónico server-only bloquea host reescrito y destino falso',async()=>{
+ const src=make(BODY,{originPermitido:'https://other.example'});
+ assert.equal((await procesarCreacionRondaD064(src.req,src.deps)).status,403);
+ const missing=make(BODY,{originPermitido:''});
+ assert.equal((await procesarCreacionRondaD064(missing.req,missing.deps)).status,403);
+ assert.equal(src.calls.length,0);
+ assert.equal(missing.calls.length,0);
+});
