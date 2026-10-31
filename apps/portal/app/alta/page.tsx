@@ -33,5 +33,6 @@ export default async function Alta(){
   }
   return <main className="panel"><span className="eyebrow">TU EMPRESA</span><h1>Crear empresa</h1><p>Configurá tu perfil como comprador o proveedor. No se enviarán invitaciones hasta confirmar el catálogo y la zona.</p>
     {entornoAuthConfigurado()?<FormularioEmpresa/>:<div className="notice">El registro permanece deshabilitado hasta completar la auditoría de integración.</div>}
+    {habilitarPantallaAltaWhatsAppD073(process.env)&&<p><Link href="/proveedores/whatsapp" className="button outline">Activar WhatsApp de mi negocio</Link></p>}
   </main>;
 }
