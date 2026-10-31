@@ -142,3 +142,28 @@ test('D061: fallo SQL en lectura o escritura no expone datos',async()=>{
  await assert.rejects(p.procesar(channel,messageKey),
   e=>e.message==='d061_cotizacion_no_disponible');
 });
+
+test('D061: precio de otro material no se atribuye a cemento aunque cifra sea real',async()=>{
+ const other='Arena gruesa 20 kg: $121.00\nFlete a convenir';
+ const parsed={...interpreter(other),items:[{
+  ...interpreter(other).items[0],
+  evidenciaPrecio:{linea:1,cita:'Arena gruesa 20 kg: $121.00'}
+ }]};
+ const {port,calls}=make({read:encrypted(other),interpret:async()=>parsed});
+ const outcome=await port.procesar(channel,messageKey);
+ assert.deepEqual(outcome,{estado:'sin_precio_atribuible'});
+ assert.equal(calls.length,1);
+});
+test('D061: dos cementos de marcas distintas no se comparan por palabra genérica',async()=>{
+ const many=[{itemId:'cemento_loma_001',line_no:1,unit:'bag'},
+  {itemId:'cemento_holcim_002',line_no:2,unit:'bag'}];
+ const raw=encrypted('Cemento 50 kg: $121.00');raw.roundItems=many;
+ const idea={...interpreter(raw.textoFuente??'Cemento 50 kg: $121.00'),
+  textoFuente:'Cemento 50 kg: $121.00',
+  items:[{...interpreter(source).items[0],itemId:'cemento_loma_001',
+   evidenciaPrecio:{linea:1,cita:'Cemento 50 kg: $121.00'}}]};
+ const {port,calls}=make({read:raw,interpret:async()=>idea});
+ assert.deepEqual(await port.procesar(channel,messageKey),
+  {estado:'sin_precio_atribuible'});
+ assert.equal(calls.length,1);
+});
