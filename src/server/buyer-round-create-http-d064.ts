@@ -66,6 +66,7 @@ export function habilitarCreacionRondaD064(env:Record<string,string|undefined>):
 }
 export async function procesarCreacionRondaD064(req:Request,deps:{
  habilitado:boolean;
+ originPermitido:string;
  verificarSesion:()=>Promise<ActorLectura|null>;
  crear:(input:BuyerRoundInputD064)=>Promise<unknown>;
 }):Promise<Response>{
