@@ -42,8 +42,10 @@ export function crearEnroladorDestinatarioD069(config:ConfigEnrolamientoD069){
   typeof config.autorizarContacto!=='function'||
   typeof config.committedRpc!=='function')deny();
  // Keep crypto material inside the server module, never expose to caller.
- const keys:D068Keys={hmacIdentity:Buffer.from(config.keys?.hmacIdentity??[]),
-  recipientAes:Buffer.from(config.keys?.recipientAes??[])};
+ if(!config.keys||!Buffer.isBuffer(config.keys.hmacIdentity)||
+   !Buffer.isBuffer(config.keys.recipientAes))deny();
+ const keys:D068Keys={hmacIdentity:Buffer.from(config.keys.hmacIdentity),
+  recipientAes:Buffer.from(config.keys.recipientAes)};
  // Validate both keys early using D068; failed, disabled, or missing secrets
  // cannot be used to generate stored data. The actual number is not recorded.
  if(keys.hmacIdentity.length!==32||keys.recipientAes.length!==32||
