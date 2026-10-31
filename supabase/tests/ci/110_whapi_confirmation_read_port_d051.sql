@@ -5,25 +5,30 @@ begin
  if not exists (select 1 from pg_roles where rolname=
   'cotironda_confirmation_reader_d051' and not rolcanlogin
   and not rolinherit and not rolbypassrls)
- or (select count(*) from pg_proc where oid in (
-   'cotironda_private.whapi_confirm_load_inbox_d051(text,text)'::regprocedure,
-   'cotironda_private.whapi_confirm_find_ack_d051(text,text)'::regprocedure)
-   and proconfig @> array['search_path=']::text[])<>2
- or has_function_privilege('anon',
+ then raise exception 'd051_owner_role_privilege_violation';end if;
+ if (select count(*) from pg_proc p where p.oid in (
+    'cotironda_private.whapi_confirm_load_inbox_d051(text,text)'::regprocedure,
+    'cotironda_private.whapi_confirm_find_ack_d051(text,text)'::regprocedure)
+    and exists(select 1 from pg_catalog.unnest(p.proconfig) as config(v)
+      where config.v in ('search_path=','search_path=""')))<>2
+ then raise exception 'd051_definer_search_path_violation';end if;
+ if has_function_privilege('anon',
     'cotironda_private.whapi_confirm_load_inbox_d051(text,text)','EXECUTE')
  or has_function_privilege('service_role',
     'cotironda_private.whapi_confirm_find_ack_d051(text,text)','EXECUTE')
  or has_function_privilege('authenticated',
     'cotironda_private.whapi_confirm_load_inbox_d051(text,text)','EXECUTE')
- or not has_function_privilege('cotironda_confirm_gateway',
+ then raise exception 'd051_public_rpc_violation';end if;
+ if not has_function_privilege('cotironda_confirm_gateway',
     'cotironda_private.whapi_confirm_load_inbox_d051(text,text)','EXECUTE')
  or not has_function_privilege('cotironda_confirm_gateway',
     'cotironda_private.whapi_confirm_find_ack_d051(text,text)','EXECUTE')
- or has_table_privilege('cotironda_confirm_gateway',
+ then raise exception 'd051_gateway_rpc_violation';end if;
+ if has_table_privilege('cotironda_confirm_gateway',
     'cotironda_private.whapi_inbox_v1','SELECT')
  or has_table_privilege('cotironda_confirm_gateway',
     'cotironda_private.whapi_reply_jobs_d047','SELECT')
- then raise exception 'd051_role_or_rpc_violation';end if;
+ then raise exception 'd051_gateway_raw_table_violation';end if;
 end;$audit$;
 insert into public.organizations(id,display_name,organization_type)
  values('aaaaaaaa-0000-4000-8000-000000000511','D051 comprador falso','buyer'),
