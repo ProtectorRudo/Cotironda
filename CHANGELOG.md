@@ -778,3 +778,6 @@
 
 ### 31/10/2026 — MVP-030: mapeos curados para el primer pedido con dos corralones
 - Nuevo script SQL opcional D079 para seis familias exactas de materiales, cinco rubros y localidad La Plata/Buenos Aires, con verificación de taxonomía, idempotencia y rechazo de conflictos. Nueva prueba transaccional PostgreSQL17: comprador con Auth sintético guarda una ronda D064 de 20 bolsas CPC Loma Negra 50 kg; D065 alcanza dos corralones en zona y excluye tercero fuera de zona y otro con BAJA; D066 preserva texto y cantidad; D071 sin vault devuelve dos destinatarios pendientes y cero jobs/mensajes. Nada aplicado en DEV ni enlazado a Whapi real. Ver docs/150 e Issue #273.
+
+### 31/10/2026 — MVP-031: evitar invitaciones a proveedores sin producto de catálogo
+- D080 agrega correspondencia interna entre `public.supplier_products` y familia material (SHA-256 del producto declarado), sin permisos de escritura para proveedores/usuarios/servicio y solo lectura del matcher NOLOGIN. D065 exige producto activo, del mismo comercio/rubro, y huella sin cambios; D066 revalida el catálogo antes de entregar un paquete al orquestador. CI PostgreSQL17: rubro sin producto no invita; dos corralones con producto de catálogo sí, tercer corralón sin producto no; edición o desactivación invalida paquetes; sin Whapi real, cambios DEV ni producción. Ver docs/151 e Issue #275.
