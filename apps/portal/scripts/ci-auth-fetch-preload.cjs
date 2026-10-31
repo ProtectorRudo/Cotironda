@@ -23,6 +23,36 @@ globalThis.fetch=async function(input,init={}){
    if(data.refresh_token==='ci_refresh_fake_only')return respond(session);
    return respond({error:'invalid_grant'},401);
   }
+  // MVP-026: separate, explicitly opt-in fake Supabase REST for pilot UI
+  // smoke. Real network forbidden; browser never receives privileged keys.
+  if(process.env.COTIRONDA_CI_WA_PREVIEW_SANDBOX==='enabled_for_tests_only'){
+   const headers=new Headers(init.headers||(input instanceof Request?input.headers:undefined));
+   const authorized=headers.get('authorization')==='Bearer '+token;
+   const supplier='bbbbbbbb-0024-4024-8024-000000000661';
+   const channel='mvp026_ci_channel';
+   if(url.pathname==='/rest/v1/organizations'&&
+    String(init.method??'GET').toUpperCase()==='GET'){
+    if(!authorized)return respond({message:'unauthorized'},401);
+    if(url.searchParams.get('organization_members.user_id')!=='eq.'+user.id||
+     url.searchParams.get('organization_members.status')!=='eq.active'||
+     url.searchParams.get('organization_members.membership_role')!=='in.(owner,manager)'||
+     url.searchParams.get('organization_type')!=='in.(supplier,both)'||
+     !url.searchParams.get('select')?.includes('supplier_profiles!inner'))
+     return respond({message:'query not RLS scoped'},403);
+    return respond([{id:supplier,display_name:'Corralón de prueba CI',organization_type:'supplier',
+     organization_members:[{user_id:user.id,membership_role:'owner',status:'active'}],
+     supplier_profiles:[{organization_id:supplier}]}]);
+   }
+   if(url.pathname==='/rest/v1/rpc/whapi_issue_supplier_code_d072'&&
+      String(init.method??'POST').toUpperCase()==='POST'){
+     if(!authorized)return respond({message:'unauthorized'},401);
+     const payload=JSON.parse(init.body||'{}');
+     if(Object.keys(payload).sort().join(',')!=='p_channel,p_supplier'||
+        payload.p_supplier!==supplier||payload.p_channel!==channel)
+        return respond({message:'not supplier member'},403);
+     return respond({state:'issued',code:'a'.repeat(32),expiresSeconds:900});
+   }
+  }
   throw Error('HTTP externo bloqueado: endpoint Supabase no permitido '+url.pathname);
  }
  if(url.protocol==='http:'&&['127.0.0.1','localhost','::1','[::1]'].includes(url.hostname))
