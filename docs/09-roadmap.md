@@ -216,3 +216,6 @@ Transición de la confirmación de D046 a comprobante SQL privado: la versión D
 
 ### 31/10/2026 — D050 conservar cita cifrada y corroborar Confirmo (sólo offline)
 D027/D029 ahora incluyen referencia `context.quoted_id` validada en el contenido AES-GCM y su huella HMAC, manteniendo compatibilidad histórica. El comprobador D050 solo prepara llamada D049 si el `Confirmo` se refiere al acuse saliente D047 correcto y el ledger verificado coincide en canal/chat/empresa/ronda/revisión. No confirma aún porque faltan puertos reales al ledger, envío Whapi, retorno de acuse y piloto móvil. Ver docs/113; gate de backup #175 continúa abierto.
+
+### 31/10/2026 — D051 puerto privado de DB para verificar confirmación, CI solamente
+Se definieron dos consultas SQL protegidas para recuperar de D028 el mensaje cifrado y desde D047/D048 el acuse HMAC con procedencia. Adaptador server-only enlaza validación D050 con confirmación D049 mediante consultas parametrizadas, manteniendo revalidación transaccional D049. No existe login gateway ni Webhook Whapi real, ni instalación DEV o publicación; backup/restore #175 bloquea migraciones. Ver docs/114.
