@@ -18,11 +18,13 @@ begin
 end;$guard$;
 
 set local role cotironda_match_gateway_d065;
-select ci_helpers.assert_true(
- cotironda_private.preview_invitation_packet_d066(
+do $no_label$
+begin
+ if cotironda_private.preview_invitation_packet_d066(
  'dddddddd-0016-4016-8016-000000000661',
- 'bbbbbbbb-0016-4016-8016-000000000662','d065_ci') is null,
- 'd066_no_label_no_packet');
+ 'bbbbbbbb-0016-4016-8016-000000000662','d065_ci') is not null
+ then raise exception 'd066_no_label_no_packet';end if;
+end;$no_label$;
 reset role;
 insert into cotironda_private.item_display_d066(product_code,display_label)
  values('cemento_001','Cemento CPC 50 kg'),
@@ -72,20 +74,24 @@ update cotironda_private.whapi_contacts_v1
  where supplier_org_id='bbbbbbbb-0016-4016-8016-000000000663'
  and channel_id='d065_ci';
 set local role cotironda_match_gateway_d065;
-select ci_helpers.assert_true(
- cotironda_private.preview_invitation_packet_d066(
+do $revoked$
+begin
+ if cotironda_private.preview_invitation_packet_d066(
  'dddddddd-0016-4016-8016-000000000661',
- 'bbbbbbbb-0016-4016-8016-000000000663','d065_ci') is null,
- 'd066_baja_after_preparation_blocks_packet');
+ 'bbbbbbbb-0016-4016-8016-000000000663','d065_ci') is not null
+ then raise exception 'd066_baja_after_preparation_blocks_packet';end if;
+end;$revoked$;
 reset role;
 update public.supplier_delivery_areas set is_enabled=false
  where organization_id='bbbbbbbb-0016-4016-8016-000000000662';
 set local role cotironda_match_gateway_d065;
-select ci_helpers.assert_true(
- cotironda_private.preview_invitation_packet_d066(
+do $area$
+begin
+ if cotironda_private.preview_invitation_packet_d066(
  'dddddddd-0016-4016-8016-000000000661',
- 'bbbbbbbb-0016-4016-8016-000000000662','d065_ci') is null,
- 'd066_revoked_delivery_area_blocks_packet');
+ 'bbbbbbbb-0016-4016-8016-000000000662','d065_ci') is not null
+ then raise exception 'd066_revoked_delivery_area_blocks_packet';end if;
+end;$area$;
 reset role;
 select ci_helpers.assert_true(
  (select count(*)=0 from cotironda_private.whapi_reply_jobs_d047
