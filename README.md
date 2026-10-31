@@ -263,3 +263,6 @@ El PR #170 incorpora un cargador privado de configuración que **falla cerrado**
 
 ### 30/10/2026 — Etapa 04: reenvíos seguros después de rotar clave AES (D034)
 PR #171 corrige una colisión falsa de D032: al recibir nuevamente un mensaje ya guardado con otra clave AES, el servidor lo reconoce por ID, remitente y huella HMAC y devuelve `duplicado`, sin crear otro presupuesto ni cambiar los bytes cifrados históricos. Si cambia el precio o la identidad, falla cerrado. Tests PostgreSQL17 y Node→PG17 real con mensajes sintéticos; **no hay webhook Whapi real ni tablas instaladas en DEV**. Ver [docs/98](docs/98-whapi-replay-aes-rotation.md).
+
+### 30/10/2026 — D035: compatibilidad de lectura de rondas con Supabase alojado
+El PR pendiente de D035 corrige el SQL de lectura D025: elimina grants de `auth` que Supabase alojado no garantiza y usa un helper `SECURITY INVOKER` de claims PostgREST, conservando comprobación de sesiones reales, correo validado y membresía de empresa. CI verifica que el rol lector no tenga USAGE de `auth`. **Sin instalar en Supabase DEV**; el Issue #167 sigue pendiente de verificación real hospedada. Ver [docs/99](docs/99-reader-hosted-auth-d035.md).
