@@ -148,6 +148,17 @@ declare
  v_ok boolean;
  v_attempt integer;
 begin
+ -- If a worker vanished on its THIRD lease, do not leave the row leased
+ -- forever. Batch and SKIP LOCKED so no worker blocks another one.
+ with expired as (
+  select job_id from cotironda_private.whapi_reply_jobs_d047
+   where status='leased' and attempts>=3
+     and leased_until<pg_catalog.clock_timestamp()
+   order by leased_until for update skip locked limit 20
+ )
+ update cotironda_private.whapi_reply_jobs_d047 j
+ set status='exhausted',lease_token=null,leased_until=null
+ from expired e where j.job_id=e.job_id;
  for v_attempt in 1..8 loop
   select * into v_job from cotironda_private.whapi_reply_jobs_d047
    where ((status='queued' and due_at<=pg_catalog.clock_timestamp())
