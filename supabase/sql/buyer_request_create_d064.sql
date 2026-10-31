@@ -124,8 +124,10 @@ begin
  for v_number in 0..v_count-1 loop
   v_line:=p_items->v_number;
   if pg_catalog.jsonb_typeof(v_line) is distinct from 'object'
-   or (select count(*) from pg_catalog.jsonb_object_keys(v_line))<>4
+   or (select count(*) from pg_catalog.jsonb_object_keys(v_line)) not in (4,5)
    or not (v_line ?& array['line_no','product_code','quantity','unit'])
+   or ((select count(*) from pg_catalog.jsonb_object_keys(v_line))=5
+       and not (v_line ? 'source_description'))
    or pg_catalog.jsonb_typeof(v_line->'line_no') is distinct from 'number'
    or v_line->>'line_no' is distinct from (v_number+1)::text
    or pg_catalog.jsonb_typeof(v_line->'product_code') is distinct from 'string'
