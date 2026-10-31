@@ -668,3 +668,7 @@
 ## [Sin publicar — MVP-001 / Issue #217: primera experiencia comprador navegable]
 - Nueva ruta responsive `/probar` en Next.js portal, accesible desde la portada: pegar lista, analizar con motor offline existente, retener dudas, agrupar invitaciones por rubro y proveedor ficticio, mostrar texto de consultas sin enviarlas. Privacidad por procesamiento local del navegador, sin red, sin IA ni presupuesto inventado. Tests unitarios de flujo y casos adversariales; docs/120.
 - Reorientación de trabajo: consolidar PR encadenados y validar UX + ronda real supervisada en lugar de seguir añadiendo infraestructura aislada. Bloqueante restauración Supabase DEV #175 vigente. Sin merge o deploy.
+
+## [Sin publicar — MVP-002 / Issue #219: candidatura de integración del producto]
+- Creada rama de integración `integration/mvp-piloto-20261031` desde el MVP-001 probado; documentación de ancestría con `main` (1145 commits a favor, 0 detrás) y riesgos de megadiff, sin merge ni reescritura ciega de historial.
+- Nueva prueba transversal entre vista comprador, motor de invitaciones D045 y comparador determinista, sin inventar precios, envíos ni adjudicación. CI completo y PR a `main` en borrador. Bloqueo Supabase DEV #175 y preview Vercel 402 vigentes. Docs/121.
