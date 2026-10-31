@@ -1,5 +1,6 @@
 'use client';
 import {useState} from 'react';
+import Link from 'next/link';
 import {
   EJEMPLO_PEDIDO_MVP,generarVistaCompradorMvp,
   type VistaCompradorMvp
@@ -40,7 +41,7 @@ export function DemostracionComprador(){
     <div className="mvp-progress" aria-label="Recorrido demostrativo">
       <span className="mvp-progress-active">1. Pedido</span>
       <span className={resultado?'mvp-progress-active':''}>2. Proveedores</span>
-      <span>3. Ofertas reales — próximamente</span>
+      <span>3. Comparación (solo demo)</span>
     </div>
     <div className="mvp-editor">
       <div className="mvp-editor-title">
@@ -139,7 +140,8 @@ export function DemostracionComprador(){
       </div>
       <div className="mvp-bottom-note">
         <strong>Lo que falta para una ronda verdadera</strong>
-        <p>Los proveedores todavía no reciben mensajes. Los precios y las ofertas no se fabrican: aparecerán cuando un proveedor real los cotice y confirme. El comprador adjudicará manualmente.</p>
+        <p>Los proveedores todavía no reciben mensajes. En una ronda real, las ofertas aparecen solo después de que cada proveedor confirma sus precios. Mientras tanto, podés explorar un ejemplo con ofertas completamente inventadas.</p>
+        <Link className="mvp-compare-link" href="/probar/ofertas">Ver cómo se comparan las ofertas ficticias →</Link>
       </div>
     </section>}
   </section>;
