@@ -17,3 +17,12 @@
 .mc-warning{padding:18px;color:#ffe1bc}.mc-chosen{margin-top:17px;padding:17px;border:1px solid #5480ab;background:#173552;border-radius:14px}.mc-chosen strong{font-size:16px}.mc-chosen p{font-size:13px;color:#c7d8e8;line-height:1.5}.mc-clear{width:auto;margin:0;background:transparent}
 .mc-footer{padding:22px 30px;background:#14253a;border-left:4px solid #e44c54}.mc-footer strong{font-size:14px}.mc-footer p{color:#b1c7d9;font-size:13px;line-height:1.6;margin:8px 0 0}
 @media(max-width:760px){.mc-toolbar{padding:20px;flex-direction:column}.mc-section{padding:20px}.mc-order{grid-template-columns:1fr}.mc-coverage,.mc-options{grid-template-columns:1fr}.mc-subtitle{align-items:flex-start}.mc-subtitle h3{font-size:19px}.mc-footer{padding:20px}}
+
+/* MVP-005: información económica contextual, no sellos globales de IVA/flete. */
+.mc-pending-note{font-size:12px;color:#ffd19b;line-height:1.6;margin:11px 0 0}
+.mc-economic-details{margin-top:13px}
+.mc-detail-text{display:flex;flex-direction:column;align-items:flex-start;gap:5px;line-height:1.55;white-space:normal}
+.mc-detail-text strong{white-space:normal;text-align:left}
+.mc-detail-text small{font-size:11px;color:#bcd1e2}
+.mc-detail-text .mc-pending,.mc-pending{color:#ffd19b;font-weight:750}
+.mc-option .mc-total{display:block;margin-top:6px}
