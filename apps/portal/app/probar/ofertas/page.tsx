@@ -5,7 +5,7 @@ import './ofertas.css';
 
 export const metadata={
   title:'Comparación de ofertas · Demo Cotironda',
-  description:'Demostración local y ficticia de cobertura, precios finales y elección manual; sin envíos ni adjudicaciones.'
+  description:'Demostración ficticia de cobertura, importes comparables y aclaraciones económicas, sin envíos ni adjudicaciones.'
 };
 export default function PaginaOfertasDemo(){
   return <main className="mvp-page">
@@ -19,8 +19,8 @@ export default function PaginaOfertasDemo(){
         </div>
         <div className="mvp-hero-aside">
           <span className="mvp-demo-mark">100 % FICTICIO</span>
-          <strong>IVA y flete incluidos.</strong>
-          <p>Podés elegir una combinación, pero no se registra ni se envía nada.</p>
+          <strong>Precios claros, sin suposiciones.</strong>
+          <p>IVA y flete se informan en las aclaraciones de cada proveedor. Elegir acá no registra ni envía nada.</p>
         </div>
       </div>
       <aside className="mvp-banner" role="note"><strong>Datos inventados para probar la interfaz.</strong> No ingreses presupuestos reales. No hay proveedores conectados ni ofertas recibidas por WhatsApp.</aside>
