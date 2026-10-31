@@ -713,3 +713,5 @@
 ### 31/10/2026 — MVP-010: no perder el importe declarado si IVA no está informado
 - Nuevo diseño de origen de precios D060: monto unitario original, estado de IVA, posición/hash fuente y vínculo a versión del proveedor; ingreso atómico D059 y lectura comprador autenticado por alias, solo último presupuesto vigente. Sin inventar neto/IVA/flete y sin segundo «Confirmo».
 - Rol SQL privado, RLS, exactitud económica, versiones y replay, ACL por empresa; pruebas PostgreSQL 17 CI y puerto TypeScript. No se aplica a Supabase DEV ni se conecta a Whapi real; ver docs/130.
+
+- Puente servidor MVP-010 `whapi-quote-source-builder-d060.ts` de importe citado y aclaración IVA a filas D060, con hash de cita y mapeo por línea de ronda controlada; pruebas desde presupuesto de texto hasta puerto SQL, incluyendo IVA pedido no cumplido y citas inventadas. Aún no hay worker/Whapi live.
