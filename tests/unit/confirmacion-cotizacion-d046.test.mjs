@@ -27,7 +27,8 @@ const propuesta=(extra={})=>({
   items:[linea('cemento_001','bag','20','120.00'),
          linea('latex_001','l','5','90.00')],...extra
 });
-const init=()=>iniciarCotizacionChatD046(vinculo,pedido);
+const nombres={cemento_001:'Cemento CPC 50 kg',latex_001:'Pintura látex interior'};
+const init=()=>iniciarCotizacionChatD046(vinculo,pedido,nombres);
 const draft=(s=init(),e=evento('a'),p=propuesta())=>prepararBorradorCotizacionD046(s,e,p);
 const confirm=(s,e=evento('b'),txt='Confirmo',replyToDraftId=s.borrador?.draftId??null)=>
  confirmarBorradorCotizacionD046(s,e,{texto:txt,replyToDraftId});
@@ -39,6 +40,8 @@ test('D046: propuesta interpretada permanece borrador, sin oferta válida ni con
  assert.equal(s.borrador.oferta.version,1);
  assert.ok(s.borrador.textoProveedor.includes('todavía NO está confirmado'));
  assert.ok(s.borrador.textoProveedor.includes('Confirmo'));
+ assert.ok(s.borrador.textoProveedor.includes('Cemento CPC 50 kg'));
+ assert.ok(!s.borrador.textoProveedor.includes('cemento_001'));
  assert.equal(ultimaOfertaConfirmadaD046(s),null);
  assert.ok(s.borrador.oferta.items.every(i=>i.equivalencia==='sin_verificar'));
  assert.ok(Object.isFrozen(s)&&Object.isFrozen(s.borrador.oferta.items));
