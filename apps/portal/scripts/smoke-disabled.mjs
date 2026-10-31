@@ -48,5 +48,14 @@ try{
  assert.doesNotMatch(mvpHtml,/action="\/api\//,'La demo no debe tener formularios de envío');
  assert.equal((await get('/probar',{method:'POST'})).status,405,
    'No se habilita endpoint para recibir pedidos del público');
- console.log('OK: HTTP real /, /probar, /ingresar, /alta y /api/organizaciones; demo sin endpoint, registro cerrado');
+ const ofertas=await get('/probar/ofertas');
+ assert.equal(ofertas.status,200,'MVP-004 comparador visible y navegable por HTTP');
+ const ofertasHtml=await ofertas.text();
+ assert.match(ofertasHtml,/Datos inventados para probar la interfaz/);
+ assert.match(ofertasHtml,/Cotizaciones claras/);
+ assert.match(ofertasHtml,/Sin compras|SIN COMPRAS|no realiza compras/i);
+ assert.doesNotMatch(ofertasHtml,/action="\/api\//,'La comparación no debe enviar un formulario');
+ assert.equal((await get('/probar/ofertas',{method:'POST'})).status,405,
+   'El ejemplo de ofertas no debe aceptar adjudicaciones HTTP');
+ console.log('OK: HTTP real /, /probar, /probar/ofertas, /ingresar, /alta y /api/organizaciones; demo sin endpoint, registro cerrado');
 }finally{child.kill('SIGTERM');}
