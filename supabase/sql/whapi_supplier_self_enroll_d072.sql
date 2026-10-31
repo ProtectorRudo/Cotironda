@@ -7,6 +7,9 @@
 create role cotironda_onboard_owner_d072 nologin noinherit nobypassrls;
 create role cotironda_onboard_gateway_d072 nologin noinherit nobypassrls;
 grant usage on schema cotironda_private,public to cotironda_onboard_owner_d072;
+-- auth.uid() is a schema-qualified function; only USAGE on schema auth is
+-- needed, no SELECT/INSERT/UPDATE grants on Auth tables.
+grant usage on schema auth to cotironda_onboard_owner_d072;
 grant usage on schema cotironda_private to cotironda_onboard_gateway_d072;
 grant execute on function cotironda_private.storage_session_active()
  to cotironda_onboard_owner_d072;
