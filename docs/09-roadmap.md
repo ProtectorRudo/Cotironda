@@ -210,3 +210,6 @@ Se preparó una bandeja SQL privada que une mensajes de D028 con revisiones de b
 
 ### 31/10/2026 — D048 vínculo transaccional de mensaje→borrador, PostgreSQL CI
 Se preparó comprobación SQL que impide encolar respuesta a una revisión D026 si no tiene procedencia exacta de mensaje D028. La función D048 guarda económicamente y registra procedencia en una misma transacción; puede rechazar duplicados y vínculos falsos sin enviar mensajes. No sustituye autenticación/interpretación real ni confirmación conversacional D046. Solo CI descartable, con gate de backup/restore #175 abierto. Ver docs/111.
+
+### 31/10/2026 — D049 confirmación transaccional con trazabilidad, solo PostgreSQL CI
+Transición de la confirmación de D046 a comprobante SQL privado: la versión D026 se crea en la misma transacción que la vinculación a una respuesta del proveedor en D028, solo para el borrador D048 cuyo mensaje saliente D047 fue aceptado. Replay, revisión anterior, contacto ajeno, BAJA y términos económicos incompletos se rechazan; SQL no lee texto cifrado ni valida reply-to real: requiere broker y pruebas de Whapi reales. No instalar en DEV hasta backup/restore #175. Ver docs/112.
