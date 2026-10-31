@@ -25,6 +25,12 @@ function fmt(value:string):string{
  const [integer,decimals='00']=value.split('.');
  return integer.replace(/\B(?=(\d{3})+(?!\d))/g,'.')+','+decimals;
 }
+function fmtQty(value:string):string{
+ const [integer,decimals='']=value.split('.');
+ const clean=decimals.replace(/0+$/,'');
+ return integer.replace(/\B(?=(\d{3})+(?!\d))/g,'.')+
+   (clean?','+clean:'');
+}
 export function PreciosRealesComprador({rondaId}:{rondaId:string}){
  const [estado,setEstado]=useState<Estado>('cargando');
  const [datos,setDatos]=useState<Datos|null>(null);
@@ -109,12 +115,12 @@ export function PreciosRealesComprador({rondaId}:{rondaId:string}){
         const offer=map.get(item.line_no);
         return <div className="mvp014-line" key={item.line_no}>
          <div><strong>{item.product_code.replaceAll('_',' ')}</strong>
-          <small>Solicitado: {fmt(item.quantity)} {unit[item.unit]??item.unit}</small></div>
+          <small>Solicitado: {fmtQty(item.quantity)} {unit[item.unit]??item.unit}</small></div>
          {offer&&offer.quoted_unit_price!==null?
           <div className="mvp014-price">
            <strong>{offer.currency} {fmt(offer.quoted_unit_price)}</strong>
            <small>Por {unit[offer.quoted_unit]??offer.quoted_unit} ·
-            disponible: {fmt(offer.available_qty)} {unit[offer.quoted_unit]??offer.quoted_unit}</small>
+            disponible: {fmtQty(offer.available_qty)} {unit[offer.quoted_unit]??offer.quoted_unit}</small>
            <small className={offer.vat_basis==='no_informado'||offer.vat_basis==='contradictorio'
             ?'mvp014-uncertain':''}>{iva[offer.vat_basis]}</small>
           </div>:
