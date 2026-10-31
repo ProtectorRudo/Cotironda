@@ -590,3 +590,8 @@
 - Auditoría solo lectura: Supabase DEV plan Free, pg_cron/pg_net/Vault instaladas, cero cron, auto IA OFF y 4/6 reservas usadas. Sin respaldo diario automático garantizado en Free; urge exportación lógica real protegida y ensayo de recuperación antes de D024.
 - Nuevo generador `scripts/ci/prepare-inert-quality-d038.mjs`, hash control y flag CI: omite **únicamente** dos `CREATE EXTENSION` de D020 en PG17 descartable, sin ejecutar migración que hace DROP EXTENSION. SQL CI 108 verifica despachador original desactivado, RLS, cinco casos sintéticos, cuatro reservas ficticias y ninguna llamada de red.
 - Plan en docs/102: no confundir restauración lógica inerte con restauración completa de DEV, no hacer clon físico con jobs activos, proteger/Auth/Storage/Vault, sin secretos en repositorio ni cambios a DEV/producción.
+
+## [Sin publicar — D039 / Issue #180: verificación de integridad de backups cifrados]
+- Nuevo script local offline `scripts/ops/verify-encrypted-dev-backup-d039.mjs` con modos seal/verify y manifiesto SHA256 de cinco exportaciones age (roles/esquema/datos/historial), ref DEV fija y hash independiente obligatorio. No importa credenciales, no descifra y rechaza paquete incompleto, SQL abierto, symlinks y contenido alterado.
+- Doce pruebas unitarias sintéticas y procedimiento en docs/103. Un paquete PASS NO demuestra exportación correcta, cobertura Auth/Storage/Vault, descifrado ni restauración. La herramienta informa expresamente `restore_verified=false` y `gate_d024_open=false`.
+- Estado de Supabase DEV verificado solo con SELECT: 17 migraciones, cron 0 y flag IA auto false. Sin cambios de datos/esquema, sin backup real ni despliegues; Issue #175 bloqueante.
