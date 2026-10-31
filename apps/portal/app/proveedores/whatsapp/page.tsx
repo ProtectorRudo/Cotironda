@@ -3,7 +3,7 @@ import {redirect} from 'next/navigation';
 import {clienteSupabaseServidor,entornoAuthConfigurado}
  from '@/lib/supabase/server';
 import {habilitarPantallaAltaWhatsAppD073}
- from '../../../../src/server/supplier-whatsapp-link-http-d073.ts';
+ from '../../../../../src/server/supplier-whatsapp-link-http-d073.ts';
 import {ActivarWhatsAppProveedor} from './activar-whatsapp';
 import './proveedor-whatsapp.css';
 
