@@ -751,3 +751,6 @@
 
 ### 31/10/2026 — MVP-021: outbox exclusiva de invitaciones (sin envíos live)
 - SQL D070 roles privados, trabajo único por proveedor/ronda/canal, reserva transaccional de límites D056 compartidos con respuestas y fases no-retry tras HTTP incierto. Worker TypeScript utiliza cifrado D068 y transporte Whapi existente D055 con autorización final HMAC+consentimiento; flags deshabilitados por defecto. Tests unitarios/PG17 de casos normales y de rechazo. No se despliega ni instala Supabase DEV/prod, backup #175 pendiente. Ver docs/141.
+
+### 31/10/2026 — MVP-022: snapshot uniforme para los fragmentos del respaldo DEV
+- `export-encrypted-dev-mvp003.mjs` usa `psql pg_export_snapshot()` en transacción READ ONLY y pasa `--snapshot` único a los cuatro dumps que componen el SQL, preservando streaming a `age`. Verifica versión PostgreSQL17 de `psql`; falla cerrado ante protocolo inválido/desconexión. `pg_dumpall` roles sigue sin snapshot global y el restore auténtico de DEV sigue pendiente Issue #175. Pruebas sintéticas Node/CI, sin datos reales ni despliegue. Ver docs/142.
