@@ -83,14 +83,14 @@ declare
  v_zone text;v_hash text;v_previous cotironda_private.round_requests_d064%rowtype;
  v_round uuid;v_now timestamptz:=pg_catalog.clock_timestamp();
  v_number integer;v_count integer;
- v_product text;v_qty text;v_unit text;
+ v_buyer uuid;v_org_count integer;
 begin
  -- D025 checks JWT role, email verification, anon flag and live auth.sessions.
  -- It is NOT a permission check for a specific org; performed below.
  perform 1 from cotironda_private.buyer_round_overview_v1(
    '00000000-0000-4000-8000-000000000064'::uuid);
  v_uid:=cotironda_private.request_user_id_v035();
- if p_buyer is null or p_key is null
+ if p_key is null
  or p_zone is null or pg_catalog.length(pg_catalog.btrim(p_zone))<3
  or pg_catalog.length(pg_catalog.btrim(p_zone))>65
  or pg_catalog.btrim(p_zone) !~ '^[[:alnum:] .,-]+$'
@@ -100,9 +100,23 @@ begin
  or pg_catalog.jsonb_array_length(p_items)<1
  or pg_catalog.jsonb_array_length(p_items)>8
  then raise exception 'd064_invalid_request' using errcode='22023';end if;
+ -- Zero-friction: if the member manages exactly ONE buyer company,
+ -- derive its ID from live membership, never from an untrusted browser claim.
+ if p_buyer is null then
+  select count(*),min(o.id) into v_org_count,v_buyer
+  from public.organizations o
+  join public.organization_members m on m.organization_id=o.id
+  where o.organization_type in('buyer','both')
+    and m.user_id=v_uid and m.status='active'
+    and m.membership_role in('owner','manager');
+  if v_org_count<>1 then
+   raise exception 'd064_buyer_org_required' using errcode='22023';end if;
+ else
+  v_buyer:=p_buyer;
+ end if;
  if not exists(select 1 from public.organizations o
   join public.organization_members m on m.organization_id=o.id
-  where o.id=p_buyer and o.organization_type in('buyer','both')
+  where o.id=v_buyer and o.organization_type in('buyer','both')
    and m.user_id=v_uid and m.status='active'
    and m.membership_role in('owner','manager'))
  then raise exception 'd064_buyer_not_authorized' using errcode='42501';end if;
@@ -129,14 +143,14 @@ begin
  end loop;
  v_zone:=pg_catalog.btrim(p_zone);
  v_hash:=pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(
-  pg_catalog.jsonb_build_object('org',p_buyer,'zone',v_zone,'iva',p_iva,
+  pg_catalog.jsonb_build_object('org',v_buyer,'zone',v_zone,'iva',p_iva,
     'items',p_items)::text,'UTF8')),'hex');
  -- Secure and deterministic serialization of double clicks and concurrent
  -- requests from the SAME buyer+idempotency key. No orphan round on replay.
  perform pg_catalog.pg_advisory_xact_lock(
-  pg_catalog.hashtextextended(p_buyer::text||':'||v_uid::text||':'||p_key::text,0));
+  pg_catalog.hashtextextended(v_buyer::text||':'||v_uid::text||':'||p_key::text,0));
  select * into v_previous from cotironda_private.round_requests_d064
-  where buyer_org_id=p_buyer and created_by=v_uid and request_key=p_key;
+  where buyer_org_id=v_buyer and created_by=v_uid and request_key=p_key;
  if found then
   if v_previous.content_sha256<>v_hash then
    raise exception 'd064_request_conflict' using errcode='23505';end if;
@@ -146,7 +160,7 @@ begin
  -- The buyer does NOT select supplier IDs or request sending: no invitations
  -- are manufactured. A separate vetted geographic matcher will distribute.
  insert into cotironda_private.rounds_v1(buyer_org_id,begins_at,ends_at)
-  values(p_buyer,v_now+interval '30 seconds',v_now+interval '2 days')
+  values(v_buyer,v_now+interval '30 seconds',v_now+interval '2 days')
   returning id into v_round;
  for v_number in 0..v_count-1 loop
   v_line:=p_items->v_number;
@@ -159,7 +173,7 @@ begin
  insert into cotironda_private.round_requests_d064
   (round_id,buyer_org_id,created_by,request_key,content_sha256,
    delivery_zone,buyer_iva_request)
-  values(v_round,p_buyer,v_uid,p_key,v_hash,v_zone,p_iva);
+  values(v_round,v_buyer,v_uid,p_key,v_hash,v_zone,p_iva);
  return pg_catalog.jsonb_build_object('roundId',v_round,
   'status','programada','repeated',false);
 end;$fn$;
