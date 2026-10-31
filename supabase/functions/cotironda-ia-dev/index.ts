@@ -8,9 +8,11 @@
 import { withSupabase } from 'npm:@supabase/server@1.9.2';
 import { handleCotirondaDevAi } from './logic.ts';
 
-// Only the existing default key and the dedicated DEV quality-lab key are accepted.
-// Explicit names avoid the overly broad 'secret:*' permission.
-Deno.serve(withSupabase({auth:['secret:default','secret:cotironda_quality_lab']}, async (req, ctx) => {
+// D044: least privilege. Do not allow the project-wide default secret key.
+// Before a future DEV deployment, validate that the dedicated key exists and
+// all authorized callers use it on the `apikey` header (never Authorization).
+// This source change alone DOES NOT change the already-deployed function v9.
+Deno.serve(withSupabase({auth:'secret:cotironda_quality_lab'}, async (req, ctx) => {
   return handleCotirondaDevAi(req,{
     supabaseUrl:Deno.env.get('SUPABASE_URL'),
     openaiKey:Deno.env.get('OPENAI_API_KEY'),
