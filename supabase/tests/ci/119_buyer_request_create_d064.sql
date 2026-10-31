@@ -72,6 +72,23 @@ begin
  -- a privileged CI assertion after RESET ROLE proves no invitation exists.
 end;$case$;
 reset role;
+-- Independent SQL family's curated accept set (no client or Next involved).
+select ci_helpers.assert_true(
+ cotironda_private.valid_pilot_product_d078('cemento_gris_obra','Cemento CPC Loma Negra 50 kg')
+ and cotironda_private.valid_pilot_product_d078('hidrofugo','Hidrófugo Ceresita 10 kg')
+ and cotironda_private.valid_pilot_product_d078('pintura_latex','Pintura látex interior')
+ and cotironda_private.valid_pilot_product_d078('placa_yeso','Placas de yeso RH 12,5 mm')
+ and cotironda_private.valid_pilot_product_d078('cable_unipolar','Cable unipolar 2,5 mm²')
+ and cotironda_private.valid_pilot_product_d078('cano_pvc','Caño PVC 110 mm')
+ and not cotironda_private.valid_pilot_product_d078('cemento_gris_obra','Pintura látex')
+ and not cotironda_private.valid_pilot_product_d078('cemento_gris_obra','Cemento cola')
+ and not cotironda_private.valid_pilot_product_d078('pintura_latex','Guantes de látex')
+ and not cotironda_private.valid_pilot_product_d078('cable_unipolar','Cable de red UTP')
+ and not cotironda_private.valid_pilot_product_d078('cano_pvc','Caño PVC eléctrico')
+ and not cotironda_private.valid_pilot_product_d078('cemento_gris_obra','Cemento látex')
+ and not has_function_privilege('anon','cotironda_private.valid_pilot_product_d078(text,text)','EXECUTE')
+ and not has_function_privilege('authenticated','cotironda_private.valid_pilot_product_d078(text,text)','EXECUTE'),
+ 'd078_identity_sql_rules_and_acl');
 select ci_helpers.assert_true(
  (select count(*)=1 from cotironda_private.round_requests_d064
   where buyer_org_id='aaaaaaaa-0015-4015-8015-000000000655'
