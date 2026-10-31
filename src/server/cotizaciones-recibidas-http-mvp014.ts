@@ -41,7 +41,7 @@ function exact(v:unknown,keys:readonly string[]):v is Record<string,unknown>{
 function validOffers(value:unknown,round:ResumenRonda):value is PrecioRecibidoMvp014[]{
  if(!Array.isArray(value)||value.length>400)return false;
  const roundLines=new Set(round.items.map(x=>x.line_no));
- const aliases=new Map<string,number>();
+ const aliases=new Map<string,string>();
  const rows=new Set<string>();
  for(const row of value){
   if(!exact(row,FIELDS)||
@@ -64,9 +64,11 @@ function validOffers(value:unknown,round:ResumenRonda):value is PrecioRecibidoMv
   )return false;
   // Never show inconsistent repeated data or a mixed-version supplier
   // as if it were a coherent quote.
-  if(aliases.has(row.supplier_alias)&&aliases.get(row.supplier_alias)!==row.offer_version)
+  const conditions=JSON.stringify([row.offer_version,row.currency,
+    row.freight_gross,row.payment_method,row.lead_days]);
+  if(aliases.has(row.supplier_alias)&&aliases.get(row.supplier_alias)!==conditions)
     return false;
-  aliases.set(row.supplier_alias,row.offer_version);
+  aliases.set(row.supplier_alias,conditions);
   const unique=row.supplier_alias+':'+row.line_no;
   if(rows.has(unique))return false;
   rows.add(unique);
