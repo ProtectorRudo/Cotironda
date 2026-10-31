@@ -51,7 +51,7 @@ async function expectDenied(db,sql){
  catch(e){if(e.code==='42501')denied=true;else throw Error('D031_denial_wrong_code')}
  assert.equal(denied,true,'missing privilege must deny query');
 }
-async function runMessage(m){
+async function runMessage(m,keyVersion='aes_2026_a'){
  return withDb(async db=>{
    const gateway=crearPuertoPostgresWhapiD030({
      query:async(sql,params)=>db.query(sql,[...params])});
