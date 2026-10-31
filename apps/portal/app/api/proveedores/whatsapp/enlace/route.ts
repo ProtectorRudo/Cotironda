@@ -1,7 +1,7 @@
 import {clienteSupabaseServidor,entornoAuthConfigurado}
  from '@/lib/supabase/server';
 import {habilitarPantallaAltaWhatsAppD073,procesarEnlaceAltaProveedorD073}
- from '../../../../../../src/server/supplier-whatsapp-link-http-d073.ts';
+ from '../../../../../../../src/server/supplier-whatsapp-link-http-d073.ts';
 
 export const runtime='nodejs';
 export const dynamic='force-dynamic';
