@@ -53,5 +53,5 @@ export async function procesarMisRondasMvp014(
  }catch{return response(503,{error:'rondas_no_disponibles'});}
 }
 export function misRondasHabilitado(env:Record<string,string|undefined>):boolean{
- return ofertasLecturaHabilitada(env);
+ return rondasLecturaHabilitada(env);
 }
