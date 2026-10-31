@@ -346,6 +346,14 @@ jobs:
           SQL
 
 
+      - name: MVP-003 restauracion PG17 de laboratorio a segunda base efimera sin DEV
+        env:
+          COTIRONDA_RESTORE_CI: 'true'
+        run: |
+          set -euo pipefail
+          bash scripts/ci/restore-mvp003.sh
+
+
   migrations-from-zero:
     name: Reconstruir historial 12 migraciones en PostgreSQL limpio
     runs-on: ubuntu-latest
