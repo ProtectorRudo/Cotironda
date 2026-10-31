@@ -703,3 +703,7 @@
 - Cambio vinculante de producto: comprador envía una sola vez; preguntar localidad/zona entrega solo si falta/contradice. Cada proveedor recibe consulta preparada con materiales, zona y detalles excepcionales expresamente pedidos. No se exige revisar renglones ni confirmar cotización dos veces.
 - Nueva ruta offline de recepción de oferta del proveedor desde evento validado: se registra al recibirla aunque falten IVA/flete; respuesta posterior crea versión inmutable; duplicados y remitente inválido bloqueados. Comparación sigue excluyendo IVA/flete desconocidos o equivalencias no verificadas, sin ocultar oferta parcial recibida.
 - Demo del comprador pregunta una única zona si falta, y muestra mensajes ficticios consolidados sin «Confirmo». Legado D046/D049/D051 permanece por compatibilidad: requiere migración real antes del piloto. Sin envío, deploy ni cambios Supabase DEV.
+
+### 31/10/2026 — MVP-009: SQL de recepción directa sin mensaje de confirmación
+- Nuevo procedimiento privado `whapi_receive_quote_d059` que liga inbox cifrado a revisión D048 y versión inmutable D026 de manera atómica, sin intervención D047/D049. Admite ofertas parciales y datos fiscales/logísticos ausentes, conserva control de opt-in, identidad, plazos, deduplicación y correcciones.
+- Recibos protegidos por RLS/rol NOLOGIN sin datos personales en claro; ensayo de casos normales y extremos en PostgreSQL 17 efímero CI. No SQL instalado en Supabase, no Whapi real, no merge/deploy. Ver docs/129.
