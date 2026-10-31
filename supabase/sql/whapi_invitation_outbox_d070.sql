@@ -389,3 +389,90 @@ grant execute on function
  to cotironda_invite_gateway_d070;
 comment on table cotironda_private.whapi_invite_jobs_d070 is
  'MVP021 CI only, invite intent separate from reply outbox; no plaintext or Whapi HTTP';
+
+-- D056 replies MUST count D070 invitations too (bidirectional shared caps).
+-- Keep existing D056 definer owner, privileges and trigger identity.
+grant select on cotironda_private.whapi_invite_reservations_d070
+ to cotironda_limits_writer_d056;
+create policy d070_old_limits_read on
+ cotironda_private.whapi_invite_reservations_d070
+ for select to cotironda_limits_writer_d056 using(true);
+create or replace function cotironda_private.whapi_guard_begin_send_d056()
+returns trigger language plpgsql volatile security definer set search_path='' as $fn$
+declare
+ v_buyer uuid;
+ v_policy cotironda_private.whapi_buyer_send_policies_d056%rowtype;
+ v_day date;
+ v_month date;
+ v_day_count bigint;
+ v_month_count bigint;
+ v_month_units numeric;
+ v_now timestamptz;
+begin
+ if not(old.send_phase='not_started' and new.send_phase='in_flight')
+ then return new;end if;
+ if old.job_id is distinct from new.job_id
+    or old.status<>'leased' or new.status<>'leased'
+    or old.lease_token is null or old.lease_token is distinct from new.lease_token
+    or old.leased_until<=pg_catalog.clock_timestamp()
+ then raise exception 'd056_invalid_begin_transition' using errcode='42501';end if;
+
+ v_now:=pg_catalog.clock_timestamp();
+ select r.buyer_org_id into v_buyer
+ from cotironda_private.rounds_v1 r
+ join cotironda_private.offer_drafts_v1 d
+  on d.round_id=r.id and d.supplier_org_id=old.supplier_org_id
+ where r.id=old.round_id and r.status='abierta'
+  and v_now>=r.begins_at and v_now<r.ends_at
+  and d.revision=old.revision;
+ if v_buyer is null or not exists(
+  select 1 from cotironda_private.whapi_contacts_v1 c
+  where c.channel_id=old.channel_id and c.chat_key=old.chat_key
+    and c.supplier_org_id=old.supplier_org_id
+    and c.opted_out_at is null and c.consented_at<=v_now
+    and c.verified_at<=v_now
+ ) then raise exception 'd056_consent_or_revision_invalid' using errcode='42501';end if;
+
+ -- Row lock serializes ALL distinct jobs of same buyer+channel, including
+ -- concurrent workers. Limits can be safely changed only by privileged admin.
+ select * into v_policy from cotironda_private.whapi_buyer_send_policies_d056
+ where buyer_org_id=v_buyer and channel_id=old.channel_id
+ for update;
+ if not found or not v_policy.enabled
+ then raise exception 'd056_policy_disabled_or_missing' using errcode='42501';end if;
+
+ v_day:=(v_now at time zone 'America/Argentina/Buenos_Aires')::date;
+ v_month:=pg_catalog.date_trunc('month',v_day::timestamp)::date;
+ select
+  (select count(*) from cotironda_private.whapi_send_reservations_d056
+    where buyer_org_id=v_buyer and channel_id=old.channel_id and local_day=v_day)
+  +(select count(*) from cotironda_private.whapi_invite_reservations_d070
+    where buyer_org_id=v_buyer and channel_id=old.channel_id and local_day=v_day)
+  into v_day_count;
+ select
+  (select count(*) from cotironda_private.whapi_send_reservations_d056
+    where buyer_org_id=v_buyer and channel_id=old.channel_id and local_month=v_month)
+  +(select count(*) from cotironda_private.whapi_invite_reservations_d070
+    where buyer_org_id=v_buyer and channel_id=old.channel_id and local_month=v_month),
+  (select coalesce(sum(reserved_units),0)
+    from cotironda_private.whapi_send_reservations_d056
+    where buyer_org_id=v_buyer and channel_id=old.channel_id and local_month=v_month)
+  +(select coalesce(sum(reserved_units),0)
+    from cotironda_private.whapi_invite_reservations_d070
+    where buyer_org_id=v_buyer and channel_id=old.channel_id and local_month=v_month)
+ into v_month_count,v_month_units;
+
+ if v_day_count>=v_policy.daily_message_limit
+ or v_month_count>=v_policy.monthly_message_limit
+ or v_month_units+v_policy.estimated_units_per_message>v_policy.monthly_budget_units
+ then raise exception 'd056_send_quota_exhausted' using errcode='42501';end if;
+ insert into cotironda_private.whapi_send_reservations_d056
+ (job_id,buyer_org_id,supplier_org_id,channel_id,chat_key,round_id,
+ revision,local_day,local_month,reserved_units,policy_revision)
+ values(old.job_id,v_buyer,old.supplier_org_id,old.channel_id,old.chat_key,
+ old.round_id,old.revision,v_day,v_month,
+ v_policy.estimated_units_per_message,v_policy.revision);
+ return new;
+end;$fn$;
+
+
