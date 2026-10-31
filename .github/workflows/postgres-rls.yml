@@ -370,7 +370,7 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_quote_queue_d062.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/117_whapi_quote_queue_d062.sql
 
-      - name: MVP-013 E2E real Node22 + PostgreSQL17: webhook a cotizacion sin Confirmo
+      - name: "MVP-013 E2E real Node22 + PostgreSQL17 - webhook a cotizacion sin Confirmo"
         run: |
           set -euo pipefail
           export COTIRONDA_D063_HMAC_ID="$(openssl rand -hex 32)"
