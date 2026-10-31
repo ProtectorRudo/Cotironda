@@ -709,3 +709,7 @@
 - Recibos protegidos por RLS/rol NOLOGIN sin datos personales en claro; ensayo de casos normales y extremos en PostgreSQL 17 efímero CI. No SQL instalado en Supabase, no Whapi real, no merge/deploy. Ver docs/129.
 
 - MVP-009 añadió también puerto **server-only** `whapi-quote-direct-postgres-d059.ts` hacia SQL D059, con validación estricta de campos, SQL parametrizado y resultados fail-closed; tests de respuesta, replay, corrección, campos maliciosos y errores internos. Aún sin endpoints ni conexión de broker real.
+
+### 31/10/2026 — MVP-010: no perder el importe declarado si IVA no está informado
+- Nuevo diseño de origen de precios D060: monto unitario original, estado de IVA, posición/hash fuente y vínculo a versión del proveedor; ingreso atómico D059 y lectura comprador autenticado por alias, solo último presupuesto vigente. Sin inventar neto/IVA/flete y sin segundo «Confirmo».
+- Rol SQL privado, RLS, exactitud económica, versiones y replay, ACL por empresa; pruebas PostgreSQL 17 CI y puerto TypeScript. No se aplica a Supabase DEV ni se conecta a Whapi real; ver docs/130.
