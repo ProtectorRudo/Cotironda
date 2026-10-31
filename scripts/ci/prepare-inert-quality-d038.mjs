@@ -52,7 +52,7 @@ export function prepararD020InerteD038(sql, expectedHash) {
 export async function generarEnsayoD038(outputPath) {
  if(process.env.COTIRONDA_CI_INERT_RESTORE!=='true'||
     process.env.PGHOST!=='127.0.0.1'||
-    process.env.PGDATABASE!=='cotironda_ci'||
+    process.env.PGDATABASE!=='cotironda_ci_fresh'||
     outputPath!=='/tmp/cotironda_d038_inert.sql')
     throw Error('D038_CI_ONLY_GUARD');
  const manifest=JSON.parse(await readFile(join(ROOT,
