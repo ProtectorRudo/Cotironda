@@ -63,6 +63,22 @@ insert into cotironda_private.delivery_localities_d065(alias_key,province,city)
  values('la plata','Buenos Aires','La Plata');
 insert into cotironda_private.item_rubros_d065(product_code,category_code)
  values('cemento_018','corralon'),('pintura_018','pintureria');
+-- D080: prove real declared catalog matching even in old D067 quote-scope tests.
+insert into public.supplier_products
+ (id,organization_id,category_code,product_name,unit_code) values
+ ('eeeeeeee-0018-4018-8018-000000000683',
+  'bbbbbbbb-0018-4018-8018-000000000683','corralon','Cemento CPC 50 kg','bag'),
+ ('eeeeeeee-0018-4018-8018-000000000684',
+  'bbbbbbbb-0018-4018-8018-000000000684','pintureria','Pintura latex','l');
+insert into cotironda_private.supplier_catalog_capabilities_d080
+ (catalog_product_id,product_code,fingerprint_sha256)
+ select id,case when category_code='corralon' then 'cemento_018'
+                else 'pintura_018' end,
+  cotironda_private.catalog_fingerprint_d080(id)
+ from public.supplier_products
+ where id in(
+  'eeeeeeee-0018-4018-8018-000000000683'::uuid,
+  'eeeeeeee-0018-4018-8018-000000000684'::uuid);
 set local role cotironda_match_gateway_d065;
 do $prepare$
 declare p jsonb;
