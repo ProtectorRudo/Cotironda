@@ -15,7 +15,7 @@ const NOW=1800000000,SECRET='d051_SECRET_WEBHOOK_SINTETICO_0123456789';
 const QUOTE='p.outbound-00000051';
 const KEY=Buffer.alloc(32,47);
 async function setup(){
- const memory={stored:null,queries:[],respond:null};
+ const memory={stored:null,queries:[],respond:undefined};
  const broker=construirBrokerWhapiPrivado({
    channel:CHANNEL,secretoWebhook:SECRET,habilitado:true,ahoraUnix:()=>NOW,
    claves:{identidadHmac:Buffer.alloc(32,14),
