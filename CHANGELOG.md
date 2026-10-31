@@ -763,3 +763,6 @@
 
 ### 31/10/2026 — MVP-025: pantalla para activar WhatsApp de proveedor (solo CI)
 - Nueva UI móvil `/proveedores/whatsapp` con un CTA de alta; SSR lista negocios propios autorizados y emite enlace `wa.me` mediante JWT Supabase + RPC D072. D072 ahora exporta emisor sin requerir claves HMAC/AES en Next. Nuevo controlador D073 con entorno Preview/Origin/Auth, response no-store, límite streaming 256 bytes y host wa.me exacto. Tests Node/HTTP Next sin envíos; flag OFF; no base DEV ni producción. Ver docs/145.
+
+### 31/10/2026 — MVP-026: Preview proveedor con registro general cerrado
+- Separado el modo de inicio de sesión del proveedor de `COTIRONDA_REGISTRATION_ENABLED`, ahora obligatorio OFF; flags explícitos Auth+WhatsApp, Vercel Preview, commit branch de integración y Supabase DEV exclusivo. `/alta` ofrece enlace a activación sin formulario de empresa, Next Proxy refresca SSR cookies en rutas proveedor. Nuevo HTTP E2E de Next con fake Auth/PostgREST/RLS/D072, origen, falta de sesión, empresa ajena y signup bloqueado. Sin deploy, migraciones reales ni WhatsApp live. Ver docs/146.
