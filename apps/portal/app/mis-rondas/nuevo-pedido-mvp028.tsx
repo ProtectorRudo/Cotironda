@@ -2,19 +2,23 @@
 import {useRef,useState,type FormEvent} from 'react';
 import {prepararPedidoTextoMvp028,type PedidoPilotoMvp028}
  from '../../../../src/domain/pedido-piloto-mvp028.ts';
+import {planificarAclaracionesMvp033}
+ from '../../../../src/domain/pedido-aclaraciones-mvp033.ts';
 
 type State='idle'|'sending'|'saved';
 export function NuevoPedidoMvp028(){
  const [text,setText]=useState('');
  const [zone,setZone]=useState('');
  const [view,setView]=useState<PedidoPilotoMvp028|null>(null);
+ const [askZone,setAskZone]=useState(false);
  const [state,setState]=useState<State>('idle');
  const [error,setError]=useState('');
  const [saved,setSaved]=useState('');
  const requestId=useRef<string|null>(null);
- const reset=()=>{
+ const reset=(keepZonePrompt=false)=>{
   requestId.current=null;
   setView(null);setError('');setSaved('');setState('idle');
+  if(!keepZonePrompt)setAskZone(false);
  };
  async function submit(e:FormEvent<HTMLFormElement>){
   e.preventDefault();
@@ -27,8 +31,11 @@ export function NuevoPedidoMvp028(){
    return;
   }
   setView(prepared);
-  if(prepared.estado!=='listo_para_registrar'||!prepared.zonaEntrega){
-   setError('Revisá los renglones indicados. No vamos a guardar ni perder materiales sin reconocer.');
+  const plan=planificarAclaracionesMvp033(prepared);
+  setAskZone(plan.preguntarZona);
+  if(!plan.permitirEnvio){
+   if(plan.pendientes.length)
+    setError('Revisá las líneas indicadas. No vamos a omitir materiales del pedido.');
    return;
   }
   if(!requestId.current)requestId.current=crypto.randomUUID();
@@ -60,13 +67,14 @@ export function NuevoPedidoMvp028(){
    setState('idle'); // keep request UUID for exact idempotent retry
   }
  }
+ const pendientesVisibles=view?.pendientes.filter(p=>p.texto!=='Zona de entrega')??[];
  return <section style={{margin:'0 auto 32px',maxWidth:950,padding:20,
   background:'#142a42',border:'1px solid #315270',borderRadius:16}}>
   <p style={{color:'#9dcdff',fontWeight:750,fontSize:12}}>PRIMER PEDIDO · PILOTO</p>
   <h2 style={{fontSize:'clamp(23px,4vw,31px)',margin:'7px 0 8px'}}>Pedí presupuestos</h2>
   <p style={{color:'#b8cde0',marginBottom:16,lineHeight:1.5}}>
-   Pegá los materiales como los tenés. Cotironda conserva las especificaciones
-   originales. Si hay algo dudoso, te lo indica sin mandar pedidos incompletos.
+   Pegá los materiales como los tenés, incluyendo la entrega si ya la sabés.
+   Cotironda conserva las especificaciones originales y solo pregunta lo imprescindible.
   </p>
   {state==='saved'?<div role="status" style={{background:'#173d34',
    padding:16,borderRadius:11}}>
@@ -84,21 +92,25 @@ export function NuevoPedidoMvp028(){
     style={{display:'block',width:'100%',boxSizing:'border-box',background:'#0b1829',
      border:'1px solid #668baa',borderRadius:10,color:'white',padding:12,
      fontSize:16,lineHeight:1.5,resize:'vertical'}}/>
-   <label htmlFor="pedido-zona-028" style={{display:'block',fontWeight:750,
-    margin:'16px 0 8px'}}>Localidad de entrega</label>
-   <input id="pedido-zona-028" value={zone} maxLength={65}
-    autoComplete="address-level2" disabled={state==='sending'}
-    placeholder="Ej.: La Plata" onChange={e=>{setZone(e.target.value);reset();}}
-    style={{display:'block',width:'100%',boxSizing:'border-box',background:'#0b1829',
-     border:'1px solid #668baa',borderRadius:10,color:'white',padding:12,fontSize:16}}/>
-   <p style={{fontSize:12,color:'#a9c6e0'}}>Podés incluir «Entrega en: La Plata»
-    en el texto. La localidad es necesaria para buscar proveedores correctos.</p>
-   {view?.pendientes?.length?<div role="alert"
+   {askZone&&<div role="group" aria-labelledby="pedido-zona-titulo-033"
+    style={{marginTop:16}}>
+    <label id="pedido-zona-titulo-033" htmlFor="pedido-zona-028"
+     style={{display:'block',fontWeight:750,marginBottom:8}}>
+     ¿En qué localidad entregamos los materiales?
+    </label>
+    <input id="pedido-zona-028" value={zone} maxLength={65} required autoFocus
+     autoComplete="address-level2" disabled={state==='sending'}
+     placeholder="Ej.: La Plata" onChange={e=>{setZone(e.target.value);reset(true);}}
+     style={{display:'block',width:'100%',boxSizing:'border-box',background:'#0b1829',
+      border:'1px solid #668baa',borderRadius:10,color:'white',padding:12,fontSize:16}}/>
+    <small style={{color:'#a9c6e0'}}>Solo lo preguntamos si no figura claramente en tu lista.</small>
+   </div>}
+   {pendientesVisibles.length>0&&<div role="alert"
     style={{background:'#4a3027',borderRadius:10,padding:12,marginTop:10}}>
-    <strong>Hay {view.pendientes.length} aclaraciones necesarias:</strong>
-    <ul>{view.pendientes.map((p,i)=><li key={i}>
+    <strong>Hay {pendientesVisibles.length} líneas para revisar:</strong>
+    <ul>{pendientesVisibles.map((p,i)=><li key={i}>
      {p.linea>0?'Línea '+p.linea+': ':''}{p.motivo}</li>)}</ul>
-   </div>:null}
+   </div>}
    {error&&<p role="alert" style={{color:'#ffcfbf'}}>{error}</p>}
    <button type="submit" disabled={state==='sending'}
     style={{marginTop:14,background:'#287ce5',color:'white',border:0,
