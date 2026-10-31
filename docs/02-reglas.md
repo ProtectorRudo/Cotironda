@@ -75,3 +75,6 @@ El comprador no elige proveedores manualmente. Cotironda comprueba rubro registr
 
 ## MVP-017 — Mensaje por proveedor, sin envío prematuro
 Cotironda prepara cada solicitud WhatsApp desde la lista D065 específica del proveedor, usando descripciones de producto curadas, cantidades, unidad y zona. Solo añade requerimiento de IVA cuando el comprador lo aclaró; no pide «Confirmo». Antes de preparar debe revalidar rubro habilitado, aceptación, zona y consentimiento/BAJA, y antes de ENVIAR debe volver a comprobarlos (la vista previa no es una autorización de envío). Nunca exponer teléfonos a clientes ni enviar solicitudes a proveedores de otro rubro. Hasta backup #175 y sender seguro, no hacer llamadas externas. Ver docs/137.
+
+## MVP-018 — Proveedores solo cotizan artículos invitados
+Una invitación parcial no autoriza cotizar otros artículos del pedido. D061 debe entregar al intérprete exclusivamente el scope D065 del proveedor. La BD valida nuevamente el scope al guardar cada oferta D064, también si se saltea la IA. El incumplimiento bloquea toda la operación sin crear versión. La BAJA posterior detiene nuevas lecturas. No modificar permisos para eludir tests; no permitir flujos históricos sin scope en el piloto. Ver docs/138.
