@@ -766,3 +766,6 @@
 
 ### 31/10/2026 — MVP-026: Preview proveedor con registro general cerrado
 - Separado el modo de inicio de sesión del proveedor de `COTIRONDA_REGISTRATION_ENABLED`, ahora obligatorio OFF; flags explícitos Auth+WhatsApp, Vercel Preview, commit branch de integración y Supabase DEV exclusivo. `/alta` ofrece enlace a activación sin formulario de empresa, Next Proxy refresca SSR cookies en rutas proveedor. Nuevo HTTP E2E de Next con fake Auth/PostgREST/RLS/D072, origen, falta de sesión, empresa ajena y signup bloqueado. Sin deploy, migraciones reales ni WhatsApp live. Ver docs/146.
+
+### 31/10/2026 — MVP-027: exportación cifrada de DEV en un comando, pendiente ejecución real
+- Nuevo `scripts/ops/cotironda-private-backup-d075.mjs` para ordenador privado POSIX: preflight de conexión exclusiva DEV y binarios PG17+age; identidad age con permisos 0600, derivación `age-keygen -y` y rechazo antes de exportar si no coincide; reutiliza D003 snapshot consistente, D039 manifest y D041 descifrado sin plaintext en disco. Rechazo explícito GitHub Actions/CI/Vercel. Pruebas sin red mediante inyección sintética. No hay backup auténtico ni restore, bloqueante #175 abierto. Ver docs/147.
