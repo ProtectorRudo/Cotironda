@@ -225,3 +225,6 @@ Conecta en un runner descartable el receptor D027, cifrado D029, entrada D030, b
 
 ### 31/10/2026 — D053 protección ante resultado incierto de WhatsApp
 El E2E D052 mostró que podíamos registrar un ACK sintético, pero no demostraba qué ocurría si HTTP respondía con timeout después del envío. En PG17 CI D053 registra primero `in_flight` (commit antes de HTTP), convierte la expiración a `uncertain` y prohíbe reenvío automático; solo conciliación interna con evidencia HMAC/cancelación. Cualquier envío real deberá pasar por ese protocolo, autenticación API y revalidación final de opt-out/revisión. Sin Whapi/IA real ni Supabase DEV; #175 sigue abierto. Ver docs/116.
+
+### 31/10/2026 — D054 trabajador saliente simulado y no duplicados
+Se crea orquestador de servidor para reservar respuesta D047, confirmar estado D053 en transacción cerrada ANTES de cualquier transporte, calcular HMAC D050 de un ID saliente y registrar resultado o incertidumbre sin reenvío. Rol SQL sender distinto del reconciliador y E2E Node22/PG17 con transporte fake. No hay envío WhatsApp, conexión real ni publicación. Siguiente: adaptar API de Whapi.Cloud bajo permisos/costos/canal piloto y restauración real DEV #175. Ver docs/117.
