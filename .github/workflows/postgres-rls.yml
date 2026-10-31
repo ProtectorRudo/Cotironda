@@ -164,6 +164,12 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_confirm_atomic_d049.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/109_whapi_confirm_atomic_d049.sql
 
+      - name: D051 lectura privada cifrada y acuse original (solo PostgreSQL CI)
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_confirmation_read_port_d051.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/110_whapi_confirmation_read_port_d051.sql
+
       - name: Preparar Node para E2E real PostgreSQL
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
