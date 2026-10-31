@@ -681,3 +681,7 @@
 ### 31/10/2026 — MVP-003 extracción cifrada DEV preparada, pendiente de ejecución auténtica
 - En PR #221 se sumó `scripts/ops/export-encrypted-dev-mvp003.mjs`, una herramienta local POSIX de cinco flujos `pg_dump`/`pg_dumpall` PostgreSQL17 → age, sin SQL plaintext persistente, con lista de destinos permitidos y manifiesto D039.
 - 10 pruebas unitarias sintéticas de exportación (casos positivos y de falla); documentación de uso local en `docs/123-mvp-003-exportacion-cifrada-dev-local.md`. No se ejecutaron backups reales de DEV, ni restore alojado, ni despliegue; #175 permanece abierto.
+
+### 31/10/2026 — MVP-004, comparador visible sin falsificar cotizaciones
+- Nueva pantalla de demostración `/probar/ofertas`, enlazada desde `/probar`: cobertura por artículo, totales de canastas completas con IVA/flete y combinación de hasta dos vendedores anónimos. Selección de ejemplo exclusivamente local. Sin API ni contacto ni adjudicación.
+- Reutiliza `compararCotizacionesOffline` con fixtures estáticos y verifica que una oferta parcial o no confirmada no gane por un subtotal menor. PR en borrador encadenado sobre #221, sin cambios en Supabase DEV ni producción.
