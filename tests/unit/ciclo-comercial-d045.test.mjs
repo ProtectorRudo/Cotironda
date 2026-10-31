@@ -66,7 +66,8 @@ test('D045: un proveedor parcial no tiene total comparable y nunca figura como c
  const r=run(),coverage=r.comparacion.cobertura;
  assert.equal(coverage.length,3);
  assert.equal(coverage.find(x=>x.anonId==='anon_cemento').lineasCompletas,1);
- assert.equal(coverage.find(x=>x.anon_cemento).length,undefined);
+ assert.equal(coverage.find(x=>x.anonId==='anon_cemento').totalComparable,null);
+ assert.ok(r.comparacion.opcionesCompletas.every(x=>x.asignacion.length===3));
 });
 test('D045: la compra con dos proveedores suma IVA y ambos fletes, sin revelar contactos',()=>{
  const r=run(),opts=r.comparacion.opcionesCompletas;
