@@ -192,5 +192,6 @@ reset role;
 \ir 123_whapi_encrypted_recipient_d068.sql
 \ir 124_whapi_invitation_outbox_d070.sql
 \ir 125_whapi_round_orchestrator_d071.sql
+\ir 126_supplier_whapi_self_enroll_d072.sql
 \ir 121_supplier_packet_d066.sql
 rollback;
