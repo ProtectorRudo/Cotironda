@@ -32,14 +32,17 @@ export type AltaWhapiConfigD072=Readonly<{
  /** D069 trusted broker: AES-GCM storage only for the registered supplier. */
  enrolar:(data:{channel:string;supplierOrgId:string;to:string})=>Promise<unknown>;
 }>;
-export function crearAltaProveedorWhatsAppD072(config:AltaWhapiConfigD072){
+export type EmisorEnlaceProveedorD072=Readonly<{
+ habilitado:boolean;channel:string;botNumber:string;
+ /** Authenticated supplier session JWT, never service_role. */
+ emitir:(query:string,args:readonly unknown[])=>Promise<unknown>;
+}>;
+/** This can be used in the portal without exposing webhook/HMAC/AES keys. */
+export function crearEmisorEnlaceProveedorD072(config:EmisorEnlaceProveedorD072){
  if(!config||typeof config.habilitado!=='boolean'||
   typeof config.channel!=='string'||!CHANNEL.test(config.channel)||
   typeof config.botNumber!=='string'||!PHONE.test(config.botNumber)||
-  !Buffer.isBuffer(config.identityHmac)||config.identityHmac.length!==32||
-  typeof config.emitir!=='function'||typeof config.consumir!=='function'||
-  typeof config.enrolar!=='function')deny();
- const identityKey=Buffer.from(config.identityHmac);
+  typeof config.emitir!=='function')deny();
  async function enlaceParaProveedor(supplierOrgId:string){
   if(config.habilitado!==true)deny();
   if(typeof supplierOrgId!=='string'||!UUID.test(supplierOrgId))deny();
@@ -49,10 +52,18 @@ export function crearAltaProveedorWhatsAppD072(config:AltaWhapiConfigD072){
   if(!exact(res,['payload'])||!exact(res.payload,['state','code','expiresSeconds'])||
    res.payload.state!=='issued'||res.payload.expiresSeconds!==900||
    typeof res.payload.code!=='string'||!CODE.test(res.payload.code))deny();
-  const text='COTI ALTA '+res.payload.code;
-  const url='https://wa.me/'+config.botNumber+'?text='+encodeURIComponent(text);
+  const message='COTI ALTA '+res.payload.code;
+  const url='https://wa.me/'+config.botNumber+'?text='+encodeURIComponent(message);
   return Object.freeze({estado:'enlace_generado' as const,url,venceEnSegundos:900});
  }
+ return Object.freeze({enlaceParaProveedor});
+}
+export function crearAltaProveedorWhatsAppD072(config:AltaWhapiConfigD072){
+ if(!config||!Buffer.isBuffer(config.identityHmac)||
+  config.identityHmac.length!==32||
+  typeof config.consumir!=='function'||typeof config.enrolar!=='function')deny();
+ const link=crearEmisorEnlaceProveedorD072(config);
+ const identityKey=Buffer.from(config.identityHmac);
  async function registrarAlta(
   channel:string,chatId:string,messageId:string,text:string,_timestamp:number
  ):Promise<'registrada'|'duplicada'>{
@@ -85,5 +96,5 @@ export function crearAltaProveedorWhatsAppD072(config:AltaWhapiConfigD072){
   }catch{deny()}
   return res.payload.state==='registered'?'registrada':'duplicada';
  }
- return Object.freeze({enlaceParaProveedor,registrarAlta});
+ return Object.freeze({enlaceParaProveedor:link.enlaceParaProveedor,registrarAlta});
 }
