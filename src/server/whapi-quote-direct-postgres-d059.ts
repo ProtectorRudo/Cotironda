@@ -107,5 +107,70 @@ export function crearPuertoRecepcionDirectaD059(db:DbRecepcionD059){
    repetido:raw.repeated as boolean
   });
  }
- return Object.freeze({registrar});
+
+ /**
+  * D060 accepts immutable ORIGINAL quoted values AND their source position.
+  * source_sha256 is a digest of the cited line in the already-decrypted
+  * persisted inbox; only the future trusted broker may produce this value.
+  * No frontend can create this input. The SQL stores no original free text.
+  */
+ async function registrarConPrecios(args:Readonly<{
+  channel:string;messageKey:string;expectedRevision:number;
+  quote:CotizacionNormalizadaD059;
+  prices:readonly Readonly<{
+   line_no:number;quoted_unit_price:string|null;
+   vat_basis:'incluido'|'no_incluido'|'no_informado'|'contradictorio';
+   source_line_no:number|null;source_sha256:string|null;
+  }>[];
+ }>):Promise<ReciboD059>{
+  if(!exact(args,['channel','messageKey','expectedRevision','quote','prices'])||
+    typeof args.channel!=='string'||!CHANNEL.test(args.channel)||
+    typeof args.messageKey!=='string'||!SHA.test(args.messageKey)||
+    !int(args.expectedRevision,0,99999))fail();
+  validarQuote(args.quote);
+  if(!Array.isArray(args.prices)||
+    args.prices.length!==args.quote.lines_snapshot.length)fail();
+  const seen=new Set<number>();
+  const originalFields=['line_no','quoted_unit_price','vat_basis',
+    'source_line_no','source_sha256'];
+  for(const item of args.prices){
+   if(!exact(item,originalFields)||!int(item.line_no,1,8)||
+     seen.has(item.line_no as number)||
+     !['incluido','no_incluido','no_informado','contradictorio'].includes(String(item.vat_basis))||
+     !(item.quoted_unit_price===null||monto(item.quoted_unit_price))||
+     !(item.source_line_no===null||int(item.source_line_no,1,160))||
+     !(item.source_sha256===null||typeof item.source_sha256==='string'&&SHA.test(item.source_sha256))||
+     (item.quoted_unit_price===null
+      ?item.source_line_no!==null||item.source_sha256!==null
+      :item.source_line_no===null||item.source_sha256===null))fail();
+   seen.add(item.line_no as number);
+   const quoteLine=args.quote.lines_snapshot.find(x=>x.line_no===item.line_no);
+   if(!quoteLine)fail();
+   if(item.quoted_unit_price===null&&quoteLine.net_unit_price!==null)fail();
+   if(item.vat_basis==='no_informado'||item.vat_basis==='contradictorio'){
+    if(quoteLine.net_unit_price!==null||quoteLine.vat_rate!==null)fail();
+   }
+   if(item.vat_basis==='no_incluido'&&
+      item.quoted_unit_price!==null&&quoteLine.net_unit_price!==item.quoted_unit_price)fail();
+  }
+  const sql='select cotironda_private.whapi_receive_with_prices_d060($1::text,$2::text,$3::integer,$4::jsonb,$5::jsonb) as payload';
+  let raw:unknown;
+  try{
+   const out=await db.query(sql,[args.channel,args.messageKey,
+     args.expectedRevision,JSON.stringify(args.quote),JSON.stringify(args.prices)]);
+   if(!obj(out)||!Array.isArray(out.rows)||out.rows.length!==1||
+      !exact(out.rows[0],['payload']))fail();
+   raw=out.rows[0].payload;
+  }catch{fail();}
+  if(!exact(raw,['state','revision','version','repeated','prices_preserved'])||
+    raw.state!=='offer_received'||raw.prices_preserved!==true||
+    !int(raw.revision,1,100000)||!int(raw.version,1,100000)||
+    typeof raw.repeated!=='boolean'||raw.revision!==args.expectedRevision+1)fail();
+  return Object.freeze({
+   estado:'cotizacion_recibida_sin_confirmacion_extra',
+   revision:raw.revision as number,version:raw.version as number,
+   repetido:raw.repeated as boolean
+  });
+ }
+ return Object.freeze({registrar,registrarConPrecios});
 }
