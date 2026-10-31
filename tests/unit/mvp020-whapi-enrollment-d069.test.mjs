@@ -11,7 +11,7 @@ const ORG='bbbbbbbb-0016-4016-8016-000000000662';
 const OTHER='bbbbbbbb-0016-4016-8016-000000000663';
 const ROUND='dddddddd-0016-4016-8016-000000000661';
 const NOW=1800000000,SECRET='w'.repeat(48);
-const key={hmacIdentity:Buffer.alloc(32,17),recipientAes:Buffer.alloc(32,39)};
+const key={hmacIdentity:Buffer.alloc(32,17),recipientAes:Buffer.alloc(32,90)};
 const contact={channel:CH,supplierOrgId:ORG,to:TO};
 function fixture(overrides={}){
  const calls=[],approvals=[];
@@ -128,8 +128,7 @@ function brokerFixture(overrides={}){
  return {broker,stores,links,attempts,state};
 }
 test('D069 D027→D029 registra destinatario solo tras entrada y vínculo verificados',async()=>{
- // This example uses distinct recipient AES from D029 message AES in real
- // deployments. The unit fixture likewise has no live network.
+ // Recipient AES and inbound-message AES have independent fixture keys.
  const x=brokerFixture();
  const response=await procesarWebhookWhapiAislado(incoming(),x.broker.dependencias);
  assert.equal(response.status,200);
