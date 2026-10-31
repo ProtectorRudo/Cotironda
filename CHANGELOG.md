@@ -574,3 +574,9 @@
 - La D025 no instalada se corrige para eliminar `GRANT USAGE auth` inefectivo en roles personalizados de Supabase alojado, sustituyendo `auth.uid()` por un helper privado SECURITY INVOKER que lee el ID desde claims PostgREST validados.
 - Se conserva `is_session_verified()` para verificación de sesión vigente y usuario/correo, así como RLS de empresa y membresía activa. Tests PG17 refuerzan ausencia de grants al lector y rechazo por claim `sub` contradictorio, session revocada o empresa ajena.
 - No se otorga SELECT directo a `auth.users/auth.sessions`, no se habilita ninguna integración y no se instala D024–D035 en DEV o producción. Ver docs/99.
+
+## [Sin publicar — D036 / Issue #173: preflight read-only antes de Supabase DEV]
+- Nuevo `supabase/sql/dev_inventory_d036.sql` exclusivamente SELECT: inventario de migraciones alojadas, estado de roles/objetos D024–D035, RLS base, checker de sesión y flags, sin tocar datos personales.
+- `scripts/ci/dev-readiness-d036.mjs` exige exactamente 17 migraciones (12 base + cinco laboratorio IA D019–D021), falla cerrado ante diferencias, y jamás devuelve aprobación automática de despliegue. Suite adversarial con historial corto, drift y permisos incorrectos.
+- `supabase/tests/ci/106_dev_rollout_security_gate.sql` añade auditoría POST de grants/owners/segregación y RLS sobre PG17 efímero. Runbook `docs/100` define backups, etapas de instalación D024→D035, smoke tests reales y recuperación. Nuevo default de Supabase 30/10/2026 obliga grants explícitos para nuevas tablas `public` (RPC D025 tiene EXECUTE explícito).
+- Preflight ejecutado en DEV alojado **solo lectura**, baseline conforme; ninguna migración, rol, secreto, webhook o producción modificada. CI y PR draft pendientes.

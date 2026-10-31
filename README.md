@@ -266,3 +266,6 @@ PR #171 corrige una colisión falsa de D032: al recibir nuevamente un mensaje ya
 
 ### 30/10/2026 — D035: compatibilidad de lectura de rondas con Supabase alojado
 El PR pendiente de D035 corrige el SQL de lectura D025: elimina grants de `auth` que Supabase alojado no garantiza y usa un helper `SECURITY INVOKER` de claims PostgREST, conservando comprobación de sesiones reales, correo validado y membresía de empresa. CI verifica que el rol lector no tenga USAGE de `auth`. **Sin instalar en Supabase DEV**; el Issue #167 sigue pendiente de verificación real hospedada. Ver [docs/99](docs/99-reader-hosted-auth-d035.md).
+
+### 30/10/2026 — Etapas 03/04: preflight seguro para Supabase DEV (D036)
+PR D036 incorpora un inventario **read-only** de Supabase DEV y evaluador estricto que impide instalar si detecta drift, roles/funciones parciales o automatizaciones encendidas. **Se verificaron 17 migraciones en DEV: 12 base y 5 del laboratorio de IA** (no 12 solamente). El SQL alojado devolvió la baseline esperada; eso **NO autoriza migrar** sin backup real, pruebas y aprobación del gate. Se añadió CI postflight para roles y grants de D024–D035 y plan escalonado de instalación y recuperación. Nada nuevo instalado en DEV/prod. Ver [docs/100](docs/100-dev-rollout-preflight-d036.md).
