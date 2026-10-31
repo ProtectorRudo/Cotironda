@@ -40,20 +40,20 @@ export function crearPlanificadorRondaD071(config:Readonly<{
   }catch{fail()}
   if(!keys(res,['payload'])||!keys(res.payload,EXPECTED))fail();
   const p=res.payload;
+  const counts=EXPECTED.slice(1).map(k=>p[k]);
   if(typeof p.state!=='string'||!STATE.has(p.state)||
-   !EXPECTED.slice(1).every(k=>Number.isSafeInteger(p[k])&&
-    (p[k] as number)>=0)||
-   p.messagesSent!==0||p.matchedSuppliers>10||
-   p.prepared+p.alreadyPrepared+p.pendingContact+p.pendingScope
-    !==p.matchedSuppliers||
-   (p.state!=='queued_without_sending'&&p.matchedSuppliers!==0))fail();
+   !counts.every(n=>Number.isSafeInteger(n)&&typeof n==='number'&&n>=0))fail();
+  const [matched,prepared,existing,pendingContact,pendingScope,sent]=counts as number[];
+  if(sent!==0||matched>10||
+   prepared+existing+pendingContact+pendingScope!==matched||
+   (p.state!=='queued_without_sending'&&matched!==0))fail();
   return Object.freeze({
    estado:p.state,
-   proveedoresSeleccionados:p.matchedSuppliers as number,
-   nuevasInvitaciones:p.prepared as number,
-   invitacionesExistentes:p.alreadyPrepared as number,
-   proveedoresPendientesContacto:p.pendingContact as number,
-   proveedoresPendientesAlcance:p.pendingScope as number,
+   proveedoresSeleccionados:matched,
+   nuevasInvitaciones:prepared,
+   invitacionesExistentes:existing,
+   proveedoresPendientesContacto:pendingContact,
+   proveedoresPendientesAlcance:pendingScope,
    mensajesEnviados:0 as const
   });
  }
