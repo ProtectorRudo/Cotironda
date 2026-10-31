@@ -183,7 +183,7 @@ insert into cotironda_private.whapi_inbox_v1
  'bbbbbbbb-0000-4000-8000-000000000472','dddddddd-0000-4000-8000-000000000474',
  repeat('3',64),'text',decode(repeat('88',18),'hex'),decode(repeat('33',12),'hex'),
  decode(repeat('44',16),'hex'),1800000000);
-do $$$
+do $$
 declare
  r constant uuid:='dddddddd-0000-4000-8000-000000000474';
  s constant uuid:='bbbbbbbb-0000-4000-8000-000000000472';
