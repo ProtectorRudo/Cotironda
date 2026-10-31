@@ -742,3 +742,6 @@
 
 ### 31/10/2026 — MVP-018: defensa de cotización entrante fuera de rubro
 - D061 restringe snapshot a líneas asignadas D065 para rondas D064. Nuevo trigger D067 impide escribir ofertas de artículos ajenos incluso por RPC directa; roles dedicados NOLOGIN/RLS y ensayos PostgreSQL17 con dos proveedores, replay y BAJA. Sin Whapi real ni instalación DEV. Ver docs/138.
+
+### 31/10/2026 — MVP-019: vault privado de destinatarios WhatsApp cifrados (sin enviar)
+- Vínculo HMAC↔destino Whapi cifrado AES-256-GCM/AAD y tabla D068 inmutable privada, functions EXECUTE-only de enrolamiento/lectura con BAJA actual y scope D066; resolver TS sin red. Tests cripto+PG17 con proveedores ficticios, manipulación, replay, rol/área y opt-out. No modifica DEV/prod ni hace envíos. Ver docs/139.
