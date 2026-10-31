@@ -70,7 +70,18 @@ begin
    on area.organization_id=s.supplier_org_id and area.is_enabled=true
    and lower(pg_catalog.btrim(area.city))=lower(pg_catalog.btrim(v_city))
    and lower(pg_catalog.btrim(area.province))=lower(pg_catalog.btrim(v_province))
- where s.round_id=p_round and s.supplier_org_id=p_supplier;
+ where s.round_id=p_round and s.supplier_org_id=p_supplier
+  -- Re-check the supplier's curated catalog NOW, not only during D065.
+  -- A modified or deactivated product invalidates the scope before outbox.
+  and exists(
+   select 1 from public.supplier_products prod
+   join cotironda_private.supplier_catalog_capabilities_d080 cap
+     on cap.catalog_product_id=prod.id and cap.product_code=i.product_code
+   where prod.organization_id=s.supplier_org_id
+    and prod.category_code=s.category_code and prod.is_active=true
+    and cap.fingerprint_sha256=
+      cotironda_private.catalog_fingerprint_d080(prod.id)
+  );
  if v_eligible<>v_total or v_items is null then return null;end if;
  return pg_catalog.jsonb_build_object(
   'roundId',p_round,'supplierOrgId',p_supplier,'channel',p_channel,

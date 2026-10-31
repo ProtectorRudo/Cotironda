@@ -101,6 +101,19 @@ begin
   'cotironda_private.whapi_reply_jobs_d047','INSERT')
  or not (select relrowsecurity from pg_class
   where oid='cotironda_private.round_supplier_lines_d065'::regclass)
+ -- Category evidence is private and editable ONLY by a trusted curator.
+ or has_table_privilege('authenticated',
+  'cotironda_private.supplier_catalog_capabilities_d080','SELECT')
+ or has_table_privilege('authenticated',
+  'cotironda_private.supplier_catalog_capabilities_d080','INSERT')
+ or has_table_privilege('service_role',
+  'cotironda_private.supplier_catalog_capabilities_d080','INSERT')
+ or has_table_privilege('cotironda_matcher_d065',
+  'cotironda_private.supplier_catalog_capabilities_d080','INSERT')
+ or not has_table_privilege('cotironda_matcher_d065',
+  'cotironda_private.supplier_catalog_capabilities_d080','SELECT')
+ or has_function_privilege('authenticated',
+  'cotironda_private.catalog_fingerprint_d080(uuid)','EXECUTE')
  then raise exception 'd065_security_invariant_failed';end if;
 end;$security$;
 -- Gateway can only execute; not directly read contacts or other buyers.
@@ -129,6 +142,37 @@ end;$unmapped$;
 reset role;
 insert into cotironda_private.item_rubros_d065(product_code,category_code) values
  ('cemento_001','corralon'),('pintura_002','pintureria');
+
+-- MVP-031: category, delivery and WhatsApp consent without an actual mapped
+-- catalog product do NOT authorize supplier invitations.
+set local role cotironda_match_gateway_d065;
+do $no_catalog$
+declare r jsonb;
+begin
+ r:=cotironda_private.prepare_supplier_invites_d065(
+ 'dddddddd-0016-4016-8016-000000000661','d065_ci');
+ if r->>'state'<>'no_eligible_suppliers' or r->>'invited'<>'0'
+ then raise exception 'd080_category_only_was_invited: %',r;end if;
+end;$no_catalog$;
+reset role;
+
+-- Two concrete catalog products, curated privately by the operator.
+insert into public.supplier_products
+ (id,organization_id,category_code,product_name,unit_code) values
+ ('eeeeeeee-0016-4016-8016-000000000662',
+  'bbbbbbbb-0016-4016-8016-000000000662','corralon','Cemento CPC 50 kg','bag'),
+ ('eeeeeeee-0016-4016-8016-000000000663',
+  'bbbbbbbb-0016-4016-8016-000000000663','pintureria','Pintura latex blanca','l');
+insert into cotironda_private.supplier_catalog_capabilities_d080
+ (catalog_product_id,product_code,fingerprint_sha256)
+ select p.id,
+  case when p.category_code='corralon' then 'cemento_001'
+       else 'pintura_002' end,
+  cotironda_private.catalog_fingerprint_d080(p.id)
+ from public.supplier_products p
+ where p.id in (
+  'eeeeeeee-0016-4016-8016-000000000662'::uuid,
+  'eeeeeeee-0016-4016-8016-000000000663'::uuid);
 
 set local role cotironda_match_gateway_d065;
 do $match$
