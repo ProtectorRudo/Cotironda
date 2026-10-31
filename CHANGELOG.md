@@ -730,3 +730,6 @@
 
 ### 31/10/2026 — MVP-014: comprador ve sus rondas y ofertas recibidas, no precios inventados
 - Pantalla móvil de «Mis solicitudes» y consulta anónima de última versión de cotizaciones por ronda, sin ingresar IDs, basada en RPC D025/D060 y autenticación de sesión; listado SQL privado con RLS. D060 amplía moneda, unidad, cantidad disponible, condiciones fiscales, flete y pago sin inferir costos. Tests SQL PG17 y API Node/TypeScript/Next, flags Preview fail-closed. Sin instalación en Supabase DEV, Whapi ni despliegue. Ver docs/134.
+
+### 31/10/2026 — MVP-015: alta real de pedido comprador como ronda privada
+- Nueva RPC SQL privada de propietario/administrador autenticado y función public invoker, idempotente, zona obligatoria, IVA explícito, 1–8 materiales sin suposiciones. Inserta ronda programada y líneas en una transacción, nunca fabrica proveedores ni envía Whapi. API Next POST con origin/CSRF, validación y guard Preview apagado. Pruebas PostgreSQL17 y unitarias; documentación 135. No instalado DEV/prod, respaldo #175 pendiente.
