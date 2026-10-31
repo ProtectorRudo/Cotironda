@@ -352,6 +352,12 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_receive_quote_direct_d059.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/114_whapi_receive_direct_d059.sql
 
+      - name: MVP-010 D060 precio original e IVA por versión y aislamiento comprador PG17 CI
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_original_prices_d060.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/115_whapi_original_prices_d060.sql
+
       - name: MVP-003 restauracion PG17 de laboratorio a segunda base efimera sin DEV
         env:
           COTIRONDA_RESTORE_CI: 'true'
