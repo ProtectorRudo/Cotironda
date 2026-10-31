@@ -569,3 +569,8 @@
 - Corregida función SQL privada versionada para que un reenvío auténtico con mismo message-key, proveedor, tipo, timestamp y HMAC de contenido sea idempotente incluso tras rotar AES; key-id/ciphertext/nonce/tag históricos no se reescriben. Cambios de precio, chat, tipo o fecha siguen siendo colisiones.
 - Revisiones equivalentes de timestamp en ruta legacy y BAJA, sin alterar grants ni propiedad del rol NOLOGIN. Nuevos ensayos PG17 y E2E Node→Postgres contra un login restringido más tests Node adversariales.
 - D025 hosted Auth Issue #167 sigue bloqueante; las pruebas CI no implican instalación DEV ni conexión real de Whapi. Docs/98, PR #171 draft.
+
+## [Sin publicar — D035 / Issue #167: rol lector sin dependencia auth.uid hosted]
+- La D025 no instalada se corrige para eliminar `GRANT USAGE auth` inefectivo en roles personalizados de Supabase alojado, sustituyendo `auth.uid()` por un helper privado SECURITY INVOKER que lee el ID desde claims PostgREST validados.
+- Se conserva `is_session_verified()` para verificación de sesión vigente y usuario/correo, así como RLS de empresa y membresía activa. Tests PG17 refuerzan ausencia de grants al lector y rechazo por claim `sub` contradictorio, session revocada o empresa ajena.
+- No se otorga SELECT directo a `auth.users/auth.sessions`, no se habilita ninguna integración y no se instala D024–D035 en DEV o producción. Ver docs/99.
