@@ -1,4 +1,6 @@
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
+import {ofertasLecturaHabilitada} from '../../../../src/server/cotizaciones-recibidas-http-mvp014.ts';
 import { clienteSupabaseServidor, entornoAuthConfigurado, entornoAuthSoloIngresoPreview } from '@/lib/supabase/server';
 import { CerrarSesionPrueba } from './cerrar-sesion-prueba';
 import { AuditoriaSeguridadSesion } from './auditoria-seguridad-sesion';
@@ -19,6 +21,9 @@ export default async function Alta(){
       <h1>Sesión de prueba activa</h1>
       <p>La identidad fue verificada por Supabase Auth desde el portal Next.js.
       El registro de empresas y las cargas documentales siguen deshabilitados.</p>
+      {ofertasLecturaHabilitada(process.env)&&<p><Link href="/mis-rondas" className="button">
+        Ver mis solicitudes y cotizaciones
+      </Link></p>}
       <CerrarSesionPrueba/>
       <AuditoriaSeguridadSesion projectRef={COTIRONDA_DEV_REF}/>
       <AuditoriaRegistroAuth/>

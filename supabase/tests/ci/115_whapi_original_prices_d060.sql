@@ -185,6 +185,13 @@ select ci_helpers.assert_true(
   'dddddddd-0010-4010-8010-000000000608')),
  'd060_buyer_quote_display');
 select ci_helpers.assert_true(
+ (select currency='ARS' and quoted_unit='bag'
+   and available_qty='10' and freight_gross is null
+   and payment_method is null and lead_days is null
+   from public.buyer_quoted_prices_d060(
+   'dddddddd-0010-4010-8010-000000000608')),
+ 'd060_buyer_terms_without_assumptions');
+select ci_helpers.assert_true(
  (select count(*)=0 from public.buyer_quoted_prices_d060(
   'dddddddd-0010-4010-8010-000000000609')),
  'd060_cross_tenant_no_prices');

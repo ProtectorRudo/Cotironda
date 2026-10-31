@@ -727,3 +727,6 @@
 ### 31/10/2026 — MVP-013: ensayo vertical completo Node/PostgreSQL17
 - Intérprete textual conservador de precios/cantidades explícitos D063, sin llamada IA ni suposiciones fiscales. Ensayo con webhook simulado y **driver pg real sobre PostgreSQL 17 efímero** enlazando cifrado, bandeja D028, cola D062, lectura D061, escritura D060, corrección/replay, BAJA y lectura anónima de comprador autenticado.
 - Rol CI de permisos EXECUTE acotados, sin acceso directo a inbox/ofertas. No instalación Supabase DEV/prod ni webhook/Whapi/IA live; backup #175 sigue pendiente. Ver docs/133.
+
+### 31/10/2026 — MVP-014: comprador ve sus rondas y ofertas recibidas, no precios inventados
+- Pantalla móvil de «Mis solicitudes» y consulta anónima de última versión de cotizaciones por ronda, sin ingresar IDs, basada en RPC D025/D060 y autenticación de sesión; listado SQL privado con RLS. D060 amplía moneda, unidad, cantidad disponible, condiciones fiscales, flete y pago sin inferir costos. Tests SQL PG17 y API Node/TypeScript/Next, flags Preview fail-closed. Sin instalación en Supabase DEV, Whapi ni despliegue. Ver docs/134.
