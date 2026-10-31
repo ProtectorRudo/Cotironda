@@ -83,8 +83,14 @@ export const interpretarCotizacionSimpleD063:InterpreteCotizacionD061=
       /^[a-z]{4,}$/u.test(w)&&!['item','producto','material','generico'].includes(w));
     return tokens.some(w=>contents.has(w));
    });
-   if(candidates.length!==1)continue;
-   const it=candidates[0];
+   // With multiple cement products, a generic token is insufficient.
+   // A brand/product-specific token may disambiguate, but cannot infer it.
+   const discriminated=candidates.length<=1?candidates:candidates.filter(it=>
+    it.itemId.split('_').some(token=>contents.has(token)&&
+      !items.some(other=>other.itemId!==it.itemId&&
+        other.itemId.split('_').includes(token))));
+   if(discriminated.length!==1)continue;
+   const it=discriminated[0];
    if(ambiguous.has(it.itemId))continue;
    if(selected.has(it.itemId)){
     selected.delete(it.itemId);ambiguous.add(it.itemId);
