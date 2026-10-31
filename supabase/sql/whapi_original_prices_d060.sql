@@ -252,7 +252,7 @@ begin
     line.value->>'available_qty',
     case when v.freight_gross is null then null::text
       else pg_catalog.to_char(v.freight_gross,'FM999999999999990.00') end,
-    v.payment_method,v.lead_days
+    v.payment_method,v.lead_days::integer
  from latest x
  join cotironda_private.whapi_price_sources_d060 s
   on s.round_id=x.round_id and s.supplier_org_id=x.supplier_org_id
