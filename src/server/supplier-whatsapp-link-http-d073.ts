@@ -33,8 +33,27 @@ export function habilitarPantallaAltaWhatsAppD073(
   CHANNEL.test(env.COTIRONDA_SUPPLIER_WA_CHANNEL)&&
   typeof env.COTIRONDA_SUPPLIER_WA_BOT_NUMBER==='string'&&
   PHONE.test(env.COTIRONDA_SUPPLIER_WA_BOT_NUMBER)&&
-  !env.COTIRONDA_WHAPI_SEND_ENABLED&&!env.SUPABASE_SERVICE_ROLE_KEY&&
+  env.COTIRONDA_WHAPI_SEND_ENABLED!=='true'&&!env.SUPABASE_SERVICE_ROLE_KEY&&
   !env.COTIRONDA_DATABASE_URL;
+}
+async function leerCuerpoLimitado(req:Request):Promise<string>{
+ if(!req.body)throw Error('sin_cuerpo');
+ const reader=req.body.getReader();
+ const parts:Uint8Array[]=[];
+ let size=0;
+ try{
+  while(true){
+   const chunk=await reader.read();
+   if(chunk.done)break;
+   size+=chunk.value.byteLength;
+   if(size>256){await reader.cancel();throw RangeError('limite');}
+   parts.push(chunk.value);
+  }
+ }finally{reader.releaseLock();}
+ const raw=new Uint8Array(size);
+ let off=0;
+ for(const part of parts){raw.set(part,off);off+=part.byteLength;}
+ return new TextDecoder('utf-8',{fatal:true}).decode(raw);
 }
 export async function procesarEnlaceAltaProveedorD073(req:Request,deps:{
  habilitado:boolean;originPermitido:string;channel:string;botNumber:string;
@@ -54,11 +73,10 @@ export async function procesarEnlaceAltaProveedorD073(req:Request,deps:{
  if(contentLength!==null&&(!/^\d+$/u.test(contentLength)||
   Number(contentLength)>256))return result(413,{error:'solicitud_demasiado_grande'});
  let body:unknown;
- try{
-  const raw=await req.text();
-  if(raw.length>256)return result(413,{error:'solicitud_demasiado_grande'});
-  body=JSON.parse(raw);
- }catch{return result(400,{error:'solicitud_invalida'})}
+ try{body=JSON.parse(await leerCuerpoLimitado(req));}
+ catch(e){return e instanceof RangeError?
+  result(413,{error:'solicitud_demasiado_grande'}):
+  result(400,{error:'solicitud_invalida'});}
  if(body===null||typeof body!=='object'||Array.isArray(body)||
   Object.keys(body).length!==1||!Object.hasOwn(body,'supplierOrgId')||
   typeof (body as {supplierOrgId:unknown}).supplierOrgId!=='string'||
