@@ -39,8 +39,8 @@ set local request.jwt.claims =
  "is_anonymous":false,"cotironda_email_verified":true}';
 do $case$
 declare
- v_input jsonb:='[{"line_no":1,"product_code":"cemento_001","quantity":"10","unit":"bag","source_description":"Cemento CPC 50 kg"},
- {"line_no":2,"product_code":"pintura_002","quantity":"5.5","unit":"l"}]'::jsonb;
+ v_input jsonb:='[{"line_no":1,"product_code":"cemento_gris_obra","quantity":"10","unit":"bag","source_description":"Cemento CPC 50 kg"},
+ {"line_no":2,"product_code":"pintura_latex","quantity":"5.5","unit":"l","source_description":"Pintura látex interior"}]'::jsonb;
  v_result jsonb;v_replay jsonb;v_round uuid;v_bad boolean;
 begin
  v_result:=public.create_buyer_round_d064(
@@ -154,6 +154,64 @@ select pg_temp.fail_d064(
  'cccccccc-0015-4015-8015-000000000659','La Plata','no_especificado',
  '[{"line_no":1,"product_code":"cemento_001","quantity":"10","unit":"bag"},
  {"line_no":2,"product_code":"cemento_001","quantity":"10","unit":"bag"}]')$$,
+ '22023');
+-- The SQL RPC is callable directly with the user's JWT (not through
+-- Next), so identity MUST be checked by PostgreSQL, never only by browser.
+select pg_temp.fail_d064(
+ $$select public.create_buyer_round_d064(
+ 'aaaaaaaa-0015-4015-8015-000000000655',
+ 'cccccccc-0015-4015-8015-000000000690','La Plata','no_especificado',
+ '[{"line_no":1,"product_code":"cemento_gris_obra","quantity":"10",
+ "unit":"bag","source_description":"Pintura látex interior"}]')$$,
+ '22023');
+select pg_temp.fail_d064(
+ $$select public.create_buyer_round_d064(
+ 'aaaaaaaa-0015-4015-8015-000000000655',
+ 'cccccccc-0015-4015-8015-000000000691','La Plata','no_especificado',
+ '[{"line_no":1,"product_code":"pintura_latex","quantity":"10",
+ "unit":"l","source_description":"Cemento CPC 50 kg"}]')$$,
+ '22023');
+select pg_temp.fail_d064(
+ $$select public.create_buyer_round_d064(
+ 'aaaaaaaa-0015-4015-8015-000000000655',
+ 'cccccccc-0015-4015-8015-000000000692','La Plata','no_especificado',
+ '[{"line_no":1,"product_code":"cemento_gris_obra","quantity":"10",
+ "unit":"bag","source_description":"Cemento cola flexible"}]')$$,
+ '22023');
+select pg_temp.fail_d064(
+ $$select public.create_buyer_round_d064(
+ 'aaaaaaaa-0015-4015-8015-000000000655',
+ 'cccccccc-0015-4015-8015-000000000693','La Plata','no_especificado',
+ '[{"line_no":1,"product_code":"pintura_latex","quantity":"10",
+ "unit":"l","source_description":"Guantes de látex"}]')$$,
+ '22023');
+select pg_temp.fail_d064(
+ $$select public.create_buyer_round_d064(
+ 'aaaaaaaa-0015-4015-8015-000000000655',
+ 'cccccccc-0015-4015-8015-000000000694','La Plata','no_especificado',
+ '[{"line_no":1,"product_code":"cable_unipolar","quantity":"10",
+ "unit":"m","source_description":"Cable de red UTP"}]')$$,
+ '22023');
+select pg_temp.fail_d064(
+ $$select public.create_buyer_round_d064(
+ 'aaaaaaaa-0015-4015-8015-000000000655',
+ 'cccccccc-0015-4015-8015-000000000695','La Plata','no_especificado',
+ '[{"line_no":1,"product_code":"cano_pvc","quantity":"10",
+ "unit":"m","source_description":"Caño PVC eléctrico"}]')$$,
+ '22023');
+select pg_temp.fail_d064(
+ $$select public.create_buyer_round_d064(
+ 'aaaaaaaa-0015-4015-8015-000000000655',
+ 'cccccccc-0015-4015-8015-000000000696','La Plata','no_especificado',
+ '[{"line_no":1,"product_code":"cemento_gris_obra","quantity":"10",
+ "unit":"bag"}]')$$,
+ '22023');
+select pg_temp.fail_d064(
+ $$select public.create_buyer_round_d064(
+ 'aaaaaaaa-0015-4015-8015-000000000655',
+ 'cccccccc-0015-4015-8015-000000000697','La Plata','no_especificado',
+ '[{"line_no":1,"product_code":"cemento_desconocido","quantity":"10",
+ "unit":"bag","source_description":"Cemento CPC 50 kg"}]')$$,
  '22023');
 reset role;
 update public.organization_members set status='suspended'
