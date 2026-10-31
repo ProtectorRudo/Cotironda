@@ -675,3 +675,5 @@
 
 ## [Sin publicar — MVP-003 / #175: ensayo real de dump/restore PostgreSQL 17 aislado]
 - GitHub Actions prueba un `pg_dump` custom y `pg_restore` PG17 reales sobre dos bases ficticias del mismo clúster CI después de todas las pruebas SQL. Compara huellas de filas, estados de outbox, ledger de cuotas, RLS, permisos y función de comienzo HTTP. No hay DROP, copia de datos de clientes, publicación, credenciales reales ni conexión a DEV. Docs/122. **No cerrar #175**: falta copia real cifrada de DEV y restauración separada con Auth/Storage/Vault/roles.
+
+- Corrección MVP-003 en laboratorio: el primer pg_restore falló por `CHECK` de ofertas que consultaba `round_items_v1` durante COPY; se migra la validación cruzada a triggers de escritura en CI, manteniendo exactamente el validador y pruebas de rechazo. No se instaló el parche en DEV ni prod; requiere rollout auditado (#175). Ver docs/122.
