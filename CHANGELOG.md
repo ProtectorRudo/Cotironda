@@ -607,3 +607,7 @@
 ## [Sin publicar — D042 / Issue #186: prueba real age con cinco archivos sintéticos]
 - Workflow independiente `age-synthetic-d042.yml` con permisos mínimos, Ubuntu24.04 y age paquete de repositorio firmado; genera dos pares X25519 efímeros y cinco SQL de prueba, cifra con CLI age real y comprueba pipeline D039/D040/D041.
 - Pruebas negativas contra identidad equivocada, encabezado falso con SHA256 coherente y bytes alterados después de sellar; borra temporales sin artifacts ni logs de claves/plaintext. Tests unitarios de D041 anteriores eran únicamente mocks: D042 agrega comprobación criptográfica real sintética. No es backup DEV ni recuperación de Auth/Storage/Vault, sin cambios Supabase DEV/producción; bloqueos #175 y D024 permanecen.
+
+## [Sin publicar — D043 / Issue #188: inventario alojado y comparador de recovery]
+- Auditoría SELECT-only real sobre cotironda-dev: PG17.11, 17 migraciones, 2 cuentas Auth, 2 identidades, 0 sesiones, 2 buckets privados/0 objetos, 1 entrada Vault (sin leer su contenido), 4 claims IA, cron=0 y automatizaciones/registro OFF. Edge Function IA desplegada identificada para revisión independiente de auth Issue #189 (`verify_jwt=false` no equivale a prueba de explotación).
+- Nuevo SQL D043 de solo lectura, comparador offline fail-closed de inventarios origen/restaurado, pruebas adversariales sintéticas y runbook docs/106. **No se ha tomado backup ni ensayado restauración real.** El comparador nunca abre D024 ni cierra bloqueo #175; sin cambios de DEV/producción.
