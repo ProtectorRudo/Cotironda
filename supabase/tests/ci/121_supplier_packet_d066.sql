@@ -47,7 +47,7 @@ begin
  if a is null or b is null then raise exception 'd066_missing_packet';end if;
  if jsonb_array_length(a->'items')<>1 or
    a->'items'->0->>'productCode'<>'cemento_001' or
-   a->'items'->0->>'label'<>'Cemento CPC 50 kg' or
+   a->'items'->0->>'label'<>'Cemento CPC Loma Negra 50 kg' or
    jsonb_array_length(b->'items')<>1 or
    b->'items'->0->>'productCode'<>'pintura_002' or
    a->>'deliveryZone'<>'La Plata' or
