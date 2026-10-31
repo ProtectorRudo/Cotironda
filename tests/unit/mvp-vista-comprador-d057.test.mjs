@@ -76,3 +76,12 @@ test('MVP-001: el texto presentado conserva números originales de las líneas',
   assert.deepEqual(v.filas.map(f=>f.numero),[2,4]);
   assert.equal(v.invitaciones,2);
 });
+
+test('MVP-001: material reconocido pero sin proveedor ficticio queda como pendiente',()=>{
+  const v=generarVistaCompradorMvp('10 metros cable unipolar');
+  assert.equal(v.invitaciones,0);
+  assert.equal(v.aprovechadas,0);
+  assert.equal(v.pendientes,1);
+  assert.equal(v.filas[0].estado,'pendiente');
+  assert.match(v.filas[0].motivo,/No hay proveedores/);
+});
