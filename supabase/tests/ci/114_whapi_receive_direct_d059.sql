@@ -175,8 +175,8 @@ begin
   'update cotironda_private.whapi_received_offers_d059 set request_sha256=%L where channel_id=%L',
   repeat('0',64),'d059_ci'),'confirmed_offer_and_event_are_immutable');
 
- -- Close round: no new message can create a version. Exact replay still works.
- update cotironda_private.rounds_v1 set status='cerrada'
+ -- Cancel round before the deadline; this is the valid state transition D024 permits.
+ update cotironda_private.rounds_v1 set status='cancelada'
   where id=r;
  perform pg_temp.d059_fails(format(
   'select cotironda_private.whapi_receive_quote_d059(%L,%L,2,%L::jsonb)',
@@ -184,7 +184,7 @@ begin
  receipt:=cotironda_private.whapi_receive_quote_d059(
   'd059_ci',repeat('1',64),0,partial_offer);
  if receipt->>'repeated'<>'true' then
-  raise exception 'd059_replay_after_close_failed';end if;
+  raise exception 'd059_replay_after_cancel_failed';end if;
  if (select count(*) from cotironda_private.whapi_received_offers_d059
    where round_id=r)<>2
  then raise exception 'd059_bad_receipt_count';end if;
