@@ -39,6 +39,10 @@ export type DependenciasWhapiEntrada={
   // BAJA no depende de invitación ni opt-in vigente, pero sí de vínculo verificado.
   registrarBaja?:(canalId:string,chatId:string,mensajeId:string,
     huellaSha256:string,marcaTiempoUnix:number)=>Promise<'registrada'|'duplicada'>;
+  // D072 voluntary onboarding works BEFORE first invitation. The callback
+  // only fires after exact webhook authentication and direct-chat validation.
+  registrarAlta?:(canalId:string,chatId:string,mensajeId:string,
+    texto:string,marcaTiempoUnix:number)=>Promise<'registrada'|'duplicada'>;
 };
 function resultado(status:number,data:Record<string,unknown>={}):Response{
   return new Response(status===204?null:JSON.stringify(data),{
@@ -162,7 +166,7 @@ export async function procesarWebhookWhapiAislado(
   // Resolver desde datos verificados del servidor, nunca del body de Whapi.
   // Los mensajes del lote se guardan de uno en uno. Si falla uno, HTTP 503
   // para reenvío completo; el sink transaccional debe deduplicar los ya guardados.
-  let guardadas=0,duplicadas=0,bajasRegistradas=0;
+  let guardadas=0,duplicadas=0,bajasRegistradas=0,altasRegistradas=0;
   for(const c of candidatos){
     // BAJA explícita y exacta. No intentar interpretar intención ni ejecutar SQL
     // desde texto arbitrario; un broker verificará el chat y registrará la baja.
@@ -178,6 +182,20 @@ export async function procesarWebhookWhapiAislado(
         else if(done==='duplicada')duplicadas++;
         else throw new Error('respuesta_baja_invalida');
       }catch{return resultado(503,{error:'baja_no_disponible'})}
+      continue;
+    }
+    // Voluntary first contact: no round/invitation exists yet. The
+    // one-time code was issued to a logged-in supplier manager (D072).
+    // Never interpret arbitrary inbound text as proof of opt-in.
+    if(c.tipo==='text'&&/^COTI ALTA [a-f0-9]{32}$/u.test(c.texto??'')){
+      if(!dep.registrarAlta)return resultado(503,{error:'alta_no_configurada'});
+      try{
+        const registered=await dep.registrarAlta(dep.canalId,c.chatId,
+          c.mensajeId,c.texto!,c.marcaTiempoUnix);
+        if(registered==='registrada')altasRegistradas++;
+        else if(registered==='duplicada')duplicadas++;
+        else throw new Error('alta_invalida');
+      }catch{return resultado(503,{error:'alta_no_disponible'})}
       continue;
     }
     let vinculo:VinculoProveedorVerificado|null;
@@ -209,6 +227,7 @@ export async function procesarWebhookWhapiAislado(
   }
   return resultado(200,{estado:'entradas_persistidas',guardadas,duplicadas,
     ...(bajasRegistradas>0?{bajasRegistradas}:{}),
+    ...(altasRegistradas>0?{altasRegistradas}:{}),
     // Nunca 'cotizacion_recibida' ni 'precio_confirmado'.
     presupuestosConfirmados:0,mensajesEnviados:0});
 }
