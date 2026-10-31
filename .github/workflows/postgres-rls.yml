@@ -311,4 +311,15 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f supabase/recovery/dev_quality_20261030/20261030190232_dev_quality_results_ledger.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/recovery/dev_quality_20261030/20261030194856_dev_quality_numeric_diagnostics_d021.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/107_recovered_quality_safe_subset.sql
+      - name: D038 ensayo lógico INERTE D020, flags OFF y SIN extensiones de red
+        env:
+          COTIRONDA_CI_INERT_RESTORE: 'true'
+        run: |
+          set -euo pipefail
+          node scripts/ci/verify-dev-ai-migration-sources-d037.mjs
+          node scripts/ci/prepare-inert-quality-d038.mjs /tmp/cotironda_d038_inert.sql
+          psql -X -v ON_ERROR_STOP=1 -f /tmp/cotironda_d038_inert.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/108_inert_d020_restore.sql
+          rm -f /tmp/cotironda_d038_inert.sql
+
 
