@@ -125,11 +125,12 @@ export async function checkBundle(operation, directory, expectedManifestSha256) 
   const handle = await safeOpenRegular(manifestPath);
   let m;
   try {
-    if ((await handle.stat()).size > 65536) fail('MANIFEST_TOO_LARGE');
+    const initial = await handle.stat();
+    if (initial.size > 65536) fail('MANIFEST_TOO_LARGE');
     const raw = await handle.readFile('utf8');
+    assertSameFile(initial, await handle.stat());
     if (createHash('sha256').update(raw).digest('hex') !== expectedManifestSha256)
       fail('MANIFEST_SHA256_MISMATCH');
-    assertSameFile(await lstat(manifestPath), await handle.stat());
     m = JSON.parse(raw);
   } catch (err) {
     if (err.message?.startsWith('D039_')) throw err;
