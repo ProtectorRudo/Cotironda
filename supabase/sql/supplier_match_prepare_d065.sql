@@ -33,7 +33,7 @@ grant execute on function cotironda_private.catalog_fingerprint_d080(uuid)
 
 create table cotironda_private.supplier_catalog_capabilities_d080(
  catalog_product_id uuid primary key references public.supplier_products(id)
-  on delete restrict,
+  on delete cascade,
  product_code text not null references cotironda_private.item_rubros_d065(product_code)
   on delete restrict,
  fingerprint_sha256 text not null check(fingerprint_sha256~'^[a-f0-9]{64}$'),
