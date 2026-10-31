@@ -19,9 +19,16 @@ function exigenciaLinea(s:string):'con_iva'|'sin_iva'|null{
  if(n.length>180||/\b(?:no necesito|no quiero|no solicitar|si es posible|consultar si)\b/u.test(n))return null;
  // Only standalone buyer instructions; a material description must not become
  // an economic rule, and unrelated IVA mentions must not create a demand.
- const prefijo=/^(?:(?:por favor\s*)?(?:necesito|solicito|solicitamos|pedimos|quiero|requiero|cotizar|cotizacion|presupuesto|precios?|enviar|enviame)\s*(?:(?:el|los|un|una|presupuesto|cotizacion|precios?|que sea|que sean|final|finales|por favor)\s*){0,6})?)/u;
+ const inicio=/^(?:por favor\s*)?(?:necesito|solicito|solicitamos|pedimos|quiero|requiero|cotizar|cotizacion|presupuesto|precios?|enviar|enviame)\s*/u;
+ const conector=/^(?:el|los|un|una|presupuesto|cotizacion|precios?|que sea|que sean|final|finales|por favor)\s+/u;
  const soloCondicion=/^(?:con(?:\s+el)?\s+iva(?:\s+incluido)?|sin\s+iva|iva\s+incluido|iva\s+discriminado|iva\s+no\s+incluido)(?:\s+(?:por favor|en el precio final|en los precios|detallado))?[.!]?$/u;
- const resto=n.replace(prefijo,'').trim();
+ const intro=n.match(inicio);
+ let resto=intro?n.slice(intro[0].length):n;
+ for(let i=0;i<6;i++){
+  const match=resto.match(conector);
+  if(!match)break;
+  resto=resto.slice(match[0].length);
+ }
  if(!soloCondicion.test(resto))return null;
  const excl=/\b(?:sin iva|iva no incluido)\b/u.test(n);
  return excl?'sin_iva':'con_iva';
