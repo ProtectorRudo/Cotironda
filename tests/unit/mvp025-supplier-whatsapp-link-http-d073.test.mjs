@@ -103,8 +103,9 @@ test('D073: SQL o Auth falla cerrado sin filtrar datos comerciales',async()=>{
  const f=make({rpc:async()=>{throw Error('private_supplier_phone')}});
  const r=await procesarEnlaceAltaProveedorD073(f.req,f.deps);
  assert.equal(r.status,503);
- assert.deepEqual(await r.json(),{error:'enlace_no_disponible'});
- assert.doesNotMatch(JSON.stringify(await r.clone().text().catch(()=>'')),/private_supplier_phone/);
+ const data=await r.json();
+ assert.deepEqual(data,{error:'enlace_no_disponible'});
+ assert.doesNotMatch(JSON.stringify(data),/private_supplier_phone/);
 });
 test('D073: token no válido y respuesta SQL inesperada se rechazan',async()=>{
  for(const payload of [
