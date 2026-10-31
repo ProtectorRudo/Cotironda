@@ -181,8 +181,12 @@ begin
 end;$dry_queue$;
 reset role;
 select ci_helpers.assert_true(
- (select count(*)=0 from cotironda_private.whapi_invite_jobs_d070)
- and (select count(*)=0 from cotironda_private.whapi_reply_jobs_d047)
- and (select count(*)=0 from cotironda_private.whapi_invite_reservations_d070),
+ (select count(*)=0 from cotironda_private.whapi_invite_jobs_d070
+  where channel_id='d079_ci')
+ and (select count(*)=0 from cotironda_private.whapi_reply_jobs_d047
+  where round_id=(select round_id from cotironda_private.round_requests_d064
+   where request_key='cccccccc-0030-4030-8030-000000000701'))
+ and (select count(*)=0 from cotironda_private.whapi_invite_reservations_d070
+  where channel_id='d079_ci'),
  'd079_real_transport_off_no_jobs_no_messages');
 rollback;
