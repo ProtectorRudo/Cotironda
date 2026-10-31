@@ -58,7 +58,8 @@ test('D020: privilegios minimos, secreto Vault separado de OpenAI y no logueado'
 
 test('D020: Edge acepta solo claves secret concretas del proyecto DEV',()=>{
   const edge=readFileSync(new URL('../../supabase/functions/cotironda-ia-dev/index.ts',import.meta.url),'utf8');
-  assert.match(edge,/auth:\s*\[\s*'secret:default'\s*,\s*'secret:cotironda_quality_lab'\s*\]/);
+  assert.match(edge,/auth:\s*'secret:cotironda_quality_lab'/);
+  assert.doesNotMatch(edge,/secret:default/);
   assert.doesNotMatch(edge,/auth:\s*['"]secret:\*['"]/);
   assert.doesNotMatch(edge,/auth:\s*['"]none['"]/);
   assert.match(edge,/withSupabase\(/);
