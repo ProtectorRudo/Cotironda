@@ -754,3 +754,6 @@
 
 ### 31/10/2026 — MVP-022: snapshot uniforme para los fragmentos del respaldo DEV
 - `export-encrypted-dev-mvp003.mjs` usa `psql pg_export_snapshot()` en transacción READ ONLY y pasa `--snapshot` único a los cuatro dumps que componen el SQL, preservando streaming a `age`. Verifica versión PostgreSQL17 de `psql`; falla cerrado ante protocolo inválido/desconexión. `pg_dumpall` roles sigue sin snapshot global y el restore auténtico de DEV sigue pendiente Issue #175. Pruebas sintéticas Node/CI, sin datos reales ni despliegue. Ver docs/142.
+
+### 31/10/2026 — MVP-023: matching y preparación integral de ronda (sin red)
+- Nueva función D071 privada PostgreSQL17 CI integra D065+D068+D070 transaccionalmente, reintentos idempotentes y pendientes cuando falten contactos verificados/etiquetas/alcance; no envía nada ni añade paso al comprador. Puerto Node con validación strict/fail-closed, tests sintéticos de dos rubros, BAJA, permisos y replays. No se desplegó y Supabase DEV #175 sigue sin respaldo auténtico. Ver docs/143.
