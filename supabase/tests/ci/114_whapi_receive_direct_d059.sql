@@ -81,7 +81,8 @@ select 'd059_ci',repeat(k,64),repeat(chat,64),
  case chat when 'a' then 'bbbbbbbb-0000-4000-8000-000000000592'::uuid
   when 'b' then 'cccccccc-0000-4000-8000-000000000593'::uuid
   else 'dddddddd-0000-4000-8000-000000000594'::uuid end,
- 'eeeeeeee-0000-4000-8000-000000000595'::uuid,
+ case when k='5' then null::uuid
+  else 'eeeeeeee-0000-4000-8000-000000000595'::uuid end,
  repeat(k,64),case when k='4' then 'image' else 'text' end,
  decode(repeat('55',32),'hex'),decode(repeat('11',12),'hex'),
  decode(repeat('22',16),'hex'),1800000000
@@ -111,7 +112,11 @@ begin
   'd059_ci',repeat('4',64),partial_offer::text),'d059_inbox_not_verified');
  perform pg_temp.d059_fails(format(
   'select cotironda_private.whapi_receive_quote_d059(%L,%L,0,%L::jsonb)',
-  'd059_ci',repeat('5',64),partial_offer::text),'supplier_not_invited');
+  'd059_ci',repeat('5',64),partial_offer::text),'d059_inbox_not_verified');
+ -- Even postgres fixtures cannot fabricate a linked inbox message for an uninvited supplier.
+ perform pg_temp.d059_fails(format(
+  'update cotironda_private.whapi_inbox_v1 set round_id=%L::uuid where channel_id=%L and message_key=%L',
+  r,'d059_ci',repeat('5',64)), 'whapi_inbox_v1_round_id_supplier_org_id_fkey');
  if (select count(*) from cotironda_private.offer_versions_v1 where round_id=r)<>0
  then raise exception 'd059_invalid_inputs_created_version';end if;
 
