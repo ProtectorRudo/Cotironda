@@ -628,3 +628,7 @@
 ## [Sin publicar — D047 / Issue #197: outbox de respuestas WhatsApp aislada]
 - SQL D047 privada con trabajo idempotente por ronda/proveedor/revisión, referencia a inbox D028 HMAC, validación de consentimiento y borrador D026, leases exclusivos SKIP LOCKED, token de acuse, backoff y máximo 3 intentos. En caso de cambio de revisión, cancela el trabajo obsoleto; si muere el worker en el último lease, pasa a exhausted tras vencer.
 - Pruebas transaccionales D047 sobre PostgreSQL17 de GitHub CI, sin datos personales, sin llamadas de Whapi/OpenAI, sin envío ni publicación. `accepted_by_transport` indica aceptación del transporte, nunca leído/entregado; persistencia de conversación D046 y correlación mensaje→versión todavía pendientes. Ver docs/110; bloqueo #175 intacto.
+
+## [Sin publicar — D048 / Issue #199: procedencia inbox→oferta para bloquear respuestas equivocadas]
+- SQL PostgreSQL CI con enlace de origen D028, evento de guardado D026, revisión y proveedor/ronda en la MISMA transacción; idempotencia y rechazo de replay distinto. Un trigger en outbox D047 rechaza respuesta si sólo comparte proveedor/ronda sin vínculo causal. Seguridad de funciones con roles NOLOGIN/RLS y sin acceso cliente ni secretos en datos.
+- Pruebas PG17 de falso origen, retroasociación indebida, empresa ajena, distinta revisión, opt-out y replay; documentación docs/111. No se conecta Whapi, no hay validación semántica de IA ni publicación DEV. Gate backup #175 permanece.
