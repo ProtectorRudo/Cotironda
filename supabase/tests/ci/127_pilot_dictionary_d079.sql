@@ -13,7 +13,8 @@ insert into public.organizations(id,display_name,organization_type) values
  ('bbbbbbbb-0030-4030-8030-000000000702','Corralon A CI','supplier'),
  ('bbbbbbbb-0030-4030-8030-000000000703','Corralon B CI','supplier'),
  ('bbbbbbbb-0030-4030-8030-000000000704','Corralon Rosario CI','supplier'),
- ('bbbbbbbb-0030-4030-8030-000000000705','Corralon BAJA CI','supplier');
+ ('bbbbbbbb-0030-4030-8030-000000000705','Corralon BAJA CI','supplier'),
+ ('bbbbbbbb-0030-4030-8030-000000000706','Corralon solo rubro CI','supplier');
 insert into public.organization_members
  (organization_id,user_id,membership_role,status) values
  ('aaaaaaaa-0030-4030-8030-000000000701',
@@ -23,19 +24,22 @@ insert into public.supplier_profiles
  ('bbbbbbbb-0030-4030-8030-000000000702','Proveedor A ficticio',true),
  ('bbbbbbbb-0030-4030-8030-000000000703','Proveedor B ficticio',true),
  ('bbbbbbbb-0030-4030-8030-000000000704','Fuera de localidad',true),
- ('bbbbbbbb-0030-4030-8030-000000000705','Consentimiento revocado',true);
+ ('bbbbbbbb-0030-4030-8030-000000000705','Consentimiento revocado',true),
+ ('bbbbbbbb-0030-4030-8030-000000000706','Solo rubro sin catalogo',true);
 insert into public.supplier_categories(organization_id,category_code,is_enabled)
  values
  ('bbbbbbbb-0030-4030-8030-000000000702','corralon',true),
  ('bbbbbbbb-0030-4030-8030-000000000703','corralon',true),
  ('bbbbbbbb-0030-4030-8030-000000000704','corralon',true),
- ('bbbbbbbb-0030-4030-8030-000000000705','corralon',true);
+ ('bbbbbbbb-0030-4030-8030-000000000705','corralon',true),
+ ('bbbbbbbb-0030-4030-8030-000000000706','corralon',true);
 insert into public.supplier_delivery_areas
  (organization_id,province,city,is_enabled) values
  ('bbbbbbbb-0030-4030-8030-000000000702','Buenos Aires','La Plata',true),
  ('bbbbbbbb-0030-4030-8030-000000000703','Buenos Aires','La Plata',true),
  ('bbbbbbbb-0030-4030-8030-000000000704','Santa Fe','Rosario',true),
- ('bbbbbbbb-0030-4030-8030-000000000705','Buenos Aires','La Plata',true);
+ ('bbbbbbbb-0030-4030-8030-000000000705','Buenos Aires','La Plata',true),
+ ('bbbbbbbb-0030-4030-8030-000000000706','Buenos Aires','La Plata',true);
 insert into cotironda_private.whapi_contacts_v1
  (channel_id,chat_key,supplier_org_id,verified_at,consented_at,opted_out_at)
  select 'd079_ci',repeat(x.letter,64),x.org,
@@ -45,7 +49,8 @@ insert into cotironda_private.whapi_contacts_v1
   ('a','bbbbbbbb-0030-4030-8030-000000000702'::uuid),
   ('b','bbbbbbbb-0030-4030-8030-000000000703'::uuid),
   ('c','bbbbbbbb-0030-4030-8030-000000000704'::uuid),
-  ('d','bbbbbbbb-0030-4030-8030-000000000705'::uuid)
+  ('d','bbbbbbbb-0030-4030-8030-000000000705'::uuid),
+  ('e','bbbbbbbb-0030-4030-8030-000000000706'::uuid)
  ) x(letter,org);
 
 -- Real Auth caller, NOT direct INSERT: buyer session, private D064 checks.
@@ -111,6 +116,35 @@ select ci_helpers.assert_true(
   where r.request_key='cccccccc-0030-4030-8030-000000000701'),
  'd079_no_suppliers_before_private_matching');
 
+-- MVP-031: confirmed category and geographic coverage are insufficient
+-- without concrete supplier catalog products and private exact mapping.
+set local role cotironda_match_gateway_d065;
+do $category_only$
+declare r jsonb;
+begin
+ r:=cotironda_private.prepare_supplier_invites_d065(
+  pg_catalog.current_setting('cotironda.ci_round_id')::uuid,'d079_ci');
+ if r->>'state'<>'no_eligible_suppliers' or r->>'invited'<>'0'
+ then raise exception 'd080_category_only_invited: %',r;end if;
+end;$category_only$;
+reset role;
+insert into public.supplier_products
+ (id,organization_id,category_code,product_name,manufacturer,unit_code)
+ values
+ ('eeeeeeee-0031-4031-8031-000000000702',
+  'bbbbbbbb-0030-4030-8030-000000000702',
+  'corralon','Cemento CPC Loma Negra 50 kg','Loma Negra','bag'),
+ ('eeeeeeee-0031-4031-8031-000000000703',
+  'bbbbbbbb-0030-4030-8030-000000000703',
+  'corralon','Cemento gris CPC 50 kg','Sin asignar','bag');
+insert into cotironda_private.supplier_catalog_capabilities_d080
+ (catalog_product_id,product_code,fingerprint_sha256)
+ select id,'cemento_gris_obra',
+  cotironda_private.catalog_fingerprint_d080(id)
+ from public.supplier_products where id in(
+  'eeeeeeee-0031-4031-8031-000000000702'::uuid,
+  'eeeeeeee-0031-4031-8031-000000000703'::uuid);
+
 -- Only a server-owned private gateway can prepare scope; no network calls.
 set local role cotironda_match_gateway_d065;
 do $two_corralones$
@@ -139,7 +173,8 @@ select ci_helpers.assert_true(
  not exists(select 1 from cotironda_private.round_invites_v1 i
   where i.supplier_org_id in(
   'bbbbbbbb-0030-4030-8030-000000000704'::uuid,
-  'bbbbbbbb-0030-4030-8030-000000000705'::uuid)),
+  'bbbbbbbb-0030-4030-8030-000000000705'::uuid,
+  'bbbbbbbb-0030-4030-8030-000000000706'::uuid)),
  'd079_exactly_two_corralones_no_rossario_and_no_baja');
 
 set local role cotironda_match_gateway_d065;
@@ -179,6 +214,35 @@ begin
   or r->>'messagesSent'<>'0'
  then raise exception 'd079_no_phone_outbox_block_failed: %',r;end if;
 end;$dry_queue$;
+reset role;
+-- After INVITATIONS were scoped, any catalog change must invalidate the
+-- packet D066: no obsolete product can be sent to a supplier.
+update public.supplier_products
+ set product_name='Cemento CPN 25 kg'
+ where id='eeeeeeee-0031-4031-8031-000000000702';
+set local role cotironda_match_gateway_d065;
+do $modified_catalog_blocks_packet$
+declare packet jsonb;
+begin
+ packet:=cotironda_private.preview_invitation_packet_d066(
+  pg_catalog.current_setting('cotironda.ci_round_id')::uuid,
+  'bbbbbbbb-0030-4030-8030-000000000702'::uuid,'d079_ci');
+ if packet is not null
+ then raise exception 'd080_catalog_modified_but_packet_open';end if;
+end;$modified_catalog_blocks_packet$;
+reset role;
+update public.supplier_products set is_active=false
+ where id='eeeeeeee-0031-4031-8031-000000000703';
+set local role cotironda_match_gateway_d065;
+do $inactive_catalog_blocks_packet$
+declare packet jsonb;
+begin
+ packet:=cotironda_private.preview_invitation_packet_d066(
+  pg_catalog.current_setting('cotironda.ci_round_id')::uuid,
+  'bbbbbbbb-0030-4030-8030-000000000703'::uuid,'d079_ci');
+ if packet is not null
+ then raise exception 'd080_catalog_disabled_but_packet_open';end if;
+end;$inactive_catalog_blocks_packet$;
 reset role;
 select ci_helpers.assert_true(
  (select count(*)=0 from cotironda_private.whapi_invite_jobs_d070
