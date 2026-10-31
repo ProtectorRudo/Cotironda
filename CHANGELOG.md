@@ -772,3 +772,6 @@
 
 ### 31/10/2026 — MVP-028: comprador pega lista y conserva especificaciones exactas
 - Nuevo formulario móvil en `/mis-rondas` para texto y localidad con un único CTA, sin confirmaciones adicionales; captura 1–8 productos reconocidos por taxonomía curada, retiene líneas dudosas y explicita `invitationsSent:0`. D064 valida y guarda `source_description` (CPC 50 kg, marca, RH 12,5) dentro del hash idempotente; D066 usa fuente original en el mensaje privado en lugar del label genérico. Auth Preview comprador separado de WhatsApp proveedor y signup OFF. Unit tests, SQL PG17 y HTTP Next con Auth/PostgREST ficticios en CI; ningún envío, SQL DEV ni despliegue. Ver docs/148 y #269.
+
+### 31/10/2026 — MVP-029: identidad de producto validada en SQL y HTTP, sin nuevos pasos
+- La RPC D064 exige `source_description` en todas las líneas nuevas y comprueba en PostgreSQL (`valid_pilot_product_d078`, solo interno) que el código del artículo corresponde a su familia literal; evita pedidos falsificados con código cemento y texto látex. Rechaza palabras parecidas excluidas y coincidencias de dos familias. Validación HTTP temprana con taxonomía existente, pero SQL conserva la autoridad. Nuevas pruebas de SQL autenticado, unitarias y regresión CI; sin instalación DEV ni mensajes WhatsApp. Ver docs/149 e Issue #271.
