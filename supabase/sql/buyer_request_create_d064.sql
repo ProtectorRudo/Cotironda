@@ -74,6 +74,46 @@ create trigger d064_requests_immutable before update or delete
  on cotironda_private.round_requests_d064
  for each row execute function cotironda_private.reject_immutable_quote_v1();
 
+-- MVP-029. The 6 pilot families are curated. HTTP/JS is never an
+-- authority: an authenticated user can call the PostgREST RPC directly.
+-- Deny wrong/mixed families and excluded near-matches before any INSERT.
+-- This verifies FAMILY evidence only, NOT brands/technical equivalence.
+create function cotironda_private.valid_pilot_product_d078(
+ p_code text,p_description text
+) returns boolean language plpgsql immutable security invoker set search_path='' as $fn$
+declare
+ v_source text;
+ v_found text[]:=array[]::text[];
+begin
+ if p_code is null or p_description is null or
+  pg_catalog.char_length(p_description) not between 3 and 90
+ then return false;end if;
+ v_source:=pg_catalog.lower(pg_catalog.btrim(p_description));
+ if v_source~'(^|[^[:alnum:]])cementos?([^[:alnum:]]|$)' and
+   v_source!~'(cemento (de contacto|cola|adhesivo|blanco|refractario|rapido|rápido|alisado|plastico|plástico|asfaltico|asfáltico)|adhesivo cementicio|mortero de cemento|pegamento para cemento|color cemento)'
+ then v_found:=pg_catalog.array_append(v_found,'cemento_gris_obra');end if;
+ if v_source~'(^|[^[:alnum:]])(hidrofugos?|hidrófugos?|ceresita)([^[:alnum:]]|$)' and
+   v_source!~'(pintura hidrofuga|pintura hidrófuga|membrana hidrofuga|membrana hidrófuga|revestimiento hidrofugo|revestimiento hidrófugo)'
+ then v_found:=pg_catalog.array_append(v_found,'hidrofugo');end if;
+ if v_source~'(^|[^[:alnum:]])(latex|látex)([^[:alnum:]]|$)' and
+   v_source!~'(guantes de (latex|látex)|adhesivo (latex|látex)|sellador (latex|látex)|membrana (latex|látex))'
+ then v_found:=pg_catalog.array_append(v_found,'pintura_latex');end if;
+ if v_source~'(^|[^[:alnum:]])placas? (de )?(yeso|durlock)([^[:alnum:]]|$)' and
+   v_source!~'(tornillo para placa|masilla para placa|perfil para placa|adhesivo para placa)'
+ then v_found:=pg_catalog.array_append(v_found,'placa_yeso');end if;
+ if v_source~'(^|[^[:alnum:]])cables? (unipolares?|eléctricos?|electricos?)([^[:alnum:]]|$)' and
+   v_source!~'(cable de acero|cable de freno|cable coaxial|cable de red|cable de datos|cable usb)'
+ then v_found:=pg_catalog.array_append(v_found,'cable_unipolar');end if;
+ if v_source~'(^|[^[:alnum:]])(caños?|canos?|tubos?) (de )?pvc([^[:alnum:]]|$)' and
+   v_source!~'(pvc (electrico|eléctrico)|conduit pvc|caño corrugado electrico|cano corrugado electrico)'
+ then v_found:=pg_catalog.array_append(v_found,'cano_pvc');end if;
+ return pg_catalog.cardinality(v_found)=1 and v_found[1]=p_code;
+end;$fn$;
+revoke all on function cotironda_private.valid_pilot_product_d078(text,text)
+ from public,anon,authenticated,service_role,cotironda_app;
+grant execute on function cotironda_private.valid_pilot_product_d078(text,text)
+ to cotironda_buyer_writer_d064;
+
 create function cotironda_private.create_buyer_round_d064(
  p_buyer uuid,p_key uuid,p_zone text,p_iva text,p_items jsonb
 ) returns jsonb
@@ -124,10 +164,9 @@ begin
  for v_number in 0..v_count-1 loop
   v_line:=p_items->v_number;
   if pg_catalog.jsonb_typeof(v_line) is distinct from 'object'
-   or (select count(*) from pg_catalog.jsonb_object_keys(v_line)) not in (4,5)
-   or not (v_line ?& array['line_no','product_code','quantity','unit'])
-   or ((select count(*) from pg_catalog.jsonb_object_keys(v_line))=5
-       and not (v_line ? 'source_description'))
+   or (select count(*) from pg_catalog.jsonb_object_keys(v_line))<>5
+   or not (v_line ?& array['line_no','product_code','quantity','unit',
+       'source_description'])
    or pg_catalog.jsonb_typeof(v_line->'line_no') is distinct from 'number'
    or v_line->>'line_no' is distinct from (v_number+1)::text
    or pg_catalog.jsonb_typeof(v_line->'product_code') is distinct from 'string'
@@ -145,6 +184,8 @@ begin
       or v_line->>'source_description' ~*
          '(https?://|www[.]|[0-9]{10,})'
    ))
+   or not cotironda_private.valid_pilot_product_d078(
+      v_line->>'product_code',v_line->>'source_description')
   then raise exception 'd064_invalid_line' using errcode='22023';end if;
   if exists(select 1 from pg_catalog.jsonb_array_elements(p_items) x(value)
      where x.value->>'product_code'=v_line->>'product_code'
