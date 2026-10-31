@@ -26,3 +26,8 @@ El MVP-011 conectaba la lectura de un mensaje cifrado con una versión de cotiza
 ## Criterios aceptados
 
 Un mensaje del proveedor = una cotización si tiene precio atribuible, sin confirmación extra. Una corrección nueva = nueva versión sin borrar la anterior. Si hay un error de infraestructura, reintento acotado e idempotente. Nada de esto debe obligar a comprador o corralón a completar formularios.
+
+## Correcciones de auditoría
+- Si se agota el cuarto lease sin ACK por una caída del worker, el siguiente claim hace limpieza de leases caducados: **marcar DONE cuando D060 ya escribió la cotización, o DEAD si no existe recibo**, para no bloquear indefinidamente al proveedor.
+- Ante un ACK tardío «no elegible» o «retry» después de la escritura efectiva, **prevalece la evidencia de D060 y el trabajo finaliza como DONE**, sin ocultar la oferta histórica ni gastar otra llamada IA. Esto no habilita escribir nuevas ofertas luego de BAJA/cierre: el propio procedimiento D060/D048 seguirá revalidando elegibilidad.
+- Para eventual instalación en DEV, el trigger solo encola **nuevos INSERT**; un despliegue futuro debe planificar la recuperación controlada de mensajes existentes, verificando permisos vigentes y sin procesar aquellos ya cerrados ni duplicar registros.
