@@ -9,7 +9,7 @@ import { checkBundle, PIECES, PROJECT_REF } from '../../scripts/ops/verify-encry
 import { validateDevDsn, verifyDecryption } from '../../scripts/ops/check-local-dev-backup-d041.mjs';
 
 const direct = 'postgresql://postgres:example-not-a-real-secret@db.'+PROJECT_REF+'.supabase.co:5432/postgres?sslmode=require';
-const pooler = 'postgresql://postgres.'+PROJECT_REF+':example-not-a-real-secret@aws-0-sa-east-1.pooler.supabase.com:5432/postgres';
+const pooler = 'postgresql://postgres.'+PROJECT_REF+':example-not-a-real-secret@aws-0-sa-east-1.pooler.supabase.com:5432/postgres?sslmode=require';
 async function fixture(fn) {
   const dir = await mkdtemp(join(tmpdir(), 'cotironda-d041-'));
   try {
@@ -92,3 +92,8 @@ test('D041 rechaza bundle modificado antes del probe',async()=>fixture(async(dir
   await writeFile(join(dir,PIECES[0]),'age-encryption.org/v1\n'+'y'.repeat(80),{mode:0o600});
   await assert.rejects(verifyDecryption(dir,hash,key,fakeAge()),/D039_BACKUP_INTEGRITY_MISMATCH/);
 }));
+
+test('D041 rechaza SSL sin parámetro y sslmode ambiguo',()=>{
+  assert.throws(()=>validateDevDsn(direct.replace('?sslmode=require','')),/D041_TLS_REQUIRED/);
+  assert.throws(()=>validateDevDsn(direct+'&sslmode=disable'),/D041_TLS_REQUIRED/);
+});
