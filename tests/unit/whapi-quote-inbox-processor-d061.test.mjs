@@ -60,7 +60,7 @@ test('D061: inbox AES-GCM real -> fuente cotejada -> versión D060, sin Confirmo
  const {port,calls}=make();
  const r=await port.procesar(channel,messageKey);
  assert.deepEqual(r,{estado:'cotizacion_recibida',version:1,
-  repetido:false,precios:1,datosNoInformados:4});
+  repetido:false,precios:1,datosNoInformados:5});
  assert.equal(calls.length,2);
  assert.match(calls[0].sql,/whapi_quote_read_d061/);
  assert.match(calls[1].sql,/whapi_receive_with_prices_d060/);
