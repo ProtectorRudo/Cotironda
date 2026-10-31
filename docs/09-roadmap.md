@@ -213,3 +213,6 @@ Se preparó comprobación SQL que impide encolar respuesta a una revisión D026 
 
 ### 31/10/2026 — D049 confirmación transaccional con trazabilidad, solo PostgreSQL CI
 Transición de la confirmación de D046 a comprobante SQL privado: la versión D026 se crea en la misma transacción que la vinculación a una respuesta del proveedor en D028, solo para el borrador D048 cuyo mensaje saliente D047 fue aceptado. Replay, revisión anterior, contacto ajeno, BAJA y términos económicos incompletos se rechazan; SQL no lee texto cifrado ni valida reply-to real: requiere broker y pruebas de Whapi reales. No instalar en DEV hasta backup/restore #175. Ver docs/112.
+
+### 31/10/2026 — D050 conservar cita cifrada y corroborar Confirmo (sólo offline)
+D027/D029 ahora incluyen referencia `context.quoted_id` validada en el contenido AES-GCM y su huella HMAC, manteniendo compatibilidad histórica. El comprobador D050 solo prepara llamada D049 si el `Confirmo` se refiere al acuse saliente D047 correcto y el ledger verificado coincide en canal/chat/empresa/ronda/revisión. No confirma aún porque faltan puertos reales al ledger, envío Whapi, retorno de acuse y piloto móvil. Ver docs/113; gate de backup #175 continúa abierto.
