@@ -230,7 +230,8 @@ create policy d060_buyer_versions_read on cotironda_private.offer_versions_v1
 
 create function cotironda_private.buyer_quoted_prices_d060(p_round uuid)
 returns table (supplier_alias text,offer_version integer,line_no integer,
- quoted_unit_price text,vat_basis text)
+ quoted_unit_price text,vat_basis text,currency text,quoted_unit text,
+ available_qty text,freight_gross text,payment_method text,lead_days integer)
 language plpgsql stable security definer set search_path='' as $fn$
 begin
  -- D025 returns no row for foreign rounds AND raises for invalid sessions.
@@ -246,13 +247,23 @@ begin
  select inv.anon_id,s.offer_version,l.line_no,
     case when l.quoted_unit_price is null then null::text
       else pg_catalog.to_char(l.quoted_unit_price,'FM999999999999990.00') end,
-    l.vat_basis
+    l.vat_basis,v.currency,
+    line.value->>'unit',
+    line.value->>'available_qty',
+    case when v.freight_gross is null then null::text
+      else pg_catalog.to_char(v.freight_gross,'FM999999999999990.00') end,
+    v.payment_method,v.lead_days
  from latest x
  join cotironda_private.whapi_price_sources_d060 s
   on s.round_id=x.round_id and s.supplier_org_id=x.supplier_org_id
     and s.offer_version=x.ver
  join cotironda_private.whapi_price_lines_d060 l
   on l.channel_id=s.channel_id and l.message_key=s.message_key
+ join cotironda_private.offer_versions_v1 v
+  on v.round_id=s.round_id and v.supplier_org_id=s.supplier_org_id
+    and v.version=s.offer_version
+ join lateral pg_catalog.jsonb_array_elements(v.lines_snapshot) line(value)
+  on line.value->>'line_no'=l.line_no::text
  join cotironda_private.round_invites_v1 inv
   on inv.round_id=s.round_id and inv.supplier_org_id=s.supplier_org_id
  order by inv.anon_id,l.line_no;
@@ -268,13 +279,15 @@ revoke all on function cotironda_private.buyer_quoted_prices_d060(uuid)
 grant execute on function cotironda_private.buyer_quoted_prices_d060(uuid) to authenticated;
 create function public.buyer_quoted_prices_d060(p_round uuid)
 returns table (supplier_alias text,offer_version integer,line_no integer,
- quoted_unit_price text,vat_basis text)
+ quoted_unit_price text,vat_basis text,currency text,quoted_unit text,
+ available_qty text,freight_gross text,payment_method text,lead_days integer)
 language sql stable security invoker set search_path='' as $fn$
- select p.supplier_alias,p.offer_version,p.line_no,p.quoted_unit_price,p.vat_basis
+ select p.supplier_alias,p.offer_version,p.line_no,p.quoted_unit_price,p.vat_basis,
+  p.currency,p.quoted_unit,p.available_qty,p.freight_gross,p.payment_method,p.lead_days
  from cotironda_private.buyer_quoted_prices_d060(p_round) p;
 $fn$;
 revoke all on function public.buyer_quoted_prices_d060(uuid)
  from public,anon,authenticated,service_role,cotironda_app;
 grant execute on function public.buyer_quoted_prices_d060(uuid) to authenticated;
 comment on function public.buyer_quoted_prices_d060(uuid) is
- 'MVP-010 buyer session validated by D025, latest supplier quote price and IVA disclosure; NOT comparative final with IVA/freight.';
+ 'MVP-010 buyer session validated by D025, latest supplier quote price, currency/unit/qty and declared economic terms; NOT comparable final total.';
