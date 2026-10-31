@@ -223,6 +223,54 @@ jobs:
           SQL
 
 
+      - name: D052 E2E Node22 PostgreSQL17 cifrado a confirmación (solo CI, sin red)
+        run: |
+          set -euo pipefail
+          # Una credencial por job, enmascarada, sin relación con Supabase DEV.
+          export COTIRONDA_D052_HMAC_ID="$(openssl rand -hex 32)"
+          export COTIRONDA_D052_HMAC_PAYLOAD="$(openssl rand -hex 32)"
+          export COTIRONDA_D052_AES_KEY="$(openssl rand -hex 32)"
+          export COTIRONDA_D052_ACK_HMAC_KEY="$(openssl rand -hex 32)"
+          export COTIRONDA_D052_WEBHOOK_SECRET="$(openssl rand -hex 32)"
+          ci_pass="$(openssl rand -hex 24)"
+          for value in "$COTIRONDA_D052_HMAC_ID" "$COTIRONDA_D052_HMAC_PAYLOAD" "$COTIRONDA_D052_AES_KEY" "$COTIRONDA_D052_ACK_HMAC_KEY" "$COTIRONDA_D052_WEBHOOK_SECRET" "$ci_pass"; do
+            echo "::add-mask::$value"
+          done
+          d052_chat="$(CHAT='5492211234567@s.whatsapp.net' node --input-type=module -e 'import {createHmac} from "node:crypto";process.stdout.write(createHmac("sha256",Buffer.from(process.env.COTIRONDA_D052_HMAC_ID,"hex")).update(JSON.stringify(["cotironda","chat",1,"whapi_d052_ci",process.env.CHAT])).digest("hex"))')"
+          psql -X -v ON_ERROR_STOP=1 -v d052_password="$ci_pass" -v d052_chat_key="$d052_chat" -f scripts/ci/whapi-pg/confirm-d052-seed.sql > /dev/null
+          COTIRONDA_D052_E2E=true COTIRONDA_D052_DB_LOGIN=cotironda_confirm_d052_ci_login COTIRONDA_D052_DB_PASSWORD="$ci_pass" node --experimental-strip-types scripts/ci/whapi-pg/confirm-d052-e2e.mjs
+          psql -X -v ON_ERROR_STOP=1 <<'SQL'
+          select ci_helpers.assert_true(
+            (select count(*)=9 from cotironda_private.whapi_inbox_v1
+              where channel_id='whapi_d052_ci'), 'd052_persisted_inbox');
+          select ci_helpers.assert_true(
+            (select count(*)=8 from cotironda_private.whapi_inbox_v1
+              where channel_id='whapi_d052_ci' and kind='text'
+                and payload_ciphertext is not null
+                and crypto_key_id='aes_d052_ci'), 'd052_encrypted_text');
+          select ci_helpers.assert_true(
+            (select count(*)=1 from cotironda_private.whapi_inbox_v1
+              where channel_id='whapi_d052_ci' and kind='opt_out'
+                and payload_ciphertext is null), 'd052_opt_out');
+          select ci_helpers.assert_true(
+            (select count(*)=2 from cotironda_private.whapi_offer_sources_d048
+              where round_id='dddddddd-0000-4000-8000-000000000524'),
+              'd052_sources');
+          select ci_helpers.assert_true(
+            (select count(*)=2 from cotironda_private.whapi_reply_jobs_d047
+              where round_id='dddddddd-0000-4000-8000-000000000524'
+                and status='accepted_by_transport'), 'd052_transport_acks');
+          select ci_helpers.assert_true(
+            (select count(*)=2 from cotironda_private.whapi_confirm_sources_d049
+              where round_id='dddddddd-0000-4000-8000-000000000524'),
+              'd052_confirm_receipts');
+          select ci_helpers.assert_true(
+            (select count(*)=2 from cotironda_private.offer_versions_v1
+              where round_id='dddddddd-0000-4000-8000-000000000524'),
+              'd052_immutable_offer_versions');
+          SQL
+
+
   migrations-from-zero:
     name: Reconstruir historial 12 migraciones en PostgreSQL limpio
     runs-on: ubuntu-latest
