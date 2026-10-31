@@ -82,6 +82,11 @@ assert.equal(first.body.guardadas,1);
 assert.equal(first.body.presupuestosConfirmados,0);
 assert.equal(first.body.mensajesEnviados,0);
 // Reenviar en otra conexión: demostrar persistencia en PostgreSQL real.
+const rotated=await runMessage({...msg,id:'pg.ci-00000006'},'aes_2026_b');
+assert.equal(rotated.response.status,200);
+assert.equal(rotated.body.guardadas,1);
+const keyCollision=await runMessage(msg,'aes_2026_b');
+assert.equal(keyCollision.response.status,503);
 const replay=await runMessage(msg);
 assert.equal(replay.response.status,200);
 assert.equal(replay.body.duplicadas,1);
