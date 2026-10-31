@@ -18,7 +18,7 @@ La cadena real debe estar almacenada mediante gestor de secretos LOCAL en la var
 
     node scripts/ops/check-local-dev-backup-d041.mjs target
 
-El comprobador solo permite la base postgres de db.qkercsoqhehbenbbncwk.supabase.co:5432 con usuario postgres, o pooler de sesión con nombre terminado en .pooler.supabase.com:5432 y usuario postgres.qkercsoqhehbenbbncwk. Rechaza otro proyecto, otra base, puerto de pooler de transacciones 6543, protocolo inesperado y parámetros explícitos de TLS inseguro. No abre red ni comprueba permisos efectivos del usuario; tampoco asegura que una extracción posterior reutilice la misma URL.
+El comprobador solo permite la base postgres de db.qkercsoqhehbenbbncwk.supabase.co:5432 con usuario postgres, o pooler de sesión con nombre terminado en .pooler.supabase.com:5432 y usuario postgres.qkercsoqhehbenbbncwk. Rechaza otro proyecto, otra base, puerto de pooler de transacciones 6543 y protocolo inesperado. **Exige exactamente un parámetro sslmode=require (o verify-ca/verify-full)**; si la URL del panel no tiene sslmode, agregarlo localmente y probarlo antes de cualquier conexión, sin mostrar la contraseña. Rechaza ausencia, duplicados y valores inseguros. No abre red ni comprueba permisos efectivos del usuario; tampoco asegura que una extracción posterior reutilice la misma URL.
 
 La contraseña en un argumento de proceso usado por supabase db dump puede exponerse en equipos compartidos. Inspeccionar supabase db dump --help y usar equipo exclusivo/gestor seguro. D041 NO exporta automáticamente una base.
 
