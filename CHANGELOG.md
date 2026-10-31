@@ -707,3 +707,5 @@
 ### 31/10/2026 — MVP-009: SQL de recepción directa sin mensaje de confirmación
 - Nuevo procedimiento privado `whapi_receive_quote_d059` que liga inbox cifrado a revisión D048 y versión inmutable D026 de manera atómica, sin intervención D047/D049. Admite ofertas parciales y datos fiscales/logísticos ausentes, conserva control de opt-in, identidad, plazos, deduplicación y correcciones.
 - Recibos protegidos por RLS/rol NOLOGIN sin datos personales en claro; ensayo de casos normales y extremos en PostgreSQL 17 efímero CI. No SQL instalado en Supabase, no Whapi real, no merge/deploy. Ver docs/129.
+
+- MVP-009 añadió también puerto **server-only** `whapi-quote-direct-postgres-d059.ts` hacia SQL D059, con validación estricta de campos, SQL parametrizado y resultados fail-closed; tests de respuesta, replay, corrección, campos maliciosos y errores internos. Aún sin endpoints ni conexión de broker real.
