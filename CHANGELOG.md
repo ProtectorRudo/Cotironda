@@ -698,3 +698,8 @@
 ### 31/10/2026 — MVP-007: presupuesto con evidencia → borrador D046
 - Nuevo adaptador económico offline de precio citado y condiciones IVA/flete a campos estrictos del borrador D046. No netear importes brutos si la alícuota y el redondeo no están comprobados. Flete omitido permanece `null`; solo es cero cuando está expresamente incluido o sin cargo.
 - Casos de regresión integrados de cita de fuente, IVA bruto/neto, alícuota faltante, importe en pesos argentinos, requisito IVA de comprador, flete adicional y confirmación D046. Sin nuevas APIs, Whapi, SQL DEV ni producción; ver docs/127.
+
+### 31/10/2026 — MVP-008: sin confirmaciones adicionales ni fricción
+- Cambio vinculante de producto: comprador envía una sola vez; preguntar localidad/zona entrega solo si falta/contradice. Cada proveedor recibe consulta preparada con materiales, zona y detalles excepcionales expresamente pedidos. No se exige revisar renglones ni confirmar cotización dos veces.
+- Nueva ruta offline de recepción de oferta del proveedor desde evento validado: se registra al recibirla aunque falten IVA/flete; respuesta posterior crea versión inmutable; duplicados y remitente inválido bloqueados. Comparación sigue excluyendo IVA/flete desconocidos o equivalencias no verificadas, sin ocultar oferta parcial recibida.
+- Demo del comprador pregunta una única zona si falta, y muestra mensajes ficticios consolidados sin «Confirmo». Legado D046/D049/D051 permanece por compatibilidad: requiere migración real antes del piloto. Sin envío, deploy ni cambios Supabase DEV.
