@@ -40,7 +40,7 @@ Antes de cerrar #175 son obligatorios una exportación real cifrada, descifrado 
 
 ## Pruebas
 
-Suite tests/unit/dev-backup-local-age-d041.test.mjs: 14 casos sintéticos de URL errónea, TLS, clave insegura, salida de descifrado y errores. **La ejecución age se simula en CI; los tests no verifican criptografía real.** La ejecución de age auténtico necesita un respaldo real que todavía no existe.
+Suite tests/unit/dev-backup-local-age-d041.test.mjs: 15 casos sintéticos de URL errónea, TLS, clave insegura, salida de descifrado y errores. **La ejecución age se simula en CI; los tests no verifican criptografía real.** La ejecución de age auténtico necesita un respaldo real que todavía no existe.
 
 Fuentes:
 - https://supabase.com/docs/guides/platform/migrating-within-supabase/backup-restore
