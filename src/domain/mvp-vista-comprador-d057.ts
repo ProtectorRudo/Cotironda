@@ -4,6 +4,7 @@
  * El texto se analiza únicamente en el navegador que la invoca.
  */
 import {simularInvitacionesEconomicasDesdeTexto} from './entrada-economica.ts';
+import {separarCondicionesComprador,condicionarMensajesProveedor,type ExigenciaIva} from './condiciones-comprador-mvp006.ts';
 import type {ProveedorPorProducto,SkuPorProducto} from './identidad-producto.ts';
 
 export const EJEMPLO_PEDIDO_MVP = [
@@ -77,6 +78,9 @@ export type VistaCompradorMvp=Readonly<{
   mensajesEnviados:0;
   llamadasIA:0;
   preciosReales:0;
+  condicionIvaComprador:ExigenciaIva;
+  avisoIva:string|null;
+  lineasDeCondicion:readonly string[];
   filas:readonly Readonly<{numero:number;texto:string;estado:'preparada'|'pendiente';motivo?:string}>[];
   proveedores:readonly Readonly<{
     id:string;nombre:string;rubro:string;
@@ -87,30 +91,34 @@ export type VistaCompradorMvp=Readonly<{
 }>;
 export function generarVistaCompradorMvp(texto:string):VistaCompradorMvp{
   if(typeof texto!=='string'||texto.trim().length===0)throw new TypeError('pedido_vacio');
+  const condiciones=separarCondicionesComprador(texto);
+  if(!condiciones.materiales.length)throw new TypeError('pedido_sin_materiales');
   const result=simularInvitacionesEconomicasDesdeTexto({
-    texto,
+    texto:condiciones.textoMateriales,
     solicitud:{id:'ronda_mvp_demostracion',zona_entrega:'la_plata',
       envio_autorizado_por_comprador:true},
     proveedores:FIXTURES
   });
   const pendientes=new Map(result.pendientes_ia.map(p=>
-    [p.numero_linea,REASONS[p.motivo]??'Necesita revisión']));
+    [condiciones.materiales[p.numero_linea-1]?.numero??p.numero_linea,
+      REASONS[p.motivo]??'Necesita revisión']));
   // Producto reconocido pero sin proveedor apto NO está listo para enviar.
   for(const item of result.plan.retenidas){
     if(item.motivo!=='sin_proveedor_que_trabaje_producto')continue;
     const origen=result.borrador.lineas.find(x=>x.fila===item.fila)?.ubicacion;
     const fila=origen?.match(/^Texto, línea (\d+)$/u);
-    const numero=fila?Number(fila[1]):item.fila;
+    const indice=fila?Number(fila[1]):item.fila;
+    const numero=condiciones.materiales[indice-1]?.numero??indice;
     pendientes.set(numero,'No hay proveedores del catálogo ficticio que trabajen este material.');
   }
-  const fuentes=texto.split(/\r\n|\r|\n/u).map((s,i)=>({texto:s.trim(),numero:i+1}))
-    .filter(x=>x.texto.length>0);
+  const fuentes=condiciones.materiales;
   const filas=fuentes.map(f=>({
     numero:f.numero,texto:f.texto,
     estado:pendientes.has(f.numero)?'pendiente' as const:'preparada' as const,
     ...(pendientes.has(f.numero)?{motivo:pendientes.get(f.numero)}:{})
   }));
-  const proveedores=result.plan.invitaciones.map(p=>({
+  const plan=condicionarMensajesProveedor(result.plan,condiciones.iva);
+  const proveedores=plan.invitaciones.map(p=>({
     id:p.proveedor_id,
     nombre:NOMBRES[p.proveedor_id]??'Proveedor de prueba',
     rubro:RUBROS[p.items[0]?.producto_id==='cemento_gris_obra'?'corralon':
@@ -128,6 +136,15 @@ export function generarVistaCompradorMvp(texto:string):VistaCompradorMvp{
     pendientes:pendientes.size,
     invitaciones:result.resumen.proveedores,
     mensajesEnviados:0,llamadasIA:0,preciosReales:0,
+    condicionIvaComprador:condiciones.iva,
+    lineasDeCondicion:condiciones.lineasCondicion.map(x=>x.texto),
+    avisoIva:condiciones.iva==='con_iva'
+      ?'Se solicitará a cada proveedor cotizar CON IVA incluido en el precio final.'
+      :condiciones.iva==='sin_iva'
+      ?'El comprador pidió cotizar SIN IVA incluido; se comunicará expresamente.'
+      :condiciones.iva==='contradictorio'
+      ?'Hay indicaciones contradictorias sobre IVA. No se transmite una condición fiscal hasta aclararla.'
+      :null,
     filas,proveedores
   });
 }
