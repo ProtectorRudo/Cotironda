@@ -10,7 +10,7 @@ export type BuyerRoundInputD064=Readonly<{
  requestId:string;companyId?:string|null;deliveryZone:string;
  vatRequest:'no_especificado'|'con_iva'|'sin_iva'|'contradictorio';
  items:readonly Readonly<{line_no:number;product_code:string;
-  quantity:string;unit:string}>[];
+  quantity:string;unit:string;source_description?:string}>[];
 }>;
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/iu;
 const CODE=/^[a-z][a-z0-9_]{2,49}$/u;
@@ -19,7 +19,8 @@ const ZONE=/^[\p{L}\p{M}\d .,-]{3,65}$/u;
 const VAT=new Set(['no_especificado','con_iva','sin_iva','contradictorio']);
 const UNITS=new Set(['unit','bag','box','kg','g','l','ml','m','m2','m3','roll','pack']);
 const FIELDS=['requestId','companyId','deliveryZone','vatRequest','items'];
-const ITEM_FIELDS=['line_no','product_code','quantity','unit'];
+const ITEM_FIELDS=['line_no','product_code','quantity','unit','source_description'];
+const SOURCE=/^[\p{L}\p{M}\p{N} .,()/+²³-]{3,90}$/u;
 const HDR={'content-type':'application/json; charset=utf-8',
  'cache-control':'private, no-store, no-cache, max-age=0, must-revalidate',
  'vary':'Cookie, Authorization','x-content-type-options':'nosniff'};
@@ -44,11 +45,17 @@ function validate(input:unknown):input is BuyerRoundInputD064{
  const seen=new Set<string>();
  for(let i=0;i<input.items.length;i++){
   const line:unknown=input.items[i];
-  if(!exact(line,ITEM_FIELDS)||
+  if(!exact(line,ITEM_FIELDS,['source_description'])||
     line.line_no!==i+1||typeof line.product_code!=='string'||
     !CODE.test(line.product_code)||seen.has(line.product_code)||
     typeof line.quantity!=='string'||!QTY.test(line.quantity)||
-    typeof line.unit!=='string'||!UNITS.has(line.unit))return false;
+    typeof line.unit!=='string'||!UNITS.has(line.unit)||
+    (line.source_description!==undefined&&(
+     typeof line.source_description!=='string'||
+     !SOURCE.test(line.source_description)||
+     line.source_description.trim()!==line.source_description||
+     /https?:|www\.|\d{10,}/iu.test(line.source_description)
+    )))return false;
   seen.add(line.product_code);
  }
  return true;
