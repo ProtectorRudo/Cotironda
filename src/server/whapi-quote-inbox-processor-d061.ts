@@ -125,8 +125,32 @@ export function crearRecepcionDirectaDeInboxD061(
    found.add(row.itemId);
    mapping.push({itemId:row.itemId,line_no:byId.get(row.itemId)!.line_no});
   }
+  // Extra guard against IA assigning a genuine $ amount to the WRONG item.
+  // Only trust source lines containing a distinctive token from the round's
+  // immutable product code. Shared/generic tokens across items are ambiguous.
+  // If not attributable, keep the inbound text but do not invent a price.
+  const notes=message.texto.split(/\r\n|\n|\r/u);
+  const descriptor=(code:string)=>code.split('_').filter(s=>
+   /^[a-z]{4,}$/u.test(s)&&!['item','producto','material','generico'].includes(s));
+  const normalized=(s:string)=>s.normalize('NFD')
+   .replace(/[\u0300-\u036f]/gu,'').toLowerCase();
+  const sanitized=proposal.items.map(row=>{
+   const known=byId.get(row.itemId)!;
+   const line=row.evidenciaPrecio?.linea;
+   if(row.precioInformado===null||!Number.isSafeInteger(line)||
+      line===undefined||line<1||line>notes.length)
+    return row;
+   const words=new Set(normalized(notes[line-1]).match(/[a-z]{3,}/gu)??[]);
+   const unique=descriptor(known.itemId).some(token=>words.has(token)&&
+    !items.some(other=>other.itemId!==known.itemId&&
+      descriptor(other.itemId).includes(token)));
+   return unique?row:{...row,precioInformado:null,evidenciaPrecio:null};
+  });
   let prepared:ReturnType<typeof prepararCotizacionDocumentalD060>;
-  try{prepared=prepararCotizacionDocumentalD060(proposal,mapping)}catch{reject()}
+  try{
+   prepared=prepararCotizacionDocumentalD060(
+    {...proposal,items:sanitized},mapping);
+  }catch{reject()}
   // A quote is accepted only if at least one price was literally grounded.
   // Avoid fake 0-price offers from vague text or guesses. Missing other prices
   // is fine: partial offers are normal and must remain visible.
