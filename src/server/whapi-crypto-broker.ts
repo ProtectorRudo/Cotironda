@@ -41,6 +41,11 @@ export type ConfigBrokerWhapi=Readonly<{
   channel:string;secretoWebhook:string;claves:ClavesPrivadasWhapi;
   almacen:AlmacenWhapiPrivado;habilitado:boolean;ahoraUnix:()=>number;
   contenidoKeyId?:string;clavesLectura?:Readonly<Record<string,Buffer>>;
+  // Optional D069 port explicitly injected by a trusted server.
+  // Called only AFTER an authenticated inbound event commits to D028.
+  enroladorContacto?:Readonly<{registrarContactoVerificado:
+    (contact:Readonly<{channel:string;supplierOrgId:string;to:string}>)=>
+      Promise<unknown>}>;
 }>;
 const CHANNEL=/^[A-Za-z0-9_-]{4,64}$/;
 const CHAT=/^[1-9][0-9]{7,16}@s\.whatsapp\.net$/;
@@ -84,7 +89,9 @@ export function construirBrokerWhapiPrivado(config:ConfigBrokerWhapi):{
     !config.almacen||typeof config.almacen.resolverVinculo!=='function'||
     typeof config.almacen.registrarEntrada!=='function'||
     typeof config.almacen.registrarBaja!=='function'||
-    typeof config.ahoraUnix!=='function'||typeof config.habilitado!=='boolean')
+    typeof config.ahoraUnix!=='function'||typeof config.habilitado!=='boolean'||
+    (config.enroladorContacto!==undefined&&
+     typeof config.enroladorContacto?.registrarContactoVerificado!=='function'))
     rechazar();
   const keys=autenticarClaves(config.claves);
   const keyId=config.contenidoKeyId??'legacy_d029';
@@ -156,6 +163,20 @@ export function construirBrokerWhapiPrivado(config:ConfigBrokerWhapi):{
       });
       if(result?.estado!=='entrada_persistida'||typeof result.repetido!=='boolean')
         throw new TypeError('broker_respuesta_almacen_invalida');
+      if(config.enroladorContacto){
+        // Do not trust the supplier identity copied by D027: re-query its
+        // server-owned binding AFTER persistence, including on event replay.
+        const verified=await config.almacen.resolverVinculo(config.channel,cKey);
+        if(!verified||verified.supplierOrgId!==msg.proveedorOrgId||
+          verified.roundId!==msg.rondaId||
+          verified.consentimientoVigente!==true||
+          verified.invitacionVigente!==true)rechazar();
+        // Only the authenticated direct chat; not phone supplied in text.
+        const to=msg.chatId.slice(0,-'@s.whatsapp.net'.length);
+        await config.enroladorContacto.registrarContactoVerificado({
+          channel:config.channel,supplierOrgId:verified.supplierOrgId,to
+        });
+      }
       return result.repetido?'duplicada':'guardada';
     },
     registrarBaja:async(channel,chatId,msgId,_untrustedHash,when)=>{
