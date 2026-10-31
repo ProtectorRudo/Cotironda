@@ -216,9 +216,11 @@ begin
     where job_id=(j->>'jobId')::uuid;
   end if;
  end loop;
- if cotironda_private.whapi_lease_reply_d047() is not null
-  or (select status from cotironda_private.whapi_reply_jobs_d047
-    where job_id=(j->>'jobId')::uuid)<>'exhausted'
+ lease:=cotironda_private.whapi_lease_reply_d047();
+ if lease is not null
+ then raise exception 'd047_final_lease_claimed_other';end if;
+ if (select status from cotironda_private.whapi_reply_jobs_d047
+     where job_id=(j->>'jobId')::uuid)<>'exhausted'
  then raise exception 'd047_final_lease_stuck';end if;
 
  perform cotironda_private.save_offer_draft_atomic_v1(r,s,
