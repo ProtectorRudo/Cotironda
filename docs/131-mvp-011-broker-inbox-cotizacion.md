@@ -23,3 +23,6 @@ Un ingreso parcial sin precio cotejable debe permanecer como **mensaje recibido 
 ## Estado de pruebas
 
 Controles a ejecutar: unitarias, TypeScript/Next, PostgREST HTTP, PostgreSQL17 con D061, smoke y restauración efímera. CI green no equivale a WhatsApp live ni a piloto de empresa real.
+
+### Anclaje adicional de material (auditoría)
+Antes de guardar el importe, el broker exige que la línea de origen contenga un término distintivo del código de producto del **snapshot privado de la ronda**, que no sea compartido por otro artículo en la misma ronda. Si el precio aparece junto a «arena» pero la línea se quiere asignar a «cemento», o existen dos cementos de marcas distintas y solo se lee «cemento», **no asignar ese precio**. El mensaje se mantiene recibido para futura interpretación, pero no se publica un importe de artículo inventado. Esta protección conservadora no sustituye una equivalencia técnica real; productos con códigos opacos pueden quedar sin precio atribuible hasta introducir un catálogo semántico confiable. Tests D061 verifican ambos casos.
