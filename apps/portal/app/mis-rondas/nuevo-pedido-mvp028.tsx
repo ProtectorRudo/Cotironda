@@ -1,5 +1,5 @@
 'use client';
-import {useRef,useState} from 'react';
+import {useRef,useState,type FormEvent} from 'react';
 import {prepararPedidoTextoMvp028,type PedidoPilotoMvp028}
  from '../../../../src/domain/pedido-piloto-mvp028.ts';
 
@@ -16,7 +16,7 @@ export function NuevoPedidoMvp028(){
   requestId.current=null;
   setView(null);setError('');setSaved('');setState('idle');
  };
- async function submit(e:React.FormEvent<HTMLFormElement>){
+ async function submit(e:FormEvent<HTMLFormElement>){
   e.preventDefault();
   if(state==='sending'||state==='saved')return;
   setError('');
