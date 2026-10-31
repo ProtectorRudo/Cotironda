@@ -7,7 +7,16 @@ alter table cotironda_private.whapi_reply_jobs_d047
  add column send_started_at timestamptz,
  add column uncertain_at timestamptz,
  add column reconciliation_evidence_hmac text
-  check(reconciliation_evidence_hmac ~ '^[a-f0-9]{64}
+  check(reconciliation_evidence_hmac ~ '^[a-f0-9]{64}$');
+-- Backfill legacy ACKs BEFORE enforcing invariants; no invented evidence.
+update cotironda_private.whapi_reply_jobs_d047
+ set send_phase='accepted' where status='accepted_by_transport';
+alter table cotironda_private.whapi_reply_jobs_d047
+ add constraint d053_consistent_send_phase check (
+  (send_phase='not_started' and status in ('queued','leased','cancelled','exhausted'))
+  or (send_phase in ('in_flight','uncertain') and status='leased')
+  or (send_phase='accepted' and status='accepted_by_transport')
+ );
 
 -- The old D047 "false" outcome is safe ONLY before HTTP starts.
 -- "true" (ack) must use whapi_record_send_outcome_d053 after begin_send.
