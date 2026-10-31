@@ -105,7 +105,9 @@ try{
  const html=await ownPage.text();
  assert.match(html,/Pedir presupuestos/);
  assert.match(html,/Lista de materiales/);
- assert.match(html,/Localidad de entrega/);
+ assert.doesNotMatch(html,/id="pedido-zona-028"/);
+ assert.match(html,/incluyendo la entrega si ya la sabés/);
+ // MVP-033: locality input is progressive, never required on first view.
  assert.doesNotMatch(html,/Activar mi WhatsApp/);
  noStore(ownPage);
  const alta=await hit('/alta',{headers:{cookie}});
