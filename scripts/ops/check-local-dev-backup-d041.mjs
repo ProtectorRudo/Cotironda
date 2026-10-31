@@ -20,8 +20,10 @@ export function validateDevDsn(raw) {
     dsn.password.length === 0 || dsn.hash.length !== 0 ||
     dsn.pathname !== '/postgres' || dsn.port !== '5432')
     fail('DEV_CONNECTION_INVALID');
-  const mode = dsn.searchParams.get('sslmode');
-  if (mode && !['require','verify-full','verify-ca'].includes(mode))
+  const modes = dsn.searchParams.getAll('sslmode');
+  // An absent or duplicate sslmode must fail: driver defaults and duplicate
+  // URL parameters may be interpreted differently by clients.
+  if (modes.length !== 1 || !['require','verify-full','verify-ca'].includes(modes[0]))
     fail('TLS_REQUIRED');
   let method;
   if (dsn.hostname === 'db.' + PROJECT_REF + '.supabase.co' &&
