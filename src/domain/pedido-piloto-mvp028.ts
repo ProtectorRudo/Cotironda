@@ -65,19 +65,25 @@ export function prepararPedidoTextoMvp028(
  const items:PedidoPilotoMvp028['items'][number][]=[];
  const codes=new Set<string>();
  for(const row of materiales){
-  const parsed=extraerLinea(row.texto.replace(/^(?:[-*•]\s+|\d{1,3}[).]\s+)/u,'').trim());
+  const clean=row.texto.replace(/^(?:[-*•]\s+|\d{1,3}[).]\s+)/u,'').trim();
+  const parsed=extraerLinea(clean);
   if(!parsed){
    pend.push({linea:row.numero,texto:row.texto,motivo:REASON.parse});continue;
   }
   if(!QTY.test(parsed.cantidad)||/[.,][0-9]{3}$/u.test(parsed.cantidad)){
    pend.push({linea:row.numero,texto:row.texto,motivo:REASON.quantity});continue;
   }
-  const product=identificarProducto(parsed.producto);
+  // "15 placas de yeso" => keep "placas" as part of the identity;
+  // a plain "yeso RH" would lose the D015 family evidence.
+  const plate=parsed.unidad==='unit'?
+   clean.match(/^\d{1,6}(?:[,.]\d{1,3})?\s+(placas?)\s+(de\s+)?(.+)$/iu):null;
+  const literal=plate?(plate[1]+' '+(plate[2]??'')+plate[3]).trim():parsed.producto;
+  const product=identificarProducto(literal);
   if(!product){
    pend.push({linea:row.numero,texto:row.texto,motivo:REASON.product});continue;
   }
-  if(!SOURCE.test(parsed.producto)||parsed.producto.trim()!==parsed.producto||
-    UNSAFE.test(parsed.producto)){
+  if(!SOURCE.test(literal)||literal.trim()!==literal||
+    UNSAFE.test(literal)){
    pend.push({linea:row.numero,texto:row.texto,motivo:REASON.source});continue;
   }
   if(codes.has(product.producto_id)){
@@ -87,7 +93,7 @@ export function prepararPedidoTextoMvp028(
   items.push({
    line_no:items.length+1,product_code:product.producto_id,
    quantity:parsed.cantidad.replace(',','.'),unit:parsed.unidad,
-   source_description:parsed.producto
+   source_description:literal
   });
  }
  if(materiales.length>8)
