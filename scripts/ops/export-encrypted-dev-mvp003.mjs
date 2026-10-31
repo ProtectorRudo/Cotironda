@@ -56,6 +56,59 @@ function checkedConnection(raw) {
     PGCONNECT_TIMEOUT: '15', PGOPTIONS: '-c default_transaction_read_only=on',
   };
 }
+// pg_dump's separate invocations use DIFFERENT snapshots by default.
+ // Hold one exporter transaction open until all four database pieces finish.
+ // No SQL/credentials pass through argv. The snapshot ID is an opaque PG
+ // transaction handle, not a phone, token or customer datum.
+const SNAPSHOT_ID = /^[0-9a-f]{8}-[0-9a-f]{8}-[0-9]+$/i;
+const SNAPSHOT_TIMEOUT_MS = 20000;
+async function openConsistentSnapshot(env, spawnCommand) {
+  const child = spawnCommand('psql',
+    ['-X', '-q', '-A', '-t', '-v', 'ON_ERROR_STOP=1', '--no-password'],
+    { env, stdio: ['pipe', 'pipe', 'ignore'] });
+  // Observe process exit immediately, even if the server disconnects early.
+  const exited = processClosed(child).catch(() => -1);
+  let timeout;
+  let closedBeforeReady = false;
+  let text = '';
+  const ready = new Promise((resolveReady, rejectReady) => {
+    const reject = () => rejectReady(new Error('MVP003_SNAPSHOT_UNAVAILABLE'));
+    timeout = setTimeout(reject, SNAPSHOT_TIMEOUT_MS);
+    child.once('error', reject);
+    child.once('close', () => { closedBeforeReady = true; reject(); });
+    child.stdout.on('data', bytes => {
+      text += bytes.toString('utf8');
+      if (text.length > 256) { reject(); return; }
+      const pos = text.indexOf('\n');
+      if (pos === -1) return;
+      const first = text.slice(0, pos).trim();
+      if (!SNAPSHOT_ID.test(first) || text.slice(pos + 1).trim() !== '') {
+        reject(); return;
+      }
+      resolveReady(first);
+    });
+  });
+  try {
+    child.stdin.write(
+      'BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY;\n' +
+      'SELECT pg_export_snapshot();\n');
+    const snapshot = await ready;
+    if (closedBeforeReady) fail('SNAPSHOT_UNAVAILABLE');
+    // On success the caller MUST call close() in finally.
+    return Object.freeze({
+      snapshot,
+      close: async () => {
+        try { child.stdin.end('ROLLBACK;\n'); }
+        catch { child.kill?.(); fail('SNAPSHOT_CLOSE_FAILED'); }
+        if (await exited !== 0) fail('SNAPSHOT_CLOSE_FAILED');
+      }
+    });
+  } catch {
+    child.kill?.();
+    fail('SNAPSHOT_UNAVAILABLE');
+  } finally { clearTimeout(timeout); }
+}
+
 async function safeNewDestination(destination) {
   if (process.platform === 'win32' || typeof process.getuid !== 'function') fail('POSIX_REQUIRED');
   if (!isAbsolute(destination)) fail('ABSOLUTE_DESTINATION_REQUIRED');
@@ -108,10 +161,22 @@ export async function exportDevEncrypted({ directory, connectionUrl, recipient, 
   let destination;
   try {
     destination = await safeNewDestination(directory);
-    for (const exe of ['pg_dump', 'pg_dumpall']) await programVersion(exe, env, spawnCommand);
-    for (let i = 0; i < PIECES.length; i++) {
-      created.push(PIECES[i]);
-      await encryptPiece(EXPORTS[i][0], EXPORTS[i][1], PIECES[i], destination, env, recipient, spawnCommand);
+    for (const exe of ['pg_dump', 'pg_dumpall', 'psql']) await programVersion(exe, env, spawnCommand);
+    // Export global roles separately. Global roles have no PostgreSQL DB snapshot.
+    created.push(PIECES[0]);
+    await encryptPiece(EXPORTS[0][0], EXPORTS[0][1], PIECES[0],
+      destination, env, recipient, spawnCommand);
+    const session = await openConsistentSnapshot(env, spawnCommand);
+    try {
+      for (let i = 1; i < PIECES.length; i++) {
+        created.push(PIECES[i]);
+        await encryptPiece(EXPORTS[i][0],
+          [...EXPORTS[i][1], '--snapshot=' + session.snapshot],
+          PIECES[i], destination, env, recipient, spawnCommand);
+      }
+    } finally {
+      // A broken snapshot session invalidates the entire backup.
+      await session.close();
     }
     const sealed = await checkBundle('seal', destination);
     created.push('cotironda-dev-backup-d039.manifest.json');
