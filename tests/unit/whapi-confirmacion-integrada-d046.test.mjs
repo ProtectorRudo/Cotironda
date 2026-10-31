@@ -60,7 +60,7 @@ test('D046 integrado: webhook ACK no es oferta; solo Confirmo referido crea vers
   assert.equal(first.status,200);
   assert.equal((await first.json()).presupuestosConfirmados,0);
   assert.equal(t.stored.length,1);
-  const session=iniciarCotizacionChatD046(t.v,pedido);
+  const session=iniciarCotizacionChatD046(t.v,pedido,{cemento_001:'Cemento CPC 50 kg'});
   const prepared=prepararBorradorCotizacionD046(session,t.ctx(t.stored[0]),proposal);
   assert.equal(prepared.estado,'pendiente_confirmacion');
   assert.equal(ultimaOfertaConfirmadaD046(prepared),null);
