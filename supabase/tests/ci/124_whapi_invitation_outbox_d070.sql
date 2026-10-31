@@ -194,6 +194,9 @@ end;$catalog_deactivated_prehttp$;
 reset role;
 update public.supplier_products set is_active=true
  where id='eeeeeeee-0016-4016-8016-000000000662';
+-- BAJA is intentionally IRREVERSIBLE at the API level. Roll back the CI
+-- test savepoint, never issue a forbidden opt-out RESET in application SQL.
+savepoint d081_optout_only;
 update cotironda_private.whapi_contacts_v1
  set opted_out_at=pg_catalog.clock_timestamp()
  where channel_id='d065_ci' and chat_key=repeat('a',64);
@@ -206,8 +209,8 @@ begin
  then raise exception 'd081_late_optout_authorized_after_begin';end if;
 end;$contact_optout_prehttp$;
 reset role;
-update cotironda_private.whapi_contacts_v1 set opted_out_at=null
- where channel_id='d065_ci' and chat_key=repeat('a',64);
+rollback to savepoint d081_optout_only;
+release savepoint d081_optout_only;
 set local role cotironda_invite_gateway_d070;
 do $resume_and_finish$
 declare v_id uuid;v_lease uuid;r jsonb;
