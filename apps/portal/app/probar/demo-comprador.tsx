@@ -35,8 +35,10 @@ export function DemostracionComprador(){
       setZonaUsada(preparada.zonaEntrega);
       setResultado(preparada.vista);
       setPestana('materiales');
-    }catch{
-      setError('No pudimos interpretar esa lista con seguridad. Probá con cantidades y unidades por línea (por ejemplo: 10 bolsas cemento).');
+    }catch(e){
+      setError(e instanceof Error && e.message==='mvp008_zona_invalida'
+        ?'Revisá la zona de entrega. Escribí solo la localidad (por ejemplo: La Plata).'
+        :'No pudimos interpretar esa lista con seguridad. Probá con cantidades y unidades por línea (por ejemplo: 10 bolsas cemento).');
     }
   }
   function reiniciar(){
