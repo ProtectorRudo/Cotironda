@@ -41,3 +41,11 @@
 Un comprador real de prueba, al menos un proveedor voluntario por rubro usado, lista con materiales claros y dudosos, convocatoria únicamente a vendedores que comercializan el producto, cotización por WhatsApp, revisión/confirmación del proveedor, comparación de precios verificados (IVA/flete y cobertura), adjudicación manual, auditoría del costo y ausencia de duplicados. Prueba móvil no técnica. Suscripciones, dashboards y adjudicación automática quedan fuera.
 
 El modo correcto para seguir es **integrar → ejecutar un ciclo real en DEV/piloto autorizado → corregir fricción → publicar cuando se autorice**, sin agregar nuevos subsistemas aislados.
+
+## 31/10/2026 — Avance concreto sobre el backup #175, sin ejecutarlo
+
+Consulta DEV de **solo lectura**: las cinco migraciones históricas mantienen `statements[1]` en `supabase_migrations.schema_migrations`, recuperados y guardados como archivos de texto en [docs/recovery-dev-20261030/README.md](recovery-dev-20261030/README.md). Se verificó igualdad exacta del contenido del SQL archivado con la fuente del mismo turno y su MD5 PostgreSQL; `tests/unit/dev-migraciones-forenses.test.mjs` protege esas huellas contra ediciones inadvertidas.
+
+**No son migraciones instalables ni equivalen a backup.** La migración D020 `dev_quality_pg_net_nonpublic_d020` usa `DROP EXTENSION pg_net`: no puede reproducirse ciegamente en un entorno con dependencias; la otra D020 define un dispatcher `SECURITY DEFINER` que consulta una credencial en Vault, por eso debe aislarse en restauración. DEV hoy contiene 17 registros, dispatcher de IA `enabled=false`, cero jobs cron de quality, cero solicitudes pendientes y cuatro claims de benchmark. No se leyeron secretos ni se modificó DEV.
+
+**El gate #175 sigue abierto**, ahora por prueba de restore real, conciliación de extensiones, roles y recursos Auth/Storage/Vault; ya no por ausencia del SQL original.
