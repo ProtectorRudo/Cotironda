@@ -47,3 +47,6 @@ El SQL de D025 incluye `GRANT USAGE ON SCHEMA auth TO cotironda_rounds_reader`. 
 Para avanzar a un webhook real faltan, además, motor de secretos gestionado, TLS entre worker/Postgres, permisos mínimos revisados en Supabase hospedado, rotación/transición sin loops de reenvío, inventario de claves, control de gastos y retención, autenticidad real del webhook, opt-in, pipeline de adjuntos y E2E comercial. No desplegar sin esos gates.
 
 **UX-001:** el comprador y el corralón no ven claves, cuentas técnicas ni formularios añadidos: toda la complejidad permanece detrás de WhatsApp.
+
+## Actualización D034 (no desplegada)
+El contrato D034 de [docs/98](98-whapi-replay-aes-rotation.md) corrige el **replay idéntico entre generaciones AES en SQL privado**: se verifica la misma huella HMAC y remitente, y se devuelve `repetido:true` sin alterar la versión histórica. Esta mejora pasa a CI y no valida aún webhook Whapi real, claves en gestor de secretos, mensajes posteriores a cierre/BAJA o una instalación hosted. No considerar resuelta la operación comercial hasta completar esos gates.

@@ -85,8 +85,13 @@ assert.equal(first.body.mensajesEnviados,0);
 const rotated=await runMessage({...msg,id:'pg.ci-00000006'},'aes_2026_b');
 assert.equal(rotated.response.status,200);
 assert.equal(rotated.body.guardadas,1);
-const keyCollision=await runMessage(msg,'aes_2026_b');
-assert.equal(keyCollision.response.status,503);
+// D034: reenvío del primer mensaje tras rotar AES no se rechaza ni reescribe.
+const keyReplay=await runMessage(msg,'aes_2026_b');
+assert.equal(keyReplay.response.status,200);
+assert.equal(keyReplay.body.duplicadas,1);
+const alteredAfterRotation=await runMessage({
+ ...msg,text:{body:'precio distinto a $1'}},'aes_2026_b');
+assert.equal(alteredAfterRotation.response.status,503);
 const replay=await runMessage(msg);
 assert.equal(replay.response.status,200);
 assert.equal(replay.body.duplicadas,1);
@@ -118,4 +123,4 @@ await withDb(async db=>{
     'cotironda','chat',1,channel,chatB])).digest('hex')]);
  assert.equal(chk.rows[0].payload,null);
 });
-console.log('D031_E2E_PG17_PASS: real_driver,least_privilege,encrypted_save,replay,collision,optout,revocation');
+console.log('D031_D034_E2E_PG17_PASS: real_driver,least_privilege,encrypted_save,replay,collision,optout,revocation');

@@ -137,6 +137,11 @@ jobs:
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_inbox_key_id_d032.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/104_whapi_key_id.sql
+      - name: D034 replay sin duplicados tras rotación AES (SQL privado PG17)
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_replay_across_aes_d034.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/105_whapi_replay_across_aes.sql
       - name: Preparar Node para E2E real PostgreSQL
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:

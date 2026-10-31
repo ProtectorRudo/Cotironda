@@ -564,3 +564,8 @@
 - Nuevo `src/server/whapi-secret-config.ts`: control de entorno esperado, flag seguro deshabilitado por defecto, secreto header propio, HMAC de identidades/fingerprint y AES activo de 32 bytes, key-id y claves históricas acotadas; sin secretos en GitHub y sin usar `process.env` implícitamente.
 - Valida formatos, claves triviales/duplicadas y rechazo de variables `NEXT_PUBLIC_COTIRONDA_WHAPI_*`; error genérico sin fuga. Preflight de retiro AES exige inventario completo confiable con cero filas por clave.
 - Tests unitarios adversariales, docs/97. Auditoría read-only Supabase DEV confirmó D025 aún no instalado; Issue #167 sigue bloqueante de deploy. Issue #169 documenta replay que falla tras rotación AES de D032: NO activar rotación real hasta resolver. Sin instalaciones, Whapi, IA o producción.
+
+## [Sin publicar — D034 / Issue #169: replay de WhatsApp entre claves AES]
+- Corregida función SQL privada versionada para que un reenvío auténtico con mismo message-key, proveedor, tipo, timestamp y HMAC de contenido sea idempotente incluso tras rotar AES; key-id/ciphertext/nonce/tag históricos no se reescriben. Cambios de precio, chat, tipo o fecha siguen siendo colisiones.
+- Revisiones equivalentes de timestamp en ruta legacy y BAJA, sin alterar grants ni propiedad del rol NOLOGIN. Nuevos ensayos PG17 y E2E Node→Postgres contra un login restringido más tests Node adversariales.
+- D025 hosted Auth Issue #167 sigue bloqueante; las pruebas CI no implican instalación DEV ni conexión real de Whapi. Docs/98, PR #171 draft.
