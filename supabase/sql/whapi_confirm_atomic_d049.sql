@@ -164,11 +164,11 @@ begin
  -- missing IVA, net price, payment, freight, minimum order or lead days.
  if v_draft.payment_method is null or v_draft.lead_days is null
   or v_draft.freight_gross is null or v_draft.min_goods_gross is null
-  or exists(select 1 from pg_catalog.jsonb_array_elements(v_draft.lines_snapshot) line
-    where pg_catalog.jsonb_typeof(line->'net_unit_price')='null'
-       or pg_catalog.jsonb_typeof(line->'vat_rate')='null'
-       or not (line ? 'net_unit_price')
-       or not (line ? 'vat_rate'))
+  or exists(select 1 from pg_catalog.jsonb_array_elements(v_draft.lines_snapshot) as l(value)
+    where pg_catalog.jsonb_typeof(l.value->'net_unit_price')='null'
+       or pg_catalog.jsonb_typeof(l.value->'vat_rate')='null'
+       or not (l.value ? 'net_unit_price')
+       or not (l.value ? 'vat_rate'))
  then raise exception 'd049_incomplete_terms' using errcode='22023';end if;
 
  -- This is the SAME DB transaction: v_draft validated, D026 locks round and
