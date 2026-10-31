@@ -301,3 +301,5 @@ El PR D038 agrega un ensayo restringido en PG17 para la lógica de despachador I
 > **MVP-012 (solo ensayos):** cola privada para texto de WhatsApp cifrado y worker que consume mensajes, con reintentos y deduplicación, orden por proveedor y límite de intentos. No hay job cloud activado ni mensajes reales. Ver [docs/132](docs/132-mvp-012-cola-cotizaciones.md).
 
 > **MVP-013: prueba de recorrido entero en PostgreSQL 17 CI**: webhook ficticio → inbox cifrado → cola → worker → cotización versionada → última oferta anónima visible para comprador ficticio. Solo texto inequívoco; no es WhatsApp ni Supabase DEV en vivo. [docs/133](docs/133-mvp-013-vertical-postgres-real.md).
+
+> **MVP-014 — lectura de cotizaciones auténticas (aún sin instalar):** nueva vista privada `/mis-rondas` → `/rondas/[rondaId]/ofertas`, con precios unitarios originales, moneda, IVA/flete declarados o desconocidos, oferta parcial y proveedor anónimo. Usa exclusivamente RPC autenticada y sesión vigente; nunca un total inventado. Requiere instalar SQL en DEV luego del backup/restore #175; no hay disponibilidad live. [docs/134](docs/134-mvp-014-vista-cotizaciones-recibidas.md).
