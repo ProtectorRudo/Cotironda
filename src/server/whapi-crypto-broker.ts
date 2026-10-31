@@ -22,6 +22,7 @@ export type VinculoConfiable=Readonly<{
 export type EntradaCifradaD028=Readonly<{
   channel:string;chatKey:string;messageKey:string;fingerprint:string;
   kind:Tipo;ciphertext:Buffer;nonce:Buffer;tag:Buffer;sourceUnix:number;
+  cryptoKeyId?:string;
 }>;
 export type BajaProtegidaD028=Readonly<{
   channel:string;chatKey:string;messageKey:string;
@@ -39,12 +40,14 @@ export type AlmacenWhapiPrivado=Readonly<{
 export type ConfigBrokerWhapi=Readonly<{
   channel:string;secretoWebhook:string;claves:ClavesPrivadasWhapi;
   almacen:AlmacenWhapiPrivado;habilitado:boolean;ahoraUnix:()=>number;
+  contenidoKeyId?:string;clavesLectura?:Readonly<Record<string,Buffer>>;
 }>;
 const CHANNEL=/^[A-Za-z0-9_-]{4,64}$/;
 const CHAT=/^[1-9][0-9]{7,16}@s\.whatsapp\.net$/;
 const MSG=/^[a-zA-Z0-9._:-]{8,160}$/;
 const ID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const TYPES=new Set(['text','image','document','audio','voice']);
+const KEY_ID=/^[a-z][a-z0-9_]{2,40}$/;
 function rechazar():never{throw new TypeError('broker_whapi_configuracion_invalida')}
 function clave(raw:unknown):Buffer{
   if(!Buffer.isBuffer(raw)||raw.length!==32||raw.every(v=>v===0))rechazar();
@@ -54,9 +57,11 @@ function mac(key:Buffer,values:readonly unknown[]):string{
   return createHmac('sha256',key).update(JSON.stringify(values),'utf8').digest('hex');
 }
 function contexto(channel:string,chatKey:string,messageKey:string,
-  kind:Tipo,sourceUnix:number):Buffer{
-  return Buffer.from(JSON.stringify(['cotironda','d029',1,channel,chatKey,
-    messageKey,kind,sourceUnix]),'utf8');
+  kind:Tipo,sourceUnix:number,keyId='legacy_d029'):Buffer{
+  const fields:unknown[]=['cotironda','d029',1,channel,chatKey,messageKey,kind,sourceUnix];
+  // Legado D029: mantener AAD idéntico; cifrado nuevo ata el key-id.
+  if(keyId!=='legacy_d029')fields.push('key-id',keyId);
+  return Buffer.from(JSON.stringify(fields),'utf8');
 }
 function validarIdentidad(channel:string,chatId:string,msgId:string):void{
   if(!CHANNEL.test(channel)||!CHAT.test(chatId)||!MSG.test(msgId))rechazar();
@@ -82,6 +87,16 @@ export function construirBrokerWhapiPrivado(config:ConfigBrokerWhapi):{
     typeof config.ahoraUnix!=='function'||typeof config.habilitado!=='boolean')
     rechazar();
   const keys=autenticarClaves(config.claves);
+  const keyId=config.contenidoKeyId??'legacy_d029';
+  if(!KEY_ID.test(keyId))rechazar();
+  const oldKeys=new Map<string,Buffer>();
+  for(const [id,value] of Object.entries(config.clavesLectura??{})){
+    if(!KEY_ID.test(id)||id===keyId||oldKeys.has(id))rechazar();
+    const previous=clave(value);
+    if(previous.equals(keys.contenidoAes)||
+      [...oldKeys.values()].some(k=>k.equals(previous)))rechazar();
+    oldKeys.set(id,previous);
+  }
   function chatKey(chatId:string):string{
     if(!CHAT.test(chatId))rechazar();
     return mac(keys.identidadHmac,['cotironda','chat',1,config.channel,chatId]);
@@ -123,14 +138,15 @@ export function construirBrokerWhapiPrivado(config:ConfigBrokerWhapi):{
       if(plain.length>8192)rechazar();
       const nonce=randomBytes(12);
       const cipher=createCipheriv('aes-256-gcm',keys.contenidoAes,nonce);
-      cipher.setAAD(contexto(config.channel,cKey,mKey,msg.tipo,msg.marcaTiempoUnix));
+      cipher.setAAD(contexto(config.channel,cKey,mKey,msg.tipo,msg.marcaTiempoUnix,keyId));
       const ciphertext=Buffer.concat([cipher.update(plain),cipher.final()]);
       const tag=cipher.getAuthTag();
       const result=await config.almacen.registrarEntrada({
         channel:config.channel,chatKey:cKey,messageKey:mKey,
         fingerprint:fingerprint(msg.chatId,msg.mensajeId,msg.tipo,
           msg.texto,msg.marcaTiempoUnix),
-        kind:msg.tipo,ciphertext,nonce,tag,sourceUnix:msg.marcaTiempoUnix
+        kind:msg.tipo,ciphertext,nonce,tag,sourceUnix:msg.marcaTiempoUnix,
+        cryptoKeyId:keyId
       });
       if(result?.estado!=='entrada_persistida'||typeof result.repetido!=='boolean')
         throw new TypeError('broker_respuesta_almacen_invalida');
@@ -160,8 +176,12 @@ export function construirBrokerWhapiPrivado(config:ConfigBrokerWhapi):{
       !Buffer.isBuffer(d.tag)||d.tag.length!==16||
       !Buffer.isBuffer(d.ciphertext)||d.ciphertext.length<1||
       d.ciphertext.length>8192)rechazar();
-    const dec=createDecipheriv('aes-256-gcm',keys.contenidoAes,d.nonce);
-    dec.setAAD(contexto(d.channel,d.chatKey,d.messageKey,d.kind,d.sourceUnix));
+    const storedId=d.cryptoKeyId??'legacy_d029';
+    if(!KEY_ID.test(storedId))rechazar();
+    const decryptKey=storedId===keyId?keys.contenidoAes:oldKeys.get(storedId);
+    if(!decryptKey)rechazar();
+    const dec=createDecipheriv('aes-256-gcm',decryptKey,d.nonce);
+    dec.setAAD(contexto(d.channel,d.chatKey,d.messageKey,d.kind,d.sourceUnix,storedId));
     dec.setAuthTag(d.tag);
     const out=Buffer.concat([dec.update(d.ciphertext),dec.final()]);
     const obj:unknown=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(out));
