@@ -207,3 +207,6 @@ Se implementó transición offline mensaje recibido/persistido → presupuesto e
 
 ### 31/10/2026 — D047 cola de intenciones de respuesta, PostgreSQL CI exclusivamente
 Se preparó una bandeja SQL privada que une mensajes de D028 con revisiones de borradores D026 para encolar una sola respuesta por revisión, con leases y reintentos; no persiste texto ni contactos y no envía mensajes. CI verifica roles y transiciones reales en PostgreSQL17 descartable; faltan broker, autorización del envío definitivo, confirmaciones transaccionales, Whapi, conciliación e idempotencia de transporte. No confundir mensaje aceptado por transporte con lectura o confirmación del proveedor. No instalar en DEV hasta resolver #175. Ver docs/110.
+
+### 31/10/2026 — D048 vínculo transaccional de mensaje→borrador, PostgreSQL CI
+Se preparó comprobación SQL que impide encolar respuesta a una revisión D026 si no tiene procedencia exacta de mensaje D028. La función D048 guarda económicamente y registra procedencia en una misma transacción; puede rechazar duplicados y vínculos falsos sin enviar mensajes. No sustituye autenticación/interpretación real ni confirmación conversacional D046. Solo CI descartable, con gate de backup/restore #175 abierto. Ver docs/111.
