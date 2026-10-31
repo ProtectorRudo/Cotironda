@@ -603,3 +603,7 @@
 ## [Sin publicar — D041 / Issue #184: preflight de destino DEV y comprobación offline de descifrado]
 - Nuevo script local scripts/ops/check-local-dev-backup-d041.mjs: valida destino Supabase DEV estricto con parámetro sslmode seguro obligatorio y único, sin conexiones ni secretos impresos, y confirma por CLI age real que cinco archivos cifrados verificados por D039/D040 se pueden descifrar con identidad privada local. El SQL descifrado se drena sin persistencia ni salida; valida nuevamente hash tras concluir.
 - Tests con URL y procesos age SIMULADOS (no pruebas criptográficas en CI). Documentación docs/104 y restricciones de claves/cobertura de Auth, Storage, Vault y extensiones. Backup real, restauración aislada y bloqueo #175 permanecen PENDIENTES. No cambios Supabase DEV ni producción, sin IA/Whapi.
+
+## [Sin publicar — D042 / Issue #186: prueba real age con cinco archivos sintéticos]
+- Workflow independiente `age-synthetic-d042.yml` con permisos mínimos, Ubuntu24.04 y age paquete de repositorio firmado; genera dos pares X25519 efímeros y cinco SQL de prueba, cifra con CLI age real y comprueba pipeline D039/D040/D041.
+- Pruebas negativas contra identidad equivocada, encabezado falso con SHA256 coherente y bytes alterados después de sellar; borra temporales sin artifacts ni logs de claves/plaintext. Tests unitarios de D041 anteriores eran únicamente mocks: D042 agrega comprobación criptográfica real sintética. No es backup DEV ni recuperación de Auth/Storage/Vault, sin cambios Supabase DEV/producción; bloqueos #175 y D024 permanecen.
