@@ -56,8 +56,8 @@ async function setup(){
   if(sql.includes('_load_inbox_d051'))return {rows:[{payload:row}]};
   if(sql.includes('_find_ack_d051'))return {rows:[{payload:ack}]};
   if(sql.includes('_from_inbox_d049')){
-   return {rows:[{payload:memory.respond??{
-    state:'offer_confirmed',revision:1,version:1,repeated:false}}]};
+   return {rows:[{payload:memory.respond===undefined?{
+    state:'offer_confirmed',revision:1,version:1,repeated:false}:memory.respond}]};
   }
   throw Error('unexpected SQL');
  }};
