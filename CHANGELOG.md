@@ -733,3 +733,6 @@
 
 ### 31/10/2026 — MVP-015: alta real de pedido comprador como ronda privada
 - Nueva RPC SQL privada de propietario/administrador autenticado y función public invoker, idempotente, zona obligatoria, IVA explícito, 1–8 materiales sin suposiciones. Inserta ronda programada y líneas en una transacción, nunca fabrica proveedores ni envía Whapi. API Next POST con origin/CSRF, validación y guard Preview apagado. Pruebas PostgreSQL17 y unitarias; documentación 135. No instalado DEV/prod, respaldo #175 pendiente.
+
+### 31/10/2026 — MVP-016: preparación de proveedores aptos sin mensajes
+- PostgreSQL17 D065 curado rubro→producto y localidad→provincia/ciudad, proveedores por categoría habilitada, área, aceptación y opt-in Whapi sin BAJA, cada invitación con scope de líneas, alias anónimo y máximo 10. Idempotencia transaccional por ronda/canal, no apertura ni WhatsApp, controles RLS y test PG17. Backup real DEV #175 sigue pendiente. Ver docs/136.
