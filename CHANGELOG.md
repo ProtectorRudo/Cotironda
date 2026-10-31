@@ -559,3 +559,8 @@
 - Broker D029 acepta clave activa y clave(s) antiguas solo de lectura; el nuevo key-id queda autenticado en AAD. Gateway usa sentencia SQL parametrizada distinta para inserciones versionadas.
 - Pruebas Node de rotación entre generaciones, tampering AAD, IDs inválidos y lectura histórica; SQL PG17 y E2E Node→PG con dos generaciones, sin cambiar HMAC de identidad ni clave de huella.
 - Sin instalación DEV, Whapi, OpenAI, secretos ni despliegue de producción. Ver docs/96, PR #166.
+
+## [Sin publicar — D033 / Issue #168: configuración server-only de claves Whapi]
+- Nuevo `src/server/whapi-secret-config.ts`: control de entorno esperado, flag seguro deshabilitado por defecto, secreto header propio, HMAC de identidades/fingerprint y AES activo de 32 bytes, key-id y claves históricas acotadas; sin secretos en GitHub y sin usar `process.env` implícitamente.
+- Valida formatos, claves triviales/duplicadas y rechazo de variables `NEXT_PUBLIC_COTIRONDA_WHAPI_*`; error genérico sin fuga. Preflight de retiro AES exige inventario completo confiable con cero filas por clave.
+- Tests unitarios adversariales, docs/97. Auditoría read-only Supabase DEV confirmó D025 aún no instalado; Issue #167 sigue bloqueante de deploy. Issue #169 documenta replay que falla tras rotación AES de D032: NO activar rotación real hasta resolver. Sin instalaciones, Whapi, IA o producción.
