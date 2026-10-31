@@ -57,3 +57,6 @@ En ofertas entrantes nunca asignar `precioUnitarioNeto` directamente a partir de
 
 ## MVP-009 — SQL privado para cotizaciones recibidas sin segundo «Confirmo»
 La cotización ya enviada por proveedor autenticado equivale a oferta recibida, aunque falte IVA, flete, pago o precio normalizado; corregirla por otro mensaje genera versión inmutable. D059 crea borrador D048 y versión D026 **en una transacción** desde un inbox cifrado verificado, sin respuesta D047 ni confirmación D049. Persistencia de prueba solo PG17 CI, sin Whapi ni Supabase DEV. El vocabulario legado `offer_confirmed` se interpreta aquí como «recibida del proveedor autenticado», no segunda aprobación. Antes del piloto, conservar precio original citado sin suponer neto cuando falta IVA. Ver [docs/129](129-mvp-009-recepcion-directa-pg.md).
+
+## MVP-010 — Precios originales aun cuando IVA no figura
+El importe declarado por un proveedor **SIEMPRE debe preservarse y quedar visible como monto declarado**, incluso si no hay IVA, flete o alícuota aclarados. A falta de esos datos, no se lo transforma en neto ni se produce un total comparable. La fuente cifrada y el precio declarado por línea se asocian a una versión inmutable; solo el comprador autorizado ve la última versión con alias anónimo. Implementación D060 en PG17 efímero CI, no conectada a Whapi real, sin confirmaciones extra. Ver docs/130.
