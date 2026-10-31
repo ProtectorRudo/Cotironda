@@ -271,6 +271,13 @@ jobs:
           SQL
 
 
+      - name: D053 prevenir reenvío HTTP incierto y conciliar (solo PG17 CI)
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_no_duplicate_send_d053.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/111_whapi_no_duplicate_send_d053.sql
+
+
   migrations-from-zero:
     name: Reconstruir historial 12 migraciones en PostgreSQL limpio
     runs-on: ubuntu-latest
