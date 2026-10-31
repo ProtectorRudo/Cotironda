@@ -595,3 +595,7 @@
 - Nuevo script local offline `scripts/ops/verify-encrypted-dev-backup-d039.mjs` con modos seal/verify y manifiesto SHA256 de cinco exportaciones age (roles/esquema/datos/historial), ref DEV fija y hash independiente obligatorio. No importa credenciales, no descifra y rechaza paquete incompleto, SQL abierto, symlinks y contenido alterado.
 - Doce pruebas unitarias sintéticas y procedimiento en docs/103. Un paquete PASS NO demuestra exportación correcta, cobertura Auth/Storage/Vault, descifrado ni restauración. La herramienta informa expresamente `restore_verified=false` y `gate_d024_open=false`.
 - Estado de Supabase DEV verificado solo con SELECT: 17 migraciones, cron 0 y flag IA auto false. Sin cambios de datos/esquema, sin backup real ni despliegues; Issue #175 bloqueante.
+
+## [Sin publicar — D040 / Issue #182: privacidad local del paquete de backup]
+- Auditoría de D039 halló falso nivel de confianza posible: ficheros cifrados o directorios con permisos públicos podían pasar las comprobaciones SHA256. D040 exige propiedad POSIX y modos privados 0700/0600, rechaza hardlinks y symlinks en cualquier ancestro y detecta cambios de inodo/tamaño/modo/marca temporal durante lectura. Rechazo en Windows nativo sin controles POSIX equivalentes.
+- Seis pruebas adversariales nuevas (total 18 sintéticas), docs/103 corregido, sin acceso a secretos ni SQL alojado, sin backup real, sin despliegue o cambios en Supabase DEV/producción. Estado de recuperación #175 bloqueante.
