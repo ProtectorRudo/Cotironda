@@ -7,6 +7,8 @@ import { AuditoriaSeguridadSesion } from './auditoria-seguridad-sesion';
 import { AuditoriaRegistroAuth } from './auditoria-registro-auth';
 import { COTIRONDA_DEV_REF } from '../../../../src/server/portal-entorno.ts';
 import { FormularioEmpresa } from './formulario';
+import {habilitarPantallaAltaWhatsAppD073}
+ from '../../../../src/server/supplier-whatsapp-link-http-d073.ts';
 export const dynamic='force-dynamic';
 export default async function Alta(){
   if(!entornoAuthConfigurado())return <main className="panel"><h1>Registro todavía deshabilitado</h1><p>Primero debemos configurar y auditar una base Supabase exclusiva de Cotironda.</p></main>;
