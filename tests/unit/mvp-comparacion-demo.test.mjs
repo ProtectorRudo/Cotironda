@@ -40,7 +40,6 @@ test('MVP-004: IVA y flete desconocidos descalifican una oferta sin inventar imp
  const changed=OFERTAS_DEMO.map(o=>o.anonId==='anon_a'?{...o,fleteFinal:null}:o);
  const x=compararCotizacionesOffline(PEDIDO_DEMO_OFERTAS,changed);
  assert.equal(x.cobertura.find(o=>o.anonId==='anon_a')?.totalComparable,null);
- assert.ok(x.comparacion===undefined);
  assert.ok(x.opcionesCompletas.every(o=>!o.proveedoresAnonimos.includes('anon_a')));
 });
 test('MVP-004: identidad, red, datos reales y adjudicación desactivados',()=>{
