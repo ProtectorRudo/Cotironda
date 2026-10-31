@@ -49,8 +49,8 @@ async function testRealAge() {
     await mkdir(invalidBundle, { mode: 0o700 });
     const identity = join(temp, 'age-identity.txt');
     const wrongIdentity = join(temp, 'wrong-age-identity.txt');
-    checkedCommand('age-keygen', ['--output', identity]);
-    checkedCommand('age-keygen', ['--output', wrongIdentity]);
+    checkedCommand('age-keygen', ['-o', identity]);
+    checkedCommand('age-keygen', ['-o', wrongIdentity]);
     await chmod(identity, 0o600);
     await chmod(wrongIdentity, 0o600);
     const recipient = checkedCommand('age-keygen', ['-y', identity]).trim();
