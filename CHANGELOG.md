@@ -620,3 +620,7 @@
 - Nueva demo que **reutiliza** los módulos documentales, producto canónico/invitaciones y comparación monetaria determinista para un pedido de cemento, látex y yeso, con ítem inseguro retenido, cuatro proveedores aptos y tres ofertas simuladas anónimas.
 - Suite integrada verifica consentimiento, catálogo/zona/baja, marca flexible, consulta de presentación alternativa NO homologada, IVA 21% y dos fletes, ofertas parciales, estado de confirmación, flete/IVA conocidos, no adjudicación y no filtración de identidad. Montos totalmente ficticios.
 - docs/108 describe qué está probado y qué falta (IA/Whapi reales, confirmación del proveedor, DB licitaciones, recuperación #175). Sin cambios en DEV, producción, migraciones ni uso de recursos pagos.
+
+## [Sin publicar — D046 / Issue #195: borrador y confirmación de cotización por conversación]
+- Nuevo módulo de transición OFFLINE de oferta de proveedor con vínculo de ronda/chat validado por futuro backend, propuesta estructurada, preguntas por faltantes, confirmación por respuesta al borrador correcto o referencia explícita, idempotencia en memoria y versiones de precio inmutables.
+- Confirmación del proveedor NO homologa diferencias de marca/envase ni permite comparación hasta verificación técnica: todas las equivalencias arrancan `sin_verificar`. Pruebas normales/adversariales de replay, identidad ajena, faltantes y cierre; suite integrada con receptor Whapi simulado D027 sin entregar mensajes. No DB ni Whapi/IA reales, sin efectos en DEV/producción. Ver docs/109.
