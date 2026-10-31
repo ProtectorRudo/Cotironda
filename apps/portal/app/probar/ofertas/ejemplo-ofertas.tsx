@@ -1,8 +1,10 @@
 'use client';
 import {useState} from 'react';
-import {generarComparacionDemo} from '../../../../../src/domain/mvp-comparacion-demo.ts';
+import {generarComparacionDemo,OFERTAS_DEMO} from '../../../../../src/domain/mvp-comparacion-demo.ts';
+import {detalleEconomicoExplicito} from '../../../../../src/domain/detalle-economico-explicito-mvp005.ts';
 
 const demo=generarComparacionDemo();
+const detalles=new Map(OFERTAS_DEMO.map(o=>[o.anonId,detalleEconomicoExplicito(o)]));
 const money=(value:string)=>new Intl.NumberFormat('es-AR',{
   style:'currency',currency:'ARS',minimumFractionDigits:2
 }).format(Number(value));
@@ -52,8 +54,23 @@ export function EjemploOfertas(){
                 {l.completa?'Completo':motivo[l.motivo??'']??'Sin cobertura'}
               </strong></li>)}</ul>
             <p className="mc-coverage-footer">{o.totalComparable!==null
-              ? <>Canasta completa: <strong>{money(o.totalComparable)}</strong></>
-              : 'Sin total de canasta comparable. Una oferta parcial no compite por su subtotal.'}</p>
+              ? <>Importe comparable, según datos declarados: <strong>{money(o.totalComparable)}</strong></>
+              : 'No se muestra un importe comparable: puede faltar cobertura, confirmación o una aclaración económica.'}</p>
+            {detalles.get(o.anonId)?.tienePendientes&&
+              <p className="mc-pending-note">Hay condiciones pendientes de aclaración. No se presupone IVA ni flete.</p>}
+            <details className="mc-details mc-economic-details">
+              <summary>Ver aclaraciones de IVA y flete</summary>
+              <ul>{detalles.get(o.anonId)?.ivaPorLinea.map(d=><li key={d.itemId}>
+                <span className="mc-detail-text"><strong>{demo.etiquetas[d.itemId]}</strong>
+                  <small>{d.precioBase.texto}</small>
+                  <small className={d.iva.estado==='pendiente'?'mc-pending':''}>{d.iva.texto}</small></span>
+              </li>)}
+                <li><span className={detalles.get(o.anonId)?.flete.estado==='pendiente'?'mc-pending':'mc-detail-text'}>
+                  {detalles.get(o.anonId)?.flete.texto}
+                </span></li>
+              </ul>
+              <p className="mc-note">Los datos de este ejemplo son ficticios; en una ronda real deben ser confirmados por el proveedor.</p>
+            </details>
           </article>
         )}
       </div>
@@ -61,7 +78,7 @@ export function EjemploOfertas(){
     <section className="mc-section" aria-labelledby="mc-combinaciones-title">
       <div className="mc-subtitle"><h3 id="mc-combinaciones-title">Opciones que cubren todo</h3>
         <span>Máximo 2 proveedores</span></div>
-      <p className="mc-muted">Solo aparecen ofertas confirmadas en el ejemplo, con cantidades, equivalencia, IVA, flete y condiciones completas. No se comparan precios de distintas condiciones entre sí.</p>
+      <p className="mc-muted">Solo se calculan opciones cuando los datos necesarios fueron declarados y son comparables. Si el IVA o el flete no se aclaran, no se inventa un importe total. Consultá los detalles de cada oferta.</p>
       {options.length===0&&<div className="mc-warning" role="status">No hay combinaciones completas para comparar.</div>}
       {grupos.map(group=><div key={group} className="mc-group">
         <p className="mc-conditions">{options.find(x=>x.grupoCondiciones===group)?.moneda} · {pago[options.find(x=>x.grupoCondiciones===group)?.formaPago??'']??'Condición desconocida'} · Entrega en {options.find(x=>x.grupoCondiciones===group)?.plazoEntregaDias} días</p>
@@ -75,10 +92,15 @@ export function EjemploOfertas(){
                 </div>
                 {o.puestoDentroDeCondiciones!==null&&<span className="mc-rank">Puesto {o.puestoDentroDeCondiciones} en estas condiciones</span>}
               </div>
+              <span className="mc-option-eyebrow">Importe comparable según datos declarados</span>
               <strong className="mc-total">{money(o.totalFinal)}</strong>
-              <p className="mc-breakdown">Materiales + IVA: {money(o.materialesConIva)} · Fletes: {money(o.fletesFinal)}</p>
-              <details className="mc-details"><summary>Ver qué cotiza cada proveedor</summary>
-                <ul>{o.asignacion.map(a=><li key={a.itemId}><span>{demo.etiquetas[a.itemId]}</span><strong>{a.anonId.replace('anon_','Oferta ').toUpperCase()}</strong></li>)}</ul>
+              <p className="mc-breakdown">IVA y transporte: condiciones en detalles, nunca supuestos.</p>
+              <details className="mc-details"><summary>Ver asignación y aclaraciones económicas</summary>
+                <ul>{o.asignacion.map(a=><li key={a.itemId}><span>{demo.etiquetas[a.itemId]}</span><strong>{a.anonId.replace('anon_','Oferta ').toUpperCase()}</strong></li>)}
+                  <li><span>Materiales calculados con las tasas de IVA declaradas en el ejemplo:</span><strong>{money(o.materialesConIva)}</strong></li>
+                  <li><span>Fletes informados por los proveedores de prueba:</span><strong>{money(o.fletesFinal)}</strong></li>
+                </ul>
+                <p className="mc-note">Revisá las aclaraciones individuales de IVA y flete de cada proveedor antes de elegir.</p>
               </details>
               <button className="mc-select" type="button"
                 aria-pressed={seleccion===i} onClick={()=>setSeleccion(seleccion===i?null:i)}>
@@ -89,7 +111,7 @@ export function EjemploOfertas(){
         </div>
       </div>)}
       {elegida&&<div className="mc-chosen" role="status" aria-live="polite">
-        <strong>Elegiste una opción de ejemplo: {money(elegida.totalFinal)}</strong>
+        <strong>Elegiste una opción de ejemplo, según los datos declarados: {money(elegida.totalFinal)}</strong>
         <p>Esta elección es únicamente visual. No se registra, no adjudica materiales y no revela ningún contacto.</p>
         <button type="button" className="mc-clear" onClick={()=>setSeleccion(null)}>Cambiar elección</button>
       </div>}

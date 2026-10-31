@@ -19,7 +19,7 @@ No construir un sistema que obligue al comprador o al corralón a aprender un po
 ## Ofertas
 - Recibidas por WhatsApp o portal y estructuradas en borrador; **el proveedor confirma** antes de validez.
 - Oferta incluye moneda, cantidad, unidad, especificación, IVA, precio, transporte, descuentos, mínimo, plazo, disponibilidad y forma de pago.
-- Si faltan datos determinantes, marcar «requiere aclaración». No asumir IVA ni flete.
+- Si faltan datos determinantes, marcar «requiere aclaración». **No asumir IVA ni flete, ni que el precio es neto/bruto.** Cada proveedor declara en los **detalles de su oferta** si el precio incluye IVA o si es más IVA, con alícuota confirmada; y si el flete está incluido, se cotiza por separado, es expresamente sin cargo o está pendiente. Un valor omitido NO equivale a cero. Sin esas aclaraciones no presentar un importe final ni competir en ranking por precio. Ver docs/125.
 - Cada cambio confirmado crea versión inmutable. Al cierre se congela la oferta vigente, salvo reapertura auditada.
 - Marcas alternativas válidas si son técnicamente equivalentes y no hay requisito obligatorio; alternativas no equivalentes, visibles pero fuera del cálculo conforme.
 

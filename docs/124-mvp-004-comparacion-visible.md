@@ -18,10 +18,13 @@ La pantalla utiliza **el comparador real `compararCotizacionesOffline`**, sin du
 
 ## Pruebas de aceptación
 
-Archivo `tests/unit/mvp-comparacion-demo.test.mjs`: cobertura parcial 1/3 y 2/3; completa 3/3; opción completa individual versus combinación de dos proveedores; IVA/flete incluidos y aritmética determinista; una oferta sin confirmar, incluso muy económica, no compite; un flete desconocido invalida el total; nunca existen datos reales ni adjudicación automática. Además, ejecutar CI completa, compilación Next.js y smoke HTTP del portal. **No declarar lista la pantalla hasta ver CI en el commit final.**
+Archivo `tests/unit/mvp-comparacion-demo.test.mjs`: cobertura parcial 1/3 y 2/3; completa 3/3; opción completa individual versus combinación de dos proveedores; IVA/flete explícitos en los datos ficticios, sin presumir su inclusión (rectificado por MVP-005, docs/125), y aritmética determinista; una oferta sin confirmar, incluso muy económica, no compite; un flete desconocido invalida el total; nunca existen datos reales ni adjudicación automática. Además, ejecutar CI completa, compilación Next.js y smoke HTTP del portal. **No declarar lista la pantalla hasta ver CI en el commit final.**
 
 ## Verificación manual futura
 
 En Preview protegido cuando Vercel tenga cuota y se autorice su activación: abrir en celular `/probar`, analizar ejemplo, elegir «Ver cómo se comparan las ofertas ficticias», desplegar asignaciones, elegir opción, quitar elección y regresar a pedido. Probar teclado/lector de pantalla, ancho 360px y que al actualizar la página no permanezca una adjudicación. No sustituir esto con capturas de código o pruebas unitarias.
 
 **No fusionar ni desplegar en producción.** #175 continúa abierto.
+
+## Rectificación posterior MVP-005
+El propietario aclaró que **IVA y flete solo se comunican en los detalles por proveedor**, nunca como condición incluida de forma general. La UI y el contrato correctos están documentados en [docs/125](125-mvp-005-iva-flete-sin-supuestos.md); toda referencia histórica a 'incluidos' describe únicamente los datos explícitos del fixture, no una regla comercial.

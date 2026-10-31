@@ -21,7 +21,7 @@ const linea=(itemId:'cemento_001'|'latex_001'|'placa_001',
   itemId,unidad,cantidadDisponible,
   equivalencia:'verificada' as const,precioUnitarioNeto,ivaPorcentaje:'21' as const
 });
-const oferta=(anonId:string,items:OfertaComparable['items'],fleteFinal:string,
+const oferta=(anonId:string,items:OfertaComparable['items'],fleteFinal:string|null,
   confirmada=true):OfertaComparable=>({
   anonId,version:1,confirmada,moneda:'ARS',
   formaPago:'transferencia',plazoEntregaDias:3,
@@ -41,11 +41,13 @@ export const OFERTAS_DEMO:readonly OfertaComparable[]=Object.freeze([
     linea('placa_001','unit','15','9800.00')
   ],'12000.00'),
   // Aunque parezca barata, no hay confirmación del proveedor.
+  // No confirmado, sin declaración de IVA ni flete: jamás suponer tasa 0
+  // ni envío gratuito, aunque el precio de base resulte tentador.
   oferta('anon_d',[
-    linea('cemento_001','bag','20','1000.00'),
-    linea('latex_001','l','5','1000.00'),
-    linea('placa_001','unit','15','1000.00')
-  ],'1000.00',false)
+    {...linea('cemento_001','bag','20','1000.00'),ivaPorcentaje:null},
+    {...linea('latex_001','l','5','1000.00'),ivaPorcentaje:null},
+    {...linea('placa_001','unit','15','1000.00'),ivaPorcentaje:null}
+  ],null,false)
 ]);
 
 export type DemoComparacion = Readonly<{
