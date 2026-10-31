@@ -672,3 +672,12 @@
 ## [Sin publicar — MVP-002 / Issue #219: candidatura de integración del producto]
 - Creada rama de integración `integration/mvp-piloto-20261031` desde el MVP-001 probado; documentación de ancestría con `main` (1145 commits a favor, 0 detrás) y riesgos de megadiff, sin merge ni reescritura ciega de historial.
 - Nueva prueba transversal entre vista comprador, motor de invitaciones D045 y comparador determinista, sin inventar precios, envíos ni adjudicación. CI completo y PR a `main` en borrador. Bloqueo Supabase DEV #175 y preview Vercel 402 vigentes. Docs/121.
+
+## [Sin publicar — MVP-003 / #175: ensayo real de dump/restore PostgreSQL 17 aislado]
+- GitHub Actions prueba un `pg_dump` custom y `pg_restore` PG17 reales sobre dos bases ficticias del mismo clúster CI después de todas las pruebas SQL. Compara huellas de filas, estados de outbox, ledger de cuotas, RLS, permisos y función de comienzo HTTP. No hay DROP, copia de datos de clientes, publicación, credenciales reales ni conexión a DEV. Docs/122. **No cerrar #175**: falta copia real cifrada de DEV y restauración separada con Auth/Storage/Vault/roles.
+
+- Corrección MVP-003 en laboratorio: el primer pg_restore falló por `CHECK` de ofertas que consultaba `round_items_v1` durante COPY; se migra la validación cruzada a triggers de escritura en CI, manteniendo exactamente el validador y pruebas de rechazo. No se instaló el parche en DEV ni prod; requiere rollout auditado (#175). Ver docs/122.
+
+### 31/10/2026 — MVP-003 extracción cifrada DEV preparada, pendiente de ejecución auténtica
+- En PR #221 se sumó `scripts/ops/export-encrypted-dev-mvp003.mjs`, una herramienta local POSIX de cinco flujos `pg_dump`/`pg_dumpall` PostgreSQL17 → age, sin SQL plaintext persistente, con lista de destinos permitidos y manifiesto D039.
+- 10 pruebas unitarias sintéticas de exportación (casos positivos y de falla); documentación de uso local en `docs/123-mvp-003-exportacion-cifrada-dev-local.md`. No se ejecutaron backups reales de DEV, ni restore alojado, ni despliegue; #175 permanece abierto.
