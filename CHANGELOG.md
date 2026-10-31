@@ -715,3 +715,7 @@
 - Rol SQL privado, RLS, exactitud económica, versiones y replay, ACL por empresa; pruebas PostgreSQL 17 CI y puerto TypeScript. No se aplica a Supabase DEV ni se conecta a Whapi real; ver docs/130.
 
 - Puente servidor MVP-010 `whapi-quote-source-builder-d060.ts` de importe citado y aclaración IVA a filas D060, con hash de cita y mapeo por línea de ronda controlada; pruebas desde presupuesto de texto hasta puerto SQL, incluyendo IVA pedido no cumplido y citas inventadas. Aún no hay worker/Whapi live.
+
+### 31/10/2026 — MVP-011: conectar recepción cifrada a cotización directa
+- Nuevo puerto de lectura PG17 privado D061 verifica contacto, invitación, ventana y snapshot por ronda; entrega cifrado AES-GCM sin exponer datos personales, y revisión correcta de versiones/replays.
+- Nuevo coordinador Node/TypeScript toma mensajes de inbox D028, comprueba autenticidad del cifrado y citas del importe, confronta artículos/unidades con ledger y ejecuta escritura atómica D060 sin «Confirmo». Tests crypto real + casos malos y pruebas SQL PG17; aún sin Whapi/API IA live ni workers. Ver docs/131.
