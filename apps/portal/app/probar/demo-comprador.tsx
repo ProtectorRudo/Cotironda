@@ -63,7 +63,7 @@ export function DemostracionComprador(){
         maxLength={LIMITE+1}
         rows={6}
         spellCheck={false}
-        placeholder={'Ejemplo:\n10 bolsas cemento\n5 litros pintura látex interior'}
+        placeholder={'Ejemplo:\n10 bolsas cemento\n5 litros pintura látex interior\nNecesito presupuesto con IVA incluido'}
         aria-describedby="mvp-privacidad"
       />
       <div className="mvp-field-footer">
@@ -94,6 +94,11 @@ export function DemostracionComprador(){
         <div><strong>{resultado.pendientes}</strong><span>Con dudas</span></div>
         <div><strong>{resultado.invitaciones}</strong><span>Comercios de ejemplo</span></div>
       </div>
+      {resultado.avisoIva&&<aside className={resultado.condicionIvaComprador==='contradictorio'?'mvp-iva-note mvp-iva-alert':'mvp-iva-note'} role="note">
+        <strong>Condición solicitada por el comprador</strong>
+        <p>{resultado.avisoIva}</p>
+        <small>Esta condición se detectó en una línea de tu pedido y no se contó como material. Los mensajes siguen siendo simulados.</small>
+      </aside>}
       <div className="mvp-tabs" role="tablist" aria-label="Resultados">
         <button type="button" role="tab" id="mvp-tab-materiales"
           aria-selected={pestana==='materiales'} aria-controls="mvp-panel-materiales"
