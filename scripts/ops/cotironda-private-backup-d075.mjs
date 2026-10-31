@@ -6,8 +6,8 @@
  */
 import {spawn} from 'node:child_process';
 import {lstat} from 'node:fs/promises';
-import {dirname,parse,resolve,sep,isAbsolute,join} from 'node:path';
-import {fileURLToPath,pathToFileURL} from 'node:url';
+import {parse,resolve,sep,isAbsolute,join} from 'node:path';
+import {pathToFileURL} from 'node:url';
 import {exportDevEncrypted} from './export-encrypted-dev-mvp003.mjs';
 import {validateDevDsn} from './check-local-dev-backup-d041.mjs';
 import {verifyDecryption} from './check-local-dev-backup-d041.mjs';
@@ -85,7 +85,7 @@ export async function ejecutarBackupPrivadoD075({
    fail('PG17_TOOLS_REQUIRED');
  }
  const ageVersion=await boundedProgram('age',['--version'],env,spawnCommand);
- if(!/^(?:age )?v?1\\.\\d+/u.test(ageVersion))fail('AGE_VERSION_REQUIRED');
+ if(!/^(?:age )?v?1\.\d+/u.test(ageVersion))fail('AGE_VERSION_REQUIRED');
  // This public key must be derived from the operator's actual private file.
  // Prevent a full dump encrypted to an inaccessible or mistyped recipient.
  const derived=await boundedProgram('age-keygen',['-y',identity],env,spawnCommand);
