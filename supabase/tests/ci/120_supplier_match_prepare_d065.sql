@@ -190,5 +190,6 @@ end;$wrong_channel$;
 reset role;
 -- D066 tests reuse this synthetic transaction (no DEV).
 \ir 123_whapi_encrypted_recipient_d068.sql
+\ir 124_whapi_invitation_outbox_d070.sql
 \ir 121_supplier_packet_d066.sql
 rollback;
