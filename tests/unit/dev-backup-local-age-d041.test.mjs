@@ -45,7 +45,7 @@ test('D041 destino directo DEV exacto, sin filtrar contraseña',()=>{
 });
 test('D041 pooler de sesión exacto DEV',()=>assert.equal(validateDevDsn(pooler).method,'session_pooler'));
 test('D041 rechaza proyecto ajeno, incluso con password',()=>{
-  assert.throws(()=>validateDevDsn('postgresql://postgres:a@db.otro.supabase.co:5432/postgres'),/D041_WRONG_PROJECT/);
+  assert.throws(()=>validateDevDsn('postgresql://postgres:a@db.otro.supabase.co:5432/postgres?sslmode=require'),/D041_WRONG_PROJECT/);
 });
 test('D041 rechaza usuario de otro proyecto en pooler',()=>{
   assert.throws(()=>validateDevDsn(pooler.replace(PROJECT_REF,'otro')),/D041_WRONG_PROJECT/);
@@ -58,7 +58,7 @@ test('D041 exige TLS y credenciales',()=>{
   assert.throws(()=>validateDevDsn(direct.replace(':example-not-a-real-secret@',':@')),/D041_DEV_CONNECTION_INVALID/);
 });
 test('D041 rechaza destino local',()=>{
-  assert.throws(()=>validateDevDsn('postgresql://postgres:a@localhost:5432/postgres'),/D041_WRONG_PROJECT/);
+  assert.throws(()=>validateDevDsn('postgresql://postgres:a@localhost:5432/postgres?sslmode=require'),/D041_WRONG_PROJECT/);
 });
 test('D041 prueba protocolo age sin conservar ni devolver SQL',async()=>fixture(async(dir,key,hash)=>{
   let calls=0;
