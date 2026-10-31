@@ -240,3 +240,6 @@ Se detectó que más de 85 PRs estaban abiertos sin integración a main. Se fren
 
 ### 31/10/2026 — MVP-002: integrar sin publicar
 Rama candidata `integration/mvp-piloto-20261031` basada en el estado aprobado de MVP-001; 1145 commits por delante de `main`, 0 detrás. Se prepara PR **draft** hacia `main` con nueva prueba de aceptación cruzando vista comprador, selección por producto y comparador de cobertura/IVA/flete/adjudicación manual. **No fusionar sin revisión de la diferencia grande y de la vinculación Vercel**. Próximo trabajo real: cerrar backup/restore DEV #175, aplicar migraciones auditadas y un piloto WhatsApp consentido. Ver docs/121.
+
+### 31/10/2026 — MVP-003 restauración lógica en CI, no backup de DEV
+La nueva prueba CI usa `pg_dump`/`pg_restore` PostgreSQL 17 en dos bases efímeras del mismo clúster, verifica datos ficticios/RLS/ACL y ausencia de cambios en la base fuente. Esto comprueba parcialmente el mecanismo de recuperación; **no** verifica un dump auténtico de DEV ni recuperación de secretos/Storage/Auth. #175 sigue como puerta antes de instalar rondas, pruebas comerciales y Whapi reales. Ver docs/122.
