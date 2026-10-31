@@ -277,6 +277,42 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_no_duplicate_send_d053.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/111_whapi_no_duplicate_send_d053.sql
 
+      - name: D054 worker real Node22/PG17 con transporte FICTICIO sin red (solo CI)
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_sender_gateway_d054.sql
+          ci_pass="$(openssl rand -hex 24)"
+          export COTIRONDA_D054_ACK_HMAC_KEY="$(openssl rand -hex 32)"
+          for value in "$ci_pass" "$COTIRONDA_D054_ACK_HMAC_KEY"; do
+            echo "::add-mask::$value"
+          done
+          psql -X -v ON_ERROR_STOP=1 -v d054_password="$ci_pass" -f scripts/ci/whapi-pg/send-d054-seed.sql > /dev/null
+          COTIRONDA_D054_CI=true COTIRONDA_D054_DB_LOGIN=cotironda_send_d054_ci COTIRONDA_D054_DB_PASSWORD="$ci_pass" node --experimental-strip-types scripts/ci/whapi-pg/send-d054-e2e.mjs
+          psql -X -v ON_ERROR_STOP=1 <<'SQL'
+          select ci_helpers.assert_true(
+            (select count(*)=3 from cotironda_private.whapi_reply_jobs_d047
+              where channel_id='whapi_d054_ci'), 'd054_three_pending_fixtures');
+          select ci_helpers.assert_true(
+            (select count(*)=1 from cotironda_private.whapi_reply_jobs_d047
+              where channel_id='whapi_d054_ci' and send_phase='accepted'
+                and status='accepted_by_transport'
+                and transport_ack_key ~ '^[a-f0-9]{64}$'), 'd054_accepted_only_once');
+          select ci_helpers.assert_true(
+            (select count(*)=1 from cotironda_private.whapi_reply_jobs_d047
+              where channel_id='whapi_d054_ci' and send_phase='uncertain'
+                and status='leased' and attempts=1
+                and transport_ack_key is null), 'd054_timeout_did_not_retry');
+          select ci_helpers.assert_true(
+            (select count(*)=1 from cotironda_private.whapi_reply_jobs_d047
+              where channel_id='whapi_d054_ci' and send_phase='not_started'
+                and status='queued' and attempts=1),
+            'd054_prehttp_error_safe_retry');
+          select ci_helpers.assert_true(
+            not has_function_privilege('cotironda_send_d054_ci',
+              'cotironda_private.whapi_reconcile_uncertain_d053(uuid,text,text,text)',
+              'EXECUTE'), 'd054_sender_cannot_reconcile');
+          SQL
+
 
   migrations-from-zero:
     name: Reconstruir historial 12 migraciones en PostgreSQL limpio
