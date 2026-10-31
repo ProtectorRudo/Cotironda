@@ -690,3 +690,7 @@
 - Regla de negocio del propietario registrada en docs/125: el proveedor informa en detalles si los precios son con/sin IVA y cómo se cobra el flete. Ningún dato ausente se completa con cero o «incluido».
 - Pantalla de comparación con aclaraciones desplegables por proveedor; el importe visible solo se anuncia como comparable según datos declarados. Caso de ejemplo IVA y transporte no aclarados; pruebas para null vs cero expreso y smoke HTTP que impide regresar al mensaje engañoso.
 - Solo desarrollo y pruebas, sin tocar Supabase DEV, producción, canales de WhatsApp ni presupuestos reales.
+
+### 31/10/2026 — MVP-006: aclaraciones documentales e IVA solicitado por comprador
+- Lector offline con citas/fila para detectar condiciones expresas de IVA y transporte en notas de presupuestos, validar propuestas IA contra evidencia y conservar «no informado» o «contradictorio» sin inventar impuestos. IA real, PDF, WhatsApp y normalización bruto/neto no conectados.
+- Solicitud de comprador con exigencia textual explícita de IVA en línea independiente: se separa del listado de materiales y se incorpora una sola vez por proveedor en el mensaje de ejemplo, preservando elegibilidad/idempotencia. No envío real, sin DEV/producción.
