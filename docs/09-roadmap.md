@@ -222,3 +222,6 @@ Se definieron dos consultas SQL protegidas para recuperar de D028 el mensaje cif
 
 ### 31/10/2026 — D052 Node.js → PostgreSQL17 E2E sintético
 Conecta en un runner descartable el receptor D027, cifrado D029, entrada D030, borrador D048, salida D047 y confirmación D050/D051/D049 con un login SQL temporal de permisos limitados. Prueba dos versiones sucesivas, error de cita, replay y BAJA desde funciones reales con driver pg; la interpretación de precios y el acuse de transporte siguen siendo fixtures ficticios. No conectado a Whapi ni desplegado: backup/restore DEV #175 pendiente. Ver docs/115.
+
+### 31/10/2026 — D053 protección ante resultado incierto de WhatsApp
+El E2E D052 mostró que podíamos registrar un ACK sintético, pero no demostraba qué ocurría si HTTP respondía con timeout después del envío. En PG17 CI D053 registra primero `in_flight` (commit antes de HTTP), convierte la expiración a `uncertain` y prohíbe reenvío automático; solo conciliación interna con evidencia HMAC/cancelación. Cualquier envío real deberá pasar por ese protocolo, autenticación API y revalidación final de opt-out/revisión. Sin Whapi/IA real ni Supabase DEV; #175 sigue abierto. Ver docs/116.

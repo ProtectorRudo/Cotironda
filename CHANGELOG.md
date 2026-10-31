@@ -648,3 +648,7 @@
 ## [Sin publicar — D052 / Issue #207: E2E real Node ↔ PostgreSQL17 para confirmar precios]
 - Ensayo reproducible PostgreSQL17 con login aislado y llaves efímeras que ejecuta el receptor WhatsApp D027, el cifrado AES de D029, la persistencia D030, procedencia D048, cola D047, verificador de cita D050/D051 y confirmación/versionado D049. Casos negativos, replay idempotente, dos versiones, baja, auditoría final de filas, sin enviar mensajes ni tocar DEV/prod. `scripts/ci/whapi-pg/confirm-d052-e2e.mjs`, workflow CI y docs/115.
 - No se usa proveedor WhatsApp real, extracción IA ni HTTP externo; #175 sigue bloqueando cualquier migración comercial en DEV y el PR no autoriza producción.
+
+## [Sin publicar — D053 / Issue #209: evitar duplicación de salida tras timeout]
+- Hallazgo: D047 reclamaba lease expirado aunque el worker podía haber comenzado HTTP, arriesgando WhatsApp duplicado. Migración D053 en PG17 CI suma fase de envío iniciada antes de red, marca incertidumbre si crash/timeout, excluye esos trabajos de reclamos automáticos, concilia por acuse/evidencia HMAC o cancela sin reenviar.
+- D047 finish(true) ya no es permitido tras D053; un fallo pre-HTTP conocido puede reintentarse bajo presupuesto. SQL privado roles NOLOGIN RLS, pruebas de expiración, token incorrecto, BAJA, rollback, estado incierto y reintento sin envío. Docs/116. No conectado a Whapi real; sin cambios DEV/prod, gate #175 pendiente.
