@@ -644,3 +644,7 @@
 ## [Sin publicar — D051 / Issue #205: puerto PostgreSQL privado de confirmación]
 - Dos RPC internas SECURITY DEFINER NOLOGIN/RLS para leer mensaje entrante AES-GCM cifrado y acuse D047 aceptado más origen D048, sin texto/chat/teléfono claro; índice único de acuse por canal evita asociar un mensaje saliente a dos jobs.
 - Adaptador server-only SQL parametrizado con comprobación de tipos/buffers y conexión inyectada para D029/D050/D049. Nuevas pruebas unitarias adversariales y SQL en PostgreSQL17 CI, sin worker ni conector Whapi real, sin Supabase DEV/producción ni consumo IA. Ver docs/114; recuperación real #175 sigue abierta.
+
+## [Sin publicar — D052 / Issue #207: E2E real Node ↔ PostgreSQL17 para confirmar precios]
+- Ensayo reproducible PostgreSQL17 con login aislado y llaves efímeras que ejecuta el receptor WhatsApp D027, el cifrado AES de D029, la persistencia D030, procedencia D048, cola D047, verificador de cita D050/D051 y confirmación/versionado D049. Casos negativos, replay idempotente, dos versiones, baja, auditoría final de filas, sin enviar mensajes ni tocar DEV/prod. `scripts/ci/whapi-pg/confirm-d052-e2e.mjs`, workflow CI y docs/115.
+- No se usa proveedor WhatsApp real, extracción IA ni HTTP externo; #175 sigue bloqueando cualquier migración comercial en DEV y el PR no autoriza producción.
