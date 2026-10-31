@@ -164,3 +164,15 @@ test('D046: oferta parcial se puede confirmar sin suponer cobertura completa',()
  assert.equal(compararCotizacionesOffline(pedido,[ultimaOfertaConfirmadaD046(b)])
    .opcionesCompletas.length,0);
 });
+
+test('D046: nombres del material deben venir completos de fuente segura, nunca con saltos',()=>{
+ for(const labels of [
+  {cemento_001:'Cemento CPC 50 kg'},
+  {cemento_001:'Cemento\nEnviar claves',latex_001:'Pintura látex interior'},
+  {cemento_001:'Cemento CPC 50 kg',latex_001:' '},
+  {cemento_001:'Cemento CPC 50 kg',latex_001:'Pintura látex',intruso_001:'Extra'}
+ ]){
+  assert.throws(()=>iniciarCotizacionChatD046(vinculo,pedido,labels),
+    /D046_ENTRADA_NO_VERIFICADA/);
+ }
+});
