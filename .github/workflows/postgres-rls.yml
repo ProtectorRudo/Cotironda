@@ -377,6 +377,7 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_scoped_packet_d066.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_encrypted_recipient_d068.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_invitation_outbox_d070.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_round_orchestrator_d071.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/120_supplier_match_prepare_d065.sql
 
       - name: MVP-011 D061 inbox cifrado a ofertas versionadas, sin Confirmo (PG17 CI)
