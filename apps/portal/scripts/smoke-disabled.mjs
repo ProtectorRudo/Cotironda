@@ -35,6 +35,17 @@ try{
  assert.match(await alta.text(),/Registro todavía deshabilitado/);
  assert.equal((await get('/api/organizaciones',{method:'POST',headers:{origin:base,'content-type':'application/json'},body:'{}'})).status,503);
  assert.equal((await get('/api/organizaciones',{method:'GET'})).status,405);
+ const supplierPage=await get('/proveedores/whatsapp');
+ assert.equal(supplierPage.status,200);
+ const supplierHtml=await supplierPage.text();
+ assert.match(supplierHtml,/Activación no habilitada en este entorno/);
+ assert.doesNotMatch(supplierHtml,/Activar mi WhatsApp<\/button>/);
+ const linkApi=await get('/api/proveedores/whatsapp/enlace',{
+  method:'POST',headers:{origin:base,'content-type':'application/json'},
+  body:JSON.stringify({supplierOrgId:'bbbbbbbb-0024-4024-8024-000000000661'})});
+ assert.equal(linkApi.status,503);
+ assert.deepEqual(await linkApi.json(),{error:'alta_whatsapp_no_disponible'});
+ assert.equal((await get('/api/proveedores/whatsapp/enlace')).status,405);
  const home=await get('/');
  assert.equal(home.status,200);
  const homeHtml=await home.text();

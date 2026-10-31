@@ -760,3 +760,6 @@
 
 ### 31/10/2026 — MVP-024: primer proveedor puede vincular WhatsApp mediante una sola acción (solo CI)
 - Nuevo D072 de token SHA256 15min/128bits para dueño/gerente Auth válido de empresa proveedor, consumo privado por webhook D027 autenticado, consentimiento explícito al enviar `COTI ALTA`, chat HMAC sin número en SQL y sellado D069 AES-GCM tras COMMIT. Broker D029 opcional y enlace `wa.me` generado sin enviar. Pruebas Node/PG17 sintéticas; no integrado en UI ni instalado DEV/prod, falta #175. Ver docs/144.
+
+### 31/10/2026 — MVP-025: pantalla para activar WhatsApp de proveedor (solo CI)
+- Nueva UI móvil `/proveedores/whatsapp` con un CTA de alta; SSR lista negocios propios autorizados y emite enlace `wa.me` mediante JWT Supabase + RPC D072. D072 ahora exporta emisor sin requerir claves HMAC/AES en Next. Nuevo controlador D073 con entorno Preview/Origin/Auth, response no-store, límite streaming 256 bytes y host wa.me exacto. Tests Node/HTTP Next sin envíos; flag OFF; no base DEV ni producción. Ver docs/145.
