@@ -13,6 +13,40 @@ create table cotironda_private.item_rubros_d065(
  product_code text primary key check(product_code~'^[a-z][a-z0-9_]{2,49}$'),
  category_code text not null references public.catalog_categories(code)
 );
+-- MVP-031 / D080. A CATEGORY alone is NOT proof of catalog coverage.
+-- Only a private curator can link a concrete supplier-owned product to a
+-- curated family, with a snapshot fingerprint. No browser INSERT/UPDATE.
+create function cotironda_private.catalog_fingerprint_d080(p_product uuid)
+ returns text language sql stable security invoker set search_path='' as $finger$
+ select pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(
+  pg_catalog.jsonb_build_object(
+   'product_name',p.product_name,'manufacturer',p.manufacturer,
+   'manufacturer_sku',p.manufacturer_sku,'unit_code',p.unit_code,
+   'attributes',p.attributes,'source_type',p.source_type
+  )::text,'UTF8')),'hex')
+ from public.supplier_products p where p.id=p_product;
+$finger$;
+revoke all on function cotironda_private.catalog_fingerprint_d080(uuid)
+ from public,anon,authenticated,service_role,cotironda_app;
+grant execute on function cotironda_private.catalog_fingerprint_d080(uuid)
+ to cotironda_matcher_d065;
+
+create table cotironda_private.supplier_catalog_capabilities_d080(
+ catalog_product_id uuid primary key references public.supplier_products(id)
+  on delete restrict,
+ product_code text not null references cotironda_private.item_rubros_d065(product_code)
+  on delete restrict,
+ fingerprint_sha256 text not null check(fingerprint_sha256~'^[a-f0-9]{64}$'),
+ curated_at timestamptz not null default pg_catalog.clock_timestamp()
+);
+alter table cotironda_private.supplier_catalog_capabilities_d080 enable row level security;
+revoke all on cotironda_private.supplier_catalog_capabilities_d080
+ from public,anon,authenticated,service_role,cotironda_app;
+grant select on cotironda_private.supplier_catalog_capabilities_d080
+ to cotironda_matcher_d065;
+create policy d080_catalog_read on cotironda_private.supplier_catalog_capabilities_d080
+ for select to cotironda_matcher_d065 using(true);
+
 -- A locality alias only resolves when explicitly assigned province AND city.
 -- Ambiguous spellings/unknown locality have no routing; the worker can
 -- flag internal review, never pick a province by default.
@@ -85,7 +119,7 @@ grant select on cotironda_private.rounds_v1,
 grant update(status) on cotironda_private.rounds_v1 to cotironda_matcher_d065;
 grant insert on cotironda_private.round_invites_v1 to cotironda_matcher_d065;
 grant select on public.supplier_profiles,public.supplier_categories,
- public.supplier_delivery_areas to cotironda_matcher_d065;
+ public.supplier_delivery_areas,public.supplier_products to cotironda_matcher_d065;
 create policy d065_rounds_read on cotironda_private.rounds_v1
  for select to cotironda_matcher_d065 using(true);
 create policy d065_rounds_lock on cotironda_private.rounds_v1
@@ -105,6 +139,8 @@ create policy d065_profiles_read on public.supplier_profiles
 create policy d065_categories_read on public.supplier_categories
  for select to cotironda_matcher_d065 using(true);
 create policy d065_delivery_read on public.supplier_delivery_areas
+ for select to cotironda_matcher_d065 using(true);
+create policy d080_products_read on public.supplier_products
  for select to cotironda_matcher_d065 using(true);
 
 create function cotironda_private.prepare_supplier_invites_d065(
@@ -185,7 +221,19 @@ begin
   join cotironda_private.round_items_v1 i on i.round_id=p_round
   join cotironda_private.item_rubros_d065 m on m.product_code=i.product_code
     and m.category_code=sc.category_code
+  -- At least one CURRENT active concrete catalog product must be curated for
+  -- this family and owned by THIS supplier. Changed product attributes or
+  -- names invalidate the proof, without sending old scoped packets.
   where p.accepting_quotes=true and p.organization_id<>v_round.buyer_org_id
+    and exists(
+     select 1 from public.supplier_products prod
+     join cotironda_private.supplier_catalog_capabilities_d080 cap
+       on cap.catalog_product_id=prod.id and cap.product_code=i.product_code
+     where prod.organization_id=p.organization_id
+       and prod.category_code=sc.category_code and prod.is_active=true
+       and cap.fingerprint_sha256=
+         cotironda_private.catalog_fingerprint_d080(prod.id)
+    )
   group by p.organization_id
   order by cardinality(pg_catalog.array_agg(distinct i.line_no
     order by i.line_no)) desc,p.organization_id
