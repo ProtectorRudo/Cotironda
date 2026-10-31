@@ -7,7 +7,7 @@ const ROUND='dddddddd-0015-4015-8015-000000000658';
 const ACTOR={userId:'11111111-0015-4015-8015-000000000651',
  emailVerificado:true,anonimo:false};
 const BODY={requestId:ID,deliveryZone:'La Plata',vatRequest:'con_iva',
- items:[{line_no:1,product_code:'cemento_001',quantity:'10',unit:'bag'}]};
+ items:[{line_no:1,product_code:'cemento_001',quantity:'10',unit:'bag',source_description:'Cemento CPC 50 kg'}]};
 const make=(input=BODY,opts={})=>{
  const calls=[];
  const deps={habilitado:true,verificarSesion:async()=>ACTOR,
