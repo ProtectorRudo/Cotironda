@@ -50,7 +50,8 @@ begin
  if v_total<1 or v_total>8 then return null;end if;
  select count(*),
  pg_catalog.jsonb_agg(pg_catalog.jsonb_build_object(
-  'lineNo',i.line_no,'productCode',i.product_code,'label',label.display_label,
+  'lineNo',i.line_no,'productCode',i.product_code,
+  'label',pg_catalog.coalesce(i.source_description,label.display_label),
   'quantity',i.quantity::text,'unit',i.unit) order by i.line_no)
  into v_eligible,v_items
  from cotironda_private.round_supplier_lines_d065 s
