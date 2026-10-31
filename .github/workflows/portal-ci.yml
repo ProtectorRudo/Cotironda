@@ -219,3 +219,36 @@ jobs:
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_dummy_never_valid
           COTIRONDA_SITE_ORIGIN: https://cotironda-ci.example
         run: node scripts/smoke-whatsapp-preview.mjs
+
+      # MVP-028: buyer can sign in with general registration OFF, and save
+      # an exact textual request; PostgREST Auth/RPC are FULLY fake in CI.
+      - name: Compilar Preview comprador con alta general y WhatsApp OFF
+        env:
+          VERCEL_ENV: preview
+          VERCEL_GIT_COMMIT_REF: integration/mvp-piloto-20261031
+          COTIRONDA_REGISTRATION_ENABLED: 'false'
+          COTIRONDA_AUTH_PREVIEW_ENABLED: 'true'
+          COTIRONDA_ROUNDS_READ_ENABLED: 'true'
+          COTIRONDA_ROUNDS_CREATE_ENABLED: 'true'
+          COTIRONDA_QUOTES_READ_ENABLED: 'false'
+          COTIRONDA_SUPPLIER_WA_UI_ENABLED: 'false'
+          COTIRONDA_SUPABASE_PROJECT_REF: qkercsoqhehbenbbncwk
+          NEXT_PUBLIC_SUPABASE_URL: https://qkercsoqhehbenbbncwk.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_dummy_never_valid
+          COTIRONDA_SITE_ORIGIN: https://cotironda-ci.example
+        run: rm -rf .next && npm run build
+      - name: HTTP real Next comprador texto D064 con fuente y Auth sintéticos
+        env:
+          VERCEL_ENV: preview
+          VERCEL_GIT_COMMIT_REF: integration/mvp-piloto-20261031
+          COTIRONDA_REGISTRATION_ENABLED: 'false'
+          COTIRONDA_AUTH_PREVIEW_ENABLED: 'true'
+          COTIRONDA_ROUNDS_READ_ENABLED: 'true'
+          COTIRONDA_ROUNDS_CREATE_ENABLED: 'true'
+          COTIRONDA_QUOTES_READ_ENABLED: 'false'
+          COTIRONDA_SUPPLIER_WA_UI_ENABLED: 'false'
+          COTIRONDA_SUPABASE_PROJECT_REF: qkercsoqhehbenbbncwk
+          NEXT_PUBLIC_SUPABASE_URL: https://qkercsoqhehbenbbncwk.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_dummy_never_valid
+          COTIRONDA_SITE_ORIGIN: https://cotironda-ci.example
+        run: node scripts/smoke-buyer-text-pilot.mjs
