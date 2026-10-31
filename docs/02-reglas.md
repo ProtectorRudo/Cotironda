@@ -66,3 +66,6 @@ Cada texto de proveedor guardado en el inbox cifrado genera un trabajo privado. 
 
 ## MVP-014 — Visibilidad real con cero fricción
 La pantalla del comprador debe mostrar **ofertas realmente registradas** de sus rondas, no sustituirlas por demos. Se entra desde «Mis solicitudes», sin copiar UUIDs, y se muestran alias anónimos, artículos con y sin precio, moneda, unidad, cantidades y condiciones comerciales declaradas o «no informado». No publicar un total, ranking ni adjudicación si falta equivalencia/cobertura/IVA/flete. La lectura exige sesión Supabase vigente, membresía actual y flags exclusivos de Preview. Hasta backup real DEV #175, SQL y rutas inhabilitados en entorno alojado. Ver docs/134.
+
+## MVP-015 — Registrar pedido no equivale a inventar proveedores
+Con datos estructurados fiables, la solicitud del comprador puede crear una ronda privada de forma transaccional sin segundo «Confirmo». Solo preguntar la zona de entrega cuando falte; no asumir provincia/localidad ni completar artículos sin datos. El SQL verifica sesión vigente y pertenencia activa de propietario/administrador de empresa compradora; reintento idéntico devuelve la misma ronda. Guardar zona y condición IVA expresa con la fuente, y **no enviar WhatsApp ni mostrar «solicitudes enviadas» hasta verificar proveedores reales habilitados por catálogo, cobertura y zona**. Ver docs/135.

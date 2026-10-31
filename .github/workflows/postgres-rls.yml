@@ -364,6 +364,12 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f supabase/sql/buyer_round_list_mvp014.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/118_buyer_round_list_mvp014.sql
 
+      - name: "MVP-015 D064 alta de solicitud del comprador - PG17 CI"
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/buyer_request_create_d064.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/119_buyer_request_create_d064.sql
+
       - name: MVP-011 D061 inbox cifrado a ofertas versionadas, sin Confirmo (PG17 CI)
         run: |
           set -euo pipefail
