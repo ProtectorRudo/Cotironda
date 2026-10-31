@@ -26,7 +26,8 @@ begin
  from cotironda_private.offer_drafts_v1 order by round_id limit 1;
  if v_round is null then raise exception 'mvp003_requires_existing_fake_offer';end if;
  begin
-   update cotironda_private.offer_drafts_v1 set lines_snapshot='[]'::jsonb
+   update cotironda_private.offer_drafts_v1
+   set revision=revision+1, lines_snapshot='[]'::jsonb
    where round_id=v_round and supplier_org_id=v_supplier;
    raise exception 'mvp003_invalid_draft_not_rejected';
  exception when check_violation then
