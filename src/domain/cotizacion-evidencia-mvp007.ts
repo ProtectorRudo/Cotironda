@@ -45,7 +45,8 @@ export type PreparacionCotizacionMvp007=Readonly<{
  propuesta:PropuestaCotizacionD046;
  condiciones:Readonly<{iva:EstadoIva;flete:EstadoFlete;comprador:ExigenciaIva}>;
  fuentes:Readonly<{lineasIva:readonly number[];lineasFlete:readonly number[];
-   lineasPrecioVerificadas:readonly number[]}>;
+   lineasPrecioVerificadas:readonly number[];
+   preciosVerificados:readonly Readonly<{itemId:string;linea:number;precioOriginal:string}>[]}>;
  pendientes:readonly string[];
  proveedorConfirmo:false;
  comparableSinConfirmacion:false;
@@ -132,6 +133,7 @@ export function prepararPropuestaEconomicaMvp007(raw:CotizacionFuenteMvp007):Pre
  const rate=tasaExpresa(obs.iva.evidencias);
  const pendientes:string[]=[];
  const priceProofs:number[]=[];
+ const preciosVerificados:{itemId:string;linea:number;precioOriginal:string}[]=[];
  const ivaCompatible=raw.condicionIvaComprador!=='contradictorio'&&
    !(raw.condicionIvaComprador==='con_iva'&&obs.iva.estado!=='incluido')&&
    !(raw.condicionIvaComprador==='sin_iva'&&obs.iva.estado!=='no_incluido');
@@ -150,6 +152,8 @@ export function prepararPropuestaEconomicaMvp007(raw:CotizacionFuenteMvp007):Pre
   let neto:string|null=null,iva:IvaExplicito|null=null;
   if(original!==null&&encontrado!==null&&encontrado===original&&ivaCompatible){
     priceProofs.push(item.evidenciaPrecio!.linea);
+    preciosVerificados.push(Object.freeze({itemId:item.itemId,
+     linea:item.evidenciaPrecio!.linea,precioOriginal:money(original)}));
     if(obs.iva.estado==='no_incluido'){
       neto=money(original);
       iva=rate;
@@ -197,7 +201,8 @@ export function prepararPropuestaEconomicaMvp007(raw:CotizacionFuenteMvp007):Pre
    fuentes:Object.freeze({
      lineasIva:Object.freeze(obs.iva.evidencias.map(x=>x.linea)),
      lineasFlete:Object.freeze(obs.flete.evidencias.map(x=>x.linea)),
-     lineasPrecioVerificadas:Object.freeze(priceProofs)}),
+     lineasPrecioVerificadas:Object.freeze(priceProofs),
+     preciosVerificados:Object.freeze(preciosVerificados)}),
    pendientes:Object.freeze(pendientes),
    proveedorConfirmo:false,comparableSinConfirmacion:false,mensajesWhatsapp:0
  });
