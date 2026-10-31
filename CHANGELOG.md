@@ -781,3 +781,6 @@
 
 ### 31/10/2026 — MVP-031: evitar invitaciones a proveedores sin producto de catálogo
 - D080 agrega correspondencia interna entre `public.supplier_products` y familia material (SHA-256 del producto declarado), sin permisos de escritura para proveedores/usuarios/servicio y solo lectura del matcher NOLOGIN. D065 exige producto activo, del mismo comercio/rubro, y huella sin cambios; D066 revalida el catálogo antes de entregar un paquete al orquestador. CI PostgreSQL17: rubro sin producto no invita; dos corralones con producto de catálogo sí, tercer corralón sin producto no; edición o desactivación invalida paquetes; sin Whapi real, cambios DEV ni producción. Ver docs/151 e Issue #275.
+
+### 31/10/2026 — MVP-032: decisión de dominio y control final pre-WhatsApp
+- Auditoría de Vercel: el dominio propio `cotironda.com` aún no está asociado a ninguno de los dos proyectos; mantenerlo fuera de Preview hasta producción aprobada. El portal Next `cotironda-portal-dev` sí tiene Preview SSO `READY` de HEAD integrado. Identificado que D070→D068→D066→D080 ya revalida catálogo, consentimiento, localidad y huella inmediatamente antes del intento HTTP. Agregada prueba PG17 que cambia/desactiva productos y registra BAJA entre `BEGIN` y autorización, asegurando rechazo sin ampliar permisos. Sin cambios DEV, Whapi live ni DNS. Ver docs/152 y #277.
