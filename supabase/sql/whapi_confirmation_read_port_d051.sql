@@ -37,6 +37,7 @@ begin
   'channel',m.channel_id,'chatKey',m.chat_key,'messageKey',m.message_key,
   'supplierOrgId',m.supplier_org_id,'roundId',m.round_id,
   'kind',m.kind,'sourceUnix',m.source_unix,'cryptoKeyId',m.crypto_key_id,
+  'fingerprint',m.payload_fingerprint,
   'cipherHex',pg_catalog.encode(m.payload_ciphertext,'hex'),
   'nonceHex',pg_catalog.encode(m.payload_nonce,'hex'),
   'tagHex',pg_catalog.encode(m.payload_tag,'hex'));
