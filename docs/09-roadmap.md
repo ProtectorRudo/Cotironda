@@ -228,3 +228,6 @@ El E2E D052 mostró que podíamos registrar un ACK sintético, pero no demostrab
 
 ### 31/10/2026 — D054 trabajador saliente simulado y no duplicados
 Se crea orquestador de servidor para reservar respuesta D047, confirmar estado D053 en transacción cerrada ANTES de cualquier transporte, calcular HMAC D050 de un ID saliente y registrar resultado o incertidumbre sin reenvío. Rol SQL sender distinto del reconciliador y E2E Node22/PG17 con transporte fake. No hay envío WhatsApp, conexión real ni publicación. Siguiente: adaptar API de Whapi.Cloud bajo permisos/costos/canal piloto y restauración real DEV #175. Ver docs/117.
+
+### 31/10/2026 — D055 adaptador HTTP Whapi preparado sin activación
+Implementada interfaz POST Whapi.Cloud con token, lista de destinatarios, cupo y consentimiento inyectados desde futuro backend, guardado por D054/D053 para no reenviar ante timeout. La respuesta `pending` es aceptación del transporte, nunca entrega. Se probó con `fetcher` ficticio y sin red. Para piloto faltan workers de secretos, permisos, presupuesto durable por empresa, verificación con teléfonos consentidos y copia/restore real DEV (#175). Ver docs/118.
