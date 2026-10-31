@@ -73,7 +73,8 @@ export async function procesarCreacionRondaD064(req:Request,deps:{
  if(!deps.habilitado)return reply(503,{error:'solicitudes_no_habilitadas'});
  if(req.method!=='POST')return reply(405,{error:'metodo_no_permitido'});
  const origin=req.headers.get('origin');
- if(!origin||origin!==new URL(req.url).origin||
+ if(!origenSeguro(deps.originPermitido)||!origin||
+  origin!==deps.originPermitido||
   req.headers.get('sec-fetch-site')==='cross-site')
   return reply(403,{error:'origen_no_autorizado'});
  if(!/^application\/json(?:\s*;\s*charset=utf-8)?$/iu.test(
