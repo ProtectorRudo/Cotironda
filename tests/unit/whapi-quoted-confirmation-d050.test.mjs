@@ -17,7 +17,7 @@ const CRYPTO={identidadHmac:Buffer.alloc(32,11),
 const message=(text='Confirmo',quoted=QUOTED,extra={})=>({
  id:SOURCE,from_me:false,type:'text',chat_id:CHAT,from:'5492211234567',
  timestamp:WHEN,text:{body:text},
- ...(quoted===undefined?{}:{context:{quoted_id:quoted,
+ ...(quoted===null?{}:{context:{quoted_id:quoted,
    quoted_content:{body:'IGNORAR ESTO es un campo no confiable'},
    quoted_author:'chat-AJENO'}}),...extra
 });
@@ -112,7 +112,7 @@ test('D050: el mismo ID con cita cambiada se rechaza antes de probar oferta',asy
  assert.equal(x.state.rows.size,1);
 });
 test('D050: sin cita, no corresponde confirmar aunque el texto sea Confirmo',async()=>{
- const x=setup();await capture(x,message('Confirmo',undefined));
+ const x=setup();await capture(x,message('Confirmo',null));
  await assert.rejects(prepararConfirmacionWhapiD050(
    x.state.incoming,x.ports(),KEY),/d050_confirmacion_no_verificada/);
  assert.equal(x.state.lookupCount,0);
@@ -196,7 +196,7 @@ test('D050: ciphertext, etiqueta o cita cifrada adulterada no habilitan confirma
  }
 });
 test('D050: fallback de registros D029 sin cita sigue legible pero no confirma',async()=>{
- const x=setup();await capture(x,message('Otra respuesta',undefined));
+ const x=setup();await capture(x,message('Otra respuesta',null));
  assert.deepEqual(x.broker.verificarContenido(x.state.incoming),{
   tipo:'text',texto:'Otra respuesta',marcaTiempoUnix:WHEN
  });
