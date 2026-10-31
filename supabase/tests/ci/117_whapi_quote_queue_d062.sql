@@ -120,9 +120,11 @@ begin
  res:=cotironda_private.whapi_receive_with_prices_d060(
   'd062_ci',repeat('1',64),0,q,source);
  if res->>'version'<>'1' then raise exception 'd062_quote_not_saved';end if;
+ -- A historical quote remains received even if another process concludes
+ -- "no longer eligible" after write (e.g. consent revoked in the meantime).
  res:=cotironda_private.whapi_finish_quote_d062(
-  'd062_ci',repeat('1',64),(a->>'leaseToken')::uuid,'received');
- if res->>'state'<>'done' then raise exception 'd062_success_not_acked';end if;
+  'd062_ci',repeat('1',64),(a->>'leaseToken')::uuid,'not_eligible');
+ if res->>'state'<>'done' then raise exception 'd062_committed_receipt_not_acked';end if;
  -- Later correction of supplier A becomes eligible only after first is DONE.
  c:=cotironda_private.whapi_claim_quote_d062();
  if c->>'messageKey'<>repeat('2',64) then
