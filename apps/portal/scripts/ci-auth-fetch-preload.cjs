@@ -53,6 +53,29 @@ globalThis.fetch=async function(input,init={}){
      return respond({state:'issued',code:'a'.repeat(32),expiresSeconds:900});
    }
   }
+  // MVP-028: isolated buyer-only fake PostgREST. No real credentials,
+  // requests, suppliers or network; only controlled fake Auth bearer.
+  if(process.env.COTIRONDA_CI_BUYER_PREVIEW_SANDBOX==='enabled_for_tests_only'){
+   const headers=new Headers(init.headers||(input instanceof Request?input.headers:undefined));
+   const authorized=headers.get('authorization')==='Bearer '+token;
+   if(url.pathname==='/rest/v1/rpc/buyer_round_list_mvp014'){
+    if(!authorized)return respond({message:'unauthorized'},401);
+    return respond([]);
+   }
+   if(url.pathname==='/rest/v1/rpc/create_buyer_round_d064'){
+    if(!authorized)return respond({message:'unauthorized'},401);
+    const p=JSON.parse(init.body||'{}');
+    if(Object.keys(p).sort().join(',')!=='p_buyer,p_items,p_iva,p_key,p_zone'||
+       p.p_buyer!==null||p.p_iva!=='no_especificado'||p.p_zone!=='La Plata'||
+       !Array.isArray(p.p_items)||p.p_items.length!==1||
+       p.p_items[0].source_description!=='Cemento CPC Loma Negra 50 kg'||
+       p.p_items[0].product_code!=='cemento_gris_obra'||
+       p.p_items[0].unit!=='bag'||p.p_items[0].quantity!=='20')
+     return respond({message:'invalid payload'},400);
+    return respond({roundId:'cccccccc-0028-4028-8028-000000000688',
+      status:'programada',repeated:false});
+   }
+  }
   throw Error('HTTP externo bloqueado: endpoint Supabase no permitido '+url.pathname);
  }
  if(url.protocol==='http:'&&['127.0.0.1','localhost','::1','[::1]'].includes(url.hostname))
