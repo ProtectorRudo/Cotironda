@@ -169,3 +169,45 @@ export function confirmarBorradorCotizacionD046(sesion,evento,confirmacion){
 export function ultimaOfertaConfirmadaD046(sesion){
   return sesion.confirmadas.at(-1)?.oferta??null;
 }
+
+
+/**
+ * MVP-008: recepción directa de una cotización ENVIADA por el propio proveedor.
+ * La acción de enviar es suficiente; NO pedir "Confirmo" ni bloquear por
+ * condiciones comerciales no informadas. Solo aceptar un evento previamente
+ * persistido, vinculado a remitente/invitación/ronda y consentimiento vigentes
+ * por backend confiable (NO tomar estos booleanos del webhook crudo).
+ *
+ * "confirmada:true" es el nombre histórico del campo en D022: aquí significa
+ * "enviada por proveedor autenticado", no confirmación por mensaje adicional.
+ * Ninguna equivalencia queda verificada; precio/flete/IVA null NO se inventan.
+ * Por lo tanto no entran a comparación económica sin datos suficientes.
+ * La antigua función D046 de doble confirmación permanece por compatibilidad
+ * con los prototipos anteriores, pero NO debe usarse en nuevos flujos UX.
+ */
+export function registrarCotizacionRecibidaSinConfirmacionMvp008(sesion,evento,propuesta){
+  verificarEvento(sesion,evento);
+  // Validar oferta y sus campos ANTES de tocar versiones o ledger.
+  const {oferta,faltantes}=validarPropuesta(sesion,propuesta);
+  const huella=sha(['cotizacion_enviada',evento,propuesta]);
+  if(repetido(sesion,evento.messageKey,huella))return sesion;
+  // Session puede venir de un borrador anterior: no enviar respuesta "Confirmo".
+  // Cada nueva respuesta válida reemplaza la versión visible, no las anteriores.
+  const recibida={...oferta,confirmada:true};
+  const nueva={
+    draftId:sha(['cotizacion_recibida',sesion.vinculo.roundId,
+      sesion.vinculo.supplierOrgId,evento.messageKey,recibida.version]).slice(0,16),
+    confirmMessageKey:evento.messageKey,
+    oferta:recibida,
+    modo:'enviada_por_proveedor_sin_confirmacion_extra'
+  };
+  const procesados=agregarProcesado(sesion,evento,huella);
+  return freeze({...sesion,
+    estado:'oferta_recibida',
+    borrador:null,
+    procesados,
+    confirmadas:[...sesion.confirmadas,nueva],
+    detallesNoInformados:faltantes,
+    necesitaConfirmacionAdicional:false
+  });
+}
