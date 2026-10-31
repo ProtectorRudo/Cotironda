@@ -78,3 +78,28 @@ test('MVP033: plan inmutable y sin modificar los pendientes originales',()=>{
  assert.equal(p.pendientes.length,n);
  assert.ok(p.pendientes.some(x=>x.texto==='Zona de entrega'));
 });
+
+test('MVP033: el campo viejo no pisa la localidad editada en el texto',()=>{
+ const pedido=prepararPedidoTextoMvp028(
+  material+'\nEntrega en: Rosario','La Plata'
+ );
+ const plan=planificarAclaracionesMvp033(pedido);
+ assert.equal(pedido.zonaEntrega,null);
+ assert.equal(plan.preguntarZona,true);
+ assert.equal(plan.permitirEnvio,false);
+ const corregido=planificarAclaracionesMvp033(
+  prepararPedidoTextoMvp028(material+'\nEntrega en: Rosario','Rosario')
+ );
+ assert.equal(corregido.preguntarZona,false);
+ assert.equal(corregido.permitirEnvio,true);
+});
+
+test('MVP033: dos destinos en la lista no se ocultan con campo de localidad',()=>{
+ const p=prepararPedidoTextoMvp028(
+  material+'\nEntrega en: La Plata\nEntrega en: Rosario','La Plata'
+ );
+ const plan=planificarAclaracionesMvp033(p);
+ assert.equal(p.zonaEntrega,null);
+ assert.equal(plan.preguntarZona,true);
+ assert.equal(plan.permitirEnvio,false);
+});
