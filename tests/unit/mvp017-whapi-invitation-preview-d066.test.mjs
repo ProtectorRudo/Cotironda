@@ -44,7 +44,7 @@ test('D066 rechaza payload extra, identidad suplantada, líneas alteradas y salt
   {...base,items:[{...base.items[0],quantity:'10;drop'}]},
   {...base,items:[{...base.items[0],price:'100'}]},
   {...base,items:[{...base.items[0],unit:'bolsas'}]},
-  {...base,channel:'wrong'},
+  {...base,channel:'x'},
   {...base,supplierOrgId:'no-uuid'}
  ];
  for(const item of bad){
