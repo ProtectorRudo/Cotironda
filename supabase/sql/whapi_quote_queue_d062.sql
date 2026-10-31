@@ -154,10 +154,12 @@ begin
  then raise exception 'd062_stale_lease' using errcode='42501';end if;
  select exists(select 1 from cotironda_private.whapi_price_sources_d060 s
   where s.channel_id=p_channel and s.message_key=p_message) into v_has_offer;
- if (p_result='received' and not v_has_offer)
- or (p_result in('no_price','not_eligible') and v_has_offer)
+ if p_result='received' and not v_has_offer
  then raise exception 'd062_receipt_state_mismatch' using errcode='42501';end if;
- if p_result='received' or (p_result='retry' and v_has_offer) then
+ -- If D060 committed before a worker timed out, the ledger is authoritative.
+ -- Even if the round subsequently closed or the contact opted out, historical
+ -- versions remain recorded, so complete the queue item without reprocessing.
+ if v_has_offer then
   -- The write might have committed before a transport timeout.
   -- Do not bill IA again or exhaust retries on an already recorded offer.
   v_status:='done';v_code:='received';
