@@ -775,3 +775,6 @@
 
 ### 31/10/2026 — MVP-029: identidad de producto validada en SQL y HTTP, sin nuevos pasos
 - La RPC D064 exige `source_description` en todas las líneas nuevas y comprueba en PostgreSQL (`valid_pilot_product_d078`, solo interno) que el código del artículo corresponde a su familia literal; evita pedidos falsificados con código cemento y texto látex. Rechaza palabras parecidas excluidas y coincidencias de dos familias. Validación HTTP temprana con taxonomía existente, pero SQL conserva la autoridad. Nuevas pruebas de SQL autenticado, unitarias y regresión CI; sin instalación DEV ni mensajes WhatsApp. Ver docs/149 e Issue #271.
+
+### 31/10/2026 — MVP-030: mapeos curados para el primer pedido con dos corralones
+- Nuevo script SQL opcional D079 para seis familias exactas de materiales, cinco rubros y localidad La Plata/Buenos Aires, con verificación de taxonomía, idempotencia y rechazo de conflictos. Nueva prueba transaccional PostgreSQL17: comprador con Auth sintético guarda una ronda D064 de 20 bolsas CPC Loma Negra 50 kg; D065 alcanza dos corralones en zona y excluye tercero fuera de zona y otro con BAJA; D066 preserva texto y cantidad; D071 sin vault devuelve dos destinatarios pendientes y cero jobs/mensajes. Nada aplicado en DEV ni enlazado a Whapi real. Ver docs/150 e Issue #273.
