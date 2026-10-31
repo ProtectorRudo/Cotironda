@@ -87,7 +87,7 @@ function parseMontoFuente(s:string):bigint|null{
 }
 /** A quote must be a literal substring of the corresponding original line. */
 function citar(lines:readonly string[],v:Evidencia|null):string|null{
- if(!exact(v,['linea','cita'])||!Number.isSafeInteger(v.linea)||
+ if(v===null||!exact(v,['linea','cita'])||!Number.isSafeInteger(v.linea)||
     v.linea<1||v.linea>lines.length||typeof v.cita!=='string'||
     v.cita.length<5||v.cita.length>240||/[^\S \t]/u.test(v.cita))return null;
  const original=lines[v.linea-1].trim();
