@@ -39,7 +39,7 @@ set local request.jwt.claims =
  "is_anonymous":false,"cotironda_email_verified":true}';
 do $case$
 declare
- v_input jsonb:='[{"line_no":1,"product_code":"cemento_001","quantity":"10","unit":"bag"},
+ v_input jsonb:='[{"line_no":1,"product_code":"cemento_001","quantity":"10","unit":"bag","source_description":"Cemento CPC 50 kg"},
  {"line_no":2,"product_code":"pintura_002","quantity":"5.5","unit":"l"}]'::jsonb;
  v_result jsonb;v_replay jsonb;v_round uuid;v_bad boolean;
 begin
@@ -82,6 +82,13 @@ select ci_helpers.assert_true(
   where round_id=(select round_id from cotironda_private.round_requests_d064
     where request_key='cccccccc-0015-4015-8015-000000000657')),
  'd064_two_ordered_items');
+select ci_helpers.assert_true(
+ (select source_description='Cemento CPC 50 kg'
+  from cotironda_private.round_items_v1
+  where round_id=(select round_id from cotironda_private.round_requests_d064
+   where request_key='cccccccc-0015-4015-8015-000000000657')
+  and line_no=1),
+ 'd076_buyer_source_specs_preserved');
 select ci_helpers.assert_true(
  (select count(*)=1 from cotironda_private.rounds_v1
   where buyer_org_id='aaaaaaaa-0015-4015-8015-000000000655'),
