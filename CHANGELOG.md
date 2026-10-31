@@ -615,3 +615,8 @@
 ## [Sin publicar — D044 / Issue #191: clave de laboratorio dedicada en Edge DEV]
 - Auditoría de 13 archivos de `cotironda-ia-dev` contra despliegue v9 confirmó paridad exacta previo a cambios; `verify_jwt=false` respaldado por documentación oficial Supabase para auth secret key no JWT. Hallazgo de superficie innecesaria: también acepta `secret:default`.
 - Rama D044 cambia únicamente fuente `index.ts` a `secret:cotironda_quality_lab` (whitelist mínima), agrega pruebas adversariales del handler con fetch/DB de CI bloqueados y contrato estático de wrapper; docs/107. **El despliegue alojado v9 NO cambia**, validación real de llamadas y migración desde default quedan pendientes. Sin IA, sin cambios en Vault/DEV/producción; #175 y D024 bloqueados.
+
+## [Sin publicar — D045 / Issue #193: recorrido comercial B2B integrado offline]
+- Nueva demo que **reutiliza** los módulos documentales, producto canónico/invitaciones y comparación monetaria determinista para un pedido de cemento, látex y yeso, con ítem inseguro retenido, cuatro proveedores aptos y tres ofertas simuladas anónimas.
+- Suite integrada verifica consentimiento, catálogo/zona/baja, marca flexible, consulta de presentación alternativa NO homologada, IVA 21% y dos fletes, ofertas parciales, estado de confirmación, flete/IVA conocidos, no adjudicación y no filtración de identidad. Montos totalmente ficticios.
+- docs/108 describe qué está probado y qué falta (IA/Whapi reales, confirmación del proveedor, DB licitaciones, recuperación #175). Sin cambios en DEV, producción, migraciones ni uso de recursos pagos.
