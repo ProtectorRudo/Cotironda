@@ -295,3 +295,5 @@ El PR D038 agrega un ensayo restringido en PG17 para la lógica de despachador I
 > Un puerto de servidor `src/server/whapi-quote-direct-postgres-d059.ts` ya permite invocar de forma parametrizada el SQL privado de cotización recibida (solo pruebas). Todavía falta el broker que autentica/descifra la cotización real y suministra esa llamada; no es Whapi en vivo.
 
 > **MVP-010 en desarrollo:** D060 conserva el precio unitario tal como lo escribió el proveedor, aunque no haya IVA informado, en un registro inmutable vinculado a su cotización y la fuente cifrada. El comprador autenticado podría consultar la última versión por **alias anónimo**, con condición de IVA explícita o `no informado`. SQL probado solo en PG17 descartable; falta el broker real y portal productivo. Ver [docs/130](docs/130-mvp-010-precio-declarado-versionado.md).
+
+> **MVP-011:** se conectó el inbox cifrado con la normalización de precios y versiones de cotizaciones mediante un broker server-only probado con AES-GCM real y PostgreSQL17 descartable; no hay interpretador IA/WhatsApp conectado en producción. [docs/131](docs/131-mvp-011-broker-inbox-cotizacion.md).
