@@ -568,4 +568,4 @@
 ## [Sin publicar — D034 / Issue #169: replay de WhatsApp entre claves AES]
 - Corregida función SQL privada versionada para que un reenvío auténtico con mismo message-key, proveedor, tipo, timestamp y HMAC de contenido sea idempotente incluso tras rotar AES; key-id/ciphertext/nonce/tag históricos no se reescriben. Cambios de precio, chat, tipo o fecha siguen siendo colisiones.
 - Revisiones equivalentes de timestamp en ruta legacy y BAJA, sin alterar grants ni propiedad del rol NOLOGIN. Nuevos ensayos PG17 y E2E Node→Postgres contra un login restringido más tests Node adversariales.
-- D025 hosted Auth Issue #167 sigue bloqueante; las pruebas CI no implican instalación DEV ni conexión real de Whapi. Docs/98, PR #172 draft.
+- D025 hosted Auth Issue #167 sigue bloqueante; las pruebas CI no implican instalación DEV ni conexión real de Whapi. Docs/98, PR #171 draft.
