@@ -22,6 +22,10 @@ docker exec "$cid" pg_restore --version | grep -Eq '^pg_restore \(PostgreSQL\) 1
 SRC='cotironda_ci'
 DST='cotironda_ci_restore_mvp003'
 TMP='/tmp/cotironda-mvp003-synthetic.custom'
+# Keep the SQL validation strict: move the cross-table CHECK into a trigger
+# BEFORE backing up. This is a CI-only candidate patch, not applied to DEV.
+psql -X -v ON_ERROR_STOP=1 -f supabase/sql/round_offer_restore_safe_mvp003.sql >/dev/null
+psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/113_restore_safe_offer_guards_mvp003.sql >/dev/null
 baseline="$(psql -X -qAt -v ON_ERROR_STOP=1 -f scripts/ci/restore-mvp003-fingerprint.sql)"
 test -n "$baseline"
 # Fail if another tool already created a target. Never drop any DB.
