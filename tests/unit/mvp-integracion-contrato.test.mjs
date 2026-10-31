@@ -69,7 +69,7 @@ test('MVP-002: ningún precio parcial se recomienda como precio total completo',
   const none=compararCotizacionesOffline({items:[
     {id:'cemento_001',cantidad:'10',unidad:'bag'}
   ]},[{
-    anonId:'parcial_001',version:1,confirmada:true,moneda:'ARS',
+    anonId:'anon_parcial_001',version:1,confirmada:true,moneda:'ARS',
     formaPago:'transferencia',plazoEntregaDias:3,
     fleteFinal:'100.00',minimoCompraFinal:'0.00',
     items:[{
