@@ -11,7 +11,8 @@ import { PROJECT_REF, PIECES } from '../../scripts/ops/verify-encrypted-dev-back
 // All exports are synthetic: no credentials, SQL server or actual encryption in CI.
 const url = 'postgresql://postgres:not-a-real-secret@db.' + PROJECT_REF + '.supabase.co:5432/postgres?sslmode=require';
 const recipient = 'age1' + 'q'.repeat(58);
-function syntheticTools(calls, { badVersion = false, failDumpIndex = -1 } = {}) {
+function syntheticTools(calls, { badVersion = false, failDumpIndex = -1,
+    invalidSnapshot = false, snapshotDisconnect = false } = {}) {
   let dumps = 0;
   return (binary, args, opts) => {
     calls.push({ binary, args, opts });
@@ -23,6 +24,31 @@ function syntheticTools(calls, { badVersion = false, failDumpIndex = -1 } = {}) 
       queueMicrotask(() => {
         child.stdout.end(binary + ' (PostgreSQL) ' + (badVersion ? '16.4' : '17.11') + '\n');
         child.emit('close', 0);
+      });
+    } else if (binary === 'psql') {
+      let sql = '';
+      child.stdin.on('data', chunk => {
+        sql += chunk.toString();
+        if (sql.includes('SELECT pg_export_snapshot();') &&
+            !child.snapshotEmitted) {
+          child.snapshotEmitted = true;
+          queueMicrotask(() => {
+            if (snapshotDisconnect) {
+              child.stdout.end();
+              child.emit('close', 1);
+            } else {
+              child.stdout.write(invalidSnapshot
+                ? 'invalid_response_from_psql\n'
+                : '00000003-0000001B-1\n');
+            }
+          });
+        }
+      });
+      child.stdin.on('end', () => {
+        if (!snapshotDisconnect) queueMicrotask(() => {
+          child.stdout.end();
+          child.emit('close', 0);
+        });
       });
     } else if (binary === 'age') {
       void (async () => {
@@ -57,6 +83,16 @@ test('MVP003 five synthetic export streams, SHA seal, readonly and secret absent
   assert.equal(calls.filter(x => x.binary === 'age').length, 5);
   assert.equal(calls.filter(x => x.binary === 'pg_dump' && !x.args.includes('--version')).length, 4);
   assert.equal(calls.filter(x => x.binary === 'pg_dumpall' && x.args.includes('--roles-only')).length, 1);
+  assert.equal(calls.filter(x => x.binary === 'psql' && x.args.includes('-X')).length, 1);
+  const databaseDumps = calls.filter(x =>
+    x.binary === 'pg_dump' && !x.args.includes('--version'));
+  assert.equal(databaseDumps.length, 4);
+  assert.ok(databaseDumps.every(x =>
+    x.args.filter(arg => arg.startsWith('--snapshot='))
+      .join('') === '--snapshot=00000003-0000001B-1'));
+  assert.ok(calls.some(x =>
+    x.binary === 'psql' && x.args.includes('ON_ERROR_STOP=1')));
+  assert.ok(calls.every(x => !JSON.stringify(x.args).includes('pg_export_snapshot')));
   assert.ok(calls.every(c => !JSON.stringify(c.args).includes('not-a-real-secret')));
   const pg = calls.filter(x => x.binary !== 'age');
   assert.ok(pg.every(c => c.opts.env.PGOPTIONS.includes('default_transaction_read_only=on')));
@@ -103,3 +139,32 @@ test('MVP003 rejects any destination within repository checkout', async () => {
     recipient,spawnCommand:syntheticTools([]),
   }), /MVP003_DESTINATION_INSIDE_REPOSITORY/);
 });
+
+test('MVP022 aborts before database dump if snapshot protocol is corrupt', async () =>
+  fixture(async dest => {
+    const calls=[];
+    await assert.rejects(exportDevEncrypted({
+      directory:dest,connectionUrl:url,recipient,
+      spawnCommand:syntheticTools(calls,{invalidSnapshot:true}),
+    }),/MVP003_SNAPSHOT_UNAVAILABLE/);
+    assert.equal(calls.filter(x => x.binary==='pg_dump' &&
+      !x.args.includes('--version')).length,0);
+    assert.deepEqual(await readdir(dest),[]);
+  }));
+test('MVP022 rejects psql connection loss before snapshot', async () =>
+  fixture(async dest => {
+    const calls=[];
+    await assert.rejects(exportDevEncrypted({
+      directory:dest,connectionUrl:url,recipient,
+      spawnCommand:syntheticTools(calls,{snapshotDisconnect:true}),
+    }),/MVP003_SNAPSHOT_UNAVAILABLE/);
+    assert.deepEqual(await readdir(dest),[]);
+  }));
+test('MVP022 rejects old psql version before exporting any bytes', async () =>
+  fixture(async dest => {
+    await assert.rejects(exportDevEncrypted({
+      directory:dest,connectionUrl:url,recipient,
+      spawnCommand:syntheticTools([],{badVersion:true}),
+    }),/MVP003_PG17_TOOLS_REQUIRED/);
+    assert.deepEqual(await readdir(dest),[]);
+  }));
