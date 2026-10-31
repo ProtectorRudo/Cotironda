@@ -51,12 +51,17 @@ async function expectDenied(db,sql){
  catch(e){if(e.code==='42501')denied=true;else throw Error('D031_denial_wrong_code')}
  assert.equal(denied,true,'missing privilege must deny query');
 }
-async function runMessage(m){
+async function runMessage(m,keyVersion='aes_2026_a'){
  return withDb(async db=>{
    const gateway=crearPuertoPostgresWhapiD030({
      query:async(sql,params)=>db.query(sql,[...params])});
+   const rotated=keyVersion==='aes_2026_b';
+   const cryptoKeys={...keys,contenidoAes:rotated?
+     Buffer.from(env.COTIRONDA_CI_AES_KEY_B,'hex'):keys.contenidoAes};
    const broker=construirBrokerWhapiPrivado({
-     channel,claves:keys,secretoWebhook:env.COTIRONDA_CI_WEBHOOK_SECRET,
+     channel,claves:cryptoKeys,contenidoKeyId:keyVersion,
+     clavesLectura:rotated?{aes_2026_a:keys.contenidoAes}:{},
+     secretoWebhook:env.COTIRONDA_CI_WEBHOOK_SECRET,
      habilitado:true,almacen:gateway,ahoraUnix:()=>now});
    const r=await procesarWebhookWhapiAislado(wrap(m),broker.dependencias);
    return {response:r,body:r.status===204?null:await r.json()};
@@ -77,6 +82,11 @@ assert.equal(first.body.guardadas,1);
 assert.equal(first.body.presupuestosConfirmados,0);
 assert.equal(first.body.mensajesEnviados,0);
 // Reenviar en otra conexión: demostrar persistencia en PostgreSQL real.
+const rotated=await runMessage({...msg,id:'pg.ci-00000006'},'aes_2026_b');
+assert.equal(rotated.response.status,200);
+assert.equal(rotated.body.guardadas,1);
+const keyCollision=await runMessage(msg,'aes_2026_b');
+assert.equal(keyCollision.response.status,503);
 const replay=await runMessage(msg);
 assert.equal(replay.response.status,200);
 assert.equal(replay.body.duplicadas,1);

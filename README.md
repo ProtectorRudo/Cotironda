@@ -254,3 +254,6 @@ El PR #162 agrega un gateway de base con rol interno sin inicio de sesión y EXE
 
 ### 30/10/2026 — Etapa 04: E2E Node ↔ PostgreSQL 17 real en CI
 PR #164 prepara una prueba integral con `pg@8.23.1`, un usuario SQL temporal de permisos mínimos y mensajes Whapi sintéticos. Se verifican guardado cifrado real, reenvíos sin duplicar y BAJA sin invitación, entre conexiones distintas. **Solo base efímera GitHub Actions**: no se instala D024–D030 en Supabase DEV, ni se configura Whapi real, ni se despliega producción. Ver [docs/95](docs/95-whapi-node-postgres-e2e.md).
+
+### 30/10/2026 — Etapa 04: versión de clave AES por presupuesto (D032)
+El PR #166 agrega `crypto_key_id` a mensajes cifrados del inbox privado, con compatibilidad hacia atrás y claves históricas disponibles solo para descifrar; el key-id se autentica dentro del AES-GCM. La base rechaza reutilizar la misma ID de mensaje con otra versión de clave. Las claves HMAC permanecen estables para no romper deduplicación ni consentimiento. **No instalado en Supabase DEV ni producción, sin Whapi conectado ni llaves reales**. Ver [docs/96](docs/96-whapi-aes-key-id-rotation.md).

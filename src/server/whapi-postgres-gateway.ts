@@ -21,6 +21,8 @@ const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]
 const KINDS=new Set(['text','image','document','audio','voice']);
 const RESOLVE_SQL='select cotironda_private.whapi_resolve_active_contact_v1($1::text,$2::text) as payload';
 const INSERT_SQL='select cotironda_private.whapi_inbox_record_v1($1::text,$2::text,$3::text,$4::text,$5::text,$6::bytea,$7::bytea,$8::bytea,$9::bigint) as payload';
+const INSERT_KEYED_SQL='select cotironda_private.whapi_inbox_record_keyed_v1($1::text,$2::text,$3::text,$4::text,$5::text,$6::bytea,$7::bytea,$8::bytea,$9::bigint,$10::text) as payload';
+const KEY_ID=/^[a-z][a-z0-9_]{2,40}$/;
 const BAJA_SQL='select cotironda_private.whapi_record_optout_v1($1::text,$2::text,$3::text,$4::text,$5::bigint) as payload';
 function fallo():never{throw new Error('whapi_gateway_no_disponible')}
 function obj(o:unknown):o is Record<string,unknown>{
@@ -78,8 +80,14 @@ export function crearPuertoPostgresWhapiD030(db:PuertoPostgresD030):AlmacenWhapi
          !sha(d.fingerprint)||!KINDS.has(d.kind)||
          !buffer(d.ciphertext,[1,8192])||!buffer(d.nonce,12)||
          !buffer(d.tag,16)||!time(d.sourceUnix))fallo();
-      const raw=await call(INSERT_SQL,[d.channel,d.chatKey,d.messageKey,
-        d.fingerprint,d.kind,d.ciphertext,d.nonce,d.tag,d.sourceUnix]);
+      const id=d.cryptoKeyId??'legacy_d029';
+      if(!KEY_ID.test(id))fallo();
+      const params=[d.channel,d.chatKey,d.messageKey,
+        d.fingerprint,d.kind,d.ciphertext,d.nonce,d.tag,d.sourceUnix];
+      // Compatibilidad D028: solo legacy; la ruta nueva exige key-id persistente.
+      const raw=id==='legacy_d029'?
+        await call(INSERT_SQL,params):
+        await call(INSERT_KEYED_SQL,[...params,id]);
       return parseResult(raw,'entrada_persistida');
     },
     registrarBaja:async(d:BajaProtegidaD028):Promise<ResultadoD028>=>{

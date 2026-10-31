@@ -132,6 +132,11 @@ jobs:
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_gateway_private_d030.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/103_whapi_gateway_private.sql
+      - name: D032 claves AES versionadas, retrocompatibilidad e idempotencia PG17
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_inbox_key_id_d032.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/104_whapi_key_id.sql
       - name: Preparar Node para E2E real PostgreSQL
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
@@ -143,9 +148,10 @@ jobs:
           export COTIRONDA_CI_HMAC_ID="$(openssl rand -hex 32)"
           export COTIRONDA_CI_HMAC_PAYLOAD="$(openssl rand -hex 32)"
           export COTIRONDA_CI_AES_KEY="$(openssl rand -hex 32)"
+          export COTIRONDA_CI_AES_KEY_B="$(openssl rand -hex 32)"
           export COTIRONDA_CI_WEBHOOK_SECRET="$(openssl rand -hex 32)"
           ci_pass="$(openssl rand -hex 24)"
-          for value in "$COTIRONDA_CI_HMAC_ID" "$COTIRONDA_CI_HMAC_PAYLOAD" "$COTIRONDA_CI_AES_KEY" "$COTIRONDA_CI_WEBHOOK_SECRET" "$ci_pass"; do
+          for value in "$COTIRONDA_CI_HMAC_ID" "$COTIRONDA_CI_HMAC_PAYLOAD" "$COTIRONDA_CI_AES_KEY" "$COTIRONDA_CI_AES_KEY_B" "$COTIRONDA_CI_WEBHOOK_SECRET" "$ci_pass"; do
             echo "::add-mask::$value"
           done
           compute_chat_key() {
@@ -157,14 +163,22 @@ jobs:
           COTIRONDA_CI_WHAPI_PG_E2E=true COTIRONDA_CI_PG_USER=cotironda_whapi_ci_login COTIRONDA_CI_PG_PASSWORD="$ci_pass" node --experimental-strip-types scripts/ci/whapi-pg/e2e.mjs
           psql -X -v ON_ERROR_STOP=1 <<'SQL'
           select ci_helpers.assert_true(
-            (select count(*)=3 from cotironda_private.whapi_inbox_v1
+            (select count(*)=4 from cotironda_private.whapi_inbox_v1
              where channel_id='whapi_ci'), 'inbox_rows_d031');
           select ci_helpers.assert_true(
-            (select count(*)=1 from cotironda_private.whapi_inbox_v1
+            (select count(*)=2 from cotironda_private.whapi_inbox_v1
              where channel_id='whapi_ci' and kind='text'
                and payload_ciphertext is not null
                and octet_length(payload_nonce)=12 and octet_length(payload_tag)=16),
              'aes_gcm_ciphertext_durable');
+          select ci_helpers.assert_true(
+            (select count(*)=1 from cotironda_private.whapi_inbox_v1
+              where channel_id='whapi_ci' and crypto_key_id='aes_2026_a' and kind='text'),
+            'first_key_id_is_durable');
+          select ci_helpers.assert_true(
+            (select count(*)=1 from cotironda_private.whapi_inbox_v1
+              where channel_id='whapi_ci' and crypto_key_id='aes_2026_b' and kind='text'),
+            'rotated_key_id_is_durable');
           select ci_helpers.assert_true(
             (select count(*)=2 from cotironda_private.whapi_inbox_v1
              where channel_id='whapi_ci' and kind='opt_out'
