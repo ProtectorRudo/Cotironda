@@ -723,3 +723,7 @@
 ### 31/10/2026 — MVP-012: cola durable de cotizaciones entrantes
 - D062 en PostgreSQL17 efímero: trigger de inbox texto a cola privada, claim concurrente con `SKIP LOCKED`, lease y recuperación, orden por proveedor/ronda, ACK sólo tras escritura D060 real, revisión interna y máximo 4 reintentos sin revelar texto. Worker Node inyectado, sin cron/Whapi/IA live.
 - Pruebas SQL normales/extremas y Node; documento 132 y auditoría. Sin instalación en Supabase DEV/prod ni merge.
+
+### 31/10/2026 — MVP-013: ensayo vertical completo Node/PostgreSQL17
+- Intérprete textual conservador de precios/cantidades explícitos D063, sin llamada IA ni suposiciones fiscales. Ensayo con webhook simulado y **driver pg real sobre PostgreSQL 17 efímero** enlazando cifrado, bandeja D028, cola D062, lectura D061, escritura D060, corrección/replay, BAJA y lectura anónima de comprador autenticado.
+- Rol CI de permisos EXECUTE acotados, sin acceso directo a inbox/ofertas. No instalación Supabase DEV/prod ni webhook/Whapi/IA live; backup #175 sigue pendiente. Ver docs/133.
