@@ -748,3 +748,6 @@
 
 ### 31/10/2026 — MVP-020: registro cifrado desde broker y onboarding verificados (sin envíos)
 - Adaptador D069 solo servidor reutiliza vault D068 y SQL con consentimiento/BAJA, autorizador HMAC inyectado, flags cerrados y respuestas sin PII. Broker D029 acepta puerto opcional y revalida proveedor después de persistir entrada autenticada. Pruebas unitarias webhook sintético, SQL D068 PG17 de BAJA/replay/identidad inexistente; ejecución CI sujeta a verificación. No implica alta real de comerciantes, Whapi activo ni cambios DEV/prod. Ver docs/140.
+
+### 31/10/2026 — MVP-021: outbox exclusiva de invitaciones (sin envíos live)
+- SQL D070 roles privados, trabajo único por proveedor/ronda/canal, reserva transaccional de límites D056 compartidos con respuestas y fases no-retry tras HTTP incierto. Worker TypeScript utiliza cifrado D068 y transporte Whapi existente D055 con autorización final HMAC+consentimiento; flags deshabilitados por defecto. Tests unitarios/PG17 de casos normales y de rechazo. No se despliega ni instala Supabase DEV/prod, backup #175 pendiente. Ver docs/141.
