@@ -660,3 +660,7 @@
 ## [Sin publicar — D055 / Issue #213: Whapi.Cloud HTTP preparado, bloqueado por defecto]
 - Adaptador server-only para POST /messages/text HTTPS, Authorization Bearer inyectada, destinatarios allowlist, autorizador de cupo obligatorio, sin global fetch ni retries, deadline 5 s, redirects prohibidos, JSON respuesta limitada a 16 KiB. Acepta `sent:true` + ID externo válido de Whapi y `pending/sent/delivered/read` como acuse de transporte **sin** inferir lectura; D054 registra HMAC o `uncertain` ante timeout/ambigüedad.
 - Pruebas con fetch fake de credenciales, allowlist, límites, status, HTTP 429/errores, JSON malformado y composición con D054. Ningún token, envío ni migración real. Docs/118. Gate backup/restore DEV #175 vigente.
+
+## [Sin publicar — D056 / Issue #215: límites de WhatsApp por comprador y consentimiento persistente]
+- Política privada de envío por empresa compradora + canal (apagada por defecto), cuotas diarias/mensuales y presupuesto mensual en unidades de **reserva estimada**, no precios facturados. Trigger SQL une reserva del ledger 1/job con inicio HTTP D053 **en la misma transacción** y serializa concurrentes con `FOR UPDATE` sobre la política. Proveedor sigue gratis.
+- Función privada pre-HTTP comprueba vigencia de consentimiento/BAJA/revisión + reserva, y adaptador server-only calcula HMAC D029 del destinatario para evitar enviar a otro chat. Tests PG17 transaccionales y tests TS de denegación, no public RPC ni tokens/clientes. No se instaló DEV/prod ni se habilitó Whapi, #175 sigue abierto. Docs/119.
