@@ -38,6 +38,14 @@ insert into public.organizations(id,display_name,organization_type) values
  ('bbbbbbbb-0013-4013-8013-000000000632','Corralon ficticio D063','supplier');
 insert into public.supplier_profiles(organization_id,trade_name,accepting_quotes)
  values('bbbbbbbb-0013-4013-8013-000000000632','Proveedor inventado',true);
+insert into auth.users(id,email_confirmed_at,is_anonymous)
+ values('11111111-0013-4013-8013-000000000634',now(),false);
+insert into auth.sessions(id,user_id,not_after) values
+ ('33333333-0013-4013-8013-000000000635',
+ '11111111-0013-4013-8013-000000000634',now()+interval '1 day');
+insert into public.organization_members(organization_id,user_id,membership_role,status)
+ values('aaaaaaaa-0013-4013-8013-000000000631',
+ '11111111-0013-4013-8013-000000000634','owner','active');
 insert into cotironda_private.rounds_v1(id,buyer_org_id,begins_at,ends_at)
  values('dddddddd-0013-4013-8013-000000000633',
  'aaaaaaaa-0013-4013-8013-000000000631',
