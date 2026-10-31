@@ -1,0 +1,472 @@
+name: PostgreSQL 17 - Aislamiento por empresa
+on:
+  pull_request:
+  push:
+    branches: [main, feat/01-identidad-catalogos-rls]
+permissions:
+  contents: read
+jobs:
+  postgres-rls:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci_only_password
+          POSTGRES_DB: cotironda_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      PGPASSWORD: ci_only_password
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGDATABASE: cotironda_ci
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: PostgreSQL disponible
+        run: psql --version && pg_isready
+      - name: Ejecutar esquema y pruebas de aislamiento
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/00_bootstrap.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/schema.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/10_tenant_rls.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/20_onboarding.sql
+      - name: Probar dos registros simultáneos
+        run: bash supabase/tests/ci/30_concurrency.sh
+      - name: Validar rol limitado sin login ni bypass RLS
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261029111731_backend_role_limited.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/40_backend_role.sql
+      - name: Alta solo por función privada y rol sin DML
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261029112947_execute_only_registration.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/50_execute_only.sql
+      - name: Registro derivado de JWT, sin p_user_id
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261029120021_jwt_bound_registration_locked.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/60_jwt_bound_registration.sql
+      - name: RPC invoker, hook correo y privilegios limitados
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261029122708_invoker_verified_email_hook.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/70_invoker_email_hook.sql
+      - name: Sesiones revocadas, suspendidas y correo actual
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261029130907_session_revocation_and_verified_user.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/80_session_revocation.sql
+
+      - name: Cuotas por usuario con rechazo durable y RPC directa
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261029140422_registration_attempt_rate_limiter.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/91_rate_limit.sql
+      - name: "Cuarenta sesiones concurrentes: cuota ineludible"
+        run: bash supabase/tests/ci/92_rate_limit_concurrency.sh
+      - name: Revocacion post-migracion 7 con estado estructurado
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/93_revoked_session_status.sql
+      - name: Storage privado y aislamiento por empresa (migracion 8)
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261029183835_storage_private_buyer_drafts.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/94_storage_private_tenant.sql
+      - name: Revocacion de sesion Auth en RLS Storage (migracion 9)
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261029202610_storage_session_revocation.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/95_storage_session_revocation.sql
+      - name: Bloquear INSERT directo de archivos sin antivirus (migracion 10)
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261029211609_storage_upload_fail_closed.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/96_storage_direct_upload_disabled.sql
+      - name: Cuarentena no accesible y ledger de ingestión privado (migración 11)
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261029213755_private_quarantine_ledger.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/97_quarantine_ledger.sql
+      - name: Guard de sesion en 17 RLS comerciales (migracion 12)
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261029234236_commercial_session_guard.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/98_commercial_session_guard.sql
+
+
+      - name: Ledger de rondas privadas D024 (solo PostgreSQL CI, sin despliegue)
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/rounds_private_ledger_d024.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/99_rounds_private_ledger.sql
+      - name: D025 RPC lectura comprador con sesión vigente y aislamiento por empresa
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/round_buyer_overview_d025.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/100_round_buyer_overview.sql
+      - name: D026 ofertas atómicas privadas (no se habilitan canales ni RPC públicas)
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/round_offer_atomic_write_d026.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/101_round_offer_atomic_write.sql
+      - name: D028 Inbox privado Whapi, opt-out y deduplicación (solo CI)
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_private_inbox_d028.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/102_whapi_private_inbox.sql
+      - name: D030 gateway SQL privado con rol EXECUTE-only (sin desplegar)
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_gateway_private_d030.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/103_whapi_gateway_private.sql
+      - name: D032 claves AES versionadas, retrocompatibilidad e idempotencia PG17
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_inbox_key_id_d032.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/104_whapi_key_id.sql
+      - name: D034 replay sin duplicados tras rotación AES (SQL privado PG17)
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_replay_across_aes_d034.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/105_whapi_replay_across_aes.sql
+      - name: D036 gate privado de roles, RLS y Data API antes de DEV
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/106_dev_rollout_security_gate.sql
+      - name: D047 outbox privada de respuestas pendientes (solo PostgreSQL CI)
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_reply_outbox_d047.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/107_whapi_reply_outbox_d047.sql
+
+      - name: D048 procedencia atómica inbox a borrador, bloquear outbox sin vínculo (solo CI)
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_offer_source_atomic_d048.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/108_whapi_offer_source_atomic_d048.sql
+
+      - name: D049 Confirmación conversacional atómica y versionada (solo PostgreSQL CI)
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_confirm_atomic_d049.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/109_whapi_confirm_atomic_d049.sql
+
+      - name: D051 lectura privada cifrada y acuse original (solo PostgreSQL CI)
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_confirmation_read_port_d051.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/110_whapi_confirmation_read_port_d051.sql
+
+      - name: Preparar Node para E2E real PostgreSQL
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22.16.0'
+      - name: D031 Node real pg a PostgreSQL17 con identidad efimera (solo CI)
+        run: |
+          set -euo pipefail
+          npm ci --prefix scripts/ci/whapi-pg --ignore-scripts --no-audit --no-fund
+          export COTIRONDA_CI_HMAC_ID="$(openssl rand -hex 32)"
+          export COTIRONDA_CI_HMAC_PAYLOAD="$(openssl rand -hex 32)"
+          export COTIRONDA_CI_AES_KEY="$(openssl rand -hex 32)"
+          export COTIRONDA_CI_AES_KEY_B="$(openssl rand -hex 32)"
+          export COTIRONDA_CI_WEBHOOK_SECRET="$(openssl rand -hex 32)"
+          ci_pass="$(openssl rand -hex 24)"
+          for value in "$COTIRONDA_CI_HMAC_ID" "$COTIRONDA_CI_HMAC_PAYLOAD" "$COTIRONDA_CI_AES_KEY" "$COTIRONDA_CI_AES_KEY_B" "$COTIRONDA_CI_WEBHOOK_SECRET" "$ci_pass"; do
+            echo "::add-mask::$value"
+          done
+          compute_chat_key() {
+            CHAT="$1" node --input-type=module -e 'import {createHmac} from "node:crypto";process.stdout.write(createHmac("sha256",Buffer.from(process.env.COTIRONDA_CI_HMAC_ID,"hex")).update(JSON.stringify(["cotironda","chat",1,"whapi_ci",process.env.CHAT])).digest("hex"))'
+          }
+          chat_b="$(compute_chat_key '5492211234567@s.whatsapp.net')"
+          chat_c="$(compute_chat_key '5492211234568@s.whatsapp.net')"
+          psql -X -v ON_ERROR_STOP=1 -v ci_password="$ci_pass" -v chat_key_b="$chat_b" -v chat_key_c="$chat_c" -f scripts/ci/whapi-pg/seed.sql > /dev/null
+          COTIRONDA_CI_WHAPI_PG_E2E=true COTIRONDA_CI_PG_USER=cotironda_whapi_ci_login COTIRONDA_CI_PG_PASSWORD="$ci_pass" node --experimental-strip-types scripts/ci/whapi-pg/e2e.mjs
+          psql -X -v ON_ERROR_STOP=1 <<'SQL'
+          select ci_helpers.assert_true(
+            (select count(*)=4 from cotironda_private.whapi_inbox_v1
+             where channel_id='whapi_ci'), 'inbox_rows_d031');
+          select ci_helpers.assert_true(
+            (select count(*)=2 from cotironda_private.whapi_inbox_v1
+             where channel_id='whapi_ci' and kind='text'
+               and payload_ciphertext is not null
+               and octet_length(payload_nonce)=12 and octet_length(payload_tag)=16),
+             'aes_gcm_ciphertext_durable');
+          select ci_helpers.assert_true(
+            (select count(*)=1 from cotironda_private.whapi_inbox_v1
+              where channel_id='whapi_ci' and crypto_key_id='aes_2026_a' and kind='text'),
+            'first_key_id_is_durable');
+          select ci_helpers.assert_true(
+            (select count(*)=1 from cotironda_private.whapi_inbox_v1
+              where channel_id='whapi_ci' and crypto_key_id='aes_2026_b' and kind='text'),
+            'rotated_key_id_is_durable');
+          select ci_helpers.assert_true(
+            (select count(*)=2 from cotironda_private.whapi_inbox_v1
+             where channel_id='whapi_ci' and kind='opt_out'
+               and payload_ciphertext is null), 'optout_two_contacts_d031');
+          select ci_helpers.assert_true(
+            (select count(*)=2 from cotironda_private.whapi_contacts_v1
+              where channel_id='whapi_ci' and opted_out_at is not null),
+             'optout_contacts_locked_d031');
+          SQL
+
+
+      - name: D052 E2E Node22 PostgreSQL17 cifrado a confirmación (solo CI, sin red)
+        run: |
+          set -euo pipefail
+          # Una credencial por job, enmascarada, sin relación con Supabase DEV.
+          export COTIRONDA_D052_HMAC_ID="$(openssl rand -hex 32)"
+          export COTIRONDA_D052_HMAC_PAYLOAD="$(openssl rand -hex 32)"
+          export COTIRONDA_D052_AES_KEY="$(openssl rand -hex 32)"
+          export COTIRONDA_D052_ACK_HMAC_KEY="$(openssl rand -hex 32)"
+          export COTIRONDA_D052_WEBHOOK_SECRET="$(openssl rand -hex 32)"
+          ci_pass="$(openssl rand -hex 24)"
+          for value in "$COTIRONDA_D052_HMAC_ID" "$COTIRONDA_D052_HMAC_PAYLOAD" "$COTIRONDA_D052_AES_KEY" "$COTIRONDA_D052_ACK_HMAC_KEY" "$COTIRONDA_D052_WEBHOOK_SECRET" "$ci_pass"; do
+            echo "::add-mask::$value"
+          done
+          d052_chat="$(CHAT='5492211234567@s.whatsapp.net' node --input-type=module -e 'import {createHmac} from "node:crypto";process.stdout.write(createHmac("sha256",Buffer.from(process.env.COTIRONDA_D052_HMAC_ID,"hex")).update(JSON.stringify(["cotironda","chat",1,"whapi_d052_ci",process.env.CHAT])).digest("hex"))')"
+          psql -X -v ON_ERROR_STOP=1 -v d052_password="$ci_pass" -v d052_chat_key="$d052_chat" -f scripts/ci/whapi-pg/confirm-d052-seed.sql > /dev/null
+          COTIRONDA_D052_E2E=true COTIRONDA_D052_DB_LOGIN=cotironda_confirm_d052_ci_login COTIRONDA_D052_DB_PASSWORD="$ci_pass" node --experimental-strip-types scripts/ci/whapi-pg/confirm-d052-e2e.mjs
+          psql -X -v ON_ERROR_STOP=1 <<'SQL'
+          select ci_helpers.assert_true(
+            (select count(*)=9 from cotironda_private.whapi_inbox_v1
+              where channel_id='whapi_d052_ci'), 'd052_persisted_inbox');
+          select ci_helpers.assert_true(
+            (select count(*)=8 from cotironda_private.whapi_inbox_v1
+              where channel_id='whapi_d052_ci' and kind='text'
+                and payload_ciphertext is not null
+                and crypto_key_id='aes_d052_ci'), 'd052_encrypted_text');
+          select ci_helpers.assert_true(
+            (select count(*)=1 from cotironda_private.whapi_inbox_v1
+              where channel_id='whapi_d052_ci' and kind='opt_out'
+                and payload_ciphertext is null), 'd052_opt_out');
+          select ci_helpers.assert_true(
+            (select count(*)=2 from cotironda_private.whapi_offer_sources_d048
+              where round_id='dddddddd-0000-4000-8000-000000000524'),
+              'd052_sources');
+          select ci_helpers.assert_true(
+            (select count(*)=2 from cotironda_private.whapi_reply_jobs_d047
+              where round_id='dddddddd-0000-4000-8000-000000000524'
+                and status='accepted_by_transport'), 'd052_transport_acks');
+          select ci_helpers.assert_true(
+            (select count(*)=2 from cotironda_private.whapi_confirm_sources_d049
+              where round_id='dddddddd-0000-4000-8000-000000000524'),
+              'd052_confirm_receipts');
+          select ci_helpers.assert_true(
+            (select count(*)=2 from cotironda_private.offer_versions_v1
+              where round_id='dddddddd-0000-4000-8000-000000000524'),
+              'd052_immutable_offer_versions');
+          SQL
+
+
+      - name: D053 prevenir reenvío HTTP incierto y conciliar (solo PG17 CI)
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_no_duplicate_send_d053.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/111_whapi_no_duplicate_send_d053.sql
+
+      - name: D054 worker real Node22/PG17 con transporte FICTICIO sin red (solo CI)
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_sender_gateway_d054.sql
+          ci_pass="$(openssl rand -hex 24)"
+          export COTIRONDA_D054_ACK_HMAC_KEY="$(openssl rand -hex 32)"
+          for value in "$ci_pass" "$COTIRONDA_D054_ACK_HMAC_KEY"; do
+            echo "::add-mask::$value"
+          done
+          psql -X -v ON_ERROR_STOP=1 -v d054_password="$ci_pass" -f scripts/ci/whapi-pg/send-d054-seed.sql > /dev/null
+          COTIRONDA_D054_CI=true COTIRONDA_D054_DB_LOGIN=cotironda_send_d054_ci COTIRONDA_D054_DB_PASSWORD="$ci_pass" node --experimental-strip-types scripts/ci/whapi-pg/send-d054-e2e.mjs
+          psql -X -v ON_ERROR_STOP=1 <<'SQL'
+          select ci_helpers.assert_true(
+            (select count(*)=3 from cotironda_private.whapi_reply_jobs_d047
+              where channel_id='whapi_d054_ci'), 'd054_three_pending_fixtures');
+          select ci_helpers.assert_true(
+            (select count(*)=1 from cotironda_private.whapi_reply_jobs_d047
+              where channel_id='whapi_d054_ci' and send_phase='accepted'
+                and status='accepted_by_transport'
+                and transport_ack_key ~ '^[a-f0-9]{64}$'), 'd054_accepted_only_once');
+          select ci_helpers.assert_true(
+            (select count(*)=1 from cotironda_private.whapi_reply_jobs_d047
+              where channel_id='whapi_d054_ci' and send_phase='uncertain'
+                and status='leased' and attempts=1
+                and transport_ack_key is null), 'd054_timeout_did_not_retry');
+          select ci_helpers.assert_true(
+            (select count(*)=1 from cotironda_private.whapi_reply_jobs_d047
+              where channel_id='whapi_d054_ci' and send_phase='not_started'
+                and status='queued' and attempts=1),
+            'd054_prehttp_error_safe_retry');
+          select ci_helpers.assert_true(
+            not has_function_privilege('cotironda_send_d054_ci',
+              'cotironda_private.whapi_reconcile_uncertain_d053(uuid,text,text,text)',
+              'EXECUTE'), 'd054_sender_cannot_reconcile');
+          SQL
+
+
+      - name: D056 cupos y reserva económica atomica antes de HTTP (solo PG17 CI)
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_send_limits_atomic_d056.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/112_whapi_send_limits_atomic_d056.sql
+
+
+      - name: D056 dos trabajadores simultaneos, un solo cupo real (Node y PG17 CI)
+        run: |
+          set -euo pipefail
+          ci_pass="$(openssl rand -hex 24)"
+          echo "::add-mask::$ci_pass"
+          psql -X -v ON_ERROR_STOP=1 -v d056_password="$ci_pass" -f scripts/ci/whapi-pg/quota-d056-concurrency-seed.sql > /dev/null
+          COTIRONDA_D056_CI=true COTIRONDA_D056_DB_LOGIN=cotironda_quota_d056_ci COTIRONDA_D056_DB_PASSWORD="$ci_pass" node --experimental-strip-types scripts/ci/whapi-pg/quota-d056-concurrency-e2e.mjs
+          psql -X -v ON_ERROR_STOP=1 <<'SQL'
+          select ci_helpers.assert_true(
+            (select count(*)=1 from cotironda_private.whapi_send_reservations_d056
+              where buyer_org_id='aaaaaaaa-0000-4000-8000-000000000571'
+                and channel_id='d056_parallel'),
+            'd056_one_concurrent_reservation');
+          select ci_helpers.assert_true(
+            (select count(*)=1 from cotironda_private.whapi_reply_jobs_d047
+              where channel_id='d056_parallel' and send_phase='in_flight'),
+            'd056_one_concurrent_begin');
+          select ci_helpers.assert_true(
+            (select count(*)=1 from cotironda_private.whapi_reply_jobs_d047
+              where channel_id='d056_parallel' and send_phase='not_started'
+                and status='leased'),
+            'd056_other_worker_never_started');
+          SQL
+
+
+  migrations-from-zero:
+    name: Reconstruir historial 12 migraciones en PostgreSQL limpio
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci_only_password
+          POSTGRES_DB: cotironda_ci_fresh
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci_fresh"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      PGPASSWORD: ci_only_password
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGDATABASE: cotironda_ci_fresh
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Emular solamente roles Supabase en PostgreSQL efímero
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/00_bootstrap.sql
+      - name: Aplicar las 12 migraciones HISTÓRICAS desde cero y en orden
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          migrations=(supabase/migrations/*.sql)
+          if [[ "${#migrations[@]}" -ne 12 ]]; then
+            echo 'ERROR: número de migraciones inesperado, revisar historial dev' >&2
+            exit 1
+          fi
+          for file in "${migrations[@]}"; do
+            if [[ "${file}" == *"20261029211609_storage_upload_fail_closed.sql" ]]; then
+              echo 'Validando contratos históricos de carga antes del cierre de INSERT'
+              psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/94_storage_private_tenant.sql > /dev/null
+              psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/95_storage_session_revocation.sql > /dev/null
+            fi
+            echo "Aplicando ${file}"
+            psql -X -v ON_ERROR_STOP=1 -f "${file}" > /dev/null
+          done
+      - name: Comprobar guard y privilegios de la cadena reconstruida
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 <<'SQL'
+          select ci_helpers.assert_true(
+            (select enabled=false from cotironda_private.registration_settings where singleton=true),
+            'registro no debe estar habilitado tras migraciones');
+          select ci_helpers.assert_true(
+            not has_table_privilege('authenticated',
+              'cotironda_private.registration_attempt_quotas','SELECT'),
+            'usuario no puede leer cuota privada');
+          select ci_helpers.assert_true(
+            not has_function_privilege('anon',
+              'public.register_company_for_current_user(uuid,text,text,text)','EXECUTE'),
+            'usuario anonimo no puede ejecutar alta');
+          select ci_helpers.assert_true(
+            not (select prosecdef from pg_proc
+                 where oid='public.register_company_for_current_user(uuid,text,text,text)'::regprocedure),
+            'RPC publica debe ser invoker');
+          SQL
+      - name: Probar alta, idempotencia, sesión revocada y cuota sobre migraciones reales
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/91_rate_limit.sql
+      - name: Cuarenta intentos concurrentes sobre historial reconstruido
+        run: bash supabase/tests/ci/92_rate_limit_concurrency.sh
+      - name: Revocacion y JWT antiguo con RPC estructurada
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/93_revoked_session_status.sql
+      - name: Storage y RLS comercial protegidos tras 12 migraciones
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/96_storage_direct_upload_disabled.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/97_quarantine_ledger.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/98_commercial_session_guard.sql
+      - name: 'Verificar limpieza final: flag apagado y cero datos de pruebas'
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 <<'SQL'
+          select ci_helpers.assert_true(
+            (select enabled=false from cotironda_private.registration_settings where singleton=true),
+            'flag SQL debe quedar apagado tras test concurrente');
+          select ci_helpers.assert_true(
+            (select count(*) from auth.users)=0 and
+            (select count(*) from auth.sessions)=0 and
+            (select count(*) from public.organizations)=0 and
+            (select count(*) from cotironda_private.registration_attempt_quotas)=0 and
+            (select count(*) from storage.objects)=0 and
+            (select count(*) from cotironda_private.document_intake_jobs)=0 and
+            (select public=false from storage.buckets where id='cotironda-buyer-drafts') and
+            (select public=false from storage.buckets where id='cotironda-upload-quarantine'),
+            'datos sintéticos de pruebas deben limpiarse');
+          SQL
+
+      - name: Restaurar backup PG17 en base aislada sin datos ni secretos reales
+        env:
+          COTIRONDA_CI_BACKUP_RESTORE: 'true'
+        run: bash scripts/ci/pg17-backup-restore-drill.sh
+      - name: D037 restauración parcial segura IA (D018/D019/D021, sin D020 pg_net)
+        run: |
+          set -euo pipefail
+          node scripts/ci/verify-dev-ai-migration-sources-d037.mjs
+          psql -X -v ON_ERROR_STOP=1 -f supabase/recovery/dev_quality_20261030/20261030182413_dev_quality_once_only.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/recovery/dev_quality_20261030/20261030190232_dev_quality_results_ledger.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/recovery/dev_quality_20261030/20261030194856_dev_quality_numeric_diagnostics_d021.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/107_recovered_quality_safe_subset.sql
+      - name: D038 ensayo lógico INERTE D020, flags OFF y SIN extensiones de red
+        env:
+          COTIRONDA_CI_INERT_RESTORE: 'true'
+        run: |
+          set -euo pipefail
+          node scripts/ci/verify-dev-ai-migration-sources-d037.mjs
+          node scripts/ci/prepare-inert-quality-d038.mjs /tmp/cotironda_d038_inert.sql
+          psql -X -v ON_ERROR_STOP=1 -f /tmp/cotironda_d038_inert.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/108_inert_d020_restore.sql
+          rm -f /tmp/cotironda_d038_inert.sql
+
+

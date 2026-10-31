@@ -1,5 +1,14 @@
 # 05 — WhatsApp y Whapi (diseño; SIN conexión actual)
 
+## UX-001 — canal principal de trabajo
+**WhatsApp no es un complemento de notificaciones: es la vía de uso preferida para comprador Y proveedor.** El comprador puede mandar su lista y consultar el avance; el proveedor puede recibir, responder, corregir y confirmar sin portal. La plataforma interpreta, registra y sincroniza estados sin obligar a copiar presupuestos. El portal queda como opción para control, comparación y adjudicación manual; no como curso obligatorio para operar.
+- Evitar menús conversacionales interminables, comandos rígidos, mensajes masivos, preguntas repetidas y requisitos de descargar aplicaciones. Mensajes breves, humanos y con siguiente paso claro.
+- Diferenciar «mensaje recibido», «borrador», «esperando confirmación» y «oferta confirmada». No declarar «presupuesto entregado» antes de confirmación efectiva; informar fallas/pendientes sin hacer repetir al proveedor la respuesta.
+- No aceptar precios inventados, ni envíos sin consentimiento, ni contacto indebido. Confirmación de precio y opt-out deben poder resolverse de forma sencilla por el canal.
+- Comprador no recibe «ganador» al vencer siete días automáticamente: **cierra la recepción, se comparan ofertas, y adjudica personalmente**.
+- Antes del piloto probar el recorrido entero en celulares de personas no técnicas de ambos roles y medir si necesitan ayuda para completar pedido/cotización.
+**Implementación WhatsApp real aún pendiente.** [Criterios UX-001](89-ux-cero-friccion-whatsapp-first.md).
+
 ## Propósito
 El proveedor puede cotizar sin aprender un portal. WhatsApp ofrece invitaciones, envío de archivo, correcciones y avisos de cierre/resultado. Portal opcional para contingencia.
 
@@ -22,3 +31,9 @@ Validar autenticidad webhook según posibilidades reales del proveedor; deduplic
 
 ## Comunicación
 Invitación pertinente, recordatorio neutral cercano al vencimiento cuando proceda, aviso de resultado. No presionar para bajar precios ni exponer datos ajenos. Controlar costos por cliente.
+
+## D013 — envío selectivo automático
+Al enviar la lista, el comprador autoriza el contacto automático. Una sola solicitud idempotente por proveedor y ronda, con únicamente los materiales concretos que confirmó trabajar y que puede entregar en la zona, sin difundir archivo original completo. Respetar opt-in, exclusiones, baja, límite de frecuencia y costos; producto con duda queda retenido, el resto avanza. La confirmación del proveedor para precios y cambios sigue siendo obligatoria.
+
+## D028 — Baja por WhatsApp sin fricción y buzón durable (propuesta en código)
+Un proveedor que escriba **BAJA** debe quedar desuscripto sin ir al portal ni tener una ronda activa; las invitaciones futuras quedan bloqueadas. Debe registrarse en una base privada sin almacenar teléfono ni texto en claro. Se exige asociación segura del chat con proveedor, reintentos idempotentes, consentimiento comprobable y respuestas de estado honestas. El módulo D028 todavía está probado solo en CI sintética, **no en Whapi real**. Ver [docs/92](92-whapi-buzon-privado-y-baja.md).

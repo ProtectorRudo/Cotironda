@@ -1,0 +1,190 @@
+name: Portal Next.js - Build seguro
+on:
+  pull_request:
+  push:
+    branches: [feat/01-portal-registro]
+permissions:
+  contents: read
+jobs:
+  nextjs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    defaults:
+      run:
+        working-directory: apps/portal
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22.16.0'
+      - name: Instalar versiones exactas
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Verificar sintaxis del E2E sin red ni credenciales
+        run: node --check scripts/auth-real-smoke.mjs
+      - name: E2E con Auth autentico NO puede correr con credenciales en GitHub Actions
+        shell: bash
+        run: |
+          set -euo pipefail
+          LOG="$RUNNER_TEMP/cotironda-auth-guard.log"
+          if npm run e2e:auth:dev > "$LOG" 2>&1; then
+            echo 'ERROR: el E2E autentico se ejecuto donde debe bloquearse'
+            exit 1
+          fi
+          if ! grep -q 'auth_e2e_entorno_remoto_bloqueado' "$LOG"; then
+            echo 'ERROR: el runner no llego al guard; revisar dependencias/Node'
+            exit 1
+          fi
+          rm -f "$LOG"
+          echo 'PASS: E2E Auth genuino denegado antes de la red en GitHub Actions'
+
+      - name: Contrato HTTP de supabase-js con fetch simulado
+        run: node scripts/postgrest-429-contract.mjs
+      - name: Contrato SSR cookies y refresh con Supabase SDK y Next Proxy sin red
+        run: node --experimental-strip-types scripts/ssr-cookies-contract.mjs
+      - name: Contrato de carga/descarga privada Storage con SDK real y fetch simulado
+        run: node --experimental-strip-types scripts/storage-http-contract.mjs
+      - name: TypeScript
+        run: npm run typecheck
+      - name: TypeScript dominio y adaptadores servidor
+        run: ./node_modules/.bin/tsc --noEmit --project ../../tsconfig.json --typeRoots ./node_modules/@types
+      - name: Compilar con registro deshabilitado
+        env:
+          COTIRONDA_REGISTRATION_ENABLED: 'false'
+        run: npm run build
+      - name: Smoke HTTP con autenticación desactivada
+        env:
+          COTIRONDA_REGISTRATION_ENABLED: 'false'
+        run: node scripts/smoke-disabled.mjs
+      - name: Reconstruir desde cero con entorno productivo simulado y flag true
+        env:
+          VERCEL_ENV: production
+          COTIRONDA_REGISTRATION_ENABLED: 'true'
+          COTIRONDA_SUPABASE_PROJECT_REF: qkercsoqhehbenbbncwk
+          NEXT_PUBLIC_SUPABASE_URL: https://qkercsoqhehbenbbncwk.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_dummy_never_valid
+          COTIRONDA_SITE_ORIGIN: https://cotironda-ci.example
+        run: rm -rf .next && npm run build
+      - name: Smoke HTTP real bloqueado en Vercel Production simulado
+        env:
+          VERCEL_ENV: production
+          COTIRONDA_REGISTRATION_ENABLED: 'true'
+          COTIRONDA_SUPABASE_PROJECT_REF: qkercsoqhehbenbbncwk
+          NEXT_PUBLIC_SUPABASE_URL: https://qkercsoqhehbenbbncwk.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_dummy_never_valid
+          COTIRONDA_SITE_ORIGIN: https://cotironda-ci.example
+        run: node --experimental-strip-types scripts/smoke-production-guard.mjs
+
+
+      - name: Reconstruir desde cero con entorno Preview de Auth aislado
+        env:
+          VERCEL_ENV: preview
+          COTIRONDA_REGISTRATION_ENABLED: 'true'
+          COTIRONDA_SUPABASE_PROJECT_REF: qkercsoqhehbenbbncwk
+          NEXT_PUBLIC_SUPABASE_URL: https://qkercsoqhehbenbbncwk.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_dummy_never_valid
+          COTIRONDA_SITE_ORIGIN: https://cotironda-ci.example
+        run: rm -rf .next && npm run build
+      - name: Generar certificado TLS efimero para HTTPS local de CI
+        shell: bash
+        run: |
+          set -euo pipefail
+          CERT="$RUNNER_TEMP/cotironda-ci-https.crt"
+          KEY="$RUNNER_TEMP/cotironda-ci-https.key"
+          openssl req -x509 -newkey rsa:2048 -sha256 -nodes -days 1 \
+            -keyout "$KEY" -out "$CERT" \
+            -subj '/CN=localhost' \
+            -addext 'subjectAltName=DNS:localhost,IP:127.0.0.1' \
+            > /dev/null 2>&1
+          chmod 600 "$KEY" "$CERT"
+          echo "COTIRONDA_CI_TLS_CERT=$CERT" >> "$GITHUB_ENV"
+          echo "COTIRONDA_CI_TLS_KEY=$KEY" >> "$GITHUB_ENV"
+      - name: HTTPS real loopback con refresh SSR, cookies seguras y prohibicion de cache
+        env:
+          VERCEL_ENV: preview
+          COTIRONDA_REGISTRATION_ENABLED: 'true'
+          COTIRONDA_SUPABASE_PROJECT_REF: qkercsoqhehbenbbncwk
+          NEXT_PUBLIC_SUPABASE_URL: https://qkercsoqhehbenbbncwk.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_dummy_never_valid
+          COTIRONDA_SITE_ORIGIN: https://cotironda-ci.example
+          COTIRONDA_CI_TLS_LOOPBACK: 'true'
+        run: node scripts/smoke-https-ssr.mjs
+      - name: Smoke HTTP Next Preview con identidad y cookies totalmente ficticias
+        env:
+          VERCEL_ENV: preview
+          COTIRONDA_REGISTRATION_ENABLED: 'true'
+          COTIRONDA_SUPABASE_PROJECT_REF: qkercsoqhehbenbbncwk
+          NEXT_PUBLIC_SUPABASE_URL: https://qkercsoqhehbenbbncwk.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_dummy_never_valid
+          COTIRONDA_SITE_ORIGIN: https://cotironda-ci.example
+        run: node scripts/smoke-preview-auth.mjs
+
+      - name: Reconstruir desde cero Preview SSO de solo login (registro false)
+        env:
+          VERCEL_ENV: preview
+          COTIRONDA_REGISTRATION_ENABLED: 'false'
+          COTIRONDA_AUTH_PREVIEW_ENABLED: 'true'
+          VERCEL_GIT_COMMIT_REF: test/01-auth-only-preview
+          COTIRONDA_SUPABASE_PROJECT_REF: qkercsoqhehbenbbncwk
+          NEXT_PUBLIC_SUPABASE_URL: https://qkercsoqhehbenbbncwk.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_dummy_never_valid
+        run: rm -rf .next && npm run build
+      - name: HTTPS real Preview login-only sin signup ni registro empresarial
+        env:
+          VERCEL_ENV: preview
+          COTIRONDA_REGISTRATION_ENABLED: 'false'
+          COTIRONDA_AUTH_PREVIEW_ENABLED: 'true'
+          VERCEL_GIT_COMMIT_REF: test/01-auth-only-preview
+          COTIRONDA_SUPABASE_PROJECT_REF: qkercsoqhehbenbbncwk
+          NEXT_PUBLIC_SUPABASE_URL: https://qkercsoqhehbenbbncwk.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_dummy_never_valid
+          COTIRONDA_CI_TLS_LOOPBACK: 'true'
+          COTIRONDA_CI_AUTH_ONLY: 'true'
+        run: node scripts/smoke-https-ssr.mjs
+
+      - name: Compilar Preview SSO dedicada a auditoría de cookies, con registro false
+        env:
+          VERCEL_ENV: preview
+          VERCEL_GIT_COMMIT_REF: security/01-browser-cookie-cache-audit
+          COTIRONDA_REGISTRATION_ENABLED: 'false'
+          COTIRONDA_AUTH_PREVIEW_ENABLED: 'true'
+          COTIRONDA_SUPABASE_PROJECT_REF: qkercsoqhehbenbbncwk
+          NEXT_PUBLIC_SUPABASE_URL: https://qkercsoqhehbenbbncwk.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_dummy_never_valid
+        run: rm -rf .next && npm run build
+      - name: HTTPS real loopback de diagnóstico privado, Auth ficticio sin red
+        env:
+          VERCEL_ENV: preview
+          VERCEL_GIT_COMMIT_REF: security/01-browser-cookie-cache-audit
+          COTIRONDA_REGISTRATION_ENABLED: 'false'
+          COTIRONDA_AUTH_PREVIEW_ENABLED: 'true'
+          COTIRONDA_SUPABASE_PROJECT_REF: qkercsoqhehbenbbncwk
+          NEXT_PUBLIC_SUPABASE_URL: https://qkercsoqhehbenbbncwk.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_dummy_never_valid
+          COTIRONDA_CI_TLS_LOOPBACK: 'true'
+          COTIRONDA_CI_AUTH_ONLY: 'true'
+        run: node scripts/smoke-https-ssr.mjs
+
+      - name: Compilar Preview de auditoria Auth signup sin registro ni usuarios reales
+        env:
+          VERCEL_ENV: preview
+          VERCEL_GIT_COMMIT_REF: security/01-auth-signup-readonly-check
+          COTIRONDA_REGISTRATION_ENABLED: 'false'
+          COTIRONDA_AUTH_PREVIEW_ENABLED: 'true'
+          COTIRONDA_SUPABASE_PROJECT_REF: qkercsoqhehbenbbncwk
+          NEXT_PUBLIC_SUPABASE_URL: https://qkercsoqhehbenbbncwk.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_dummy_never_valid
+        run: rm -rf .next && npm run build
+      - name: HTTPS real CI de consulta Auth solo GET (sin ejecutar Auth remoto)
+        env:
+          VERCEL_ENV: preview
+          VERCEL_GIT_COMMIT_REF: security/01-auth-signup-readonly-check
+          COTIRONDA_REGISTRATION_ENABLED: 'false'
+          COTIRONDA_AUTH_PREVIEW_ENABLED: 'true'
+          COTIRONDA_SUPABASE_PROJECT_REF: qkercsoqhehbenbbncwk
+          NEXT_PUBLIC_SUPABASE_URL: https://qkercsoqhehbenbbncwk.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_dummy_never_valid
+          COTIRONDA_CI_TLS_LOOPBACK: 'true'
+          COTIRONDA_CI_AUTH_ONLY: 'true'
+        run: node scripts/smoke-https-ssr.mjs

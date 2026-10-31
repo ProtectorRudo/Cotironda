@@ -1,0 +1,22 @@
+{
+  "name": "cotironda",
+  "private": true,
+  "type": "module",
+  "version": "0.0.0",
+  "scripts": {
+    "test:unit": "node --experimental-strip-types --test tests/unit/*.test.mjs",
+    "typecheck": "tsc --project tsconfig.json",
+    "demo:texto": "node --experimental-strip-types scripts/demo/flujo-texto.mjs",
+    "demo:xlsx": "node --experimental-strip-types scripts/demo/xlsx-demo.mjs",
+    "eval:ia": "node --experimental-strip-types scripts/eval/openai-texto.mjs",
+    "benchmark:ia:offline": "node --experimental-strip-types scripts/eval/quality-gold-offline.mjs",
+    "demo:productos": "node --experimental-strip-types scripts/demo/productos-canonicos.mjs",
+    "demo:sin-ia": "node --experimental-strip-types scripts/demo/entrada-economica.mjs",
+    "benchmark:producto:offline": "node --experimental-strip-types scripts/eval/producto-quality-offline.mjs",
+    "benchmark:producto:live": "node --experimental-strip-types scripts/eval/producto-quality-live.mjs",
+    "sync:edge-quality-core": "node scripts/dev/sync-edge-quality-core.mjs"
+  },
+  "engines": {
+    "node": ">=22.16.0"
+  }
+}

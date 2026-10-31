@@ -22,3 +22,6 @@
 
 ## Pendiente antes de SQL
 Cardinalidades, reglas de borrado/retención, índices, restricciones únicas, permisos, concurrencia, estrategia de migraciones y restauración. La arquitectura de datos es una propuesta, no tablas creadas.
+
+## Implementación preparatoria de Etapa 01 (sin migración)
+Se creó `supabase/schema.sql` con organizaciones, membresías, perfiles de proveedores, categorías, productos, zonas y contactos restringidos al esquema privado. RLS y permisos SQL propuestos. **No se aplicó a PostgreSQL y falta validar completamente la seguridad real con tests de empresas ajenas.**
