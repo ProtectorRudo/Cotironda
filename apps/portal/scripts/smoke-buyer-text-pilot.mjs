@@ -72,7 +72,7 @@ function noStore(r){
  assert.match(r.headers.get('cache-control')||'',/no-store/,
   'Cache-Control missing at '+r.url);
 }
-function post(body,credentials='',reqOrigin=app){
+function post(body,credentials='',reqOrigin=origin){
  return hit('/api/rondas',{
   method:'POST',headers:{
    'content-type':'application/json',
@@ -134,7 +134,7 @@ try{
  assert.deepEqual(await list.json(),{rondas:[]});
  noStore(list);
  const blockedSignup=await hit('/api/organizaciones',{
-  method:'POST',headers:{cookie,origin:app,'content-type':'application/json'},
+  method:'POST',headers:{cookie,origin,'content-type':'application/json'},
   body:JSON.stringify({nombre:'Trampa CI',tipo:'buyer'})});
  assert.equal(blockedSignup.status,503);
  noStore(blockedSignup);
