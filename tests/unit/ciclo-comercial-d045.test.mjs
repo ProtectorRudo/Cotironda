@@ -43,7 +43,7 @@ test('D045: quien hizo opt-out, no consintió o está fuera de zona no recibe in
  }
  assert.ok(r.invitaciones.plan.invitaciones.every(x=>x.items.length>=1));
  assert.ok(r.invitaciones.plan.invitaciones.every(x=>
-   x.clave_idempotencia==='ronda_d045_ficticia:'+x.proveedor_id));
+   x.clave_idempotencia==='ronda_d045_ficticia:familia:'+x.proveedor_id));
 });
 test('D045: marca mencionada no es exclusividad, 50kg a 25kg es consulta, no oferta homologada',()=>{
  const r=run();
