@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
-import { autenticacionPortalHabilitada, autenticacionPreviewSoloIngreso } from '../../../../src/server/portal-entorno.ts';
+import { autenticacionPortalHabilitada, autenticacionPreviewSoloIngreso, autenticacionPreviewProveedorD074 } from '../../../../src/server/portal-entorno.ts';
 
 export function entornoAuthConfigurado(): boolean {
   return autenticacionPortalHabilitada(process.env);
