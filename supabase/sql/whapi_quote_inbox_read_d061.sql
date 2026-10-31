@@ -29,6 +29,17 @@ create policy d061_read_draft on cotironda_private.offer_drafts_v1
 create policy d061_read_receipt on cotironda_private.whapi_received_offers_d059
  for select to cotironda_quote_reader_d061 using(true);
 
+grant select on cotironda_private.round_requests_d064,
+ cotironda_private.round_match_preparations_d065,
+ cotironda_private.round_supplier_lines_d065
+ to cotironda_quote_reader_d061;
+create policy d067_read_request on cotironda_private.round_requests_d064
+ for select to cotironda_quote_reader_d061 using(true);
+create policy d067_read_preparation on cotironda_private.round_match_preparations_d065
+ for select to cotironda_quote_reader_d061 using(true);
+create policy d067_read_scope on cotironda_private.round_supplier_lines_d065
+ for select to cotironda_quote_reader_d061 using(true);
+
 create function cotironda_private.whapi_quote_read_d061(p_channel text,p_message text)
 returns jsonb language plpgsql stable security definer set search_path='' as $fn$
 declare m cotironda_private.whapi_inbox_v1%rowtype;
@@ -61,9 +72,27 @@ begin
   from cotironda_private.whapi_received_offers_d059 s
   where s.channel_id=m.channel_id and s.message_key=m.message_key;
  v_expected:=coalesce(v_saved,v_expected,0);
- select jsonb_agg(jsonb_build_object('itemId',i.product_code,
-    'line_no',i.line_no,'unit',i.unit) order by i.line_no) into v_lines
- from cotironda_private.round_items_v1 i where i.round_id=m.round_id;
+ -- D064 commercial orders require D065 preparation for THIS channel.
+ -- Never give the interpreter the complete buyer list for a partial supplier.
+ -- Old synthetic pre-D064 rounds preserve their existing D061 contract.
+ if exists(select 1 from cotironda_private.round_requests_d064 req
+    where req.round_id=m.round_id) then
+  if not exists(select 1 from cotironda_private.round_match_preparations_d065 prep
+     where prep.round_id=m.round_id and prep.channel_id=m.channel_id)
+  then return null;end if;
+  select pg_catalog.jsonb_agg(pg_catalog.jsonb_build_object(
+   'itemId',i.product_code,'line_no',i.line_no,'unit',i.unit)
+   order by i.line_no) into v_lines
+  from cotironda_private.round_supplier_lines_d065 scoped
+  join cotironda_private.round_items_v1 i
+   on i.round_id=scoped.round_id and i.line_no=scoped.line_no
+  where scoped.round_id=m.round_id and scoped.supplier_org_id=m.supplier_org_id;
+ else
+  select pg_catalog.jsonb_agg(pg_catalog.jsonb_build_object(
+   'itemId',i.product_code,'line_no',i.line_no,'unit',i.unit)
+   order by i.line_no) into v_lines
+  from cotironda_private.round_items_v1 i where i.round_id=m.round_id;
+ end if;
  if v_lines is null then return null;end if;
  return pg_catalog.jsonb_build_object(
   'channel',m.channel_id,'messageKey',m.message_key,'chatKey',m.chat_key,

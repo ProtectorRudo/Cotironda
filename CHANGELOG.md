@@ -739,3 +739,6 @@
 
 ### 31/10/2026 — MVP-017: paquetes WhatsApp por proveedor con rubro y consentimiento, SIN ENVÍO
 - Función privada D066 de vista previa con scope D065, etiqueta curada, zona, cantidad, IVA explícito y revalidación de contacto/BAJA, rubro y área. Generador TS sin red. Tests PostgreSQL17 con BAJA posterior y zona revocada + casos maliciosos en unitarias. No envío, no nuevas tablas en Supabase DEV, #175 pendiente. Ver docs/137.
+
+### 31/10/2026 — MVP-018: defensa de cotización entrante fuera de rubro
+- D061 restringe snapshot a líneas asignadas D065 para rondas D064. Nuevo trigger D067 impide escribir ofertas de artículos ajenos incluso por RPC directa; roles dedicados NOLOGIN/RLS y ensayos PostgreSQL17 con dos proveedores, replay y BAJA. Sin Whapi real ni instalación DEV. Ver docs/138.

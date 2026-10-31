@@ -383,6 +383,12 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_quote_inbox_read_d061.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/116_whapi_quote_read_d061.sql
 
+      - name: "MVP-018 D067 scope de cotización entrante y oferta PG17 CI"
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_quote_scope_guard_d067.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/122_quote_scope_d067.sql
+
       - name: MVP-012 D062 cola durable con leases y reintentos (PG17 CI)
         run: |
           set -euo pipefail
