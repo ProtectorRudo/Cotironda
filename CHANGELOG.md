@@ -745,3 +745,6 @@
 
 ### 31/10/2026 — MVP-019: vault privado de destinatarios WhatsApp cifrados (sin enviar)
 - Vínculo HMAC↔destino Whapi cifrado AES-256-GCM/AAD y tabla D068 inmutable privada, functions EXECUTE-only de enrolamiento/lectura con BAJA actual y scope D066; resolver TS sin red. Tests cripto+PG17 con proveedores ficticios, manipulación, replay, rol/área y opt-out. No modifica DEV/prod ni hace envíos. Ver docs/139.
+
+### 31/10/2026 — MVP-020: registro cifrado desde broker y onboarding verificados (sin envíos)
+- Adaptador D069 solo servidor reutiliza vault D068 y SQL con consentimiento/BAJA, autorizador HMAC inyectado, flags cerrados y respuestas sin PII. Broker D029 acepta puerto opcional y revalida proveedor después de persistir entrada autenticada. Pruebas unitarias webhook sintético, SQL D068 PG17 de BAJA/replay/identidad inexistente; ejecución CI sujeta a verificación. No implica alta real de comerciantes, Whapi activo ni cambios DEV/prod. Ver docs/140.

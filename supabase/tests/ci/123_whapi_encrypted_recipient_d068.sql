@@ -86,6 +86,22 @@ begin
  if cotironda_private.whapi_read_recipient_packet_d068(
    v_round,v_cement,'d065_ci',repeat('a',64)) is not null
  then raise exception 'd068_optout_not_enforced';end if;
+ -- Enrolment after BAJA must be rejected even as a historical replay.
+ begin
+  perform cotironda_private.whapi_store_recipient_d068(
+    'd065_ci',repeat('a',64),v_cement,'recipient_ci',
+    decode(repeat('ab',12),'hex'),decode(repeat('cd',32),'hex'),
+    decode(repeat('ef',16),'hex'));
+  raise exception 'd069_optout_replay_stored';
+ exception when insufficient_privilege then null;end;
+ -- Neither a foreign contact nor a made-up HMAC may be provisioned.
+ begin
+  perform cotironda_private.whapi_store_recipient_d068(
+    'd065_ci',repeat('f',64),v_cement,'recipient_ci',
+    decode(repeat('ab',12),'hex'),decode(repeat('cd',32),'hex'),
+    decode(repeat('ef',16),'hex'));
+  raise exception 'd069_unknown_contact_enrolled';
+ exception when insufficient_privilege then null;end;
 end;$revoked$;
 reset role;
 rollback to savepoint d068_recipient_fixture;
