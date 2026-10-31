@@ -234,3 +234,6 @@ Implementada interfaz POST Whapi.Cloud con token, lista de destinatarios, cupo y
 
 ### 31/10/2026 — D056 autorización persistente de costos y consentimiento, solo CI
 Cupo diario, mensual y presupuesto conservador por empresa compradora/canal, política inicialmente desactivada y ledger único por trabajo. La transición D053 `not_started→in_flight` se rechaza si no puede reservar costo en la misma transacción; autorización de destinatario compara el HMAC D029 contra el chat de D028 y revalida BAJA justo antes de HTTP D055. No equivale a facturación real de Whapi. Falta calibrar precios, proveedor de secretos, política admin auditada, piloto consentido y backup/restore DEV #175. Ver docs/119.
+
+### 31/10/2026 — MVP-001: priorizar primera experiencia real de uso, sin enviar nada
+Se detectó que más de 85 PRs estaban abiertos sin integración a main. Se frena la secuencia de nuevas capas y se agrega `/probar` en apps/portal: comprador pega lista, motor D021 procesa localmente, se ven materiales, dudas y proveedores ficticios seleccionados con catálogo/opt-in/zona. No hay precios, WhatsApp o IA externa. Siguiente hito: consolidación revisada + Preview aislada, restore de Supabase DEV #175, y luego un ciclo comercial con compradores/proveedores voluntarios. Ver docs/120 y Issue #217.
