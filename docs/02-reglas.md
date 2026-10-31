@@ -69,3 +69,6 @@ La pantalla del comprador debe mostrar **ofertas realmente registradas** de sus 
 
 ## MVP-015 — Registrar pedido no equivale a inventar proveedores
 Con datos estructurados fiables, la solicitud del comprador puede crear una ronda privada de forma transaccional sin segundo «Confirmo». Solo preguntar la zona de entrega cuando falte; no asumir provincia/localidad ni completar artículos sin datos. El SQL verifica sesión vigente y pertenencia activa de propietario/administrador de empresa compradora; reintento idéntico devuelve la misma ronda. Guardar zona y condición IVA expresa con la fuente, y **no enviar WhatsApp ni mostrar «solicitudes enviadas» hasta verificar proveedores reales habilitados por catálogo, cobertura y zona**. Ver docs/135.
+
+## MVP-016 — proveedores por rubro, zona y opt-in
+El comprador no elige proveedores manualmente. Cotironda comprueba rubro registrado (no inferido de nombres), zona de entrega con provincia/ciudad verificada, comercio habilitado, consentimiento Whapi actual y ausencia de BAJA. No invitar negocios fuera de zona; las ofertas parciales son válidas y se rotulan. Cada proveedor recibe solo artículos de sus rubros. Las invitaciones preparadas NO son WhatsApp enviado; al momento del envío se revalidarán consentimiento y cobertura. Ver docs/136.
