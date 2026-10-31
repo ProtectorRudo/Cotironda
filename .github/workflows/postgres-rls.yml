@@ -346,6 +346,12 @@ jobs:
           SQL
 
 
+      - name: MVP-009 D059 recepción directa de cotización sin Confirmo (PG17 CI)
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_receive_quote_direct_d059.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/114_whapi_receive_direct_d059.sql
+
       - name: MVP-003 restauracion PG17 de laboratorio a segunda base efimera sin DEV
         env:
           COTIRONDA_RESTORE_CI: 'true'
