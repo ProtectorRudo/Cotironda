@@ -17,3 +17,10 @@
 .mvp-compare-link{display:inline-block;margin-top:15px;background:#2672e4;border-radius:10px;color:white;font-weight:800;padding:12px 17px;text-decoration:none;font-size:13px}.mvp-compare-link:hover{background:#3684f3}.mvp-compare-link:focus-visible{outline:3px solid #a4cbff;outline-offset:3px}
 
 .mvp-iva-note{margin:0 0 22px;border:1px solid #3e6e91;border-left:3px solid #81b8ff;background:#16334a;border-radius:11px;padding:15px;color:#dbeaff}.mvp-iva-note strong{font-size:13px}.mvp-iva-note p{margin:8px 0;color:#c8dcf1;font-size:13px;line-height:1.5}.mvp-iva-note small{color:#9db8d0;font-size:11px;line-height:1.55}.mvp-iva-alert{border-color:#b68545;border-left-color:#ffc180;background:#342b24}
+
+/* MVP-008: pedir zona solo si falta, sin sumar un formulario permanente. */
+.mvp-zone-required{display:flex;flex-direction:column;gap:9px;padding:15px;margin:15px 0;background:#153449;border:1px solid #487da0;border-radius:12px}
+.mvp-zone-required label{font-weight:750;font-size:14px;color:#e5f3ff}
+.mvp-zone-required small{font-size:12px;color:#b9d1e4;line-height:1.55}
+.mvp-zone-input{width:100%;box-sizing:border-box;min-height:44px;border:1px solid #6c95b2;border-radius:8px;background:#f9fcff;color:#102438;font:inherit;padding:11px}
+.mvp-zone-input:focus-visible{outline:3px solid #76baf6;outline-offset:2px}
