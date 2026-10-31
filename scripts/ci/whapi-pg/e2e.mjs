@@ -55,8 +55,13 @@ async function runMessage(m,keyVersion='aes_2026_a'){
  return withDb(async db=>{
    const gateway=crearPuertoPostgresWhapiD030({
      query:async(sql,params)=>db.query(sql,[...params])});
+   const rotated=keyVersion==='aes_2026_b';
+   const cryptoKeys={...keys,contenidoAes:rotated?
+     Buffer.from(env.COTIRONDA_CI_AES_KEY_B,'hex'):keys.contenidoAes};
    const broker=construirBrokerWhapiPrivado({
-     channel,claves:keys,secretoWebhook:env.COTIRONDA_CI_WEBHOOK_SECRET,
+     channel,claves:cryptoKeys,contenidoKeyId:keyVersion,
+     clavesLectura:rotated?{aes_2026_a:keys.contenidoAes}:{},
+     secretoWebhook:env.COTIRONDA_CI_WEBHOOK_SECRET,
      habilitado:true,almacen:gateway,ahoraUnix:()=>now});
    const r=await procesarWebhookWhapiAislado(wrap(m),broker.dependencias);
    return {response:r,body:r.status===204?null:await r.json()};
