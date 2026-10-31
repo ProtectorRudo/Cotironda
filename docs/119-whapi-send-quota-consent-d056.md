@@ -37,3 +37,7 @@ Las políticas requieren **provisión por un administrador de infraestructura me
 Existe una carrera entre el último control SQL de D055 y el envío HTTP si llega una baja justo después: para minimizarla el futuro worker debe serializar la baja con la autorización final o mantener un mecanismo de cancelación; no declarar eliminación absoluta de la carrera. Ningún control de PostgreSQL puede probar que la empresa realmente consintió fuera de una fuente confiable: la verificación/consentimiento siguen siendo responsabilidad del onboarding seguro.
 
 No se instalaron migraciones en Supabase DEV ni producción, no se vinculó Whapi real, no hay IA ni mensajes reales. El respaldo y restauración de DEV de #175 siguen bloqueando la aplicación comercial.
+
+### Prueba real de concurrencia independiente
+
+Además del ensayo SQL transaccional, `scripts/ci/whapi-pg/quota-d056-concurrency-seed.sql` crea **dos trabajos distintos de un mismo comprador/canal con cupo exacto de un mensaje**. `quota-d056-concurrency-e2e.mjs` abre **dos conexiones reales independientes** con login SQL de permisos mínimos y ejecuta simultáneamente `whapi_begin_send_d053` para ambos. Se exige exactamente una reserva y una denegación de cuota, sin permitir SELECT de tablas o `SET ROLE postgres`; GitHub vuelve a contar las filas finales de la base. Todo sin HTTP, Whapi ni IA. El bloqueo `FOR UPDATE` de la política es el punto de serialización verificable.
