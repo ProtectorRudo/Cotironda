@@ -26,11 +26,17 @@ const create=(overrides={})=>{
   habilitado:true,pilotoAutorizado:true,token:TOKEN,
   destinatariosPermitidos:[TO],
   autorizarIntento:async()=>{state.authorizations++;return state.authorizations<=state.limit},
-  fetcher:async(url,options)=>{
-   state.fetchCalls.push({url,options});
-   return response(success);
-  },...overrides
+  fetcher:async()=>response(success),
+  ...overrides
  };
+ // Capture EVERY injected transport, including adversarial replacements.
+ if(typeof opts.fetcher==='function'){
+   const originalFetcher=opts.fetcher;
+   opts.fetcher=async(url,options)=>{
+     state.fetchCalls.push({url,options});
+     return originalFetcher(url,options);
+   };
+ }
  return {state,port:crearTransporteWhapiCloudD055(opts),opts};
 };
 const rejects=async(p)=>assert.rejects(p,e=>e.message==='d055_transporte_no_disponible');
