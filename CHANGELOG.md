@@ -624,3 +624,7 @@
 ## [Sin publicar — D046 / Issue #195: borrador y confirmación de cotización por conversación]
 - Nuevo módulo de transición OFFLINE de oferta de proveedor con vínculo de ronda/chat validado por futuro backend, propuesta estructurada, preguntas por faltantes, confirmación por respuesta al borrador correcto o referencia explícita, idempotencia en memoria y versiones de precio inmutables.
 - Confirmación del proveedor NO homologa diferencias de marca/envase ni permite comparación hasta verificación técnica: todas las equivalencias arrancan `sin_verificar`. Pruebas normales/adversariales de replay, identidad ajena, faltantes y cierre; suite integrada con receptor Whapi simulado D027 sin entregar mensajes. No DB ni Whapi/IA reales, sin efectos en DEV/producción. Ver docs/109.
+
+## [Sin publicar — D047 / Issue #197: outbox de respuestas WhatsApp aislada]
+- SQL D047 privada con trabajo idempotente por ronda/proveedor/revisión, referencia a inbox D028 HMAC, validación de consentimiento y borrador D026, leases exclusivos SKIP LOCKED, token de acuse, backoff y máximo 3 intentos. En caso de cambio de revisión, cancela el trabajo obsoleto; si muere el worker en el último lease, pasa a exhausted tras vencer.
+- Pruebas transaccionales D047 sobre PostgreSQL17 de GitHub CI, sin datos personales, sin llamadas de Whapi/OpenAI, sin envío ni publicación. `accepted_by_transport` indica aceptación del transporte, nunca leído/entregado; persistencia de conversación D046 y correlación mensaje→versión todavía pendientes. Ver docs/110; bloqueo #175 intacto.
