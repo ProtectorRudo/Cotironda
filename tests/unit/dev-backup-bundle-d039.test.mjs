@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, writeFile, readFile, rm, symlink } from 'node:fs/promises';
+import { mkdtemp, writeFile, readFile, rm, symlink, chmod, link, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, dirname, basename } from 'node:path';
 import { checkBundle, MANIFEST, PIECES, PROJECT_REF } from '../../scripts/ops/verify-encrypted-dev-backup-d039.mjs';
 
 async function fixture(fn) {
@@ -77,4 +77,33 @@ test('D039 rechaza manifiesto corrupto', async () => fixture(async dir => {
 test('D039 exige hash externo confiable para verificar', async () => fixture(async dir => {
   await checkBundle('seal',dir);
   await assert.rejects(checkBundle('verify',dir),/D039_EXPECTED_MANIFEST_SHA256_REQUIRED/);
+}));
+
+test('D040 rechaza carpeta backup con permiso group/other', async () => fixture(async dir => {
+  await chmod(dir, 0o755);
+  await assert.rejects(checkBundle('seal',dir),/D039_DIRECTORY_PERMISSIONS/);
+}));
+test('D040 rechaza archivo age accesible por grupo u otros', async () => fixture(async dir => {
+  await chmod(join(dir, PIECES[1]), 0o644);
+  await assert.rejects(checkBundle('seal',dir),/D039_FILE_PERMISSIONS/);
+}));
+test('D040 rechaza hardlinks del contenido', async () => fixture(async dir => {
+  await rm(join(dir, PIECES[0]));
+  await link(join(dir, PIECES[1]), join(dir, PIECES[0]));
+  await assert.rejects(checkBundle('seal',dir),/D039_HARDLINK_REJECTED/);
+}));
+test('D040 rechaza symlink en un componente padre de la carpeta', async () => fixture(async dir => {
+  const alias=join(dir, 'alias-parent');
+  await symlink(dirname(dir),alias);
+  await assert.rejects(checkBundle('seal',join(alias,basename(dir))),/D039_DIRECTORY_UNSAFE/);
+}));
+test('D040 rechaza manifiesto existente con permiso público', async () => fixture(async dir => {
+  const sealed=await checkBundle('seal',dir);
+  await chmod(join(dir,MANIFEST),0o644);
+  await assert.rejects(checkBundle('verify',dir,sealed.manifest_sha256),/D039_FILE_PERMISSIONS/);
+}));
+test('D040 conserva modo privado de manifiesto creado 0600', async () => fixture(async dir => {
+  await checkBundle('seal',dir);
+  const metadata=await stat(join(dir,MANIFEST));
+  assert.equal(metadata.mode & 0o777,0o600);
 }));
