@@ -95,6 +95,14 @@ export function generarVistaCompradorMvp(texto:string):VistaCompradorMvp{
   });
   const pendientes=new Map(result.pendientes_ia.map(p=>
     [p.numero_linea,REASONS[p.motivo]??'Necesita revisión']));
+  // Producto reconocido pero sin proveedor apto NO está listo para enviar.
+  for(const item of result.plan.retenidas){
+    if(item.motivo!=='sin_proveedor_que_trabaje_producto')continue;
+    const origen=result.borrador.lineas.find(x=>x.fila===item.fila)?.ubicacion;
+    const fila=origen?.match(/^Texto, línea (\d+)$/u);
+    const numero=fila?Number(fila[1]):item.fila;
+    pendientes.set(numero,'No hay proveedores del catálogo ficticio que trabajen este material.');
+  }
   const fuentes=texto.split(/\r\n|\r|\n/u).map((s,i)=>({texto:s.trim(),numero:i+1}))
     .filter(x=>x.texto.length>0);
   const filas=fuentes.map(f=>({
@@ -117,7 +125,7 @@ export function generarVistaCompradorMvp(texto:string):VistaCompradorMvp{
     estado:'demo_local_sin_envio',
     lineas:result.resumen.lineas,
     aprovechadas:result.resumen.lineas_aprovechadas,
-    pendientes:result.resumen.lineas_pendientes_ia,
+    pendientes:pendientes.size,
     invitaciones:result.resumen.proveedores,
     mensajesEnviados:0,llamadasIA:0,preciosReales:0,
     filas,proveedores
