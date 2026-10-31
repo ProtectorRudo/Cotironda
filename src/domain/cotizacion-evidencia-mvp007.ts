@@ -150,10 +150,13 @@ export function prepararPropuestaEconomicaMvp007(raw:CotizacionFuenteMvp007):Pre
   const cita=citar(lines,item.evidenciaPrecio);
   const encontrado=precioEnCita(cita);
   let neto:string|null=null,iva:IvaExplicito|null=null;
-  if(original!==null&&encontrado!==null&&encontrado===original&&ivaCompatible){
+  const precioCitado=original!==null&&encontrado!==null&&encontrado===original;
+  if(precioCitado){
     priceProofs.push(item.evidenciaPrecio!.linea);
     preciosVerificados.push(Object.freeze({itemId:item.itemId,
      linea:item.evidenciaPrecio!.linea,precioOriginal:money(original)}));
+  }
+  if(precioCitado&&ivaCompatible){
     if(obs.iva.estado==='no_incluido'){
       neto=money(original);
       iva=rate;
