@@ -219,3 +219,6 @@ D027/D029 ahora incluyen referencia `context.quoted_id` validada en el contenido
 
 ### 31/10/2026 — D051 puerto privado de DB para verificar confirmación, CI solamente
 Se definieron dos consultas SQL protegidas para recuperar de D028 el mensaje cifrado y desde D047/D048 el acuse HMAC con procedencia. Adaptador server-only enlaza validación D050 con confirmación D049 mediante consultas parametrizadas, manteniendo revalidación transaccional D049. No existe login gateway ni Webhook Whapi real, ni instalación DEV o publicación; backup/restore #175 bloquea migraciones. Ver docs/114.
+
+### 31/10/2026 — D052 Node.js → PostgreSQL17 E2E sintético
+Conecta en un runner descartable el receptor D027, cifrado D029, entrada D030, borrador D048, salida D047 y confirmación D050/D051/D049 con un login SQL temporal de permisos limitados. Prueba dos versiones sucesivas, error de cita, replay y BAJA desde funciones reales con driver pg; la interpretación de precios y el acuse de transporte siguen siendo fixtures ficticios. No conectado a Whapi ni desplegado: backup/restore DEV #175 pendiente. Ver docs/115.
