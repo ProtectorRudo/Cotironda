@@ -27,7 +27,9 @@ function harness(){
      const existing=rows.get(entry.messageKey);
      if(existing){
        if(existing.fingerprint!==entry.fingerprint||
-           existing.cryptoKeyId!==entry.cryptoKeyId)throw Error('collision');
+           existing.chatKey!==entry.chatKey||
+           existing.kind!==entry.kind||
+           existing.sourceUnix!==entry.sourceUnix)throw Error('collision');
        return {estado:'entrada_persistida',repetido:true};
      }
      rows.set(entry.messageKey,entry);
@@ -65,6 +67,15 @@ test('rotar solo AES permite leer ambas generaciones, sin modificar HMAC del cha
  const retry=await procesarWebhookWhapiAislado(message('msg.key-0000001'),first.dependencias);
  assert.equal((await retry.json()).duplicadas,1);
  assert.equal(rows.size,2);
+ // Reenvío idéntico después de rotar AES: debe ser reconocido como replay.
+ const original=rows.get(aKey);
+ const postRotation=await procesarWebhookWhapiAislado(
+   message('msg.key-0000001'),second.dependencias);
+ assert.equal(postRotation.status,200);
+ assert.equal((await postRotation.json()).duplicadas,1);
+ assert.equal(rows.size,2);
+ assert.equal(rows.get(aKey),original);
+ assert.equal(rows.get(aKey).cryptoKeyId,'aes_2026_a');
 });
 test('si cambia key-id en el registro, AAD rechaza descifrado aunque clave exista',async()=>{
  const {rows,make}=harness();
@@ -109,4 +120,24 @@ test('gateway versionado pasa key-id como parámetro $10, sin interpolación',as
  await assert.rejects(()=>gw.registrarEntrada({...data,cryptoKeyId:'unsafe;drop'}),
    /whapi_gateway_no_disponible/);
  assert.equal(params.length,10);
+});
+
+test('mismo ID con precio distinto tras rotación falla sin modificar cotización',async()=>{
+ const {rows,make}=harness();
+ const first=make('aes_2026_a',AES_A);
+ await procesarWebhookWhapiAislado(message('msg.key-0000008'),first.dependencias);
+ const old=[...rows.values()][0];
+ const second=make('aes_2026_b',AES_B,{aes_2026_a:AES_A});
+ const altered=new Request('https://ci.invalid/whapi',{method:'POST',
+  headers:{'content-type':'application/json','x-cotironda-webhook-key':SECRET},
+  body:JSON.stringify({
+    channel_id:CHANNEL,event:{type:'messages',event:'post'},
+    messages:[{...msg('msg.key-0000008'),
+      text:{body:'Cemento 50 bolsas $10000'}}]
+  })});
+ const reply=await procesarWebhookWhapiAislado(altered,second.dependencias);
+ assert.equal(reply.status,503);
+ assert.equal(rows.size,1);
+ assert.equal([...rows.values()][0],old);
+ assert.equal(second.verificarContenido(old).texto,'Cemento 50 bolsas $8000');
 });
