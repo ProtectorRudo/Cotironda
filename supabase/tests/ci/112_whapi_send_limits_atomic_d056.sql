@@ -167,7 +167,7 @@ begin
   'select cotironda_private.whapi_begin_send_d053(%L,%L)',
     ids[3],tokens[3]),'d056_send_quota_exhausted');
  update cotironda_private.whapi_buyer_send_policies_d056
- set daily_message_limit=10,monthly_message_limit=2,monthly_budget_units=1000
+ set daily_message_limit=2,monthly_message_limit=2,monthly_budget_units=1000
  where buyer_org_id=buyer1;
  perform pg_temp.d056_reject(format(
   'select cotironda_private.whapi_begin_send_d053(%L,%L)',
