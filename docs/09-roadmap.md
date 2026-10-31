@@ -246,3 +246,6 @@ La nueva prueba CI usa `pg_dump`/`pg_restore` PostgreSQL 17 en dos bases efímer
 
 ### 31/10/2026 — Prioridad piloto, extracción DEV MVP-003
 La exportación cifrada **real** de Supabase DEV requiere ejecución local del propietario con conexión segura y clave age privada (guía `docs/123-mvp-003-exportacion-cifrada-dev-local.md`). El script y tests sintéticos están en PR #221, **sin dump real ni restauración verificable todavía**. Después, restauración aislada y E2E comercial mínimo; no seguir ampliando el laboratorio de WhatsApp mientras #175 bloquee DEV.
+
+### 31/10/2026 — MVP-004 interfaz económica
+Quedó preparada una pantalla local `/probar/ofertas` para ensayar la comparación económica con opciones completas individuales y de dos proveedores, sin API ni datos reales. Ver docs/124. **Próximos bloqueantes siguen siendo respaldo/restore auténtico #175, flujo comercial DEV y pruebas móviles con usuarios voluntarios**; no introducir pagos o paneles extra antes del piloto.
