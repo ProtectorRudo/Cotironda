@@ -60,3 +60,6 @@ La cotización ya enviada por proveedor autenticado equivale a oferta recibida, 
 
 ## MVP-010 — Precios originales aun cuando IVA no figura
 El importe declarado por un proveedor **SIEMPRE debe preservarse y quedar visible como monto declarado**, incluso si no hay IVA, flete o alícuota aclarados. A falta de esos datos, no se lo transforma en neto ni se produce un total comparable. La fuente cifrada y el precio declarado por línea se asocian a una versión inmutable; solo el comprador autorizado ve la última versión con alias anónimo. Implementación D060 en PG17 efímero CI, no conectada a Whapi real, sin confirmaciones extra. Ver docs/130.
+
+## MVP-012 — Reintentos internos sin fricción
+Cada texto de proveedor guardado en el inbox cifrado genera un trabajo privado. Se procesa por proveedor y ronda en orden (una corrección no debe adelantarse a la primera cotización); si falla la infraestructura, retry máximo cuatro intentos y pausa acotada, sin duplicar una versión ya persistida. Si no se puede atribuir precio con evidencia, revisión **interna**; no pedir «Confirmo», no inventar monto. Sólo marcar recibida cuando PostgreSQL comprueba que D060 guardó la evidencia. Aún laboratorio PG17, ver docs/132.
