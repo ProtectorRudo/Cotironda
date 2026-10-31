@@ -168,4 +168,70 @@ begin
 end;$$;
 
 -- No jobs, fictional contacts or offers survive this test.
+
+-- D047 edge cases: a worker dies on its FINAL lease; a provider opts out
+-- while the summary is still queued. Each scenario is transactionally isolated.
+insert into cotironda_private.whapi_inbox_v1
+ (channel_id,message_key,chat_key,supplier_org_id,round_id,
+  payload_fingerprint,kind,payload_ciphertext,payload_nonce,payload_tag,source_unix)
+ values
+ ('whapi_d047',repeat('2',64),repeat('a',64),
+ 'bbbbbbbb-0000-4000-8000-000000000472','dddddddd-0000-4000-8000-000000000474',
+ repeat('2',64),'text',decode(repeat('77',18),'hex'),decode(repeat('11',12),'hex'),
+ decode(repeat('22',16),'hex'),1800000000),
+ ('whapi_d047',repeat('3',64),repeat('a',64),
+ 'bbbbbbbb-0000-4000-8000-000000000472','dddddddd-0000-4000-8000-000000000474',
+ repeat('3',64),'text',decode(repeat('88',18),'hex'),decode(repeat('33',12),'hex'),
+ decode(repeat('44',16),'hex'),1800000000);
+do $
+declare
+ r constant uuid:='dddddddd-0000-4000-8000-000000000474';
+ s constant uuid:='bbbbbbbb-0000-4000-8000-000000000472';
+ offer jsonb:='{"currency":"ARS","payment_method":"transferencia",
+ "lead_days":3,"freight_gross":"100.00","min_goods_gross":"0.00",
+ "lines_snapshot":[{"line_no":1,"unit":"bag","available_qty":"10",
+ "net_unit_price":"2500.00","vat_rate":"21"}]}'::jsonb;
+ j jsonb;
+ lease jsonb;
+ ack jsonb;
+ v integer;
+begin
+ perform cotironda_private.save_offer_draft_atomic_v1(r,s,
+  'eeeeeeee-0000-4000-8000-000000000474',3,offer);
+ j:=cotironda_private.whapi_enqueue_reply_d047('whapi_d047',repeat('2',64),4);
+ for v in 1..3 loop
+  lease:=cotironda_private.whapi_lease_reply_d047();
+  if lease->>'jobId'<>j->>'jobId'
+   then raise exception 'd047_crash_lease_missing';end if;
+  if v<3 then
+   ack:=cotironda_private.whapi_finish_reply_d047(
+     (lease->>'jobId')::uuid,(lease->>'leaseToken')::uuid,false,null);
+   update cotironda_private.whapi_reply_jobs_d047
+     set due_at=clock_timestamp()-interval '1 second'
+     where job_id=(j->>'jobId')::uuid;
+  else
+   -- Simulates a worker crash after taking the third lease; NO ACK.
+   update cotironda_private.whapi_reply_jobs_d047
+    set leased_until=clock_timestamp()-interval '1 second'
+    where job_id=(j->>'jobId')::uuid;
+  end if;
+ end loop;
+ if cotironda_private.whapi_lease_reply_d047() is not null
+  or (select status from cotironda_private.whapi_reply_jobs_d047
+    where job_id=(j->>'jobId')::uuid)<>'exhausted'
+ then raise exception 'd047_final_lease_stuck';end if;
+
+ perform cotironda_private.save_offer_draft_atomic_v1(r,s,
+  'eeeeeeee-0000-4000-8000-000000000475',4,offer);
+ j:=cotironda_private.whapi_enqueue_reply_d047('whapi_d047',repeat('3',64),5);
+ update cotironda_private.whapi_contacts_v1
+  set opted_out_at=clock_timestamp()
+  where channel_id='whapi_d047' and chat_key=repeat('a',64);
+ if cotironda_private.whapi_lease_reply_d047() is not null
+ then raise exception 'd047_optout_job_was_leased';end if;
+ if (select status from cotironda_private.whapi_reply_jobs_d047
+    where job_id=(j->>'jobId')::uuid)<>'cancelled'
+ then raise exception 'd047_optout_not_cancelled';end if;
+end;$;
+
 rollback;
