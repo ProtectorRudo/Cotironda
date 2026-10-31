@@ -784,3 +784,6 @@
 
 ### 31/10/2026 — MVP-032: decisión de dominio y control final pre-WhatsApp
 - Auditoría de Vercel: el dominio propio `cotironda.com` aún no está asociado a ninguno de los dos proyectos; mantenerlo fuera de Preview hasta producción aprobada. El portal Next `cotironda-portal-dev` sí tiene Preview SSO `READY` de HEAD integrado. Identificado que D070→D068→D066→D080 ya revalida catálogo, consentimiento, localidad y huella inmediatamente antes del intento HTTP. Agregada prueba PG17 que cambia/desactiva productos y registra BAJA entre `BEGIN` y autorización, asegurando rechazo sin ampliar permisos. Sin cambios DEV, Whapi live ni DNS. Ver docs/152 y #277.
+
+### 31/10/2026 — MVP-033: el destino se pregunta solo si falta
+- La pantalla del primer pedido no presenta una segunda entrada de localidad por defecto; usa `Entrega en:` de la lista cuando es inequívoca y pregunta únicamente cuando falta o hay conflicto. Un valor anterior escrito en el campo no puede sobrescribir sin aviso un nuevo destino en el texto. Se retienen líneas ambiguas/IVA contradictorio como antes, sin cambios en D064, Whapi, RLS, Supabase DEV ni despliegue. Tests nuevos y smoke HTTP SSR; ver docs/153 e Issue #279. #175 sigue abierto.
