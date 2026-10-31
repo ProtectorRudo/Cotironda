@@ -664,3 +664,7 @@
 ## [Sin publicar — D056 / Issue #215: límites de WhatsApp por comprador y consentimiento persistente]
 - Política privada de envío por empresa compradora + canal (apagada por defecto), cuotas diarias/mensuales y presupuesto mensual en unidades de **reserva estimada**, no precios facturados. Trigger SQL une reserva del ledger 1/job con inicio HTTP D053 **en la misma transacción** y serializa concurrentes con `FOR UPDATE` sobre la política. Proveedor sigue gratis.
 - Función privada pre-HTTP comprueba vigencia de consentimiento/BAJA/revisión + reserva, y adaptador server-only calcula HMAC D029 del destinatario para evitar enviar a otro chat. Tests PG17 transaccionales y tests TS de denegación, no public RPC ni tokens/clientes. No se instaló DEV/prod ni se habilitó Whapi, #175 sigue abierto. Docs/119.
+
+## [Sin publicar — MVP-001 / Issue #217: primera experiencia comprador navegable]
+- Nueva ruta responsive `/probar` en Next.js portal, accesible desde la portada: pegar lista, analizar con motor offline existente, retener dudas, agrupar invitaciones por rubro y proveedor ficticio, mostrar texto de consultas sin enviarlas. Privacidad por procesamiento local del navegador, sin red, sin IA ni presupuesto inventado. Tests unitarios de flujo y casos adversariales; docs/120.
+- Reorientación de trabajo: consolidar PR encadenados y validar UX + ronda real supervisada en lugar de seguir añadiendo infraestructura aislada. Bloqueante restauración Supabase DEV #175 vigente. Sin merge o deploy.

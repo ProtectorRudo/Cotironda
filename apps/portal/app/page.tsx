@@ -1,4 +1,13 @@
 import Link from 'next/link';
 export default function Inicio() {
-  return <main className="wrap hero"><span className="eyebrow">COMPRA DE MATERIALES · ARGENTINA</span><h1>Un solo pedido.<br/><span>Las ofertas que necesitás.</span></h1><p>Estamos desarrollando el portal para arquitectos, constructoras y proveedores. El registro permanecerá cerrado hasta terminar las pruebas con una base exclusiva de Cotironda.</p><div className="actions"><Link href="/ingresar" className="button">Acceder al portal</Link><Link href="https://cotironda.vercel.app" className="button outline">Ver demostración</Link></div><div className="notice"><b>Versión de desarrollo.</b> No cargues datos comerciales ni presupuestos reales.</div></main>;
+  return <main className="wrap hero">
+    <span className="eyebrow">COMPRA DE MATERIALES · ARGENTINA</span>
+    <h1>Un solo pedido.<br/><span>Las ofertas que necesitás.</span></h1>
+    <p>Cotironda busca simplificar la compra de materiales: vos mandás una lista y el sistema prepara las consultas por producto y rubro. Primero estamos probando el recorrido con catálogos ficticios, sin ventas ni mensajes reales.</p>
+    <div className="actions">
+      <Link href="/probar" className="button">Probar un pedido de ejemplo</Link>
+      <Link href="/ingresar" className="button outline">Acceder al portal de prueba</Link>
+    </div>
+    <div className="notice"><b>Entorno de desarrollo.</b> En la demostración, el texto se interpreta en tu navegador y no se envía ni se guarda. No cargues datos privados ni presupuestos comerciales. El envío de solicitudes a proveedores todavía no está activo.</div>
+  </main>;
 }

@@ -37,5 +37,16 @@ try{
  assert.equal((await get('/api/organizaciones',{method:'GET'})).status,405);
  const home=await get('/');
  assert.equal(home.status,200);
- console.log('OK: HTTP real /, /ingresar, /alta y /api/organizaciones; registro cerrado');
+ const homeHtml=await home.text();
+ assert.match(homeHtml,/Probar un pedido de ejemplo/);
+ const mvp=await get('/probar');
+ assert.equal(mvp.status,200);
+ const mvpHtml=await mvp.text();
+ assert.match(mvpHtml,/Escribí o pegá tus materiales/);
+ assert.match(mvpHtml,/Demostración con proveedores ficticios/);
+ assert.match(mvpHtml,/No ingreses datos personales ni presupuestos comerciales/);
+ assert.doesNotMatch(mvpHtml,/action="\/api\//,'La demo no debe tener formularios de envío');
+ assert.equal((await get('/probar',{method:'POST'})).status,405,
+   'No se habilita endpoint para recibir pedidos del público');
+ console.log('OK: HTTP real /, /probar, /ingresar, /alta y /api/organizaciones; demo sin endpoint, registro cerrado');
 }finally{child.kill('SIGTERM');}
