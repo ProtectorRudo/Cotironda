@@ -685,3 +685,8 @@
 ### 31/10/2026 — MVP-004, comparador visible sin falsificar cotizaciones
 - Nueva pantalla de demostración `/probar/ofertas`, enlazada desde `/probar`: cobertura por artículo, totales de canastas completas con IVA/flete y combinación de hasta dos vendedores anónimos. Selección de ejemplo exclusivamente local. Sin API ni contacto ni adjudicación.
 - Reutiliza `compararCotizacionesOffline` con fixtures estáticos y verifica que una oferta parcial o no confirmada no gane por un subtotal menor. PR en borrador encadenado sobre #221, sin cambios en Supabase DEV ni producción.
+
+### 31/10/2026 — MVP-005: no presuponer IVA ni flete
+- Regla de negocio del propietario registrada en docs/125: el proveedor informa en detalles si los precios son con/sin IVA y cómo se cobra el flete. Ningún dato ausente se completa con cero o «incluido».
+- Pantalla de comparación con aclaraciones desplegables por proveedor; el importe visible solo se anuncia como comparable según datos declarados. Caso de ejemplo IVA y transporte no aclarados; pruebas para null vs cero expreso y smoke HTTP que impide regresar al mensaje engañoso.
+- Solo desarrollo y pruebas, sin tocar Supabase DEV, producción, canales de WhatsApp ni presupuestos reales.
