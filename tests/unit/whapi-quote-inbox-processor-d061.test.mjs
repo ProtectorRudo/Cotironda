@@ -48,7 +48,7 @@ function make(custom={}){
  const calls=[];
  const sqlDb={query:async(sql,params)=>{
   calls.push({sql,params});
-  if(sql.includes('quote_read_d061'))return{rows:[{payload:custom.read??encrypted()}]};
+  if(sql.includes('quote_read_d061'))return{rows:[{payload:custom.read===undefined?encrypted():custom.read}]};
   return {rows:[{payload:custom.receipt??{
    state:'offer_received',version:1,revision:1,
    repeated:false,prices_preserved:true}}]};
