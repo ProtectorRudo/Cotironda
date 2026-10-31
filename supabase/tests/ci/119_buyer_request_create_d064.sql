@@ -39,8 +39,8 @@ set local request.jwt.claims =
  "is_anonymous":false,"cotironda_email_verified":true}';
 do $case$
 declare
- v_input jsonb:='[{"line_no":1,"product_code":"cemento_001","quantity":"10","unit":"bag","source_description":"Cemento CPC 50 kg"},
- {"line_no":2,"product_code":"pintura_002","quantity":"5.5","unit":"l"}]'::jsonb;
+ v_input jsonb:='[{"line_no":1,"product_code":"cemento_gris_obra","quantity":"10","unit":"bag","source_description":"Cemento CPC 50 kg"},
+ {"line_no":2,"product_code":"pintura_latex","quantity":"5.5","unit":"l","source_description":"Pintura látex interior"}]'::jsonb;
  v_result jsonb;v_replay jsonb;v_round uuid;v_bad boolean;
 begin
  v_result:=public.create_buyer_round_d064(
@@ -72,6 +72,23 @@ begin
  -- a privileged CI assertion after RESET ROLE proves no invitation exists.
 end;$case$;
 reset role;
+-- Independent SQL family's curated accept set (no client or Next involved).
+select ci_helpers.assert_true(
+ cotironda_private.valid_pilot_product_d078('cemento_gris_obra','Cemento CPC Loma Negra 50 kg')
+ and cotironda_private.valid_pilot_product_d078('hidrofugo','Hidrófugo Ceresita 10 kg')
+ and cotironda_private.valid_pilot_product_d078('pintura_latex','Pintura látex interior')
+ and cotironda_private.valid_pilot_product_d078('placa_yeso','Placas de yeso RH 12,5 mm')
+ and cotironda_private.valid_pilot_product_d078('cable_unipolar','Cable unipolar 2,5 mm²')
+ and cotironda_private.valid_pilot_product_d078('cano_pvc','Caño PVC 110 mm')
+ and not cotironda_private.valid_pilot_product_d078('cemento_gris_obra','Pintura látex')
+ and not cotironda_private.valid_pilot_product_d078('cemento_gris_obra','Cemento cola')
+ and not cotironda_private.valid_pilot_product_d078('pintura_latex','Guantes de látex')
+ and not cotironda_private.valid_pilot_product_d078('cable_unipolar','Cable de red UTP')
+ and not cotironda_private.valid_pilot_product_d078('cano_pvc','Caño PVC eléctrico')
+ and not cotironda_private.valid_pilot_product_d078('cemento_gris_obra','Cemento látex')
+ and not has_function_privilege('anon','cotironda_private.valid_pilot_product_d078(text,text)','EXECUTE')
+ and not has_function_privilege('authenticated','cotironda_private.valid_pilot_product_d078(text,text)','EXECUTE'),
+ 'd078_identity_sql_rules_and_acl');
 select ci_helpers.assert_true(
  (select count(*)=1 from cotironda_private.round_requests_d064
   where buyer_org_id='aaaaaaaa-0015-4015-8015-000000000655'
@@ -154,6 +171,64 @@ select pg_temp.fail_d064(
  'cccccccc-0015-4015-8015-000000000659','La Plata','no_especificado',
  '[{"line_no":1,"product_code":"cemento_001","quantity":"10","unit":"bag"},
  {"line_no":2,"product_code":"cemento_001","quantity":"10","unit":"bag"}]')$$,
+ '22023');
+-- The SQL RPC is callable directly with the user's JWT (not through
+-- Next), so identity MUST be checked by PostgreSQL, never only by browser.
+select pg_temp.fail_d064(
+ $$select public.create_buyer_round_d064(
+ 'aaaaaaaa-0015-4015-8015-000000000655',
+ 'cccccccc-0015-4015-8015-000000000690','La Plata','no_especificado',
+ '[{"line_no":1,"product_code":"cemento_gris_obra","quantity":"10",
+ "unit":"bag","source_description":"Pintura látex interior"}]')$$,
+ '22023');
+select pg_temp.fail_d064(
+ $$select public.create_buyer_round_d064(
+ 'aaaaaaaa-0015-4015-8015-000000000655',
+ 'cccccccc-0015-4015-8015-000000000691','La Plata','no_especificado',
+ '[{"line_no":1,"product_code":"pintura_latex","quantity":"10",
+ "unit":"l","source_description":"Cemento CPC 50 kg"}]')$$,
+ '22023');
+select pg_temp.fail_d064(
+ $$select public.create_buyer_round_d064(
+ 'aaaaaaaa-0015-4015-8015-000000000655',
+ 'cccccccc-0015-4015-8015-000000000692','La Plata','no_especificado',
+ '[{"line_no":1,"product_code":"cemento_gris_obra","quantity":"10",
+ "unit":"bag","source_description":"Cemento cola flexible"}]')$$,
+ '22023');
+select pg_temp.fail_d064(
+ $$select public.create_buyer_round_d064(
+ 'aaaaaaaa-0015-4015-8015-000000000655',
+ 'cccccccc-0015-4015-8015-000000000693','La Plata','no_especificado',
+ '[{"line_no":1,"product_code":"pintura_latex","quantity":"10",
+ "unit":"l","source_description":"Guantes de látex"}]')$$,
+ '22023');
+select pg_temp.fail_d064(
+ $$select public.create_buyer_round_d064(
+ 'aaaaaaaa-0015-4015-8015-000000000655',
+ 'cccccccc-0015-4015-8015-000000000694','La Plata','no_especificado',
+ '[{"line_no":1,"product_code":"cable_unipolar","quantity":"10",
+ "unit":"m","source_description":"Cable de red UTP"}]')$$,
+ '22023');
+select pg_temp.fail_d064(
+ $$select public.create_buyer_round_d064(
+ 'aaaaaaaa-0015-4015-8015-000000000655',
+ 'cccccccc-0015-4015-8015-000000000695','La Plata','no_especificado',
+ '[{"line_no":1,"product_code":"cano_pvc","quantity":"10",
+ "unit":"m","source_description":"Caño PVC eléctrico"}]')$$,
+ '22023');
+select pg_temp.fail_d064(
+ $$select public.create_buyer_round_d064(
+ 'aaaaaaaa-0015-4015-8015-000000000655',
+ 'cccccccc-0015-4015-8015-000000000696','La Plata','no_especificado',
+ '[{"line_no":1,"product_code":"cemento_gris_obra","quantity":"10",
+ "unit":"bag"}]')$$,
+ '22023');
+select pg_temp.fail_d064(
+ $$select public.create_buyer_round_d064(
+ 'aaaaaaaa-0015-4015-8015-000000000655',
+ 'cccccccc-0015-4015-8015-000000000697','La Plata','no_especificado',
+ '[{"line_no":1,"product_code":"cemento_desconocido","quantity":"10",
+ "unit":"bag","source_description":"Cemento CPC 50 kg"}]')$$,
  '22023');
 reset role;
 update public.organization_members set status='suspended'
