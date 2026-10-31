@@ -21,6 +21,8 @@ jobs:
           cache: ''
       - name: Pruebas de dominio y estructura
         run: node --experimental-strip-types --test tests/unit/*.test.mjs
+      - name: D037 integridad SHA256 de cinco migraciones IA alojadas, sin ejecutar SQL
+        run: node scripts/ci/verify-dev-ai-migration-sources-d037.mjs
 
       # Solo PR de la rama exacta en este repositorio. Una única consulta GET
       # pública, sin usuarios/contraseñas/JWT. FAIL si Auth admite signup.

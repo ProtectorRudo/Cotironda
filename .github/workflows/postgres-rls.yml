@@ -303,3 +303,12 @@ jobs:
         env:
           COTIRONDA_CI_BACKUP_RESTORE: 'true'
         run: bash scripts/ci/pg17-backup-restore-drill.sh
+      - name: D037 restauración parcial segura IA (D018/D019/D021, sin D020 pg_net)
+        run: |
+          set -euo pipefail
+          node scripts/ci/verify-dev-ai-migration-sources-d037.mjs
+          psql -X -v ON_ERROR_STOP=1 -f supabase/recovery/dev_quality_20261030/20261030182413_dev_quality_once_only.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/recovery/dev_quality_20261030/20261030190232_dev_quality_results_ledger.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/recovery/dev_quality_20261030/20261030194856_dev_quality_numeric_diagnostics_d021.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/107_recovered_quality_safe_subset.sql
+
