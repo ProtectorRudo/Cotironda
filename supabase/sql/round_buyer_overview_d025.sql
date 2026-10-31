@@ -3,9 +3,21 @@
 -- NO SELECT directo de identidades, invitaciones, cotizaciones ni contactos.
 create role cotironda_rounds_reader nologin noinherit nobypassrls;
 grant usage on schema public,cotironda_private to cotironda_rounds_reader;
--- Necesario para auth.uid() en política RLS, sin SELECT de auth.users/sessions.
-grant usage on schema auth to cotironda_rounds_reader;
-grant execute on function auth.uid() to cotironda_rounds_reader;
+-- D035: evitar GRANT en auth, inefectivo en Supabase alojado para roles
+-- personalizados. Este helper SEC INVOKER solo lee claims de PostgREST;
+-- NO certifica sesión: la función buyer_round_overview continúa verificando
+-- auth.sessions mediante is_session_verified() privado y de alcance limitado.
+create function cotironda_private.request_user_id_v035()
+returns uuid language sql stable security invoker set search_path='' as $claims$
+  select coalesce(
+    nullif(current_setting('request.jwt.claim.sub',true),''),
+    nullif(current_setting('request.jwt.claims',true),'')::jsonb ->> 'sub'
+  )::uuid;
+$claims$;
+revoke all on function cotironda_private.request_user_id_v035()
+ from public,anon,authenticated,service_role,cotironda_app;
+grant execute on function cotironda_private.request_user_id_v035()
+ to cotironda_rounds_reader;
 grant select on public.organizations,public.organization_members to cotironda_rounds_reader;
 grant select on cotironda_private.rounds_v1,cotironda_private.round_items_v1
   to cotironda_rounds_reader;
@@ -13,14 +25,14 @@ grant select on cotironda_private.rounds_v1,cotironda_private.round_items_v1
 -- RLS de defensa en profundidad, incluso para el rol lector no conectado.
 create policy d025_members_own_active on public.organization_members
  for select to cotironda_rounds_reader using (
-   user_id=(select auth.uid()) and status='active'
+   user_id=(select cotironda_private.request_user_id_v035()) and status='active'
  );
 create policy d025_organizations_own_buyer on public.organizations
  for select to cotironda_rounds_reader using (
    organization_type in ('buyer','both') and exists (
      select 1 from public.organization_members m
      where m.organization_id=organizations.id
-       and m.user_id=(select auth.uid()) and m.status='active'
+       and m.user_id=(select cotironda_private.request_user_id_v035()) and m.status='active'
    )
  );
 create policy d025_rounds_own_buyer on cotironda_private.rounds_v1
@@ -64,7 +76,7 @@ begin
  then raise exception 'round_session_invalid' using errcode='42501'; end if;
  v_uid:=(v_claims->>'sub')::uuid;
  v_sid:=(v_claims->>'session_id')::uuid;
- if v_uid is distinct from (select auth.uid())
+ if v_uid is distinct from (select cotironda_private.request_user_id_v035())
     or not coalesce(cotironda_private.is_session_verified(v_uid,v_sid),false)
  then raise exception 'round_session_invalid' using errcode='42501'; end if;
 

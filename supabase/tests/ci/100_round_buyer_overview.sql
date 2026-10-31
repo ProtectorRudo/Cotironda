@@ -29,6 +29,18 @@ do $test$
 begin
   if exists(select 1 from pg_roles where rolname='cotironda_rounds_reader'
     and (rolcanlogin or rolbypassrls)) then raise exception 'reader_has_privileged_role'; end if;
+  -- Simulación de Supabase hospedado: el reader NO tiene USAGE de auth.
+  -- Solo usa JWT de PostgREST y validación de sesión con función restringida.
+  if has_schema_privilege('cotironda_rounds_reader','auth','USAGE')
+     or has_function_privilege('anon',
+       'cotironda_private.request_user_id_v035()','EXECUTE')
+     or has_function_privilege('authenticated',
+       'cotironda_private.request_user_id_v035()','EXECUTE')
+     or not has_function_privilege('cotironda_rounds_reader',
+       'cotironda_private.request_user_id_v035()','EXECUTE')
+     or (select prosecdef from pg_proc
+          where oid='cotironda_private.request_user_id_v035()'::regprocedure)<>false
+  then raise exception 'hosted_auth_reader_isolation_regression';end if;
   if has_function_privilege('anon','public.buyer_round_overview_v1(uuid)','EXECUTE')
      or has_function_privilege('service_role','public.buyer_round_overview_v1(uuid)','EXECUTE')
      or has_table_privilege('authenticated','cotironda_private.rounds_v1','SELECT')
@@ -72,6 +84,19 @@ select ci_helpers.assert_true(
       'dddddddd-dddd-4ddd-8ddd-dddddddddddd')),
  'no_supplier_or_offer_info');
 
+-- D035: cuando la claim legacy sub discrepa de JSON sub,
+-- el helper debe detectarlo y la lectura negarse (antes se hacía por auth.uid()).
+set local request.jwt.claim.sub = '22222222-2222-4222-8222-222222222222';
+do $mismatch$
+declare denied boolean:=false;
+begin
+ begin
+  perform * from public.buyer_round_overview_v1(
+   'dddddddd-dddd-4ddd-8ddd-dddddddddddd');
+ exception when insufficient_privilege then denied:=true; end;
+ if not denied then raise exception 'conflicting_sub_claims_accepted'; end if;
+end;$mismatch$;
+set local request.jwt.claim.sub = '';
 reset role;
 -- Suspender membresía y probar que JWT firmado antiguo NO concede acceso.
 update public.organization_members set status='suspended'
