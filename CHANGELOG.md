@@ -757,3 +757,6 @@
 
 ### 31/10/2026 — MVP-023: matching y preparación integral de ronda (sin red)
 - Nueva función D071 privada PostgreSQL17 CI integra D065+D068+D070 transaccionalmente, reintentos idempotentes y pendientes cuando falten contactos verificados/etiquetas/alcance; no envía nada ni añade paso al comprador. Puerto Node con validación strict/fail-closed, tests sintéticos de dos rubros, BAJA, permisos y replays. No se desplegó y Supabase DEV #175 sigue sin respaldo auténtico. Ver docs/143.
+
+### 31/10/2026 — MVP-024: primer proveedor puede vincular WhatsApp mediante una sola acción (solo CI)
+- Nuevo D072 de token SHA256 15min/128bits para dueño/gerente Auth válido de empresa proveedor, consumo privado por webhook D027 autenticado, consentimiento explícito al enviar `COTI ALTA`, chat HMAC sin número en SQL y sellado D069 AES-GCM tras COMMIT. Broker D029 opcional y enlace `wa.me` generado sin enviar. Pruebas Node/PG17 sintéticas; no integrado en UI ni instalado DEV/prod, falta #175. Ver docs/144.
