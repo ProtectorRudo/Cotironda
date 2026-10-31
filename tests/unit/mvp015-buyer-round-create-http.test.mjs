@@ -7,7 +7,7 @@ const ROUND='dddddddd-0015-4015-8015-000000000658';
 const ACTOR={userId:'11111111-0015-4015-8015-000000000651',
  emailVerificado:true,anonimo:false};
 const BODY={requestId:ID,deliveryZone:'La Plata',vatRequest:'con_iva',
- items:[{line_no:1,product_code:'cemento_001',quantity:'10',unit:'bag',source_description:'Cemento CPC 50 kg'}]};
+ items:[{line_no:1,product_code:'cemento_gris_obra',quantity:'10',unit:'bag',source_description:'Cemento CPC 50 kg'}]};
 const make=(input=BODY,opts={})=>{
  const calls=[];
  const deps={habilitado:true,originPermitido:'https://cotironda.invalid',
@@ -47,6 +47,12 @@ test('D064: falta zona, unidad, cantidad o material explícito: 400 sin RPC',asy
   {...BODY,items:[{...BODY.items[0],source_description:'https://ejemplo.invalid'}]},
   {...BODY,items:[{...BODY.items[0],source_description:'Cemento\\ninyectar'}]},
   {...BODY,items:[{...BODY.items[0],source_description:''}]},
+  {...BODY,items:[{...BODY.items[0],source_description:'Pintura látex interior'}]},
+  {...BODY,items:[{...BODY.items[0],source_description:'Cemento cola flexible'}]},
+  {...BODY,items:[{...BODY.items[0],source_description:'Cemento blanco 25 kg'}]},
+  {...BODY,items:[{...BODY.items[0],source_description:'Cemento y pintura latex'}]},
+  {...BODY,items:[{...BODY.items[0],product_code:'pintura_latex'}]},
+  {...BODY,items:[{line_no:1,product_code:'cemento_gris_obra',quantity:'10',unit:'bag'}]},
   {...BODY,items:[{...BODY.items[0],source_description:'Cemento CPC 5492211234567'}]},
   {...BODY,items:[{...BODY.items[0],source_description:'Cemento',otro:'intruso'}]},
   {...BODY,items:[{...BODY.items[0],unit:'tonelada'}]},
@@ -132,4 +138,40 @@ test('D064: Origin canónico server-only bloquea host reescrito y destino falso'
  assert.equal((await procesarCreacionRondaD064(missing.req,missing.deps)).status,403);
  assert.equal(src.calls.length,0);
  assert.equal(missing.calls.length,0);
+});
+
+test('MVP029: seis familias curadas pasan el filtro HTTP sin depender de la UI',async()=>{
+ const items=[
+  ['cemento_gris_obra','Cemento CPC Loma Negra 50 kg','bag'],
+  ['hidrofugo','Hidrófugo Ceresita 10 kg','unit'],
+  ['pintura_latex','Pintura látex interior blanco','l'],
+  ['placa_yeso','Placas de yeso RH 12,5 mm','unit'],
+  ['cable_unipolar','Cable unipolar 2,5 mm²','m'],
+  ['cano_pvc','Caño PVC 110 mm','m']
+ ];
+ for(const [product_code,source_description,unit] of items){
+  const t=make({...BODY,items:[{line_no:1,product_code,source_description,quantity:'10',unit}]});
+  const r=await procesarCreacionRondaD064(t.req,t.deps);
+  assert.equal(r.status,201,product_code+' '+source_description);
+  assert.equal(t.calls.length,1);
+ }
+});
+test('MVP029: llamadas directas maliciosas 400 sin tocar SQL',async()=>{
+ const bad=[
+  ['pintura_latex','Cemento CPC 50 kg'],
+  ['placa_yeso','Cemento CPC 50 kg'],
+  ['cemento_gris_obra','Pintura látex interior'],
+  ['cemento_gris_obra','Cemento de contacto 1 litro'],
+  ['pintura_latex','Guantes de látex descartables'],
+  ['cable_unipolar','Cable de red UTP'],
+  ['cano_pvc','Caño PVC eléctrico'],
+  ['no_curado_123','Cemento CPC 50 kg'],
+  ['cemento_gris_obra','Cemento látex'],
+ ];
+ for(const [product_code,source_description] of bad){
+  const t=make({...BODY,items:[{...BODY.items[0],product_code,source_description}]});
+  const r=await procesarCreacionRondaD064(t.req,t.deps);
+  assert.equal(r.status,400,product_code+' '+source_description);
+  assert.equal(t.calls.length,0);
+ }
 });
