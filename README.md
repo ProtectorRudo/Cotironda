@@ -299,3 +299,5 @@ El PR D038 agrega un ensayo restringido en PG17 para la lógica de despachador I
 > **MVP-011:** se conectó el inbox cifrado con la normalización de precios y versiones de cotizaciones mediante un broker server-only probado con AES-GCM real y PostgreSQL17 descartable; no hay interpretador IA/WhatsApp conectado en producción. [docs/131](docs/131-mvp-011-broker-inbox-cotizacion.md).
 
 > **MVP-012 (solo ensayos):** cola privada para texto de WhatsApp cifrado y worker que consume mensajes, con reintentos y deduplicación, orden por proveedor y límite de intentos. No hay job cloud activado ni mensajes reales. Ver [docs/132](docs/132-mvp-012-cola-cotizaciones.md).
+
+> **MVP-013: prueba de recorrido entero en PostgreSQL 17 CI**: webhook ficticio → inbox cifrado → cola → worker → cotización versionada → última oferta anónima visible para comprador ficticio. Solo texto inequívoco; no es WhatsApp ni Supabase DEV en vivo. [docs/133](docs/133-mvp-013-vertical-postgres-real.md).

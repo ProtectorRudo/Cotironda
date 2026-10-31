@@ -370,6 +370,78 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_quote_queue_d062.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/117_whapi_quote_queue_d062.sql
 
+      - name: "MVP-013 E2E real Node22 + PostgreSQL17 - webhook a cotizacion sin Confirmo"
+        run: |
+          set -euo pipefail
+          export COTIRONDA_D063_HMAC_ID="$(openssl rand -hex 32)"
+          export COTIRONDA_D063_HMAC_PAYLOAD="$(openssl rand -hex 32)"
+          export COTIRONDA_D063_AES_KEY="$(openssl rand -hex 32)"
+          export COTIRONDA_D063_WEBHOOK_SECRET="$(openssl rand -hex 32)"
+          ci_pass="$(openssl rand -hex 24)"
+          for val in "$COTIRONDA_D063_HMAC_ID" "$COTIRONDA_D063_HMAC_PAYLOAD" "$COTIRONDA_D063_AES_KEY" "$COTIRONDA_D063_WEBHOOK_SECRET" "$ci_pass"; do
+            echo "::add-mask::$val"
+          done
+          d063_chat="$(CHAT='5492211234567@s.whatsapp.net' node --input-type=module -e 'import {createHmac} from "node:crypto";process.stdout.write(createHmac("sha256",Buffer.from(process.env.COTIRONDA_D063_HMAC_ID,"hex")).update(JSON.stringify(["cotironda","chat",1,"whapi_d063_ci",process.env.CHAT])).digest("hex"))')"
+          psql -X -v ON_ERROR_STOP=1 -v d063_password="$ci_pass" -v d063_chat_key="$d063_chat" -f scripts/ci/whapi-pg/mvp-d063-seed.sql > /dev/null
+          COTIRONDA_D063_CI=true COTIRONDA_D063_DB_LOGIN=cotironda_mvp_d063_ci_login COTIRONDA_D063_DB_PASSWORD="$ci_pass" node --experimental-strip-types scripts/ci/whapi-pg/mvp-d063-e2e.mjs
+          psql -X -v ON_ERROR_STOP=1 <<'SQL'
+          select ci_helpers.assert_true(
+            (select count(*)=2 from cotironda_private.offer_versions_v1
+             where round_id='dddddddd-0013-4013-8013-000000000633'),
+            'd063_two_immutable_versions');
+          select ci_helpers.assert_true(
+            (select count(*)=2 from cotironda_private.whapi_price_sources_d060
+             where round_id='dddddddd-0013-4013-8013-000000000633'),
+            'd063_original_prices_evidenced');
+          select ci_helpers.assert_true(
+            (select count(*)=1
+             from cotironda_private.whapi_price_lines_d060 l
+             join cotironda_private.whapi_price_sources_d060 s
+               on s.channel_id=l.channel_id and s.message_key=l.message_key
+             where s.channel_id='whapi_d063_ci' and s.offer_version=1
+               and l.quoted_unit_price=121 and l.vat_basis='no_informado'),
+            'd063_original_price_without_iva_kept');
+          select ci_helpers.assert_true(
+            (select count(*)=1 from cotironda_private.whapi_price_lines_d060
+             where channel_id='whapi_d063_ci'
+               and quoted_unit_price=242 and vat_basis='incluido'),
+            'd063_corrected_gross_price');
+          select ci_helpers.assert_true(
+            (select count(*)=1 from cotironda_private.offer_versions_v1
+             where round_id='dddddddd-0013-4013-8013-000000000633'
+              and version=2 and lines_snapshot->0->>'net_unit_price'='200.00'
+              and lines_snapshot->0->>'vat_rate'='21'),
+            'd063_verified_second_net_price');
+          select ci_helpers.assert_true(
+            (select count(*)=3 from cotironda_private.whapi_quote_queue_d062
+             where channel_id='whapi_d063_ci'), 'd063_three_quote_jobs');
+          select ci_helpers.assert_true(
+            (select count(*)=2 from cotironda_private.whapi_quote_queue_d062
+             where channel_id='whapi_d063_ci' and status='done'), 'd063_two_done');
+          select ci_helpers.assert_true(
+            (select count(*)=1 from cotironda_private.whapi_quote_queue_d062
+             where channel_id='whapi_d063_ci' and status='manual_review'), 'd063_ambiguous_review');
+          select ci_helpers.assert_true(
+            (select count(*)=0 from cotironda_private.whapi_reply_jobs_d047
+             where round_id='dddddddd-0013-4013-8013-000000000633'),
+            'd063_no_confirmo_sent');
+          begin;
+          set local role authenticated;
+          set local request.jwt.claims =
+            '{"role":"authenticated","sub":"11111111-0013-4013-8013-000000000634","session_id":"33333333-0013-4013-8013-000000000635","is_anonymous":false,"cotironda_email_verified":true}';
+          select ci_helpers.assert_true(
+            (select count(*)=1 from public.buyer_quoted_prices_d060(
+              'dddddddd-0013-4013-8013-000000000633')),
+            'd063_buyer_sees_latest_only');
+          select ci_helpers.assert_true(
+            (select supplier_alias='anon_corralon_d063'
+              and quoted_unit_price='242.00' and vat_basis='incluido'
+              and offer_version=2 from public.buyer_quoted_prices_d060(
+              'dddddddd-0013-4013-8013-000000000633')),
+            'd063_buyer_sees_anonymous_corrected_offer');
+          rollback;
+          SQL
+
       - name: MVP-003 restauracion PG17 de laboratorio a segunda base efimera sin DEV
         env:
           COTIRONDA_RESTORE_CI: 'true'
