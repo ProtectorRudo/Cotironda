@@ -60,7 +60,8 @@ function validOffers(value:unknown,round:ResumenRonda):value is PrecioRecibidoMv
       typeof row.freight_gross==='string'&&AMOUNT.test(row.freight_gross))||
     !(row.payment_method===null||PAYMENT.has(String(row.payment_method)))||
     !(row.lead_days===null||
-      Number.isSafeInteger(row.lead_days)&&row.lead_days>=0&&row.lead_days<=365)
+      typeof row.lead_days==='number'&&Number.isSafeInteger(row.lead_days)&&
+      row.lead_days>=0&&row.lead_days<=365)
   )return false;
   // Never show inconsistent repeated data or a mixed-version supplier
   // as if it were a coherent quote.
