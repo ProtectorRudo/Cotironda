@@ -9,7 +9,9 @@ const ACTOR={userId:'11111111-0024-4024-8024-000000000661',
  emailVerificado:true,anonimo:false};
 const CODE='a'.repeat(32);
 const ENV={
- VERCEL_ENV:'preview',COTIRONDA_REGISTRATION_ENABLED:'true',
+ VERCEL_ENV:'preview',COTIRONDA_REGISTRATION_ENABLED:'false',
+ COTIRONDA_AUTH_PREVIEW_ENABLED:'true',
+ VERCEL_GIT_COMMIT_REF:'integration/mvp-piloto-20261031',
  COTIRONDA_SUPABASE_PROJECT_REF:'qkercsoqhehbenbbncwk',
  COTIRONDA_SITE_ORIGIN:ORIGIN,
  NEXT_PUBLIC_SUPABASE_URL:'https://qkercsoqhehbenbbncwk.supabase.co',
