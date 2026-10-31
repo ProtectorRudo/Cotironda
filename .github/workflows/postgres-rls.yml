@@ -321,6 +321,31 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/112_whapi_send_limits_atomic_d056.sql
 
 
+      - name: D056 dos trabajadores simultaneos, un solo cupo real (Node y PG17 CI)
+        run: |
+          set -euo pipefail
+          ci_pass="$(openssl rand -hex 24)"
+          echo "::add-mask::$ci_pass"
+          psql -X -v ON_ERROR_STOP=1 -v d056_password="$ci_pass" -f scripts/ci/whapi-pg/quota-d056-concurrency-seed.sql > /dev/null
+          COTIRONDA_D056_CI=true COTIRONDA_D056_DB_LOGIN=cotironda_quota_d056_ci COTIRONDA_D056_DB_PASSWORD="$ci_pass" node --experimental-strip-types scripts/ci/whapi-pg/quota-d056-concurrency-e2e.mjs
+          psql -X -v ON_ERROR_STOP=1 <<'SQL'
+          select ci_helpers.assert_true(
+            (select count(*)=1 from cotironda_private.whapi_send_reservations_d056
+              where buyer_org_id='aaaaaaaa-0000-4000-8000-000000000571'
+                and channel_id='d056_parallel'),
+            'd056_one_concurrent_reservation');
+          select ci_helpers.assert_true(
+            (select count(*)=1 from cotironda_private.whapi_reply_jobs_d047
+              where channel_id='d056_parallel' and send_phase='in_flight'),
+            'd056_one_concurrent_begin');
+          select ci_helpers.assert_true(
+            (select count(*)=1 from cotironda_private.whapi_reply_jobs_d047
+              where channel_id='d056_parallel' and send_phase='not_started'
+                and status='leased'),
+            'd056_other_worker_never_started');
+          SQL
+
+
   migrations-from-zero:
     name: Reconstruir historial 12 migraciones en PostgreSQL limpio
     runs-on: ubuntu-latest
