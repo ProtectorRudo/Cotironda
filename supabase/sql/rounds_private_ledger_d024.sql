@@ -62,6 +62,12 @@ create table cotironda_private.round_items_v1 (
   round_id uuid not null references cotironda_private.rounds_v1(id) on delete restrict,
   line_no smallint not null check(line_no between 1 and 8),
   product_code text not null check(product_code ~ '^[a-z][a-z0-9_]{2,49}$'),
+  -- MVP-028: keep technical details literally requested by buyer.
+  source_description text check(
+    char_length(source_description) between 3 and 90
+    and source_description ~ '^[[:alnum:] ÁÉÍÓÚÜÑáéíóúüñ.,()/+²³-]+$'
+    and source_description !~* '(https?://|www[.]|[0-9]{10,})'
+  ),
   quantity numeric(18,3) not null check(quantity>0),
   unit text not null check(unit in
     ('unit','bag','box','kg','g','l','ml','m','m2','m3','roll','pack')),

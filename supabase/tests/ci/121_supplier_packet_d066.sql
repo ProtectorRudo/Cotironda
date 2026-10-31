@@ -29,6 +29,11 @@ reset role;
 insert into cotironda_private.item_display_d066(product_code,display_label)
  values('cemento_001','Cemento CPC 50 kg'),
        ('pintura_002','Pintura latex blanca');
+-- MVP-028: keep the EXACT buyer specs, not the generic curated label.
+update cotironda_private.round_items_v1
+ set source_description='Cemento CPC Loma Negra 50 kg'
+ where round_id='dddddddd-0016-4016-8016-000000000661'
+   and product_code='cemento_001';
 set local role cotironda_match_gateway_d065;
 do $packet$
 declare a jsonb;b jsonb;
@@ -42,7 +47,7 @@ begin
  if a is null or b is null then raise exception 'd066_missing_packet';end if;
  if jsonb_array_length(a->'items')<>1 or
    a->'items'->0->>'productCode'<>'cemento_001' or
-   a->'items'->0->>'label'<>'Cemento CPC 50 kg' or
+   a->'items'->0->>'label'<>'Cemento CPC Loma Negra 50 kg' or
    jsonb_array_length(b->'items')<>1 or
    b->'items'->0->>'productCode'<>'pintura_002' or
    a->>'deliveryZone'<>'La Plata' or

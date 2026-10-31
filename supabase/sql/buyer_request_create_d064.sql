@@ -124,8 +124,10 @@ begin
  for v_number in 0..v_count-1 loop
   v_line:=p_items->v_number;
   if pg_catalog.jsonb_typeof(v_line) is distinct from 'object'
-   or (select count(*) from pg_catalog.jsonb_object_keys(v_line))<>4
+   or (select count(*) from pg_catalog.jsonb_object_keys(v_line)) not in (4,5)
    or not (v_line ?& array['line_no','product_code','quantity','unit'])
+   or ((select count(*) from pg_catalog.jsonb_object_keys(v_line))=5
+       and not (v_line ? 'source_description'))
    or pg_catalog.jsonb_typeof(v_line->'line_no') is distinct from 'number'
    or v_line->>'line_no' is distinct from (v_number+1)::text
    or pg_catalog.jsonb_typeof(v_line->'product_code') is distinct from 'string'
@@ -135,6 +137,14 @@ begin
    or pg_catalog.jsonb_typeof(v_line->'unit') is distinct from 'string'
    or v_line->>'unit' not in ('unit','bag','box','kg','g','l','ml',
                               'm','m2','m3','roll','pack')
+   or (v_line ? 'source_description' and (
+      pg_catalog.jsonb_typeof(v_line->'source_description') is distinct from 'string'
+      or pg_catalog.char_length(v_line->>'source_description') not between 3 and 90
+      or v_line->>'source_description' !~
+         '^[[:alnum:] ÁÉÍÓÚÜÑáéíóúüñ.,()/+²³-]+$'
+      or v_line->>'source_description' ~*
+         '(https?://|www[.]|[0-9]{10,})'
+   ))
   then raise exception 'd064_invalid_line' using errcode='22023';end if;
   if exists(select 1 from pg_catalog.jsonb_array_elements(p_items) x(value)
      where x.value->>'product_code'=v_line->>'product_code'
@@ -165,10 +175,10 @@ begin
  for v_number in 0..v_count-1 loop
   v_line:=p_items->v_number;
   insert into cotironda_private.round_items_v1
-    (round_id,line_no,product_code,quantity,unit)
+    (round_id,line_no,product_code,quantity,unit,source_description)
    values(v_round,(v_line->>'line_no')::smallint,
     v_line->>'product_code',(v_line->>'quantity')::numeric(18,3),
-    v_line->>'unit');
+    v_line->>'unit',v_line->>'source_description');
  end loop;
  insert into cotironda_private.round_requests_d064
   (round_id,buyer_org_id,created_by,request_key,content_sha256,

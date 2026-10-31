@@ -47,4 +47,5 @@ export async function proxy(request: NextRequest) {
   return response;
 }
 export const config={matcher:['/ingresar','/alta','/api/organizaciones',
- '/proveedores/whatsapp','/api/proveedores/whatsapp/enlace']};
+ '/proveedores/whatsapp','/api/proveedores/whatsapp/enlace',
+ '/mis-rondas','/api/rondas']};

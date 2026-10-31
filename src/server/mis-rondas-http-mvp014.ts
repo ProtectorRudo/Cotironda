@@ -2,7 +2,7 @@
  * MVP-014 current buyer's rounds. SQL enforces actual session + membership,
  * this layer validates and limits output, never sends company/supplier IDs.
  */
-import {ofertasLecturaHabilitada} from './cotizaciones-recibidas-http-mvp014.ts';
+import {rondasLecturaHabilitada} from './rondas-lectura-http.ts';
 import type {ActorLectura} from './rondas-lectura-http.ts';
 export type RondaPropiaMvp014=Readonly<{
  round_id:string;round_status:'programada'|'abierta'|'cerrada'|'cancelada';
@@ -53,5 +53,5 @@ export async function procesarMisRondasMvp014(
  }catch{return response(503,{error:'rondas_no_disponibles'});}
 }
 export function misRondasHabilitado(env:Record<string,string|undefined>):boolean{
- return ofertasLecturaHabilitada(env);
+ return rondasLecturaHabilitada(env);
 }

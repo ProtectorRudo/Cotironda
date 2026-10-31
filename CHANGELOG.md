@@ -769,3 +769,6 @@
 
 ### 31/10/2026 — MVP-027: exportación cifrada de DEV en un comando, pendiente ejecución real
 - Nuevo `scripts/ops/cotironda-private-backup-d075.mjs` para ordenador privado POSIX: preflight de conexión exclusiva DEV y binarios PG17+age; identidad age con permisos 0600, derivación `age-keygen -y` y rechazo antes de exportar si no coincide; reutiliza D003 snapshot consistente, D039 manifest y D041 descifrado sin plaintext en disco. Rechazo explícito GitHub Actions/CI/Vercel. Pruebas sin red mediante inyección sintética. No hay backup auténtico ni restore, bloqueante #175 abierto. Ver docs/147.
+
+### 31/10/2026 — MVP-028: comprador pega lista y conserva especificaciones exactas
+- Nuevo formulario móvil en `/mis-rondas` para texto y localidad con un único CTA, sin confirmaciones adicionales; captura 1–8 productos reconocidos por taxonomía curada, retiene líneas dudosas y explicita `invitationsSent:0`. D064 valida y guarda `source_description` (CPC 50 kg, marca, RH 12,5) dentro del hash idempotente; D066 usa fuente original en el mensaje privado en lugar del label genérico. Auth Preview comprador separado de WhatsApp proveedor y signup OFF. Unit tests, SQL PG17 y HTTP Next con Auth/PostgREST ficticios en CI; ningún envío, SQL DEV ni despliegue. Ver docs/148 y #269.

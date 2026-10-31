@@ -7,6 +7,7 @@ import { AuditoriaSeguridadSesion } from './auditoria-seguridad-sesion';
 import { AuditoriaRegistroAuth } from './auditoria-registro-auth';
 import { COTIRONDA_DEV_REF } from '../../../../src/server/portal-entorno.ts';
 import { FormularioEmpresa } from './formulario';
+import {habilitarCreacionRondaD064} from '../../../../src/server/buyer-round-create-http-d064.ts';
 import {habilitarPantallaAltaWhatsAppD073}
  from '../../../../src/server/supplier-whatsapp-link-http-d073.ts';
 export const dynamic='force-dynamic';
@@ -29,6 +30,8 @@ export default async function Alta(){
       <CerrarSesionPrueba/>
       <AuditoriaSeguridadSesion projectRef={COTIRONDA_DEV_REF}/>
       <AuditoriaRegistroAuth/>
+      {habilitarCreacionRondaD064(process.env)&&
+        <p><Link href="/mis-rondas" className="button">Pedir presupuestos</Link></p>}
       {habilitarPantallaAltaWhatsAppD073(process.env)&&
         <p><Link href="/proveedores/whatsapp" className="button">Activar WhatsApp de mi negocio</Link></p>}
     </main>;

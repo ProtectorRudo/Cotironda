@@ -7,10 +7,11 @@ const ROUND='dddddddd-0015-4015-8015-000000000658';
 const ACTOR={userId:'11111111-0015-4015-8015-000000000651',
  emailVerificado:true,anonimo:false};
 const BODY={requestId:ID,deliveryZone:'La Plata',vatRequest:'con_iva',
- items:[{line_no:1,product_code:'cemento_001',quantity:'10',unit:'bag'}]};
+ items:[{line_no:1,product_code:'cemento_001',quantity:'10',unit:'bag',source_description:'Cemento CPC 50 kg'}]};
 const make=(input=BODY,opts={})=>{
  const calls=[];
- const deps={habilitado:true,verificarSesion:async()=>ACTOR,
+ const deps={habilitado:true,originPermitido:'https://cotironda.invalid',
+  verificarSesion:async()=>ACTOR,
   crear:async body=>{calls.push(body);return{
    roundId:ROUND,status:'programada',repeated:false}},...opts};
  const req=new Request('https://cotironda.invalid/api/rondas',{
@@ -43,6 +44,11 @@ test('D064: falta zona, unidad, cantidad o material explícito: 400 sin RPC',asy
   {...BODY,items:[{...BODY.items[0],quantity:'0'}]},
   {...BODY,items:[{...BODY.items[0],quantity:'NaN'}]},
   {...BODY,items:[{...BODY.items[0],product_code:'CEMENTO'}]},
+  {...BODY,items:[{...BODY.items[0],source_description:'https://ejemplo.invalid'}]},
+  {...BODY,items:[{...BODY.items[0],source_description:'Cemento\\ninyectar'}]},
+  {...BODY,items:[{...BODY.items[0],source_description:''}]},
+  {...BODY,items:[{...BODY.items[0],source_description:'Cemento CPC 5492211234567'}]},
+  {...BODY,items:[{...BODY.items[0],source_description:'Cemento',otro:'intruso'}]},
   {...BODY,items:[{...BODY.items[0],unit:'tonelada'}]},
   {...BODY,items:[{...BODY.items[0],line_no:2}]},
   {...BODY,items:[BODY.items[0],BODY.items[0]]},
@@ -118,4 +124,12 @@ test('D064: flags de Preview restringen alta y dejan producción cerrada',()=>{
   {COTIRONDA_ROUNDS_READ_ENABLED:'false'},
   {COTIRONDA_DATABASE_URL:'private'}])
   assert.equal(habilitarCreacionRondaD064({...env,...change}),false);
+});
+test('D064: Origin canónico server-only bloquea host reescrito y destino falso',async()=>{
+ const src=make(BODY,{originPermitido:'https://other.example'});
+ assert.equal((await procesarCreacionRondaD064(src.req,src.deps)).status,403);
+ const missing=make(BODY,{originPermitido:''});
+ assert.equal((await procesarCreacionRondaD064(missing.req,missing.deps)).status,403);
+ assert.equal(src.calls.length,0);
+ assert.equal(missing.calls.length,0);
 });

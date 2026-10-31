@@ -36,6 +36,7 @@ export async function POST(req:Request):Promise<Response>{
  let cliente:Awaited<ReturnType<typeof clienteSupabaseServidor>>|null=null;
  return procesarCreacionRondaD064(req,{
   habilitado,
+  originPermitido:process.env.COTIRONDA_SITE_ORIGIN??'',
   verificarSesion:async()=>{
    cliente=await clienteSupabaseServidor();
    const {data:{user},error}=await cliente.auth.getUser();
