@@ -95,6 +95,7 @@ declare
  j2 jsonb;
  claimed jsonb;
  q jsonb;
+ v integer;
 begin
  perform cotironda_private.save_offer_draft_atomic_v1(r,s,
    'eeeeeeee-0000-4000-8000-000000000471',0,offer);
