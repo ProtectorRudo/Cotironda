@@ -1,7 +1,7 @@
 # 02 — Reglas funcionales
 
 ## UX-001 — regla transversal de simplicidad radical
-No construir un sistema que obligue al comprador o al corralón a aprender un portal: **WhatsApp primero para ambos, web opcional para seguimiento y decisiones**. El usuario no transcribe ni separa rubros ni repite datos enviados. Mensajes con lenguaje claro, contexto, próximo paso y errores accionables; estados siempre honestos. Aclaraciones acotadas, sin interrumpir materiales seguros. Precio/cambios requieren confirmación breve; adjudicación siempre por comprador. Cada interacción que añada pasos, pantallas o capacitación requiere justificación, tests móviles y prueba de usabilidad. **No confundir objetivo UX con WhatsApp ya funcionando.** Ver [docs/89](89-ux-cero-friccion-whatsapp-first.md).
+No construir un sistema que obligue al comprador o al corralón a aprender un portal: **WhatsApp primero para ambos, web opcional para seguimiento y decisiones**. El usuario no transcribe ni separa rubros ni repite datos enviados. Mensajes con lenguaje claro, contexto, próximo paso y errores accionables; estados siempre honestos. Aclaraciones acotadas, sin interrumpir materiales seguros. La cotización enviada por el proveedor se registra sin un segundo «Confirmo» y puede corregirse; adjudicación siempre por el comprador. Cada interacción que añada pasos, pantallas o capacitación requiere justificación, tests móviles y prueba de usabilidad. **No confundir objetivo UX con WhatsApp ya funcionando.** Ver [docs/89](89-ux-cero-friccion-whatsapp-first.md).
 
 ## Pedido
 - Empresa compradora autenticada carga documento o texto, datos de entrega, urgencia, condiciones y plazo.
@@ -17,10 +17,10 @@ No construir un sistema que obligue al comprador o al corralón a aprender un po
 - Invitaciones limitadas y pertinentes, con rotación y mecanismo de baja.
 
 ## Ofertas
-- Recibidas por WhatsApp o portal y estructuradas en borrador; **el proveedor confirma** antes de validez.
+- Recibidas por WhatsApp o portal y registradas como **oferta recibida al enviarlas**, siempre que la procedencia se verifique en el backend; **no pedir una confirmación adicional**. El proveedor puede corregir enviando una nueva versión.
 - Oferta incluye moneda, cantidad, unidad, especificación, IVA, precio, transporte, descuentos, mínimo, plazo, disponibilidad y forma de pago.
 - Si faltan datos determinantes, marcar «requiere aclaración». **No asumir IVA ni flete, ni que el precio es neto/bruto.** Cada proveedor declara en los **detalles de su oferta** si el precio incluye IVA o si es más IVA, con alícuota confirmada; y si el flete está incluido, se cotiza por separado, es expresamente sin cargo o está pendiente. Un valor omitido NO equivale a cero. Sin esas aclaraciones no presentar un importe final ni competir en ranking por precio. Ver docs/125.
-- Cada cambio confirmado crea versión inmutable. Al cierre se congela la oferta vigente, salvo reapertura auditada.
+- Cada nueva oferta o corrección enviada crea una versión inmutable. Al cierre se congela la última recibida dentro de plazo, salvo reapertura auditada.
 - Marcas alternativas válidas si son técnicamente equivalentes y no hay requisito obligatorio; alternativas no equivalentes, visibles pero fuera del cálculo conforme.
 
 ## Privacidad y resultado
@@ -28,8 +28,8 @@ No construir un sistema que obligue al comprador o al corralón a aprender un po
 - Proveedores no ven identidad, oferta detallada ni archivos de competidores.
 - No compartir ranking ordinal salvo canasta completa y comparación realmente equivalente.
 - Adjudicación manual a uno o hasta dos proveedores por rubro con asignación de cantidades no duplicada.
-- Sólo ganadores y comprador intercambian identidad/contacto después de confirmación. No garantizar compra ni entrega en MVP.
-- Registrar transiciones, quién decidió, por qué y cuándo; prohibir adjudicación después de cambios no confirmados.
+- Sólo ganadores y comprador intercambian identidad/contacto según las reglas de adjudicación manual aprobadas. No garantizar compra ni entrega en MVP.
+- Registrar transiciones, quién decidió, por qué y cuándo; prohibir adjudicar sobre datos no atribuibles al proveedor o modificaciones posteriores al cierre.
 
 ## Casos antiabuso
 Pedidos falsos, invitaciones duplicadas por rubro compartido, cambios fuera de plazo, modificación de oferta ajena, proveedor sin consentimiento, archivos maliciosos y spam.
@@ -50,4 +50,7 @@ La consulta se dirige a **todos los proveedores elegibles que tengan confirmado 
 La IA debe leer notas, pies y aclaraciones **dentro del presupuesto** con evidencia literal verificable, no dar IVA/flete por ausentes únicamente porque no están en los renglones. Si no hay evidencia clara, mostrar «IVA no informado» o «Flete no informado»: el importe citado no acredita esos cargos, pero **nunca** afirmar «IVA excluido», «flete gratuito» o «precio final» como hecho sin declaración. Contradicciones se consultan, no se resuelven por estimación. Si el comprador exige **con IVA incluido**, incorporar esa condición en la misma solicitud enviada a cada proveedor elegible para que responda respetándola o aclare su imposibilidad. No agregar pasos al comprador ni invitaciones adicionales. Ver docs/126; solo protocolo offline probado, no IA live ni WhatsApp real.
 
 ## MVP-007 — Conversión controlada a borradores de cotización
-En ofertas entrantes nunca asignar `precioUnitarioNeto` directamente a partir de un importe de presupuesto: primero verificar el origen del precio, si la nota dice **más IVA / incluido / no informado**, la alícuota explícita y el requisito expreso del comprador. En precio bruto con IVA solo calcular base cuando la conversión determinista al centavo recompone el bruto original; ante diferencias de redondeo, retener y preguntar. Flete cero solo si el proveedor declara sin cargo o incluido; flete adicional con monto y cita válida; omisión no equivale a cero. Todo sigue siendo borrador D046 que confirma el proveedor; equivalencias técnicas siguen sin verificar. MVP-007 solo offline, sin Whapi ni IA live. Ver docs/127.
+En ofertas entrantes nunca asignar `precioUnitarioNeto` directamente a partir de un importe de presupuesto: primero verificar el origen del precio, si la nota dice **más IVA / incluido / no informado**, la alícuota explícita y el requisito expreso del comprador. En precio bruto con IVA solo calcular base cuando la conversión determinista al centavo recompone el bruto original; ante diferencias de redondeo, retener y preguntar. Flete cero solo si el proveedor declara sin cargo o incluido; flete adicional con monto y cita válida; omisión no equivale a cero. La cotización se registra al recibirla del proveedor verificado según la nueva decisión MVP-008; D046 de doble confirmación queda legado offline. Equivalencias técnicas siguen sin verificar. MVP-007 solo offline, sin Whapi ni IA live. Ver docs/127.
+
+## MVP-008 — Regla vigente, prioridad máxima: fluidez sin pasos extra
+**No pedir al comprador confirmación de renglones ni al proveedor confirmar una oferta que ya envió.** Enviar pedido autoriza distribuir; solo preguntar datos vitales ausentes, empezando por localidad/zona de entrega. Con zona de pedido o perfil vigente, no preguntar. Consultar una sola vez a cada comercio elegible con sus materiales y **zona de entrega**; incluir condiciones extraordinarias del comprador únicamente cuando las pidió de forma explícita (p. ej. con IVA). Respuesta de comercio identificada y autenticada = cotización recibida, visible con aclaraciones aunque falten IVA/flete; nuevas respuestas actualizan con versiones inmutables. El precio publicado puede mostrarse, pero **no se inventan totales finales ni rankings económicos** si faltan datos suficientes. Toda interacción de autorización, remitente, opt-in, idempotencia, adjudicación manual y privacidad se conserva. Ver [docs/128](128-mvp-008-flujo-sin-friccion.md): esta decisión rectifica confirmaciones redundantes históricas D022–D026/D046. Aún falta migrar SQL y Whapi real.
