@@ -198,7 +198,7 @@ select ci_helpers.assert_true(
  ->>'repetido'='true','d081_old_question_never_requeues');
 reset role;
 select pg_temp.d081_fail(
- $select cotironda_private.whapi_create_buyer_round_d081(
+ $$select cotironda_private.whapi_create_buyer_round_d081(
   'd081_ci',repeat('a',64),repeat('2',64),repeat('3',64),
   'aaaaaaaa-0081-4081-8081-000000000811','Rosario',
   'con_iva',pg_temp.items_d081())$$,
