@@ -1,5 +1,7 @@
 # Cotironda
 
+> **MVP-060 (ejecutor real preparado, APAGADO):** una ruta POST privada en Preview puede drenar hasta 3 pedidos WhatsApp por tick, con 5 conexiones PostgreSQL independientes de permisos mínimos y descifrado AES autenticado. El entorno DEV, las credenciales, el cron y Whapi **NO están activados**. [Procedimiento y controles](docs/180-mvp-060-ejecutor-http-comprador.md). #333.
+
 > **MVP-059 (flujo consumidor de WhatsApp en desarrollo, sin ejecución real):** la cola D082 queda conectada a lector cifrado D077, intérprete D073, alta de ronda idempotente D081 e invitaciones D071. Pruebas con texto de arquitecto, zona faltante, reintentos sin duplicar, empresa no autorizada y cifrado inválido. **Ningún emisor Whapi, DB real ni cron habilitado.** [Detalles](docs/179-mvp-059-pipeline-queue-comprador.md). #331.
 
 > **MVP-058 (lectura de texto WhatsApp en desarrollo, sin envíos):** el arquitecto puede escribir cemento, hidrófugo y látex con cantidades en **un solo mensaje**, seguido de `Entrega: La Plata.`. El parser D073 conserva cada cantidad y deriva familia/canal mediante D028, consulta la zona solo si falta y retiene ambigüedades sin inventar. [Detalles y pruebas](docs/178-mvp-058-lista-natural-whatsapp.md). Supabase comercial y Whapi reales siguen pendientes.
