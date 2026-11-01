@@ -208,7 +208,7 @@ export async function procesarWebhookWhapiAislado(
         }catch{return resultado(503,{error:'resolucion_no_disponible'})}
         if(buyer!==null){
           if(supplier!==null||!uuid(buyer.buyerOrgId)||
-            !buyer.chatHabilitado||!buyer.consentimientoContactoVigente)
+            !buyer.chatHabilitado)
             return resultado(403,{error:'remitente_no_habilitado'});
           if(!dep.registrarBajaComprador)
             return resultado(503,{error:'bajas_no_configuradas'});
