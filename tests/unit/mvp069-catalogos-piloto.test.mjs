@@ -3,15 +3,15 @@ import assert from 'node:assert/strict';
 import {analizarListadoComercioMvp069 as read,
  simularConsultasCatalogosMvp069 as simulate}
  from '../../src/domain/catalogo-listado-mvp069.ts';
-const a='Cemento Avellaneda 25 kg\nHidrófugo Ceresita 1 l\nArena fina';
-const b='producto;precio;cantidad;rubro\nCemento Loma Negra 50 kg;9900;2;corralon\nCal aérea;3400;1;corralon';
+const a='Cemento Avellaneda 25 kg\nHidrófugo Ceresita 1 l\nArena especial sin ficha';
+const b='producto;precio;cantidad;rubro\nCemento Loma Negra 50 kg;9900;2;corralon\nGranza especial sin ficha;3400;1;corralon';
 const pedido='20 bolsas de cemento CPC 50 kg, 5 litros de hidrófugo, 6 litros de pintura látex. Entrega: La Plata.';
 test('MVP069 texto natural detecta familia y retiene todo material desconocido',()=>{
  const r=read(a,'texto');
  assert.equal(r.estado,'interpretado_para_simulacion_sin_confirmar');
  assert.deepEqual(r.reconocidos.map(i=>i.producto_id),['cemento_gris_obra','hidrofugo']);
  assert.equal(r.pendientes.length,1);
- assert.equal(r.pendientes[0].descripcion,'Arena fina');
+ assert.equal(r.pendientes[0].descripcion,'Arena especial sin ficha');
 });
 test('MVP069 CSV exportado de Excel: delimitador ; y precios ignorados',()=>{
  const r=read(b,'csv');

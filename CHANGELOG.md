@@ -1,5 +1,11 @@
 # Registro de cambios
 
+## MVP-070 — 51 materiales iguales para ambos corralones en demo
+- Mismo listado ficticio, amplio y sin precios, desde una sola fuente de código en los dos cuadros de `/probar/catalogos`; cada proveedor puede editar su lista en la simulación.
+- Taxonomía D015 ampliada en 22 familias específicas, v2 y snapshot Edge sincronizado; negativas para no confundir ladrillos, hormigón celular ni cementos especiales. Pruebas de reparto igualitario y filtro por zona.
+- **Sin persistencia de catálogos ni Whapi real**; fuentes, limitaciones y gates en docs/190.
+
+
 ## MVP-069 — carga CSV/TXT de negocios y selección simulada por catálogo
 - Pantalla móvil `/probar/catalogos` con dos listados locales en CSV/TXT; parser conservador de seis familias curadas, desconocidos y duplicados pendientes. Ignora precios; catálogo preliminar no equivale a producto activo en backend.
 - Pedido con localidad; consultas solo para negocios cuya familia reconocida coincide y que declaran esa zona. Pruebas adversarias sin red.
