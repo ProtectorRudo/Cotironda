@@ -96,6 +96,7 @@ where id in('eeeeeeee-0056-4056-8056-000000000561'::uuid,
 -- IA extraction is out of scope; here items are already curated by D078.
 create temp table pilot56_created(round_id uuid);
 grant insert on pg_temp.pilot56_created to cotironda_whapi_round_gateway_d081;
+grant select on pg_temp.pilot56_created to cotironda_match_gateway_d065;
 set local role cotironda_whapi_round_gateway_d081;
 do $create$declare v jsonb;v_replay jsonb;v_items jsonb:= '[
  {"line_no":1,"product_code":"cemento_gris_obra",
