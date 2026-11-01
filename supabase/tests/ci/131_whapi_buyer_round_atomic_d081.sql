@@ -14,7 +14,7 @@ begin
  begin execute command;
  exception when others then
   get stacked diagnostics v_error=message_text;
-  if pg_catalog.position(expected in v_error)=0
+  if pg_catalog.strpos(v_error,expected)=0
   then raise exception 'd081_incorrect_error_expected_%,_actual_%',expected,v_error;end if;
   v_failed:=true;
  end;
