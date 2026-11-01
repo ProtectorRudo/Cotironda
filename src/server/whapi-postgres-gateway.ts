@@ -8,6 +8,7 @@
  * El SQL es fijo y PARAMETRIZADO; jamás se interpolan datos Whapi.
  */
 import type {AlmacenWhapiPrivado,EntradaCifradaD028,
+  EntradaCifradaCompradorMvp042,BajaProtegidaCompradorMvp042,
   BajaProtegidaD028,ResultadoD028,VinculoConfiable} from './whapi-crypto-broker.ts';
 
 export type PuertoPostgresD030=Readonly<{
@@ -98,4 +99,62 @@ export function crearPuertoPostgresWhapiD030(db:PuertoPostgresD030):AlmacenWhapi
       return parseResult(raw,'baja_registrada');
     }
   };
+}
+
+
+/**
+ * MVP-043: opt-in bridge to D074 buyer SQL. The existing D030 supplier
+ * adapter is unchanged; only a deliberately selected private worker may
+ * construct this dual-role variant. Never connect directly to browser.
+ */
+export function crearPuertoPostgresWhapiDualD074(db:PuertoPostgresD030):
+ AlmacenWhapiPrivado{
+ const supplier=crearPuertoPostgresWhapiD030(db);
+ async function call(sql:string,args:readonly unknown[]):Promise<unknown>{
+  try{
+   const result=await db.query(sql,args);
+   if(!obj(result)||!Array.isArray(result.rows)||result.rows.length!==1||
+    !exact(result.rows[0],['payload']))fallo();
+   return result.rows[0].payload;
+  }catch{fallo()}
+ }
+ const RESOLVE='select cotironda_private.whapi_resolve_buyer_d074($1::text,$2::text) as payload';
+ const INSERT='select cotironda_private.whapi_record_buyer_d074($1::text,$2::text,$3::text,$4::text,$5::text,$6::bytea,$7::bytea,$8::bytea,$9::bigint,$10::text) as payload';
+ const OPT_OUT='select cotironda_private.whapi_buyer_optout_d074($1::text,$2::text,$3::text,$4::text,$5::bigint) as payload';
+ return Object.freeze({
+  ...supplier,
+  resolverComprador:async(channel,chatKey)=>{
+   if(!ch(channel)||!sha(chatKey))fallo();
+   const out=await call(RESOLVE,[channel,chatKey]);
+   if(out===null)return null;
+   if(!exact(out,['buyerOrgId','consentimientoContactoVigente',
+     'chatHabilitado'])||typeof out.buyerOrgId!=='string'||
+     !UUID.test(out.buyerOrgId)||out.consentimientoContactoVigente!==true||
+     out.chatHabilitado!==true)fallo();
+   return Object.freeze({
+    buyerOrgId:out.buyerOrgId as string,
+    consentimientoContactoVigente:true as const,
+    chatHabilitado:true as const
+   });
+  },
+  registrarEntradaComprador:async(d:EntradaCifradaCompradorMvp042)=>{
+   if(!obj(d)||!ch(d.channel)||!sha(d.chatKey)||!sha(d.messageKey)||
+    !sha(d.fingerprint)||!UUID.test(d.buyerOrgId)||
+    !KINDS.has(d.kind)||!buffer(d.ciphertext,[1,8192])||
+    !buffer(d.nonce,12)||!buffer(d.tag,16)||!time(d.sourceUnix)||
+    typeof d.cryptoKeyId!=='string'||!KEY_ID.test(d.cryptoKeyId)||
+    d.cryptoKeyId==='legacy_d029')fallo();
+   const out=await call(INSERT,[d.channel,d.chatKey,d.messageKey,
+    d.fingerprint,d.kind,d.ciphertext,d.nonce,d.tag,
+    d.sourceUnix,d.cryptoKeyId]);
+   return parseResult(out,'entrada_persistida');
+  },
+  registrarBajaComprador:async(d:BajaProtegidaCompradorMvp042)=>{
+   if(!obj(d)||!ch(d.channel)||!sha(d.chatKey)||!sha(d.messageKey)||
+    !sha(d.fingerprint)||!UUID.test(d.buyerOrgId)||!time(d.sourceUnix))fallo();
+   const out=await call(OPT_OUT,[d.channel,d.chatKey,d.messageKey,
+    d.fingerprint,d.sourceUnix]);
+   return parseResult(out,'baja_registrada');
+  }
+ } satisfies AlmacenWhapiPrivado);
 }
