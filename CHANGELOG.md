@@ -1,5 +1,11 @@
 # Registro de cambios
 
+## MVP-053 — Plazo comercial WhatsApp de 3–7 días, default 5 (sin publicar)
+- Se corrigió el vencimiento de 2 días que D081 tenía fijo. El arquitecto puede indicar una línea opcional de plazo, conservada al preguntar localidad; sin línea son 5 días corridos.
+- Node/SQL rechazan 2, 8 y directivas duplicadas; cierre se calcula con reloj PostgreSQL y duración forma parte del replay idempotente.
+- D066 añade fecha límite local argentina al mensaje específico de cada proveedor, sin revelar identidades. Pruebas Node/PG17 y docs/173, Issue #319.
+- Sin cambios en Supabase DEV, Whapi real, main ni producción; cierre finalistas/contactos sigue pendiente.
+
 ## MVP-052 — Identidad SQL restringida para receptor Whapi (rama de desarrollo)
 - D085 prepara sesión PostgreSQL dedicada con comprobación de login/effective role y `SET ROLE` D084; limita a seis RPC existentes y cierra conexión en error.
 - Tests para cuenta administrativa equivocada, SQL arbitrario, aridad, errores y cierre. Issue #317 / docs/172.
