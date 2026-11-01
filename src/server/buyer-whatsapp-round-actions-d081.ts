@@ -93,10 +93,18 @@ export function crearAccionesRondaWhatsappD081(config:Readonly<{
    if(typeof roundId!=='string'||!UUID.test(roundId))deny();
    try{
     const result=await planner.planificar({roundId});
-    return Object.freeze({estado:result.estado,
-     mensajesEnviados:0 as const,
-     ...(result.nuevasInvitaciones!==undefined?
-      {nuevasInvitaciones:result.nuevasInvitaciones}:{})});
+    const allowed=['queued_without_sending','needs_verified_location',
+     'needs_catalog_mapping','no_eligible_suppliers','desactivado'] as const;
+    if(!allowed.some(x=>x===result.estado))deny();
+    const estado=result.estado as typeof allowed[number];
+    const nuevasInvitaciones='nuevasInvitaciones' in result?
+     result.nuevasInvitaciones:undefined;
+    if(nuevasInvitaciones!==undefined&&
+     (typeof nuevasInvitaciones!=='number'||
+      !Number.isSafeInteger(nuevasInvitaciones)||nuevasInvitaciones<0))deny();
+    return Object.freeze({estado,mensajesEnviados:0 as const,
+     ...(typeof nuevasInvitaciones==='number'?
+      {nuevasInvitaciones}:{})});
    }catch{deny()}
   }
  } satisfies Pick<PuertoCompradorD073,'crearRonda'|'prepararInvitaciones'>);
