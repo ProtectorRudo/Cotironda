@@ -8,7 +8,7 @@ Estados: **Aprobado**, **Propuesto**, **Pendiente**. Toda nueva decisión lleva 
 - D003 Compradores con suscripción prevista de ARS 10.000/mes; validar monto y costos antes de lanzamiento.
 - D004 (SUSTITUIDA por D013, 30/10/2026): la confirmación previa por línea queda anulada.
 - D005 WhatsApp vía Whapi+IA como canal preferido de proveedores; portal alternativo.
-- D006 Anonimato durante ronda, adjudicación humana y revelación de contactos según decisión.
+- D006 (RECTIFICADA por UX-002, 31/10/2026): anonimato durante la ronda; ya NO se adjudica en la plataforma. Finalistas automáticos al cierre y contactos recíprocos consentidos.
 - D007 Ranking separa cobertura, competitividad y costo completo. No enfrentar canastas diferentes.
 - D008 Marcas flexibles salvo especificación obligatoria del comprador.
 - D009 Evaluar compras completas con uno o hasta dos proveedores.
@@ -18,8 +18,8 @@ Estados: **Aprobado**, **Propuesto**, **Pendiente**. Toda nueva decisión lleva 
 
 ## UX-001 (APROBADA 30/10/2026): simplicidad radical para ambos roles
 **Contexto:** el propietario declara que Cotironda debe ser hiperintuitiva, cero fricción innecesaria y muy amigable tanto para el comprador como para el corralón y demás proveedores. Ninguno debe necesitar un curso o ingresar a la plataforma para tareas cotidianas.
-**Decisión:** WhatsApp-first en ambos lados. El comprador manda una sola lista por WhatsApp o portal; autoriza distribución automática (D013), sin revisar cada material claro. Los proveedores reciben solo lo pertinente y pueden responder con texto, archivos o audios por WhatsApp; la IA prepara un borrador, pide dudas puntuales y el proveedor **confirma** precio/cambios por conversación. Cotironda sincroniza y registra el presupuesto; el portal sirve para ver estados, ofertas, comparaciones y adjudicación, siendo opcional para cotizar. El plazo de siete días es un ejemplo configurable: el cierre **no** selecciona ganador; adjudica el comprador.
-**Reglas:** prohibir repetir datos, registro/curso forzado, mensajes confusos y pasos no justificados; exigir pruebas de usabilidad con personas no técnicas de ambos roles antes de piloto. Mantener opt-in, privacidad, permisos, confirmación económica, controles técnicos y adjudicación manual. El objetivo se documenta ahora y **no afirma conexión Whapi implementada**.
+**Decisión:** WhatsApp-first en ambos lados. El comprador manda una sola lista por WhatsApp o portal; autoriza distribución automática (D013), sin revisar cada material claro. Los proveedores reciben solo lo pertinente y pueden responder con texto, archivos o audios por WhatsApp; la IA prepara un borrador, pide dudas puntuales y el proveedor **confirma** precio/cambios por conversación. Cotironda sincroniza y registra el presupuesto; el portal sirve para ver estados, ofertas y comparaciones; no adjudica. El plazo de siete días es un ejemplo configurable. **Este último punto queda rectificado por UX-002:** al cierre se identifican hasta dos presupuestos finalistas comparables y se habilita el contacto mutuo consentido sin intervención posterior del comprador.
+**Reglas:** prohibir repetir datos, registro/curso forzado, mensajes confusos y pasos no justificados; exigir pruebas de usabilidad con personas no técnicas de ambos roles antes de piloto. Mantener opt-in, privacidad, permisos, atribución económica y controles técnicos. UX-002 sustituye la adjudicación manual por contacto de finalistas. El objetivo se documenta ahora y **no afirma conexión Whapi implementada**.
 **Impacto:** AGENTS, README, producto, reglas, WhatsApp, pruebas, roadmap y contrato [docs/89](89-ux-cero-friccion-whatsapp-first.md). Issue #151; PR de documentación en revisión.
 
 ## Propuestas pendientes de confirmar
@@ -35,7 +35,7 @@ Estados: **Aprobado**, **Propuesto**, **Pendiente**. Toda nueva decisión lleva 
 - A002 Qué información de ofertas ve comprador antes del cierre.
 - A003 Condiciones de equivalencia técnica, marcas y unidades.
 - A004 Reglas concretas de garantía/calidad, vencimiento y reapertura.
-- A005 Roles y autorizaciones para adjudicación, compras a varios proveedores.
+- A005 (REDEFINIDA por UX-002): permisos del cierre y revelación automática de contactos; compra y trato comercial se concretan fuera de Cotironda.
 - A006 Términos, privacidad, WhatsApp, política anti-spam.
 - A007 IVA, precio de suscripción, prueba gratis, ajustes y pagos.
 - A008 Cómo definir y medir objetivamente entrega/stock, filtros de confianza y reclamos.
@@ -44,7 +44,7 @@ No considerar ninguna propuesta automáticamente aprobada solo por estar documen
 
 ## D013 (APROBADA 30/10/2026): distribución automática selectiva
 **Contexto:** el propietario corrige explícitamente D004. El diferencial comercial es cargar la lista UNA vez, no obligar a revisar un presupuesto reconstruido.
-**Decisión:** el comprador autoriza distribución al enviar PDF, imagen, Excel, Word o texto. Cotironda extrae materiales y solicita cotizaciones automáticamente a cada proveedor únicamente por los productos de su catálogo confirmado y que entrega en la zona. Nunca basta el rubro; dudas/duplicados se retienen puntualmente y se notifican sin bloquear otras líneas. No hay aprobación previa por línea. Enviar una sola invitación idempotente por proveedor/ronda, con consentimiento y anti-spam. Confirmación de precios por proveedor y adjudicación humana permanecen. Issue #102.
+**Decisión:** el comprador autoriza distribución al enviar PDF, imagen, Excel, Word o texto. Cotironda extrae materiales y solicita cotizaciones automáticamente a cada proveedor únicamente por los productos de su catálogo confirmado y que entrega en la zona. Nunca basta el rubro; dudas/duplicados se retienen puntualmente y se notifican sin bloquear otras líneas. No hay aprobación previa por línea. Enviar una sola invitación idempotente por proveedor/ronda, con consentimiento y anti-spam. Atribución del precio recibido y anonimato permanecen; la adjudicación humana histórica fue sustituida por finalistas y contacto mutuo (UX-002). Issue #102.
 **Impacto:** requiere corregir contrato documental, matching, avisos de cobertura y límites; una prueba offline no acredita envío real ni seguridad comercial.
 
 ## P007 — Política de alternativas de cotización (PROPUESTA TÉCNICA, pendiente aprobación comercial)
