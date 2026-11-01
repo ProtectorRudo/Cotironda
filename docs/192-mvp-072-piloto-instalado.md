@@ -16,7 +16,7 @@ Fecha: 01/11/2026. Proyecto Supabase **solo PILOTO** (PostgreSQL 17.11): `ilggka
 1. Conteos DB: participantes=3; catálogo=102 (51/51); reconocidos=82; teléfonos/consentimientos=0; pedidos=0; presupuestos=0; salida WhatsApp=false.
 2. Comparación de ambas listas de los 51 renglones: diferencias=0.
 3. Permisos: 7/7 tablas `relrowsecurity=true`, `has_table_privilege(anon|authenticated|service_role, SELECT)=false`.
-4. Prueba **transaccional con rollback**: solicitud cementos+hidrófugo La Plata devuelve 2 candidatos; solicitud de iguales materiales a Berisso devuelve 0; ambas cotizaciones permanecen sin confirmar y sin envío; guarda extra de pallets/flete en `original_quote`; UPDATE del original es rechazado; replay con mismo HMAC es rechazado; envío y recepción siguen apagados. ROLLBACK ejecutado, y verificado de nuevo: 0 pedidos / 0 ofertas / 0 invitaciones.
+4. Prueba **transaccional con rollback** (SQL versionado en `supabase/piloto/mvp072_smoke_rollback.sql`, ejecutado contra la base piloto con resultado sin errores): solicitud cementos+hidrófugo La Plata devuelve 2 candidatos; solicitud de iguales materiales a Berisso devuelve 0; ambas cotizaciones permanecen sin confirmar y sin envío; guarda extra de pallets/flete en `original_quote`; UPDATE del original es rechazado; replay con mismo HMAC es rechazado; envío y recepción siguen apagados. ROLLBACK ejecutado, y verificado de nuevo: 0 pedidos / 0 ofertas / 0 invitaciones.
 5. Security Advisor: únicamente 7 INFO «RLS activo sin policy», esperado/restringido; no se desplegó ni se cambió configuración de Auth.
 
 ## Pendientes indispensables para piloto WhatsApp real
