@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {parseBuyerPilot,validMessage}
+import {parseBuyerPilot,canPrepareBuyerPilot,validMessage}
  from '../../supabase/functions/cotironda-piloto-whapi/core.ts';
 test('MVP073: pedido 2 artículos con zona La Plata',()=>{
  const p=parseBuyerPilot('20 bolsas de cemento CPC 50 kg, 5 litros de hidrófugo. Entrega: La Plata.');
@@ -52,4 +52,17 @@ test('MVP073: esquema private; RPC solo role, confirmación y banderas apagadas'
  assert.match(edge,/cotironda_piloto_authorize_whapi_v1/);
  assert.match(edge,/cotironda_piloto_finish_whapi_v1/);
  assert.doesNotMatch(edge,/\b221\d{7}\b/);
+});
+
+test('MVP073: NO enviar pedido parcialmente reconocido, ni sin zona',()=>{
+ const parcial=parseBuyerPilot('20 bolsas de cemento CPC 50 kg, 2 bolsas de adhesivo especial. Entrega: La Plata.');
+ assert.equal(parcial.items.length,1);
+ assert.equal(parcial.unresolved.length,1);
+ assert.equal(canPrepareBuyerPilot(parcial),false);
+ const sinZona=parseBuyerPilot('20 bolsas de cemento CPC 50 kg');
+ assert.equal(canPrepareBuyerPilot(sinZona),false);
+ const completo=parseBuyerPilot('20 bolsas de cemento CPC 50 kg, 5 litros de hidrófugo. Entrega: La Plata.');
+ assert.equal(canPrepareBuyerPilot(completo),true);
+ const soloDesconocido=parseBuyerPilot('2 bolsas de material desconocido. Entrega: La Plata.');
+ assert.equal(canPrepareBuyerPilot(soloDesconocido),false);
 });
