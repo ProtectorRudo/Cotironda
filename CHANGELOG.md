@@ -1,5 +1,10 @@
 # Registro de cambios
 
+## MVP-051 — Preflight y cierre de conexiones del receptor WhatsApp (DEV, sin publicar)
+- D083 rechaza Content-Type y Content-Length inválidos antes de abrir PostgreSQL; D027 sigue comprobando tamaño real de cuerpo.
+- Puerto SQL D030 permite cierre opcional; D083 lo libera incluso ante errores, sin provocar reenvío cuando ya hubo persistencia.
+- Pruebas de regresión de rechazo sin SQL, liberación y secretos no expuestos. Issue #315 y docs/171. Sin conectar Whapi ni alterar Supabase DEV/main.
+
 ## [Sin publicar] — Etapa 01 / Seguridad y registro
 - Esquema multiempresa propuesto y RLS probadas en PostgreSQL 17 efímero mediante GitHub Actions.
 - Registro SQL atómico de organizaciones, propietarios y proveedores; datos privados e idempotencia persistente por usuario y solicitud.
