@@ -796,3 +796,6 @@
 
 ### 31/10/2026 — MVP-036: política de ahorro de deployments Vercel DEV
 - `apps/portal/vercel.json`: regla global `git.deploymentEnabled: {"**":false}` más única excepción para rama de integración, sin `ignoreCommand` que consume la cuota. Tests unitarios de alcance y configuración, docs/156. Requiere validación de Root Directory/efecto real; no elimina el 402 ya consumido, no actualiza producción, no instala SQL DEV ni activa WhatsApp.
+
+### 31/10/2026 — MVP-037: corregir permisos de carpetas privadas en asistente de backup
+- Se detectó que `mkdir -p -m 700` no asegura permisos sobre carpetas preexistentes. Preflight con Node22 comprueba propietario actual, rutas privadas sin symlinks, HOME no manipulable y bits grupo/otros de keys/backup en 0 antes de generar clave age o leer conexión. Pruebas con chmod/symlink reales sobre fixtures; sin ejecutar backup real ni modificar Supabase/Vercel/Whapi. Ver docs/157, Issue #287 y gate pendiente #175.
