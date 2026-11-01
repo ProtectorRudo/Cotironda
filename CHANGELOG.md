@@ -1,5 +1,11 @@
 # Registro de cambios
 
+## MVP-069 — carga CSV/TXT de negocios y selección simulada por catálogo
+- Pantalla móvil `/probar/catalogos` con dos listados locales en CSV/TXT; parser conservador de seis familias curadas, desconocidos y duplicados pendientes. Ignora precios; catálogo preliminar no equivale a producto activo en backend.
+- Pedido con localidad; consultas solo para negocios cuya familia reconocida coincide y que declaran esa zona. Pruebas adversarias sin red.
+- **No se registra información en DB ni se conecta Whapi.** XLSX/PDF real y backup+restore #175 siguen pendientes. Docs/189.
+
+
 ## MVP-068 — lista privada de 3 participantes Whapi (solo rama)
 - Receptor Preview D083 exige 1 HMAC comprador y 2 HMAC proveedores, distintos y configurados únicamente en secretos privados; valida número remitente + rol antes de consulta SQL, manteniendo autorización y consentimiento por empresa.
 - Pruebas con números completamente ficticios y cuarto número bloqueado. Ningún número real, token ni clave se incorpora a GitHub ni a CI. No se despliega ni se registran contactos en Supabase.
