@@ -103,7 +103,7 @@ function simulation({quote=encrypted(),noAuth=false,receiptFail=false,
   }},
   escritura:{query:async(sql,args)=>{
    s.sql.push({role:'escritura',sql,args});
-   assert.match(sql,/whapi_receive_with_prices_d060/u);
+   assert.match(sql,/whapi_receive_with_original_d093/u);
    s.writes++;if(receiptFail)throw Error('REAL_PRIVATE_DB');
    assert.deepEqual(args.slice(0,3),[CH,MSG,0]);
    const stored=JSON.parse(args[3]),lines=JSON.parse(args[4]);
@@ -114,12 +114,18 @@ function simulation({quote=encrypted(),noAuth=false,receiptFail=false,
    assert.equal(lines[0].quoted_unit_price,'121.00');
    assert.equal(lines[0].vat_basis,'no_informado');
    assert.equal(lines[0].source_line_no,1);
+   const manifest=JSON.parse(args[5]);
+   assert.match(manifest.source_text_sha256,/^[a-f0-9]{64}$/u);
+   assert.equal(manifest.source_lines,quoteTextLines(quote));
+   assert.equal(manifest.total_status,'no_detectado');
    return {rows:[{payload:{state:'offer_received',version:1,
-    revision:1,repeated:replay,prices_preserved:true}}]};
+    revision:1,repeated:replay,prices_preserved:true,
+    original_preserved:true,original_encrypted:true}}]};
   }}
  };
  const worker=crearProcesadorCotizacionesMvp062({
-  habilitado:true,puertos:ports,verificar:verifier()
+  habilitado:true,puertos:ports,verificar:verifier(),
+  exigirOriginalIntegral:true
  });
  return {s,ports,worker};
 }
