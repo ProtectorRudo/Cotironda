@@ -7,6 +7,7 @@ Proyecto único: `ilggkalaafhtiysyzlmg` (`cotironda-piloto`, región São Paulo)
 - `mvp073b_fix_item_ordinality` (corrección descubierta en SQL smoke).
 - `mvp073c_fix_uuid_aggregate` (corrección UUID en PostgreSQL 17).
 - `mvp073d_whapi_durable_outbox` (invitaciones en cola, claims at-most-once, estado incierto sin reintento ciego).
+- `mvp073e_quote_detection_guard` (un saludo no cuenta como presupuesto; el texto original se conserva a revisión).
 
 Edge Function `cotironda-piloto-whapi`, despliegue **v2 / ACTIVE** en Supabase PILOTO. `verify_jwt=false` exclusivamente porque Whapi no envía un JWT de Supabase; la función exige **su propio secreto** en `x-cotironda-webhook-key`, valida canal e identidad, límites de tamaño, chat individual y tiempos, más HMAC y AES-GCM. Sin configuración de secreto/flag, contesta 503 y no abre la base. Proyecto usa únicamente las variables privadas inyectadas por Supabase, jamás claves en repositorio.
 
@@ -23,6 +24,7 @@ Edge Function `cotironda-piloto-whapi`, despliegue **v2 / ACTIVE** en Supabase P
 ## Pruebas realmente ejecutadas
 
 - SQL transaccional (rollback) sobre Supabase PILOTO: 3 enrolamientos sintéticos, comprador crea pedido, dos invitaciones, texto original con pallets y total preservado, replay rechazado, BAJA desactiva, otro mensaje ya no se acepta. Primeros dos intentos encontraron errores SQL y se corrigieron en migraciones independientes; última ejecución PASS.
+- SQL transaccional de saludo/budget: «Hola» se conserva como pendiente y NO se cuenta como oferta; una cotización con importe explícito sí se versiona. PASS, rollback.
 - SQL transaccional de outbox sobre Supabase PILOTO: dos pendientes, lease del destinatario consentido, autorización antes de envío, finalización 1 vez, segundo destinatario en estado incierto, no se genera tercer envío ni reenvío. PASS.
 - Persistencia final: verificar vía queries que **no quedaron** enrolamientos, mensajes, pedidos, ofertas ni envíos sintéticos (ROLLBACK).
 - Función desplegada y listada `ACTIVE`, versión 2. **No hay HTTP POST extremo-a-extremo autenticado con Whapi real** ni envío a teléfono real; no afirmar lo contrario.
