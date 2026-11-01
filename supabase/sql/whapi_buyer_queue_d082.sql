@@ -118,7 +118,7 @@ begin
  update cotironda_private.whapi_buyer_jobs_d082 set
   status=v_status,outcome=v_code,lease_token=null,leased_until=null,
   ready_at=case when v_status='pending' then
-    v_now+pg_catalog.make_interval(secs=15*v_job.attempts*v_job.attempts)
+    v_now+pg_catalog.make_interval(secs=>15*v_job.attempts*v_job.attempts)
     else ready_at end,
   finished_at=case when v_status in
    ('done','manual_review','discarded','dead') then v_now else null end
