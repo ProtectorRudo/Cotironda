@@ -226,7 +226,7 @@ create policy d081_request_insert on cotironda_private.round_requests_d064
 
 create function cotironda_private.whapi_create_buyer_round_d081(
  p_channel text,p_chat text,p_origin text,p_reply text,p_buyer uuid,
- p_zone text,p_iva text,p_items jsonb
+ p_zone text,p_iva text,p_items jsonb,p_days integer default 5
 ) returns jsonb language plpgsql volatile security definer set search_path='' as $fn$
 declare
  v_source cotironda_private.whapi_buyer_inbox_d074%rowtype;
@@ -248,6 +248,7 @@ begin
  or p_zone<>pg_catalog.btrim(p_zone)
  or p_zone!~'^[[:alnum:] .,-]+$'
  or p_iva is null or p_iva not in('no_especificado','con_iva','sin_iva')
+ or p_days is null or p_days not between 3 and 7
  or pg_catalog.jsonb_typeof(p_items) is distinct from 'array'
  or pg_catalog.jsonb_array_length(p_items) not between 1 and 8
  or pg_catalog.length(p_items::text)>6000
@@ -305,7 +306,7 @@ begin
  v_hash:=pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(
    pg_catalog.jsonb_build_object('buyer',p_buyer,'channel',p_channel,
     'chat',p_chat,'origin',p_origin,'reply',p_reply,'zone',p_zone,
-    'iva',p_iva,'items',p_items)::text,'UTF8')),'hex');
+    'iva',p_iva,'items',p_items,'plazoDias',p_days)::text,'UTF8')),'hex');
  select * into v_prev from cotironda_private.buyer_whapi_round_sources_d081
   where channel_id=p_channel and origin_message_key=p_origin;
  if found then
@@ -330,7 +331,7 @@ begin
  end if;
 
  insert into cotironda_private.rounds_v1(buyer_org_id,begins_at,ends_at)
- values(p_buyer,v_now+interval '30 seconds',v_now+interval '2 days')
+ values(p_buyer,v_now+interval '30 seconds',v_now+pg_catalog.make_interval(days=>p_days))
  returning id into v_round;
  for v_i in 0..v_count-1 loop
   v_line:=p_items->v_i;
@@ -363,15 +364,15 @@ end;$fn$;
 grant create on schema cotironda_private to cotironda_whapi_round_writer_d081;
 grant cotironda_whapi_round_writer_d081 to postgres with set true,inherit false;
 alter function cotironda_private.whapi_create_buyer_round_d081(
- text,text,text,text,uuid,text,text,jsonb) owner to cotironda_whapi_round_writer_d081;
+ text,text,text,text,uuid,text,text,jsonb,integer) owner to cotironda_whapi_round_writer_d081;
 revoke cotironda_whapi_round_writer_d081 from postgres;
 revoke create on schema cotironda_private from cotironda_whapi_round_writer_d081;
 revoke all on function cotironda_private.whapi_create_buyer_round_d081(
- text,text,text,text,uuid,text,text,jsonb)
+ text,text,text,text,uuid,text,text,jsonb,integer)
  from public,anon,authenticated,service_role,cotironda_app;
 grant execute on function cotironda_private.whapi_create_buyer_round_d081(
- text,text,text,text,uuid,text,text,jsonb)
+ text,text,text,text,uuid,text,text,jsonb,integer)
  to cotironda_whapi_round_gateway_d081;
 comment on function cotironda_private.whapi_create_buyer_round_d081(
- text,text,text,text,uuid,text,text,jsonb)
+ text,text,text,text,uuid,text,text,jsonb,integer)
  is 'CI-only WhatsApp buyer round; HMAC company+messages, replay and pending consumed atomically; NO WhatsApp send';
