@@ -810,3 +810,6 @@
 
 ### 31/10/2026 — MVP-040: primer puente WhatsApp arquitecto → ronda → proveedores
 - Consumidor privado `src/server/buyer-whatsapp-ingress-d073.ts` procesa entrada confiable y cifrada de comprador (vía puerto pendiente de conectar), extrae lista textual verificada sin pedir confirmación extra, prepara pregunta de localidad idempotente en outbox, permite continuar con respuesta posterior del mismo chat y llama creación de ronda + preparación de invitaciones D071 tras COMMIT. Rechaza adjuntos sin descarga/escaneo/extracción autorizados, identidad no vinculada y ausencia de consentimiento previo de contacto. Sin envíos/SQL DEV/Whapi live/IA de documentos: ver [docs/160](docs/160-mvp-040-ingreso-whatsapp-comprador.md) e Issue #293; bloqueos #175 y wiring real.
+
+### 31/10/2026 — MVP-041: preparar Whapi.Cloud para QR sin activar tráfico
+- Propuesta segura de webhook Body/messages.post + encabezado secreto, auditor GET-only con URL fija `/health?wakeup=false`, `/users/profile` y `/settings` (respuesta sanitaria sin teléfonos, secretos ni payload), comando local privado sin envíos ni cambio de ajustes y pruebas adversariales. **No existe webhook real montado todavía**; ni token guardado, ni Whapi vinculado, ni backend comercial instalado. Ver [docs/161](docs/161-mvp-041-conectar-whapi-qr.md); bloqueo de respaldo DEV #175 intacto.
