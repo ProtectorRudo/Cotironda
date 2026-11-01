@@ -1,5 +1,7 @@
 # Cotironda
 
+> **MVP-055 (prueba de contrato, SIN conexión real):** un único número Whapi central para todos los arquitectos y comercios. Revisado el patrón probado en repo OFI `ofi-v2`; test con 2 compradores, 3 proveedores y 6º contacto de software para demostrar que **la cuota de 5 conversaciones es solo del Sandbox gratuito de Whapi**, no una restricción nuestra. [Preparación y límites](docs/175-mvp-055-whapi-numero-central-ofi.md). No enviar mensajes ni activar webhook 503 hasta completar gateway privado.
+
 > **MVP-054 (código de desarrollo, no operativo):** función privada PostgreSQL para abrir/cerrar rondas vencidas idempotentemente, más selección de hasta dos finalistas anónimos por rubro reutilizando D039. **Aún no hay scheduler, ofertas reales procesadas ni revelación de contactos.** [Docs/174](docs/174-mvp-054-cierre-y-finalistas-rubro.md), Issue #321. `main` y Supabase DEV sin cambios.
 
 > **MVP-053 (WhatsApp-first, sin publicar):** cada pedido de materiales por WhatsApp usa 5 días corridos para recibir ofertas, o un plazo explícito de 3 a 7; la fecha límite se conserva si falta la zona y se anuncia al comercio. D081 deja atrás el plazo fijo de 2 días. [Reglas y pruebas](docs/173-mvp-053-plazo-ronda-whatsapp.md). Sin envíos reales ni cierre/contactos activos; #175 permanece pendiente.
