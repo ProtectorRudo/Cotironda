@@ -27,11 +27,11 @@ Actuar como director técnico, desarrollador, analista de producto y auditor. Pr
 8. No integrar o desplegar por suposición; mantener producción aislada.
 
 ## Fundamento del producto — UX-001 (APROBADO)
-**Cotironda debe ser hiperintuitiva, de cero fricción innecesaria y sumamente amigable para compradores, corralones y demás proveedores. Deben poder utilizarla sin curso ni obligación de entrar regularmente al portal.** WhatsApp es la conversación principal para AMBOS lados; el portal complementa con seguimiento, comparación y adjudicación, no impone carga manual.
+**Cotironda debe ser hiperintuitiva, de cero fricción innecesaria y sumamente amigable para compradores, corralones y demás proveedores. Deben poder utilizarla sin curso ni obligación de entrar regularmente al portal.** WhatsApp es la conversación principal para AMBOS lados; el portal complementa con seguimiento y comparación; no impone carga manual ni exige adjudicar. UX-002: al vencer el plazo, el sistema identifica hasta dos finalistas por canasta comparable y habilita contacto mutuo consentido, sin compra dentro de Cotironda.
 - Enviar una sola vez el pedido por WhatsApp o portal; Cotironda clasifica y distribuye sin obligar revisión previa por línea clara (D013). Aclaraciones solo si hacen falta.
 - El proveedor responde por WhatsApp: **la cotización queda registrada al recibirse de un remitente autenticado, sin pedir «Confirmo»**. Puede editarla enviando una corrección; se versiona con estado honesto sincronizado. El portal es opcional.
 - Antes de aprobar cada interacción, auditar: pasos, necesidad de registro/capacitación, repeticiones, accesibilidad móvil, mensajes y dudas innecesarios. Probar con una persona no técnica de cada rol antes de piloto.
-- Fricción cero **no** elimina consentimiento, baja, autenticación, privacidad, precisión en la lectura de precios o adjudicación manual. **No confundir autenticación/atribución del precio con exigir que el proveedor confirme por segunda vez lo que acaba de enviar.** Eliminar la complejidad visible sin saltar salvaguardas.
+- Fricción cero **no** elimina consentimiento, baja, autenticación, privacidad, precisión en la lectura de precios o revelación mutua autorizada al cierre. **No confundir autenticación/atribución del precio con exigir que el proveedor confirme por segunda vez lo que acaba de enviar.** Eliminar la complejidad visible sin saltar salvaguardas.
 - Esta experiencia WhatsApp-first es el OBJETIVO, no una integración ya implementada. No atribuir funcionamiento real a Whapi antes de pruebas E2E.
 Ver [docs/89](docs/89-ux-cero-friccion-whatsapp-first.md), decisión UX-001, Issue #151.
 
@@ -45,7 +45,7 @@ Ver [docs/89](docs/89-ux-cero-friccion-whatsapp-first.md), decisión UX-001, Iss
 - Separar cobertura, competitividad e importe final con IVA, transporte y condiciones; **nunca exigir aclaración de IVA/flete para registrar o mostrar la oferta recibida**.
 - Sin ranking engañoso o presiones de precios por mensajes automáticos.
 - Una respuesta del proveedor autenticado constituye su cotización presentada; no pedir confirmación redundante por IA. Los datos ambiguos quedan señalados, no inventados ni comparados.
-- Adjudicación manual; identidad de oferentes protegida durante ronda.
+- UX-002 (31/10/2026) sustituye la adjudicación manual: al cierre se identifican hasta dos presupuestos finalistas por canasta comparable/rubro. El arquitecto NO elige ni adjudica en la plataforma; se revelan recíprocamente contactos entre comprador y finalistas consentidos/verificados para contratar fuera de Cotironda. Hasta el cierre, proveedores anónimos; no revelar a perdedores. Ver docs/159.
 
 ## Protección
 - Entornos de desarrollo, pruebas y producción separados.
