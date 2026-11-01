@@ -16,8 +16,14 @@ export function separarListaWhatsappNaturalMvp058(original:string):string{
  if(typeof original!=='string'||original.length===0||original.length>4000||
     /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/u.test(original))
   throw new TypeError('mvp058_pedido_invalido');
- return original
+ const split=original
   .replace(NEXT_ITEM,'\n')
   .replace(NEXT_DETAIL,'\n')
   .replace(INLINE_DETAIL,'\n');
+ // A final sentence dot is punctuation, NOT part of a delivery city.
+ // Only strip it on an explicit locality line; never alter item specs.
+ return split.replace(
+  /(^|\n)((?:entrega(?: en)?|entregar en|zona de entrega|localidad de entrega|destino)\s*:\s*[^\r\n]{3,65}?)\.(?=\n|$)/giu,
+  '$1$2'
+ );
 }
