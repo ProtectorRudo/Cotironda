@@ -1,5 +1,10 @@
 # Registro de cambios
 
+## MVP-052 — Identidad SQL restringida para receptor Whapi (rama de desarrollo)
+- D085 prepara sesión PostgreSQL dedicada con comprobación de login/effective role y `SET ROLE` D084; limita a seis RPC existentes y cierra conexión en error.
+- Tests para cuenta administrativa equivocada, SQL arbitrario, aridad, errores y cierre. Issue #317 / docs/172.
+- No introduce `pg`, credenciales, webhook activo, migraciones DEV ni producción. #175 continúa bloqueando recepción real.
+
 ## MVP-051 — Preflight y cierre de conexiones del receptor WhatsApp (DEV, sin publicar)
 - D083 rechaza Content-Type y Content-Length inválidos antes de abrir PostgreSQL; D027 sigue comprobando tamaño real de cuerpo.
 - Puerto SQL D030 permite cierre opcional; D083 lo libera incluso ante errores, sin provocar reenvío cuando ya hubo persistencia.
