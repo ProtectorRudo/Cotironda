@@ -224,7 +224,7 @@ select pg_temp.d081_fail(
   'sin_iva',pg_temp.items_d081())$$,
  'd081_buyer_not_authorized');
 -- Verify deferred provenance only after all D081 calls have committed their source.
-set constraints d081_whapi_provenance_after_insert immediate;
+set constraints cotironda_private.d081_whapi_provenance_after_insert immediate;
 select ci_helpers.assert_true(
  (select count(*)=2 from cotironda_private.buyer_whapi_round_sources_d081
   where channel_id='d081_ci'),
