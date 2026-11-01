@@ -13,7 +13,7 @@
 1. **WhatsApp primero para las dos partes.** Compradores y proveedores pueden avanzar desde su conversación habitual. El portal es un tablero opcional de seguimiento, comparación y decisiones puntuales; no se exige para enviar o responder una cotización.
 2. **Una sola carga, nunca transcripción doble.** Cotironda recibe texto, PDF, planilla, documento, foto o audio donde el canal y la tecnología permitan interpretarlo con confiabilidad. No obligar a reescribir, desglosar manualmente por rubro, copiar precios ni instalar una aplicación. Si WhatsApp no admite alguna operación, ofrecer alternativa clara y accesible, sin prometer capacidades inexistentes.
 3. **Cada quien recibe solo lo que necesita.** El proveedor recibe exclusivamente los materiales pertinentes a su catálogo/producto y cobertura; mensajes breves, naturales, contexto y plazo visibles. El comprador no recibe jerga de IA, SQL, versiones o rankings engañosos.
-4. **Automatizar lo repetitivo y pedir intervención solo ante una decisión o dato ambiguo.** El comprador autoriza la distribución al enviar el pedido (D013), sin aprobar cada línea segura; los renglones dudosos se retienen y consultan puntualmente, sin frenar los demás. El proveedor confirma precios y cambios de forma inequívoca, sin completar formularios extensos.
+4. **Automatizar lo repetitivo y pedir intervención solo ante una decisión o dato ambiguo.** El comprador autoriza la distribución al enviar el pedido (D013), sin aprobar cada línea segura; los renglones dudosos se retienen y consultan puntualmente, sin frenar los demás. La respuesta del proveedor identificado constituye cotización recibida sin segundo «Confirmo», y sus correcciones generan versiones atribuibles, sin formularios extensos.
 5. **Nada de pasos ocultos ni callejones sin salida.** El próximo paso, plazo y estado deben ser comprensibles. La conversación y el portal muestran el mismo estado verificado; reintentos y fallos se resuelven sin repetir lo ya recibido y sin duplicar mensajes.
 6. **Privacidad y trato profesional.** No mostrar otros proveedores, sus ofertas, el contacto de un comprador o datos personales fuera de las reglas aprobadas. No presionar a bajar precios ni enviar recordatorios excesivos. Mensajes simples, educados y en español argentino.
 7. **Móvil antes que escritorio.** Mensajes legibles en pantallas chicas, botones claros si existen, accesibilidad, lectura escaneable, navegación sin capacitación, y opción de ayuda humana o explicación puntual cuando sea necesaria.
@@ -24,14 +24,14 @@
 2. Cotironda entiende, segmenta en rubros/productos, valida catálogo y zona, y distribuye automáticamente únicamente lo seguro y autorizado; **no** obliga a revisar una lista línea por línea (D013).
 3. Recibe confirmación honesta: «Recibimos tu pedido; consultamos a los comercios correspondientes. Faltan aclarar estos dos artículos», **solo si esas acciones ocurrieron**.
 4. Si hay dudas concretas, responde una pregunta puntual; en cualquier momento puede consultar por WhatsApp «¿Cómo viene?» y, si quiere, abrir el portal para ver solicitudes, estados y ofertas.
-5. Al vencer el plazo configurable (por ejemplo, 7 días) ve opciones comparables y parciales claramente diferenciadas. **El sistema no declara un ganador automáticamente**: Cotironda identifica hasta dos finalistas comparables por rubro y habilita contacto comercial mutuo consentido, sin botón de adjudicación ni compra en la plataforma.
+5. Al vencer el plazo configurable (por ejemplo, 7 días) ve opciones comparables y parciales claramente diferenciadas. **No se adjudica ninguna compra**: Cotironda identifica hasta dos finalistas comparables por rubro y habilita contacto comercial mutuo consentido, sin botón de adjudicación ni compra en la plataforma.
 
 ## 3. Flujo ideal proveedor — tan sencillo como responder a un cliente
 
 1. Recibe por WhatsApp una invitación pertinente y comprensible, con productos, cantidades, plazo y zona; consentimiento activo, frecuencia razonable y «no recibir más» sencillo.
 2. Contesta por **texto, foto, audio o archivo** según posibilidad técnica del canal: no tiene obligación de abrir el portal ni crear una planilla nueva.
 3. La IA interpreta la cotización y prepara **un borrador**. Si faltan IVA, presentación, unidad, flete o entrega, hace preguntas breves y específicas; **no inventa valores**.
-4. Cotironda devuelve un resumen entendible para confirmar; «Confirmo» incorpora la oferta confirmada y su versión al tablero. Un cambio de precio requiere nueva confirmación, no se actualiza silenciosamente.
+4. Cotironda registra la respuesta del proveedor autenticado como oferta recibida, sin solicitar «Confirmo» adicional. Una corrección enviada por el mismo proveedor crea una nueva versión atribuible; ante ambigüedad real se pregunta solo lo imprescindible.
 5. El comercio puede preguntar «¿Se registró?», «¿Cuándo cierra?» o «¿Cómo salió?» desde WhatsApp sin entrar al portal. Nunca recibe un puesto engañoso ni datos de competidores.
 6. Ante fallo de procesamiento, recepción o desconexión de Whapi, el sistema muestra estado honesto y alternativa, sin dar por recibido/entregado algo que no llegó.
 
@@ -43,8 +43,8 @@
 | «Alta y gestión de oferta versionada» | «Enviá tu precio» / «Confirmá tu presupuesto» |
 | «Error de validación semántica del ítem» | «¿De cuántos kilos es la bolsa?» |
 | «Solicitud enviada» si solo está en cola | «Estamos enviando tu pedido» |
-| «Presupuesto entregado» si aún falta confirmar | «Recibimos tu respuesta; falta tu confirmación» |
-| «Ganaste» antes de adjudicación | «La ronda cerró; estamos verificando las ofertas finalistas» |
+| «Presupuesto recibido» si solo está en cola | «Recibimos tu mensaje; estamos registrando la cotización» |
+| «Ganaste la venta» cuando solo es finalista | «Tu propuesta quedó entre las finalistas; ya podés contactar al comprador» (solo tras verificar entrega) |
 
 Estos ejemplos **no son mensajes automáticos habilitados**; se evaluarán por políticas de WhatsApp y claridad con usuarios piloto.
 
@@ -55,7 +55,7 @@ Antes de aprobar una nueva función, responder con evidencia:
 - ¿Le agregamos una cuenta, paso, pantalla, descarga, copia manual o explicación que podría evitarse? Si sí, justificar o rediseñar.
 - ¿Qué pasará cuando reciba un texto incompleto, foto borrosa, error de interpretación, duplicado, desconexión o respuesta fuera de plazo?
 - ¿El estado mostrado es verdadero y sincronizado entre canales?
-- ¿Qué confirma la persona realmente y qué hace la IA sin permiso? Mantener consentimiento, autorización, precios confirmados y adjudicación humana.
+- ¿Qué confirma la persona realmente y qué hace la IA sin permiso? Mantener consentimiento, autorización, precios atribuibles y revelación mutua autorizada al cierre.
 - ¿Puede resolverlo desde un celular, con lectura breve y accesible, sin saber qué significa «ronda» o «homologación»?
 
 **Puerta de calidad UX:** ningún PR que agregue interacción se considera listo para piloto sin una prueba del flujo completo con una persona no técnica de cada rol, sin capacitación ni guía paso a paso. Los tests técnicos son necesarios pero no suficientes.
@@ -73,7 +73,7 @@ Antes de aprobar una nueva función, responder con evidencia:
 
 ## 7. Simplicidad no significa negligencia
 
-«Cero fricción» significa **cero fricción innecesaria**, no quitar consentimiento de envío, opt-in del proveedor, autenticación/permisos, controles técnicos, revisión ante ambigüedad, confirmación expresa de precios, privacidad, deduplicación, trazabilidad, límites de costos o selección manual del comprador. Toda automatización opera dentro de esos límites.
+«Cero fricción» significa **cero fricción innecesaria**, no quitar consentimiento de envío, opt-in del proveedor, autenticación/permisos, controles técnicos, revisión ante ambigüedad, atribución de precios, privacidad, deduplicación, trazabilidad, límites de costos o revelación recíproca consentida de finalistas. Toda automatización opera dentro de esos límites.
 
 ## 8. Estado de implementación al registrar la decisión
 
