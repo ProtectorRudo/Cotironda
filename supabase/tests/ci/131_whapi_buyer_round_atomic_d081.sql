@@ -186,22 +186,22 @@ select ci_helpers.assert_true(
  'd081_default_five_days_with_zone_reply');
 -- A changed duration in a repeated message must NEVER mutate the previous round.
 select pg_temp.d081_fail(
- $select cotironda_private.whapi_create_buyer_round_d081(
+ $$select cotironda_private.whapi_create_buyer_round_d081(
   'd081_ci',repeat('a',64),repeat('1',64),repeat('1',64),
   'aaaaaaaa-0081-4081-8081-000000000811','La Plata',
-  'no_especificado',pg_temp.items_d081(),7)$,
+  'no_especificado',pg_temp.items_d081(),7)$$,
  'd081_replayed_changed_payload');
 select pg_temp.d081_fail(
- $select cotironda_private.whapi_create_buyer_round_d081(
+ $$select cotironda_private.whapi_create_buyer_round_d081(
   'd081_ci',repeat('a',64),repeat('1',64),repeat('1',64),
   'aaaaaaaa-0081-4081-8081-000000000811','La Plata',
-  'no_especificado',pg_temp.items_d081(),2)$,
+  'no_especificado',pg_temp.items_d081(),2)$$,
  'd081_invalid_request');
 select pg_temp.d081_fail(
- $select cotironda_private.whapi_create_buyer_round_d081(
+ $$select cotironda_private.whapi_create_buyer_round_d081(
   'd081_ci',repeat('a',64),repeat('1',64),repeat('1',64),
   'aaaaaaaa-0081-4081-8081-000000000811','La Plata',
-  'no_especificado',pg_temp.items_d081(),8)$,
+  'no_especificado',pg_temp.items_d081(),8)$$,
  'd081_invalid_request');
 
 -- Once first round has consumed its locality, a NEW pedido may ask a new
