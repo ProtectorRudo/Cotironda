@@ -38,7 +38,8 @@ function inputValid(v:unknown,channel:string):v is Input{
   !/^[\p{L}\p{M}0-9 .,-]+$/u.test(p.deliveryZone)||
   p.deliveryZone.trim()!==p.deliveryZone||
   typeof p.vatRequest!=='string'||!IVA.has(p.vatRequest)||
-  !Number.isSafeInteger(p.plazoDias)||p.plazoDias<3||p.plazoDias>7||
+  typeof p.plazoDias!=='number'||!Number.isSafeInteger(p.plazoDias)||
+  p.plazoDias<3||p.plazoDias>7||
   !Array.isArray(p.items)||p.items.length<1||p.items.length>8)return false;
  const seen=new Set<string>();
  return p.items.every((item,i)=>{
