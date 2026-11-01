@@ -831,3 +831,6 @@
 
 ### 01/11/2026 — MVP-047 cola durable de pedidos por WhatsApp
 - D082 SQL PG17 CI: trigger de inserción cifrada comprador→cola única por canal/mensaje, lease/ACK, reintento con demora y dead-letter, RLS/roles restringidos. Worker server-only D082 conecta D077/D081, trata archivos no verificados como revisión y nunca envía WhatsApp; regresión SQL/Node. Sin instalación Supabase DEV, Whapi ni producción. Ver docs/167 y gate #175.
+
+### 01/11/2026 — MVP-048: ruta HTTP HTTPS Whapi, segura y cerrada hasta piloto
+- Nueva ruta Next `/api/integraciones/whapi` y adaptador server-only D083: Preview/branch/flags, header secreto comprobado antes de conexión, HMAC/AES mediante módulos existentes, escritura buyer/supplier sin descargar medios ni enviar mensajes. Tests HTTP/seguridad. **Sin gateway PostgreSQL real inyectado, permanece 503**, ninguna migración comercial Supabase DEV o despliegue Whapi/Vercel. Ver docs/168; backup real+restore #175 no cumplido.
