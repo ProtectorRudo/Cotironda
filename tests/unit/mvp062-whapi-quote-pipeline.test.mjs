@@ -158,7 +158,7 @@ test('MVP064 E2E sintético AES: corralón agrega pallets, bolsones, flete, desc
   'Flete a obra $120,00',
   'Descuento: -$30,00',
   'TOTAL FINAL: $ 217.500,00'
- ].join('\\n');
+ ].join('\n');
  const t=simulation({quote:encrypted(quote),
   expectedTotal:'explicitamente_verificado',expectedLines:6});
  const result=await t.worker.procesarUno();
