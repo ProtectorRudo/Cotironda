@@ -151,7 +151,7 @@ test('MVP060: SQL de worker usa cinco logins reservados con SET ROLE distinto',a
  const row=await resources.sql.cola.query(
   'select cotironda_private.whapi_claim_buyer_d082($1::text) as payload',[C]);
  assert.deepEqual(row,{rows:[{payload:null}]});
- await assert.rejects(()=>resources.verificarContenidoComprador({
+ assert.throws(()=>resources.verificarContenidoComprador({
   channel:C,chatKey:'a'.repeat(64),messageKey:'b'.repeat(64),
   buyerOrgId:'aaaaaaaa-0000-4000-8000-000000000001',
   kind:'text',sourceUnix:1800000000,cryptoKeyId:'aes_2026_a',
@@ -212,5 +212,4 @@ test('MVP060: si falla trabajo, servidor responde 503 sin PII y cierra',async()=
  assert.equal(res.status,503);
  assert.deepEqual(await res.json(),{error:'worker_privado_no_disponible'});
  assert.equal(closed,1);
- assert.equal(await res.text(),'');
 });
