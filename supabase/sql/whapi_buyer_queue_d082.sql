@@ -65,11 +65,14 @@ create trigger d082_buyer_inbox_enqueue after insert on
 -- expired attempt is dead-letter, never silently discarded or re-sent.
 create function cotironda_private.whapi_claim_buyer_d082(p_channel text)
 returns jsonb language plpgsql volatile security definer set search_path='' as $fn$
-declare v_job cotironda_private.whapi_buyer_jobs_d082%rowtype;
+declare
+ v_job cotironda_private.whapi_buyer_jobs_d082%rowtype;
  v_now timestamptz:=pg_catalog.clock_timestamp();
  v_token uuid;
 begin
- if p_channel is null or p_channel!~'^[A-Za-z0-9_-]{4,64}
+ if p_channel is null or p_channel!~'^[A-Za-z0-9_-]{4,64}$'
+ then raise exception 'd082_channel_invalid' using errcode='22023';end if;
+ update cotironda_private.whapi_buyer_jobs_d082 q
   set status='dead',outcome='max_attempts',finished_at=v_now,
    lease_token=null,leased_until=null
  where q.channel_id=p_channel and
