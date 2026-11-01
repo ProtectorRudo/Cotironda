@@ -1,5 +1,7 @@
 # Cotironda
 
+> **MVP-062 (cotizaciones WhatsApp de proveedores, CÓDIGO OFF):** cola D062 → inbox cifrado D061 → lector de precios verificables D063 → registro versionado D060, sin pedir «Confirmo». Ruta Preview privada procesa hasta 2 cotizaciones por tick con 3 logins de permisos mínimos. **Solo textos sencillos y probados; sin WhatsApp real, IA documental, catálogos DEV ni cron.** [Detalles](docs/182-mvp-062-cotizaciones-proveedores-whatsapp.md). #337.
+
 > **MVP-061 (emisor Whapi comercial privado, DESACTIVADO):** el transporte D055 y la cola D070 ya existentes quedan conectados a una ruta privada de Preview que puede enviar **una consulta por ejecución** únicamente a 1–3 números de proveedores permitidos, con consentimiento, cupos y COMMIT de SQL verificados. El emisor requiere token Whapi y claves privadas; **no se instaló en DEV ni se enviaron mensajes reales**. [Procedimiento](docs/181-mvp-061-whapi-sender-privado.md). #335.
 
 > **MVP-060 (ejecutor real preparado, APAGADO):** una ruta POST privada en Preview puede drenar hasta 3 pedidos WhatsApp por tick, con 5 conexiones PostgreSQL independientes de permisos mínimos y descifrado AES autenticado. El entorno DEV, las credenciales, el cron y Whapi **NO están activados**. [Procedimiento y controles](docs/180-mvp-060-ejecutor-http-comprador.md). #333.
