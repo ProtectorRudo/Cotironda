@@ -7,7 +7,7 @@ import {parseBuyerPilot,validMessage} from './core.ts';
 const REF='ilggkalaafhtiysyzlmg';
 const NAME='cotironda-piloto-whapi';
 const encoder=new TextEncoder();
-const json=(status:number,state:string)=>new Response(JSON.stringify({state}),{
+const json=(status:number,state:string)=>new Response(status===204?null:JSON.stringify({state}),{
  status,headers:{'content-type':'application/json; charset=utf-8',
  'cache-control':'no-store','x-content-type-options':'nosniff'}
 });
