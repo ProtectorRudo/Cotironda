@@ -106,7 +106,8 @@ try{
  assert.match(html,/Pedir presupuestos/);
  assert.match(html,/Lista de materiales/);
  assert.doesNotMatch(html,/id="pedido-zona-028"/);
- assert.match(html,/incluyendo la entrega si ya la sabés/);
+ assert.match(html,/pegá tres columnas de Excel/);
+ assert.match(html,/No se sube el archivo/);
  // MVP-033: locality input is progressive, never required on first view.
  assert.doesNotMatch(html,/Activar mi WhatsApp/);
  noStore(ownPage);
