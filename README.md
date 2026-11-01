@@ -1,5 +1,7 @@
 # Cotironda
 
+> **MVP-059 (flujo consumidor de WhatsApp en desarrollo, sin ejecución real):** la cola D082 queda conectada a lector cifrado D077, intérprete D073, alta de ronda idempotente D081 e invitaciones D071. Pruebas con texto de arquitecto, zona faltante, reintentos sin duplicar, empresa no autorizada y cifrado inválido. **Ningún emisor Whapi, DB real ni cron habilitado.** [Detalles](docs/179-mvp-059-pipeline-queue-comprador.md). #331.
+
 > **MVP-058 (lectura de texto WhatsApp en desarrollo, sin envíos):** el arquitecto puede escribir cemento, hidrófugo y látex con cantidades en **un solo mensaje**, seguido de `Entrega: La Plata.`. El parser D073 conserva cada cantidad y deriva familia/canal mediante D028, consulta la zona solo si falta y retiene ambigüedades sin inventar. [Detalles y pruebas](docs/178-mvp-058-lista-natural-whatsapp.md). Supabase comercial y Whapi reales siguen pendientes.
 
 > **MVP-057 (conexión PostgreSQL preparada, sin desplegar):** el endpoint HTTPS Whapi Preview ahora tiene driver Postgres.js 3.4.9 en sesión reservada, TLS verificado y rol técnico limitado a seis RPC. Rol D089 sin contraseña y validaciones contra DB DEV y usuario correcto; pruebas CI. **Sigue apagado hasta instalar SQL DEV y configurar secretos privados; no procesa mensajes reales todavía.** [docs/177](docs/177-mvp-057-webhook-postgres-sesion-real.md). #327.
