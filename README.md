@@ -1,5 +1,8 @@
 # Cotironda
 
+> **MVP-068 — lista privada de 3 contactos de prueba:** el webhook Preview ahora exige una huella HMAC de comprador y dos de proveedores en variables secretas de servidor. Desconocidos y rol equivocado se bloquean sin consultar PostgreSQL; falta de lista devuelve 503 antes de abrir conexión. **Los teléfonos facilitados para el ensayo NO se guardaron ni en GitHub ni en Supabase; los envíos y el webhook real siguen APAGADOS.** [Detalles](docs/188-mvp-068-lista-privada-piloto-whatsapp.md), Issue #349.
+
+
 > **MVP-067 — preparando 3 teléfonos de prueba:** corregida ruta canónica de webhook Whapi a `/api/integraciones/whapi` (antes se recomendaba `/api/whapi/webhook`, inexistente); preflight GET-only y nombre de secreto compartido D083 alineados. **No cargar URL ni enviar números todavía:** la Preview actual es antigua, no hay SQL comercial en Supabase DEV ni respaldo+restore real #175. Ver [docs/187](docs/187-mvp-067-whapi-ruta-real-preparacion-tres-numeros.md), Issue #347.
 
 
