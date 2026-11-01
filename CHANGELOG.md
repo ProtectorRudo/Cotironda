@@ -834,3 +834,6 @@
 
 ### 01/11/2026 — MVP-048: ruta HTTP HTTPS Whapi, segura y cerrada hasta piloto
 - Nueva ruta Next `/api/integraciones/whapi` y adaptador server-only D083: Preview/branch/flags, header secreto comprobado antes de conexión, HMAC/AES mediante módulos existentes, escritura buyer/supplier sin descargar medios ni enviar mensajes. Tests HTTP/seguridad. **Sin gateway PostgreSQL real inyectado, permanece 503**, ninguna migración comercial Supabase DEV o despliegue Whapi/Vercel. Ver docs/168; backup real+restore #175 no cumplido.
+
+### 01/11/2026 — MVP-049: ensayo de restore local aislado para desbloquear Supabase DEV
+- Herramienta `restore-encrypted-dev-lab-mvp049.mjs` y wrapper `restaurar-dev-aislado.sh`: D039 valida integridad AGE y hash independiente; D041 valida clave y descifrado; crea PostgreSQL17 local Docker sin red/ports/mounts, reconstituye 5 SQL por streaming, verifica esquema y destruye contenedor. Rechaza cloud/CI/DSN externos, oculta contenido y nunca deja SQL en disco. Unitarias con procesos simulados y shell. **Todavía no hay restore real ni conexión Supabase DEV; gate #175 continúa pendiente.** Docs/169.
