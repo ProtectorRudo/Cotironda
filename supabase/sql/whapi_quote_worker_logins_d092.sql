@@ -7,7 +7,7 @@ begin
  for v in select * from (values
   ('cotironda_quote_worker_queue_login_d092','cotironda_queue_gateway_d062'),
   ('cotironda_quote_worker_read_login_d092','cotironda_quote_gateway_d061'),
-  ('cotironda_quote_worker_write_login_d092','cotironda_price_gateway_d060')
+  ('cotironda_quote_worker_write_login_d092','cotironda_original_gateway_d093')
  ) r(login_name,role_name) loop
   execute pg_catalog.format(
    'create role %I login noinherit nosuperuser nocreatedb nocreaterole noreplication nobypassrls connection limit 2 password null',v.login_name);
