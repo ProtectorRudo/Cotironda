@@ -23,7 +23,8 @@ const SQL={
   ['select cotironda_private.whapi_quote_read_d061($1::text,$2::text) as payload',2]
  ]),
  escritura:new Map([
-  ['select cotironda_private.whapi_receive_with_prices_d060($1::text,$2::text,$3::integer,$4::jsonb,$5::jsonb) as payload',5]
+  ['select cotironda_private.whapi_receive_with_prices_d060($1::text,$2::text,$3::integer,$4::jsonb,$5::jsonb) as payload',5],
+  ['select cotironda_private.whapi_receive_with_original_d093($1::text,$2::text,$3::integer,$4::jsonb,$5::jsonb,$6::jsonb) as payload',6]
  ])
 } as const;
 function deny():never{throw Error('mvp062_cotizador_privado_no_disponible')}
@@ -41,6 +42,7 @@ function narrowed(db:DbRecepcionD059,allowed:ReadonlyMap<string,number>):DbRecep
 export function crearProcesadorCotizacionesMvp062(config:Readonly<{
  habilitado:boolean;puertos:PuertosCotizadorMvp062;
  verificar:VerificadorCifradoD061;
+ exigirOriginalIntegral?:boolean;
 }>){
  if(!config||typeof config.habilitado!=='boolean'||
    !config.puertos||typeof config.verificar!=='function')deny();
@@ -57,6 +59,7 @@ export function crearProcesadorCotizacionesMvp062(config:Readonly<{
   deny();
  }};
  const inbound=crearRecepcionDirectaDeInboxD061(
-  joined,config.verificar,interpretarCotizacionSimpleD063);
+  joined,config.verificar,interpretarCotizacionSimpleD063,
+  config.exigirOriginalIntegral===true);
  return crearWorkerCotizacionesD062(cola,inbound);
 }
