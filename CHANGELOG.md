@@ -1,5 +1,10 @@
 # Registro de cambios
 
+## MVP-057 — Receptor Whapi Preview con driver SQL real (código, sin desplegar)
+- El POST de Next D083 ya inyecta un driver Postgres.js 3.4.9, sesión reservada y cerrada por request, TLS con CA/hostname, project DEV y usuario técnico D085. Con credenciales ausentes conserva error seguro, sin conexión ni envíos.
+- D089 crea LOGIN técnico sin contraseña, NOINHERIT, con SET ROLE solo D084; pruebas PG17, Node y Next. Se bloqueó integridad en npm lock.
+- Falta instalar SQL/rol DEV de forma recuperable, cargar los 4 contactos/catálogos, conectar workers/IA, cotizaciones, envíos y revelar finalistas. No se activó Whapi ni Vercel producción.
+
 ## MVP-056 — Ensayo comercial consolidado WhatsApp → tres comercios (sin desplegar)
 - PostgreSQL17 CI: 1 arquitecto, 2 corralones, 1 pinturería, pedido de cemento/hidrófugo/látex para La Plata, ronda de 5 días. Verifica matching por catálogo concreto y ubicación y que cada negocio reciba solo su alcance; reintentos no duplican invitaciones.
 - Verificados 0 proveedores/catalogo/empresas reales cargados en Supabase DEV (solo lectura). Documento operativo docs/176, Issue #325.
