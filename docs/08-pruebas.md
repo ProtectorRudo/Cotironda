@@ -1,5 +1,7 @@
 # 08 — Pruebas, aceptación y escenarios críticos
 
+**UX-002 (31/10/2026):** sustituir el test antiguo de adjudicación manual por elección automática de hasta dos finalistas comparables y contacto mutuo consentido solo al cierre. La compra se decide fuera de Cotironda. Ver docs/159.
+
 ## Política
 Criterios de aceptación observables por Issue; casos habituales, extremos y regresión. Ningún «probado» sin ejecución y evidencia. En la Etapa 00 sólo se validan documentos; aún no existen tests ejecutables de producto.
 
@@ -9,7 +11,7 @@ Además de pruebas técnicas, antes del piloto realizar con personas no técnica
 - Proveedor responde y confirma cotización por WhatsApp sin iniciar sesión en portal; comprueba que no se pierda información, no se inventen precios y el estado aparezca correctamente en su tablero opcional.
 - Pedido ambiguo: solo la duda bloquea ese material; los seguros avanzan, sin una confirmación previa por cada línea.
 - Duplicados/desconexión: no repetir invitaciones ni exigir que se vuelvan a transcribir datos; mensajes de falla y recuperación claros.
-- Plazo finalizado: no anunciar ganador sin adjudicación humana, conservar privacidad y distinguir confirmada de recibida.
+- Plazo finalizado: identificar automáticamente hasta dos finalistas válidos de presupuesto completo por rubro comparable; no adjudicar compras ni anunciar ventas ganadas; compartir contacto solo con consentimientos previos y vínculo comprobado.
 Medir con línea base real tiempo, acciones, consultas de ayuda, abandonos y uso WhatsApp sin portal. Metas numéricas pendientes de piloto; no afirmar E2E WhatsApp aprobado antes de conectarlo. Ver [UX-001](89-ux-cero-friccion-whatsapp-first.md).
 
 ## Ranking y materiales
@@ -42,7 +44,7 @@ Medir con línea base real tiempo, acciones, consultas de ayuda, abandonos y uso
 - T21: URL firmada vencida → denegado.
 - T22: Webhook de suscripción duplicado → una única transición.
 - T23: Colaborador revocado no ve datos sensibles.
-- T24: Proveedor no adjudicado no recibe contacto; adjudicado sí después de confirmación.
+- T24: Proveedor no finalista no recibe contacto; finalista solo tras cierre verificado con consentimiento recíproco, y nunca recibe datos de competidores. No hay botón de adjudicar.
 
 ## Secuencia de pruebas
 Unitarias → integración con BD aislada → browser end-to-end → WhatsApp con números autorizados → piloto comercial. Definir objetivos medibles de error, latencia y costo antes del piloto.
