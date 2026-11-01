@@ -419,6 +419,12 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_http_gateway_role_d084.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/133_whapi_http_gateway_role_d084.sql
 
+      - name: "MVP-054 D086 cierre de ronda vencida sin contactos ni WA (PG17 CI)"
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/round_clock_transitions_d086.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/134_round_clock_d086.sql
+
       - name: MVP-011 D061 inbox cifrado a ofertas versionadas, sin Confirmo (PG17 CI)
         run: |
           set -euo pipefail
