@@ -43,7 +43,9 @@ const ID=/^anon_[a-z0-9_]{1,44}$/u;
 const DATE=/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/u;
 const deny=():never=>{throw new TypeError('mvp039_entrada_no_confiable');};
 function fecha(value:unknown):number{
- if(typeof value!=='string'||!DATE.test(value)||Number.isNaN(Date.parse(value))||
+ // Explicit TS guard: avoid accepting non-string client-supplied server times.
+ if(typeof value!=='string')throw new TypeError('mvp039_entrada_no_confiable');
+ if(!DATE.test(value)||Number.isNaN(Date.parse(value))||
   new Date(value).toISOString()!==value)deny();
  return Date.parse(value);
 }
