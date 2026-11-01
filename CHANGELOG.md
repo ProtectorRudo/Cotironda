@@ -793,3 +793,6 @@
 
 ### 31/10/2026 — MVP-035: asistente local para obtener respaldo cifrado de DEV
 - Un único comando en una PC privada prepara identidad age, pide URL sin eco y reutiliza `cotironda-private-backup-d075.mjs`; comprobación fail-closed ante cloud/CI/no-TTY, cero SQL en claro guardado. Suma pruebas offline y runbook docs/155; **no hubo dump de DEV ni restore genuino**. No cambia Supabase, Whapi, DNS, env ni producción. #175 permanece abierto.
+
+### 31/10/2026 — MVP-036: política de ahorro de deployments Vercel DEV
+- `apps/portal/vercel.json`: regla global `git.deploymentEnabled: {"**":false}` más única excepción para rama de integración, sin `ignoreCommand` que consume la cuota. Tests unitarios de alcance y configuración, docs/156. Requiere validación de Root Directory/efecto real; no elimina el 402 ya consumido, no actualiza producción, no instala SQL DEV ni activa WhatsApp.
