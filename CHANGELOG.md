@@ -1,5 +1,11 @@
 # Registro de cambios
 
+## MVP-066 — WhatsApp central exige recepción de comprador y proveedor (solo rama)
+- La ruta Preview D083 activa contrato obligatorio de doble rol; D027 rechaza con 503 si falta resolver, persistir o registrar BAJA para comprador o proveedor. El receptor antiguo solo-proveedor conserva compatibilidad sin activar el flag.
+- Nuevo test de rutas por número verificado, rechazo de no registrados y rol dual; sin secretos ni teléfonos reales. Reglas integrales en docs/186 e Issue #345.
+- **Sin despliegue ni Whapi vivo**: faltan alta verificada de teléfonos compradores, backup/restore DEV #175, presupuestos completos visibles en portal, interpretación de archivos y divulgación real de finalistas.
+
+
 ## MVP-065 — prototipo móvil WhatsApp-first de 4 participantes (simulación)
 - Nueva página `/probar/whatsapp` integrada a la portada y `/probar`, experiencia móvil en 5 momentos, sin adjudicación ni confirmaciones. Usa parser natural MVP-058/MVP-028 para 1 arquitecto y 3 comercios ficticios por catálogo.
 - Presupuestos originales íntegros, pallets/bolsones/total literal intactos, correcciones simuladas como versiones sin reemplazo, cobertura parcial honesta y dos proveedores máximo. No infiere IVA/flete ni ranking económico.

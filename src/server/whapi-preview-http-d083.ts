@@ -97,7 +97,11 @@ export async function atenderWebhookWhapiPreviewD083(req:Request,config:Readonly
    ahoraUnix:config.ahoraUnix??(()=>Math.floor(Date.now()/1000)),
    almacen:crearPuertoPostgresWhapiDualD074(db)
   });
-  return await procesarWebhookWhapiAislado(req,broker.dependencias);
+  // The pilot must support BOTH registered phone roles or reject the whole
+  // webhook. Never run a silently degraded supplier-only central channel.
+  return await procesarWebhookWhapiAislado(req,{
+   ...broker.dependencias,exigirAmbosRoles:true
+  });
  }catch{
   // Never echo database errors, message content or key material.
   return response(503,'integracion_privada_no_disponible');
