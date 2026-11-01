@@ -407,6 +407,12 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_buyer_round_atomic_d081.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/131_whapi_buyer_round_atomic_d081.sql
 
+      - name: D082 cola de pedidos comprador (trigger inbox, leases, permisos PG17)
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_buyer_queue_d082.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/132_whapi_buyer_queue_d082.sql
+
       - name: MVP-011 D061 inbox cifrado a ofertas versionadas, sin Confirmo (PG17 CI)
         run: |
           set -euo pipefail
