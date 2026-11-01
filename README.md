@@ -1,5 +1,7 @@
 # Cotironda
 
+> **MVP-054 (código de desarrollo, no operativo):** función privada PostgreSQL para abrir/cerrar rondas vencidas idempotentemente, más selección de hasta dos finalistas anónimos por rubro reutilizando D039. **Aún no hay scheduler, ofertas reales procesadas ni revelación de contactos.** [Docs/174](docs/174-mvp-054-cierre-y-finalistas-rubro.md), Issue #321. `main` y Supabase DEV sin cambios.
+
 > **MVP-053 (WhatsApp-first, sin publicar):** cada pedido de materiales por WhatsApp usa 5 días corridos para recibir ofertas, o un plazo explícito de 3 a 7; la fecha límite se conserva si falta la zona y se anuncia al comercio. D081 deja atrás el plazo fijo de 2 días. [Reglas y pruebas](docs/173-mvp-053-plazo-ronda-whatsapp.md). Sin envíos reales ni cierre/contactos activos; #175 permanece pendiente.
 
 > **MVP-052 (desarrollo, no operativo):** contrato de conexión SQL Whapi D085 con login técnico y `SET ROLE` limitado a seis RPC D084, con cliente privado inyectado y sin driver ni credenciales. El receptor HTTPS real sigue cerrado (503), #175 backup+restore real pendiente. [docs/172](docs/172-mvp-052-sesion-sql-whapi.md).
