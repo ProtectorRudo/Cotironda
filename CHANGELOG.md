@@ -837,3 +837,6 @@
 
 ### 01/11/2026 — MVP-049: ensayo de restore local aislado para desbloquear Supabase DEV
 - Herramienta `restore-encrypted-dev-lab-mvp049.mjs` y wrapper `restaurar-dev-aislado.sh`: D039 valida integridad AGE y hash independiente; D041 valida clave y descifrado; crea PostgreSQL17 local Docker sin red/ports/mounts, reconstituye 5 SQL por streaming, verifica esquema y destruye contenedor. Rechaza cloud/CI/DSN externos, oculta contenido y nunca deja SQL en disco. Unitarias con procesos simulados y shell. **Todavía no hay restore real ni conexión Supabase DEV; gate #175 continúa pendiente.** Docs/169.
+
+### 01/11/2026 — MVP-050: preparar rol técnico exclusivo para receptor Whapi HTTPS
+- D084 PostgreSQL17 CI define rol de privilegios NOLOGIN/NOBYPASSRLS, seis funciones privadas de guardar/resolver mensajes comprador/proveedor y BAJA, sin lectura directa ni creación de rondas y cola. Test con login ficticio de CI bajo ROLLBACK, controlando explícitamente permisos prohibidos. Sin secret, driver DB, migración Supabase DEV, llamada Whapi ni despliegue. Ver docs/170 y gate #175.
