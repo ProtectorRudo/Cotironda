@@ -1,5 +1,8 @@
 # Cotironda
 
+> **MVP-070 — ambos corralones con el mismo catálogo amplio:** `/probar/catalogos` ahora precarga **51 materiales típicos idénticos** (sin precios) en los dos negocios; taxonomía D015 ampliada conservadoramente a nuevas familias de corralón. Cualquier material no reconocido queda pendiente. **Sigue siendo una simulación local**, sin números reales, WhatsApp ni catálogo guardado. [Detalles](docs/190-mvp-070-dos-corralones-mismo-catalogo.md).
+
+
 > **MVP-069 — ensayo de carga de catálogos:** ruta de navegador `/probar/catalogos` para subir CSV/TXT de dos corralones, detectar familias verificadas/pendientes y simular consultas del arquitecto por producto y localidad. No se guardan archivos ni se registran materiales en Supabase y **no hay WhatsApp real**. XLSX/PDF/imagen y curaduría persistente pendientes; [docs/189](docs/189-mvp-069-carga-catalogos-corralones.md), Issue #351.
 
 
