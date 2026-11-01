@@ -1,5 +1,10 @@
 # Registro de cambios
 
+## MVP-063 — Regla obligatoria: presupuesto original íntegro, incluidos extras y TOTAL (desarrollo)
+- Auditoría confirmó brecha: el pipeline D061/D063/D060 y la vista MVP014 solo incluyen artículos que pidió el comprador, no pallets, bolsones vacíos, extras ni TOTAL del proveedor. **Aún no es fiel de punta a punta**.
+- Nuevo módulo puro `presupuesto-original-fiel-mvp063.ts`: espejo de cada línea textual original sin borrar/reordenar, tokens de importes literales, SHA-256 fuente, TOTAL declarado extraído solo con evidencia explícita unívoca, sin sustituirlo por cálculos. Clasificación aparte sin eliminar líneas ni atribuir extras por conjetura.
+- Vista de cotizaciones muestra advertencia explícita sobre extras/total todavía ausentes. AGENTS y docs/183 incorporan regla de negocio y puertas para persistencia/versiones D093, archivos originales y UI íntegra. Tests de pallets, bolsones, descuento, flete, total distinto, ambigüedad y no omisiones. Sin tocar DB ni Whapi reales.
+
 ## MVP-062 — Respuestas por WhatsApp → ofertas verificables, sin confirmación extra (código)
 - Se compuso D062 cola durable + D061 AES-GCM/alcance + D063 precio textual explícito + D060 ledger de presupuestos/versiones. Cota de 2 trabajos por tick; sin enviar mensajes, sin inferir precios ni IVA.
 - Nueva ruta privada Preview `/api/integraciones/whapi/cotizaciones`, nueva SQL D092 (tres logins sin contraseña, SET ROLE único por cola/lectura/escritura) y driver TLS Session PG17. CI con errores, reprocesos y precios ambiguos.
