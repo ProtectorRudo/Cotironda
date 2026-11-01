@@ -4,6 +4,8 @@ import {abrirPuertoWhapiPreviewD088,validarConexionWhapiD088}
  from '../../src/server/whapi-postgres-driver-d088.ts';
 import {atenderWebhookWhapiPreviewD083}
  from '../../src/server/whapi-preview-http-d083.ts';
+import {calcularChatDestinatarioD056}
+ from '../../src/server/whapi-send-authorization-d056.ts';
 
 const REF='qkercsoqhehbenbbncwk',LOGIN='cotironda_whapi_http_login_d085';
 const ROLE='cotironda_whapi_http_gateway_d084';
@@ -29,7 +31,13 @@ function env(extra={}){return {
  COTIRONDA_WHAPI_AES_KEY_ID:'aes_2026_a',
  COTIRONDA_WHAPI_HMAC_ID_HEX:'01'.repeat(32),
  COTIRONDA_WHAPI_HMAC_FINGERPRINT_HEX:'02'.repeat(32),
- COTIRONDA_WHAPI_AES_CONTENT_HEX:'03'.repeat(32),...extra
+ COTIRONDA_WHAPI_AES_CONTENT_HEX:'03'.repeat(32),
+ COTIRONDA_WHAPI_PILOT_BUYER_CHAT_KEY:calcularChatDestinatarioD056(
+  CH,PHONE,Buffer.from('01'.repeat(32),'hex')),
+ COTIRONDA_WHAPI_PILOT_SUPPLIER_CHAT_KEYS_JSON:JSON.stringify([
+  calcularChatDestinatarioD056(CH,'5491111111001',Buffer.from('01'.repeat(32),'hex')),
+  calcularChatDestinatarioD056(CH,'5491111111002',Buffer.from('01'.repeat(32),'hex'))
+ ]),...extra
 };}
 function pg({login=LOGIN,role=LOGIN,invalidSet=false,fail='',buyer=false}={}){
  const state={opened:0,closed:0,queries:[],options:null,connection:role,writes:0,stored:new Map()};
