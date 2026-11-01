@@ -152,11 +152,6 @@ jobs:
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_zone_conversation_d077.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/130_whapi_zone_conversation_d077.sql
-      - name: D081 ronda WhatsApp comprador transaccional y replay sin user falso (PG17 CI)
-        run: |
-          set -euo pipefail
-          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_buyer_round_atomic_d081.sql
-          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/131_whapi_buyer_round_atomic_d081.sql
       - name: D034 replay sin duplicados tras rotación AES (SQL privado PG17)
         run: |
           set -euo pipefail
@@ -405,6 +400,12 @@ jobs:
         run: |
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/127_pilot_dictionary_d079.sql
+
+      - name: D081 ronda WhatsApp comprador transaccional y replay sin user falso (PG17 CI)
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_buyer_round_atomic_d081.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/131_whapi_buyer_round_atomic_d081.sql
 
       - name: MVP-011 D061 inbox cifrado a ofertas versionadas, sin Confirmo (PG17 CI)
         run: |
