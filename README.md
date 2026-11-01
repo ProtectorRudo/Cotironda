@@ -1,5 +1,8 @@
 # Cotironda
 
+> **MVP-067 — preparando 3 teléfonos de prueba:** corregida ruta canónica de webhook Whapi a `/api/integraciones/whapi` (antes se recomendaba `/api/whapi/webhook`, inexistente); preflight GET-only y nombre de secreto compartido D083 alineados. **No cargar URL ni enviar números todavía:** la Preview actual es antigua, no hay SQL comercial en Supabase DEV ni respaldo+restore real #175. Ver [docs/187](docs/187-mvp-067-whapi-ruta-real-preparacion-tres-numeros.md), Issue #347.
+
+
 > **MVP-066 — seguridad del WhatsApp central (solo código):** el webhook Preview rechaza toda recepción si no están disponibles **ambos roles** (compradores y proveedores, cada uno con vínculo telefónico verificado). Se mantiene la separación por número registrado, catálogo activo para invitar y fuente literal cifrada para presupuestos. **No hay Whapi real habilitado, alta automática de compradores, vista íntegra real ni divulgación automática de dos finalistas.** [Contrato técnico](docs/186-mvp-066-whapi-central-roles.md), Issue #345.\n\n
 > **MVP-065 — NUEVO prototipo WhatsApp en navegador (SIN WhatsApp real):** `/probar/whatsapp` muestra 1 arquitecto → 2 corralones + 1 pinturería → presupuestos completos con pallets, bolsones, flete, descuentos y TOTAL original → comparación sin mezclar coberturas ni IVA → cierre sin adjudicar. Permite correcciones con versiones íntegras ficticias. No guarda ni envía datos; falta habilitar Preview tras aprobación y resolver backup #175 para piloto real. [Documento técnico](docs/185-mvp-065-prototipo-movil-whatsapp.md), Issue #343.
 

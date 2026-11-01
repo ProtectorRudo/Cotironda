@@ -19,18 +19,18 @@ Fuentes oficiales verificadas:
 `src/server/whapi-channel-preflight-mvp041.ts` crea el payload futuro de webhook y consulta **solo por GET**, mediante un transporte inyectado:
 1. `GET https://gate.whapi.cloud/health?wakeup=false` — no considerar un simple 200 como sesión conectada; exigir estado `AUTH` explícito.
 2. `GET /users/profile` — comprobar que es consultable; **descartar** cuerpo (puede contener nombre/número).
-3. `GET /settings` — validar que el canal tiene webhook HTTPS previsto en `/api/whapi/webhook`, modo **body**, evento `messages.post`, encabezado **`X-Cotironda-Webhook-Key`** con secreto compartido exacto y `callback_persist:true`. Nunca devolver settings crudos.
+3. `GET /settings` — validar que el canal tiene webhook HTTPS previsto en `/api/integraciones/whapi`, modo **body**, evento `messages.post`, encabezado **`X-Cotironda-Webhook-Key`** con secreto compartido exacto y `callback_persist:true`. Nunca devolver settings crudos.
 4. Estados sanitizados: `configuracion_incompleta`, `canal_sin_verificar`, `webhook_incorrecto` o `configuracion_whapi_verificada_sin_envio`; nada implica que Cotironda acepte ya webhooks reales ni haya enviado mensajes.
 
 `scripts/ops/auditar-canal-whapi-mvp041.mjs --read-only`: comando LOCAL, requiere Node 22+ y las variables provistas de forma privada con `COTIRONDA_WHAPI_PREPARE_AUDIT=SI` y `COTIRONDA_WHAPI_RUNTIME=development`. Si está en CI/Vercel/producción o envío habilitado, no ejecuta llamadas. Imprime **solo estado**, no token/secret/perfil/URLs. No pasa credenciales como argumentos ni permite un proceso que envíe, cambie o restablezca un canal. Ejecutarlo **solo en un dispositivo privado**, sin compartir logs de entorno, historiales ni secretos. Aun si devuelve "verificada", solo demuestra configuración de Whapi, no la llegada auténtica al webhook de Cotironda.
 
-**Importante:** la ruta `/api/whapi/webhook` todavía **NO EXISTE** como endpoint real activado, por lo que no es correcto usar un URL inventado de Preview. No configurar un webhook que acepte y descarte mensajes: un ACK 200 debe ir después de persistir el evento. El código propone el camino previsto para la futura ruta y el preflight quedará útil cuando se integre.
+**Importante:** la ruta `/api/integraciones/whapi` todavía **NO EXISTE** como endpoint real activado, por lo que no es correcto usar un URL inventado de Preview. No configurar un webhook que acepte y descarte mensajes: un ACK 200 debe ir después de persistir el evento. El código propone el camino previsto para la futura ruta y el preflight quedará útil cuando se integre.
 
 ## Preparación manual del titular, cuando se habilite el entorno
 
 1. Abrir [Whapi](https://panel.whapi.cloud/), crear una cuenta si no existe y vincular un **número dedicado de ensayo** por QR desde *Dispositivos vinculados*. No usar un número personal ni conectar comerciantes todavía.
 2. Guardar el token Bearer del canal **solo en el gestor de secretos del worker privado** bajo `COTIRONDA_WHAPI_TOKEN`. No escribirlo en GitHub, chat ni variables `NEXT_PUBLIC_`.
-3. Cuando el backend se haya desplegado con URL HTTPS auténtica `/api/whapi/webhook`, configurar el webhook en Whapi: **Body**, `messages.post`, `callback_persist:true`, header `X-Cotironda-Webhook-Key` con secreto aleatorio de 32 bytes hexadecimal (=64 caracteres) independiente de token, HMAC y AES. El mismo valor se guarda de forma privada como `COTIRONDA_WHAPI_WEBHOOK_SECRET_HEX`; nunca se publica en navegador. Configurar desde interfaz, **no ejecutar PATCH de /settings sobre otros ajustes por sorpresa**.
+3. Cuando el backend se haya desplegado con URL HTTPS auténtica `/api/integraciones/whapi`, configurar el webhook en Whapi: **Body**, `messages.post`, `callback_persist:true`, header `X-Cotironda-Webhook-Key` con secreto aleatorio de 32 bytes hexadecimal (=64 caracteres) independiente de token, HMAC y AES. El mismo valor se guarda de forma privada como `COTIRONDA_WHAPI_WEBHOOK_SECRET`; nunca se publica en navegador. Configurar desde interfaz, **no ejecutar PATCH de /settings sobre otros ajustes por sorpresa**.
 4. En el backend privado de desarrollo registrar `COTIRONDA_WHAPI_CHANNEL` y `COTIRONDA_WHAPI_WEBHOOK_URL` (origen HTTPS real, no dominio comprado sin publicar). Mantener `COTIRONDA_WHAPI_SEND_ENABLED=false` y `COTIRONDA_WHAPI_PILOT_SEND_AUTHORIZED=false`.
 5. Verificar primero conexión y configuración mediante lectura. Después, **solo con infraestructura real segura**, probar un único webhook de cuenta autorizada y su persistencia cifrada, deduplicación y respuesta; luego permitidos de envío y presupuesto de mensajes.
 
@@ -55,3 +55,6 @@ Consulta **solo de lectura del 31/10/2026**: `cotironda-dev` (ref `qkercsoqhehbe
 ## Calidad
 
 Pruebas unitarias sin red real sobre canal AUTH, sesión QR no conectada, webhook URL equivocado, modo Path, evento distinto, secreto omitido o distinto, persistencia OFF, HTTP 429/500, respuesta HTML/JSON inválida, respuesta grande, error neutro, desactivado, URL insegura y garantías de **cero POST/PATCH/WhatsApp**. Además ejecutar los cinco workflows habituales y no declarar aprobado hasta ver sus conclusiones.
+
+## Rectificación MVP-067 (01/11/2026)
+La ruta `/api/whapi/webhook` mencionada en versiones anteriores era solo una propuesta sin implementación. La ruta montada en Next.js y el auditor alineado es **`/api/integraciones/whapi`**. Aun así, no copiarla a Whapi hasta certificar una Preview desplegada y la persistencia cifrada. La variable de header es `COTIRONDA_WHAPI_WEBHOOK_SECRET`. Ver docs/187.

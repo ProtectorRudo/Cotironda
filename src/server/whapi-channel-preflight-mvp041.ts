@@ -12,6 +12,8 @@ const TOKEN=/^[A-Za-z0-9._-]{24,512}$/u;
 const SECRET=/^[a-f0-9]{64}$/u;
 const MAX_BYTES=32*1024;
 const CHANNEL=/^[A-Za-z0-9_-]{4,64}$/u;
+// Must match apps/portal/app/api/integraciones/whapi/route.ts exactly.
+// Legacy /api/whapi/webhook was never deployed: NEVER propose it.
 function fail():never{throw new Error('mvp041_auditoria_no_disponible');}
 function obj(x:unknown):x is Record<string,unknown>{
  return x!==null&&typeof x==='object'&&!Array.isArray(x);
@@ -62,7 +64,7 @@ export function proponerWebhookWhapiMvp041(
   !SECRET.test(webhookSecretHex))fail();
  const parsed=new URL(webhookUrl);
  if(parsed.username||parsed.password||parsed.hash||parsed.search||
-  parsed.pathname!=='/api/whapi/webhook'||parsed.origin==='https://gate.whapi.cloud')
+  parsed.pathname!=='/api/integraciones/whapi'||parsed.origin==='https://gate.whapi.cloud')
   fail();
  return Object.freeze({
   callback_persist:true,
