@@ -6,6 +6,7 @@
  * buyer-company binding, explicit sharing consent and durable idempotency.
  */
 import {prepararPedidoTextoMvp028} from '../domain/pedido-piloto-mvp028.ts';
+import {separarListaWhatsappNaturalMvp058} from '../domain/lista-whatsapp-natural-mvp058.ts';
 import {extraerPlazoCotizacionMvp053} from '../domain/plazo-cotizacion-mvp053.ts';
 import type {BuyerRoundInputD064} from './buyer-round-create-http-d064.ts';
 
@@ -135,7 +136,8 @@ export function crearConsumidorCompradorWhatsappD073(config:Readonly<{
   try{
    const solicitud=extraerPlazoCotizacionMvp053(raw);
    plazoDias=solicitud.dias;
-   parsed=prepararPedidoTextoMvp028(solicitud.textoMateriales,zone);
+   parsed=prepararPedidoTextoMvp028(
+     separarListaWhatsappNaturalMvp058(solicitud.textoMateriales),zone);
   }catch{
    return done('requiere_revision_interna');
   }
