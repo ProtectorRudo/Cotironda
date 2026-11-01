@@ -816,3 +816,6 @@
 
 ### 01/11/2026 — MVP-042: entrada Whapi para arquitecto y negocio en un mismo número
 - D027 ahora enruta mensajes entrantes de compradores **o** proveedores únicamente por vínculo privado del chat y bloquea doble rol. D029 extiende cifrado AES-GCM/AAD y HMAC con separación de comprador; BAJA independiente, duplicados y fallos fail-closed, sin confirmar, despachar ni revelar contactos. Tests con WhatsApp sintético; detalles docs/162. **Sin endpoint ni canal Whapi real habilitado**, Supabase DEV comercial sigue pendiente de #175.
+
+### 01/11/2026 — MVP-043: inbox comprador SQL/RLS y gateway Whapi dual
+- Nuevo D074 con tablas privadas de chat comprador HMAC y mensajes AES-GCM, resolución verificada, BAJA idempotente, prevención del mismo chat comprador/proveedor, RLS/EXECUTE-only y cifrado AES key-id. Adaptador JS para gateway dual sobre D030, pruebas SQL PG17 sintéticas y unitarias de permisos/parametrización. **Sin migración DEV ni Whapi real**, bloqueo #175 intacto. Ver docs/163.
