@@ -1,5 +1,8 @@
 # Cotironda
 
+> **MVP-071 — ensayo integrado 1+2 en `/probar/tres-telefonos`**: catálogos iniciales idénticos de 51 materiales, distribución por producto y localidad, dos presupuestos originales íntegros (pallets, bolsones, flete, descuentos, total). Sin ranking engañoso. **Solo simulación en navegador, sin WhatsApp ni SQL real.** Bloqueo #175 documentado en [docs/191](docs/191-mvp-071-ruta-critica-piloto-tres.md).
+
+
 > **MVP-070 — ambos corralones con el mismo catálogo amplio:** `/probar/catalogos` ahora precarga **51 materiales típicos idénticos** (sin precios) en los dos negocios; taxonomía D015 ampliada conservadoramente a nuevas familias de corralón. Cualquier material no reconocido queda pendiente. **Sigue siendo una simulación local**, sin números reales, WhatsApp ni catálogo guardado. [Detalles](docs/190-mvp-070-dos-corralones-mismo-catalogo.md).
 
 
