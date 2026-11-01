@@ -139,10 +139,15 @@ export function PreciosRealesComprador({rondaId}:{rondaId:string}){
      </article>;
     })}
    </div>
-   <p className="mvp014-caution">Los importes son precios unitarios declarados.
-    <strong> No son totales finales ni un ranking de precios.</strong> La comparación
-    económica exige cobertura, equivalencia de materiales, unidades, impuestos,
-    flete y condiciones de pago compatibles. La elección sigue siendo del comprador.</p>
+   <p className="mvp014-caution">
+    <strong>Vista parcial de artículos solicitados: no es una copia completa del presupuesto del comercio.</strong>
+    Todavía no aparecen acá los ítems agregados por el proveedor (por ejemplo,
+    pallets o bolsones vacíos), sus cargos, descuentos ni el total original
+    declarado. Los importes mostrados son solo precios unitarios asociados a
+    artículos de la solicitud. No los uses como total final ni como ranking.
+    La comparación económica completa deberá conservar todos esos conceptos,
+    con cobertura, unidades, IVA, flete y condiciones de pago verificables.
+   </p>
   </>}
  </section>;
 }
