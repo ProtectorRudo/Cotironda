@@ -1,10 +1,12 @@
 # 89 — UX-001: simplicidad radical, WhatsApp primero y cero fricción innecesaria
 
+> **Rectificación aprobada UX-002 (31/10/2026):** el arquitecto NO adjudica en Cotironda. Al cierre, el sistema identifica automáticamente hasta dos presupuestos finalistas comparables por rubro y revela contacto comercial mutuo solo a las partes elegibles previamente consentidas y verificadas. Contacto no es venta; cualquier frase histórica de adjudicación manual o doble «Confirmo» en este documento queda sustituida por [docs/159](159-ux-002-finalistas-y-contacto-mutuo.md).
+
 **Decisión fundacional APROBADA por el propietario · 30/10/2026 · Issue #151.**
 
 > **Cotironda tiene que ser tan intuitiva que un comprador y un corralón quieran usarla sin capacitación, tutorial ni obligación de entrar a un sistema nuevo.**
 >
-> **La tecnología trabaja detrás; las personas simplemente piden, responden y deciden.**
+> **La tecnología trabaja detrás; las personas simplemente piden, responden y se ponen en contacto.**
 
 ## 1. Principios no negociables
 
@@ -22,7 +24,7 @@
 2. Cotironda entiende, segmenta en rubros/productos, valida catálogo y zona, y distribuye automáticamente únicamente lo seguro y autorizado; **no** obliga a revisar una lista línea por línea (D013).
 3. Recibe confirmación honesta: «Recibimos tu pedido; consultamos a los comercios correspondientes. Faltan aclarar estos dos artículos», **solo si esas acciones ocurrieron**.
 4. Si hay dudas concretas, responde una pregunta puntual; en cualquier momento puede consultar por WhatsApp «¿Cómo viene?» y, si quiere, abrir el portal para ver solicitudes, estados y ofertas.
-5. Al vencer el plazo configurable (por ejemplo, 7 días) ve opciones comparables y parciales claramente diferenciadas. **El sistema no declara un ganador automáticamente**: el comprador adjudica manualmente a uno o varios proveedores y recién entonces se revelan contactos según reglas de privacidad.
+5. Al vencer el plazo configurable (por ejemplo, 7 días) ve opciones comparables y parciales claramente diferenciadas. **El sistema no declara un ganador automáticamente**: Cotironda identifica hasta dos finalistas comparables por rubro y habilita contacto comercial mutuo consentido, sin botón de adjudicación ni compra en la plataforma.
 
 ## 3. Flujo ideal proveedor — tan sencillo como responder a un cliente
 
@@ -42,7 +44,7 @@
 | «Error de validación semántica del ítem» | «¿De cuántos kilos es la bolsa?» |
 | «Solicitud enviada» si solo está en cola | «Estamos enviando tu pedido» |
 | «Presupuesto entregado» si aún falta confirmar | «Recibimos tu respuesta; falta tu confirmación» |
-| «Ganaste» antes de adjudicación | «La ronda cerró; el comprador está eligiendo» |
+| «Ganaste» antes de adjudicación | «La ronda cerró; estamos verificando las ofertas finalistas» |
 
 Estos ejemplos **no son mensajes automáticos habilitados**; se evaluarán por políticas de WhatsApp y claridad con usuarios piloto.
 
