@@ -1,5 +1,10 @@
 # Registro de cambios
 
+## MVP-058 — Lista natural de WhatsApp sin obligar al comprador a usar un formato
+- D073 normaliza exclusivamente separadores evidentes de lista dentro de un mensaje para D028: cantidades+unidades reconocidas, `Entrega:` y `Plazo:`; evita incluir el punto final en la localidad. No usa IA ni reescribe el parser del portal.
+- Pruebas del pedido natural de 20 bolsas cemento, 10 litros hidrófugo, 5 litros látex, además de decimales, IVA/plazos, sin zona y descripciones dudosas (sin envío).
+- No activa Whapi ni trabaja con contactos de producción; #175 y SQL comercial remoto aún pendientes. Docs/178, Issue #329.
+
 ## MVP-057 — Receptor Whapi Preview con driver SQL real (código, sin desplegar)
 - El POST de Next D083 ya inyecta un driver Postgres.js 3.4.9, sesión reservada y cerrada por request, TLS con CA/hostname, project DEV y usuario técnico D085. Con credenciales ausentes conserva error seguro, sin conexión ni envíos.
 - D089 crea LOGIN técnico sin contraseña, NOINHERIT, con SET ROLE solo D084; pruebas PG17, Node y Next. Se bloqueó integridad en npm lock.
