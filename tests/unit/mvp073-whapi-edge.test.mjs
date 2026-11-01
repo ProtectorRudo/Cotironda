@@ -47,6 +47,9 @@ test('MVP073: esquema private; RPC solo role, confirmación y banderas apagadas'
  assert.match(edge,/x-cotironda-webhook-key/);
  assert.match(edge,/AES-GCM/);
  assert.match(edge,/cotironda_piloto_receive_whapi_v1/);
- assert.doesNotMatch(edge,/https:\/\/gate\.whapi\.cloud/);
+ assert.match(edge,/https:\/\/gate\.whapi\.cloud\/messages\/text/);
+ assert.match(edge,/COTIRONDA_PILOT_WHAPI_OUTBOUND_ENABLED/);
+ assert.match(edge,/cotironda_piloto_authorize_whapi_v1/);
+ assert.match(edge,/cotironda_piloto_finish_whapi_v1/);
  assert.doesNotMatch(edge,/\b221\d{7}\b/);
 });
