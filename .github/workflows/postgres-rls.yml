@@ -466,17 +466,17 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_quote_queue_d062.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/117_whapi_quote_queue_d062.sql
 
-      - name: "MVP-062 tres logins cotizador y precio versionado (PG17 CI)"
-        run: |
-          set -euo pipefail
-          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_quote_worker_logins_d092.sql
-          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/139_whapi_quote_worker_logins_d092.sql
-
       - name: "MVP-064 original cifrado versionado, extras y total intactos (PG17 CI)"
         run: |
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_original_bindings_d093.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/140_whapi_original_bindings_d093.sql
+
+      - name: "MVP-062 tres logins cotizador y precio versionado (PG17 CI)"
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_quote_worker_logins_d092.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/139_whapi_quote_worker_logins_d092.sql
 
       - name: "MVP-013 E2E real Node22 + PostgreSQL17 - webhook a cotizacion sin Confirmo"
         run: |
