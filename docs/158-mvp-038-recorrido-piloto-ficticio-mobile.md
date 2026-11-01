@@ -31,3 +31,7 @@ Si hay una Preview del commit correcto de integración en Vercel, abrir `/probar
 ## Qué sigue para piloto comercial verdadero
 
 Este circuito demuestra **UX y matemática entre pantallas**, no habilita el canal real. Mantener #175 backup + restore auténtico de Supabase DEV; después instalar y verificar SQL D024+, identidad/consentimiento de dos proveedores, Whapi y cotizaciones recibidas, conciliación de importes y adjudicación de prueba con personas reales. **No publicar `main`, DNS ni contactos reales sin autorización.**
+
+## RECTIFICACIÓN UX-002 (31/10/2026)
+
+El usuario **rechazó este flujo como experiencia comercial** por tener demasiados pasos. El comprador NO carga/edita respuestas ficticias ni usa un botón «Elegir» para adjudicar. El flujo aprobado es **WhatsApp → IA distribuye → proveedores cotizan por WhatsApp → cierre → hasta dos finalistas automáticos y contacto mutuo consentido**. Esta demo previa se conserva solo como instrumento de prueba de matemática y navegación, **no como diseño funcional ni referencia de lanzamiento**. Ver [docs/159](159-ux-002-finalistas-y-contacto-mutuo.md).
