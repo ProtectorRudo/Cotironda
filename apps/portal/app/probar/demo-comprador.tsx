@@ -169,6 +169,8 @@ export function DemostracionComprador(){
       <div className="mvp-bottom-note">
         <strong>Lo que falta para una ronda verdadera</strong>
         <p>Los proveedores todavía no reciben mensajes en esta demo. En el flujo real, envías el pedido una sola vez y cada comercio responde por WhatsApp; su cotización se registra al recibirla y puede corregirla cuando lo necesite, sin responder «Confirmo». Mientras tanto, podés explorar ofertas inventadas.</p>
+        <Link className="mvp-compare-link" href="/probar/piloto">Probar pedido → respuestas → comparación en una ronda ficticia</Link>
+        <p className="m038-small">La comparación de esta pantalla es independiente y utiliza otro pedido de ejemplo.</p>
         <Link className="mvp-compare-link" href="/probar/ofertas">Ver cómo se comparan las ofertas ficticias →</Link>
       </div>
     </section>}
