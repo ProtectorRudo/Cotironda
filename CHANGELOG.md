@@ -2,7 +2,7 @@
 
 ## MVP-064 — vínculo original cifrado D093 al recibo económico D060 (laboratorio)
 - D093 crea una vinculación inmutable por channel/message y offerVersion contra el mensaje íntegro cifrado del inbox D028; SHA256 texto fuente, SHA256 ciphertext, conteo de renglones/bytes y posición/hash del TOTAL literal. No almacena texto comercial en claro.
-- La RPC D093 llama a D060 y guarda evidencia en el mismo COMMIT; replay idéntico mantiene versión y fuente distinta falla. Sin grants directos anon/auth/service_role; PostgreSQL17 prueba total, replay, rollback y versiones. **Falta acoplar worker vivo, vista comprador íntegra y archivo original binario.** #175 y #339 abiertos; docs/184.
+- La RPC D093 llama a D060 y guarda evidencia en el mismo COMMIT; replay idéntico mantiene versión y fuente distinta falla. Sin grants directos anon/auth/service_role; PostgreSQL17 prueba total, replay, rollback y versiones. **El worker privado D062 requiere ahora D093 y rol D092 exclusivo de ese RPC.** Aún falta vista comprador íntegra y archivo original binario. #175 y #339 abiertos; docs/184.
 
 ## MVP-063 — Regla obligatoria: presupuesto original íntegro, incluidos extras y TOTAL (desarrollo)
 - Auditoría confirmó brecha: el pipeline D061/D063/D060 y la vista MVP014 solo incluyen artículos que pidió el comprador, no pallets, bolsones vacíos, extras ni TOTAL del proveedor. **Aún no es fiel de punta a punta**.
