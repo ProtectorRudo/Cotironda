@@ -2,6 +2,8 @@ import {atenderWebhookWhapiPreviewD083}
  from '../../../../../../src/server/whapi-preview-http-d083.ts';
 import {abrirPuertoWhapiPreviewD088}
  from '../../../../../../src/server/whapi-postgres-driver-d088.ts';
+import type {PostgresFactoryD088}
+ from '../../../../../../src/server/whapi-postgres-driver-d088.ts';
 
 export const runtime='nodejs';
 export const dynamic='force-dynamic';
@@ -20,7 +22,8 @@ export async function POST(req:Request):Promise<Response>{
   abrirPuertoSql:()=>abrirPuertoWhapiPreviewD088(process.env,
    async()=>{
     const {default:postgres}=await import('postgres');
-    return postgres;
+    return ((url,options)=>postgres(url,options) as unknown as
+     ReturnType<PostgresFactoryD088>) satisfies PostgresFactoryD088;
    })
  });
 }
