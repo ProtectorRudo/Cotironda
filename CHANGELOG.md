@@ -1,5 +1,10 @@
 # Registro de cambios
 
+## MVP-065 — prototipo móvil WhatsApp-first de 4 participantes (simulación)
+- Nueva página `/probar/whatsapp` integrada a la portada y `/probar`, experiencia móvil en 5 momentos, sin adjudicación ni confirmaciones. Usa parser natural MVP-058/MVP-028 para 1 arquitecto y 3 comercios ficticios por catálogo.
+- Presupuestos originales íntegros, pallets/bolsones/total literal intactos, correcciones simuladas como versiones sin reemplazo, cobertura parcial honesta y dos proveedores máximo. No infiere IVA/flete ni ranking económico.
+- Navegador sin acceso a Whapi/Supabase, sin token visible ni guardado; no hay webhook real ni despliegue. Suite Node de 9 casos de integridad y UI Next build; #175/#339 pendientes. Docs/185.
+
 ## MVP-064 — vínculo original cifrado D093 al recibo económico D060 (laboratorio)
 - D093 crea una vinculación inmutable por channel/message y offerVersion contra el mensaje íntegro cifrado del inbox D028; SHA256 texto fuente, SHA256 ciphertext, conteo de renglones/bytes y posición/hash del TOTAL literal. No almacena texto comercial en claro.
 - La RPC D093 llama a D060 y guarda evidencia en el mismo COMMIT; replay idéntico mantiene versión y fuente distinta falla. Sin grants directos anon/auth/service_role; PostgreSQL17 prueba total, replay, rollback y versiones. **El worker privado D062 requiere ahora D093 y rol D092 exclusivo de ese RPC.** Aún falta vista comprador íntegra y archivo original binario. #175 y #339 abiertos; docs/184.
