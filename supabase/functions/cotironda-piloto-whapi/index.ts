@@ -3,7 +3,7 @@
  * No WhatsApp outgoing; no tokens or phones in source.
  */
 import {createClient} from 'npm:@supabase/supabase-js@2.118.0';
-import {parseBuyerPilot,validMessage} from './core.ts';
+import {parseBuyerPilot,canPrepareBuyerPilot,validMessage} from './core.ts';
 const REF='ilggkalaafhtiysyzlmg';
 const NAME='cotironda-piloto-whapi';
 const encoder=new TextEncoder();
@@ -219,7 +219,7 @@ async function respond(req:Request):Promise<Response>{
    p_nonce_b64:c.nonce,p_ciphertext_b64:c.ciphertext,
    p_source_unix:row.timestamp,
    p_plaintext:body,
-   p_city:parsed.city,p_items:parsed.items.length?parsed.items:null
+   p_city:parsed.city,p_items:canPrepareBuyerPilot(parsed)?parsed.items:null
   });
   if(out.error)return json(503,'storage_unavailable');
   if(!['recorded','duplicate','unrecognized_contact','needs_zone',
