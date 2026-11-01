@@ -26,7 +26,7 @@ const QTY=/^[1-9][0-9]{0,8}(?:[.,][0-9]{1,3})?$/u;
 const ZONE=/^[\p{L}\p{M}\d .,-]{3,65}$/u;
 const SOURCE=/^[\p{L}\p{M}\p{N} .,()/+²³-]{3,90}$/u;
 const UNSAFE=/https?:|www\.|\d{10,}/iu;
-const DELIVERY=/^(?:(?:zona|localidad|direcci[oó]n)\s+de\s+entrega|entregar\s+en|entrega\s+en|destino)\s*:\s*(.+?)\s*$/iu;
+const DELIVERY=/^(?:(?:zona|localidad|direcci[oó]n)\s+de\s+entrega|entregar\s+en|entrega(?:\s+en)?|destino)\s*:\s*(.+?)\s*$/iu;
 const REASON={
  parse:'No pudimos reconocer cantidad y unidad.',
  product:'Material fuera del diccionario verificado para este piloto.',
