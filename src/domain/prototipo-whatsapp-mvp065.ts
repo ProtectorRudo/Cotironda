@@ -16,6 +16,7 @@ export type OfertaSimuladaMvp065=Readonly<{
  id:RolComercioMvp065;anonimo:'Proveedor A'|'Proveedor B'|'Proveedor C';
  rubro:'Corralón'|'Pinturería';
  productosPedido:readonly string[];
+ productosCotizados:readonly string[];
  historial:readonly string[];
  plantillaOriginal:string;
 }>;
@@ -52,7 +53,7 @@ function plantilla(
  id:RolComercioMvp065,
  items:EscenarioWhatsAppMvp065['pedido']['items']
 ):string{
- const prices=id==='corralon_a'?
+ const prices:Readonly<Record<string,number>>=id==='corralon_a'?
   {cemento_gris_obra:9500,hidrofugo:4200}:
   id==='corralon_b'?
    {cemento_gris_obra:9100,hidrofugo:4500}:
@@ -108,6 +109,7 @@ export function crearPrototipoWhatsAppMvp065(
   return Object.freeze({
    id,anonimo:meta[id].anonimo,rubro:meta[id].rubro,
    productosPedido:Object.freeze(products),
+   productosCotizados:Object.freeze(id==='corralon_b'?products.slice(0,1):products),
    historial:Object.freeze([original]),
    plantillaOriginal:original
   });
@@ -161,14 +163,15 @@ export function evaluarCoberturaMvp065(
  comparacionEconomica:'no_verificable_sin_iva_y_cargos';
 }>{
  const pedido=escenario.pedido.items.map(i=>i.product_code);
- const covered=new Set(ofertas.flatMap(o=>[...o.productosPedido]));
+ const valid=ofertas.filter(o=>o.historial.at(-1)===o.plantillaOriginal);
+ const covered=new Set(valid.flatMap(o=>[...o.productosCotizados]));
  const full=pedido.filter(k=>covered.has(k));
  const missing=pedido.filter(k=>!covered.has(k));
  const combos:string[]=[];
- for(let i=0;i<ofertas.length;i++)for(let j=i+1;j<ofertas.length;j++){
-  const both=new Set([...ofertas[i].productosPedido,...ofertas[j].productosPedido]);
+ for(let i=0;i<valid.length;i++)for(let j=i+1;j<valid.length;j++){
+  const both=new Set([...valid[i].productosCotizados,...valid[j].productosCotizados]);
   if(pedido.every(id=>both.has(id)))
-   combos.push(ofertas[i].anonimo+' + '+ofertas[j].anonimo);
+   combos.push(valid[i].anonimo+' + '+valid[j].anonimo);
  }
  return Object.freeze({
   cubiertos:Object.freeze(full),sinProveedor:Object.freeze(missing),
