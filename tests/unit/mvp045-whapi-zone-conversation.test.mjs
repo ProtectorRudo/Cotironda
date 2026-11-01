@@ -96,7 +96,7 @@ function testHarness(){
  };
  const create=()=>crearLectorCompradorConZonaD077({
   habilitado:true,channel:CH,readDb,zoneDb,
-  verificarComprador:broker.verificarContenidoComprador,acciones
+  verificarComprador:broker.verificarContenidoComprador,acciones:actions
  });
  const ingest=async msg=>{
   const req=new Request('https://local.invalid/whapi',{
