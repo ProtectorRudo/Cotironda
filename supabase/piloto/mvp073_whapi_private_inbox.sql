@@ -6,6 +6,8 @@ alter table cotironda_piloto_privado.integration_flags
  drop constraint integration_flags_whatsapp_inbound_enabled_check;
 -- Outbound intentionally remains hard-disabled in MVP-073.
 
+alter table cotironda_piloto_privado.participants
+ add column opted_out_at timestamptz;
 create table cotironda_piloto_privado.enrollment_codes (
  participant_key text primary key references cotironda_piloto_privado.participants(key),
  code_hash text not null unique check(code_hash ~ '^[a-f0-9]{64}$'),
@@ -66,7 +68,7 @@ begin
   return jsonb_build_object('state','participant_already_linked');
  end if;
  update cotironda_piloto_privado.participants
- set chat_hmac=p_chat_hmac,consent_at=clock_timestamp()
+ set chat_hmac=p_chat_hmac,consent_at=clock_timestamp(),opted_out_at=null
  where key=v_key;
  update cotironda_piloto_privado.enrollment_codes
  set consumed_at=clock_timestamp() where participant_key=v_key;
@@ -206,3 +208,24 @@ revoke all on function public.cotironda_piloto_receive_whapi_v1(
 grant execute on function public.cotironda_piloto_receive_whapi_v1(
  text,text,text,text,text,text,bigint,text,text,jsonb)
  to service_role;
+
+-- Opt-out can always be recorded by a previously authenticated direct chat.
+create function public.cotironda_piloto_optout_whapi_v1(
+ p_chat_hmac text
+) returns jsonb language plpgsql security definer set search_path='' as $body$
+declare v_key text;
+begin
+ if p_chat_hmac !~ '^[a-f0-9]{64}$' then
+  raise exception 'chat_invalid' using errcode='22023';
+ end if;
+ select key into v_key from cotironda_piloto_privado.participants
+ where chat_hmac=p_chat_hmac and consent_at is not null for update;
+ if v_key is null then return jsonb_build_object('state','no_active_contact');end if;
+ update cotironda_piloto_privado.participants
+ set consent_at=null,opted_out_at=clock_timestamp()
+ where key=v_key;
+ return jsonb_build_object('state','opted_out');
+end;$body$;
+revoke all on function public.cotironda_piloto_optout_whapi_v1(text)
+ from PUBLIC,anon,authenticated;
+grant execute on function public.cotironda_piloto_optout_whapi_v1(text) to service_role;
