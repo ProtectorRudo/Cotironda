@@ -159,7 +159,7 @@ export function simularConsultasCatalogosMvp069(args:{
   return {estado:'pedido_necesita_aclaracion' as const,
    pendientes:pedido.pendientes,invitaciones:[],sinProveedor:[],mensajesEnviados:0 as const};
  const invitaciones=args.comercios.map(c=>{
-  const codes=new Set(c.catalogo.reconocidos.map(r=>r.producto_id));
+  const codes=new Set(c.catalogo.reconocidos.map((r:LineaCatalogoMvp069)=>r.producto_id));
   return {comercio:c.id,
    items:canon(c.zona)===canon(pedido.zonaEntrega!)?
     pedido.items.filter(i=>codes.has(i.product_code)):[]
