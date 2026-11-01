@@ -140,3 +140,69 @@ test('MVP048: SQL privado roto nunca filtra mensajes o credenciales',async()=>{
  assert.equal(r.status,503);
  assert.doesNotMatch(await r.text(),/DB_CREDENTIAL|Cemento|549221/);
 });
+
+
+test('MVP051: rechazo por Content-Type y Content-Length ANTES de SQL',async()=>{
+ const s=port();
+ let opened=0;
+ const cfg={env:env(),abrirPuertoSql:async()=>{opened++;return s.open();},ahoraUnix:()=>NOW};
+ function withHeaders(type,length){
+  const original=req(),headers=new Headers(original.headers);
+  if(type===null)headers.delete('content-type');
+  else headers.set('content-type',type);
+  if(length===null)headers.delete('content-length');
+  else headers.set('content-length',length);
+  return new Request(original,{headers});
+ }
+ for(const bad of [null,'text/plain','application/xml']){
+  assert.equal((await atenderWebhookWhapiPreviewD083(
+   withHeaders(bad,null),cfg)).status,415);
+ }
+ for(const bad of ['65537','-1','1.5','abc','999999999999999999999']){
+  assert.equal((await atenderWebhookWhapiPreviewD083(
+   withHeaders('application/json',bad),cfg)).status,413);
+ }
+ assert.equal(opened,0);
+ assert.equal(s.queries.length,0);
+ // Headerless length is valid; D027 enforces the ACTUAL stream byte cap.
+ assert.equal((await atenderWebhookWhapiPreviewD083(
+  withHeaders('application/json',null),cfg)).status,200);
+ assert.equal(opened,1);
+});
+
+test('MVP051: puerto SQL temporal se libera tras éxito y error',async()=>{
+ const s=port();let closeCount=0;
+ const good=await atenderWebhookWhapiPreviewD083(req(),{
+  env:env(),abrirPuertoSql:async()=>({
+   ...await s.open(),cerrar:async()=>{closeCount++;}
+  }),ahoraUnix:()=>NOW
+ });
+ assert.equal(good.status,200);assert.equal(closeCount,1);
+ const failed=await atenderWebhookWhapiPreviewD083(req(),{
+  env:env(),abrirPuertoSql:async()=>({
+   query:async()=>{throw Error('DB_PRIVATE_PASSWORD');},
+   cerrar:async()=>{closeCount++;}
+  }),ahoraUnix:()=>NOW
+ });
+ assert.equal(failed.status,503);assert.equal(closeCount,2);
+ assert.doesNotMatch(await failed.text(),/PASSWORD|549221|Cemento/);
+ const malformed=await atenderWebhookWhapiPreviewD083(req(),{
+  env:env(),abrirPuertoSql:async()=>({
+   query:null,cerrar:async()=>{closeCount++;}
+  }),ahoraUnix:()=>NOW
+ });
+ assert.equal(malformed.status,503);assert.equal(closeCount,3);
+});
+
+test('MVP051: fallo de cierre no revela secretos ni reintenta ingreso confirmado',async()=>{
+ const s=port();let closed=0;
+ const out=await atenderWebhookWhapiPreviewD083(req(),{
+  env:env(),abrirPuertoSql:async()=>({
+   ...await s.open(),cerrar:async()=>{closed++;throw Error('PRIVATE_CLOSE_ERROR');}
+  }),ahoraUnix:()=>NOW
+ });
+ assert.equal(out.status,200);
+ assert.equal(closed,1);
+ assert.equal(s.storage.size,1);
+ assert.doesNotMatch(await out.text(),/PRIVATE_CLOSE_ERROR|Cemento|549221/);
+});
