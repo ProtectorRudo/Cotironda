@@ -74,7 +74,9 @@ function validText(t:unknown):t is string{
 }
 function locality(text:string):string|null{
  if(text.includes('\n')||text.includes('\r')||text.includes('\t')||
-    /https?:|www\.|@|\d{8,}/iu.test(text))return null;
+    /https?:|www\.|@|\d{8,}|\$/iu.test(text)||
+    /\b\d+(?:[.,]\d+)?\s*(?:bolsas?|unidades?|cajas?|kg|litros?|m2|m3|placas?|metros?)\b/iu.test(text))
+   return null;
  const m=text.trim().match(answer);
  const v=m?.[1]?.trim()??'';
  return v&&Z.test(v)?v:null;
