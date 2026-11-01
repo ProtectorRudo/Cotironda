@@ -71,6 +71,11 @@ alter table cotironda_private.whapi_buyer_inbox_d074 enable row level security;
 revoke all on cotironda_private.whapi_buyer_contacts_d074,
  cotironda_private.whapi_buyer_inbox_d074
  from public,anon,authenticated,service_role,cotironda_app;
+-- Trigger must validate buyer organization type without running as postgres.
+grant select on public.organizations to cotironda_whapi_inbox_writer;
+create policy d074_buyer_org_type on public.organizations
+ for select to cotironda_whapi_inbox_writer
+ using(organization_type in ('buyer','both'));
 grant select,update(opted_out_at) on cotironda_private.whapi_buyer_contacts_d074
  to cotironda_whapi_inbox_writer;
 grant select,insert on cotironda_private.whapi_buyer_inbox_d074
