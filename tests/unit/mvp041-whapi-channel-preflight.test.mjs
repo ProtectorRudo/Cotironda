@@ -153,7 +153,7 @@ test('MVP041: HTTP 429/500, redirect, HTML y JSON corrupto fallan cerrados',asyn
   new Response('error',{status:500}),
   new Response('<html></html>',{status:200,headers:{'content-type':'text/html'}}),
   new Response('{broken',{status:200,headers:{'content-type':'application/json'}}),
-  Object.assign(yes({status:'AUTH'}),{redirected:true})
+  (()=>{const r=yes({status:'AUTH'});Object.defineProperty(r,'redirected',{value:true});return r})()
  ]){
   const x=config({}, {'/health?wakeup=false':response});
   assert.equal((await auditarCanalWhapiMvp041(x.config)).estado,'canal_sin_verificar');
