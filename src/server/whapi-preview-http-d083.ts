@@ -11,6 +11,8 @@ import {timingSafeEqual} from 'node:crypto';
 import {procesarWebhookWhapiAislado} from './whapi-inbound-offline.ts';
 import {construirBrokerWhapiPrivado} from './whapi-crypto-broker.ts';
 import {crearPuertoPostgresWhapiDualD074} from './whapi-postgres-gateway.ts';
+import {crearListaPilotoWhatsappMvp068}
+ from './whapi-pilot-allowlist-mvp068.ts';
 import type {PuertoPostgresD030} from './whapi-postgres-gateway.ts';
 
 type Env=Readonly<Record<string,string|undefined>>;
@@ -84,6 +86,11 @@ export async function atenderWebhookWhapiPreviewD083(req:Request,config:Readonly
    identidadHmac.equals(huellaHmac)||identidadHmac.equals(contenidoAes)||
    huellaHmac.equals(contenidoAes))
   return response(503,'cifrado_privado_no_configurado');
+ // Pilot roster consists of HMAC chat keys, never telephone numbers. Require
+ // one buyer and two suppliers BEFORE opening any database connection.
+ let lista:ReturnType<typeof crearListaPilotoWhatsappMvp068>;
+ try{lista=crearListaPilotoWhatsappMvp068(env,channel,identidadHmac);}
+ catch{return response(503,'lista_piloto_no_configurada')}
  let db:PuertoPostgresD030|undefined;
  try{
   db=await config.abrirPuertoSql();
@@ -97,10 +104,17 @@ export async function atenderWebhookWhapiPreviewD083(req:Request,config:Readonly
    ahoraUnix:config.ahoraUnix??(()=>Math.floor(Date.now()/1000)),
    almacen:crearPuertoPostgresWhapiDualD074(db)
   });
-  // The pilot must support BOTH registered phone roles or reject the whole
-  // webhook. Never run a silently degraded supplier-only central channel.
+  // The pilot must support BOTH registered phone roles. Its allowlist
+  // narrows the SQL resolvers, it does NOT replace identity/consent/round
+  // checks. Unknown contacts and crossed roles cause zero database lookups.
+  const buyerResolver=broker.dependencias.resolverComprador;
+  if(!buyerResolver)return response(503,'canal_doble_rol_no_configurado');
   return await procesarWebhookWhapiAislado(req,{
-   ...broker.dependencias,exigirAmbosRoles:true
+   ...broker.dependencias,exigirAmbosRoles:true,
+   resolverProveedor:(ch,chat)=>lista.permitido('proveedor',ch,chat)?
+    broker.dependencias.resolverProveedor(ch,chat):Promise.resolve(null),
+   resolverComprador:(ch,chat)=>lista.permitido('comprador',ch,chat)?
+    buyerResolver(ch,chat):Promise.resolve(null)
   });
  }catch{
   // Never echo database errors, message content or key material.
