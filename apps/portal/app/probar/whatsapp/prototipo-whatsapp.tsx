@@ -150,7 +150,7 @@ export function PrototipoWhatsappCuatroTelefonosMvp065(){
       <Etiqueta>Preparada</Etiqueta>
      </div>
      <p className="cw65-minor">Solicitud que recibiría:</p>
-     <ul>{o.productosCotizados.map(code=><li key={code}>
+     <ul>{o.productosPedido.map(code=><li key={code}>
       {etiquetas.get(code)??code}</li>)}</ul>
      <p className="cw65-minor">Entrega: {escenario.pedido.zonaEntrega}</p>
     </article>)}
@@ -215,7 +215,7 @@ export function PrototipoWhatsappCuatroTelefonosMvp065(){
      return <article className="cw65-shop" key={o.id}>
       <div className="cw65-shop-head"><strong>{o.anonimo}</strong>
        <Etiqueta>{o.productosCotizados.length} materiales de su oferta</Etiqueta></div>
-      <ul>{o.productosPedido.map(code=><li key={code}>
+      <ul>{o.productosCotizados.map(code=><li key={code}>
        {etiquetas.get(code)??code}</li>)}</ul>
       <div className="cw65-total"><span>Total declarado</span>
        <strong>{summary.totalLiteral??'Sin total único'}</strong></div>
