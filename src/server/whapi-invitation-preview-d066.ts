@@ -2,10 +2,12 @@
 export type PaqueteD066=Readonly<{
  roundId:string;supplierOrgId:string;channel:string;
  deliveryZone:string;vatRequest:'no_especificado'|'con_iva'|'sin_iva'|'contradictorio';
+ deadlineAt?:string; // UTC server timestamp from private D066 SQL
  items:readonly Readonly<{lineNo:number;productCode:string;label:string;quantity:string;unit:string}>[];
 }>;
 const fields=['roundId','supplierOrgId','channel','deliveryZone','vatRequest','items'];
 const itemFields=['lineNo','productCode','label','quantity','unit'];
+const UTC=/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/u;
 const uuid=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/iu;
 const code=/^[a-z][a-z0-9_]{2,49}$/u;
 const channel=/^[A-Za-z0-9_-]{4,64}$/u;
@@ -30,13 +32,26 @@ function human(s:string):string{
  return parts[0]+(fractional?','+fractional:'');
 }
 export function formatearConsultaProveedorD066(input:unknown){
- if(!exact(input,fields)||typeof input.roundId!=='string'||!uuid.test(input.roundId)||
+ if(!(exact(input,fields)||exact(input,[...fields,'deadlineAt']))||
+  typeof input.roundId!=='string'||!uuid.test(input.roundId)||
   typeof input.supplierOrgId!=='string'||!uuid.test(input.supplierOrgId)||
   typeof input.channel!=='string'||!channel.test(input.channel)||
   typeof input.deliveryZone!=='string'||!zone.test(input.deliveryZone)||
   input.deliveryZone.trim()!==input.deliveryZone||
   !['no_especificado','con_iva','sin_iva'].includes(String(input.vatRequest))||
   !Array.isArray(input.items)||input.items.length<1||input.items.length>8)fail();
+ let fechaLimite='';
+ if(input.deadlineAt!==undefined){
+  if(typeof input.deadlineAt!=='string'||!UTC.test(input.deadlineAt)||
+    Number.isNaN(Date.parse(input.deadlineAt))||
+    new Date(input.deadlineAt).toISOString()!==input.deadlineAt)fail();
+  const fecha=new Intl.DateTimeFormat('es-AR',{
+   timeZone:'America/Argentina/Buenos_Aires',day:'2-digit',
+   month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',
+   hourCycle:'h23'
+  }).format(new Date(input.deadlineAt));
+  fechaLimite='\\nFecha límite para cotizar: '+fecha+' (hora de Argentina).';
+ }
  const lines:string[]=[];
  const seen=new Set<number>(),products=new Set<string>();
  let previous=0;
@@ -58,7 +73,7 @@ export function formatearConsultaProveedorD066(input:unknown){
   input.vatRequest==='sin_iva'?
   '\nPor favor, indicá precios sin IVA.':'';
  const message='Cotironda | Solicitud de cotización\n\nEntrega: '+
-  input.deliveryZone+'\n\nMateriales:\n'+lines.join('\n')+vat+
+  input.deliveryZone+fechaLimite+'\n\nMateriales:\n'+lines.join('\n')+vat+
   '\n\nPodés responder directamente por este WhatsApp con los precios, disponibilidad y condiciones de entrega. No necesitás entrar a ninguna plataforma.';
  if(message.length>1700||message.includes('Confirmo'))fail();
  return Object.freeze({estado:'vista_previa' as const,contenido:message,
