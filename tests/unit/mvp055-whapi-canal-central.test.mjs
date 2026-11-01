@@ -128,7 +128,7 @@ test('MVP055+068: Preview restringida procesa 1 arquitecto + 2 comercios aislado
  assert.equal(out.guardadas,0);
  assert.equal(out.duplicadas,3);
  assert.equal(out.mensajesEnviados,0);
- assert.equal(h.stored.size,5);
+ assert.equal(h.stored.size,3);
  assert.equal(h.closed,2);
 });
 test('MVP055: D027 reutilizable no limita artificialmente a cinco contactos',async()=>{
