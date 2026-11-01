@@ -802,3 +802,8 @@
 
 ### 31/10/2026 — MVP-038: una ronda ficticia completa y navegable
 - Ruta móvil `/probar/piloto` une pedido real escrito por el usuario con respuestas **ficticias editables** de A/B y el comparador económico ya existente, IVA/flete desconocidos sin ranking engañoso, selección solo visual y sin persistencia. CTA desde `/`, enlace desde `/probar`; pruebas de dominio y smoke SSR. Sin DB DEV, WhatsApp, producción o DNS; #175 permanece bloqueante.
+
+### 31/10/2026 — UX-002 / MVP-039: NO adjudicación; finalistas y contacto recíproco
+- El propietario rectifica expresamente D006 y UX-001: Cotironda al cierre identifica **hasta dos presupuestos finalistas comparables por rubro**; arquitecto y cada finalista autorizados conocen recíprocamente sus datos comerciales, sin click de adjudicar ni compromiso de compra en Cotironda. La negociación se acuerda por fuera.
+- Nuevo contrato puro `src/domain/finalistas-automaticos-mvp039.ts`, sin contacto real, red, WhatsApp ni persistencia: elige anónimos únicamente después del vencimiento con consentimientos e identidades verificados por el caller, canasta completa, mismas condiciones, sin falsos totales parciales, empates dudosos ni contactos de no finalistas; tests unitarios asociados.
+- Se rectifican AGENTS, visión, reglas, decisiones, WhatsApp, pruebas, roadmap y nota de que la demo MVP-038 de adjudicación visual es **legada/rechazada como UX**. Ver [docs/159](docs/159-ux-002-finalistas-y-contacto-mutuo.md), Issue #291. Sin publicación ni difusión de contactos; backend real requiere #175, RLS y pruebas de WhatsApp/consentimientos.
