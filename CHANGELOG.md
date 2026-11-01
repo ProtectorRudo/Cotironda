@@ -1,5 +1,10 @@
 # Registro de cambios
 
+## MVP-060 — Ejecutar cola de pedidos desde HTTP privado (sin habilitación)
+- Ruta Node Preview `POST /api/integraciones/whapi/procesar` autenticada con secreto propio, sin body, alcance máximo de 3 trabajos; el cliente no puede seleccionar empresa/ronda/canal. Nunca envía WhatsApp.
+- Driver Postgres.js reutilizado, cinco conexiones por rol D090 sin herencia/direct-table rights, CA TLS y sesión reservada, cierre garantizado ante error, criptografía D029 reutilizada; 5 URLs privadas y usuario técnico distinto por puerto.
+- Test CI Node y PostgreSQL17 con rol propio; SQL instalado únicamente en laboratorio CI. Backup real #175, cron, credenciales, Whapi y catálogos reales pendientes. Docs/180, issue #333.
+
 ## MVP-059 — Worker de pedido comprador WhatsApp compuesto (sin publicar)
 - Se conectaron los módulos D082 (cola durable), D077 (lectura AES y respuesta de localidad), D073 (texto WhatsApp), D081 (ronda idempotente) y D071 (match/invitaciones) sin nuevas RPC ni llamadas de red.
 - Puertos SQL separados con lista cerrada por rol y parámetros, pruebas de pedido completo, falta de zona, fallo tras COMMIT/retry, revocación, AES y apagado. Sin WhatsApp enviado.
