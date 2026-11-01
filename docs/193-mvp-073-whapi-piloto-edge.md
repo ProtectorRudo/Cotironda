@@ -9,7 +9,7 @@ Proyecto único: `ilggkalaafhtiysyzlmg` (`cotironda-piloto`, región São Paulo)
 - `mvp073d_whapi_durable_outbox` (invitaciones en cola, claims at-most-once, estado incierto sin reintento ciego).
 - `mvp073e_quote_detection_guard` (un saludo no cuenta como presupuesto; el texto original se conserva a revisión).
 
-Edge Function `cotironda-piloto-whapi`, despliegue **v2 / ACTIVE** en Supabase PILOTO. `verify_jwt=false` exclusivamente porque Whapi no envía un JWT de Supabase; la función exige **su propio secreto** en `x-cotironda-webhook-key`, valida canal e identidad, límites de tamaño, chat individual y tiempos, más HMAC y AES-GCM. Sin configuración de secreto/flag, contesta 503 y no abre la base. Proyecto usa únicamente las variables privadas inyectadas por Supabase, jamás claves en repositorio.
+Edge Function `cotironda-piloto-whapi`, despliegue **v3 / ACTIVE** en Supabase PILOTO. `verify_jwt=false` exclusivamente porque Whapi no envía un JWT de Supabase; la función exige **su propio secreto** en `x-cotironda-webhook-key`, valida canal e identidad, límites de tamaño, chat individual y tiempos, más HMAC y AES-GCM. Sin configuración de secreto/flag, contesta 503 y no abre la base. Proyecto usa únicamente las variables privadas inyectadas por Supabase, jamás claves en repositorio.
 
 ## Funcionalidad comprobada y límites
 
@@ -27,7 +27,7 @@ Edge Function `cotironda-piloto-whapi`, despliegue **v2 / ACTIVE** en Supabase P
 - SQL transaccional de saludo/budget: «Hola» se conserva como pendiente y NO se cuenta como oferta; una cotización con importe explícito sí se versiona. PASS, rollback.
 - SQL transaccional de outbox sobre Supabase PILOTO: dos pendientes, lease del destinatario consentido, autorización antes de envío, finalización 1 vez, segundo destinatario en estado incierto, no se genera tercer envío ni reenvío. PASS.
 - Persistencia final: verificar vía queries que **no quedaron** enrolamientos, mensajes, pedidos, ofertas ni envíos sintéticos (ROLLBACK).
-- Función desplegada y listada `ACTIVE`, versión 2. **No hay HTTP POST extremo-a-extremo autenticado con Whapi real** ni envío a teléfono real; no afirmar lo contrario.
+- Función desplegada y listada `ACTIVE`, versión 3. **No hay HTTP POST extremo-a-extremo autenticado con Whapi real** ni envío a teléfono real; no afirmar lo contrario.
 
 ## Únicas configuraciones externas que faltan (en Supabase, NO en chat ni GitHub)
 
@@ -65,3 +65,14 @@ Whapi documenta configuración de headers de webhook y método `POST https://gat
 4. Seguridad revisada, copias/restore de piloto, límites de gasto y plan de migración reversible a `cotironda-dev` pausado, antes del plazo de recuperación (90 días desde 01/11/2026).
 
 Se documenta expresamente que **Edge ACTIVE no es Whapi E2E PASS**.
+
+## Auditoría posterior MVP-073f — 01/11/2026
+
+Se detectaron y corrigieron dos riesgos reales antes de activar Whapi:
+
+- **No despachar una lista incompleta**: `canPrepareBuyerPilot` obliga localidad, 1–8 renglones reconocidos y **cero** segmentos pendientes. Si aparece algún desconocido o el texto es ambiguo, el webhook pasa `p_items=null`, y el SQL marca `needs_review` sin generar invitaciones. Se añadió test de la mezcla «cemento + material desconocido». Esta funcionalidad de retención se encuentra en Edge **v3**, pero no hay una prueba real por HTTP del canal.
+- **Consentimiento dinámico del comprador**: migración aplicada `mvp073f_outbox_buyer_consent_guard`. La RPC de selección y la comprobación inmediatamente anterior al envío exigen comprador con consentimiento vigente, ronda preparada y creada en los últimos 7 días. Una `BAJA` cancela autorización para el lease previamente adquirido y bloquea el resto de la cola. Reprobado con SQL transaccional y ROLLBACK, ejecutado con éxito desde `supabase/piloto/mvp073f_buyer_baja_smoke_rollback.sql`.
+
+El endpoint sigue **apagado por falta de secretos privados y activación deliberada**. La Edge Function es pública a nivel HTTPS (`verify_jwt=false` por ser webhook) pero requiere el secreto personalizado para cualquier evento, y con configuración incompleta falla cerrada; no afirmamos que pueda recibir ni enviar mensajes reales todavía.
+
+Fuente técnica de Whapi Cloud: https://support.whapi.cloud/help-desk/receiving/webhooks/detailed-webhook-settings y https://support.whapi.cloud/help-desk/sending/send-text-message .
