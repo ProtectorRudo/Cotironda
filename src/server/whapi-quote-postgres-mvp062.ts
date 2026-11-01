@@ -23,7 +23,7 @@ const PORTS={
  lectura:{login:'cotironda_quote_worker_read_login_d092',
   gateway:'cotironda_quote_gateway_d061',secret:'COTIRONDA_QUOTE_DB_URL_READ'},
  escritura:{login:'cotironda_quote_worker_write_login_d092',
-  gateway:'cotironda_price_gateway_d060',secret:'COTIRONDA_QUOTE_DB_URL_WRITE'}
+  gateway:'cotironda_original_gateway_d093',secret:'COTIRONDA_QUOTE_DB_URL_WRITE'}
 } as const;
 type Port=keyof typeof PORTS;
 const IDENT='select session_user as login, current_user as rol';
