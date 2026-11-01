@@ -170,8 +170,35 @@ select ci_helpers.assert_true(
   'con_iva',pg_temp.items_d081())->>'repetida'='true',
  'd081_exact_reply_replay_idempotent');
 reset role;
+-- Once first round has consumed its locality, a NEW pedido may ask a new
+-- locality immediately. The previous final reply must remain replayable.
+set local role cotironda_buyer_zone_gateway_d077;
+select ci_helpers.assert_true(
+ cotironda_private.whapi_zone_enqueue_d077('d081_ci',repeat('a',64),
+  repeat('5',64),'aaaaaaaa-0081-4081-8081-000000000811')=
+ '{"estado":"zona_solicitada_en_cola","repetido":false}'::jsonb,
+ 'd081_new_round_can_ask_zone_after_old_consumed');
+reset role;
+select ci_helpers.assert_true(
+ (select count(*)=2 from cotironda_private.buyer_zone_question_d077
+  where channel_id='d081_ci') and
+ (select consumed_round_id is null from cotironda_private.buyer_zone_pending_d077
+  where channel_id='d081_ci' and chat_key=repeat('a',64)),
+ 'd081_new_pending_reset_after_previous_consumed');
+set local role cotironda_buyer_gateway_d076;
+select ci_helpers.assert_true(
+ cotironda_private.whapi_zone_context_d077('d081_ci',repeat('3',64))
+ ->'original'->>'messageKey'=repeat('2',64),
+ 'd081_old_reply_replay_uses_immutable_mapping_not_new_pending');
+reset role;
+set local role cotironda_buyer_zone_gateway_d077;
+select ci_helpers.assert_true(
+ cotironda_private.whapi_zone_enqueue_d077('d081_ci',repeat('a',64),
+  repeat('2',64),'aaaaaaaa-0081-4081-8081-000000000811')
+ ->>'repetido'='true','d081_old_question_never_requeues');
+reset role;
 select pg_temp.d081_fail(
- $$select cotironda_private.whapi_create_buyer_round_d081(
+ $select cotironda_private.whapi_create_buyer_round_d081(
   'd081_ci',repeat('a',64),repeat('2',64),repeat('3',64),
   'aaaaaaaa-0081-4081-8081-000000000811','Rosario',
   'con_iva',pg_temp.items_d081())$$,
