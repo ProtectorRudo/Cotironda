@@ -1,5 +1,7 @@
 # Cotironda
 
+> **MVP-061 (emisor Whapi comercial privado, DESACTIVADO):** el transporte D055 y la cola D070 ya existentes quedan conectados a una ruta privada de Preview que puede enviar **una consulta por ejecución** únicamente a 1–3 números de proveedores permitidos, con consentimiento, cupos y COMMIT de SQL verificados. El emisor requiere token Whapi y claves privadas; **no se instaló en DEV ni se enviaron mensajes reales**. [Procedimiento](docs/181-mvp-061-whapi-sender-privado.md). #335.
+
 > **MVP-060 (ejecutor real preparado, APAGADO):** una ruta POST privada en Preview puede drenar hasta 3 pedidos WhatsApp por tick, con 5 conexiones PostgreSQL independientes de permisos mínimos y descifrado AES autenticado. El entorno DEV, las credenciales, el cron y Whapi **NO están activados**. [Procedimiento y controles](docs/180-mvp-060-ejecutor-http-comprador.md). #333.
 
 > **MVP-059 (flujo consumidor de WhatsApp en desarrollo, sin ejecución real):** la cola D082 queda conectada a lector cifrado D077, intérprete D073, alta de ronda idempotente D081 e invitaciones D071. Pruebas con texto de arquitecto, zona faltante, reintentos sin duplicar, empresa no autorizada y cifrado inválido. **Ningún emisor Whapi, DB real ni cron habilitado.** [Detalles](docs/179-mvp-059-pipeline-queue-comprador.md). #331.
