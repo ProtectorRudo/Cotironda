@@ -29,7 +29,8 @@ try{
   habilitado:true,pilotoAutorizado:true,
   channel:e.COTIRONDA_WHAPI_CHANNEL??'',
   token:e.COTIRONDA_WHAPI_TOKEN,
-  webhookSecretHex:e.COTIRONDA_WHAPI_WEBHOOK_SECRET_HEX,
+  // Same secret server-side name as D083, never log the value.
+  webhookSecretHex:e.COTIRONDA_WHAPI_WEBHOOK_SECRET,
   webhookUrl:e.COTIRONDA_WHAPI_WEBHOOK_URL??'',
   fetcher:fetch
  });
