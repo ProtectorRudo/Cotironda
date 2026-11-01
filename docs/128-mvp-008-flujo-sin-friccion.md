@@ -1,0 +1,30 @@
+# 128 — MVP-008: fluidez comercial sin confirmaciones extra
+
+**Decisión de negocio del propietario (31/10/2026) · Issue #229. Esta regla RECTIFICA D022–D026, D046, MVP-005, MVP-006 y MVP-007 cuando requieren «Confirmo» o pasos de aprobación redundantes.** Etapa de implementación: **desarrollo/offline, sin enviar mensajes reales**.
+
+## La experiencia que queremos lanzar
+
+1. **El comprador manda la lista una sola vez** (archivo, WhatsApp o texto), en una acción que autoriza la búsqueda y distribución. La IA separa rubros y destinatarios. **No pedir revisión ni confirmación renglón por renglón.** Si falta un dato imprescindible para consultar —sobre todo la **localidad/zona de entrega**—, preguntar **solo eso** (o reutilizar una zona del perfil confirmada y vigente). No adivinar una zona por geolocalización, corralones próximos o un ejemplo predeterminado. Si hay dos zonas contradictorias, aclarar la zona antes de enviar. No retrasar por cuestiones no esenciales.
+2. **Cada proveedor recibe una sola consulta** por ronda con **sus materiales y la zona de entrega**. No recibe la lista completa de otros rubros ni datos de competidores. Incluir únicamente condiciones adicionales que el comprador pidió **expresamente**, por ejemplo «cotización con IVA incluido» en detalles. No enviar catálogos, IVA, flete o plazos imaginarios ni exigir formulario.
+3. **El proveedor responde directamente** por WhatsApp con texto, audio o documento; esa acción **cuenta como presentación de su oferta**, sin segundo «Confirmo», código ni portal obligatorio. Una corrección posterior por el mismo canal autenticado crea otra versión inmutable y deja la anterior como historial. La oferta recibida puede ser parcial o tener IVA/flete no informados y **se muestra igualmente**, con estado verdadero y aclaraciones visibles. No interrumpir el trabajo para pedirles que declaren 15 condiciones faltantes.
+4. El comprador compara lo realmente comparable: muestra **cobertura** y **precios publicados por cada proveedor** incluso cuando son parciales, y aclara IVA/flete cuando estén ausentes. El **ranking económico/total final** solo se produce si hay datos adecuados y equivalencia técnica confiable; no usar subtotal parcial ni valores desconocidos como cero. No forzar confirmaciones para alcanzar ese ranking.
+5. **La adjudicación sigue siendo una decisión manual del comprador**, pero sin una aprobación previa a enviar su lista. Respetar cierre/plazo, versiones inmutables, autorización servidor, opt-in y baja WhatsApp, privacidad, no duplicados y permisos por empresa.
+
+## Qué se cambió en esta rama
+
+- `src/domain/pedido-sin-friccion-mvp008.ts`: identifica una línea explícita de zona de entrega; sin zona de pedido ni perfil confirmado devuelve una sola pregunta; si hay zona, usa el clasificador existente y prepara una consulta consolidada por comercio apto con materiales, zona y detalles explícitos. Datos y catálogos **ficticios** en demo. No hace red, no crea ronda ni envía WhatsApp.
+- `apps/portal/app/probar/demo-comprador.tsx`: pregunta la zona de entrega únicamente si falta y presenta las consultas con zona en lugar de pedir confirmaciones. Si el comprador especifica IVA incluido se añade a la misma consulta. La demo **no** promete envío y aún no permite cargar PDF/Word/Excel/fotos.
+- `registrarCotizacionRecibidaSinConfirmacionMvp008` en `src/domain/confirmacion-cotizacion-offline.mjs`: nuevo camino que acepta una propuesta estructurada de un proveedor **con remitente/identidad/invitación/ronda/consentimiento verificados por backend**, usando los chequeos existentes. Registra versión apenas llega, aunque falten IVA, flete, mínimo, pago o alícuota, sin enviar un resumen para «Confirmo». Las versiones previas permanecen, reenvíos exactos no duplican y colisiones de ID fallan. La oferta queda `sin_verificar` técnicamente, no se adjudica ni rankea por IVA/flete ausentes. El valor histórico `oferta.confirmada:true` indica **presentación por un emisor verificado**, no confirmación conversacional extra. Es un término interno heredado de D022; corregir nombres en migración de persistencia.
+- La función anterior de confirmación en D046 se mantiene **solo por compatibilidad con ensayos viejos y código no desplegado**; para el producto final se deberá retirar de los adaptadores y procedimientos SQL existentes. Las pruebas viejas siguen protegiendo regresiones, **NO son especificación vigente de UX**.
+
+## Bloqueantes para producción
+
+Las nuevas funciones son **offline**. Un evento con campos `persistido:true` e identidad verificada solo es confiable si lo construye un servidor autenticado a partir del ledger real; no aceptar estos valores desde la IA/WhatsApp/browser. Todavía **no existe** el paso real que convierta el nuevo camino en cotizaciones recibidas y versionadas en PostgreSQL; D049/D051 y procedimientos actuales siguen aplicando doble confirmación y requieren migración, prueba de aislamiento y rollback. Tampoco hay despacho de solicitudes por WhatsApp conectado, procesamiento de adjuntos ni backup/restauración auténtico DEV (#175). Nunca confundir un PASS sintético con piloto funcional.
+
+**No merge, no deploy, no WhatsApp real** hasta migrar la infraestructura en entorno autorizado y hacer E2E con proveedor y comprador de prueba.
+
+## Pruebas de aceptación
+
+Pedido con zona presente (una consulta por proveedor, zona visible); falta de zona (solo una pregunta, cero envíos); zona de perfil confirmada; zonas contradictorias; zona fuera del catálogo demo sin destinatarios inventados; petición IVA expresa como detalle excepcional; cotización parcial y sin IVA/flete recibida sin confirmación; edición con versiones inmutables, sin duplicados; remitente/consentimiento/ventana inválidos rechazados; equivalencia técnica y ranking no inferidos. CI TypeScript/Next/PostgreSQL/PostgREST y smoke HTTP.
+
+**Prioridad siguiente:** reemplazar protocolos SQL/worker de confirmación redundante por recepción directa autenticada y hacer prueba real de punta a punta en DEV tras respaldo verificado. Evitar ampliar demostraciones sin conectar el flujo comercial.

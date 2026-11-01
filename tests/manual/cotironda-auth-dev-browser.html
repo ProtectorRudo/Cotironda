@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; connect-src https://qkercsoqhehbenbbncwk.supabase.co; script-src 'unsafe-inline'; style-src 'unsafe-inline'; form-action 'none'; img-src 'none'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'">
+<title>Cotironda · Diagnóstico de Auth desarrollo</title>
+<style>
+:root{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#152c42;background:#f4f7fb}
+*{box-sizing:border-box}body{margin:0;padding:22px 12px 42px}main{max-width:690px;margin:0 auto}
+header{border-bottom:4px solid #bd3545;padding:14px 6px 22px}h1{font-size:31px;color:#163d74;letter-spacing:-.6px;margin:4px 0}h2{font-size:18px;color:#163d74;margin:0 0 12px}p{line-height:1.55;color:#506276;margin:8px 0 14px}
+.kicker{font-size:12px;font-weight:750;letter-spacing:1.5px;color:#bd3545;text-transform:uppercase}
+.card{margin-top:18px;background:white;border:1px solid #dce5ee;border-radius:16px;padding:22px;box-shadow:0 5px 22px #142b4510}
+label{font-weight:600;font-size:13px;display:block;margin:14px 0 6px}
+input[type=email],input[type=password]{width:100%;font:inherit;padding:12px 13px;border:1px solid #b9cbda;border-radius:9px;outline-color:#2863a9}
+input:focus{outline:2px solid #3b70b5}
+small{color:#5c6b79;font-size:12px;line-height:1.6;display:block}
+button{background:#174e91;color:white;border:0;font:inherit;font-weight:700;border-radius:9px;padding:13px 20px;cursor:pointer;margin-top:17px}
+button:disabled{opacity:.55;cursor:wait}button.secondary{background:#e8eef5;color:#173855;padding:10px 13px}
+.tag{background:#eaf1f9;border:1px solid #cee0f0;color:#315574;padding:6px 11px;border-radius:50px;display:inline-block;font-size:12px;font-weight:650}
+.row{display:flex;align-items:flex-start;gap:10px;margin:9px 0;padding:11px 12px;background:#f7f9fc;border-radius:9px;border:1px solid #e5eaf0}
+.dot{height:22px;min-width:22px;border-radius:50%;display:grid;place-items:center;background:#e6ebf1;color:#445f77;font-size:12px;font-weight:800}
+.row.ok .dot{background:#dcefe5;color:#167345}.row.fail .dot{background:#f9e1e2;color:#ae2533}
+.row span:last-child{font-size:13px;line-height:1.6;overflow-wrap:anywhere}
+#results{margin-top:14px}.muted{font-size:13px}
+.note{padding:12px 14px;border-left:3px solid #c33c4b;background:#fff4f4;color:#5f3440;margin:16px 0;font-size:13px;line-height:1.55}
+.topline{display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap}
+label.check{display:flex;align-items:center;gap:8px;font-weight:500;line-height:1.4}
+@media (max-width:550px){.card{padding:17px}h1{font-size:25px}}
+</style>
+</head>
+<body>
+<main>
+<header>
+<div class="kicker">COTIRONDA · ETAPA 01 · ENSAYO PRIVADO</div>
+<h1>Prueba de seguridad de sesiones</h1>
+<p>Comprueba Supabase Auth y la revocación del acceso a categorías después de cerrar sesión. No crea empresas, no habilita registros ni sube archivos.</p>
+<span class="tag">Proyecto fijo: cotironda-dev</span>
+<span class="tag">Solo lectura de catálogo</span>
+</header>
+<section class="card">
+<h2>Dos cuentas de ensayo</h2>
+<div class="note">Este archivo no guarda correos ni contraseñas, no envía datos a GitHub o ChatGPT y solo se conecta por HTTPS al proyecto Supabase de desarrollo. Si estas claves se usan en otra plataforma, cambiarlas antes.</div>
+<form id="form" autocomplete="off">
+<label for="verifiedEmail">Correo de la cuenta CONFIRMADA</label>
+<input id="verifiedEmail" type="email" required autocomplete="off" spellcheck="false" placeholder="correo de prueba confirmado">
+<label for="verifiedPassword">Contraseña de esa cuenta</label>
+<input id="verifiedPassword" type="password" required autocomplete="off" minlength="8" placeholder="No se almacena">
+<label for="pendingEmail">Correo de la cuenta SIN CONFIRMAR</label>
+<input id="pendingEmail" type="email" required autocomplete="off" spellcheck="false" placeholder="correo de prueba pendiente">
+<label for="pendingPassword">Contraseña de la cuenta sin confirmar</label>
+<input id="pendingPassword" type="password" autocomplete="off" minlength="8" placeholder="Solo si es distinta">
+<label class="check" for="samePassword">
+<input id="samePassword" type="checkbox" checked>
+Usar temporalmente la misma contraseña para las dos cuentas de ensayo
+</label>
+<small>Si las contraseñas son diferentes, desmarcá la opción e ingresá la segunda. Esta prueba no modifica ninguna contraseña.</small>
+<button id="run" type="submit">Ejecutar prueba de seguridad</button>
+</form>
+</section>
+<section class="card" aria-live="polite">
+<div class="topline"><h2>Resultados</h2><button type="button" class="secondary" id="copy" disabled>Copiar informe seguro</button></div>
+<p class="muted">Solo se informan resultados PASS/FAIL y cantidades, nunca credenciales, correos, identificadores personales ni JWT.</p>
+<div id="results" role="status"><div class="row"><span class="dot">·</span><span>Sin ejecutar todavía.</span></div></div>
+</section>
+<p class="muted" style="padding:16px 5px">Herramienta manual offline de Cotironda. La autenticación y la lectura de categorías sí requieren conexión a Supabase dev. Las pruebas con resultado PASS/FAIL deben revisarse antes de declarar finalizada la Etapa 01.</p>
+</main>
+<script>
+(() => {
+ 'use strict';
+ const ORIGIN='https://qkercsoqhehbenbbncwk.supabase.co';
+ const PUBLISHABLE='sb_publishable_7Hw2C8N5ga2-b4eHdXMa2Q_jKeSPhio';
+ const CATALOG='/rest/v1/catalog_categories?select=code&is_active=eq.true&order=code.asc';
+ const form=document.getElementById('form');
+ const results=document.getElementById('results');
+ const runButton=document.getElementById('run');
+ const copyButton=document.getElementById('copy');
+ const done=[];
+ let running=false;
+ const get=id=>document.getElementById(id);
+ function record(label,ok){
+   const text=(ok?'PASS: ':'FAIL: ')+label;
+   done.push(text);
+   const row=document.createElement('div');row.className='row '+(ok?'ok':'fail');
+   const dot=document.createElement('span');dot.className='dot';dot.textContent=ok?'✓':'!';
+   const message=document.createElement('span');message.textContent=text;
+   row.append(dot,message);results.appendChild(row);
+ }
+ function decodeJwt(token){
+   const payload=token.split('.')[1];
+   const base64=payload.replace(/-/g,'+').replace(/_/g,'/');
+   const bytes=Uint8Array.from(atob(base64),c=>c.charCodeAt(0));
+   return JSON.parse(new TextDecoder().decode(bytes));
+ }
+ async function send(path,options){
+   if(!path.startsWith('/')||path.startsWith('//'))throw Error('endpoint_invalido');
+   const controller=new AbortController();
+   const timeout=setTimeout(()=>controller.abort(),9000);
+   try{
+     return await fetch(ORIGIN+path,{
+       method:options.method||'GET',
+       mode:'cors',credentials:'omit',redirect:'error',cache:'no-store',
+       headers:{
+         apikey:PUBLISHABLE,
+         accept:'application/json',
+         ...(options.token?{authorization:'Bearer '+options.token}:{}),
+         ...(options.body?{'content-type':'application/json'}:{})
+       },
+       ...(options.body?{body:JSON.stringify(options.body)}:{}),
+       signal:controller.signal
+     });
+   }finally{clearTimeout(timeout)}
+ }
+ async function safeJson(response){
+   try{return await response.json()}catch{return null}
+ }
+ function validClaims(claims,userId){
+   return Boolean(claims&&claims.sub===userId&&
+     claims.role==='authenticated'&&claims.is_anonymous===false&&
+     claims.cotironda_email_verified===true&&
+     /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(claims.session_id||'')&&
+     Number.isFinite(claims.exp)&&claims.exp-Math.floor(Date.now()/1000)>120);
+ }
+ function validCategories(data){
+   return Array.isArray(data)&&data.length>0&&data.every(
+     row=>row&&typeof row.code==='string'&&Object.keys(row).length===1
+   );
+ }
+ async function checkConfirmed(email,password){
+   let token=null;let logoutDone=false;let claims=null;
+   try{
+     const login=await send('/auth/v1/token?grant_type=password',{
+       method:'POST',body:{email,password,gotrue_meta_security:{}}
+     });
+     const auth=await safeJson(login);
+     if(login.status!==200||!auth||typeof auth.access_token!=='string'){
+       record('La cuenta confirmada inicia sesión correctamente',false);
+       return;
+     }
+     token=auth.access_token;
+     record('Supabase Auth emitió una sesión auténtica',true);
+     try{claims=decodeJwt(token)}catch{}
+     const userResponse=await send('/auth/v1/user',{token});
+     const user=await safeJson(userResponse);
+     const verified=userResponse.status===200&&user&&typeof user.id==='string'&&
+       Boolean(user.email_confirmed_at)&&validClaims(claims,user.id);
+     record('Identidad, correo confirmado y JWT con session_id válido',verified);
+     if(!verified)return;
+     const first=await send(CATALOG,{token});const items=await safeJson(first);
+     const baseline=first.status===200&&validCategories(items);
+     record('Antes del cierre: catálogo visible por RLS (HTTP 200)',baseline);
+     if(!baseline)return;
+     // La sesión se cierra en el servidor, pero conservamos el JWT original
+     // solo en memoria para comprobar que RLS ya no permite leer las filas.
+     const logout=await send('/auth/v1/logout?scope=global',{method:'POST',token});
+     logoutDone=logout.status===200||logout.status===204;
+     record('Supabase Auth aceptó el cierre global',logoutDone);
+     if(!logoutDone)return;
+     const notExpired=claims.exp-Math.floor(Date.now()/1000)>120;
+     record('El JWT original aún no expiró',notExpired);
+     if(!notExpired)return;
+     const after=await send(CATALOG,{token});const rows=await safeJson(after);
+     const denied=after.status===200&&Array.isArray(rows)&&rows.length===0;
+     record('Tras el cierre: mismo JWT devuelve HTTP 200 y [] por RLS',denied);
+   }finally{
+     if(token&&!logoutDone){
+       try{await send('/auth/v1/logout?scope=global',{method:'POST',token})}
+       catch{record('Cierre de emergencia: verificar sesión en panel Auth',false)}
+     }
+     token=null;claims=null;
+   }
+ }
+ async function checkPending(email,password){
+   const response=await send('/auth/v1/token?grant_type=password',{
+     method:'POST',body:{email,password,gotrue_meta_security:{}}
+   });
+   const result=await safeJson(response);
+   const code=typeof result?.code==='string'?result.code:'';
+   const msg=typeof result?.msg==='string'?result.msg:
+     (typeof result?.message==='string'?result.message:'');
+   const denied=(response.status===400||response.status===403)&&
+     (code==='email_not_confirmed'||/email.not.confirmed/i.test(msg));
+   record('Cuenta pendiente rechazada por correo sin confirmar',denied);
+   if(response.status===200&&result?.access_token){
+     // Nunca dejar abierta una sesión creada accidentalmente.
+     try{await send('/auth/v1/logout?scope=global',{method:'POST',token:result.access_token})}
+     catch{record('Cierre de emergencia de cuenta pendiente: revisar Auth',false)}
+   }
+ }
+ form.addEventListener('submit',async event=>{
+   event.preventDefault();if(running)return;
+   running=true;runButton.disabled=true;copyButton.disabled=true;done.length=0;
+   results.textContent='';
+   const email=get('verifiedEmail').value.trim();
+   const password=get('verifiedPassword').value;
+   const pendingEmail=get('pendingEmail').value.trim();
+   const pendingPassword=get('samePassword').checked?password:get('pendingPassword').value;
+   // Solo cuentas de ensayo, sin secretos en URL, archivo, localStorage o consola.
+   try{
+     if(!email||!pendingEmail||email.toLowerCase()===pendingEmail.toLowerCase()||
+       !password||!pendingPassword){
+       record('Dos cuentas distintas con contraseña ingresada',false);
+     }else{
+       await checkConfirmed(email,password);
+       await checkPending(pendingEmail,pendingPassword);
+     }
+   }catch{
+     record('Conexión Auth/PostgREST no completada (revisar CORS o Internet)',false);
+   }finally{
+     for(const id of ['verifiedPassword','pendingPassword'])get(id).value='';
+     running=false;runButton.disabled=false;copyButton.disabled=done.length===0;
+     const success=done.length>0&&done.every(x=>x.startsWith('PASS:'));
+     record('Diagnóstico completo sin errores',success);
+   }
+ });
+ get('samePassword').addEventListener('change',event=>{
+   get('pendingPassword').disabled=event.target.checked;
+ });
+ get('pendingPassword').disabled=true;
+ copyButton.addEventListener('click',async()=>{
+   const report='Cotironda · diagnóstico Auth dev (sin secretos)\n'+
+     done.join('\n')+'\nFecha local: '+new Date().toLocaleDateString('es-AR');
+   try{
+     await navigator.clipboard.writeText(report);
+     copyButton.textContent='Informe copiado';
+   }catch{
+     const box=document.createElement('textarea');box.value=report;box.readOnly=true;
+     box.style.width='100%';box.rows=10;box.setAttribute('aria-label','Informe sin credenciales');
+     results.appendChild(box);box.focus();box.select();copyButton.textContent='Seleccioná el informe';
+   }
+ });
+})();
+</script>
+</body></html>

@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "source": "Supabase DEV qkercsoqhehbenbbncwk schema_migrations.statements[1], verified 2026-10-30",
+  "safeToAutoExecute": false,
+  "expectedBaseMigrations": 12,
+  "devTotalMigrations": 17,
+  "notes": "Archivos de recuperación EXACTOS, no migraciones de despliegue; D020 requiere pg_net/pg_cron y puede efectuar red solo si se habilita. CI verifica integridad, no restaura DEV.",
+  "migrations": [
+    {
+      "version": "20261030182413",
+      "name": "dev_quality_once_only",
+      "path": "supabase/recovery/dev_quality_20261030/20261030182413_dev_quality_once_only.sql",
+      "sha256": "617f6161fa5e9019732194e40fdaa7edbf287719ce75d153546093954368479f",
+      "characters": 1231
+    },
+    {
+      "version": "20261030190232",
+      "name": "dev_quality_results_ledger",
+      "path": "supabase/recovery/dev_quality_20261030/20261030190232_dev_quality_results_ledger.sql",
+      "sha256": "2100ac622efbd018c784cd71cc7a4fac58ce838b12881a9aea62790c612efc28",
+      "characters": 1840
+    },
+    {
+      "version": "20261030192011",
+      "name": "dev_quality_auto_dispatch_d020",
+      "path": "supabase/recovery/dev_quality_20261030/20261030192011_dev_quality_auto_dispatch_d020.sql",
+      "sha256": "fbe20929669d5ea5b1865cdf1c536d6f7f4b8f6565c0d2e43a9cfaea158567fe",
+      "characters": 6445
+    },
+    {
+      "version": "20261030192221",
+      "name": "dev_quality_pg_net_nonpublic_d020",
+      "path": "supabase/recovery/dev_quality_20261030/20261030192221_dev_quality_pg_net_nonpublic_d020.sql",
+      "sha256": "7fcdbc2d0f984977b0e933bafe6e93d355b13dfbeae0a48c3fdc91655eef27f6",
+      "characters": 172
+    },
+    {
+      "version": "20261030194856",
+      "name": "dev_quality_numeric_diagnostics_d021",
+      "path": "supabase/recovery/dev_quality_20261030/20261030194856_dev_quality_numeric_diagnostics_d021.sql",
+      "sha256": "62b36a7041c1ff69bcc8e033a15fffb646941e2458f5855ff42012d9048182ca",
+      "characters": 1507
+    }
+  ]
+}

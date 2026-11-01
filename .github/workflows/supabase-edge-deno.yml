@@ -1,0 +1,31 @@
+name: Supabase Edge Deno - Typecheck solo DEV
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/cotironda-ia-dev/**'
+      - '.github/workflows/supabase-edge-deno.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  deno-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Obtener codigo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Instalar Deno 2
+        uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb # v2.0.3
+        with:
+          deno-version: v2.x
+      - name: Verificar tipos y resolucion de imports Edge
+        working-directory: supabase/functions/cotironda-ia-dev
+        run: deno check --config deno.json index.ts
+      - name: Controlar que las pruebas de mock no accedan a red real
+        run: |
+          if grep -R -E 'Deno\\.env\\.get\\(.*(SERVICE_ROLE|SUPABASE_SECRET)' supabase/functions/cotironda-ia-dev; then
+            echo 'Lectura inesperada de secretos privilegiados en laboratorio'
+            exit 1
+          fi

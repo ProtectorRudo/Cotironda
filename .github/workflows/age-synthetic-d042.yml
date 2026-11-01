@@ -1,0 +1,40 @@
+name: D042 - age real con datos exclusivamente sinteticos
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/age-synthetic-d042.yml'
+      - 'scripts/ci/smoke-age-real-d042.mjs'
+      - 'scripts/ops/check-local-dev-backup-d041.mjs'
+      - 'scripts/ops/verify-encrypted-dev-backup-d039.mjs'
+      - 'tests/unit/dev-backup-local-age-d041.test.mjs'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-age-synthetic-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    env:
+      CI: 'true'
+      COTIRONDA_CI_REAL_AGE_SYNTHETIC: 'true'
+    steps:
+      - name: Checkout sin credenciales persistidas
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Preparar Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+      - name: Instalar age del repositorio Ubuntu 24.04 firmado
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends age
+          age --version
+          age-keygen --version
+      - name: Integración real age sin DB, usuarios, claves reales ni red en el test
+        run: |
+          set -euo pipefail
+          umask 077
+          node scripts/ci/smoke-age-real-d042.mjs

@@ -1,0 +1,21 @@
+-- Pruebas estructurales pgTAP, NO ejecutadas hasta disponer de BD aislada.
+begin;
+create extension if not exists pgtap with schema extensions;
+select plan(15);
+select has_table('public', 'organizations', 'organizaciones');
+select has_table('public', 'organization_members', 'miembros');
+select has_table('public', 'catalog_categories', 'categorias');
+select has_table('public', 'supplier_profiles', 'perfiles');
+select has_table('public', 'supplier_categories', 'categorias proveedor');
+select has_table('public', 'supplier_products', 'productos');
+select has_table('public', 'supplier_delivery_areas', 'areas');
+select has_table('cotironda_private', 'supplier_contacts', 'contactos privados');
+select is((select relrowsecurity from pg_class where oid='public.organizations'::regclass),true,'RLS organizaciones');
+select is((select relrowsecurity from pg_class where oid='public.organization_members'::regclass),true,'RLS miembros');
+select is((select relrowsecurity from pg_class where oid='public.supplier_profiles'::regclass),true,'RLS perfiles');
+select is((select relrowsecurity from pg_class where oid='public.supplier_products'::regclass),true,'RLS productos');
+select is(has_table_privilege('anon','public.supplier_products','SELECT'),false,'anon sin catalogo');
+select is(has_table_privilege('authenticated','public.organization_members','INSERT'),false,'sin alta de miembros desde navegador');
+select is(has_schema_privilege('authenticated','cotironda_private','USAGE'),false,'sin acceso a contactos');
+select * from finish();
+rollback;

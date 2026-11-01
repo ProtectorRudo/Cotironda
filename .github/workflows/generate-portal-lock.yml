@@ -1,0 +1,38 @@
+name: Generar lockfile de portal (rama autorizada)
+on:
+  push:
+    branches: [feat/01-portal-registro]
+permissions:
+  contents: write
+jobs:
+  lockfile:
+    if: github.repository == 'ProtectorRudo/Cotironda'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22.16.0'
+      - name: Generar lock solo si falta
+        id: lock
+        working-directory: apps/portal
+        run: |
+          if [ -f package-lock.json ]; then
+            echo "needed=false" >> "$GITHUB_OUTPUT"
+          else
+            npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+            echo "needed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Registrar lockfile en GitHub sin exponer token
+        if: steps.lock.outputs.needed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          node -e "const fs=require('node:fs');fs.writeFileSync('/tmp/cotironda-lock-put.json',JSON.stringify({message:'chore(portal): fijar resoluciones npm verificables',content:fs.readFileSync('apps/portal/package-lock.json').toString('base64'),branch:process.env.BRANCH}))"
+          gh api --method PUT "repos/$REPO/contents/apps/portal/package-lock.json" --input /tmp/cotironda-lock-put.json > /dev/null
+          rm -f /tmp/cotironda-lock-put.json

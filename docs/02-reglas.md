@@ -1,9 +1,14 @@
 # 02 — Reglas funcionales
 
+> **UX-002, regla aprobada 31/10/2026:** sin adjudicación ni selección manual de ganador en la plataforma. Cotironda identifica hasta dos finalistas por canasta comparable al cierre y habilita contacto recíproco consentido entre comprador y cada finalista. [docs/159](159-ux-002-finalistas-y-contacto-mutuo.md). La compra se concreta fuera del sistema.
+
+## UX-001 — regla transversal de simplicidad radical
+No construir un sistema que obligue al comprador o al corralón a aprender un portal: **WhatsApp primero para ambos, web opcional para seguimiento y decisiones**. El usuario no transcribe ni separa rubros ni repite datos enviados. Mensajes con lenguaje claro, contexto, próximo paso y errores accionables; estados siempre honestos. Aclaraciones acotadas, sin interrumpir materiales seguros. La cotización enviada por el proveedor se registra sin un segundo «Confirmo» y puede corregirse; la selección de finalistas y el contacto mutuo se realizan automáticamente tras el cierre, sin adjudicación por el comprador en Cotironda. Cada interacción que añada pasos, pantallas o capacitación requiere justificación, tests móviles y prueba de usabilidad. **No confundir objetivo UX con WhatsApp ya funcionando.** Ver [docs/89](89-ux-cero-friccion-whatsapp-first.md).
+
 ## Pedido
 - Empresa compradora autenticada carga documento o texto, datos de entrega, urgencia, condiciones y plazo.
 - IA extrae líneas con cantidades, unidades, rubros, marca y especificaciones; dudas visibles. Nada inventado.
-- Comprador revisa y **confirma** antes de publicar. El envío automático sin confirmación está prohibido.
+- Al **enviar la lista**, el comprador autoriza explícitamente la distribución automática; NO revisa ni confirma cada línea. Los ítems seguros se derivan sin intervención; los dudosos se retienen para aclaración puntual sin detener el resto.
 - Plazos candidatos: 24/48 horas; 3, 5, 7 o 10 días. Vigencia y zona horaria se verifican antes del piloto.
 
 ## Proveedores
@@ -14,19 +19,73 @@
 - Invitaciones limitadas y pertinentes, con rotación y mecanismo de baja.
 
 ## Ofertas
-- Recibidas por WhatsApp o portal y estructuradas en borrador; **el proveedor confirma** antes de validez.
+- Recibidas por WhatsApp o portal y registradas como **oferta recibida al enviarlas**, siempre que la procedencia se verifique en el backend; **no pedir una confirmación adicional**. El proveedor puede corregir enviando una nueva versión.
 - Oferta incluye moneda, cantidad, unidad, especificación, IVA, precio, transporte, descuentos, mínimo, plazo, disponibilidad y forma de pago.
-- Si faltan datos determinantes, marcar «requiere aclaración». No asumir IVA ni flete.
-- Cada cambio confirmado crea versión inmutable. Al cierre se congela la oferta vigente, salvo reapertura auditada.
+- Si faltan datos determinantes, marcar «requiere aclaración». **No asumir IVA ni flete, ni que el precio es neto/bruto.** Cada proveedor declara en los **detalles de su oferta** si el precio incluye IVA o si es más IVA, con alícuota confirmada; y si el flete está incluido, se cotiza por separado, es expresamente sin cargo o está pendiente. Un valor omitido NO equivale a cero. Sin esas aclaraciones no presentar un importe final ni competir en ranking por precio. Ver docs/125.
+- Cada nueva oferta o corrección enviada crea una versión inmutable. Al cierre se congela la última recibida dentro de plazo, salvo reapertura auditada.
 - Marcas alternativas válidas si son técnicamente equivalentes y no hay requisito obligatorio; alternativas no equivalentes, visibles pero fuera del cálculo conforme.
 
 ## Privacidad y resultado
 - Comprador ve importes y condiciones pero no nombre/contacto del proveedor durante ronda, según política a aprobar.
 - Proveedores no ven identidad, oferta detallada ni archivos de competidores.
 - No compartir ranking ordinal salvo canasta completa y comparación realmente equivalente.
-- Adjudicación manual a uno o hasta dos proveedores por rubro con asignación de cantidades no duplicada.
-- Sólo ganadores y comprador intercambian identidad/contacto después de confirmación. No garantizar compra ni entrega en MVP.
-- Registrar transiciones, quién decidió, por qué y cuándo; prohibir adjudicación después de cambios no confirmados.
+- Al cierre se identifican automáticamente hasta dos presupuestos finalistas por rubro/canasta completa y comparable, con asignación de cantidades no duplicada. No es una adjudicación ni obliga a comprar. Empates irresolubles y ofertas incomparables no habilitan revelación automática.
+- Sólo el comprador y cada proveedor finalista elegible intercambian nombre y contacto comercial, de forma recíproca y automática DESPUÉS del cierre, con consentimientos previos y datos autenticados. Un finalista no ve competidores ni se garantiza compra o entrega.
+- Registrar transiciones, fecha de cierre, cálculo verificable, consentimientos y cada revelación idempotente. No revelar contactos sobre datos no atribuibles al proveedor o modificaciones posteriores al cierre.
 
 ## Casos antiabuso
 Pedidos falsos, invitaciones duplicadas por rubro compartido, cambios fuera de plazo, modificación de oferta ajena, proveedor sin consentimiento, archivos maliciosos y spam.
+
+## Distribución automática D013
+No alcanza pertenecer al rubro: coincidir producto específico confirmado en catálogo, unidad, dimensiones, marca si obligatoria y cobertura geográfica. La similitud semántica por IA sola no demuestra equivalencia técnica. Sin coincidencia verificable, retener esa línea y avisar, no inventar. Enviar una sola solicitud por proveedor/ronda con su subconjunto; no compartir documento completo, precios objetivo ni información innecesaria. Exigir autorización de envío del comprador, opt-in proveedor, baja respetada, anti-spam, cuotas e idempotencia. Informar al comprador DESPUÉS, no pedir aprobación previa por línea.
+
+## Alternativas de presentación y consultas (propuesta para piloto, Issue #112)
+El proveedor que confirmó un SKU compatible con requisitos técnicos esenciales pero distinto tamaño de envase **puede ser candidato a cotizar** el número entero necesario de envases; la cantidad real suministrada y el sobrante deben figurar, sin que Cotironda lo presente como idéntico. Los nombres comerciales relacionados requieren relación curada explícita y consulta al proveedor con uso/ficha técnica; nunca se infiere equivalencia a partir de palabras similares o confianza IA. Marcas obligatorias, normas, diferencias estructurales y familias incompatibles bloquean sustitución. Prototipo docs/70: offline sin Whapi, no modifica el despachador actual.
+
+## D014 — identidad del producto como primer criterio (30/10/2026)
+Primero identificar la **familia/producto funcional canónico**. La marca es una preferencia libre y el tamaño de envase una presentación, salvo marca expresamente obligatoria. Antes de considerar una variante válida, comprobar los **atributos técnicos esenciales** (por rubro: tipo/clase/resistencia, aplicación, ancho/espesor, aislamiento/sección y norma si aplica). Familia igual con atributos confirmados incompatibles = no enviar como cumplimiento. Datos críticos faltantes = **consulta técnica**, no comparar como idéntico. Si coincide, el proveedor puede cotizar cualquier marca y presentación de su catálogo confirmado, informando envases enteros, cantidad realmente ofrecida y excedente. Un comercio con varias marcas no recibe múltiples invitaciones por el mismo artículo. La oferta, las condiciones económicas y la decisión final son del proveedor y del comprador respectivamente. Módulo offline docs/71, sin Whapi ni producción.
+
+## Rectificación D015 — separar invitación de comprobación de equivalencia
+La consulta se dirige a **todos los proveedores elegibles que tengan confirmado trabajar ese producto/familia** dentro de la zona y con opt-in, incluso si el SKU registrado tiene otra marca o presentación, o las especificaciones que no pidió el comprador están ausentes. «Cemento Loma Negra 50 kg» no exige Loma Negra **por sí solo**; marca obligatoria solo con exclusividad expresa. No se filtra un proveedor de cemento por comercializar Avellaneda 25 kg. Con diferencias técnicas conocidas en la MISMA familia, el comercio puede recibir una **consulta de alternativa diferente** y ofrecer cumplir el pedido o declarar qué variante vende: esa alternativa nunca pasa por conforme/idéntica, no se inventa cantidad ni se ocultan discrepancias. Un proveedor de adhesivos no recibe «cemento» solo por ser corralón. La validación técnica estricta se hace **sobre la oferta real** antes de compararla, sin adjudicación en Cotironda; contacto mutuo de finalistas únicamente al cierre según UX-002. Ver docs/72; módulo offline sin envíos.
+
+## MVP-006 — Condiciones económicas del documento y del comprador
+La IA debe leer notas, pies y aclaraciones **dentro del presupuesto** con evidencia literal verificable, no dar IVA/flete por ausentes únicamente porque no están en los renglones. Si no hay evidencia clara, mostrar «IVA no informado» o «Flete no informado»: el importe citado no acredita esos cargos, pero **nunca** afirmar «IVA excluido», «flete gratuito» o «precio final» como hecho sin declaración. Contradicciones se consultan, no se resuelven por estimación. Si el comprador exige **con IVA incluido**, incorporar esa condición en la misma solicitud enviada a cada proveedor elegible para que responda respetándola o aclare su imposibilidad. No agregar pasos al comprador ni invitaciones adicionales. Ver docs/126; solo protocolo offline probado, no IA live ni WhatsApp real.
+
+## MVP-007 — Conversión controlada a borradores de cotización
+En ofertas entrantes nunca asignar `precioUnitarioNeto` directamente a partir de un importe de presupuesto: primero verificar el origen del precio, si la nota dice **más IVA / incluido / no informado**, la alícuota explícita y el requisito expreso del comprador. En precio bruto con IVA solo calcular base cuando la conversión determinista al centavo recompone el bruto original; ante diferencias de redondeo, retener y preguntar. Flete cero solo si el proveedor declara sin cargo o incluido; flete adicional con monto y cita válida; omisión no equivale a cero. La cotización se registra al recibirla del proveedor verificado según la nueva decisión MVP-008; D046 de doble confirmación queda legado offline. Equivalencias técnicas siguen sin verificar. MVP-007 solo offline, sin Whapi ni IA live. Ver docs/127.
+
+## MVP-008 — Regla vigente, prioridad máxima: fluidez sin pasos extra
+**No pedir al comprador confirmación de renglones ni al proveedor confirmar una oferta que ya envió.** Enviar pedido autoriza distribuir; solo preguntar datos vitales ausentes, empezando por localidad/zona de entrega. Con zona de pedido o perfil vigente, no preguntar. Consultar una sola vez a cada comercio elegible con sus materiales y **zona de entrega**; incluir condiciones extraordinarias del comprador únicamente cuando las pidió de forma explícita (p. ej. con IVA). Respuesta de comercio identificada y autenticada = cotización recibida, visible con aclaraciones aunque falten IVA/flete; nuevas respuestas actualizan con versiones inmutables. El precio publicado puede mostrarse, pero **no se inventan totales finales ni rankings económicos** si faltan datos suficientes. Toda interacción de autorización, remitente, opt-in, idempotencia y privacidad se conserva; se sustituye adjudicación manual por finalistas y contacto mutuo consentido al cierre (UX-002). Ver [docs/128](128-mvp-008-flujo-sin-friccion.md): esta decisión rectifica confirmaciones redundantes históricas D022–D026/D046. Aún falta migrar SQL y Whapi real.
+
+## MVP-009 — SQL privado para cotizaciones recibidas sin segundo «Confirmo»
+La cotización ya enviada por proveedor autenticado equivale a oferta recibida, aunque falte IVA, flete, pago o precio normalizado; corregirla por otro mensaje genera versión inmutable. D059 crea borrador D048 y versión D026 **en una transacción** desde un inbox cifrado verificado, sin respuesta D047 ni confirmación D049. Persistencia de prueba solo PG17 CI, sin Whapi ni Supabase DEV. El vocabulario legado `offer_confirmed` se interpreta aquí como «recibida del proveedor autenticado», no segunda aprobación. Antes del piloto, conservar precio original citado sin suponer neto cuando falta IVA. Ver [docs/129](129-mvp-009-recepcion-directa-pg.md).
+
+## MVP-010 — Precios originales aun cuando IVA no figura
+El importe declarado por un proveedor **SIEMPRE debe preservarse y quedar visible como monto declarado**, incluso si no hay IVA, flete o alícuota aclarados. A falta de esos datos, no se lo transforma en neto ni se produce un total comparable. La fuente cifrada y el precio declarado por línea se asocian a una versión inmutable; solo el comprador autorizado ve la última versión con alias anónimo. Implementación D060 en PG17 efímero CI, no conectada a Whapi real, sin confirmaciones extra. Ver docs/130.
+
+## MVP-012 — Reintentos internos sin fricción
+Cada texto de proveedor guardado en el inbox cifrado genera un trabajo privado. Se procesa por proveedor y ronda en orden (una corrección no debe adelantarse a la primera cotización); si falla la infraestructura, retry máximo cuatro intentos y pausa acotada, sin duplicar una versión ya persistida. Si no se puede atribuir precio con evidencia, revisión **interna**; no pedir «Confirmo», no inventar monto. Sólo marcar recibida cuando PostgreSQL comprueba que D060 guardó la evidencia. Aún laboratorio PG17, ver docs/132.
+
+## MVP-014 — Visibilidad real con cero fricción
+La pantalla del comprador debe mostrar **ofertas realmente registradas** de sus rondas, no sustituirlas por demos. Se entra desde «Mis solicitudes», sin copiar UUIDs, y se muestran alias anónimos, artículos con y sin precio, moneda, unidad, cantidades y condiciones comerciales declaradas o «no informado». No publicar un total, ranking ni adjudicación si falta equivalencia/cobertura/IVA/flete. La lectura exige sesión Supabase vigente, membresía actual y flags exclusivos de Preview. Hasta backup real DEV #175, SQL y rutas inhabilitados en entorno alojado. Ver docs/134.
+
+## MVP-015 — Registrar pedido no equivale a inventar proveedores
+Con datos estructurados fiables, la solicitud del comprador puede crear una ronda privada de forma transaccional sin segundo «Confirmo». Solo preguntar la zona de entrega cuando falte; no asumir provincia/localidad ni completar artículos sin datos. El SQL verifica sesión vigente y pertenencia activa de propietario/administrador de empresa compradora; reintento idéntico devuelve la misma ronda. Guardar zona y condición IVA expresa con la fuente, y **no enviar WhatsApp ni mostrar «solicitudes enviadas» hasta verificar proveedores reales habilitados por catálogo, cobertura y zona**. Ver docs/135.
+
+## MVP-016 — proveedores por rubro, zona y opt-in
+El comprador no elige proveedores manualmente. Cotironda comprueba rubro registrado (no inferido de nombres), zona de entrega con provincia/ciudad verificada, comercio habilitado, consentimiento Whapi actual y ausencia de BAJA. No invitar negocios fuera de zona; las ofertas parciales son válidas y se rotulan. Cada proveedor recibe solo artículos de sus rubros. Las invitaciones preparadas NO son WhatsApp enviado; al momento del envío se revalidarán consentimiento y cobertura. Ver docs/136.
+
+## MVP-017 — Mensaje por proveedor, sin envío prematuro
+Cotironda prepara cada solicitud WhatsApp desde la lista D065 específica del proveedor, usando descripciones de producto curadas, cantidades, unidad y zona. Solo añade requerimiento de IVA cuando el comprador lo aclaró; no pide «Confirmo». Antes de preparar debe revalidar rubro habilitado, aceptación, zona y consentimiento/BAJA, y antes de ENVIAR debe volver a comprobarlos (la vista previa no es una autorización de envío). Nunca exponer teléfonos a clientes ni enviar solicitudes a proveedores de otro rubro. Hasta backup #175 y sender seguro, no hacer llamadas externas. Ver docs/137.
+
+## MVP-018 — Proveedores solo cotizan artículos invitados
+Una invitación parcial no autoriza cotizar otros artículos del pedido. D061 debe entregar al intérprete exclusivamente el scope D065 del proveedor. La BD valida nuevamente el scope al guardar cada oferta D064, también si se saltea la IA. El incumplimiento bloquea toda la operación sin crear versión. La BAJA posterior detiene nuevas lecturas. No modificar permisos para eludir tests; no permitir flujos históricos sin scope en el piloto. Ver docs/138.
+
+## MVP-019 — Recuperación segura del destinatario Whapi
+El número WhatsApp que una persona consintió no puede reconstruirse a partir de HMAC D028. El backend debe enrolarlo de forma verificada y cifrarlo AES-256-GCM con identidad, empresa, canal y versión atados mediante AAD, separados de la clave HMAC. Solo el worker puede descifrar, después de validar scope/catálogo/zona y consentimiento actual, y **otra vez** justo antes del futuro envío real. El vault no autoriza ningún mensaje por sí mismo. Reintentos inciertos nunca se despachan automáticamente. Ver docs/139.
+
+## MVP-020 — Enrolamiento Whapi sin fricción
+El registro cifrado D069 parte de identidad y consentimiento previamente verificados y se autoriza **solo en servidor** por canal, proveedor y HMAC. SQL D068 vuelve a validar que el contacto pertenezca al proveedor y siga consentido sin BAJA. Un webhook autenticado con mensaje efectivamente persistido puede activar esta vinculación como operación posterior y opcional; jamás supone un alta nueva del contacto ni prueba consentimiento por sí solo. Antes de la primera invitación, el onboarding verificado es una operación separada y no puede requerir ronda abierta. No construir otro transporte ni pedir a compradores/corralones confirmaciones redundantes. No habilitar envíos hasta sender comercial separado, pruebas reales y respaldo DEV #175. Ver docs/140.
+
+## MVP-021 — Envío de invitaciones sin duplicados
+Cada solicitud válida genera una sola intención por ronda, proveedor y canal, con los productos D065 que le corresponden; no comparte la cola de respuestas ni incluye otro rubro. El inicio del envío reserva en PostgreSQL cupo del comprador compartido con mensajes de respuesta. Solo tras confirmar COMMIT se permite al transporte D055 intentar un mensaje; antes del HTTP se revisan nuevamente el contacto, BAJA, zona, rubro, política y HMAC. Nunca reintentar automáticamente si el HTTP pudo haber comenzado; marcar incierto aunque implique revisión operativa. No pedir «Confirmo», ni forzar portales. Sin autorización previa de piloto, backups reales DEV ni consentimiento vigente, todo permanece deshabilitado. Ver docs/141.
