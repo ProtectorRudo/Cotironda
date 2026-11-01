@@ -425,6 +425,12 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_http_dedicated_login_d089.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/136_whapi_http_dedicated_login_d089.sql
 
+      - name: "MVP-062 tres logins cotizador y precio versionado (PG17 CI)"
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_quote_worker_logins_d092.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/139_whapi_quote_worker_logins_d092.sql
+
       - name: "MVP-061 remitente Whapi con seis RPC y sin SQL directo (PG17 CI)"
         run: |
           set -euo pipefail
