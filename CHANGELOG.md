@@ -822,3 +822,6 @@
 
 ### 01/11/2026 — MVP-044: lector SQL cifrado del WhatsApp comprador al procesador de pedidos
 - D076 privado para recuperar inbox D074 solo con consentimiento actual y sin doble rol, permisos NOLOGIN/EXECUTE-only y RLS. Adaptador Node sin red ni secreto para validar ciphertext AES-GCM AAD del comprador y pasar texto validado al motor D073 (que prepara pregunta de zona o ronda vía puertos transaccionales). SQL PG17 CI, pruebas de eventos cifrados y regresión. **No webhooks vivos ni migraciones instaladas en DEV**. Ver docs/164, gate de respaldo #175.
+
+### 01/11/2026 — MVP-045: continuar pedidos por WhatsApp con una sola respuesta de zona
+- D077 privado: memoria HMAC del pedido original y outbox fija de consulta de localidad, sin texto ni contactos en claro, idempotencia/concurrencia, expiración 48h, revocación y lectura de dos mensajes cifrados validados por AES-GCM. Worker nuevo reutiliza D073; tests PG17 y unitarios. **No envía la pregunta, no consume pendiente al crear ronda real, no habilita Whapi ni DEV**. Ver docs/165 y backup #175.
