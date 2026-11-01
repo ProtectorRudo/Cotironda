@@ -73,8 +73,9 @@ export function NuevoPedidoMvp028(){
   <p style={{color:'#9dcdff',fontWeight:750,fontSize:12}}>PRIMER PEDIDO · PILOTO</p>
   <h2 style={{fontSize:'clamp(23px,4vw,31px)',margin:'7px 0 8px'}}>Pedí presupuestos</h2>
   <p style={{color:'#b8cde0',marginBottom:16,lineHeight:1.5}}>
-   Pegá los materiales como los tenés, incluyendo la entrega si ya la sabés.
-   Cotironda conserva las especificaciones originales y solo pregunta lo imprescindible.
+   Escribí los materiales o pegá tres columnas de Excel:
+   Cantidad, Unidad y Material. También podés incluir la entrega.
+   Solo preguntamos lo imprescindible.
   </p>
   {state==='saved'?<div role="status" style={{background:'#173d34',
    padding:16,borderRadius:11}}>
@@ -92,6 +93,11 @@ export function NuevoPedidoMvp028(){
     style={{display:'block',width:'100%',boxSizing:'border-box',background:'#0b1829',
      border:'1px solid #668baa',borderRadius:10,color:'white',padding:12,
      fontSize:16,lineHeight:1.5,resize:'vertical'}}/>
+   <p style={{fontSize:12,color:'#a9c6e0',margin:'8px 0 0'}}>
+    Podés copiar directamente las celdas de una planilla con columnas
+    Cantidad | Unidad | Material (o Material | Cantidad | Unidad).
+    No se sube el archivo.
+   </p>
    {askZone&&<div role="group" aria-labelledby="pedido-zona-titulo-033"
     style={{marginTop:16}}>
     <label id="pedido-zona-titulo-033" htmlFor="pedido-zona-028"
