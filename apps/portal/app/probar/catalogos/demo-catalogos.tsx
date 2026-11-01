@@ -4,19 +4,22 @@ import {
  analizarListadoComercioMvp069,simularConsultasCatalogosMvp069,
  type LecturaCatalogoMvp069,type FormatoCatalogoMvp069
 } from '../../../../../src/domain/catalogo-listado-mvp069.ts';
+import {LISTADO_AMBOS_CORRALONES_MVP070,PEDIDO_COMUN_DEMO_MVP070,
+ MATERIALES_CORRALON_DEMO_MVP070} from '../../../../../src/domain/catalogo-fixture-corralones-mvp070.ts';
 
 type Shop='corralon_a'|'corralon_b';
 type Input=Readonly<{
  texto:string;zona:string;formato:FormatoCatalogoMvp069;
  archivo:string|null;lectura:LecturaCatalogoMvp069|null;error:string;
 }>;
+// Both independent panels start with identical, fictional, price-free stock.
 const initial:Record<Shop,Input>={
- corralon_a:{texto:'Cemento Avellaneda 25 kg\nHidrófugo Ceresita 1 l\nArena fina',
+ corralon_a:{texto:LISTADO_AMBOS_CORRALONES_MVP070,
   zona:'La Plata',formato:'texto',archivo:null,lectura:null,error:''},
- corralon_b:{texto:'material;precio\nCemento Loma Negra 50 kg;9900\nCal aérea;4000',
-  zona:'La Plata',formato:'csv',archivo:null,lectura:null,error:''}
+ corralon_b:{texto:LISTADO_AMBOS_CORRALONES_MVP070,
+  zona:'La Plata',formato:'texto',archivo:null,lectura:null,error:''}
 };
-const pedidoInicial='20 bolsas de cemento CPC 50 kg, 5 litros de hidrófugo y 6 litros de pintura látex. Entrega: La Plata.';
+const pedidoInicial=PEDIDO_COMUN_DEMO_MVP070;
 const names:Record<Shop,string>={corralon_a:'Corralón A',corralon_b:'Corralón B'};
 const message:Record<string,string>={
  sin_familia_verificada:'Familia no reconocida: revisar antes de habilitar',
@@ -74,14 +77,14 @@ export function DemoCatalogosPilotoMvp069(){
  return <section className="cat69-shell" aria-label="Ensayo de catálogos de proveedores">
   <div className="cat69-intro">
    <h2>1. Cargá qué materiales trabajan</h2>
-   <p>Pueden ser archivos de prueba o una lista pegada. Todo se interpreta en este navegador y no se envía a ningún servidor.</p>
+   <p>Los dos corralones empiezan con el mismo listado de {MATERIALES_CORRALON_DEMO_MVP070.length} materiales típicos. Podés modificar cada uno o subir otro archivo. Todo se interpreta en este navegador, sin enviarlo al servidor.</p>
   </div>
   <div className="cat69-grid">
    {(['corralon_a','corralon_b'] as Shop[]).map(id=>{
     const current=data[id];
     return <article className="cat69-card" key={id}>
      <div className="cat69-head"><span className="cat69-letter">{id==='corralon_a'?'A':'B'}</span>
-      <div><h3>{names[id]}</h3><p>Solo materiales, sin precios obligatorios</p></div></div>
+      <div><h3>{names[id]}</h3><p>Mismo catálogo inicial · sin precios</p></div></div>
      <label className="cat69-label" htmlFor={'cat69-file-'+id}>Subir un listado CSV / TXT</label>
      <input id={'cat69-file-'+id} type="file" accept=".csv,.txt,text/csv,text/plain"
       onChange={e=>{void cargarArchivo(id,e.target.files?.[0]);e.target.value='';}}/>
