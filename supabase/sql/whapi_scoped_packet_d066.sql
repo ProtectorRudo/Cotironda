@@ -85,7 +85,9 @@ begin
  if v_eligible<>v_total or v_items is null then return null;end if;
  return pg_catalog.jsonb_build_object(
   'roundId',p_round,'supplierOrgId',p_supplier,'channel',p_channel,
-  'deliveryZone',v_zone,'vatRequest',v_iva,'items',v_items);
+  'deliveryZone',v_zone,'vatRequest',v_iva,'items',v_items,
+  'deadlineAt',pg_catalog.to_char(v_ends at time zone 'UTC',
+   'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'));
 end;$fn$;
 grant create on schema cotironda_private to cotironda_matcher_d065;
 grant cotironda_matcher_d065 to postgres with set true,inherit false;
