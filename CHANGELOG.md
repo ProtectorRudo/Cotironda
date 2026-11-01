@@ -1,5 +1,10 @@
 # Registro de cambios
 
+## MVP-061 — Conexión privada del emisor Whapi de invitaciones (sin activación)
+- Reutiliza sender D070 + transporte Whapi D055 + destinatario cifrado D068 en `POST /api/integraciones/whapi/enviar`, protegido por secreto exclusivo y doble flag Preview, un trabajo por tick, número en allowlist explícita de 1–3 comercios.
+- Nuevo D091: LOGIN sin password/NOINHERIT y gateway con solo seis RPC; driver Postgres.js con sesión nueva y autocommit por RPC antes de HTTP, TLS CA y proyecto DEV, cierre al finalizar.
+- CI pruebas HTTP/Whapi mock, duplicados, revocación, BEGIN incierto, SQL allowlist y PG17. Pendientes #175 recuperación DEV, enrolamiento 4 teléfonos, Whapi y cron. Nunca se activó envío real. Docs/181.
+
 ## MVP-060 — Ejecutar cola de pedidos desde HTTP privado (sin habilitación)
 - Ruta Node Preview `POST /api/integraciones/whapi/procesar` autenticada con secreto propio, sin body, alcance máximo de 3 trabajos; el cliente no puede seleccionar empresa/ronda/canal. Nunca envía WhatsApp.
 - Driver Postgres.js reutilizado, cinco conexiones por rol D090 sin herencia/direct-table rights, CA TLS y sesión reservada, cierre garantizado ante error, criptografía D029 reutilizada; 5 URLs privadas y usuario técnico distinto por puerto.
