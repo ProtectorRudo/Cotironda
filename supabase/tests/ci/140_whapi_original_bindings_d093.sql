@@ -34,7 +34,7 @@ insert into cotironda_private.round_items_v1
 insert into cotironda_private.round_invites_v1
  (round_id,supplier_org_id,anon_id,invite_position)
  values('dddddddd-0093-4093-8093-000000000001',
- 'bbbbbbbb-0093-4093-8093-000000000001','anon_93',1);
+ 'bbbbbbbb-0093-4093-8093-000000000001','anon_corralon_93',1);
 update cotironda_private.rounds_v1 set status='abierta'
  where id='dddddddd-0093-4093-8093-000000000001';
 insert into cotironda_private.whapi_contacts_v1
