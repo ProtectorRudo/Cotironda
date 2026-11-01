@@ -26,7 +26,11 @@ function runner({failPiece=null,failCleanup=false,failReady=false,checkReply='MV
   if(stdoutMode){
    child.stdout=new PassThrough();
    queueMicrotask(()=>{
-    if(bin==='age')child.stdout.end('CREATE ROLE postgres;\nCREATE ROLE sandbox_test;\n');
+    if(bin==='age')child.stdout.end(
+     args.at(-1).endsWith('/roles.sql.age')
+      ? 'CREATE ROLE postgres;\nCREATE ROLE sandbox_test;\n'
+      : 'SELECT 1;\n'
+    );
     else if(bin==='docker'&&args[0]==='run')child.stdout.end(ID+'\n');
     else if(bin==='docker'&&args[0]==='exec'&&args.includes('-c'))
      child.stdout.end(checkReply+'\n');
