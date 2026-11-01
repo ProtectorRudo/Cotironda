@@ -10,6 +10,9 @@
  */
 import type {EntradaCifradaD028} from './whapi-crypto-broker.ts';
 import type {CotizacionFuenteMvp007} from '../domain/cotizacion-evidencia-mvp007.ts';
+import {prepararManifiestoOriginalD093}
+ from './whapi-quote-original-manifest-d093.ts';
+
 import {prepararCotizacionDocumentalD060} from './whapi-quote-source-builder-d060.ts';
 import {crearPuertoRecepcionDirectaD059,type DbRecepcionD059}
  from './whapi-quote-direct-postgres-d059.ts';
@@ -66,7 +69,8 @@ function snapshot(v:unknown):v is RoundItem[]{
 export function crearRecepcionDirectaDeInboxD061(
  db:DbRecepcionD059,
  verificarContenido:VerificadorCifradoD061,
- interpretar:InterpreteCotizacionD061
+ interpretar:InterpreteCotizacionD061,
+ exigirOriginalIntegral:boolean=false
 ){
  if(!db||typeof db.query!=='function'||
   typeof verificarContenido!=='function'||typeof interpretar!=='function')reject();
@@ -157,10 +161,38 @@ export function crearRecepcionDirectaDeInboxD061(
   if(!prepared.prices.some(x=>x.quoted_unit_price!==null))
     return Object.freeze({estado:'sin_precio_atribuible'} as const);
   try{
-   const receipt=await destination.registrarConPrecios({
-    channel,messageKey,expectedRevision:raw.expectedRevision as number,
-    quote:prepared.quote,prices:prepared.prices
-   });
+   // The active private worker uses D093, NOT the older D060-only path.
+   // Its one SQL statement commits both accepted prices and a binding to
+   // EVERY ORIGINAL line (including non-requested pallets/bolsones/total).
+   // The source itself stays encrypted in D028, with immutable version FKs.
+   let receipt:{version:number;repetido:boolean};
+   if(exigirOriginalIntegral){
+    const manifest=prepararManifiestoOriginalD093(message.texto);
+    const response=await db.query(
+     'select cotironda_private.whapi_receive_with_original_d093($1::text,$2::text,$3::integer,$4::jsonb,$5::jsonb,$6::jsonb) as payload',
+     [channel,messageKey,raw.expectedRevision as number,
+      JSON.stringify(prepared.quote),JSON.stringify(prepared.prices),
+      JSON.stringify(manifest)]
+    );
+    if(!obj(response)||!Array.isArray(response.rows)||
+       response.rows.length!==1||!exact(response.rows[0],['payload'])||
+       !obj(response.rows[0].payload))reject();
+    const answer=response.rows[0].payload as Record<string,unknown>;
+    if(answer.state!=='offer_received'||answer.original_preserved!==true||
+       answer.original_encrypted!==true||answer.prices_preserved!==true||
+       !integer(answer.version,1,100000)||
+       !integer(answer.revision,1,100000)||
+       answer.revision!==(raw.expectedRevision as number)+1||
+       typeof answer.repeated!=='boolean')reject();
+    receipt={version:answer.version as number,
+     repetido:answer.repeated as boolean};
+   }else{
+    const old=await destination.registrarConPrecios({
+     channel,messageKey,expectedRevision:raw.expectedRevision as number,
+     quote:prepared.quote,prices:prepared.prices
+    });
+    receipt={version:old.version,repetido:old.repetido};
+   }
    return Object.freeze({estado:'cotizacion_recibida' as const,
     version:receipt.version,repetido:receipt.repetido,
     precios:prepared.prices.length,
