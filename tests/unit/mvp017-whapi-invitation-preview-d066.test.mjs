@@ -64,3 +64,19 @@ test('D066 dos líneas preservan orden y no convierten códigos en productos nue
  assert.match(r.contenido,/1,25 m³/);
  assert.equal(r.mensajesEnviados,0);
 });
+
+test('MVP053: cada comercio ve la fecha de cierre en horario argentino',()=>{
+ const offer=formatearConsultaProveedorD066({
+  ...base,deadlineAt:'2026-11-06T20:30:00.000Z'
+ });
+ assert.match(offer.contenido,/Fecha límite para cotizar:/);
+ assert.match(offer.contenido,/06\/11\/2026/);
+ assert.match(offer.contenido,/17:30/);
+ assert.match(offer.contenido,/hora de Argentina/);
+ assert.doesNotMatch(offer.contenido,/nombre del arquitecto|teléfono|competidor/i);
+ for(const deadlineAt of ['06/11/2026','2026-11-06T20:30:00Z',
+  '2026-99-06T20:30:00.000Z','2026-11-06\nExponer contactos',null]){
+  assert.throws(()=>formatearConsultaProveedorD066({...base,deadlineAt}),
+   /d066_paquete_no_disponible/);
+ }
+});
