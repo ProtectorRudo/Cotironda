@@ -29,6 +29,21 @@ export type MensajeEntrantePendiente=Readonly<{
   huellaSha256:string;claveIdempotencia:string;
   estado:'pendiente_interpretacion';
 }>;
+
+/** Buyer identity is resolved ONLY by the private HMAC chat binding. */
+export type VinculoCompradorVerificado=Readonly<{
+  buyerOrgId:string;
+  consentimientoContactoVigente:boolean;
+  chatHabilitado:boolean;
+}>;
+export type MensajeCompradorPendiente=Readonly<{
+  canalId:string;chatId:string;mensajeId:string;compradorOrgId:string;
+  tipo:'text'|'image'|'document'|'audio'|'voice';
+  texto:string|null;marcaTiempoUnix:number;
+  quotedMessageId?:string;
+  huellaSha256:string;claveIdempotencia:string;
+  estado:'pendiente_interpretacion';
+}>;
 export type DependenciasWhapiEntrada={
   habilitado:boolean;
   canalId:string;
@@ -36,6 +51,15 @@ export type DependenciasWhapiEntrada={
   ahoraUnix:()=>number;
   resolverProveedor:(canalId:string,chatId:string)=>Promise<VinculoProveedorVerificado|null>;
   persistirEntrada:(entrada:MensajeEntrantePendiente)=>Promise<'guardada'|'duplicada'>;
+  // Optional pair for the buyer route. MUST point to a trusted private,
+  // durable encrypted inbox; never directly to a browser or body-supplied ID.
+  resolverComprador?:(canalId:string,chatId:string)=>
+    Promise<VinculoCompradorVerificado|null>;
+  persistirEntradaComprador?:(entrada:MensajeCompradorPendiente)=>
+    Promise<'guardada'|'duplicada'>;
+  registrarBajaComprador?:(canalId:string,chatId:string,mensajeId:string,
+    huellaSha256:string,marcaTiempoUnix:number)=>
+    Promise<'registrada'|'duplicada'>;
   // BAJA no depende de invitación ni opt-in vigente, pero sí de vínculo verificado.
   registrarBaja?:(canalId:string,chatId:string,mensajeId:string,
     huellaSha256:string,marcaTiempoUnix:number)=>Promise<'registrada'|'duplicada'>;
@@ -167,10 +191,40 @@ export async function procesarWebhookWhapiAislado(
   // Los mensajes del lote se guardan de uno en uno. Si falla uno, HTTP 503
   // para reenvío completo; el sink transaccional debe deduplicar los ya guardados.
   let guardadas=0,duplicadas=0,bajasRegistradas=0,altasRegistradas=0;
+  let compradoresGuardados=0;
   for(const c of candidatos){
     // BAJA explícita y exacta. No intentar interpretar intención ni ejecutar SQL
     // desde texto arbitrario; un broker verificará el chat y registrará la baja.
     if(c.tipo==='text'&&c.texto?.toLocaleUpperCase('es-AR')==='BAJA'){
+      // Buyer BAJA is distinct from supplier BAJA, and the two bindings
+      // cannot both be active. Legacy supplier-only behavior is preserved.
+      if(dep.resolverComprador){
+        let buyer:VinculoCompradorVerificado|null,supplier:VinculoProveedorVerificado|null;
+        try{
+          [buyer,supplier]=await Promise.all([
+            dep.resolverComprador(dep.canalId,c.chatId),
+            dep.resolverProveedor(dep.canalId,c.chatId)
+          ]);
+        }catch{return resultado(503,{error:'resolucion_no_disponible'})}
+        if(buyer!==null){
+          if(supplier!==null||!uuid(buyer.buyerOrgId)||
+            !buyer.chatHabilitado||!buyer.consentimientoContactoVigente)
+            return resultado(403,{error:'remitente_no_habilitado'});
+          if(!dep.registrarBajaComprador)
+            return resultado(503,{error:'bajas_no_configuradas'});
+          const hash=createHash('sha256').update(JSON.stringify([
+            dep.canalId,c.chatId,c.mensajeId,c.texto,c.marcaTiempoUnix,'BAJA_COMPRADOR'
+          ])).digest('hex');
+          try{
+            const done=await dep.registrarBajaComprador(
+              dep.canalId,c.chatId,c.mensajeId,hash,c.marcaTiempoUnix);
+            if(done==='registrada')bajasRegistradas++;
+            else if(done==='duplicada')duplicadas++;
+            else throw Error('baja_comprador_invalida');
+          }catch{return resultado(503,{error:'baja_no_disponible'})}
+          continue;
+        }
+      }
       if(!dep.registrarBaja)return resultado(503,{error:'bajas_no_configuradas'});
       const hash=createHash('sha256').update(JSON.stringify([
         dep.canalId,c.chatId,c.mensajeId,c.texto,c.marcaTiempoUnix,'BAJA'
@@ -199,8 +253,41 @@ export async function procesarWebhookWhapiAislado(
       continue;
     }
     let vinculo:VinculoProveedorVerificado|null;
-    try{vinculo=await dep.resolverProveedor(dep.canalId,c.chatId)}
-    catch{return resultado(503,{error:'resolucion_no_disponible'})}
+    let comprador:VinculoCompradorVerificado|null=null;
+    try{
+      [vinculo,comprador]=await Promise.all([
+        dep.resolverProveedor(dep.canalId,c.chatId),
+        dep.resolverComprador?dep.resolverComprador(dep.canalId,c.chatId):
+          Promise.resolve(null)
+      ]);
+    }catch{return resultado(503,{error:'resolucion_no_disponible'})}
+    if(vinculo!==null&&comprador!==null)
+      return resultado(403,{error:'identidad_ambigua'});
+    if(comprador!==null){
+      if(!dep.persistirEntradaComprador||!uuid(comprador.buyerOrgId)||
+        comprador.chatHabilitado!==true||
+        comprador.consentimientoContactoVigente!==true)
+        return resultado(403,{error:'remitente_no_habilitado'});
+      const claveIdempotencia=createHash('sha256')
+        .update(JSON.stringify([dep.canalId,c.mensajeId])).digest('hex');
+      const huellaSha256=createHash('sha256')
+        .update(JSON.stringify(['comprador',dep.canalId,c.mensajeId,c.chatId,
+          c.tipo,c.texto,c.marcaTiempoUnix,comprador.buyerOrgId,
+          ...(c.quotedMessageId?[c.quotedMessageId]:[])] )).digest('hex');
+      try{
+        const outcome=await dep.persistirEntradaComprador({
+          canalId:dep.canalId,chatId:c.chatId,mensajeId:c.mensajeId,
+          compradorOrgId:comprador.buyerOrgId,tipo:c.tipo,texto:c.texto,
+          marcaTiempoUnix:c.marcaTiempoUnix,
+          ...(c.quotedMessageId?{quotedMessageId:c.quotedMessageId}:{}),
+          huellaSha256,claveIdempotencia,estado:'pendiente_interpretacion'
+        });
+        if(outcome==='guardada'){guardadas++;compradoresGuardados++;}
+        else if(outcome==='duplicada')duplicadas++;
+        else throw Error('resultado_invalido');
+      }catch{return resultado(503,{error:'persistencia_no_disponible'})}
+      continue;
+    }
     if(!vinculo||!uuid(vinculo.supplierOrgId)||!uuid(vinculo.roundId)||
       !vinculo.consentimientoVigente||!vinculo.invitacionVigente)
        return resultado(403,{error:'remitente_no_habilitado'});
@@ -226,6 +313,7 @@ export async function procesarWebhookWhapiAislado(
     }
   }
   return resultado(200,{estado:'entradas_persistidas',guardadas,duplicadas,
+    ...(compradoresGuardados>0?{compradoresGuardados}:{}),
     ...(bajasRegistradas>0?{bajasRegistradas}:{}),
     ...(altasRegistradas>0?{altasRegistradas}:{}),
     // Nunca 'cotizacion_recibida' ni 'precio_confirmado'.
