@@ -1,5 +1,5 @@
 'use client';
-import {useState} from 'react';
+import {useState,type ReactNode} from 'react';
 import {separarListaWhatsappNaturalMvp058}
  from '../../../../../src/domain/lista-whatsapp-natural-mvp058.ts';
 import {prepararPedidoTextoMvp028}
@@ -17,7 +17,7 @@ const etapas:Readonly<{key:Etapa;label:string}[]>=[
  {key:'respuestas',label:'Presupuestos'},
  {key:'comparacion',label:'Comparación'},{key:'cierre',label:'Cierre'}
 ];
-function Etiqueta({children}:{children:React.ReactNode}){
+function Etiqueta({children}:{children:ReactNode}){
  return <span className="cw65-tag">{children}</span>;
 }
 function Original({texto}:{texto:string}){
@@ -150,7 +150,7 @@ export function PrototipoWhatsappCuatroTelefonosMvp065(){
       <Etiqueta>Preparada</Etiqueta>
      </div>
      <p className="cw65-minor">Solicitud que recibiría:</p>
-     <ul>{o.productosPedido.map(code=><li key={code}>
+     <ul>{o.productosCotizados.map(code=><li key={code}>
       {etiquetas.get(code)??code}</li>)}</ul>
      <p className="cw65-minor">Entrega: {escenario.pedido.zonaEntrega}</p>
     </article>)}
@@ -214,7 +214,7 @@ export function PrototipoWhatsappCuatroTelefonosMvp065(){
      const summary=resumenFuenteFielMvp065(o.historial.at(-1)??'');
      return <article className="cw65-shop" key={o.id}>
       <div className="cw65-shop-head"><strong>{o.anonimo}</strong>
-       <Etiqueta>{o.productosPedido.length} materiales de su catálogo</Etiqueta></div>
+       <Etiqueta>{o.productosCotizados.length} materiales de su oferta</Etiqueta></div>
       <ul>{o.productosPedido.map(code=><li key={code}>
        {etiquetas.get(code)??code}</li>)}</ul>
       <div className="cw65-total"><span>Total declarado</span>
