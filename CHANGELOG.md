@@ -1,5 +1,11 @@
 # Registro de cambios
 
+## MVP-071 — pantalla integrada de ensayo un arquitecto y dos corralones
+- Nuevo recorrido `/probar/tres-telefonos`: ambos negocios con catálogo de 51 productos iguales, zona y pedido, dos presupuestos literales con extras y cargos intactos, sin ranking económico no verificable.
+- Tests de tres participantes, filtro zona, retención de originales y prevención de falsa adjudicación. Sin envíos ni persistencia real.
+- Ruta de integración WhatsApp y respaldo obligatorio #175 en docs/191. No afectar proyectos de otros negocios ni pagar ramas.
+
+
 ## MVP-070 — 51 materiales iguales para ambos corralones en demo
 - Mismo listado ficticio, amplio y sin precios, desde una sola fuente de código en los dos cuadros de `/probar/catalogos`; cada proveedor puede editar su lista en la simulación.
 - Taxonomía D015 ampliada en 22 familias específicas, v2 y snapshot Edge sincronizado; negativas para no confundir ladrillos, hormigón celular ni cementos especiales. Pruebas de reparto igualitario y filtro por zona.
