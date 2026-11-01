@@ -425,6 +425,12 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_http_dedicated_login_d089.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/136_whapi_http_dedicated_login_d089.sql
 
+      - name: "MVP-060 cinco logins SQL por rol para worker comprador (PG17 CI)"
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_buyer_worker_logins_d090.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/137_whapi_buyer_worker_roles_d090.sql
+
       - name: "MVP-056 arquitecto WhatsApp a dos corralones y pintureria 5 dias (PG17 CI)"
         run: |
           set -euo pipefail
