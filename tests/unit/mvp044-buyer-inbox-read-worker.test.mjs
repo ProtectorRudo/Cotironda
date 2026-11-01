@@ -81,7 +81,7 @@ function factory({text=textWithZone,kind='text',revoked=false}={}){
    assert.equal(data.buyerOrgId,BUYER);
    assert.equal(data.pedido.deliveryZone,'La Plata');
    assert.equal(data.pedido.items[0].quantity,'20');
-   assert.equal(data.pedido.items[0].productCode,'cemento_gris_obra');
+   assert.equal(data.pedido.items[0].product_code,'cemento_gris_obra');
    return {roundId:ROUND,repetida:ops.round>1};
   },
   prepararInvitaciones:async r=>{
