@@ -67,6 +67,14 @@ export async function atenderWebhookWhapiPreviewD083(req:Request,config:Readonly
  // fixed custom header configured IN Whapi Settings. Whapi is not HMAC-signed.
  if(!equalSecret(req.headers.get('x-cotironda-webhook-key')??'',secret))
   return response(401,'origen_no_autorizado');
+ // Cheap header checks BEFORE opening a scarce private database connection.
+ // D027 still validates the actual streamed body against the same 64 KiB cap.
+ if(!/^application\/json(?:;|$)/iu.test(req.headers.get('content-type')??''))
+  return response(415,'formato_no_admitido');
+ const contentLength=req.headers.get('content-length');
+ if(contentLength!==null&&
+   (!/^\d+$/u.test(contentLength)||Number(contentLength)>65536))
+  return response(413,'cuerpo_invalido');
  if(typeof config.abrirPuertoSql!=='function')
   return response(503,'almacenamiento_privado_no_configurado');
  const identidadHmac=key(env.COTIRONDA_WHAPI_HMAC_ID_HEX),
@@ -76,9 +84,11 @@ export async function atenderWebhookWhapiPreviewD083(req:Request,config:Readonly
    identidadHmac.equals(huellaHmac)||identidadHmac.equals(contenidoAes)||
    huellaHmac.equals(contenidoAes))
   return response(503,'cifrado_privado_no_configurado');
+ let db:PuertoPostgresD030|undefined;
  try{
-  const db=await config.abrirPuertoSql();
-  if(!db||typeof db.query!=='function')
+  db=await config.abrirPuertoSql();
+  if(!db||typeof db.query!=='function'||
+    (db.cerrar!==undefined&&typeof db.cerrar!=='function'))
    return response(503,'almacenamiento_privado_no_configurado');
   const broker=construirBrokerWhapiPrivado({
    channel,secretoWebhook:secret,habilitado:true,
@@ -91,5 +101,10 @@ export async function atenderWebhookWhapiPreviewD083(req:Request,config:Readonly
  }catch{
   // Never echo database errors, message content or key material.
   return response(503,'integracion_privada_no_disponible');
+ }finally{
+  // Close a per-request private connection on success, rejection or failure.
+  // A shared-pool adapter must inject a release callback, never pool.end().
+  // After a committed inbox write a close error must not provoke replay.
+  try{await db?.cerrar?.()}catch{ /* No secrets in webhook/logs. */ }
  }
 }
