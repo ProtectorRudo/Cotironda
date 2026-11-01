@@ -43,13 +43,13 @@ end;$check$;
 set local role cotironda_whapi_http_login_d085;
 do $role$
 begin
- if pg_catalog.current_user<>'cotironda_whapi_http_login_d085'
+ if current_user<>'cotironda_whapi_http_login_d085'
  then raise exception 'd089_wrong_login_role';end if;
 end;$role$;
 set local role cotironda_whapi_http_gateway_d084;
 do $gateway$
 begin
- if pg_catalog.current_user<>'cotironda_whapi_http_gateway_d084'
+ if current_user<>'cotironda_whapi_http_gateway_d084'
  then raise exception 'd089_wrong_gateway_role';end if;
 end;$gateway$;
 reset role;
