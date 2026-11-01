@@ -1,5 +1,10 @@
 # Registro de cambios
 
+## MVP-059 — Worker de pedido comprador WhatsApp compuesto (sin publicar)
+- Se conectaron los módulos D082 (cola durable), D077 (lectura AES y respuesta de localidad), D073 (texto WhatsApp), D081 (ronda idempotente) y D071 (match/invitaciones) sin nuevas RPC ni llamadas de red.
+- Puertos SQL separados con lista cerrada por rol y parámetros, pruebas de pedido completo, falta de zona, fallo tras COMMIT/retry, revocación, AES y apagado. Sin WhatsApp enviado.
+- Pendiente: base DEV recuperable #175, catálogos/consentimiento real, ejecutor por cron, envío controlado y lectura de presupuestos. Docs/179 y Issue #331.
+
 ## MVP-058 — Lista natural de WhatsApp sin obligar al comprador a usar un formato
 - D073 normaliza exclusivamente separadores evidentes de lista dentro de un mensaje para D028: cantidades+unidades reconocidas, `Entrega:` y `Plazo:`; evita incluir el punto final en la localidad. No usa IA ni reescribe el parser del portal.
 - Pruebas del pedido natural de 20 bolsas cemento, 10 litros hidrófugo, 5 litros látex, además de decimales, IVA/plazos, sin zona y descripciones dudosas (sin envío).
