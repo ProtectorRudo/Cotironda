@@ -25,8 +25,8 @@ do $acl$begin
   'cotironda_private.rounds_v1','UPDATE')
  or has_table_privilege('cotironda_round_close_writer_d086',
   'cotironda_private.offer_versions_v1','SELECT')
- or not has_table_privilege('cotironda_round_close_writer_d086',
-  'cotironda_private.rounds_v1','UPDATE')
+ or not has_column_privilege('cotironda_round_close_writer_d086',
+  'cotironda_private.rounds_v1','status','UPDATE')
  or (select pg_catalog.pg_get_userbyid(proowner)
      from pg_catalog.pg_proc
      where oid='cotironda_private.advance_round_clock_d086(uuid)'::regprocedure)
