@@ -9,7 +9,7 @@ import type {PuertoCompradorD073} from './buyer-whatsapp-ingress-d073.ts';
 
 type Db=Readonly<{query:(sql:string,args:readonly unknown[])=>
  Promise<Readonly<{rows:readonly Record<string,unknown>[]}>>}>;
-const SQL='select cotironda_private.whapi_create_buyer_round_d081($1::text,$2::text,$3::text,$4::text,$5::uuid,$6::text,$7::text,$8::jsonb) as payload';
+const SQL='select cotironda_private.whapi_create_buyer_round_d081($1::text,$2::text,$3::text,$4::text,$5::uuid,$6::text,$7::text,$8::jsonb,$9::integer) as payload';
 const UUID=/^[a-f\d]{8}-[a-f\d]{4}-[1-8][a-f\d]{3}-[89ab][a-f\d]{3}-[a-f\d]{12}$/iu;
 const SHA=/^[a-f0-9]{64}$/u;
 const CH=/^[A-Za-z0-9_-]{4,64}$/u;
@@ -31,13 +31,14 @@ function inputValid(v:unknown,channel:string):v is Input{
    typeof v.chatKey!=='string'||!SHA.test(v.chatKey)||
    typeof v.originMessageKey!=='string'||!SHA.test(v.originMessageKey)||
    typeof v.replyMessageKey!=='string'||!SHA.test(v.replyMessageKey)||
-   !exact(v.pedido,['deliveryZone','vatRequest','items']))return false;
+   !exact(v.pedido,['deliveryZone','vatRequest','items','plazoDias']))return false;
  const p=v.pedido;
  if(typeof p.deliveryZone!=='string'||
   p.deliveryZone.length<3||p.deliveryZone.length>65||
   !/^[\p{L}\p{M}0-9 .,-]+$/u.test(p.deliveryZone)||
   p.deliveryZone.trim()!==p.deliveryZone||
   typeof p.vatRequest!=='string'||!IVA.has(p.vatRequest)||
+  !Number.isSafeInteger(p.plazoDias)||p.plazoDias<3||p.plazoDias>7||
   !Array.isArray(p.items)||p.items.length<1||p.items.length>8)return false;
  const seen=new Set<string>();
  return p.items.every((item,i)=>{
@@ -78,7 +79,7 @@ export function crearAccionesRondaWhatsappD081(config:Readonly<{
     const result=await config.roundDb.query(SQL,[
      input.channel,input.chatKey,input.originMessageKey,input.replyMessageKey,
      input.buyerOrgId,input.pedido.deliveryZone,input.pedido.vatRequest,
-     JSON.stringify(input.pedido.items)
+     JSON.stringify(input.pedido.items),input.pedido.plazoDias
     ]);
     if(!obj(result)||!Array.isArray(result.rows)||result.rows.length!==1||
      !exact(result.rows[0],['payload']))deny();
