@@ -103,6 +103,13 @@ begin
    then raise exception 'd077_pending_other_request' using errcode='42501';end if;
   return pg_catalog.jsonb_build_object('estado','zona_solicitada_en_cola','repetido',true);
  end if;
+ -- Old webhook replay, even after expiry/newer requests, must NOT
+ -- resurrect an already-questioned origin or manufacture another send.
+ if exists(select 1 from cotironda_private.buyer_zone_question_d077 q
+  where q.channel_id=p_channel and q.origin_message_key=p_origin)
+ then
+  return pg_catalog.jsonb_build_object('estado','zona_solicitada_en_cola','repetido',true);
+ end if;
  insert into cotironda_private.buyer_zone_pending_d077(
   channel_id,chat_key,buyer_org_id,origin_message_key,source_unix,expires_at)
  values(p_channel,p_chat,p_buyer,p_origin,v_source.source_unix,v_now+interval '48 hours')
