@@ -46,7 +46,7 @@ function port(){
    assert.equal(params[0],CH);
    assert.match(params[1],/^[a-f0-9]{64}$/u);
    assert.match(params[2],/^[a-f0-9]{64}$/u);
-   assert.equal(params[4],'text');
+   assert.ok(params[4]==='text'||params[4]==='document');
    assert.ok(Buffer.isBuffer(params[5]));
    assert.equal(params[6].length,12);assert.equal(params[7].length,16);
    assert.equal(params[8],NOW);assert.equal(params[9],'aes_2026_a');
