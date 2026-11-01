@@ -1,5 +1,6 @@
 # Cotironda
 
+> **MVP-069 — ensayo de carga de catálogos:** nueva ruta local del navegador `/probar/catalogos` para subir CSV/TXT de dos corralones, detectar familias verificadas/pendientes y simular consultas del arquitecto por producto y localidad. No se guardan archivos ni se registran materiales en Supabase y **no hay WhatsApp real**. XLSX/PDF/imagen y curaduría persistente pendientes; [docs/189](docs/189-mvp-069-carga-catalogos-corralones.md), Issue #351.\n\n
 > **MVP-068 — lista privada de 3 contactos de prueba:** el webhook Preview ahora exige una huella HMAC de comprador y dos de proveedores en variables secretas de servidor. Desconocidos y rol equivocado se bloquean sin consultar PostgreSQL; falta de lista devuelve 503 antes de abrir conexión. **Los teléfonos facilitados para el ensayo NO se guardaron ni en GitHub ni en Supabase; los envíos y el webhook real siguen APAGADOS.** [Detalles](docs/188-mvp-068-lista-privada-piloto-whatsapp.md), Issue #349.
 
 
