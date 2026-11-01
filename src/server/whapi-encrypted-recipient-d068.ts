@@ -132,8 +132,10 @@ export function crearResolverInvitacionD068(
   if(!exactly(raw,['payload'])||!exactly(raw.payload,[
    'packet','chatKey','cryptoKeyId','nonceHex','cipherHex','tagHex']))invalid();
   const p=raw.payload;
-  if(!exactly(p.packet,['roundId','supplierOrgId','channel',
+  if(!(exactly(p.packet,['roundId','supplierOrgId','channel',
    'deliveryZone','vatRequest','items'])||
+   exactly(p.packet,['roundId','supplierOrgId','channel',
+    'deliveryZone','vatRequest','items','deadlineAt']))||
    p.packet.roundId!==request.roundId||
    p.packet.supplierOrgId!==request.supplierOrgId||
    p.packet.channel!==request.channel||
