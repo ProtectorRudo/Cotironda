@@ -34,6 +34,7 @@ function env(extra={}){return {
 function pg({login=LOGIN,role=LOGIN,invalidSet=false,fail='',buyer=false}={}){
  const state={opened:0,closed:0,queries:[],options:null,connection:role,writes:0,stored:new Map()};
  function factory(url,options){
+  state.connection=role; // Every HTTPS request creates a NEW DB session.
   assert.equal(url,URL_DB);
   state.options=options;
   return {
