@@ -6,7 +6,7 @@ begin
  for v in select * from (values
   ('cotironda_quote_worker_queue_login_d092','cotironda_queue_gateway_d062'),
   ('cotironda_quote_worker_read_login_d092','cotironda_quote_gateway_d061'),
-  ('cotironda_quote_worker_write_login_d092','cotironda_price_gateway_d060')
+  ('cotironda_quote_worker_write_login_d092','cotironda_original_gateway_d093')
  ) z(login_name,gateway_name) loop
   if not exists(select 1 from pg_catalog.pg_roles r
     where r.rolname=v.login_name and r.rolcanlogin and not r.rolinherit
@@ -59,12 +59,12 @@ begin
 end;$audit$;
 reset role;
 set local role cotironda_quote_worker_write_login_d092;
-set local role cotironda_price_gateway_d060;
+set local role cotironda_original_gateway_d093;
 do $audit$
 begin
- if current_user<>'cotironda_price_gateway_d060'
+ if current_user<>'cotironda_original_gateway_d093'
   or not has_function_privilege(current_user,
-   'cotironda_private.whapi_receive_with_prices_d060(text,text,integer,jsonb,jsonb)','EXECUTE')
+   'cotironda_private.whapi_receive_with_original_d093(text,text,integer,jsonb,jsonb,jsonb)','EXECUTE')
   or has_function_privilege(current_user,
    'cotironda_private.whapi_claim_quote_d062()','EXECUTE')
  then raise exception 'd092_wrong_write_gateway';end if;
