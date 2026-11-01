@@ -55,7 +55,8 @@ export async function atenderCotizacionesMvp062(req:Request,config:Readonly<{
     typeof opened.cerrar!=='function')
    throw Error('invalid_ports');
   const worker=crearProcesadorCotizacionesMvp062({
-   habilitado:true,puertos:opened.sql,verificar:opened.verificar
+   habilitado:true,puertos:opened.sql,verificar:opened.verificar,
+   exigirOriginalIntegral:true
   });
   const result=await worker.procesarLote(2);
   return res(200,{estado:'procesado',...result,mensajesEnviados:0});
