@@ -80,7 +80,58 @@ declare
  v_current cotironda_private.buyer_zone_pending_d077%rowtype;
  v_now timestamptz:=pg_catalog.clock_timestamp();
 begin
- if p_channel is null or p_channel!~'^[A-Za-z0-9_-]{4,64}
+ if p_channel is null or p_channel!~'^[A-Za-z0-9_-]{4,64}$'
+  or p_chat is null or p_chat!~'^[a-f0-9]{64}$'
+  or p_origin is null or p_origin!~'^[a-f0-9]{64}$'
+  or p_buyer is null
+ then raise exception 'd077_identity_invalid' using errcode='22023';end if;
+ perform pg_catalog.pg_advisory_xact_lock(
+  pg_catalog.hashtextextended('whapi-zone:'||p_channel||':'||p_chat,0));
+ select * into v_source from cotironda_private.whapi_buyer_inbox_d074
+  where channel_id=p_channel and message_key=p_origin;
+ if not found or v_source.chat_key<>p_chat or v_source.buyer_org_id<>p_buyer
+  or v_source.kind<>'text' or v_source.status<>'pendiente_interpretacion'
+ then raise exception 'd077_source_not_verified' using errcode='42501';end if;
+ if not exists(
+  select 1 from cotironda_private.whapi_buyer_contacts_d074 c
+  where c.channel_id=p_channel and c.chat_key=p_chat and c.buyer_org_id=p_buyer
+   and c.verified_at<=v_now and c.consented_at<=v_now and c.opted_out_at is null
+ ) or exists(select 1 from cotironda_private.whapi_contacts_v1 s
+  where s.channel_id=p_channel and s.chat_key=p_chat)
+ then raise exception 'd077_contact_not_authorized' using errcode='42501';end if;
+ select * into v_current from cotironda_private.buyer_zone_pending_d077
+  where channel_id=p_channel and chat_key=p_chat;
+ if found and v_current.expires_at>v_now and v_current.consumed_round_id is null then
+  if v_current.origin_message_key<>p_origin or v_current.buyer_org_id<>p_buyer
+   then raise exception 'd077_pending_other_request' using errcode='42501';end if;
+  return pg_catalog.jsonb_build_object('estado','zona_solicitada_en_cola','repetido',true);
+ end if;
+ -- Old webhook replay, even after expiry/newer requests, must NOT
+ -- resurrect an already-questioned origin or manufacture another send.
+ if exists(select 1 from cotironda_private.buyer_zone_question_d077 q
+  where q.channel_id=p_channel and q.origin_message_key=p_origin)
+ then
+  return pg_catalog.jsonb_build_object('estado','zona_solicitada_en_cola','repetido',true);
+ end if;
+ insert into cotironda_private.buyer_zone_pending_d077(
+  channel_id,chat_key,buyer_org_id,origin_message_key,source_unix,expires_at)
+ values(p_channel,p_chat,p_buyer,p_origin,v_source.source_unix,v_now+interval '48 hours')
+ on conflict(channel_id,chat_key) do update set
+  buyer_org_id=excluded.buyer_org_id,
+  origin_message_key=excluded.origin_message_key,
+  source_unix=excluded.source_unix,
+  expires_at=excluded.expires_at,
+  updated_at=pg_catalog.clock_timestamp(),
+  consumed_by_message_key=null,consumed_round_id=null,consumed_at=null;
+ insert into cotironda_private.buyer_zone_question_d077(
+  channel_id,origin_message_key,chat_key,buyer_org_id)
+ values(p_channel,p_origin,p_chat,p_buyer)
+ on conflict(channel_id,origin_message_key) do nothing;
+ return pg_catalog.jsonb_build_object('estado','zona_solicitada_en_cola','repetido',false);
+end;$fn$;
+grant select,update(consumed_by_message_key,consumed_round_id,consumed_at)
+ on cotironda_private.buyer_zone_pending_d077
+ to cotironda_whapi_round_writer_d081;
 create policy d081_pending_read on cotironda_private.buyer_zone_pending_d077
  for select to cotironda_whapi_round_writer_d081 using(true);
 create policy d081_pending_write on cotironda_private.buyer_zone_pending_d077
