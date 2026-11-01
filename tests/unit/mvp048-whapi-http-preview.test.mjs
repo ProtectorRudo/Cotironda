@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import {POST,GET,PUT} from '../../apps/portal/app/api/integraciones/whapi/route.ts';
 import {atenderWebhookWhapiPreviewD083,whapiPreviewEnabledD083}
  from '../../src/server/whapi-preview-http-d083.ts';
+import {calcularChatDestinatarioD056}
+ from '../../src/server/whapi-send-authorization-d056.ts';
 
 const CH='whapi_d083',SECRET='secret.d083.'.padEnd(64,'a'),NOW=1800000000;
 const CHAT='5492211234567@s.whatsapp.net',PHONE='5492211234567';
@@ -18,7 +20,13 @@ function env(patch={}){
  COTIRONDA_WHAPI_AES_KEY_ID:'aes_2026_a',
  COTIRONDA_WHAPI_HMAC_ID_HEX:'01'.repeat(32),
  COTIRONDA_WHAPI_HMAC_FINGERPRINT_HEX:'02'.repeat(32),
- COTIRONDA_WHAPI_AES_CONTENT_HEX:'03'.repeat(32),...patch};
+ COTIRONDA_WHAPI_AES_CONTENT_HEX:'03'.repeat(32),
+ COTIRONDA_WHAPI_PILOT_BUYER_CHAT_KEY:calcularChatDestinatarioD056(
+  CH,PHONE,Buffer.from('01'.repeat(32),'hex')),
+ COTIRONDA_WHAPI_PILOT_SUPPLIER_CHAT_KEYS_JSON:JSON.stringify([
+  calcularChatDestinatarioD056(CH,'5491111111001',Buffer.from('01'.repeat(32),'hex')),
+  calcularChatDestinatarioD056(CH,'5491111111002',Buffer.from('01'.repeat(32),'hex'))
+ ]),...patch};
 }
 function req({text='20 bolsas Cemento CPC 50 kg Entrega: La Plata',
  channel=CH,auth=SECRET,kind='text',method='POST'}={}){

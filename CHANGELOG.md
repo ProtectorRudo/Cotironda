@@ -1,5 +1,11 @@
 # Registro de cambios
 
+## MVP-068 — lista privada de 3 participantes Whapi (solo rama)
+- Receptor Preview D083 exige 1 HMAC comprador y 2 HMAC proveedores, distintos y configurados únicamente en secretos privados; valida número remitente + rol antes de consulta SQL, manteniendo autorización y consentimiento por empresa.
+- Pruebas con números completamente ficticios y cuarto número bloqueado. Ningún número real, token ni clave se incorpora a GitHub ni a CI. No se despliega ni se registran contactos en Supabase.
+- Mantiene abiertos backup #175, SQL comercial/alta telefónica, Preview actualizada y ensayos con WhatsApp real. Docs/188, Issue #349.
+
+
 ## MVP-067 — corrección de ruta del webhook Whapi y preflight (en rama)
 - Se alinea MVP-041 con la ruta Next real `/api/integraciones/whapi`, rechazando la antigua `/api/whapi/webhook` y evitando falsos positivos de configuración. El auditor local usa `COTIRONDA_WHAPI_WEBHOOK_SECRET`, el mismo nombre que el receptor D083; no agrega secrets ni HTTP.
 - Se documenta piloto 1 arquitecto + 2 corralones propios y gates para solicitar números. Aún sin Whapi conectado, SQL DEV, backup auténtico, portal Preview reciente ni mensajes reales. Docs/187, Issue #347.
