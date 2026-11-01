@@ -147,6 +147,11 @@ reset role;
 set local role cotironda_buyer_zone_gateway_d077;
 select ci_helpers.assert_true(
  cotironda_private.whapi_zone_enqueue_d077('d077_ci',repeat('a',64),
+  repeat('1',64),'aaaaaaaa-0077-4077-8077-000000000771')=
+ '{"estado":"zona_solicitada_en_cola","repetido":true}'::jsonb,
+ 'd077_expired_historical_replay_does_not_send_again');
+select ci_helpers.assert_true(
+ cotironda_private.whapi_zone_enqueue_d077('d077_ci',repeat('a',64),
   repeat('3',64),'aaaaaaaa-0077-4077-8077-000000000771')=
  '{"estado":"zona_solicitada_en_cola","repetido":false}'::jsonb,
  'd077_new_request_after_expiry');
