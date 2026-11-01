@@ -12,7 +12,7 @@ const items=[{line_no:1,product_code:'cemento_gris_obra',
 function pedido(update={}){
  return {buyerOrgId:ORG,chatKey:CHAT,channel:CHANNEL,
   originMessageKey:SOURCE,replyMessageKey:REPLY,
-  pedido:{deliveryZone:'La Plata',vatRequest:'no_especificado',items},
+  pedido:{deliveryZone:'La Plata',vatRequest:'no_especificado',plazoDias:5,items},
   ...update};
 }
 function scenario({failSave=false,failInvite=false,badSave=false}={}){
@@ -22,7 +22,7 @@ function scenario({failSave=false,failInvite=false,badSave=false}={}){
   calls.round.push({sql,args});
   if(failSave)throw Error('SECRET_POSTGRES_STRING');
   assert.match(sql,/whapi_create_buyer_round_d081/);
-  assert.equal(args.length,8);
+  assert.equal(args.length,9);
   if(badSave)return {rows:[{payload:{roundId:'FAKE',repetida:false}}]};
   const key=args[0]+'|'+args[2];
   const fingerprint=JSON.stringify(args);
@@ -52,6 +52,7 @@ test('MVP046: crear ronda por chat autorizado SQL parametrizado sin sesión web'
   CHANNEL,CHAT,SOURCE,REPLY,ORG,'La Plata','no_especificado'
  ]);
  assert.deepEqual(JSON.parse(h.calls.round[0].args[7]),items);
+ assert.equal(h.calls.round[0].args[8],5);
  assert.equal(h.calls.round[0].sql.includes(ORG),false);
  assert.equal(h.calls.round[0].sql.includes('created_by'),false);
 });
@@ -104,7 +105,8 @@ test('MVP046: bloquea cantidades/precios/materiales sin validación',async()=>{
   {items:[{...items[0],line_no:2}]},
   {items:[items[0],{...items[0],line_no:2}]},
   {items:[{...items[0],extra:'contacto'}]},
-  {deliveryZone:'https://test.com'}, {vatRequest:'contradictorio'}
+  {deliveryZone:'https://test.com'}, {vatRequest:'contradictorio'},
+  {plazoDias:2},{plazoDias:8},{plazoDias:5.5},{plazoDias:'5'},{plazoDias:null}
  ]){
   const h=scenario();
   await assert.rejects(h.actions.crearRonda(pedido({
@@ -135,4 +137,17 @@ test('MVP046: invocación D071 no puede anunciar mensajes WhatsApp enviados',asy
  };
  await assert.rejects(h.actions.prepararInvitaciones(ROUND),
   /d081_round_unavailable/);
+});
+
+test('MVP053: 3 y 7 días llegan intactos al RPC y el replay no modifica plazo',async()=>{
+ for(const plazoDias of [3,5,7]){
+  const h=scenario();
+  const p=pedido({pedido:{...pedido().pedido,plazoDias}});
+  assert.equal((await h.actions.crearRonda(p)).repetida,false);
+  assert.equal(h.calls.round[0].args[8],plazoDias);
+  assert.equal((await h.actions.crearRonda(p)).repetida,true);
+  await assert.rejects(h.actions.crearRonda(pedido({
+   pedido:{...p.pedido,plazoDias:plazoDias===7?3:7}
+  })),/d081_round_unavailable/);
+ }
 });
