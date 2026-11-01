@@ -1,5 +1,7 @@
 # Cotironda
 
+> **MVP-051 (rama sin publicar):** recepción HTTPS Whapi endurecida: metadatos HTTP inválidos se rechazan antes de SQL, y puertos de conexión temporales se liberan al concluir. Se mantiene el 503 de la ruta real sin gateway privado; no hay WhatsApp conectado. Issue #315 y [docs/171](docs/171-mvp-051-preflight-cierre-whapi.md). Backup/restauración auténticos #175 siguen bloqueando el piloto.
+
 > **Integración MVP-002 (31/10/2026):** candidatura de integración en rama `integration/mvp-piloto-20261031`, sin fusionar a `main` ni publicar. Conserva el portal `/probar` y motores de seguridad/comparación de los PR apilados. `main` sigue sin la aplicación comercial; la rama candidata es una demostración navegable y un conjunto de pruebas, **no** un piloto WhatsApp real. Bloqueantes: respaldo/restauración DEV #175, conciliación de migraciones y prueba con proveedores voluntarios. Ver [auditoría de integración](docs/121-integracion-mvp-piloto.md).
 
 > **MVP-001 (rama de integración, sin desplegar):** nueva experiencia navegable de comprador en la ruta `/probar` del portal Next.js. Permite pegar una lista, identificar materiales, retener dudas y ver proveedores y mensajes ficticios sin envíos. Analiza en el navegador; no usa IA externa, WhatsApp, Supabase ni almacena información. [Alcance y límites](docs/120-mvp-primer-flujo-comprador.md). No ingresar presupuestos reales. El piloto comercial y `main` siguen sin integrar, y el gate de backup #175 está abierto.
