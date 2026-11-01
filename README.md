@@ -1,5 +1,8 @@
 # Cotironda
 
+> **MVP-073f**: Edge Whapi piloto v3 preparada en Supabase; no envía pedidos con renglones desconocidos y exige consentimiento vigente del comprador antes de cualquier salida. **Sin secretos/alta real todavía: Whapi OFF.** Ver [docs/193](docs/193-mvp-073-whapi-piloto-edge.md).
+
+
 > **MVP-073 — Piloto Whapi Supabase nativo**: Edge Function `cotironda-piloto-whapi` v2 instalada y BD piloto con inbox cifrado, alta por código único, baja, original de presupuestos inmutable, outbox at-most-once. **INBOUND/OUTBOUND deshabilitados por defecto hasta configurar secretos y consentimiento; sin prueba WhatsApp real**. Ver [docs/193](docs/193-mvp-073-whapi-piloto-edge.md).
 
 
