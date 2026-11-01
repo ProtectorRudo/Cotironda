@@ -33,3 +33,7 @@ Tasa de solicitudes con ≥2 cotizaciones válidas, cobertura por línea y canti
 
 ## Diferencial D013 — distribución automática
 El comprador envía su presupuesto/lista una sola vez (PDF, Excel, imagen, Word o texto), autorizando la distribución. Cotironda extrae y deriva automáticamente solo los materiales que cada proveedor confirmó que comercializa y entrega en esa zona. El comprador recibe resumen posterior de cobertura y dudas, sin confirmar cada línea. Una línea ambigua no detiene el resto. Cotizaciones y precios propuestos continúan requiriendo confirmación del proveedor; adjudicación manual.
+
+## Actualización comercial aprobada UX-002 (31/10/2026)
+
+El arquitecto no adjudica dentro del portal. Envía su lista de materiales por WhatsApp (o alternativamente portal), Cotironda clasifica/consulta por catálogo y zona, recibe presupuestos de proveedores por WhatsApp y al vencer el plazo identifica hasta **dos presupuestos finalistas comparables por rubro**. La única acción posterior es que comprador y finalistas autorizados reciben mutuamente nombre y contacto para coordinar su compra **fuera de Cotironda**. Cotironda no ordena, garantiza ni cobra comisión por esa operación. La selección se calcula en código verificable con privacidad/consentimientos previos; el contacto real sigue sin habilitar. Detalle: [UX-002](159-ux-002-finalistas-y-contacto-mutuo.md).
