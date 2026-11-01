@@ -787,3 +787,6 @@
 
 ### 31/10/2026 — MVP-033: el destino se pregunta solo si falta
 - La pantalla del primer pedido no presenta una segunda entrada de localidad por defecto; usa `Entrega en:` de la lista cuando es inequívoca y pregunta únicamente cuando falta o hay conflicto. Un valor anterior escrito en el campo no puede sobrescribir sin aviso un nuevo destino en el texto. Se retienen líneas ambiguas/IVA contradictorio como antes, sin cambios en D064, Whapi, RLS, Supabase DEV ni despliegue. Tests nuevos y smoke HTTP SSR; ver docs/153 e Issue #279. #175 sigue abierto.
+
+### 31/10/2026 — MVP-034: pegar desde planillas sin reescribir materiales
+- Soporte estricto para pegar tres columnas de Excel (texto TSV) en el campo comprador existente: dos órdenes reconocibles, encabezado exacto opcional, fuente literal conservada y aclaraciones por línea para filas dudosas o contenido peligroso. Sin subir archivos ni ejecutar fórmulas; reutiliza D064 y sus verificaciones. Añadida suite de regresiones, explicación de UI y docs/154. Sin tocar base DEV, WhatsApp, dominio ni producción; #175 abierto.
