@@ -1,5 +1,10 @@
 # Registro de cambios
 
+## MVP-054 — Reloj de cierre y finalistas anónimos por rubro (sin publicar)
+- SQL D086 transiciona rondas por hora del servidor con lock y rol privado; recupera programadas vencidas sin doble cierre.
+- Módulo puro de finalistas por rubro utiliza motor D039/D022, no mezcla parciales ni revela datos; pruebas PG17/Node, Issue #321 y docs/174.
+- No hay cron, conexión WhatsApp, disclosure ni instalación real en DEV/producción.
+
 ## MVP-053 — Plazo comercial WhatsApp de 3–7 días, default 5 (sin publicar)
 - Se corrigió el vencimiento de 2 días que D081 tenía fijo. El arquitecto puede indicar una línea opcional de plazo, conservada al preguntar localidad; sin línea son 5 días corridos.
 - Node/SQL rechazan 2, 8 y directivas duplicadas; cierre se calcula con reloj PostgreSQL y duración forma parte del replay idempotente.
