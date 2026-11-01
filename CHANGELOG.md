@@ -813,3 +813,6 @@
 
 ### 31/10/2026 — MVP-041: preparar Whapi.Cloud para QR sin activar tráfico
 - Propuesta segura de webhook Body/messages.post + encabezado secreto, auditor GET-only con URL fija `/health?wakeup=false`, `/users/profile` y `/settings` (respuesta sanitaria sin teléfonos, secretos ni payload), comando local privado sin envíos ni cambio de ajustes y pruebas adversariales. **No existe webhook real montado todavía**; ni token guardado, ni Whapi vinculado, ni backend comercial instalado. Ver [docs/161](docs/161-mvp-041-conectar-whapi-qr.md); bloqueo de respaldo DEV #175 intacto.
+
+### 01/11/2026 — MVP-042: entrada Whapi para arquitecto y negocio en un mismo número
+- D027 ahora enruta mensajes entrantes de compradores **o** proveedores únicamente por vínculo privado del chat y bloquea doble rol. D029 extiende cifrado AES-GCM/AAD y HMAC con separación de comprador; BAJA independiente, duplicados y fallos fail-closed, sin confirmar, despachar ni revelar contactos. Tests con WhatsApp sintético; detalles docs/162. **Sin endpoint ni canal Whapi real habilitado**, Supabase DEV comercial sigue pendiente de #175.
