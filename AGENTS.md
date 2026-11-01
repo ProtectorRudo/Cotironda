@@ -42,6 +42,8 @@ Ver [docs/89](docs/89-ux-cero-friccion-whatsapp-first.md), decisión UX-001, Iss
 - Proveedores elegidos por catálogo confirmado y zona, no por rubro genérico solamente.
 - Marcas flexibles salvo exigencia de marca obligatoria; equivalencia técnica comprobable.
 - Ofertas parciales nunca ganan un ranking general por su total menor.
+- **Fidelidad absoluta del presupuesto del proveedor (01/11/2026, MVP-063):** conservar íntegros el texto/archivo original, orden de TODOS los renglones, cantidad, unidad, descripción, importes unitarios, totales por línea, cargos, descuentos, embalajes (pallets/bolsones vacíos), condiciones y **TOTAL declarado exactamente como fueron enviados**, aunque el comprador no los haya solicitado. Fuente inmutable/versionada + hash; si el total no concuerda, señalar diferencia pero JAMÁS cambiarlo silenciosamente. Distinguir «Presupuesto original», «Suma comprobada de conceptos» y «Costo comparable de materiales solicitados». Las líneas adicionales se muestran, no se descartan, y su obligatoriedad se verifica antes de compararlas. La IA interpreta y sugiere, no altera el original. **No presentar el lector D060/MVP014 de solo ítems del comprador como presupuesto completo** hasta crear ledger+vista íntegros D093 y probar archivos. Ver docs/183, Issue #339.
+
 - Separar cobertura, competitividad e importe final con IVA, transporte y condiciones; **nunca exigir aclaración de IVA/flete para registrar o mostrar la oferta recibida**.
 - Sin ranking engañoso o presiones de precios por mensajes automáticos.
 - Una respuesta del proveedor autenticado constituye su cotización presentada; no pedir confirmación redundante por IA. Los datos ambiguos quedan señalados, no inventados ni comparados.
