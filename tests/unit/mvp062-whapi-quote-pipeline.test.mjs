@@ -168,8 +168,6 @@ test('MVP062: desconocido/revocado, AES corrupto y SQL caído, sin escritura fal
 });
 test('MVP062: puerto SQL no puede consultar otra función ni tabla',async()=>{
  const t=simulation();
- await assert.rejects(t.ports.lectura.query('select * from auth.users',[]),
-  /unexpected/i).catch(()=>{});
  const wrong=crearProcesadorCotizacionesMvp062({
   habilitado:true,verificar:verifier(),
   puertos:{cola:t.ports.cola,lectura:t.ports.lectura,
