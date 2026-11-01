@@ -76,7 +76,8 @@ function verifier(){
  }).verificarContenido;
 }
 function simulation({quote=encrypted(),noAuth=false,receiptFail=false,
-  noPrice=false,replay=false}={}){
+  noPrice=false,replay=false,expectedTotal='no_detectado',
+  expectedLines=2}={}){
  const s={sql:[],writes:0,checked:0,claims:0,finishes:[],acks:0,version:1};
  const ports={
   cola:{query:async(sql,args)=>{
@@ -116,8 +117,12 @@ function simulation({quote=encrypted(),noAuth=false,receiptFail=false,
    assert.equal(lines[0].source_line_no,1);
    const manifest=JSON.parse(args[5]);
    assert.match(manifest.source_text_sha256,/^[a-f0-9]{64}$/u);
-   assert.ok(manifest.source_lines>=1);
-   assert.equal(manifest.total_status,'no_detectado');
+   assert.equal(manifest.source_lines,expectedLines);
+   assert.equal(manifest.total_status,expectedTotal);
+   if(expectedTotal==='explicitamente_verificado'){
+    assert.equal(manifest.total_source.line_no,expectedLines);
+    assert.match(manifest.total_source.literal_sha256,/^[a-f0-9]{64}$/u);
+   }else assert.equal(manifest.total_source,null);
    return {rows:[{payload:{state:'offer_received',version:1,
     revision:1,repeated:replay,prices_preserved:true,
     original_preserved:true,original_encrypted:true}}]};
@@ -144,6 +149,24 @@ test('MVP062: D062 cola + D061 AES real + D063 + D060 precio y fuente, sin Confi
  assert.deepEqual(t.s.finishes,['received']);
  assert.deepEqual(t.s.sql.map(x=>x.role),
   ['cola','lectura','escritura','cola','cola']);
+});
+test('MVP064 E2E sintético AES: corralón agrega pallets, bolsones, flete, descuento y total',async()=>{
+ const quote=[
+  '10 bolsas cemento CPC $121.00',
+  '2 pallets vacíos $70,00',
+  '3 bolsones vacíos $23,00',
+  'Flete a obra $120,00',
+  'Descuento: -$30,00',
+  'TOTAL FINAL: $ 217.500,00'
+ ].join('\\n');
+ const t=simulation({quote:encrypted(quote),
+  expectedTotal:'explicitamente_verificado',expectedLines:6});
+ const result=await t.worker.procesarUno();
+ assert.deepEqual(result,{estado:'procesado',cola:'done',intento:1});
+ assert.equal(t.s.writes,1);
+ assert.deepEqual(t.s.finishes,['received']);
+ // D093 receives verified original-manifest in SAME SQL call as D060 prices.
+ assert.equal(t.s.sql.filter(x=>x.role==='escritura').length,1);
 });
 test('MVP062: replay mismo mensaje devuelve recibo repetido, no nueva versión',async()=>{
  const t=simulation({replay:true});
