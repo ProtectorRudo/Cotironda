@@ -1,5 +1,7 @@
 # Cotironda
 
+> **MVP-057 (conexión PostgreSQL preparada, sin desplegar):** el endpoint HTTPS Whapi Preview ahora tiene driver Postgres.js 3.4.9 en sesión reservada, TLS verificado y rol técnico limitado a seis RPC. Rol D089 sin contraseña y validaciones contra DB DEV y usuario correcto; pruebas CI. **Sigue apagado hasta instalar SQL DEV y configurar secretos privados; no procesa mensajes reales todavía.** [docs/177](docs/177-mvp-057-webhook-postgres-sesion-real.md). #327.
+
 > **MVP-056 (ensayo integral en PostgreSQL CI, sin envío real):** un pedido WhatsApp de arquitecto en La Plata con tres materiales y plazo de 5 días se distribuye entre **dos corralones y una pinturería** por catálogo, rubro y zona. Preparación sin duplicados y sin mensajes enviados. **Supabase DEV no tiene comercios ni productos reales cargados**. [Ver prueba y pendientes](docs/176-mvp-056-ensayo-arquitecto-tres-comercios.md). #325.
 
 > **MVP-055 (prueba de contrato, SIN conexión real):** un único número Whapi central para todos los arquitectos y comercios. Revisado el patrón probado en repo OFI `ofi-v2`; test con 2 compradores, 3 proveedores y 6º contacto de software para demostrar que **la cuota de 5 conversaciones es solo del Sandbox gratuito de Whapi**, no una restricción nuestra. [Preparación y límites](docs/175-mvp-055-whapi-numero-central-ofi.md). No enviar mensajes ni activar webhook 503 hasta completar gateway privado.
