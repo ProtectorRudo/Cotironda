@@ -1,5 +1,8 @@
 -- MVP-043 D074 — PG17 ephemeral CI ONLY; fixture and writes ROLLBACK.
 begin;
+-- Temporary CI-only grants vanish under ROLLBACK; gateway stays EXECUTE-only in actual SQL.
+grant usage on schema ci_helpers to cotironda_whapi_gateway;
+grant execute on function ci_helpers.assert_true(boolean,text) to cotironda_whapi_gateway;
 create function pg_temp.d074_must_fail(cmd text,contains text) returns void
  language plpgsql as $$
 declare failed boolean:=false; reason text;
