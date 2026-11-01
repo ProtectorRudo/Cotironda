@@ -419,6 +419,11 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_http_gateway_role_d084.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/133_whapi_http_gateway_role_d084.sql
 
+      - name: "MVP-056 arquitecto WhatsApp a dos corralones y pintureria 5 dias (PG17 CI)"
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/135_pilot_whapi_1_buyer_3_shops_d087.sql
+
       - name: "MVP-054 D086 cierre de ronda vencida sin contactos ni WA (PG17 CI)"
         run: |
           set -euo pipefail
