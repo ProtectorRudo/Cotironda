@@ -44,6 +44,7 @@ async function encrypt(key:CryptoKey,value:string,aad:string){
 }
 type Secrets=Readonly<{
  key:CryptoKey;aes:CryptoKey;channel:string;webhookSecret:string;url:string;roleKey:string;
+ outbound:boolean;token:string;recipients:Readonly<Record<string,string>>;
 }>;
 async function secrets():Promise<Secrets|null>{
  if(Deno.env.get('COTIRONDA_PILOT_WHAPI_INBOUND_ENABLED')!=='true')
@@ -66,9 +67,23 @@ async function secrets():Promise<Secrets|null>{
    roleKey.length<20)return null;
  const raw=fromHex(keyRaw),rawAes=fromHex(aesRaw);
  if(!raw||!rawAes||keyRaw===aesRaw)return null;
+ const outbound=Deno.env.get('COTIRONDA_PILOT_WHAPI_OUTBOUND_ENABLED')==='true';
+ const token=Deno.env.get('COTIRONDA_PILOT_WHAPI_TOKEN')??'';
+ let recipients:Record<string,string>={};
+ if(outbound){
+  if(token.length<16||token.length>300)return null;
+  try{
+   const parsed=JSON.parse(Deno.env.get('COTIRONDA_PILOT_RECIPIENTS_JSON')??'null');
+   if(!parsed||typeof parsed!=='object'||Array.isArray(parsed)||
+      Object.keys(parsed).sort().join(',')!=='corralon_ailin,corralon_nahuel'||
+      !Object.values(parsed).every(v=>typeof v==='string'&&/^[1-9][0-9]{7,16}$/u.test(v))||
+      parsed.corralon_ailin===parsed.corralon_nahuel)return null;
+   recipients=parsed;
+  }catch{return null}
+ }
  const key=await crypto.subtle.importKey('raw',raw,'HMAC',false,['sign']);
  const aes=await crypto.subtle.importKey('raw',rawAes,'AES-GCM',false,['encrypt']);
- return {key,aes,channel,webhookSecret,url,roleKey};
+ return {key,aes,channel,webhookSecret,url,roleKey,outbound,token,recipients};
 }
 function client(s:Secrets){
  return createClient(s.url,s.roleKey,{auth:{autoRefreshToken:false,persistSession:false},
@@ -80,6 +95,61 @@ function outcome(raw:unknown):string{
  if(typeof state!=='string')throw Error('bad_rpc');
  return state;
 }
+
+async function dispatchTwo(sec:Secrets,db:ReturnType<typeof client>):Promise<void>{
+ if(!sec.outbound)return;
+ // At most two messages per webhook, no automatic retries of unknown outcomes.
+ for(let i=0;i<2;i++){
+  const claim=await db.rpc('cotironda_piloto_claim_whapi_v1');
+  if(claim.error)throw Error('claim_failure');
+  const c=claim.data as Record<string,unknown>|null;
+  if(!c||c.state==='empty'||c.state==='outbound_disabled')return;
+  if(c.state!=='leased'||typeof c.request_id!=='string'||
+    typeof c.supplier_key!=='string'||typeof c.chat_hmac!=='string'||
+    typeof c.message_body!=='string'||typeof c.lease_token!=='string')
+    throw Error('claim_invalid');
+  const args={p_request:c.request_id,p_supplier:c.supplier_key,p_lease:c.lease_token};
+  const finish=async(state:'api_accepted'|'uncertain',id:string|null)=>{
+   const out=await db.rpc('cotironda_piloto_finish_whapi_v1',{
+    ...args,p_state:state,p_message_id:id
+   });
+   if(out.error||out.data!==true)throw Error('finish_failed');
+  };
+  const to=sec.recipients[c.supplier_key];
+  if(!to){await finish('uncertain',null);continue}
+  const expected=await hmac(sec.key,'cotironda|pilot|chat|'+sec.channel+'|'+
+    to+'@s.whatsapp.net');
+  if(!equalSecret(c.chat_hmac,expected)){
+   await finish('uncertain',null);continue;
+  }
+  const guard=await db.rpc('cotironda_piloto_authorize_whapi_v1',args);
+  if(guard.error||guard.data!==true){
+   await finish('uncertain',null);continue;
+  }
+  // Post-lease crash may leave the row leased. Never retry automatically.
+  // A timeout has UNKNOWN delivery outcome; mark uncertain for human review.
+  let accepted=false,messageId:string|null=null;
+  try{
+   const response=await fetch('https://gate.whapi.cloud/messages/text',{
+    method:'POST',
+    headers:{'Authorization':'Bearer '+sec.token,'Content-Type':'application/json'},
+    body:JSON.stringify({to,body:c.message_body}),
+    signal:AbortSignal.timeout(12000)
+   });
+   accepted=response.ok;
+   if(accepted){
+    const data=await response.json().catch(()=>null);
+    if(data&&typeof data==='object'){
+     const d=data as Record<string,unknown>;
+     if(typeof d.message_id==='string')messageId=d.message_id.slice(0,160);
+     else if(typeof d.id==='string')messageId=d.id.slice(0,160);
+    }
+   }
+  }catch{/* network may have accepted the message: uncertain, never retry. */}
+  await finish(accepted?'api_accepted':'uncertain',messageId);
+ }
+}
+
 async function respond(req:Request):Promise<Response>{
  if(req.method!=='POST')return json(405,'method_not_allowed');
  const sec=await secrets();
@@ -156,6 +226,7 @@ async function respond(req:Request):Promise<Response>{
        'needs_review','quote_recorded','unmatched_quote'].includes(outcome(out.data)))
    return json(503,'storage_unavailable');
  }
+ try{await dispatchTwo(sec,db)}catch{return json(503,'dispatch_reconciliation_required')}
  return json(200,'accepted');
 }
 Deno.serve(req=>respond(req).catch(()=>json(503,'temporarily_unavailable')));
