@@ -1,0 +1,46 @@
+.m038-hero{margin-top:28px}
+.m038-shell{border:1px solid #365473;border-radius:20px;overflow:hidden;background:#101f32;box-shadow:0 16px 48px #050b1938}
+.m038-progress{margin:0;padding:16px 22px;list-style:none;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;border-bottom:1px solid #304961}
+.m038-progress li{font-weight:750;color:#a1b6c8;font-size:12px;padding:8px 4px;text-align:center}
+.m038-progress .m038-current{background:#20538a;color:#fff;border-radius:8px}
+.m038-panel{padding:27px}
+.m038-panel h2{font-size:clamp(25px,4vw,34px);line-height:1.2;letter-spacing:-.035em;margin:0 0 13px}
+.m038-panel>p{font-size:14px;line-height:1.6;color:#b8cada}
+.m038-label{font-size:13px;display:block;margin:20px 0 9px;font-weight:750}
+.m038-panel button{cursor:pointer;min-height:43px}
+.m038-primary,.m038-secondary{border-radius:11px;font-weight:800;padding:13px 16px;font-size:14px;border:1px solid transparent;display:inline-flex;align-items:center;justify-content:center;gap:8px;margin-top:16px}
+.m038-primary{background:#2271df;color:#fff}.m038-primary:hover{background:#3987ef}
+.m038-secondary{background:transparent;border-color:#496888;color:#c5dfff}
+.m038-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:13px}
+.m038-warning{padding:12px 14px;border:1px solid #a66c49;border-radius:10px;background:#342626;color:#ffdcc0!important;font-size:13px!important}
+.m038-warning span{overflow-wrap:anywhere}
+.m038-small{font-size:12px!important;color:#a6bdcf!important;line-height:1.6!important}
+.m038-source{background:#152d43;border:1px solid #466681;border-radius:13px;padding:17px;margin:18px 0}
+.m038-source strong{font-size:14px}.m038-source ul{font-size:13px;line-height:1.65;padding-left:20px}
+.m038-source small{color:#a1c0d9}
+.m038-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;margin:16px 0 20px}
+.m038-supplier{background:#152d43;border:1px solid #3c5a77;border-radius:15px;padding:18px;min-width:0}
+.m038-supplier h3{font-size:19px;margin:0 0 9px}
+.m038-supplier p{color:#c2d5e5;font-size:13px;line-height:1.6}
+.m038-supplier strong{overflow-wrap:anywhere}
+.m038-line-edit{padding:14px 0;border-top:1px solid #36506a}
+.m038-toggle{display:flex;align-items:flex-start;gap:9px;font-size:13px;line-height:1.5}
+.m038-toggle input{margin:3px 0;flex:none;width:17px;height:17px;accent-color:#74adff}
+.m038-input-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+.m038-input-grid label{display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:700;color:#bcd1e3;line-height:1.5}
+.m038-input-grid input,.m038-input-grid select{min-width:0;width:100%;font:inherit;font-size:14px;background:#0b1b2d;color:#f4f8ff;border:1px solid #4b6d8d;border-radius:8px;padding:10px;box-sizing:border-box}
+.m038-input-grid input:focus-visible,.m038-input-grid select:focus-visible,.m038-panel button:focus-visible{outline:3px solid #89bbff;outline-offset:2px}
+.m038-coverage{list-style:none;margin:12px 0;padding:0}
+.m038-coverage li{display:flex;justify-content:space-between;gap:10px;font-size:12px;line-height:1.5;border-top:1px solid #35506b;padding:9px 0}
+.m038-coverage li>span{min-width:0;overflow-wrap:anywhere}
+.m038-coverage li>strong{flex:none}
+.m038-option{padding:18px;border:1px solid #416183;border-radius:14px;margin-top:13px;background:#172f49}
+.m038-option>div:first-child{display:flex;align-items:center;justify-content:space-between;gap:15px;font-size:17px}
+.m038-option>div:first-child span{font-size:12px;color:#a5bfd7}
+.m038-price{display:block;font-size:27px;margin:12px 0;font-variant-numeric:tabular-nums}
+.m038-option details{font-size:13px;color:#c2d9ee;line-height:1.6}
+.m038-option summary{cursor:pointer;font-weight:750}.m038-option li{padding:5px 0}
+.m038-finished{padding:19px;margin:18px 0;border:1px solid #5e96b6;border-radius:13px;background:#163e54}
+.m038-finished p{color:#d7e5f5;font-size:14px;line-height:1.6}
+@media(max-width:740px){.m038-grid{grid-template-columns:1fr}.m038-panel{padding:18px}.m038-actions{flex-direction:column}.m038-actions button,.m038-panel>.m038-primary{width:100%}.m038-progress{gap:2px;padding:12px 8px}.m038-progress li{font-size:10px}.m038-input-grid{grid-template-columns:1fr 1fr}.m038-hero{margin-top:16px}}
+@media(max-width:360px){.m038-input-grid{grid-template-columns:1fr}}
