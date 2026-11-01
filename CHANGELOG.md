@@ -825,3 +825,6 @@
 
 ### 01/11/2026 — MVP-045: continuar pedidos por WhatsApp con una sola respuesta de zona
 - D077 privado: memoria HMAC del pedido original y outbox fija de consulta de localidad, sin texto ni contactos en claro, idempotencia/concurrencia, expiración 48h, revocación y lectura de dos mensajes cifrados validados por AES-GCM. Worker nuevo reutiliza D073; tests PG17 y unitarios. **No envía la pregunta, no consume pendiente al crear ronda real, no habilita Whapi ni DEV**. Ver docs/165 y backup #175.
+
+### 01/11/2026 — MVP-046: ronda WhatsApp comprador transaccional sin usuario ficticio
+- D081 privado en PG17 CI crea ronda+ítems+pedido compatible con D065/D071+origen Whapi HMAC en una transacción, conserva created_by NULL con constraint de procedencia, consume pregunta D077 al asociar respuesta exacta y evita duplicados/concurrencias. Adaptador JS compone D073 con D071 solo después de commit y jamás envía WhatsApp. Tests SQL/unitarios. Sin Supabase DEV, Whapi live, publicación ni migraciones productivas. Ver docs/166; backup real #175 pendiente.
