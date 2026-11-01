@@ -6,7 +6,7 @@ export default function Inicio() {
     <p>Cotironda busca simplificar la compra de materiales: vos mandás una lista y el sistema prepara las consultas por producto y rubro. Primero estamos probando el recorrido con catálogos ficticios, sin ventas ni mensajes reales.</p>
     <div className="actions">
       <Link href="/probar/whatsapp" className="button">Probar WhatsApp con 3 comercios</Link>
-      <Link href="/probar/piloto" className="button outline">Demo anterior</Link>
+      <Link href="/probar/piloto" className="button outline">Probar una ronda completa</Link>
       <Link href="/probar" className="button outline">Ver demo simple</Link>
       <Link href="/ingresar" className="button outline">Acceder al portal de prueba</Link>
     </div>
