@@ -49,7 +49,17 @@ try{
  const home=await get('/');
  assert.equal(home.status,200);
  const homeHtml=await home.text();
- assert.match(homeHtml,/Probar un pedido de ejemplo/);
+ assert.match(homeHtml,/Probar una ronda completa/);
+ const recorrido=await get('/probar/piloto');
+ assert.equal(recorrido.status,200,'MVP038 debe ser navegable desde el celular');
+ const recorridoHtml=await recorrido.text();
+ assert.match(recorridoHtml,/De tu lista a una decisión/);
+ assert.match(recorridoHtml,/SIMULACIÓN/);
+ assert.match(recorridoHtml,/Preparar pedido/);
+ assert.match(recorridoHtml,/No se envía WhatsApp ni se registra una ronda real/);
+ assert.doesNotMatch(recorridoHtml,/action="\\/api\\//,
+  'La simulación integral nunca debe tener formulario comercial HTTP');
+ assert.equal((await get('/probar/piloto',{method:'POST'})).status,405);
  const mvp=await get('/probar');
  assert.equal(mvp.status,200);
  const mvpHtml=await mvp.text();
