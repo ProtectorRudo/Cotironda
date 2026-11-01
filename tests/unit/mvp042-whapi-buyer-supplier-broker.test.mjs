@@ -126,7 +126,9 @@ test('MVP042: sin vínculo verificado comprador, sin consentimiento o baja no re
   {buyerOrgId:'FAKE',consentimientoContactoVigente:true,chatHabilitado:true}
  ]){
   const x=setup();x.state.buyerBinding=binding;
-  assert.equal((await x.run()).status,403);
+  // Binding malformed from our PRIVATE backend is an internal incident (503);
+  // a valid identity lacking consent/chat access is an ordinary denial (403).
+  assert.equal((await x.run()).status,binding?.buyerOrgId==='FAKE'?503:403);
   assert.equal(x.state.writes,0);
  }
 });
