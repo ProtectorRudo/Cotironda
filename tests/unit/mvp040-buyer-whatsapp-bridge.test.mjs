@@ -39,6 +39,7 @@ function harness(source=input(),options={}){
    assert.equal(v.chatKey,chat);
    assert.equal(v.originMessageKey,m1);
    assert.equal(v.pedido.deliveryZone,'La Plata');
+   assert.equal(v.pedido.plazoDias,options.expectedDays??5);
    assert.equal(v.pedido.items[0].quantity,'20');
    assert.equal(v.pedido.items[0].unit,'bag');
    assert.equal(v.pedido.items[0].source_description,'Cemento CPC Loma Negra 50 kg');
@@ -168,4 +169,36 @@ test('MVP040: respuesta de broker falsa que afirma mensajes enviados no pasa',as
  });
  assert.equal((await h.processor.procesar(m1)).estado,
   'ronda_registrada_preparacion_pendiente');
+});
+
+test('MVP053: WhatsApp guarda 7 días sin preguntar y zona ya incluida',async()=>{
+ const h=harness(input({textoVerificado:full+'\nPlazo de cotización: 7 días'}),
+  {expectedDays:7});
+ assert.equal((await h.processor.procesar(m1)).estado,'ronda_registrada_consultas_en_cola');
+ assert.equal(h.counts.pending,0);
+ assert.equal(h.counts.created,1);
+});
+test('MVP053: recuerda 3 días cuando pregunta localidad y recibe respuesta',async()=>{
+ const original=pedido+'\nPlazo para cotizar: 3 días';
+ const h=harness(input({textoVerificado:original}),{expectedDays:3});
+ h.port.registrarFaltaZona=async data=>{
+  assert.equal(data.textoOriginal,original);
+  h.counts.pending++;return 'registrada';
+ };
+ assert.equal((await h.processor.procesar(m1)).estado,'zona_solicitada_en_cola');
+ const pending={origenMessageKey:m1,chatKey:chat,textoOriginal:original};
+ h.port.cargar=async(_ch,key)=>input({
+  messageKey:key,textoVerificado:'La Plata',pendienteZona:pending
+ });
+ assert.equal((await h.processor.procesar(m2)).estado,'ronda_registrada_consultas_en_cola');
+ assert.equal(h.counts.created,1);
+ assert.equal(h.counts.pending,1);
+});
+test('MVP053: plazo inválido no crea ronda ni genera invitaciones',async()=>{
+ for(const term of ['Plazo: 8 días','Plazo: 2 días',
+   'Plazo: 3 días\nPlazo: 7 días','Plazo: mañana']){
+  const h=harness(input({textoVerificado:full+'\n'+term}));
+  assert.equal((await h.processor.procesar(m1)).estado,'requiere_revision_interna');
+  assert.equal(h.counts.created,0);assert.equal(h.counts.planned,0);
+ }
 });
