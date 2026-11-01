@@ -23,7 +23,7 @@ do $security$ begin
  or has_function_privilege('cotironda_whapi_http_gateway_d084',
   'cotironda_private.whapi_zone_context_d077(text,text)','EXECUTE')
  or has_function_privilege('cotironda_whapi_http_gateway_d084',
-  'cotironda_private.whapi_create_buyer_round_d081(text,text,text,text,uuid,text,text,jsonb)','EXECUTE')
+  'cotironda_private.whapi_create_buyer_round_d081(text,text,text,text,uuid,text,text,jsonb,integer)','EXECUTE')
  or has_function_privilege('cotironda_whapi_http_gateway_d084',
   'cotironda_private.whapi_claim_buyer_d082(text)','EXECUTE')
  or has_function_privilege('cotironda_whapi_http_gateway_d084',
