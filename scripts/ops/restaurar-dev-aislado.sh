@@ -3,7 +3,7 @@
 set -euo pipefail
 umask 077
 die(){ printf 'MVP049_WRAPPER_%s\n' "$1" >&2; exit 1; }
-if [[ "$1" == '--help' && "$#" -eq 1 ]]; then
+if [[ "$#" -eq 1 && "$1" == '--help' ]]; then
   printf '%s\n' \
    'Ejecutar desde una terminal privada Linux/macOS/WSL, en la raíz del repo:' \
    '  bash scripts/ops/restaurar-dev-aislado.sh' \
@@ -14,11 +14,9 @@ if [[ "$1" == '--help' && "$#" -eq 1 ]]; then
 fi
 [[ "$#" -eq 0 ]] || die NO_ARGUMENTS
 case "$-" in *x*) set +x; die NO_SHELL_TRACE ;; esac
-[[ -z "$CI" && -z "$GITHUB_ACTIONS" &&
- -z "$VERCEL" && -z "$VERCEL_ENV" &&
- -z "$COTIRONDA_DEV_DB_URL" && -z "$DATABASE_URL" &&
- -z "$PGHOST" && -z "$PGUSER" && -z "$PGPASSWORD" &&
- -z "$DOCKER_CONTEXT" ]] || die LOCAL_ONLY
+for var in CI GITHUB_ACTIONS VERCEL VERCEL_ENV COTIRONDA_DEV_DB_URL DATABASE_URL PGHOST PGUSER PGPASSWORD DOCKER_CONTEXT; do
+ [[ ! -v "$var" ]] || die LOCAL_ONLY
+done
 [[ -t 0 && -t 1 ]] || die PRIVATE_TERMINAL_REQUIRED
 [[ "$(id -u)" != 0 ]] || die NON_ROOT_REQUIRED
 for tool in node docker age pg_dump; do
