@@ -29,13 +29,13 @@ do $priv$ begin
    where rolname='cotironda_whapi_round_gateway_d081' and not rolcanlogin
     and not rolbypassrls and not rolinherit)
  or has_function_privilege('anon',
-  'cotironda_private.whapi_create_buyer_round_d081(text,text,text,text,uuid,text,text,jsonb)','EXECUTE')
+  'cotironda_private.whapi_create_buyer_round_d081(text,text,text,text,uuid,text,text,jsonb,integer)','EXECUTE')
  or has_function_privilege('authenticated',
-  'cotironda_private.whapi_create_buyer_round_d081(text,text,text,text,uuid,text,text,jsonb)','EXECUTE')
+  'cotironda_private.whapi_create_buyer_round_d081(text,text,text,text,uuid,text,text,jsonb,integer)','EXECUTE')
  or has_function_privilege('service_role',
-  'cotironda_private.whapi_create_buyer_round_d081(text,text,text,text,uuid,text,text,jsonb)','EXECUTE')
+  'cotironda_private.whapi_create_buyer_round_d081(text,text,text,text,uuid,text,text,jsonb,integer)','EXECUTE')
  or not has_function_privilege('cotironda_whapi_round_gateway_d081',
-  'cotironda_private.whapi_create_buyer_round_d081(text,text,text,text,uuid,text,text,jsonb)','EXECUTE')
+  'cotironda_private.whapi_create_buyer_round_d081(text,text,text,text,uuid,text,text,jsonb,integer)','EXECUTE')
  or has_table_privilege('cotironda_whapi_round_gateway_d081',
   'cotironda_private.rounds_v1','INSERT')
  or has_table_privilege('cotironda_whapi_round_gateway_d081',
@@ -45,7 +45,7 @@ do $priv$ begin
  or has_table_privilege('service_role',
   'cotironda_private.buyer_whapi_round_sources_d081','INSERT')
  or (select pg_catalog.pg_get_userbyid(proowner) from pg_catalog.pg_proc
-  where oid='cotironda_private.whapi_create_buyer_round_d081(text,text,text,text,uuid,text,text,jsonb)'::regprocedure)
+  where oid='cotironda_private.whapi_create_buyer_round_d081(text,text,text,text,uuid,text,text,jsonb,integer)'::regprocedure)
   <>'cotironda_whapi_round_writer_d081'
  then raise exception 'd081_acl_failed';end if;
 end;$priv$;
@@ -99,14 +99,14 @@ do $direct$ declare r jsonb;rr jsonb;begin
  r:=cotironda_private.whapi_create_buyer_round_d081(
  'd081_ci',repeat('a',64),repeat('1',64),repeat('1',64),
  'aaaaaaaa-0081-4081-8081-000000000811','La Plata',
- 'no_especificado',pg_temp.items_d081());
+ 'no_especificado',pg_temp.items_d081(),3);
  if r->>'repetida'<>'false' or r->>'roundId' is null
  then raise exception 'd081_direct_round_not_created';end if;
  insert into pg_temp.d081_created values((r->>'roundId')::uuid);
  rr:=cotironda_private.whapi_create_buyer_round_d081(
  'd081_ci',repeat('a',64),repeat('1',64),repeat('1',64),
  'aaaaaaaa-0081-4081-8081-000000000811','La Plata',
- 'no_especificado',pg_temp.items_d081());
+ 'no_especificado',pg_temp.items_d081(),3);
  if rr->>'repetida'<>'true' or rr->>'roundId'<>r->>'roundId'
  then raise exception 'd081_direct_replay_made_new_round';end if;
 end;$direct$;
@@ -123,6 +123,14 @@ select ci_helpers.assert_true(
  and (select count(*)=1 from cotironda_private.buyer_whapi_round_sources_d081
   where origin_message_key=repeat('1',64)),
  'd081_direct_round_uses_d064_data_without_forged_user');
+
+-- Plazo elegido por WhatsApp queda en DB, sin confundir entrega con cierre.
+select ci_helpers.assert_true(
+ (select count(*)=1 from cotironda_private.rounds_v1 r
+  join cotironda_private.buyer_whapi_round_sources_d081 s on s.round_id=r.id
+  where s.channel_id='d081_ci' and s.origin_message_key=repeat('1',64)
+   and r.ends_at-r.begins_at=interval '3 days'-interval '30 seconds'),
+ 'd081_explicit_three_days_preserved');
 
 -- A missing zone is registered once. Reply is bound to the existing encrypted
 -- original; creation consumes that pending atomically and preserves replay.
@@ -170,6 +178,32 @@ select ci_helpers.assert_true(
   'con_iva',pg_temp.items_d081())->>'repetida'='true',
  'd081_exact_reply_replay_idempotent');
 reset role;
+select ci_helpers.assert_true(
+ (select count(*)=1 from cotironda_private.rounds_v1 r
+  join cotironda_private.buyer_whapi_round_sources_d081 s on s.round_id=r.id
+  where s.channel_id='d081_ci' and s.origin_message_key=repeat('2',64)
+   and r.ends_at-r.begins_at=interval '5 days'-interval '30 seconds'),
+ 'd081_default_five_days_with_zone_reply');
+-- A changed duration in a repeated message must NEVER mutate the previous round.
+select pg_temp.d081_fail(
+ $select cotironda_private.whapi_create_buyer_round_d081(
+  'd081_ci',repeat('a',64),repeat('1',64),repeat('1',64),
+  'aaaaaaaa-0081-4081-8081-000000000811','La Plata',
+  'no_especificado',pg_temp.items_d081(),7)$,
+ 'd081_replayed_changed_payload');
+select pg_temp.d081_fail(
+ $select cotironda_private.whapi_create_buyer_round_d081(
+  'd081_ci',repeat('a',64),repeat('1',64),repeat('1',64),
+  'aaaaaaaa-0081-4081-8081-000000000811','La Plata',
+  'no_especificado',pg_temp.items_d081(),2)$,
+ 'd081_invalid_request');
+select pg_temp.d081_fail(
+ $select cotironda_private.whapi_create_buyer_round_d081(
+  'd081_ci',repeat('a',64),repeat('1',64),repeat('1',64),
+  'aaaaaaaa-0081-4081-8081-000000000811','La Plata',
+  'no_especificado',pg_temp.items_d081(),8)$,
+ 'd081_invalid_request');
+
 -- Once first round has consumed its locality, a NEW pedido may ask a new
 -- locality immediately. The previous final reply must remain replayable.
 set local role cotironda_buyer_zone_gateway_d077;
@@ -240,6 +274,24 @@ select pg_temp.d081_fail(
   'contradictorio',pg_temp.items_d081())$$,
  'd081_invalid_request');
 
+-- Another verified buyer with no open zone question chooses seven days.
+set local role cotironda_whapi_round_gateway_d081;
+do $seven$ declare r jsonb;begin
+ r:=cotironda_private.whapi_create_buyer_round_d081(
+  'd081_ci',repeat('b',64),repeat('4',64),repeat('4',64),
+  'aaaaaaaa-0081-4081-8081-000000000812','La Plata',
+  'no_especificado',pg_temp.items_d081(),7);
+ if r->>'repetida'<>'false' then raise exception 'd081_seven_days_not_created';end if;
+ insert into pg_temp.d081_created values((r->>'roundId')::uuid);
+end;$seven$;
+reset role;
+select ci_helpers.assert_true(
+ (select count(*)=1 from cotironda_private.rounds_v1 r
+  join cotironda_private.buyer_whapi_round_sources_d081 s on s.round_id=r.id
+  where s.channel_id='d081_ci' and s.origin_message_key=repeat('4',64)
+   and r.ends_at-r.begins_at=interval '7 days'-interval '30 seconds'),
+ 'd081_explicit_seven_days_preserved');
+
 -- No new future writes after BAJA; previous round stays intact/auditable.
 update cotironda_private.whapi_buyer_contacts_d074
  set opted_out_at=pg_catalog.clock_timestamp()
@@ -253,7 +305,7 @@ select pg_temp.d081_fail(
 -- Verify deferred provenance only after all D081 calls have committed their source.
 set constraints cotironda_private.d081_whapi_provenance_after_insert immediate;
 select ci_helpers.assert_true(
- (select count(*)=2 from cotironda_private.buyer_whapi_round_sources_d081
+ (select count(*)=3 from cotironda_private.buyer_whapi_round_sources_d081
   where channel_id='d081_ci'),
  'd081_rejections_left_no_orphan_rounds');
 rollback;
