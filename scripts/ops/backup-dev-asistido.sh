@@ -39,6 +39,14 @@ backupdir="$HOME/.cotironda-backups"
 [[ ! -L "$keydir" && ! -L "$backupdir" ]] || fail UNSAFE_DIRECTORY
 mkdir -p -m 700 "$keydir" "$backupdir" || fail DIRECTORY_CREATE_FAILED
 [[ -d "$keydir" && -d "$backupdir" ]] || fail UNSAFE_DIRECTORY
+# Existing directories are NOT changed by mkdir -m. Reject 0755/0777,
+# a foreign owner and symlinked ancestors BEFORE generating a key or
+# asking for a private database URL.
+repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd -P)" ||
+  fail REPOSITORY_UNAVAILABLE
+node "$repo_root/scripts/ops/check-private-backup-dirs-mvp037.mjs" \
+  "$HOME" "$keydir" "$backupdir" >/dev/null ||
+  fail PRIVATE_DIRECTORY_UNSAFE
 identity="$keydir/identity.txt"
 [[ ! -L "$identity" ]] || fail IDENTITY_SYMLINK
 
@@ -73,8 +81,6 @@ export COTIRONDA_AGE_RECIPIENT
 
 bundle="$(mktemp -d "$backupdir/respaldo-dev-XXXXXXXX")" ||
   fail OUTPUT_CREATE_FAILED
-repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd -P)" ||
-  fail REPOSITORY_UNAVAILABLE
 node "$repo_root/scripts/ops/cotironda-private-backup-d075.mjs" "$bundle" "$identity" ||
   fail BACKUP_INCOMPLETE
 
