@@ -1,5 +1,10 @@
 # Registro de cambios
 
+## MVP-067 — corrección de ruta del webhook Whapi y preflight (en rama)
+- Se alinea MVP-041 con la ruta Next real `/api/integraciones/whapi`, rechazando la antigua `/api/whapi/webhook` y evitando falsos positivos de configuración. El auditor local usa `COTIRONDA_WHAPI_WEBHOOK_SECRET`, el mismo nombre que el receptor D083; no agrega secrets ni HTTP.
+- Se documenta piloto 1 arquitecto + 2 corralones propios y gates para solicitar números. Aún sin Whapi conectado, SQL DEV, backup auténtico, portal Preview reciente ni mensajes reales. Docs/187, Issue #347.
+
+
 ## MVP-066 — WhatsApp central exige recepción de comprador y proveedor (solo rama)
 - La ruta Preview D083 activa contrato obligatorio de doble rol; D027 rechaza con 503 si falta resolver, persistir o registrar BAJA para comprador o proveedor. El receptor antiguo solo-proveedor conserva compatibilidad sin activar el flag.
 - Nuevo test de rutas por número verificado, rechazo de no registrados y rol dual; sin secretos ni teléfonos reales. Reglas integrales en docs/186 e Issue #345.
