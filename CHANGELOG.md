@@ -1,5 +1,10 @@
 # Registro de cambios
 
+## MVP-062 — Respuestas por WhatsApp → ofertas verificables, sin confirmación extra (código)
+- Se compuso D062 cola durable + D061 AES-GCM/alcance + D063 precio textual explícito + D060 ledger de presupuestos/versiones. Cota de 2 trabajos por tick; sin enviar mensajes, sin inferir precios ni IVA.
+- Nueva ruta privada Preview `/api/integraciones/whapi/cotizaciones`, nueva SQL D092 (tres logins sin contraseña, SET ROLE único por cola/lectura/escritura) y driver TLS Session PG17. CI con errores, reprocesos y precios ambiguos.
+- Sigue apagado: Supabase DEV #175, catálogos y contactos, Whapi, cron y archivos/IA pendientes. Docs/182, Issue #337.
+
 ## MVP-061 — Conexión privada del emisor Whapi de invitaciones (sin activación)
 - Reutiliza sender D070 + transporte Whapi D055 + destinatario cifrado D068 en `POST /api/integraciones/whapi/enviar`, protegido por secreto exclusivo y doble flag Preview, un trabajo por tick, número en allowlist explícita de 1–3 comercios.
 - Nuevo D091: LOGIN sin password/NOINHERIT y gateway con solo seis RPC; driver Postgres.js con sesión nueva y autocommit por RPC antes de HTTP, TLS CA y proyecto DEV, cierre al finalizar.
