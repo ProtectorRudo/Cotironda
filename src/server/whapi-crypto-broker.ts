@@ -7,7 +7,8 @@
  */
 import {createCipheriv,createDecipheriv,createHmac,randomBytes} from 'node:crypto';
 import type {DependenciasWhapiEntrada,MensajeEntrantePendiente,
-  VinculoProveedorVerificado} from './whapi-inbound-offline.ts';
+  MensajeCompradorPendiente,VinculoProveedorVerificado,VinculoCompradorVerificado}
+  from './whapi-inbound-offline.ts';
 
 type Tipo=MensajeEntrantePendiente['tipo'];
 export type ClavesPrivadasWhapi=Readonly<{
@@ -24,6 +25,12 @@ export type EntradaCifradaD028=Readonly<{
   kind:Tipo;ciphertext:Buffer;nonce:Buffer;tag:Buffer;sourceUnix:number;
   cryptoKeyId?:string;
 }>;
+export type EntradaCifradaCompradorMvp042=EntradaCifradaD028&Readonly<{
+ buyerOrgId:string;
+}>;
+export type BajaProtegidaCompradorMvp042=BajaProtegidaD028&Readonly<{
+ buyerOrgId:string;
+}>;
 export type BajaProtegidaD028=Readonly<{
   channel:string;chatKey:string;messageKey:string;
   fingerprint:string;sourceUnix:number;
@@ -36,6 +43,14 @@ export type AlmacenWhapiPrivado=Readonly<{
   resolverVinculo:(channel:string,chatKey:string)=>Promise<VinculoConfiable|null>;
   registrarEntrada:(data:EntradaCifradaD028)=>Promise<ResultadoD028>;
   registrarBaja:(data:BajaProtegidaD028)=>Promise<ResultadoD028>;
+  // Strict pair: separate buyer binding and encrypted buyer inbox are
+  // required together. D028 supplier SQL MUST NOT receive buyer records.
+  resolverComprador?:(channel:string,chatKey:string)=>
+    Promise<VinculoCompradorVerificado|null>;
+  registrarEntradaComprador?:(data:EntradaCifradaCompradorMvp042)=>
+    Promise<ResultadoD028>;
+  registrarBajaComprador?:(data:BajaProtegidaCompradorMvp042)=>
+    Promise<ResultadoD028>;
 }>;
 export type ConfigBrokerWhapi=Readonly<{
   channel:string;secretoWebhook:string;claves:ClavesPrivadasWhapi;
@@ -73,6 +88,12 @@ function contexto(channel:string,chatKey:string,messageKey:string,
   if(keyId!=='legacy_d029')fields.push('key-id',keyId);
   return Buffer.from(JSON.stringify(fields),'utf8');
 }
+function contextoComprador(channel:string,chatKey:string,messageKey:string,
+  buyerOrgId:string,kind:Tipo,sourceUnix:number,keyId:string):Buffer{
+  if(!ID.test(buyerOrgId))rechazar();
+  return Buffer.from(JSON.stringify(['cotironda','comprador',2,channel,
+    chatKey,messageKey,buyerOrgId,kind,sourceUnix,'key-id',keyId]),'utf8');
+}
 function validarIdentidad(channel:string,chatId:string,msgId:string):void{
   if(!CHANNEL.test(channel)||!CHAT.test(chatId)||!MSG.test(msgId))rechazar();
 }
@@ -88,6 +109,9 @@ export function construirBrokerWhapiPrivado(config:ConfigBrokerWhapi):{
   verificarContenido:(d:EntradaCifradaD028)=>Readonly<{
     tipo:Tipo;texto:string|null;marcaTiempoUnix:number;quotedMessageId?:string;
   }>;
+  verificarContenidoComprador:(d:EntradaCifradaCompradorMvp042)=>Readonly<{
+    tipo:Tipo;texto:string|null;marcaTiempoUnix:number;quotedMessageId?:string;
+  }>;
 }{
   if(!config||!CHANNEL.test(config.channel)||
     typeof config.secretoWebhook!=='string'||config.secretoWebhook.length<32||
@@ -95,6 +119,14 @@ export function construirBrokerWhapiPrivado(config:ConfigBrokerWhapi):{
     typeof config.almacen.registrarEntrada!=='function'||
     typeof config.almacen.registrarBaja!=='function'||
     typeof config.ahoraUnix!=='function'||typeof config.habilitado!=='boolean'||
+    (Boolean(config.almacen.resolverComprador)!==
+      Boolean(config.almacen.registrarEntradaComprador))||
+    (config.almacen.resolverComprador!==undefined&&
+      typeof config.almacen.resolverComprador!=='function')||
+    (config.almacen.registrarEntradaComprador!==undefined&&
+      typeof config.almacen.registrarEntradaComprador!=='function')||
+    (config.almacen.registrarBajaComprador!==undefined&&
+      typeof config.almacen.registrarBajaComprador!=='function')||
     (config.enroladorContacto!==undefined&&
      typeof config.enroladorContacto?.registrarContactoVerificado!=='function')||
     (config.enroladorAlta!==undefined&&
@@ -135,6 +167,85 @@ export function construirBrokerWhapiPrivado(config:ConfigBrokerWhapi):{
        channel,chatId,messageId,texto,when);
     }}:{}),
     secretoWebhook:config.secretoWebhook,ahoraUnix:config.ahoraUnix,
+    ...(config.almacen.resolverComprador?{
+      resolverComprador:async(channel:string,chatId:string):
+        Promise<VinculoCompradorVerificado|null>=>{
+        if(channel!==config.channel||!CHAT.test(chatId))rechazar();
+        const binding=await config.almacen.resolverComprador!(
+          channel,chatKey(chatId));
+        if(binding===null)return null;
+        if(!binding||!ID.test(binding.buyerOrgId)||
+          typeof binding.chatHabilitado!=='boolean'||
+          typeof binding.consentimientoContactoVigente!=='boolean')
+          rechazar();
+        return binding;
+      },
+      persistirEntradaComprador:async(msg:MensajeCompradorPendiente):
+        Promise<'guardada'|'duplicada'>=>{
+        if(msg.canalId!==config.channel)rechazar();
+        validarIdentidad(msg.canalId,msg.chatId,msg.mensajeId);
+        if(!ID.test(msg.compradorOrgId)||!TYPES.has(msg.tipo)||
+          !Number.isSafeInteger(msg.marcaTiempoUnix)||
+          msg.marcaTiempoUnix<1||
+          !(msg.texto===null||(typeof msg.texto==='string'&&
+            msg.texto.length>0&&msg.texto.length<=3000)))rechazar();
+        if(msg.quotedMessageId!==undefined&&
+          (msg.tipo!=='text'||!MSG.test(msg.quotedMessageId)))rechazar();
+        const cKey=chatKey(msg.chatId),mKey=messageKey(msg.mensajeId);
+        // Recheck contact binding at the LAST step; payload buyerOrgId is
+        // never sufficient authority to write an economic request.
+        const binding=await config.almacen.resolverComprador!(
+          config.channel,cKey);
+        if(!binding||binding.buyerOrgId!==msg.compradorOrgId||
+          binding.chatHabilitado!==true||
+          binding.consentimientoContactoVigente!==true)rechazar();
+        const plain=Buffer.from(JSON.stringify({
+          tipo:msg.tipo,texto:msg.texto,marcaTiempoUnix:msg.marcaTiempoUnix,
+          ...(msg.quotedMessageId?{quotedMessageId:msg.quotedMessageId}:{})
+        }),'utf8');
+        if(plain.length>8192)rechazar();
+        const nonce=randomBytes(12);
+        const cipher=createCipheriv('aes-256-gcm',keys.contenidoAes,nonce);
+        cipher.setAAD(contextoComprador(config.channel,cKey,mKey,
+          binding.buyerOrgId,msg.tipo,msg.marcaTiempoUnix,keyId));
+        const ciphertext=Buffer.concat([cipher.update(plain),cipher.final()]);
+        const result=await config.almacen.registrarEntradaComprador!({
+          channel:config.channel,chatKey:cKey,messageKey:mKey,
+          buyerOrgId:binding.buyerOrgId,
+          fingerprint:mac(keys.huellaHmac,['cotironda','comprador',2,
+            config.channel,cKey,mKey,msg.tipo,msg.texto,msg.marcaTiempoUnix,
+            binding.buyerOrgId,msg.quotedMessageId??null]),
+          kind:msg.tipo,ciphertext,nonce,tag:cipher.getAuthTag(),
+          sourceUnix:msg.marcaTiempoUnix,cryptoKeyId:keyId
+        });
+        if(result?.estado!=='entrada_persistida'||
+          typeof result.repetido!=='boolean')rechazar();
+        return result.repetido?'duplicada':'guardada';
+      }
+    }:{}),
+    ...(config.almacen.resolverComprador?{
+      registrarBajaComprador:async(channel:string,chatId:string,msgId:string,
+        _untrustedHash:string,when:number):Promise<'registrada'|'duplicada'>=>{
+        if(!config.almacen.registrarBajaComprador||
+          channel!==config.channel||!Number.isSafeInteger(when)||when<1)
+          rechazar();
+        validarIdentidad(channel,chatId,msgId);
+        const cKey=chatKey(chatId),mKey=messageKey(msgId);
+        const binding=await config.almacen.resolverComprador!(
+          config.channel,cKey);
+        if(!binding||!ID.test(binding.buyerOrgId)||
+          binding.chatHabilitado!==true)rechazar();
+        const result=await config.almacen.registrarBajaComprador({
+          channel,chatKey:cKey,messageKey:mKey,buyerOrgId:binding.buyerOrgId,
+          fingerprint:mac(keys.huellaHmac,['cotironda','baja_comprador',2,
+            channel,cKey,mKey,binding.buyerOrgId,when]),
+          sourceUnix:when
+        });
+        if(result?.estado!=='baja_registrada'||
+          typeof result.repetido!=='boolean')rechazar();
+        return result.repetido?'duplicada':'registrada';
+      }
+    }:{}),
     resolverProveedor:async(channel,chatId):Promise<VinculoProveedorVerificado|null>=>{
       if(channel!==config.channel||!CHAT.test(chatId))rechazar();
       // La fuente autorizada recibe exclusivamente un HMAC, jamás un teléfono.
@@ -239,5 +350,41 @@ export function construirBrokerWhapiPrivado(config:ConfigBrokerWhapi):{
       marcaTiempoUnix:d.sourceUnix,
       ...('quotedMessageId' in v?{quotedMessageId:v.quotedMessageId as string}:{})};
   }
-  return {dependencias,verificarContenido};
+  function verificarContenidoComprador(d:EntradaCifradaCompradorMvp042){
+    if(!d||!ID.test(d.buyerOrgId)||d.channel!==config.channel||
+      !/^[a-f0-9]{64}$/u.test(d.chatKey)||
+      !/^[a-f0-9]{64}$/u.test(d.messageKey)||
+      !TYPES.has(d.kind)||!Number.isSafeInteger(d.sourceUnix)||
+      !Buffer.isBuffer(d.nonce)||d.nonce.length!==12||
+      !Buffer.isBuffer(d.tag)||d.tag.length!==16||
+      !Buffer.isBuffer(d.ciphertext)||d.ciphertext.length<1||
+      d.ciphertext.length>8192)rechazar();
+    const storedId=d.cryptoKeyId??'legacy_d029';
+    if(!KEY_ID.test(storedId))rechazar();
+    const decryptKey=storedId===keyId?keys.contenidoAes:
+      oldKeys.get(storedId);
+    if(!decryptKey)rechazar();
+    const dec=createDecipheriv('aes-256-gcm',decryptKey,d.nonce);
+    dec.setAAD(contextoComprador(d.channel,d.chatKey,d.messageKey,
+      d.buyerOrgId,d.kind,d.sourceUnix,storedId));
+    dec.setAuthTag(d.tag);
+    const out=Buffer.concat([dec.update(d.ciphertext),dec.final()]);
+    const v:unknown=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(out));
+    if(!v||typeof v!=='object'||Array.isArray(v))rechazar();
+    const x=v as Record<string,unknown>;
+    const props=Object.keys(x).sort().join(',');
+    if(!['marcaTiempoUnix,texto,tipo',
+      'marcaTiempoUnix,quotedMessageId,texto,tipo'].includes(props)||
+      x.tipo!==d.kind||x.marcaTiempoUnix!==d.sourceUnix||
+      !(x.texto===null||typeof x.texto==='string')||
+      ('quotedMessageId' in x&&(d.kind!=='text'||
+        typeof x.quotedMessageId!=='string'||
+        !MSG.test(x.quotedMessageId))))rechazar();
+    return {tipo:d.kind,texto:x.texto as string|null,
+      marcaTiempoUnix:d.sourceUnix,
+      ...('quotedMessageId' in x?{
+        quotedMessageId:x.quotedMessageId as string
+      }:{})};
+  }
+  return {dependencias,verificarContenido,verificarContenidoComprador};
 }
