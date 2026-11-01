@@ -11,7 +11,7 @@ test('MVP069 texto natural detecta familia y retiene todo material desconocido',
  assert.equal(r.estado,'interpretado_para_simulacion_sin_confirmar');
  assert.deepEqual(r.reconocidos.map(i=>i.producto_id),['cemento_gris_obra','hidrofugo']);
  assert.equal(r.pendientes.length,1);
- assert.equal(r.pendientes[0].descripcion,'Arena fina');
+ assert.equal(r.pendientes[0].descripcion,'Arena especial sin ficha');
 });
 test('MVP069 CSV exportado de Excel: delimitador ; y precios ignorados',()=>{
  const r=read(b,'csv');
