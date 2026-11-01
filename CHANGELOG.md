@@ -828,3 +828,6 @@
 
 ### 01/11/2026 — MVP-046: ronda WhatsApp comprador transaccional sin usuario ficticio
 - D081 privado en PG17 CI crea ronda+ítems+pedido compatible con D065/D071+origen Whapi HMAC en una transacción, conserva created_by NULL con constraint de procedencia, consume pregunta D077 al asociar respuesta exacta y evita duplicados/concurrencias. Adaptador JS compone D073 con D071 solo después de commit y jamás envía WhatsApp. Tests SQL/unitarios. Sin Supabase DEV, Whapi live, publicación ni migraciones productivas. Ver docs/166; backup real #175 pendiente.
+
+### 01/11/2026 — MVP-047 cola durable de pedidos por WhatsApp
+- D082 SQL PG17 CI: trigger de inserción cifrada comprador→cola única por canal/mensaje, lease/ACK, reintento con demora y dead-letter, RLS/roles restringidos. Worker server-only D082 conecta D077/D081, trata archivos no verificados como revisión y nunca envía WhatsApp; regresión SQL/Node. Sin instalación Supabase DEV, Whapi ni producción. Ver docs/167 y gate #175.
