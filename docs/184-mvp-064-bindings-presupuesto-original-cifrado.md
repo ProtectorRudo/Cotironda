@@ -22,7 +22,7 @@ D061/D063/D060 registran precios de los materiales reconocidos y preservan versi
 
 ## Limitaciones que NO deben ocultarse
 
-**Este primer incremento instala el contrato SQL y su ensayo, no la funcionalidad completa.** La ruta actual del worker D062 todavía llama D060 (no D093); se debe conectar el broker al manifest con SHA-256 del texto original comprobado, nuevo gateway exclusivo del worker, y eliminar rutas que eludan D093 para cotizaciones nuevas. Además necesitamos la vista del comprador capaz de recuperar/desencriptar la fuente **solo con sesión vigente y autorización sobre su ronda**, mostrar TODAS las líneas y literal del total. Para PDF, Word, Excel y fotos, se deben conservar los bytes originales en Storage privado e inmutable; D028 preserva solo el texto cuando el mensaje es text, no adjuntos.
+**Este incremento incorpora D093 al worker privado D062**: el receptor D061 prepara el manifest desde el texto verificado con AES-GCM, invoca la RPC D093, y no considera registrada una oferta si falla el vínculo fuente/version. La ruta real `/api/integraciones/whapi/cotizaciones` exige este modo; se conserva D060 únicamente como contrato histórico de tests aislados. El LOGIN técnico de escritura D092 pasa a tener **solo el gateway D093**, sin EXECUTE directo de D060. Queda pendiente la vista del comprador capaz de recuperar/desencriptar la fuente **solo con sesión vigente y autorización sobre su ronda**, mostrar TODAS las líneas y literal del total. Para PDF, Word, Excel y fotos, se deben conservar los bytes originales en Storage privado e inmutable; D028 preserva solo el texto cuando el mensaje es text, no adjuntos.
 
 Por lo tanto #339 sigue **ABIERTO**, aunque D093 pase CI; nunca declarar todavía que el comprador ve 100% del presupuesto.
 
