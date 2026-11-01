@@ -91,6 +91,7 @@ create function pg_temp.items_d081() returns jsonb language sql immutable as $$
  select '[{"line_no":1,"product_code":"cemento_gris_obra","quantity":"20","unit":"bag","source_description":"Cemento CPC Loma Negra 50 kg"}]'::jsonb;
 $$;
 create temporary table d081_created(round_id uuid);
+grant insert on pg_temp.d081_created to cotironda_whapi_round_gateway_d081;
 
 -- A direct WhatsApp message with confirmed materials+zone creates a real round.
 set local role cotironda_whapi_round_gateway_d081;
