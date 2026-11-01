@@ -1,5 +1,7 @@
 # Cotironda
 
+> **MVP-052 (desarrollo, no operativo):** contrato de conexión SQL Whapi D085 con login técnico y `SET ROLE` limitado a seis RPC D084, con cliente privado inyectado y sin driver ni credenciales. El receptor HTTPS real sigue cerrado (503), #175 backup+restore real pendiente. [docs/172](docs/172-mvp-052-sesion-sql-whapi.md).
+
 > **MVP-051 (rama sin publicar):** recepción HTTPS Whapi endurecida: metadatos HTTP inválidos se rechazan antes de SQL, y puertos de conexión temporales se liberan al concluir. Se mantiene el 503 de la ruta real sin gateway privado; no hay WhatsApp conectado. Issue #315 y [docs/171](docs/171-mvp-051-preflight-cierre-whapi.md). Backup/restauración auténticos #175 siguen bloqueando el piloto.
 
 > **Integración MVP-002 (31/10/2026):** candidatura de integración en rama `integration/mvp-piloto-20261031`, sin fusionar a `main` ni publicar. Conserva el portal `/probar` y motores de seguridad/comparación de los PR apilados. `main` sigue sin la aplicación comercial; la rama candidata es una demostración navegable y un conjunto de pruebas, **no** un piloto WhatsApp real. Bloqueantes: respaldo/restauración DEV #175, conciliación de migraciones y prueba con proveedores voluntarios. Ver [auditoría de integración](docs/121-integracion-mvp-piloto.md).
