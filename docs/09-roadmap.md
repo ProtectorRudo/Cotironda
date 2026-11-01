@@ -1,5 +1,7 @@
 # 09 — Hoja de ruta y puertas de calidad
 
+> **UX-002 actualiza el criterio de etapa 03 y la salida del piloto:** sin adjudicación en Cotironda; finalistas automáticos por canasta comparable al cierre y contacto comercial recíproco consentido entre arquitecto y cada finalista. El negocio se concreta fuera de la plataforma. Ver [docs/159](159-ux-002-finalistas-y-contacto-mutuo.md). Las referencias anteriores a «adjudicación manual» quedan históricas.
+
 **Estado auditado 29/10/2026:** Etapa 00 documentada; Etapa 01 en PR apilados hasta #63. Doce migraciones aplicadas solamente en `cotironda-dev`, incluida la décima de bloqueo de cargas directas, registro SQL y portal comercial cerrados. El Auth Hook está ACTIVADO en desarrollo y el propietario probó un JWT real desde Chrome con cuentas de ensayo; CI de PostgreSQL, Next y SSR/HTTP aprobado sobre datos simulados. **Las migraciones 8 y 9 de Storage privado están aplicadas en `cotironda-dev`: bucket RLS y guard de sesiones revocadas; mientras falta backend antimalware, la décima migración cierra la carga directa y la onceava prepara una cuarentena inaccesible con ledger privado, aún sin antivirus ni interfaz de carga** (la auditoría inicial encontró 0 buckets en dev); falta un ensayo real de revocación JWT, prueba HTTP 429 auténtica controlada y consolidación de PR. El dominio comprado `cotironda.com` está registrado en Hostinger pero NO apunta a Vercel; su configuración se programa en la puerta de publicación. Ver `docs/38-dominio-hostinger-vercel.md` y `docs/39-storage-privado-pendiente.md`.
 
 | Etapa | Entregable | Criterio de aprobación |
@@ -7,14 +9,14 @@
 | 00 Documentación | Visión, reglas, arquitectura, pruebas, decisiones, riesgos | Documentos coherentes, abiertos registrados y revisión comercial |
 | 01 Usuarios y base | Organizaciones, roles, rubros, catálogos, zonas, Storage privado | Autorización cruzada y RLS probadas con varias empresas |
 | 02 IA documental | Extracción, trazabilidad y validación para distribución automática sin aprobación por línea | Corpus realista y filtros por producto confirmado probados |
-| 03 Licitaciones | Rondas, invitaciones, ofertas versionadas, rankings y adjudicación | Matemática determinista y casos parciales aprobados |
+| 03 Licitaciones | Rondas, invitaciones, ofertas versionadas, comparación y finalistas | Matemática determinista, cobertura honesta y contactos solo al cierre consentido |
 | 04 WhatsApp | Adaptador Whapi, webhooks, IA conversacional, colas y opt-out | Ciclo real probado con números autorizados, sin duplicados |
 | 05 UX | Portales comprador/proveedor/admin, móvil y escritorio | Flujos completos usables, pruebas end-to-end |
 | 06 Pagos y protección | Suscripciones, webhooks, gastos, auditoría, backups | Pagos idempotentes y restauración/pruebas de seguridad |
-| 07 Piloto | Primeros compradores y proveedores voluntarios | Rondas completas, costos medidos y retroalimentación |
+| 07 Piloto | Primeros compradores y proveedores voluntarios | Pedido WhatsApp → ofertas WhatsApp → cierre → contacto mutuo de finalistas, costos y retroalimentación |
 
 ## Criterio transversal de aceptación UX-001 (todas las etapas)
-**No basta con una función técnicamente correcta: tiene que ser fácil de usar sin capacitación.** Al especificar, desarrollar, probar y pilotear cada etapa comprobar el recorrido por WhatsApp de compradores y proveedores, reducir pasos y retrabajo, permitir portal opcional, usar lenguaje cotidiano y estados verificables. Validar con personas reales no técnicas antes de piloto, registrando tiempo, acciones, ayuda necesaria y abandonos. UX se evalúa desde Etapa 01, **no se posterga hasta la Etapa 05**. La seguridad, opt-in, confirmaciones económicas y adjudicación manual son límites que nunca se omiten. Ver [docs/89](89-ux-cero-friccion-whatsapp-first.md) y Issue #151.
+**No basta con una función técnicamente correcta: tiene que ser fácil de usar sin capacitación.** Al especificar, desarrollar, probar y pilotear cada etapa comprobar el recorrido por WhatsApp de compradores y proveedores, reducir pasos y retrabajo, permitir portal opcional, usar lenguaje cotidiano y estados verificables. Validar con personas reales no técnicas antes de piloto, registrando tiempo, acciones, ayuda necesaria y abandonos. UX se evalúa desde Etapa 01, **no se posterga hasta la Etapa 05**. La seguridad, opt-in, atribución económica y revelación mutua consentida al cierre son límites que nunca se omiten. Ver [docs/89](89-ux-cero-friccion-whatsapp-first.md) y Issue #151.
 
 ## Secuencia profesional por Issue
 Inspección de situación actual → impacto y aceptación → rama → implementar → pruebas → auditoría → PR → revisión → merge → producción sólo autorizada.
