@@ -147,6 +147,11 @@ jobs:
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_buyer_inbox_read_d076.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/129_whapi_buyer_inbox_read_d076.sql
+      - name: D077 unica pregunta de localidad y reanudacion cifrada (solo PG17 CI)
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/sql/whapi_zone_conversation_d077.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/130_whapi_zone_conversation_d077.sql
       - name: D034 replay sin duplicados tras rotación AES (SQL privado PG17)
         run: |
           set -euo pipefail
