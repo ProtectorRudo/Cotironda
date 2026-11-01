@@ -1,5 +1,10 @@
 # Registro de cambios
 
+## MVP-056 — Ensayo comercial consolidado WhatsApp → tres comercios (sin desplegar)
+- PostgreSQL17 CI: 1 arquitecto, 2 corralones, 1 pinturería, pedido de cemento/hidrófugo/látex para La Plata, ronda de 5 días. Verifica matching por catálogo concreto y ubicación y que cada negocio reciba solo su alcance; reintentos no duplican invitaciones.
+- Verificados 0 proveedores/catalogo/empresas reales cargados en Supabase DEV (solo lectura). Documento operativo docs/176, Issue #325.
+- Sin envío Whapi, sin conectar API IA real, sin modificar Supabase DEV/producción ni usuarios OFI.
+
 ## MVP-055 — Canal WhatsApp central reutilizando aprendizaje de OFI (desarrollo)
 - Verificado repo privado `ProtectorRudo/ofi` rama `ofi-v2`: distribución por remitente verificado sobre un único canal Whapi; se adopta el diseño, nunca las credenciales ni datos.
 - Añadido test multiproveedor/comprador D083 con un solo número central, replay sin duplicados, identidad cifrada y rechazo de remitentes ilegítimos. Cotironda no impone límite artificial de 5 chats (solo Sandbox Whapi aplica ese cupo).
