@@ -799,3 +799,6 @@
 
 ### 31/10/2026 — MVP-037: corregir permisos de carpetas privadas en asistente de backup
 - Se detectó que `mkdir -p -m 700` no asegura permisos sobre carpetas preexistentes. Preflight con Node22 comprueba propietario actual, rutas privadas sin symlinks, HOME no manipulable y bits grupo/otros de keys/backup en 0 antes de generar clave age o leer conexión. Pruebas con chmod/symlink reales sobre fixtures; sin ejecutar backup real ni modificar Supabase/Vercel/Whapi. Ver docs/157, Issue #287 y gate pendiente #175.
+
+### 31/10/2026 — MVP-038: una ronda ficticia completa y navegable
+- Ruta móvil `/probar/piloto` une pedido real escrito por el usuario con respuestas **ficticias editables** de A/B y el comparador económico ya existente, IVA/flete desconocidos sin ranking engañoso, selección solo visual y sin persistencia. CTA desde `/`, enlace desde `/probar`; pruebas de dominio y smoke SSR. Sin DB DEV, WhatsApp, producción o DNS; #175 permanece bloqueante.
