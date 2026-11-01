@@ -6,6 +6,8 @@
  */
 import {extraerLinea} from './flujo-texto.ts';
 import {identificarProducto} from './taxonomia-materiales.ts';
+import {encabezadoTablaMvp034,filaTablaMvp034,
+ type OrdenTablaMvp034} from './filas-copiadas-mvp034.ts';
 import {separarCondicionesComprador,type ExigenciaIva}
  from './condiciones-comprador-mvp006.ts';
 
@@ -68,9 +70,20 @@ export function prepararPedidoTextoMvp028(
   pend.push({linea:0,texto:'IVA',motivo:REASON.vat});
  const items:PedidoPilotoMvp028['items'][number][]=[];
  const codes=new Set<string>();
+ let ordenTabla:OrdenTablaMvp034|null=null;
+ let totalArticulos=0;
  for(const row of materiales){
-  const clean=row.texto.replace(/^(?:[-*•]\s+|\d{1,3}[).]\s+)/u,'').trim();
-  const parsed=extraerLinea(clean);
+  const encabezado=encabezadoTablaMvp034(row.texto);
+  if(encabezado&&totalArticulos===0&&ordenTabla===null){
+   ordenTabla=encabezado;
+   continue;
+  }
+  totalArticulos++;
+  const tabulada=row.texto.includes('\t')?
+   filaTablaMvp034(row.texto,ordenTabla):null;
+  const clean=(tabulada?.normalizada??row.texto)
+   .replace(/^(?:[-*•]\s+|\d{1,3}[).]\s+)/u,'').trim();
+  const parsed=row.texto.includes('\t')&&!tabulada?null:extraerLinea(clean);
   if(!parsed){
    pend.push({linea:row.numero,texto:row.texto,motivo:REASON.parse});continue;
   }
@@ -81,7 +94,8 @@ export function prepararPedidoTextoMvp028(
   // a plain "yeso RH" would lose the D015 family evidence.
   const plate=parsed.unidad==='unit'?
    clean.match(/^\d{1,6}(?:[,.]\d{1,3})?\s+(placas?)\s+(de\s+)?(.+)$/iu):null;
-  const literal=plate?(plate[1]+' '+(plate[2]??'')+plate[3]).trim():parsed.producto;
+  const literal=tabulada?.descripcionOriginal??
+   (plate?(plate[1]+' '+(plate[2]??'')+plate[3]).trim():parsed.producto);
   const product=identificarProducto(literal);
   if(!product){
    pend.push({linea:row.numero,texto:row.texto,motivo:REASON.product});continue;
@@ -100,7 +114,7 @@ export function prepararPedidoTextoMvp028(
    source_description:literal
   });
  }
- if(materiales.length>8)
+ if(totalArticulos>8)
   pend.push({linea:0,texto:'Cantidad de artículos',motivo:REASON.tooMany});
  if(items.length===0)
   pend.push({linea:0,texto:'Pedido',motivo:'No hay materiales identificados con seguridad.'});
