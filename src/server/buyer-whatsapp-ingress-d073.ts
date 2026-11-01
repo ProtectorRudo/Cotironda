@@ -134,10 +134,10 @@ export function crearConsumidorCompradorWhatsappD073(config:Readonly<{
   let parsed:ReturnType<typeof prepararPedidoTextoMvp028>;
   let plazoDias:number;
   try{
-   const solicitud=extraerPlazoCotizacionMvp053(raw);
+   const solicitud=extraerPlazoCotizacionMvp053(
+     separarListaWhatsappNaturalMvp058(raw));
    plazoDias=solicitud.dias;
-   parsed=prepararPedidoTextoMvp028(
-     separarListaWhatsappNaturalMvp058(solicitud.textoMateriales),zone);
+   parsed=prepararPedidoTextoMvp028(solicitud.textoMateriales,zone);
   }catch{
    return done('requiere_revision_interna');
   }
