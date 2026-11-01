@@ -7,7 +7,7 @@ select v.k,encode(sha256(convert_to(repeat(v.ch,32),'UTF8')),'hex'),
 clock_timestamp()+interval '1 hour'
 from (values ('arquitecto','a'),('corralon_ailin','c'),('corralon_nahuel','e')) v(k,ch);
 do $qa$
-declare v jsonb; r uuid; n integer; token uuid;
+declare v jsonb; held jsonb; r uuid; n integer; token uuid;
 begin
  perform public.cotironda_piloto_enroll_whapi_v1(repeat('a',32),repeat('b',64));
  perform public.cotironda_piloto_enroll_whapi_v1(repeat('c',32),repeat('d',64));
@@ -31,6 +31,7 @@ begin
  token:=(v->>'lease_token')::uuid;
  if public.cotironda_piloto_authorize_whapi_v1(r,v->>'supplier_key',token) is not true
  then raise exception 'send_authorization_failed';end if;
+ held:=v;
  -- BAJA del comprador bloquea incluso un lease ya adquirido, antes del API POST.
  if (public.cotironda_piloto_optout_whapi_v1(repeat('b',64))->>'state')<>'opted_out'
  then raise exception 'buyer_optout_failed';end if;
@@ -41,6 +42,7 @@ begin
  -- Restablecer la prueba sintética sin reenrolar un nuevo chat.
  update cotironda_piloto_privado.participants
  set consent_at=clock_timestamp(),opted_out_at=null where key='arquitecto';
+ v:=held;
 
  if public.cotironda_piloto_finish_whapi_v1(r,v->>'supplier_key',token,'api_accepted','example-msg-123') is not true
  then raise exception 'finish_failed';end if;
