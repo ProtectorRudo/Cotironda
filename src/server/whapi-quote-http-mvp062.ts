@@ -44,7 +44,7 @@ export async function atenderCotizacionesMvp062(req:Request,config:Readonly<{
  if(!equal(req.headers.get('x-cotironda-quote-worker-key')??'',secret))
   return res(401,{error:'acceso_no_autorizado'});
  const len=req.headers.get('content-length');
- if(req.body!==null||(len!==null&&(!/^\\d+$/u.test(len)||Number(len)!==0)))
+ if(req.body!==null||(len!==null&&(!/^\d+$/u.test(len)||Number(len)!==0)))
   return res(415,{error:'cuerpo_no_admitido'});
  if(typeof config.abrirRecursos!=='function')
   return res(503,{error:'cotizador_no_configurado'});
