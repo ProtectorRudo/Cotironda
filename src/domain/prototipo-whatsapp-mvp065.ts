@@ -82,7 +82,7 @@ function plantilla(
    ...materials.slice(0,1),
    'Entrega: flete a convenir',
    'TOTAL DECLARADO: '+fmt(
-    scoped.length>0?cantidad(scoped[0].quantity)*9100:0),
+    scoped.length>0?cantidad(scoped[0].quantity)*(prices[scoped[0].product_code]??0):0),
    'Observación: cotización parcial; IVA no aclarado.'
   ].join('\n');
  }
