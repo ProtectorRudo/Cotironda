@@ -45,6 +45,12 @@ export function parseBuyerPilot(raw:string):ParsedBuyer{
  }
  return {city,items,unresolved};
 }
+/** A pedido con artículos omitidos o sin localidad nunca autoriza invitaciones. */
+export function canPrepareBuyerPilot(parsed:ParsedBuyer):boolean{
+ return typeof parsed.city==='string'&&parsed.city.length>=3&&
+  parsed.items.length>0&&parsed.items.length<=8&&parsed.unresolved.length===0;
+}
+
 export function validMessage(message:unknown, now:number):message is {
  id:string;from_me:false;type:'text'|'image'|'document'|'audio'|'voice';
  chat_id:string;from?:string;timestamp:number;text?:{body:string};
