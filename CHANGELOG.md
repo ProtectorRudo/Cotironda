@@ -819,3 +819,6 @@
 
 ### 01/11/2026 — MVP-043: inbox comprador SQL/RLS y gateway Whapi dual
 - Nuevo D074 con tablas privadas de chat comprador HMAC y mensajes AES-GCM, resolución verificada, BAJA idempotente, prevención del mismo chat comprador/proveedor, RLS/EXECUTE-only y cifrado AES key-id. Adaptador JS para gateway dual sobre D030, pruebas SQL PG17 sintéticas y unitarias de permisos/parametrización. **Sin migración DEV ni Whapi real**, bloqueo #175 intacto. Ver docs/163.
+
+### 01/11/2026 — MVP-044: lector SQL cifrado del WhatsApp comprador al procesador de pedidos
+- D076 privado para recuperar inbox D074 solo con consentimiento actual y sin doble rol, permisos NOLOGIN/EXECUTE-only y RLS. Adaptador Node sin red ni secreto para validar ciphertext AES-GCM AAD del comprador y pasar texto validado al motor D073 (que prepara pregunta de zona o ronda vía puertos transaccionales). SQL PG17 CI, pruebas de eventos cifrados y regresión. **No webhooks vivos ni migraciones instaladas en DEV**. Ver docs/164, gate de respaldo #175.
