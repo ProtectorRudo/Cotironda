@@ -1,5 +1,11 @@
 # Registro de cambios
 
+## MVP-055 — Canal WhatsApp central reutilizando aprendizaje de OFI (desarrollo)
+- Verificado repo privado `ProtectorRudo/ofi` rama `ofi-v2`: distribución por remitente verificado sobre un único canal Whapi; se adopta el diseño, nunca las credenciales ni datos.
+- Añadido test multiproveedor/comprador D083 con un solo número central, replay sin duplicados, identidad cifrada y rechazo de remitentes ilegítimos. Cotironda no impone límite artificial de 5 chats (solo Sandbox Whapi aplica ese cupo).
+- Documentado onboarding Whapi, límites reales, costos por canal, cinco conversaciones piloto y bloqueo de ruta 503; docs/175, issue #323.
+- No se conectó ni contrató Whapi, no se modificó OFI, Supabase DEV, DNS, main ni producción.
+
 ## MVP-054 — Reloj de cierre y finalistas anónimos por rubro (sin publicar)
 - SQL D086 transiciona rondas por hora del servidor con lock y rol privado; recupera programadas vencidas sin doble cierre.
 - Módulo puro de finalistas por rubro utiliza motor D039/D022, no mezcla parciales ni revela datos; pruebas PG17/Node, Issue #321 y docs/174.
