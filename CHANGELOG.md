@@ -1,3 +1,10 @@
+
+## MVP-072 — base PostgreSQL piloto aislado instalada (01/11/2026)
+- Migración independiente `mvp072_pilot_private_runtime_and_seed` aplicada en Supabase piloto Free; cero cambios a DEV histórica y Te Hice Esto.
+- 3 participantes ficticios; 51+51 renglones idénticos, sin precios/telefonía. 41 familias curadas y 10 retenidas por negocio. Tablas privadas RLS; 0 permisos web; 0 WhatsApps; presupuestos inmutables y antirreplay.
+- SQL E2E transaccional real: 2 destinatarios en La Plata, 0 en Berisso, originales inmutables, mensaje duplicado rechazado; rollback confirmado.
+- Nuevos test y docs/192. Pendiente identidad/consentimiento/Whapi E2E.
+
 # Registro de cambios
 
 ## MVP-071 — pantalla integrada de ensayo un arquitecto y dos corralones
