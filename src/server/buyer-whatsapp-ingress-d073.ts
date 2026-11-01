@@ -36,6 +36,7 @@ export type PuertoCompradorD073=Readonly<{
  // same stored round. It must atomically clear waiting-zone state.
  crearRonda:(input:Readonly<{
    buyerOrgId:string;chatKey:string;channel:string;originMessageKey:string;
+   replyMessageKey:string;
    pedido:Omit<BuyerRoundInputD064,'requestId'|'companyId'>;
  }>)=>Promise<Readonly<{roundId:string;repetida:boolean}>>;
  // Invoke private D071 only AFTER round COMMIT. D071 is idempotent, queues
@@ -156,6 +157,7 @@ export function crearConsumidorCompradorWhatsappD073(config:Readonly<{
    saved=await config.puerto.crearRonda({
     buyerOrgId:source.buyerOrgId,chatKey:source.chatKey,
     channel:config.channel,originMessageKey,
+    replyMessageKey:source.messageKey,
     pedido:{
      deliveryZone:parsed.zonaEntrega,vatRequest:parsed.vatRequest,
      items:parsed.items
