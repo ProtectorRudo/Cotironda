@@ -50,7 +50,7 @@ export function formatearConsultaProveedorD066(input:unknown){
    month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',
    hourCycle:'h23'
   }).format(new Date(input.deadlineAt));
-  fechaLimite='\\nFecha límite para cotizar: '+fecha+' (hora de Argentina).';
+  fechaLimite='\nFecha límite para cotizar: '+fecha+' (hora de Argentina).';
  }
  const lines:string[]=[];
  const seen=new Set<number>(),products=new Set<string>();
