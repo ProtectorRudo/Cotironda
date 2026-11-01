@@ -54,7 +54,7 @@ function request({method='POST',secret=SECRET,body=false}={}){
  });
 }
 function mock({badLogin=false,wrongRole=false,beginsFail=false,
- authorize=false,failRead=false}={}){
+ authorize=true,failRead=false}={}){
  const s={calls:[],connections:0,closes:0,releases:0,sent:0,started:false,
  taken:false,finished:null,redacted:[]};
  const factory=(url,opts)=>{
