@@ -101,16 +101,16 @@ begin
  then raise exception 'd077_contact_not_authorized' using errcode='42501';end if;
  select * into v_current from cotironda_private.buyer_zone_pending_d077
   where channel_id=p_channel and chat_key=p_chat;
- if found and v_current.expires_at>v_now and v_current.consumed_round_id is null then
-  if v_current.origin_message_key<>p_origin or v_current.buyer_org_id<>p_buyer
-   then raise exception 'd077_pending_other_request' using errcode='42501';end if;
-  return pg_catalog.jsonb_build_object('estado','zona_solicitada_en_cola','repetido',true);
- end if;
  -- Old webhook replay, even after expiry/newer requests, must NOT
  -- resurrect an already-questioned origin or manufacture another send.
  if exists(select 1 from cotironda_private.buyer_zone_question_d077 q
   where q.channel_id=p_channel and q.origin_message_key=p_origin)
  then
+  return pg_catalog.jsonb_build_object('estado','zona_solicitada_en_cola','repetido',true);
+ end if;
+ if found and v_current.expires_at>v_now and v_current.consumed_round_id is null then
+  if v_current.origin_message_key<>p_origin or v_current.buyer_org_id<>p_buyer
+   then raise exception 'd077_pending_other_request' using errcode='42501';end if;
   return pg_catalog.jsonb_build_object('estado','zona_solicitada_en_cola','repetido',true);
  end if;
  insert into cotironda_private.buyer_zone_pending_d077(
