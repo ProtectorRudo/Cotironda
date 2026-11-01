@@ -1,5 +1,8 @@
 # Cotironda
 
+> **MVP-072 — piloto PostgreSQL aislado REAL**: `cotironda-piloto` ref `ilggkalaafhtiysyzlmg` contiene 3 participantes de ensayo y 2 catálogos idénticos con 51 materiales cada uno. Familias reconocidas: 41 por comercio; 10 por comercio pendientes de curación. Pruebas SQL La Plata/Berisso, presupuesto literal, antirreplay y RLS: aprobadas. **Todavía NO recibe ni envía WhatsApp.** Ver [docs/192](docs/192-mvp-072-piloto-instalado.md); SQL en `supabase/piloto/mvp072_runtime_aislado.sql`. DEV histórica pausada para liberar cuota y Te Hice Esto intacto.
+
+
 > **MVP-071 — ensayo integrado 1+2 en `/probar/tres-telefonos`**: catálogos iniciales idénticos de 51 materiales, distribución por producto y localidad, dos presupuestos originales íntegros (pallets, bolsones, flete, descuentos, total). Sin ranking engañoso. **Solo simulación en navegador, sin WhatsApp ni SQL real.** Bloqueo #175 documentado en [docs/191](docs/191-mvp-071-ruta-critica-piloto-tres.md).
 
 
