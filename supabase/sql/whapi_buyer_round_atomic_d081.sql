@@ -86,35 +86,56 @@ create policy d081_pending_read on cotironda_private.buyer_zone_pending_d077
 create policy d081_pending_write on cotironda_private.buyer_zone_pending_d077
  for update to cotironda_whapi_round_writer_d081 using(true) with check(true);
 
--- A re-delivered WhatsApp reply must still have an authenticated original
--- after the pending state was marked consumed, but ONLY that precise reply.
--- Existing D077 reader role already has SELECT; owner remains unchanged.
+-- Replays need immutable source history even after a subsequent NEW pending.
+grant select on cotironda_private.buyer_whapi_round_sources_d081
+ to cotironda_buyer_reader_d076;
+create policy d081_reader_history on cotironda_private.buyer_whapi_round_sources_d081
+ for select to cotironda_buyer_reader_d076 using(true);
+
+-- A re-delivered WhatsApp reply keeps the original authenticated request,
+-- including if the architect has since asked for a new batch of materials.
+-- Prioritize immutable completed mapping before the active pending.
 create or replace function cotironda_private.whapi_zone_context_d077(
  p_channel text,p_message text
 ) returns jsonb language plpgsql stable security definer set search_path='' as $fn$
 declare
  v_entry jsonb;v_origin jsonb;
+ v_old_key text;
  v_pending cotironda_private.buyer_zone_pending_d077%rowtype;
 begin
  v_entry:=cotironda_private.whapi_buyer_read_d076(p_channel,p_message);
  if v_entry is null then return null;end if;
- select * into v_pending from cotironda_private.buyer_zone_pending_d077
- where channel_id=p_channel and chat_key=v_entry->>'chatKey'
-  and buyer_org_id=(v_entry->>'buyerOrgId')::uuid
-  and origin_message_key<>p_message
-  and source_unix<(v_entry->>'sourceUnix')::bigint
-  and (
-    (consumed_round_id is null and expires_at>pg_catalog.clock_timestamp())
-    or (consumed_round_id is not null and consumed_by_message_key=p_message)
-  );
- if found and v_entry->>'kind'='text' then
-  v_origin:=cotironda_private.whapi_buyer_read_d076(
-   p_channel,v_pending.origin_message_key);
-  if v_origin is null or v_origin->>'kind'<>'text'
-   or v_origin->>'chatKey'<>v_entry->>'chatKey'
-   or v_origin->>'buyerOrgId'<>v_entry->>'buyerOrgId'
-   or (v_origin->>'sourceUnix')::bigint<>v_pending.source_unix
-  then v_origin:=null;end if;
+ if v_entry->>'kind'='text' then
+  select s.origin_message_key into v_old_key
+  from cotironda_private.buyer_whapi_round_sources_d081 s
+  where s.channel_id=p_channel and s.reply_message_key=p_message
+    and s.origin_message_key<>p_message
+    and s.chat_key=v_entry->>'chatKey'
+    and s.buyer_org_id=(v_entry->>'buyerOrgId')::uuid;
+  if not found then
+   select * into v_pending from cotironda_private.buyer_zone_pending_d077
+   where channel_id=p_channel and chat_key=v_entry->>'chatKey'
+    and buyer_org_id=(v_entry->>'buyerOrgId')::uuid
+    and origin_message_key<>p_message
+    and source_unix<(v_entry->>'sourceUnix')::bigint
+    and (
+      (consumed_round_id is null and expires_at>pg_catalog.clock_timestamp())
+      or (consumed_round_id is not null and consumed_by_message_key=p_message)
+    );
+   if found then v_old_key:=v_pending.origin_message_key;end if;
+  end if;
+  if v_old_key is not null then
+   v_origin:=cotironda_private.whapi_buyer_read_d076(
+    p_channel,v_old_key);
+   if v_origin is null or v_origin->>'kind'<>'text'
+    or v_origin->>'chatKey'<>v_entry->>'chatKey'
+    or v_origin->>'buyerOrgId'<>v_entry->>'buyerOrgId'
+    or (v_origin->>'sourceUnix')::bigint >= (v_entry->>'sourceUnix')::bigint
+    or (v_pending.origin_message_key is not null
+      and v_pending.origin_message_key=v_old_key and
+      (v_origin->>'sourceUnix')::bigint<>v_pending.source_unix)
+   then v_origin:=null;end if;
+  end if;
  end if;
  return pg_catalog.jsonb_build_object('entry',v_entry,'original',v_origin);
 end;$fn$;
