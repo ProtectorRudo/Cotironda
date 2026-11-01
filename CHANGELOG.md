@@ -790,3 +790,6 @@
 
 ### 31/10/2026 — MVP-034: pegar desde planillas sin reescribir materiales
 - Soporte estricto para pegar tres columnas de Excel (texto TSV) en el campo comprador existente: dos órdenes reconocibles, encabezado exacto opcional, fuente literal conservada y aclaraciones por línea para filas dudosas o contenido peligroso. Sin subir archivos ni ejecutar fórmulas; reutiliza D064 y sus verificaciones. Añadida suite de regresiones, explicación de UI y docs/154. Sin tocar base DEV, WhatsApp, dominio ni producción; #175 abierto.
+
+### 31/10/2026 — MVP-035: asistente local para obtener respaldo cifrado de DEV
+- Un único comando en una PC privada prepara identidad age, pide URL sin eco y reutiliza `cotironda-private-backup-d075.mjs`; comprobación fail-closed ante cloud/CI/no-TTY, cero SQL en claro guardado. Suma pruebas offline y runbook docs/155; **no hubo dump de DEV ni restore genuino**. No cambia Supabase, Whapi, DNS, env ni producción. #175 permanece abierto.
