@@ -57,7 +57,7 @@ try{
  assert.match(recorridoHtml,/SIMULACIÓN/);
  assert.match(recorridoHtml,/Preparar pedido/);
  assert.match(recorridoHtml,/No se envía WhatsApp ni se registra una ronda real/);
- assert.doesNotMatch(recorridoHtml,/action="\\/api\\//,
+ assert.equal(recorridoHtml.includes('action="/api/'),false,
   'La simulación integral nunca debe tener formulario comercial HTTP');
  assert.equal((await get('/probar/piloto',{method:'POST'})).status,405);
  const mvp=await get('/probar');
