@@ -14,6 +14,9 @@ import type {AlmacenWhapiPrivado,EntradaCifradaD028,
 export type PuertoPostgresD030=Readonly<{
   query:(sql:string,params:readonly unknown[])=>
     Promise<Readonly<{rows:readonly Record<string,unknown>[] }>>;
+  // For one-request connections opened by an HTTP adapter. Never close a
+  // shared pool here; the injected owner decides the appropriate lifecycle.
+  cerrar?:()=>Promise<void>;
 }>;
 
 const CHANNEL=/^[A-Za-z0-9_-]{4,64}$/;
