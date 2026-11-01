@@ -1,18 +1,28 @@
 import {atenderWebhookWhapiPreviewD083}
  from '../../../../../../src/server/whapi-preview-http-d083.ts';
+import {abrirPuertoWhapiPreviewD088}
+ from '../../../../../../src/server/whapi-postgres-driver-d088.ts';
 
 export const runtime='nodejs';
 export const dynamic='force-dynamic';
 export const revalidate=0;
 
 /**
- * Preview-only receiver. Intentionally cannot be enabled with env vars alone:
- * a verified private PostgreSQL gateway provider must be wired after real
- * Supabase DEV backup+restore #175 and explicit pilot approval.
- * No service_role, public SQL RPC, token, memory fallback or outbound send.
+ * Private, OFF by default. D083 authenticates the callback and verifies
+ * Preview/branch BEFORE calling abrirPuertoSql, which is the ONLY point at
+ * which the postgres package is dynamically loaded. D088 rejects admin
+ * credentials, pooler 6543, another project, missing CA and other hosts.
+ * NO Webhooks, database migrations, or sends have been activated here.
  */
 export async function POST(req:Request):Promise<Response>{
- return atenderWebhookWhapiPreviewD083(req,{env:process.env});
+ return atenderWebhookWhapiPreviewD083(req,{
+  env:process.env,
+  abrirPuertoSql:()=>abrirPuertoWhapiPreviewD088(process.env,
+   async()=>{
+    const {default:postgres}=await import('postgres');
+    return postgres;
+   })
+ });
 }
 export async function GET(req:Request):Promise<Response>{
  return atenderWebhookWhapiPreviewD083(req,{env:process.env});
