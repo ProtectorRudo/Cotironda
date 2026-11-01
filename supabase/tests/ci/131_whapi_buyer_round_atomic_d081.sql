@@ -122,8 +122,6 @@ select ci_helpers.assert_true(
  and (select count(*)=1 from cotironda_private.buyer_whapi_round_sources_d081
   where origin_message_key=repeat('1',64)),
  'd081_direct_round_uses_d064_data_without_forged_user');
--- Explicitly trigger deferred check: every NULL created_by has proven source.
-set constraints d081_whapi_provenance_after_insert immediate;
 
 -- A missing zone is registered once. Reply is bound to the existing encrypted
 -- original; creation consumes that pending atomically and preserves replay.
@@ -224,6 +222,8 @@ select pg_temp.d081_fail(
   'aaaaaaaa-0081-4081-8081-000000000812','La Plata',
   'sin_iva',pg_temp.items_d081())$$,
  'd081_buyer_not_authorized');
+-- Verify deferred provenance only after all D081 calls have committed their source.
+set constraints d081_whapi_provenance_after_insert immediate;
 select ci_helpers.assert_true(
  (select count(*)=2 from cotironda_private.buyer_whapi_round_sources_d081
   where channel_id='d081_ci'),
