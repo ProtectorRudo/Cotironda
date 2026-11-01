@@ -25,6 +25,7 @@ export default function Probar(){
        <strong>Demostración con proveedores ficticios.</strong>
        <span> No ingreses datos personales ni presupuestos comerciales. No hay envíos, precios reales, IA externa ni adjudicaciones.</span>
      </aside>
+     <p><a href="/probar/whatsapp" className="mvp-tag">Ver nuevo prototipo WhatsApp (3 comercios)</a></p>
      <DemostracionComprador/>
    </div>
  </main>;
