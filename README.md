@@ -1,5 +1,7 @@
 # Cotironda
 
+> **MVP-058 (lectura de texto WhatsApp en desarrollo, sin envíos):** el arquitecto puede escribir cemento, hidrófugo y látex con cantidades en **un solo mensaje**, seguido de `Entrega: La Plata.`. El parser D073 conserva cada cantidad y deriva familia/canal mediante D028, consulta la zona solo si falta y retiene ambigüedades sin inventar. [Detalles y pruebas](docs/178-mvp-058-lista-natural-whatsapp.md). Supabase comercial y Whapi reales siguen pendientes.
+
 > **MVP-057 (conexión PostgreSQL preparada, sin desplegar):** el endpoint HTTPS Whapi Preview ahora tiene driver Postgres.js 3.4.9 en sesión reservada, TLS verificado y rol técnico limitado a seis RPC. Rol D089 sin contraseña y validaciones contra DB DEV y usuario correcto; pruebas CI. **Sigue apagado hasta instalar SQL DEV y configurar secretos privados; no procesa mensajes reales todavía.** [docs/177](docs/177-mvp-057-webhook-postgres-sesion-real.md). #327.
 
 > **MVP-056 (ensayo integral en PostgreSQL CI, sin envío real):** un pedido WhatsApp de arquitecto en La Plata con tres materiales y plazo de 5 días se distribuye entre **dos corralones y una pinturería** por catálogo, rubro y zona. Preparación sin duplicados y sin mensajes enviados. **Supabase DEV no tiene comercios ni productos reales cargados**. [Ver prueba y pendientes](docs/176-mvp-056-ensayo-arquitecto-tres-comercios.md). #325.
