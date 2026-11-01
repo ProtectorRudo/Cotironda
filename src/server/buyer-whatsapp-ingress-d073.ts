@@ -6,6 +6,7 @@
  * buyer-company binding, explicit sharing consent and durable idempotency.
  */
 import {prepararPedidoTextoMvp028} from '../domain/pedido-piloto-mvp028.ts';
+import {extraerPlazoCotizacionMvp053} from '../domain/plazo-cotizacion-mvp053.ts';
 import type {BuyerRoundInputD064} from './buyer-round-create-http-d064.ts';
 
 type CanalEntrada='text'|'document'|'image'|'audio'|'voice';
@@ -37,7 +38,7 @@ export type PuertoCompradorD073=Readonly<{
  crearRonda:(input:Readonly<{
    buyerOrgId:string;chatKey:string;channel:string;originMessageKey:string;
    replyMessageKey:string;
-   pedido:Omit<BuyerRoundInputD064,'requestId'|'companyId'>;
+   pedido:Omit<BuyerRoundInputD064,'requestId'|'companyId'> & {plazoDias:number};
  }>)=>Promise<Readonly<{roundId:string;repetida:boolean}>>;
  // Invoke private D071 only AFTER round COMMIT. D071 is idempotent, queues
  // by (round,supplier,channel); it does NOT send any actual WhatsApp.
@@ -130,7 +131,12 @@ export function crearConsumidorCompradorWhatsappD073(config:Readonly<{
   if(pending&&!zone)return done('requiere_revision_interna');
   const raw=pending?pending.textoOriginal:source.textoVerificado;
   let parsed:ReturnType<typeof prepararPedidoTextoMvp028>;
-  try{parsed=prepararPedidoTextoMvp028(raw,zone)}catch{
+  let plazoDias:number;
+  try{
+   const solicitud=extraerPlazoCotizacionMvp053(raw);
+   plazoDias=solicitud.dias;
+   parsed=prepararPedidoTextoMvp028(solicitud.textoMateriales,zone);
+  }catch{
    return done('requiere_revision_interna');
   }
   const other=parsed.pendientes.some(p=>p.motivo!==
@@ -160,7 +166,7 @@ export function crearConsumidorCompradorWhatsappD073(config:Readonly<{
     replyMessageKey:source.messageKey,
     pedido:{
      deliveryZone:parsed.zonaEntrega,vatRequest:parsed.vatRequest,
-     items:parsed.items
+     plazoDias,items:parsed.items
     }
    });
   }catch{fail()}
