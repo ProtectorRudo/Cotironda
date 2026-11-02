@@ -1,3 +1,8 @@
+## MVP-104 — mensajes de inicio/recepción del circuito WhatsApp (02/11/2026)
+- Corregido el faltante del enlace de seguimiento para pedidos originados en foto/PDF y para documentos completados por localidad o unidades: el token se emite únicamente al crear ronda y queda asociado a su archivo original autenticado, no al mensaje de aclaración. El texto confirma recepción y que Cotironda reunirá cotizaciones.
+- Acuse breve y único al proveedor cuando se guardó una cotización textual o el original documental con recibo pendiente de fidelidad; ledger SQL privado, HMAC, consentimiento, invitación, vencimiento, protección de duplicados y entregas inciertas sin reintentos ciegos. Medios se vinculan por archivo archivado, aunque `whapi_inbox.request_id` sea nulo.
+- Prueba PostgreSQL 17 real y reversible de ambos caminos (texto y PDF), privacidad, enlaces y anti-replay PASS; sin instalación, WhatsApps reales ni producción. Docs/221, Issue #419.
+
 ## MVP-103 — cálculo económico privado y exacto de presupuestos documentales (02/11/2026)
 - Tras dos lecturas concordantes, el receptor prepara una auditoría determinista que comprueba importes literales, multiplicación cantidad × precio unitario, descuentos, pallets/bolsones/flete y total declarado, sin sobreescribir la cotización original.
 - Los importes inequívocos se normalizan exclusivamente a centavos enteros; `$ 7.000` aislado sigue como ambiguo. El estado interno distingue `balanced`, `difference`, `needs_review`, pero **no autoriza ranking ni prueba fidelidad física al PDF**.

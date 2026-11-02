@@ -283,6 +283,10 @@ async function respond(req:Request):Promise<Response>{
   let parsed=local;
   let aiReply:ReplyCode|null=null;
   let mediaClarificationBody:string|null=null;
+  // The source HMAC is the ORIGINAL buyer file, even when a later
+  // locality clarification is what finally makes a round eligible.
+  let preparedDocumentSourceHmac:string|null=null;
+  let supplierAckMode:'text_quote'|'media_quote'|null=null;
   // OpenAI is optional and off by default. The server-side DB gate is
   // durable, one-per-HMAC, buyer-only and capped at 12 calls per day.
   // Supplier quote ingestion never passes through this classifier.
@@ -355,6 +359,7 @@ async function respond(req:Request):Promise<Response>{
   if(!['recorded','duplicate','unrecognized_contact','needs_zone',
        'needs_review','quote_recorded','unmatched_quote'].includes(outcome(out.data)))
    return json(503,'storage_unavailable');
+  if(outcome(out.data)==='quote_recorded')supplierAckMode='text_quote';
   // Archive original incoming PDF, Excel, Word or photo ONLY after
   // committed authenticated inbox and supplier/buyer consent SQL check.
   // No interpretation can distribute until independently reviewed.
@@ -437,6 +442,8 @@ async function respond(req:Request):Promise<Response>{
                       p_message_hmac:messageHash
                     });
                     if(prepared.error)console.warn('cotironda_document_preparation_reconciliation_required');
+                    else if(prepared.data?.state==='prepared')
+                      preparedDocumentSourceHmac=messageHash;
                     else if(prepared.data?.state!=='prepared'){
                       const missing=await db.rpc('cotironda_piloto_clarification_preview_mvp100',{
                         p_message_hmac:messageHash
@@ -459,6 +466,7 @@ async function respond(req:Request):Promise<Response>{
                 });
                 if(receipt.error)console.warn('cotironda_supplier_media_reconciliation_required');
                 else if(receipt.data?.state==='stored_unverified'){
+                  supplierAckMode='media_quote';
                   // Both calls already analyzed the exact archived bytes.
                   // A failed/missing second reading is logged as needing
                   // source review, never retried or treated as a valid price.
@@ -508,6 +516,8 @@ async function respond(req:Request):Promise<Response>{
           p_message_hmac:linked.data.source_message_hmac
         });
         if(ready.error)console.warn('cotironda_document_context_promotion_reconciliation_required');
+        else if(ready.data?.state==='prepared')
+          preparedDocumentSourceHmac=linked.data.source_message_hmac;
       }
     }
   }
@@ -529,6 +539,8 @@ async function respond(req:Request):Promise<Response>{
           p_message_hmac:linked.data?.source_message_hmac??''
         });
         if(ready.error)console.warn('cotironda_document_zone_promotion_reconciliation_required');
+        else if(ready.data?.state==='prepared')
+          preparedDocumentSourceHmac=linked.data.source_message_hmac;
       }
     }
   }
@@ -575,13 +587,15 @@ async function respond(req:Request):Promise<Response>{
   // Send ONE tracking link to the authenticated buyer who just created a
   // genuine new round. The URL fragment avoids token leakage in GET logs.
   // Never send a link on replay, unrelated text, quote, or enrolment.
-  if(sec.outbound&&row.type==='text'&&outcome(out.data)==='recorded'&&
-     canPrepareBuyerPilot(parsed)){
+  const trackingSourceHmac=preparedDocumentSourceHmac??
+   (row.type==='text'&&outcome(out.data)==='recorded'&&
+    canPrepareBuyerPilot(parsed)?messageHash:null);
+  if(sec.outbound&&trackingSourceHmac){
    const rand=crypto.getRandomValues(new Uint8Array(32));
    const token=toHex(rand.buffer);
    const tokenHash=await sha(token);
    const issue=await db.rpc('cotironda_piloto_issue_tracking_mvp091',{
-    p_buyer_chat_hmac:chatHash,p_source_hmac:messageHash,p_token_hash:tokenHash
+    p_buyer_chat_hmac:chatHash,p_source_hmac:trackingSourceHmac,p_token_hash:tokenHash
    });
    if(issue.error)return json(503,'tracking_unavailable');
    if(issue.data?.state==='issued'){
@@ -594,7 +608,7 @@ async function respond(req:Request):Promise<Response>{
       method:'POST',headers:{Authorization:'Bearer '+sec.token,
        'Content-Type':'application/json'},
       body:JSON.stringify({to:row.chat_id,
-       body:'Cotironda recibió tu solicitud. Seguís las cotizaciones acá: '+
+       body:'Cotironda ya tiene los datos de tu pedido. Ahora nos encargamos de reunir las mejores cotizaciones. Seguí el avance acá: '+
         link+'\nLos presupuestos se mantienen cerrados hasta que termine el plazo.'}),
       signal:AbortSignal.timeout(12000)
      });
@@ -611,6 +625,36 @@ async function respond(req:Request):Promise<Response>{
      // No automatic retry: unknown Whapi delivery is not safe to duplicate.
     }
    }
+  }
+ }
+ // Acknowledge a supplier ONLY after their authenticated quote was
+ // durably captured. Media receipt is explicitly pending source review.
+ // One ledger reservation per message; uncertain Whapi results never retry.
+ if(sec.outbound&&supplierAckMode){
+  const reserved=await db.rpc('cotironda_piloto_reserve_supplier_ack_mvp104',{
+   p_message_hmac:messageHash,p_chat_hmac:chatHash,p_mode:supplierAckMode
+  });
+  if(reserved.error)return json(503,'supplier_ack_reservation_unavailable');
+  if(reserved.data===true){
+   let ackState:'api_accepted'|'uncertain'='uncertain';
+   try{
+    const response=await fetch('https://gate.whapi.cloud/messages/text',{
+     method:'POST',headers:{Authorization:'Bearer '+sec.token,
+      'Content-Type':'application/json'},
+     body:JSON.stringify({to:row.chat_id,
+      body:'¡Gracias! Recibimos tu presupuesto. Lo estamos procesando en Cotironda.'}),
+     signal:AbortSignal.timeout(12000)
+    });
+    const value=response.ok?await response.json().catch(()=>null):null;
+    if(response.ok&&value&&typeof value==='object'&&
+      (value as Record<string,unknown>).sent===true)
+      ackState='api_accepted';
+   }catch{/* uncertain is terminal until manual delivery reconciliation */}
+   const finished=await db.rpc('cotironda_piloto_finish_supplier_ack_mvp104',{
+    p_message_hmac:messageHash,p_state:ackState
+   });
+   if(finished.error||finished.data!==true)
+    return json(503,'supplier_ack_reconciliation_required');
   }
  }
  try{await dispatchTwo(sec,db)}catch{return json(503,'dispatch_reconciliation_required')}
