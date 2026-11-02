@@ -64,8 +64,8 @@ begin
  or (select classified_family from cotironda_piloto_privado.document_lines_mvp098
     where message_hmac=source and line_no=2)<>'arena_gruesa'
  then raise exception 'missing_or_invented_specifications';end if;
- if (select proposal from cotironda_piloto_privado.media_archive_mvp095
-   where message_hmac=source)<>proposal
+ if (select a.proposal from cotironda_piloto_privado.media_archive_mvp095 a
+   where a.message_hmac=source)<>proposal
  then raise exception 'original_model_proposal_was_overwritten';end if;
  res:=public.cotironda_piloto_apply_clarification_mvp100(chat,reply,'La Plata',
  '[{"line_no":1,"unit":"unit","family_hint":null}]'::jsonb);
