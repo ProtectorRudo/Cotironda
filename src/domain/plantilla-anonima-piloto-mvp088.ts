@@ -77,8 +77,9 @@ export function construirPlantillaAnonimaMvp088(
  for(let i=0;i<fuente.renglones.length;i++){
   const linea=fuente.renglones[i],literal=originals[i];
   const clase=byNo.get(i+1);
+  if(clase===undefined)deny();
   if(linea.numero!==i+1||linea.textoExacto!==literal||
-   !Array.isArray(linea.importesLiterales)||!clase)deny();
+   !Array.isArray(linea.importesLiterales))deny();
   // A header with a price is not identity-only: keeping that price is mandatory.
   if(clase==='identidad'){
    if(MONEY.test(literal)||linea.importesLiterales.length>0)deny();
