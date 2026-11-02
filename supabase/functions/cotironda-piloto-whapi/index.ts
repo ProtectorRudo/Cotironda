@@ -9,6 +9,7 @@ import {makeMediaManifest} from './media-intake.ts';
 import {parseDocumentClarification} from './document-clarification.ts';
 import {getVerifiedWhapiMedia,storeVerifiedMedia} from './whapi-media-archive.ts';
 import {checkSupplierTextSource} from './supplier-source-text.ts';
+import {checkSupplierOfficeSource} from './supplier-source-office.ts';
 import {proposeDocumentAI} from './document-ai-draft.ts';
 import {interpretPilotBuyerWithAI} from './ai-interpreter.ts';
 import {decidePilotAIAction,shortBusinessReply,type ReplyCode} from './business-ai-policy.ts';
@@ -526,10 +527,13 @@ async function respond(req:Request):Promise<Response>{
                       console.warn('cotironda_supplier_amount_audit_reconciliation_required');
                     else if(['balanced','difference','needs_review'].includes(
                       amounts.data?.state)){
-                      // Independent byte-level TXT/CSV coverage. Other formats
-                      // remain NEEDS REVIEW; two AI passes are not source proof.
-                      const checked=checkSupplierTextSource(
-                        downloadedForReview,proposal);
+                      // Independent original-source coverage. DOCX and XLSX need
+                      // conservative ZIP/XML corroboration; PDF/photos still
+                      // require review rather than trusting two model reads.
+                      const checked=downloadedForReview.mime.includes(
+                        'openxmlformats-officedocument')
+                        ?await checkSupplierOfficeSource(downloadedForReview,proposal)
+                        :checkSupplierTextSource(downloadedForReview,proposal);
                       const savedCheck=await db.rpc(
                         'cotironda_piloto_record_supplier_source_check_mvp106',{
                           p_message_hmac:messageHash,
@@ -541,9 +545,9 @@ async function respond(req:Request):Promise<Response>{
                         console.warn('cotironda_supplier_source_check_reconciliation_required');
                       else if(savedCheck.data?.state==='source_text_covered'&&
                               amounts.data?.state==='balanced'){
-                        // Publish only vetted textual economic figures under
+                        // Publish only source-vetted economic figures under
                         // narrowly scoped pilot privacy and consent gates.
-                        // Source PDF/image and unknown materials stay private.
+                        // PDF/image and unsupported Office layouts stay private.
                         const published=await db.rpc(
                           'cotironda_piloto_publish_source_text_mvp107',{
                             p_message_hmac:messageHash
