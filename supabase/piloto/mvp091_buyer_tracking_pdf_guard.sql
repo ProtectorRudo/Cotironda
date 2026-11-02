@@ -15,6 +15,8 @@ create table cotironda_piloto_privado.buyer_tracking_mvp091(
  created_at timestamptz not null default clock_timestamp(),
  expires_at timestamptz not null,
  revoked_at timestamptz,
+ send_state text not null default 'pending' check(send_state in ('pending','api_accepted','uncertain')),
+ send_attempted_at timestamptz,
  check(expires_at>created_at),
  check(expires_at<=created_at+interval '40 days')
 );
@@ -42,6 +44,8 @@ begin
    and p.consent_at is not null and p.opted_out_at is null
    and r.source_hmac=p_source_hmac
    and r.state='prepared' and r.created_at>clock_timestamp()-interval '5 minutes'
+   and exists(select 1 from cotironda_piloto_privado.integration_flags f
+      where f.only_row and f.whatsapp_outbound_enabled=true)
    and r.closes_at>clock_timestamp()
  for update of r;
  if rid is null then return jsonb_build_object('state','not_eligible');end if;
@@ -55,6 +59,27 @@ end;$fn$;
 revoke all on function public.cotironda_piloto_issue_tracking_mvp091(text,text,text)
  from public,anon,authenticated;
 grant execute on function public.cotironda_piloto_issue_tracking_mvp091(text,text,text)
+ to service_role;
+
+-- Record the buyer link's one attempted send, with no blind retry.
+create function public.cotironda_piloto_finish_tracking_mvp091(
+ p_token_hash text,p_state text
+) returns boolean language plpgsql security definer set search_path='' as $fn$
+declare n integer;
+begin
+ if p_token_hash !~ '^[a-f0-9]{64}$' or
+   p_state not in ('api_accepted','uncertain') then
+  raise exception 'invalid_tracking_send' using errcode='22023';
+ end if;
+ update cotironda_piloto_privado.buyer_tracking_mvp091
+ set send_state=p_state,send_attempted_at=clock_timestamp()
+ where token_hash=p_token_hash and send_state='pending';
+ get diagnostics n=row_count;
+ return n=1;
+end;$fn$;
+revoke all on function public.cotironda_piloto_finish_tracking_mvp091(text,text)
+ from public,anon,authenticated;
+grant execute on function public.cotironda_piloto_finish_tracking_mvp091(text,text)
  to service_role;
 
 -- A separate operator-reviewed projection is mandatory before any supplier
