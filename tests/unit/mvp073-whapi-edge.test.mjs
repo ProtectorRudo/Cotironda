@@ -66,3 +66,12 @@ test('MVP073: NO enviar pedido parcialmente reconocido, ni sin zona',()=>{
  const soloDesconocido=parseBuyerPilot('2 bolsas de material desconocido. Entrega: La Plata.');
  assert.equal(canPrepareBuyerPilot(soloDesconocido),false);
 });
+
+test('MVP073: verificación webhook devuelve HTTP 200 sin tocar mensajes y valida canal para mensajes reales',()=>{
+ const edge=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/index.ts',import.meta.url),'utf8');
+ assert.match(edge,/if\(!ev\|\|ev\.type!==\x27messages\x27\|\|ev\.event!==\x27post\x27\)return json\(200,\x27ignored\x27\)/);
+ assert.match(edge,/if\(event\.channel_id!==sec\.channel\)return json\(403,\x27wrong_channel\x27\)/);
+ const i=edge.indexOf('if(!ev||ev.type');
+ const j=edge.indexOf('if(event.channel_id!==sec.channel)');
+ assert.ok(i>=0&&j>i);
+});
