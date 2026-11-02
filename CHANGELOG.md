@@ -1,3 +1,6 @@
+## MVP-077 — Cierre automático PILOTO (02/11/2026)
+- Nuevo job Supabase Cron cada 5 minutos para ejecutar exclusivamente la RPC privada de cierre D076 con no envíos y no revelaciones. Migración, smoke rollback, test de seguridad y documentación en docs/197. El ranking y WhatsApp a finalistas siguen pendientes.
+
 ## MVP-076 — 4 días por defecto y anonimato previo al cierre (02/11/2026)
 - Contrato 4 días por omisión (antes 5), 3–7 días explícitos en ruta legacy.
 - SQL piloto: vencimiento privado, cierre idempotente y guards Whapi para no registrar/enviar ofertas fuera de plazo; los finales no comparten contactos por cerrar.
