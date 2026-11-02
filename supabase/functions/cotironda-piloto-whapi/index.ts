@@ -4,6 +4,7 @@
  */
 import {createClient} from 'npm:@supabase/supabase-js@2.118.0';
 import {parseBuyerPilot,canPrepareBuyerPilot,validMessage} from './core.ts';
+import {generarSolicitudPdfMvp091} from './request-pdf.ts';
 const REF='ilggkalaafhtiysyzlmg';
 const NAME='cotironda-piloto-whapi';
 const encoder=new TextEncoder();
@@ -154,10 +155,18 @@ async function dispatchTwo(sec:Secrets,db:ReturnType<typeof client>):Promise<voi
   // A timeout has UNKNOWN delivery outcome; mark uncertain for human review.
   let accepted=false,messageId:string|null=null;
   try{
-   const response=await fetch('https://gate.whapi.cloud/messages/text',{
+   // The quote request must be generated from immutable, trusted SQL lines.
+   const snapshot=await db.rpc('cotironda_piloto_pdf_snapshot_mvp091',args);
+   if(snapshot.error||!snapshot.data)throw Error('pdf_snapshot_unavailable');
+   const pdf=generarSolicitudPdfMvp091(snapshot.data);
+   if(pdf.byteLength>100000)throw Error('pdf_too_large');
+   const media='data:application/pdf;name=Solicitud-Cotironda.pdf;base64,'+b64(pdf);
+   const response=await fetch('https://gate.whapi.cloud/messages/document',{
     method:'POST',
     headers:{'Authorization':'Bearer '+sec.token,'Content-Type':'application/json'},
-    body:JSON.stringify({to,body:c.message_body}),
+    body:JSON.stringify({to,media,mime_type:'application/pdf',
+       filename:'Solicitud-Cotironda.pdf',
+       caption:'Cotironda · Nueva solicitud de cotización'}),
     signal:AbortSignal.timeout(12000)
    });
    accepted=response.ok;
@@ -268,6 +277,43 @@ async function respond(req:Request):Promise<Response>{
   if(!['recorded','duplicate','unrecognized_contact','needs_zone',
        'needs_review','quote_recorded','unmatched_quote'].includes(outcome(out.data)))
    return json(503,'storage_unavailable');
+  // Send ONE tracking link to the authenticated buyer who just created a
+  // genuine new round. The URL fragment avoids token leakage in GET logs.
+  // Never send a link on replay, unrelated text, quote, or enrolment.
+  if(sec.outbound&&row.type==='text'&&outcome(out.data)==='recorded'&&
+     canPrepareBuyerPilot(parsed)){
+   const rand=crypto.getRandomValues(new Uint8Array(32));
+   const token=toHex(rand.buffer);
+   const tokenHash=await sha(token);
+   const issue=await db.rpc('cotironda_piloto_issue_tracking_mvp091',{
+    p_buyer_chat_hmac:chatHash,p_source_hmac:messageHash,p_token_hash:tokenHash
+   });
+   if(issue.error)return json(503,'tracking_unavailable');
+   if(issue.data?.state==='issued'){
+    const link='https://'+REF+
+     '.supabase.co/functions/v1/cotironda-piloto-seguimiento#'+token;
+    // Buyer chat comes from a Whapi-signed inbound event; the SQL issue
+    // independently proves buyer role, consent and source message ownership.
+    try{
+     const response=await fetch('https://gate.whapi.cloud/messages/text',{
+      method:'POST',headers:{Authorization:'Bearer '+sec.token,
+       'Content-Type':'application/json'},
+      body:JSON.stringify({to:row.chat_id,
+       body:'Cotironda recibió tu solicitud. Seguís las cotizaciones acá: '+
+        link+'\nLos presupuestos se mantienen cerrados hasta que termine el plazo.'}),
+      signal:AbortSignal.timeout(12000)
+     });
+     const finish=await db.rpc('cotironda_piloto_finish_tracking_mvp091',{
+       p_token_hash:tokenHash,p_state:response.ok?'api_accepted':'uncertain'
+     });
+     if(finish.error)return json(503,'tracking_reconciliation_required');
+    }catch{
+     await db.rpc('cotironda_piloto_finish_tracking_mvp091',{
+       p_token_hash:tokenHash,p_state:'uncertain'});
+     // No automatic retry: unknown Whapi delivery is not safe to duplicate.
+    }
+   }
+  }
  }
  try{await dispatchTwo(sec,db)}catch{return json(503,'dispatch_reconciliation_required')}
  return json(200,'accepted');
