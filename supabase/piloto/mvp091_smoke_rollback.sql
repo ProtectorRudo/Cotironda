@@ -27,6 +27,14 @@ begin
        (rid,2,'hidrófugo',5,'l','hidrofugo');
  insert into cotironda_piloto_privado.invitations(request_id,supplier_key)
  values(rid,'corralon_ailin'),(rid,'corralon_nahuel');
+ -- MVP092: this is a replacement test. Older invitations are not eligible
+ -- to receive a new WhatsApp quote; retain the original test quote/version.
+ if (select count(*) from cotironda_piloto_privado.invitations
+      where supplier_key in('corralon_ailin','corralon_nahuel') and state='prepared')<>2
+ then raise exception 'mvp092_ambiguous_supplier_invitations';end if;
+ if (select count(*) from cotironda_piloto_privado.offer_versions
+      where supplier_key='corralon_ailin' and request_id<>rid)<>1
+ then raise exception 'mvp092_previous_quote_was_changed';end if;
  if not cotironda_piloto_privado.allow_next_pilot_send_mvp091(rid,'corralon_ailin')
  or not cotironda_piloto_privado.allow_next_pilot_send_mvp091(rid,'corralon_nahuel')
  then raise exception 'mvp091_two_suppliers_not_eligible';end if;
