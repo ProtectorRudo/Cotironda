@@ -469,6 +469,15 @@ async function respond(req:Request):Promise<Response>{
                   });
                   if(compared.error)
                     console.warn('cotironda_supplier_corroboration_reconciliation_required');
+                  else if(compared.data?.state==='model_readings_match'){
+                    // Exact arithmetic only: this never upgrades a quote to
+                    // source-verified or sends prices/rankings to buyers.
+                    const amounts=await db.rpc('cotironda_piloto_audit_supplier_amounts_mvp103',{
+                      p_message_hmac:messageHash
+                    });
+                    if(amounts.error)
+                      console.warn('cotironda_supplier_amount_audit_reconciliation_required');
+                  }
                 }
               }
             }else{
