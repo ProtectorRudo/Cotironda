@@ -3,7 +3,7 @@
  * No WhatsApp outgoing; no tokens or phones in source.
  */
 import {createClient} from 'npm:@supabase/supabase-js@2.118.0';
-import {parseBuyerPilot,canPrepareBuyerPilot,validMessage} from './core.ts';
+import {parseBuyerPilot,canPrepareBuyerPilot,validMessage,standaloneDeliveryCity} from './core.ts';
 import {generarSolicitudPdfMvp091} from './request-pdf.ts';
 import {makeMediaManifest} from './media-intake.ts';
 import {getVerifiedWhapiMedia,storeVerifiedMedia} from './whapi-media-archive.ts';
@@ -403,25 +403,46 @@ async function respond(req:Request):Promise<Response>{
               enabled:true
             });
             // Never store model-supplied status: server forces review_required.
-            await db.rpc('cotironda_piloto_note_media_proposal_mvp095',{
+            const saved=await db.rpc('cotironda_piloto_note_media_proposal_mvp095',{
               p_message_hmac:messageHash,
               p_proposal:proposal
             });
+            if(!saved.error&&saved.data===true&&
+              proposal.kind==='buyer_request'&&proposal.delivery_city===null&&
+              proposal.lines.length>0)aiReply='zone';
           }catch{/* preserve original and review_required; no retry */}
         }
       }
     }
     }
   }
+  // A locality-only answer after a pending document enriches the PRIVATE
+  // original. No invented units, request, ranking or invitations.
+  if(row.type==='text'&&['needs_review','needs_zone'].includes(outcome(out.data))){
+    const zone=standaloneDeliveryCity(body);
+    if(zone){
+      const linked=await db.rpc('cotironda_piloto_attach_zone_to_document_mvp097',{
+        p_chat_hmac:chatHash,p_message_hmac:messageHash,p_city:zone
+      });
+      if(linked.error)return json(503,'zone_context_reconciliation_required');
+      if(linked.data?.state==='city_attached')aiReply=null;
+    }
+  }
   // The model picks an intent, never an outgoing message. A business
   // reply is pulled only from approved text, within an independent SQL
   // lease and rate limit, after receiving the authenticated message.
-  if(aiReply&&sec.outbound&&row.type==='text'&&
+  if(aiReply&&sec.outbound&&
+     (row.type==='text'||((row.type==='image'||row.type==='document')
+       &&aiReply==='zone'))&&
      Deno.env.get('COTIRONDA_PILOT_AI_REPLIES_ENABLED')==='true'&&
      ['needs_zone','needs_review'].includes(outcome(out.data))){
-    const reserve=await db.rpc('cotironda_piloto_reserve_reply_mvp094',{
-     p_message_hmac:messageHash,p_chat_hmac:chatHash,p_reply_code:aiReply
-    });
+    const reserve=row.type==='text'
+      ?await db.rpc('cotironda_piloto_reserve_reply_mvp094',{
+        p_message_hmac:messageHash,p_chat_hmac:chatHash,p_reply_code:aiReply
+       })
+      :await db.rpc('cotironda_piloto_reserve_document_zone_reply_mvp097',{
+        p_message_hmac:messageHash,p_chat_hmac:chatHash
+       });
     if(!reserve.error&&reserve.data===true){
       let state:'api_accepted'|'uncertain'='uncertain';
       try{
