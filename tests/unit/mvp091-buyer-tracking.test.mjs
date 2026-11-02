@@ -66,3 +66,11 @@ test('MVP091: smoke reversible valida privacidad incluso con oferta aprobada ant
  assert.match(rollback,/mvp091_invalid_token_visible/);
  assert.match(rollback,/mvp091_private_table_grants/);
 });
+
+test('MVP091: seguimiento visible muestra recibos anónimos, no posiciones económicas inventadas',()=>{
+ assert.match(view,/Presupuesto anónimo /);
+ assert.match(view,/posiciones pendientes de comparación/);
+ assert.match(view,/contenido reservado/);
+ assert.match(view,/receipts\.replaceChildren\(\)/);
+ assert.doesNotMatch(view,/ranking provisional|ganador provisional|mejor precio/iu);
+});
