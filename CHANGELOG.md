@@ -1,3 +1,8 @@
+## MVP-083 — Dominio Cotironda asociado a Vercel sin DNS cutover (02/11/2026)
+- Se asociaron `cotironda.com` y `www.cotironda.com` al proyecto GitHub-conectado `cotironda` en Vercel, con redirección permanente www→apex (308) y titularidad verified=true.
+- Auditoría DNS: NS en Hostinger, apex A viejo `2.57.91.91`, www CNAME apex; Vercel recomienda A `76.76.21.21` y CNAME `cname.vercel-dns.com.`; ambos dominios `misconfigured=true`. La producción sigue en demo main antigua, portal piloto no publicado.
+- Documentado el plan de corte (solo @ y www, conservar MX/TXT/NS), validación SSL y criterios de seguridad/rollback. **No se modificó DNS ni se desplegó contenido**. Ver docs/204 e Issue #380.
+
 ## MVP-082c — Lectura RLS real bajo rol segregado con rollback (02/11/2026)
 - Smoke SQL reproducible en Supabase PILOTO: el rol `cotironda_piloto_reader` leyó oferta(s) y verificó fuente/SHA de WhatsApp; se denegó acceso a contacto, cifrado completo y escritura.
 - Transacción revertida; comprobado que no persiste la membresía temporal del operador, oferta intacta y WhatsApp saliente OFF. Aún sin conexión real Next.js ni endpoint comprador. [docs/203](docs/203-mvp-082-login-privado-preparado.md).
