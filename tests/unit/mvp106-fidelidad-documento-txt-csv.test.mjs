@@ -64,7 +64,7 @@ test('MVP106 omissions, price changes, original order changes and invented field
   {input:original.replace('pallets vacíos','pallets de madera'),draft:quote(),reason:'line_not_found'},
   {input:original.replace('$ 12.000,00','$ 13.000,00'),draft:quote(),reason:'field_not_on_source'},
   {input:original.replace('-$ 3.000,00','$ 3.000,00'),draft:quote(),reason:'field_not_on_source'},
-  {input:original.replace('20 bolsas','21 bolsas'),draft:quote(),reason:'field_not_on_source'},
+  {input:original.replace('20 bolsas','21 bolsas'),draft:quote(),reason:'uncovered_number'},
   {input:original.replace('IVA: incluido','IVA: sin incluir'),draft:quote(),reason:'line_not_found'},
   {input:original.replace('Total: $ 214.500,00','Total: $ 214.000,00'),draft:quote(),reason:'total_not_found'}
  ];
