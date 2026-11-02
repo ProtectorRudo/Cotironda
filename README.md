@@ -1,3 +1,5 @@
+> **MVP-075 — Auditoría económica OFFLINE de presupuestos WhatsApp:** nuevo control independiente de fuente literal, líneas, importes y sumas verificables. Totales ambiguos, IVA/flete y datos incompletos no permiten ranking ni alteración del original; no integrado aún a Supabase ni mensajes reales. [docs/195](docs/195-mvp-075-auditoria-cotizaciones-texto.md).
+
 > **MVP-074 — Protección de invitaciones tardías del PILOTO:** si un proveedor ya respondió por WhatsApp, su invitación pendiente debe cancelarse sin afectar a otro proveedor ni su presupuesto original. Migración, prueba SQL reproducible y controles de claim/autorizar documentados en [docs/194](docs/194-mvp-074-no-invitar-si-ya-cotizo.md). Outbound permanece apagado y el ranking aún no está implementado.
 
 # Cotironda
