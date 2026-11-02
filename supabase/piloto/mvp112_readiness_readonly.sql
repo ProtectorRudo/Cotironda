@@ -23,16 +23,16 @@ state as (
 ),
 flags as (
  select whatsapp_inbound_enabled,whatsapp_outbound_enabled,
-  document_ai_enabled from cotironda_piloto_privado.integration_flags where only_row
+  media_archive_enabled_mvp095 from cotironda_piloto_privado.integration_flags where only_row
 )
 select case when state.database_ready and flags.whatsapp_inbound_enabled
- and flags.whatsapp_outbound_enabled and flags.document_ai_enabled
+ and flags.whatsapp_outbound_enabled and flags.media_archive_enabled_mvp095
  then 'database_gates_present_external_edge_and_real_e2e_not_verified'
  else 'NO_GO' end as pilot_status,
  state.missing as missing_database_gates,
  coalesce(state.pending,'[]'::jsonb) as missing_list,
  flags.whatsapp_inbound_enabled,
  flags.whatsapp_outbound_enabled,
- flags.document_ai_enabled,
+ flags.media_archive_enabled_mvp095,
  'NOT_CHECKED_BY_SQL: GitHub merges, Edge deployed hashes, Vercel, Whapi callback, API secrets, real 1+2 phones and cost/rate limits' as external_checks
 from state cross join flags;
