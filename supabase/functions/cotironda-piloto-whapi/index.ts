@@ -407,10 +407,7 @@ async function respond(req:Request):Promise<Response>{
               p_message_hmac:messageHash,
               p_proposal:proposal
             });
-            if(saved.error||saved.data!==true){
-              // The source remains stored; do not claim a usable extraction.
-              console.warn('cotironda_media_proposal_reconciliation_required');
-            }else{
+            if(!saved.error&&saved.data===true){
               // The per-line planner is internal and NEVER sends invitations.
               // Supplier original files get a separate, unverified receipt:
               // totals and extra charges remain available in source storage.
@@ -427,6 +424,9 @@ async function respond(req:Request):Promise<Response>{
                 });
                 if(receipt.error)console.warn('cotironda_supplier_media_reconciliation_required');
               }
+            }else{
+              // The source remains stored; do not claim a usable extraction.
+              console.warn('cotironda_media_proposal_reconciliation_required');
             }
           }catch{/* preserve original and review_required; no retry */}
         }
