@@ -1,3 +1,14 @@
+## MVP-073f — cierre de riesgos del piloto (01/11/2026)
+- Receptor Supabase Edge v3: ninguna solicitud parcial si el texto contiene renglones no reconocidos.
+- Migración `mvp073f_outbox_buyer_consent_guard` aplicada: BAJA comprador, cancelación y expiración bloquean claims y autorización de envío.
+- SQL smoke reproducible de BAJA y lease con rollback pasó. Sin WhatsApp real ni cambios en DEV/producción.
+
+## MVP-073 — receptor Whapi Supabase piloto (01/11/2026)
+- Edge Function piloto desplegada v2; receptor validado por estructura/código, secreto HTTPS, canal y chat; AES-GCM y claves HMAC en variables privadas pendientes.
+- RPC de inscripción por código de un solo uso, BAJA, inbox y presupuestos en versiones fieles, outbox con leasing y estados inciertos sin reenvíos ciegos.
+- Migraciones 073/073b/073c/073d aplicadas solo en piloto. SQL smoke comprador/proveedor y outbox reales con ROLLBACK aprobados. Whapi real OFF.
+- Documentación de configuración segura y límites de extracción/ranking: docs/193.
+
 
 ## MVP-072 — base PostgreSQL piloto aislado instalada (01/11/2026)
 - Migración independiente `mvp072_pilot_private_runtime_and_seed` aplicada en Supabase piloto Free; cero cambios a DEV histórica y Te Hice Esto.

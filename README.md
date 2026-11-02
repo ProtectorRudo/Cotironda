@@ -1,5 +1,12 @@
 # Cotironda
 
+> **MVP-073f**: Edge Whapi piloto v3 preparada en Supabase; no envía pedidos con renglones desconocidos y exige consentimiento vigente del comprador antes de cualquier salida. **Sin secretos/alta real todavía: Whapi OFF.** Ver [docs/193](docs/193-mvp-073-whapi-piloto-edge.md).
+
+
+> **MVP-073 — Piloto Whapi Supabase nativo**: Edge Function `cotironda-piloto-whapi` v2 instalada y BD piloto con inbox cifrado, alta por código único, baja, original de presupuestos inmutable, outbox at-most-once. **INBOUND/OUTBOUND deshabilitados por defecto hasta configurar secretos y consentimiento; sin prueba WhatsApp real**. Ver [docs/193](docs/193-mvp-073-whapi-piloto-edge.md).
+
+
+
 > **MVP-072 — piloto PostgreSQL aislado REAL**: `cotironda-piloto` ref `ilggkalaafhtiysyzlmg` contiene 3 participantes de ensayo y 2 catálogos idénticos con 51 materiales cada uno. Familias reconocidas: 41 por comercio; 10 por comercio pendientes de curación. Pruebas SQL La Plata/Berisso, presupuesto literal, antirreplay y RLS: aprobadas. **Todavía NO recibe ni envía WhatsApp.** Ver [docs/192](docs/192-mvp-072-piloto-instalado.md); SQL en `supabase/piloto/mvp072_runtime_aislado.sql`. DEV histórica pausada para liberar cuota y Te Hice Esto intacto.
 
 
