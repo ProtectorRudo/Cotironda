@@ -96,3 +96,37 @@ test('MVP073: no-op de Whapi sin autenticación NO puede abrir DB ni enviar',()=
  assert.match(edge,/ev\?\.type==='messages'&&ev\?\.event==='post'&&/);
  assert.match(edge,/Array\.isArray\(event\.messages\)&&event\.messages\.length>0/);
 });
+
+test('MVP092: pedido exacto real con Entrega como PRIMER renglón no pierde artículos',()=>{
+ const input='Entrega: La Plata\n20 bolsas cemento CPC 50 kg\n5 litros hidrófugo';
+ const p=parseBuyerPilot(input);
+ assert.equal(p.city,'La Plata');
+ assert.deepEqual(p.items.map(x=>[x.quantity,x.unit,x.family]),[
+  [20,'bag','cemento_gris_obra'],[5,'l','hidrofugo']
+ ]);
+ assert.deepEqual(p.unresolved,[]);
+ assert.equal(canPrepareBuyerPilot(p),true);
+});
+test('MVP092: ubicación al final, al medio, y con puntuación conserva ítems exactos',()=>{
+ for(const input of [
+   '20 bolsas cemento CPC 50 kg\n5 litros hidrófugo\nEntrega: La Plata',
+   '20 bolsas cemento CPC 50 kg\nEntrega: La Plata\n5 litros hidrófugo',
+   'Entrega: La Plata; 20 bolsas cemento CPC 50 kg; 5 litros hidrófugo',
+   '20 bolsas cemento CPC 50 kg. Entrega: La Plata.\n5 litros hidrófugo'
+ ]){
+   const p=parseBuyerPilot(input);
+   assert.equal(p.city,'La Plata',input);
+   assert.equal(p.items.length,2,input);
+   assert.deepEqual(p.unresolved,[],input);
+   assert.equal(canPrepareBuyerPilot(p),true,input);
+ }
+});
+test('MVP092: una línea incomprensible o falta zona NO disparan ofertas parciales',()=>{
+ const partial=parseBuyerPilot('Entrega: La Plata\n20 bolsas cemento CPC 50 kg\n3 bolsas material desconocido');
+ assert.equal(partial.items.length,1);
+ assert.equal(partial.unresolved.length,1);
+ assert.equal(canPrepareBuyerPilot(partial),false);
+ const absent=parseBuyerPilot('20 bolsas cemento CPC 50 kg\n5 litros hidrófugo');
+ assert.equal(absent.city,null);
+ assert.equal(canPrepareBuyerPilot(absent),false);
+});
