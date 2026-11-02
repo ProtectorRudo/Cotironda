@@ -1,3 +1,8 @@
+## MVP-080 — Puente SQL privado de fuente real a plantilla (02/11/2026)
+- Agregado adaptador `src/server/plantillas-piloto-mvp080.ts`, consulta fija parametrizada por pedido/comprador, versiones últimas por proveedor y verificación SHA independiente contra mensaje original del inbox.
+- Revisión de privacidad vinculada a proveedor, revisión y SHA; sin ella se bloquea la vista, sin publicar renglones ni precios. Pruebas normal/adversaria y documentación docs/201.
+- Verificado exclusivamente en Supabase PILOTO agregado SHA consistente 1/1, sin consultar ni divulgar presupuestos en chats. No se integró endpoint, puerto PostgreSQL real, archivos externos, ranking, Whapi ni producción.
+
 ## MVP-079 — Plantilla propia de presupuestos anónimos (02/11/2026)
 - Modelo offline de oferta anónima que conserva todos los renglones comerciales literales y el total declarado, incluyendo pallets, artículos extra, fletes, descuentos y notas.
 - Retención fail-closed de una oferta ante filtración de identidad, importes ocultos, clasificación parcial, totales repetidos y entradas adulteradas; privacidad revisada por servidor es requisito de datos reales.
