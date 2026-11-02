@@ -1,3 +1,8 @@
+## MVP-109 — resguardo cifrado de contactos y autorización para revelación bilateral (02/11/2026)
+- WhatsApp captura el número autenticado de comprador/proveedor en AES-GCM con AAD de chat, sin teléfono legible en Supabase; HMAC y hash vinculados al mensaje de origen. Cambio de identidad bloqueado.
+- El usuario autoriza una sola vez el contacto posterior al cierre mediante el comando WhatsApp COTI CONTACTOS SI, revocable con COTI CONTACTOS NO; nunca se interpretan como cotizaciones. Snapshot privado solo con datos cifrados, después del cierre y del plan de finalistas, revalidando a todas las partes.
+- PostgreSQL 17 real con ensayo reversible consentimiento triple, replay, cambio de identidad y revocación PASS; docs/227 e Issue #429. No hay mensajes de cierre todavía, no instalado ni desplegado.
+
 ## MVP-108 — cierre con hasta dos alternativas de cobertura completa (02/11/2026)
 - SQL del piloto identifica, después del vencimiento REAL, hasta dos proveedores cuyas cotizaciones TEXTUALES originales ya fueron verificadas y publicadas anónimamente y cumplen 100% de los materiales por descripción, cantidad, unidad y rubro de forma única. Una oferta parcial no compite por su total menor y una nueva versión pendiente invalida la anterior.
 - Registra solo plan privado idempotente/RLS; evita adjudicaciones, ranking por precio engañoso, datos de contacto y envío WhatsApp. Estado «dos alternativas completas» NO implica «dos precios más bajos» cuando faltan IVA/flete/pago comparables.
