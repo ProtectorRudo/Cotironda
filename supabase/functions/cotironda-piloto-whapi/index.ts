@@ -6,6 +6,8 @@ import {createClient} from 'npm:@supabase/supabase-js@2.118.0';
 import {parseBuyerPilot,canPrepareBuyerPilot,validMessage} from './core.ts';
 import {generarSolicitudPdfMvp091} from './request-pdf.ts';
 import {makeMediaManifest} from './media-intake.ts';
+import {interpretPilotBuyerWithAI} from './ai-interpreter.ts';
+import {decidePilotAIAction,shortBusinessReply,type ReplyCode} from './business-ai-policy.ts';
 const REF='ilggkalaafhtiysyzlmg';
 const NAME='cotironda-piloto-whapi';
 const encoder=new TextEncoder();
@@ -274,7 +276,49 @@ async function respond(req:Request):Promise<Response>{
   }
   const textHash=await sha(body);
   const c=await encrypt(sec.aes,body,chatHash+'|'+messageHash+'|'+row.type);
-  const parsed=row.type==='text'?parseBuyerPilot(body):{city:null,items:[],unresolved:[]};
+  const local=row.type==='text'?parseBuyerPilot(body):{city:null,items:[],unresolved:[]};
+  let parsed=local;
+  let aiReply:ReplyCode|null=null;
+  // OpenAI is optional and off by default. The server-side DB gate is
+  // durable, one-per-HMAC, buyer-only and capped at 12 calls per day.
+  // Supplier quote ingestion never passes through this classifier.
+  if(row.type==='text'&&
+     Deno.env.get('COTIRONDA_PILOT_AI_ENABLED')==='true'){
+    const preflight=await db.rpc('cotironda_piloto_reserve_ai_mvp094',{
+      p_chat_hmac:chatHash,p_message_hmac:messageHash
+    });
+    if(preflight.error){
+      // Fail closed, not a silent inference using an unvalidated identity.
+      parsed={city:local.city,items:[],unresolved:['ai_unavailable']};
+    }else if(preflight.data===true){
+      try{
+        const model=await interpretPilotBuyerWithAI({
+          text:body,apiKey:Deno.env.get('COTIRONDA_PILOT_OPENAI_API_KEY')??'',
+          enabled:true
+        });
+        const decision=decidePilotAIAction(body,model,'buyer');
+        aiReply=decision.replyCode;
+        if(decision.action==='ready_to_distribute'&&decision.parsed){
+          parsed=decision.parsed;
+        }else{
+          // A question/greeting/uncertain extraction is not a request.
+          // The original is still encrypted and stored by receive_whapi.
+          parsed={city:local.city??'sin solicitud',items:[],
+            unresolved:[decision.reason]};
+        }
+      }catch{
+        // No automatic retry; preserve original and request review instead
+        // of generating a partly understood invitation.
+        parsed={city:local.city??'sin solicitud',items:[],
+          unresolved:['ai_review_required']};
+      }
+    }else{
+      // Could be a replay, exhausted budget or unauthorised sender.
+      // Non-buyer quotes still enter their original immutable SQL flow.
+      parsed={city:local.city??'sin solicitud',items:[],
+        unresolved:['ai_not_admitted']};
+    }
+  }
   const out=await db.rpc('cotironda_piloto_receive_whapi_v1',{
    p_chat_hmac:chatHash,p_message_hmac:messageHash,
    p_plaintext_sha256:textHash,p_kind:row.type,
@@ -287,6 +331,35 @@ async function respond(req:Request):Promise<Response>{
   if(!['recorded','duplicate','unrecognized_contact','needs_zone',
        'needs_review','quote_recorded','unmatched_quote'].includes(outcome(out.data)))
    return json(503,'storage_unavailable');
+  // The model picks an intent, never an outgoing message. A business
+  // reply is pulled only from approved text, within an independent SQL
+  // lease and rate limit, after receiving the authenticated message.
+  if(aiReply&&sec.outbound&&row.type==='text'&&
+     Deno.env.get('COTIRONDA_PILOT_AI_REPLIES_ENABLED')==='true'&&
+     ['needs_zone','needs_review'].includes(outcome(out.data))){
+    const reserve=await db.rpc('cotironda_piloto_reserve_reply_mvp094',{
+     p_message_hmac:messageHash,p_chat_hmac:chatHash,p_reply_code:aiReply
+    });
+    if(!reserve.error&&reserve.data===true){
+      let state:'api_accepted'|'uncertain'='uncertain';
+      try{
+        const response=await fetch('https://gate.whapi.cloud/messages/text',{
+          method:'POST',headers:{Authorization:'Bearer '+sec.token,
+            'Content-Type':'application/json'},
+          body:JSON.stringify({to:row.chat_id,body:shortBusinessReply(aiReply)}),
+          signal:AbortSignal.timeout(12000)
+        });
+        const body=response.ok?await response.json().catch(()=>null):null;
+        if(response.ok&&body&&typeof body==='object'&&
+          (body as Record<string,unknown>).sent===true)
+          state='api_accepted';
+      }catch{/* delivery unknown, no duplicate retry */}
+      const finished=await db.rpc('cotironda_piloto_finish_reply_mvp094',{
+        p_message_hmac:messageHash,p_state:state
+      });
+      if(finished.error)return json(503,'reply_reconciliation_required');
+    }
+  }
   // Send ONE tracking link to the authenticated buyer who just created a
   // genuine new round. The URL fragment avoids token leakage in GET logs.
   // Never send a link on replay, unrelated text, quote, or enrolment.
