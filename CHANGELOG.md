@@ -1,3 +1,8 @@
+## MVP-108 — cierre con hasta dos alternativas de cobertura completa (02/11/2026)
+- SQL del piloto identifica, después del vencimiento REAL, hasta dos proveedores cuyas cotizaciones TEXTUALES originales ya fueron verificadas y publicadas anónimamente y cumplen 100% de los materiales por descripción, cantidad, unidad y rubro de forma única. Una oferta parcial no compite por su total menor y una nueva versión pendiente invalida la anterior.
+- Registra solo plan privado idempotente/RLS; evita adjudicaciones, ranking por precio engañoso, datos de contacto y envío WhatsApp. Estado «dos alternativas completas» NO implica «dos precios más bajos» cuando faltan IVA/flete/pago comparables.
+- Ensayo PG17 de dos rondas sintéticas (ambos completos vs uno parcial) con reloj del servidor, plazo inmutable, ROLLBACK PASS; docs/226, Issue #427, tests Node. No desplegado.
+
 ## MVP-107 — primera publicación anónima automática de presupuesto de proveedor (02/11/2026)
 - Con fuente TXT/CSV simple cotejada contra bytes, dos lecturas IA concordantes, suma exacta, consentimiento y categorías/piloto autorizado, Cotironda genera una proyección con TODOS los conceptos y literal total declarado, incluidos pallets, bolsones, flete y descuento. No expone nombre/telefono/contacto; bloquea documentos no confirmados o con riesgo de privacidad.
 - El enlace de seguimiento incorpora estas proyecciones automáticas a las ofertas textuales previamente aprobadas, mostrando solo la ÚLTIMA versión por proveedor; nueva cotización no revisada oculta la previa. Token privado, sin ranking ni finalistas.
