@@ -1,3 +1,9 @@
+## MVP-095 — originales de archivos y propuestas documentales privadas (02/11/2026)
+- Archivo entrante Whapi autenticado por ID: descarga acotada y firma de contenido, conservación íntegra en Storage privado Supabase (3 MiB), SHA256 y estado irreversible `stored`/`uncertain`; límites 8 archivos por contacto/día y asociación unívoca a ronda. No URLs arbitrarias ni exposición pública del original.
+- Propuesta documental OpenAI Responses JSON estricto sobre PDF, DOCX, XLSX, imagen y texto, límite 2 lecturas/contacto/día y salida únicamente `review_required`. Sin autorizaciones automáticas de despacho, cálculo ni finalistas a partir del resultado de IA.
+- Seguimiento diferencia `received_count` de presupuestos verificados frente a `files_pending_review` de archivos de negocios. Migra solo a PILOTO tras CI/SQL smoke. `docs/212-mvp-095-archivos-originales-y-borradores.md`.
+- `integration_flags.media_archive_enabled_mvp095` y `COTIRONDA_PILOT_DOCUMENT_AI_ENABLED` quedan apagados por defecto hasta habilitación y prueba real controlada. No se cambiaron secretos, producción ni dominio.
+
 ## MVP-094 — Intérprete IA operacional de WhatsApp, respuestas breves y verificables (02/11/2026)
 - Adaptador real de OpenAI Responses (JSON Schema estricto, `store:false`, sin herramientas, límites de tokens/caracteres y timeout) para clasificar mensajes de compradores autorizados. **Deshabilitado por defecto hasta configurar clave/flags privados y medir costos**.
 - Las respuestas de Cotironda son textos comerciales fijos, breves y auditables, no textos inventados por el modelo. Saludos y consultas fuera del alcance no producen mensajes. Pedidos con evidencia insuficiente quedan en revisión, nunca despachos parciales no verificados.

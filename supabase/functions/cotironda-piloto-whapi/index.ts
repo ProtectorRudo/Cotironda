@@ -6,6 +6,8 @@ import {createClient} from 'npm:@supabase/supabase-js@2.118.0';
 import {parseBuyerPilot,canPrepareBuyerPilot,validMessage} from './core.ts';
 import {generarSolicitudPdfMvp091} from './request-pdf.ts';
 import {makeMediaManifest} from './media-intake.ts';
+import {getVerifiedWhapiMedia,storeVerifiedMedia} from './whapi-media-archive.ts';
+import {proposeDocumentAI} from './document-ai-draft.ts';
 import {interpretPilotBuyerWithAI} from './ai-interpreter.ts';
 import {decidePilotAIAction,shortBusinessReply,type ReplyCode} from './business-ai-policy.ts';
 const REF='ilggkalaafhtiysyzlmg';
@@ -331,6 +333,66 @@ async function respond(req:Request):Promise<Response>{
   if(!['recorded','duplicate','unrecognized_contact','needs_zone',
        'needs_review','quote_recorded','unmatched_quote'].includes(outcome(out.data)))
    return json(503,'storage_unavailable');
+  // Archive original incoming PDF, Excel, Word or photo ONLY after
+  // committed authenticated inbox and supplier/buyer consent SQL check.
+  // No interpretation can distribute until independently reviewed.
+  if(row.type!=='text'&&media?.state==='awaiting_secure_download'&&
+     outcome(out.data)==='needs_review'){
+    const archiveGate=await db.rpc('cotironda_piloto_media_enabled_mvp095');
+    if(archiveGate.error)return json(503,'media_archive_gate_unavailable');
+    if(archiveGate.data===true){
+    const reservation=await db.rpc('cotironda_piloto_reserve_media_mvp095',{
+      p_message_hmac:messageHash,p_chat_hmac:chatHash,
+      p_media_id_sha256:await sha(media.media_id),p_mime:media.mime
+    });
+    if(reservation.error)return json(503,'media_reservation_unavailable');
+    if(reservation.data===true){
+      let status:'stored'|'uncertain'='uncertain';
+      let contentHash:string|null=null,contentSize:number|null=null;
+      let downloadedForReview:Awaited<ReturnType<typeof getVerifiedWhapiMedia>>|null=null;
+      try{
+        const downloaded=await getVerifiedWhapiMedia({
+          manifest:media,token:sec.token
+        });
+        await storeVerifiedMedia(db.storage,messageHash,downloaded);
+        contentHash=downloaded.sha256;
+        contentSize=downloaded.bytes.length;
+        downloadedForReview=downloaded;
+        status='stored';
+      }catch{
+        // A slow upload may have succeeded; NEVER automatically retry.
+      }
+      const completed=await db.rpc('cotironda_piloto_finish_media_mvp095',{
+        p_message_hmac:messageHash,p_state:status,
+        p_size:contentSize,p_sha:contentHash
+      });
+      if(completed.error||completed.data!==true)
+        return json(503,'media_reconciliation_required');
+      // The model only proposes a PRIVATE DRAFT; cannot create an invitation,
+      // offer, winner or public view without separate independent verification.
+      if(status==='stored'&&downloadedForReview&&
+         Deno.env.get('COTIRONDA_PILOT_DOCUMENT_AI_ENABLED')==='true'){
+        const quota=await db.rpc('cotironda_piloto_reserve_document_ai_mvp095',{
+          p_message_hmac:messageHash
+        });
+        if(!quota.error&&quota.data===true){
+          try{
+            const proposal=await proposeDocumentAI({
+              manifest:media,file:downloadedForReview,
+              apiKey:Deno.env.get('COTIRONDA_PILOT_OPENAI_API_KEY')??'',
+              enabled:true
+            });
+            // Never store model-supplied status: server forces review_required.
+            await db.rpc('cotironda_piloto_note_media_proposal_mvp095',{
+              p_message_hmac:messageHash,
+              p_proposal:proposal
+            });
+          }catch{/* preserve original and review_required; no retry */}
+        }
+      }
+    }
+    }
+  }
   // The model picks an intent, never an outgoing message. A business
   // reply is pulled only from approved text, within an independent SQL
   // lease and rate limit, after receiving the authenticated message.

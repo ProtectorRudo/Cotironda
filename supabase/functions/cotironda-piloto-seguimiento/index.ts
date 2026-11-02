@@ -26,6 +26,7 @@ y la identidad de los negocios se mantienen reservados hasta el cierre.</p>
 <div class="count" id="count" aria-live="polite">—</div>
 <div class="caption">Presupuestos recibidos</div>
 <div class="deadline"><b id="state">Consultando…</b><p id="deadline"></p></div>
+<div id="files" class="caption" aria-live="polite"></div>
 <div id="receipts" aria-live="polite"></div>
 <div id="offers" aria-live="polite"></div></main>
 <p><small>Enlace privado. No lo compartas con otras personas.</small></p>
@@ -45,6 +46,10 @@ if(!/^[a-f0-9]{64}$/.test(token)){
    const d=await res.json();
    if(d.state==="not_found"){ $("state").textContent="Enlace vencido o revocado";return }
    $("count").textContent=String(d.received_count);
+   const files=Number(d.files_pending_review);
+   $("files").textContent=Number.isSafeInteger(files)&&files>0
+    ?files+" archivo(s) de proveedores pendiente(s) de verificar. No son presupuestos validados."
+    :"";
    $("deadline").textContent="Fecha límite: "+
      new Date(d.deadline).toLocaleString("es-AR",{timeZone:"America/Argentina/Buenos_Aires"});
    if(d.state==="waiting"){
