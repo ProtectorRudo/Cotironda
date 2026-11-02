@@ -122,8 +122,9 @@ begin
   if (select source_sha256 from
      cotironda_piloto_privado.supplier_reading_checks_mvp102
      where message_hmac=msg)<>source_sha
-  or (select proposal from cotironda_piloto_privado.media_archive_mvp095
-     where message_hmac=msg)<>proposal
+  or (select source_media.proposal
+     from cotironda_piloto_privado.media_archive_mvp095 source_media
+     where source_media.message_hmac=msg)<>proposal
   or (select declared_total_literal from
      cotironda_piloto_privado.supplier_media_quotes_mvp098
      where message_hmac=msg)<>'$ 211.000,00'
