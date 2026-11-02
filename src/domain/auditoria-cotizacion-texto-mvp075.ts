@@ -65,6 +65,7 @@ function tipoDeLinea(texto:string,monedas:readonly string[]):TipoLinea{
  if(discount.test(texto))return 'descuento';
  if(freight.test(texto))return 'flete';
  if(packaging.test(texto))return 'embalaje';
+ if(/^\s*(?:nota|observaci[oó]n|aclaraci[oó]n)\s*[:=]/iu.test(texto))return 'nota';
  if(/^\s*(?:iva|impuestos?)\s*[:= ]/iu.test(texto))return 'impuesto';
  return monedas.length>0?'concepto':'nota';
 }
@@ -122,7 +123,8 @@ export function auditarCotizacionTextoMvp075(texto:string):AuditoriaCotizacionTe
  const hasUnsafe=lines.some(l=>l.importesLiterales.length>0&&
   l.tipo!=='total'&&l.importeVerificable===null);
  const reliable=original.totalDeclarado!==null&&allVerified&&!anyCurrencyOutside&&
-  !hasUnexpectedSubtotals&&!hasForeignCurrency&&!hasUnsafe;
+  !hasUnexpectedSubtotals&&!hasForeignCurrency&&!hasUnsafe&&
+  !fleteAConvenir&&estadoFlete!=='contradictorio';
  let sum:bigint|null=null;
  if(reliable){
   sum=conceptos.reduce((n,l)=>{
