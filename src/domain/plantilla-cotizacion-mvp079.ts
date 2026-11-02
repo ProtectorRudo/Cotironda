@@ -12,7 +12,7 @@ import {auditarCotizacionTextoMvp075} from './auditoria-cotizacion-texto-mvp075.
 
 export type CategoriaRenglonMvp079 =
  'material'|'adicional'|'embalaje'|'flete'|'descuento'|
- 'impuesto'|'aclaracion'|'total'|'privado'|'vacio';
+ 'impuesto'|'aclaracion'|'subtotal'|'total'|'privado'|'vacio';
 export type RenglonClasificadoMvp079=Readonly<{
  numeroLinea:number;
  categoria:CategoriaRenglonMvp079;
@@ -51,7 +51,7 @@ export type PlantillasMvp079=Readonly<{
 const CODE=/^[a-z][a-z0-9_]{2,49}$/u;
 const ALLOWED=new Set<CategoriaRenglonMvp079>([
  'material','adicional','embalaje','flete','descuento',
- 'impuesto','aclaracion','total','privado','vacio'
+ 'impuesto','aclaracion','subtotal','total','privado','vacio'
 ]);
 const RISK=[
  /(?:https?:\/\/|www\.|@[a-z0-9_]{2,}|[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,})/iu,
@@ -61,7 +61,10 @@ const RISK=[
 ];
 // RISK is a fail-closed screening aid, NOT proof of identity absence.
 // In production only an independently audited privacy gate may approve.
-function unsafe(x:string):boolean{return RISK.some(re=>re.test(x));}
+function unsafe(x:string):boolean{
+ const sinImportes=x.replace(/\$\s*[0-9][0-9.,]*/gu,'MONTO');
+ return RISK.some(re=>re.test(sinImportes));
+}
 function keys(x:unknown,ks:readonly string[]):x is Record<string,unknown>{
  return x!==null&&typeof x==='object'&&!Array.isArray(x)&&
  Object.keys(x).length===ks.length&&Object.keys(x).every(k=>ks.includes(k));
@@ -128,14 +131,15 @@ export function crearPlantillasAnonimasMvp079(
       l.tipo==='descuento'&&category!=='descuento'||
       l.tipo==='embalaje'&&category!=='embalaje'||
       l.tipo==='impuesto'&&category!=='impuesto'||
-      l.tipo==='subtotal'){flagged=true;break}
+      l.tipo==='subtotal'&&category!=='subtotal'){flagged=true;break}
    if(category==='material'&&l.tipo!=='concepto'||
       category==='embalaje'&&l.tipo!=='embalaje'||
       category==='flete'&&l.tipo!=='flete'||
       category==='descuento'&&l.tipo!=='descuento'||
       category==='impuesto'&&l.tipo!=='impuesto'||
       category==='aclaracion'&&l.tipo!=='nota'||
-      category==='adicional'&&l.tipo!=='concepto'){flagged=true;break}
+      category==='adicional'&&l.tipo!=='concepto'||
+      category==='subtotal'&&l.tipo!=='subtotal'){flagged=true;break}
    rows.push(Object.freeze({
     numeroLinea:l.numero,categoria:category,
     textoLiteral:l.textoExacto,
