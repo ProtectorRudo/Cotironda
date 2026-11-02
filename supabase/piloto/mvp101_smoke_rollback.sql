@@ -3,7 +3,7 @@ begin;
 do $test$
 declare
  sc text; msg text; sha text; rid uuid; result jsonb; src jsonb;
- baseline bigint;
+ baseline bigint;bad_msg text;
 begin
  select p.chat_hmac into sc from cotironda_piloto_privado.participants p
   where p.key='corralon_nahuel' and p.participant_role='supplier'
@@ -109,5 +109,46 @@ begin
  if (select unit_price_literal from cotironda_piloto_privado.supplier_quote_lines_mvp101
     where message_hmac=msg and line_no=1)<>'$ 9.500,00'
  then raise exception 'mvp101_snapshot_mutated';end if;
+
+ -- Attempting to edit an already-stored line must be rejected.
+ begin
+  update cotironda_piloto_privado.supplier_quote_lines_mvp101
+   set description_literal='otro producto'
+   where message_hmac=msg and line_no=1;
+  raise exception 'mvp101_mutation_allowed';
+ exception when check_violation then null;
+ end;
+
+ -- A DIFFERENT source whose AI draft contains a numeric price must create
+ -- neither a receipt nor any line. This checks the pre-insert fail-closed gate.
+ bad_msg:=encode(extensions.gen_random_bytes(32),'hex');
+ insert into cotironda_piloto_privado.whapi_inbox(
+  message_hmac,chat_hmac,participant_key,kind,nonce_b64,ciphertext_b64,
+  plaintext_sha256,source_unix,processing_state)
+ values(bad_msg,sc,'corralon_nahuel','document','AAAAAAAAAAAAAAAA',
+  'AAAAAAAAAAAAAAAAAAAAAAAA',sha,
+  extract(epoch from clock_timestamp())::bigint,'needs_review');
+ insert into cotironda_piloto_privado.media_archive_mvp095(
+  message_hmac,chat_hmac,participant_key,request_id,kind,mime,media_id_sha256,
+  state,size_bytes,content_sha256,storage_path,review_state,proposal)
+ values(bad_msg,sc,'corralon_nahuel',rid,'document','application/pdf',sha,
+  'stored',2048,sha,'media/'||bad_msg,'suggested_only',
+  jsonb_set(src,'{lines,0,unit_price}','9500'::jsonb));
+ result:=public.cotironda_piloto_record_supplier_media_mvp098(bad_msg);
+ if result->>'state'<>'invalid_source_line'
+  or exists(select 1 from cotironda_piloto_privado.supplier_media_quotes_mvp098
+    where message_hmac=bad_msg)
+ then raise exception 'mvp101_invalid_draft_created_receipt %',result;end if;
+
+ -- 26 lines must reject the entire transcription rather than saving 25.
+ update cotironda_piloto_privado.media_archive_mvp095
+ set proposal=jsonb_set(src,'{lines}',
+   (select jsonb_agg(src->'lines'->0) from generate_series(1,26)))
+ where message_hmac=bad_msg;
+ result:=public.cotironda_piloto_record_supplier_media_mvp098(bad_msg);
+ if result->>'state'<>'invalid_line_count'
+  or exists(select 1 from cotironda_piloto_privado.supplier_media_quotes_mvp098
+    where message_hmac=bad_msg)
+ then raise exception 'mvp101_silently_truncated_26_lines %',result;end if;
 end;$test$;
 rollback;
