@@ -15,7 +15,7 @@ const origen=[
  ''
 ].join('\r\n');
 const categorias=['privado','material','material','embalaje','flete',
- 'descuento','total','aclaracion','vacio'];
+ 'descuento','total','impuesto','vacio'];
 const oferta=(extra={})=>({
  idInterno:'corralon_privado_01',revision:1,textoOriginal:origen,
  privacidad:'revisada_por_servidor',
@@ -109,7 +109,7 @@ test('MVP079: subtotales y otras condiciones comerciales se conservan sin sobres
  const raw='Cemento: $ 100,00\nSUBTOTAL: $ 100,00\nFlete a convenir\nIVA excluido\nTOTAL FINAL: $ 100,00';
  const x=primera(oferta({textoOriginal:raw,lineas:[
   {numeroLinea:1,categoria:'material'},{numeroLinea:2,categoria:'subtotal'},
-  {numeroLinea:3,categoria:'flete'},{numeroLinea:4,categoria:'aclaracion'},
+  {numeroLinea:3,categoria:'flete'},{numeroLinea:4,categoria:'impuesto'},
   {numeroLinea:5,categoria:'total'}
  ]}));
  assert.equal(x.estado,'lista_para_vista');
