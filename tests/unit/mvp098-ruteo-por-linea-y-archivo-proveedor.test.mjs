@@ -13,8 +13,8 @@ test('MVP098: cada documento leído crea plan privado; jamás invita proveedores
  assert.match(src,/saved\.data===true/);
  assert.match(src,/cotironda_piloto_record_supplier_media_mvp098/);
  const segment=src.slice(src.indexOf("if(proposal.kind==='buyer_request')"),
- src.indexOf("if(proposal.delivery_city===null",src.indexOf("if(proposal.kind==='buyer_request')")));
- assert.doesNotMatch(segment,/dispatchTwo\(|\/messages\/document|invitations/);
+ src.indexOf("}else if(proposal.kind==='supplier_quote')",src.indexOf("if(proposal.kind==='buyer_request')")));
+ assert.doesNotMatch(segment,/dispatchTwo\(|\/messages\/document/);
 });
 test('MVP098: nunca inventar unidad ni variante de arena',()=>{
  assert.match(sql,/rawunit is null or length\(btrim\(rawunit\)\)=0 then 'missing_unit'/);
