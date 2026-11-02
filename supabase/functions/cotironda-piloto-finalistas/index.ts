@@ -5,7 +5,7 @@
  */
 import {createClient} from 'npm:@supabase/supabase-js@2.118.0';
 const REF='ilggkalaafhtiysyzlmg';
-import {hex,decodeContacts,prepareMessage} from './finalist-notice.ts';
+import {hex,decodeContacts,prepareMessage} from '../_shared/cotironda-finalist-notice.ts';
 const te=new TextEncoder();
 const textResponse=(status:number,code:string)=>new Response(JSON.stringify({state:code}),{
  status,headers:{'content-type':'application/json','cache-control':'no-store',
