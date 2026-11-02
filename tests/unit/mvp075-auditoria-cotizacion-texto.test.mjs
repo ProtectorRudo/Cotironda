@@ -135,3 +135,12 @@ test('MVP075: fuente inválida o demasiado larga bloqueada sin tocar sistemas re
  const code=readFileSync(new URL('../../src/domain/auditoria-cotizacion-texto-mvp075.ts',import.meta.url),'utf8');
  assert.doesNotMatch(code,/fetch\(|Deno\.env|supabase\.co|gate\.whapi\.cloud|api\.openai\.com/);
 });
+
+test('MVP075: precio unitario sin cantidad atribuida no cuenta como total de ítem',()=>{
+ const quote='Precio unitario: $ 100,00\nTOTAL: $ 100,00';
+ const r=auditar(quote);
+ assert.equal(r.lineas[0].tipo,'nota');
+ assert.equal(r.sumaObservada,null);
+ assert.equal(r.estadoConciliacion,'no_verificable');
+ assert.equal(r.totalDeclaradoLiteral,'$ 100,00');
+});
