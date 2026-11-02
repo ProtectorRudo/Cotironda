@@ -337,8 +337,10 @@ async function respond(req:Request):Promise<Response>{
   // committed authenticated inbox and supplier/buyer consent SQL check.
   // No interpretation can distribute until independently reviewed.
   if(row.type!=='text'&&media?.state==='awaiting_secure_download'&&
-     outcome(out.data)==='needs_review'&&
-     Deno.env.get('COTIRONDA_PILOT_MEDIA_ARCHIVE_ENABLED')==='true'){
+     outcome(out.data)==='needs_review'){
+    const archiveGate=await db.rpc('cotironda_piloto_media_enabled_mvp095');
+    if(archiveGate.error)return json(503,'media_archive_gate_unavailable');
+    if(archiveGate.data===true){
     const reservation=await db.rpc('cotironda_piloto_reserve_media_mvp095',{
       p_message_hmac:messageHash,p_chat_hmac:chatHash,
       p_media_id_sha256:await sha(media.media_id),p_mime:media.mime
@@ -388,6 +390,7 @@ async function respond(req:Request):Promise<Response>{
           }catch{/* preserve original and review_required; no retry */}
         }
       }
+    }
     }
   }
   // The model picks an intent, never an outgoing message. A business
