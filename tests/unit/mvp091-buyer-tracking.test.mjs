@@ -54,7 +54,7 @@ test('MVP091: un solo pedido nuevo, dos proveedores con zona y material confirma
  assert.match(gate,/rr\.created_at>=w\.starts_at and rr\.created_at<w\.expires_at\)=1/);
  assert.match(gate,/for update of o skip locked limit 1/);
  assert.match(gate,/allow_next_pilot_send_mvp091/);
- assert.doesNotMatch(gate,/whatsapp_outbound_enabled\s*=\s*true/);
+ assert.doesNotMatch(gate,/update\s+cotironda_piloto_privado\.integration_flags\s+set/i);
 });
 test('MVP091: smoke reversible valida privacidad incluso con oferta aprobada antes de cierre',()=>{
  assert.match(rollback,/^begin;/m);
