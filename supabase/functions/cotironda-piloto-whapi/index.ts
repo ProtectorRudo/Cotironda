@@ -501,6 +501,18 @@ async function respond(req:Request):Promise<Response>{
                         });
                       if(savedCheck.error)
                         console.warn('cotironda_supplier_source_check_reconciliation_required');
+                      else if(savedCheck.data?.state==='source_text_covered'&&
+                              amounts.data?.state==='balanced'){
+                        // Publish only vetted textual economic figures under
+                        // narrowly scoped pilot privacy and consent gates.
+                        // Source PDF/image and unknown materials stay private.
+                        const published=await db.rpc(
+                          'cotironda_piloto_publish_source_text_mvp107',{
+                            p_message_hmac:messageHash
+                          });
+                        if(published.error)
+                          console.warn('cotironda_supplier_anonymous_projection_reconciliation_required');
+                      }
                     }
                   }
                 }
