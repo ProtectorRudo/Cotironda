@@ -52,7 +52,7 @@ export function parseDocumentClarification(raw:string):DocumentClarification|nul
   const body=line[2].trim().toLowerCase();
   // Reject numeric changes and pricing: quantities and values were in
   // the original document and must not be overwritten by clarification.
-  if(/\d/u.test(body)||/[$€]|(?:precio|costo|total|iva|flete|descuento)/iu.test(body))
+  if(/\d/u.test(body.replace(/\bm[23]\b/giu,''))||/[$€]|(?:precio|costo|total|iva|flete|descuento)/iu.test(body))
    return null;
   const units=unitPatterns.filter(([rx])=>rx.test(body));
   if(units.length>1)return null;
