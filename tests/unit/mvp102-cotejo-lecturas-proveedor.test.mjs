@@ -47,6 +47,8 @@ test('MVP102: results are private, immutable, idempotent and fail closed',()=>{
  assert.match(sql,/p\.consent_at is not null and p\.opted_out_at is null/);
  assert.match(sql,/m\.content_sha256=q\.source_sha256/);
  assert.match(sql,/second_unavailable/);
+ assert.match(sql,/p_second_proposal \?& array\[/);
+ assert.match(sql,/v \?& array\[/);
  assert.match(sql,/already_checked/);
  assert.match(smoke,/mvp102_created_unverified_offer/);
  assert.match(smoke,/mvp102_public_access/);
@@ -57,7 +59,7 @@ test('MVP102: full cross-section includes source mismatch and extras',()=>{
  for(const scenario of [
  'match','changed_price','changed_discount','changed_total','omitted_pallet',
  'unavailable','wrong_kind','notes','unanswered','ambiguous','no_evidence',
- 'malformed'
+ 'malformed','missing_kind','missing_null_field'
  ]) assert.ok(smoke.includes("'"+scenario+"'"),scenario);
  for(const concept of ['Cemento CPC 50 kg','pallets vacíos','bolsones vacíos',
  'Flete a obra','Descuento comercial']) assert.ok(smoke.includes(concept),concept);
