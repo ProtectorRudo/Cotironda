@@ -88,7 +88,7 @@ test('MVP095: hash de proveedor adulterado bloquea archivo',async()=>{
 test('MVP095: integración en webhook queda bajo flag independiente y SQL privado',()=>{
  const s=readFileSync(new URL(
   '../../supabase/functions/cotironda-piloto-whapi/index.ts',import.meta.url),'utf8');
- assert.match(s,/COTIRONDA_PILOT_MEDIA_ARCHIVE_ENABLED/);
+ assert.match(s,/cotironda_piloto_media_enabled_mvp095/);
  assert.match(s,/cotironda_piloto_reserve_media_mvp095/);
  assert.match(s,/cotironda_piloto_finish_media_mvp095/);
  assert.match(s,/getVerifiedWhapiMedia/);
