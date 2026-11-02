@@ -1,3 +1,12 @@
+## MVP-081b — Roles de lectura mínimos aplicados al PILOTO (02/11/2026)
+- Tras 5/5 CI PASS del código (1.450 unitarias), Supabase PILOTO confirmó migración `mvp081_private_reader_role_no_login` aplicada: rol NOLOGIN, sin BYPASSRLS, 3 políticas RLS, SELECT mínimo, no UPDATE/DELETE, outbound WhatsApp OFF.
+- El rol es deliberadamente incapaz de iniciar sesión: faltan credencial operativa dedicada en secret manager, conexión E2E y autorización del comprador para servir plantillas reales. Sin modificaciones a ofertas, DEV histórica o producción.
+
+## MVP-081 — Lector privado PostgreSQL controlado (02/11/2026)
+- Implementados rol NOLOGIN y RLS/SELECT específicos por columna (SQL en repo, no instalados tras ensayo rollback) y adaptador Node de lectura en transacción READ ONLY con TLS y credencial backend exclusiva, OFF por defecto.
+- Prueba transaccional de permisos en PILOTO aprobada con rollback. El servicio administrativo Supabase no pudo asumir el rol mediante SET LOCAL ROLE, por lo que queda pendiente prueba E2E real con credenciales de lector.
+- Tests config y no exposición, docs/202. Sin ruta de arquitecto, secretos reales, modificaciones de presupuestos, WhatsApp o producción.
+
 ## MVP-080 — Puente SQL privado de fuente real a plantilla (02/11/2026)
 - Agregado adaptador `src/server/plantillas-piloto-mvp080.ts`, consulta fija parametrizada por pedido/comprador, versiones últimas por proveedor y verificación SHA independiente contra mensaje original del inbox.
 - Revisión de privacidad vinculada a proveedor, revisión y SHA; sin ella se bloquea la vista, sin publicar renglones ni precios. Pruebas normal/adversaria y documentación docs/201.
