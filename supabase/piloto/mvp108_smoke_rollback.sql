@@ -18,11 +18,16 @@ begin
  ) t(scenario,wanted,wanted_count)
  loop
   scenario:=row_.scenario;expected:=row_.wanted;
+  -- Create with a short, immutable deadline (created_at exactly 4 days prior).
+  -- Never modify an existing deadline to simulate closure.
+  cutoff:=clock_timestamp()+interval '3 seconds';
   insert into cotironda_piloto_privado.requests(
-    buyer_key,delivery_city,original_request,source_hmac,state)
+    buyer_key,delivery_city,original_request,source_hmac,state,
+    created_at,closes_at)
   values('arquitecto','La Plata',
    'Cemento CPC 50 kg, cantidad 20 bolsas, ensayo '||scenario,
-   encode(extensions.gen_random_bytes(32),'hex'),'prepared')
+   encode(extensions.gen_random_bytes(32),'hex'),'prepared',
+   cutoff-interval '4 days',cutoff)
   returning id into rid;
   insert into cotironda_piloto_privado.request_lines(
    request_id,line_no,original_description,quantity,unit,family_code)
@@ -90,11 +95,11 @@ begin
   out_:=public.cotironda_piloto_plan_coverage_finalists_mvp108(rid);
   if out_->>'state'<>'deadline_pending'
   then raise exception 'mvp108_premature_plan %',out_;end if;
-  cutoff:=clock_timestamp();
-  -- Simulate reaching 96-hour deadline while preserving duration exactness.
+  -- Let the immutable deadline pass using PostgreSQL server time.
+  perform pg_sleep(greatest(0,
+    extract(epoch from (cutoff-clock_timestamp()))+0.05));
   update cotironda_piloto_privado.requests
-  set created_at=cutoff-interval '4 days',closes_at=cutoff,
-    closed_at=cutoff,state='closed' where id=rid;
+  set closed_at=clock_timestamp(),state='closed' where id=rid;
   out_:=public.cotironda_piloto_plan_coverage_finalists_mvp108(rid);
   if out_->>'state'<>expected
    or (out_->>'candidate_count')::integer<>row_.wanted_count
