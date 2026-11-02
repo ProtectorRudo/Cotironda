@@ -30,7 +30,9 @@ begin
   ('unanswered','unanswered_questions',null::integer),
   ('ambiguous','unresolved_ambiguity',2),
   ('no_evidence','evidence_missing',3),
-  ('malformed','second_invalid',null::integer)
+  ('malformed','second_invalid',null::integer),
+  ('missing_kind','second_invalid',null::integer),
+  ('missing_null_field','line_disagreement',3)
  ) as x(scenario,reason,expected_line)
  loop
   step:=row_.scenario;expected:=row_.reason;expected_line:=row_.expected_line;
@@ -106,6 +108,10 @@ begin
    second:=jsonb_set(second,'{lines,2,evidence_location}',
      to_jsonb(''::text));
   elsif step='malformed' then second:='"no es un objeto"'::jsonb;
+  elsif step='missing_kind' then second:=second-'kind';
+  elsif step='missing_null_field' then
+   second:=jsonb_set(second,'{lines,2}',
+     (second->'lines'->2)-'unit_price');
   end if;
   result:=public.cotironda_piloto_compare_supplier_readings_mvp102(msg,second);
   if result->>'reason'<>expected
@@ -133,6 +139,13 @@ begin
  if (select count(*) from cotironda_piloto_privado.offer_versions
   where request_id=rid and supplier_key='corralon_nahuel')<>before_offers
  then raise exception 'mvp102_created_unverified_offer';end if;
+ -- Immutability is enforced even for privileged callers.
+ begin
+  update cotironda_piloto_privado.supplier_reading_checks_mvp102
+  set state='model_readings_match' where message_hmac=msg;
+  raise exception 'mvp102_check_could_be_edited';
+ exception when check_violation then null;
+ end;
  if has_table_privilege('anon',
      'cotironda_piloto_privado.supplier_reading_checks_mvp102','SELECT')
  or has_table_privilege('authenticated',
