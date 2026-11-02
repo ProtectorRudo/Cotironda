@@ -70,3 +70,15 @@ test('MVP091: determinismo de bytes, sin número de WhatsApp ni identidad de com
  assert.doesNotMatch(raw,/549[0-9]{9,}/);
  assert.doesNotMatch(raw,/corralon_ailin|corralon_nahuel|arquitecto/);
 });
+
+test('MVP091: no filtra contacto personal incrustado en el pedido PDF',()=>{
+ for(const name of ['cemento vendedor@example.invalid',
+    'cemento 1234567890123','piedra tel 111 111 1111',
+    'arena www.example.invalid']){
+   assert.throws(()=>generarSolicitudPdfMvp091({...input(),
+     items:[{description:name,quantity:'1',unit:'bag'}]}),
+     /mvp091_pdf_input_invalid/);
+ }
+ assert.throws(()=>generarSolicitudPdfMvp091({...input(),
+    city:'La Plata whatsapp 11111111111'}),/mvp091_pdf_input_invalid/);
+});
