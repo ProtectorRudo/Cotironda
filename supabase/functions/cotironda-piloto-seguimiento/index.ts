@@ -184,7 +184,7 @@ Deno.serve(async req=>{
          const c=contacts.find(x=>x.key===supplier&&x.role==='supplier');
          const name=(labels as Record<string,unknown>)[supplier];
          if(!c||typeof name!=='string'||name.length>80||
-            /[\\u0000-\\u001f\\u007f]/u.test(name))
+            /[\u0000-\u001f\u007f]/u.test(name))
             throw Error('contact_invalid');
          return {name,whatsapp:c.phone};
        });
