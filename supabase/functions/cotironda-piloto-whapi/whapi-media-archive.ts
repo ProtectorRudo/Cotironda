@@ -11,7 +11,8 @@ const ALLOWED=new Set(['application/pdf','image/jpeg','image/png','image/webp',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   'text/csv','text/plain']);
 export class MediaError extends Error{
- constructor(readonly code:string){super(code);this.name='MediaError'}
+ readonly code:string;
+ constructor(code:string){super(code);this.name='MediaError';this.code=code}
 }
 function hex(bytes:Uint8Array):string{
  return Array.from(bytes,x=>x.toString(16).padStart(2,'0')).join('');
