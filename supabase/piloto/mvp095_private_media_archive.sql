@@ -22,6 +22,7 @@ create table cotironda_piloto_privado.media_archive_mvp095(
  message_hmac text primary key references cotironda_piloto_privado.whapi_inbox(message_hmac),
  chat_hmac text not null check(chat_hmac ~ '^[a-f0-9]{64}$'),
  participant_key text not null references cotironda_piloto_privado.participants(key),
+ request_id uuid references cotironda_piloto_privado.requests(id),
  kind text not null check(kind in ('image','document')),
  mime text not null check(length(mime) between 4 and 130),
  media_id_sha256 text not null check(media_id_sha256 ~ '^[a-f0-9]{64}$'),
@@ -50,7 +51,7 @@ create index media_archive_mvp095_quota
 create function public.cotironda_piloto_reserve_media_mvp095(
  p_message_hmac text,p_chat_hmac text,p_media_id_sha256 text,p_mime text
 ) returns boolean language plpgsql security definer set search_path='' as $fn$
-declare v_key text;v_kind text;n integer;
+declare v_key text;v_kind text;v_role text;v_request uuid;n integer;
 begin
  if p_message_hmac !~ '^[a-f0-9]{64}$'
    or p_chat_hmac !~ '^[a-f0-9]{64}$'
@@ -62,7 +63,7 @@ begin
  then return false;end if;
  if not exists(select 1 from cotironda_piloto_privado.integration_flags
      where only_row and whatsapp_inbound_enabled)then return false;end if;
- select m.participant_key,m.kind into v_key,v_kind
+ select m.participant_key,m.kind,p.participant_role into v_key,v_kind,v_role
  from cotironda_piloto_privado.whapi_inbox m
  join cotironda_piloto_privado.participants p on
    p.key=m.participant_key and p.chat_hmac=m.chat_hmac
@@ -79,9 +80,17 @@ begin
     where chat_hmac=p_chat_hmac
       and reserved_at>=clock_timestamp()-interval '24 hours')>=8
  then return false;end if;
+ if v_role='supplier' then
+   select count(*),min(i.request_id::text)::uuid into n,v_request
+   from cotironda_piloto_privado.invitations i
+   join cotironda_piloto_privado.requests r on r.id=i.request_id
+   where i.supplier_key=v_key and i.state='prepared'
+    and r.state='prepared' and r.closes_at>clock_timestamp();
+   if n<>1 then v_request:=null;end if;
+ end if;
  insert into cotironda_piloto_privado.media_archive_mvp095(
-  message_hmac,chat_hmac,participant_key,kind,mime,media_id_sha256)
- values(p_message_hmac,p_chat_hmac,v_key,v_kind,p_mime,p_media_id_sha256)
+  message_hmac,chat_hmac,participant_key,request_id,kind,mime,media_id_sha256)
+ values(p_message_hmac,p_chat_hmac,v_key,v_request,v_kind,p_mime,p_media_id_sha256)
  on conflict do nothing;
  get diagnostics n=row_count;
  return n=1;
