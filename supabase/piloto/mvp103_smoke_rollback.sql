@@ -111,9 +111,8 @@ begin
    end if;
   end if;
   result:=public.cotironda_piloto_audit_supplier_amounts_mvp103(msg);
-  if result->>'state'<>state_ or result->>'reason' is distinct from
-    case when case_='no_second_read' then null else expected end and
-    case_<>'no_second_read'
+  if result->>'state'<>state_
+   or (case_<>'no_second_read' and result->>'reason'<>expected)
    or (result->>'line_no')::integer is distinct from problem
    or (case_<>'no_second_read' and
        (result->>'source_verified'<>'false' or
