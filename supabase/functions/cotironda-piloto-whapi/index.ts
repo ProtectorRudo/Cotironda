@@ -8,6 +8,7 @@ import {generarSolicitudPdfMvp091} from './request-pdf.ts';
 import {makeMediaManifest} from './media-intake.ts';
 import {parseDocumentClarification} from './document-clarification.ts';
 import {getVerifiedWhapiMedia,storeVerifiedMedia} from './whapi-media-archive.ts';
+import {checkSupplierTextSource} from './supplier-source-text.ts';
 import {proposeDocumentAI} from './document-ai-draft.ts';
 import {interpretPilotBuyerWithAI} from './ai-interpreter.ts';
 import {decidePilotAIAction,shortBusinessReply,type ReplyCode} from './business-ai-policy.ts';
@@ -485,6 +486,22 @@ async function respond(req:Request):Promise<Response>{
                     });
                     if(amounts.error)
                       console.warn('cotironda_supplier_amount_audit_reconciliation_required');
+                    else if(['balanced','difference','needs_review'].includes(
+                      amounts.data?.state)){
+                      // Independent byte-level TXT/CSV coverage. Other formats
+                      // remain NEEDS REVIEW; two AI passes are not source proof.
+                      const checked=checkSupplierTextSource(
+                        downloadedForReview,proposal);
+                      const savedCheck=await db.rpc(
+                        'cotironda_piloto_record_supplier_source_check_mvp106',{
+                          p_message_hmac:messageHash,
+                          p_source_sha256:downloadedForReview.sha256,
+                          p_state:checked.state,p_reason:checked.reason,
+                          p_line_count:proposal.lines.length
+                        });
+                      if(savedCheck.error)
+                        console.warn('cotironda_supplier_source_check_reconciliation_required');
+                    }
                   }
                 }
               }
