@@ -112,7 +112,9 @@ export function crearPlantillasAnonimasMvp079(
    if(category===undefined){flagged=true;break}
    // No ocultar montos ni notas comerciales bajo una falsa cabecera privada.
    if(category==='privado'){
-    if(l.importesLiterales.length>0||l.tipo!=='nota'){flagged=true;break}
+    if(l.importesLiterales.length>0||l.tipo!=='nota'||!unsafe(l.textoExacto)){
+     flagged=true;break;
+    }
     continue;
    }
    if(category==='vacio'){
