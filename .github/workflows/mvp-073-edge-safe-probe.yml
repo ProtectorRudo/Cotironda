@@ -5,6 +5,7 @@ on:
       - feat/mvp-073-whapi-edge-inbox-piloto
     paths:
       - .github/workflows/mvp-073-edge-safe-probe.yml
+      - supabase/functions/cotironda-piloto-whapi/index.ts
   workflow_dispatch:
 permissions:
   contents: read
