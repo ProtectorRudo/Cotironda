@@ -70,6 +70,9 @@ begin
  if a.proposal->>'delivery_city' is distinct from
     p_second_proposal->>'delivery_city' then
   return jsonb_build_object('state','city_disagreement');end if;
+ if a.proposal->>'requested_delivery_note' is distinct from
+    p_second_proposal->>'requested_delivery_note' then
+  return jsonb_build_object('state','delivery_note_disagreement');end if;
  for n in 0..total-1 loop
   line_:=a.proposal->'lines'->n;
   compare_:=p_second_proposal->'lines'->n;
