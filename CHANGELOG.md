@@ -1,3 +1,16 @@
+## MVP-082c — Lectura RLS real bajo rol segregado con rollback (02/11/2026)
+- Smoke SQL reproducible en Supabase PILOTO: el rol `cotironda_piloto_reader` leyó oferta(s) y verificó fuente/SHA de WhatsApp; se denegó acceso a contacto, cifrado completo y escritura.
+- Transacción revertida; comprobado que no persiste la membresía temporal del operador, oferta intacta y WhatsApp saliente OFF. Aún sin conexión real Next.js ni endpoint comprador. [docs/203](docs/203-mvp-082-login-privado-preparado.md).
+
+## MVP-082b — Instalación de login sin contraseña en PILOTO (02/11/2026)
+- GitHub Actions 5/5 PASS, 1.455/1.455 unitarias sobre el código. Supabase PILOTO: `mvp082_login_without_password` aplicada; LOGIN real sin contraseña y sin heredar SELECT, miembro con solo SET al rol NOLOGIN y sin DELETE; WhatsApp saliente apagado.
+- Vercel `cotironda-portal-dev`: intento de agregar variables restringidas a rama rechazado porque proyecto no está conectado a Git. No se crearon envs, no se desplegó, no hay prueba E2E/credencial. Ver docs/203.
+
+## MVP-082 — Cuenta separada y preflight de conexión privada (02/11/2026)
+- Preparada identidad PostgreSQL LOGIN con PASSWORD NULL, NOINHERIT, SET ROLE explícito al reader NOLOGIN y límites de conexión. SQL apuntado solo al piloto.
+- Adaptador Next server verifica rol efectivo dentro de transacción READ ONLY; configuración valida producción bloqueada y Preview permitido solo bajo flag/host/cuenta/SSL estrictos.
+- Pruebas y smoke del operador sin datos personales; docs/203. Sin contraseña real, endpoint comprador, envíos, publicación o descarga de presupuesto original.
+
 ## MVP-081b — Roles de lectura mínimos aplicados al PILOTO (02/11/2026)
 - Tras 5/5 CI PASS del código (1.450 unitarias), Supabase PILOTO confirmó migración `mvp081_private_reader_role_no_login` aplicada: rol NOLOGIN, sin BYPASSRLS, 3 políticas RLS, SELECT mínimo, no UPDATE/DELETE, outbound WhatsApp OFF.
 - El rol es deliberadamente incapaz de iniciar sesión: faltan credencial operativa dedicada en secret manager, conexión E2E y autorización del comprador para servir plantillas reales. Sin modificaciones a ofertas, DEV histórica o producción.

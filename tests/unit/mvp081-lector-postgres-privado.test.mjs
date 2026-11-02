@@ -17,7 +17,8 @@ test('MVP081: salida cerrada por defecto, en produccion y para URL maliciosa',()
  for(const bad of [
   {...env(),habilitado:undefined},
   {...env(),habilitado:'false'},
-  {...env(),modo:'production'},
+  {...env(),modo:'production',vercelEntorno:'development'},
+  {...env(),modo:'test'},
   {...env(),vercelEntorno:'production'},
   {...env(),identificadorProyecto:'proyecto_equivocado'},
   {...env(),conexion:undefined},
