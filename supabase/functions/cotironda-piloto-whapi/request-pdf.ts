@@ -27,7 +27,8 @@ function textOk(s:string,max:number):boolean{
 function decimal(n:string):string{
  if(typeof n!=='string'||!NUM.test(n)||Number(n)<=0)fail();
  const p=n.split('.');
- return p[1]?p[0]+'.'+p[1].replace(/0+$/u,'').replace(/^$/u,''):p[0];
+ const fraction=p[1]?.replace(/0+$/u,'')??'';
+ return fraction?p[0]+'.'+fraction:p[0];
 }
 function quote(s:string):string{
  return s.replace(/\\/gu,'\\\\').replace(/\(/gu,'\\(').replace(/\)/gu,'\\)');
