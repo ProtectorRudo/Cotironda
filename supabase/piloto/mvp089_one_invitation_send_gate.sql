@@ -87,7 +87,9 @@ returns text language sql stable security definer set search_path='' as $fn$
    'Entrega: '||r.delivery_city||E'\n'||
    'Materiales:'||E'\n'||
    left(string_agg(
-     regexp_replace(regexp_replace(l.quantity::text,'(\\.\\d*?)0+$','\\1'),'\\.$','')||
+     case when l.quantity=trunc(l.quantity)
+       then trunc(l.quantity)::text
+       else trim(trailing '0' from l.quantity::text) end||
      ' '||case l.unit
        when 'bag' then 'bolsas'
        when 'l' then 'litros'
