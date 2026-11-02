@@ -13,6 +13,21 @@
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
+  <svg class="icon-sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+    <symbol id="ico-stack" viewBox="0 0 24 24"><path d="m12 2 9 5-9 5-9-5 9-5ZM3 12l9 5 9-5M3 17l9 5 9-5"/></symbol>
+    <symbol id="ico-tag" viewBox="0 0 24 24"><path d="M20 13 11 22 2 13V3h10l8 10Z"/><circle cx="7" cy="8" r="1"/></symbol>
+    <symbol id="ico-chart" viewBox="0 0 24 24"><path d="M4 21V13h4v8M10 21V8h4v13M16 21V3h4v18"/></symbol>
+    <symbol id="ico-chat" viewBox="0 0 24 24"><path d="M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 21l2.1-5.4A8.5 8.5 0 1 1 21 11.5Z"/><path d="m9 9 1.5 2 2.2 1.7 2.3 1"/></symbol>
+    <symbol id="ico-store" viewBox="0 0 24 24"><path d="M3 10 5 3h14l2 7M3 10h18v11H3V10ZM3 10c0 3 4 4 6 0 0 3 4 4 6 0 0 3 4 4 6 0"/></symbol>
+    <symbol id="ico-scale" viewBox="0 0 24 24"><path d="M12 3v18M4 7h16M4 7l-3 7h6L4 7ZM20 7l-3 7h6l-3-7ZM7 21h10"/></symbol>
+    <symbol id="ico-file" viewBox="0 0 24 24"><path d="M5 2h10l5 5v15H5V2ZM15 2v6h5M9 13h7M9 17h7"/></symbol>
+    <symbol id="ico-shield" viewBox="0 0 24 24"><path d="m12 2 9 4v6c0 6-4 9-9 11-5-2-9-5-9-11V6l9-4ZM8 12l3 3 5-6"/></symbol>
+    <symbol id="ico-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
+    <symbol id="ico-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m7 12 3 3 7-7"/></symbol>
+    <symbol id="ico-package" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="12" rx="1"/><path d="M3 12h18M8 7V4h8v3M8 19v2m8-2v2"/></symbol>
+    <symbol id="ico-truck" viewBox="0 0 24 24"><path d="M2 5h13v13H2V5Zm13 5h4l3 4v4h-7v-8Z"/><circle cx="6" cy="19" r="2"/><circle cx="19" cy="19" r="2"/></symbol>
+    <symbol id="ico-savings" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v5c0 2 4 3 8 3s8-1 8-3V6M4 11v5c0 2 4 3 8 3s8-1 8-3v-5"/></symbol>
+  </svg>
   <a class="skip" href="#contenido">Ir al contenido</a>
   <header class="header">
     <div class="container header-inner">
@@ -22,8 +37,9 @@
       </a>
       <nav class="nav" aria-label="Navegación principal">
         <a href="#funciona">Cómo funciona</a>
-        <a href="#ventajas">Por qué Cotironda</a>
-        <a href="#comparador">Ejemplo</a>
+        <a href="#ventajas">Ahorro inteligente</a>
+        <a href="#comparador">Comparador</a>
+        <a href="#demo">Demo</a>
       </nav>
       <span class="header-status"><span aria-hidden="true" class="status-dot"></span> Piloto en desarrollo</span>
     </div>
@@ -32,12 +48,13 @@
   <main id="contenido">
     <section class="hero container" aria-labelledby="hero-title">
       <div class="hero-copy">
-        <p class="eyebrow"><span class="dash" aria-hidden="true"></span> LA NUEVA FORMA DE COTIZAR · ARGENTINA</p>
+        <p class="eyebrow hero-eyebrow"><span class="dash" aria-hidden="true"></span> LA NUEVA FORMA DE COTIZAR · ARGENTINA</p>
         <h1 id="hero-title">Comprá mejor.<br><span>Ahorrá más.</span></h1>
-        <p class="lead">Cotironda te ayuda a encontrar <strong>mejores precios</strong>: hacés un solo pedido por WhatsApp, recibís propuestas de distintos proveedores y comparás costos completos para elegir la opción más conveniente. <strong>Más oportunidades de ahorro, sin perder tiempo.</strong></p>
+        <p class="lead">Cotironda te ayuda a encontrar <strong>mejores precios</strong>: hacés un solo pedido por WhatsApp, recibís propuestas de distintos proveedores y comparás costos completos para elegir la opción más conveniente.</p>
+        <p class="hero-promise">Más oportunidades de ahorro, sin perder tiempo.</p>
         <div class="hero-actions">
           <a class="primary" href="#funciona">Descubrí cómo ahorrar <span aria-hidden="true">→</span></a>
-          <a class="secondary" href="#presupuesto">Ver un presupuesto <span aria-hidden="true">↗</span></a>
+          <a class="secondary" href="#presupuesto"><span aria-hidden="true" class="play-symbol">▷</span> Ver ejemplo</a>
         </div>
         <p class="transparency"><span aria-hidden="true">ⓘ</span> Esta es una <strong>demostración pública con datos ficticios</strong>. El piloto con WhatsApp está en desarrollo: esta página no recibe solicitudes ni presupuestos reales.</p>
       </div>
@@ -47,49 +64,53 @@
         <article class="budget" aria-label="Ejemplo ficticio de la plantilla anónima de presupuesto Cotironda">
           <div class="budget-top">
             <div class="budget-brand"><img src="./brand-mark.svg" alt="" width="24" height="27"><strong>Cotironda</strong></div>
-            <span class="budget-label">EJEMPLO</span>
+            <span class="budget-label"><svg class="tiny-svg" aria-hidden="true"><use href="#ico-lock"/></svg> Identidad reservada</span>
           </div>
           <div class="budget-intro">
-            <span class="overline">PRESUPUESTO DE MATERIALES</span>
-            <h2>Una propuesta, todo claro.</h2>
-            <p>Proveedor A <span class="privacy-mark"><span aria-hidden="true">●</span> Identidad reservada</span></p>
+            <h2>Presupuesto anónimo</h2>
+            <p class="budget-caption">Ronda de cotización · Ejemplo ficticio</p>
+            <p class="budget-provider">Proveedor A <span class="privacy-mark"><span aria-hidden="true">●</span> Identidad reservada</span></p>
           </div>
           <table class="budget-table">
             <caption class="sr-only">Presupuesto ficticio de un proveedor, con productos y cargos adicionales</caption>
             <thead><tr><th scope="col">Descripción</th><th scope="col">Importe</th></tr></thead>
             <tbody>
-              <tr><td>Cemento CPC 50 kg <small>20 bolsas</small></td><td>$ 190.000</td></tr>
-              <tr><td>Hidrófugo 5 L <small>1 bidón</small></td><td>$ 21.000</td></tr>
-              <tr><td>Pallets vacíos <small>2 unidades · adicional</small></td><td>$ 14.000</td></tr>
-              <tr><td>Flete <small>Entrega</small></td><td>$ 12.000</td></tr>
-              <tr><td>Descuento <small>Declarado por el comercio</small></td><td>− $ 3.000</td></tr>
+              <tr><td><svg class="line-icon" aria-hidden="true"><use href="#ico-package"/></svg>Cemento CPC 50 kg <small>20 bolsas</small></td><td>$ 168.000</td></tr>
+              <tr><td><svg class="line-icon" aria-hidden="true"><use href="#ico-tag"/></svg>Hidrófugo 5 L <small>1 bidón</small></td><td>$ 24.000</td></tr>
+              <tr><td><svg class="line-icon" aria-hidden="true"><use href="#ico-stack"/></svg>Pallets vacíos <small>2 unidades · adicional</small></td><td>$ 18.000</td></tr>
+              <tr><td><svg class="line-icon" aria-hidden="true"><use href="#ico-truck"/></svg>Flete <small>Entrega</small></td><td>$ 36.000</td></tr>
+              <tr class="discount-row"><td><svg class="line-icon" aria-hidden="true"><use href="#ico-tag"/></svg>Descuento <small>Declarado por el comercio</small></td><td>− $ 12.000</td></tr>
             </tbody>
           </table>
           <div class="budget-total"><span>Total declarado <small>IVA no informado</small></span><strong>$ 234.000</strong></div>
           <p class="budget-footnote">La plantilla es ilustrativa: en el sistema real se debe preservar cada renglón y el total original del proveedor.</p>
         </article>
-        <div class="visual-note"><span class="note-icon" aria-hidden="true">✓</span><span>Un mismo formato.<br><strong>Sin perder ningún detalle.</strong></span></div>
+        <div class="visual-notes" aria-label="Ventajas de comparar con Cotironda">
+          <div class="visual-note"><svg class="tiny-svg" aria-hidden="true"><use href="#ico-scale"/></svg><strong>Comparación justa</strong></div>
+          <div class="visual-note"><svg class="tiny-svg" aria-hidden="true"><use href="#ico-check"/></svg><strong>Cobertura + precio + flete</strong></div>
+          <div class="visual-note"><svg class="tiny-svg" aria-hidden="true"><use href="#ico-chart"/></svg><strong>Más oportunidades de ahorro</strong></div>
+        </div>
       </div>
     </section>
 
     <section class="principles" aria-label="Nuestra forma de trabajar">
       <div class="container principle-grid">
-        <p><strong>Más opciones.</strong> Distintos proveedores.</p>
-        <p><strong>Precios claros.</strong> Costos comparables.</p>
-        <p><strong>Más ahorro.</strong> Mejores decisiones.</p>
+        <div class="principle"><span class="principle-icon"><svg class="section-icon" aria-hidden="true"><use href="#ico-stack"/></svg></span><p><strong>Más opciones</strong><span>Distintos proveedores</span></p></div>
+        <div class="principle"><span class="principle-icon"><svg class="section-icon" aria-hidden="true"><use href="#ico-tag"/></svg></span><p><strong>Precios claros</strong><span>Costos comparables</span></p></div>
+        <div class="principle"><span class="principle-icon"><svg class="section-icon" aria-hidden="true"><use href="#ico-chart"/></svg></span><p><strong>Más ahorro</strong><span>Mejores decisiones</span></p></div>
       </div>
     </section>
 
     <section class="section container" id="funciona">
       <div class="section-heading">
         <p class="eyebrow">ASÍ DE SIMPLE</p>
-        <h2>Vos pedís.<br><span>Comparamos para que compres mejor.</span></h2>
-        <p>No hace falta aprender otra plataforma. La experiencia está pensada para que tanto compradores como comercios sigan trabajando de la forma más natural.</p>
+        <h2>Así funciona</h2>
+        <p>Un solo pedido. Cotironda se encarga de buscar opciones y presentar presupuestos claros para ayudarte a comprar mejor.</p>
       </div>
       <div class="steps">
-        <article class="step"><span class="step-number">01</span><h3>Mandás lo que necesitás</h3><p>Por WhatsApp: texto, PDF, Excel o foto. Cotironda podrá interpretar el pedido y solo preguntar un dato esencial si falta, como la zona de entrega.</p></article>
-        <article class="step"><span class="step-number">02</span><h3>Buscamos precios entre proveedores</h3><p>Consultamos a varios negocios pertinentes según catálogo y zona. Responden por WhatsApp, sin entrar a un portal ni confirmar dos veces.</p></article>
-        <article class="step"><span class="step-number">03</span><h3>Comparás y encontrás oportunidades de ahorro</h3><p>Ves las ofertas en una presentación propia y anónima, fiel a cada producto, precio, adicional, flete, descuento y total declarado. Así podés evaluar qué compra te conviene.</p></article>
+        <article class="step"><span class="step-icon"><svg class="section-icon" aria-hidden="true"><use href="#ico-chat"/></svg></span><span class="step-number">1</span><h3>Mandás lo que necesitás</h3><p>Por WhatsApp: texto, PDF, Excel o foto. Solo preguntamos un dato esencial si falta, como la zona de entrega.</p></article>
+        <article class="step"><span class="step-icon"><svg class="section-icon" aria-hidden="true"><use href="#ico-store"/></svg></span><span class="step-number">2</span><h3>Buscamos precios entre proveedores</h3><p>Consultamos a distintos negocios según catálogo y zona. Responden por WhatsApp, sin entrar a un portal ni confirmar dos veces.</p></article>
+        <article class="step"><span class="step-icon"><svg class="section-icon" aria-hidden="true"><use href="#ico-chart"/></svg></span><span class="step-number">3</span><h3>Comparás y encontrás oportunidades de ahorro</h3><p>Ves precios, adicionales, fletes, descuentos y totales en un formato claro, siempre fiel al original.</p></article>
       </div>
     </section>
 
@@ -101,9 +122,9 @@
           <p>El objetivo es ayudarte a pagar el precio más conveniente <strong>entre las ofertas realmente comparables</strong>. Analizamos cobertura, unidades, IVA, flete y condiciones de cada proveedor. Un total menor no necesariamente significa una compra más barata si faltan productos.</p>
         </div>
         <div class="feature-list">
-          <div><span class="feature-check" aria-hidden="true">✓</span><p><strong>Fidelidad al original</strong><span>Se respetan todos los renglones y el total declarado, incluso los conceptos adicionales.</span></p></div>
-          <div><span class="feature-check" aria-hidden="true">✓</span><p><strong>Privacidad durante la ronda</strong><span>Las ofertas se muestran anónimas mientras corresponda, sin adjuntar el presupuesto identificable del comercio.</span></p></div>
-          <div><span class="feature-check" aria-hidden="true">✓</span><p><strong>Comparación justa</strong><span>Cobertura y precios equivalentes se analizan por separado. No se confunden ofertas parciales con completas.</span></p></div>
+          <div><span class="feature-check" aria-hidden="true"><svg class="section-icon"><use href="#ico-file"/></svg></span><p><strong>Fidelidad al original</strong><span>Se respetan todos los renglones y el total declarado, incluso los conceptos adicionales.</span></p></div>
+          <div><span class="feature-check" aria-hidden="true"><svg class="section-icon"><use href="#ico-shield"/></svg></span><p><strong>Privacidad durante la ronda</strong><span>Las ofertas se muestran anónimas mientras corresponda, sin adjuntar el presupuesto identificable del comercio.</span></p></div>
+          <div><span class="feature-check" aria-hidden="true"><svg class="section-icon"><use href="#ico-scale"/></svg></span><p><strong>Comparación justa</strong><span>Cobertura y precios equivalentes se analizan por separado. No se confunden ofertas parciales con completas.</span></p></div>
         </div>
       </div>
     </section>
@@ -111,7 +132,7 @@
     <section class="section comparison container" id="comparador">
       <div class="section-heading">
         <p class="eyebrow">COMPARADOR · SIMULACIÓN</p>
-        <h2>Para ahorrar de verdad,<br><span>compará la compra completa.</span></h2>
+        <h2>Comparador: un ejemplo de <span>ahorro potencial.</span></h2>
         <p>Probá este ejemplo ficticio de una compra de 13 materiales. Compará cobertura, importes y fletes: una oferta parcial puede parecer más barata sin resolver toda la compra. El ahorro real depende de las ofertas y condiciones recibidas.</p>
       </div>
       <div class="demo-layout">
@@ -122,7 +143,7 @@
           <div class="supplier"><div class="supplier-head"><span class="supplier-name">Proveedor C <small>Oferta parcial</small></span><strong>2 / 13</strong></div><div class="bar"><i style="width:15.4%"></i></div><div class="supplier-price">Materiales <strong>$ 170.000</strong></div></div>
           <p class="small-note">Los $ 170.000 de C corresponden solo a dos productos. No representan el costo del pedido completo.</p>
         </div>
-        <div class="demo-card results" aria-live="polite">
+        <div class="demo-card results" id="demo" aria-live="polite">
           <div class="demo-title"><h3>¿Una oferta o dos?</h3><span class="demo-label">SIMULACIÓN</span></div>
           <div class="segmented" role="group" aria-label="Opciones de compra">
             <button id="single" type="button" aria-pressed="true">Un proveedor</button>
@@ -132,6 +153,7 @@
           <div class="total" id="total">$ 1.340.000</div>
           <div class="cost-line"><span>Materiales</span><strong id="materials">$ 1.300.000</strong></div>
           <div class="cost-line"><span>Fletes</span><strong id="shipping">$ 40.000</strong></div>
+          <div class="demo-takeaway"><svg class="section-icon" aria-hidden="true"><use href="#ico-savings"/></svg><strong>Para ahorrar de verdad, compará la compra completa.</strong></div>
           <div class="summary" id="summary">Un solo proveedor abastece los 13 materiales. En este ejemplo resulta $ 10.000 más conveniente que dividir la compra.</div>
           <p class="small-note">Ejemplo con impuestos, disponibilidad y condiciones equivalentes. La comparación real requiere comprobar IVA, unidades, entrega y pagos.</p>
         </div>
@@ -140,8 +162,7 @@
 
     <section class="closing">
       <div class="container closing-inner">
-        <div><p class="eyebrow">LA NUEVA FORMA DE COTIZAR</p><h2>Tu próxima compra puede costar menos.</h2><p>Con Cotironda vas a poder explorar distintos presupuestos y elegir con más información para ahorrar. Los proveedores podrán participar gratis y sin comisiones. Las rondas tendrán cuatro días por defecto y podrán identificar hasta dos ofertas finalistas comparables, facilitando el contacto entre las partes con consentimiento y bajo las reglas correspondientes.</p></div>
-        <div class="closing-stamp"><img src="./brand-mark.svg" width="74" height="80" alt=""><strong>Cotironda</strong><span>La nueva forma de <b>cotizar</b></span></div>
+        <div class="closing-copy"><h2>Tu próxima compra puede costar menos.</h2><p>Cotironda te permite explorar distintas ofertas y detectar oportunidades reales de ahorro.</p><p class="closing-slogan">LA NUEVA FORMA DE COTIZAR</p><p class="closing-details">Proveedores gratis y sin comisiones. Rondas de cuatro días por defecto; hasta dos finalistas comparables con contacto consentido, según las reglas del piloto.</p></div>
       </div>
     </section>
     <div class="disclaimer container"><strong>DEMOSTRACIÓN · PILOTO EN DESARROLLO</strong><p>Cotironda todavía no ofrece acceso al piloto ni acepta solicitudes de compradores desde esta web. Las pantallas, importes y casos presentados son ficticios.</p></div>
@@ -151,7 +172,7 @@
     <div class="container footer-inner">
       <a class="footer-brand" href="./" aria-label="Cotironda, volver al inicio"><img src="./brand-mark.svg" alt="" width="31" height="34"><strong>Cotironda</strong></a>
       <span>La nueva forma de cotizar · Argentina © 2026</span>
-      <a href="https://github.com/ProtectorRudo/Cotironda" target="_blank" rel="noopener noreferrer">Desarrollo del proyecto ↗</a>
+      <span class="footer-note">Más opciones. Mejores decisiones.</span>
     </div>
   </footer>
   <script src="./app.js" defer></script>
