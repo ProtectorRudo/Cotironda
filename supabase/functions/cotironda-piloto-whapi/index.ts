@@ -182,9 +182,11 @@ async function respond(req:Request):Promise<Response>{
  if(!raw||typeof raw!=='object'||Array.isArray(raw))
   return json(400,'invalid_event');
  const event=raw as Record<string,unknown>;
- if(event.channel_id!==sec.channel)return json(403,'wrong_channel');
  const ev=event.event as Record<string,unknown>|undefined;
- if(!ev||ev.type!=='messages'||ev.event!=='post')return json(204,'ignored');
+ // Whapi webhook verification and unrelated events expect HTTP 200, not 204.
+ // No side effects unless it is an authenticated messages.post event with exact channel.
+ if(!ev||ev.type!=='messages'||ev.event!=='post')return json(200,'ignored');
+ if(event.channel_id!==sec.channel)return json(403,'wrong_channel');
  if(!Array.isArray(event.messages)||event.messages.length<1||event.messages.length>10)
   return json(422,'invalid_batch');
  const ids=new Set<string>();
