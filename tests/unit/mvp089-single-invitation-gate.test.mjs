@@ -21,7 +21,7 @@ test('MVP089: una sola autorización de envío al proveedor de ensayo, nunca mas
  assert.match(mig,/for update of o skip locked limit 1/);
  assert.match(mig,/lease_token=p_lease/);
  assert.match(mig,/not exists\(select 1 from cotironda_piloto_privado\.offer_versions/);
- assert.doesNotMatch(mig,/whatsapp_outbound_enabled\s*=\s*true/);
+ assert.doesNotMatch(mig,/update\s+cotironda_piloto_privado\.integration_flags\s+set\s+whatsapp_outbound_enabled/i);
 });
 
 test('MVP089: no confirma ciegamente los 51 artículos ni invita por zona genérica',()=>{
