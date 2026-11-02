@@ -74,3 +74,10 @@ test('MVP091: seguimiento visible muestra recibos anÃ³nimos, no posiciones econÃ
  assert.match(view,/receipts\.replaceChildren\(\)/);
  assert.doesNotMatch(view,/ranking provisional|ganador provisional|mejor precio/iu);
 });
+
+test('MVP091: HTTP 2xx de PDF no basta sin sent=true de Whapi',()=>{
+ assert.match(whapi,/accepted=Boolean\(response\.ok&&data/);
+ assert.match(whapi,/\.sent===true/);
+ assert.match(whapi,/typeof message\?\.id==='string'/);
+ assert.match(whapi,/finish\(accepted\?'api_accepted':'uncertain'/);
+});
