@@ -25,13 +25,13 @@ revoke all on cotironda_piloto_privado.clarified_lines_mvp100
 create function public.cotironda_piloto_clarification_preview_mvp100(
  p_message_hmac text
 ) returns jsonb language plpgsql stable security definer set search_path='' as $fn$
-declare a record; body text; needs text; city text; n integer; l record;
+declare v_doc record; body text; needs text; city text; n integer; l record;
 begin
  if p_message_hmac !~ '^[a-f0-9]{64}$' then
   return jsonb_build_object('state','invalid');end if;
  select a.message_hmac,a.participant_key,a.delivery_city_confirmed,
    a.proposal
- into a from cotironda_piloto_privado.media_archive_mvp095 a
+ into v_doc from cotironda_piloto_privado.media_archive_mvp095 a
  join cotironda_piloto_privado.document_agreements_mvp099 g on
   g.message_hmac=a.message_hmac and g.source_sha256=a.content_sha256
  join cotironda_piloto_privado.participants p on
@@ -41,7 +41,7 @@ begin
   and p.participant_role='buyer' and p.consent_at is not null
   and p.opted_out_at is null;
  if not found then return jsonb_build_object('state','not_ready');end if;
- city:=coalesce(a.delivery_city_confirmed,a.proposal->>'delivery_city');
+ city:=coalesce(v_doc.delivery_city_confirmed,v_doc.proposal->>'delivery_city');
  body:='Cotironda recibió tu lista. Para pedir precios necesito estos datos:'||E'\n';
  n:=0;
  for l in select l.line_no,l.description_literal,l.unit_literal,
