@@ -1,0 +1,44 @@
+name: MVP-073 piloto Whapi diagnostico publico (sin secretos)
+on:
+  push:
+    branches:
+      - feat/mvp-073-whapi-edge-inbox-piloto
+    paths:
+      - .github/workflows/mvp-073-edge-safe-probe.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Verificar rechazo de POST sin header ni mensajes reales
+        shell: bash
+        run: |
+          set -eu
+          body=$(mktemp)
+          status=$(curl -sS --max-time 15 -o "$body" -w '%{http_code}' \
+            -X POST \
+            -H 'content-type: application/json' \
+            --data '{"event":{"type":"probe","event":"post"}}' \
+            'https://ilggkalaafhtiysyzlmg.supabase.co/functions/v1/cotironda-piloto-whapi' || true)
+          echo "Webhook HTTP status: $status"
+          python3 - "$body" <<'PY'
+          import json,sys
+          try:
+              data=json.load(open(sys.argv[1]))
+              state=data.get("state")
+              print("Webhook state:", state if state in ("unauthorized","pilot_not_enabled","temporarily_unavailable","invalid_event","ignored") else "unexpected")
+          except Exception:
+              print("Webhook body: unparsable")
+          PY
+          if [ "$status" = "401" ]; then
+            echo "OK: runtime listo y header obligatorio."
+          elif [ "$status" = "503" ]; then
+            echo "::error::Edge secret/runtime configuration is blocking reception; inspect sanitized Supabase function logs."
+            exit 1
+          else
+            echo "::error::Unexpected authentication behavior; investigate before activation."
+            exit 1
+          fi
