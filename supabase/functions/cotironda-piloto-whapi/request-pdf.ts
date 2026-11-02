@@ -54,8 +54,8 @@ function formatDay(iso:string):string{
 }
 function drawText(cmds:string[],x:number,y:number,label:string,size=11,
  bold=false,color='0.10 0.16 0.29'){
- cmds.push(color+' rg /'+(bold?'F2':'F1')+' '+size+
-  ' Tf 1 0 0 1 '+x+' '+y+' Tm ('+quote(label)+') Tj');
+ cmds.push('BT '+color+' rg /'+(bold?'F2':'F1')+' '+size+
+  ' Tf 1 0 0 1 '+x+' '+y+' Tm ('+quote(label)+') Tj ET');
 }
 function box(cmds:string[],x:number,y:number,w:number,h:number,rgb:string){
  cmds.push(rgb+' rg '+x+' '+y+' '+w+' '+h+' re f');
@@ -73,7 +73,7 @@ export function generarSolicitudPdfMvp091(input:SolicitudPdfMvp091):Uint8Array{
   return {name:it.description,display:qty+' '+UNITS[it.unit],i};
  });
  const deadline=formatDay(input.deadlineIso);
- const cmds=['BT'];
+ const cmds:string[]=[];
  box(cmds,0,836,595,6,'0.10 0.23 0.55');
  drawText(cmds,48,774,'COTIRONDA',25,true,'0.10 0.23 0.55');
  drawText(cmds,48,750,'La nueva forma de cotizar',10,false,'0.40 0.46 0.55');
@@ -98,7 +98,6 @@ export function generarSolicitudPdfMvp091(input:SolicitudPdfMvp091):Uint8Array{
  }
  drawText(cmds,48,62,'Respondé por WhatsApp con tu presupuesto.',9,false,'0.40 0.46 0.55');
  drawText(cmds,48,43,'Cotironda · Solicitud privada para proveedor invitado',8,false,'0.40 0.46 0.55');
- cmds.push('ET');
  const stream=cmds.join('\n')+'\n';
  const bytes:number[]=[];
  const add=(str:string)=>{bytes.push(...isoBytes(str))};
