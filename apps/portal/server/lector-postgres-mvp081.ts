@@ -5,12 +5,12 @@
  * contra la sesion activa y la pertenencia al pedido en backend.
  */
 import postgres from 'postgres';
-import {validarEntornoLectorMvp081} from '../../../../src/server/lector-pg-config-mvp081.ts';
+import {validarEntornoLectorMvp081} from '../../../src/server/lector-pg-config-mvp081.ts';
 import {
  construirPlantillasDesdePilotoMvp080,
  SQL_FUENTE_PRIVADA_MVP080,
  type ContextoLecturaMvp080
-} from '../../../../src/server/plantillas-piloto-mvp080.ts';
+} from '../../../src/server/plantillas-piloto-mvp080.ts';
 
 /** Solo para entorno de desarrollo aislado, activacion explicita. */
 export async function leerPlantillasPrivadasMvp081(
