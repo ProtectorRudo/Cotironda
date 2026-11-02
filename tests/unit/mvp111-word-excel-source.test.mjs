@@ -149,3 +149,13 @@ test('MVP111: vendor identity in source, ambiguous amount or missing IVA cannot 
  assert.equal((await checkSupplierOfficeSource(source(DOCX,word()),uncertain)).reason,
   'unresolved');
 });
+
+test('MVP111: external Word chunks and workbook extensions are not omitted silently',async()=>{
+ const external=word([cpc,freight,total],'<w:altChunk r:id="outside"/>');
+ assert.equal((await checkSupplierOfficeSource(source(DOCX,external),proposal)).reason,
+  'unsupported_layout');
+ const normal=excel();
+ // A valid archive must still contain only directly verifiable visible rows.
+ assert.equal((await checkSupplierOfficeSource(source(XLSX,normal),proposal)).state,
+  'source_text_covered');
+});
