@@ -1,3 +1,8 @@
+## MVP-103 — cálculo económico privado y exacto de presupuestos documentales (02/11/2026)
+- Tras dos lecturas concordantes, el receptor prepara una auditoría determinista que comprueba importes literales, multiplicación cantidad × precio unitario, descuentos, pallets/bolsones/flete y total declarado, sin sobreescribir la cotización original.
+- Los importes inequívocos se normalizan exclusivamente a centavos enteros; `$ 7.000` aislado sigue como ambiguo. El estado interno distingue `balanced`, `difference`, `needs_review`, pero **no autoriza ranking ni prueba fidelidad física al PDF**.
+- RLS privada, hash SHA256, consentimiento/ronda/proveedor, ledger idempotente, cero envíos y cero exposición económica. Nueve escenarios PG17 reversibles PASS; docs/220, Issue #416. No instalado ni publicado en producción.
+
 ## MVP-102 — cotejo independiente de dos lecturas de presupuesto proveedor (02/11/2026)
 - Whapi ahora usa también la segunda lectura documental de cada proveedor, ya realizada, para cotejarla con el espejo privado MVP-101: todos los renglones, cantidades, unidades, precio unitario, total de línea, descuentos, IVA/cargos literales y total declarado. Las diferencias quedan como `needs_source_review`; una coincidencia estricta es `model_readings_match` sin afirmar fidelidad al archivo original.
 - Ledger privado RLS, fuente SHA256, identidad de proveedor/ronda, consentimiento, detección de replay y motivo categórico sin importes/PII. Ausencia de segundo resultado bloquea la comprobación. Jamás crea `offer_versions`, rankings ni finalistas.
