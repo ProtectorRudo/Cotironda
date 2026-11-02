@@ -11,7 +11,13 @@ export function parseBuyerPilot(raw:string):ParsedBuyer{
   return {city:null,items:[],unresolved:['invalid_message']};
  const cityRaw=raw.match(/(?:^|[.;\n])\s*(?:entrega|destino|obra)\s*:\s*([^\n.;]{3,80})/iu);
  const city=cityRaw?cityRaw[1].trim():null;
- const list=cityRaw?raw.slice(0,cityRaw.index):raw;
+ // A location may appear BEFORE, BETWEEN or AFTER item lines.
+ // The old prefix-only slice silently deleted all items when "Entrega" was first.
+ const list=cityRaw
+  ? (raw.slice(0,cityRaw.index)+ '\n' +
+     raw.slice(cityRaw.index+cityRaw[0].length))
+      .replace(/^[.;\s]+|[.;\s]+$/gu,'')
+  : raw;
  const segments=list.split(/\s*(?:,|;|\n|\s+y\s+)\s*/iu)
   .map(x=>x.trim().replace(/[.]$/u,'')).filter(Boolean);
  const items:PilotItem[]=[],unresolved:string[]=[];
