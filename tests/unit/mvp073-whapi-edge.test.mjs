@@ -69,15 +69,30 @@ test('MVP073: NO enviar pedido parcialmente reconocido, ni sin zona',()=>{
 
 test('MVP073: verificación webhook devuelve HTTP 200 sin tocar mensajes y valida canal para mensajes reales',()=>{
  const edge=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/index.ts',import.meta.url),'utf8');
- assert.match(edge,/if\(!ev\|\|ev\.type!==\x27messages\x27\|\|ev\.event!==\x27post\x27\)return json\(200,\x27ignored\x27\)/);
+ assert.match(edge,/if\(!actionable\)/);
+ assert.match(edge,/return json\(200,'probe_only'\)/);
+ assert.match(edge,/if\(!authenticated\)/);
+ assert.match(edge,/return json\(401,'unauthorized'\)/);
  assert.match(edge,/if\(event\.channel_id!==sec\.channel\)return json\(403,\x27wrong_channel\x27\)/);
- const i=edge.indexOf('if(!ev||ev.type');
- const j=edge.indexOf('if(event.channel_id!==sec.channel)');
- assert.ok(i>=0&&j>i);
+ const i=edge.indexOf('if(!actionable)');
+ const j=edge.indexOf('if(!authenticated)');
+ const k=edge.indexOf('const db=client(sec)');
+ assert.ok(i>=0&&j>i&&k>j);
 });
 
 test('MVP073: HMAC debe especificar SHA-256 al importar clave en WebCrypto/Deno',()=>{
  const edge=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/index.ts',import.meta.url),'utf8');
  assert.match(edge,/crypto\.subtle\.importKey\('raw',raw,\{name:'HMAC',hash:'SHA-256'\},false,\['sign'\]\)/);
  assert.doesNotMatch(edge,/crypto\.subtle\.importKey\('raw',raw,'HMAC'/);
+});
+
+test('MVP073: no-op de Whapi sin autenticación NO puede abrir DB ni enviar',()=>{
+ const edge=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/index.ts',import.meta.url),'utf8');
+ const noop=edge.indexOf("return json(200,'probe_only')");
+ const auth=edge.indexOf("if(!authenticated)");
+ const db=edge.indexOf("const db=client(sec)",auth);
+ const dispatch=edge.indexOf("await dispatchTwo(sec,db)",auth);
+ assert.ok(noop>=0 && auth>noop && db>auth && dispatch>db);
+ assert.match(edge,/ev\?\.type==='messages'&&ev\?\.event==='post'&&/);
+ assert.match(edge,/Array\.isArray\(event\.messages\)&&event\.messages\.length>0/);
 });
