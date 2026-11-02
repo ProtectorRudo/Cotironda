@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {decodeContacts,prepareMessage,hex} from
- '../../supabase/functions/cotironda-piloto-finalistas/finalist-notice.ts';
+ '../../supabase/functions/_shared/cotironda-finalist-notice.ts';
 
 const sql=readFileSync(new URL('../../supabase/piloto/mvp110_finalists_whapi_outbox.sql',import.meta.url),'utf8');
 const smoke=readFileSync(new URL('../../supabase/piloto/mvp110_smoke_rollback.sql',import.meta.url),'utf8');
