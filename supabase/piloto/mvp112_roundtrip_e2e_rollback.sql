@@ -139,13 +139,18 @@ begin
     cotironda_piloto_privado.finalist_whapi_outbox_mvp110
     where request_id=rid)<>0
   then raise exception 'mvp112_queued_unconsented_finalists';end if;
-  out_:=public.cotironda_piloto_plan_coverage_finalists_mvp108(rid);
+  -- The scheduled planner already wrote the immutable plan.
+  select jsonb_build_object('state',state,
+    'candidate_count',candidate_count,'price_ranked',false,
+    'contacts_revealed',false,'messages_sent',false)
+  into out_ from cotironda_piloto_privado.finalist_coverage_plans_mvp108
+  where request_id=rid;
   if out_->>'state'<>expected
    or (out_->>'candidate_count')::integer<>row_.wanted_count
    or out_->>'price_ranked'<>'false'
    or out_->>'contacts_revealed'<>'false'
    or out_->>'messages_sent'<>'false'
-  then raise exception 'mvp108_wrong_finalists scenario=% got=%',
+  then raise exception 'mvp112_wrong_finalists scenario=% got=%',
      scenario,out_;end if;
   if (public.cotironda_piloto_plan_coverage_finalists_mvp108(rid))
    ->>'state'<>'already_planned'
