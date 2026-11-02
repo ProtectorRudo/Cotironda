@@ -67,9 +67,5 @@ begin
  if (select count(*) from storage.buckets where
    id='cotironda-piloto-originals' and public=false)<>1
  then raise exception 'media_public_bucket';end if;
- if exists(select 1 from storage.policies where 1=1) then
-  -- No assertion about other bucket policies; checked via RLS & bucket above.
-  null;
- end if;
 end;$smoke$;
 rollback;
