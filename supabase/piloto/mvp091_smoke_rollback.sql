@@ -14,7 +14,7 @@ begin
  insert into cotironda_piloto_privado.next_round_window_mvp091(
  only_row,starts_at,expires_at)
  values(true,clock_timestamp()-interval '10 seconds',clock_timestamp()+interval '1 hour');
- source_hid:=encode(gen_random_bytes(32),'hex');
+ source_hid:=encode(extensions.gen_random_bytes(32),'hex');
  insert into cotironda_piloto_privado.requests(
  buyer_key,delivery_city,original_request,source_hmac,state)
  values('arquitecto','La Plata',
@@ -40,7 +40,7 @@ begin
  update cotironda_piloto_privado.integration_flags
  set whatsapp_outbound_enabled=true where only_row;
  result:=public.cotironda_piloto_issue_tracking_mvp091(
- hid,source_hid,encode(gen_random_bytes(32),'hex'));
+ hid,source_hid,encode(extensions.gen_random_bytes(32),'hex'));
  if result->>'state'<>'issued' then raise exception 'mvp091_tracking_issue_fail';end if;
  select token_hash into token from cotironda_piloto_privado.buyer_tracking_mvp091
  where request_id=rid;
@@ -72,7 +72,7 @@ begin
  -- Supplier creates genuine quote (SOURCE unmodified, versioned).
  insert into cotironda_piloto_privado.offer_versions(
  request_id,supplier_key,revision_no,source_message_hmac,original_quote)
- values(rid,'corralon_ailin',1,encode(gen_random_bytes(32),'hex'),
+ values(rid,'corralon_ailin',1,encode(extensions.gen_random_bytes(32),'hex'),
   '20 bolsas cemento $ 900,00'||E'\n'||'TOTAL: $ 18000,00');
  result:=public.cotironda_piloto_tracking_status_mvp091(token);
  if result->>'state'<>'waiting' or (result->>'received_count')::integer<>1
@@ -85,7 +85,7 @@ begin
  if result->'offers'<>'[]'::jsonb
  then raise exception 'mvp091_approved_quote_predeadline_leaked';end if;
  if (public.cotironda_piloto_tracking_status_mvp091(
-   encode(gen_random_bytes(32),'hex'))->>'state')<>'not_found'
+   encode(extensions.gen_random_bytes(32),'hex'))->>'state')<>'not_found'
  then raise exception 'mvp091_invalid_token_visible';end if;
  if has_table_privilege('anon',
    'cotironda_piloto_privado.buyer_tracking_mvp091','SELECT')
@@ -96,7 +96,7 @@ begin
  insert into cotironda_piloto_privado.requests(
  buyer_key,delivery_city,original_request,source_hmac,state)
  values('arquitecto','La Plata','Prueba concurrente extra',
-   encode(gen_random_bytes(32),'hex'),'prepared') returning id into second;
+   encode(extensions.gen_random_bytes(32),'hex'),'prepared') returning id into second;
  if cotironda_piloto_privado.allow_next_pilot_send_mvp091(rid,'corralon_nahuel')
  then raise exception 'mvp091_more_than_one_round_allowed';end if;
 end;$smoke$;
