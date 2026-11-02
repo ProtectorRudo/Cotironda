@@ -6,6 +6,7 @@ import {createClient} from 'npm:@supabase/supabase-js@2.118.0';
 import {parseBuyerPilot,canPrepareBuyerPilot,validMessage,standaloneDeliveryCity} from './core.ts';
 import {generarSolicitudPdfMvp091} from './request-pdf.ts';
 import {makeMediaManifest} from './media-intake.ts';
+import {parseDocumentClarification} from './document-clarification.ts';
 import {getVerifiedWhapiMedia,storeVerifiedMedia} from './whapi-media-archive.ts';
 import {proposeDocumentAI} from './document-ai-draft.ts';
 import {interpretPilotBuyerWithAI} from './ai-interpreter.ts';
@@ -281,6 +282,7 @@ async function respond(req:Request):Promise<Response>{
   const local=row.type==='text'?parseBuyerPilot(body):{city:null,items:[],unresolved:[]};
   let parsed=local;
   let aiReply:ReplyCode|null=null;
+  let mediaClarificationBody:string|null=null;
   // OpenAI is optional and off by default. The server-side DB gate is
   // durable, one-per-HMAC, buyer-only and capped at 12 calls per day.
   // Supplier quote ingestion never passes through this classifier.
@@ -435,10 +437,22 @@ async function respond(req:Request):Promise<Response>{
                       p_message_hmac:messageHash
                     });
                     if(prepared.error)console.warn('cotironda_document_preparation_reconciliation_required');
+                    else if(prepared.data?.state!=='prepared'){
+                      const missing=await db.rpc('cotironda_piloto_clarification_preview_mvp100',{
+                        p_message_hmac:messageHash
+                      });
+                      if(!missing.error&&missing.data?.state==='needs_details'&&
+                         typeof missing.data?.body==='string'){
+                        aiReply='zone';
+                        mediaClarificationBody=missing.data.body;
+                      }
+                    }
                   }
                 }
-                if(proposal.delivery_city===null&&proposal.lines.length>0)
-                  aiReply='zone';
+                // If independent reads disagree, do not ask for material
+                // edits based on uncorroborated data or send suppliers.
+                if(!mediaClarificationBody&&proposal.delivery_city===null&&
+                   proposal.lines.length>0)aiReply='zone';
               }else if(proposal.kind==='supplier_quote'){
                 const receipt=await db.rpc('cotironda_piloto_record_supplier_media_mvp098',{
                   p_message_hmac:messageHash
@@ -455,9 +469,30 @@ async function respond(req:Request):Promise<Response>{
     }
     }
   }
-  // A locality-only answer after a pending document enriches the PRIVATE
-  // original. No invented units, request, ranking or invitations.
+  // Clarifications are associated with exactly one outstanding,
+  // consented document. Never reinterpret line numbers as quantities.
+  let handledDocumentReply=false;
   if(row.type==='text'&&['needs_review','needs_zone'].includes(outcome(out.data))){
+    const details=parseDocumentClarification(body);
+    if(details){
+      const linked=await db.rpc('cotironda_piloto_apply_clarification_mvp100',{
+        p_chat_hmac:chatHash,p_reply_hmac:messageHash,
+        p_city:details.city,p_changes:details.changes
+      });
+      if(linked.error)return json(503,'document_clarification_reconciliation_required');
+      if(linked.data?.state==='applied'){
+        handledDocumentReply=true;
+        aiReply=null;
+        const ready=await db.rpc('cotironda_piloto_prepare_document_mvp099',{
+          p_message_hmac:linked.data.source_message_hmac
+        });
+        if(ready.error)console.warn('cotironda_document_context_promotion_reconciliation_required');
+      }
+    }
+  }
+  // A bare locality reply remains accepted for buyers who only owe a city.
+  if(row.type==='text'&&!handledDocumentReply&&
+     ['needs_review','needs_zone'].includes(outcome(out.data))){
     const zone=standaloneDeliveryCity(body);
     if(zone){
       const linked=await db.rpc('cotironda_piloto_attach_zone_to_document_mvp097',{
@@ -488,16 +523,21 @@ async function respond(req:Request):Promise<Response>{
       ?await db.rpc('cotironda_piloto_reserve_reply_mvp094',{
         p_message_hmac:messageHash,p_chat_hmac:chatHash,p_reply_code:aiReply
        })
-      :await db.rpc('cotironda_piloto_reserve_document_zone_reply_mvp097',{
-        p_message_hmac:messageHash,p_chat_hmac:chatHash
-       });
+      :(mediaClarificationBody
+        ?await db.rpc('cotironda_piloto_reserve_clarification_mvp100',{
+          p_message_hmac:messageHash,p_chat_hmac:chatHash
+         })
+        :await db.rpc('cotironda_piloto_reserve_document_zone_reply_mvp097',{
+          p_message_hmac:messageHash,p_chat_hmac:chatHash
+         }));
     if(!reserve.error&&reserve.data===true){
       let state:'api_accepted'|'uncertain'='uncertain';
       try{
         const response=await fetch('https://gate.whapi.cloud/messages/text',{
           method:'POST',headers:{Authorization:'Bearer '+sec.token,
             'Content-Type':'application/json'},
-          body:JSON.stringify({to:row.chat_id,body:shortBusinessReply(aiReply)}),
+          body:JSON.stringify({to:row.chat_id,
+            body:mediaClarificationBody??shortBusinessReply(aiReply)}),
           signal:AbortSignal.timeout(12000)
         });
         const body=response.ok?await response.json().catch(()=>null):null;

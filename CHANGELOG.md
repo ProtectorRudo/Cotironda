@@ -1,3 +1,8 @@
+## MVP-100 — respuestas contextuales del arquitecto para completar unidades/arena/localidad (02/11/2026)
+- Whapi pregunta una sola vez lo indispensable de un documento corroborado, recibe unidades y tipo de arena por número de renglón y localidad en un mensaje, asocia todo al original privado por HMAC sin modificar cantidades ni propuesta IA.
+- Si los datos son suficientes, reanuda promoción MVP-099 y el despacho por proveedor sujeto a consentimiento. En caso contrario mantiene la solicitud pendiente; sin reenvío, sin confirmaciones por línea.
+- SQL rollback real y tests unitarios, docs/217. No habilita producción ni ranking/cierre completos.
+
 ## MVP-099 — despacho por proveedor desde documentos originales (02/11/2026)
 - Dos lecturas paralelas de archivo, cotejo estricto y consenso privado antes de promoverlo a solicitud. Si faltan localidad, unidades o cobertura, no inventar ni enviar.
 - Solicitud documental conserva todos los ítems y original privado SHA256; cada proveedor recibe solo su subconjunto por categoría y zona (texto y PDF), con autorización Whapi revalidada al reclamar y enviar. Compatibilidad con ronda piloto anterior.
