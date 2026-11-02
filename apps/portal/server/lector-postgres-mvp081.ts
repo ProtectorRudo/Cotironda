@@ -34,6 +34,11 @@ export async function leerPlantillasPrivadasMvp081(
  try{
   return await connection.begin(async transaction=>{
    await transaction.unsafe('set transaction read only');
+   // LOGIN sin herencia: asumir SOLAMENTE el rol no-login con RLS.
+   await transaction.unsafe('set local role cotironda_piloto_reader');
+   const actual=await transaction.unsafe('select current_user as lector');
+   if(actual.length!==1||actual[0]?.lector!=='cotironda_piloto_reader')
+    throw new Error('mvp082_lector_no_activo');
    return construirPlantillasDesdePilotoMvp080({
     async query(sql,values){
      if(sql!==SQL_FUENTE_PRIVADA_MVP080||values.length!==2)
