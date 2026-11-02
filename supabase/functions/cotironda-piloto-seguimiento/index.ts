@@ -21,8 +21,9 @@ h1{font-size:23px;line-height:1.2;margin:0 0 12px}p{color:#65738a;line-height:1.
 small{color:#65738a}.status{font-weight:650;color:#34558f;margin-top:16px}
 </style></head><body><div class="wrap"><div class="brand">COTIRONDA</div>
 <main class="card"><h1>Seguimiento de cotizaciones</h1>
-<p>Podés consultar cuántos presupuestos recibió Cotironda. Su contenido
-y la identidad de los negocios se mantienen reservados hasta el cierre.</p>
+<p>Acá se actualizan las cotizaciones a medida que llegan y se revisan.
+Vas a ver sus datos y precios aprobados sin saber qué negocio cotizó.
+Al cierre se revelan los datos únicamente de los finalistas habilitados.</p>
 <div class="count" id="count" aria-live="polite">—</div>
 <div class="caption">Presupuestos recibidos</div>
 <div class="deadline"><b id="state">Consultando…</b><p id="deadline"></p></div>
@@ -52,15 +53,33 @@ if(!/^[a-f0-9]{64}$/.test(token)){
     :"";
    $("deadline").textContent="Fecha límite: "+
      new Date(d.deadline).toLocaleString("es-AR",{timeZone:"America/Argentina/Buenos_Aires"});
+   // Only the server-provided reviewed anonymous projection is displayed.
+   // All values enter the DOM through textContent, never innerHTML.
+   const showApproved=()=>{
+     const target=$("offers");target.replaceChildren();
+     if(d.can_open&&Array.isArray(d.offers)){
+       for(const offer of d.offers){
+         if(!offer||typeof offer.label!=="string"||
+            typeof offer.text!=="string")continue;
+         const card=document.createElement("div");card.className="quote";
+         const heading=document.createElement("strong");
+         heading.textContent=offer.label;
+         const p=document.createElement("p");p.textContent=offer.text;
+         card.append(heading,p);target.appendChild(card);
+       }
+     }
+   };
    if(d.state==="waiting"){
-     $("state").textContent="Ronda abierta · posiciones pendientes de comparación";
-     $("offers").replaceChildren();
+     $("state").textContent=d.can_open
+       ?"Ronda abierta · presupuestos anónimos disponibles"
+       :"Ronda abierta · esperando cotizaciones verificadas";
+     showApproved();
      const receipts=$("receipts");receipts.replaceChildren();
      // Each box is a RECEIPT, not an economic ranking position.
      const count=Number(d.received_count);
      for(let i=0;i<Math.min(25,Number.isSafeInteger(count)&&count>0?count:0);i++){
        const card=document.createElement("div");card.className="quote";
-       card.textContent="Presupuesto anónimo "+(i+1)+" · recibido · contenido reservado";
+       card.textContent="Presupuesto anónimo "+(i+1)+" · recibido · en revisión";
        receipts.appendChild(card);
      }
    }else if(d.state==="cancelled"){
@@ -69,15 +88,7 @@ if(!/^[a-f0-9]{64}$/.test(token)){
      $("receipts").replaceChildren();
      $("state").textContent=d.can_open?"Ronda cerrada · presupuestos habilitados":
        "Ronda cerrada · esperando verificación de los presupuestos";
-     const target=$("offers");target.replaceChildren();
-     if(d.can_open&&Array.isArray(d.offers)){
-       for(const offer of d.offers){
-         const card=document.createElement("div");card.className="quote";
-         const heading=document.createElement("strong");heading.textContent=offer.label;
-         const p=document.createElement("p");p.textContent=offer.text;
-         card.append(heading,p);target.appendChild(card);
-       }
-     }
+     showApproved();
    }
   }catch{$("state").textContent="No pudimos actualizar. Probá nuevamente más tarde."}
  };
