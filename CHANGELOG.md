@@ -1,3 +1,8 @@
+## MVP-105 — presupuestos anónimos revisados en vivo (02/11/2026)
+- El enlace privado del comprador muestra la proyección revisada y anonimizada de cada presupuesto **durante** la ronda, actualizada por el navegador cada 45 segundos, sin revelar comercio, contacto, fuente cruda ni posiciones económicas anticipadas. El contador distingue archivos pendientes y cotizaciones recibidas.
+- El servidor devuelve solo anonymous_offers_mvp091 ya aprobado, atado a la última versión de cada proveedor; una revisión posterior sin aprobar oculta la versión vieja; tokens revocados y rondas canceladas no revelan nada. Se filtran patrones evidentes de contacto y se inserta todo como textContent, no HTML.
+- SQL real en Supabase Piloto **PASS** en una única transacción con datos ficticios y ROLLBACK; docs/222, Issue #421. La aprobación automática del contenido, fidelidad contra archivo, ranking y revelación de finalistas siguen pendientes.
+
 ## MVP-104 — mensajes de inicio/recepción del circuito WhatsApp (02/11/2026)
 - Corregido el faltante del enlace de seguimiento para pedidos originados en foto/PDF y para documentos completados por localidad o unidades: el token se emite únicamente al crear ronda y queda asociado a su archivo original autenticado, no al mensaje de aclaración. El texto confirma recepción y que Cotironda reunirá cotizaciones.
 - Acuse breve y único al proveedor cuando se guardó una cotización textual o el original documental con recibo pendiente de fidelidad; ledger SQL privado, HMAC, consentimiento, invitación, vencimiento, protección de duplicados y entregas inciertas sin reintentos ciegos. Medios se vinculan por archivo archivado, aunque `whapi_inbox.request_id` sea nulo.

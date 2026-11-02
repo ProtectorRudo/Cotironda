@@ -69,8 +69,10 @@ test('MVP091: smoke reversible valida privacidad incluso con oferta aprobada ant
 
 test('MVP091: seguimiento visible muestra recibos anónimos, no posiciones económicas inventadas',()=>{
  assert.match(view,/Presupuesto anónimo /);
- assert.match(view,/posiciones pendientes de comparación/);
- assert.match(view,/contenido reservado/);
+ assert.match(view,/Ronda abierta · presupuestos anónimos disponibles/);
+ assert.match(view,/Ronda abierta · esperando cotizaciones verificadas/);
+ assert.match(view,/· recibido · en revisión/);
+ assert.match(view,/const showApproved=/);
  assert.match(view,/receipts\.replaceChildren\(\)/);
  assert.doesNotMatch(view,/ranking provisional|ganador provisional|mejor precio/iu);
 });
