@@ -1,3 +1,8 @@
+## MVP-089 — Única invitación Whapi a Nahuel, limitada y con formato correcto (02/11/2026)
+- Gate de una sola autorización temporal por ronda/proveedor en esquema privado PILOTO, con dobles verificaciones de consentimiento, vencimiento, familia de artículos, zona y fuente; sin confirmar listas genéricas ni activar envíos.
+- Traducción de cantidades y unidades del pedido al mensaje «20 bolsas», «5 litros» sin alterar originales, y operador condicionado a `pending`.
+- Smoke PostgreSQL reversible, regresiones y procedimiento de activación/reversión documentado en `docs/208-mvp-089-primer-envio-acotado.md`. El backend existente no comunica finalistas ni entrega presupuestos al comprador todavía.
+
 ## MVP-077 — Cierre automático PILOTO (02/11/2026)
 - Nuevo job Supabase Cron cada 5 minutos para ejecutar exclusivamente la RPC privada de cierre D076 con no envíos y no revelaciones. Migración, smoke rollback, test de seguridad y documentación en docs/197. El ranking y WhatsApp a finalistas siguen pendientes.
 
