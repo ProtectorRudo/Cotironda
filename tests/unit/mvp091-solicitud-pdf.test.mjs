@@ -82,3 +82,14 @@ test('MVP091: no filtra contacto personal incrustado en el pedido PDF',()=>{
  assert.throws(()=>generarSolicitudPdfMvp091({...input(),
     city:'La Plata whatsapp 11111111111'}),/mvp091_pdf_input_invalid/);
 });
+
+test('MVP093: la fecha solicitada por el comprador aparece literalmente sólo cuando la indicó',()=>{
+ const withDate=Buffer.from(generarSolicitudPdfMvp091({...input(),
+   deliveryNote:'10/11/2026'})).toString('latin1');
+ const withoutDate=Buffer.from(generarSolicitudPdfMvp091(input())).toString('latin1');
+ assert.match(withDate,/ENTREGA SOLICITADA POR EL COMPRADOR/);
+ assert.match(withDate,/10\/11\/2026/);
+ assert.doesNotMatch(withoutDate,/ENTREGA SOLICITADA POR EL COMPRADOR/);
+ assert.throws(()=>generarSolicitudPdfMvp091({...input(),
+   deliveryNote:'tel 11111111111'}),/mvp091_pdf_input_invalid/);
+});

@@ -5,6 +5,7 @@
 import {createClient} from 'npm:@supabase/supabase-js@2.118.0';
 import {parseBuyerPilot,canPrepareBuyerPilot,validMessage} from './core.ts';
 import {generarSolicitudPdfMvp091} from './request-pdf.ts';
+import {makeMediaManifest} from './media-intake.ts';
 const REF='ilggkalaafhtiysyzlmg';
 const NAME='cotironda-piloto-whapi';
 const encoder=new TextEncoder();
@@ -253,7 +254,12 @@ async function respond(req:Request):Promise<Response>{
   ids.add(row.id);
   const chatHash=await hmac(sec.key,'cotironda|pilot|chat|'+sec.channel+'|'+row.chat_id);
   const messageHash=await hmac(sec.key,'cotironda|pilot|msg|'+sec.channel+'|'+row.id);
-  const body=row.type==='text'?row.text!.body:'';
+  const media=row.type==='text'?null:makeMediaManifest(row,row.type);
+  // Store media ID, size, MIME and caption in the AES-GCM encrypted
+  // inbox instead of losing every attachment as an empty string.
+  // This is NOT proof that its binary content was read.
+  const body=row.type==='text'?row.text!.body:
+    JSON.stringify(media??{state:'invalid_media_manifest',kind:row.type});
   if(row.type==='text'&&/^BAJA$/iu.test(body.trim())){
    const out=await db.rpc('cotironda_piloto_optout_whapi_v1',{p_chat_hmac:chatHash});
    if(out.error)return json(503,'storage_unavailable');

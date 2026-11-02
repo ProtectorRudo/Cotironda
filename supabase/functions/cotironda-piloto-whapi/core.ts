@@ -1,57 +1,111 @@
-/** MVP-073: pure parser and bounds for Whapi pilot. No network or secrets.
- * Deliberately limited to CLEAR text. Never treat images/PDFs as extracted.
+/** Pilot text intake. Deterministic conservative fast-path. No network/API.
+ * An AI/document intake must pass the SAME strict canonical validator before
+ * generating requests; this fast-path must never guess missing materials.
  */
 export type PilotItem=Readonly<{description:string;quantity:number;unit:'bag'|'l'|'kg'|'m3'|'unit';family:string}>;
-export type ParsedBuyer=Readonly<{city:string|null;items:readonly PilotItem[];unresolved:readonly string[]}>;
+export type ParsedBuyer=Readonly<{
+ city:string|null;items:readonly PilotItem[];unresolved:readonly string[];
+ deliveryNote?:string|null;
+}>;
 function fold(s:string):string{
  return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
 }
-export function parseBuyerPilot(raw:string):ParsedBuyer{
- if(typeof raw!=='string'||raw.length>4000||raw.length===0)
-  return {city:null,items:[],unresolved:['invalid_message']};
- const cityRaw=raw.match(/(?:^|[.;\n])\s*(?:entrega|destino|obra)\s*:\s*([^\n.;]{3,80})/iu);
- const city=cityRaw?cityRaw[1].trim():null;
- // A location may appear BEFORE, BETWEEN or AFTER item lines.
- // The old prefix-only slice silently deleted all items when "Entrega" was first.
- const list=cityRaw
-  ? (raw.slice(0,cityRaw.index)+ '\n' +
-     raw.slice(cityRaw.index+cityRaw[0].length))
-      .replace(/^[.;\s]+|[.;\s]+$/gu,'')
-  : raw;
- const segments=list.split(/\s*(?:,|;|\n|\s+y\s+)\s*/iu)
-  .map(x=>x.trim().replace(/[.]$/u,'')).filter(Boolean);
- const items:PilotItem[]=[],unresolved:string[]=[];
- for(const segment of segments){
-  const m=segment.match(/^(\d{1,6}(?:[.,]\d{1,3})?)\s+(bolsas?|litros?|kgs?|kilogramos?|m3|unidades?)\s+(?:de\s+)?(.{3,150})$/iu);
-  if(!m){unresolved.push(segment.slice(0,100));continue}
-  const quantity=Number(m[1].replace(',','.'));
-  const desc=m[3].trim();
-  const n=fold(desc);
-  const unit=m[2].toLowerCase().startsWith('bolsa')?'bag':
-   m[2].toLowerCase().startsWith('litro')?'l':
-   /^(?:kg|kilogram)/iu.test(m[2])?'kg':
-   m[2].toLowerCase()==='m3'?'m3':'unit';
-  let family:string|null=null;
-  if(/\bcemento\b/u.test(n)&&
-    !/(contacto|adhesivo|cola|blanco|refractario|asfaltico|plastico)/u.test(n))
-    family='cemento_gris_obra';
-  else if(/(?:\bhidrofugo\b|\bceresita\b)/u.test(n)&&
-    !/(pintura|membrana|revestimiento)/u.test(n))family='hidrofugo';
-  else if(/\barena fina\b/u.test(n))family='arena_fina';
-  else if(/\barena gruesa\b/u.test(n))family='arena_gruesa';
-  else if(/\bladrillo comun\b/u.test(n))family='ladrillo_comun';
-  else if(/\bladrillo hueco\b/u.test(n))family='ladrillo_hueco';
-  else if(/\bpiedra partida\b/u.test(n))family='piedra_partida';
-  else if(/\bcal hidraulica\b/u.test(n))family='cal_hidraulica';
-  else if(/\bcal (?:aerea|hidratada)\b/u.test(n))family='cal_aerea';
-  if(!family||!Number.isFinite(quantity)||quantity<=0||quantity>1000000){
-   unresolved.push(segment.slice(0,100));continue;
-  }
-  items.push({description:desc,quantity,unit,family});
- }
- return {city,items,unresolved};
+const QTY=String.raw`(\d{1,6}(?:[.,]\d{1,3})?)`;
+const U=String.raw`(bolsas?|bols?\.?|litros?|lts?\.?|l|kgs?|kilogramos?|m3|m³|unidades?|unid?\.?|u)`;
+const prefixLine=new RegExp('^'+QTY+'\\s*'+U+'\\s+(?:de\\s+)?(.{3,150})$','iu');
+const suffixLine=new RegExp('^(.{3,150}?)\\s*(?:[-–—:]\\s*|\\s+[x×]\\s*)'+QTY+'\\s*'+U+'$','iu');
+const CITY=/^[ \t]*(?:zona(?: de entrega)?|entrega|destino|obra)\s*(?::|\ben\b|\ba\b)\s*([^\n;.]{3,100})[ \t]*[.;]?/gimu;
+const DELIVERY=/^[ \t]*(?:fecha de entrega|entrega solicitada|necesito recibir|para recibir)\s*:\s*([^\n;.]{3,90})/gimu;
+function cityOnly(s:string):string{
+ // Do not mistake desired date for part of the shipping locality.
+ return s.replace(/\s+(?:(?:el|para el|antes del|desde el)\s+(?=\d)|fecha\s*:).*$/iu,'').trim();
 }
-/** A pedido con artículos omitidos o sin localidad nunca autoriza invitaciones. */
+function unit(raw:string):PilotItem['unit']|null{
+ const s=fold(raw).replace(/\.$/u,'');
+ if(/^(?:bolsa|bolsas|bols|bol)$/u.test(s))return 'bag';
+ if(/^(?:litro|litros|lt|lts|l)$/u.test(s))return 'l';
+ if(/^(?:kg|kgs|kilogramo|kilogramos)$/u.test(s))return 'kg';
+ if(/^(?:m3|m³)$/u.test(s))return 'm3';
+ if(/^(?:unidad|unidades|unid|uni|u)$/u.test(s))return 'unit';
+ return null;
+}
+function familyOf(desc:string):string|null{
+ const n=fold(desc);
+ if(/\bcemento\b/u.test(n)&&
+    !/(contacto|adhesivo|cola|blanco|refractario|asfaltico|plastico)/u.test(n))
+   return 'cemento_gris_obra';
+ if(/(?:\bhidrofugo\b|\bceresita\b)/u.test(n)&&
+   !/(pintura|membrana|revestimiento)/u.test(n))return 'hidrofugo';
+ if(/\barena fina\b/u.test(n))return 'arena_fina';
+ if(/\barena gruesa\b/u.test(n))return 'arena_gruesa';
+ if(/\bladrillo comun\b/u.test(n))return 'ladrillo_comun';
+ if(/\bladrillo hueco\b/u.test(n))return 'ladrillo_hueco';
+ if(/\bpiedra partida\b/u.test(n))return 'piedra_partida';
+ if(/\bcal hidraulica\b/u.test(n))return 'cal_hidraulica';
+ if(/\bcal (?:aerea|hidratada)\b/u.test(n))return 'cal_aerea';
+ return null;
+}
+function isChatter(s:string):boolean{
+ const n=fold(s).replace(/[!?.:,\s]+$/gu,'');
+ return /^(?:hola|buen dia|buenos dias|buenas tardes|buenas noches|buenas|gracias|muchas gracias|saludos|quedo atento|quedo a la espera|por favor)$/u.test(n)||
+ /^(?:les (?:paso|mando|envio) (?:la )?(?:lista|solicitud|pedido)(?: de materiales)?(?: para cotizar)?|necesito (?:un )?presupuesto|quisiera (?:un )?presupuesto|pedido de cotizacion|solicitud de cotizacion|materiales a cotizar)$/u.test(n);
+}
+function stripOpener(s:string):string{
+ let out=s.trim();
+ out=out.replace(/^(?:(?:hola|buen dia|buenos dias|buenas tardes|buenas noches|buenas)\s*[,!:.]+\s*)+/iu,'');
+ out=out.replace(/^(?:(?:por favor\s*,?\s*)?(?:necesito cotizar|me cotizan|me presupuestan|quisiera cotizar|necesitaria cotizar|les paso|te paso|te mando|les mando|cotizar)\s*[:!,]?\s*)/iu,'');
+ return out.trim();
+}
+export function parseBuyerPilot(raw:string):ParsedBuyer{
+ if(typeof raw!=='string'||raw.length>4000||raw.trim().length===0)
+  return {city:null,items:[],unresolved:['invalid_message']};
+ const text=raw.replace(/\r\n?/gu,'\n')
+  .replace(/[.;]\s*(?=(?:entrega|destino|obra|zona de entrega)\s*[:])/giu,'\n');
+ const cities=[...text.matchAll(CITY)];
+ const cityValues=cities.map(c=>cityOnly(c[1]));
+ const notes=[...text.matchAll(DELIVERY)];
+ const deliveryNote=notes.length===1?notes[0][1].trim():null;
+ const unresolved:string[]=[];
+ if(cityValues.length>1 && new Set(cityValues.map(fold)).size>1)
+  unresolved.push('conflicting_delivery_locations');
+ if(notes.length>1)unresolved.push('conflicting_delivery_dates');
+ let city=cityValues[0]??null;
+ if(city&&!/^[\p{L}\p{N} ,()'-]{3,80}$/u.test(city)){
+  unresolved.push('invalid_delivery_location');city=null;
+ }
+ // Remove ONLY the city or explicit date lines; other material lines survive.
+ let clean=text.replace(CITY,'\n').replace(DELIVERY,'\n');
+ // Preserve decimal commas; split comma and conjunction only at next quantity.
+ clean=clean.replace(/,\s+(?=\d{1,6}(?:[.,]\d{1,3})?\s*(?:bolsas?|litros?|lts?\.?|l\b|kgs?|kilogramos?|m3|unidades?))/giu,'\n');
+ clean=clean.replace(/\s+y\s+(?=\d{1,6}(?:[.,]\d{1,3})?\s*(?:bolsas?|litros?|lts?\.?|l\b|kgs?|m3|unidades?))/giu,'\n');
+ const lines=clean.split(/[\n;]+/u).map(s=>s.trim()).filter(Boolean);
+ const items:PilotItem[]=[];
+ for(const literal of lines){
+  if(isChatter(literal))continue;
+  let s=stripOpener(literal);
+  if(!s||isChatter(s))continue;
+  s=s.replace(/^\s*[-*•]\s*/u,'').replace(/^\s*\d+[.)]\s+/u,'').trim();
+  if(isChatter(s))continue;
+  const left=s.match(prefixLine);
+  const right=left?null:s.match(suffixLine);
+  const quantityLiteral=left?.[1]??right?.[2];
+  const unitLiteral=left?.[2]??right?.[3];
+  const description=(left?.[3]??right?.[1]??'').trim().replace(/[.!]+$/u,'').trim();
+  if(!quantityLiteral||!unitLiteral||!description){
+   unresolved.push(literal.slice(0,100));continue;
+  }
+  const quantity=Number(quantityLiteral.replace(',','.'));
+  const resolvedUnit=unit(unitLiteral);
+  const family=familyOf(description);
+  if(!resolvedUnit||!family||!Number.isFinite(quantity)||
+   quantity<=0||quantity>1000000){
+   unresolved.push(literal.slice(0,100));continue;
+  }
+  items.push({description,quantity,unit:resolvedUnit,family});
+ }
+ return {city,items,unresolved,deliveryNote};
+}
+/** No partially understood request is dispatched automatically. */
 export function canPrepareBuyerPilot(parsed:ParsedBuyer):boolean{
  return typeof parsed.city==='string'&&parsed.city.length>=3&&
   parsed.items.length>0&&parsed.items.length<=8&&parsed.unresolved.length===0;

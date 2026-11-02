@@ -8,7 +8,7 @@ export type ItemSolicitudMvp091=Readonly<{
  description:string;quantity:string;unit:string;
 }>;
 export type SolicitudPdfMvp091=Readonly<{
- requestId:string;city:string;deadlineIso:string;
+ requestId:string;city:string;deadlineIso:string;deliveryNote?:string|null;
  items:readonly ItemSolicitudMvp091[];
 }>;
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/iu;
@@ -75,6 +75,8 @@ export function generarSolicitudPdfMvp091(input:SolicitudPdfMvp091):Uint8Array{
   return {name:it.description,display:qty+' '+UNITS[it.unit],i};
  });
  const deadline=formatDay(input.deadlineIso);
+ const note=input.deliveryNote??null;
+ if(note!==null&&(!textOk(note,90)||CONTACT.test(note)))fail();
  const cmds:string[]=[];
  box(cmds,0,836,595,6,'0.10 0.23 0.55');
  drawText(cmds,48,774,'COTIRONDA',25,true,'0.10 0.23 0.55');
@@ -82,11 +84,15 @@ export function generarSolicitudPdfMvp091(input:SolicitudPdfMvp091):Uint8Array{
  box(cmds,48,725,499,1,'0.85 0.88 0.93');
  drawText(cmds,48,687,'Solicitud de cotización',18,true);
  drawText(cmds,48,663,'Código de solicitud: '+input.requestId.slice(0,8).toUpperCase(),9,false,'0.40 0.46 0.55');
- box(cmds,48,551,499,91,'0.96 0.97 0.99');
+ box(cmds,48,note?520:551,499,note?122:91,'0.96 0.97 0.99');
  drawText(cmds,65,615,'LOCALIDAD',9,true,'0.40 0.46 0.55');
  drawText(cmds,310,615,'CIERRE DE COTIZACIONES',9,true,'0.40 0.46 0.55');
  drawText(cmds,65,586,input.city,11,true);
  drawText(cmds,310,586,deadline,10,true);
+ if(note){
+  drawText(cmds,65,558,'ENTREGA SOLICITADA POR EL COMPRADOR',9,true,'0.40 0.46 0.55');
+  drawText(cmds,65,538,note,10,true);
+ }
  box(cmds,48,497,499,40,'0.10 0.23 0.55');
  drawText(cmds,63,511,'MATERIAL',10,true,'1 1 1');
  drawText(cmds,442,511,'CANTIDAD',10,true,'1 1 1');

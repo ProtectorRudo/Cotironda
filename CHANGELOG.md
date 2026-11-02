@@ -1,3 +1,11 @@
+## MVP-093 — Ingreso flexible de pedidos y fuentes cifradas (02/11/2026)
+- Instalado en PILOTO `MVP-092b` para que al comenzar una ronda nueva se cancelen únicamente invitaciones anteriores del mismo proveedor sin borrar sus presupuestos y sin crear pedidos ficticios.
+- Parser WhatsApp con saludos y múltiples representaciones de cantidad/unidad, ubicación y fecha. Pruebas positivas y adversarias; envíos parciales bloqueados.
+- Fuente media (PDF, Excel, Word, imágenes): guarda un manifiesto cifrado del ID/mime/caption en Whapi inbox, **sin fingir que el contenido fue leído**. Extracción de archivos binarios, IA real y verificación independiente pendientes.
+- Contrato IA estricto `ai-contract.ts`: sin fuente comprobable, unidades y evidencias consistentes nunca se autoriza distribución.
+- Migración PILOTO `mvp093_preserve_buyer_requested_delivery_note` instalada con autoensayo reversible: fecha de entrega explícita se guarda y pasa al PDF de solicitud; no supone fecha para otros pedidos.
+- Documentación de límites y siguientes puertas de seguridad en `docs/210-mvp-093-ingreso-flexible-e-ia-documental.md`. No se modificaron Vercel, main ni producción.
+
 ## MVP-091 — Solicitud PDF y seguimiento privado con embargo hasta cierre (02/11/2026)
 - Generador PDF determinista de 1–8 artículos con localidad y vencimiento, sin frases sobre IVA, fletes, adicionales ni descuentos; transporte Whapi `/messages/document` desde snapshot SQL confiable con lease único.
 - Registro de enlace de seguimiento por WhatsApp con token aleatorio de 256 bits, SHA256 privado y URL con fragmento: recuento actualizado sin precios, originales ni identidades antes del vencimiento. Solo se publican al cierre ofertas previamente revisadas y anonimizadas.
