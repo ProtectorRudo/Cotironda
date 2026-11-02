@@ -307,8 +307,11 @@ async function respond(req:Request):Promise<Response>{
         link+'\nLos presupuestos se mantienen cerrados hasta que termine el plazo.'}),
       signal:AbortSignal.timeout(12000)
      });
+     const sent=response.ok?await response.json().catch(()=>null):null;
+     const accepted=Boolean(response.ok&&sent&&typeof sent==='object'&&
+        (sent as Record<string,unknown>).sent===true);
      const finish=await db.rpc('cotironda_piloto_finish_tracking_mvp091',{
-       p_token_hash:tokenHash,p_state:response.ok?'api_accepted':'uncertain'
+       p_token_hash:tokenHash,p_state:accepted?'api_accepted':'uncertain'
      });
      if(finish.error)return json(503,'tracking_reconciliation_required');
     }catch{
