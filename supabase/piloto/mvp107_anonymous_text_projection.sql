@@ -61,7 +61,9 @@ begin
  where q.message_hmac=p_message_hmac
   and q.state='awaiting_fidelity_check'
   and m.state='stored' and m.review_state='suggested_only'
-  and m.mime in ('text/plain','text/csv')
+  and m.mime in ('text/plain','text/csv',
+   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
   and m.proposal->>'kind'='supplier_quote'
   and m.proposal->'unanswered'='[]'::jsonb
   and r.delivery_city='La Plata'
