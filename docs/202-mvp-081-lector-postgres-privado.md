@@ -24,3 +24,9 @@
 - Comprobar autorización comprador vigente, consentimientos, control de sesión e inexistencia de fugas por notas, nombre de marcas comerciales, RUT/CUIT/CBU, logos, WhatsApp, archivos.
 - Confirmar integridad de **cada** renglón para PDF/Excel/Word/imagen antes de mostrar plantilla real.
 - Ningún despliegue en producción, mensajes salientes o anuncios de finalistas sin nueva autorización y pruebas E2E.
+
+## Instalación posterior, confirmada en PILOTO (02/11/2026)
+
+Luego de que los cinco pipelines GitHub Actions terminaron PASS (1.450 unitarias), se aplicó en Supabase PILOTO la migración `mvp081_private_reader_role_no_login` con resultado `success=true`. Se verificó por SELECT que `cotironda_piloto_reader` existe con `rolcanlogin=false`, `rolbypassrls=false`, `rolsuper=false`, 3 políticas RLS, SELECT mínimo sobre original/hash y UPDATE/DELETE de oferta en `false`. Flag WhatsApp saliente permanece `false`.
+
+**Importante:** esta instalación crea exclusivamente permisos de un rol que **NO puede iniciar sesión**. No se creó login/password ni se configuró una cadena de conexión del portal. La prueba de `SET LOCAL ROLE` por el conector administrativo sigue pendiente por falta de permiso para asumir el rol (error 42501). No afirmar conexión E2E con credencial real o acceso desde arquitecto. El lector del portal continúa apagado y no fue desplegado.
