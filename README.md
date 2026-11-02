@@ -1,3 +1,5 @@
+> **MVP-077 — Cierre automático PILOTO:** instalar job Supabase Cron de 5 minutos para cerrar exclusivamente rondas vencidas, sin comparar ni revelar proveedores, sin WhatsApp ni credenciales externas; pruebas y monitoreo en [docs/197](docs/197-mvp-077-cierre-automatico-cron-piloto.md). **No anuncia finalistas**.
+
 > **MVP-076 — Rondas anónimas de 4 días (desarrollo / PILOTO):** plazo por defecto 96 horas, cierre privado idempotente sin revelación, guards de Whapi contra ofertas/invitaciones vencidas y planes offline de vista anónima + mensajes recíprocos hasta dos finalistas por rubro. **Aún no hay cron, ranking real validado ni envíos de avisos:** no anunciar selección automática completa. [docs/196](docs/196-mvp-076-cuatro-dias-anonimato-finalistas.md).
 
 > **MVP-075 — Auditoría económica OFFLINE de presupuestos WhatsApp:** nuevo control independiente de fuente literal, líneas, importes y sumas verificables. Totales ambiguos, IVA/flete y datos incompletos no permiten ranking ni alteración del original; no integrado aún a Supabase ni mensajes reales. [docs/195](docs/195-mvp-075-auditoria-cotizaciones-texto.md).
