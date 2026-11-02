@@ -25,7 +25,7 @@ revoke all on cotironda_piloto_privado.clarified_lines_mvp100
 create function public.cotironda_piloto_clarification_preview_mvp100(
  p_message_hmac text
 ) returns jsonb language plpgsql stable security definer set search_path='' as $fn$
-declare v_doc record; body text; needs text; city text; n integer; l record;
+declare v_doc record; body text; needs text; city text; n integer; v_line record;
 begin
  if p_message_hmac !~ '^[a-f0-9]{64}$' then
   return jsonb_build_object('state','invalid');end if;
@@ -44,19 +44,19 @@ begin
  city:=coalesce(v_doc.delivery_city_confirmed,v_doc.proposal->>'delivery_city');
  body:='Cotironda recibió tu lista. Para pedir precios necesito estos datos:'||E'\n';
  n:=0;
- for l in select l.line_no,l.description_literal,l.unit_literal,
+ for v_line in select l.line_no,l.description_literal,l.unit_literal,
   l.classified_family
   from cotironda_piloto_privado.document_lines_mvp098 l
   where l.message_hmac=p_message_hmac order by l.line_no
  loop
   needs:='';
-  if cotironda_piloto_privado.unit_code_mvp099(l.unit_literal) is null
+  if cotironda_piloto_privado.unit_code_mvp099(v_line.unit_literal) is null
    then needs:='unidad';end if;
-  if l.classified_family is null
+  if v_line.classified_family is null
    then needs:=case when needs='' then 'tipo de producto'
      else needs||' y tipo de producto' end;end if;
   if needs<>'' then
-   body:=body||l.line_no||'. '||l.description_literal||': '||needs||E'\n';
+   body:=body||v_line.line_no||'. '||v_line.description_literal||': '||needs||E'\n';
    n:=n+1;
   end if;
  end loop;
