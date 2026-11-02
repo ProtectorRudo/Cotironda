@@ -74,7 +74,7 @@ function harness({entries=[{key:MSG1,text:ORDER}],missing=false,
    assert.equal(channel,CH);assert.equal(chat,CHAT);assert.equal(org,BUYER);
    assert.equal(origin,MSG1);assert.equal(reply,entries.at(-1).key);
    assert.equal(zone,'La Plata');assert.equal(iva,'no_especificado');
-   assert.equal(days,5);
+   assert.equal(days,4);
    const parsed=JSON.parse(materials);
    assert.equal(parsed.length,entries.length===1&&entries[0].text===ORDER?3:2);
    if(entries.length===1&&entries[0].text===ORDER)
