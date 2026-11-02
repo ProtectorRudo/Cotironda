@@ -33,10 +33,13 @@ begin
  from cotironda_piloto_privado.whapi_inbox m
  join cotironda_piloto_privado.participants p
    on p.key=m.participant_key and p.chat_hmac=m.chat_hmac
+ left join cotironda_piloto_privado.media_archive_mvp095 a
+   on a.message_hmac=m.message_hmac and a.participant_key=p.key
  join cotironda_piloto_privado.invitations i
-   on i.supplier_key=p.key and i.request_id=m.request_id
+   on i.supplier_key=p.key
+   and i.request_id=coalesce(m.request_id,a.request_id)
  join cotironda_piloto_privado.requests r
-   on r.id=m.request_id
+   on r.id=i.request_id
  where m.message_hmac=p_message_hmac and m.chat_hmac=p_chat_hmac
   and m.received_at>clock_timestamp()-interval '15 minutes'
   and p.participant_role='supplier'
@@ -50,15 +53,14 @@ begin
        and o.supplier_key=p.key and o.request_id=m.request_id))
    or (p_mode='media_quote' and m.kind in ('image','document')
     and m.processing_state='needs_review'
+    and a.state='stored' and a.review_state='suggested_only'
+    and a.request_id=i.request_id
     and exists(select 1
-      from cotironda_piloto_privado.media_archive_mvp095 a
-      join cotironda_piloto_privado.supplier_media_quotes_mvp098 q
-        on q.message_hmac=a.message_hmac
-        and q.request_id=m.request_id and q.supplier_key=p.key
-        and q.source_sha256=a.content_sha256
-      where a.message_hmac=m.message_hmac and a.state='stored'
-        and a.review_state='suggested_only'
-        and q.state='awaiting_fidelity_check')))
+      from cotironda_piloto_privado.supplier_media_quotes_mvp098 q
+      where q.message_hmac=m.message_hmac
+       and q.request_id=a.request_id and q.supplier_key=p.key
+       and q.source_sha256=a.content_sha256
+       and q.state='awaiting_fidelity_check')))
  for update of p;
  if v_key is null then return false;end if;
  insert into cotironda_piloto_privado.supplier_ack_mvp104(
