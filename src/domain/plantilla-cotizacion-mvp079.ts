@@ -65,7 +65,7 @@ function unsafe(x:string):boolean{
  const sinImportes=x.replace(/\$\s*[0-9][0-9.,]*/gu,'MONTO');
  return RISK.some(re=>re.test(sinImportes));
 }
-function keys(x:unknown,ks:readonly string[]):x is Record<string,unknown>{
+function keys(x:unknown,ks:readonly string[]):boolean{
  return x!==null&&typeof x==='object'&&!Array.isArray(x)&&
  Object.keys(x).length===ks.length&&Object.keys(x).every(k=>ks.includes(k));
 }
