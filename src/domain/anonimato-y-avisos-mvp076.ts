@@ -38,7 +38,7 @@ export function vistaPresupuestosAnonimosMvp076(
  const out:OfertaAnonimaMvp076[]=ofertas.map((o,i)=>{
   if(!keys(o,['idInterno','revision','verificada','lineas'])||
    typeof o.idInterno!=='string'||!CODE.test(o.idInterno)||
-   seen.has(o.idInterno)||!Number.isSafeInteger(o.revision)||o.revision<1||
+   seen.has(o.idInterno)||typeof o.revision!=='number'||!Number.isSafeInteger(o.revision)||o.revision<1||
    typeof o.verificada!=='boolean'||!Array.isArray(o.lineas)||o.lineas.length>30)deny();
   seen.add(o.idInterno);
   const ids=new Set<string>();
