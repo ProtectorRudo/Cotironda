@@ -10,7 +10,7 @@ const sql=readFileSync(new URL(
 test('MVP098: cada documento leído crea plan privado; jamás invita proveedores',()=>{
  assert.match(src,/cotironda_piloto_plan_document_mvp098/);
  assert.match(src,/proposal\.kind==='buyer_request'/);
- assert.match(src,/saved\.data!==true/);
+ assert.match(src,/saved\.data===true/);
  assert.match(src,/cotironda_piloto_record_supplier_media_mvp098/);
  const segment=src.slice(src.indexOf("if(proposal.kind==='buyer_request')"),
  src.indexOf("if(proposal.delivery_city===null",src.indexOf("if(proposal.kind==='buyer_request')")));
