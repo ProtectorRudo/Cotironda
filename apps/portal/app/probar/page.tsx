@@ -28,6 +28,7 @@ export default function Probar(){
      <p><a href="/probar/whatsapp" className="mvp-tag">Ver nuevo prototipo WhatsApp (3 comercios)</a></p>
      <p><a href="/probar/catalogos" className="mvp-tag">Probar carga de listados de corralones (CSV/TXT)</a></p>
      <p><a href="/probar/tres-telefonos" className="mvp-tag">Probar circuito completo: un arquitecto y dos corralones</a></p>
+     <p><a href="/probar/plantilla" className="mvp-tag">Ver plantilla propia de presupuestos anónimos (demo)</a></p>
      <DemostracionComprador/>
    </div>
  </main>;
