@@ -34,9 +34,9 @@ const vista=crearPlantillasAnonimasMvp079([
     'privado'|'material'|'embalaje'|'flete'|'descuento'|'total'|'impuesto'}))},
  {idInterno:'proveedor_ensayo_02',revision:1,textoOriginal:ejemploB,
   privacidad:'revisada_por_servidor',lineas:[
-   'privado','material','material','flete','total','impuesto'
+   'privado','material','material','flete','total','aclaracion'
   ].map((categoria,i)=>({numeroLinea:i+1,categoria:categoria as
-    'privado'|'material'|'flete'|'total'|'impuesto'}))}
+    'privado'|'material'|'flete'|'total'|'aclaracion'}))}
 ]);
 const categorias:Record<string,string>={
  material:'Material solicitado',adicional:'Artículo adicional',
