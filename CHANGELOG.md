@@ -1,3 +1,8 @@
+## MVP-076 — 4 días por defecto y anonimato previo al cierre (02/11/2026)
+- Contrato 4 días por omisión (antes 5), 3–7 días explícitos en ruta legacy.
+- SQL piloto: vencimiento privado, cierre idempotente y guards Whapi para no registrar/enviar ofertas fuera de plazo; los finales no comparten contactos por cerrar.
+- Módulos offline para lista de artículos/precios anónimos y plan de WhatsApps de contacto mutuo solo de finalistas comprobados. Sin cron, envío, ranking real ni divulgación. Ver docs/196.
+
 ## MVP-075 — Auditoría conservadora de presupuestos WhatsApp en texto (02/11/2026)
 - Nuevo módulo offline que conserva fuente literal y hash, identifica renglones extra/cargos/descuentos, IVA/flete y solo concilia importes explícitos inequívocos con BigInt.
 - Caso real de ensayo con $180.000/$35.000/TOTAL $215.000: las cifras permanecen literales, sin ranking por ambigüedad.
