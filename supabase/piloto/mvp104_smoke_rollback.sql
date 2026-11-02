@@ -33,6 +33,9 @@ begin
   buyer_key,delivery_city,original_request,source_hmac,state)
  values('arquitecto','La Plata','Lista documental sintética de cemento 20 bolsas',
   buyer_hmac,'prepared') returning id into rid;
+ insert into cotironda_piloto_privado.request_lines(
+  request_id,line_no,original_description,quantity,unit,family_code)
+ values(rid,1,'Cemento CPC 50 kg',20,'bag','cemento_gris_obra');
  insert into cotironda_piloto_privado.invitations(request_id,supplier_key)
  values(rid,'corralon_nahuel');
 
