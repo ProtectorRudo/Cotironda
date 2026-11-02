@@ -407,9 +407,27 @@ async function respond(req:Request):Promise<Response>{
               p_message_hmac:messageHash,
               p_proposal:proposal
             });
-            if(!saved.error&&saved.data===true&&
-              proposal.kind==='buyer_request'&&proposal.delivery_city===null&&
-              proposal.lines.length>0)aiReply='zone';
+            if(!saved.error&&saved.data===true){
+              // The per-line planner is internal and NEVER sends invitations.
+              // Supplier original files get a separate, unverified receipt:
+              // totals and extra charges remain available in source storage.
+              if(proposal.kind==='buyer_request'){
+                const plan=await db.rpc('cotironda_piloto_plan_document_mvp098',{
+                  p_message_hmac:messageHash
+                });
+                if(plan.error)console.warn('cotironda_media_plan_reconciliation_required');
+                if(proposal.delivery_city===null&&proposal.lines.length>0)
+                  aiReply='zone';
+              }else if(proposal.kind==='supplier_quote'){
+                const receipt=await db.rpc('cotironda_piloto_record_supplier_media_mvp098',{
+                  p_message_hmac:messageHash
+                });
+                if(receipt.error)console.warn('cotironda_supplier_media_reconciliation_required');
+              }
+            }else{
+              // The source remains stored; do not claim a usable extraction.
+              console.warn('cotironda_media_proposal_reconciliation_required');
+            }
           }catch{/* preserve original and review_required; no retry */}
         }
       }

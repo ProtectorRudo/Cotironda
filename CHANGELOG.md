@@ -1,3 +1,8 @@
+## MVP-098 — plan de distribución por artículo y recibos de presupuesto en archivo (02/11/2026)
+- Borradores IA de archivos archivados se convierten en un plan por renglón con unidades literales, cantidad, evidencia y motivos de bloqueo. Cobertura por proveedor/catalogo/localidad sin fingir stock ni cotizaciones válidas. La imagen real contenía 10 Cemento, 2 Arena y 288 Huecos del 12, sin unidades ni ciudad.
+- Presupuesto de proveedor enviado como archivo queda asociado a la única invitación activa, con original SHA256, total declarado literal, extras visibles en la fuente y estado `awaiting_fidelity_check`; nunca reemplaza ni modifica `offer_versions`.
+- RPCs privados, idempotentes, sin despacho y ensayos SQL rollback + tests; ver docs/215. No habilita aún ronda documental, ranking o finalistas.
+
 ## MVP-097 — menos cupos arbitrarios y zona contextual de documentos (02/11/2026)
 - La segunda imagen real del arquitecto se archivó y OpenAI propuso 3 renglones, sin zona ni unidades explícitas; no hubo ronda nueva ni envíos a proveedores.
 - Configuración de salvaguardas privadas amplias y ajustables en Supabase (500 archivos, 100 lecturas documentales, 200 consultas IA texto, 100 respuestas por contacto/24h), sin límite comercial de 2 archivos/día. Persisten controles de permisos, integridad, duplicados y costo.
