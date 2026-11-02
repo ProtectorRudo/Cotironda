@@ -104,7 +104,7 @@ async function unpack(bytes:Uint8Array):Promise<Map<string,string>>{
  }
  if(offset!==dirOff+dirSize)fail('invalid_source');
  if(!out.has('[Content_Types].xml')||
-   !/<Types(?:\s|>)/u.test(out.get('[Content_Types].xml')!))
+   !/<Types(?:\s|\/|>)/u.test(out.get('[Content_Types].xml')!))
    fail('invalid_source');
  for(const xml of out.values())
    if(/<!DOCTYPE|<!ENTITY|TargetMode=["']External["']/iu.test(xml))
