@@ -115,3 +115,28 @@ test('MVP110: network worker fail closed and no blind retries',()=>{
  assert.match(workflow,/vars\.COTIRONDA_PILOT_FINALIST_WORKER_ENABLED == 'true'/);
  assert.match(workflow,/--retry 0/);
 });
+
+test('MVP110: private buyer token unlocks finalist contacts only on closed consented round',()=>{
+ const status=readFileSync(new URL(
+  '../../supabase/piloto/mvp110_buyer_finalists_tracking.sql',import.meta.url),'utf8');
+ const portal=readFileSync(new URL(
+  '../../supabase/functions/cotironda-piloto-seguimiento/index.ts',import.meta.url),'utf8');
+ for(const term of ['t.token_hash=p_token_hash','t.revoked_at is null',
+  't.expires_at>clock_timestamp()',"req.state='closed'",
+  'req.closes_at<=clock_timestamp()',"b.participant_role='buyer'",
+  'b.consent_at is not null','b.opted_out_at is null',
+  'cotironda_piloto_finalist_contacts_mvp109','to service_role']){
+  assert.ok(status.includes(term),term);
+ }
+ assert.match(portal,/COTIRONDA_PILOT_FINALIST_VIEW_ENABLED/);
+ assert.match(portal,/cotironda_piloto_tracking_finalists_mvp110/);
+ assert.match(portal,/publicResult\?\.state==='closed'/);
+ assert.match(portal,/decodeContacts\(finals\.data/);
+ assert.match(portal,/publicResult=\{\.\.\.publicResult,finalists:list\}/);
+ assert.match(portal,/targetFinalists\.replaceChildren\(\)/);
+ assert.match(portal,/card\.textContent=finalist\.name/);
+ assert.doesNotMatch(portal,/\binnerHTML\b/);
+ for(const id of ['mvp110_premature_portal_contact_release',
+  'mvp110_portal_reveal_not_authorized','mvp110_wrong_token_access_to_contacts',
+  'mvp110_revoked_contact_visible_in_portal'])assert.ok(smoke.includes(id),id);
+});
