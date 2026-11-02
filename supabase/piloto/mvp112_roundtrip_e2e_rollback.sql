@@ -166,10 +166,10 @@ begin
   -- to 3 contact handoffs; partial quote round goes to just one supplier.
   for contact_person in
    select key,chat_hmac from cotironda_piloto_privado.participants
-    where key='arquitecto' or key=any((
-      select supplier_keys from
+    where key='arquitecto' or key in (
+      select unnest(supplier_keys) from
        cotironda_piloto_privado.finalist_coverage_plans_mvp108
-       where request_id=rid))
+       where request_id=rid)
     order by key
   loop
     contact_hash:=encode(extensions.gen_random_bytes(32),'hex');
