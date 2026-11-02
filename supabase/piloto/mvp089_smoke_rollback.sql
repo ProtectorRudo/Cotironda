@@ -4,7 +4,7 @@ begin;
 do $smoke$
 declare rid uuid; c integer; message text; payload jsonb; lid uuid;
 begin
- select count(*),min(id) into c,rid
+ select count(*),min(id::text)::uuid into c,rid
  from cotironda_piloto_privado.requests
  where state='prepared' and buyer_key='arquitecto' and delivery_city='La Plata'
  and closes_at>clock_timestamp();
