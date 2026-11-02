@@ -18,6 +18,19 @@ do $check$begin
   raise exception 'mvp095_bucket_not_private' using errcode='42501';end if;
 end;$check$;
 
+-- Private enablement gate, operator-controlled without additional user secrets.
+alter table cotironda_piloto_privado.integration_flags
+ add column media_archive_enabled_mvp095 boolean not null default false;
+create function public.cotironda_piloto_media_enabled_mvp095()
+returns boolean language sql stable security definer set search_path='' as $fn$
+ select exists(select 1 from cotironda_piloto_privado.integration_flags
+  where only_row and whatsapp_inbound_enabled and media_archive_enabled_mvp095);
+$fn$;
+revoke all on function public.cotironda_piloto_media_enabled_mvp095()
+ from public,anon,authenticated;
+grant execute on function public.cotironda_piloto_media_enabled_mvp095()
+ to service_role;
+
 create table cotironda_piloto_privado.media_archive_mvp095(
  message_hmac text primary key references cotironda_piloto_privado.whapi_inbox(message_hmac),
  chat_hmac text not null check(chat_hmac ~ '^[a-f0-9]{64}$'),
