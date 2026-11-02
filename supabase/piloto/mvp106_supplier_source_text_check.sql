@@ -74,7 +74,9 @@ begin
  if not found then return jsonb_build_object('state','not_permitted');end if;
  if row_.source_sha256<>p_source_sha256 or row_.line_count<>p_line_count
  then return jsonb_build_object('state','source_mismatch');end if;
- if p_state='source_text_covered' and row_.mime not in('text/plain','text/csv')
+ if p_state='source_text_covered' and row_.mime not in('text/plain','text/csv',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
  then return jsonb_build_object('state','unsupported_format');end if;
  if exists(select 1 from cotironda_piloto_privado.supplier_source_checks_mvp106
   where message_hmac=p_message_hmac)

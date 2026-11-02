@@ -1,3 +1,7 @@
+## MVP-111 — cotejo determinista del original Word/Excel Office OpenXML (02/11/2026)
+- DOCX con párrafos simples y XLSX con una hoja de celdas literales pueden contrastarse contra bytes reales ZIP, CRC32, Deflate y XML; se cotejan importes/renglones con MVP-106 y se publican anónimos solo si MVP-107 también valida doble lectura, suma exacta, consentimiento y privacidad. Fórmulas, estilos monetarios ambiguos, encabezados, datos ocultos, tablas complejas e imágenes no autorizan publicación.
+- Tests Node generan archivos Office ZIP reales y ensayan precio alterado, hoja extra, fórmula, fila oculta, archivo corrupto y teléfono. PostgreSQL 17 PILOTO migraciones 101–110 y smoke MIME Word/Excel con reversión **PASS**; docs/229, Issue #433. No desplegado; PDF/fotos y otras complejidades pendientes.
+
 ## MVP-110 — aviso bilateral de finalistas por WhatsApp, con reserva de envío (02/11/2026)
 - Se desarrolló outbox at-most-once de 1 aviso al arquitecto + hasta 2 proveedores completos, posterior al cierre real de 4 días. Envía datos reales únicamente si arquitecto y todos los proveedores habilitaron revelación de contactos y sus números cifrados coinciden con chat autenticado. Revalida consentimiento antes del HTTP.
 - Worker Edge protegido por secreto exclusivo y bandera apagada por defecto; descifra solo en memoria, verifica AES-GCM AAD y chat HMAC, envía texto Whapi y registra resultado api_accepted/uncertain sin reintentar a ciegas. GH cron cada 5 minutos condicionado a variable y secretos, sin ejecución por defecto.

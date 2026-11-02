@@ -20,7 +20,9 @@ test('MVP107: private publication depends on original bytes, twice-read agreemen
  assert.match(publication,/dual\.state='model_readings_match'/);
  assert.match(publication,/amounts\.state='balanced'/);
  assert.match(publication,/m\.content_sha256=q\.source_sha256/);
- assert.match(publication,/m\.mime in \('text\/plain','text\/csv'\)/);
+ assert.match(publication,/m\.mime in \('text\/plain','text\/csv',/);
+ assert.match(publication,/openxmlformats-officedocument\.wordprocessingml\.document/);
+ assert.match(publication,/openxmlformats-officedocument\.spreadsheetml\.sheet/);
  assert.match(publication,/supplier\.consent_at is not null/);
  assert.match(publication,/buyer\.consent_at is not null/);
  assert.match(publication,/r\.closes_at>clock_timestamp\(\)/);
