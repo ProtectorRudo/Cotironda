@@ -19,7 +19,8 @@ const rejected=(source:DownloadedMedia,reason:Reason,lines=0):SourceCheckResult=
   publicationAllowed:false,rankingAllowed:false});
 
 class OfficeFailure extends Error{
- constructor(readonly reason:Reason){super(reason)}
+ readonly reason:Reason;
+ constructor(reason:Reason){super(reason);this.reason=reason}
 }
 const fail=(reason:Reason):never=>{throw new OfficeFailure(reason)};
 function u16(d:DataView,n:number){return d.getUint16(n,true)}
