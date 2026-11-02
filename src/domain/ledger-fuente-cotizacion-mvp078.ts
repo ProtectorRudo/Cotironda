@@ -31,7 +31,7 @@ export type LineaLedgerMvp078 = Readonly<{
  destino:DestinoRenglonMvp078|'sin_clasificar';
  articuloId:string|null;
  importeObservado:string|null;
- precioComprobado:boolean;
+ importeVerificado:boolean;
 }>;
 export type LedgerMvp078 = Readonly<{
  estado:'desglose_privado_sin_ranking';
@@ -106,7 +106,7 @@ export function vincularRenglonesOriginalesMvp078(input:EntradaLedgerMvp078):Led
    destino:c?.destino??'sin_clasificar',
    articuloId:c?.articuloId??null,
    importeObservado:l.importeVerificable,
-   precioComprobado:l.importeVerificable!==null
+   importeVerificado:l.importeVerificable!==null
   });
  });
  // Es un desglose de la fuente completa, no una extracción parcial.
@@ -125,9 +125,9 @@ export function vincularRenglonesOriginalesMvp078(input:EntradaLedgerMvp078):Led
   estadoIva:audit.estadoIva,estadoFlete:audit.estadoFlete,
   lineasSinClasificarConImportes:sinClasificar,
   lineasSolicitadasConImportesVerificados:requested.filter(
-    l=>l.precioComprobado).length,
+    l=>l.importeVerificado).length,
   lineasSolicitadasSinImporteVerificado:requested.filter(
-    l=>!l.precioComprobado).length,
+    l=>!l.importeVerificado).length,
   presupuestoOriginalIntacto:true as const,
   equivalenciasVerificadas:false as const,
   comparacionHabilitada:false as const,
