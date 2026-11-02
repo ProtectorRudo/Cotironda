@@ -1,3 +1,8 @@
+## MVP-101 — espejo privado de todos los renglones de presupuesto documental (02/11/2026)
+- La recepción de un archivo de proveedor mantiene el original privado SHA256 y ahora registra atómicamente cada renglón del borrador IA con su orden, cantidades, precios literales, evidencia y dudas, **sin descartar pallets, bolsones, flete, descuentos ni extras**.
+- El total declarado se conserva literal aun si es inconsistente; idempotencia por HMAC, RLS estricta y transcripción inmutable. Los documentos históricos sin espejo no se hacen pasar por recuperados.
+- Estado exclusivo `awaiting_fidelity_check`: no es cotejo contra el PDF/foto, no crea oferta verificada ni habilita ranking, exposición a comprador o finalistas. Docs/218, Issue #412, SQL smoke reversible y tests unitarios. Sin producción.
+
 ## MVP-100 — respuestas contextuales del arquitecto para completar unidades/arena/localidad (02/11/2026)
 - Whapi pregunta una sola vez lo indispensable de un documento corroborado, recibe unidades y tipo de arena por número de renglón y localidad en un mensaje, asocia todo al original privado por HMAC sin modificar cantidades ni propuesta IA.
 - Si los datos son suficientes, reanuda promoción MVP-099 y el despacho por proveedor sujeto a consentimiento. En caso contrario mantiene la solicitud pendiente; sin reenvío, sin confirmaciones por línea.
