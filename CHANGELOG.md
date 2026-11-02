@@ -1,3 +1,8 @@
+## MVP-079 — Plantilla propia de presupuestos anónimos (02/11/2026)
+- Modelo offline de oferta anónima que conserva todos los renglones comerciales literales y el total declarado, incluyendo pallets, artículos extra, fletes, descuentos y notas.
+- Retención fail-closed de una oferta ante filtración de identidad, importes ocultos, clasificación parcial, totales repetidos y entradas adulteradas; privacidad revisada por servidor es requisito de datos reales.
+- Demo Next.js `/probar/plantilla` responsive con datos ficticios y tests. Sin integración a PDFs, Excel, Supabase real, portal comprador autenticado, ranking o Whapi. Ver docs/200.
+
 ## MVP-078b — Puente privado de versiones de cotizaciones (02/11/2026)
 - Nuevo módulo de resumen de auditoría sin identificadores personales, con vinculación estricta de pedido, proveedor y revisión, y métricas conservadoras del original íntegro.
 - Casos de pruebas nuevos: versiones ajenas, documento alterado, cargos extras, fuente ambigua y exposición de datos. Sin conexión SQL real, envíos ni despliegues. Ver docs/199.
