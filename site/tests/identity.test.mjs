@@ -8,7 +8,7 @@ const brand=readFileSync(new URL('../brand-mark.svg',import.meta.url),'utf8');
 
 test('MVP085: identidad Cotironda en portada, tipografia y paleta corporativa',()=>{
  assert.match(html,/<title>Cotironda · La nueva forma de cotizar<\/title>/);
- assert.match(html,/<h1[^>]*>La nueva forma de <span>cotizar\.<\/span><\/h1>/);
+ assert.match(html,/<h1[^>]*>Comprá mejor\.<br><span>Ahorrá más\.<\/span><\/h1>/);
  assert.match(html,/<link rel="icon" type="image\/svg\+xml" href="\.\/brand-mark\.svg">/);
  assert.ok((html.match(/src="\.\/brand-mark\.svg"/g)||[]).length>=3);
  assert.match(brand,/<svg [^>]*viewBox="0 0 193 208"/);
@@ -17,6 +17,19 @@ test('MVP085: identidad Cotironda en portada, tipografia y paleta corporativa',(
  }
  assert.doesNotMatch(css,/#3be2bc|#49e1be|#0b1724/i);
  assert.doesNotMatch(html,/<link[^>]*fonts\.googleapis|<script[^>]*https?:\/\//i);
+});
+
+test('MVP085: la promesa principal es comprar mejor y encontrar ahorro sin engañar',()=>{
+ assert.match(html, /<h1 id="hero-title">Comprá mejor\.<br><span>Ahorrá más\.<\/span><\/h1>/);
+ assert.match(html, /name="description" content="[^"]*compará precios[^"]*oportunidades de ahorro/);
+ assert.match(html, /og:description" content="[^"]*ahorrá[^"]*presupuestos/);
+ assert.match(html, /<strong>mejores precios<\/strong>/);
+ assert.match(html, /más oportunidades de ahorro/i);
+ assert.match(html, /entre las ofertas realmente comparables/);
+ assert.match(html, /IVA, flete y condiciones/);
+ assert.match(html, /El ahorro real depende de las ofertas y condiciones recibidas/);
+ assert.match(html, /una oferta parcial puede parecer más barata sin resolver toda la compra/i);
+ assert.doesNotMatch(html, /ahorro garantizado|precio más bajo del mercado|siempre el precio más bajo|ahorrás un \d+%/i);
 });
 
 test('MVP085: responsive legible, navegacion y accesibilidad',()=>{
