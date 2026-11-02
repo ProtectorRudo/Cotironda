@@ -13,7 +13,7 @@ export type SolicitudPdfMvp091=Readonly<{
 }>;
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/iu;
 const NUM=/^(?:0|[1-9][0-9]{0,8})(?:\.[0-9]{1,3})?$/u;
-const CONTACT=/(?:https?:\/\/|www\.|[\\w.+-]+@[\\w.-]+\\.[A-Za-z]{2,}|(?:\\+?\\d[\\s.-]?){9,}|\\b(?:whatsapp|tel[eé]fono|celular|cuit|cuil|correo|email|raz[oó]n social)\\b)/iu;
+const CONTACT=/(?:https?:\/\/|www\.|[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}|(?:\+?\d[\s.-]?){9,}|\b(?:whatsapp|tel[eé]fono|celular|cuit|cuil|correo|email|raz[oó]n social)\b)/iu;
 const UNITS:Readonly<Record<string,string>>={
  bag:'bolsas',unit:'unidades',box:'cajas',kg:'kg',g:'g',
  l:'litros',ml:'ml',m:'m',m2:'m2',m3:'m3',roll:'rollos',pack:'paquetes'
