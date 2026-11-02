@@ -1,3 +1,8 @@
+## MVP-075 — Auditoría conservadora de presupuestos WhatsApp en texto (02/11/2026)
+- Nuevo módulo offline que conserva fuente literal y hash, identifica renglones extra/cargos/descuentos, IVA/flete y solo concilia importes explícitos inequívocos con BigInt.
+- Caso real de ensayo con $180.000/$35.000/TOTAL $215.000: las cifras permanecen literales, sin ranking por ambigüedad.
+- Sin cambios en Supabase, WhatsApp, Vercel ni producción. Ver docs/195.
+
 ## MVP-074 — No invitar si el proveedor ya cotizó (02/11/2026)
 - Corregida cola privada PILOTO: responder a una solicitud cancela solamente la invitación aún pendiente del mismo proveedor y pedido; se conservan los estados inciertos y el texto del presupuesto original.
 - El claim y la autorización previa a Whapi impiden solicitar de nuevo cuando ya hay una cotización.
