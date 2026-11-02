@@ -1,3 +1,7 @@
+## MVP-082b — Instalación de login sin contraseña en PILOTO (02/11/2026)
+- GitHub Actions 5/5 PASS, 1.455/1.455 unitarias sobre el código. Supabase PILOTO: `mvp082_login_without_password` aplicada; LOGIN real sin contraseña y sin heredar SELECT, miembro con solo SET al rol NOLOGIN y sin DELETE; WhatsApp saliente apagado.
+- Vercel `cotironda-portal-dev`: intento de agregar variables restringidas a rama rechazado porque proyecto no está conectado a Git. No se crearon envs, no se desplegó, no hay prueba E2E/credencial. Ver docs/203.
+
 ## MVP-082 — Cuenta separada y preflight de conexión privada (02/11/2026)
 - Preparada identidad PostgreSQL LOGIN con PASSWORD NULL, NOINHERIT, SET ROLE explícito al reader NOLOGIN y límites de conexión. SQL apuntado solo al piloto.
 - Adaptador Next server verifica rol efectivo dentro de transacción READ ONLY; configuración valida producción bloqueada y Preview permitido solo bajo flag/host/cuenta/SSL estrictos.
