@@ -1,7 +1,7 @@
 ## MVP-102 — cotejo independiente de dos lecturas de presupuesto proveedor (02/11/2026)
 - Whapi ahora usa también la segunda lectura documental de cada proveedor, ya realizada, para cotejarla con el espejo privado MVP-101: todos los renglones, cantidades, unidades, precio unitario, total de línea, descuentos, IVA/cargos literales y total declarado. Las diferencias quedan como `needs_source_review`; una coincidencia estricta es `model_readings_match` sin afirmar fidelidad al archivo original.
 - Ledger privado RLS, fuente SHA256, identidad de proveedor/ronda, consentimiento, detección de replay y motivo categórico sin importes/PII. Ausencia de segundo resultado bloquea la comprobación. Jamás crea `offer_versions`, rankings ni finalistas.
-- 12 casos sintéticos de PostgreSQL 17 en Supabase Piloto bajo `ROLLBACK` PASS, tests de contrato Node, docs/219, Issue #414. Sin instalación permanente de SQL, producción ni WhatsApps.
+- 14 casos sintéticos de PostgreSQL 17 en Supabase Piloto bajo `ROLLBACK` PASS, tests de contrato Node, docs/219, Issue #414. Sin instalación permanente de SQL, producción ni WhatsApps.
 
 ## MVP-101 — espejo privado de todos los renglones de presupuesto documental (02/11/2026)
 - La recepción de un archivo de proveedor mantiene el original privado SHA256 y ahora registra atómicamente cada renglón del borrador IA con su orden, cantidades, precios literales, evidencia y dudas, **sin descartar pallets, bolsones, flete, descuentos ni extras**.
