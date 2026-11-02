@@ -66,7 +66,7 @@ begin
    'revoke',
    'AAAAAAAAAAAAAAAA','AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',revoke_hash,
    extract(epoch from clock_timestamp())::bigint,
-   encode(extensions.gen_random_bytes(32),'hex'),
+   (select contact_sha256 from cotironda_piloto_privado.participant_channels_mvp109 where participant_key='corralon_nahuel'),
    'AAAAAAAAAAAAAAAA','AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA');
  if result->>'state'<>'revoked' then
   raise exception 'mvp109_revocation_refused %',result;end if;
