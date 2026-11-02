@@ -58,3 +58,16 @@ test('MVP082: la consulta real activa rol dentro de la transacción y no fuga te
  assert.match(s,/connection\.end/);
  assert.doesNotMatch(s,/console\.(?:log|warn|error)|NEXT_PUBLIC_|service_role/i);
 });
+
+test('MVP082: smoke real exige RLS, SHA de cada fuente y revierte privilegios temporales',()=>{
+ const sql=readFileSync(new URL('../../supabase/piloto/mvp082_reader_rls_smoke_rollback.sql',import.meta.url),'utf8');
+ assert.match(sql,/^begin;/m);
+ assert.match(sql,/grant cotironda_piloto_reader to postgres/);
+ assert.match(sql,/set local role cotironda_piloto_reader/);
+ assert.match(sql,/current_user <> 'cotironda_piloto_reader'/);
+ assert.match(sql,/w\.plaintext_sha256=encode\(sha256\(/);
+ assert.match(sql,/con_sha<>total_ofertas/);
+ assert.match(sql,/has_column_privilege\(current_user/);
+ assert.match(sql,/^rollback;/m);
+ assert.doesNotMatch(sql,/\b(?:update|delete from|insert into)\s+cotironda_piloto_privado/iu);
+});
