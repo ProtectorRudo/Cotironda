@@ -1,3 +1,9 @@
+## MVP-094 — Intérprete IA operacional de WhatsApp, respuestas breves y verificables (02/11/2026)
+- Adaptador real de OpenAI Responses (JSON Schema estricto, `store:false`, sin herramientas, límites de tokens/caracteres y timeout) para clasificar mensajes de compradores autorizados. **Deshabilitado por defecto hasta configurar clave/flags privados y medir costos**.
+- Las respuestas de Cotironda son textos comerciales fijos, breves y auditables, no textos inventados por el modelo. Saludos y consultas fuera del alcance no producen mensajes. Pedidos con evidencia insuficiente quedan en revisión, nunca despachos parciales no verificados.
+- Guardas SQL privadas de 12 interpretaciones por comprador/24h, una por mensaje HMAC, consentimiento/rol obligatorios, 5 respuestas/24h y un único intento de envío Whapi sin reintento incierto; smoke PG17 transaccional y pruebas con API mock.
+- El ranking económico, comprensión binaria de archivos y revelación de finalistas siguen pendientes de integración; ver `docs/211-mvp-094-ia-operacional-whatsapp.md`.
+
 ## MVP-093 — Ingreso flexible de pedidos y fuentes cifradas (02/11/2026)
 - Instalado en PILOTO `MVP-092b` para que al comenzar una ronda nueva se cancelen únicamente invitaciones anteriores del mismo proveedor sin borrar sus presupuestos y sin crear pedidos ficticios.
 - Parser WhatsApp con saludos y múltiples representaciones de cantidad/unidad, ubicación y fecha. Pruebas positivas y adversarias; envíos parciales bloqueados.
