@@ -81,3 +81,9 @@ test('MVP091: HTTP 2xx de PDF no basta sin sent=true de Whapi',()=>{
  assert.match(whapi,/typeof message\?\.id==='string'/);
  assert.match(whapi,/finish\(accepted\?'api_accepted':'uncertain'/);
 });
+
+test('MVP091: enlace WhatsApp exige confirmación positiva de API',()=>{
+ assert.match(whapi,/const sent=response\.ok\?await response\.json\(\)\.catch\(\(\)=>null\):null/);
+ assert.match(whapi,/\(sent as Record<string,unknown>\)\.sent===true/);
+ assert.match(whapi,/p_token_hash:tokenHash,p_state:accepted\?'api_accepted':'uncertain'/);
+});
