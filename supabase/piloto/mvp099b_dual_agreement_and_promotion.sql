@@ -180,6 +180,20 @@ begin
    where l.message_hmac=p_message_hmac);
  if eligible_count=0 then return jsonb_build_object(
    'state','no_matching_suppliers');end if;
+ -- Never silently drop an item for lack of any matching supplier. Keep
+ -- the original private and notify via future status rather than pretend
+ -- the buyer's full list is being quoted.
+ if exists(select 1 from cotironda_piloto_privado.document_lines_mvp098 l
+    where l.message_hmac=p_message_hmac
+     and not exists(select 1 from cotironda_piloto_privado.participants p
+      join cotironda_piloto_privado.catalogue_lines c
+       on c.participant_key=p.key and c.family_code=l.classified_family
+        and c.recognition_state='curated_family'
+      where p.key in('corralon_ailin','corralon_nahuel')
+       and p.delivery_city=city and p.participant_role='supplier'
+       and p.chat_hmac is not null and p.consent_at is not null
+       and p.opted_out_at is null))
+ then return jsonb_build_object('state','uncovered_items');end if;
  -- No plaintext media or contact data is placed in this transcription:
  -- immutable original byte-for-byte is referenced by SHA256+message_hmac.
  select 'Documento privado archivado (SHA256 '||a.content_sha256||')'||
@@ -227,4 +241,55 @@ end;$fn$;
 revoke all on function public.cotironda_piloto_prepare_document_mvp099(text)
  from public,anon,authenticated;
 grant execute on function public.cotironda_piloto_prepare_document_mvp099(text)
+ to service_role;
+
+
+-- Contextual locality is attached to one exact image, not to a new request.
+-- Return that original's internal HMAC to the authenticated backend so the
+-- already agreed document can continue without a third paid model call.
+create or replace function public.cotironda_piloto_attach_zone_to_document_mvp097(
+ p_chat_hmac text,p_message_hmac text,p_city text
+) returns jsonb language plpgsql security definer set search_path='' as $fn$
+declare v_buyer text;v_target text;n integer;
+begin
+ if p_chat_hmac !~ '^[a-f0-9]{64}$' or
+    p_message_hmac !~ '^[a-f0-9]{64}$' or
+    p_city is null or length(btrim(p_city)) not between 3 and 80 or
+    p_city !~ '^[[:alpha:][:space:]()'',.-]+$'
+ then return jsonb_build_object('state','invalid_city');end if;
+ select p.key into v_buyer from cotironda_piloto_privado.participants p
+ join cotironda_piloto_privado.whapi_inbox m on m.chat_hmac=p.chat_hmac
+   and m.participant_key=p.key
+ where p.chat_hmac=p_chat_hmac and m.message_hmac=p_message_hmac
+   and m.kind='text' and m.processing_state in ('needs_review','needs_zone')
+   and m.received_at>clock_timestamp()-interval '15 minutes'
+   and p.participant_role='buyer' and p.consent_at is not null
+   and p.opted_out_at is null for update of p;
+ if v_buyer is null then return jsonb_build_object('state','not_permitted');end if;
+ select count(*),min(a.message_hmac) into n,v_target
+ from cotironda_piloto_privado.media_archive_mvp095 a
+ where a.chat_hmac=p_chat_hmac and a.participant_key=v_buyer
+  and a.kind in ('image','document') and a.state='stored'
+  and a.proposal->>'kind'='buyer_request'
+  and (a.proposal->>'delivery_city') is null
+  and a.delivery_city_confirmed is null
+  and a.request_id is null
+  and a.reserved_at>clock_timestamp()-interval '7 days'
+  and exists(select 1 from cotironda_piloto_privado.ai_replies_mvp094 rep
+      where rep.message_hmac=a.message_hmac and rep.reply_code='zone'
+       and rep.state='api_accepted');
+ if n<>1 then return jsonb_build_object('state',case when n=0
+    then 'no_pending_document' else 'ambiguous_pending_documents' end);end if;
+ update cotironda_piloto_privado.media_archive_mvp095
+ set delivery_city_confirmed=btrim(p_city),
+  delivery_zone_source_hmac=p_message_hmac
+ where message_hmac=v_target and delivery_city_confirmed is null;
+ get diagnostics n=row_count;
+ return jsonb_build_object('state',case when n=1
+   then 'city_attached' else 'not_attached' end,
+   'source_message_hmac',case when n=1 then v_target else null end);
+end;$fn$;
+revoke all on function public.cotironda_piloto_attach_zone_to_document_mvp097(text,text,text)
+ from public,anon,authenticated;
+grant execute on function public.cotironda_piloto_attach_zone_to_document_mvp097(text,text,text)
  to service_role;
