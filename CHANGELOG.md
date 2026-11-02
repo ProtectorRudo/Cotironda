@@ -1,3 +1,8 @@
+## MVP-082 — Cuenta separada y preflight de conexión privada (02/11/2026)
+- Preparada identidad PostgreSQL LOGIN con PASSWORD NULL, NOINHERIT, SET ROLE explícito al reader NOLOGIN y límites de conexión. SQL apuntado solo al piloto.
+- Adaptador Next server verifica rol efectivo dentro de transacción READ ONLY; configuración valida producción bloqueada y Preview permitido solo bajo flag/host/cuenta/SSL estrictos.
+- Pruebas y smoke del operador sin datos personales; docs/203. Sin contraseña real, endpoint comprador, envíos, publicación o descarga de presupuesto original.
+
 ## MVP-081b — Roles de lectura mínimos aplicados al PILOTO (02/11/2026)
 - Tras 5/5 CI PASS del código (1.450 unitarias), Supabase PILOTO confirmó migración `mvp081_private_reader_role_no_login` aplicada: rol NOLOGIN, sin BYPASSRLS, 3 políticas RLS, SELECT mínimo, no UPDATE/DELETE, outbound WhatsApp OFF.
 - El rol es deliberadamente incapaz de iniciar sesión: faltan credencial operativa dedicada en secret manager, conexión E2E y autorización del comprador para servir plantillas reales. Sin modificaciones a ofertas, DEV histórica o producción.
