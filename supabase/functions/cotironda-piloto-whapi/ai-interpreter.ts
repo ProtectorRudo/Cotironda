@@ -49,22 +49,22 @@ const SCHEMA={
 export const BUSINESS_AI_SCHEMA=SCHEMA;
 const obj=(v:unknown):v is Record<string,unknown>=>
  !!v&&typeof v==='object'&&!Array.isArray(v);
-const onlyKeys=(v:unknown,keys:readonly string[]):boolean=>
+const onlyKeys=(v:unknown,keys:readonly string[]):v is Record<string,unknown>=>
  obj(v)&&Object.keys(v).length===keys.length&&
  keys.every(k=>Object.hasOwn(v,k));
 function parseResponse(raw:unknown):AiIntent{
  if(!obj(raw)||raw.status!=='completed'||!Array.isArray(raw.output))
   throw new Error('pilot_ai_not_completed');
- const messages=raw.output.filter((i:unknown)=>
+ const messages=raw.output.filter((i:unknown):i is Record<string,unknown>=>
   obj(i)&&i.type==='message'&&i.role==='assistant');
- if(messages.length!==1||!Array.isArray(messages[0].content)||
-    messages[0].content.length!==1||
-    !obj(messages[0].content[0])||
-    messages[0].content[0].type!=='output_text'||
-    typeof messages[0].content[0].text!=='string')
+ if(messages.length!==1||!Array.isArray(messages[0].content))
+  throw new Error('pilot_ai_bad_output');
+ const parts=messages[0].content as unknown[];
+ if(parts.length!==1||!obj(parts[0])||
+    parts[0].type!=='output_text'||typeof parts[0].text!=='string')
   throw new Error('pilot_ai_bad_output');
  let data:unknown;
- try{data=JSON.parse(messages[0].content[0].text as string)}
+ try{data=JSON.parse(parts[0].text)}
  catch{throw new Error('pilot_ai_bad_json')}
  if(!onlyKeys(data,SCHEMA.required)||
     !SCHEMA.properties.intent.enum.includes((data as Record<string,unknown>).intent as never)||
