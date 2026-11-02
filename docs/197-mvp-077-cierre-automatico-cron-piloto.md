@@ -34,3 +34,14 @@ Desarrollo en rama `feat/mvp-077-piloto-cron-close`. PR y CI deben completarse y
 - **Historial de ejecución de cron**: `cron.job_run_details` aún sin filas al momento de la primera lectura inmediata posterior a la instalación; **job activado/registrado**, pero no afirmar todavía primera ejecución exitosa del scheduler. Verificar en la siguiente ventana de 5 minutos.
 
 No se instaló `pg_net`, no se emitió ningún WhatsApp, no se filtró nombre ni teléfono de contactos, no se modificó producción, DEV histórica ni Te Hice Esto.
+
+### Primera ejecución real de Supabase Cron — VERIFICADA
+
+A las **2026-11-02 10:20:00.089469+00**, el scheduler registró en `cron.job_run_details` la primera ejecución real del job `jobid=1`, `runid=1`, **`status=succeeded`**, finalizada `2026-11-02 10:20:00.095817+00` (`return_message='1 row'`).
+
+La lectura posterior verificó que:
+- La ronda auténtica sigue `prepared`, sin cierre prematuro, `closes_at=2026-11-06 04:34:00.325945+00`, con **una** oferta existente.
+- `integration_flags.whatsapp_outbound_enabled=false`.
+- Historial `cron.job_run_details`: **1 ejecución, 1 éxito**.
+
+**Conclusión verificada:** no solo figura programado; el scheduler REAL de Supabase ejecutó exitosamente la función de cierre sin modificar una ronda futura. No se observaron ni se autorizaron notificaciones de finalistas. Se requiere aún verificar cierre real de una ronda vencida por la tarea, y no puede proclamarse el ranking/lista de ganadores como terminado.
