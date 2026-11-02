@@ -118,7 +118,7 @@ grant execute on function public.cotironda_piloto_record_agreement_mvp099(text,j
 -- may silently be discarded. No individual buyer confirmation needed.
 create function public.cotironda_piloto_prepare_document_mvp099(p_message_hmac text)
 returns jsonb language plpgsql security definer set search_path='' as $fn$
-declare a record; line_ record; city text; request_id uuid; n int;
+declare a record; line_ record; city text; v_request uuid; n int;
         item_count int:=0; eligible_count int:=0; u text;
         transcription text;
 begin
@@ -190,10 +190,10 @@ begin
     requested_delivery_note)
  values(a.participant_key,city,transcription,p_message_hmac,'prepared',
    nullif(btrim(left(coalesce(a.proposal->>'requested_delivery_note',''),90)),''))
- returning id into request_id;
+ returning id into v_request;
  insert into cotironda_piloto_privado.request_lines(
    request_id,line_no,original_description,quantity,unit,family_code)
- select request_id,l.line_no,l.description_literal,
+ select v_request,l.line_no,l.description_literal,
   replace(l.quantity_literal,',','.')::numeric,
   cotironda_piloto_privado.unit_code_mvp099(l.unit_literal),
   l.classified_family
@@ -201,9 +201,9 @@ begin
  where l.message_hmac=p_message_hmac order by l.line_no;
  insert into cotironda_piloto_privado.document_sources_mvp099(
   request_id,message_hmac,content_sha256,verified_method)
- values(request_id,p_message_hmac,a.content_sha256,'dual_ai_exact_lines');
+ values(v_request,p_message_hmac,a.content_sha256,'dual_ai_exact_lines');
  insert into cotironda_piloto_privado.invitations(request_id,supplier_key)
- select request_id,p.key from cotironda_piloto_privado.participants p
+ select v_request,p.key from cotironda_piloto_privado.participants p
  where p.key in('corralon_ailin','corralon_nahuel')
   and p.participant_role='supplier' and p.delivery_city=city
   and p.chat_hmac is not null and p.consent_at is not null
@@ -212,13 +212,13 @@ begin
    join cotironda_piloto_privado.catalogue_lines c on
      c.family_code=l.family_code and c.participant_key=p.key
      and c.recognition_state='curated_family'
-   where l.request_id=request_id);
+   where l.request_id=v_request);
  get diagnostics n=row_count;
  if n<>eligible_count then
   raise exception 'mvp099_supplier_count_changed' using errcode='23514';end if;
  update cotironda_piloto_privado.media_archive_mvp095
- set request_id=request_id where message_hmac=p_message_hmac;
- return jsonb_build_object('state','prepared','request_id',request_id,
+ set request_id=v_request where message_hmac=p_message_hmac;
+ return jsonb_build_object('state','prepared','request_id',v_request,
   'all_lines',item_count,'supplier_invites',n);
 end;$fn$;
 revoke all on function public.cotironda_piloto_prepare_document_mvp099(text)
