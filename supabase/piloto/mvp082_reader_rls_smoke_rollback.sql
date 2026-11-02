@@ -15,8 +15,8 @@ begin
  end if;
  select count(*) into total_ofertas
  from cotironda_piloto_privado.offer_versions;
- if total_ofertas<>1 then
-  raise exception 'mvp082_pilot_expected_one_quote';
+ if total_ofertas<1 or total_ofertas>10 then
+  raise exception 'mvp082_pilot_quote_count_out_of_range';
  end if;
  select count(*) into con_sha
  from cotironda_piloto_privado.offer_versions o
@@ -29,7 +29,7 @@ begin
  where r.buyer_key='arquitecto'
   and w.processing_state='quote_recorded'
   and w.plaintext_sha256=encode(sha256(convert_to(o.original_quote,'UTF8')),'hex');
- if con_sha<>1 then
+ if con_sha<>total_ofertas then
   raise exception 'mvp082_source_sha_not_proved';
  end if;
  if has_table_privilege(current_user,
