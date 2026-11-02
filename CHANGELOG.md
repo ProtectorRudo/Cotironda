@@ -1,3 +1,8 @@
+## MVP-091 — Solicitud PDF y seguimiento privado con embargo hasta cierre (02/11/2026)
+- Generador PDF determinista de 1–8 artículos con localidad y vencimiento, sin frases sobre IVA, fletes, adicionales ni descuentos; transporte Whapi `/messages/document` desde snapshot SQL confiable con lease único.
+- Registro de enlace de seguimiento por WhatsApp con token aleatorio de 256 bits, SHA256 privado y URL con fragmento: recuento actualizado sin precios, originales ni identidades antes del vencimiento. Solo se publican al cierre ofertas previamente revisadas y anonimizadas.
+- Nueva ventana limitada a un pedido real de arquitecto y dos proveedores del piloto, SQL RLS, pruebas adversarias y `mvp091_smoke_rollback.sql`. **No equiparar código listo con envío real** ni cierre con ranking de finalistas; ver `docs/209-mvp-091-pdf-y-seguimiento-privado.md`.
+
 ## MVP-089 — Única invitación Whapi a Nahuel, limitada y con formato correcto (02/11/2026)
 - Gate de una sola autorización temporal por ronda/proveedor en esquema privado PILOTO, con dobles verificaciones de consentimiento, vencimiento, familia de artículos, zona y fuente; sin confirmar listas genéricas ni activar envíos.
 - Traducción de cantidades y unidades del pedido al mensaje «20 bolsas», «5 litros» sin alterar originales, y operador condicionado a `pending`.
