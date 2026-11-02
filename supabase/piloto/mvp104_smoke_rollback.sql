@@ -91,7 +91,7 @@ begin
   request_id)
  values(supplier_doc_hmac,supplier_chat,'corralon_nahuel','document',
   'AAAAAAAAAAAAAAAA','AAAAAAAAAAAAAAAAAAAAAAAA',hash_,
-  extract(epoch from clock_timestamp())::bigint,'needs_review',rid);
+  extract(epoch from clock_timestamp())::bigint,'needs_review',null);
  insert into cotironda_piloto_privado.media_archive_mvp095(
    message_hmac,chat_hmac,participant_key,request_id,kind,mime,
    media_id_sha256,state,size_bytes,content_sha256,storage_path,
@@ -126,7 +126,7 @@ begin
   request_id)
  values(invalid_doc_hmac,supplier_chat,'corralon_nahuel','document',
   'AAAAAAAAAAAAAAAA','AAAAAAAAAAAAAAAAAAAAAAAA',hash_,
-  extract(epoch from clock_timestamp())::bigint,'needs_review',rid);
+  extract(epoch from clock_timestamp())::bigint,'needs_review',null);
  if public.cotironda_piloto_reserve_supplier_ack_mvp104(
   invalid_doc_hmac,supplier_chat,'media_quote')
  then raise exception 'mvp104_unprocessed_document_acked';end if;
