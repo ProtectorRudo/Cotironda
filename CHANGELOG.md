@@ -1,3 +1,7 @@
+## MVP-082c — Lectura RLS real bajo rol segregado con rollback (02/11/2026)
+- Smoke SQL reproducible en Supabase PILOTO: el rol `cotironda_piloto_reader` leyó oferta(s) y verificó fuente/SHA de WhatsApp; se denegó acceso a contacto, cifrado completo y escritura.
+- Transacción revertida; comprobado que no persiste la membresía temporal del operador, oferta intacta y WhatsApp saliente OFF. Aún sin conexión real Next.js ni endpoint comprador. [docs/203](docs/203-mvp-082-login-privado-preparado.md).
+
 ## MVP-082b — Instalación de login sin contraseña en PILOTO (02/11/2026)
 - GitHub Actions 5/5 PASS, 1.455/1.455 unitarias sobre el código. Supabase PILOTO: `mvp082_login_without_password` aplicada; LOGIN real sin contraseña y sin heredar SELECT, miembro con solo SET al rol NOLOGIN y sin DELETE; WhatsApp saliente apagado.
 - Vercel `cotironda-portal-dev`: intento de agregar variables restringidas a rama rechazado porque proyecto no está conectado a Git. No se crearon envs, no se desplegó, no hay prueba E2E/credencial. Ver docs/203.
