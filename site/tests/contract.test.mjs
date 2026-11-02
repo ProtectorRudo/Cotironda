@@ -5,14 +5,15 @@ import vm from 'node:vm';
 const html = readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const js = readFileSync(new URL('../app.js',import.meta.url),'utf8');
 test('la demo identifica claramente que no es producto comercial',()=>{
-  assert.match(html,/VISTA PRELIMINAR/);
+  assert.match(html,/DEMOSTRACIÓN · PILOTO EN DESARROLLO/);
   assert.match(html,/datos ficticios/);
-  assert.match(html,/No admite licitaciones/);
+  assert.match(html,/no recibe solicitudes ni presupuestos reales/);
 });
 test('no solicita datos reales ni integra servicios no implementados',()=>{
   assert.doesNotMatch(html,/<form\b/i);
   assert.doesNotMatch(html,/api\.whapi|supabase\.co|mercadopago\.com/);
-  assert.match(html,/WhatsApp automático, licitaciones reales y cobros todavía no están habilitados/);
+  assert.match(html,/todavía no ofrece acceso al piloto ni acepta solicitudes de compradores/);
+  assert.doesNotMatch(html,/adjudicar|confirmar tu presupuesto|revisarla antes de enviarla/i);
 });
 test('archivos estaticos correctamente referenciados',()=>{
   assert.match(html,/href="\.\/styles\.css"/);
