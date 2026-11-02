@@ -31,7 +31,7 @@ begin
   h:=encode(extensions.gen_random_bytes(32),'hex');
   result:=public.cotironda_piloto_contact_command_mvp109(
    h,p.chat_hmac,'approve',
-   'AAAAAAAAAAAAAAAA','AAAAAAAAAAAAAAAAAAAAAAAA',consent_hash,
+   'AAAAAAAAAAAAAAAA','AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',consent_hash,
    extract(epoch from clock_timestamp())::bigint,
    encode(extensions.gen_random_bytes(32),'hex'),
    'AAAAAAAAAAAAAAAA','AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA');
@@ -39,7 +39,7 @@ begin
    raise exception 'mvp109_valid_consent_refused % %',p.key,result;end if;
   if (public.cotironda_piloto_contact_command_mvp109(
    h,p.chat_hmac,'approve',
-   'AAAAAAAAAAAAAAAA','AAAAAAAAAAAAAAAAAAAAAAAA',consent_hash,
+   'AAAAAAAAAAAAAAAA','AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',consent_hash,
    extract(epoch from clock_timestamp())::bigint,
    encode(extensions.gen_random_bytes(32),'hex'),
    'AAAAAAAAAAAAAAAA','AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'))
@@ -64,7 +64,7 @@ begin
    h,(select chat_hmac from cotironda_piloto_privado.participants
        where key='corralon_nahuel'),
    'revoke',
-   'AAAAAAAAAAAAAAAA','AAAAAAAAAAAAAAAAAAAAAAAA',revoke_hash,
+   'AAAAAAAAAAAAAAAA','AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',revoke_hash,
    extract(epoch from clock_timestamp())::bigint,
    encode(extensions.gen_random_bytes(32),'hex'),
    'AAAAAAAAAAAAAAAA','AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA');
