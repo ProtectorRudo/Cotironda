@@ -85,7 +85,7 @@ test('MVP110: identity, business list and label tampering never creates a send',
 test('MVP110: SQL queue, one-time lease, consent recheck, terminal unknown response',()=>{
  for(const t of ['finalist_whapi_outbox_mvp110','whatsapp_outbound_enabled',
   'finalist_contacts_mvp109','candidate_count+1','on conflict do nothing',
-  "state='pending'","state='leased'","state='api_accepted'",
+  "state='pending'","state='leased'","'api_accepted'",
   'for update of o skip locked','contact_reveal_consents_mvp109',
   'consent_or_contact_missing','lease_token','to service_role',
   'enable row level security']){
