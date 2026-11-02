@@ -5,6 +5,7 @@
  * Never supplier source files, names, contacts or raw offer versions.
  */
 import {createClient} from 'npm:@supabase/supabase-js@2.118.0';
+import {hex,decodeContacts} from '../_shared/cotironda-finalist-notice.ts';
 const ref='ilggkalaafhtiysyzlmg';
 const html=`<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -30,7 +31,7 @@ Al cierre se revelan los datos únicamente de los finalistas habilitados.</p>
 <div class="deadline"><b id="state">Consultando…</b><p id="deadline"></p></div>
 <div id="files" class="caption" aria-live="polite"></div>
 <div id="receipts" aria-live="polite"></div>
-<div id="offers" aria-live="polite"></div></main>
+<div id="offers" aria-live="polite"></div><div id="finalists" aria-live="polite"></div></main>
 <p><small>Enlace privado. No lo compartas con otras personas.</small></p>
 </div><script>
 "use strict";
@@ -70,6 +71,23 @@ if(!/^[a-f0-9]{64}$/.test(token)){
        }
      }
    };
+   const targetFinalists=$("finalists");
+   targetFinalists.replaceChildren();
+   if(d.state==="closed"&&Array.isArray(d.finalists)){
+     const title=document.createElement("h2");
+     title.textContent="Contactos de las alternativas completas";
+     targetFinalists.appendChild(title);
+     const explanation=document.createElement("p");
+     explanation.textContent="La selección refleja cobertura de materiales, no un ranking de menor precio. Consultá IVA, flete, pago y disponibilidad con los negocios.";
+     targetFinalists.appendChild(explanation);
+     for(const finalist of d.finalists){
+       if(!finalist||typeof finalist.name!=="string"||
+          typeof finalist.whatsapp!=="string")continue;
+       const card=document.createElement("div");card.className="quote";
+       card.textContent=finalist.name+" · WhatsApp: "+finalist.whatsapp;
+       targetFinalists.appendChild(card);
+     }
+   }
    if(d.state==="waiting"){
      $("state").textContent=d.can_open
        ?"Ronda abierta · presupuestos anónimos disponibles"
@@ -138,6 +156,42 @@ Deno.serve(async req=>{
  const db=createClient(url,key,{auth:{autoRefreshToken:false,persistSession:false}});
  const result=await db.rpc('cotironda_piloto_tracking_status_mvp091',{p_token_hash:digest});
  if(result.error)return new Response('',{status:503,headers:headers('text/plain')});
- return new Response(JSON.stringify(result.data),{
+ let publicResult=result.data as Record<string,unknown>;
+ // Private, source-authorized contact reveal only after verified closure.
+ // Ciphertext is NEVER sent to the browser, even on a decoding error.
+ if(publicResult?.state==='closed'&&
+    Deno.env.get('COTIRONDA_PILOT_FINALIST_VIEW_ENABLED')==='true'){
+   const finals=await db.rpc('cotironda_piloto_tracking_finalists_mvp110',{
+     p_token_hash:digest});
+   if(!finals.error&&finals.data?.state==='ready_private'){
+     try{
+       const aesRaw=hex(Deno.env.get('COTIRONDA_PILOT_AES_HEX')??'');
+       const idRaw=hex(Deno.env.get('COTIRONDA_PILOT_ID_HMAC_HEX')??'');
+       const channel=Deno.env.get('COTIRONDA_PILOT_WHAPI_CHANNEL')??'';
+       if(!aesRaw||!idRaw||!channel)throw Error('keys_unavailable');
+       const aes=await crypto.subtle.importKey('raw',aesRaw,'AES-GCM',
+          false,['decrypt']);
+       const idKey=await crypto.subtle.importKey('raw',idRaw,{
+          name:'HMAC',hash:'SHA-256'},false,['sign']);
+       const contacts=await decodeContacts(finals.data,aes,idKey,channel);
+       const keys=finals.data.supplier_keys as unknown;
+       const labels=finals.data.labels as unknown;
+       if(!Array.isArray(keys)||keys.length<1||keys.length>2||
+          !labels||typeof labels!=='object'||Array.isArray(labels))
+         throw Error('finalist_shape_invalid');
+       const list=keys.map((supplier:unknown)=>{
+         if(typeof supplier!=='string')throw Error('supplier_invalid');
+         const c=contacts.find(x=>x.key===supplier&&x.role==='supplier');
+         const name=(labels as Record<string,unknown>)[supplier];
+         if(!c||typeof name!=='string'||name.length>80||
+            /[\u0000-\u001f\u007f]/u.test(name))
+            throw Error('contact_invalid');
+         return {name,whatsapp:c.phone};
+       });
+       publicResult={...publicResult,finalists:list};
+     }catch{/* Keep the ordinary anonymous view, no partial release. */}
+   }
+ }
+ return new Response(JSON.stringify(publicResult),{
    status:200,headers:headers('application/json; charset=utf-8')});
 });

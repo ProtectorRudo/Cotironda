@@ -1,3 +1,8 @@
+## MVP-110 — aviso bilateral de finalistas por WhatsApp, con reserva de envío (02/11/2026)
+- Se desarrolló outbox at-most-once de 1 aviso al arquitecto + hasta 2 proveedores completos, posterior al cierre real de 4 días. Envía datos reales únicamente si arquitecto y todos los proveedores habilitaron revelación de contactos y sus números cifrados coinciden con chat autenticado. Revalida consentimiento antes del HTTP.
+- Worker Edge protegido por secreto exclusivo y bandera apagada por defecto; descifra solo en memoria, verifica AES-GCM AAD y chat HMAC, envía texto Whapi y registra resultado api_accepted/uncertain sin reintentar a ciegas. GH cron cada 5 minutos condicionado a variable y secretos, sin ejecución por defecto.
+- SQL PG17 PILOTO reversible PASS (3 avisos únicos, replay, revocación, leases, token del comprador, revelación de contactos solo al cierre). Portal privado muestra los contactos tras cierre/consentimiento, descifrando solo en Edge, apagado por defecto. Node AES/HMAC y contrato, docs/228, Issue #431. Sin migraciones instaladas, despliegue ni mensajes reales. Falta probar E2E.
+
 ## MVP-109 — resguardo cifrado de contactos y autorización para revelación bilateral (02/11/2026)
 - WhatsApp captura el número autenticado de comprador/proveedor en AES-GCM con AAD de chat, sin teléfono legible en Supabase; HMAC y hash vinculados al mensaje de origen. Cambio de identidad bloqueado.
 - El usuario autoriza una sola vez el contacto posterior al cierre mediante el comando WhatsApp COTI CONTACTOS SI, revocable con COTI CONTACTOS NO; nunca se interpretan como cotizaciones. Snapshot privado solo con datos cifrados, después del cierre y del plan de finalistas, revalidando a todas las partes.
