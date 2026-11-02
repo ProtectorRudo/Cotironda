@@ -89,7 +89,7 @@ test('MVP073: HMAC debe especificar SHA-256 al importar clave en WebCrypto/Deno'
 test('MVP073: no-op de Whapi sin autenticación NO puede abrir DB ni enviar',()=>{
  const edge=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/index.ts',import.meta.url),'utf8');
  const noop=edge.indexOf("return json(200,'probe_only')");
- const auth=edge.indexOf("if(!authenticated)");
+ const auth=edge.indexOf("if(!authenticated){",noop);
  const db=edge.indexOf("const db=client(sec)",auth);
  const dispatch=edge.indexOf("await dispatchTwo(sec,db)",auth);
  assert.ok(noop>=0 && auth>noop && db>auth && dispatch>db);
