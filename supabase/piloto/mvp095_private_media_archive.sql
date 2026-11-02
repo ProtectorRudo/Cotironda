@@ -32,6 +32,7 @@ create table cotironda_piloto_privado.media_archive_mvp095(
  size_bytes integer check(size_bytes is null or size_bytes between 1 and 3145728),
  content_sha256 text check(content_sha256 is null or content_sha256 ~ '^[a-f0-9]{64}$'),
  storage_path text check(storage_path is null or storage_path ~ '^media/[a-f0-9]{64}$'),
+ ai_reserved_at timestamptz,
  review_state text not null default 'unread'
   check(review_state in ('unread','review_required','suggested_only')),
  proposal jsonb,
@@ -135,4 +136,37 @@ end;$fn$;
 revoke all on function public.cotironda_piloto_note_media_proposal_mvp095(text,jsonb)
  from public,anon,authenticated;
 grant execute on function public.cotironda_piloto_note_media_proposal_mvp095(text,jsonb)
+ to service_role;
+
+-- At most 2 paid multimodal attempts per enrolled participant in 24 h.
+-- Reserve AFTER original bytes are safely stored; no replay on unknown result.
+create function public.cotironda_piloto_reserve_document_ai_mvp095(
+ p_message_hmac text
+) returns boolean language plpgsql security definer set search_path='' as $fn$
+declare v_key text;v_chat text;n integer;
+begin
+ if p_message_hmac !~ '^[a-f0-9]{64}$' then return false;end if;
+ select a.participant_key,a.chat_hmac into v_key,v_chat
+ from cotironda_piloto_privado.media_archive_mvp095 a
+ join cotironda_piloto_privado.participants p
+   on p.key=a.participant_key and p.chat_hmac=a.chat_hmac
+ where a.message_hmac=p_message_hmac and a.state='stored'
+   and a.review_state='review_required' and a.ai_reserved_at is null
+   and p.consent_at is not null and p.opted_out_at is null;
+ if v_key is null then return false;end if;
+ perform 1 from cotironda_piloto_privado.participants
+   where key=v_key and chat_hmac=v_chat for update;
+ select count(*) into n from cotironda_piloto_privado.media_archive_mvp095
+ where chat_hmac=v_chat and ai_reserved_at>=clock_timestamp()-interval '24 hours';
+ if n>=2 then return false;end if;
+ update cotironda_piloto_privado.media_archive_mvp095
+ set ai_reserved_at=clock_timestamp()
+ where message_hmac=p_message_hmac and ai_reserved_at is null
+   and state='stored' and review_state='review_required';
+ get diagnostics n=row_count;
+ return n=1;
+end;$fn$;
+revoke all on function public.cotironda_piloto_reserve_document_ai_mvp095(text)
+ from public,anon,authenticated;
+grant execute on function public.cotironda_piloto_reserve_document_ai_mvp095(text)
  to service_role;
