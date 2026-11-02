@@ -1,3 +1,7 @@
+## MVP-078a — Fuente textual vinculada por renglón (02/11/2026)
+- Nuevo módulo offline de desglose privado por número de línea y SHA-256, revisiones, tipos de anotación controlados, importes verificables solo desde MVP-075 y preservación íntegra de extras, IVA, flete, descuentos y total original.
+- Sin conversiones implícitas de precios ambiguos, sin homologación ni ranking falso, sin contactos, sin WhatsApp o BD; tests de seguridad y regresión. Ver docs/198, Issue #369.
+
 ## MVP-077 — Cierre automático PILOTO (02/11/2026)
 - Nuevo job Supabase Cron cada 5 minutos para ejecutar exclusivamente la RPC privada de cierre D076 con no envíos y no revelaciones. Migración, smoke rollback, test de seguridad y documentación en docs/197. El ranking y WhatsApp a finalistas siguen pendientes.
 
