@@ -133,7 +133,7 @@ function unescapeXml(s:string):string{
 function words(files:Map<string,string>):string[]{
  const xml=files.get('word/document.xml');
  if(!xml||!/<w:document\b/u.test(xml)||!/<w:body\b/u.test(xml)||
-   /<(?:w:tbl|w:hyperlink|w:fldSimple|w:instrText|w:del|w:ins|w:drawing|w:pict|w:object|w:vanish|w:webHidden|w:smartTag|w:tab|w:br)\b/iu.test(xml)||
+   /<(?:w:tbl|w:hyperlink|w:fldSimple|w:instrText|w:del|w:ins|w:drawing|w:pict|w:object|w:vanish|w:webHidden|w:smartTag|w:tab|w:br|w:altChunk|w:sdt|w:contentPart|w:footnoteReference|w:endnoteReference|w:fldChar|w:commentReference|w:txbxContent|mc:AlternateContent)\b/iu.test(xml)||
    [...files.keys()].some(x=>/^word\/(?:header|footer|footnotes|endnotes|comments)/iu.test(x))||
    /<(?:w:vanish|w:webHidden)\b/iu.test(files.get('word/styles.xml')??''))
   fail('unsupported_layout');
@@ -170,7 +170,7 @@ function sheets(files:Map<string,string>):string[]{
   (workbook.match(/<sheet\b/gu)??[]).length!==1||
   /<sheet\b[^>]*(?:state="hidden"|state="veryHidden")/u.test(workbook)||
   [...files.keys()].some(x=>/^xl\/worksheets\/sheet[^1]/u.test(x))||
-  /<(?:mergeCells|drawing|legacyDrawing|hyperlinks|conditionalFormatting|dataValidation|autoFilter|cols|sheetProtection|rowBreaks|colBreaks)\b/iu.test(sheet)||
+  /<(?:mergeCells|drawing|legacyDrawing|hyperlinks|conditionalFormatting|dataValidation|autoFilter|cols|sheetProtection|rowBreaks|colBreaks|extLst|tableParts|pivotTable|oleObjects|controls)\b/iu.test(sheet)||
   /<f(?:\s|>)/iu.test(sheet)||/<row\b[^>]*hidden="1"/iu.test(sheet))
   fail('unsupported_layout');
  const dictionary=files.has('xl/sharedStrings.xml')?
@@ -192,9 +192,11 @@ function sheets(files:Map<string,string>):string[]{
    const raw=inner.match(/<v>([\s\S]*?)<\/v>/u)?.[1];
    if(type==='inlineStr'){
     const m=inner.match(/<is(?:\s[^>]*)?>([\s\S]*?)<\/is>/u)?.[1];
-    const t=m?.match(/<t(?:\s[^>]*)?>([\s\S]*?)<\/t>/u)?.[1];
-    if(t===undefined)fail('unsupported_layout');
-    return unescapeXml(t);
+    const fragments=m?[...m.matchAll(/<t(?:\s[^>]*)?>([\s\S]*?)<\/t>/gu)]:[];
+    if(!fragments.length||
+       (m?.match(/<t(?=\s|>)/gu)??[]).length!==fragments.length)
+      fail('unsupported_layout');
+    return fragments.map(f=>unescapeXml(f[1])).join('');
    }
    if(raw===undefined)fail('unsupported_layout');
    if(type==='s'){
