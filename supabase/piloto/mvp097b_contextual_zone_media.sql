@@ -41,7 +41,7 @@ begin
   and (a.proposal->>'delivery_city') is null
   and a.delivery_city_confirmed is null
   and a.request_id is null
-  and a.reserved_at>clock_timestamp()-interval '24 hours'
+  and a.reserved_at>clock_timestamp()-interval '7 days'
   and exists(select 1 from cotironda_piloto_privado.ai_replies_mvp094 rep
       where rep.message_hmac=a.message_hmac and rep.reply_code='zone'
        and rep.state='api_accepted');
