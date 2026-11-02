@@ -13,7 +13,7 @@ test('MVP091: token nunca en SQL en claro ni en query de URL',()=>{
  assert.match(sql,/token_hash text not null unique/);
  assert.match(sql,/enable row level security/g);
  assert.match(sql,/revoke all on cotironda_piloto_privado.buyer_tracking_mvp091/);
- assert.match(sql,/p_source_hmac=p_source_hmac/);
+ assert.match(sql,/r\.source_hmac=p_source_hmac/);
  assert.match(sql,/p\.chat_hmac=p_buyer_chat_hmac/);
  assert.match(sql,/r\.created_at>clock_timestamp\(\)-interval '5 minutes'/);
  assert.match(view,/location\.hash\.slice\(1\)/);
@@ -51,7 +51,7 @@ test('MVP091: un solo pedido nuevo, dos proveedores con zona y material confirma
  assert.match(gate,/r\.delivery_city='La Plata'/);
  assert.match(gate,/l\.family_code not in \('cemento_gris_obra','hidrofugo'\)/);
  assert.match(gate,/c\.recognition_state='curated_family'/);
- assert.match(gate,/clock_timestamp\(\)\)=1/);
+ assert.match(gate,/rr\.created_at>=w\.starts_at and rr\.created_at<w\.expires_at\)=1/);
  assert.match(gate,/for update of o skip locked limit 1/);
  assert.match(gate,/allow_next_pilot_send_mvp091/);
  assert.doesNotMatch(gate,/whatsapp_outbound_enabled\s*=\s*true/);
