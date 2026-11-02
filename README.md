@@ -1,3 +1,5 @@
+> **MVP-074 — Protección de invitaciones tardías del PILOTO:** si un proveedor ya respondió por WhatsApp, su invitación pendiente debe cancelarse sin afectar a otro proveedor ni su presupuesto original. Migración, prueba SQL reproducible y controles de claim/autorizar documentados en [docs/194](docs/194-mvp-074-no-invitar-si-ya-cotizo.md). Outbound permanece apagado y el ranking aún no está implementado.
+
 # Cotironda
 
 > **MVP-073f**: Edge Whapi piloto v3 preparada en Supabase; no envía pedidos con renglones desconocidos y exige consentimiento vigente del comprador antes de cualquier salida. **Sin secretos/alta real todavía: Whapi OFF.** Ver [docs/193](docs/193-mvp-073-whapi-piloto-edge.md).
