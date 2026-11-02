@@ -144,7 +144,7 @@ create function public.cotironda_piloto_pdf_snapshot_mvp091(
  join cotironda_piloto_privado.whapi_outbox o on o.request_id=r.id
  where r.id=p_request and o.supplier_key=p_supplier
   and o.state='leased' and o.lease_token=p_lease
-  and cotironda_piloto_privado.allow_single_test_send_mvp089(p_request,p_supplier);
+  and cotironda_piloto_privado.allow_next_pilot_send_mvp091(p_request,p_supplier);
 $fn$;
 revoke all on function public.cotironda_piloto_pdf_snapshot_mvp091(uuid,text,uuid)
  from public,anon,authenticated;
