@@ -1,7 +1,7 @@
 name: Web publica Cotironda - fidelidad y simulacion
 on:
   pull_request:
-    branches: [main]
+    branches: [main, 'feat/mvp-084-web-publica-actualizada']
     paths:
       - 'site/**'
       - 'scripts/test-public-demo.mjs'
