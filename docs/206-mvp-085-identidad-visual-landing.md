@@ -61,3 +61,18 @@ A pedido del propietario, la promesa central del sitio no debe limitarse a «pre
 - Vercel proyecto `cotironda` generó algunos previews de commits *anteriores* de la rama. El intento explícito de desplegar **el HEAD exacto y completo** retornó HTTP **402** por cuota `api-deployments-free-per-day` en plan Hobby. Por tanto **no se validó visualmente el HEAD final en Vercel y no hay URL nueva apta para presentar como versión final**.
 - Ningún despliegue Production nuevo, sin alias de dominio propio ni cambios de DNS en Hostinger. Permanecen los datos ficticios.
 - Para publicar el rediseño, esperar disponibilidad de cuota o resolverla por los controles del propietario, desplegar SHA de release explícita, inspeccionar página/CSS/JS/SSL y obtener autorización `Publicalo` para esta nueva versión.
+
+
+## MVP-086 — Implementación del mockup aprobado y autorización a publicar (02/11/2026)
+
+El propietario aprobó expresamente el mockup «Comprá mejor. Ahorrá más.» y solicitó crear la página real y publicarla. Se conservó el producto web estático aislado en Vercel `cotironda`, diferente del portal DEV, para evitar publicar datos o servicios del piloto antes de validarlos.
+
+**Pantalla entregada**: navegación «Cómo funciona / Ahorro inteligente / Comparador / Demo», hero con valor de ahorro, tarjeta de presupuesto anónimo, tres chips comerciales flotantes, franja de tres beneficios, tres pasos de WhatsApp, sección corporativa azul con fidelidad/comparabilidad/privacidad, comparador interactivo de 13 artículos y cierre centrado. Se utilizaron íconos SVG locales, sin dependencias externas, imágenes remotas ni credenciales.
+
+**Fidelidad de presupuesto**: la tarjeta es ficticia, pero sus importes se conservan exactamente y cierran en ARS 234.000: 168.000 + 24.000 + 18.000 + 36.000 − 12.000. Incluye pallets, flete y descuento, y aclara que el IVA no fue informado. El comparador funcional de 13 ítems **no se modificó**: una oferta parcial no es considerada oferta más barata por su menor total.
+
+**Protección comercial**: sin formularios de recepción, WhatsApp activo, credenciales, precios reales ni promesas de ahorros garantizados. El beneficio se expresa como oportunidad de ahorro sujeta a ofertas comparables (cobertura, flete, IVA y condiciones). El sitio mantiene la advertencia de piloto en desarrollo.
+
+**Criterios de aceptación / pruebas**: `site/tests/approved-design.test.mjs` verifica secciones y navegación del mockup, suma de presupuesto, avisos legales y ausencia de formularios/integraciones; regresiones `site/tests/identity.test.mjs`, `site/tests/contract.test.mjs`, `scripts/test-public-demo.mjs`. Revisar en Vercel Preview en móvil y escritorio, estado GitHub CI, producción y dominio.
+
+**Despliegue**: solo proyecto Vercel `cotironda`, no `cotironda-portal-dev`. GitHub `main` es fuente de producción. Los dominios apex y www ya están agregados al proyecto, pero Hostinger administra DNS; hay que comprobar A y CNAME en su panel antes de asegurar acceso desde `cotironda.com`. No modificar registros MX, TXT, ni cambiar nameservers de todo el dominio.
