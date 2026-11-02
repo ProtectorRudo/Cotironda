@@ -177,7 +177,10 @@ begin
      contact_hash,contact_person.chat_hmac,'approve',
      'AAAAAAAAAAAAAAAA','AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
      consent_hash,extract(epoch from clock_timestamp())::bigint,
-     encode(extensions.gen_random_bytes(32),'hex'),
+     coalesce((select contact_sha256 from
+       cotironda_piloto_privado.participant_channels_mvp109
+       where participant_key=contact_person.key),
+       encode(extensions.gen_random_bytes(32),'hex')),
      'AAAAAAAAAAAAAAAA','AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA');
     if out_->>'state'<>'consented'
     then raise exception 'mvp112_contact_optin_rejected % %',
