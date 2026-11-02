@@ -32,13 +32,15 @@ begin
  if p_message_hmac !~ '^[a-f0-9]{64}$'
     or p_result_state not in ('completed','failed') then return false;end if;
  if p_result_state='completed' then
-   if p_intent not in ('quote_request','business_question',
+   if p_intent is null or p_decision is null or
+      p_intent not in ('quote_request','business_question',
       'status_question','greeting','other')
       or p_decision not in ('ready_to_distribute','ask_zone','ask_material',
         'answer_faq','ignore','not_evaluated')
       or p_failure_category is not null then return false;end if;
  else
-   if p_intent is not null or p_decision is not null
+   if p_intent is not null or p_decision is not null or
+      p_failure_category is null
       or p_failure_category not in ('auth_config','upstream','quota',
         'bad_output','other')then return false;end if;
  end if;
