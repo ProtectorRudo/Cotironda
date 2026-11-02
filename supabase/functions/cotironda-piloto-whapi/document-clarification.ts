@@ -19,7 +19,7 @@ const unitPatterns:ReadonlyArray<readonly [RegExp,string]>=[
  [/\b(?:paquetes?)\b/iu,'pack'],
  [/(?:\bmetros?\s+c[uú]bicos?\b|\bm3\b|\bm³)(?!\p{L})/iu,'m3'],
  [/(?:\bmetros?\s+cuadrados?\b|\bm2\b|\bm²)(?!\p{L})/iu,'m2'],
- [/\b(?:metros?|m)\b/iu,'m'],
+ [/\b(?:metros?(?!\s+c[uú]bicos?|\s+cuadrados?)|m(?![²³]))\b/iu,'m'],
  [/\b(?:gramos?|g)\b/iu,'g']
 ];
 function canonicalCity(s:string):string|null{
