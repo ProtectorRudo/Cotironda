@@ -30,25 +30,25 @@ create trigger finalist_coverage_immutable_mvp108
 create function public.cotironda_piloto_plan_coverage_finalists_mvp108(
  p_request uuid
 ) returns jsonb language plpgsql security definer set search_path='' as $fn$
-declare r record;q record;matches_count integer;req_count integer;
+declare req_ record;q record;matches_count integer;req_count integer;
  distinct_req integer;distinct_line integer;
  picked text[]:=array[]::text[]; n integer:=0;result_state text;
 begin
  if p_request is null then return jsonb_build_object('state','invalid');end if;
- select r.id,r.state,r.closes_at,r.buyer_key,r.delivery_city into r
- from cotironda_piloto_privado.requests r
+ select rq.id,rq.state,rq.closes_at,rq.buyer_key,rq.delivery_city into req_
+ from cotironda_piloto_privado.requests rq
  join cotironda_piloto_privado.participants buyer
-  on buyer.key=r.buyer_key and buyer.participant_role='buyer'
+  on buyer.key=rq.buyer_key and buyer.participant_role='buyer'
   and buyer.consent_at is not null and buyer.opted_out_at is null
- where r.id=p_request and r.buyer_key='arquitecto'
-  and r.delivery_city='La Plata'
- for update of r;
+ where rq.id=p_request and rq.buyer_key='arquitecto'
+  and rq.delivery_city='La Plata'
+ for update of rq;
  if not found then return jsonb_build_object('state','not_permitted');end if;
  if exists(select 1 from
   cotironda_piloto_privado.finalist_coverage_plans_mvp108
   where request_id=p_request)
  then return jsonb_build_object('state','already_planned');end if;
- if r.state<>'closed' or r.closes_at>clock_timestamp()
+ if req_.state<>'closed' or req_.closes_at>clock_timestamp()
  then return jsonb_build_object('state','deadline_pending');end if;
  select count(*) into req_count from
   cotironda_piloto_privado.request_lines req where req.request_id=p_request;
@@ -65,7 +65,7 @@ begin
    on media.message_hmac=d.message_hmac
     and media.source_sha256=d.source_sha256
     and media.request_id=p_request
-    and media.received_at<=r.closes_at
+    and media.received_at<=req_.closes_at
   join cotironda_piloto_privado.invitations i
    on i.request_id=p_request and i.supplier_key=d.supplier_key
   join cotironda_piloto_privado.participants supplier
@@ -77,14 +77,14 @@ begin
    and not exists(select 1
     from cotironda_piloto_privado.supplier_media_quotes_mvp098 newer
     where newer.request_id=p_request and newer.supplier_key=d.supplier_key
-      and newer.received_at<=r.closes_at
+      and newer.received_at<=req_.closes_at
       and (newer.received_at,newer.message_hmac)>
           (media.received_at,media.message_hmac))
    and not exists(select 1
     from cotironda_piloto_privado.offer_versions newer_text
     where newer_text.request_id=p_request
      and newer_text.supplier_key=d.supplier_key
-     and newer_text.created_at<=r.closes_at
+     and newer_text.created_at<=req_.closes_at
      and newer_text.created_at>=media.received_at)
   order by d.supplier_key
  loop
