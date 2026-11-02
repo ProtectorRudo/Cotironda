@@ -1,3 +1,7 @@
+## MVP-088 — Proyección anónima fiel de presupuestos y auditoría del piloto (02/11/2026)
+- Nuevo contrato de presentación para presupuestos WhatsApp de texto: conserva cada renglón monetario, adicionales, descuentos y TOTAL literal; bloquea cabeceras monetarias ocultas y datos de contacto en renglones públicos; no revela identidades ni calcula ranking.
+- Pruebas adversarias y estado live documentado en `docs/207-mvp-088-piloto-presupuesto-anonimo.md`. Sin cambios a Supabase, Edge, Vercel ni envíos.
+
 # Registro de cambios
 
 ## MVP-065 — prototipo móvil WhatsApp-first de 4 participantes (simulación)
