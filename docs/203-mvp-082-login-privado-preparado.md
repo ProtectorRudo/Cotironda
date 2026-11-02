@@ -27,3 +27,13 @@ Las pruebas CI deben aprobar antes de instalar migración; después auditar en P
 - SQL limitado a la base PILOTO y migración con RLS, sin writes a fuentes, cron o outbox.
 - 0 secretos en GitHub; 0 nuevas variables de conexión del navegador; Production bloqueado.
 - Pruebas unitarias, PostgreSQL 17/PostgREST/Next.js y sitio 5/5 PASS; antes de afirmar conexion real, smoke remoto con rol LOGIN y prueba de denegación de escritura.
+
+## Resultado real de instalación (02/11/2026)
+
+1. GitHub Actions HEAD de código `f3b1df6aae937215577bdd0287ec2b3a6db784a5`: **5/5 PASS**, incluidas **1.455/1.455 pruebas unitarias**, Next.js build, PostgreSQL 17, PostgREST Auth y sitio.
+2. Ensayo transaccional (BEGIN ... ROLLBACK) de la nueva migración aprobado. La vista pública `pg_roles` enmascara el valor de `rolpassword`; se comprobó `PASSWORD NULL` con el campo booleano de `pg_catalog.pg_authid`, sin extraer hashes ni contraseñas.
+3. **Migración aplicada en Supabase PILOTO:** `mvp082_login_without_password` — `success=true`. Comprobación independiente: login sin password, puede hacer `SET` al reader NOLOGIN, NO hereda `USAGE` ni lectura directa, NO puede DELETE sobre cotizaciones, 3 políticas RLS presentes, WhatsApp saliente `false`.
+4. **Vercel Preview sin conexión lista:** el proyecto `cotironda-portal-dev` no tiene repositorio Git vinculado. El intento de crear flags exclusivamente para `feat/mvp-082-piloto-login-privado` fue rechazado por Vercel con BAD_REQUEST; **no se crearon envs ni secretos**. No ampliar la variable a todo Preview para evitar propagación accidental.
+5. La cuenta LOGIN está materialmente bloqueada hasta que se asigne una contraseña robusta por canal de secretos privado y exista un entorno de ejecución confiable. Todavía no hay prueba E2E de consulta desde el backend, ni endpoint para arquitectos ni revisión automática fiable de documentos.
+
+La base permanece en modo piloto; no tocar DEV histórica, producción, mensajes salientes ni las versiones de presupuestos.
