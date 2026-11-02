@@ -1,0 +1,50 @@
+.cotipl-page{background:#f3f5f8;color:#152338;min-height:100vh;font-family:Arial,Helvetica,sans-serif}
+.cotipl-page *{box-sizing:border-box}
+.cotipl-container{max-width:1240px;margin:auto;padding:24px 28px 80px}
+.cotipl-back a{color:#304766;font-size:14px;text-decoration:none}
+.cotipl-hero{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(270px,.7fr);gap:36px;margin:28px 0 24px;padding:42px;background:#132e50;color:white;border-radius:18px}
+.cotipl-eyebrow{font-size:12px;letter-spacing:.12em;font-weight:700;color:#b5c6da}
+.cotipl-hero h1{font-size:clamp(30px,4vw,52px);letter-spacing:-.04em;line-height:1.13;margin:16px 0 16px;font-weight:750}
+.cotipl-hero h1 span{color:#bbdcfd}
+.cotipl-hero p{line-height:1.6;max-width:720px;margin-bottom:0;color:#d9e6f3}
+.cotipl-hero-note{border-left:1px solid rgba(255,255,255,.25);padding-left:24px;display:flex;flex-direction:column;justify-content:center;gap:12px}
+.cotipl-hero-note span{text-transform:uppercase;letter-spacing:.09em;font-size:11px;color:#a4c7e9}
+.cotipl-hero-note strong{font-size:24px;line-height:1.24}
+.cotipl-hero-note p{font-size:13px;margin:0}
+.cotipl-notice{background:#fff;border:1px solid #d6dfeb;padding:18px 20px;border-radius:12px;line-height:1.6;font-size:14px;margin-bottom:24px}
+.cotipl-offers{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;align-items:start}
+.cotipl-card{background:white;border:1px solid #dce3ec;border-radius:14px;overflow:hidden;box-shadow:0 8px 30px rgba(24,48,75,.06)}
+.cotipl-card-header{padding:23px 24px;border-bottom:1px solid #e5eaf0;display:flex;justify-content:space-between;align-items:center;gap:16px}
+.cotipl-brand{font-weight:850;letter-spacing:-.04em;color:#12375b;font-size:22px}
+.cotipl-brand span{font-weight:400}
+.cotipl-brand small{display:block;letter-spacing:.11em;color:#63758b;font-size:9px;font-weight:700;margin-top:4px}
+.cotipl-anon{text-align:right;display:flex;flex-direction:column;gap:5px}
+.cotipl-anon strong{font-size:14px;color:#172c43}
+.cotipl-anon span{font-size:11px;color:#62778a}
+.cotipl-card-title{padding:24px;display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.cotipl-card-title p{margin:0;color:#6b7b8e;font-size:12px}
+.cotipl-card-title h2{margin:5px 0 0;font-size:20px;letter-spacing:-.03em}
+.cotipl-revision{flex-shrink:0;border:1px solid #dce4ed;padding:5px 9px;border-radius:6px;font-size:11px;color:#607389}
+.cotipl-tablewrap{width:100%;overflow-x:auto}
+.cotipl-tablewrap table{border-collapse:collapse;width:100%;text-align:left}
+.cotipl-tablewrap th{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:#657a8f;background:#f6f8fb;padding:12px 24px}
+.cotipl-tablewrap th:last-child{text-align:right}
+.cotipl-tablewrap td{border-bottom:1px solid #edf0f4;padding:13px 24px;vertical-align:top}
+.cotipl-type{text-transform:uppercase;letter-spacing:.05em;font-weight:650;font-size:10px;color:#5e768d}
+.cotipl-literal{font-size:13px;color:#1f3143;margin-top:6px;line-height:1.55;overflow-wrap:anywhere;white-space:pre-wrap}
+.cotipl-amount{text-align:right;font-size:13px;font-variant-numeric:tabular-nums;font-weight:600;min-width:125px;white-space:nowrap}
+.cotipl-final{margin:18px 24px;padding:19px;background:#ecf3fa;border-radius:9px;display:flex;align-items:center;gap:16px;justify-content:space-between}
+.cotipl-final small{color:#5a6f85;font-size:11px;display:block}
+.cotipl-final strong{font-size:25px;letter-spacing:-.025em;display:block;margin-top:5px;color:#152f50;overflow-wrap:anywhere}
+.cotipl-verified{font-size:10px;max-width:135px;text-align:right;line-height:1.45;color:#596e81}
+.cotipl-conditions{display:flex;gap:26px;padding:4px 24px 24px;flex-wrap:wrap}
+.cotipl-conditions div{display:flex;flex-direction:column;gap:5px}
+.cotipl-conditions span{font-size:11px;color:#7a8b9e}
+.cotipl-conditions strong{font-size:12px;font-weight:600}
+.cotipl-footer{display:flex;justify-content:space-between;gap:18px;padding:16px 24px;background:#f9fafc;border-top:1px solid #e6ecf2;font-size:11px;color:#63788a;line-height:1.5}
+.cotipl-blocked{margin:0 24px 24px;border:1px dashed #c9d7e6;padding:18px;font-size:14px}
+.cotipl-explain{max-width:790px;margin:34px auto 0;padding:8px 0 26px}
+.cotipl-explain h2{font-size:24px;letter-spacing:-.03em}
+.cotipl-explain p{line-height:1.8;font-size:14px;color:#52677d}
+@media(max-width:960px){.cotipl-offers{grid-template-columns:1fr}.cotipl-hero{grid-template-columns:1fr}.cotipl-hero-note{border-left:none;border-top:1px solid rgba(255,255,255,.25);padding-left:0;padding-top:20px}}
+@media(max-width:550px){.cotipl-container{padding:14px 12px 50px}.cotipl-hero{padding:26px 20px;border-radius:12px;gap:20px}.cotipl-card-header,.cotipl-card-title{padding:18px}.cotipl-tablewrap td,.cotipl-tablewrap th{padding:11px 14px}.cotipl-final{margin:15px;padding:15px;align-items:flex-start;flex-direction:column}.cotipl-verified{text-align:left;max-width:none}.cotipl-final strong{font-size:22px}.cotipl-conditions{padding:3px 18px 20px}.cotipl-footer{padding:14px 18px;flex-direction:column}}
