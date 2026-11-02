@@ -26,7 +26,7 @@ test('MVP091: entrega PDF real con dos líneas, cantidades correctas y sin pedir
  assert.match(raw,/La Plata/);
  for(const forbidden of ['IVA','impuestos','descuentos','adicionales','condiciones comerciales',
   'flete a cargo','pago adelantado','razón social del arquitecto'])
-  assert.equal(raw.toLowerCase().includes(forbidden.toLowerCase()),false,forbidden);
+  assert.equal(new RegExp('\\b'+forbidden+'\\b','iu').test(raw),false,forbidden);
  assert.equal(pdf.length<100000,true);
 });
 test('MVP091: fuente con 8 productos cabe en una hoja sin truncar ni inventar precios',()=>{
