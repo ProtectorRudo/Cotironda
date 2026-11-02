@@ -46,7 +46,7 @@ export const SQL_FUENTE_PRIVADA_MVP080=[
  'w.plaintext_sha256, r.buyer_key, r.state',
  'from cotironda_piloto_privado.offer_versions o',
  'join cotironda_piloto_privado.requests r on r.id=o.request_id',
- 'join cotironda_piloto_privado.whapi_inbox w',
+ 'left join cotironda_piloto_privado.whapi_inbox w',
  ' on w.message_hmac=o.source_message_hmac',
  ' and w.participant_key=o.supplier_key and w.request_id=o.request_id',
  " and w.processing_state = 'quote_recorded'",
@@ -130,7 +130,7 @@ export async function construirPlantillasDesdePilotoMvp080(
    revision:x.revision_no,
    textoOriginal:approved?x.original_quote:'', // nada ambiguo va al analizador
    privacidad:approved?'revisada_por_servidor':'pendiente',
-   lineas:approved?review.renglones:[]
+   lineas:approved&&review?review.renglones:[]
   });
  }
  // La consulta SQL ya ordena de forma reproducible; no mezclar proveedores.
