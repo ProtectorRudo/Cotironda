@@ -4,6 +4,7 @@ begin;
 do $test$
 declare p record;h text;buyer_source text;rid uuid;cutoff timestamptz;
  result jsonb;consent_hash text;revoke_hash text;before_offers bigint;
+ track_token text;
  claim jsonb; permission jsonb;reserved_count integer;
 begin
  consent_hash:=encode(extensions.digest('COTI CONTACTOS SI','sha256'),'hex');
@@ -22,6 +23,13 @@ begin
   request_id,state,candidate_count,supplier_keys)
  values(rid,'two_complete_alternatives',2,
   ARRAY['corralon_ailin','corralon_nahuel']);
+ track_token:=encode(extensions.gen_random_bytes(32),'hex');
+ insert into cotironda_piloto_privado.buyer_tracking_mvp091(
+   request_id,token_hash,expires_at)
+ values(rid,track_token,clock_timestamp()+interval '10 days');
+ if (public.cotironda_piloto_tracking_finalists_mvp110(track_token))
+   ->>'state'<>'not_ready'
+ then raise exception 'mvp110_premature_portal_contact_release';end if;
  result:=public.cotironda_piloto_queue_finalists_mvp110(rid);
  if result->>'state'<>'consent_or_contact_missing' then
   raise exception 'mvp110_no_consent_queued';end if;
@@ -64,6 +72,14 @@ begin
  if result::text ~ '(549[0-9]{8,}|@s[.]whatsapp[.]net)'
  then raise exception 'mvp109_plaintext_leaked';end if;
 
+ result:=public.cotironda_piloto_tracking_finalists_mvp110(track_token);
+ if result->>'state'<>'ready_private' or
+  jsonb_array_length(result->'contacts_encrypted')<>3 or
+  result->>'price_ranked'<>'false'
+ then raise exception 'mvp110_portal_reveal_not_authorized %',result;end if;
+ if (public.cotironda_piloto_tracking_finalists_mvp110(
+   encode(extensions.gen_random_bytes(32),'hex')))->>'state'<>'not_ready'
+ then raise exception 'mvp110_wrong_token_access_to_contacts';end if;
  -- Full consent received: create exactly three recipient records.
  result:=public.cotironda_piloto_queue_finalists_mvp110(rid);
  if result->>'state'<>'queued' or
@@ -122,6 +138,9 @@ begin
  if (public.cotironda_piloto_finalist_contacts_mvp109(rid))
    ->>'state'<>'consent_or_contact_missing' then
   raise exception 'mvp109_revocation_not_effective';end if;
+ if (public.cotironda_piloto_tracking_finalists_mvp110(track_token))
+   ->>'state'<>'not_ready'
+ then raise exception 'mvp110_revoked_contact_visible_in_portal';end if;
  -- A revocation after queue blocks EVERY pending notification, even for
  -- another participant who personally still consents.
  claim:=public.cotironda_piloto_claim_finalist_whapi_mvp110();
