@@ -95,7 +95,7 @@ begin
    second:=jsonb_set(second,'{total_declared}',
      to_jsonb('$ 999.000,00'::text));
   elsif step='omitted_pallet' then
-   second:=jsonb_set(second,'{lines}',second->'lines'-1);
+   second:=jsonb_set(second,'{lines}',(second->'lines')-1);
   elsif step='unavailable' then second:=null;
   elsif step='wrong_kind' then
    second:=jsonb_set(second,'{kind}',to_jsonb('buyer_request'::text));
