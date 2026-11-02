@@ -1,3 +1,5 @@
+> **MVP-084 — Web pública alineada a WhatsApp-first (rama, NO publicada):** actualización de `site/index.html` para presentar el producto aprobado sin adjudicación manual ni confirmaciones adicionales. Incluye pruebas automáticas del copy y comparador ficticio. El dominio `cotironda.com` está asociado a Vercel pero su DNS aún apunta a Hostinger; **no muestra esta versión ni acepta presupuestos reales**. Ver [docs/205](docs/205-mvp-084-web-publica-whatsapp-first.md) e [Issue #382](https://github.com/ProtectorRudo/Cotironda/issues/382).
+
 # Cotironda
 
 **Estado: Etapa 00 — documentación para revisión. No hay producto desplegado.**
