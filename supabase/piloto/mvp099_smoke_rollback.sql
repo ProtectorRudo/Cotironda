@@ -39,6 +39,13 @@ begin
  rec:=public.cotironda_piloto_plan_document_mvp098(h);
  if rec->>'state'<>'planned_private' then
   raise exception 'mvp099_plan_failed %',rec;end if;
+ rec:=public.cotironda_piloto_record_agreement_mvp099(h,
+   jsonb_set(doc,'{lines,1,quantity}','"289"'::jsonb));
+ if rec->>'state'<>'line_disagreement' then
+  raise exception 'mvp099_wrong_quantity_was_accepted %',rec;end if;
+ if (select count(*) from cotironda_piloto_privado.document_agreements_mvp099
+   where message_hmac=h)<>0
+ then raise exception 'mvp099_disagreement_wrote_agreement';end if;
  rec:=public.cotironda_piloto_record_agreement_mvp099(h,doc);
  if rec->>'state'<>'agreed_private' then
   raise exception 'mvp099_agreement_failed %',rec;end if;
