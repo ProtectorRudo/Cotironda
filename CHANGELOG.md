@@ -1,3 +1,8 @@
+## MVP-086 — Portada real basada en mockup aprobado, pendiente de validación final de publicación (02/11/2026)
+- Web estática de Cotironda alineada al diseño aprobado: hero «Comprá mejor. Ahorrá más.», presupuesto privado ilustrativo, tarjetas flotantes, franja de beneficios, pasos de WhatsApp, comparador interactivo y cierre centrado.
+- Diseño adaptable, iconografía SVG local, presupuesto ficticio que suma ARS 234.000, sin tocar el cálculo real del comparador de 13 productos ni activar datos/integraciones.
+- Pruebas nuevas del diseño, privacidad, suma y mensaje de ahorro responsable. Publicación limitada a Vercel `cotironda`, DNS Hostinger revisado por separado.
+
 ## MVP-085 — Ajuste de propuesta de valor: ahorro y mejores precios (02/11/2026) — Sin publicar
 - La portada ahora prioriza «Comprá mejor. Ahorrá más.»; se ajustaron SEO, beneficios, 3 pasos, comparador y cierre para explicar la búsqueda de mejores precios.
 - Mensaje responsable: ahorro potencial entre ofertas comparables, nunca mínimo universal ni ahorro garantizado; costos completos con IVA, flete y cobertura.
