@@ -62,6 +62,8 @@ function decimal(value:bigint):string{
 function tipoDeLinea(texto:string,monedas:readonly string[]):TipoLinea{
  if(totalHead.test(texto))return 'total';
  if(subtotalHead.test(texto))return 'subtotal';
+ // Un precio por unidad NO es automáticamente un total de línea.
+ if(/^\s*(?:precio|valor|costo)\s+(?:unitario|por\s+unidad|por\s+bolsa)\s*[:=]/iu.test(texto))return 'nota';
  // Una observación comercial con palabras como 'descuento' o 'flete'
  // no se convierte automáticamente en un cargo contabilizable.
  if(/^\s*(?:nota|observaci[oó]n|aclaraci[oó]n)\s*[:=]/iu.test(texto))return 'nota';
