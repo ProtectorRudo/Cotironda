@@ -31,3 +31,15 @@ Cada finalista deberá recibir WhatsApp personalizado: «Tu propuesta quedó ent
 
 ## Ámbito
 Solo código de rama y **base aislada Cotironda Piloto**, nunca Te Hice Esto, Cotironda DEV pausada, Vercel producción ni `main`. Issue #364.
+
+## Instalación y verificación REAL en Supabase Piloto — 02/11/2026
+
+**Aplicadas únicamente en ref `ilggkalaafhtiysyzlmg`:**
+- `mvp076_four_day_deadline_private` — `success=true`.
+- `mvp076b_deadline_whapi_guards` — `success=true`.
+
+**Lectura SQL luego de instalar:** la solicitud WhatsApp del arquitecto creada `2026-11-02 04:34:00.325945+00` permanece `prepared`, `round_days=4`, `closes_at=2026-11-06 04:34:00.325945+00` (01:34 en Argentina), `closed_at=null`, 1 oferta guardada. Outbox: Ailín `cancelled` porque ya respondió; Nahuel `pending` porque todavía no lo hizo. No se alteró ningún presupuesto original ni la cola de Nahuel.
+
+**Smoke de verificación posinstalación:** `supabase/piloto/mvp076_smoke_rollback.sql` → PASS: duración exacta 96 horas, plazo explícito 72 horas admitido, cierre anticipado bloqueado, cierre repetido 0, permisos público/auth sin función de cierre, estado original conservado, controles Whapi presentes, 0 mensajes y 0 revelaciones. El ensayo revirtió todos los datos sintéticos.
+
+**Importante:** `cotironda_piloto_close_due_v1` es una RPC **lista para ser invocada por un scheduler seguro**, pero NO se configuró cron ni se está ejecutando automáticamente en el piloto. El guard de vencimiento en recepción y salida sí está instalado. El texto de WhatsApp de Ailín no fue interpretado como ranking real; no existe una decisión de finalistas ni mensajes enviados.
