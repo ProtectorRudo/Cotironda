@@ -1,7 +1,8 @@
 /**
  * MVP-091 / Private buyer progress link. The bearer token is in the URL
  * FRAGMENT (never sent as GET query), then posted over HTTPS to a closed RPC.
- * Before deadline, the RPC returns count ONLY. No raw offer sources here.
+ * During the round, RPC returns counts and only reviewed anonymous projections.
+ * Never supplier source files, names, contacts or raw offer versions.
  */
 import {createClient} from 'npm:@supabase/supabase-js@2.118.0';
 const ref='ilggkalaafhtiysyzlmg';
