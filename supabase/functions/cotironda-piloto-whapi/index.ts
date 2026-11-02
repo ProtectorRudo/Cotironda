@@ -280,6 +280,29 @@ async function respond(req:Request):Promise<Response>{
   }
   const textHash=await sha(body);
   const c=await encrypt(sec.aes,body,chatHash+'|'+messageHash+'|'+row.type);
+  // One-time consent or revocation for the bilateral exchange of contacts.
+  // Never classify this opt-in as a supplier quotation or a buyer request.
+  const contactCommand=row.type==='text'&&
+    /^COTI CONTACTOS (SI|NO)$/u.test(body)?body:null;
+  if(contactCommand){
+    if(!/^[1-9][0-9]{7,16}@s[.]whatsapp[.]net$/u.test(row.chat_id))
+      return json(422,'invalid_contact_channel');
+    const vault=await encrypt(sec.aes,row.chat_id,
+      chatHash+'|cotironda-contact-v1');
+    const permission=await db.rpc('cotironda_piloto_contact_command_mvp109',{
+      p_message_hmac:messageHash,p_chat_hmac:chatHash,
+      p_action:contactCommand==='COTI CONTACTOS SI'?'approve':'revoke',
+      p_nonce_b64:c.nonce,p_ciphertext_b64:c.ciphertext,
+      p_plaintext_sha256:textHash,p_source_unix:row.timestamp,
+      p_contact_sha256:await sha(row.chat_id),
+      p_contact_nonce_b64:vault.nonce,
+      p_contact_ciphertext_b64:vault.ciphertext
+    });
+    if(permission.error)return json(503,'contact_consent_reconciliation_required');
+    if(!['consented','revoked','duplicate'].includes(permission.data?.state))
+      return json(422,'contact_consent_not_accepted');
+    continue;
+  }
   const local=row.type==='text'?parseBuyerPilot(body):{city:null,items:[],unresolved:[]};
   let parsed=local;
   let aiReply:ReplyCode|null=null;
@@ -360,6 +383,21 @@ async function respond(req:Request):Promise<Response>{
   if(!['recorded','duplicate','unrecognized_contact','needs_zone',
        'needs_review','quote_recorded','unmatched_quote'].includes(outcome(out.data)))
    return json(503,'storage_unavailable');
+  // Recoverable sender address lives only as AES-GCM ciphertext in the
+  // private vault, never as plaintext in SQL, logs or a supplier request.
+  if(!['unrecognized_contact','duplicate'].includes(outcome(out.data))&&
+     /^[1-9][0-9]{7,16}@s[.]whatsapp[.]net$/u.test(row.chat_id)){
+    const vault=await encrypt(sec.aes,row.chat_id,
+      chatHash+'|cotironda-contact-v1');
+    const bound=await db.rpc('cotironda_piloto_bind_contact_mvp109',{
+      p_message_hmac:messageHash,p_chat_hmac:chatHash,
+      p_contact_sha256:await sha(row.chat_id),
+      p_nonce_b64:vault.nonce,p_ciphertext_b64:vault.ciphertext
+    });
+    if(bound.error)return json(503,'contact_vault_reconciliation_required');
+    if(bound.data?.state==='identity_conflict')
+      return json(503,'contact_identity_reconciliation_required');
+  }
   if(outcome(out.data)==='quote_recorded')supplierAckMode='text_quote';
   // Archive original incoming PDF, Excel, Word or photo ONLY after
   // committed authenticated inbox and supplier/buyer consent SQL check.
