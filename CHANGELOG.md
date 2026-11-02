@@ -1,3 +1,7 @@
+## MVP-106 — comprobación independiente de archivo textual del proveedor (02/11/2026)
+- El receptor Whapi incorpora cotejo determinista contra bytes originales de TXT/CSV (líneas, descripciones, cantidades, importes, descuentos, flete, embalajes, IVA y total) después de doble lectura IA y control económico, con rechazo de faltantes y datos de contacto.
+- Registro privado e inmutable de resultado por HMAC/SHA256; PDF/imagen/DOCX/XLSX siguen sin prueba independiente; nunca se autoriza oferta, publicación, ranking o contacto a partir de este resultado. PostgreSQL 17 con migraciones 101..106 y ensayo reversible PASS. Tests Node, docs/224, Issue #423. No desplegado.
+
 ## MVP-105 — presupuestos anónimos revisados en vivo (02/11/2026)
 - El enlace privado del comprador muestra la proyección revisada y anonimizada de cada presupuesto **durante** la ronda, actualizada por el navegador cada 45 segundos, sin revelar comercio, contacto, fuente cruda ni posiciones económicas anticipadas. El contador distingue archivos pendientes y cotizaciones recibidas.
 - El servidor devuelve solo anonymous_offers_mvp091 ya aprobado, atado a la última versión de cada proveedor; una revisión posterior sin aprobar oculta la versión vieja; tokens revocados y rondas canceladas no revelan nada. Se filtran patrones evidentes de contacto y se inserta todo como textContent, no HTML.
