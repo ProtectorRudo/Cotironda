@@ -4,7 +4,7 @@ begin;
 do $test$
 declare buyer_chat text;supplier_chat text;buyer_hmac text;
  supplier_text_hmac text;supplier_doc_hmac text;invalid_doc_hmac text;
- rid uuid;hash_ text;token_hash text;result jsonb;
+ rid uuid;hash_ text;v_token_hash text;result jsonb;
  n integer;before_offers bigint;
 begin
  select chat_hmac into buyer_chat from cotironda_piloto_privado.participants
@@ -21,7 +21,7 @@ begin
  supplier_doc_hmac:=encode(extensions.gen_random_bytes(32),'hex');
  invalid_doc_hmac:=encode(extensions.gen_random_bytes(32),'hex');
  hash_:=encode(extensions.gen_random_bytes(32),'hex');
- token_hash:=encode(extensions.gen_random_bytes(32),'hex');
+ v_token_hash:=encode(extensions.gen_random_bytes(32),'hex');
 
  insert into cotironda_piloto_privado.whapi_inbox(
   message_hmac,chat_hmac,participant_key,kind,
@@ -38,7 +38,7 @@ begin
 
  -- The ORIGINAL photo HMAC, not the zone-reply HMAC, binds tracking.
  result:=public.cotironda_piloto_issue_tracking_mvp091(
-  buyer_chat,buyer_hmac,token_hash);
+  buyer_chat,buyer_hmac,v_token_hash);
  if result->>'state'<>'issued' then
   raise exception 'mvp104_document_tracking_not_issued %',result;end if;
  if (public.cotironda_piloto_issue_tracking_mvp091(
@@ -50,9 +50,9 @@ begin
     ->>'state'<>'not_eligible'
  then raise exception 'mvp104_supplier_can_steal_tracking';end if;
  if (select send_state from cotironda_piloto_privado.buyer_tracking_mvp091
-     where token_hash=token_hash)='api_accepted'
+     where token_hash=v_token_hash)='api_accepted'
  then raise exception 'mvp104_link_was_marked_delivered_without_whapi';end if;
- if not public.cotironda_piloto_finish_tracking_mvp091(token_hash,'uncertain')
+ if not public.cotironda_piloto_finish_tracking_mvp091(v_token_hash,'uncertain')
  then raise exception 'mvp104_link_finish_failed';end if;
 
  insert into cotironda_piloto_privado.whapi_inbox(
