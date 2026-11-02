@@ -8,7 +8,7 @@ begin
  if not exists(select 1 from cotironda_piloto_privado.integration_flags
    where only_row and whatsapp_inbound_enabled=true and whatsapp_outbound_enabled=false)
  then raise exception 'mvp089_outbound_must_stay_off' using errcode='42501';end if;
- select count(*),min(id) into c,rid
+ select count(*),min(id::text)::uuid into c,rid
  from cotironda_piloto_privado.requests
  where state='prepared' and buyer_key='arquitecto' and delivery_city='La Plata'
    and closes_at>clock_timestamp()
