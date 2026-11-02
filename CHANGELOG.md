@@ -1,3 +1,8 @@
+## MVP-097 — menos cupos arbitrarios y zona contextual de documentos (02/11/2026)
+- La segunda imagen real del arquitecto se archivó y OpenAI propuso 3 renglones, sin zona ni unidades explícitas; no hubo ronda nueva ni envíos a proveedores.
+- Configuración de salvaguardas privadas amplias y ajustables en Supabase (500 archivos, 100 lecturas documentales, 200 consultas IA texto, 100 respuestas por contacto/24h), sin límite comercial de 2 archivos/día. Persisten controles de permisos, integridad, duplicados y costo.
+- Documentos válidos sin localidad consultan una sola vez por WhatsApp y una respuesta de localidad se vincula al original sin reenviarlo. No se convierte extracción ambigua en oferta ni se simula ranking. SQL smoke ROLLBACK y pruebas unitarias; docs/214.
+
 ## MVP-096 — resultado de IA auditable (02/11/2026)
 - La primera prueba real de FAQ por WhatsApp quedó autenticada (16:27 ART), reservó 1 intento IA y no creó ronda; antes no había prueba de respuesta del modelo.
 - Ledger de intentos con código éxito/fracaso/intención/decisión y sin respuestas crudas ni PII, prueba SQL transaccional reversible y autorización exclusiva para service_role. No reejecutar mensajes históricos.

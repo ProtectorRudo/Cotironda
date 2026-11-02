@@ -105,6 +105,22 @@ export function parseBuyerPilot(raw:string):ParsedBuyer{
  }
  return {city,items,unresolved,deliveryNote};
 }
+
+/** A one-line locality answer is interpreted ONLY while a previous
+ * buyer document is already waiting for its missing delivery zone.
+ * Does not use the model to guess arbitrary free-form locations. */
+export function standaloneDeliveryCity(raw:string):string|null{
+ if(typeof raw!=='string'||raw.length>130)return null;
+ const compact=raw.trim().replace(/^[\s]*(?:(?:entrega|destino|localidad|zona(?: de entrega)?)\s*[:=-]\s*|en\s+)/iu,'')
+   .replace(/[.]\s*$/u,'').trim();
+ if(compact.length<3||compact.length>80||!/^[\p{L}\s()'.,-]+$/u.test(compact)||
+    compact.split(/\s+/u).length>5)return null;
+ const safe=fold(compact);
+ if(/\b(hola|gracias|presupuesto|cotizacion|cotizar|necesito|cemento|arena|cuanto|precio|consulta|buenos|buenas|saludos|ok|listo|dale)\b/iu.test(safe))
+  return null;
+ return compact;
+}
+
 /** No partially understood request is dispatched automatically. */
 export function canPrepareBuyerPilot(parsed:ParsedBuyer):boolean{
  return typeof parsed.city==='string'&&parsed.city.length>=3&&
