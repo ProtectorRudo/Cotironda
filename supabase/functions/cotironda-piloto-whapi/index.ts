@@ -47,8 +47,10 @@ type Secrets=Readonly<{
  outbound:boolean;token:string;recipients:Readonly<Record<string,string>>;
 }>;
 async function secrets():Promise<Secrets|null>{
- if(Deno.env.get('COTIRONDA_PILOT_WHAPI_INBOUND_ENABLED')!=='true')
+ if(Deno.env.get('COTIRONDA_PILOT_WHAPI_INBOUND_ENABLED')!=='true'){
+  console.warn('cotironda_pilot_config: inbound_flag_not_true');
   return null;
+ }
  const webhookSecret=Deno.env.get('COTIRONDA_PILOT_WEBHOOK_SECRET')??'';
  const channel=Deno.env.get('COTIRONDA_PILOT_WHAPI_CHANNEL')??'';
  const keyRaw=Deno.env.get('COTIRONDA_PILOT_ID_HMAC_HEX')??'';
@@ -59,27 +61,46 @@ async function secrets():Promise<Secrets|null>{
   try{
    const keys=JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS')??'{}');
    if(typeof keys.default==='string')roleKey=keys.default;
-  }catch{return null}
+  }catch{
+   console.warn('cotironda_pilot_config: malformed_supabase_secret_keys');
+   return null;
+  }
  }
  if(webhookSecret.length<32||webhookSecret.length>256||
    !/^[A-Za-z0-9_-]{4,64}$/u.test(channel)||
    url!==('https://'+REF+'.supabase.co')||
-   roleKey.length<20)return null;
+   roleKey.length<20){
+  // Config diagnostics report only a category; never log values or lengths.
+  console.warn('cotironda_pilot_config: missing_or_invalid_required_setting');
+  return null;
+ }
  const raw=fromHex(keyRaw),rawAes=fromHex(aesRaw);
- if(!raw||!rawAes||keyRaw===aesRaw)return null;
+ if(!raw||!rawAes||keyRaw===aesRaw){
+  console.warn('cotironda_pilot_config: invalid_crypto_keys');
+  return null;
+ }
  const outbound=Deno.env.get('COTIRONDA_PILOT_WHAPI_OUTBOUND_ENABLED')==='true';
  const token=Deno.env.get('COTIRONDA_PILOT_WHAPI_TOKEN')??'';
  let recipients:Record<string,string>={};
  if(outbound){
-  if(token.length<16||token.length>300)return null;
+  if(token.length<16||token.length>300){
+   console.warn('cotironda_pilot_config: outbound_token_missing');
+   return null;
+  }
   try{
    const parsed=JSON.parse(Deno.env.get('COTIRONDA_PILOT_RECIPIENTS_JSON')??'null');
    if(!parsed||typeof parsed!=='object'||Array.isArray(parsed)||
       Object.keys(parsed).sort().join(',')!=='corralon_ailin,corralon_nahuel'||
       !Object.values(parsed).every(v=>typeof v==='string'&&/^[1-9][0-9]{7,16}$/u.test(v))||
-      parsed.corralon_ailin===parsed.corralon_nahuel)return null;
+      parsed.corralon_ailin===parsed.corralon_nahuel){
+     console.warn('cotironda_pilot_config: outbound_allowlist_invalid');
+     return null;
+   }
    recipients=parsed;
-  }catch{return null}
+  }catch{
+   console.warn('cotironda_pilot_config: outbound_allowlist_json_invalid');
+   return null;
+  }
  }
  const key=await crypto.subtle.importKey('raw',raw,'HMAC',false,['sign']);
  const aes=await crypto.subtle.importKey('raw',rawAes,'AES-GCM',false,['encrypt']);
@@ -231,4 +252,8 @@ async function respond(req:Request):Promise<Response>{
  try{await dispatchTwo(sec,db)}catch{return json(503,'dispatch_reconciliation_required')}
  return json(200,'accepted');
 }
-Deno.serve(req=>respond(req).catch(()=>json(503,'temporarily_unavailable')));
+Deno.serve(req=>respond(req).catch((err)=>{
+ // Never include messages, request bodies, headers, tokens or recipient identities in logs.
+ console.error('cotironda_pilot_unexpected:',err instanceof Error?err.name:'unknown');
+ return json(503,'temporarily_unavailable');
+}));
