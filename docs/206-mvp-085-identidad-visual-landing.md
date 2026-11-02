@@ -36,3 +36,11 @@ Paleta:
 - **No es la publicación**. La autorización anterior «Publicalo: portada institucional» se aplicó al diseño anterior de #383; este rediseño nuevo requiere aprobar la versión concreta antes de producir/cambiar DNS.
 - El dominio \`cotironda.com\` y \`www\` están asociados a Vercel, pero DNS Hostinger aún no apunta a Vercel; certificado TLS personalizado pendiente. No cambiarlo sin producción lista.
 - El portal real y la recepción/procesamiento de archivos/WhatsApp siguen separados de esta landing estática. Los últimos módulos piloto de backend no se integran aquí; sin credenciales ni mensajes salientes.
+
+
+## Resultado de la verificación del rediseño
+
+- Último commit de código validado `2e87e02c96fd3aaa4ea5402588d17081bcc52f68`: GitHub Actions **2/2 PASS** — sitio `41448600405` y fidelidad/simulación `41448600520`. La comprobación existente cubre contratos de funcionalidad y la nueva prueba de identidad añade paleta, logotipo, móvil, accesibilidad y prohibición de captura de datos reales.
+- Vercel proyecto `cotironda` generó algunos previews de commits *anteriores* de la rama. El intento explícito de desplegar **el HEAD exacto y completo** retornó HTTP **402** por cuota `api-deployments-free-per-day` en plan Hobby. Por tanto **no se validó visualmente el HEAD final en Vercel y no hay URL nueva apta para presentar como versión final**.
+- Ningún despliegue Production nuevo, sin alias de dominio propio ni cambios de DNS en Hostinger. Permanecen los datos ficticios.
+- Para publicar el rediseño, esperar disponibilidad de cuota o resolverla por los controles del propietario, desplegar SHA de release explícita, inspeccionar página/CSS/JS/SSL y obtener autorización `Publicalo` para esta nueva versión.
