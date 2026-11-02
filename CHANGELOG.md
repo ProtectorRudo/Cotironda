@@ -1,3 +1,8 @@
+## MVP-085 — Ajuste de propuesta de valor: ahorro y mejores precios (02/11/2026) — Sin publicar
+- La portada ahora prioriza «Comprá mejor. Ahorrá más.»; se ajustaron SEO, beneficios, 3 pasos, comparador y cierre para explicar la búsqueda de mejores precios.
+- Mensaje responsable: ahorro potencial entre ofertas comparables, nunca mínimo universal ni ahorro garantizado; costos completos con IVA, flete y cobertura.
+- Pruebas de copy económico en `site/tests/identity.test.mjs`, sin modificar lógica JS, presupuestos ficticios, integraciones ni DNS. Ver `docs/206`.
+
 ## MVP-085 — Landing minimalista con identidad azul Cotironda (02/11/2026) — Sin publicar
 - Creado recurso vectorial local del isotipo C desde la ficha de marca entregada por el usuario; nueva portada blanca/azul noche y acentos azules con jerarquía simple.
 - Rediseñado ejemplo de presupuesto anónimo fiel con pallets, flete, descuento y total declarado; conservado comparador JS y aviso de simulación.
