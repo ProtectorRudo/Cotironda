@@ -29,14 +29,14 @@ const ejemploB=[
 const vista=crearPlantillasAnonimasMvp079([
  {idInterno:'proveedor_ensayo_01',revision:1,textoOriginal:ejemploA,
   privacidad:'revisada_por_servidor',lineas:[
-   'privado','material','material','embalaje','flete','descuento','total','aclaracion'
+   'privado','material','material','embalaje','flete','descuento','total','impuesto'
   ].map((categoria,i)=>({numeroLinea:i+1,categoria:categoria as
-    'privado'|'material'|'embalaje'|'flete'|'descuento'|'total'|'aclaracion'}))},
+    'privado'|'material'|'embalaje'|'flete'|'descuento'|'total'|'impuesto'}))},
  {idInterno:'proveedor_ensayo_02',revision:1,textoOriginal:ejemploB,
   privacidad:'revisada_por_servidor',lineas:[
-   'privado','material','material','flete','total','aclaracion'
+   'privado','material','material','flete','total','impuesto'
   ].map((categoria,i)=>({numeroLinea:i+1,categoria:categoria as
-    'privado'|'material'|'flete'|'total'|'aclaracion'}))}
+    'privado'|'material'|'flete'|'total'|'impuesto'}))}
 ]);
 const categorias:Record<string,string>={
  material:'Material solicitado',adicional:'Artículo adicional',
