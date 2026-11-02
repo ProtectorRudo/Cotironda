@@ -38,6 +38,23 @@ Paleta:
 - El portal real y la recepción/procesamiento de archivos/WhatsApp siguen separados de esta landing estática. Los últimos módulos piloto de backend no se integran aquí; sin credenciales ni mensajes salientes.
 
 
+
+## Revisión comercial: ahorro como beneficio principal (02/11/2026)
+
+A pedido del propietario, la promesa central del sitio no debe limitarse a «presupuestos claros» ni describir únicamente un software de cotizaciones. El motivo de uso del comprador es **poder encontrar mejores precios y reducir el gasto de sus compras**.
+
+- Hero principal: **«Comprá mejor. Ahorrá más.»**, con el lema de marca **«La nueva forma de cotizar»** conservado en el encabezado y el resto del sitio.
+- Explicación visible: un pedido por WhatsApp, consulta a distintos proveedores pertinentes y comparación de costos completos para elegir la oferta conveniente.
+- Beneficios/3 pasos/comparador/cierre explican el ahorro potencial, no solo la tecnología o la prolijidad del presupuesto.
+- SEO descriptivo y OG destacan precios y oportunidades de ahorro.
+- **Límite de honestidad comercial:** no se promete el precio más bajo del mercado ni un porcentaje fijo de ahorro. La comparación justa se realiza solo sobre productos, cantidades y condiciones equivalentes; cobertura, IVA, flete y forma de pago pueden modificar el costo efectivo. El ahorro depende de ofertas efectivamente recibidas.
+- **Sin cambios funcionales** en `site/app.js`: los 13 materiales y sus cálculos permanecen idénticos, no se manipulan datos para mostrar ahorros ficticios.
+- La web sigue informando «Demostración / piloto en desarrollo», sin aceptar presupuestos reales.
+
+**Criterios de aceptación:** «ahorrar» y «mejores precios» visibles en la primera pantalla; meta description y Open Graph consistentes; aclaración de comparabilidad y no garantía; mantenimiento de identidad, privacidad, accesibilidad, simulación y avisos. Prueba `site/tests/identity.test.mjs` ampliada.
+
+**Estado:** cambios en rama de PR #385, sin integrar a main ni publicar en producción o configurar DNS. Revalidar CI y vista previa de HEAD actualizado antes de autorización de publicación.
+
 ## Resultado de la verificación del rediseño
 
 - Último commit de código validado `2e87e02c96fd3aaa4ea5402588d17081bcc52f68`: GitHub Actions **2/2 PASS** — sitio `41448600405` y fidelidad/simulación `41448600520`. La comprobación existente cubre contratos de funcionalidad y la nueva prueba de identidad añade paleta, logotipo, móvil, accesibilidad y prohibición de captura de datos reales.
