@@ -62,10 +62,12 @@ function decimal(value:bigint):string{
 function tipoDeLinea(texto:string,monedas:readonly string[]):TipoLinea{
  if(totalHead.test(texto))return 'total';
  if(subtotalHead.test(texto))return 'subtotal';
+ // Una observación comercial con palabras como 'descuento' o 'flete'
+ // no se convierte automáticamente en un cargo contabilizable.
+ if(/^\s*(?:nota|observaci[oó]n|aclaraci[oó]n)\s*[:=]/iu.test(texto))return 'nota';
  if(discount.test(texto))return 'descuento';
  if(freight.test(texto))return 'flete';
  if(packaging.test(texto))return 'embalaje';
- if(/^\s*(?:nota|observaci[oó]n|aclaraci[oó]n)\s*[:=]/iu.test(texto))return 'nota';
  if(/^\s*(?:iva|impuestos?)\s*[:= ]/iu.test(texto))return 'impuesto';
  return monedas.length>0?'concepto':'nota';
 }
