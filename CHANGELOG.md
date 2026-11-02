@@ -1,3 +1,8 @@
+## MVP-081 — Lector privado PostgreSQL controlado (02/11/2026)
+- Implementados rol NOLOGIN y RLS/SELECT específicos por columna (SQL en repo, no instalados tras ensayo rollback) y adaptador Node de lectura en transacción READ ONLY con TLS y credencial backend exclusiva, OFF por defecto.
+- Prueba transaccional de permisos en PILOTO aprobada con rollback. El servicio administrativo Supabase no pudo asumir el rol mediante SET LOCAL ROLE, por lo que queda pendiente prueba E2E real con credenciales de lector.
+- Tests config y no exposición, docs/202. Sin ruta de arquitecto, secretos reales, modificaciones de presupuestos, WhatsApp o producción.
+
 ## MVP-080 — Puente SQL privado de fuente real a plantilla (02/11/2026)
 - Agregado adaptador `src/server/plantillas-piloto-mvp080.ts`, consulta fija parametrizada por pedido/comprador, versiones últimas por proveedor y verificación SHA independiente contra mensaje original del inbox.
 - Revisión de privacidad vinculada a proveedor, revisión y SHA; sin ella se bloquea la vista, sin publicar renglones ni precios. Pruebas normal/adversaria y documentación docs/201.
