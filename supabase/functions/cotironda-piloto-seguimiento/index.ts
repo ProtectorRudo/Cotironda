@@ -54,7 +54,7 @@ if(!/^[a-f0-9]{64}$/.test(token)){
    $("deadline").textContent="Fecha límite: "+
      new Date(d.deadline).toLocaleString("es-AR",{timeZone:"America/Argentina/Buenos_Aires"});
    // Only the server-provided reviewed anonymous projection is displayed.
-   // All values enter the DOM through textContent, never innerHTML.
+   // All untrusted strings enter the DOM via textContent only.
    const showApproved=()=>{
      const target=$("offers");target.replaceChildren();
      if(d.can_open&&Array.isArray(d.offers)){
