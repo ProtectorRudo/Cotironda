@@ -178,14 +178,12 @@ async function respond(req:Request):Promise<Response>{
  if(req.method!=='POST')return json(405,'method_not_allowed');
  const sec=await secrets();
  if(!sec)return json(503,'pilot_not_enabled');
+ // The Whapi panel's "Check webhook" does not forward custom headers,
+ // even when real messages are configured with them. Read a size-bounded body
+ // before deciding: a non-actionable probe can get 200, but ONLY messages
+ // authenticated with the configured secret can reach any database routine.
  const webhookHeader=req.headers.get('x-cotironda-webhook-key')??'';
- if(!equalSecret(webhookHeader,sec.webhookSecret)){
-  // Record only presence/mismatch, never secret, header value or request body.
-  console.warn(webhookHeader.length>0
-   ? 'cotironda_pilot_webhook_auth: header_mismatch'
-   : 'cotironda_pilot_webhook_auth: header_missing');
-  return json(401,'unauthorized');
- }
+ const authenticated=equalSecret(webhookHeader,sec.webhookSecret);
  if(!/^application\/json(?:;|$)/iu.test(req.headers.get('content-type')??''))
   return json(415,'content_type');
  const len=req.headers.get('content-length');
@@ -213,9 +211,22 @@ async function respond(req:Request):Promise<Response>{
   return json(400,'invalid_event');
  const event=raw as Record<string,unknown>;
  const ev=event.event as Record<string,unknown>|undefined;
- // Whapi webhook verification and unrelated events expect HTTP 200, not 204.
- // No side effects unless it is an authenticated messages.post event with exact channel.
- if(!ev||ev.type!=='messages'||ev.event!=='post')return json(200,'ignored');
+ const actionable=ev?.type==='messages'&&ev?.event==='post'&&
+   Array.isArray(event.messages)&&event.messages.length>0;
+ // Whapi checks liveness without forwarding custom headers. A no-op has
+ // absolutely no side effects: no database client, message, dispatch or invite.
+ // The response does not prove that authenticated incoming messages work.
+ if(!actionable){
+   if(!authenticated)console.info('cotironda_pilot_webhook_probe: no_action_no_auth');
+   return json(200,'probe_only');
+ }
+ if(!authenticated){
+  // Never echo/log header values, numbers, IDs, message content or credentials.
+  console.warn(webhookHeader.length>0
+    ? 'cotironda_pilot_webhook_auth: header_mismatch'
+    : 'cotironda_pilot_webhook_auth: header_missing');
+  return json(401,'unauthorized');
+ }
  if(event.channel_id!==sec.channel)return json(403,'wrong_channel');
  if(!Array.isArray(event.messages)||event.messages.length<1||event.messages.length>10)
   return json(422,'invalid_batch');
