@@ -299,6 +299,14 @@ async function respond(req:Request):Promise<Response>{
           enabled:true
         });
         const decision=decidePilotAIAction(body,model,'buyer');
+        // Success means a structurally valid model answer, not commercial
+        // authorization. Store only intent/decision codes, never content.
+        const audit=await db.rpc('cotironda_piloto_finish_ai_mvp096',{
+          p_message_hmac:messageHash,p_result_state:'completed',
+          p_intent:model.intent,p_decision:decision.action
+        });
+        if(audit.error||audit.data!==true)
+          return json(503,'ai_audit_reconciliation_required');
         aiReply=decision.replyCode;
         if(decision.action==='ready_to_distribute'&&decision.parsed){
           parsed=decision.parsed;
@@ -308,9 +316,21 @@ async function respond(req:Request):Promise<Response>{
           parsed={city:local.city??'sin solicitud',items:[],
             unresolved:[decision.reason]};
         }
-      }catch{
-        // No automatic retry; preserve original and request review instead
-        // of generating a partly understood invitation.
+      }catch(error){
+        // No details, prompts or raw OpenAI responses are logged.
+        const code=error instanceof Error?error.message:'';
+        const category=code==='pilot_ai_key_missing'?'auth_config':
+          code==='pilot_ai_quota'?'quota':
+          code==='pilot_ai_transport_error'||code==='pilot_ai_http_error'
+            ?'upstream':
+          code.startsWith('pilot_ai_')?'bad_output':'other';
+        const audit=await db.rpc('cotironda_piloto_finish_ai_mvp096',{
+          p_message_hmac:messageHash,p_result_state:'failed',
+          p_failure_category:category
+        });
+        if(audit.error||audit.data!==true)
+          return json(503,'ai_audit_reconciliation_required');
+        // The same HMAC may not trigger a second billable model attempt.
         parsed={city:local.city??'sin solicitud',items:[],
           unresolved:['ai_review_required']};
       }
