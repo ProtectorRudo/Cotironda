@@ -165,18 +165,18 @@ grant execute on function
 create function public.cotironda_piloto_finalist_contacts_mvp109(
  p_request uuid
 ) returns jsonb language plpgsql security definer set search_path='' as $fn$
-declare r record;contacts jsonb;needed integer;valid_count integer;
+declare req_ record;contacts jsonb;needed integer;valid_count integer;
 begin
- select r.id,r.closes_at,r.state,plan.supplier_keys,
-   plan.candidate_count,r.buyer_key
- into r from cotironda_piloto_privado.requests r
+ select rq.id,rq.closes_at,rq.state,plan.supplier_keys,
+   plan.candidate_count,rq.buyer_key
+ into req_ from cotironda_piloto_privado.requests rq
  join cotironda_piloto_privado.finalist_coverage_plans_mvp108 plan
-  on plan.request_id=r.id and plan.state in
+  on plan.request_id=rq.id and plan.state in
    ('two_complete_alternatives','one_complete_alternative')
- where r.id=p_request and r.state='closed'
-  and r.closes_at<=clock_timestamp();
+ where rq.id=p_request and rq.state='closed'
+  and rq.closes_at<=clock_timestamp();
  if not found then return jsonb_build_object('state','not_permitted');end if;
- needed:=r.candidate_count+1;
+ needed:=req_.candidate_count+1;
  select count(*) into valid_count
  from cotironda_piloto_privado.participants p
  join cotironda_piloto_privado.participant_channels_mvp109 ch
@@ -184,15 +184,15 @@ begin
  join cotironda_piloto_privado.contact_reveal_consents_mvp109 c
   on c.participant_key=p.key and c.approved_at is not null
    and c.revoked_at is null
- where (p.key=r.buyer_key or p.key=any(r.supplier_keys))
+ where (p.key=req_.buyer_key or p.key=any(req_.supplier_keys))
   and p.consent_at is not null and p.opted_out_at is null;
  if valid_count<>needed then
   return jsonb_build_object('state','consent_or_contact_missing');end if;
  select jsonb_agg(jsonb_build_object(
-  'role',case when p.key=r.buyer_key then 'buyer' else 'supplier' end,
+  'role',case when p.key=req_.buyer_key then 'buyer' else 'supplier' end,
   'participant_key',p.key,'chat_hmac',ch.chat_hmac,
   'nonce_b64',ch.nonce_b64,'ciphertext_b64',ch.ciphertext_b64)
-  order by case when p.key=r.buyer_key then 0 else 1 end,p.key)
+  order by case when p.key=req_.buyer_key then 0 else 1 end,p.key)
  into contacts
  from cotironda_piloto_privado.participants p
  join cotironda_piloto_privado.participant_channels_mvp109 ch
@@ -200,7 +200,7 @@ begin
  join cotironda_piloto_privado.contact_reveal_consents_mvp109 c
   on c.participant_key=p.key and c.approved_at is not null
    and c.revoked_at is null
- where (p.key=r.buyer_key or p.key=any(r.supplier_keys))
+ where (p.key=req_.buyer_key or p.key=any(req_.supplier_keys))
   and p.consent_at is not null and p.opted_out_at is null;
  return jsonb_build_object('state','ready_private',
   'count',needed,'contacts_encrypted',contacts,
