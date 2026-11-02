@@ -1,3 +1,8 @@
+## MVP-107 — primera publicación anónima automática de presupuesto de proveedor (02/11/2026)
+- Con fuente TXT/CSV simple cotejada contra bytes, dos lecturas IA concordantes, suma exacta, consentimiento y categorías/piloto autorizado, Cotironda genera una proyección con TODOS los conceptos y literal total declarado, incluidos pallets, bolsones, flete y descuento. No expone nombre/telefono/contacto; bloquea documentos no confirmados o con riesgo de privacidad.
+- El enlace de seguimiento incorpora estas proyecciones automáticas a las ofertas textuales previamente aprobadas, mostrando solo la ÚLTIMA versión por proveedor; nueva cotización no revisada oculta la previa. Token privado, sin ranking ni finalistas.
+- Smoke PostgreSQL 17 PILOTO de migraciones 101..107 y ronda sintética end-to-end **PASS con ROLLBACK**. Tests Node, docs/225, Issue #425. No instalado ni publicado.
+
 ## MVP-106 — comprobación independiente de archivo textual del proveedor (02/11/2026)
 - El receptor Whapi incorpora cotejo determinista contra bytes originales de TXT/CSV (líneas, descripciones, cantidades, importes, descuentos, flete, embalajes, IVA y total) después de doble lectura IA y control económico, con rechazo de faltantes y datos de contacto.
 - Registro privado e inmutable de resultado por HMAC/SHA256; PDF/imagen/DOCX/XLSX siguen sin prueba independiente; nunca se autoriza oferta, publicación, ranking o contacto a partir de este resultado. PostgreSQL 17 con migraciones 101..106 y ensayo reversible PASS. Tests Node, docs/224, Issue #423. No desplegado.
