@@ -178,8 +178,14 @@ async function respond(req:Request):Promise<Response>{
  if(req.method!=='POST')return json(405,'method_not_allowed');
  const sec=await secrets();
  if(!sec)return json(503,'pilot_not_enabled');
- if(!equalSecret(req.headers.get('x-cotironda-webhook-key')??'',sec.webhookSecret))
+ const webhookHeader=req.headers.get('x-cotironda-webhook-key')??'';
+ if(!equalSecret(webhookHeader,sec.webhookSecret)){
+  // Record only presence/mismatch, never secret, header value or request body.
+  console.warn(webhookHeader.length>0
+   ? 'cotironda_pilot_webhook_auth: header_mismatch'
+   : 'cotironda_pilot_webhook_auth: header_missing');
   return json(401,'unauthorized');
+ }
  if(!/^application\/json(?:;|$)/iu.test(req.headers.get('content-type')??''))
   return json(415,'content_type');
  const len=req.headers.get('content-length');
