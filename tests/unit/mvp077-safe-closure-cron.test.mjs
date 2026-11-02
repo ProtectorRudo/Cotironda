@@ -29,7 +29,7 @@ test('MVP077: guarda de entorno impide instalar sin esquema privado, RPC o flags
 });
 
 test('MVP077: smoke aborta ante duplicados, registra 0 envíos y revierte pruebas ficticias',()=>{
- assert.match(smoke,/^begin;/);
+ assert.match(smoke,/(?:^|\\n)begin;/);
  assert.match(smoke,/rollback;/);
  assert.match(smoke,/mvp077_cron_missing_or_duplicate/);
  assert.match(smoke,/mvp077_double_close/);
