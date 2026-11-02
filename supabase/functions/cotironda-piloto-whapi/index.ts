@@ -66,12 +66,15 @@ async function secrets():Promise<Secrets|null>{
    return null;
   }
  }
- if(webhookSecret.length<32||webhookSecret.length>256||
-   !/^[A-Za-z0-9_-]{4,64}$/u.test(channel)||
-   url!==('https://'+REF+'.supabase.co')||
-   roleKey.length<20){
-  // Config diagnostics report only a category; never log values or lengths.
-  console.warn('cotironda_pilot_config: missing_or_invalid_required_setting');
+ const invalidSettings=[
+  ...(webhookSecret.length<32||webhookSecret.length>256?['webhook_secret']:[]),
+  ...(!/^[A-Za-z0-9_-]{4,64}$/u.test(channel)?['channel_id']:[]),
+  ...(url!==('https://'+REF+'.supabase.co')?['supabase_url']:[]),
+  ...(roleKey.length<20?['backend_admin_key']:[])
+ ];
+ if(invalidSettings.length){
+  // No values, lengths, contacts, request data, tokens or HMACs in logs.
+  console.warn('cotironda_pilot_config_invalid:',invalidSettings.join(','));
   return null;
  }
  const raw=fromHex(keyRaw),rawAes=fromHex(aesRaw);
