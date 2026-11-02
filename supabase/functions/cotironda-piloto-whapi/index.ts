@@ -169,14 +169,18 @@ async function dispatchTwo(sec:Secrets,db:ReturnType<typeof client>):Promise<voi
        caption:'Cotironda · Nueva solicitud de cotización'}),
     signal:AbortSignal.timeout(12000)
    });
-   accepted=response.ok;
+   const data=response.ok?await response.json().catch(()=>null):null;
+   // Whapi document endpoint specifies {sent:boolean, message:{id}}.
+   // A 2xx alone is insufficient to declare delivery accepted.
+   accepted=Boolean(response.ok&&data&&typeof data==='object'&&
+      (data as Record<string,unknown>).sent===true);
    if(accepted){
-    const data=await response.json().catch(()=>null);
-    if(data&&typeof data==='object'){
-     const d=data as Record<string,unknown>;
-     if(typeof d.message_id==='string')messageId=d.message_id.slice(0,160);
-     else if(typeof d.id==='string')messageId=d.id.slice(0,160);
-    }
+    const d=data as Record<string,unknown>;
+    const message=d.message&&typeof d.message==='object'
+      ? d.message as Record<string,unknown>:null;
+    if(typeof message?.id==='string')messageId=message.id.slice(0,160);
+    else if(typeof d.message_id==='string')messageId=d.message_id.slice(0,160);
+    else if(typeof d.id==='string')messageId=d.id.slice(0,160);
    }
   }catch{/* network may have accepted the message: uncertain, never retry. */}
   await finish(accepted?'api_accepted':'uncertain',messageId);
