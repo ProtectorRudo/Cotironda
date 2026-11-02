@@ -74,8 +74,17 @@ begin
  elsif jsonb_typeof(p_second_proposal) is distinct from 'object'
   or length(p_second_proposal::text)>10000
   or jsonb_typeof(p_second_proposal->'lines') is distinct from 'array'
+  or not (p_second_proposal ?& array[
+      'kind','lines','total_declared','delivery_city',
+      'requested_delivery_note','unanswered'])
+  or coalesce(jsonb_typeof(p_second_proposal->'total_declared'),'missing')
+    not in ('null','string')
+  or coalesce(jsonb_typeof(p_second_proposal->'delivery_city'),'missing')
+    not in ('null','string')
+  or coalesce(jsonb_typeof(p_second_proposal->'requested_delivery_note'),'missing')
+    not in ('null','string')
  then v_reason:='second_invalid';
- elsif p_second_proposal->>'kind'<>'supplier_quote'
+ elsif p_second_proposal->>'kind' is distinct from 'supplier_quote'
  then v_reason:='kind_disagreement';
  elsif jsonb_array_length(p_second_proposal->'lines')<>a.line_count
  then v_reason:='line_count_disagreement';
@@ -108,6 +117,9 @@ begin
     n:=line_.line_no-1;
     v:=p_second_proposal->'lines'->n;
     if jsonb_typeof(v) is distinct from 'object'
+     or not (v ?& array[
+       'original_description','quantity','unit','unit_price',
+       'line_total','evidence_location','ambiguity'])
      or jsonb_typeof(v->'original_description') is distinct from 'string'
      or coalesce(jsonb_typeof(v->'quantity'),'null') not in ('null','string')
      or coalesce(jsonb_typeof(v->'unit'),'null') not in ('null','string')
