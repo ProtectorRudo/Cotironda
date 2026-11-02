@@ -7,6 +7,7 @@ import {parseBuyerPilot,canPrepareBuyerPilot,validMessage} from './core.ts';
 import {generarSolicitudPdfMvp091} from './request-pdf.ts';
 import {makeMediaManifest} from './media-intake.ts';
 import {getVerifiedWhapiMedia,storeVerifiedMedia} from './whapi-media-archive.ts';
+import {proposeDocumentAI} from './document-ai-draft.ts';
 import {interpretPilotBuyerWithAI} from './ai-interpreter.ts';
 import {decidePilotAIAction,shortBusinessReply,type ReplyCode} from './business-ai-policy.ts';
 const REF='ilggkalaafhtiysyzlmg';
@@ -346,6 +347,7 @@ async function respond(req:Request):Promise<Response>{
     if(reservation.data===true){
       let status:'stored'|'uncertain'='uncertain';
       let contentHash:string|null=null,contentSize:number|null=null;
+      let downloadedForReview:Awaited<ReturnType<typeof getVerifiedWhapiMedia>>|null=null;
       try{
         const downloaded=await getVerifiedWhapiMedia({
           manifest:media,token:sec.token
@@ -353,6 +355,7 @@ async function respond(req:Request):Promise<Response>{
         await storeVerifiedMedia(db.storage,messageHash,downloaded);
         contentHash=downloaded.sha256;
         contentSize=downloaded.bytes.length;
+        downloadedForReview=downloaded;
         status='stored';
       }catch{
         // A slow upload may have succeeded; NEVER automatically retry.
@@ -363,6 +366,28 @@ async function respond(req:Request):Promise<Response>{
       });
       if(completed.error||completed.data!==true)
         return json(503,'media_reconciliation_required');
+      // The model only proposes a PRIVATE DRAFT; cannot create an invitation,
+      // offer, winner or public view without separate independent verification.
+      if(status==='stored'&&downloadedForReview&&
+         Deno.env.get('COTIRONDA_PILOT_DOCUMENT_AI_ENABLED')==='true'){
+        const quota=await db.rpc('cotironda_piloto_reserve_document_ai_mvp095',{
+          p_message_hmac:messageHash
+        });
+        if(!quota.error&&quota.data===true){
+          try{
+            const proposal=await proposeDocumentAI({
+              manifest:media,file:downloadedForReview,
+              apiKey:Deno.env.get('COTIRONDA_PILOT_OPENAI_API_KEY')??'',
+              enabled:true
+            });
+            // Never store model-supplied status: server forces review_required.
+            await db.rpc('cotironda_piloto_note_media_proposal_mvp095',{
+              p_message_hmac:messageHash,
+              p_proposal:proposal
+            });
+          }catch{/* preserve original and review_required; no retry */}
+        }
+      }
     }
   }
   // The model picks an intent, never an outgoing message. A business
