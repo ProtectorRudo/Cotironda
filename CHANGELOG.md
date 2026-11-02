@@ -1,3 +1,7 @@
+## MVP-078b — Puente privado de versiones de cotizaciones (02/11/2026)
+- Nuevo módulo de resumen de auditoría sin identificadores personales, con vinculación estricta de pedido, proveedor y revisión, y métricas conservadoras del original íntegro.
+- Casos de pruebas nuevos: versiones ajenas, documento alterado, cargos extras, fuente ambigua y exposición de datos. Sin conexión SQL real, envíos ni despliegues. Ver docs/199.
+
 ## MVP-078a — Fuente textual vinculada por renglón (02/11/2026)
 - Nuevo módulo offline de desglose privado por número de línea y SHA-256, revisiones, tipos de anotación controlados, importes verificables solo desde MVP-075 y preservación íntegra de extras, IVA, flete, descuentos y total original.
 - Sin conversiones implícitas de precios ambiguos, sin homologación ni ranking falso, sin contactos, sin WhatsApp o BD; tests de seguridad y regresión. Ver docs/198, Issue #369.
