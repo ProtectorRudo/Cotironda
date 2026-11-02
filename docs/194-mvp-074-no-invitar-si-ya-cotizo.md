@@ -28,3 +28,17 @@ La creación de trigger es una migración **de un solo uso** (no volver a aplica
 - Ventana residual de carrera inevitable entre el último control de autorización y la respuesta de API externa; no se puede afirmar entrega/ausencia de entrega sin evidencias del proveedor. La autorización se verifica lo más cerca posible del envío y nunca se reintenta un estado incierto automáticamente.
 - El ranking determinista, parseo del presupuesto íntegro, IVA, flete y costos comparables siguen pendientes; el texto original de la oferta se conserva, pero **no es un total normalizado/validado**.
 - Nahuel todavía debe vincular su teléfono. No habilitar envíos solo por haber corregido esta cola.
+
+## Verificación de despliegue en PILOTO (02/11/2026)
+
+Migración `mvp074_no_invites_after_quote` aplicada por Supabase: `success=true`.
+
+**SELECT posterior a instalar**:
+- `corralon_ailin`: `whapi_outbox.state=cancelled`, `offer_versions` presente.
+- `corralon_nahuel`: `whapi_outbox.state=pending`, sin oferta.
+- `integration_flags`: `inbound=true`, **`outbound=false`**.
+- `offer_versions`: solo versión 1 de Ailín; fuente literal original completa y `TOTAL: $215.000` conservado.
+
+**Smoke SQL de regresión sobre la instalación**: `supabase/piloto/mvp074_smoke_rollback.sql` devolvió **PASS**, y revirtió simulaciones de revisiones 2–4, cambios de estado `leased/uncertain` y habilitación hipotética de outbound. Ni contactos ni envíos nuevos.
+
+Sin cambios en Cotironda DEV histórica pausada, producción, proyecto Te Hice Esto o configuración Whapi.
