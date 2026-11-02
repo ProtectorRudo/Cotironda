@@ -37,3 +37,14 @@ Las pruebas CI deben aprobar antes de instalar migración; después auditar en P
 5. La cuenta LOGIN está materialmente bloqueada hasta que se asigne una contraseña robusta por canal de secretos privado y exista un entorno de ejecución confiable. Todavía no hay prueba E2E de consulta desde el backend, ni endpoint para arquitectos ni revisión automática fiable de documentos.
 
 La base permanece en modo piloto; no tocar DEV histórica, producción, mensajes salientes ni las versiones de presupuestos.
+
+## Auditoría adicional real de lectura RLS (02/11/2026)
+
+Se añadió el ensayo reproducible `supabase/piloto/mvp082_reader_rls_smoke_rollback.sql`, ejecutado satisfactoriamente sobre la base PILOTO. Dentro de **una transacción con ROLLBACK**:
+
+- Se concedió TEMPORALMENTE al operador de SQL Editor la capacidad de cambiar al rol no-login, se ejecutó `SET LOCAL ROLE cotironda_piloto_reader` y se comprobó `current_user` sin acceder a la fuente mediante identidad de administrador.
+- La lectura real vio la oferta del piloto y verificó que cada versión sea atribuible a mensaje WhatsApp, comprador esperado y SHA-256 independiente del texto íntegro. La prueba admite entre 1 y 10 versiones para continuar funcionando cuando Nahuel cotice.
+- Se comprobó que el rol lector no tiene UPDATE/DELETE sobre ofertas, SELECT sobre `whapi_outbox`, texto cifrado completo del inbox ni HMAC de contacto de participantes. No se imprimieron datos originales.
+- Confirmación posterior a `ROLLBACK`: `pg_has_role('postgres', 'cotironda_piloto_reader','SET')=false`, **1 versión original intacta** y `whatsapp_outbound_enabled=false`.
+
+**Esto SÍ comprueba la lectura real bajo RLS dentro de PostgreSQL, pero NO constituye prueba de conexión desde el proceso Next.js con credenciales LOGIN reales.** Sigue faltando ese último tramo y la autorización de comprador.
