@@ -8,7 +8,7 @@ create table cotironda_piloto_privado.clarified_lines_mvp100(
  unit_code text,
  family_code text,
  created_at timestamptz not null default clock_timestamp(),
- primary key(source_hmac,line_no),
+ primary key(source_hmac,line_no,reply_hmac),
  foreign key(source_hmac,line_no)
   references cotironda_piloto_privado.document_lines_mvp098(message_hmac,line_no),
  check(unit_code is not null or family_code is not null),
@@ -183,10 +183,13 @@ begin
       lower(btrim(item.description_literal))<>'arena' or
       new_family not in ('arena_fina','arena_gruesa'))
   then return jsonb_build_object('state','family_not_ambiguous');end if;
-  if (canonical_unit is null and new_family is null) or
-      exists(select 1 from cotironda_piloto_privado.clarified_lines_mvp100 c
-       where c.source_hmac=original and c.line_no=item.line_no)
-  then return jsonb_build_object('state','already_clarified_or_empty');end if;
+  if canonical_unit is null and new_family is null
+  then return jsonb_build_object('state','empty_change');end if;
+  if exists(select 1 from cotironda_piloto_privado.clarified_lines_mvp100 c
+     where c.source_hmac=original and c.line_no=item.line_no
+      and ((canonical_unit is not null and c.unit_code is not null)
+        or (new_family is not null and c.family_code is not null)))
+  then return jsonb_build_object('state','already_clarified');end if;
  end loop;
  for change_ in select v.value as obj from jsonb_array_elements(p_changes) v loop
   canonical_unit:=nullif(change_.obj->>'unit','');
@@ -198,7 +201,10 @@ begin
   update cotironda_piloto_privado.document_lines_mvp098 l
    set unit_literal=coalesce(canonical_unit,l.unit_literal),
        classified_family=coalesce(new_family,l.classified_family),
-       blocker='needs_source_verification'
+       blocker=case
+         when coalesce(canonical_unit,l.unit_literal) is null then 'missing_unit'
+         when coalesce(new_family,l.classified_family) is null then 'ambiguous_family'
+         else 'needs_source_verification' end
    where l.message_hmac=original and
      l.line_no=(change_.obj->>'line_no')::smallint;
   changed:=changed+1;
