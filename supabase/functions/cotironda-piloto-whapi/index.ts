@@ -458,6 +458,18 @@ async function respond(req:Request):Promise<Response>{
                   p_message_hmac:messageHash
                 });
                 if(receipt.error)console.warn('cotironda_supplier_media_reconciliation_required');
+                else if(receipt.data?.state==='stored_unverified'){
+                  // Both calls already analyzed the exact archived bytes.
+                  // A failed/missing second reading is logged as needing
+                  // source review, never retried or treated as a valid price.
+                  const compared=await db.rpc('cotironda_piloto_compare_supplier_readings_mvp102',{
+                    p_message_hmac:messageHash,
+                    p_second_proposal:readings[1].status==='fulfilled'
+                      ?readings[1].value:null
+                  });
+                  if(compared.error)
+                    console.warn('cotironda_supplier_corroboration_reconciliation_required');
+                }
               }
             }else{
               // The source remains stored; do not claim a usable extraction.
