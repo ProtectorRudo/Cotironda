@@ -23,3 +23,14 @@ MVP-076 agregó a la solicitud WhatsApp auténtica una fecha de cierre precisa, 
 
 ## Estado
 Desarrollo en rama `feat/mvp-077-piloto-cron-close`. PR y CI deben completarse y luego se valida la instalación de cron y una ejecución real antes de declarar automatización funcionando.
+
+## Instalación efectiva y auditoría posinstalación — 02/11/2026
+
+- **GitHub Actions** último commit de código `81eeeeb379d8dcc93d4e516a768b2d9830ce47ca`: 5/5 PASS (unitarias, PostgreSQL 17, Auth PostgREST HTTP, verificación de sitio, build Next).
+- **Supabase PILOTO** `ilggkalaafhtiysyzlmg`: migración `mvp077_safe_closure_cron` aplicada con `success=true`.
+- **Tarea verificada**: `cron.job` contiene exactamente un job con `jobid=1`, `jobname='cotironda_piloto_close_due_5min'`, `active=true`, `schedule='*/5 * * * *'`, comando **único** `select public.cotironda_piloto_close_due_v1(25);`, ejecutado por rol `postgres`. Sin tráfico saliente.
+- **Smoke SQL tras instalar** `supabase/piloto/mvp077_smoke_rollback.sql`: PASS (job único activo, estado de solicitud anterior inalterado, ronda sintética vencida cerrada exactamente una vez, doble ejecución no vuelve a cerrar, sin revelación/ganadores/mensajes, base sin nuevos datos de prueba).
+- **Estado real**: 1 solicitud `prepared` del arquitecto creada `2026-11-02 04:34:00.325945+00`, cierre lógico `2026-11-06 04:34:00.325945+00`, 1 oferta original de Ailín. Flag `whatsapp_inbound_enabled=true`, `whatsapp_outbound_enabled=false`.
+- **Historial de ejecución de cron**: `cron.job_run_details` aún sin filas al momento de la primera lectura inmediata posterior a la instalación; **job activado/registrado**, pero no afirmar todavía primera ejecución exitosa del scheduler. Verificar en la siguiente ventana de 5 minutos.
+
+No se instaló `pg_net`, no se emitió ningún WhatsApp, no se filtró nombre ni teléfono de contactos, no se modificó producción, DEV histórica ni Te Hice Esto.
