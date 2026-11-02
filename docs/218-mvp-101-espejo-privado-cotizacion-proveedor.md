@@ -19,6 +19,13 @@ El proveedor puede cotizar por WhatsApp con un PDF, una foto o una planilla. Ant
 - `supabase/piloto/mvp101_smoke_rollback.sql`: cinco conceptos sintéticos (cemento, pallets, bolsones, flete, descuento), importe total expresamente contradictorio, orden, SHA256, duplicados, RLS, fuente conservada y no inserción de oferta verificada. Termina en `ROLLBACK`.
 - La migración debe aplicarse **después de MVP-098, 099 y 100**, y ejecutarse el smoke SQL contra PostgreSQL 17 aislado o transacción reversible de PILOTO antes de cualquier instalación. Los resultados concretos de CI/DB deben comunicarse, no presumirse.
 
+## Resultado de pruebas verificadas (02/11/2026)
+- Ejecuté la migración y el smoke extendido **en una única transacción PostgreSQL 17 del proyecto Supabase `cotironda-piloto`**, con `lock_timeout=2s`, datos exclusivamente sintéticos, sin WhatsApp y `ROLLBACK` al terminar. Incluyó cinco conceptos, total contradictorio, fuente SHA256, duplicados, acceso, intento de UPDATE/DELETE, campo monetario de tipo incorrecto y 26 líneas: **aprobó sin excepciones**.
+- Verificación posterior desde otra consulta: `to_regclass('cotironda_piloto_privado.supplier_quote_lines_mvp101') IS NULL` y `supplier_media_quotes_mvp098` tenía 0 recibos; **no se dejó instalada esta migración ni nuevos datos de ensayo**.
+- GitHub Actions: pruebas unitarias, verificación del sitio y suite PostgreSQL 17 de aislamiento aprobadas en commit `55cf5763`. La validación de portal/PostgREST continuaba en curso al registrar este resultado.
+- El linter de seguridad del piloto reportó 21 avisos informativos `rls_enabled_no_policy` de tablas privadas; no reportó advertencias críticas, pero ese análisis no reemplaza la revisión de permisos.
+- No hubo mensajes de Whapi, envíos a compradores, despliegues ni cambio de secretos.
+
 ## Limitaciones y próximos controles
 - El lector actual admite hasta **25 renglones** en borrador y archivos de hasta 3 MiB. Cuando se supera, queda pendiente: **nunca se trunca silenciosamente** ni se considera cotizado. Debemos eliminar esos topes técnicos gradualmente mediante partición/continuación validada y controles reales de costo.
 - La lectura IA puede omitir conceptos, confundir `$ 7.000` unitario con total, ignorar IVA o leer mal signos. El siguiente MVP debe comparar todos los renglones contra evidencia original, resolver ambigüedades sin modificar fuente y bloquear comparaciones incompletas.
