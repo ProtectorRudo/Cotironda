@@ -397,11 +397,19 @@ async function respond(req:Request):Promise<Response>{
         });
         if(!quota.error&&quota.data===true){
           try{
-            const proposal=await proposeDocumentAI({
-              manifest:media,file:downloadedForReview,
+            // Two parallel readings reduce copy errors without extra
+            // WhatsApp actions. Each is untrusted until source corroboration;
+            // disagreement MUST NOT create a commercial invitation.
+            const args={manifest:media,file:downloadedForReview,
               apiKey:Deno.env.get('COTIRONDA_PILOT_OPENAI_API_KEY')??'',
-              enabled:true
-            });
+              enabled:true};
+            const readings=await Promise.allSettled([
+              proposeDocumentAI({...args,perspective:'primary'}),
+              proposeDocumentAI({...args,perspective:'corroboration'})
+            ]);
+            if(readings[0].status!=='fulfilled')
+              throw Error('document_primary_extraction_unavailable');
+            const proposal=readings[0].value;
             // Never store model-supplied status: server forces review_required.
             const saved=await db.rpc('cotironda_piloto_note_media_proposal_mvp095',{
               p_message_hmac:messageHash,
@@ -416,6 +424,19 @@ async function respond(req:Request):Promise<Response>{
                   p_message_hmac:messageHash
                 });
                 if(plan.error)console.warn('cotironda_media_plan_reconciliation_required');
+                if(!plan.error&&readings[1].status==='fulfilled'){
+                  const agreed=await db.rpc('cotironda_piloto_record_agreement_mvp099',{
+                    p_message_hmac:messageHash,
+                    p_second_proposal:readings[1].value
+                  });
+                  if(agreed.error)console.warn('cotironda_document_agreement_reconciliation_required');
+                  else if(agreed.data?.state==='agreed_private'){
+                    const prepared=await db.rpc('cotironda_piloto_prepare_document_mvp099',{
+                      p_message_hmac:messageHash
+                    });
+                    if(prepared.error)console.warn('cotironda_document_preparation_reconciliation_required');
+                  }
+                }
                 if(proposal.delivery_city===null&&proposal.lines.length>0)
                   aiReply='zone';
               }else if(proposal.kind==='supplier_quote'){
@@ -443,7 +464,16 @@ async function respond(req:Request):Promise<Response>{
         p_chat_hmac:chatHash,p_message_hmac:messageHash,p_city:zone
       });
       if(linked.error)return json(503,'zone_context_reconciliation_required');
-      if(linked.data?.state==='city_attached')aiReply=null;
+      if(linked.data?.state==='city_attached'){
+        aiReply=null;
+        // Use its existing dual agreement, not a third model call.
+        // Promotion is one-time, only when every requested unit and product
+        // is explicit. An ambiguous document remains private.
+        const ready=await db.rpc('cotironda_piloto_prepare_document_mvp099',{
+          p_message_hmac:linked.data?.source_message_hmac??''
+        });
+        if(ready.error)console.warn('cotironda_document_zone_promotion_reconciliation_required');
+      }
     }
   }
   // The model picks an intent, never an outgoing message. A business
