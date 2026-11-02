@@ -1,3 +1,8 @@
+## MVP-099 — despacho por proveedor desde documentos originales (02/11/2026)
+- Dos lecturas paralelas de archivo, cotejo estricto y consenso privado antes de promoverlo a solicitud. Si faltan localidad, unidades o cobertura, no inventar ni enviar.
+- Solicitud documental conserva todos los ítems y original privado SHA256; cada proveedor recibe solo su subconjunto por categoría y zona (texto y PDF), con autorización Whapi revalidada al reclamar y enviar. Compatibilidad con ronda piloto anterior.
+- Prueba transaccional reversible de ofertas parciales 2/1 ítems, consentimiento retirado, duplicados, RLS y discrepancia de IA; documentado en docs/216. No equivale a cierre/ranking E2E.
+
 ## MVP-098 — plan de distribución por artículo y recibos de presupuesto en archivo (02/11/2026)
 - Borradores IA de archivos archivados se convierten en un plan por renglón con unidades literales, cantidad, evidencia y motivos de bloqueo. Cobertura por proveedor/catalogo/localidad sin fingir stock ni cotizaciones válidas. La imagen real contenía 10 Cemento, 2 Arena y 288 Huecos del 12, sin unidades ni ciudad.
 - Presupuesto de proveedor enviado como archivo queda asociado a la única invitación activa, con original SHA256, total declarado literal, extras visibles en la fuente y estado `awaiting_fidelity_check`; nunca reemplaza ni modifica `offer_versions`.
