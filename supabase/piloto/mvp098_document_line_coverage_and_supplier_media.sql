@@ -9,7 +9,7 @@ create table cotironda_piloto_privado.document_lines_mvp098(
  evidence_literal text not null check(length(evidence_literal) between 1 and 200),
  classified_family text,
  blocker text not null check(blocker in(
-  'missing_delivery_city','missing_quantity','missing_unit',
+  'missing_quantity','missing_unit',
   'ambiguous_family','unsupported_family','needs_source_verification')),
  planned_at timestamptz not null default clock_timestamp(),
  primary key(message_hmac,line_no)
@@ -82,7 +82,6 @@ begin
   then raise exception 'mvp098_source_line_invalid' using errcode='22023';end if;
   f:=cotironda_piloto_privado.family_preview_mvp098(literal);
   why:=case
-   when city is null or length(btrim(city))<3 then 'missing_delivery_city'
    when rawqty is null or rawqty !~ '^[0-9]{1,6}([,][0-9]{1,3})?$'
       or replace(rawqty,',','.')::numeric<=0 then 'missing_quantity'
    when rawunit is null or length(btrim(rawunit))=0 then 'missing_unit'
@@ -116,6 +115,13 @@ returns jsonb language sql stable security definer set search_path='' as $fn$
   'unit',l.unit_literal,
   'family',l.classified_family,
   'blocker',l.blocker,
+  'delivery_city_known',exists(
+   select 1 from cotironda_piloto_privado.media_archive_mvp095 m
+   where m.message_hmac=l.message_hmac
+     and length(btrim(coalesce(m.delivery_city_confirmed,
+        m.proposal->>'delivery_city','')))>=3
+  ),
+  'source_verified',false,
   'suppliers',coalesce((
      select jsonb_agg(jsonb_build_object(
        'supplier',p.key,
