@@ -26,6 +26,7 @@ y la identidad de los negocios se mantienen reservados hasta el cierre.</p>
 <div class="count" id="count" aria-live="polite">—</div>
 <div class="caption">Presupuestos recibidos</div>
 <div class="deadline"><b id="state">Consultando…</b><p id="deadline"></p></div>
+<div id="receipts" aria-live="polite"></div>
 <div id="offers" aria-live="polite"></div></main>
 <p><small>Enlace privado. No lo compartas con otras personas.</small></p>
 </div><script>
@@ -47,11 +48,20 @@ if(!/^[a-f0-9]{64}$/.test(token)){
    $("deadline").textContent="Fecha límite: "+
      new Date(d.deadline).toLocaleString("es-AR",{timeZone:"America/Argentina/Buenos_Aires"});
    if(d.state==="waiting"){
-     $("state").textContent="Ronda abierta · presupuestos reservados hasta el cierre";
+     $("state").textContent="Ronda abierta · posiciones pendientes de comparación";
      $("offers").replaceChildren();
+     const receipts=$("receipts");receipts.replaceChildren();
+     // Each box is a RECEIPT, not an economic ranking position.
+     const count=Number(d.received_count);
+     for(let i=0;i<Math.min(25,Number.isSafeInteger(count)&&count>0?count:0);i++){
+       const card=document.createElement("div");card.className="quote";
+       card.textContent="Presupuesto anónimo "+(i+1)+" · recibido · contenido reservado";
+       receipts.appendChild(card);
+     }
    }else if(d.state==="cancelled"){
-     $("state").textContent="Ronda cancelada";$("offers").replaceChildren();
+     $("state").textContent="Ronda cancelada";$("offers").replaceChildren();$("receipts").replaceChildren();
    }else{
+     $("receipts").replaceChildren();
      $("state").textContent=d.can_open?"Ronda cerrada · presupuestos habilitados":
        "Ronda cerrada · esperando verificación de los presupuestos";
      const target=$("offers");target.replaceChildren();
