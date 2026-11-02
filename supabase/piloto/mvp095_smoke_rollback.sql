@@ -57,6 +57,25 @@ begin
  then raise exception 'media_day_quota_failed';end if;
  if (select count(*) from cotironda_piloto_privado.media_archive_mvp095
      where state='stored')<>8 then raise exception 'media_missing_origins';end if;
+ h:=encode(extensions.gen_random_bytes(32),'hex');
+ select chat_hmac into s from cotironda_piloto_privado.participants
+  where key='corralon_nahuel' and consent_at is not null and opted_out_at is null;
+ insert into cotironda_piloto_privado.whapi_inbox(
+  message_hmac,chat_hmac,participant_key,kind,nonce_b64,ciphertext_b64,
+  plaintext_sha256,source_unix,processing_state)
+ values(h,s,'corralon_nahuel','document',
+  'AAAAAAAAAAAAAAAA','AAAAAAAAAAAAAAAAAAAAAAAA',
+  encode(extensions.gen_random_bytes(32),'hex'),
+  extract(epoch from clock_timestamp())::bigint,'needs_review');
+ if not public.cotironda_piloto_reserve_media_mvp095(
+  h,s,encode(extensions.gen_random_bytes(32),'hex'),'application/pdf')
+ then raise exception 'media_supplier_not_saved';end if;
+ if (select request_id from cotironda_piloto_privado.media_archive_mvp095
+     where message_hmac=h)<>
+    (select request_id from cotironda_piloto_privado.invitations
+     where supplier_key='corralon_nahuel' and state='prepared' limit 1)
+ then raise exception 'media_supplier_wrong_round';end if;
+
  if has_table_privilege('anon',
     'cotironda_piloto_privado.media_archive_mvp095','SELECT')
  or has_table_privilege('authenticated',
