@@ -1,3 +1,8 @@
+## MVP-074 — No invitar si el proveedor ya cotizó (02/11/2026)
+- Corregida cola privada PILOTO: responder a una solicitud cancela solamente la invitación aún pendiente del mismo proveedor y pedido; se conservan los estados inciertos y el texto del presupuesto original.
+- El claim y la autorización previa a Whapi impiden solicitar de nuevo cuando ya hay una cotización.
+- Migración y prueba SQL con rollback; sin habilitar envíos ni cambios a producción. Ver docs/194.
+
 ## MVP-073f — cierre de riesgos del piloto (01/11/2026)
 - Receptor Supabase Edge v3: ninguna solicitud parcial si el texto contiene renglones no reconocidos.
 - Migración `mvp073f_outbox_buyer_consent_guard` aplicada: BAJA comprador, cancelación y expiración bloquean claims y autorización de envío.
