@@ -59,7 +59,8 @@ function stripOpener(s:string):string{
 export function parseBuyerPilot(raw:string):ParsedBuyer{
  if(typeof raw!=='string'||raw.length>4000||raw.trim().length===0)
   return {city:null,items:[],unresolved:['invalid_message']};
- const text=raw.replace(/\r\n?/gu,'\n');
+ const text=raw.replace(/\r\n?/gu,'\n')
+  .replace(/[.;]\s*(?=(?:entrega|destino|obra|zona de entrega)\s*[:])/giu,'\n');
  const cities=[...text.matchAll(CITY)];
  const cityValues=cities.map(c=>cityOnly(c[1]));
  const notes=[...text.matchAll(DELIVERY)];
@@ -75,11 +76,12 @@ export function parseBuyerPilot(raw:string):ParsedBuyer{
  // Remove ONLY the city or explicit date lines; other material lines survive.
  let clean=text.replace(CITY,'\n').replace(DELIVERY,'\n');
  // Preserve decimal commas; split comma and conjunction only at next quantity.
- clean=clean.replace(/,\s*(?=\d{1,6}(?:[.,]\d{1,3})?\s*(?:bolsas?|litros?|lts?\.?|l\b|kgs?|kilogramos?|m3|unidades?))/giu,'\n');
+ clean=clean.replace(/,\s+(?=\d{1,6}(?:[.,]\d{1,3})?\s*(?:bolsas?|litros?|lts?\.?|l\b|kgs?|kilogramos?|m3|unidades?))/giu,'\n');
  clean=clean.replace(/\s+y\s+(?=\d{1,6}(?:[.,]\d{1,3})?\s*(?:bolsas?|litros?|lts?\.?|l\b|kgs?|m3|unidades?))/giu,'\n');
  const lines=clean.split(/[\n;]+/u).map(s=>s.trim()).filter(Boolean);
  const items:PilotItem[]=[];
  for(const literal of lines){
+  if(isChatter(literal))continue;
   let s=stripOpener(literal);
   if(!s||isChatter(s))continue;
   s=s.replace(/^\s*[-*•]\s*/u,'').replace(/^\s*\d+[.)]\s+/u,'').trim();
