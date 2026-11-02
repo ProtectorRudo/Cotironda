@@ -59,7 +59,7 @@ const SHA=/^[a-f0-9]{64}$/u;
 const DESTINOS=new Set<DestinoRenglonMvp078>(
  ['solicitado','extra','cargo','descuento','aclaracion']);
 function fail():never{throw new TypeError('mvp078_vinculo_fuente_invalido')}
-function exactKeys(o:unknown,keys:readonly string[]):o is Record<string,unknown>{
+function exactKeys(o:unknown,keys:readonly string[]):boolean{
  return o!==null&&typeof o==='object'&&!Array.isArray(o)&&
   Object.keys(o).length===keys.length&&
   Object.keys(o).every(k=>keys.includes(k));
@@ -112,7 +112,7 @@ export function vincularRenglonesOriginalesMvp078(input:EntradaLedgerMvp078):Led
  // Es un desglose de la fuente completa, no una extracción parcial.
  // Incluso un precio no interpretado se conserva en su renglón original.
  const sinClasificar=lines.filter(l=>l.destino==='sin_clasificar'&&
-   l.importesLiterales.length>0&&l.tipo!=='total'&&l.tipo!=='subtotal').length;
+   l.importesLiterales.length>0&&l.tipoDetectado!=='total'&&l.tipoDetectado!=='subtotal').length;
  const requested=lines.filter(l=>l.destino==='solicitado');
  return Object.freeze({
   estado:'desglose_privado_sin_ranking',
