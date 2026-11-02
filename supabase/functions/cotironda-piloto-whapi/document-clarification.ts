@@ -17,8 +17,8 @@ const unitPatterns:ReadonlyArray<readonly [RegExp,string]>=[
  [/\b(?:cajas?)\b/iu,'box'],
  [/\b(?:rollos?)\b/iu,'roll'],
  [/\b(?:paquetes?)\b/iu,'pack'],
- [/\b(?:metros?\s+c[uú]bicos?|m3|m³)\b/iu,'m3'],
- [/\b(?:metros?\s+cuadrados?|m2|m²)\b/iu,'m2'],
+ [/(?:\bmetros?\s+c[uú]bicos?\b|\bm3\b|\bm³)(?!\p{L})/iu,'m3'],
+ [/(?:\bmetros?\s+cuadrados?\b|\bm2\b|\bm²)(?!\p{L})/iu,'m2'],
  [/\b(?:metros?|m)\b/iu,'m'],
  [/\b(?:gramos?|g)\b/iu,'g']
 ];
