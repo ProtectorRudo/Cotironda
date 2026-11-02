@@ -13,6 +13,7 @@ export type SolicitudPdfMvp091=Readonly<{
 }>;
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/iu;
 const NUM=/^(?:0|[1-9][0-9]{0,8})(?:\.[0-9]{1,3})?$/u;
+const CONTACT=/(?:https?:\/\/|www\.|[\\w.+-]+@[\\w.-]+\\.[A-Za-z]{2,}|(?:\\+?\\d[\\s.-]?){9,}|\\b(?:whatsapp|tel[eé]fono|celular|cuit|cuil|correo|email|raz[oó]n social)\\b)/iu;
 const UNITS:Readonly<Record<string,string>>={
  bag:'bolsas',unit:'unidades',box:'cajas',kg:'kg',g:'g',
  l:'litros',ml:'ml',m:'m',m2:'m2',m3:'m3',roll:'rollos',pack:'paquetes'
@@ -64,10 +65,10 @@ function box(cmds:string[],x:number,y:number,w:number,h:number,rgb:string){
 /** Generate a compact corporate PDF; no source or buyer identity escapes. */
 export function generarSolicitudPdfMvp091(input:SolicitudPdfMvp091):Uint8Array{
  if(!input||typeof input!=='object'||!UUID.test(input.requestId)||
-  !textOk(input.city,70)||!Array.isArray(input.items)||
+  !textOk(input.city,70)||CONTACT.test(input.city)||!Array.isArray(input.items)||
   input.items.length<1||input.items.length>8)fail();
  const lines=input.items.map((it,i)=>{
-  if(!it||!textOk(it.description,75)||
+  if(!it||!textOk(it.description,75)||CONTACT.test(it.description)||
     typeof it.unit!=='string'||!Object.hasOwn(UNITS,it.unit))fail();
   const qty=decimal(it.quantity);
   if((qty+' '+UNITS[it.unit]).length>35)fail();
