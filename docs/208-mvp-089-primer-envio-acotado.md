@@ -34,3 +34,15 @@ La orden «dale hagamoslo» permite avanzar con esta **prueba comercial controla
 
 ## No incluido
 Esta pieza prepara **el primer envío**, no implementa la clasificación documental IA, los presupuestos propios completos en portal, el cálculo determinista de costos con IVA/flete, ni el ranking y disclosure recíproco al cierre. Ver PR #389 y Issue #388 sobre proyección fiel; no publicar ganadores si faltan fuentes/comparabilidad.
+
+
+## Instalación efectiva en entorno PILOTO — 02/11/2026
+
+- Se ejecutó primero el **ensayo PostgreSQL 17 con DDL + pruebas y ROLLBACK**. Un primer error `min(uuid)` en el operador/smoke fue corregido por `min(id::text)::uuid` y repetido, posteriormente **PASS**.
+- Se verificó el operador de autorización en otra transacción `ROLLBACK`: un único permiso, flag de salida falso, mensaje natural con ambos ítems; **PASS**.
+- La migración `mvp089_single_invite_gate_and_human_quantities` se aplicó correctamente con Supabase `apply_migration`, **`success=true`** solo en proyecto `ilggkalaafhtiysyzlmg`. El `mvp089_smoke_rollback.sql` posterior **PASS**, sin cambios de envíos.
+- Se ejecutó el operador `mvp089_one_invitation_operator.sql` con éxito, dejando **exactamente un permiso temporal** para la solicitud activa/Nahuel, con ambas líneas, localidad y texto corregidos. No se crearon permisos para Ailín ni otros destinatarios.
+- Auditoría posterior: 1 scope vigente, `whatsapp_outbound_enabled=false`, Nahuel `pending` y mensaje con `20 bolsas · cemento CPC 50 kg` y `5 litros · hidrófugo`; Ailín `cancelled` y 1 oferta original preservada; cron de cierre único activo.
+- Seguridad RLS en scope `true`; permisos de lectura `anon=false`, `authenticated=false`, `service_role=false`; funciones `claim` no ejecutables por clientes, sí para `service_role`. `claim` con flag OFF respondió `outbound_disabled`. La lectura fue directa del piloto.
+- **Aún NO se envió ningún WhatsApp**. Falta verificar en panel propietario la configuración secreta de Whapi outbound (token, canal, mapa exacto de dos números) y la bandera `COTIRONDA_PILOT_WHAPI_OUTBOUND_ENABLED`. La conexión del panel de secretos no permite consultar estos valores con el conector actual, y no deben obtenerse ni divulgarse. Solo tras esa verificación y con costo/consentimiento acotado se permitirá habilitar la salida en SQL para el alcance específico y disparar un evento autenticado.
+- El permiso expira 12 horas después de su emisión o al cierre de la ronda, lo que ocurra primero. Si caduca antes de verificar Whapi, se debe revalidar y renovar bajo control, no reactivar automáticamente.
