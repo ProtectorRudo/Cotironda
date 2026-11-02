@@ -102,6 +102,12 @@ async function unpack(bytes:Uint8Array):Promise<Map<string,string>>{
   if(/\.xml$|\.rels$/iu.test(name))out.set(name,decoder.decode(textBytes));
  }
  if(offset!==dirOff+dirSize)fail('invalid_source');
+ if(!out.has('[Content_Types].xml')||
+   !/<Types(?:\s|>)/u.test(out.get('[Content_Types].xml')!))
+   fail('invalid_source');
+ for(const xml of out.values())
+   if(/<!DOCTYPE|<!ENTITY|TargetMode=["']External["']/iu.test(xml))
+     fail('unsupported_layout');
  return out;
 }
 function unescapeXml(s:string):string{
@@ -133,13 +139,18 @@ function words(files:Map<string,string>):string[]{
  const body=xml.match(/<w:body\b[^>]*>([\s\S]*?)<\/w:body>/u)?.[1];
  if(!body)fail('unsupported_layout');
  const ps=[...body.matchAll(/<w:p(?:\s[^>]*)?>([\s\S]*?)<\/w:p>/gu)];
- if(ps.length<2||ps.length>26)fail('unsupported_layout');
+ if(ps.length<2||ps.length>26||
+   (body.match(/<w:p(?=\s|>)/gu)??[]).length!==ps.length)
+   fail('unsupported_layout');
  const lines=ps.map(p=>{
   const fragments=[...p[1].matchAll(/<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>/gu)];
   if(!fragments.length)fail('unsupported_layout');
   return fragments.map(f=>unescapeXml(f[1])).join('').trim();
  });
- if(lines.some(x=>!x))fail('unsupported_layout');
+ if(lines.some(x=>!x)||
+    ps.reduce((n,p)=>n+(p[1].match(/<w:t(?=\s|>)/gu)??[]).length,0)!==
+      (body.match(/<w:t(?=\s|>)/gu)??[]).length)
+   fail('unsupported_layout');
  return lines;
 }
 function strings(xml:string):string[]{
@@ -166,7 +177,9 @@ function sheets(files:Map<string,string>):string[]{
  const data=sheet.match(/<sheetData(?:\s[^>]*)?>([\s\S]*?)<\/sheetData>/u)?.[1];
  if(!data)fail('unsupported_layout');
  const rows=[...data.matchAll(/<row(?:\s[^>]*)?>([\s\S]*?)<\/row>/gu)];
- if(rows.length<2||rows.length>26)fail('unsupported_layout');
+ if(rows.length<2||rows.length>26||
+   (data.match(/<row(?=\s|>)/gu)??[]).length!==rows.length)
+   fail('unsupported_layout');
  return rows.map(row=>{
   const cells=[...row[1].matchAll(/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/gu)];
   if(cells.length<1||cells.length>12)fail('unsupported_layout');
