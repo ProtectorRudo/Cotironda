@@ -163,59 +163,96 @@ function strings(xml:string):string[]{
   return t.map(x=>unescapeXml(x[1])).join('');
  });
 }
+/**
+ * Use the workbook's relationships rather than assuming a single sheet1.
+ * Inspect EVERY worksheet: hidden or unrecognized sheets remain private.
+ */
 function sheets(files:Map<string,string>):string[]{
  const workbook=files.get('xl/workbook.xml');
- const sheet=files.get('xl/worksheets/sheet1.xml');
- if(!workbook||!sheet||
-  (workbook.match(/<sheet\b/gu)??[]).length!==1||
-  /<sheet\b[^>]*(?:state="hidden"|state="veryHidden")/u.test(workbook)||
-  [...files.keys()].some(x=>/^xl\/worksheets\/sheet[^1]/u.test(x))||
-  // Display formatting, filter controls, merged headers and cached SUM cells
-  // are normal. We read literal cached values only and NEVER execute formulae.
-  /<(?:drawing|legacyDrawing|hyperlinks|sheetProtection|extLst|tableParts|pivotTable|oleObjects|controls)\b/iu.test(sheet)||
-  /<row\b[^>]*hidden="(?:1|true)"/iu.test(sheet))
+ const rels=files.get('xl/_rels/workbook.xml.rels');
+ if(!workbook||!rels)fail('unsupported_layout');
+ const refs=[...workbook.matchAll(/<sheet\b([^>]*?)(?:\/>|>)/gu)];
+ if(refs.length<1||refs.length>12)fail('unsupported_layout');
+ const attr=(s:string,name:string):string|null=>{
+  const safe=name.replace(/[.*+?^$()|[\]{}\\]/gu,'\\$&');
+  return s.match(new RegExp('(?:^|\\s)'+safe+'="([^"]*)"','u'))?.[1]??null;
+ };
+ const relPaths=new Map<string,string>();
+ for(const r of rels.matchAll(/<Relationship\b([^>]*?)(?:\/>|>)/gu)){
+  const id=attr(r[1],'Id'),target=attr(r[1],'Target');
+  const type=attr(r[1],'Type');
+  if(!id||!target||!type)fail('unsupported_layout');
+  if(!type.endsWith('/worksheet'))continue;
+  const path=target.startsWith('/xl/')?target.slice(1):
+   target.startsWith('worksheets/')?'xl/'+target:'';
+  if(!/^xl\/worksheets\/[a-z0-9_-]+\.xml$/iu.test(path)||relPaths.has(id))
+   fail('unsupported_layout');
+  relPaths.set(id,path);
+ }
+ if(relPaths.size!==refs.length)fail('unsupported_layout');
+ const paths:string[]=[];
+ for(const ref of refs){
+  const state=attr(ref[1],'state');
+  if(state&&state!=='visible')fail('unsupported_layout');
+  const id=attr(ref[1],'r:id'),path=id?relPaths.get(id):null;
+  if(!path||!files.has(path)||paths.includes(path))fail('unsupported_layout');
+  paths.push(path);
+ }
+ // Reject unreferenced worksheets, including hidden/additional financial data.
+ if([...files.keys()].some(path=>
+  /^xl\/worksheets\/[^/]+\.xml$/iu.test(path)&&!paths.includes(path)))
   fail('unsupported_layout');
  const dictionary=files.has('xl/sharedStrings.xml')?
   strings(files.get('xl/sharedStrings.xml')!):[];
- const data=sheet.match(/<sheetData(?:\s[^>]*)?>([\s\S]*?)<\/sheetData>/u)?.[1];
- if(!data)fail('unsupported_layout');
- const rows=[...data.matchAll(/<row(?:\s[^>]*)?>([\s\S]*?)<\/row>/gu)];
- if(rows.length<1||rows.length>300||
-   (data.match(/<row(?=\s|>)/gu)??[]).length!==rows.length)
+ const output:string[]=[];
+ for(const path of paths){
+  const sheet=files.get(path)!;
+  if(/<(?:drawing|legacyDrawing|hyperlinks|sheetProtection|extLst|tableParts|pivotTable|oleObjects|controls)\b/iu.test(sheet)||
+   /<row\b[^>]*hidden="(?:1|true)"/iu.test(sheet))
    fail('unsupported_layout');
- return rows.map(row=>{
-  const cells=[...row[1].matchAll(/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/gu)];
-  if(cells.length>50)fail('unsupported_layout');
-  const values=cells.map(c=>{
-   const at=c[1],inner=c[2]??'';
-   if(/\bs="[^0-9]/u.test(at)||/\bs="\d{6,}"/u.test(at)||
-      /\bhidden="(?:true|1)"/u.test(at))
+  const data=sheet.match(/<sheetData(?:\s[^>]*)?>([\s\S]*?)<\/sheetData>/u)?.[1];
+  if(!data)fail('unsupported_layout');
+  const rows=[...data.matchAll(/<row(?:\s[^>]*)?>([\s\S]*?)<\/row>/gu)];
+  if(rows.length<1||rows.length>300||
+    (data.match(/<row(?=\s|>)/gu)??[]).length!==rows.length)
     fail('unsupported_layout');
-   const type=at.match(/\bt="([^"]+)"/u)?.[1]??'n';
-   const raw=inner.match(/<v>([\s\S]*?)<\/v>/u)?.[1];
-   if(!inner.trim()||raw===undefined&&type!=='inlineStr')return '';
-   if(type==='inlineStr'){
-    const m=inner.match(/<is(?:\s[^>]*)?>([\s\S]*?)<\/is>/u)?.[1];
-    const fragments=m?[...m.matchAll(/<t(?:\s[^>]*)?>([\s\S]*?)<\/t>/gu)]:[];
-    if(!fragments.length&&m?.trim()==='')return '';
-    if(!fragments.length||
-       (m?.match(/<t(?=\s|>)/gu)??[]).length!==fragments.length)
-      fail('unsupported_layout');
-    return fragments.map(f=>unescapeXml(f[1])).join('');
-   }
-   if(raw===undefined)fail('unsupported_layout');
-   if(type==='s'){
-    if(!/^\d{1,5}$/u.test(raw)||!dictionary[Number(raw)])
+  for(const row of rows){
+   const cells=[...row[1].matchAll(/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/gu)];
+   if(cells.length>50)fail('unsupported_layout');
+   const values=cells.map(c=>{
+    const at=c[1],inner=c[2]??'';
+    if(/\bs="[^0-9]/u.test(at)||/\bs="\d{6,}"/u.test(at)||
+     /\bhidden="(?:true|1)"/u.test(at))
      fail('unsupported_layout');
-    return dictionary[Number(raw)];
-   }
-   if(type==='str')return unescapeXml(raw);
-   if(type==='n'&&/^-?\d+(?:\.\d+)?$/u.test(raw))return raw;
-   fail('unsupported_layout');
-  }).filter(x=>x.trim()!=='');
-  return values.join(' · ');
- }).filter(Boolean);
+    const type=at.match(/\bt="([^"]+)"/u)?.[1]??'n';
+    const raw=inner.match(/<v>([\s\S]*?)<\/v>/u)?.[1];
+    if(!inner.trim()||raw===undefined&&type!=='inlineStr')return '';
+    if(type==='inlineStr'){
+     const m=inner.match(/<is(?:\s[^>]*)?>([\s\S]*?)<\/is>/u)?.[1];
+     const fragments=m?[...m.matchAll(/<t(?:\s[^>]*)?>([\s\S]*?)<\/t>/gu)]:[];
+     if(!fragments.length&&m?.trim()==='')return '';
+     if(!fragments.length||
+      (m?.match(/<t(?=\s|>)/gu)??[]).length!==fragments.length)
+      fail('unsupported_layout');
+     return fragments.map(f=>unescapeXml(f[1])).join('');
+    }
+    if(raw===undefined)fail('unsupported_layout');
+    if(type==='s'){
+     if(!/^\d{1,5}$/u.test(raw)||dictionary[Number(raw)]===undefined)
+      fail('unsupported_layout');
+     return dictionary[Number(raw)];
+    }
+    if(type==='str')return unescapeXml(raw);
+    if(type==='n'&&/^-?\d+(?:\.\d+)?$/u.test(raw))return raw;
+    fail('unsupported_layout');
+   }).filter(x=>x.trim()!=='');
+   if(values.length)output.push(values.join(' · '));
+   if(output.length>300)fail('unsupported_layout');
+  }
+ }
+ return output;
 }
+
 /** Positive means every Office line was proven against ZIP/XML source. */
 export async function checkSupplierOfficeSource(
  source:DownloadedMedia,proposal:DocumentDraft
