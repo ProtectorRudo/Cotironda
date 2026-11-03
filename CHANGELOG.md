@@ -1,3 +1,7 @@
+## MVP-116 — bloquear condiciones económicas omitidas del original (02/11/2026)
+- Corregido el cotejo de importes de TXT/CSV/Office/PDF simples: cada ocurrencia monetaria se cuenta, incluso duplicados del mismo valor. Cualquier IVA, flete, entrega, pago, stock u otra aclaración no representada en el renglón original bloquea la publicación automática, y el TOTAL no puede incorporar letra chica silenciosa.
+- Nuevo motivo privado `uncovered_terms` en SQL MVP106 y lector de originales; el documento sigue archivado sin ranking ni exposición engañosa. Test Node con duplicados de flete, precio repetido, letra chica y casos correctos; docs/234, Issue #443. Sin migración instalada, despliegue ni WhatsApp real. Ranking económico definitivo permanece NO_GO.
+
 ## MVP-115 — dos proveedores parciales juntos cubren el pedido sin comparación engañosa (02/11/2026)
 - En el cierre SQL de PILOTO se agregó la modalidad `two_supplier_combination`: solo con presupuestos originales verificados y sin importar totales parciales entre sí, reconoce cuando dos negocios cubren artículos distintos que juntos completan el pedido. Los artículos y cantidades se contrastan 1:1; ninguna cantidad individual se divide ni se inventan equivalencias.
 - Mensajes a cada negocio y vista del arquitecto ahora diferencian claramente una **solución conjunta de dos ofertas parciales** de dos alternativas completas independientes; no proclaman precios ganadores ni exponen teléfonos ajenos. Siguen vigentes consentimientos 1+2, cierre de 96h, RLS y outbox sin duplicados.
