@@ -1,5 +1,40 @@
+> **MVP-077 — Cierre automático PILOTO VERIFICADO:** job Supabase Cron cada 5 minutos instalado en la base aislada. Primera ejecución real `succeeded` el **02/11/2026 a las 07:20 (Argentina)**. Cierra exclusivamente rondas vencidas; **no compara ni revela proveedores y no envía WhatsApp**. Ver pruebas y monitoreo en [docs/197](docs/197-mvp-077-cierre-automatico-cron-piloto.md). No se ensayó aún el vencimiento real del 06/11.
+
+> **MVP-076 — Rondas anónimas de 4 días (desarrollo / PILOTO):** plazo por defecto 96 horas, cierre privado idempotente sin revelación, guards de Whapi contra ofertas/invitaciones vencidas y planes offline de vista anónima + mensajes recíprocos hasta dos finalistas por rubro. **El cron de MVP-077 ya está instalado, pero no hay ranking real validado ni envíos de avisos:** no anunciar selección automática completa. [docs/196](docs/196-mvp-076-cuatro-dias-anonimato-finalistas.md).
+
+> **MVP-075 — Auditoría económica OFFLINE de presupuestos WhatsApp:** nuevo control independiente de fuente literal, líneas, importes y sumas verificables. Totales ambiguos, IVA/flete y datos incompletos no permiten ranking ni alteración del original; no integrado aún a Supabase ni mensajes reales. [docs/195](docs/195-mvp-075-auditoria-cotizaciones-texto.md).
+
+> **MVP-074 — Protección de invitaciones tardías del PILOTO:** si un proveedor ya respondió por WhatsApp, su invitación pendiente debe cancelarse sin afectar a otro proveedor ni su presupuesto original. Migración, prueba SQL reproducible y controles de claim/autorizar documentados en [docs/194](docs/194-mvp-074-no-invitar-si-ya-cotizo.md). Outbound permanece apagado y el ranking aún no está implementado.
+
 # Cotironda
 
+> **MVP-073f**: Edge Whapi piloto v3 preparada en Supabase; no envía pedidos con renglones desconocidos y exige consentimiento vigente del comprador antes de cualquier salida. **Sin secretos/alta real todavía: Whapi OFF.** Ver [docs/193](docs/193-mvp-073-whapi-piloto-edge.md).
+
+
+> **MVP-073 — Piloto Whapi Supabase nativo**: Edge Function `cotironda-piloto-whapi` v2 instalada y BD piloto con inbox cifrado, alta por código único, baja, original de presupuestos inmutable, outbox at-most-once. **INBOUND/OUTBOUND deshabilitados por defecto hasta configurar secretos y consentimiento; sin prueba WhatsApp real**. Ver [docs/193](docs/193-mvp-073-whapi-piloto-edge.md).
+
+
+
+> **MVP-072 — piloto PostgreSQL aislado REAL**: `cotironda-piloto` ref `ilggkalaafhtiysyzlmg` contiene 3 participantes de ensayo y 2 catálogos idénticos con 51 materiales cada uno. Familias reconocidas: 41 por comercio; 10 por comercio pendientes de curación. Pruebas SQL La Plata/Berisso, presupuesto literal, antirreplay y RLS: aprobadas. **Todavía NO recibe ni envía WhatsApp.** Ver [docs/192](docs/192-mvp-072-piloto-instalado.md); SQL en `supabase/piloto/mvp072_runtime_aislado.sql`. DEV histórica pausada para liberar cuota y Te Hice Esto intacto.
+
+
+> **MVP-071 — ensayo integrado 1+2 en `/probar/tres-telefonos`**: catálogos iniciales idénticos de 51 materiales, distribución por producto y localidad, dos presupuestos originales íntegros (pallets, bolsones, flete, descuentos, total). Sin ranking engañoso. **Solo simulación en navegador, sin WhatsApp ni SQL real.** Bloqueo #175 documentado en [docs/191](docs/191-mvp-071-ruta-critica-piloto-tres.md).
+
+
+> **MVP-070 — ambos corralones con el mismo catálogo amplio:** `/probar/catalogos` ahora precarga **51 materiales típicos idénticos** (sin precios) en los dos negocios; taxonomía D015 ampliada conservadoramente a nuevas familias de corralón. Cualquier material no reconocido queda pendiente. **Sigue siendo una simulación local**, sin números reales, WhatsApp ni catálogo guardado. [Detalles](docs/190-mvp-070-dos-corralones-mismo-catalogo.md).
+
+
+> **MVP-069 — ensayo de carga de catálogos:** ruta de navegador `/probar/catalogos` para subir CSV/TXT de dos corralones, detectar familias verificadas/pendientes y simular consultas del arquitecto por producto y localidad. No se guardan archivos ni se registran materiales en Supabase y **no hay WhatsApp real**. XLSX/PDF/imagen y curaduría persistente pendientes; [docs/189](docs/189-mvp-069-carga-catalogos-corralones.md), Issue #351.
+
+
+> **MVP-069 — ensayo de carga de catálogos:** nueva ruta local del navegador `/probar/catalogos` para subir CSV/TXT de dos corralones, detectar familias verificadas/pendientes y simular consultas del arquitecto por producto y localidad. No se guardan archivos ni se registran materiales en Supabase y **no hay WhatsApp real**. XLSX/PDF/imagen y curaduría persistente pendientes; [docs/189](docs/189-mvp-069-carga-catalogos-corralones.md), Issue #351.\n\n
+> **MVP-068 — lista privada de 3 contactos de prueba:** el webhook Preview ahora exige una huella HMAC de comprador y dos de proveedores en variables secretas de servidor. Desconocidos y rol equivocado se bloquean sin consultar PostgreSQL; falta de lista devuelve 503 antes de abrir conexión. **Los teléfonos facilitados para el ensayo NO se guardaron ni en GitHub ni en Supabase; los envíos y el webhook real siguen APAGADOS.** [Detalles](docs/188-mvp-068-lista-privada-piloto-whatsapp.md), Issue #349.
+
+
+> **MVP-067 — preparando 3 teléfonos de prueba:** corregida ruta canónica de webhook Whapi a `/api/integraciones/whapi` (antes se recomendaba `/api/whapi/webhook`, inexistente); preflight GET-only y nombre de secreto compartido D083 alineados. **No cargar URL ni enviar números todavía:** la Preview actual es antigua, no hay SQL comercial en Supabase DEV ni respaldo+restore real #175. Ver [docs/187](docs/187-mvp-067-whapi-ruta-real-preparacion-tres-numeros.md), Issue #347.
+
+
+> **MVP-066 — seguridad del WhatsApp central (solo código):** el webhook Preview rechaza toda recepción si no están disponibles **ambos roles** (compradores y proveedores, cada uno con vínculo telefónico verificado). Se mantiene la separación por número registrado, catálogo activo para invitar y fuente literal cifrada para presupuestos. **No hay Whapi real habilitado, alta automática de compradores, vista íntegra real ni divulgación automática de dos finalistas.** [Contrato técnico](docs/186-mvp-066-whapi-central-roles.md), Issue #345.\n\n
 > **MVP-065 — NUEVO prototipo WhatsApp en navegador (SIN WhatsApp real):** `/probar/whatsapp` muestra 1 arquitecto → 2 corralones + 1 pinturería → presupuestos completos con pallets, bolsones, flete, descuentos y TOTAL original → comparación sin mezclar coberturas ni IVA → cierre sin adjudicar. Permite correcciones con versiones íntegras ficticias. No guarda ni envía datos; falta habilitar Preview tras aprobación y resolver backup #175 para piloto real. [Documento técnico](docs/185-mvp-065-prototipo-movil-whatsapp.md), Issue #343.
 
 > **MVP-064 (fuente de presupuesto vinculada a versión; SQL CI, SIN instalar):** D093 enlaza en una transacción la oferta D060 con el **mensaje COMPLETO cifrado** D028, incluidos los renglones extra y su total declarado; conserva SHA-256 del original y un total literal referenciado, no inventa una suma. El worker privado D062 ya exige D093 con manifest generado tras descifrar AES-GCM; **aún faltan mostrar el original al comprador y almacenar originales de PDF/Excel/fotos**. **No se cumple todavía el 100% E2E.** [Detalles](docs/184-mvp-064-bindings-presupuesto-original-cifrado.md), Issue #341.
