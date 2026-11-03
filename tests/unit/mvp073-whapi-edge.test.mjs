@@ -88,7 +88,7 @@ test('MVP073: verificación webhook devuelve HTTP 200 sin tocar mensajes y valid
 
 test('MVP073: HMAC debe especificar SHA-256 al importar clave en WebCrypto/Deno',()=>{
  const edge=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/index.ts',import.meta.url),'utf8');
- assert.match(edge,/crypto\.subtle\.importKey\('raw',raw,\{name:'HMAC',hash:'SHA-256'\},false,\['sign'\]\)/);
+ assert.match(edge,/crypto\.subtle\.importKey\('raw',new Uint8Array\(raw\)\.buffer,\{name:'HMAC',hash:'SHA-256'\},false,\['sign'\]\)/);
  assert.doesNotMatch(edge,/crypto\.subtle\.importKey\('raw',raw,'HMAC'/);
 });
 

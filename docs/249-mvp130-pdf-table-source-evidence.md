@@ -22,3 +22,5 @@ Deno check, tests unitarios y regresiones de PDF simple deben estar verdes antes
 ## Corrección de compatibilidad Deno (rama aislada)
 
 Se corrigieron los 15 diagnósticos estáticos del primer CI Deno del PR #469: inferencia de localidad nullable, importación de claves WebCrypto usando `ArrayBuffer` propio, propagación del guard `never` en Office, y liberación opcional del PDF proxy. Son cambios conservadores de tipado/limpieza; **no prueban** todavía lectura del PDF real, extracción sobre runtime Supabase ni publicación. Requieren pasar nuevamente CI y ensayo con original privado antes de integrar.
+
+Se ajustaron las dos pruebas estáticas MVP073/MVP122 para validar la importación WebCrypto desde una copia `ArrayBuffer` con algoritmos y usos idénticos. No se alteró el valor de ninguna clave ni el proceso de descifrado.
