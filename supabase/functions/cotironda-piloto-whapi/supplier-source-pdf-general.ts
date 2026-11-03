@@ -114,7 +114,7 @@ export async function checkGeneralPdfSource(
  const money=(v:string)=>Array.from(v.matchAll(MONEY),m=>normalized(m[0]));
  const exactAmounts=(row:string,expected:readonly string[])=>{
   const all=money(row),wanted=expected.flatMap(v=>money(v));
-  return all.length===wanted.length&&wanted.every(v=>{
+  return wanted.length>0&&all.length===wanted.length&&wanted.every(v=>{
    const i=all.indexOf(v);if(i<0)return false;all.splice(i,1);return true;
   });
  };
@@ -126,9 +126,10 @@ export async function checkGeneralPdfSource(
   if(idx<0)return invalid(f,n,'line_not_found');
   if(!exactAmounts(rows[idx],[line.unit_price!,line.line_total!]))
    return invalid(f,n,'uncovered_money');
-  if(TERMS.test(rows[idx])&&
-    !mentions(line.original_description,rows[idx])&&
-    !mentions(p.requested_delivery_note??'',rows[idx]))
+  const economicTerm=rows[idx].match(TERMS)?.[0]??null;
+  if(economicTerm&&
+    !mentions(line.original_description,economicTerm)&&
+    !mentions(p.requested_delivery_note??'',economicTerm))
    return invalid(f,n,'uncovered_terms');
   consumed.add(idx);
  }
