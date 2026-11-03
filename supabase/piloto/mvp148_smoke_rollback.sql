@@ -1,7 +1,6 @@
 -- MVP148: smoke exclusivamente PILOTO. No SEND, no CLAIM, no net/http.
 -- Ejecutar SQL real sobre un transaction BEGIN/ROLLBACK y verificar ambos estados.
 begin;
-\set VERBOSITY terse
 -- La función real debe estar creada antes de ejecutar este archivo.
 select
  cotironda_piloto_privado.allow_next_pilot_send_mvp091(
