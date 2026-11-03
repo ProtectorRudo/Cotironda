@@ -1,3 +1,8 @@
+## MVP-122 — contexto de localidad para pedido de texto WhatsApp (03/11/2026)
+- Hallazgo real del piloto: el comprador envió materiales, recibió la pregunta de zona y respondió «Entrega: La Plata»; ambos mensajes se guardaron pero no se creó una ronda. Causa: existía contexto solo para documentos, no para textos.
+- Añadidas RPC de fuente original autenticada y correlación única, descifrado privado AES-GCM/validación SHA256 en Edge, parseo independiente con la zona de respuesta, creación idempotente de ronda e invitaciones; sin llamar al modelo otra vez para reinterpretar el primer pedido.
+- Ensayo en PostgreSQL PILOTO con los dos mensajes reales en transacción **PASS + ROLLBACK** (2 artículos y proveedores según catálogo), sin nuevos WhatsApps. Issue #454, docs/241. **No se acredita todavía E2E físico.**
+
 ## MVP-120 — ensayo integral reproducible y corte seguro del piloto (03/11/2026)
 - Runner seguro de 15 etapas SQL y cuatro escenarios sintéticos con SAVEPOINT/ROLLBACK independientes, bloqueo de transacciones embebidas y digest SHA256 del bundle. Solo prepara SQL reversible: no conecta a DB, no instala ni envía WhatsApp. Tests de regresión, docs/239, Issue #451, PR #452.
 - Verificación puntual en Supabase PILOTO PG17.11 con migraciones temporales y fixtures MVP112/MVP115/MVP117/MVP119: **PASS, clean_rollback=true**. Persisten tres participantes y dos originales de Storage sin modificación, 13 puertas pendientes. Sin respaldo externo restaurable, Edge nueva ni prueba 1+2 real: **NO-GO comercial**.
