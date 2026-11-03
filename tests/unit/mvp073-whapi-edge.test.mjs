@@ -69,15 +69,21 @@ test('MVP073: NO enviar pedido parcialmente reconocido, ni sin zona',()=>{
 
 test('MVP073: verificación webhook devuelve HTTP 200 sin tocar mensajes y valida canal para mensajes reales',()=>{
  const edge=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/index.ts',import.meta.url),'utf8');
- assert.match(edge,/if\(!actionable\)/);
+ // Status callbacks are actionable too: never treat a delivery receipt as a no-op probe.
+ assert.match(edge,/const statusAction=isWhapiStatusEvent\(event\)/);
+ assert.match(edge,/if\(!actionable&&!statusAction\)\{/);
  assert.match(edge,/return json\(200,'probe_only'\)/);
  assert.match(edge,/if\(!authenticated\)/);
  assert.match(edge,/return json\(401,'unauthorized'\)/);
  assert.match(edge,/if\(event\.channel_id!==sec\.channel\)return json\(403,\x27wrong_channel\x27\)/);
- const i=edge.indexOf('if(!actionable)');
- const j=edge.indexOf('if(!authenticated)');
- const k=edge.indexOf('const db=client(sec)');
- assert.ok(i>=0&&j>i&&k>j);
+ assert.match(edge,/if\(statusAction\)\{/);
+ const i=edge.indexOf('if(!actionable&&!statusAction)');
+ const j=edge.indexOf('if(!authenticated)',i);
+ const k=edge.indexOf('const db=client(sec)',j);
+ const status=edge.indexOf('if(statusAction)',j);
+ assert.ok(i>=0&&j>i&&status>j&&k>status);
+ // An incoming status must be authenticated before any DB client exists.
+ assert.equal(edge.slice(i,j).includes('const db=client(sec)'),false);
 });
 
 test('MVP073: HMAC debe especificar SHA-256 al importar clave en WebCrypto/Deno',()=>{
