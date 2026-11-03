@@ -1,3 +1,8 @@
+## MVP-123 — resolver ReferenceError tras link y habilitar cola PDF a proveedores (03/11/2026)
+- Incidente del piloto real: el arquitecto recibió link y la ronda quedó preparada, pero los dos PDF permanecieron pendientes; el webhook produjo dos HTTP 503 con `ReferenceError` luego de enviar enlace.
+- Se corrigió el cierre prematuro del ciclo de mensajes: el agradecimiento al proveedor vuelve a estar dentro de su ámbito y el despacho `dispatchTwo` permanece una vez al final. Tests de regresión de scope/ACK/reclamo idempotente, docs/242 e Issue #456.
+- Prueba SQL reversible en PILOTO con ambas invitaciones reales: claims y permisos PASS, 2 artículos en cada snapshot PDF, tercer claim vacío; **ROLLBACK**, estados `pending=2, leased=0`. La entrega real requiere despliegue de Edge y confirmación de Whapi, no inferir de tests.
+
 ## MVP-122 — contexto de localidad para pedido de texto WhatsApp (03/11/2026)
 - Hallazgo real del piloto: el comprador envió materiales, recibió la pregunta de zona y respondió «Entrega: La Plata»; ambos mensajes se guardaron pero no se creó una ronda. Causa: existía contexto solo para documentos, no para textos.
 - Añadidas RPC de fuente original autenticada y correlación única, descifrado privado AES-GCM/validación SHA256 en Edge, parseo independiente con la zona de respuesta, creación idempotente de ronda e invitaciones; sin llamar al modelo otra vez para reinterpretar el primer pedido.
