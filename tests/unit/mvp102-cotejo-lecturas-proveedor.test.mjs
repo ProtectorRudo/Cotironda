@@ -20,7 +20,9 @@ test('MVP102: uses already-paid independent second read of exact original',()=>{
  assert.match(edge,/receipt\.data\?\.state==='stored_unverified'/);
  assert.match(edge,/cotironda_piloto_compare_supplier_readings_mvp102/);
  assert.match(edge,/readings\[1\]\.status==='fulfilled'/);
- assert.match(edge,/p_second_proposal:readings\[1\]/);
+ assert.match(edge,/p_second_proposal:corroboration/);
+ assert.match(edge,/readings\[0\]\.status==='fulfilled'&&/);
+ assert.match(edge,/readings\[1\]\.status==='fulfilled'\?readings\[1\]\.value:null/);
 });
 
 test('MVP102: compares every economic line and metadata but does not publish prices',()=>{
