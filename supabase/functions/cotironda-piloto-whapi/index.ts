@@ -626,6 +626,15 @@ async function respond(req:Request):Promise<Response>{
                 if(!mediaClarificationBody&&proposal.delivery_city===null&&
                    proposal.lines.length>0)aiReply='zone';
               }else if(proposal.kind==='supplier_quote'){
+                // A new unquoted file may match exactly one already-sent RFQ.
+                // Quoted replies (including wrong quotes) always use MVP151.
+                if(!quotedId&&verifiedSupplier){
+                  const match=await db.rpc('cotironda_piloto_autolink_unquoted_media_mvp155',{
+                    p_message_hmac:messageHash,p_chat_hmac:chatHash
+                  });
+                  if(match.error)
+                    console.warn('cotironda_supplier_unquoted_match_unavailable');
+                }
                 const receipt=await db.rpc('cotironda_piloto_record_supplier_media_mvp098',{
                   p_message_hmac:messageHash
                 });

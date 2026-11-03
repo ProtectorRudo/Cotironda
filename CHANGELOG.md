@@ -1,3 +1,6 @@
+## MVP155 — archivos de proveedores sin cita, atribuidos automáticamente con evidencia
+- Con varias rondas, cotejar todos los materiales con catálogo real y atribuir solo a solicitud única; preservar extras, precios y originales. Issue #513, docs/273. Solo piloto.
+
 ## MVP153 — Vista de seguimiento del PILOTO sin HTML crudo
 - Recupera el diseño y las pruebas de MVP146 sobre la base actual de Cotironda: micrositio estático y API de seguimiento en Vercel PILOTO, con GET 302 de Supabase habilitado solo después de probar el despliegue. Issue #497, PR #498 sustituida por PR nueva basada en código actualizado. Sin producción.
 
