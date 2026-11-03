@@ -1,3 +1,6 @@
+## MVP137 — Clasificación contextual de documentos de proveedor por identidad verificada
+- Evita que Excel con precios y total de proveedor consentido se trate como solicitud de comprador. Solo routing privado y source checks intactos, sin migración SQL. Rescate de archivo antiguo se conserva separado en issue #485.
+
 ## MVP-136 — rescate autónomo de Excel proveedor mal clasificado (desarrollo)
 - Reclasifica borradores con precios, proveedor e invitación comprobados, originales SHA256 y auditoría inmutable. Solo cotización recibida, sin ranking. Issue #485.
 

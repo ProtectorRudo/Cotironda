@@ -173,6 +173,7 @@ export async function proposeDocumentAI(args:{
  manifest:MediaManifest;file:DownloadedMedia;apiKey:string;
  enabled:boolean;fetchImpl?:typeof fetch;
  perspective?:'primary'|'corroboration';
+ verifiedSupplier?:boolean;
 }):Promise<DocumentDraft>{
  if(!args?.enabled)throw Error('doc_ai_disabled');
  if(typeof args.apiKey!=='string'||!/^sk-[A-Za-z0-9_-]{16,}$/u.test(args.apiKey))
@@ -192,9 +193,12 @@ export async function proposeDocumentAI(args:{
   input:[
    {role:'system',content:[{type:'input_text',text:intro}]},
    {role:'user',content:[filePart,
-    {type:'input_text',text:args.perspective==='corroboration'
+    {type:'input_text',text:(args.perspective==='corroboration'
        ? 'Segunda lectura independiente: olvidá toda suposición. Transcribí cada renglón del archivo en el orden visible, respaldando cantidad, unidad y descripción con cita literal breve. Si faltan unidades escribí null, nunca completes a partir de costumbre. Nunca hagas referencia a otra lectura.'
-       : 'Extraé el documento adjunto como borrador privado. No alteres valores.'}]}
+       : 'Extraé el documento adjunto como borrador privado. No alteres valores.')
+      + (args.verifiedSupplier
+       ? ' Este archivo lo envió un PROVEEDOR verificado de la ronda. Si contiene artículos con precios unitarios, importes y total declarado, su función es supplier_quote, aunque el título diga lista o pedido. No presupongas precio ni IVA.'
+       : '')}]}
   ],
   text:{format:{type:'json_schema',name:'cotironda_document_draft_v1',
     strict:true,schema:SCHEMA}}

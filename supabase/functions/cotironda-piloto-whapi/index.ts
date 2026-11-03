@@ -13,6 +13,7 @@ import {checkSupplierTextSource} from './supplier-source-text.ts';
 import {checkSupplierOfficeSource} from './supplier-source-office.ts';
 import {checkSupplierPdfSource} from './supplier-source-pdf.ts';
 import {proposeDocumentAI,documentFailureCode} from './document-ai-draft.ts';
+import {promoteVerifiedSupplierQuote} from './supplier-role-hint.ts';
 import {recoverOneStoredDocument} from './private-document-recovery.ts';
 import {interpretPilotBuyerWithAI} from './ai-interpreter.ts';
 import {decidePilotAIAction,shortBusinessReply,type ReplyCode} from './business-ai-policy.ts';
@@ -505,9 +506,18 @@ async function respond(req:Request):Promise<Response>{
             // Two parallel readings reduce copy errors without extra
             // WhatsApp actions. Each is untrusted until source corroboration;
             // disagreement MUST NOT create a commercial invitation.
+            // PILOTO: compare the already-verified sender HMAC to the two
+            // configured, previously approved supplier recipients. The
+            // reserve_media RPC has ALREADY checked consent + supplier invite.
+            // No buyer is promoted and no phone is logged or returned.
+            const verifiedSupplier=(await Promise.all(
+              Object.values(sec.recipients).map(async number=>
+                hmac(sec.key,'cotironda|pilot|chat|'+sec.channel+'|'+
+                  number+'@s.whatsapp.net'))))
+              .some(expected=>equalSecret(expected,chatHash));
             const args={manifest:media,file:downloadedForReview,
               apiKey:Deno.env.get('COTIRONDA_PILOT_OPENAI_API_KEY')??'',
-              enabled:true};
+              enabled:true,verifiedSupplier};
             const readings=await Promise.allSettled([
               proposeDocumentAI({...args,perspective:'primary'}),
               proposeDocumentAI({...args,perspective:'corroboration'})
@@ -515,10 +525,12 @@ async function respond(req:Request):Promise<Response>{
             // If one read fails, preserve the other's private draft, but do
             // NOT call it a corroboration or publish its economic contents.
             const proposal=readings[0].status==='fulfilled'
-              ?readings[0].value:
-              readings[1].status==='fulfilled'?readings[1].value:null;
+              ?promoteVerifiedSupplierQuote(readings[0].value,verifiedSupplier):
+              readings[1].status==='fulfilled'
+                ?promoteVerifiedSupplierQuote(readings[1].value,verifiedSupplier):null;
             const corroboration=readings[0].status==='fulfilled'&&
-              readings[1].status==='fulfilled'?readings[1].value:null;
+              readings[1].status==='fulfilled'
+                ?promoteVerifiedSupplierQuote(readings[1].value,verifiedSupplier):null;
             if(!proposal)throw readings[0].status==='rejected'
               ?readings[0].reason:Error('doc_ai_response_incomplete');
             diagnosticPhase='storage';
@@ -536,7 +548,7 @@ async function respond(req:Request):Promise<Response>{
               // The per-line planner is internal and NEVER sends invitations.
               // Supplier original files get a separate, unverified receipt:
               // totals and extra charges remain available in source storage.
-              if(proposal.kind==='buyer_request'){
+              if(proposal.kind==='buyer_request'&&!verifiedSupplier){
                 const plan=await db.rpc('cotironda_piloto_plan_document_mvp098',{
                   p_message_hmac:messageHash
                 });

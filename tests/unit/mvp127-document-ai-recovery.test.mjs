@@ -92,7 +92,7 @@ test('MVP127: HTTP 429, 403, 500 and timeouts report distinct safe classes',asyn
 test('MVP127: untrusted model proposals are NEVER published or ranked on API success',()=>{
  assert.match(handler,/p_needs_corrob:corroboration===null/u);
  assert.match(handler,/readings\[0\]\.status==='fulfilled'&&/u);
- assert.match(handler,/readings\[1\]\.status==='fulfilled'\?readings\[1\]\.value:null/u);
+ assert.match(handler,/readings\[1\]\.status==='fulfilled'\s*\?promoteVerifiedSupplierQuote\(readings\[1\]\.value,verifiedSupplier\):null/u);
  assert.match(handler,/cotironda_piloto_note_document_failure_mvp127/u);
  assert.match(handler,/documentFailureCode\(err\)/u);
  assert.match(handler,/cotironda_piloto_record_supplier_source_check_mvp106/u);
