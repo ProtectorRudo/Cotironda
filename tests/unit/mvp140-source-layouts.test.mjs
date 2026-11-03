@@ -124,7 +124,7 @@ test('MVP140: PDF con total sin acreditar o con cargo adicional jamás se public
   [...rows,'Pallet $2.500,00'],
   ['CEMENTO CPC 50 KG 20 $10.250,00 $205.000,00',
    'HIDROFUGO EN PASTA 5 $3.050,00 $15.250,00',
-   'TOTAL GENERAL','OTRA NOTA','$220.250,00']
+   'TOTAL GENERAL','OTRO CARGO $1,00','$220.250,00']
  ]){
   const r=await verifySupplierEvidence(input,pdf,async()=>variant);
   assert.equal(r.state,'needs_source_review',JSON.stringify(r));
