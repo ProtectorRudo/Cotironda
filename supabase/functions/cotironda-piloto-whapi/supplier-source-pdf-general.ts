@@ -33,7 +33,7 @@ const mentions=(source:string,term:string|null):boolean=>term===null||
 export async function readPdfPositioned(bytes:Uint8Array):Promise<PdfSourceEvidence>{
  if(bytes.length<120||bytes.length>8*1024*1024)throw Error('pdf_size_gate');
  const {getDocumentProxy,extractTextItems,inspectPages}=
-  await import('npm:unpdf@1.9.1');
+  await import('npm:unpdf@2.1.0');
  const pdf=await getDocumentProxy(Uint8Array.from(bytes),{
   maxImageSize:16_777_216,isOffscreenCanvasSupported:false,
   isImageDecoderSupported:false
