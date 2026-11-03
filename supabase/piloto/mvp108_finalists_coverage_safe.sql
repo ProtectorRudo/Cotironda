@@ -53,7 +53,7 @@ begin
  then return jsonb_build_object('state','deadline_pending');end if;
  select count(*) into req_count from
   cotironda_piloto_privado.request_lines req where req.request_id=p_request;
- if req_count not between 1 and 8
+ if req_count not between 1 and 25
  then return jsonb_build_object('state','invalid_request');end if;
 
  -- Newer quotes that have NOT passed source validation must invalidate
