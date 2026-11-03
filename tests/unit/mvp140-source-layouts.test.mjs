@@ -139,3 +139,36 @@ test('MVP140: revisión 3 append-only y proyección selecciona una sola evidenci
  assert.match(sql,/to service_role/u);
  assert.doesNotMatch(sql,/net\.http|send_whatsapp/iu);
 });
+
+
+test('MVP141: XML Excel con fila autoconclusiva vacía sí se puede verificar',async()=>{
+ const doc=entries();
+ doc['xl/worksheets/sheet1.xml']=doc['xl/worksheets/sheet1.xml']
+  .replace('</sheetData>','<row r="27" /></sheetData>');
+ const input=file(doc);
+ const rows=await readOfficeVisibleRows(input);
+ assert.equal(rows.length,4);
+ assert.equal((await verifySupplierEvidence(input,xl)).state,'verified');
+});
+test('MVP141: fila vacía oculta se retiene por privacidad y cobertura',async()=>{
+ const doc=entries();
+ doc['xl/worksheets/sheet1.xml']=doc['xl/worksheets/sheet1.xml']
+  .replace('</sheetData>','<row r="27" hidden="1"/></sheetData>');
+ assert.equal((await verifySupplierEvidence(file(doc),xl)).reason,'unreadable');
+});
+test('MVP141: PDF con total en objeto distante pero exacto se verifica',async()=>{
+ const original=[
+  pdf.lines[0].original_description+' 20 $10.250,00 $205.000,00',
+  pdf.lines[1].original_description+' 5 $3.050,00 $15.250,00',
+  'TOTAL GENERAL','Presupuesto preparado','Observaciones',
+  'Referencia','Cotización','Hoja','Número','Área','Versión',
+  'Cliente','$220.250,00'
+ ];
+ const file={mime:'application/pdf',bytes:new Uint8Array(128),sha256:H};
+ const result=await verifySupplierEvidence(file,pdf,async()=>original);
+ assert.deepEqual(result,{state:'verified',reason:'covered',lines:2});
+ const withExtra=[...original,'Pallet $2.500,00'];
+ assert.equal((await verifySupplierEvidence(file,pdf,async()=>withExtra)).state,'needs_source_review');
+ const withFalseTotal=[...original].map(x=>x==='$220.250,00'?'$220.250,01':x);
+ assert.equal((await verifySupplierEvidence(file,pdf,async()=>withFalseTotal)).reason,'missing_total');
+});
