@@ -81,6 +81,7 @@ begin
    job.ai_reserved_at,job.ai_reserved_at,clock_timestamp()-interval '1 second')
  on conflict(message_hmac) do update
  set state='failed',reason_code='api_timeout',phase='retry',
+  attempt_count=least(3,cotironda_piloto_privado.document_ai_diagnostics_mvp127.attempt_count+1),
   next_retry_at=clock_timestamp()-interval '1 second',
   updated_at=clock_timestamp()
  where cotironda_piloto_privado.document_ai_diagnostics_mvp127.state='pending'
