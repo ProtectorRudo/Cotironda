@@ -15,7 +15,7 @@ export type RecoveryIO={
  rpc:(name:string,args:Record<string,unknown>)=>Promise<Result>;
  download:(path:string)=>Promise<{data:Blob|null;error:unknown}>;
 };
-const HEX=/^[a-f0-9]{64}$/u,MAX=3145728;
+const HEX=/^[a-f0-9]{64}$/u,MAX=8*1024*1024;
 const obj=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==='object'&&!Array.isArray(v);
 const data=(r:Result):Record<string,unknown>|null=>!r.error&&obj(r.data)?r.data:null;
 const isPdf=(v:string)=>v==='application/pdf';
@@ -23,13 +23,15 @@ const goodMime=new Set([
  'application/pdf','image/jpeg','image/png','image/webp',
  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
- 'text/plain','text/csv'
+ 'text/plain','text/csv',
+ 'application/msword','application/vnd.ms-excel'
 ]);
 function manifest(mime:string,size:number):MediaManifest{
  const kind=mime.startsWith('image/')?'image':'document';
  const extension=mime==='application/pdf'?'pdf':
   mime==='application/vnd.openxmlformats-officedocument.wordprocessingml.document'?'docx':
   mime==='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'?'xlsx':
+  mime==='application/msword'?'doc':mime==='application/vnd.ms-excel'?'xls':
   mime==='text/csv'?'csv':mime==='text/plain'?'txt':mime.split('/').at(-1)??'bin';
  return {version:1,origin:'whapi',kind,media_id:'stored-archived',
   mime,size,filename:'original.'+extension,caption:null,
