@@ -1,3 +1,6 @@
+## MVP-136 — rescate autónomo de Excel proveedor mal clasificado (desarrollo)
+- Reclasifica borradores con precios, proveedor e invitación comprobados, originales SHA256 y auditoría inmutable. Solo cotización recibida, sin ranking. Issue #485.
+
 ## MVP-135-B — las aclaraciones también requieren prueba de fuente
 - Verificación bidireccional de notas comerciales en PDF y TXT/CSV. Una cláusula inventada o importe extra camuflado se retiene. Prueba reversible de proyección en PostgreSQL con source-gates conservados.
 
