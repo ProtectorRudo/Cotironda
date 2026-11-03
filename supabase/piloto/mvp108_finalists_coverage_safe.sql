@@ -137,7 +137,7 @@ begin
  if n>2 then
   result_state:='more_than_two_undifferentiated';
   picked:=array[]::text[];n:=0;
- elsif n=2 and result_state is null then result_state:='two_complete_alternatives';
+ elsif n=2 then result_state:=coalesce(result_state,'two_complete_alternatives');
  elsif n=1 then result_state:='one_complete_alternative';
  else result_state:='no_complete_alternatives';end if;
  insert into cotironda_piloto_privado.finalist_coverage_plans_mvp108(
