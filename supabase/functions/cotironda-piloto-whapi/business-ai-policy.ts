@@ -5,6 +5,7 @@
  */
 import {parseBuyerPilot,canPrepareBuyerPilot,type ParsedBuyer} from './core.ts';
 import {validateAiBuyerProposal,type AiBuyerProposal} from './ai-contract.ts';
+import {verifyAiBuyerSourceEvidence} from './ai-evidence.ts';
 export type Intent='quote_request'|'business_question'|'greeting'|'status_question'|'other';
 export type Topic='how_it_works'|'supplier_pricing'|'buyer_pricing'|
  'privacy'|'timing'|'other';
@@ -40,7 +41,8 @@ const silent=(reason:string):Decision=>({
 });
 /** Buyer only. No supplier quote, seller details or new contacts are sent here. */
 export function decidePilotAIAction(
- raw:string,proposal:AiIntent|null,role:'buyer'|'supplier'|'unknown'
+ raw:string,proposal:AiIntent|null,role:'buyer'|'supplier'|'unknown',
+ curatedFamilies:readonly string[]=[]
 ):Decision{
  if(role!=='buyer')return silent('not_buyer');
  if(!proposal||!['quote_request','business_question','greeting',
@@ -68,6 +70,14 @@ export function decidePilotAIAction(
  if(review.state==='source_verified_text'&&canPrepareBuyerPilot(independent))
   return {action:'ready_to_distribute',replyCode:null,parsed:independent,
    reason:'independent_source_coverage'};
+ // The AI need not satisfy the same rigid parser twice. Its evidence
+ // must instead prove every extracted quantity, unit, family and locality.
+ const proof=verifyAiBuyerSourceEvidence(raw,candidate,curatedFamilies);
+ if(proof.state==='verified'&&proof.parsed&&canPrepareBuyerPilot(proof.parsed))
+  return {action:'ready_to_distribute',replyCode:null,parsed:proof.parsed,
+   reason:'source_evidence_and_curated_catalogue'};
+ if(proof.state==='missing_zone')
+  return {action:'ask_zone',replyCode:'zone',parsed:null,reason:'delivery_zone_missing'};
  if(review.state==='missing_zone' || (independent.items.length>0 &&
    independent.city===null && independent.unresolved.length===0)){
   return {action:'ask_zone',replyCode:'zone',parsed:null,reason:'delivery_zone_missing'};
