@@ -59,7 +59,7 @@ begin
     and req.created_at>=activation.activated_at
  join cotironda_piloto_privado.finalist_coverage_plans_mvp108 plan
   on plan.request_id=req.id
-  and plan.state in ('two_complete_alternatives','one_complete_alternative')
+  and plan.state in ('two_complete_alternatives','one_complete_alternative','two_supplier_combination')
  where req.id=p_request and req.state='closed'
   and req.closes_at<=clock_timestamp()
   and req.buyer_key='arquitecto' and req.delivery_city='La Plata'
@@ -204,7 +204,7 @@ begin
     and req.created_at>=activation.activated_at
  join cotironda_piloto_privado.finalist_coverage_plans_mvp108 plan
   on plan.request_id=req.id and plan.state in
-   ('two_complete_alternatives','one_complete_alternative')
+   ('two_complete_alternatives','one_complete_alternative','two_supplier_combination')
  where o.request_id=p_request and o.recipient_key=p_recipient
   and o.lease_token=p_lease and o.state='leased'
   and req.state='closed' and req.closes_at<=clock_timestamp()
