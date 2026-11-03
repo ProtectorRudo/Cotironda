@@ -105,7 +105,8 @@ test('MVP128: SQL queue is service-role only, capped and consent + deadline guar
  assert.match(sql,/d\.state='pending' and d\.attempt_count<3/u);
  assert.match(sql,/d\.updated_at<clock_timestamp\(\)-interval '8 minutes'/u);
  assert.match(sql,/attempt_count=least\(3,cotironda_piloto_privado\.document_ai_diagnostics_mvp127\.attempt_count\+1\)/u);
- assert.match(sql,/on conflict\(message_hmac\) do nothing/u);
+ assert.match(sql,/on conflict\(message_hmac\) do update/u);
+ assert.match(sql,/state='pending'\n and cotironda_piloto_privado\.document_ai_diagnostics_mvp127\.attempt_count<3/u);
  assert.match(sql,/to service_role;/u);
  assert.doesNotMatch(sql,/to (?:anon|authenticated);/u);
 });
