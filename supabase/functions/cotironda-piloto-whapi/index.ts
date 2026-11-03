@@ -46,6 +46,21 @@ async function hmac(key:CryptoKey,value:string):Promise<string>{
 async function sha(text:string):Promise<string>{
  return toHex(await crypto.subtle.digest('SHA-256',encoder.encode(text)));
 }
+async function decryptArchivedText(
+ key:CryptoKey,nonce:string,ciphertext:string,aad:string
+):Promise<string>{
+ if(!/^[A-Za-z0-9+/]{16}$/u.test(nonce) ||
+    !/^[A-Za-z0-9+/=]{24,20000}$/u.test(ciphertext))
+  throw Error('invalid_archived_envelope');
+ const iv=Uint8Array.from(atob(nonce),c=>c.charCodeAt(0));
+ const data=Uint8Array.from(atob(ciphertext),c=>c.charCodeAt(0));
+ if(iv.length!==12||data.length<17||data.length>10000)
+  throw Error('invalid_archived_bytes');
+ const plain=await crypto.subtle.decrypt(
+  {name:'AES-GCM',iv,additionalData:encoder.encode(aad),tagLength:128},
+  key,data);
+ return new TextDecoder('utf-8',{fatal:true}).decode(plain);
+}
 async function encrypt(key:CryptoKey,value:string,aad:string){
  const iv=crypto.getRandomValues(new Uint8Array(12));
  const bytes=await crypto.subtle.encrypt(
@@ -117,7 +132,7 @@ async function secrets():Promise<Secrets|null>{
   }
  }
  const key=await crypto.subtle.importKey('raw',raw,{name:'HMAC',hash:'SHA-256'},false,['sign']);
- const aes=await crypto.subtle.importKey('raw',rawAes,'AES-GCM',false,['encrypt']);
+ const aes=await crypto.subtle.importKey('raw',rawAes,'AES-GCM',false,['encrypt','decrypt']);
  return {key,aes,channel,webhookSecret,url,roleKey,outbound,token,recipients};
 }
 function client(s:Secrets){
@@ -635,6 +650,47 @@ async function respond(req:Request):Promise<Response>{
         if(ready.error)console.warn('cotironda_document_zone_promotion_reconciliation_required');
         else if(ready.data?.state==='prepared')
           preparedDocumentSourceHmac=linked.data.source_message_hmac;
+      }
+      else if(linked.data?.state==='no_pending_document'){
+        // A text-only buyer request can also be waiting for this locality.
+        // Read only the ONE encrypted previous message that already received
+        // an API-accepted zone question; never infer arbitrary chat history.
+        const pending=await db.rpc('cotironda_piloto_text_zone_candidate_mvp122',{
+          p_chat_hmac:chatHash,p_reply_hmac:messageHash
+        });
+        if(pending.error)return json(503,'text_zone_candidate_unavailable');
+        const source=pending.data;
+        if(source?.state==='pending'&&
+          typeof source.source_hmac==='string'&&
+          typeof source.nonce==='string'&&
+          typeof source.ciphertext==='string'&&
+          typeof source.sha256==='string'){
+          let original:string|null=null;
+          try{
+            original=await decryptArchivedText(sec.aes,
+              source.nonce,source.ciphertext,
+              chatHash+'|'+source.source_hmac+'|text');
+          }catch{/* Invalid auth tag, wrong key or damaged envelope: fail closed. */}
+          if(original&&await sha(original)===source.sha256){
+            const prior=parseBuyerPilot(original);
+            const completed={...prior,city:zone};
+            // Original lines must independently parse without ambiguity.
+            // A missing zone is the ONLY field allowed to be filled here.
+            if(prior.city===null&&canPrepareBuyerPilot(completed)){
+              const promoted=await db.rpc(
+                'cotironda_piloto_complete_text_zone_mvp122',{
+                  p_chat_hmac:chatHash,p_reply_hmac:messageHash,
+                  p_source_hmac:source.source_hmac,p_original_text:original,
+                  p_city:zone,p_items:completed.items
+                });
+              if(promoted.error)return json(503,'text_zone_promotion_unavailable');
+              if(promoted.data?.state==='prepared'){
+                aiReply=null;
+                preparedDocumentSourceHmac=source.source_hmac;
+              }
+            }
+          }
+        }
       }
     }
   }
