@@ -132,8 +132,8 @@ async function secrets():Promise<Secrets|null>{
    return null;
   }
  }
- const key=await crypto.subtle.importKey('raw',raw,{name:'HMAC',hash:'SHA-256'},false,['sign']);
- const aes=await crypto.subtle.importKey('raw',rawAes,'AES-GCM',false,['encrypt','decrypt']);
+ const key=await crypto.subtle.importKey('raw',new Uint8Array(raw).buffer,{name:'HMAC',hash:'SHA-256'},false,['sign']);
+ const aes=await crypto.subtle.importKey('raw',new Uint8Array(rawAes).buffer,'AES-GCM',false,['encrypt','decrypt']);
  return {key,aes,channel,webhookSecret,url,roleKey,outbound,token,recipients};
 }
 function client(s:Secrets){

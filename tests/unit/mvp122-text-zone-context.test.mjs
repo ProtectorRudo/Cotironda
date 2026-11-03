@@ -47,7 +47,7 @@ test('MVP122: SQL binds reply to authenticated same buyer and unique accepted zo
 });
 
 test('MVP122: decrypt authenticated archived source and strictly validate before creating round',()=>{
- assert.match(edge,/const aes=await crypto\.subtle\.importKey\('raw',rawAes,'AES-GCM',false,\['encrypt','decrypt'\]\)/u);
+ assert.match(edge,/const aes=await crypto\.subtle\.importKey\('raw',new Uint8Array\(rawAes\)\.buffer,'AES-GCM',false,\['encrypt','decrypt'\]\)/u);
  assert.match(edge,/crypto\.subtle\.decrypt\(/u);
  assert.match(edge,/chatHash\+'\|'\+source\.source_hmac\+'\|text'/u);
  assert.match(edge,/await sha\(original\)===source\.sha256/u);

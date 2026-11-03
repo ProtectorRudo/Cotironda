@@ -69,7 +69,7 @@ export function parseBuyerPilot(raw:string):ParsedBuyer{
  if(cityValues.length>1 && new Set(cityValues.map(fold)).size>1)
   unresolved.push('conflicting_delivery_locations');
  if(notes.length>1)unresolved.push('conflicting_delivery_dates');
- let city=cityValues[0]??null;
+ let city:string|null=cityValues[0]??null;
  if(city&&!/^[\p{L}\p{N} ,()'-]{3,80}$/u.test(city)){
   unresolved.push('invalid_delivery_location');city=null;
  }
