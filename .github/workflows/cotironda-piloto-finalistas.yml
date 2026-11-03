@@ -1,0 +1,31 @@
+name: Cotironda PILOTO - avisos finalistas protegidos
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/5 * * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  invoke-finalists:
+    runs-on: ubuntu-latest
+    environment: cotironda-piloto
+    timeout-minutes: 2
+    if: ${{ vars.COTIRONDA_PILOT_FINALIST_WORKER_ENABLED == 'true' }}
+    steps:
+      - name: Invocar exclusivamente worker piloto autorizado
+        env:
+          WORKER_SECRET: ${{ secrets.COTIRONDA_PILOT_FINALIST_WORKER_SECRET }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${WORKER_SECRET}" ]]; then
+            echo "El secreto exclusivo del worker piloto no esta configurado."
+            exit 1
+          fi
+          curl --fail --silent --show-error --max-time 60 --retry 0 \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -H "x-cotironda-finalist-worker-secret: ${WORKER_SECRET}" \
+            --data '{}' \
+            "https://ilggkalaafhtiysyzlmg.supabase.co/functions/v1/cotironda-piloto-finalistas"

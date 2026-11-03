@@ -1,0 +1,36 @@
+name: MVP-073 piloto Whapi diagnostico publico (sin secretos)
+on:
+  push:
+    branches:
+      - feat/mvp-073-whapi-edge-inbox-piloto
+    paths:
+      - .github/workflows/mvp-073-edge-safe-probe.yml
+      - supabase/functions/cotironda-piloto-whapi/index.ts
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Verificar no-op 200 y mensajes reales sin header 401
+        shell: bash
+        run: |
+          set -euo pipefail
+          url='https://ilggkalaafhtiysyzlmg.supabase.co/functions/v1/cotironda-piloto-whapi'
+          probe=$(curl -sS --max-time 15 -o /dev/null -w '%{http_code}' \
+            -X POST -H 'content-type: application/json' \
+            --data '{"event":{"type":"probe","event":"post"}}' "$url")
+          echo "NO-OP without secret HTTP: $probe (expected 200)"
+          if [ "$probe" != 200 ]; then
+            echo "::error::Whapi no-op check must get HTTP 200"; exit 1
+          fi
+          incoming=$(curl -sS --max-time 15 -o /dev/null -w '%{http_code}' \
+            -X POST -H 'content-type: application/json' \
+            --data '{"channel_id":"ANTMAN-KXQY3","event":{"type":"messages","event":"post"},"messages":[{"id":"fake-00000001","type":"text","from_me":false,"chat_id":"5492210000000@s.whatsapp.net","timestamp":1793580000,"text":{"body":"No debe registrarse"}}]}' "$url")
+          echo "ACTIONABLE without secret HTTP: $incoming (expected 401)"
+          if [ "$incoming" != 401 ]; then
+            echo "::error::Incoming messages MUST require secret"; exit 1
+          fi
+          echo "PASS: safe no-op accepted, real content remains authenticated."
