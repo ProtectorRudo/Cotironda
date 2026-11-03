@@ -1,3 +1,7 @@
+## MVP-120 — ensayo integral reproducible y corte seguro del piloto (03/11/2026)
+- Runner seguro de 15 etapas SQL y cuatro escenarios sintéticos con SAVEPOINT/ROLLBACK independientes, bloqueo de transacciones embebidas y digest SHA256 del bundle. Solo prepara SQL reversible: no conecta a DB, no instala ni envía WhatsApp. Tests de regresión, docs/239, Issue #451, PR #452.
+- Verificación puntual en Supabase PILOTO PG17.11 con migraciones temporales y fixtures MVP112/MVP115/MVP117/MVP119: **PASS, clean_rollback=true**. Persisten tres participantes y dos originales de Storage sin modificación, 13 puertas pendientes. Sin respaldo externo restaurable, Edge nueva ni prueba 1+2 real: **NO-GO comercial**.
+
 ## MVP-119 — confirmación real de entrega WhatsApp (02/11/2026)
 - Implementados eventos directos `statuses.post` de Whapi con autenticación, canal, destinatario HMAC y coincidencia exacta del mensaje previamente aceptado; `sent: true` **no** equivale a `delivered`. Los estados de grupos `statuses.put` no se cuentan como entregas directas.
 - Libro de evidencia privado, con RLS, ID Whapi solo en SHA256, estados monotónicos y protección contra suplantación, duplicados, respuestas tardías y mensajes desconocidos. Se retiene por primera vez el ID de los avisos de agradecimiento al proveedor y enlace al comprador, además de los envíos documentales y finalistas.
