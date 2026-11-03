@@ -1,5 +1,22 @@
 -- MVP-110 / PILOTO ONLY. SQL never sends WhatsApp and never decrypts
 -- participant contacts. Automatic delivery is disabled by default.
+-- MVP-113 hardening of the NOT-YET-INSTALLED MVP-110 schema:
+-- A fresh pilot must never backfill WhatsApp notifications from historical
+-- rounds when the worker is first enabled. It is OFF by default. Only a
+-- privileged SQL operator can enable it, at an explicit UTC timestamp.
+create table cotironda_piloto_privado.finalist_activation_mvp113(
+ only_row boolean primary key default true check(only_row),
+ enabled boolean not null default false,
+ activated_at timestamptz,
+ check(not enabled or activated_at is not null)
+);
+insert into cotironda_piloto_privado.finalist_activation_mvp113(
+ only_row,enabled,activated_at) values(true,false,null);
+alter table cotironda_piloto_privado.finalist_activation_mvp113
+ enable row level security;
+revoke all on cotironda_piloto_privado.finalist_activation_mvp113
+ from public,anon,authenticated,service_role;
+
 create table cotironda_piloto_privado.finalist_whapi_outbox_mvp110(
  request_id uuid not null references cotironda_piloto_privado.requests(id),
  recipient_key text not null references cotironda_piloto_privado.participants(key),
@@ -31,8 +48,15 @@ begin
    where only_row and whatsapp_inbound_enabled
       and whatsapp_outbound_enabled)
  then return jsonb_build_object('state','outbound_disabled');end if;
+ if not exists(select 1 from cotironda_piloto_privado.finalist_activation_mvp113
+    where only_row and enabled and activated_at<=clock_timestamp())
+ then return jsonb_build_object('state','pilot_finalist_off');end if;
  select req.id,req.buyer_key,plan.supplier_keys,plan.candidate_count
  into r_ from cotironda_piloto_privado.requests req
+ join cotironda_piloto_privado.finalist_activation_mvp113 activation
+  on activation.only_row and activation.enabled
+    and activation.activated_at<=clock_timestamp()
+    and req.created_at>=activation.activated_at
  join cotironda_piloto_privado.finalist_coverage_plans_mvp108 plan
   on plan.request_id=req.id
   and plan.state in ('two_complete_alternatives','one_complete_alternative')
@@ -78,8 +102,15 @@ declare rq record;v jsonb;planned integer:=0;queued integer:=0;
 begin
  if p_limit is null or p_limit not between 1 and 25
  then return jsonb_build_object('state','invalid_limit');end if;
+ if not exists(select 1 from cotironda_piloto_privado.finalist_activation_mvp113
+    where only_row and enabled and activated_at<=clock_timestamp())
+ then return jsonb_build_object('state','pilot_finalist_off');end if;
  for rq in select r.id
   from cotironda_piloto_privado.requests r
+  join cotironda_piloto_privado.finalist_activation_mvp113 activation
+   on activation.only_row and activation.enabled
+     and activation.activated_at<=clock_timestamp()
+     and r.created_at>=activation.activated_at
   where r.state='closed' and r.closes_at<=clock_timestamp()
     and r.buyer_key='arquitecto' and r.delivery_city='La Plata'
   order by r.closes_at,r.id limit p_limit
@@ -114,9 +145,16 @@ begin
    where only_row and whatsapp_inbound_enabled
     and whatsapp_outbound_enabled)
  then return jsonb_build_object('state','outbound_disabled');end if;
+ if not exists(select 1 from cotironda_piloto_privado.finalist_activation_mvp113
+    where only_row and enabled and activated_at<=clock_timestamp())
+ then return jsonb_build_object('state','pilot_finalist_off');end if;
  select o.request_id,o.recipient_key into one_
  from cotironda_piloto_privado.finalist_whapi_outbox_mvp110 o
  join cotironda_piloto_privado.requests r on r.id=o.request_id
+ join cotironda_piloto_privado.finalist_activation_mvp113 activation
+  on activation.only_row and activation.enabled
+    and activation.activated_at<=clock_timestamp()
+    and r.created_at>=activation.activated_at
  join cotironda_piloto_privado.participants p on p.key=o.recipient_key
  join cotironda_piloto_privado.contact_reveal_consents_mvp109 c
   on c.participant_key=p.key and c.approved_at is not null
@@ -153,10 +191,17 @@ begin
     where only_row and whatsapp_inbound_enabled
       and whatsapp_outbound_enabled)
  then return jsonb_build_object('state','outbound_disabled');end if;
+ if not exists(select 1 from cotironda_piloto_privado.finalist_activation_mvp113
+    where only_row and enabled and activated_at<=clock_timestamp())
+ then return jsonb_build_object('state','pilot_finalist_off');end if;
  select o.request_id,o.recipient_key,req.buyer_key,
   plan.supplier_keys,plan.candidate_count into r_
  from cotironda_piloto_privado.finalist_whapi_outbox_mvp110 o
  join cotironda_piloto_privado.requests req on req.id=o.request_id
+ join cotironda_piloto_privado.finalist_activation_mvp113 activation
+  on activation.only_row and activation.enabled
+    and activation.activated_at<=clock_timestamp()
+    and req.created_at>=activation.activated_at
  join cotironda_piloto_privado.finalist_coverage_plans_mvp108 plan
   on plan.request_id=req.id and plan.state in
    ('two_complete_alternatives','one_complete_alternative')
