@@ -39,12 +39,16 @@ const quantityUnitEvidence=(row:string,description:string,quantity:string|null,u
  // Remove the entire product description (including its sizes, e.g. 25 kg).
  // Currency tokens and text after the first amount are NOT quantity evidence.
  let context=row.slice(0,at)+' '+row.slice(at+desc.length);
- const moneyStart=context.search(MONEY);
+ // A literal price marker is stronger evidence of the boundary between
+ // numeric QUANTITY (e.g. 40,00) and monetary columns. The broad money
+ // detector also sees bare 40,00, so using it here would erase quantity.
+ const pricedAt=context.search(/\\$\\s*-?\\s*\\d/u);
+ const moneyStart=pricedAt>=0?pricedAt:context.search(MONEY);
  if(moneyStart>=0)context=context.slice(0,moneyStart);
  if(!u){
-  // A source may print quantity under a numeric column without a unit.
-  // Confirm the literal number as a separate token, NEVER infer a unit.
-  if(moneyStart<0)return false;
+  // Without a declared unit, accept only a standalone quantity before an
+  // EXPLICITLY marked price. Never guess units from the product size.
+  if(pricedAt<0)return false;
   const number='(?<![\\p{L}\\p{N}.,])'+regexEscape(q)+'(?![\\p{L}\\p{N}.,])';
   return new RegExp(number,'u').test(context);
  }
@@ -142,8 +146,67 @@ export async function checkGeneralPdfSource(
  const rows=source.rows.map(v=>normalized(v.text));
  const consumed=new Set<number>();
  const money=(v:string)=>Array.from(v.matchAll(MONEY),m=>normalized(m[0]));
- const exactAmounts=(row:string,expected:readonly string[])=>{
+ const exactAmounts=(row:string,expected:readonly string[],
+  quantity:string|null=null)=>{
   const all=money(row),wanted=expected.flatMap(v=>money(v));
+  // A PDF numeric quantity column may look like an unprefixed money token
+  // (40,00). It is NOT a third price if the same number is independently
+  // corroborated as quantity and sits before the first explicit $ price.
+  const start=row.search(/\\$\\s*-?\\s*\\d/u);
+  if(quantity!==null&&start>=0&&
+     expected.every(v=>v.includes('
+ for(const line of p.lines){
+  const idx=rows.findIndex((row,i)=>!consumed.has(i)&&
+   mentions(row,line.original_description)&&
+   quantityUnitEvidence(row,line.original_description,line.quantity,line.unit)&&
+   mentions(row,line.unit_price)&&mentions(row,line.line_total));
+  if(idx<0)return invalid(f,n,'line_not_found');
+  if(!exactAmounts(rows[idx],[line.unit_price!,line.line_total!],line.quantity))
+   return invalid(f,n,'uncovered_money');
+  const economicTerm=rows[idx].match(TERMS)?.[0]??null;
+  if(economicTerm&&
+    !mentions(line.original_description,economicTerm)&&
+    !mentions(p.requested_delivery_note??'',economicTerm))
+   return invalid(f,n,'uncovered_terms');
+  consumed.add(idx);
+ }
+ const totalCandidates=rows.map((text,index)=>({text,index})).filter(v=>
+  !consumed.has(v.index)&&/\b(?:total(?:\s+general)?|importe\s+total|a\s+pagar)\b/iu.test(v.text)
+  &&mentions(v.text,p.total_declared));
+ if(totalCandidates.length!==1)return invalid(f,n,'total_not_found');
+ if(!exactAmounts(totalCandidates[0].text,[p.total_declared]))
+  return invalid(f,n,'uncovered_money');
+ consumed.add(totalCandidates[0].index);
+ for(const [i,row] of rows.entries()){
+  // No money may be ignored: all amount-bearing rows must map to an
+  // original supplier line (including freight, pallets and discounts) or total.
+  if(!consumed.has(i)&&MONEY.test(row)){
+   MONEY.lastIndex=0;
+   return invalid(f,n,'uncovered_money');
+  }
+  MONEY.lastIndex=0;
+  // A commercial annotation can contain a list number (LISTA 7) or
+  // pallet return condition. Treat it as claimed only if the WHOLE source
+  // row is present in the copied supplier note; never ignore money-bearing
+  // rows or other numeric data as if they were harmless annotations.
+  const noteClaim=!consumed.has(i)&&TERMS.test(row)&&
+   normalized(p.requested_delivery_note??'').includes(row);
+  if(!consumed.has(i)&&TERMS.test(row)&&!noteClaim)
+   return invalid(f,n,'uncovered_terms');
+  if(!consumed.has(i)&&/\d/u.test(row)&&!noteClaim)
+   return invalid(f,n,'uncovered_number');
+ }
+ return covered(f,n);
+}
+))){
+   const q=normalized(quantity);
+   const before=row.slice(0,start);
+   if(new RegExp('(?<![\\p{L}\\p{N}.,])'+regexEscape(q)+
+      '(?![\\p{L}\\p{N}.,])','u').test(before)){
+    const i=all.indexOf(q);
+    if(i>=0)all.splice(i,1);
+   }
+  }
   return wanted.length>0&&all.length===wanted.length&&wanted.every(v=>{
    const i=all.indexOf(v);if(i<0)return false;all.splice(i,1);return true;
   });
