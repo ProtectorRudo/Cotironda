@@ -50,7 +50,7 @@ begin
  get diagnostics n=row_count;
  select count(*) into full_n from cotironda_piloto_privado.request_lines l
  where l.request_id=new.request_id;
- if n<1 or n>8 or full_n<1 or full_n>8 then
+ if n<1 or n>25 or full_n<1 or full_n>25 then
   raise exception 'mvp099_invalid_subset' using errcode='23514';end if;
  select 'Cotironda · Solicitud de cotización'||E'\nEntrega: '||city||
    E'\nArtículos de tu rubro ('||n||' de '||full_n||'):'||E'\n'||
@@ -66,6 +66,16 @@ begin
  join cotironda_piloto_privado.invitation_lines_mvp099 il
   on il.request_id=l.request_id and il.line_no=l.line_no
  where il.request_id=new.request_id and il.supplier_key=new.supplier_key;
+ -- A 25-item request can exceed WhatsApp's legacy 3500-character
+ -- message column. All items are still sent in the attached, source-backed
+ -- MULTI-PAGE PDF. Never truncate item descriptions without telling the
+ -- recipient where the entire request lives.
+ if length(body_text)>3500 then
+  body_text:='Cotironda · Solicitud de cotización'||E'\nEntrega: '||city||
+    E'\nArtículos de tu rubro: '||n||' de '||full_n||
+    E'\nLista completa y cantidades en el PDF adjunto.'||
+    E'\nRespondé por WhatsApp con tu presupuesto.';
+ end if;
  if length(body_text) not between 20 and 3500 then
   raise exception 'mvp099_invitation_body_invalid' using errcode='23514';end if;
  update cotironda_piloto_privado.whapi_outbox o
@@ -115,9 +125,9 @@ create function cotironda_piloto_privado.allow_document_send_mvp099(
    and a.review_state='suggested_only'
    and ds.verified_method='dual_ai_exact_lines'
    and (select count(*) from cotironda_piloto_privado.request_lines l
-      where l.request_id=r.id) between 1 and 8
+      where l.request_id=r.id) between 1 and 25
    and (select count(*) from cotironda_piloto_privado.invitation_lines_mvp099 il
-      where il.request_id=r.id and il.supplier_key=s.key) between 1 and 8
+      where il.request_id=r.id and il.supplier_key=s.key) between 1 and 25
    and not exists(
      select 1 from cotironda_piloto_privado.invitation_lines_mvp099 il
      join cotironda_piloto_privado.request_lines l
