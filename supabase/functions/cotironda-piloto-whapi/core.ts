@@ -67,7 +67,8 @@ function familyOf(desc:string):string|null{
 }
 function isChatter(s:string):boolean{
  const n=fold(s).replace(/^[¡!¿?.,:;\s]+|[!?.:;,\s]+$/gu,'');
- return /^(?:hola|buen dia|buenos dias|buenas tardes|buenas noches|buenas|gracias|muchas gracias|muchisimas gracias|te agradezco|saludos|quedo atento|quedo a la espera|por favor)$/u.test(n)||\n /^(?:hola[, ]+)?(?:buen dia|buenos dias|buenas tardes|buenas noches)$/u.test(n)||
+ return /^(?:hola|buen dia|buenos dias|buenas tardes|buenas noches|buenas|gracias|muchas gracias|muchisimas gracias|te agradezco|saludos|quedo atento|quedo a la espera|por favor)$/u.test(n)||
+ /^(?:hola[, ]+)?(?:buen dia|buenos dias|buenas tardes|buenas noches)$/u.test(n)||
  /^(?:les (?:paso|mando|envio) (?:la )?(?:lista|solicitud|pedido)(?: de materiales)?(?: para cotizar)?|necesito (?:un )?presupuesto|quisiera (?:un )?presupuesto|pedido de cotizacion|solicitud de cotizacion|materiales a cotizar)$/u.test(n)||
  /^(?:(?:los|las)\s+)?(?:siguientes\s+)?(?:materiales|productos)(?:\s+(?:a|para)\s+cotizar)?$/u.test(n);
 }
