@@ -3,7 +3,7 @@
  * No WhatsApp outgoing; no tokens or phones in source.
  */
 import {createClient} from 'npm:@supabase/supabase-js@2.118.0';
-import {parseBuyerPilot,canPrepareBuyerPilot,validMessage,standaloneDeliveryCity} from './core.ts';
+import {parseBuyerPilot,canPrepareBuyerPilot,validMessage,standaloneDeliveryCity,quotedWhapiMessageId} from './core.ts';
 import {generarSolicitudPdfMvp091} from './request-pdf.ts';
 import {makeMediaManifest} from './media-intake.ts';
 import {parseDocumentClarification} from './document-clarification.ts';
@@ -300,6 +300,18 @@ async function respond(req:Request):Promise<Response>{
   ids.add(row.id);
   const chatHash=await hmac(sec.key,'cotironda|pilot|chat|'+sec.channel+'|'+row.chat_id);
   const messageHash=await hmac(sec.key,'cotironda|pilot|msg|'+sec.channel+'|'+row.id);
+  // Only an authenticated sender already in the two approved supplier
+  // destinations may use Whapi's quoted_id to identify a supplier PDF.
+  // Do NOT reinterpret a buyer's quoted reply as their delivery city.
+  const quotedId=quotedWhapiMessageId(row);
+  let supplierQuotedId:string|null=null;
+  if(quotedId&&sec.outbound){
+   for(const number of Object.values(sec.recipients)){
+    const expected=await hmac(sec.key,'cotironda|pilot|chat|'+sec.channel+
+      '|'+number+'@s.whatsapp.net');
+    if(equalSecret(expected,chatHash)){supplierQuotedId=quotedId;break}
+   }
+  }
   recoveryTriggerHmac=chatHash;
   const media=row.type==='text'?null:makeMediaManifest(row,row.type);
   // Store media ID, size, MIME and caption in the AES-GCM encrypted
@@ -425,7 +437,8 @@ async function respond(req:Request):Promise<Response>{
    p_nonce_b64:c.nonce,p_ciphertext_b64:c.ciphertext,
    p_source_unix:row.timestamp,
    p_plaintext:body,
-   p_city:parsed.city,p_items:canPrepareBuyerPilot(parsed)?parsed.items:null
+   p_city:supplierQuotedId?'__quoted_supplier_reply__':parsed.city,
+   p_items:canPrepareBuyerPilot(parsed)?parsed.items:null
   });
   if(out.error)return json(503,'storage_unavailable');
   if(!['recorded','duplicate','unrecognized_contact','needs_zone',
@@ -459,6 +472,17 @@ async function respond(req:Request):Promise<Response>{
     continue;
   }
   if(outcome(out.data)==='quote_recorded')supplierAckMode='text_quote';
+  // A supplier can have several open invitations. A quoted PDF ID is
+  // checked against the exact accepted Whapi outbox for this same seller.
+  if(row.type==='text'&&supplierQuotedId&&
+     outcome(out.data)==='unmatched_quote'){
+    const binding=await db.rpc('cotironda_piloto_link_quoted_text_mvp151',{
+      p_message_hmac:messageHash,p_chat_hmac:chatHash,
+      p_quoted_id:supplierQuotedId,p_plaintext:body
+    });
+    if(binding.error)return json(503,'supplier_quote_context_unavailable');
+    if(binding.data?.state==='linked')supplierAckMode='text_quote';
+  }
   // Archive original incoming PDF, Excel, Word or photo ONLY after
   // committed authenticated inbox and supplier/buyer consent SQL check.
   // No interpretation can distribute until independently reviewed.
@@ -473,6 +497,15 @@ async function respond(req:Request):Promise<Response>{
     });
     if(reservation.error)return json(503,'media_reservation_unavailable');
     if(reservation.data===true){
+      // Resolve supplier documents BEFORE interpreting bytes or publishing
+      // any amount. A stale/wrong quote must not land on a newer round.
+      if(supplierQuotedId){
+        const binding=await db.rpc('cotironda_piloto_link_quoted_media_mvp151',{
+          p_message_hmac:messageHash,p_chat_hmac:chatHash,
+          p_quoted_id:supplierQuotedId
+        });
+        if(binding.error)return json(503,'supplier_media_context_unavailable');
+      }
       let status:'stored'|'uncertain'='uncertain';
       let contentHash:string|null=null,contentSize:number|null=null;
       let downloadedForReview:Awaited<ReturnType<typeof getVerifiedWhapiMedia>>|null=null;

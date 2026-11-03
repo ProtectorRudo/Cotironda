@@ -1,3 +1,6 @@
+## MVP151 — Asociación por respuesta al PDF original en WhatsApp
+- Presupuestos de proveedor vinculados al mensaje citado, incluso entre rondas simultáneas; documentos sin identidad de ronda quedan conservados sin atribución inventada. Issue #507, docs/270.
+
 ## MVP150 — Pedidos naturales sin límite artificial de 8 renglones
 - Texto/IA/SQL alineados a la capacidad de 25 renglones del PDF actual; más formatos claros de materiales y unidades, controles de fuente intactos. Issue #505, docs/269. Solo piloto.
 
