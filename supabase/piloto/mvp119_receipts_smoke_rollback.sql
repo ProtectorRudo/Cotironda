@@ -25,12 +25,16 @@ begin
   '10 bolsas de cemento CPC 50 kg, confirmar entrega en La Plata',
   encode(extensions.gen_random_bytes(32),'hex'),
   'prepared',now_,4,now_+interval '4 days');
+ insert into cotironda_piloto_privado.request_lines(
+  request_id,line_no,original_description,quantity,unit,family_code)
+ values(rid,1,'Cemento CPC 50 kg',10,'bag','cemento_gris_obra');
  insert into cotironda_piloto_privado.invitations(request_id,supplier_key,state)
  values(rid,'corralon_ailin','prepared');
- insert into cotironda_piloto_privado.whapi_outbox(
-  request_id,supplier_key,message_body,state,whapi_message_id)
- values(rid,'corralon_ailin','Cotironda solicitud 10 bolsas de cemento.',
-  'api_accepted',supplier_mid);
+ -- The original outbound trigger queues a private message. Mark API-accepted
+ -- ONLY inside this transaction; no live HTTP request is performed.
+ update cotironda_piloto_privado.whapi_outbox
+ set state='api_accepted',whapi_message_id=supplier_mid
+ where request_id=rid and supplier_key='corralon_ailin';
 
  -- Never infer 2 ticks from Whapi API accepted response.
  if exists(select 1 from cotironda_piloto_privado.delivery_receipts_mvp119
