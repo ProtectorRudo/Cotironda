@@ -30,6 +30,14 @@ begin
  if not exists(select 1 from cotironda_piloto_privado.integration_flags
   where only_row and whatsapp_inbound_enabled)
  then return jsonb_build_object('state','disabled');end if;
+ -- Do not silently multiply OpenAI calls when many messages arrive.
+ if (select count(*) from cotironda_piloto_privado.media_archive_mvp095
+     where ai_reserved_at >= clock_timestamp()-interval '24 hours')
+  + (select count(*) from cotironda_piloto_privado.document_ai_diagnostics_mvp127
+     where last_attempt_at >= clock_timestamp()-interval '24 hours')
+  >= (select max_document_ai_per_24h from cotironda_piloto_privado.operational_caps_mvp097
+      where only_row)
+ then return jsonb_build_object('state','quota');end if;
  select m.message_hmac,m.ai_reserved_at into job
  from cotironda_piloto_privado.media_archive_mvp095 m
  join cotironda_piloto_privado.participants owner
