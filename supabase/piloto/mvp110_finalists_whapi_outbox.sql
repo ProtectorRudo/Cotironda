@@ -195,7 +195,8 @@ begin
     where only_row and enabled and activated_at<=clock_timestamp())
  then return jsonb_build_object('state','pilot_finalist_off');end if;
  select o.request_id,o.recipient_key,req.buyer_key,
-  plan.supplier_keys,plan.candidate_count into r_
+  plan.supplier_keys,plan.candidate_count,
+  plan.state as selection_state into r_
  from cotironda_piloto_privado.finalist_whapi_outbox_mvp110 o
  join cotironda_piloto_privado.requests req on req.id=o.request_id
  join cotironda_piloto_privado.finalist_activation_mvp113 activation
@@ -224,7 +225,8 @@ begin
    'buyer_key',r_.buyer_key,
    'supplier_keys',to_jsonb(r_.supplier_keys),
    'contacts_encrypted',v->'contacts_encrypted',
-   'labels',labels,'price_ranked',false);
+   'labels',labels,'price_ranked',false,
+   'joint_supplier_coverage',r_.selection_state='two_supplier_combination');
 end;$fn$;
 revoke all on function
  public.cotironda_piloto_authorize_finalist_whapi_mvp110(uuid,text,uuid)
