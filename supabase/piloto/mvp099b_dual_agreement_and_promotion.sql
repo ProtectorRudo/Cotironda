@@ -4,7 +4,7 @@
 create table cotironda_piloto_privado.document_agreements_mvp099(
  message_hmac text primary key references cotironda_piloto_privado.media_archive_mvp095(message_hmac),
  source_sha256 text not null check(source_sha256 ~ '^[a-f0-9]{64}$'),
- line_count smallint not null check(line_count between 1 and 8),
+ line_count smallint not null check(line_count between 1 and 25),
  agreed_at timestamptz not null default clock_timestamp()
 );
 alter table cotironda_piloto_privado.document_agreements_mvp099 enable row level security;
@@ -64,7 +64,7 @@ begin
   or jsonb_typeof(a.proposal->'lines')<>'array' then
   return jsonb_build_object('state','disagreement');end if;
  total:=jsonb_array_length(a.proposal->'lines');
- if total not between 1 and 8 or jsonb_array_length(
+ if total not between 1 and 25 or jsonb_array_length(
   p_second_proposal->'lines')<>total then
   return jsonb_build_object('state','disagreement');end if;
  if a.proposal->>'delivery_city' is distinct from
