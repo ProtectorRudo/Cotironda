@@ -1,3 +1,6 @@
+## MVP-134 — conciliación autónoma de PDFs retenidos, solo privada (desarrollo)
+- Cron diagnostica el PDF original de cotizaciones retenidas sin pedir reenvíos, no saltea doble lectura ni publica presupuestos sin respaldo. Issue #480.
+
 ## MVP-133 — cotejo de borradores reales sin rechazos artificiales (03/11/2026)
 - Admite condiciones y evidencia multilínea y descripciones amplias en borradores PRIVADOS sin relajar reglas de publicación. Issue #478. La ronda no publica propuestas sin fuente verificada.
 

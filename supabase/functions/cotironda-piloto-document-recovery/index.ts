@@ -6,6 +6,7 @@
 import {createClient} from 'npm:@supabase/supabase-js@2.118.0';
 import {recoverOneStoredDocument} from '../cotironda-piloto-whapi/private-document-recovery.ts';
 import {runRecoveryService} from './logic.ts';
+import {diagnoseOneStoredQuote} from './quote-reconciliation.ts';
 import {guardScheduledRecovery} from './scheduled-auth.ts';
 const REF='ilggkalaafhtiysyzlmg';
 const root='https://'+REF+'.supabase.co';
@@ -51,6 +52,22 @@ Deno.serve(async(req)=>{
      const {data,error}=await db.rpc('cotironda_piloto_system_document_trigger_mvp131');
      return {data,error};
     },
+    review:async()=>diagnoseOneStoredQuote({
+     lookup:async()=>{
+      const {data,error}=await db.rpc('cotironda_piloto_next_reconciliation_mvp134');
+      return {data,error};
+     },
+     download:async(path)=>{
+      const {data,error}=await db.storage.from('cotironda-piloto-originals')
+       .download(path);
+      return {data,error};
+     },
+     record:async(params)=>{
+      const {data,error}=await db.rpc('cotironda_piloto_record_reconciliation_mvp134',
+       params);
+      return {data,error};
+     }
+    }),
     recover:async(triggerChatHmac)=>recoverOneStoredDocument({
      triggerChatHmac,apiKey:s.apiKey,enabled:true,io:{
       rpc:async(name,params)=>{

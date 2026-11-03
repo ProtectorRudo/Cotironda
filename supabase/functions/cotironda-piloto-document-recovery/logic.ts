@@ -4,6 +4,7 @@ type Lookup={data:unknown;error:unknown};
 type IO={
  lookup:()=>Promise<Lookup>;
  recover:(triggerChatHmac:string)=>Promise<RetryState>;
+ review?:()=>Promise<'none'|'diagnosed_private'|'failed'>;
 };
 const TOKEN=/^[a-f0-9]{64}$/u;
 const isRecord=(v:unknown):v is Record<string,unknown>=>
@@ -22,6 +23,11 @@ export async function runRecoveryService(
  try{
   const x=await io.lookup();
   if(x.error||!isRecord(x.data))return response(503,'selection_unavailable');
+  if(x.data.state==='none'&&io.review){
+   const reviewed=await io.review();
+   if(reviewed==='failed')return response(503,'reconciliation_failed');
+   if(reviewed==='diagnosed_private')return response(200,'reconciliation_private');
+  }
   if(x.data.state==='none'||x.data.state==='disabled')
    return response(200,'no_eligible_document');
   if(x.data.state==='quota')return response(200,'quota_reached');
