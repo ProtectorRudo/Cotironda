@@ -48,7 +48,11 @@ begin
     'ÁÉÍÓÚáéíóúÑñÜü','AEIOUaeiouNnUu')) as description,
     -- The file's quantity is a contextual clue, not a verified price or unit.
     -- Never coerce 1.000 / 1,000: its thousands/decimal meaning is ambiguous.
-    case when x->>'quantity' ~ '^[1-9][0-9]{0,5}(?:[.,][0-9]{1,2})?
+    case when x->>'quantity' ~ '^[1-9][0-9]{0,5}(?:[.,][0-9]{1,2})?$'
+      then replace(x->>'quantity',',','.')::numeric
+      else null
+    end as quantity
+  from jsonb_array_elements(source.proposal->'lines') x
  ), products as materialized (
   select description,quantity,
    description ~ '^[[:space:]]*(pallets?|flete|transporte|cargo[[:space:]]+de[[:space:]]+entrega|envases?[[:space:]]+retornables?|bolsones?[[:space:]]+vacios?)([^a-z]|$)' as extra
