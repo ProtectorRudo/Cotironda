@@ -63,8 +63,11 @@ begin
    and i.state='prepared' and r.state='prepared'
    and r.closes_at>clock_timestamp())
  )
- and (d.message_hmac is null or d.state='failed' and
-  d.attempt_count<3 and d.next_retry_at<=clock_timestamp())
+ and (d.message_hmac is null
+  or d.state='failed' and d.attempt_count<3
+   and d.next_retry_at<=clock_timestamp()
+  or d.state='pending' and d.attempt_count<3
+   and d.updated_at<clock_timestamp()-interval '8 minutes')
  order by m.ai_reserved_at,m.message_hmac
  limit 1
  for update of m skip locked;
@@ -76,7 +79,14 @@ begin
   last_attempt_at,next_retry_at)
  values(job.message_hmac,'failed','legacy_unclassified','initial',1,
    job.ai_reserved_at,job.ai_reserved_at,clock_timestamp()-interval '1 second')
- on conflict(message_hmac) do nothing;
+ on conflict(message_hmac) do update
+ set state='failed',reason_code='api_timeout',phase='retry',
+  next_retry_at=clock_timestamp()-interval '1 second',
+  updated_at=clock_timestamp()
+ where cotironda_piloto_privado.document_ai_diagnostics_mvp127.state='pending'
+ and cotironda_piloto_privado.document_ai_diagnostics_mvp127.attempt_count<3
+ and cotironda_piloto_privado.document_ai_diagnostics_mvp127.updated_at<
+  clock_timestamp()-interval '8 minutes';
  get diagnostics n=row_count;
  -- Subsequent RPC reserves atomically and rechecks all eligibility and timing.
  return jsonb_build_object('state','candidate','message_hmac',job.message_hmac);
