@@ -1,3 +1,9 @@
+## MVP-121 — instalación real de Supabase PILOTO sin respaldo autorizado (03/11/2026)
+- Autorización explícita del propietario para omitir backup previo SOLO en PILOTO; se asume riesgo de no recuperación ante corrupción o pérdida irreversible. No alteró producción.
+- 15 scripts de MVP101–119 + ampliación a 25 artículos instalados en Supabase PILOTO, migración `mvp120_pilot_cutover_101_to_119_frozen_e9ccc006`; 0 puertas faltantes, archivos y participantes existentes preservados.
+- Edge Whapi v34 y finalistas v1 desplegados; seguimiento continúa en v7 debido a bloqueo de seguridad en herramienta. Vercel Preview READY; cuatro pruebas E2E SQL sintéticas PASS ROLLBACK. Entrada/salida habilitadas para tres participantes, guardia de finalistas OFF.
+- **NO-GO real**: sin prueba de entrega Whapi a teléfonos, sin vista nueva en vivo y sin consentimiento/contactos cifrados para revelación. Issue #453, docs/240.
+
 ## MVP-120 — ensayo integral reproducible y corte seguro del piloto (03/11/2026)
 - Runner seguro de 15 etapas SQL y cuatro escenarios sintéticos con SAVEPOINT/ROLLBACK independientes, bloqueo de transacciones embebidas y digest SHA256 del bundle. Solo prepara SQL reversible: no conecta a DB, no instala ni envía WhatsApp. Tests de regresión, docs/239, Issue #451, PR #452.
 - Verificación puntual en Supabase PILOTO PG17.11 con migraciones temporales y fixtures MVP112/MVP115/MVP117/MVP119: **PASS, clean_rollback=true**. Persisten tres participantes y dos originales de Storage sin modificación, 13 puertas pendientes. Sin respaldo externo restaurable, Edge nueva ni prueba 1+2 real: **NO-GO comercial**.
