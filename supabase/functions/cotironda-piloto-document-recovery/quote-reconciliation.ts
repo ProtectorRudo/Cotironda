@@ -79,7 +79,7 @@ export async function diagnoseOneStoredQuote(
   }
   return 'failed';
  }
- async function persist():'Promise<"failed"|"diagnosed_private">'{
+ async function persist():Promise<'failed'|'diagnosed_private'>{
   if(!h||!sha||n<1)return 'failed';
   const r=await io.record({p_message_hmac:h,p_source_sha256:sha,
    p_state:state,p_reason:reason,p_question_count:qCount,p_line_count:n});
