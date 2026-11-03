@@ -77,7 +77,7 @@ test('MVP130: scanned image, hidden layers, unresolved lines and numeric headers
 });
 test('MVP130: PDF proof never treats matching two AI outputs as source evidence',()=>{
  const code=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/supplier-source-pdf-general.ts',import.meta.url),'utf8');
- assert.match(code,/npm:unpdf@1\.9\.1/u);
+ assert.match(code,/npm:unpdf@2\.1\.0/u);
  assert.match(code,/maxImageSize:16_777_216/u);
  assert.match(code,/pdf\.numPages>12/u);
  assert.match(code,/extractTextItems\(pdf\)/u);
