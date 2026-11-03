@@ -31,7 +31,8 @@ begin
  revoke_hash:=encode(extensions.digest('COTI CONTACTOS NO','sha256'),'hex');
  for row_ in select * from (values
   ('both_full','two_complete_alternatives',2),
-  ('supplier_partial','one_complete_alternative',1)
+  ('supplier_partial','one_complete_alternative',1),
+  ('two_complementary','two_supplier_combination',2)
  ) t(scenario,wanted,wanted_count)
  loop
   scenario:=row_.scenario;expected:=row_.wanted;
@@ -56,6 +57,11 @@ begin
   insert into cotironda_piloto_privado.request_lines(
    request_id,line_no,original_description,quantity,unit,family_code)
   values(rid,1,'Cemento CPC 50 kg',20,'bag','cemento_gris_obra');
+  if scenario='two_complementary' then
+    insert into cotironda_piloto_privado.request_lines(
+      request_id,line_no,original_description,quantity,unit,family_code)
+    values(rid,2,'Arena fina',5,'m3','arena_fina');
+  end if;
   for sup in select s.key from cotironda_piloto_privado.participants s
     where s.key in ('corralon_ailin','corralon_nahuel')
     and s.consent_at is not null and s.opted_out_at is null
@@ -67,19 +73,29 @@ begin
     request_id,supplier_key) values(rid,sup);
    msg:=encode(extensions.gen_random_bytes(32),'hex');
    sha:=encode(extensions.gen_random_bytes(32),'hex');
-   qty:=case when scenario='supplier_partial'
-       and sup='corralon_nahuel' then '10' else '20' end;
-   line_amount:=case when qty='10' then '$ 95.000,00'
+   qty:=case when scenario='two_complementary'
+                and sup='corralon_nahuel' then '5'
+             when scenario='supplier_partial'
+                and sup='corralon_nahuel' then '10'
+             else '20' end;
+   line_amount:=case when qty='5' then '$ 100.000,00'
+     when qty='10' then '$ 95.000,00'
      else '$ 190.000,00' end;
-   total_text:=case when qty='10' then '$ 107.000,00'
+   total_text:=case when qty='5' then '$ 112.000,00'
+     when qty='10' then '$ 107.000,00'
      else '$ 202.000,00' end;
    proposal:=jsonb_build_object(
     'status','review_required','kind','supplier_quote',
     'delivery_city',null,'requested_delivery_note',null,
     'unanswered','[]'::jsonb,'total_declared',total_text,
     'lines',jsonb_build_array(
-      jsonb_build_object('original_description','Cemento CPC 50 kg',
-       'quantity',qty,'unit','bolsas','unit_price','$ 9.500,00',
+      jsonb_build_object(
+        'original_description',case when qty='5' then 'Arena fina'
+         else 'Cemento CPC 50 kg' end,
+       'quantity',qty,
+       'unit',case when qty='5' then 'm3' else 'bolsas' end,
+       'unit_price',case when qty='5' then '$ 20.000,00'
+                    else '$ 9.500,00' end,
        'line_total',line_amount,'evidence_location','renglón 1',
        'ambiguity',null),
       jsonb_build_object('original_description','Flete a obra',
@@ -204,7 +220,9 @@ begin
   out_:=public.cotironda_piloto_tracking_finalists_mvp110(track_token);
   if out_->>'state'<>'ready_private' or
     jsonb_array_length(out_->'contacts_encrypted')<>row_.wanted_count+1
-  then raise exception 'mvp112_accepted_buyer_contact_missing %',out_;end if;
+    or (out_->>'joint_supplier_coverage')::boolean
+       is distinct from (scenario='two_complementary')
+  then raise exception 'mvp115_buyer_joint_coverage_flag_incorrect %',out_;end if;
   if (public.cotironda_piloto_tracking_finalists_mvp110(
     encode(extensions.gen_random_bytes(32),'hex')))->>'state'<>'not_ready'
   then raise exception 'mvp112_wrong_token_revealed';end if;
@@ -218,8 +236,10 @@ begin
       rid,claim->>'recipient_key',(claim->>'lease_token')::uuid);
     if authorized->>'state'<>'authorized' or
      authorized->>'price_ranked'<>'false' or
+     (authorized->>'joint_supplier_coverage')::boolean
+       is distinct from (scenario='two_complementary') or
      jsonb_array_length(authorized->'contacts_encrypted')<>row_.wanted_count+1
-    then raise exception 'mvp112_disclosure_wrong %',authorized;end if;
+    then raise exception 'mvp115_disclosure_mode_wrong %',authorized;end if;
     if not public.cotironda_piloto_finish_finalist_whapi_mvp110(
       rid,claim->>'recipient_key',(claim->>'lease_token')::uuid,
       'api_accepted','synthetic-api-acceptance')
