@@ -1,3 +1,8 @@
+## MVP-124 — seguimiento HTML en frontend público aislado (03/11/2026)
+- Incidente real: Chrome mostraba HTML literal del enlace privado de Supabase. Causa confirmada: Edge en dominio compartido transforma `text/html` a `text/plain` (límite oficial de la plataforma).
+- Nuevo frontend responsive versionado `apps/seguimiento-piloto`, CSP y noindex estrictos, JavaScript sin dependencias externas que lee token exclusivamente de fragmento y consulta por POST la API proxy de Vercel. Proyección autorizada anónima; finalistas únicamente tras cierre y aprobación.
+- Tests de seguridad, permisos y privacidad; Issue #458, docs/243. Proyecto Vercel aislado creado pero **despliegue bloqueado por cuota 402 api-deployments-free-per-day**. La Edge antigua sigue activa sin redirección hasta contar con destino accesible, para no romper los enlaces ya enviados. No se habilitan finalistas ni mensajes adicionales.
+
 ## MVP-123 — resolver ReferenceError tras link y habilitar cola PDF a proveedores (03/11/2026)
 - Incidente del piloto real: el arquitecto recibió link y la ronda quedó preparada, pero los dos PDF permanecieron pendientes; el webhook produjo dos HTTP 503 con `ReferenceError` luego de enviar enlace.
 - Se corrigió el cierre prematuro del ciclo de mensajes: el agradecimiento al proveedor vuelve a estar dentro de su ámbito y el despacho `dispatchTwo` permanece una vez al final. Tests de regresión de scope/ACK/reclamo idempotente, docs/242 e Issue #456.
