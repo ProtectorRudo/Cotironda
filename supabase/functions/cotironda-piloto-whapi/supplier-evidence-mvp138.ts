@@ -24,6 +24,55 @@ const nonmaterial=(x:string)=>/^(?:no se especifica el tratamiento del iva|no se
 const minor=(x:string|null)=>x===null||x.trim()===''||
  /^unidad de cantidad no indicada\.?(?: descuento visible:\s*\d{1,2}[.,]\d{1,2}%\.?)?$/iu.test(n(x));
 const discount=(x:string|null)=>x?.match(/descuento visible:\s*(\d{1,2}[.,]\d{1,2})\s*%/iu)?.[1]??null;
+
+/** Decimal percentages are compared in exact basis points: 22,4 = 22,40.
+ * Some supplier PDFs place Dscto in a separate column/text object.
+ * Only accept a global discount when amount math independently corroborates. */
+const basis=(v:string):bigint|null=>{
+ const m=v.trim().replace('.',',').match(/^(\d{1,2})(?:,(\d{1,2}))?$/u);
+ if(!m)return null;
+ const b=BigInt(m[1])*100n+BigInt((m[2]??'').padEnd(2,'0'));
+ return b<10000n?b:null;
+};
+const cents=(v:string):bigint|null=>{
+ let t=scalar(v);
+ if(/^\d{1,3}(?:\.\d{3})+,\d{2}$/u.test(t))t=t.replace(/\./gu,'');
+ else if(!/^\d+(?:,\d{2})?$/u.test(t))return null;
+ const [integer,decimal='']=t.split(',');
+ return BigInt(integer)*100n+BigInt(decimal.padEnd(2,'0'));
+};
+const hundredths=(v:string):bigint|null=>{
+ let t=scalar(v).replace('.',',');
+ if(!/^\d+(?:,\d{1,2})?$/u.test(t))return null;
+ const [a,b='']=t.split(',');
+ return BigInt(a)*100n+BigInt(b.padEnd(2,'0'));
+};
+const discountMath=(line:DocumentDraft['lines'][number],rate:bigint)=>{
+ const qty=hundredths(line.quantity??'');
+ const unit=cents(line.unit_price??'');
+ const extended=cents(line.line_total??'');
+ if(qty===null||unit===null||extended===null)return false;
+ const numerator=unit*qty*(10000n-rate);
+ const actual=extended*100n*10000n;
+ const diff=numerator>actual?numerator-actual:actual-numerator;
+ // Up to 10 cents difference in a quantity × rounded two-decimal list price,
+ // preserving the supplier's DECLARED line total without recalculation.
+ return diff<=10n*100n*10000n;
+};
+const percentSeen=(rows:readonly string[],discount:bigint)=>rows.some(row=>
+ [...row.matchAll(/(\d{1,2}(?:[.,]\d{1,2})?)\s*%/gu)]
+ .some(m=>basis(m[1])===discount)
+);
+const discountProof=(row:string,rows:readonly string[],
+ line:DocumentDraft['lines'][number],value:string)=>{
+ if(has(row,value))return true;
+ const d=basis(value);
+ if(d===null)return false;
+ return percentSeen(rows,d)&&
+  rows.some(x=>/\b(?:descuento|dscto|bonificaci[oó]n)\b/iu.test(x))&&
+  discountMath(line,d);
+};
+
 const pii=/(?:https?:\/\/|wa\.me|www\.|whatsapp|cuit|cuil|tel[eé]fono|raz[oó]n social|[a-z0-9._%+-]+@[a-z0-9.-]+|[0-9]{8,})/iu;
 const commercial=/(?:\biva\b|flete|pallet|bolson|devoluci[oó]n|lista|contado|efectivo|plazo|entrega|env[ií]o|transporte|cargo|pago|transferencia|descuento)/iu;
 const sourceReader:Reader=async f=>{
@@ -60,7 +109,7 @@ export async function verifySupplierEvidence(
    has(row,l.quantity!)&&has(row,l.unit_price!)&&has(row,l.line_total!));
   if(i<0)return reject('missing_line',c);
   const d=discount(l.ambiguity);
-  if(d&&!has(source[i],d))return reject('missing_amount',c);
+  if(d&&!discountProof(source[i],source,l,d))return reject('missing_amount',c);
   const m=cash(source[i]);
   for(const v of [l.unit_price!,l.line_total!]){
    const pos=m.indexOf(scalar(v));if(pos>=0)m.splice(pos,1);
