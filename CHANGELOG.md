@@ -1,3 +1,9 @@
+## MVP-135-B — las aclaraciones también requieren prueba de fuente
+- Verificación bidireccional de notas comerciales en PDF y TXT/CSV. Una cláusula inventada o importe extra camuflado se retiene. Prueba reversible de proyección en PostgreSQL con source-gates conservados.
+
+## MVP-135 — aclaraciones completas de proveedores (desarrollo, 03/11/2026)
+- Extraer y conservar precios de lista/contado, flete, pallets retornables y demás condiciones en el presupuesto propio, sin renombrar importes ni pedir reconfirmación. PDF con cantidad decimal sin unidad literal y evidencia independiente. El ranking económico sigue bloqueado con incertidumbre. Issue #482.
+
 ## MVP-134 — conciliación autónoma de PDFs retenidos, solo privada (desarrollo)
 - Cron diagnostica el PDF original de cotizaciones retenidas sin pedir reenvíos, no saltea doble lectura ni publica presupuestos sin respaldo. Issue #480.
 

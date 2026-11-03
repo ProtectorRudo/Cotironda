@@ -74,9 +74,22 @@ const intro=[
  'Nunca inventes una celda o conviertas moneda, unidades o cantidades.',
  'Extraé literalmente TODOS los renglones, incluyendo extras como pallets,',
  'bolsones, envases, descuentos, cargos y flete, incluso no solicitados.',
- 'Conservá condiciones explícitas de IVA, flete, disponibilidad, moneda y pago',
- 'en requested_delivery_note solo si son breves y están visibles; si hay más,',
- 'registrá cada condición faltante en unanswered, sin omitirla silenciosamente.',
+ 'En supplier_quote, requested_delivery_note reúne TODAS las aclaraciones',
+ 'comerciales del PROVEEDOR que se lean en el original, no solo la entrega:',
+ 'número de lista (por ej. PRECIOS LISTA 7), precios de lista y precios de',
+ 'pago contado/efectivo, transferencia, vencimientos, IVA, flete a convenir,',
+ 'devolución/retorno/cargo de pallets y bolsones, stock y condiciones de pago.',
+ 'Preservá el texto de esas condiciones con sus cifras, signos y restricciones.',
+ 'No deduzcas porcentajes de descuento de un precio de lista y un importe.',
+ 'No conviertas el precio unitario de lista en precio unitario efectivo.',
+ 'Si existen dos columnas de precios, extraé el valor explícito de cada campo',
+ 'según su encabezado y preservá las otras condiciones en la nota.',
+ 'Si una condición comercial es demasiado larga, registrala completa dentro',
+ 'del límite del campo; nunca la recortes silenciosamente.',
+ 'Solo agregá unanswered cuando una CELDA sea ilegible, haya contradicción',
+ 'o no puedas atribuir un valor necesario. Que no informe IVA, moneda, flete',
+ 'o disponibilidad NO significa que haya que pedir confirmación por WhatsApp.',
+ 'La ausencia se muestra como no informada; NO infieras IVA, ARS ni stock.',
  'Si hay más de 25 renglones, NO declares lectura completa: incluí',
  'more_than_25_lines en unanswered; los parciales no se podrán publicar.',
  'Preservá cada valor y total declarado como TEXTO ORIGINAL, sin recalcular,',
@@ -134,7 +147,7 @@ const safe=(v:unknown,max:number):v is string|null=>
 function validated(raw:unknown):DocumentDraft{
  if(!keys(raw,SCHEMA.required)||
    !['buyer_request','supplier_quote','other'].includes(String(raw.kind))||
-   !safe(raw.delivery_city,160)||!safe(raw.requested_delivery_note,2048)||
+   !safe(raw.delivery_city,160)||!safe(raw.requested_delivery_note,4096)||
    !safe(raw.total_declared,256)||
    !Array.isArray(raw.lines)||raw.lines.length>25||
    !Array.isArray(raw.unanswered)||raw.unanswered.length>15||

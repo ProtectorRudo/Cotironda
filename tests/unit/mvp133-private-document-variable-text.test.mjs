@@ -44,7 +44,7 @@ test('MVP133: model may represent empty unreadable product without falsely publi
 test('MVP133: reject malicious NUL and absurdly long fields while keeping failure redacted',async()=>{
  for(const v of [
   (()=>{const p=raw();p.lines[0].original_description='abc\u0000def';return p})(),
-  (()=>{const p=raw();p.requested_delivery_note='x'.repeat(3000);return p})(),
+  (()=>{const p=raw();p.requested_delivery_note='x'.repeat(6000);return p})(),
   (()=>{const p=raw();p.lines[0].evidence_location='y'.repeat(3000);return p})()
  ]){
   await assert.rejects(async()=>{try{await read(v)}catch(e){
