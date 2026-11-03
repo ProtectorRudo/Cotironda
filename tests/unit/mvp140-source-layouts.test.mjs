@@ -278,3 +278,31 @@ test('MVP144: v7 conserva fuente, notas, descuentos y no habilita ranking',()=>{
  assert.match(sql,/to service_role/u);
  assert.doesNotMatch(sql,/net\.http_post|send_whatsapp/iu);
 });
+
+test('MVP145: encabezados PDF y cero rellenado no bloquean condiciones acreditadas',async()=>{
+ const input={mime:'application/pdf',bytes:new Uint8Array(128),sha256:H};
+ const note='Condición de pago: 1. Contado Efectivo; plazo de entrega: 0 DIAS; FLETE A CONVENIR; PRECIOS LISTA 7; PRECIOS DE PAGO CONTADO EN EFECTIVO.';
+ const src=[
+  ...rows.slice(0,2),
+  'E MAIL COMERCIAL CONDICION DE PAGO 1 CONTADO EFECTIVO',
+  'PLAZO ENTREGA 0 DIAS 0000',
+  'ITEM CANT DESCRIPCION PRODUCTO PR UNIT DESCUENTO SUBTOTAL',
+  'OBSERVACIONES PRECIOS LISTA 7',
+  'PRECIOS DE PAGO CONTADO EN EFECTIVO',
+  'FLETE A CONVENIR',
+  '$220.250,00'
+ ];
+ const proposal={...pdf,requested_delivery_note:note};
+ assert.deepEqual(await verifySupplierEvidence(input,proposal,async()=>src),
+  {state:'verified',reason:'covered',lines:2});
+ assert.equal((await verifySupplierEvidence(input,proposal,async()=>
+  src.map(r=>r==='FLETE A CONVENIR'?'FLETE NO A CONVENIR':r))).reason,
+  'uncovered_note');
+ assert.equal((await verifySupplierEvidence(input,proposal,async()=>
+  src.map(r=>r==='PLAZO ENTREGA 0 DIAS 0000'?'PLAZO ENTREGA 10 DIAS':r))).reason,
+  'uncovered_note');
+ assert.equal((await verifySupplierEvidence(input,proposal,async()=>
+  [...src,'RECARGO POR PALLET 2 $100,00'])).reason,'extra_charge');
+ assert.equal((await verifySupplierEvidence(input,proposal,async()=>
+  src.map(r=>r==='$220.250,00'?'$220.250,01':r))).reason,'missing_total');
+});

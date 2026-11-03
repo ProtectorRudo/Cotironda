@@ -95,6 +95,31 @@ const coveredTokens=(evidence:string,claim:string):boolean=>{
  const found=new Set(clauseTokens(evidence));
  return clauseTokens(claim).every(word=>found.has(word));
 };
+/** Only financial conditions (not PDF table headers / labels) are material.
+ * Numeric conditions are compared exactly, ignoring leading zeros only.
+ * An unclaimed negation, payment term, shipping charge or nonzero number
+ * still blocks publication. Monetary figures are rejected separately.
+ */
+const materialTokens=(value:string):readonly string[]=>{
+ const protectedTerms=new Set([
+  'no','sin','iva','flete','pallet','bolson','devolucion','lista',
+  'contado','efectivo','plazo','entrega','envio','transporte','cargo',
+  'pago','transferencia','descuento','bonificacion','incluido','excluido',
+  'convenir','credito','impuesto','disponibilidad','anticipo','dia',
+  'precio','condicion','garantia','vencimiento','retornable','financiacion'
+ ]);
+ return clauseTokens(value).filter(word=>protectedTerms.has(word)||/^\d+(?:[.,]\d+)*%?$/u.test(word))
+  .map(word=>/^0+$/u.test(word)?'0':word.replace(/^0+(?=\d)/u,''));
+};
+const commercialNotesCovered=(note:string,row:string):boolean=>{
+ const noteSet=new Set(materialTokens(note));
+ return materialTokens(row).every(word=>noteSet.has(word));
+};
+const headerWithoutPrices=(row:string):boolean=>
+ /\b(?:item|cant(?:idad)?)\b/iu.test(row)&&
+ /\b(?:descripcion|descripci[oó]n|producto)\b/iu.test(row)&&
+ /\b(?:subtotal|unit|precio|importe)\b/iu.test(row)&&
+ !/\d+(?:[.,]\d+)?\s*%/u.test(row);
 const discountOnly=(row:string,claimed:readonly bigint[]):boolean=>{
  const m=n(row).match(/^(?:descuento|dscto|bonificacion)\s*:?\s*(\d{1,2}(?:[.,]\d{1,2})?)\s*%?$/u);
  const rate=m?basis(m[1]):null;
@@ -219,8 +244,8 @@ export async function verifySupplierEvidence(
   if(cash(row).length||bareCurrency.test(row)||
    excelNumbers>=2||excelNumbers>=1&&commercial.test(row))
    return reject('extra_charge',c);
-  if(commercial.test(row)&&!coveredTokens(note,row)&&
-    !discountOnly(row,claimedDiscounts)&&
+  if(commercial.test(row)&&!commercialNotesCovered(note,row)&&
+    !discountOnly(row,claimedDiscounts)&&!headerWithoutPrices(row)&&
     !/^\s*(?:descripci[oó]n|producto|cantidad|precio|importe)\b/iu.test(row))
    return reject('uncovered_note',c);
  }

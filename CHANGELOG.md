@@ -1,3 +1,6 @@
+## MVP145 — Encabezados comerciales PDF frente a condiciones verificadas
+- Revisión v8 append-only. No confundir metadatos de tabla, correo y ceros con condiciones omitidas; precios, IVA, flete, plazos y descuentos permanecen exigidos. Solo piloto. Ver docs/264 e Issue #488.
+
 ## MVP144 — Aclaraciones PDF acreditadas sin imponer orden de extracción
 - Verificador v7 de texto comercial original reordenado y descuento visible en presentación Cotironda. Sin ocultar cargos, números ni negaciones; sin tocar producción. Ver docs/263 e Issue #488.
 
