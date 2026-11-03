@@ -7,7 +7,35 @@ import type {MediaManifest} from './media-intake.ts';
 import type {DownloadedMedia} from './whapi-media-archive.ts';
 export const DOCUMENT_MODEL='gpt-6-luna';
 const URL='https://api.openai.com/v1/responses';
-const MAX_FILE=3145728,MAX_OUTPUT=2300,MAX_RESPONSE=12000;
+const MAX_FILE=3145728,MAX_OUTPUT=7000,MAX_RESPONSE=50000;
+
+/** Stable, redacted code: never include HTTP bodies, document text or keys. */
+export type DocumentFailureCode=
+ 'ai_disabled'|'quota_blocked'|'api_credentials_missing'|'api_unauthorized'|
+ 'api_rate_limited'|'api_rejected'|'api_server_error'|'api_unavailable'|
+ 'api_timeout'|'response_incomplete'|'response_invalid'|
+ 'response_too_large'|'schema_rejected'|'draft_persistence_failed'|
+ 'source_review_required'|'internal_error';
+export function documentFailureCode(e:unknown):DocumentFailureCode{
+ if(!(e instanceof Error))return 'internal_error';
+ const codes:Readonly<Record<string,DocumentFailureCode>>={
+  doc_ai_disabled:'ai_disabled',doc_ai_quota:'api_rate_limited',
+  doc_ai_key_missing:'api_credentials_missing',
+  doc_ai_http_unauthorized:'api_unauthorized',
+  doc_ai_http_error:'api_rejected',
+  doc_ai_http_server:'api_server_error',
+  doc_ai_transport_unavailable:'api_unavailable',
+  doc_ai_transport_timeout:'api_timeout',
+  doc_ai_response_incomplete:'response_incomplete',
+  doc_ai_response_invalid:'response_invalid',
+  doc_ai_bad_json:'response_invalid',
+  doc_ai_response_too_large:'response_too_large',
+  doc_ai_output_invalid:'schema_rejected',
+  doc_ai_line_invalid:'schema_rejected'
+ };
+ return codes[e.message]??'internal_error';
+}
+
 const SCHEMA={
  type:'object',additionalProperties:false,properties:{
   kind:{type:'string',enum:['buyer_request','supplier_quote','other']},
@@ -114,7 +142,7 @@ export async function proposeDocumentAI(args:{
  const filePart=args.manifest.kind==='image'
   ?{type:'input_image',image_url:data,detail:'high'}
   :{type:'input_file',filename:args.manifest.filename??'pedido.pdf',
-    file_data:data};
+    file_data:data,detail:args.manifest.mime==='application/pdf'?'high':undefined};
  const body={model:DOCUMENT_MODEL,store:false,tools:[],
   max_output_tokens:MAX_OUTPUT,
   input:[
@@ -131,10 +159,16 @@ export async function proposeDocumentAI(args:{
  try{response=await (args.fetchImpl??fetch)(URL,{
   method:'POST',headers:{Authorization:'Bearer '+args.apiKey,
     'Content-Type':'application/json'},
-  body:JSON.stringify(body),signal:AbortSignal.timeout(25000)
- })}catch{throw Error('doc_ai_transport_unavailable')}
+  body:JSON.stringify(body),signal:AbortSignal.timeout(40000)
+ })}catch(e){
+  // Abort/timeout are distinct from transport outages; never log the error.
+  throw Error(e instanceof Error&&(e.name==='TimeoutError'||e.name==='AbortError')
+   ?'doc_ai_transport_timeout':'doc_ai_transport_unavailable');
+ }
  if(!response.ok)throw Error(
-  response.status===429?'doc_ai_quota':'doc_ai_http_error');
+  response.status===429?'doc_ai_quota':
+  response.status===401||response.status===403?'doc_ai_http_unauthorized':
+  response.status>=500?'doc_ai_http_server':'doc_ai_http_error');
  const size=response.headers.get('content-length');
  if(size&&Number(size)>MAX_RESPONSE)throw Error('doc_ai_response_too_large');
  let raw:string;
