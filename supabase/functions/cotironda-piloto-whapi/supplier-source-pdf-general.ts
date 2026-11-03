@@ -96,29 +96,48 @@ export async function checkGeneralPdfSource(
  }
  if(PII.test(p.requested_delivery_note??''))return invalid(f,n,'unsafe_contact');
  let source:PdfSourceEvidence;
+ let timer:ReturnType<typeof setTimeout>|undefined;
  try{
   source=await Promise.race([
    reader(f.bytes),
-   new Promise<never>((_,reject)=>setTimeout(()=>reject(Error('pdf_timeout')),10000))
+   new Promise<never>((_,reject)=>{
+    timer=setTimeout(()=>reject(Error('pdf_timeout')),10000);
+   })
   ]);
  }catch{return invalid(f,n,'unsupported_layout')}
+ finally{if(timer!==undefined)clearTimeout(timer)}
  if(source.scanned||source.pages<1||source.pages>12||
     source.rows.length>300||source.rows.some(v=>v.page<1||v.page>source.pages))
   return invalid(f,n,'unsupported_layout');
  const rows=source.rows.map(v=>normalized(v.text));
  const consumed=new Set<number>();
+ const money=(v:string)=>Array.from(v.matchAll(MONEY),m=>normalized(m[0]));
+ const exactAmounts=(row:string,expected:readonly string[])=>{
+  const all=money(row),wanted=expected.flatMap(v=>money(v));
+  return all.length===wanted.length&&wanted.every(v=>{
+   const i=all.indexOf(v);if(i<0)return false;all.splice(i,1);return true;
+  });
+ };
  for(const line of p.lines){
   const idx=rows.findIndex((row,i)=>!consumed.has(i)&&
    mentions(row,line.original_description)&&
    mentions(row,line.unit)&&mentions(row,line.quantity)&&
    mentions(row,line.unit_price)&&mentions(row,line.line_total));
   if(idx<0)return invalid(f,n,'line_not_found');
+  if(!exactAmounts(rows[idx],[line.unit_price!,line.line_total!]))
+   return invalid(f,n,'uncovered_money');
+  if(TERMS.test(rows[idx])&&
+    !mentions(line.original_description,rows[idx])&&
+    !mentions(p.requested_delivery_note??'',rows[idx]))
+   return invalid(f,n,'uncovered_terms');
   consumed.add(idx);
  }
  const totalCandidates=rows.map((text,index)=>({text,index})).filter(v=>
   !consumed.has(v.index)&&/\b(?:total(?:\s+general)?|importe\s+total|a\s+pagar)\b/iu.test(v.text)
   &&mentions(v.text,p.total_declared));
  if(totalCandidates.length!==1)return invalid(f,n,'total_not_found');
+ if(!exactAmounts(totalCandidates[0].text,[p.total_declared]))
+  return invalid(f,n,'uncovered_money');
  consumed.add(totalCandidates[0].index);
  for(const [i,row] of rows.entries()){
   // No money may be ignored: all amount-bearing rows must map to an
