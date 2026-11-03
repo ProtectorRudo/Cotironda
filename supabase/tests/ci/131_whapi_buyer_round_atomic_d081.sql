@@ -182,8 +182,8 @@ select ci_helpers.assert_true(
  (select count(*)=1 from cotironda_private.rounds_v1 r
   join cotironda_private.buyer_whapi_round_sources_d081 s on s.round_id=r.id
   where s.channel_id='d081_ci' and s.origin_message_key=repeat('2',64)
-   and r.ends_at-r.begins_at=interval '5 days'-interval '30 seconds'),
- 'd081_default_five_days_with_zone_reply');
+   and r.ends_at-r.begins_at=interval '4 days'-interval '30 seconds'),
+ 'd081_default_four_days_with_zone_reply');
 -- A changed duration in a repeated message must NEVER mutate the previous round.
 select pg_temp.d081_fail(
  $$select cotironda_private.whapi_create_buyer_round_d081(

@@ -226,7 +226,7 @@ create policy d081_request_insert on cotironda_private.round_requests_d064
 
 create function cotironda_private.whapi_create_buyer_round_d081(
  p_channel text,p_chat text,p_origin text,p_reply text,p_buyer uuid,
- p_zone text,p_iva text,p_items jsonb,p_days integer default 5
+ p_zone text,p_iva text,p_items jsonb,p_days integer default 4
 ) returns jsonb language plpgsql volatile security definer set search_path='' as $fn$
 declare
  v_source cotironda_private.whapi_buyer_inbox_d074%rowtype;

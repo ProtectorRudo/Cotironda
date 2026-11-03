@@ -1,0 +1,13 @@
+{
+  "name": "cotironda-seguimiento-piloto",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test ../../tests/unit/mvp124*.test.mjs",
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
