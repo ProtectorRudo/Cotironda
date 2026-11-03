@@ -114,9 +114,9 @@ begin
  if v_request is null then return jsonb_build_object('state','already_prepared');end if;
  insert into cotironda_piloto_privado.request_lines(
   request_id,line_no,original_description,quantity,unit,family_code)
- select v_request,idx,description,quantity,unit,family
- from jsonb_to_recordset(p_items) with ordinality as x(
-  description text,quantity numeric,unit text,family text,idx bigint);
+ select v_request,x.idx,(x.item->>'description'),
+  (x.item->>'quantity')::numeric,(x.item->>'unit'),(x.item->>'family')
+ from jsonb_array_elements(p_items) with ordinality as x(item,idx);
  insert into cotironda_piloto_privado.invitations(request_id,supplier_key)
  select v_request,c.supplier_key
  from cotironda_piloto_privado.candidate_suppliers c
