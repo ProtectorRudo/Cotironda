@@ -1,3 +1,6 @@
+## MVP-133 — cotejo de borradores reales sin rechazos artificiales (03/11/2026)
+- Admite condiciones y evidencia multilínea y descripciones amplias en borradores PRIVADOS sin relajar reglas de publicación. Issue #478. La ronda no publica propuestas sin fuente verificada.
+
 ## MVP-132 - cron documental autónomo con Vault (desarrollo, 03/11/2026)
 - Recuperación automática sin permisos repetidos ni reenvíos, token generado en Vault y verificador RPC exclusivo de service_role. Respeta baja, cuota, plazo y privacidad. Issue #476, despliegue solo a PILOTO tras pruebas.
 
