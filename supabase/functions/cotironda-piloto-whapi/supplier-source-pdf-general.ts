@@ -70,7 +70,12 @@ export async function readPdfPositioned(bytes:Uint8Array):Promise<PdfSourceEvide
   }
   if(!rows.length)throw Error('pdf_no_text');
   return {pages:pdf.numPages,rows,scanned:false};
- }finally{await pdf.destroy()}
+ }finally{
+  // The unpdf proxy type does not expose destroy in every runtime build.
+  // Dispose when available; never assume an untyped method exists.
+  const disposable=pdf as unknown as {destroy?:()=>Promise<void>|void};
+  await disposable.destroy?.();
+ }
 }
 
 /**

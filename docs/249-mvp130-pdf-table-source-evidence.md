@@ -18,3 +18,7 @@ La versión v39 almacena y propone PDFs/fotos/Word/Excel, pero el comprobador de
 En `tests/unit/mvp130-source-pdf-tables.test.mjs`: PDF de 2 páginas con pallet extra, precio adicional, flete omitido, subtotal no incluido, total modificado, IVA explícito, flete como ítem, escaneo/OCR, duda sin resolver y encabezado con números. Las pruebas usan evidencia posicionada sintética para aislar la lógica del analizador; todavía falta un fixture PDF complejo real que ejercite la librería en ejecución Edge.
 
 Deno check, tests unitarios y regresiones de PDF simple deben estar verdes antes de fusionar. **No desplegar a PILOTO** si la versión npm o parsing runtime no están confirmados en Supabase Edge. El PDF real de Ailín permanece privado y su recuperación todavía no tiene resultado verificable. El trabajo evita inventar precios y preservar la confidencialidad comercial.
+
+## Corrección de compatibilidad Deno (rama aislada)
+
+Se corrigieron los 15 diagnósticos estáticos del primer CI Deno del PR #469: inferencia de localidad nullable, importación de claves WebCrypto usando `ArrayBuffer` propio, propagación del guard `never` en Office, y liberación opcional del PDF proxy. Son cambios conservadores de tipado/limpieza; **no prueban** todavía lectura del PDF real, extracción sobre runtime Supabase ni publicación. Requieren pasar nuevamente CI y ensayo con original privado antes de integrar.

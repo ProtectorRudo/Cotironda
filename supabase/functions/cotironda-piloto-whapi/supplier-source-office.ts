@@ -22,7 +22,7 @@ class OfficeFailure extends Error{
  readonly reason:Reason;
  constructor(reason:Reason){super(reason);this.reason=reason}
 }
-const fail=(reason:Reason):never=>{throw new OfficeFailure(reason)};
+function fail(reason:Reason):never{throw new OfficeFailure(reason)}
 function u16(d:DataView,n:number){return d.getUint16(n,true)}
 function u32(d:DataView,n:number){return d.getUint32(n,true)}
 function crc32(data:Uint8Array):number{
