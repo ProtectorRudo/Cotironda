@@ -1,3 +1,5 @@
+import {elegirParExacto25} from './comparacion-pares-exacta.ts';
+
 /**
  * Cotironda / Etapa 03 - Comparador económico OFFLINE y conservador.
  * Solo acepta datos previamente verificados y ofertas confirmadas.
@@ -53,7 +55,7 @@ type Candidate={ids:string[];assignment:string[];currency:MonedaCotizada;pay:For
 const UNIDADES=new Set<UnidadCotizada>(['unit','bag','box','kg','g','l','ml','m','m2','m3','roll','pack']);
 const PAGO=new Set<FormaPago>(['contado','transferencia','cuenta_corriente_30_dias']);
 const IVA:{[K in IvaExplicito]:bigint}={'0':0n,'10.5':1050n,'21':2100n};
-const MAX_ITEMS=8,MAX_OFERTAS=10,MAX_AMOUNT=1000000000000n; // 10.000 millones ARS (centavos).
+const MAX_ITEMS=25,MAX_OFERTAS=10,MAX_AMOUNT=1000000000000n; // 10.000 millones ARS (centavos).
 function error():never{throw new TypeError('comparacion_entrada_invalida');}
 function record(x:unknown):x is Record<string,unknown>{
   return x!==null&&typeof x==='object'&&!Array.isArray(x);
@@ -147,6 +149,32 @@ function candidate(items:Item[],qs:Q[],assignment:number[]):Candidate|null{
     total:materials+freight,materials,freight,
     group:[first.moneda,first.formaPago,String(first.plazoEntregaDias)].join('|')};
 }
+/** Exact cheapest whole-line allocation for a supplier PAIR, up to 25 lines.
+ * Every economic field must be explicitly verified; otherwise no price option.
+ * Used only OFFLINE: it never supplies identities or sends buyer notifications.
+ */
+function exactPair(items:Item[],qs:Q[],a:number,b:number):Candidate|null{
+ const left=qs[a],right=qs[b],x=left.src,y=right.src;
+ if(!x.confirmada||!y.confirmada||
+   x.moneda!==y.moneda||x.formaPago===null||
+   x.formaPago!==y.formaPago||x.plazoEntregaDias===null||
+   x.plazoEntregaDias!==y.plazoEntregaDias||
+   left.flete===null||right.flete===null||
+   left.minimo===null||right.minimo===null)
+  return null;
+ const prices=items.map(item=>{
+  const la=validLine(left,item),lb=validLine(right,item);
+  const pa=la&&la.disponible>=item.q?linePrice(la,item.q):null;
+  const pb=lb&&lb.disponible>=item.q?linePrice(lb,item.q):null;
+  return {a:pa,b:pb};
+ });
+ const assignment=elegirParExacto25({precios:prices,
+  minimoA:left.minimo,minimoB:right.minimo,
+  preferirA:x.anonId<y.anonId});
+ if(assignment===null)return null;
+ return candidate(items,qs,assignment.map(useA=>useA?a:b));
+}
+
 export function compararCotizacionesOffline(pedido:PedidoComparable,
   ofertas:readonly OfertaComparable[]):ResultadoComparacion {
   exactKeys(pedido,['items']);
@@ -196,17 +224,11 @@ export function compararCotizacionesOffline(pedido:PedidoComparable,
   for(let a=0;a<qs.length;a++){
     const c=candidate(items,qs,items.map(()=>a));if(c)candidates.push(c);
   }
-  // Se elige la asignación mínima viable por cada PAR de proveedores.
-  // Exhaustivo solo para líneas indivisibles; no declara óptimo de fraccionamientos.
+  // Min-cost TWO-supplier assignment with separate minimum purchase limits.
+  // Exact meet-in-the-middle search (bounded to 25 non-splittable lines).
+  // It finds the cheapest valid pair allocation without evaluating 2^25 masks.
   for(let a=0;a<qs.length;a++)for(let b=a+1;b<qs.length;b++){
-    let best:Candidate|null=null;
-    const limit=1<<items.length;
-    for(let mask=1;mask<limit-1;mask++){
-      const assignment=items.map((_,i)=>((mask>>i)&1)?a:b);
-      const c=candidate(items,qs,assignment);
-      if(c&&(!best||c.total<best.total||
-        c.total===best.total&&c.assignment.join('|')<best.assignment.join('|')))best=c;
-    }
+    const best=exactPair(items,qs,a,b);
     if(best)candidates.push(best);
   }
   const groupCounts=new Map<string,number>();
