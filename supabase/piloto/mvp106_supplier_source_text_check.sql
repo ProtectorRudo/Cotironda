@@ -11,7 +11,7 @@ create table cotironda_piloto_privado.supplier_source_checks_mvp106(
  reason text not null check(reason in
   ('covered','unsupported_format','invalid_source','unsupported_layout',
   'unresolved','unsafe_contact','line_not_found','line_order_mismatch',
-  'field_not_on_source','uncovered_money','uncovered_number',
+  'field_not_on_source','uncovered_money','uncovered_number','uncovered_terms',
   'total_not_found')),
  checked_at timestamptz not null default clock_timestamp(),
  check((state='source_text_covered')=(reason='covered'))
@@ -39,7 +39,7 @@ begin
  or p_reason not in
   ('covered','unsupported_format','invalid_source','unsupported_layout',
    'unresolved','unsafe_contact','line_not_found','line_order_mismatch',
-   'field_not_on_source','uncovered_money','uncovered_number',
+   'field_not_on_source','uncovered_money','uncovered_number','uncovered_terms',
    'total_not_found')
  or (p_state='source_text_covered') is distinct from(p_reason='covered')
  or p_line_count not between 1 and 25
