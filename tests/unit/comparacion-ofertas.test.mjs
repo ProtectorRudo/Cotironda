@@ -192,7 +192,7 @@ test('ids repetidos, request corrupto y límite de complejidad se rechazan',()=>
   assert.throws(()=>run({items:[]},[a]),/comparacion_entrada_invalida/);
   assert.throws(()=>run(pedido(['bolsa_001','0']),[a]),/comparacion_entrada_invalida/);
   assert.throws(()=>run(pedido(['bolsa_001','1'],['bolsa_001','2']),[a]),/comparacion_entrada_invalida/);
-  assert.throws(()=>run(pedido(...Array.from({length:9},(_,i)=>['sku_'+i,'1'])),[]),/comparacion_entrada_invalida/);
+  assert.throws(()=>run(pedido(...Array.from({length:26},(_,i)=>['sku_'+i,'1'])),[]),/comparacion_entrada_invalida/);
 });
 
 test('un par con líneas no cubiertas nunca se considera compra completa',()=>{

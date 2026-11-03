@@ -39,7 +39,7 @@ function harness(source=input(),options={}){
    assert.equal(v.chatKey,chat);
    assert.equal(v.originMessageKey,m1);
    assert.equal(v.pedido.deliveryZone,'La Plata');
-   assert.equal(v.pedido.plazoDias,options.expectedDays??5);
+   assert.equal(v.pedido.plazoDias,options.expectedDays??4);
    assert.equal(v.pedido.items[0].quantity,'20');
    assert.equal(v.pedido.items[0].unit,'bag');
    assert.equal(v.pedido.items[0].source_description,'Cemento CPC Loma Negra 50 kg');

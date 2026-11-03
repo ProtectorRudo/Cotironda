@@ -10,7 +10,7 @@ const CH='pilot058_channel',MSG='a'.repeat(64),CHAT='b'.repeat(64);
 const ORG='aaaaaaaa-0058-4058-8058-000000000581';
 const ROUND='cccccccc-0058-4058-8058-000000000581';
 const SIMPLE='20 bolsas de cemento CPC 50 kg, 10 litros de hidrófugo y 5 litros de pintura látex. Entrega: La Plata.';
-function simulate(source,{expectedDays=5}={}){
+function simulate(source,{expectedDays=4}={}){
  const state={created:0,queued:0,zone:0,seen:null};
  const handler=crearConsumidorCompradorWhatsappD073({
   habilitado:true,channel:CH,

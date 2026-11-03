@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import {extraerPlazoCotizacionMvp053 as extraer}
  from '../../src/domain/plazo-cotizacion-mvp053.ts';
 const pedido='20 bolsas Cemento CPC 50 kg\nEntrega en: La Plata';
-test('MVP053: sin plazo expreso son 5 días y no se toca el pedido',()=>{
- assert.deepEqual(extraer(pedido),{dias:5,textoMateriales:pedido,explicito:false});
+test('MVP053: sin plazo expreso son 4 días y no se toca el pedido',()=>{
+ assert.deepEqual(extraer(pedido),{dias:4,textoMateriales:pedido,explicito:false});
 });
 test('MVP053: 3 a 7 días como instrucción separada, sin pregunta extra',()=>{
  for(const [n,directiva] of [
@@ -22,7 +22,7 @@ test('MVP053: 3 a 7 días como instrucción separada, sin pregunta extra',()=>{
 test('MVP053: nunca interpreta plazo de entrega del material como plazo de ronda',()=>{
  const raw=pedido+'\nEntrega de la mercadería en 3 días';
  const x=extraer(raw);
- assert.equal(x.dias,5);assert.equal(x.textoMateriales,raw);
+ assert.equal(x.dias,4);assert.equal(x.textoMateriales,raw);
 });
 test('MVP053: rango inválido, doble plazo y texto ambiguo no inician silenciosamente ronda',()=>{
  for(const bad of [

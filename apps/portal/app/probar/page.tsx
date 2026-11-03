@@ -26,6 +26,8 @@ export default function Probar(){
        <span> No ingreses datos personales ni presupuestos comerciales. No hay envíos, precios reales, IA externa ni adjudicaciones.</span>
      </aside>
      <p><a href="/probar/whatsapp" className="mvp-tag">Ver nuevo prototipo WhatsApp (3 comercios)</a></p>
+     <p><a href="/probar/catalogos" className="mvp-tag">Probar carga de listados de corralones (CSV/TXT)</a></p>
+     <p><a href="/probar/tres-telefonos" className="mvp-tag">Probar circuito completo: un arquitecto y dos corralones</a></p>
      <DemostracionComprador/>
    </div>
  </main>;
