@@ -172,7 +172,7 @@ begin
  into req_ from cotironda_piloto_privado.requests rq
  join cotironda_piloto_privado.finalist_coverage_plans_mvp108 plan
   on plan.request_id=rq.id and plan.state in
-   ('two_complete_alternatives','one_complete_alternative')
+   ('two_complete_alternatives','one_complete_alternative','two_supplier_combination')
  where rq.id=p_request and rq.state='closed'
   and rq.closes_at<=clock_timestamp();
  if not found then return jsonb_build_object('state','not_permitted');end if;
