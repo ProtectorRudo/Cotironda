@@ -1,3 +1,6 @@
+## MVP156 — Asociación contextual con evidencia multirrubro y cantidades
+- PDF de proveedor con nombres abreviados de materiales podrá asociarse a ronda única si hay ≥2 familias distintas y cantidades exactas. La pertenencia no prueba equivalencia comercial. Issue #515; docs/274. Solo PILOTO.
+
 ## MVP155 — archivos de proveedores sin cita, atribuidos automáticamente con evidencia
 - Con varias rondas, cotejar todos los materiales con catálogo real y atribuir solo a solicitud única; preservar extras, precios y originales. Issue #513, docs/273. Solo piloto.
 
