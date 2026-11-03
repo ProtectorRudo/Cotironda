@@ -26,3 +26,7 @@ Se corrigieron los 15 diagnósticos estáticos del primer CI Deno del PR #469: i
 Se ajustaron las dos pruebas estáticas MVP073/MVP122 para validar la importación WebCrypto desde una copia `ArrayBuffer` con algoritmos y usos idénticos. No se alteró el valor de ninguna clave ni el proceso de descifrado.
 
 El CI ejecuta además una prueba real de parsing PDF (archivo sintético de dos páginas con texto y un cargo extra). Este smoke verifica runtime de `unpdf` en Deno y mantiene separado el ensayo pendiente del PDF privado de Ailín.
+
+## Revisión de integridad cantidad/unidad (Issue #471)
+
+El cotejo de cada línea exige ahora un par explícito cantidad/unidad independiente de los números en precios y de medidas en el nombre del material. Acepta ambos órdenes de columnas y plural simple; los formatos donde el par no sea trazable quedan para revisión. Se agregaron regresiones para evitar que una cantidad `20` se infiera desde un total `$ 220.000,00` cuando la fuente dice `2 bolsa`.
