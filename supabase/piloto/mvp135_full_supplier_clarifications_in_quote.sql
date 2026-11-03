@@ -88,7 +88,7 @@ begin
    case when l.unit_literal is null then ''
     else E' '||l.unit_literal end||
    case when l.unit_price_literal is null then ''
-    else E'\nPrecio unitario: '||l.unit_price_literal end||
+    else E'\nPrecio unitario informado (ver aclaraciones): '||l.unit_price_literal end||
    case when l.line_total_literal is null then ''
     else E'\nImporte: '||l.line_total_literal end,
   E'\n\n' order by l.line_no)
