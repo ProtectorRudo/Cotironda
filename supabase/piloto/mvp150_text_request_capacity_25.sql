@@ -124,5 +124,4 @@ begin
   v_state,v_request);
  return jsonb_build_object('state',v_state,'invitations_prepared',v_invites);
 end;
-$function$
-
+$function$;
