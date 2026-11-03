@@ -27,8 +27,8 @@ jobs:
           deno-version: v2.x
       - name: Typecheck the EXACT production pilot webhook and PDF readers
         run: |
-          deno check supabase/functions/cotironda-piloto-whapi/index.ts
-          deno check supabase/functions/cotironda-piloto-whapi/supplier-source-pdf-general.ts
+          deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/index.ts
+          deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/supplier-source-pdf-general.ts
       - name: Verify no raw supplier document is printed
         run: |
           if grep -R -E 'console\.(log|error)\(.*(bytes|proposal|file\.data|sourceText)' supabase/functions/cotironda-piloto-whapi; then
