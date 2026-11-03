@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="theme-color" content="#112a4a">
+<title>Cotironda · Seguimiento privado</title>
+<link rel="stylesheet" href="/styles.css">
+<script src="/app.js" defer></script>
+</head>
+<body>
+<header class="top"><div class="shell bar"><div class="mark" aria-hidden="true">C</div><div><strong>COTIRONDA</strong><span>La nueva forma de cotizar</span></div><span class="chip">Seguimiento privado</span></div></header>
+<main class="shell">
+<section class="intro">
+<p class="eyebrow">TU RONDA DE COTIZACIÓN</p>
+<h1>Tus presupuestos, en un solo lugar.</h1>
+<p class="lead">Cada respuesta que recibimos de los proveedores se registra y revisa. Vas a ver las ofertas aprobadas, sin conocer la identidad de los negocios mientras la ronda siga abierta.</p>
+</section>
+<section class="panel" aria-labelledby="heading">
+<div class="panel-head"><div><p class="eyebrow">ESTADO DE LA SOLICITUD</p><h2 id="heading">Avance de la ronda</h2></div><span id="statePill" class="status">Consultando</span></div>
+<div class="summary">
+<div class="metric"><span class="metric-number" id="count" aria-live="polite">—</span><span class="metric-label">Presupuestos recibidos</span></div>
+<div class="metric side"><span class="small-label">Fecha límite</span><strong id="deadline">Consultando…</strong><span class="help" id="clockInfo">Hora argentina</span></div>
+</div>
+<div class="detail"><span class="dot" aria-hidden="true"></span><p id="stateText" role="status">Estamos obteniendo el estado de tu cotización.</p></div>
+<p id="pendingFiles" class="review-note" aria-live="polite"></p>
+<div id="receipts" class="offer-grid" aria-live="polite"></div>
+<div id="approvedOffers" class="offer-grid"></div>
+<div id="finalists" class="offer-grid"></div>
+<div class="footer-line"><span id="lastUpdated">Conectando…</span><button id="refresh" type="button">Actualizar ahora</button></div>
+</section>
+<section class="privacy"><strong>Tu información está protegida.</strong><p>Durante la ronda, los presupuestos y los proveedores se muestran de forma anónima. Las condiciones y los contactos se revelan únicamente cuando las reglas de cierre y consentimiento lo permiten.</p></section>
+</main>
+<footer class="shell legal">COTIRONDA · La nueva forma de cotizar <span>Este enlace es personal. No lo compartas.</span></footer>
+</body>
+</html>
