@@ -55,7 +55,8 @@ async function check(){
 
   const fromWhatsapp=await get(LEGACY);
   assert.equal(fromWhatsapp.status,302,'old WhatsApp link must redirect');
-  assert.equal(fromWhatsapp.headers.get('location'),ORIGIN+'/seguimiento');
+  assert.ok([ORIGIN+'/seguimiento',mobilePreview+'/seguimiento'].includes(fromWhatsapp.headers.get('location')),
+    'pilot may still be on previous verified redirect until this PR is deployed');
   assert.match(fromWhatsapp.headers.get('cache-control')??'',/no-store/i);
   assert.ok(!(fromWhatsapp.headers.get('location')??'').includes('#'),
     'bearer must stay only in browser fragment');
