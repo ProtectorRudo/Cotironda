@@ -63,6 +63,6 @@ test('MVP122: only backend can call context RPC and source stays immutable',()=>
  assert.match(sql,/revoke all on function public\.cotironda_piloto_text_zone_candidate_mvp122\(text,text\)/u);
  assert.match(sql,/revoke all on function public\.cotironda_piloto_complete_text_zone_mvp122\(/u);
  assert.match(sql,/grant execute on function public\.cotironda_piloto_complete_text_zone_mvp122\([\s\S]+?to service_role;/u);
- assert.match(sql,/source_hmac,p_original_text,'prepared'/u);
+ assert.match(sql,/values\(v_key,btrim\(p_city\),p_original_text,p_source_hmac,'prepared'\)/u);
  assert.doesNotMatch(sql,/grant execute [\s\S]*?to (?:anon|authenticated);/iu);
 });
