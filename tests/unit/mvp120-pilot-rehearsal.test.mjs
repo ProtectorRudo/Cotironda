@@ -15,7 +15,7 @@ test('MVP120: build includes all 15 ordered migrations and four synthetic fixtur
   previous=index;
  }
  assert.match(sql,/mvp118_release_db_gate/);
- assert.equal((sql.match(/SAVEPOINT mvp120_fixture_\d+;/gu)||[]).length,4);
+ assert.equal((sql.match(/^SAVEPOINT mvp120_fixture_\d+;$/gmu)||[]).length,4);
  assert.equal((sql.match(/ROLLBACK TO SAVEPOINT mvp120_fixture_\d+;/gu)||[]).length,4);
  assert.ok(sql.startsWith('BEGIN;\nSET LOCAL lock_timeout'));
  assert.match(sql,/\nROLLBACK;\nSELECT .*AS mvp120_reverted_without_install;\n$/u);
