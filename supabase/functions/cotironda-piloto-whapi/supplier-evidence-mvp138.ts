@@ -164,7 +164,14 @@ export async function verifySupplierEvidence(
  }
  for(const [i,row] of source.entries()){
   if(used.has(i))continue;
-  if(cash(row).length)return reject('extra_charge',c);
+  // A supplier can submit prices without the $ sign. Unclaimed numeric
+  // spreadsheet cells and bare PDF currency must never disappear.
+  const bareCurrency=/(?<![\p{L}\p{N}])(?:\d{1,3}(?:\.\d{3})+(?:,\d{2})?|\d+,\d{2})(?![\d.,%])/u;
+  const excelNumbers=f.mime==='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'?
+   row.split('·').filter(v=>num(v.trim())).length:0;
+  if(cash(row).length||bareCurrency.test(row)||
+   excelNumbers>=2||excelNumbers>=1&&commercial.test(row))
+   return reject('extra_charge',c);
   if(commercial.test(row)&&!note.includes(row)&&
     !/^\s*(?:descripci[oó]n|producto|cantidad|precio|importe)\b/iu.test(row))
    return reject('uncovered_note',c);
