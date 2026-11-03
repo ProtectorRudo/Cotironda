@@ -95,7 +95,6 @@ revoke all on function public.cotironda_piloto_note_document_draft_mvp127(text,b
 grant execute on function public.cotironda_piloto_note_document_draft_mvp127(text,boolean)
  to service_role;
 
-
 -- For private, authenticated workers ONLY. SQL NEVER downloads media, calls
 -- external APIs, sends WhatsApps, or returns document text/PII.
 create or replace function public.cotironda_piloto_reserve_document_retry_mvp127(
@@ -104,32 +103,7 @@ returns jsonb language plpgsql volatile security definer set search_path='' as $
 declare a record; diag record;
 begin
  if p_message_hmac is null or p_message_hmac !~ '^[a-f0-9]{64}
--- Every proposed line is still bounded/validated by Edge and downstream SQL.
-create or replace function public.cotironda_piloto_note_media_proposal_mvp095(
- p_message_hmac text,p_proposal jsonb)
-returns boolean language plpgsql volatile security definer set search_path='' as $function$
-declare n integer;
-begin
- if p_message_hmac is null or p_message_hmac !~ '^[a-f0-9]{64}$'
- or jsonb_typeof(p_proposal)<>'object'
- or length(p_proposal::text)>40000
- or p_proposal->>'status'<>'review_required'
- or jsonb_typeof(p_proposal->'lines')<>'array'
- or jsonb_array_length(p_proposal->'lines') not between 0 and 25
- then return false;end if;
- update cotironda_piloto_privado.media_archive_mvp095
- set proposal=p_proposal,review_state='suggested_only'
- where message_hmac=p_message_hmac and state='stored'
- and review_state='review_required' and ai_reserved_at is not null
- and proposal is null;
- get diagnostics n=row_count;
- return n=1;
-end;$function$;
-revoke all on function public.cotironda_piloto_note_media_proposal_mvp095(text,jsonb)
- from public,anon,authenticated;
-grant execute on function public.cotironda_piloto_note_media_proposal_mvp095(text,jsonb)
- to service_role;
-
+$'
  then return jsonb_build_object('state','invalid');end if;
  select m.message_hmac,m.kind,m.mime,m.content_sha256,m.size_bytes,
         m.request_id,p.participant_role
@@ -140,32 +114,7 @@ grant execute on function public.cotironda_piloto_note_media_proposal_mvp095(tex
  where m.message_hmac=p_message_hmac and m.state='stored'
   and m.proposal is null and m.review_state='review_required'
   and m.ai_reserved_at is not null and m.content_sha256 ~ '^[a-f0-9]{64}
--- Every proposed line is still bounded/validated by Edge and downstream SQL.
-create or replace function public.cotironda_piloto_note_media_proposal_mvp095(
- p_message_hmac text,p_proposal jsonb)
-returns boolean language plpgsql volatile security definer set search_path='' as $function$
-declare n integer;
-begin
- if p_message_hmac is null or p_message_hmac !~ '^[a-f0-9]{64}$'
- or jsonb_typeof(p_proposal)<>'object'
- or length(p_proposal::text)>40000
- or p_proposal->>'status'<>'review_required'
- or jsonb_typeof(p_proposal->'lines')<>'array'
- or jsonb_array_length(p_proposal->'lines') not between 0 and 25
- then return false;end if;
- update cotironda_piloto_privado.media_archive_mvp095
- set proposal=p_proposal,review_state='suggested_only'
- where message_hmac=p_message_hmac and state='stored'
- and review_state='review_required' and ai_reserved_at is not null
- and proposal is null;
- get diagnostics n=row_count;
- return n=1;
-end;$function$;
-revoke all on function public.cotironda_piloto_note_media_proposal_mvp095(text,jsonb)
- from public,anon,authenticated;
-grant execute on function public.cotironda_piloto_note_media_proposal_mvp095(text,jsonb)
- to service_role;
-
+$'
   and m.size_bytes between 8 and 3145728
   and m.mime in ('application/pdf','image/jpeg','image/png','image/webp',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
