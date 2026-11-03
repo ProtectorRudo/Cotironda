@@ -223,9 +223,15 @@ function sheets(files:Map<string,string>):string[]{
   const data=sheet.match(/<sheetData(?:\s[^>]*)?>([\s\S]*?)<\/sheetData>/u)?.[1];
   if(!data)fail('unsupported_layout');
   const rows=[...data.matchAll(/<row(?:\s[^>]*)?>([\s\S]*?)<\/row>/gu)];
-  if(rows.length<1||rows.length>300||
-    (data.match(/<row(?=\s|>)/gu)??[]).length!==rows.length)
-    fail('unsupported_layout');
+  // Excel writes blank, formatted rows as <row r="17"/>. Their lack of cells
+  // is source-proven, so skip them rather than reject the whole quotation.
+  // Match and count every row tag: do not silently ignore non-empty/hidden XML.
+  const blanks=[...data.matchAll(/<row\b[^>]*\/>/gu)];
+  const openings=(data.match(/<row(?=\s|>)/gu)??[]).length;
+  if(rows.length<1||rows.length+blanks.length>300||
+   openings!==rows.length+blanks.length||
+   blanks.some(r=>/\bhidden="(?:1|true)"/iu.test(r[0])))
+   fail('unsupported_layout');
   for(const row of rows){
    const cells=[...row[1].matchAll(/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/gu)];
    if(cells.length>50)fail('unsupported_layout');
