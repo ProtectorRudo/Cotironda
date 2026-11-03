@@ -136,12 +136,27 @@ export function checkSupplierTextSource(
   return not('unresolved',proposal.lines.length,hash);
  const lines=original.replace(/\r\n|\r/gu,'\n').split('\n')
   .map(s=>s.trim()).filter(Boolean);
- // Strict one-item-per-line textual attachment; larger or complex documents
- // remain review-required instead of being quietly truncated or misread.
- if(lines.length!==proposal.lines.length+1||
-   lines.length<2||lines.length>26)
-  return not('unsupported_layout',proposal.lines.length,hash);
- const total=lines[lines.length-1];
+ // Strict ordered product rows first, followed by exactly one TOTAL
+ // and optional non-monetary notes either before or after TOTAL. Notes
+ // are never turned into price lines or allowed to conceal extra charges.
+ const n=proposal.lines.length;
+ if(n<1||n>25||lines.length<n+1||lines.length>n+21)
+  return not('unsupported_layout',n,hash);
+ const tail=lines.slice(n);
+ const totalIndices=tail.flatMap((row,i)=>
+  /^(?:total(?:\\s+(?:final|general|a\\s+pagar))?|importe\\s+total)\\s*[:=]?/iu.test(row)?[i]:[]);
+ if(totalIndices.length!==1)return not('total_not_found',n,hash);
+ const total=tail[totalIndices[0]];
+ const notes=tail.filter((_,i)=>i!==totalIndices[0]);
+ const note=(proposal.requested_delivery_note??'').trim();
+ const clauses=note.split(/[;\\r\\n]+/u).map(v=>v.trim()).filter(Boolean);
+ if(notes.some(v=>moneyTokens(v).length>0))
+  return not('uncovered_money',n,hash);
+ const norm=(v:string)=>v.replace(/\\s+/gu,' ').trim().toLocaleLowerCase('es-AR');
+ const complete=norm(note);
+ if(notes.some(v=>!complete.includes(norm(v)))||
+    clauses.some(v=>!notes.some(row=>norm(row).includes(norm(v)))))
+  return not('uncovered_terms',n,hash);
  const totalMatch=total.match(
   /^(?:total(?:\s+(?:final|general|a\s+pagar))?|importe\s+total)\s*[:=]?\s*/iu);
  if(!totalMatch||
