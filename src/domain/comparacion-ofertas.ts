@@ -154,6 +154,9 @@ function candidate(items:Item[],qs:Q[],assignment:number[]):Candidate|null{
  * Used only OFFLINE: it never supplies identities or sends buyer notifications.
  */
 function exactPair(items:Item[],qs:Q[],a:number,b:number):Candidate|null{
+ // A one-item basket cannot be divided between two suppliers without
+ // splitting the requested quantity. Single-provider candidates remain valid.
+ if(items.length<2)return null;
  const left=qs[a],right=qs[b],x=left.src,y=right.src;
  if(!x.confirmada||!y.confirmada||
    x.moneda!==y.moneda||x.formaPago===null||
