@@ -151,6 +151,17 @@ export function canPrepareBuyerPilot(parsed:ParsedBuyer):boolean{
   parsed.items.length>0&&parsed.items.length<=25&&parsed.unresolved.length===0;
 }
 
+
+/** A quoted WhatsApp reply can identify the outbound supplier PDF. */
+export function quotedWhapiMessageId(message:unknown):string|null{
+ if(!message||typeof message!=='object'||Array.isArray(message))return null;
+ const ctx=(message as Record<string,unknown>).context;
+ if(!ctx||typeof ctx!=='object'||Array.isArray(ctx))return null;
+ const id=(ctx as Record<string,unknown>).quoted_id;
+ return typeof id==='string'&&/^[A-Za-z0-9._:-]{8,160}$/u.test(id)
+  ?id:null;
+}
+
 export function validMessage(message:unknown, now:number):message is {
  id:string;from_me:false;type:'text'|'image'|'document'|'audio'|'voice';
  chat_id:string;from?:string;timestamp:number;text?:{body:string};
