@@ -249,7 +249,7 @@ begin
  then return jsonb_build_object('state','duplicate_line');end if;
  for change_ in select v.value as obj from jsonb_array_elements(p_changes) v loop
   if jsonb_typeof(change_.obj)<>'object' or
-     (change_.obj->>'line_no') !~ '^(?:[1-9]|1[0-9]|2[0-5])
+     (change_.obj->>'line_no') !~ '^([1-9]|1[0-9]|2[0-5])$'
   then return jsonb_build_object('state','invalid_line');end if;
   select l.* into item from cotironda_piloto_privado.document_lines_mvp098 l
   where l.message_hmac=original and
