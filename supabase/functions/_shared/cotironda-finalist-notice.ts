@@ -84,18 +84,25 @@ export function prepareMessage(info:Record<string,unknown>,contacts:Contact[]):{
  const businessLines=supplierContacts.map(c=>
   label(labels[c.key])+' · WhatsApp: '+c.phone).join('\n');
  const intro='Cotironda · La ronda de cotizaciones finalizó.\n';
+ const combined=info.joint_supplier_coverage===true;
  let body:string;
  if(recipientKey===buyerKey){
-  body=intro+'Estas son las '+supplierContacts.length+
-   ' alternativa(s) completas verificadas respecto de los materiales solicitados. '+
-   'No están ordenadas por menor precio: consultá IVA, flete, disponibilidad y pago '+
-   'directamente con los negocios.\n\n'+businessLines;
+  body=combined
+   ?intro+'Estos dos negocios, con sus cotizaciones parciales, pueden cubrir juntos la lista solicitada. Ninguno cotizó el pedido completo por sí solo. No calculamos un precio total comparable: confirmá los artículos, IVA, flete, pago y disponibilidad con ambos.\n\n'+businessLines
+   :intro+'Estas son las '+supplierContacts.length+
+    ' alternativa(s) completas verificadas respecto de los materiales solicitados. '+
+    'No están ordenadas por menor precio: consultá IVA, flete, disponibilidad y pago '+
+    'directamente con los negocios.\n\n'+businessLines;
  }else{
-  body=intro+'Tu presupuesto quedó entre las '+supplierContacts.length+
-   ' alternativa(s) que cubren los materiales solicitados. '+
-   'Esto no indica que hayas obtenido el menor precio ni adjudica ninguna compra.\n'+
-   'Contacto del comprador: '+buyerName+' · WhatsApp: '+buyer.phone+
-   '\nPodés coordinar directamente las condiciones comerciales.';
+  body=combined
+   ?intro+'Tu presupuesto parcial, junto con el de otro negocio, permite cubrir todos los materiales solicitados. No significa que hayas ganado por precio ni que se haya adjudicado una compra.\n'
+     +'Contacto del comprador: '+buyerName+' · WhatsApp: '+buyer.phone
+     +'\nCoordiná directamente los artículos y condiciones.'
+   :intro+'Tu presupuesto quedó entre las '+supplierContacts.length+
+    ' alternativa(s) que cubren los materiales solicitados. '+
+    'Esto no indica que hayas obtenido el menor precio ni adjudica ninguna compra.\n'+
+    'Contacto del comprador: '+buyerName+' · WhatsApp: '+buyer.phone+
+    '\nPodés coordinar directamente las condiciones comerciales.';
  }
  if(body.length>2200)throw Error('message_too_long');
  return {to:recipient.phone,body};
