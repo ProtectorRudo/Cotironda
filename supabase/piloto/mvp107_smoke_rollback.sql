@@ -33,7 +33,7 @@ begin
   raise exception 'mvp107_no_tracking %',out_;end if;
  proposal:=jsonb_build_object(
   'kind','supplier_quote','status','review_required','delivery_city',null,
-  'requested_delivery_note',null,'unanswered','[]'::jsonb,
+  'requested_delivery_note', 'PRECIOS LISTA 7; PAGO CONTADO EFECTIVO; FLETE A CONVENIR; DEVOLUCION DE PALLETS', 'unanswered','[]'::jsonb,
   'total_declared','$ 214.500,00',
   'lines',jsonb_build_array(
     jsonb_build_object('original_description','Cemento CPC 50 kg',
@@ -98,7 +98,7 @@ begin
  or content not like '%Flete a obra%'
  or content not like '%Descuento comercial%'
  or content not like '%-$ 3.000,00%'
- or content not like '%TOTAL DECLARADO: $ 214.500,00%'
+ or content not like '%TOTAL DECLARADO: $ 214.500,00%'\n or content not like '%ACLARACIONES DEL PROVEEDOR%'\n or content not like '%PRECIOS LISTA 7%'\n or content not like '%PAGO CONTADO EFECTIVO%'\n or content not like '%FLETE A CONVENIR%'\n or content not like '%DEVOLUCION DE PALLETS%'
  or content like '%corralon_nahuel%'
  then raise exception 'mvp107_original_concepts_not_preserved';end if;
  out_:=public.cotironda_piloto_tracking_status_mvp091(token);

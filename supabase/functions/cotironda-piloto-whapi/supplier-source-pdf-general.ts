@@ -17,7 +17,7 @@ export type EvidenceReader=(bytes:Uint8Array)=>Promise<PdfSourceEvidence>;
 type Reason=SourceCheckResult['reason'];
 const MONEY=/(?:\$\s*-?\s*\d[\d.,]*|\b\d{1,3}(?:\.\d{3})+(?:,\d{2})?\b|\b\d+,\d{2}\b)/gu;
 const PII=/(?:cuit|cuil|whats?app|tel[eé]fono|celular|raz[oó]n social|facturar a|wa\.me|https?:\/\/|@[\w-]+|\b[\w.%+-]+@[\w.-]+\.[a-z]{2,}\b)/iu;
-const TERMS=/(?:\biva\b|flete|entrega|formas? de pago|descuento|bonificaci[oó]n|disponib|vencimiento|contado|cr[eé]dito|financiaci[oó]n|impuestos|garant[ií]a)/iu;
+const TERMS=/(?:\biva\b|flete|entrega|formas? de pago|descuento|bonificaci[oó]n|disponib|vencimiento|contado|efectivo|transferencia|precios?\s+(?:de\s+)?lista|\blista\s+\d+\b|devoluci[oó]n|retornabl|pallets?|bolsones?|cr[eé]dito|financiaci[oó]n|impuestos|garant[ií]a)/iu;
 const normalized=(s:string)=>s.normalize('NFKC').replace(/\s+/gu,' ').trim().toLocaleLowerCase('es-AR');
 const invalid=(f:DownloadedMedia,n:number,r:Reason):SourceCheckResult=>
  Object.freeze({state:'needs_source_review',reason:r,lines:n,
@@ -33,13 +33,21 @@ const mentions=(source:string,term:string|null):boolean=>term===null||
 const regexEscape=(value:string):string=>value.replace(/[.*+?^${}()|[\]\\]/gu,'\\$&');
 const quantityUnitEvidence=(row:string,description:string,quantity:string|null,unit:string|null):boolean=>{
  const q=normalized(quantity??''),u=normalized(unit??''),desc=normalized(description);
- if(!/^\d+(?:[.,]\d+)?$/u.test(q)||!u||!desc)return false;
+ if(!/^\d+(?:[.,]\d+)?$/u.test(q)||!desc)return false;
  const at=row.indexOf(desc);
  if(at<0)return false;
- // Remove product size/specification, then exclude every monetary amount.
+ // Remove the entire product description (including its sizes, e.g. 25 kg).
+ // Currency tokens and text after the first amount are NOT quantity evidence.
  let context=row.slice(0,at)+' '+row.slice(at+desc.length);
  const moneyStart=context.search(MONEY);
  if(moneyStart>=0)context=context.slice(0,moneyStart);
+ if(!u){
+  // A source may print quantity under a numeric column without a unit.
+  // Confirm the literal number as a separate token, NEVER infer a unit.
+  if(moneyStart<0)return false;
+  const number='(?<![\\p{L}\\p{N}.,])'+regexEscape(q)+'(?![\\p{L}\\p{N}.,])';
+  return new RegExp(number,'u').test(context);
+ }
  const sep='[\\s|:;·/-]*';
  const pattern='(?<![\\p{L}\\p{N}.,])(?:'+regexEscape(q)+sep+regexEscape(u)+'s?|'+
    regexEscape(u)+'s?'+sep+regexEscape(q)+')(?![\\p{L}\\p{N}.,])';
@@ -170,12 +178,15 @@ export async function checkGeneralPdfSource(
    return invalid(f,n,'uncovered_money');
   }
   MONEY.lastIndex=0;
-  if(!consumed.has(i)&&TERMS.test(row)&&
-     !mentions(p.requested_delivery_note??'',row))
-    return invalid(f,n,'uncovered_terms');
-  // Unclaimed numeric cell may be a quote extra, omitted quantity or code.
-  // We fail closed rather than silently discard an economic element.
-  if(!consumed.has(i)&&/\d/u.test(row))
+  // A commercial annotation can contain a list number (LISTA 7) or
+  // pallet return condition. Treat it as claimed only if the WHOLE source
+  // row is present in the copied supplier note; never ignore money-bearing
+  // rows or other numeric data as if they were harmless annotations.
+  const noteClaim=!consumed.has(i)&&TERMS.test(row)&&
+   normalized(p.requested_delivery_note??'').includes(row);
+  if(!consumed.has(i)&&TERMS.test(row)&&!noteClaim)
+   return invalid(f,n,'uncovered_terms');
+  if(!consumed.has(i)&&/\d/u.test(row)&&!noteClaim)
    return invalid(f,n,'uncovered_number');
  }
  return covered(f,n);
