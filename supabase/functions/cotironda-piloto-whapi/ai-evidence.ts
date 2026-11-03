@@ -91,6 +91,13 @@ export function verifyAiBuyerSourceEvidence(
     /\b(adhesivo|contacto|cola|blanco|refractario|plastico|asfaltico)\b/u.test(normalized)))
    return reject('family_not_proven');
   const sourcePairs=found.filter(p=>p.start>=start&&p.end<=end);
+  // A pack's presentation (e.g. cemento 50 kg) is not what the buyer
+  // ordered when the line explicitly says 10 bags. Do not treat the
+  // presentation number as the requested quantity.
+  if((v.unit==='kg'||v.unit==='l')&&
+     sourcePairs.some(p=>p.unit==='bag'||p.unit==='box'||
+       p.unit==='pack'||p.unit==='roll'))
+    return reject('presentation_not_requested_quantity');
   if(!sourcePairs.some(p=>p.unit===v.unit&&p.quantity===Number(v.quantity)))
    return reject('requested_quantity_not_proven');
   used.push({start,end});
