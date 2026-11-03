@@ -19,3 +19,5 @@
 
 ## Política de alta y permisos
 No generar prompts de autorización por cada pedido o presupuesto. La aceptación única de mensajes operativos debe ser clara y verificable cuando se registra la persona; si la autorización fue obtenida por el operador, se almacena su referencia. Se conserva la baja y el bloqueo de mensajes no solicitados. La plataforma conserva RLS y permisos entre empresas. Las integraciones reciben acceso mínimo necesario para operar sin interacción humana reiterada.
+
+La solicitud pg_net usa timeout de 60 s porque la doble lectura documental puede tardar hasta 40 s. Un timeout no implica permiso para un segundo envío WhatsApp. La reserva SQL impide dos lecturas simultáneas del mismo original.
