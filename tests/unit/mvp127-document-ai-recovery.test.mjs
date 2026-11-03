@@ -105,6 +105,12 @@ test('MVP127: private diagnostic codes, no anon grants and no stored file/price/
  assert.match(sql,/revoke all on cotironda_piloto_privado\.document_ai_diagnostics_mvp127/u);
  assert.match(sql,/to service_role;/u);
  assert.match(sql,/check \(attempt_count between 0 and 3\)/u);
+ assert.match(sql,/cotironda_piloto_reserve_document_retry_mvp127/u);
+ assert.match(sql,/attempt_count<3 and next_retry_at <=clock_timestamp\(\)/u);
+ assert.match(sql,/m\.proposal is null and m\.review_state='review_required'/u);
+ assert.match(sql,/for update of m/u);
+ assert.match(sql,/return jsonb_build_object\('state','reserved'/u);
+ assert.match(sql,/to service_role;/u);
  assert.match(sql,/p\.opted_out_at is null/u);
  assert.match(sql,/p_proposal->>'status'<>'review_required'/u);
  assert.match(sql,/length\(p_proposal::text\)>40000/u);
