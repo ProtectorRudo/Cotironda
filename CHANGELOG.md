@@ -1,3 +1,6 @@
+## MVP158 — Seguimiento móvil legible y hora de 24 horas
+- Total e ítems por tarjeta con transcripción original; aviso BIG BAG sin equivalencia presunta; fecha límite en Argentina 16:30 y no 04:30. Issue #519, docs/276. Solo PILOTO.
+
 ## MVP157 — Descuento en columna PDF con verificación independiente v9
 - Contrastar sufijo Dscto de la IA con porcentaje y aritmética fuente original sin exigirlo como texto pegado al producto; evidencia append-only v9, status comprador sin ampliar permisos. Issue #517, docs/275. Solo piloto.
 
