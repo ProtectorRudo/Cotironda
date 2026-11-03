@@ -1,3 +1,6 @@
+## MVP143 — PDF total sin etiqueta reconocida, con evidencia matemática
+- Corrige bloqueo PDF Ailín cuando importe único y suma exacta acreditan el total; verificación v6 append-only. Documento docs/262. Solo PILOTO.
+
 ## MVP142 — Presupuestos reales: hojas Excel vacías y total de contado en PDF
 - Verificación v5 de fuente original, preservación de cifras y notas, pruebas adversarias. Solo PILOTO. Ver docs/261 y #488.
 

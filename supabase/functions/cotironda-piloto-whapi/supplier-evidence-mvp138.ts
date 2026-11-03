@@ -148,11 +148,12 @@ export async function verifySupplierEvidence(
   return neighbors.map(j=>({row:source[j],i,consumed:[i,j]}));
  });
  let totals=[...inline,...split];
- // The source PDF may position the TOTAL label in a distant text object.
+ // The source PDF may have NO machine-readable TOTAL label; only source
+ // amounts, an unambiguous money field and exact line-sum math are trusted.
  // Accept only one standalone, original-value money field, with the
  // deterministic sum of ALL quoted line totals equal to the claimed total.
  // All other unclaimed charges and conditions are still audited below.
- if(totals.length===0&&f.mime==='application/pdf'&&source.some(row=>label.test(row))){
+ if(totals.length===0&&f.mime==='application/pdf'){
   const totalValue=cents(p.total_declared!);
   const values=p.lines.map(l=>cents(l.line_total??''));
   if(totalValue!==null&&values.every((v):v is bigint=>v!==null)&&
