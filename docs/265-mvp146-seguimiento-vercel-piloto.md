@@ -20,3 +20,6 @@ El Edge `cotironda-piloto-seguimiento` conserva POST actual, y GET 302 a Vercel 
 Rollback: redeploy versión previa de Edge solo GET; Vercel no modifica base ni WhatsApp.
 
 Proyecto Vercel PILOTO Git aislado: `cotironda-seguimiento-vista-piloto` (`prj_0kZzvuzEg7vL4FzsqbdARKeoHzLk`), raíz `piloto/seguimiento-web`. Validar `READY` y HTTP antes del GET 302.
+
+## MVP153 — Dominio de PREVIEW realmente asignado
+Vercel confirmó despliegue `READY` `dpl_Ew1EbyVU9rJFqdMnictkRuai7CFu` de la rama `fix/mvp153-seguimiento-web-piloto` y alias de rama `https://cotironda-seguimiento-vist-git-147a4e-protector-rudo-s-projects.vercel.app/seguimiento`. No se debe usar el dominio corto `cotironda-seguimiento-vista-piloto.vercel.app` porque no está asignado. El 302 usa el alias de PREVIEW real, no producción. La comprobación HTTP directa y móvil continúa pendiente: ningún estado READY demuestra una página legible en el navegador.
