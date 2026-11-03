@@ -11,6 +11,10 @@ begin
  select req.id,req.buyer_key,plan.supplier_keys,plan.candidate_count
  into r_ from cotironda_piloto_privado.buyer_tracking_mvp091 t
  join cotironda_piloto_privado.requests req on req.id=t.request_id
+ join cotironda_piloto_privado.finalist_activation_mvp113 activation
+  on activation.only_row and activation.enabled
+   and activation.activated_at<=clock_timestamp()
+   and req.created_at>=activation.activated_at
  join cotironda_piloto_privado.participants b on b.key=req.buyer_key
  join cotironda_piloto_privado.finalist_coverage_plans_mvp108 plan
   on plan.request_id=req.id and plan.state in
