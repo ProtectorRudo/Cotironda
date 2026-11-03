@@ -1,3 +1,6 @@
+## MVP-132 - cron documental autónomo con Vault (desarrollo, 03/11/2026)
+- Recuperación automática sin permisos repetidos ni reenvíos, token generado en Vault y verificador RPC exclusivo de service_role. Respeta baja, cuota, plazo y privacidad. Issue #476, despliegue solo a PILOTO tras pruebas.
+
 ## MVP-131 — recuperación de archivos sin mensaje WhatsApp posterior (DEV, 03/11/2026)
 - Worker Edge aislado service-to-service con autenticación por clave secreta, bandera OFF y RPC de selección privada solo para service_role. Reusa recuperación MVP128, archivo original, doble lectura y auditoría económica, sin enviar WhatsApp.
 - Issue #473. Pendiente: CI, SQL smoke aislado, autorización de despliegue PILOTO y verificación del PDF original de Ailín. No tocar producción.

@@ -62,7 +62,8 @@ test('MVP131: entrypoint authenticated and SQL restricted',()=>{
  const edge=readFileSync(new URL('../../supabase/functions/cotironda-piloto-document-recovery/index.ts',import.meta.url),'utf8');
  const sql=readFileSync(new URL('../../supabase/piloto/mvp131_system_document_trigger.sql',import.meta.url),'utf8');
  const config=readFileSync(new URL('../../supabase/config.toml',import.meta.url),'utf8');
- assert.match(edge,/withSupabase\(\{auth:'secret'\}/u);
+ assert.match(edge,/guardScheduledRecovery/u);
+ assert.match(edge,/cotironda_piloto_recovery_token_allowed_mvp132/u);
  assert.doesNotMatch(edge,/messages\/text|messages\/document|gate\.whapi\.cloud/u);
  assert.match(sql,/security definer set search_path=''/u);
  assert.match(sql,/revoke all on function public\.cotironda_piloto_system_document_trigger_mvp131\(\)[\s\S]*?from public,anon,authenticated/u);
