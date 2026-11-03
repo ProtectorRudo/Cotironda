@@ -175,7 +175,7 @@ begin
      else '' end||
     case when note_ is null then '' else
      E'\n\nACLARACIONES DEL PROVEEDOR\n'||note_ end||
-    E'\n\nIVA, moneda, stock o flete no informados expresamente: consultar las condiciones originales.'||
+    E'\n\nIVA, moneda, disponibilidad y flete: consultar las aclaraciones expresas; lo ausente se considera no informado.'||
     E'\nEsta es una cotización recibida, no un ranking de ofertas equivalentes.';
    if length(presentation)>12000 or
      presentation ~* '(https?://|www[.]|wa[.]me|@[[:alnum:]_]|cuit|cuil|whatsapp|tel[eé]fono|direcci[oó]n|domicilio|contacto|[0-9]{8,})'

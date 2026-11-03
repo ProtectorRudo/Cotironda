@@ -25,7 +25,7 @@ const minor=(x:string|null)=>x===null||x.trim()===''||
  /^unidad de cantidad no indicada\.?(?: descuento visible:\s*\d{1,2}[.,]\d{1,2}%\.?)?$/iu.test(n(x));
 const discount=(x:string|null)=>x?.match(/descuento visible:\s*(\d{1,2}[.,]\d{1,2})\s*%/iu)?.[1]??null;
 const pii=/(?:https?:\/\/|wa\.me|www\.|whatsapp|cuit|cuil|tel[eé]fono|raz[oó]n social|[a-z0-9._%+-]+@[a-z0-9.-]+|[0-9]{8,})/iu;
-const commercial=/(?:\biva\b|flete|pallet|bolson|devoluci[oó]n|lista|contado|efectivo|plazo|entrega|pago|transferencia|descuento)/iu;
+const commercial=/(?:\biva\b|flete|pallet|bolson|devoluci[oó]n|lista|contado|efectivo|plazo|entrega|env[ií]o|transporte|cargo|pago|transferencia|descuento)/iu;
 const sourceReader:Reader=async f=>{
  if(f.mime==='application/pdf'){
   const pdf=await readPdfPositioned(f.bytes);
@@ -66,6 +66,17 @@ export async function verifySupplierEvidence(
    const pos=m.indexOf(scalar(v));if(pos>=0)m.splice(pos,1);
   }
   if(m.length)return reject('extra_charge',c);
+  if(f.mime==='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'){
+   // All bare numeric XLSX cells are source amounts, not just $-prefixed ones.
+   const cells=source[i].split('·').map(v=>v.trim()).filter(v=>num(v));
+   const expected=[l.quantity!,l.unit_price!,l.line_total!].map(scalar);
+   for(const wanted of expected){
+    const at=cells.findIndex(v=>scalar(v)===wanted);
+    if(at<0)return reject('missing_amount',c);
+    cells.splice(at,1);
+   }
+   if(cells.length)return reject('extra_charge',c);
+  }
   used.add(i);
  }
  const totals=source.map((row,i)=>({row,i})).filter(({row,i})=>

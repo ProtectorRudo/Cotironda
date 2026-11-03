@@ -102,7 +102,7 @@ test('MVP138: SQL uses source hash, buyer privacy, idempotency and no ranking',(
   'supplier_evidence_mvp138','enable row level security','supplier_evidence_immutable_mvp138',
   "p.participant_role='supplier'","p.opted_out_at is null",
   "r.closes_at>clock_timestamp()","m.content_sha256=q.source_sha256",
-  "p_message_hmac=p_message_hmac","q.source_sha256=p_source_sha256",
+  "q.message_hmac=p_message_hmac","q.source_sha256=p_source_sha256",
   'public.cotironda_piloto_next_supplier_evidence_mvp138',
   'public.cotironda_piloto_record_supplier_evidence_mvp138',
   "'ranking_allowed',false","to service_role"
