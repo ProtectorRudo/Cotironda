@@ -1,3 +1,9 @@
+## MVP-126 — vinculación voluntaria de cuenta web con WhatsApp ya verificado (03/11/2026)
+- Dos tablas privadas RLS con desafío de 96 bits, SHA256, 10 minutos de vencimiento, límites de emisión, uso único y revocación; autenticación confirma que la sesión real sigue viva en `auth.sessions`.
+- El webhook Whapi interpreta exclusivamente `VINCULAR <código>` tras autenticación e inbox cifrado. SQL exige mismo chat/participante con consentimiento, texto original corroborado por SHA256, rol y sesión vigente, sin crear cotizaciones ni pasar por IA.
+- Nueva RPC `cotironda_piloto_my_rounds_mvp126`: comprador solo sus solicitudes y conteos no verificados; proveedor solo sus invitaciones y sus versiones de presupuesto, sin precios ni contactos ajenos.
+- Ensayo real transaccional contra Supabase PILOTO con dos cuentas Auth sintéticas, comprador y proveedor, rechazo de código incorrecto/chat ajeno/replay y sesión cerrada: PASS + ROLLBACK, sin cuentas ni rondas persistidas. CI y publicación de funciones quedan sujetos a aprobación y auditoría. Issue #462, docs/245. **Sin acceso comercial activo: Auth PILOTO sigue vacío y SMTP no habilitado para terceros.**
+
 ## MVP-125 — unificar seguimiento y futuro acceso en cotironda.com (03/11/2026)
 - Decisión de producto: una sola plataforma cotironda.com; WhatsApp sigue siendo el canal principal, y compradores/proveedores podrán consultar su historial desde cuentas propias.
 - Primer bloque implementado en `site/seguimiento/` (HTML/CSS/JS) con Vercel rewrite same-origin `/api/seguimiento` hacia la API segura de Supabase, fragmento privado sin logs, CSP/noindex/no-store y anonimato hasta aprobación. Contratos y tests de seguridad en `tests/unit/mvp125-*`.

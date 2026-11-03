@@ -340,7 +340,13 @@ async function respond(req:Request):Promise<Response>{
       return json(422,'contact_consent_not_accepted');
     continue;
   }
-  const local=row.type==='text'?parseBuyerPilot(body):{city:null,items:[],unresolved:[]};
+  // A one-time account ownership challenge from a previously authenticated
+  // web session. Never classify as a material request or a supplier quotation.
+  // Only the Whapi-signed sender/chat and the persisted inbox can prove it.
+  const webLinkCode=row.type==='text'
+    ?/^VINCULAR ([A-F0-9]{24})$/u.exec(body)?.[1]??null:null;
+  const local=row.type==='text'&&!webLinkCode
+    ?parseBuyerPilot(body):{city:null,items:[],unresolved:[]};
   let parsed=local;
   let aiReply:ReplyCode|null=null;
   let mediaClarificationBody:string|null=null;
@@ -351,7 +357,7 @@ async function respond(req:Request):Promise<Response>{
   // OpenAI is optional and off by default. The server-side DB gate is
   // durable, one-per-HMAC, buyer-only and capped at 12 calls per day.
   // Supplier quote ingestion never passes through this classifier.
-  if(row.type==='text'&&
+  if(row.type==='text'&&!webLinkCode&&
      Deno.env.get('COTIRONDA_PILOT_AI_ENABLED')==='true'){
     const preflight=await db.rpc('cotironda_piloto_reserve_ai_mvp094',{
       p_chat_hmac:chatHash,p_message_hmac:messageHash
@@ -434,6 +440,18 @@ async function respond(req:Request):Promise<Response>{
     if(bound.error)return json(503,'contact_vault_reconciliation_required');
     if(bound.data?.state==='identity_conflict')
       return json(503,'contact_identity_reconciliation_required');
+  }
+  if(webLinkCode){
+    // A replay cannot create a second link or trigger a false quote.
+    if(!['duplicate','unrecognized_contact'].includes(outcome(out.data))){
+      const bound=await db.rpc('cotironda_piloto_complete_web_link_mvp126',{
+        p_chat_hmac:chatHash,p_message_hmac:messageHash,p_code:webLinkCode
+      });
+      if(bound.error)return json(503,'web_link_reconciliation_required');
+      // Deliberately no WhatsApp echo; the verified web session refreshes
+      // the dashboard to observe the linked state. Never log a linking code.
+    }
+    continue;
   }
   if(outcome(out.data)==='quote_recorded')supplierAckMode='text_quote';
   // Archive original incoming PDF, Excel, Word or photo ONLY after
