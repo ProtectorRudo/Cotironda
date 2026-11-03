@@ -1,3 +1,9 @@
+## MVP-125 — unificar seguimiento y futuro acceso en cotironda.com (03/11/2026)
+- Decisión de producto: una sola plataforma cotironda.com; WhatsApp sigue siendo el canal principal, y compradores/proveedores podrán consultar su historial desde cuentas propias.
+- Primer bloque implementado en `site/seguimiento/` (HTML/CSS/JS) con Vercel rewrite same-origin `/api/seguimiento` hacia la API segura de Supabase, fragmento privado sin logs, CSP/noindex/no-store y anonimato hasta aprobación. Contratos y tests de seguridad en `tests/unit/mvp125-*`.
+- Auditoría: PILOTO tiene **0 usuarios Auth**, la cuenta DEV es otra Supabase y no se puede presentar como acceso comercial. Vinculación OTP/código de WhatsApp y RLS por empresa **pendientes**, documentadas en docs/244, Issue #460.
+- Despliegue de Vercel bloqueado por cuota 402 el 03/11; el sitio real no se ha sustituido ni se redirigió el enlace viejo. GO requiere HTTP 200 HTML y POST real verificados antes de conectar cotironda.com.
+
 ## MVP-124 — seguimiento HTML en frontend público aislado (03/11/2026)
 - Incidente real: Chrome mostraba HTML literal del enlace privado de Supabase. Causa confirmada: Edge en dominio compartido transforma `text/html` a `text/plain` (límite oficial de la plataforma).
 - Nuevo frontend responsive versionado `apps/seguimiento-piloto`, CSP y noindex estrictos, JavaScript sin dependencias externas que lee token exclusivamente de fragmento y consulta por POST la API proxy de Vercel. Proyección autorizada anónima; finalistas únicamente tras cierre y aprobación.
