@@ -31,7 +31,9 @@ test('MVP108: one-to-one strict full coverage, never partial totals or invented 
  assert.match(sql,/matches_count=distinct_line/);
  assert.match(sql,/matches_count=req_count/);
  assert.match(sql,/two_supplier_combination/);
- assert.match(sql,/distinct_line=req_count/);
+ assert.match(sql,/matches_count=distinct_line/);
+ assert.match(sql,/if matches_count=req_count then/);
+ assert.match(sql,/cardinality\(cover_a\)<req_count/);
  assert.match(sql,/not exists\(select 1\s+from cotironda_piloto_privado\.supplier_media_quotes_mvp098 newer/);
  assert.match(sql,/not exists\(select 1\s+from cotironda_piloto_privado\.offer_versions newer_text/);
  assert.doesNotMatch(sql,/order by.*declared_total_cents|order by.*totalFinal/i);
