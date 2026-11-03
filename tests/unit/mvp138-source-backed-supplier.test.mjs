@@ -42,6 +42,12 @@ test('MVP138: real Ailin-shaped discount 22,4% preserves source price and line t
  const r=await verifySupplierEvidence(mockFile('application/pdf'),base,async()=>pdfRows);
  assert.deepEqual(r,{state:'verified',reason:'covered',lines:2});
 });
+test('MVP139: discounts in separate PDF text objects, equivalent decimal precision',async()=>{
+ const rows=[...pdfRows].map(v=>v.replaceAll('22,4%','22,40'));
+ rows.push('Dscto. 22,40%');
+ const result=await verifySupplierEvidence(mockFile('application/pdf'),base,async()=>rows);
+ assert.equal(result.state,'verified',JSON.stringify(result));
+});
 test('MVP138: real Nahuel-shaped Excel without $ passes independent evidence',async()=>{
  const r=await verifySupplierEvidence(mockFile('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'),xl,async()=>excelRows);
  assert.equal(r.state,'verified');

@@ -1,3 +1,6 @@
+## MVP139 — Mejoras source PDF/XLSX v2 (piloto)
+- Comprueba descuento explícito en columna separada con centavos exactos; admite planillas formateadas y cacheadas, nunca ejecuta fórmulas. Conserva auditoría v1 y source SHA, sin publicación no verificada. Issue #488.
+
 ## MVP138 — Fuente original económica y publicación sin fricción (piloto)
 - Revisión unificada de documentos archivados sin exigir doble coincidencia de metadatos ni multiplicación sin descuentos; proyección anónima inmutable, IVA no supuesto y token comprador conservado. Issue #488.
 

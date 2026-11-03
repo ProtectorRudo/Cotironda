@@ -170,20 +170,22 @@ function sheets(files:Map<string,string>):string[]{
   (workbook.match(/<sheet\b/gu)??[]).length!==1||
   /<sheet\b[^>]*(?:state="hidden"|state="veryHidden")/u.test(workbook)||
   [...files.keys()].some(x=>/^xl\/worksheets\/sheet[^1]/u.test(x))||
-  /<(?:mergeCells|drawing|legacyDrawing|hyperlinks|conditionalFormatting|dataValidation|autoFilter|cols|sheetProtection|rowBreaks|colBreaks|extLst|tableParts|pivotTable|oleObjects|controls)\b/iu.test(sheet)||
-  /<f(?:\s|>)/iu.test(sheet)||/<row\b[^>]*hidden="1"/iu.test(sheet))
+  // Display formatting, filter controls, merged headers and cached SUM cells
+  // are normal. We read literal cached values only and NEVER execute formulae.
+  /<(?:drawing|legacyDrawing|hyperlinks|sheetProtection|extLst|tableParts|pivotTable|oleObjects|controls)\b/iu.test(sheet)||
+  /<row\b[^>]*hidden="(?:1|true)"/iu.test(sheet))
   fail('unsupported_layout');
  const dictionary=files.has('xl/sharedStrings.xml')?
   strings(files.get('xl/sharedStrings.xml')!):[];
  const data=sheet.match(/<sheetData(?:\s[^>]*)?>([\s\S]*?)<\/sheetData>/u)?.[1];
  if(!data)fail('unsupported_layout');
  const rows=[...data.matchAll(/<row(?:\s[^>]*)?>([\s\S]*?)<\/row>/gu)];
- if(rows.length<2||rows.length>26||
+ if(rows.length<1||rows.length>300||
    (data.match(/<row(?=\s|>)/gu)??[]).length!==rows.length)
    fail('unsupported_layout');
  return rows.map(row=>{
   const cells=[...row[1].matchAll(/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/gu)];
-  if(cells.length<1||cells.length>12)fail('unsupported_layout');
+  if(cells.length>50)fail('unsupported_layout');
   const values=cells.map(c=>{
    const at=c[1],inner=c[2]??'';
    if(/\bs="[^0-9]/u.test(at)||/\bs="\d{6,}"/u.test(at)||
@@ -191,9 +193,11 @@ function sheets(files:Map<string,string>):string[]{
     fail('unsupported_layout');
    const type=at.match(/\bt="([^"]+)"/u)?.[1]??'n';
    const raw=inner.match(/<v>([\s\S]*?)<\/v>/u)?.[1];
+   if(!inner.trim()||raw===undefined&&type!=='inlineStr')return '';
    if(type==='inlineStr'){
     const m=inner.match(/<is(?:\s[^>]*)?>([\s\S]*?)<\/is>/u)?.[1];
     const fragments=m?[...m.matchAll(/<t(?:\s[^>]*)?>([\s\S]*?)<\/t>/gu)]:[];
+    if(!fragments.length&&m?.trim()==='')return '';
     if(!fragments.length||
        (m?.match(/<t(?=\s|>)/gu)??[]).length!==fragments.length)
       fail('unsupported_layout');
@@ -209,9 +213,8 @@ function sheets(files:Map<string,string>):string[]{
    if(type==='n'&&/^-?\d+(?:\.\d+)?$/u.test(raw))return raw;
    fail('unsupported_layout');
   }).filter(x=>x.trim()!=='');
-  if(!values.length)fail('unsupported_layout');
   return values.join(' · ');
- });
+ }).filter(Boolean);
 }
 /** Positive means every Office line was proven against ZIP/XML source. */
 export async function checkSupplierOfficeSource(
