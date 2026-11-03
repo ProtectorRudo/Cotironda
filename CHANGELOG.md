@@ -1,3 +1,6 @@
+## MVP148 — Envío PILOTO por solicitud autenticada y catálogo curado
+- Reemplazo de la ventana única del viejo MVP091, manteniendo 1 comprador y 2 proveedores, con evaluación determinista por cada línea/familia y consentimiento vigente. Issue #501, docs/267. Sin secretos ni llamadas Whapi en migración.
+
 ## MVP147 — Mensajes completos del comprador sin falsos faltantes
 - La lista clara con saludo y encabezado no queda bloqueada por `ask_material`: fast-path seguro del parser local, sin borrar líneas desconocidas. Solo piloto, Issue #499, docs/266.
 
