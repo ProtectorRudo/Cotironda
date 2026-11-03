@@ -1,3 +1,8 @@
+## MVP-117 — pedidos documentales hasta 25 artículos con PDF multipágina (02/11/2026)
+- Se amplió de 8 a 25 ítems el camino documental completo de despacho: acuerdo privado doble lectura, distribución por catálogo, aclaraciones de números de línea, guardias de envío y cobertura de cierre. Cada proveedor recibe un PDF de 1–4 páginas con TODOS sus materiales y cantidades, nunca un archivo cortado por la página o por el mensaje WhatsApp.
+- `mvp117_upgrade_document_25.sql` prepara la actualización incremental de las RPC y restricciones ya instaladas en PILOTO; las pruebas reales de PostgreSQL con 9 y 25 artículos, filtro por proveedor y tokens/leases se ejecutaron **PASS y ROLLBACK**, sin envíos ni cambios persistentes.
+- Tests Node de 9/25/26 materiales, numeración, XRef y privacidad; docs/235, Issue #445. Se conserva el tope real de IA de 25 líneas/3 MiB y el `NO_GO` comercial/Whapi hasta desplegar el circuito autorizado y probarlo con tres teléfonos.
+
 ## MVP-116 — bloquear condiciones económicas omitidas del original (02/11/2026)
 - Corregido el cotejo de importes de TXT/CSV/Office/PDF simples: cada ocurrencia monetaria se cuenta, incluso duplicados del mismo valor. Cualquier IVA, flete, entrega, pago, stock u otra aclaración no representada en el renglón original bloquea la publicación automática, y el TOTAL no puede incorporar letra chica silenciosa.
 - Nuevo motivo privado `uncovered_terms` en SQL MVP106 y lector de originales; el documento sigue archivado sin ranking ni exposición engañosa. Test Node con duplicados de flete, precio repetido, letra chica y casos correctos; docs/234, Issue #443. Sin migración instalada, despliegue ni WhatsApp real. Ranking económico definitivo permanece NO_GO.
