@@ -31,7 +31,8 @@ export function documentFailureCode(e:unknown):DocumentFailureCode{
   doc_ai_bad_json:'response_invalid',
   doc_ai_response_too_large:'response_too_large',
   doc_ai_output_invalid:'schema_rejected',
-  doc_ai_line_invalid:'schema_rejected'
+  doc_ai_line_invalid:'schema_rejected',
+  draft_persistence_failed:'draft_persistence_failed'
  };
  return codes[e.message]??'internal_error';
 }
