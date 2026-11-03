@@ -125,7 +125,7 @@ begin
  if p_chat_hmac !~ '^[a-f0-9]{64}$' or
     p_reply_hmac !~ '^[a-f0-9]{64}$' or
     p_changes is null or jsonb_typeof(p_changes)<>'array' or
-    jsonb_array_length(p_changes)>8 or
+    jsonb_array_length(p_changes)>25 or
     (jsonb_array_length(p_changes)=0 and p_city is null)
  then return jsonb_build_object('state','invalid');end if;
  select p.key into buyer from cotironda_piloto_privado.whapi_inbox i
@@ -165,7 +165,65 @@ begin
  then return jsonb_build_object('state','duplicate_line');end if;
  for change_ in select v.value as obj from jsonb_array_elements(p_changes) v loop
   if jsonb_typeof(change_.obj)<>'object' or
-     (change_.obj->>'line_no') !~ '^[1-8]$'
+     (change_.obj->>'line_no') !~ '^(?:[1-9]|1[0-9]|2[0-5])
+  then return jsonb_build_object('state','invalid_line');end if;
+  select l.* into item from cotironda_piloto_privado.document_lines_mvp098 l
+  where l.message_hmac=original and
+    l.line_no=(change_.obj->>'line_no')::smallint
+  for update;
+  if not found then return jsonb_build_object('state','unrelated_line');end if;
+  canonical_unit:=nullif(change_.obj->>'unit','');
+  new_family:=nullif(change_.obj->>'family_hint','');
+  if canonical_unit is not null and (
+      canonical_unit not in ('bag','unit','kg','l','m3','m2','m','g','box','roll','pack')
+      or cotironda_piloto_privado.unit_code_mvp099(item.unit_literal) is not null)
+  then return jsonb_build_object('state','unit_not_missing');end if;
+  if new_family is not null and (
+      item.classified_family is not null or
+      lower(btrim(item.description_literal))<>'arena' or
+      new_family not in ('arena_fina','arena_gruesa'))
+  then return jsonb_build_object('state','family_not_ambiguous');end if;
+  if canonical_unit is null and new_family is null
+  then return jsonb_build_object('state','empty_change');end if;
+  if exists(select 1 from cotironda_piloto_privado.clarified_lines_mvp100 c
+     where c.source_hmac=original and c.line_no=item.line_no
+      and ((canonical_unit is not null and c.unit_code is not null)
+        or (new_family is not null and c.family_code is not null)))
+  then return jsonb_build_object('state','already_clarified');end if;
+ end loop;
+ for change_ in select v.value as obj from jsonb_array_elements(p_changes) v loop
+  canonical_unit:=nullif(change_.obj->>'unit','');
+  new_family:=nullif(change_.obj->>'family_hint','');
+  insert into cotironda_piloto_privado.clarified_lines_mvp100(
+   source_hmac,line_no,reply_hmac,unit_code,family_code)
+  values(original,(change_.obj->>'line_no')::smallint,p_reply_hmac,
+    canonical_unit,new_family);
+  update cotironda_piloto_privado.document_lines_mvp098 l
+   set unit_literal=coalesce(canonical_unit,l.unit_literal),
+       classified_family=coalesce(new_family,l.classified_family),
+       blocker=case
+         when coalesce(canonical_unit,l.unit_literal) is null then 'missing_unit'
+         when coalesce(new_family,l.classified_family) is null then 'ambiguous_family'
+         else 'needs_source_verification' end
+   where l.message_hmac=original and
+     l.line_no=(change_.obj->>'line_no')::smallint;
+  changed:=changed+1;
+ end loop;
+ if p_city is not null and city_old is null then
+  update cotironda_piloto_privado.media_archive_mvp095
+    set delivery_city_confirmed=btrim(p_city),
+      delivery_zone_source_hmac=p_reply_hmac
+   where message_hmac=original and delivery_city_confirmed is null;
+  city_added:=true;
+ end if;
+ return jsonb_build_object('state','applied','source_message_hmac',original,
+  'lines',changed,'city_added',city_added);
+end;$fn$;
+revoke all on function public.cotironda_piloto_apply_clarification_mvp100(
+ text,text,text,jsonb) from public,anon,authenticated;
+grant execute on function public.cotironda_piloto_apply_clarification_mvp100(
+ text,text,text,jsonb) to service_role;
+
   then return jsonb_build_object('state','invalid_line');end if;
   select l.* into item from cotironda_piloto_privado.document_lines_mvp098 l
   where l.message_hmac=original and
