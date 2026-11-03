@@ -66,7 +66,7 @@ test('MVP095: no acepta renglones sin evidencia ni campos extraviados',async()=>
  }
 });
 test('MVP095: 429, rechazo, salida incompleta y transporte fallan cerrado',async()=>{
- for(const [status,code] of [[429,'doc_ai_quota'],[401,'doc_ai_http_error']]){
+ for(const [status,code] of [[429,'doc_ai_quota'],[401,'doc_ai_http_unauthorized']]){
   await assert.rejects(proposeDocumentAI({
    ...input,fetchImpl:reply({error:'bad'},status)
   }),new RegExp(code));

@@ -12,7 +12,7 @@ import {isWhapiStatusEvent,parseWhapiDirectStatuses} from './delivery-status.ts'
 import {checkSupplierTextSource} from './supplier-source-text.ts';
 import {checkSupplierOfficeSource} from './supplier-source-office.ts';
 import {checkSupplierPdfSource} from './supplier-source-pdf.ts';
-import {proposeDocumentAI} from './document-ai-draft.ts';
+import {proposeDocumentAI,documentFailureCode} from './document-ai-draft.ts';
 import {interpretPilotBuyerWithAI} from './ai-interpreter.ts';
 import {decidePilotAIAction,shortBusinessReply,type ReplyCode} from './business-ai-policy.ts';
 const REF='ilggkalaafhtiysyzlmg';
@@ -497,6 +497,7 @@ async function respond(req:Request):Promise<Response>{
           p_message_hmac:messageHash
         });
         if(!quota.error&&quota.data===true){
+          let diagnosticPhase:'primary'|'storage'|'validation'='primary';
           try{
             // Two parallel readings reduce copy errors without extra
             // WhatsApp actions. Each is untrusted until source corroboration;
@@ -508,15 +509,27 @@ async function respond(req:Request):Promise<Response>{
               proposeDocumentAI({...args,perspective:'primary'}),
               proposeDocumentAI({...args,perspective:'corroboration'})
             ]);
-            if(readings[0].status!=='fulfilled')
-              throw Error('document_primary_extraction_unavailable');
-            const proposal=readings[0].value;
+            // If one read fails, preserve the other's private draft, but do
+            // NOT call it a corroboration or publish its economic contents.
+            const proposal=readings[0].status==='fulfilled'
+              ?readings[0].value:
+              readings[1].status==='fulfilled'?readings[1].value:null;
+            const corroboration=readings[0].status==='fulfilled'&&
+              readings[1].status==='fulfilled'?readings[1].value:null;
+            if(!proposal)throw readings[0].status==='rejected'
+              ?readings[0].reason:Error('doc_ai_response_incomplete');
+            diagnosticPhase='storage';
             // Never store model-supplied status: server forces review_required.
             const saved=await db.rpc('cotironda_piloto_note_media_proposal_mvp095',{
               p_message_hmac:messageHash,
               p_proposal:proposal
             });
             if(!saved.error&&saved.data===true){
+              const noted=await db.rpc('cotironda_piloto_note_document_draft_mvp127',{
+                p_message_hmac:messageHash,p_needs_corrob:corroboration===null
+              });
+              if(noted.error)console.warn('cotironda_doc_draft_telemetry_unavailable');
+              diagnosticPhase='validation';
               // The per-line planner is internal and NEVER sends invitations.
               // Supplier original files get a separate, unverified receipt:
               // totals and extra charges remain available in source storage.
@@ -525,10 +538,10 @@ async function respond(req:Request):Promise<Response>{
                   p_message_hmac:messageHash
                 });
                 if(plan.error)console.warn('cotironda_media_plan_reconciliation_required');
-                if(!plan.error&&readings[1].status==='fulfilled'){
+                if(!plan.error&&corroboration!==null){
                   const agreed=await db.rpc('cotironda_piloto_record_agreement_mvp099',{
                     p_message_hmac:messageHash,
-                    p_second_proposal:readings[1].value
+                    p_second_proposal:corroboration
                   });
                   if(agreed.error)console.warn('cotironda_document_agreement_reconciliation_required');
                   else if(agreed.data?.state==='agreed_private'){
@@ -566,8 +579,7 @@ async function respond(req:Request):Promise<Response>{
                   // source review, never retried or treated as a valid price.
                   const compared=await db.rpc('cotironda_piloto_compare_supplier_readings_mvp102',{
                     p_message_hmac:messageHash,
-                    p_second_proposal:readings[1].status==='fulfilled'
-                      ?readings[1].value:null
+                    p_second_proposal:corroboration
                   });
                   if(compared.error)
                     console.warn('cotironda_supplier_corroboration_reconciliation_required');
@@ -618,8 +630,18 @@ async function respond(req:Request):Promise<Response>{
             }else{
               // The source remains stored; do not claim a usable extraction.
               console.warn('cotironda_media_proposal_reconciliation_required');
+              throw Error('draft_persistence_failed');
             }
-          }catch{/* preserve original and review_required; no retry */}
+          }catch(err){
+            // Structured internal telemetry; never log document bytes, model
+            // responses, prices, supplier identity, provider HTTP body or key.
+            const note=await db.rpc('cotironda_piloto_note_document_failure_mvp127',{
+              p_message_hmac:messageHash,
+              p_reason_code:documentFailureCode(err),
+              p_phase:diagnosticPhase
+            });
+            if(note.error)console.warn('cotironda_doc_failure_telemetry_unavailable');
+          }
         }
       }
     }
