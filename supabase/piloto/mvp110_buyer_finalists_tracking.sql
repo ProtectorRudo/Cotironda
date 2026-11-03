@@ -18,7 +18,7 @@ begin
  join cotironda_piloto_privado.participants b on b.key=req.buyer_key
  join cotironda_piloto_privado.finalist_coverage_plans_mvp108 plan
   on plan.request_id=req.id and plan.state in
-  ('one_complete_alternative','two_complete_alternatives')
+  ('one_complete_alternative','two_complete_alternatives','two_supplier_combination')
  where t.token_hash=p_token_hash
   and t.revoked_at is null and t.expires_at>clock_timestamp()
   and req.state='closed' and req.closes_at<=clock_timestamp()
