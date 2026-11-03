@@ -1,3 +1,6 @@
+## MVP146 — Seguimiento web piloto sin HTML crudo
+- Issue #497: vista segura en Vercel, proxy POST a Supabase y redirección GET desde enlace anterior. No main/producción. Ver docs/265.
+
 ## MVP145 — Encabezados comerciales PDF frente a condiciones verificadas
 - Revisión v8 append-only. No confundir metadatos de tabla, correo y ceros con condiciones omitidas; precios, IVA, flete, plazos y descuentos permanecen exigidos. Solo piloto. Ver docs/264 e Issue #488.
 
