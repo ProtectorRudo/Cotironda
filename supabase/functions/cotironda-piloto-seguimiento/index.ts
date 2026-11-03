@@ -75,10 +75,14 @@ if(!/^[a-f0-9]{64}$/.test(token)){
    targetFinalists.replaceChildren();
    if(d.state==="closed"&&Array.isArray(d.finalists)){
      const title=document.createElement("h2");
-     title.textContent="Contactos de las alternativas completas";
+     title.textContent=d.joint_supplier_coverage===true
+       ?"Dos negocios que juntos cubren el pedido"
+       :"Contactos de las alternativas completas";
      targetFinalists.appendChild(title);
      const explanation=document.createElement("p");
-     explanation.textContent="La selección refleja cobertura de materiales, no un ranking de menor precio. Consultá IVA, flete, pago y disponibilidad con los negocios.";
+     explanation.textContent=d.joint_supplier_coverage===true
+       ?"Ninguno cubre todo por separado. Juntos pueden cubrir los materiales. Coordiná qué artículos aporta cada negocio y confirmá IVA, flete, pago y disponibilidad; no existe un precio total comparado."
+       :"La selección refleja cobertura de materiales, no un ranking de menor precio. Consultá IVA, flete, pago y disponibilidad con los negocios.";
      targetFinalists.appendChild(explanation);
      for(const finalist of d.finalists){
        if(!finalist||typeof finalist.name!=="string"||
@@ -188,7 +192,8 @@ Deno.serve(async req=>{
             throw Error('contact_invalid');
          return {name,whatsapp:c.phone};
        });
-       publicResult={...publicResult,finalists:list};
+       publicResult={...publicResult,finalists:list,
+         joint_supplier_coverage:finals.data.joint_supplier_coverage===true};
      }catch{/* Keep the ordinary anonymous view, no partial release. */}
    }
  }
