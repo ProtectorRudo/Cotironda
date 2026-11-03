@@ -1,3 +1,7 @@
+## MVP-131 — recuperación de archivos sin mensaje WhatsApp posterior (DEV, 03/11/2026)
+- Worker Edge aislado service-to-service con autenticación por clave secreta, bandera OFF y RPC de selección privada solo para service_role. Reusa recuperación MVP128, archivo original, doble lectura y auditoría económica, sin enviar WhatsApp.
+- Issue #473. Pendiente: CI, SQL smoke aislado, autorización de despliegue PILOTO y verificación del PDF original de Ailín. No tocar producción.
+
 ## MVP-130 — cotejo PDF multicolumna, fuentes y varios folios (03/11/2026)
 - Lector `unpdf@2.1.0` (PDF.js serverless) pinneado para evidencias de texto posicionado sobre el original privado, después del verificador de PDF simple. Límite de páginas/tiempo/memoria y falla cerrada para escaneos, OCR oculto, filas largas o ilegibles.
 - Cobertura por renglón y por importe como multiconjunto exacto; prohíbe omitir cargos, fletes, pallets, IVA, condiciones, subtotales, números y total del presupuesto real. Si algo no está respaldado por la fuente, se mantiene en revisión privada.

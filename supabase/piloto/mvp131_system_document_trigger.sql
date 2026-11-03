@@ -2,7 +2,7 @@
 -- The existing MVP128 RPC still reserves/locks the actual document and checks
 -- consent, invitation, deadline, size, source hash and rate limits again.
 create or replace function public.cotironda_piloto_system_document_trigger_mvp131()
-returns jsonb language plpgsql stable security definer set search_path='' as $function$
+returns jsonb language plpgsql volatile security definer set search_path='' as $function$
 declare v_chat text;
 begin
  if not exists(select 1 from cotironda_piloto_privado.integration_flags
