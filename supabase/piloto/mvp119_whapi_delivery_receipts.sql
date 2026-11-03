@@ -87,7 +87,8 @@ create function public.cotironda_piloto_record_delivery_mvp119(
  p_whapi_message_id text,p_status text,p_status_code integer,
  p_recipient_chat_hmac text,p_event_unix bigint
 ) returns jsonb language plpgsql security definer set search_path='' as $fn$
-declare matched record; count_ integer; existing record;
+declare matched_source_kind text; matched_request_id uuid;
+ matched_recipient_key text; count_ integer; existing record;
  old_rank integer;new_rank integer;hash_ text;rows_ integer;
 begin
  if p_whapi_message_id is null or
@@ -103,7 +104,7 @@ begin
 
  select count(*),max(k.source_kind),max(k.request_id::text)::uuid,
    max(k.recipient_key)
- into count_,matched.source_kind,matched.request_id,matched.recipient_key
+ into count_,matched_source_kind,matched_request_id,matched_recipient_key
  from (
   select 'supplier_request'::text source_kind,o.request_id,o.supplier_key recipient_key
    from cotironda_piloto_privado.whapi_outbox o
@@ -136,8 +137,8 @@ begin
  insert into cotironda_piloto_privado.delivery_receipts_mvp119(
   message_id_sha256,source_kind,request_id,recipient_key,
   state,status_code,event_unix)
- values(hash_,matched.source_kind,matched.request_id,
-  matched.recipient_key,p_status,p_status_code,p_event_unix)
+ values(hash_,matched_source_kind,matched_request_id,
+  matched_recipient_key,p_status,p_status_code,p_event_unix)
  on conflict(message_id_sha256) do nothing;
  get diagnostics rows_=row_count;
  if rows_=1 then return jsonb_build_object('state','recorded');end if;
@@ -147,9 +148,9 @@ begin
  select state,source_kind,request_id,recipient_key into existing
  from cotironda_piloto_privado.delivery_receipts_mvp119
  where message_id_sha256=hash_ for update;
- if existing.source_kind is distinct from matched.source_kind or
-    existing.request_id is distinct from matched.request_id or
-    existing.recipient_key is distinct from matched.recipient_key
+ if existing.source_kind is distinct from matched_source_kind or
+    existing.request_id is distinct from matched_request_id or
+    existing.recipient_key is distinct from matched_recipient_key
  then return jsonb_build_object('state','unmatched');end if;
  old_rank:=case existing.state
   when 'pending' then 0 when 'sent' then 1
@@ -174,12 +175,9 @@ create function public.cotironda_piloto_delivery_summary_mvp119(
 ) returns jsonb language sql security definer set search_path='' as $fn$
  select jsonb_build_object(
   'state','private_delivery_summary',
-  'accepted',count(*) filter(where r.state in ('pending','sent','failed',
-     'deleted','delivered','read','played')),
+  'status_events_matched',count(*),
   'delivered',count(*) filter(where r.state in ('delivered','read','played')),
-  'failed',count(*) filter(where r.state in ('failed','deleted')),
-  'by_kind',coalesce(jsonb_object_agg(r.source_kind, r.state) filter(
-    where r.source_kind is not null), '{}'::jsonb)
+  'failed',count(*) filter(where r.state in ('failed','deleted'))
  ) from cotironda_piloto_privado.delivery_receipts_mvp119 r
  where r.request_id=p_request;
 $fn$;
