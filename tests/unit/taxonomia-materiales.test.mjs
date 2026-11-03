@@ -31,7 +31,7 @@ const simular=(b,ps=prov,s=solicitud)=>simularInvitacionesDesdeBorrador({
 });
 
 test('diccionario inicial versionado para 5 rubros de construcción',()=>{
-  assert.equal(VERSION_TAXONOMIA,'obra_ar_v1_2026_10_30');
+  assert.equal(VERSION_TAXONOMIA,'obra_ar_v2_2026_11_01');
   const casos=[
     ['Cemento','cemento_gris_obra','corralon'],
     ['Cemento común','cemento_gris_obra','corralon'],

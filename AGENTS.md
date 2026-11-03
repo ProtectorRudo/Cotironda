@@ -36,6 +36,7 @@ Actuar como director técnico, desarrollador, analista de producto y auditor. Pr
 Ver [docs/89](docs/89-ux-cero-friccion-whatsapp-first.md), decisión UX-001, Issue #151.
 
 ## Invariantes de negocio
+- **MVP-076 (02/11/2026):** plazo de recepción de presupuestos **4 días corridos por defecto** (96 h desde la creación en el servidor; 3–7 días si se especifica expresamente). Durante la ronda, comprador solo ve ítems/precios verificados de ofertas anónimas; los textos originales del proveedor pueden contener identificadores y no son vista pública. Al cierre, hasta dos finalistas por rubro y canasta comparable **solo si hay cobertura/equivalencias/IVA/flete/condiciones verificables**, sin desempates arbitrarios. Contactos mutuos solo a finalistas, con consentimiento específico, identidad vigente, outbox auditado y envío verificado; nadie recibe aviso de venta adjudicada. No afirmar que esta fase está instalada por contar con módulos offline. Ver docs/196, Issue #364.
 - Proveedores gratuitos sin comisiones; compradores por suscripción prevista.
 - Productos materiales de obra, no servicios de precio subjetivo.
 - El comprador autoriza la distribución al enviar la lista; NO revisa ni confirma cada línea antes del despacho. Los ítems ambiguos se retienen; el resto continúa automáticamente.

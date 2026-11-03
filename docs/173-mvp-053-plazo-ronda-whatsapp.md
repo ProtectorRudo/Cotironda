@@ -1,3 +1,5 @@
+> **REGLA VIGENTE DESDE 02/11/2026 — MVP-076:** el plazo predeterminado ahora es **4 días corridos (96 horas)**, no 5. Este documento conserva el texto histórico de la fase anterior. Código y límites actualizados en [docs/196](196-mvp-076-cuatro-dias-anonimato-finalistas.md). **No confundir cierre programado con revelación de contactos implementada.**
+
 # 173 — MVP-053: plazo de cotización de 3 a 7 días por WhatsApp
 
 **01/11/2026 · Issue #319 · Rama de desarrollo, sin envíos ni instalación SQL en Supabase DEV.**

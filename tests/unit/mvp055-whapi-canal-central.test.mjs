@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import {createHmac} from 'node:crypto';
 import {atenderWebhookWhapiPreviewD083 as receive}
  from '../../src/server/whapi-preview-http-d083.ts';
+import {procesarWebhookWhapiAislado}
+ from '../../src/server/whapi-inbound-offline.ts';
 
 // The single CENTRAL number belongs to Cotironda, not to each supplier.
 // All phones below are fictional, test-only. No Whapi or DB network.
@@ -32,7 +34,11 @@ function env(){
   COTIRONDA_WHAPI_AES_KEY_ID:'aes_2026_a',
   COTIRONDA_WHAPI_HMAC_ID_HEX:'01'.repeat(32),
   COTIRONDA_WHAPI_HMAC_FINGERPRINT_HEX:'02'.repeat(32),
-  COTIRONDA_WHAPI_AES_CONTENT_HEX:'03'.repeat(32)};
+  COTIRONDA_WHAPI_AES_CONTENT_HEX:'03'.repeat(32),
+  // MVP068 restricts only the Preview pilot, not the reusable D027 engine.
+  COTIRONDA_WHAPI_PILOT_BUYER_CHAT_KEY:hmacChat(identities[0].phone),
+  COTIRONDA_WHAPI_PILOT_SUPPLIER_CHAT_KEYS_JSON:JSON.stringify([
+   hmacChat(identities[2].phone),hmacChat(identities[3].phone)])};
 }
 function incoming(index,{text='10 bolsas cemento CPC 50 kg',fromMe=false}={}){
  const phone=identities[index].phone;
@@ -99,20 +105,20 @@ function backend(){
 function cfg(h){
  return {env:env(),abrirPuertoSql:async()=>h.db(),ahoraUnix:()=>NOW};
 }
-test('MVP055: un Whapi central recibe 2 arquitectos + 3 proveedores, aislados y cifrados',async()=>{
+test('MVP055+068: Preview restringida procesa 1 arquitecto + 2 comercios aislados y cifrados',async()=>{
  const h=backend();
- const messages=[0,1,2,3,4].map(i=>incoming(i));
+ const messages=[0,2,3].map(i=>incoming(i));
  const first=await receive(request(messages),cfg(h));
  assert.equal(first.status,200);
  assert.deepEqual(await first.json(),{
-  estado:'entradas_persistidas',guardadas:5,duplicadas:0,
-  compradoresGuardados:2,presupuestosConfirmados:0,mensajesEnviados:0
+  estado:'entradas_persistidas',guardadas:3,duplicadas:0,
+  compradoresGuardados:1,presupuestosConfirmados:0,mensajesEnviados:0
  });
- assert.equal(h.stored.size,5);
+ assert.equal(h.stored.size,3);
  assert.equal(h.closed,1);
  assert.deepEqual([...h.stored.values()].map(x=>x.role),
-  ['buyer','buyer','supplier','supplier','supplier']);
- assert.equal(new Set([...h.stored.values()].map(x=>x.chatKey)).size,5);
+  ['buyer','supplier','supplier']);
+ assert.equal(new Set([...h.stored.values()].map(x=>x.chatKey)).size,3);
  const data=JSON.stringify([...h.stored]);
  for(const person of identities)assert.equal(data.includes(person.phone),false);
  assert.equal(data.includes('cemento'),false);
@@ -120,47 +126,49 @@ test('MVP055: un Whapi central recibe 2 arquitectos + 3 proveedores, aislados y 
  assert.equal(again.status,200);
  const out=await again.json();
  assert.equal(out.guardadas,0);
- assert.equal(out.duplicadas,5);
+ assert.equal(out.duplicadas,3);
  assert.equal(out.mensajesEnviados,0);
- assert.equal(h.stored.size,5);
+ assert.equal(h.stored.size,3);
  assert.equal(h.closed,2);
 });
-test('MVP055: Cotironda no impone el tope externo de cinco chats de Sandbox',async()=>{
+test('MVP055: D027 reutilizable no limita artificialmente a cinco contactos',async()=>{
  const h=backend();
- // This is an INTERNAL contract only. Whapi Sandbox itself may refuse chat 6.
  h.people.set(hmacChat(identities[5].phone),identities[5]);
- const reply=await receive(request([incoming(5)]),cfg(h));
- assert.equal(reply.status,200);
- assert.equal((await reply.json()).guardadas,1);
- assert.equal(h.stored.size,1);
- assert.equal([...h.stored.values()][0].org,identities[5].org);
+ // Direct/offline core: the restriction of 3 numbers belongs ONLY to Preview.
+ const res=await procesarWebhookWhapiAislado(request([incoming(5)]),{
+  habilitado:true,canalId:CH,secretoWebhook:SECRET,ahoraUnix:()=>NOW,
+  resolverProveedor:async(_channel,chat)=>{
+   const p=h.people.get(hmacChat(chat.replace('@s.whatsapp.net','')));
+   return p?.role==='supplier'?{supplierOrgId:p.org,roundId:ROUND,
+    consentimientoVigente:true,invitacionVigente:true}:null;
+  },
+  resolverComprador:async()=>null,
+  persistirEntrada:async entry=>{
+   assert.equal(entry.proveedorOrgId,identities[5].org);
+   return 'guardada';
+  },
+  persistirEntradaComprador:async()=>{throw Error('wrong_role')},
+  registrarBaja:async()=> 'registrada',
+  registrarBajaComprador:async()=> 'registrada'
+ });
+ assert.equal(res.status,200);
+ assert.equal((await res.json()).guardadas,1);
+ // But Preview MUST refuse the same sixth contact, even if it is in DB.
+ const forbidden=await receive(request([incoming(5)]),cfg(h));
+ assert.equal(forbidden.status,403);
+ assert.equal(h.stored.size,0);
 });
-test('MVP055: otro canal, remitente no inscripto y doble rol no pasan',async()=>{
+
+test('MVP055+068: otro canal, desconocido y rol cruzado no pasan',async()=>{
  const h=backend();
  const spoof=await receive(request([incoming(0)],{channel:'otro_numero'}),cfg(h));
  assert.equal(spoof.status,403);assert.equal(h.stored.size,0);
  // Sixth contact has no enrollment yet.
  const unknown=await receive(request([incoming(5)]),cfg(h));
  assert.equal(unknown.status,403);assert.equal(h.stored.size,0);
- const key=hmacChat(identities[0].phone);
- const old=h.people.get(key);
- h.people.set(key,{role:'supplier',org:identities[0].org});
- // Emulate inconsistent SQL registries: buyer and supplier both resolve same chat.
- const contradiction=await receive(request([incoming(0)]),{
-  ...cfg(h),abrirPuertoSql:async()=>({
-   query:async(sql,params)=>{
-    if(sql.includes('whapi_resolve_active_contact_v1'))
-     return {rows:[{payload:{supplierOrgId:identities[2].org,
-      roundId:ROUND,consentimientoVigente:true,invitacionVigente:true}}]};
-    if(sql.includes('whapi_resolve_buyer_d074'))
-     return {rows:[{payload:{buyerOrgId:identities[0].org,
-      consentimientoContactoVigente:true,chatHabilitado:true}}]};
-    throw Error('unexpected_write');
-   }
-  })
- });
- assert.equal(contradiction.status,403);
- h.people.set(key,old);
+ // The buyer's number cannot be enrolled as a supplier in the pilot.
+ const crossed=await receive(request([incoming(1)]),cfg(h));
+ assert.equal(crossed.status,403);
  const self=await receive(request([incoming(0,{fromMe:true})]),cfg(h));
  assert.equal(self.status,204);
  assert.equal(h.stored.size,0);
