@@ -100,7 +100,7 @@ create or replace function public.cotironda_piloto_record_supplier_evidence_mvp1
  p_message_hmac text,p_source_sha256 text,p_state text,p_reason text,
  p_line_count integer)
 returns jsonb language plpgsql security definer volatile set search_path='' as $fn$
-declare q record;lines record; cnt int;sum_ bigint:=0;v bigint;
+declare quote_ record;lines record; cnt int;sum_ bigint:=0;v bigint;
  total_ bigint;note_ text;presentation text;body text;
 begin
  if p_message_hmac is null or p_message_hmac !~ '^[a-f0-9]{64}$'
@@ -113,7 +113,7 @@ begin
  then return jsonb_build_object('state','invalid');end if;
  select q.message_hmac,q.request_id,q.supplier_key,q.source_sha256,
   q.line_count,q.declared_total_literal,m.proposal
- into q from cotironda_piloto_privado.supplier_media_quotes_mvp098 q
+ into quote_ from cotironda_piloto_privado.supplier_media_quotes_mvp098 q
  join cotironda_piloto_privado.media_archive_mvp095 m
  on m.message_hmac=q.message_hmac and m.content_sha256=q.source_sha256
   and m.participant_key=q.supplier_key and m.request_id=q.request_id
@@ -142,7 +142,7 @@ begin
  where message_hmac=p_message_hmac;
  if cnt<>p_line_count then return jsonb_build_object('state','mirror_incomplete');end if;
  if p_state='verified' then
-  total_:=cotironda_piloto_privado.price_cents_mvp138(q.declared_total_literal);
+  total_:=cotironda_piloto_privado.price_cents_mvp138(quote_.declared_total_literal);
   if total_ is null then p_state:='needs_source_review';p_reason:='amounts_unparseable';end if;
   if p_state='verified' then
    for lines in select * from cotironda_piloto_privado.supplier_quote_lines_mvp101
@@ -167,9 +167,9 @@ begin
    into body
    from cotironda_piloto_privado.supplier_quote_lines_mvp101 l
    where l.message_hmac=p_message_hmac;
-   note_:=nullif(q.proposal->>'requested_delivery_note','');
+   note_:=nullif(quote_.proposal->>'requested_delivery_note','');
    presentation:='COTIRONDA · Presupuesto anónimo'||E'\n\n'||body||
-    E'\n\nTOTAL DECLARADO POR EL PROVEEDOR: '||q.declared_total_literal||
+    E'\n\nTOTAL DECLARADO POR EL PROVEEDOR: '||quote_.declared_total_literal||
     case when sum_<>total_ then
      E'\nDiferencia entre total declarado y suma de renglones: verificar condiciones comerciales.'
      else '' end||
@@ -186,7 +186,7 @@ begin
  insert into cotironda_piloto_privado.supplier_evidence_mvp138(
  message_hmac,verifier_version,request_id,supplier_key,source_sha256,
  line_count,state,reason,sum_line_cents,declared_total_cents,public_text)
- values(p_message_hmac,1,q.request_id,q.supplier_key,q.source_sha256,
+ values(p_message_hmac,1,quote_.request_id,quote_.supplier_key,quote_.source_sha256,
   p_line_count,p_state,p_reason,
   case when p_state='verified' then sum_ else null end,
   case when p_state='verified' then total_ else null end,
