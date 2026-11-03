@@ -140,6 +140,12 @@ export async function checkGeneralPdfSource(
     source.rows.length>300||source.rows.some(v=>v.page<1||v.page>source.pages))
   return invalid(f,n,'unsupported_layout');
  const rows=source.rows.map(v=>normalized(v.text));
+ // Each proposed commercial clause must also be visible on the ORIGINAL PDF,
+ // not just appear in an AI draft. The PDF source is independent evidence.
+ const clauses=(p.requested_delivery_note??'').split(/[;\r\n]+/u)
+  .map(v=>normalized(v)).filter(Boolean);
+ if(clauses.length>30||clauses.some(v=>!rows.some(row=>row.includes(v))))
+  return invalid(f,n,'uncovered_terms');
  const consumed=new Set<number>();
  const money=(v:string)=>Array.from(v.matchAll(MONEY),m=>normalized(m[0]));
  const exactAmounts=(row:string,expected:readonly string[],
