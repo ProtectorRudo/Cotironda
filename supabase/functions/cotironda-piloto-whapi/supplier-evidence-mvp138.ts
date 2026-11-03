@@ -152,7 +152,7 @@ export async function verifySupplierEvidence(
  // Accept only one standalone, original-value money field, with the
  // deterministic sum of ALL quoted line totals equal to the claimed total.
  // All other unclaimed charges and conditions are still audited below.
- if(totals.length===0&&f.mime==='application/pdf'){
+ if(totals.length===0&&f.mime==='application/pdf'&&source.some(row=>label.test(row))){
   const totalValue=cents(p.total_declared!);
   const values=p.lines.map(l=>cents(l.line_total??''));
   if(totalValue!==null&&values.every((v):v is bigint=>v!==null)&&
