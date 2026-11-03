@@ -78,6 +78,29 @@ const discountProof=(row:string,rows:readonly string[],
 
 const pii=/(?:https?:\/\/|wa\.me|www\.|whatsapp|cuit|cuil|tel[eé]fono|raz[oó]n social|[a-z0-9._%+-]+@[a-z0-9.-]+|[0-9]{8,})/iu;
 const commercial=/(?:\biva\b|flete|pallet|bolson|devoluci[oó]n|lista|contado|efectivo|plazo|entrega|env[ií]o|transporte|cargo|pago|transferencia|descuento)/iu;
+/**
+ * PDF text objects may be emitted in a different order from the printed
+ * commercial clauses. Prove EVERY significant word and number against
+ * unconsumed original text; never discard negations or numeric conditions.
+ * Order is deliberately not used as an authenticity signal.
+ */
+const clauseTokens=(value:string):readonly string[]=>{
+ const stop=new Set(['a','al','de','del','el','en','la','las','los','y']);
+ return (n(value).normalize('NFD').replace(/\p{M}/gu,'')
+  .match(/[\p{L}]+|\d+(?:[.,]\d+)*%?/gu)??[])
+  .map(word=>word==='precios'?'precio':word==='dias'?'dia':word)
+  .filter(word=>!stop.has(word));
+};
+const coveredTokens=(evidence:string,claim:string):boolean=>{
+ const found=new Set(clauseTokens(evidence));
+ return clauseTokens(claim).every(word=>found.has(word));
+};
+const discountOnly=(row:string,claimed:readonly bigint[]):boolean=>{
+ const m=n(row).match(/^(?:descuento|dscto|bonificacion)\s*:?\s*(\d{1,2}(?:[.,]\d{1,2})?)\s*%?$/u);
+ const rate=m?basis(m[1]):null;
+ return rate!==null&&claimed.includes(rate);
+};
+
 const sourceReader:Reader=async f=>{
  if(f.mime==='application/pdf'){
   const pdf=await readPdfPositioned(f.bytes);
@@ -173,16 +196,19 @@ export async function verifySupplierEvidence(
  if(cash(totals[0].row).length>1)return reject('extra_charge',c);
  for(const i of totals[0].consumed)used.add(i);
  const note=n(p.requested_delivery_note??'');
- const flattened=n(source.join(' ')).replace(/[:;.,]/gu,' ');
- for(const clause of note.split(/[;\r\n]+/gu).filter(Boolean)){
-  const words=n(clause).replace(/[:;.,]/gu,' ').split(' ').filter(Boolean);
-  let at=0;
-  for(const word of words){
-   at=flattened.indexOf(word,at);
-   if(at<0)return reject('uncovered_note',c);
-   at+=word.length;
-  }
- }
+ // Only unmatched source rows may prove commercial notes. A product
+ // name or a price already consumed cannot masquerade as a payment term.
+ // A verified TOTAL row can also say CONTADO; reuse only its text
+ // qualifiers, never the monetary digits, as evidence for a payment note.
+ const totalRowWords=clauseTokens(totals[0].row)
+  .filter(word=>!/\d/u.test(word)).join(' ');
+ const unclaimedSource=source.filter((_,i)=>!used.has(i)).join(' ')+
+  ' '+totalRowWords;
+ if(note&&!coveredTokens(unclaimedSource,note))
+  return reject('uncovered_note',c);
+ const claimedDiscounts=p.lines.map(l=>discount(l.ambiguity))
+  .filter((d):d is string=>d!==null).map(basis)
+  .filter((d):d is bigint=>d!==null);
  for(const [i,row] of source.entries()){
   if(used.has(i))continue;
   // A supplier can submit prices without the $ sign. Unclaimed numeric
@@ -193,7 +219,8 @@ export async function verifySupplierEvidence(
   if(cash(row).length||bareCurrency.test(row)||
    excelNumbers>=2||excelNumbers>=1&&commercial.test(row))
    return reject('extra_charge',c);
-  if(commercial.test(row)&&!note.includes(row)&&
+  if(commercial.test(row)&&!coveredTokens(note,row)&&
+    !discountOnly(row,claimedDiscounts)&&
     !/^\s*(?:descripci[oó]n|producto|cantidad|precio|importe)\b/iu.test(row))
    return reject('uncovered_note',c);
  }

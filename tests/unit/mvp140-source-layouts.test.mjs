@@ -228,3 +228,53 @@ test('MVP143: PDF real sin palabra TOTAL conserva suma exacta original',async()=
  assert.equal((await verifySupplierEvidence(input,pdf,async()=>
   [...withoutLabel,'Pallet $2.500,00'])).reason,'extra_charge');
 });
+
+test('MVP144: PDF comercial en columnas desordenadas acredita condiciones completas',async()=>{
+ const input={mime:'application/pdf',bytes:new Uint8Array(128),sha256:H};
+ const note='Condición de pago: 1. Contado Efectivo; plazo de entrega: 0 DIAS; FLETE A CONVENIR; PRECIOS LISTA 7; PRECIOS DE PAGO CONTADO EN EFECTIVO.';
+ const source=[
+  ...rows.slice(0,2),
+  'PRECIOS LISTA 7',
+  'FLETE A CONVENIR',
+  'PLAZO ENTREGA 0 DIAS',
+  'PRECIOS DE PAGO CONTADO EN EFECTIVO',
+  'CONDICIÓN DE PAGO 1',
+  'CONTADO EFECTIVO',
+  '$220.250,00'
+ ];
+ assert.deepEqual(await verifySupplierEvidence(input,{...pdf,requested_delivery_note:note},async()=>source),{
+  state:'verified',reason:'covered',lines:2
+ });
+ const altered=source.map(s=>s==='FLETE A CONVENIR'?'FLETE NO INCLUIDO':s);
+ assert.equal((await verifySupplierEvidence(input,
+  {...pdf,requested_delivery_note:note},async()=>altered)).reason,'uncovered_note');
+ const extra=[...source,'PALLET $10.000,00'];
+ assert.equal((await verifySupplierEvidence(input,
+  {...pdf,requested_delivery_note:note},async()=>extra)).reason,'extra_charge');
+});
+
+test('MVP144: descuento fuente acreditado en fila separada no se oculta ni bloquea',async()=>{
+ const input={mime:'application/pdf',bytes:new Uint8Array(128),sha256:H};
+ const proposal={...pdf,total_declared:'$776,00',requested_delivery_note:'Flete a convenir',
+  lines:[{...pdf.lines[0],original_description:'CEMENTO 50 KG',
+   quantity:'10',unit_price:'$100,00',line_total:'$776,00',
+   ambiguity:'Unidad de cantidad no indicada. Descuento visible: 22,4%.'}]};
+ const source=['CEMENTO 50 KG 10 $100,00 $776,00',
+  'DESCUENTO 22,4%','FLETE A CONVENIR','$776,00'];
+ assert.deepEqual(await verifySupplierEvidence(input,proposal,async()=>source),
+  {state:'verified',reason:'covered',lines:1});
+ assert.equal((await verifySupplierEvidence(input,proposal,async()=>
+  [...source,'FLETE ADICIONAL $500,00'])).reason,'extra_charge');
+});
+
+test('MVP144: v7 conserva fuente, notas, descuentos y no habilita ranking',()=>{
+ const sql=readFileSync(new URL('../../supabase/piloto/mvp144_source_verified_revision7.sql',
+  import.meta.url),'utf8');
+ assert.match(sql,/verifier_version=7/u);
+ assert.match(sql,/values\(p_message_hmac,7,/u);
+ assert.match(sql,/verifier_version between 2 and 7/u);
+ assert.match(sql,/Descuento visible: \[0-9\]/u);
+ assert.match(sql,/ranking_allowed',false/u);
+ assert.match(sql,/to service_role/u);
+ assert.doesNotMatch(sql,/net\.http_post|send_whatsapp/iu);
+});
