@@ -1,3 +1,7 @@
+## MVP-114 — PDF simple con comprobación de fuente original (02/11/2026)
+- Lector seguro y acotado de PDF original (1 página, 1 stream textual ASCII y fuente estándar), con soporte FlateDecode. Compara líneas, precios, flete y total contra la fuente; PDF escaneado, con imágenes, tablas u operadores no interpretados permanece en revisión privada. Integrado a doble IA, aritmética exacta y proyección anónima, no habilita ranking por sí solo.
+- Pruebas Node con PDF binario y xref para valor correcto/manipulado/faltante/escaneo/múltiples páginas; ensayo en PostgreSQL 17 PILOTO en transacción **PASS ROLLBACK**, ninguna migración instalada. Docs/232, Issue #439. La publicación y el ensayo con teléfonos reales siguen bloqueados hasta superar todos los criterios docs/223.
+
 ## MVP-113 — blindaje de activación para no contactar rondas viejas (02/11/2026)
 - Auditoría de pre-lanzamiento: el worker de finalistas podía volver a recorrer cierres históricos al activar los envíos. Añadido guardia privado `finalist_activation_mvp113`, OFF por defecto y sin permisos API, con fecha de activación explícita: queue, cron, claim, authorize y revelación de contactos del portal bloquean rondas anteriores.
 - Dos ensayos SQL integrados PostgreSQL 17 PILOTO **PASS** con `ROLLBACK`: apagado, exclusión de histórico, fecha ficticia controlada, mensaje único, consentimiento, revocación, apertura y cierre. Pruebas Node de regresión, docs/231, Issue #437. Ninguna tabla instalada, ningún envío, ninguna activación ni deploy.
