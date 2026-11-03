@@ -1,3 +1,6 @@
+## MVP141 — Lectura real de PDF y XLSX en PILOTO
+- PDF: total literal único separado de la etiqueta respaldado por suma exacta; XLSX: filas vacías autoconclusivas; comprobación v4 append-only. Ver docs/260 e Issue #488.
+
 ## MVP140 — Lectura de múltiples hojas Excel y totales PDF contiguos (desarrollo)
 - Revisión de fuente v3 append-only con retrocompatibilidad del seguimiento, detección de cargos sin símbolo monetario y pruebas ZIP/PDF. Sin despliegue de producción; ver docs/259. Issue #488.
 
