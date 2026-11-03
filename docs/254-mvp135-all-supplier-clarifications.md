@@ -31,3 +31,16 @@ El comercio envía una sola vez por WhatsApp su cotización, de la manera que qu
 ## Pendiente para piloto end-to-end real
 
 El PDF de Ailín ya cuenta con borrador original privado de 2 líneas, pero su doble lectura previa discrepó en metadatos, las 3 dudas quedaron registradas e importes de lista no multiplican los importes de línea. Por seguridad, ese caso NO se convierte automáticamente en presupuesto aprobado o comparable. El modelo y la interfaz de comparación deberán incorporar el concepto de precio de lista y precio final según condiciones explícitas, moneda, IVA y fletes; solo después de verificarlos se podrán mostrar resultados comerciales y seleccionar finalistas.
+
+## Prueba adicional de fidelidad fuente (MVP135-B)
+
+Se agregó un control recíproco: no basta con que todas las condiciones originales estén en el texto de la IA; **cada cláusula que la IA afirme debe poder encontrarse literalmente en la fuente independiente**. Un IVA incluido inventado se rechaza aunque el modelo haya leído bien todos los precios.
+
+- PDF: se comprueba cada cláusula separada por punto y coma o salto de línea contra las filas extraídas por PDF.js; las filas con números de lista quedan cubiertas solo si su texto entero está preservado; los cargos con importes adicionales continúan siendo líneas obligatorias.
+- TXT/CSV: se admiten hasta veinte renglones de condiciones sin importe situados antes o después del total, después de los artículos; se exige un único total y correspondencia literal en ambos sentidos entre anotaciones del original y la nota. Los cargos monetarios que aparezcan como mera anotación se bloquean.
+- Los lectores **no publican** precios, no invocan WhatsApp y no declaran equivalencias. Un resultado de fuente cubierta significa únicamente que la transcripción de ese ejemplo quedó respaldada por texto original, no que la moneda, IVA o precio comparable estén confirmados.
+- Se agregaron casos adversarios de nota inventada, devolución de pallets con cargo extra, cantidad del nombre de producto confundida con cantidad, y TXT/CSV con notas al pie.
+
+## Acta de prueba de migración SQL
+
+El SQL de actualización de la función de presupuesto se ejecutó con la prueba sintética MVP107 en una única transacción con ROLLBACK contra cotironda-piloto. Se comprobó sintaxis, selección de proveedor autorizado, conservación de todos los conceptos, texto de aclaraciones y acceso restringido sin publicación persistente. **No se instaló esa actualización en el piloto**: el ejercicio fue reversible y el webhook Whapi permanece intacto. La migración deberá publicarse solo al entorno autorizado, una vez revisado el CI del commit final y las reglas de IVA/precios condicionados.
