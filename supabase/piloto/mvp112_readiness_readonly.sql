@@ -13,6 +13,7 @@ with requirements(gate,part,installed) as (
  ('encrypted_contacts','privacy',to_regclass('cotironda_piloto_privado.participant_channels_mvp109') is not null),
  ('specific_mutual_consent','privacy',to_regclass('cotironda_piloto_privado.contact_reveal_consents_mvp109') is not null),
  ('finalist_whapi_outbox','close',to_regclass('cotironda_piloto_privado.finalist_whapi_outbox_mvp110') is not null),
+ ('historic_notice_cutoff','privacy',to_regclass('cotironda_piloto_privado.finalist_activation_mvp113') is not null),
  ('outbound_private_worker_rpc','close',to_regprocedure('public.cotironda_piloto_claim_finalist_whapi_mvp110()') is not null),
  ('buyer_finalist_reveal_rpc','view',to_regprocedure('public.cotironda_piloto_tracking_finalists_mvp110(text)') is not null)
 ),
@@ -34,5 +35,5 @@ select case when state.database_ready and flags.whatsapp_inbound_enabled
  flags.whatsapp_inbound_enabled,
  flags.whatsapp_outbound_enabled,
  flags.media_archive_enabled_mvp095,
- 'NOT_CHECKED_BY_SQL: GitHub merges, Edge deployed hashes, Vercel, Whapi callback, API secrets, real 1+2 phones and cost/rate limits' as external_checks
+ 'NOT_CHECKED_BY_SQL: manual activation OFF-by-default, GitHub merges, Edge deployed hashes, Vercel, Whapi callback, API secrets, real 1+2 phones and cost/rate limits' as external_checks
 from state cross join flags;
