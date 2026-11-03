@@ -147,7 +147,23 @@ export async function verifySupplierEvidence(
    !used.has(j)&&amountOnly(source[j]));
   return neighbors.map(j=>({row:source[j],i,consumed:[i,j]}));
  });
- const totals=[...inline,...split];
+ let totals=[...inline,...split];
+ // The source PDF may position the TOTAL label in a distant text object.
+ // Accept only one standalone, original-value money field, with the
+ // deterministic sum of ALL quoted line totals equal to the claimed total.
+ // All other unclaimed charges and conditions are still audited below.
+ if(totals.length===0&&f.mime==='application/pdf'){
+  const totalValue=cents(p.total_declared!);
+  const values=p.lines.map(l=>cents(l.line_total??''));
+  if(totalValue!==null&&values.every((v):v is bigint=>v!==null)&&
+   values.reduce((a,v)=>a+(v??0n),0n)===totalValue){
+   const isolated=source.map((row,i)=>({row,i,consumed:[i]}))
+    .filter(({row,i})=>!used.has(i)&&has(row,p.total_declared!)&&
+      cash(row).length===1&&cash(row)[0]===scalar(p.total_declared!)&&
+      !commercial.test(row));
+   if(isolated.length===1)totals=isolated;
+  }
+ }
  if(totals.length!==1)return reject('missing_total',c);
  if(cash(totals[0].row).length>1)return reject('extra_charge',c);
  for(const i of totals[0].consumed)used.add(i);
