@@ -31,6 +31,7 @@ jobs:
           deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/index.ts
           deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/supplier-source-pdf-general.ts
           deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-document-recovery/index.ts
+          deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-document-recovery/scheduled-auth.ts
       - name: Exercise unpdf runtime with a real two-page PDF (synthetic content)
         run: deno run --node-modules-dir=auto tests/unit/mvp130-unpdf-deno-runtime.smoke.ts
       - name: Verify no raw supplier document is printed
