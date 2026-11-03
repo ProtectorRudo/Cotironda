@@ -790,7 +790,6 @@ async function respond(req:Request):Promise<Response>{
     }
    }
   }
- }
  // Acknowledge a supplier ONLY after their authenticated quote was
  // durably captured. Media receipt is explicitly pending source review.
  // One ledger reservation per message; uncertain Whapi results never retry.
@@ -833,6 +832,7 @@ async function respond(req:Request):Promise<Response>{
      return json(503,'supplier_ack_delivery_id_unavailable');
    }
   }
+ }
  }
  try{await dispatchTwo(sec,db)}catch{return json(503,'dispatch_reconciliation_required')}
  return json(200,'accepted');
