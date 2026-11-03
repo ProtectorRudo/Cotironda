@@ -131,11 +131,26 @@ export async function verifySupplierEvidence(
   }
   used.add(i);
  }
- const totals=source.map((row,i)=>({row,i})).filter(({row,i})=>
-  !used.has(i)&&/\b(?:total|importe a pagar)\b/iu.test(row)&&has(row,p.total_declared!));
+ // Commercial PDFs often print TOTAL and its amount on adjacent text baselines.
+ // Reconcile only an unambiguous, isolated amount right next to the label.
+ // Every unconsumed monetary row still blocks publication.
+ const label=/\b(?:total(?:\s+(?:general|final|a\s+pagar|presupuesto))?|importe\s+(?:total|a\s+pagar|final)|monto\s+a\s+pagar|neto\s+a\s+pagar|a\s+pagar)\b/iu;
+ const inline=source.map((row,i)=>({row,i,consumed:[i]})).filter(({row,i})=>
+  !used.has(i)&&label.test(row)&&has(row,p.total_declared!));
+ const amountOnly=(row:string)=>/^\s*\$?\s*\d[\d.,]*\s*$/u.test(row)&&
+  has(row,p.total_declared!);
+ const split=source.flatMap((row,i)=>{
+  if(used.has(i)||!label.test(row)||cash(row).length||
+   /(?<![\p{L}\p{N}])\d[\d.,]*(?![\p{L}\p{N}])/u.test(row))
+   return [] as {row:string;i:number;consumed:number[]}[];
+  const neighbors=[i-1,i+1].filter(j=>j>=0&&j<source.length&&
+   !used.has(j)&&amountOnly(source[j]));
+  return neighbors.map(j=>({row:source[j],i,consumed:[i,j]}));
+ });
+ const totals=[...inline,...split];
  if(totals.length!==1)return reject('missing_total',c);
  if(cash(totals[0].row).length>1)return reject('extra_charge',c);
- used.add(totals[0].i);
+ for(const i of totals[0].consumed)used.add(i);
  const note=n(p.requested_delivery_note??'');
  const flattened=n(source.join(' ')).replace(/[:;.,]/gu,' ');
  for(const clause of note.split(/[;\r\n]+/gu).filter(Boolean)){
