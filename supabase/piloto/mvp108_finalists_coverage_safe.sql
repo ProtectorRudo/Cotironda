@@ -5,14 +5,14 @@
 create table cotironda_piloto_privado.finalist_coverage_plans_mvp108(
  request_id uuid primary key references cotironda_piloto_privado.requests(id),
  state text not null check(state in
-  ('two_complete_alternatives','one_complete_alternative',
+  ('two_complete_alternatives','two_supplier_combination','one_complete_alternative',
    'no_complete_alternatives','more_than_two_undifferentiated')),
  candidate_count smallint not null check(candidate_count between 0 and 2),
  supplier_keys text[] not null,
  checked_at timestamptz not null default clock_timestamp(),
  check(array_length(supplier_keys,1) is null or
    array_length(supplier_keys,1)=candidate_count),
- check((state='two_complete_alternatives')=(candidate_count=2)),
+ check((state in ('two_complete_alternatives','two_supplier_combination'))=(candidate_count=2)),
  check((state='one_complete_alternative')=(candidate_count=1)),
  check((state in('no_complete_alternatives',
   'more_than_two_undifferentiated'))=(candidate_count=0))
@@ -32,6 +32,7 @@ create function public.cotironda_piloto_plan_coverage_finalists_mvp108(
 ) returns jsonb language plpgsql security definer set search_path='' as $fn$
 declare req_ record;q record;matches_count integer;req_count integer;
  distinct_req integer;distinct_line integer;
+ matched_req integer[];cover_a integer[];cover_b integer[];
  picked text[]:=array[]::text[]; n integer:=0;result_state text;
 begin
  if p_request is null then return jsonb_build_object('state','invalid');end if;
@@ -92,8 +93,8 @@ begin
   -- inference, no splitting, no fabricated equivalence. Every buyer line
   -- must map ONE-TO-ONE to a supplier source line with an actual amount.
   select count(*),count(distinct req.line_no),
-    count(distinct l.line_no)
-  into matches_count,distinct_req,distinct_line
+    count(distinct l.line_no),array_agg(distinct req.line_no order by req.line_no)
+  into matches_count,distinct_req,distinct_line,matched_req
   from cotironda_piloto_privado.request_lines req
   join cotironda_piloto_privado.supplier_quote_lines_mvp101 l
     on l.message_hmac=q.message_hmac
@@ -108,15 +109,35 @@ begin
    and cotironda_piloto_privado.family_preview_mvp098(
       l.description_literal)=req.family_code
   where req.request_id=p_request;
-  if matches_count=req_count and distinct_req=req_count
-    and distinct_line=req_count then
-   n:=n+1;picked:=array_append(picked,q.supplier_key);
+  -- Do not retain ambiguous mappings or unverified partial quantities.
+  -- Each valid supplier line must match exactly ONE requested line.
+  if matches_count>0 and matches_count=distinct_req
+    and matches_count=distinct_line then
+   if q.supplier_key='corralon_ailin' then cover_a:=matched_req;
+   elsif q.supplier_key='corralon_nahuel' then cover_b:=matched_req;
+   end if;
+   if matches_count=req_count then
+    n:=n+1;picked:=array_append(picked,q.supplier_key);
+   end if;
   end if;
  end loop;
+ -- A pair of individually PARTIAL supplier offers can collectively cover
+ -- the entire basket (no split quantity and no inferred product equivalent).
+ -- This is COVERAGE, never a claim of the lowest comparable total.
+ if n=0 and coalesce(cardinality(cover_a),0)>0
+     and coalesce(cardinality(cover_b),0)>0
+     and cardinality(cover_a)<req_count
+     and cardinality(cover_b)<req_count
+     and (select count(distinct line_no) from
+          unnest(cover_a||cover_b) as all_rows(line_no))=req_count
+ then
+   n:=2;picked:=array['corralon_ailin','corralon_nahuel'];
+   result_state:='two_supplier_combination';
+ end if;
  if n>2 then
   result_state:='more_than_two_undifferentiated';
   picked:=array[]::text[];n:=0;
- elsif n=2 then result_state:='two_complete_alternatives';
+ elsif n=2 and result_state is null then result_state:='two_complete_alternatives';
  elsif n=1 then result_state:='one_complete_alternative';
  else result_state:='no_complete_alternatives';end if;
  insert into cotironda_piloto_privado.finalist_coverage_plans_mvp108(
@@ -124,6 +145,7 @@ begin
  values(p_request,result_state,n,picked);
  return jsonb_build_object(
   'state',result_state,'candidate_count',n,
+  'joint_supplier_coverage',result_state='two_supplier_combination',
   'price_ranked',false,'contacts_revealed',false,
   'messages_sent',false,'purchase_awarded',false);
 end;$fn$;
