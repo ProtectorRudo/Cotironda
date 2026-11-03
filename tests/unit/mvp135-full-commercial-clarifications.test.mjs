@@ -77,7 +77,7 @@ test('MVP135: prompt preserves terms; draft has no invented unit or discount',as
   file:{bytes,sha256:'a'.repeat(64),mime:'application/pdf'},
   apiKey:'sk-test123456789abcdefghijklmnop',enabled:true};
  const response={status:'completed',output:[{type:'message',role:'assistant',
-  content:[{type:'output_text',text:JSON.stringify(draft)}]}]};
+  content:[{type:'output_text',text:JSON.stringify({...draft,status:undefined})}]}]};
  let prompt='';
  const result=await proposeDocumentAI({...args,fetchImpl:async(_url,options)=>{
   const body=JSON.parse(options.body);
