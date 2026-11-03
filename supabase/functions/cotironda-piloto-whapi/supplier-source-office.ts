@@ -186,7 +186,8 @@ function sheets(files:Map<string,string>):string[]{
   if(cells.length<1||cells.length>12)fail('unsupported_layout');
   const values=cells.map(c=>{
    const at=c[1],inner=c[2]??'';
-   if(/\bs="/u.test(at)||/\b(?:hidden|s)="(?:true|1)"/u.test(at))
+   if(/\bs="[^0-9]/u.test(at)||/\bs="\d{6,}"/u.test(at)||
+      /\bhidden="(?:true|1)"/u.test(at))
     fail('unsupported_layout');
    const type=at.match(/\bt="([^"]+)"/u)?.[1]??'n';
    const raw=inner.match(/<v>([\s\S]*?)<\/v>/u)?.[1];
@@ -234,4 +235,11 @@ export async function checkSupplierOfficeSource(
   if(e instanceof OfficeFailure)return rejected(source,e.reason,proposal.lines.length);
   return rejected(source,'invalid_source',proposal.lines.length);
  }
+}
+
+/** MVP138: private, source-independent Office rows; never served raw. */
+export async function readOfficeVisibleRows(source:DownloadedMedia):Promise<readonly string[]>{
+ if(source.mime!==XLSX&&source.mime!==DOCX)fail('unsupported_format');
+ const entries=await unpack(source.bytes);
+ return source.mime===XLSX?sheets(entries):words(entries);
 }

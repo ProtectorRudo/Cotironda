@@ -6,6 +6,7 @@ type IO={
  recover:(triggerChatHmac:string)=>Promise<RetryState>;
  review?:()=>Promise<'none'|'diagnosed_private'|'failed'>;
  reclassify?:()=>Promise<'none'|'reclassified_private'|'failed'>;
+ audit?:()=>Promise<'none'|'verified_anonymous'|'needs_source_review'|'failed'>;
 };
 const TOKEN=/^[a-f0-9]{64}$/u;
 const isRecord=(v:unknown):v is Record<string,unknown>=>
@@ -28,6 +29,11 @@ export async function runRecoveryService(
    const corrected=await io.reclassify();
    if(corrected==='failed')return response(503,'reclassification_failed');
    if(corrected==='reclassified_private')return response(200,'reclassified_private');
+  }
+  if(x.data.state==='none'&&io.audit){
+   const assessed=await io.audit();
+   if(assessed==='failed')return response(503,'evidence_unavailable');
+   if(assessed!=='none')return response(200,assessed);
   }
   if(x.data.state==='none'&&io.review){
    const reviewed=await io.review();
