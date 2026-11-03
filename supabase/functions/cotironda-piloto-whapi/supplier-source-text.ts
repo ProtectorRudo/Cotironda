@@ -144,15 +144,15 @@ export function checkSupplierTextSource(
   return not('unsupported_layout',n,hash);
  const tail=lines.slice(n);
  const totalIndices=tail.flatMap((row,i)=>
-  /^(?:total(?:\\s+(?:final|general|a\\s+pagar))?|importe\\s+total)\\s*[:=]?/iu.test(row)?[i]:[]);
+  /^(?:total(?:\s+(?:final|general|a\s+pagar))?|importe\s+total)\s*[:=]?/iu.test(row)?[i]:[]);
  if(totalIndices.length!==1)return not('total_not_found',n,hash);
  const total=tail[totalIndices[0]];
  const notes=tail.filter((_,i)=>i!==totalIndices[0]);
  const note=(proposal.requested_delivery_note??'').trim();
- const clauses=note.split(/[;\\r\\n]+/u).map(v=>v.trim()).filter(Boolean);
+ const clauses=note.split(/[;\r\n]+/u).map(v=>v.trim()).filter(Boolean);
  if(notes.some(v=>moneyTokens(v).length>0))
   return not('uncovered_money',n,hash);
- const norm=(v:string)=>v.replace(/\\s+/gu,' ').trim().toLocaleLowerCase('es-AR');
+ const norm=(v:string)=>v.replace(/\s+/gu,' ').trim().toLocaleLowerCase('es-AR');
  const complete=norm(note);
  if(notes.some(v=>!complete.includes(norm(v)))||
     clauses.some(v=>!notes.some(row=>norm(row).includes(norm(v)))))
