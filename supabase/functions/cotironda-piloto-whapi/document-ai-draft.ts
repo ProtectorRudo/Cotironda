@@ -125,26 +125,33 @@ const obj=(x:unknown):x is Record<string,unknown>=>
 const keys=(x:unknown,allowed:readonly string[]):x is Record<string,unknown>=>
  obj(x)&&Object.keys(x).length===allowed.length&&
  allowed.every(k=>Object.hasOwn(x,k));
+// A PDF may have multi-line terms, long descriptions or missing/blank cells.
+// They are untrusted PRIVATE suggestions, not commercial facts. Preserve them
+// verbatim; the independent source verifier still controls publication.
 const safe=(v:unknown,max:number):v is string|null=>
  v===null||(typeof v==='string'&&v.length<=max&&
- !/[\u0000-\u001f\u007f]/u.test(v));
+ !/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/u.test(v));
 function validated(raw:unknown):DocumentDraft{
  if(!keys(raw,SCHEMA.required)||
    !['buyer_request','supplier_quote','other'].includes(String(raw.kind))||
-   !safe(raw.delivery_city,80)||!safe(raw.requested_delivery_note,90)||
-   !safe(raw.total_declared,120)||
+   !safe(raw.delivery_city,160)||!safe(raw.requested_delivery_note,2048)||
+   !safe(raw.total_declared,256)||
    !Array.isArray(raw.lines)||raw.lines.length>25||
    !Array.isArray(raw.unanswered)||raw.unanswered.length>15||
-   !raw.unanswered.every(v=>typeof v==='string'&&v.length<=160))
+   !raw.unanswered.every(v=>typeof v==='string'&&
+     v.length<=1200&&!/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/u.test(v)))
   throw Error('doc_ai_output_invalid');
  for(const line of raw.lines){
   if(!keys(line,SCHEMA.properties.lines.items.required)||
    typeof line.original_description!=='string'||
-   line.original_description.length<2||line.original_description.length>250||
-   !safe(line.quantity,50)||!safe(line.unit,70)||
-   !safe(line.unit_price,100)||!safe(line.line_total,120)||
+   line.original_description.length>1600||
+   /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/u.test(line.original_description)||
+   !safe(line.quantity,120)||!safe(line.unit,160)||
+   !safe(line.unit_price,256)||!safe(line.line_total,256)||
    typeof line.evidence_location!=='string'||
-   line.evidence_location.length>200||!safe(line.ambiguity,150))
+   line.evidence_location.length>2048||
+   /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/u.test(line.evidence_location)||
+   !safe(line.ambiguity,1000))
    throw Error('doc_ai_line_invalid');
  }
  return {status:'review_required',...raw} as DocumentDraft;
