@@ -36,9 +36,27 @@ async function check(){
   });
   assert.equal(apiBad.status,400,'invalid/short tokens cannot reach Supabase');
 
+  // Independently exercise the NEW mobile preview, without a bearer token.
+  // It is not the live redirect target until this verification passes.
+  const mobilePreview='https://cotironda-seguimiento-vist-git-43f7cf-protector-rudo-s-projects.vercel.app';
+  const preview=await get(mobilePreview+'/seguimiento');
+  assert.equal(preview.status,200,'updated mobile preview must be accessible');
+  assert.match(preview.headers.get('content-type')??'',/text\/html/i);
+  assert.match(preview.headers.get('content-security-policy')??'',/script-src 'self'/i);
+  const previewHtml=await preview.text();
+  assert.match(previewHtml,/id="equivalence"/u);
+  assert.match(previewHtml,/id="offers"/u);
+  const previewScript=await get(mobilePreview+'/site.js');
+  assert.equal(previewScript.status,200,'updated mobile JavaScript must load');
+  const updatedCode=await previewScript.text();
+  assert.match(updatedCode,/hour12:false/u);
+  assert.match(updatedCode,/offer-total-value/u);
+  assert.doesNotMatch(updatedCode,/innerHTML|localStorage|document\.cookie/u);
+
   const fromWhatsapp=await get(LEGACY);
   assert.equal(fromWhatsapp.status,302,'old WhatsApp link must redirect');
-  assert.equal(fromWhatsapp.headers.get('location'),ORIGIN+'/seguimiento');
+  assert.ok([ORIGIN+'/seguimiento',mobilePreview+'/seguimiento'].includes(fromWhatsapp.headers.get('location')),
+    'pilot may still be on previous verified redirect until this PR is deployed');
   assert.match(fromWhatsapp.headers.get('cache-control')??'',/no-store/i);
   assert.ok(!(fromWhatsapp.headers.get('location')??'').includes('#'),
     'bearer must stay only in browser fragment');
