@@ -1,3 +1,8 @@
+## MVP-118 — comparador económico exacto a 25 artículos sin explosión combinatoria (02/11/2026)
+- Motor económico offline extendido de 8 a 25 artículos con solución por mitades y búsqueda de mínimos, hasta 2 proveedores y 10 ofertas. Conserva cálculos enteros BigInt, IVA/flete/minimos separados, condiciones de pago, cobertura y ofertas parciales, sin falsos puestos por totales incomparables.
+- Tests contra oráculo de fuerza bruta en 150 casos, pruebas extremas 25 artículos / 10 proveedores, mínimos y falta de IVA/pago/flete. Documento docs/236, Issue #447, sin integración económica en vivo mientras no exista verificación documental completa de condiciones.
+- Sin modificación permanente de Supabase, despliegue ni WhatsApp real. **NO_GO** para piloto completo por las 13 puertas nuevas pendientes y la prueba externa 1+2.
+
 ## MVP-117 — pedidos documentales hasta 25 artículos con PDF multipágina (02/11/2026)
 - Se amplió de 8 a 25 ítems el camino documental completo de despacho: acuerdo privado doble lectura, distribución por catálogo, aclaraciones de números de línea, guardias de envío y cobertura de cierre. Cada proveedor recibe un PDF de 1–4 páginas con TODOS sus materiales y cantidades, nunca un archivo cortado por la página o por el mensaje WhatsApp.
 - `mvp117_upgrade_document_25.sql` prepara la actualización incremental de las RPC y restricciones ya instaladas en PILOTO; las pruebas reales de PostgreSQL con 9 y 25 artículos, filtro por proveedor y tokens/leases se ejecutaron **PASS y ROLLBACK**, sin envíos ni cambios persistentes.
