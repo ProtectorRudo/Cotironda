@@ -30,9 +30,11 @@ test('MVP131: bad environment blocks before database',async()=>{
 });
 test('MVP131: service candidate triggers exactly one private recovery',async()=>{
  const i=io();const r=await runRecoveryService(new Request('https://test/',{method:'POST'}),flags,i.ops);
- assert.equal(r.status,200);assert.equal(await state(r),'recovered_private');
+ assert.equal(r.status,200);
+ const serialized=await r.clone().text();
+ assert.equal(await state(r),'recovered_private');
  assert.equal(i.count.lookup,1);assert.equal(i.count.recover,1);
- assert.equal((await r.text()).includes(h),false);
+ assert.equal(serialized.includes(h),false);
 });
 test('MVP131: empty, disabled and quota never call AI worker',async()=>{
  for(const v of ['none','quota','disabled']){

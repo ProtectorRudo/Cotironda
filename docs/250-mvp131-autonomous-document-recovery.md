@@ -18,3 +18,5 @@ Archivo PDF de Ailín de 12.725 bytes, Storage privado, propietario consentido, 
 - Solo ante autorización Publicalo: solo PILOTO, instalar selector SQL y función Edge en la instancia de pruebas, con la nueva bandera OFF hasta prueba de acceso autorizado y rechazo de apikey inválidas.
 - Para ejecución programada, configurar pg_cron y pg_net con credencial secreta en Vault, revisando permisos a cola pg_net. Nunca guardar tokens en GitHub, SQL o chat.
 - Después, consultar el registro real del PDF de Ailín y comprobar si existe borrador y presupuesto verificado. No declarar éxito sin comparar todos los artículos, extras y el total. Nunca publicar a ciegas.
+
+Se agregó prueba SQL PG17 real en CI con datos sintéticos que exige revocación para anon/authenticated, SELECT mediante service_role, rechazo por baja, vencimiento, ruta de storage distinta y cuota agotada. Esto no ejecuta SQL en el piloto ni procesa el PDF real.
