@@ -266,3 +266,15 @@ test('MVP144: descuento fuente acreditado en fila separada no se oculta ni bloqu
  assert.equal((await verifySupplierEvidence(input,proposal,async()=>
   [...source,'FLETE ADICIONAL $500,00'])).reason,'extra_charge');
 });
+
+test('MVP144: v7 conserva fuente, notas, descuentos y no habilita ranking',()=>{
+ const sql=readFileSync(new URL('../../supabase/piloto/mvp144_source_verified_revision7.sql',
+  import.meta.url),'utf8');
+ assert.match(sql,/verifier_version=7/u);
+ assert.match(sql,/values\(p_message_hmac,7,/u);
+ assert.match(sql,/verifier_version between 2 and 7/u);
+ assert.match(sql,/Descuento visible: \[0-9\]/u);
+ assert.match(sql,/ranking_allowed',false/u);
+ assert.match(sql,/to service_role/u);
+ assert.doesNotMatch(sql,/net\.http_post|send_whatsapp/iu);
+});
