@@ -170,7 +170,7 @@ function strings(xml:string):string[]{
 function sheets(files:Map<string,string>):string[]{
  const workbook=files.get('xl/workbook.xml');
  const rels=files.get('xl/_rels/workbook.xml.rels');
- if(!workbook||!rels)fail('unsupported_layout');
+ if(!workbook)fail('unsupported_layout');
  const refs=[...workbook.matchAll(/<sheet\b([^>]*?)(?:\/>|>)/gu)];
  if(refs.length<1||refs.length>12)fail('unsupported_layout');
  const attr=(s:string,name:string):string|null=>{
@@ -178,7 +178,7 @@ function sheets(files:Map<string,string>):string[]{
   return s.match(new RegExp('(?:^|\\s)'+safe+'="([^"]*)"','u'))?.[1]??null;
  };
  const relPaths=new Map<string,string>();
- for(const r of rels.matchAll(/<Relationship\b([^>]*?)(?:\/>|>)/gu)){
+ for(const r of (rels??'').matchAll(/<Relationship\b([^>]*?)(?:\/>|>)/gu)){
   const id=attr(r[1],'Id'),target=attr(r[1],'Target');
   const type=attr(r[1],'Type');
   if(!id||!target||!type)fail('unsupported_layout');
@@ -189,9 +189,19 @@ function sheets(files:Map<string,string>):string[]{
    fail('unsupported_layout');
   relPaths.set(id,path);
  }
- if(relPaths.size!==refs.length)fail('unsupported_layout');
  const paths:string[]=[];
- for(const ref of refs){
+ // Legacy minimal worksheets may omit workbook.xml.rels. Accept them ONLY
+ // when the archive contains exactly one nonhidden sheet1 and no extra sheet.
+ if(!rels){
+  if(refs.length!==1||
+   [...files.keys()].filter(x=>/^xl\/worksheets\/[^/]+\.xml$/iu.test(x)).length!==1||
+   !files.has('xl/worksheets/sheet1.xml'))
+   fail('unsupported_layout');
+  paths.push('xl/worksheets/sheet1.xml');
+ }else{
+  if(relPaths.size!==refs.length)fail('unsupported_layout');
+ }
+ for(const ref of rels?refs:[]){
   const state=attr(ref[1],'state');
   if(state&&state!=='visible')fail('unsupported_layout');
   const id=attr(ref[1],'r:id'),path=id?relPaths.get(id):null;
