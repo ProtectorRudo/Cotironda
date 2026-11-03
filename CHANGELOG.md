@@ -1,3 +1,8 @@
+## MVP-119 — confirmación real de entrega WhatsApp (02/11/2026)
+- Implementados eventos directos `statuses.post` de Whapi con autenticación, canal, destinatario HMAC y coincidencia exacta del mensaje previamente aceptado; `sent: true` **no** equivale a `delivered`. Los estados de grupos `statuses.put` no se cuentan como entregas directas.
+- Libro de evidencia privado, con RLS, ID Whapi solo en SHA256, estados monotónicos y protección contra suplantación, duplicados, respuestas tardías y mensajes desconocidos. Se retiene por primera vez el ID de los avisos de agradecimiento al proveedor y enlace al comprador, además de los envíos documentales y finalistas.
+- Ensayo PG17 SQL integrado de 3 envíos simulados + eventos `sent/delivered/read`, suplantación, duplicado y rechazo de retroceso: **PASS ROLLBACK**; pruebas de parser TS y Edge, docs/238, Issue #449. Sin instalación ni mensajes Whapi reales. La publicación completa sigue **NO_GO** hasta despliegue autorizado y prueba con 3 teléfonos.
+
 ## MVP-118 — comparador económico exacto a 25 artículos sin explosión combinatoria (02/11/2026)
 - Motor económico offline extendido de 8 a 25 artículos con solución por mitades y búsqueda de mínimos, hasta 2 proveedores y 10 ofertas. Conserva cálculos enteros BigInt, IVA/flete/minimos separados, condiciones de pago, cobertura y ofertas parciales, sin falsos puestos por totales incomparables.
 - Tests contra oráculo de fuerza bruta en 150 casos, pruebas extremas 25 artículos / 10 proveedores, mínimos y falta de IVA/pago/flete. Documento docs/236, Issue #447, sin integración económica en vivo mientras no exista verificación documental completa de condiciones.
