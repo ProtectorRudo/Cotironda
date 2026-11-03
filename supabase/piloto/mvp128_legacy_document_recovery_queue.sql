@@ -48,10 +48,11 @@ begin
  and m.proposal is null
  and m.content_sha256 ~ '^[a-f0-9]{64}$'
  and m.ai_reserved_at < clock_timestamp()-interval '3 minutes'
- and m.size_bytes between 8 and 3145728
+ and m.size_bytes between 8 and 8388608
  and m.mime in ('application/pdf','image/jpeg','image/png','image/webp',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/msword','application/vnd.ms-excel',
   'text/plain','text/csv')
  and owner.consent_at is not null and owner.opted_out_at is null
  and (
