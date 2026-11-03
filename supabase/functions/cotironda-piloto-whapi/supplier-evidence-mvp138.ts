@@ -61,7 +61,10 @@ const discountMath=(line:DocumentDraft['lines'][number],rate:bigint)=>{
 };
 const percentSeen=(rows:readonly string[],discount:bigint)=>rows.some(row=>
  [...row.matchAll(/(\d{1,2}(?:[.,]\d{1,2})?)\s*%/gu)]
- .some(m=>basis(m[1])===discount)
+ .some(m=>basis(m[1])===discount) ||
+ (/(?:descuento|dscto|bonificaci[oó]n)/iu.test(row) &&
+ [...row.matchAll(/(?<!\d)(\d{1,2}[.,]\d{1,2})(?!\d)/gu)]
+  .some(m=>basis(m[1])===discount))
 );
 const discountProof=(row:string,rows:readonly string[],
  line:DocumentDraft['lines'][number],value:string)=>{
