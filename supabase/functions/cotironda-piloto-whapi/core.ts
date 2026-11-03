@@ -14,7 +14,7 @@ const QTY=String.raw`(\d{1,6}(?:[.,]\d{1,3})?)`;
 const U=String.raw`(bolsas?|bols?\.?|litros?|lts?\.?|l|kgs?|kilogramos?|m3|m³|unidades?|unid?\.?|u|cajas?|rollos?|barras?|placas?|metros?|mts?\.?|m2|m²|packs?)`;
 const prefixLine=new RegExp('^'+QTY+'\\s*'+U+'\\s+(?:de\\s+)?(.{3,150})$','iu');
 const suffixLine=new RegExp('^(.{3,150}?)\\s*(?:[-–—:]\\s*|\\s+[x×]\\s*)'+QTY+'\\s*'+U+'$','iu');
-const CITY=/^[ \t]*(?:zona(?: de entrega)?|entrega|destino|obra|localidad|enviar|envi[oó]|despacho|envío)\s*(?::|\ben\b|\ba\b)\s*([^\n;.]{3,100})[ \t]*[.;]?/gimu;
+const CITY=/^[ \t]*(?:zona(?: de entrega)?|entrega|destino|obra|localidad|enviar|envi[oó]|despacho|envío)\s*(?::|\ben\s*:?|\ba\s*:?)\s*([^\n;.]{3,100})[ \t]*[.;]?/gimu;
 const DELIVERY=/^[ \t]*(?:fecha de entrega|entrega solicitada|necesito recibir|para recibir)\s*:\s*([^\n;.]{3,90})/gimu;
 function cityOnly(s:string):string{
  // Do not mistake desired date for part of the shipping locality.
@@ -67,7 +67,7 @@ function familyOf(desc:string):string|null{
 }
 function isChatter(s:string):boolean{
  const n=fold(s).replace(/^[¡!¿?.,:;\s]+|[!?.:;,\s]+$/gu,'');
- return /^(?:hola|buen dia|buenos dias|buenas tardes|buenas noches|buenas|gracias|muchas gracias|muchisimas gracias|te agradezco|saludos|quedo atento|quedo a la espera|por favor)$/u.test(n)||
+ return /^(?:hola|buen dia|buenos dias|buenas tardes|buenas noches|buenas|gracias|muchas gracias|muchisimas gracias|te agradezco|saludos|quedo atento|quedo a la espera|por favor)$/u.test(n)||\n /^(?:hola[, ]+)?(?:buen dia|buenos dias|buenas tardes|buenas noches)$/u.test(n)||
  /^(?:les (?:paso|mando|envio) (?:la )?(?:lista|solicitud|pedido)(?: de materiales)?(?: para cotizar)?|necesito (?:un )?presupuesto|quisiera (?:un )?presupuesto|pedido de cotizacion|solicitud de cotizacion|materiales a cotizar)$/u.test(n)||
  /^(?:(?:los|las)\s+)?(?:siguientes\s+)?(?:materiales|productos)(?:\s+(?:a|para)\s+cotizar)?$/u.test(n);
 }
