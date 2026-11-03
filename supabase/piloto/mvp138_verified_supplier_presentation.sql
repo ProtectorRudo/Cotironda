@@ -3,7 +3,7 @@
 -- Private original files and previous MVP102/103/106 ledgers stay untouched.
 create table cotironda_piloto_privado.supplier_evidence_mvp138(
  message_hmac text not null references cotironda_piloto_privado.supplier_media_quotes_mvp098(message_hmac),
- verifier_version smallint not null default 1 check(verifier_version=1),
+ verifier_version smallint not null default 1 check(verifier_version between 1 and 10),
  request_id uuid not null references cotironda_piloto_privado.requests(id),
  supplier_key text not null references cotironda_piloto_privado.participants(key),
  source_sha256 text not null check(source_sha256 ~ '^[a-f0-9]{64}$'),
