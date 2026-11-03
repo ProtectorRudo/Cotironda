@@ -152,7 +152,11 @@ export function checkSupplierTextSource(
  // A total with extra wording ("IVA incluido", "pago a 30 días", etc.)
  // must NOT be marked fully source-covered when those terms are not in
  // the independently verified economic record.
- if(total.slice(totalMatch[0].length).trim()!==proposal.total_declared)
+ // XLSX cells are joined with a middle-dot separator: `Total: · $ ...`.
+ // Accept only that *leading* separator, never omitted trailing clauses.
+ const amountTail=total.slice(totalMatch[0].length).trim()
+  .replace(/^·\s*/u,'');
+ if(amountTail!==proposal.total_declared)
   return not('uncovered_terms',proposal.lines.length,hash);
  for(let i=0;i<proposal.lines.length;i++){
   const originalLine=lines[i],line=proposal.lines[i];
