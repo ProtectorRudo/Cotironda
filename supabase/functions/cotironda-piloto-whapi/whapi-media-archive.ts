@@ -4,11 +4,12 @@
  */
 import type {MediaManifest} from './media-intake.ts';
 const MEDIA_ID=/^[a-zA-Z0-9]+-[0-9a-fA-F-]{8,180}$/u;
-const MAX=3*1024*1024;
+const MAX=8*1024*1024;
 const HASH=/^[A-Za-z0-9+/]{43}=$/u;
 const ALLOWED=new Set(['application/pdf','image/jpeg','image/png','image/webp',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/msword','application/vnd.ms-excel',
   'text/csv','text/plain']);
 export class MediaError extends Error{
  readonly code:string;
@@ -28,6 +29,10 @@ function binarySignature(bytes:Uint8Array,mime:string):boolean{
    String.fromCharCode(...bytes.slice(8,12))==='WEBP';
  if(mime.includes('openxmlformats-officedocument'))
   return starts(0x50,0x4b,0x03,0x04);
+ // Legacy DOC/XLS Compound File Binary (CFB/OLE2). Do not execute macros.
+ // Legacy formats are sent ONLY for private AI draft; no auto-publication.
+ if(mime==='application/msword'||mime==='application/vnd.ms-excel')
+  return starts(0xd0,0xcf,0x11,0xe0,0xa1,0xb1,0x1a,0xe1);
  if(mime==='text/csv'||mime==='text/plain'){
   try{
    const t=new TextDecoder('utf-8',{fatal:true}).decode(bytes);
