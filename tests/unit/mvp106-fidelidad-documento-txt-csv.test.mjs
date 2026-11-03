@@ -76,7 +76,7 @@ test('MVP106 omissions, price changes, original order changes and invented field
 test('MVP106 rejects omitted economic terms, supplemental money and unaccounted numeric quantities',()=>{
  assert.equal(checkSupplierTextSource(fixture(original.replace('Flete a obra · $ 12.000,00','Flete a obra · $ 12.000,00 + $ 1.000,00')),quote()).reason,'uncovered_money');
  assert.equal(checkSupplierTextSource(fixture(original.replace('Flete a obra · $ 12.000,00','Flete a obra 2 unidades · $ 12.000,00')),quote()).reason,'uncovered_number');
- assert.equal(checkSupplierTextSource(fixture(original),quote({lines:draft.lines.slice(0,5)})).reason,'unsupported_layout');
+ assert.equal(checkSupplierTextSource(fixture(original),quote({lines:draft.lines.slice(0,5)})).reason,'uncovered_terms');
 });
 test('MVP106 never makes contact-bearing source public and never accepts model uncertainties',()=>{
  for(const extra of ['Contacto: +54 9 221 555 1234','Mail: contacto@proveedor.com',

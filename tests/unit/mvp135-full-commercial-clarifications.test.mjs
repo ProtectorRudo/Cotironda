@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {checkGeneralPdfSource} from '../../supabase/functions/cotironda-piloto-whapi/supplier-source-pdf-general.ts';
+import {checkSupplierTextSource} from '../../supabase/functions/cotironda-piloto-whapi/supplier-source-text.ts';
 import {proposeDocumentAI} from '../../supabase/functions/cotironda-piloto-whapi/document-ai-draft.ts';
 const pdf={bytes:new Uint8Array(512),mime:'application/pdf',sha256:'b'.repeat(64)};
 const rows=[
@@ -108,4 +109,46 @@ test('MVP135: quote publication preserves original gates, no guessed winners',()
  assert.doesNotMatch(sql,/\b(?:insert\s+into|update|delete\s+from)\s+cotironda_piloto_privado\.offer_versions/iu);
  assert.doesNotMatch(sql,/http_post|net\.http|whapi\.cloud/iu);
  assert.match(sql,/to service_role;/u);
+});
+
+test('MVP135: invented commercial promise is rejected even if prices match',async()=>{
+ const wrong={...draft,requested_delivery_note:note+'; IVA incluido'};
+ const x=await checkGeneralPdfSource(pdf,wrong,reader(rows));
+ assert.equal(x.state,'needs_source_review');
+ assert.equal(x.reason,'uncovered_terms');
+});
+test('MVP135: TXT and CSV quote keeps every note after original total',()=>{
+ const document=[
+  '20 bolsas · Cemento CPC 50 kg · $ 9.500,00 x 20 = $ 190.000,00',
+  'Total: $ 190.000,00',
+  'PRECIOS LISTA 7',
+  'CONTADO EFECTIVO',
+  'FLETE A CONVENIR',
+  'DEVOLUCION DE PALLETS'
+ ].join('\n');
+ const note=['PRECIOS LISTA 7','CONTADO EFECTIVO','FLETE A CONVENIR',
+  'DEVOLUCION DE PALLETS'].join('; ');
+ const model={...draft,total_declared:'$ 190.000,00',
+  requested_delivery_note:note,lines:[{
+   original_description:'Cemento CPC 50 kg',quantity:'20',unit:'bolsas',
+   unit_price:'$ 9.500,00',line_total:'$ 190.000,00',
+   evidence_location:'renglón 1',ambiguity:null
+  }]};
+ const check=checkSupplierTextSource;
+ const make=mime=>({mime,bytes:new TextEncoder().encode(document),
+   sha256:'f'.repeat(64)});
+ for(const mime of ['text/plain','text/csv']){
+  const x=check(make(mime),model);
+  assert.equal(x.state,'source_text_covered',mime);
+  assert.equal(x.rankingAllowed,false);
+  assert.equal(check(make(mime),{
+   ...model,requested_delivery_note:note.replace('DEVOLUCION DE PALLETS','')
+  }).reason,'uncovered_terms');
+  assert.equal(check(make(mime),{
+   ...model,requested_delivery_note:note+'; IVA incluido'
+  }).reason,'uncovered_terms');
+ }
+ const withMoney=document+' \nCargo devolución pallets $ 5.000,00';
+ const m={mime:'text/plain',bytes:new TextEncoder().encode(withMoney),sha256:'f'.repeat(64)};
+ assert.equal(check(m,{...model,requested_delivery_note:note+'; Cargo devolución pallets $ 5.000,00'}).reason,'uncovered_money');
 });
