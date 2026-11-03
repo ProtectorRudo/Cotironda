@@ -225,7 +225,7 @@ function sheets(files:Map<string,string>):string[]{
   // They contribute no prices; inspect all such sheets rather than
   // mistaking their empty sheetData XML for an unreadable quotation.
   if(data===undefined||!data.trim()){
-   const explicitEmpty=/\<sheetData(?:\s[^>]*)?\s*\/>/u.test(sheet);
+   const explicitEmpty=/<sheetData(?:\s[^>]*)?\s*\/>/u.test(sheet);
    if(data===undefined&&!explicitEmpty)fail('unsupported_layout');
    if(/<(?:c|f|v)(?=\s|>)/iu.test(sheet))fail('unsupported_layout');
    continue;
