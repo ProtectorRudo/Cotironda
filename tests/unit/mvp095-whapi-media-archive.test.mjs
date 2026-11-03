@@ -48,7 +48,7 @@ test('MVP095: no permiten URLs, media IDs no-whapi, audio o ZIP no autorizado',a
   {...media(),media_id:'../../etc/passwd'},
   {...media(),state:'unsupported_needs_review'},
   {...media(),kind:'audio'},
-  {...media(),size:3*1024*1024+1},
+  {...media(),size:8*1024*1024+1},
   {...media(),mime:'application/x-msdownload'}
  ]){
   await assert.rejects(getVerifiedWhapiMedia({manifest:m,token,
@@ -69,7 +69,7 @@ test('MVP095: respuestas vacías, truncadas o mayores al límite bloqueadas',asy
   manifest:media('application/pdf',999),token,fetchImpl:async()=>reply(payload)
  }),/media_length_mismatch/);
  await assert.rejects(getVerifiedWhapiMedia({
-  manifest:media(),token,fetchImpl:async()=>reply(payload,{'content-length':'3145729'})
+  manifest:media(),token,fetchImpl:async()=>reply(payload,{'content-length':'8388609'})
  }),/media_too_large/);
 });
 test('MVP095: no reintentar errores de red y no seguir redirecciones externas',async()=>{
@@ -94,4 +94,21 @@ test('MVP095: integración en webhook queda bajo flag independiente y SQL privad
  assert.match(s,/getVerifiedWhapiMedia/);
  assert.match(s,/storeVerifiedMedia/);
  assert.match(s,/outcome\(out\.data\)==='needs_review'/);
+});
+
+
+test('MVP095: formatos DOC/XLS heredados solo pasan con firma OLE2 válida',async()=>{
+ const cfb=Uint8Array.from([0xd0,0xcf,0x11,0xe0,0xa1,0xb1,0x1a,0xe1,0,0]);
+ for(const mime of ['application/msword','application/vnd.ms-excel']){
+  const f=await getVerifiedWhapiMedia({
+   manifest:media(mime,cfb.byteLength),token,
+   fetchImpl:async()=>new Response(cfb,{status:200})
+  });
+  assert.deepEqual(f.bytes,cfb);
+  assert.equal(f.mime,mime);
+  await assert.rejects(getVerifiedWhapiMedia({
+   manifest:media(mime),token,
+   fetchImpl:async()=>new Response(payload,{status:200})
+  }),/media_signature_mismatch/);
+ }
 });
