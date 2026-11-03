@@ -13,7 +13,7 @@ export type SourceCheckResult=Readonly<{
  state:'source_text_covered'|'needs_source_review';
  reason:'covered'|'unsupported_format'|'invalid_source'|'unsupported_layout'|
   'unresolved'|'unsafe_contact'|'line_not_found'|'line_order_mismatch'|
-  'field_not_on_source'|'uncovered_money'|'uncovered_number'|'total_not_found';
+  'field_not_on_source'|'uncovered_money'|'uncovered_number'|'uncovered_terms'|'total_not_found';
  lines:number;
  sourceSha256:string|null;
  sourceVerified:boolean;
@@ -55,12 +55,43 @@ function sourceMoneyCovered(source:string,line:Line):boolean{
  const seenOnSource=moneyTokens(source);
  const claimed=[line.unit_price,line.line_total].filter(
   (x):x is string=>typeof x==='string'&&x.length>0);
- // Every explicit monetary token must survive in the extracted line.
- // This is not an arithmetic or currency verification.
- if(seenOnSource.length===0)return claimed.length===0;
- if(claimed.length===0)return false;
- return seenOnSource.every(x=>claimed.includes(x))&&
-   claimed.every(x=>seenOnSource.includes(x));
+ // Compare EVERY occurrence, not just set membership. If the original
+ // contains two identical $12.000,00 amounts, the model must account for
+ // both, or the source remains for private review.
+ if(seenOnSource.length!==claimed.length)return false;
+ const occurrences=new Map<string,number>();
+ for(const literal of seenOnSource)
+  occurrences.set(literal,(occurrences.get(literal)??0)+1);
+ for(const literal of claimed){
+  const count=occurrences.get(literal)??0;
+  if(count===0)return false;
+  occurrences.set(literal,count-1);
+ }
+ return [...occurrences.values()].every(count=>count===0);
+}
+/**
+ * Every visible word must belong to a model-captured description or unit.
+ * Otherwise a trailing "IVA incluido", "pago contado", "flete sin cargo"
+ * or other commercial condition could vanish without affecting the sums.
+ * Allow only arithmetic "x" after subtracting source-exact fields.
+ */
+function unclaimedWords(source:string,line:Line):boolean{
+ let left=source;
+ const consume=(v:string|null):boolean=>{
+  if(v===null||v.length===0)return true;
+  const index=left.toLocaleLowerCase('es-AR').indexOf(
+   v.toLocaleLowerCase('es-AR'));
+  if(index<0)return false;
+  left=left.slice(0,index)+' '+left.slice(index+v.length);
+  return true;
+ };
+ if(!consume(line.original_description)||!consume(line.unit)||
+    !consume(line.unit_price)||!consume(line.line_total))return true;
+ // Numbers are already checked by remainingNumberCovered: after removing
+ // descriptions and money, each is the explicitly declared quantity.
+ left=left.replace(/\d+(?:[.,]\d+)?/gu,' ');
+ const words=left.match(/\p{L}+/gu)??[];
+ return words.some(word=>word.toLocaleLowerCase('es-AR')!=='x');
 }
 function remainingNumberCovered(source:string,line:Line):boolean{
  // Remove source-exact description and the full money tokens first, so
@@ -111,11 +142,18 @@ export function checkSupplierTextSource(
    lines.length<2||lines.length>26)
   return not('unsupported_layout',proposal.lines.length,hash);
  const total=lines[lines.length-1];
- if(!/^(?:total(?:\s+(?:final|general|a\s+pagar))?|importe\s+total)\b/iu.test(total)||
-   typeof proposal.total_declared!=='string'||
-   !moneyTokens(total).includes(proposal.total_declared)||
-   moneyTokens(total).length!==1)
+ const totalMatch=total.match(
+  /^(?:total(?:\s+(?:final|general|a\s+pagar))?|importe\s+total)\s*[:=]?\s*/iu);
+ if(!totalMatch||
+    typeof proposal.total_declared!=='string'||
+    !moneyTokens(total).includes(proposal.total_declared)||
+    moneyTokens(total).length!==1)
   return not('total_not_found',proposal.lines.length,hash);
+ // A total with extra wording ("IVA incluido", "pago a 30 días", etc.)
+ // must NOT be marked fully source-covered when those terms are not in
+ // the independently verified economic record.
+ if(total.slice(totalMatch[0].length).trim()!==proposal.total_declared)
+  return not('uncovered_terms',proposal.lines.length,hash);
  for(let i=0;i<proposal.lines.length;i++){
   const originalLine=lines[i],line=proposal.lines[i];
   if(typeof line.original_description!=='string'||
@@ -129,6 +167,8 @@ export function checkSupplierTextSource(
     return not('uncovered_money',i+1,hash);
   if(!remainingNumberCovered(originalLine,line))
     return not('uncovered_number',i+1,hash);
+  if(unclaimedWords(originalLine,line))
+    return not('uncovered_terms',i+1,hash);
  }
  return ok(proposal.lines.length,hash);
 }
