@@ -1,3 +1,6 @@
+## MVP147 — Mensajes completos del comprador sin falsos faltantes
+- La lista clara con saludo y encabezado no queda bloqueada por `ask_material`: fast-path seguro del parser local, sin borrar líneas desconocidas. Solo piloto, Issue #499, docs/266.
+
 ## MVP145 — Encabezados comerciales PDF frente a condiciones verificadas
 - Revisión v8 append-only. No confundir metadatos de tabla, correo y ceros con condiciones omitidas; precios, IVA, flete, plazos y descuentos permanecen exigidos. Solo piloto. Ver docs/264 e Issue #488.
 

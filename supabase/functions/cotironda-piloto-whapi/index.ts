@@ -362,6 +362,7 @@ async function respond(req:Request):Promise<Response>{
   // durable, one-per-HMAC, buyer-only and capped at 12 calls per day.
   // Supplier quote ingestion never passes through this classifier.
   if(row.type==='text'&&!webLinkCode&&
+     !canPrepareBuyerPilot(local)&&
      Deno.env.get('COTIRONDA_PILOT_AI_ENABLED')==='true'){
     const preflight=await db.rpc('cotironda_piloto_reserve_ai_mvp094',{
       p_chat_hmac:chatHash,p_message_hmac:messageHash
