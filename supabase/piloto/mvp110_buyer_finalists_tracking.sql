@@ -8,7 +8,8 @@ declare r_ record;contacts jsonb;names jsonb;
 begin
  if p_token_hash is null or p_token_hash !~ '^[a-f0-9]{64}$'
  then return jsonb_build_object('state','not_found');end if;
- select req.id,req.buyer_key,plan.supplier_keys,plan.candidate_count
+ select req.id,req.buyer_key,plan.supplier_keys,plan.candidate_count,
+   plan.state as selection_state
  into r_ from cotironda_piloto_privado.buyer_tracking_mvp091 t
  join cotironda_piloto_privado.requests req on req.id=t.request_id
  join cotironda_piloto_privado.finalist_activation_mvp113 activation
@@ -37,7 +38,8 @@ begin
   'buyer_key',r_.buyer_key,
   'supplier_keys',to_jsonb(r_.supplier_keys),
   'contacts_encrypted',contacts->'contacts_encrypted',
-  'labels',names,'price_ranked',false);
+  'labels',names,'price_ranked',false,
+  'joint_supplier_coverage',r_.selection_state='two_supplier_combination');
 end;$fn$;
 revoke all on function
  public.cotironda_piloto_tracking_finalists_mvp110(text)
