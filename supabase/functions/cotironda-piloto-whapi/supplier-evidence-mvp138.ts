@@ -198,7 +198,12 @@ export async function verifySupplierEvidence(
  const note=n(p.requested_delivery_note??'');
  // Only unmatched source rows may prove commercial notes. A product
  // name or a price already consumed cannot masquerade as a payment term.
- const unclaimedSource=source.filter((_,i)=>!used.has(i)).join(' ');
+ // A verified TOTAL row can also say CONTADO; reuse only its text
+ // qualifiers, never the monetary digits, as evidence for a payment note.
+ const totalRowWords=clauseTokens(totals[0].row)
+  .filter(word=>!/\d/u.test(word)).join(' ');
+ const unclaimedSource=source.filter((_,i)=>!used.has(i)).join(' ')+
+  ' '+totalRowWords;
  if(note&&!coveredTokens(unclaimedSource,note))
   return reject('uncovered_note',c);
  const claimedDiscounts=p.lines.map(l=>discount(l.ambiguity))
