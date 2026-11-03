@@ -36,18 +36,14 @@ const quantityUnitEvidence=(row:string,description:string,quantity:string|null,u
  if(!/^\d+(?:[.,]\d+)?$/u.test(q)||!desc)return false;
  const at=row.indexOf(desc);
  if(at<0)return false;
- // Remove the entire product description (including its sizes, e.g. 25 kg).
- // Currency tokens and text after the first amount are NOT quantity evidence.
+ // Strip description with sizes; stop before explicitly marked monetary price.
  let context=row.slice(0,at)+' '+row.slice(at+desc.length);
- // A literal price marker is stronger evidence of the boundary between
- // numeric QUANTITY (e.g. 40,00) and monetary columns. The broad money
- // detector also sees bare 40,00, so using it here would erase quantity.
- const pricedAt=context.search(/\\$\\s*-?\\s*\\d/u);
+ const pricedAt=context.search(/\$\s*-?\s*\d/u);
  const moneyStart=pricedAt>=0?pricedAt:context.search(MONEY);
  if(moneyStart>=0)context=context.slice(0,moneyStart);
  if(!u){
-  // Without a declared unit, accept only a standalone quantity before an
-  // EXPLICITLY marked price. Never guess units from the product size.
+  // Without a declared unit, prove a separate numeric quantity cell.
+  // An amount or a product size is NOT sufficient evidence.
   if(pricedAt<0)return false;
   const number='(?<![\\p{L}\\p{N}.,])'+regexEscape(q)+'(?![\\p{L}\\p{N}.,])';
   return new RegExp(number,'u').test(context);
@@ -149,12 +145,21 @@ export async function checkGeneralPdfSource(
  const exactAmounts=(row:string,expected:readonly string[],
   quantity:string|null=null)=>{
   const all=money(row),wanted=expected.flatMap(v=>money(v));
-  // A PDF numeric quantity column may look like an unprefixed money token
-  // (40,00). It is NOT a third price if the same number is independently
-  // corroborated as quantity and sits before the first explicit $ price.
-  const start=row.search(/\\$\\s*-?\\s*\\d/u);
-  if(quantity!==null&&start>=0&&
-     expected.every(v=>v.includes('
+  // Decimal quantity (40,00) is an unprefixed token, NOT a third price.
+  // Exclude it only when corroborated before the first explicit $ amount.
+  const firstPrice=row.search(/\$\s*-?\s*\d/u);
+  if(quantity!==null&&firstPrice>=0&&expected.every(v=>v.includes('$'))){
+   const q=normalized(quantity);
+   if(new RegExp('(?<![\\p{L}\\p{N}.,])'+regexEscape(q)+
+     '(?![\\p{L}\\p{N}.,])','u').test(row.slice(0,firstPrice))){
+    const pos=all.indexOf(q);
+    if(pos>=0)all.splice(pos,1);
+   }
+  }
+  return wanted.length>0&&all.length===wanted.length&&wanted.every(v=>{
+   const i=all.indexOf(v);if(i<0)return false;all.splice(i,1);return true;
+  });
+ };
  for(const line of p.lines){
   const idx=rows.findIndex((row,i)=>!consumed.has(i)&&
    mentions(row,line.original_description)&&
@@ -185,66 +190,8 @@ export async function checkGeneralPdfSource(
    return invalid(f,n,'uncovered_money');
   }
   MONEY.lastIndex=0;
-  // A commercial annotation can contain a list number (LISTA 7) or
-  // pallet return condition. Treat it as claimed only if the WHOLE source
-  // row is present in the copied supplier note; never ignore money-bearing
-  // rows or other numeric data as if they were harmless annotations.
-  const noteClaim=!consumed.has(i)&&TERMS.test(row)&&
-   normalized(p.requested_delivery_note??'').includes(row);
-  if(!consumed.has(i)&&TERMS.test(row)&&!noteClaim)
-   return invalid(f,n,'uncovered_terms');
-  if(!consumed.has(i)&&/\d/u.test(row)&&!noteClaim)
-   return invalid(f,n,'uncovered_number');
- }
- return covered(f,n);
-}
-))){
-   const q=normalized(quantity);
-   const before=row.slice(0,start);
-   if(new RegExp('(?<![\\p{L}\\p{N}.,])'+regexEscape(q)+
-      '(?![\\p{L}\\p{N}.,])','u').test(before)){
-    const i=all.indexOf(q);
-    if(i>=0)all.splice(i,1);
-   }
-  }
-  return wanted.length>0&&all.length===wanted.length&&wanted.every(v=>{
-   const i=all.indexOf(v);if(i<0)return false;all.splice(i,1);return true;
-  });
- };
- for(const line of p.lines){
-  const idx=rows.findIndex((row,i)=>!consumed.has(i)&&
-   mentions(row,line.original_description)&&
-   quantityUnitEvidence(row,line.original_description,line.quantity,line.unit)&&
-   mentions(row,line.unit_price)&&mentions(row,line.line_total));
-  if(idx<0)return invalid(f,n,'line_not_found');
-  if(!exactAmounts(rows[idx],[line.unit_price!,line.line_total!]))
-   return invalid(f,n,'uncovered_money');
-  const economicTerm=rows[idx].match(TERMS)?.[0]??null;
-  if(economicTerm&&
-    !mentions(line.original_description,economicTerm)&&
-    !mentions(p.requested_delivery_note??'',economicTerm))
-   return invalid(f,n,'uncovered_terms');
-  consumed.add(idx);
- }
- const totalCandidates=rows.map((text,index)=>({text,index})).filter(v=>
-  !consumed.has(v.index)&&/\b(?:total(?:\s+general)?|importe\s+total|a\s+pagar)\b/iu.test(v.text)
-  &&mentions(v.text,p.total_declared));
- if(totalCandidates.length!==1)return invalid(f,n,'total_not_found');
- if(!exactAmounts(totalCandidates[0].text,[p.total_declared]))
-  return invalid(f,n,'uncovered_money');
- consumed.add(totalCandidates[0].index);
- for(const [i,row] of rows.entries()){
-  // No money may be ignored: all amount-bearing rows must map to an
-  // original supplier line (including freight, pallets and discounts) or total.
-  if(!consumed.has(i)&&MONEY.test(row)){
-   MONEY.lastIndex=0;
-   return invalid(f,n,'uncovered_money');
-  }
-  MONEY.lastIndex=0;
-  // A commercial annotation can contain a list number (LISTA 7) or
-  // pallet return condition. Treat it as claimed only if the WHOLE source
-  // row is present in the copied supplier note; never ignore money-bearing
-  // rows or other numeric data as if they were harmless annotations.
+  // Only full exact source terms copied into the supplier's note can claim
+  // numbers such as LISTA 7. A money-bearing row is never hidden as a note.
   const noteClaim=!consumed.has(i)&&TERMS.test(row)&&
    normalized(p.requested_delivery_note??'').includes(row);
   if(!consumed.has(i)&&TERMS.test(row)&&!noteClaim)
