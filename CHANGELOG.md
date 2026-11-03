@@ -1,3 +1,8 @@
+## MVP-130 — cotejo PDF multicolumna, fuentes y varios folios (03/11/2026)
+- Lector `unpdf@1.9.1` (PDF.js serverless) pinneado para evidencias de texto posicionado sobre el original privado, después del verificador de PDF simple. Límite de páginas/tiempo/memoria y falla cerrada para escaneos, OCR oculto, filas largas o ilegibles.
+- Cobertura por renglón y por importe como multiconjunto exacto; prohíbe omitir cargos, fletes, pallets, IVA, condiciones, subtotales, números y total del presupuesto real. Si algo no está respaldado por la fuente, se mantiene en revisión privada.
+- Pruebas sintéticas de dos páginas, IVA, costos extra, cambios de precio, subtotal/total no conciliado y escaneo, documentación en docs/249. Issue #468. Sin declaración de lectura real de Ailín hasta verificarla.
+
 ## MVP-128 — recuperación privada de PDF histórico sin reenvío (03/11/2026)
 - Worker dedicado `private-document-recovery.ts` descarga solo el original en Storage, verifica SHA256/tamaño/MIME y vuelve a ejecutar dos lecturas independientes con las puertas de lectura, fuente y aritmética ya existentes. Nunca envía invitaciones ni publica PDFs sin verificación determinista.
 - La cola segura solo identifica una fuente elegible con consentimiento, ronda abierta, HMAC de mensaje y cuota; `legacy_unclassified` preserva la incertidumbre del error del piloto inicial. Reserva con bloqueo de fila, espera mínima y tope de tres intentos.
