@@ -15,6 +15,8 @@ test('MVP148: permiso de envío acotado a WhatsApp auténtico y compradores/prov
  assert.match(sql,/b\.consent_at is not null and b\.opted_out_at is null/u);
  assert.match(sql,/s\.consent_at is not null and s\.opted_out_at is null/u);
  assert.match(sql,/i\.state='prepared'/u);
+ assert.match(sql,/outbox\.state in \('pending','leased'\)/u);
+ assert.match(sql,/outbox\.request_id=r\.id and outbox\.supplier_key=s\.key/u);
  assert.match(sql,/between 1 and 8/u);
  assert.match(sql,/c\.recognition_state='curated_family'/u);
  assert.match(sql,/not exists\(\s*select 1 from cotironda_piloto_privado\.offer_versions/u);
