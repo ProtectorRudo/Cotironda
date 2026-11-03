@@ -22,7 +22,8 @@ La tabla base `cotironda_piloto_privado.request_lines` del piloto acepta número
 1. Node `mvp091-solicitud-pdf.test.mjs`: PDF con 1, 2, 8, 9 y 25 artículos; 26 rechazados; XRef y offsets de objetos; 4 páginas y **cada descripción exactamente una vez**, orden intacto, ciudad/plazo y pie por página, rechazo de números o contacto.
 2. Node `mvp117-document-25-routing.test.mjs`: prueba de contrato de límite uniforme, origen privado, fallback de texto con PDF íntegro y parche incremental idempotente en intención de despliegue (no es idempotente si se aplica dos veces; requiere control de migraciones).
 3. PostgreSQL 17 real Supabase PILOTO: dentro de **una transacción con ROLLBACK**, se aplicó temporalmente el parche MVP117, se generaron documentos sintéticos de 9 y 25 renglones, se comprobó acuerdo, ruteo a ambos negocios por catálogo, `request_lines`, `invitation_lines`, snapshots por proveedor, autorización y privacidad SQL. **PASS**. La comprobación final confirmó que el check real seguía limitando a 8 porque el parche se había revertido.
-4. GitHub Actions: exigir aprobación de pruebas unitarias, Deno/Edge, PostgREST, aislamiento PG17, Next.js y sitio antes de marcar desarrollado; ninguna suite sustituye la prueba real Whapi.
+4. GitHub Actions del commit `ab9a97fd`: **6/6 SUCCESS** (unitarias, Deno/Edge, PostgREST, aislamiento PostgreSQL 17, Next.js y sitio).
+5. **Prueba cruzada única real de PostgreSQL 17**: dentro de una sola transacción PILOTO se concatenaron el parche incremental 117, las migraciones privadas 101–110, el ensayo integrado de tres escenarios 112 (ronda, originales, privacidad, cobertura, opt-in, avisos simulados, revocación) y el ensayo adicional 117 con 9 y 25 artículos (doble lectura, catálogo, invitaciones por proveedor, snapshot completo). **PASS**, `pilot_unchanged_after_joint_replay=true` tras `ROLLBACK`; sin red, datos persistidos ni mensajes reales.
 
 ## Lo que NO queda resuelto
 
