@@ -1,3 +1,6 @@
+## MVP144 — Aclaraciones PDF acreditadas sin imponer orden de extracción
+- Verificador v7 de texto comercial original reordenado y descuento visible en presentación Cotironda. Sin ocultar cargos, números ni negaciones; sin tocar producción. Ver docs/263 e Issue #488.
+
 ## MVP143 — PDF total sin etiqueta reconocida, con evidencia matemática
 - Corrige bloqueo PDF Ailín cuando importe único y suma exacta acreditan el total; verificación v6 append-only. Documento docs/262. Solo PILOTO.
 
