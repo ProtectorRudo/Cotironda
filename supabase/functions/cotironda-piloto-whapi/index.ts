@@ -344,7 +344,7 @@ async function respond(req:Request):Promise<Response>{
   // web session. Never classify as a material request or a supplier quotation.
   // Only the Whapi-signed sender/chat and the persisted inbox can prove it.
   const webLinkCode=row.type==='text'
-    ?/^VINCULAR ([A-F0-9]{24})$/u.exec(body.trim())?.[1]??null:null;
+    ?/^VINCULAR ([A-F0-9]{24})$/u.exec(body)?.[1]??null:null;
   const local=row.type==='text'&&!webLinkCode
     ?parseBuyerPilot(body):{city:null,items:[],unresolved:[]};
   let parsed=local;
