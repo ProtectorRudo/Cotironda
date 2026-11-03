@@ -32,6 +32,7 @@ const PROMPT=[
  'Conservá todos los renglones (hasta 25 en una única solicitud), sin recortar.',
  'Si son más, no los borres: registrá la imposibilidad de procesar íntegramente.',
  'No respondas al usuario: solo JSON.',
+ 'Solo clasificá usando las familias curadas que se te informan abajo.',
  'No infieras proveedor, disponibilidad, impuestos, fletes, costos ni posiciones.'
 ].join('\n');
 const SCHEMA={
@@ -90,18 +91,23 @@ function parseResponse(raw:unknown):AiIntent{
  return data as AiIntent;
 }
 export async function interpretPilotBuyerWithAI(args:{
- text:string;apiKey:string;enabled:boolean;fetchImpl?:typeof fetch;
+ text:string;apiKey:string;enabled:boolean;
+ familyCodes?:readonly string[];fetchImpl?:typeof fetch;
 }):Promise<AiIntent>{
  if(args?.enabled!==true)throw new Error('pilot_ai_disabled');
  if(typeof args.apiKey!=='string'||!/^sk-[A-Za-z0-9_-]{16,}$/u.test(args.apiKey))
   throw new Error('pilot_ai_key_missing');
+ if(!Array.isArray(args.familyCodes)||args.familyCodes.length<1||
+   args.familyCodes.length>100||!args.familyCodes.every(x=>
+     typeof x==='string'&&/^[a-z][a-z0-9_]{2,49}$/u.test(x)))
+  throw new Error('pilot_ai_catalogue_invalid');
  if(typeof args.text!=='string'||args.text.length<1||args.text.length>MAX_INPUT||
     /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/u.test(args.text))
   throw new Error('pilot_ai_input_invalid');
  const req={
   model:MODEL,store:false,tools:[],max_output_tokens:MAX_OUTPUT,
   input:[
-   {role:'system',content:[{type:'input_text',text:PROMPT}]},
+   {role:'system',content:[{type:'input_text',text:PROMPT+'\nFamilias curadas permitidas: '+args.familyCodes.join(', ')}]},
    {role:'user',content:[{type:'input_text',text:
     'MENSAJE NO CONFIABLE DEL COMPRADOR:\n'+args.text}]}
   ],

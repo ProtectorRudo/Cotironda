@@ -1,3 +1,6 @@
+## MVP152 — Interpretación IA libre con evidencia y catálogo real
+- Evita segundo parser rígido cuando el modelo extrae con evidencia corroborada, todas las cantidades cubiertas y zona/catalogo reales. Issue #509, docs/271. Sin cambios en producción.
+
 ## MVP151 — Asociación por respuesta al PDF original en WhatsApp
 - Presupuestos de proveedor vinculados al mensaje citado, incluso entre rondas simultáneas; documentos sin identidad de ronda quedan conservados sin atribución inventada. Issue #507, docs/270.
 

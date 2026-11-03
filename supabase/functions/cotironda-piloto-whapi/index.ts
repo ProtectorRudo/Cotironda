@@ -384,11 +384,20 @@ async function respond(req:Request):Promise<Response>{
       parsed={city:local.city,items:[],unresolved:['ai_unavailable']};
     }else if(preflight.data===true){
       try{
+        const categories=await db.rpc('cotironda_piloto_curated_families_mvp152',{
+          p_buyer_chat_hmac:chatHash,p_city:local.city
+        });
+        if(categories.error||!Array.isArray(categories.data)||
+          categories.data.length<1||categories.data.length>100||
+          !categories.data.every((s:unknown)=>typeof s==='string'&&
+            /^[a-z][a-z0-9_]{2,49}$/u.test(s)))
+          throw Error('pilot_ai_catalogue_unavailable');
+        const familyCodes=categories.data as string[];
         const model=await interpretPilotBuyerWithAI({
           text:body,apiKey:Deno.env.get('COTIRONDA_PILOT_OPENAI_API_KEY')??'',
-          enabled:true
+          enabled:true,familyCodes
         });
-        const decision=decidePilotAIAction(body,model,'buyer');
+        const decision=decidePilotAIAction(body,model,'buyer',familyCodes);
         // Success means a structurally valid model answer, not commercial
         // authorization. Store only intent/decision codes, never content.
         const audit=await db.rpc('cotironda_piloto_finish_ai_mvp096',{
