@@ -102,8 +102,7 @@ create or replace function public.cotironda_piloto_reserve_document_retry_mvp127
 returns jsonb language plpgsql volatile security definer set search_path='' as $function$
 declare a record; diag record;
 begin
- if p_message_hmac is null or p_message_hmac !~ '^[a-f0-9]{64}
-$'
+ if p_message_hmac is null or p_message_hmac !~ '^[a-f0-9]{64}$'
  then return jsonb_build_object('state','invalid');end if;
  select m.message_hmac,m.kind,m.mime,m.content_sha256,m.size_bytes,
         m.request_id,p.participant_role
@@ -113,8 +112,7 @@ $'
   on p.key=m.participant_key and p.chat_hmac=m.chat_hmac
  where m.message_hmac=p_message_hmac and m.state='stored'
   and m.proposal is null and m.review_state='review_required'
-  and m.ai_reserved_at is not null and m.content_sha256 ~ '^[a-f0-9]{64}
-$'
+  and m.ai_reserved_at is not null and m.content_sha256 ~ '^[a-f0-9]{64}$'
   and m.size_bytes between 8 and 3145728
   and m.mime in ('application/pdf','image/jpeg','image/png','image/webp',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
