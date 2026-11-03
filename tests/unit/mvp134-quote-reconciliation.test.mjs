@@ -114,7 +114,9 @@ test('MVP134: no public offer, outbound WhatsApp or webhook in diagnosis',()=>{
  assert.match(sql,/p\.consent_at is not null and p\.opted_out_at is null/u);
  assert.match(sql,/r\.closes_at>clock_timestamp\(\)/u);
  assert.match(edge,/diagnoseOneStoredQuote/u);
- for(const word of ['offer_versions','anonymous_supplier_docs_mvp107',
-   'publish_source_text','net.http_post','whapi.cloud','sendMessage'])
+ // Comments may name protected tables to explain why they remain unchanged.
+ // Assert that no business mutation or outbound call is actually implemented.
+ assert.doesNotMatch(sql+scan,/\b(?:insert\s+into|update|delete\s+from)\s+(?:\w+\.)?(?:offer_versions|anonymous_supplier_docs_mvp107)\b/iu);
+ for(const word of ['publish_source_text','net.http_post','whapi.cloud','sendMessage'])
    assert.equal(sql.includes(word)||scan.includes(word),false,word);
 });
