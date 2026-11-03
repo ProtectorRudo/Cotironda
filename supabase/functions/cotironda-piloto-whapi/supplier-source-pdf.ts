@@ -5,6 +5,7 @@
 import type {DownloadedMedia} from './whapi-media-archive.ts';
 import type {DocumentDraft} from './document-ai-draft.ts';
 import {checkSupplierTextSource,type SourceCheckResult} from './supplier-source-text.ts';
+import {checkGeneralPdfSource} from './supplier-source-pdf-general.ts';
 type Reason=SourceCheckResult['reason'];
 const rejected=(f:DownloadedMedia,r:Reason,n=0):SourceCheckResult=>Object.freeze({
  state:'needs_source_review',reason:r,lines:n,sourceSha256:f?.sha256??null,
@@ -109,5 +110,12 @@ export async function checkSupplierPdfSource(f:DownloadedMedia,p:DocumentDraft):
  try{const lines=await pdfLines(f.bytes);
   return checkSupplierTextSource({mime:'text/plain',bytes:new TextEncoder().encode(lines.join('\n')),
    sha256:f.sha256},p);
- }catch(e){return rejected(f,e instanceof PDFProblem?e.reason:'invalid_source',p.lines.length)}
+ }catch(e){
+  // Real-world quotes commonly use embedded fonts, Flate streams and tables.
+  // Attempt independent positioned text extraction ONLY for unsupported
+  // layouts; scanned/malformed sources remain private and unapproved.
+  if(e instanceof PDFProblem&&e.reason==='unsupported_layout')
+   return await checkGeneralPdfSource(f,p);
+  return rejected(f,e instanceof PDFProblem?e.reason:'invalid_source',p.lines.length);
+ }
 }
