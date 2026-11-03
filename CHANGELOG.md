@@ -1,3 +1,9 @@
+## MVP-127 — fallos documentales observables y capacidad real de 25 líneas (03/11/2026)
+- PDF real de Ailín (12.725 bytes) correctamente guardado y asociado a la ronda, pero sin borrador ni presupuesto validado. El webhook ocultaba toda excepción de la lectura; no hay evidencia de PDF defectuoso.
+- Salida OpenAI 7.000 tokens (antes 2.300), respuesta hasta 50 KB, PDF high-detail y timeout 40s; clasificación redacted HTTP/timeout/cuota/JSON y persistencia privada por archivo mediante RLS. Al menos una lectura válida se conserva como borrador SIN presentarla como doble corroboración.
+- RPC de propuesta admite hasta 40 KB de JSON validado para documentos de hasta 25 renglones. Pruebas nuevas y SQL smoke BEGIN/ROLLBACK PASS; se mantiene bloqueada cualquier publicación/ranking sin auditoría determinista de fuente. Issue #464, docs/246.
+- Pendiente: relector seguro del original histórico y extractor PDF general para tablas/fuentes; NO se atribuyó el fallo al proveedor ni se declaró automáticamente su oferta válida.
+
 ## MVP-126 — vinculación voluntaria de cuenta web con WhatsApp ya verificado (03/11/2026)
 - Dos tablas privadas RLS con desafío de 96 bits, SHA256, 10 minutos de vencimiento, límites de emisión, uso único y revocación; autenticación confirma que la sesión real sigue viva en `auth.sessions`.
 - El webhook Whapi interpreta exclusivamente `VINCULAR <código>` tras autenticación e inbox cifrado. SQL exige mismo chat/participante con consentimiento, texto original corroborado por SHA256, rol y sesión vigente, sin crear cotizaciones ni pasar por IA.
