@@ -1,3 +1,6 @@
+## MVP149 — Recuperación autónoma de PDF a proveedores en PILOTO
+- Despacho seguro de pendientes con cron ya autenticado, claim+HMAC+PDF fuente y ledger sin duplicados ni reintentos de resultados inciertos. Issue #503, docs/268. No afecta producción.
+
 ## MVP148 — Envío PILOTO por solicitud autenticada y catálogo curado
 - Reemplazo de la ventana única del viejo MVP091, manteniendo 1 comprador y 2 proveedores, con evaluación determinista por cada línea/familia y consentimiento vigente. Issue #501, docs/267. Sin secretos ni llamadas Whapi en migración.
 

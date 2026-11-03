@@ -10,6 +10,7 @@ import {diagnoseOneStoredQuote} from './quote-reconciliation.ts';
 import {correctArchivedSupplierRole} from './supplier-role-recovery.ts';
 import {auditStoredSupplierQuote} from './supplier-evidence.ts';
 import {guardScheduledRecovery} from './scheduled-auth.ts';
+import {dispatchPendingPilotSupplierPdfs} from './whapi-dispatch.ts';
 const REF='ilggkalaafhtiysyzlmg';
 const root='https://'+REF+'.supabase.co';
 type Secrets={roleKey:string;apiKey:string;url:string};
@@ -46,6 +47,30 @@ Deno.serve(async(req)=>{
    const db=createClient(s.url,s.roleKey,{auth:{
     autoRefreshToken:false,persistSession:false
    }});
+   // This request has already passed the Vault-backed recovery-token guard.
+   // Pick up any eligible supplier PDF outbox with the same SQL lease/HMAC
+   // checks as Whapi. No client can invoke this worker with a browser token.
+   if(Deno.env.get('COTIRONDA_PILOT_WHAPI_OUTBOUND_ENABLED')==='true'){
+    try{
+     await dispatchPendingPilotSupplierPdfs({
+      enabled:true,
+      hmacHex:Deno.env.get('COTIRONDA_PILOT_ID_HMAC_HEX')??'',
+      channel:Deno.env.get('COTIRONDA_PILOT_WHAPI_CHANNEL')??'',
+      token:Deno.env.get('COTIRONDA_PILOT_WHAPI_TOKEN')??'',
+      recipientsJson:Deno.env.get('COTIRONDA_PILOT_RECIPIENTS_JSON')??''
+     },{
+      rpc:async(name,params)=>{
+       const {data,error}=await db.rpc(name,params??{});
+       return {data,error};
+      },
+      post:(url,init)=>fetch(url,init)
+     });
+    }catch{
+     return new Response(JSON.stringify({state:'supplier_dispatch_unavailable'}),{
+      status:503,headers:{'content-type':'application/json','cache-control':'no-store'}
+     });
+    }
+   }
    return runRecoveryService(req,{
     enabled:true,projectMatches:s.url===root,
     modelKeyAvailable:s.apiKey.length>=20
