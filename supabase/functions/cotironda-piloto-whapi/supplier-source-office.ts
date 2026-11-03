@@ -221,7 +221,15 @@ function sheets(files:Map<string,string>):string[]{
    /<row\b[^>]*hidden="(?:1|true)"/iu.test(sheet))
    fail('unsupported_layout');
   const data=sheet.match(/<sheetData(?:\s[^>]*)?>([\s\S]*?)<\/sheetData>/u)?.[1];
-  if(!data)fail('unsupported_layout');
+  // Genuine workbooks can contain entirely empty, visible worksheets.
+  // They contribute no prices; inspect all such sheets rather than
+  // mistaking their empty sheetData XML for an unreadable quotation.
+  if(data===undefined||!data.trim()){
+   const explicitEmpty=/<sheetData(?:\s[^>]*)?\s*\/>/u.test(sheet);
+   if(data===undefined&&!explicitEmpty)fail('unsupported_layout');
+   if(/<(?:c|f|v)(?=\s|>)/iu.test(sheet))fail('unsupported_layout');
+   continue;
+  }
   const rows=[...data.matchAll(/<row(?:\s[^>]*)?>([\s\S]*?)<\/row>/gu)];
   // Excel writes blank, formatted rows as <row r="17"/>. Their lack of cells
   // is source-proven, so skip them rather than reject the whole quotation.

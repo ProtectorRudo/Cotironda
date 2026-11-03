@@ -157,10 +157,14 @@ export async function verifySupplierEvidence(
   const values=p.lines.map(l=>cents(l.line_total??''));
   if(totalValue!==null&&values.every((v):v is bigint=>v!==null)&&
    values.reduce((a,v)=>a+(v??0n),0n)===totalValue){
+   const noteEvidence=n(p.requested_delivery_note??'');
+   const totalQualifiers=/\b(?:contado|efectivo|transferencia|iva|pago|plazo|lista|entrega)\b/giu;
+   const otherCharge=/(?:pallet|bolson|flete|cargo|descuento|unitario|cemento|hidrofug|transporte|env[ií]o)/iu;
    const isolated=source.map((row,i)=>({row,i,consumed:[i]}))
     .filter(({row,i})=>!used.has(i)&&has(row,p.total_declared!)&&
       cash(row).length===1&&cash(row)[0]===scalar(p.total_declared!)&&
-      !commercial.test(row));
+      !otherCharge.test(row)&&
+      [...row.matchAll(totalQualifiers)].every(m=>noteEvidence.includes(m[0])));
    if(isolated.length===1)totals=isolated;
   }
  }

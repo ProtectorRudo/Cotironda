@@ -1,3 +1,6 @@
+## MVP142 — Presupuestos reales: hojas Excel vacías y total de contado en PDF
+- Verificación v5 de fuente original, preservación de cifras y notas, pruebas adversarias. Solo PILOTO. Ver docs/261 y #488.
+
 ## MVP141 — Lectura real de PDF y XLSX en PILOTO
 - PDF: total literal único separado de la etiqueta respaldado por suma exacta; XLSX: filas vacías autoconclusivas; comprobación v4 append-only. Ver docs/260 e Issue #488.
 

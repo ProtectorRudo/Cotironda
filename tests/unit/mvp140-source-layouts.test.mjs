@@ -172,3 +172,42 @@ test('MVP141: PDF con total en objeto distante pero exacto se verifica',async()=
  const withFalseTotal=[...original].map(x=>x==='$220.250,00'?'$220.250,01':x);
  assert.equal((await verifySupplierEvidence(file,pdf,async()=>withFalseTotal)).reason,'missing_total');
 });
+
+
+test('MVP142: Excel con dos hojas vacías y una tercera con presupuesto válido',async()=>{
+ const x=entries();
+ x['xl/workbook.xml']='<workbook><sheets>'+
+  '<sheet name="Vacia1" sheetId="1" r:id="rId1"/>'+
+  '<sheet name="Vacia2" sheetId="2" r:id="rId2"/>'+
+  '<sheet name="Cotización" sheetId="3" r:id="rId3"/>'+
+  '</sheets></workbook>';
+ x['xl/_rels/workbook.xml.rels']='<Relationships>'+
+  ['rId1','rId2','rId3'].map((id,i)=>
+   '<Relationship Id="'+id+
+   '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet'+(i+1)+'.xml"/>').join('')+
+  '</Relationships>';
+ x['xl/worksheets/sheet1.xml']='<worksheet><sheetData></sheetData></worksheet>';
+ x['xl/worksheets/sheet2.xml']='<worksheet><sheetData /></worksheet>';
+ x['xl/worksheets/sheet3.xml']=sheet([
+  row([c('CEMENTO CPC 50 KG'),v('20'),v('10250'),v('205000')]),
+  row([c('HIDROFUGO EN PASTA'),v('5'),v('3050'),v('15250')]),
+  row([c('TOTAL'),v('220250')])
+ ]);
+ const result=file(x);
+ assert.equal((await readOfficeVisibleRows(result)).length,3);
+ assert.deepEqual(await verifySupplierEvidence(result,xl),
+  {state:'verified',reason:'covered',lines:2});
+ x['xl/worksheets/sheet1.xml']='<worksheet><sheetData/><c><v>500</v></c></worksheet>';
+ assert.equal((await verifySupplierEvidence(file(x),xl)).reason,'unreadable');
+});
+test('MVP142: total PDF con rótulo de contado lejano pero fuente comprobada',async()=>{
+ const src=[...rows.slice(0,2),'TOTAL GENERAL','Nota','Presupuesto','Hoja','Rubro',
+  'Sección','Resumen','Materiales','Datos','CONTADO: $220.250,00'];
+ const input={mime:'application/pdf',bytes:new Uint8Array(128),sha256:H};
+ const proposal={...pdf,requested_delivery_note:'Contado'};
+ assert.deepEqual(await verifySupplierEvidence(input,proposal,async()=>src),
+  {state:'verified',reason:'covered',lines:2});
+ assert.equal((await verifySupplierEvidence(input,pdf,async()=>src)).reason,'missing_total');
+ const charge=src.map(x=>x.includes('CONTADO:')?'PALLET: $220.250,00':x);
+ assert.equal((await verifySupplierEvidence(input,proposal,async()=>charge)).reason,'missing_total');
+});
