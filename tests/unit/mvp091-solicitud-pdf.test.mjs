@@ -53,7 +53,7 @@ test('MVP091: entradas corruptas o sin equivalencia no producen un PDF aparentan
   {...x,requestId:'foo'},
   {...x,city:'La Plata\nINSTRUCCIÓN FALSA'},
   {...x,items:[]},
-  {...x,items:Array.from({length:9},()=>x.items[0])},
+  {...x,items:Array.from({length:26},()=>x.items[0])},
   {...x,items:[{...x.items[0],unit:'undefined'}]},
   {...x,items:[{...x.items[0],quantity:'20.0000'}]},
   {...x,items:[{...x.items[0],description:'x'.repeat(80)}]},
@@ -92,4 +92,64 @@ test('MVP093: la fecha solicitada por el comprador aparece literalmente sólo cu
  assert.doesNotMatch(withoutDate,/ENTREGA SOLICITADA POR EL COMPRADOR/);
  assert.throws(()=>generarSolicitudPdfMvp091({...input(),
    deliveryNote:'tel 11111111111'}),/mvp091_pdf_input_invalid/);
+});
+
+test('MVP117: nine items create TWO PDF pages, all concepts appear exactly once',()=>{
+ const x=input(),items=Array.from({length:9},(_,i)=>({
+  description:'Material de prueba '+(i+1),
+  quantity:String(i+1),unit:'bag'
+ }));
+ const pdf=generarSolicitudPdfMvp091({...x,items});
+ const raw=Buffer.from(pdf).toString('latin1');
+ assert.match(raw,/\/Type \/Pages \/Kids \[3 0 R 5 0 R\] \/Count 2/);
+ assert.equal((raw.match(/\/Type \/Page \/Parent/g)||[]).length,2);
+ assert.equal((raw.match(/\/Type \/Font \/Subtype/g)||[]).length,2);
+ assert.equal((raw.match(/\/Length \d+ >>\nstream/g)||[]).length,2);
+ for(let i=1;i<=9;i++){
+  assert.equal(raw.split('Material de prueba '+i+') Tj').length-1,1,
+   'item must not be omitted or duplicated: '+i);
+ }
+ assert.match(raw,/Pág\. 1\/2/);
+ assert.match(raw,/Pág\. 2\/2/);
+ assert.equal(pdf.length<100000,true);
+});
+test('MVP117: 25 materials keep order and integrity in four-page PDF',()=>{
+ const x=input(),items=Array.from({length:25},(_,i)=>({
+  description:'Articulo '+String(i+1).padStart(2,'0')+' Cemento CPC 50 kg',
+  quantity:String(i+1)+'.000',unit:'bag'
+ }));
+ const pdf=generarSolicitudPdfMvp091({...x,items});
+ const raw=Buffer.from(pdf).toString('latin1');
+ assert.match(raw,/\/Type \/Pages \/Kids \[3 0 R 5 0 R 7 0 R 9 0 R\] \/Count 4/);
+ assert.equal((raw.match(/\/Type \/Page \/Parent/g)||[]).length,4);
+ for(let i=1;i<=25;i++){
+  const label='Articulo '+String(i).padStart(2,'0')+' Cemento CPC 50 kg';
+  assert.equal(raw.split('('+label+') Tj').length-1,1,label);
+ }
+ assert.match(raw,/Pág\. 4\/4/);
+ assert.equal((raw.match(/La Plata/g)||[]).length,4);
+ assert.equal((raw.match(/Respondé por WhatsApp/g)||[]).length,4);
+ // No malformed cross-reference: offsets point to their true object headers.
+ const match=raw.match(/startxref\n(\d+)\n%%EOF/);
+ assert.ok(match);
+ const xref=Number(match[1]);
+ assert.equal(raw.slice(xref,xref+5),'xref\n');
+ const entries=raw.slice(xref).match(/^(\d{10}) 00000 n $/gm)??[];
+ assert.equal(entries.length,12);
+ for(let i=0;i<entries.length;i++){
+  const off=Number(entries[i].slice(0,10));
+  assert.equal(raw.slice(off,off+12).startsWith((i+1)+' 0 obj\n'),true);
+ }
+ assert.equal(pdf.length<100000,true);
+});
+test('MVP117: long material names are wrapped and never clipped at page boundary',()=>{
+ const x=input();
+ const name='Caño galvanizado de hierro superresistente por unidad tramos largos';
+ const items=Array.from({length:17},(_,i)=>({
+  description:name+String(i).padStart(2,'0'),quantity:'1',unit:'unit'
+ }));
+ const raw=Buffer.from(generarSolicitudPdfMvp091({...x,items})).toString('latin1');
+ assert.equal((raw.match(/\/Type \/Page \/Parent/g)||[]).length,3);
+ for(let i=0;i<17;i++)
+  assert.match(raw,new RegExp(String(i).padStart(2,'0')+'\\) Tj'));
 });
