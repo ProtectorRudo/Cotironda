@@ -30,6 +30,27 @@ begin
  if (public.cotironda_piloto_tracking_finalists_mvp110(track_token))
    ->>'state'<>'not_ready'
  then raise exception 'mvp110_premature_portal_contact_release';end if;
+ -- ALL contacts / WhatsApp still locked without an administrator's
+ -- activation timestamp, even when general WhatsApp outbound is true.
+ result:=public.cotironda_piloto_queue_finalists_mvp110(rid);
+ if result->>'state'<>'pilot_finalist_off'
+ then raise exception 'mvp113_ungated_queue';end if;
+ result:=public.cotironda_piloto_prepare_finalists_due_mvp110(10);
+ if result->>'state'<>'pilot_finalist_off'
+ then raise exception 'mvp113_ungated_scheduler';end if;
+ -- Activate now: this historic fixture must NOT be backfilled.
+ update cotironda_piloto_privado.finalist_activation_mvp113
+ set enabled=true,activated_at=clock_timestamp() where only_row;
+ result:=public.cotironda_piloto_queue_finalists_mvp110(rid);
+ if result->>'state'<>'not_eligible'
+ then raise exception 'mvp113_old_round_would_notify %',result;end if;
+ if (public.cotironda_piloto_tracking_finalists_mvp110(track_token))
+   ->>'state'<>'not_ready'
+ then raise exception 'mvp113_old_contacts_visible';end if;
+ -- Synthetic-only shift to 5 days earlier for a 4-day-old fictional
+ -- request, then continue the existing quote/consent/lease tests.
+ update cotironda_piloto_privado.finalist_activation_mvp113
+ set activated_at=clock_timestamp()-interval '5 days' where only_row;
  result:=public.cotironda_piloto_queue_finalists_mvp110(rid);
  if result->>'state'<>'consent_or_contact_missing' then
   raise exception 'mvp110_no_consent_queued';end if;
@@ -135,6 +156,18 @@ begin
    'AAAAAAAAAAAAAAAA','AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA');
  if result->>'state'<>'revoked' then
   raise exception 'mvp109_revocation_refused %',result;end if;
+ -- Turning the dedicated pilot gate back OFF must instantly deny the
+ -- private buyer endpoint and any new outgoing claim.
+ update cotironda_piloto_privado.finalist_activation_mvp113
+ set enabled=false where only_row;
+ if (public.cotironda_piloto_tracking_finalists_mvp110(track_token))
+   ->>'state'<>'not_ready'
+ then raise exception 'mvp113_off_buyer_disclosure';end if;
+ if (public.cotironda_piloto_claim_finalist_whapi_mvp110())
+    ->>'state'<>'pilot_finalist_off'
+ then raise exception 'mvp113_off_worker_still_claiming';end if;
+ update cotironda_piloto_privado.finalist_activation_mvp113
+ set enabled=true where only_row;
  if (public.cotironda_piloto_finalist_contacts_mvp109(rid))
    ->>'state'<>'consent_or_contact_missing' then
   raise exception 'mvp109_revocation_not_effective';end if;
