@@ -10,6 +10,7 @@ import {parseDocumentClarification} from './document-clarification.ts';
 import {getVerifiedWhapiMedia,storeVerifiedMedia} from './whapi-media-archive.ts';
 import {checkSupplierTextSource} from './supplier-source-text.ts';
 import {checkSupplierOfficeSource} from './supplier-source-office.ts';
+import {checkSupplierPdfSource} from './supplier-source-pdf.ts';
 import {proposeDocumentAI} from './document-ai-draft.ts';
 import {interpretPilotBuyerWithAI} from './ai-interpreter.ts';
 import {decidePilotAIAction,shortBusinessReply,type ReplyCode} from './business-ai-policy.ts';
@@ -530,10 +531,12 @@ async function respond(req:Request):Promise<Response>{
                       // Independent original-source coverage. DOCX and XLSX need
                       // conservative ZIP/XML corroboration; PDF/photos still
                       // require review rather than trusting two model reads.
-                      const checked=downloadedForReview.mime.includes(
-                        'openxmlformats-officedocument')
-                        ?await checkSupplierOfficeSource(downloadedForReview,proposal)
-                        :checkSupplierTextSource(downloadedForReview,proposal);
+                      const checked=downloadedForReview.mime==='application/pdf'
+                        ?await checkSupplierPdfSource(downloadedForReview,proposal)
+                        :downloadedForReview.mime.includes(
+                          'openxmlformats-officedocument')
+                          ?await checkSupplierOfficeSource(downloadedForReview,proposal)
+                          :checkSupplierTextSource(downloadedForReview,proposal);
                       const savedCheck=await db.rpc(
                         'cotironda_piloto_record_supplier_source_check_mvp106',{
                           p_message_hmac:messageHash,
