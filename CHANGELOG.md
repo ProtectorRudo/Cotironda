@@ -1,3 +1,6 @@
+## MVP140 — Lectura de múltiples hojas Excel y totales PDF contiguos (desarrollo)
+- Revisión de fuente v3 append-only con retrocompatibilidad del seguimiento, detección de cargos sin símbolo monetario y pruebas ZIP/PDF. Sin despliegue de producción; ver docs/259. Issue #488.
+
 ## MVP139 — Mejoras source PDF/XLSX v2 (piloto)
 - Comprueba descuento explícito en columna separada con centavos exactos; admite planillas formateadas y cacheadas, nunca ejecuta fórmulas. Conserva auditoría v1 y source SHA, sin publicación no verificada. Issue #488.
 
