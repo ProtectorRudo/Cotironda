@@ -1,3 +1,6 @@
+## MVP153 — Vista de seguimiento del PILOTO sin HTML crudo
+- Recupera el diseño y las pruebas de MVP146 sobre la base actual de Cotironda: micrositio estático y API de seguimiento en Vercel PILOTO, con GET 302 de Supabase habilitado solo después de probar el despliegue. Issue #497, PR #498 sustituida por PR nueva basada en código actualizado. Sin producción.
+
 ## MVP152 — Interpretación IA libre con evidencia y catálogo real
 - Evita segundo parser rígido cuando el modelo extrae con evidencia corroborada, todas las cantidades cubiertas y zona/catalogo reales. Issue #509, docs/271. Sin cambios en producción.
 
