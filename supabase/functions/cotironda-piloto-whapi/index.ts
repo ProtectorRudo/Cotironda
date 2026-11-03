@@ -8,6 +8,7 @@ import {generarSolicitudPdfMvp091} from './request-pdf.ts';
 import {makeMediaManifest} from './media-intake.ts';
 import {parseDocumentClarification} from './document-clarification.ts';
 import {getVerifiedWhapiMedia,storeVerifiedMedia} from './whapi-media-archive.ts';
+import {isWhapiStatusEvent,parseWhapiDirectStatuses} from './delivery-status.ts';
 import {checkSupplierTextSource} from './supplier-source-text.ts';
 import {checkSupplierOfficeSource} from './supplier-source-office.ts';
 import {checkSupplierPdfSource} from './supplier-source-pdf.ts';
@@ -235,10 +236,11 @@ async function respond(req:Request):Promise<Response>{
  const ev=event.event as Record<string,unknown>|undefined;
  const actionable=ev?.type==='messages'&&ev?.event==='post'&&
    Array.isArray(event.messages)&&event.messages.length>0;
+ const statusAction=isWhapiStatusEvent(event);
  // Whapi checks liveness without forwarding custom headers. A no-op has
  // absolutely no side effects: no database client, message, dispatch or invite.
  // The response does not prove that authenticated incoming messages work.
- if(!actionable){
+ if(!actionable&&!statusAction){
    if(!authenticated)console.info('cotironda_pilot_webhook_probe: no_action_no_auth');
    return json(200,'probe_only');
  }
@@ -250,6 +252,24 @@ async function respond(req:Request):Promise<Response>{
   return json(401,'unauthorized');
  }
  if(event.channel_id!==sec.channel)return json(403,'wrong_channel');
+ if(statusAction){
+  let entries:ReturnType<typeof parseWhapiDirectStatuses>;
+  try{entries=parseWhapiDirectStatuses(event)}
+  catch{return json(422,'invalid_status_batch')}
+  if(entries.length===0)return json(200,'group_status_ignored');
+  const db=client(sec);
+  for(const entry of entries){
+   const recipientHmac=await hmac(sec.key,
+    'cotironda|pilot|chat|'+sec.channel+'|'+entry.recipientChatId);
+   const receipt=await db.rpc('cotironda_piloto_record_delivery_mvp119',{
+    p_whapi_message_id:entry.messageId,p_status:entry.status,
+    p_status_code:entry.code,p_recipient_chat_hmac:recipientHmac,
+    p_event_unix:entry.eventUnix
+   });
+   if(receipt.error)return json(503,'status_storage_unavailable');
+  }
+  return json(200,'statuses_processed');
+ }
  if(!Array.isArray(event.messages)||event.messages.length<1||event.messages.length>10)
   return json(422,'invalid_batch');
  const ids=new Set<string>();
@@ -689,10 +709,24 @@ async function respond(req:Request):Promise<Response>{
      const sent=response.ok?await response.json().catch(()=>null):null;
      const accepted=Boolean(response.ok&&sent&&typeof sent==='object'&&
         (sent as Record<string,unknown>).sent===true);
+     const sentRecord=accepted?sent as Record<string,unknown>:null;
+     const message=sentRecord?.message;
+     const candidate=sentRecord?.message_id??
+       (message&&typeof message==='object'?
+        (message as Record<string,unknown>).id:null);
+     const id=typeof candidate==='string'&&
+       /^[A-Za-z0-9_-]{8,160}$/u.test(candidate)?candidate:null;
      const finish=await db.rpc('cotironda_piloto_finish_tracking_mvp091',{
        p_token_hash:tokenHash,p_state:accepted?'api_accepted':'uncertain'
      });
-     if(finish.error)return json(503,'tracking_reconciliation_required');
+     if(finish.error||finish.data!==true)
+      return json(503,'tracking_reconciliation_required');
+     if(accepted&&id){
+      const recorded=await db.rpc('cotironda_piloto_record_tracking_id_mvp119',{
+       p_token_hash:tokenHash,p_whapi_message_id:id});
+      if(recorded.error||recorded.data!==true)
+       return json(503,'tracking_delivery_id_unavailable');
+     }
     }catch{
      await db.rpc('cotironda_piloto_finish_tracking_mvp091',{
        p_token_hash:tokenHash,p_state:'uncertain'});
@@ -711,6 +745,7 @@ async function respond(req:Request):Promise<Response>{
   if(reserved.error)return json(503,'supplier_ack_reservation_unavailable');
   if(reserved.data===true){
    let ackState:'api_accepted'|'uncertain'='uncertain';
+   let ackWhapiId:string|null=null;
    try{
     const response=await fetch('https://gate.whapi.cloud/messages/text',{
      method:'POST',headers:{Authorization:'Bearer '+sec.token,
@@ -721,14 +756,26 @@ async function respond(req:Request):Promise<Response>{
     });
     const value=response.ok?await response.json().catch(()=>null):null;
     if(response.ok&&value&&typeof value==='object'&&
-      (value as Record<string,unknown>).sent===true)
+      (value as Record<string,unknown>).sent===true){
       ackState='api_accepted';
+      const obj=value as Record<string,unknown>,msg=obj.message;
+      const id=obj.message_id??(msg&&typeof msg==='object'?
+       (msg as Record<string,unknown>).id:null);
+      if(typeof id==='string'&&/^[A-Za-z0-9_-]{8,160}$/u.test(id))
+       ackWhapiId=id;
+    }
    }catch{/* uncertain is terminal until manual delivery reconciliation */}
    const finished=await db.rpc('cotironda_piloto_finish_supplier_ack_mvp104',{
     p_message_hmac:messageHash,p_state:ackState
    });
    if(finished.error||finished.data!==true)
     return json(503,'supplier_ack_reconciliation_required');
+   if(ackState==='api_accepted'&&ackWhapiId){
+    const recorded=await db.rpc('cotironda_piloto_record_supplier_ack_id_mvp119',{
+     p_message_hmac:messageHash,p_whapi_message_id:ackWhapiId});
+    if(recorded.error||recorded.data!==true)
+     return json(503,'supplier_ack_delivery_id_unavailable');
+   }
   }
  }
  try{await dispatchTwo(sec,db)}catch{return json(503,'dispatch_reconciliation_required')}
