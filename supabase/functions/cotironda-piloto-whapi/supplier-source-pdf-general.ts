@@ -29,6 +29,23 @@ const covered=(f:DownloadedMedia,n:number):SourceCheckResult=>
   publicationAllowed:false,rankingAllowed:false});
 const mentions=(source:string,term:string|null):boolean=>term===null||
  normalized(source).includes(normalized(term));
+// Quantities must be distinct from product size and price digits.
+const regexEscape=(value:string):string=>value.replace(/[.*+?^${}()|[\]\\]/gu,'\\/** Default adapter: pinned PDF.js serverless text extraction. */');
+const quantityUnitEvidence=(row:string,description:string,quantity:string|null,unit:string|null):boolean=>{
+ const q=normalized(quantity??''),u=normalized(unit??''),desc=normalized(description);
+ if(!/^\d+(?:[.,]\d+)?$/u.test(q)||!u||!desc)return false;
+ const at=row.indexOf(desc);
+ if(at<0)return false;
+ // Remove product size/specification, then exclude every monetary amount.
+ let context=row.slice(0,at)+' '+row.slice(at+desc.length);
+ const moneyStart=context.search(MONEY);
+ if(moneyStart>=0)context=context.slice(0,moneyStart);
+ const sep='[\\s|:;·\\\\/-]*';
+ const pattern='(?<![\\\\p{L}\\\\p{N}.,])(?:'+regexEscape(q)+sep+regexEscape(u)+'s?|'+
+   regexEscape(u)+'s?'+sep+regexEscape(q)+')(?![\\\\p{L}\\\\p{N}.,])';
+ return new RegExp(pattern,'iu').test(context);
+};
+
 /** Default adapter: pinned PDF.js serverless text extraction. */
 export async function readPdfPositioned(bytes:Uint8Array):Promise<PdfSourceEvidence>{
  if(bytes.length<120||bytes.length>8*1024*1024)throw Error('pdf_size_gate');
@@ -126,7 +143,7 @@ export async function checkGeneralPdfSource(
  for(const line of p.lines){
   const idx=rows.findIndex((row,i)=>!consumed.has(i)&&
    mentions(row,line.original_description)&&
-   mentions(row,line.unit)&&mentions(row,line.quantity)&&
+   quantityUnitEvidence(row,line.original_description,line.quantity,line.unit)&&
    mentions(row,line.unit_price)&&mentions(row,line.line_total));
   if(idx<0)return invalid(f,n,'line_not_found');
   if(!exactAmounts(rows[idx],[line.unit_price!,line.line_total!]))

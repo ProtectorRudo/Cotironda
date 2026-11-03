@@ -33,6 +33,19 @@ test('MVP130: multi-page PDF table with all prices and extra pallets is covered'
  assert.equal(actual.publicationAllowed,false);
  assert.equal(actual.rankingAllowed,false);
 });
+test('MVP130: quantity cannot be proven by digits inside the total or a product size',async()=>{
+ const wrongQuantity=original.map(x=>({...x}));
+ wrongQuantity[1]={...wrongQuantity[1],text:'Cemento CPC 50 kg   2 bolsa   $ 11.000,00   $ 220.000,00'};
+ assert.equal((await checkGeneralPdfSource(pdf,draft,reader(wrongQuantity))).reason,'line_not_found');
+ const wrongUnit={...draft,lines:[{...draft.lines[0],quantity:'50',unit:'kg'},draft.lines[1]]};
+ assert.equal((await checkGeneralPdfSource(pdf,wrongUnit,reader())).reason,'line_not_found');
+});
+test('MVP130: quantity and unit may be in either column order, with plural variation',async()=>{
+ const reversed=original.map(x=>({...x}));
+ reversed[1]={...reversed[1],text:'Cemento CPC 50 kg   bolsas 20   $ 11.000,00   $ 220.000,00'};
+ assert.equal((await checkGeneralPdfSource(pdf,draft,reader(reversed))).state,'source_text_covered');
+});
+
 test('MVP130: one omitted unexpected source price invalidates the whole proof',async()=>{
  const rows=original.map(x=>({...x}));
  rows[1]={...rows[1],text:rows[1].text+' $ 9.999,99'};
