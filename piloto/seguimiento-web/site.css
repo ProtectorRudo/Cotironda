@@ -13,11 +13,36 @@ h1{font-size:clamp(25px,6vw,34px);letter-spacing:-.04em;line-height:1.2;margin:9
 .caption{font-size:13px;color:#686868;margin-top:8px}
 .statusbox{max-width:330px}.statusbox strong{font-size:14px}.statusbox p{font-size:13px;color:#777;margin:6px 0 0}
 .notice{font-size:13px;color:#606060;margin:15px 0}
-.offer{padding:20px;border:1px solid #e3e3e3;border-radius:10px;margin-top:15px;background:#fcfcfc}
-.offer h2{font-size:15px;margin:0 0 12px}.offer pre{font:14px/1.65 system-ui,sans-serif;white-space:pre-wrap;overflow-wrap:anywhere;margin:0;color:#262626}
-.offer p{margin:0;overflow-wrap:anywhere}
+.equivalence{padding:13px 15px;border:1px solid #dedede;border-radius:10px;background:#f5f5f5;font-size:13px;color:#414141;margin:0}
+.equivalence:empty{display:none}
+.offer{padding:20px;border:1px solid #e3e3e3;border-radius:12px;margin-top:15px;background:#fcfcfc}
+.offer-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px 22px;align-items:flex-start;padding-bottom:14px}
+.offer-heading{font-size:17px;margin:0 0 2px;font-weight:750}
+.offer-subtitle{margin:0;color:#666;font-size:13px}
+.offer-total{display:flex;flex-direction:column;gap:2px}
+.offer-total-label{font-size:12px;color:#666}
+.offer-total-value{font-size:24px;font-weight:770;line-height:1.18;letter-spacing:-.035em;font-variant-numeric:tabular-nums}
+.offer-items{list-style:none;margin:0;padding:0;border-top:1px solid #e7e7e7}
+.offer-item{border-bottom:1px solid #e7e7e7;padding:14px 0}
+.offer-item-name{font-size:14px;font-weight:675;margin:0 0 8px;overflow-wrap:anywhere}
+.offer-item-values{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px 13px}
+.offer-item-values>div{display:flex;flex-direction:column;min-width:0;gap:2px}
+.offer-item-values span{font-size:11px;color:#666;line-height:1.3}
+.offer-item-values strong{font-size:14px;font-weight:620;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.offer-conditions{padding:15px 0 0}
+.offer-conditions h3{font-size:13px;margin:0 0 7px}
+.offer-notes{font-size:13px;color:#4b4b4b;margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.offer-details{border-top:1px solid #e7e7e7;margin-top:14px;padding-top:11px}
+.offer-details summary{cursor:pointer;font-size:13px;font-weight:625;color:#414141}
+.offer-original{font:13px/1.6 system-ui,sans-serif;white-space:pre-wrap;overflow-wrap:anywhere;margin:12px 0 0;color:#343434}
+.offer p{overflow-wrap:anywhere}
 #finalists h2{font-size:19px;margin-top:32px}
 #finalists>p{color:#5d5d5d;font-size:14px}
 .error{color:#983c3c;font-size:14px}
 footer{font-size:12px;color:#777;margin-top:18px;text-align:center}
-@media(max-width:470px){.wrap{padding:20px 12px}.card{padding:20px}.summary{align-items:flex-start}.count{font-size:46px}}
+@media(max-width:470px){
+ .wrap{padding:20px 12px}.card{padding:20px}.summary{align-items:flex-start}.count{font-size:46px}
+ .offer{padding:16px}.offer-total{width:100%}.offer-total-value{font-size:26px}
+ .offer-item-values{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .offer-subtotal{grid-column:1 / -1}
+}
