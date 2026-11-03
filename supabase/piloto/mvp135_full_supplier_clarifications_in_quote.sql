@@ -1,28 +1,7 @@
--- MVP-107 PILOTO: a narrowly scoped, fully source-covered textual quote
--- may be presented as an anonymous Cotironda projection. Never a ranking.
--- PDF/image/DOCX/XLSX, model-only matches, unknown conditions, and
--- unverified source lines are NOT publishable.
-create table cotironda_piloto_privado.anonymous_supplier_docs_mvp107(
- message_hmac text primary key references
-  cotironda_piloto_privado.supplier_source_checks_mvp106(message_hmac),
- request_id uuid not null references cotironda_piloto_privado.requests(id),
- supplier_key text not null references cotironda_piloto_privado.participants(key),
- source_sha256 text not null check(source_sha256 ~ '^[a-f0-9]{64}$'),
- line_count smallint not null check(line_count between 1 and 25),
- public_text text not null check(length(public_text) between 20 and 12000),
- published_at timestamptz not null default clock_timestamp(),
- unique(message_hmac,request_id,supplier_key)
-);
-alter table cotironda_piloto_privado.anonymous_supplier_docs_mvp107
- enable row level security;
-revoke all on cotironda_piloto_privado.anonymous_supplier_docs_mvp107
- from public,anon,authenticated,service_role;
-create trigger supplier_anonymous_docs_immutable_mvp107
- before update or delete on
- cotironda_piloto_privado.anonymous_supplier_docs_mvp107
- for each row execute function
- cotironda_piloto_privado.reject_supplier_line_mutation_mvp101();
-
+-- MVP-135 PILOTO: backwards-compatible modification of existing service-only
+-- publisher. Does not re-create tables, triggers or drop any policies.
+-- Source-check, twice-read comparison, exact amount, buyer ownership and
+-- anonymous safe-text checks are unchanged from MVP-107.
 create or replace function public.cotironda_piloto_publish_source_text_mvp107(
  p_message_hmac text
 ) returns jsonb language plpgsql security definer
