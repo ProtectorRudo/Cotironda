@@ -1,3 +1,5 @@
+> **REGLA VIGENTE DESDE 02/11/2026 — MVP-076:** el plazo predeterminado ahora es **4 días corridos (96 horas)**, no 5. Este documento conserva el texto histórico de la fase anterior. Código y límites actualizados en [docs/196](196-mvp-076-cuatro-dias-anonimato-finalistas.md). **No confundir cierre programado con revelación de contactos implementada.**
+
 # 174 — MVP-054: cierre por vencimiento y hasta dos finalistas por rubro
 
 **01/11/2026 · Issue #321 · desarrollo sin desplegar ni usar clientes reales.**

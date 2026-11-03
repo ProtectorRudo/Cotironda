@@ -46,6 +46,9 @@ export type MensajeCompradorPendiente=Readonly<{
 }>;
 export type DependenciasWhapiEntrada={
   habilitado:boolean;
+  // When true, fail closed unless BOTH verified roles can be resolved and
+  // persisted. Historical supplier-only offline tests stay supported.
+  exigirAmbosRoles?:boolean;
   canalId:string;
   secretoWebhook:string;
   ahoraUnix:()=>number;
@@ -156,6 +159,17 @@ export async function procesarWebhookWhapiAislado(
   // Desactivado por defecto. Ninguna ruta publica monta este procesador.
   if(!dep.habilitado)return resultado(503,{error:'integracion_no_habilitada'});
   if(req.method!=='POST')return resultado(405,{error:'metodo_no_permitido'});
+  // Production pilot uses ONE incoming WhatsApp for both roles. If the buyer
+  // side was accidentally left disconnected, do not acknowledge supplier
+  // messages as if the central channel were fully operational.
+  if(dep.exigirAmbosRoles===true&&(
+    typeof dep.resolverProveedor!=='function'||
+    typeof dep.persistirEntrada!=='function'||
+    typeof dep.registrarBaja!=='function'||
+    typeof dep.resolverComprador!=='function'||
+    typeof dep.persistirEntradaComprador!=='function'||
+    typeof dep.registrarBajaComprador!=='function'
+  ))return resultado(503,{error:'canal_doble_rol_no_configurado'});
   if(!CHANNEL.test(dep.canalId)||typeof dep.secretoWebhook!=='string'||
     dep.secretoWebhook.length<32||dep.secretoWebhook.length>256)
     return resultado(503,{error:'integracion_no_configurada'});
