@@ -46,22 +46,6 @@ const quantityUnitEvidence=(row:string,description:string,quantity:string|null,u
  return new RegExp(pattern,'iu').test(context);
 };
 
-/** Default adapter: pinned PDF.js serverless text extraction. */');
-const quantityUnitEvidence=(row:string,description:string,quantity:string|null,unit:string|null):boolean=>{
- const q=normalized(quantity??''),u=normalized(unit??''),desc=normalized(description);
- if(!/^\d+(?:[.,]\d+)?$/u.test(q)||!u||!desc)return false;
- const at=row.indexOf(desc);
- if(at<0)return false;
- // Remove product size/specification, then exclude every monetary amount.
- let context=row.slice(0,at)+' '+row.slice(at+desc.length);
- const moneyStart=context.search(MONEY);
- if(moneyStart>=0)context=context.slice(0,moneyStart);
- const sep='[\\s|:;·\\\\/-]*';
- const pattern='(?<![\\\\p{L}\\\\p{N}.,])(?:'+regexEscape(q)+sep+regexEscape(u)+'s?|'+
-   regexEscape(u)+'s?'+sep+regexEscape(q)+')(?![\\\\p{L}\\\\p{N}.,])';
- return new RegExp(pattern,'iu').test(context);
-};
-
 /** Default adapter: pinned PDF.js serverless text extraction. */
 export async function readPdfPositioned(bytes:Uint8Array):Promise<PdfSourceEvidence>{
  if(bytes.length<120||bytes.length>8*1024*1024)throw Error('pdf_size_gate');
