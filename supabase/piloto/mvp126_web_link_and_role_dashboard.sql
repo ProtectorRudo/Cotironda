@@ -130,7 +130,8 @@ begin
  from cotironda_piloto_privado.whapi_inbox i
  where i.message_hmac=p_message_hmac and i.chat_hmac=p_chat_hmac
   and i.participant_key=p.key and i.kind='text'
-  and i.received_at>clock_timestamp()-interval '10 minutes';
+  and i.received_at>clock_timestamp()-interval '10 minutes'
+  and i.plaintext_sha256=encode(extensions.digest('VINCULAR '||normalized,'sha256'),'hex');
  if not found then return jsonb_build_object('state','not_permitted');end if;
  select wc.id,wc.auth_user_id,wc.issued_at,wc.expires_at into c
  from cotironda_piloto_privado.web_link_challenges_mvp126 wc
