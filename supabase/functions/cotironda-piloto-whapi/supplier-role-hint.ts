@@ -4,7 +4,7 @@
  * a PRIVATE quote draft. This function never approves a price or sends data.
  */
 import type {DocumentDraft} from './document-ai-draft.ts';
-const MONEY=/^\s*-?\s*(?:\$\s*)?\d[\d.,\s]*$/u;
+const MONEY=/^[ \t]*-?[ \t]*(?:\$[ \t]*)?\d[\d., ]*$/u;
 const monetary=(v:string|null):boolean=>
  typeof v==='string'&&v.length<160&&MONEY.test(v)&&
  /\d/u.test(v)&&!/[A-Za-z]/u.test(v);
