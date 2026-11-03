@@ -11,6 +11,8 @@ create or replace function cotironda_piloto_privado.allow_next_pilot_send_mvp091
   join cotironda_piloto_privado.participants s on s.key=p_supplier
   join cotironda_piloto_privado.invitations i on
     i.request_id=r.id and i.supplier_key=s.key
+  join cotironda_piloto_privado.whapi_outbox outbox on
+    outbox.request_id=r.id and outbox.supplier_key=s.key
   join cotironda_piloto_privado.whapi_inbox source on
     source.request_id=r.id and source.message_hmac=r.source_hmac
     and source.participant_key=b.key and source.chat_hmac=b.chat_hmac
@@ -26,7 +28,7 @@ create or replace function cotironda_piloto_privado.allow_next_pilot_send_mvp091
     and s.participant_role='supplier'
     and s.delivery_city=r.delivery_city and s.chat_hmac is not null
     and s.consent_at is not null and s.opted_out_at is null
-    and i.state='prepared'
+    and i.state='prepared' and outbox.state in ('pending','leased')
     and (select count(*) from cotironda_piloto_privado.request_lines l
          where l.request_id=r.id) between 1 and 8
     and not exists(
