@@ -64,6 +64,7 @@ test('MVP126: signed Whapi source identity is checked against stored inbox and o
  assert.match(sql,/part\.consent_at is not null and part\.opted_out_at is null/u);
  assert.match(sql,/i\.message_hmac=p_message_hmac and i\.chat_hmac=p_chat_hmac/u);
  assert.match(sql,/i\.participant_key=p\.key and i\.kind='text'/u);
+ assert.match(sql,/i\.plaintext_sha256=encode\(extensions\.digest\('VINCULAR '\|\|normalized,'sha256'\),'hex'\)/u);
  assert.match(sql,/i\.received_at>clock_timestamp\(\)-interval '10 minutes'/u);
  assert.match(sql,/wc\.desired_role=p\.participant_role/u);
  assert.match(edge,/const webLinkCode=row\.type==='text'/u);
