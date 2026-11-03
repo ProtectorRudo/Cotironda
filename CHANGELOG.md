@@ -1,5 +1,5 @@
 ## MVP-130 — cotejo PDF multicolumna, fuentes y varios folios (03/11/2026)
-- Lector `unpdf@1.9.1` (PDF.js serverless) pinneado para evidencias de texto posicionado sobre el original privado, después del verificador de PDF simple. Límite de páginas/tiempo/memoria y falla cerrada para escaneos, OCR oculto, filas largas o ilegibles.
+- Lector `unpdf@2.1.0` (PDF.js serverless) pinneado para evidencias de texto posicionado sobre el original privado, después del verificador de PDF simple. Límite de páginas/tiempo/memoria y falla cerrada para escaneos, OCR oculto, filas largas o ilegibles.
 - Cobertura por renglón y por importe como multiconjunto exacto; prohíbe omitir cargos, fletes, pallets, IVA, condiciones, subtotales, números y total del presupuesto real. Si algo no está respaldado por la fuente, se mantiene en revisión privada.
 - Pruebas sintéticas de dos páginas, IVA, costos extra, cambios de precio, subtotal/total no conciliado y escaneo, documentación en docs/249. Issue #468. Sin declaración de lectura real de Ailín hasta verificarla.
 
