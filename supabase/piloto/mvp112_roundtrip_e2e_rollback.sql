@@ -19,6 +19,14 @@ begin
  where key='arquitecto' and consent_at is not null and opted_out_at is null;
  if buyer_chat is null then raise exception 'mvp108_buyer_missing';end if;
  select count(*) into before_offers from cotironda_piloto_privado.offer_versions;
+ if (select enabled from cotironda_piloto_privado.finalist_activation_mvp113
+     where only_row) is distinct from false
+ then raise exception 'mvp113_pilot_gate_was_not_disabled_by_default';end if;
+ -- This is a TEST-ONLY window. In production the activation timestamp
+ -- will be NOW to categorically exclude all older rounds.
+ update cotironda_piloto_privado.finalist_activation_mvp113
+ set enabled=true,activated_at=clock_timestamp()-interval '5 days'
+ where only_row;
  consent_hash:=encode(extensions.digest('COTI CONTACTOS SI','sha256'),'hex');
  revoke_hash:=encode(extensions.digest('COTI CONTACTOS NO','sha256'),'hex');
  for row_ in select * from (values
