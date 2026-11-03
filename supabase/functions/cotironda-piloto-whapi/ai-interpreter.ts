@@ -8,7 +8,7 @@ import type {AiIntent} from './business-ai-policy.ts';
 
 const URL='https://api.openai.com/v1/responses';
 export const MODEL='gpt-6-luna';
-const MAX_INPUT=3000,MAX_OUTPUT=2100,MAX_RESPONSE=30000;
+const MAX_INPUT=3000,MAX_OUTPUT=5000,MAX_RESPONSE=50000;
 const PROMPT=[
  'Sos el intérprete operacional de Cotironda, una plataforma B2B argentina.',
  'Solo interpretás el mensaje recibido de un comprador de materiales.',
@@ -26,10 +26,12 @@ const PROMPT=[
  'con cantidad, unidad y descripción íntegra; sin inventar marcas ni condiciones.',
  'source_evidence es una SUBCADENA exacta del mensaje, con cantidad, unidad y producto.',
  'No confundas peso de presentación (cemento 50 kg) con cantidad pedida (20 bolsas).',
- 'Usá unit bag, l, kg, m3, unit; si falta cantidad/unidad o hay dudas,',
+ 'Usá unit bag, l, kg, m3, unit, box, m, m2, roll, pack; si falta cantidad/unidad o hay dudas,',
  'agregá el renglón completo a unresolved y no inventes contenido.',
  'Conservá city y delivery_note solo si se leen expresamente, o null.',
- 'Máximo 8 ítems en esta prueba acotada. No respondas al usuario: solo JSON.',
+ 'Conservá todos los renglones (hasta 25 en una única solicitud), sin recortar.',
+ 'Si son más, no los borres: registrá la imposibilidad de procesar íntegramente.',
+ 'No respondas al usuario: solo JSON.',
  'No infieras proveedor, disponibilidad, impuestos, fletes, costos ni posiciones.'
 ].join('\n');
 const SCHEMA={
@@ -71,7 +73,7 @@ function parseResponse(raw:unknown):AiIntent{
     !SCHEMA.properties.topic.enum.includes((data as Record<string,unknown>).topic as never)||
     !(data.city===null||typeof data.city==='string'&&data.city.length<=80)||
     !(data.delivery_note===null||typeof data.delivery_note==='string'&&data.delivery_note.length<=90)||
-    !Array.isArray(data.items)||data.items.length>8||
+    !Array.isArray(data.items)||data.items.length>25||
     !Array.isArray(data.unresolved)||data.unresolved.length>20||
     !data.unresolved.every((s:unknown)=>typeof s==='string'&&s.length<=180))
     throw new Error('pilot_ai_schema_rejected');

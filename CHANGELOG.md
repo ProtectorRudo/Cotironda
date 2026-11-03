@@ -1,3 +1,6 @@
+## MVP150 — Pedidos naturales sin límite artificial de 8 renglones
+- Texto/IA/SQL alineados a la capacidad de 25 renglones del PDF actual; más formatos claros de materiales y unidades, controles de fuente intactos. Issue #505, docs/269. Solo piloto.
+
 ## MVP149 — Recuperación autónoma de PDF a proveedores en PILOTO
 - Despacho seguro de pendientes con cron ya autenticado, claim+HMAC+PDF fuente y ledger sin duplicados ni reintentos de resultados inciertos. Issue #503, docs/268. No afecta producción.
 
