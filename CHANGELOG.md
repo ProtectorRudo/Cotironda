@@ -1,3 +1,9 @@
+## MVP-128 — recuperación privada de PDF histórico sin reenvío (03/11/2026)
+- Worker dedicado `private-document-recovery.ts` descarga solo el original en Storage, verifica SHA256/tamaño/MIME y vuelve a ejecutar dos lecturas independientes con las puertas de lectura, fuente y aritmética ya existentes. Nunca envía invitaciones ni publica PDFs sin verificación determinista.
+- La cola segura solo identifica una fuente elegible con consentimiento, ronda abierta, HMAC de mensaje y cuota; `legacy_unclassified` preserva la incertidumbre del error del piloto inicial. Reserva con bloqueo de fila, espera mínima y tope de tres intentos.
+- Corre en segundo plano mediante `EdgeRuntime.waitUntil` después de un webhook Whapi auténtico, sin pedir reenvío. SQL smoke sobre el PDF real de Ailín PASS + ROLLBACK (sin ejecutar IA), tests con fuente sintética y casos hash/adulteración/doble lectura. Issue #466, docs/247.
+- No afirmar que el archivo de Ailín ya fue recuperado hasta registrar una propuesta real. El diseño PDF general con fuentes/tablas sigue siendo una mejora posterior.
+
 ## MVP-127 — fallos documentales observables y capacidad real de 25 líneas (03/11/2026)
 - PDF real de Ailín (12.725 bytes) correctamente guardado y asociado a la ronda, pero sin borrador ni presupuesto validado. El webhook ocultaba toda excepción de la lectura; no hay evidencia de PDF defectuoso.
 - Salida OpenAI 7.000 tokens (antes 2.300), respuesta hasta 50 KB, PDF high-detail y timeout 40s; clasificación redacted HTTP/timeout/cuota/JSON y persistencia privada por archivo mediante RLS. Al menos una lectura válida se conserva como borrador SIN presentarla como doble corroboración.

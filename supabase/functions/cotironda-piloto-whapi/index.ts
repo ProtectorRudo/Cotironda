@@ -13,6 +13,7 @@ import {checkSupplierTextSource} from './supplier-source-text.ts';
 import {checkSupplierOfficeSource} from './supplier-source-office.ts';
 import {checkSupplierPdfSource} from './supplier-source-pdf.ts';
 import {proposeDocumentAI,documentFailureCode} from './document-ai-draft.ts';
+import {recoverOneStoredDocument} from './private-document-recovery.ts';
 import {interpretPilotBuyerWithAI} from './ai-interpreter.ts';
 import {decidePilotAIAction,shortBusinessReply,type ReplyCode} from './business-ai-policy.ts';
 const REF='ilggkalaafhtiysyzlmg';
@@ -290,6 +291,7 @@ async function respond(req:Request):Promise<Response>{
  const ids=new Set<string>();
  const now=Math.floor(Date.now()/1000);
  const db=client(sec);
+ let recoveryTriggerHmac:string|null=null;
  for(const row of event.messages){
   if(row&&typeof row==='object'&&(row as Record<string,unknown>).from_me===true)continue;
   if(!validMessage(row,now))return json(422,'invalid_message');
@@ -297,6 +299,7 @@ async function respond(req:Request):Promise<Response>{
   ids.add(row.id);
   const chatHash=await hmac(sec.key,'cotironda|pilot|chat|'+sec.channel+'|'+row.chat_id);
   const messageHash=await hmac(sec.key,'cotironda|pilot|msg|'+sec.channel+'|'+row.id);
+  recoveryTriggerHmac=chatHash;
   const media=row.type==='text'?null:makeMediaManifest(row,row.type);
   // Store media ID, size, MIME and caption in the AES-GCM encrypted
   // inbox instead of losing every attachment as an empty string.
@@ -875,8 +878,32 @@ async function respond(req:Request):Promise<Response>{
  }
  }
  try{await dispatchTwo(sec,db)}catch{return json(503,'dispatch_reconciliation_required')}
+ // Opportunistic recovery needs a signed Whapi event, an already-consented
+ // pilot participant and a DB-leased private file. Never block the user reply
+ // and NEVER send supplier invitations or expose source bytes.
+ if(recoveryTriggerHmac&&Deno.env.get('COTIRONDA_PILOT_DOCUMENT_AI_ENABLED')==='true'){
+  const triggerChatHmac=recoveryTriggerHmac;
+  try{
+   EdgeRuntime.waitUntil(recoverOneStoredDocument({
+    triggerChatHmac,apiKey:Deno.env.get('COTIRONDA_PILOT_OPENAI_API_KEY')??'',
+    enabled:true,io:{
+     rpc:async(name,params)=>{
+      const r=await db.rpc(name,params);
+      return {data:r.data,error:r.error};
+     },
+     download:async(path)=>{
+      const r=await db.storage.from('cotironda-piloto-originals').download(path);
+      return {data:r.data,error:r.error};
+     }
+    }
+   }).then(()=>undefined).catch(()=>undefined));
+  }catch{
+   console.warn('cotironda_private_document_background_unavailable');
+  }
+ }
  return json(200,'accepted');
 }
+declare const EdgeRuntime:{waitUntil(p:Promise<unknown>):void};
 Deno.serve(req=>respond(req).catch((err)=>{
  // Never include messages, request bodies, headers, tokens or recipient identities in logs.
  console.error('cotironda_pilot_unexpected:',err instanceof Error?err.name:'unknown');
