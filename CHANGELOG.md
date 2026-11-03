@@ -1,3 +1,6 @@
+## MVP157 — Descuento en columna PDF con verificación independiente v9
+- Contrastar sufijo Dscto de la IA con porcentaje y aritmética fuente original sin exigirlo como texto pegado al producto; evidencia append-only v9, status comprador sin ampliar permisos. Issue #517, docs/275. Solo piloto.
+
 ## MVP156 — Asociación contextual con evidencia multirrubro y cantidades
 - PDF de proveedor con nombres abreviados de materiales podrá asociarse a ronda única si hay ≥2 familias distintas y cantidades exactas. La pertenencia no prueba equivalencia comercial. Issue #515; docs/274. Solo PILOTO.
 

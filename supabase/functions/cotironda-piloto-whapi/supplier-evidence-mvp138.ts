@@ -24,6 +24,16 @@ const nonmaterial=(x:string)=>/^(?:no se especifica el tratamiento del iva|no se
 const minor=(x:string|null)=>x===null||x.trim()===''||
  /^unidad de cantidad no indicada\.?(?: descuento visible:\s*\d{1,2}[.,]\d{1,2}%\.?)?$/iu.test(n(x));
 const discount=(x:string|null)=>x?.match(/descuento visible:\s*(\d{1,2}[.,]\d{1,2})\s*%/iu)?.[1]??null;
+/** Some PDFs have a Dscto column: the model may append its value after
+ * the product name even though the source prints it as a separate cell.
+ * This removes the suffix ONLY for finding the product line. Its numeric
+ * value still requires an independent source percentage and exact math. */
+const discountFromDescription=(literal:string):{description:string;rate:string|null}=>{
+ const m=literal.match(/;\s*dscto\.?\s*:?\s*(\d{1,2}[.,]\d{1,2})\s*%$/iu);
+ return m&&m.index!==undefined
+  ?{description:literal.slice(0,m.index).trim(),rate:m[1]}
+  :{description:literal,rate:null};
+};
 
 /** Decimal percentages are compared in exact basis points: 22,4 = 22,40.
  * Some supplier PDFs place Dscto in a separate column/text object.
@@ -156,9 +166,19 @@ export async function verifySupplierEvidence(
  if(rows.length<2||rows.length>300)return reject('unreadable',c);
  const source=rows.map(n),used=new Set<number>();
  for(const l of p.lines){
-  const i=source.findIndex((row,j)=>!used.has(j)&&row.includes(n(l.original_description))&&
+  const dsc=discountFromDescription(l.original_description);
+  const i=source.findIndex((row,j)=>!used.has(j)&&row.includes(n(dsc.description))&&
    has(row,l.quantity!)&&has(row,l.unit_price!)&&has(row,l.line_total!));
   if(i<0)return reject('missing_line',c);
+  if(dsc.rate!==null){
+   const rate=basis(dsc.rate);
+   // Neither the AI text nor a table header is proof of a discount.
+   // Require an original visible percent, a source Dscto/discount label,
+   // AND deterministic arithmetic using the supplier's literal numbers.
+   if(rate===null||!discountMath(l,rate)||!percentSeen(source,rate)||
+     !source.some(row=>/\b(?:dscto|descuento|bonificaci[oó]n)\b/iu.test(row)))
+    return reject('missing_amount',c);
+  }
   const d=discount(l.ambiguity);
   if(d&&!discountProof(source[i],source,l,d))return reject('missing_amount',c);
   const m=cash(source[i]);
@@ -231,7 +251,8 @@ export async function verifySupplierEvidence(
   ' '+totalRowWords;
  if(note&&!coveredTokens(unclaimedSource,note))
   return reject('uncovered_note',c);
- const claimedDiscounts=p.lines.map(l=>discount(l.ambiguity))
+ const claimedDiscounts=p.lines.flatMap(l=>[
+   discount(l.ambiguity),discountFromDescription(l.original_description).rate])
   .filter((d):d is string=>d!==null).map(basis)
   .filter((d):d is bigint=>d!==null);
  for(const [i,row] of source.entries()){
