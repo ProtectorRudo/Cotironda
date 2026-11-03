@@ -1,0 +1,35 @@
+name: Cotironda PILOTO recovery Edge auth smoke (sin secretos)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/cotironda-piloto-recovery-edge-auth.yml'
+      - 'supabase/functions/cotironda-piloto-document-recovery/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  recovery-auth:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Denegar llamadas sin clave de servidor y apikey publicable
+        shell: bash
+        run: |
+          set -euo pipefail
+          url='https://ilggkalaafhtiysyzlmg.supabase.co/functions/v1/cotironda-piloto-document-recovery'
+          check() {
+            local label="$1"; shift
+            local code
+            code=$(curl --silent --show-error --max-time 15 --retry 0 \
+              -o /dev/null -w '%{http_code}' "$@" "$url")
+            echo "$label HTTP $code"
+            case "$code" in
+              401|403) return 0;;
+              *) echo "::error::Recovery endpoint accepted or failed improperly for $label: $code"; return 1;;
+            esac
+          }
+          check "POST no apikey" -X POST -H 'Content-Type: application/json' --data '{}'
+          check "GET no apikey" -X GET
+          check "POST invalid apikey" -X POST -H 'Content-Type: application/json' \
+            -H 'apikey: sb_publishable_fake_forbidden' --data '{}'
+          echo 'PASS: los tres intentos no autorizados fueron rechazados.'
