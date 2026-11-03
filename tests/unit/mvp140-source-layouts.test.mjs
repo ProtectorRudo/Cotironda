@@ -211,3 +211,20 @@ test('MVP142: total PDF con rótulo de contado lejano pero fuente comprobada',as
  const charge=src.map(x=>x.includes('CONTADO:')?'PALLET: $220.250,00':x);
  assert.equal((await verifySupplierEvidence(input,proposal,async()=>charge)).reason,'missing_total');
 });
+
+
+test('MVP143: PDF real sin palabra TOTAL conserva suma exacta original',async()=>{
+ const input={mime:'application/pdf',bytes:new Uint8Array(128),sha256:H};
+ const withoutLabel=[
+  'CEMENTO CPC 50 KG 20 $10.250,00 $205.000,00',
+  'HIDROFUGO EN PASTA 5 $3.050,00 $15.250,00',
+  'Presupuestado','Fecha','Hoja','Referencia',
+  'Datos','Materiales','Condiciones','Planilla','$220.250,00'
+ ];
+ assert.deepEqual(await verifySupplierEvidence(input,pdf,async()=>withoutLabel),
+  {state:'verified',reason:'covered',lines:2});
+ assert.equal((await verifySupplierEvidence(input,pdf,async()=>
+  withoutLabel.map(x=>x==='$220.250,00'?'$220.250,01':x))).reason,'missing_total');
+ assert.equal((await verifySupplierEvidence(input,pdf,async()=>
+  [...withoutLabel,'Pallet $2.500,00'])).reason,'extra_charge');
+});
