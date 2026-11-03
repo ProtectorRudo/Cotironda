@@ -132,7 +132,8 @@ test('MVP110: private buyer token unlocks finalist contacts only on closed conse
  assert.match(portal,/cotironda_piloto_tracking_finalists_mvp110/);
  assert.match(portal,/publicResult\?\.state==='closed'/);
  assert.match(portal,/decodeContacts\(finals\.data/);
- assert.match(portal,/publicResult=\{\.\.\.publicResult,finalists:list\}/);
+ assert.match(portal,/publicResult=\{\.\.\.publicResult,finalists:list,/);
+ assert.match(portal,/joint_supplier_coverage/);
  assert.match(portal,/targetFinalists\.replaceChildren\(\)/);
  assert.match(portal,/card\.textContent=finalist\.name/);
  assert.doesNotMatch(portal,/\binnerHTML\b/);
