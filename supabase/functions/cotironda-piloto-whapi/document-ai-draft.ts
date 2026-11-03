@@ -79,7 +79,7 @@ const intro=[
  'registrá cada condición faltante en unanswered, sin omitirla silenciosamente.',
  'Si hay más de 25 renglones, NO declares lectura completa: incluí',
  'more_than_25_lines en unanswered; los parciales no se podrán publicar.',
- 'Preservá cada valor y total declarado como TEXTO ORIGINAL, sin recalcular,'
+ 'Preservá cada valor y total declarado como TEXTO ORIGINAL, sin recalcular,',
  'completar o cambiar signos, separadores de miles, IVA o moneda.',
  'Cuando un campo o parte de la imagen sea ilegible, escribí null y registrá',
  'unanswered. No supongas cantidad, unidad, precios, zona ni fecha.',
