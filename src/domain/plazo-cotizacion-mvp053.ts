@@ -1,6 +1,6 @@
 /**
  * MVP-053: explicit bidding-window instruction, NOT supplier lead time.
- * A WhatsApp buyer can omit it (5 days), or supply a separate line:
+ * A WhatsApp buyer can omit it (4 days), or supply a separate line:
  * "Plazo de cotización: 3 días" ... "7 días".
  * Never infer bidding deadline from "entrega en N días" or prices.
  */
@@ -15,7 +15,7 @@ function fail():never{throw TypeError('mvp053_plazo_invalido')}
 export function extraerPlazoCotizacionMvp053(raw:string):PlazoCotizacionMvp053{
  if(typeof raw!=='string'||!raw.trim()||raw.length>4000)fail();
  const lines=raw.split(/\r?\n/u);
- let plazo:3|4|5|6|7=5;
+ let plazo:3|4|5|6|7=4;
  let explicito=false;
  const material:string[]=[];
  for(const line of lines){

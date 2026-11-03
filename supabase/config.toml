@@ -6,3 +6,9 @@ project_id = "cotironda"
 # La función es exclusiva para backend con apikey sb_secret_*;
 # estas keys no son JWT. withSupabase auth:'secret' verifica el caller.
 verify_jwt = false
+
+[functions.cotironda-piloto-finalistas]
+# Internal scheduler only, authenticated by 48+ byte shared secret in the
+# Edge handler. JWT is deliberately disabled because the worker is invoked
+# by scheduled GitHub Actions, not a Supabase user session.
+verify_jwt = false

@@ -4,7 +4,7 @@ import {auditarCanalWhapiMvp041,proponerWebhookWhapiMvp041}
  from '../../src/server/whapi-channel-preflight-mvp041.ts';
 
 const token='t'.repeat(32),secret='a'.repeat(64);
-const url='https://piloto.cotironda.example/api/whapi/webhook';
+const url='https://piloto.cotironda.example/api/integraciones/whapi';
 const settings=()=>({
  callback_persist:true,
  webhooks:[{url,mode:'body',
@@ -81,9 +81,9 @@ test('MVP041: faltan token, secret, fetcher o URL segura: cero GET',async()=>{
  for(const patch of [
   {token:undefined},{token:'invalid'},{webhookSecretHex:''},
   {webhookSecretHex:'0'.repeat(8)},{fetcher:undefined},
-  {webhookUrl:'http://ejemplo.com/api/whapi/webhook'},
+  {webhookUrl:'http://ejemplo.com/api/integraciones/whapi'},
   {webhookUrl:'https://ejemplo.com/cualquier-cosa'},
-  {webhookUrl:'https://ejemplo.com/api/whapi/webhook?secret=abc'},
+  {webhookUrl:'https://ejemplo.com/api/integraciones/whapi?secret=abc'},
   {channel:'a'}
  ]){
   const x=config(patch);
@@ -110,7 +110,7 @@ test('MVP041: canal AUTH pero error perfil no declara listo',async()=>{
 });
 test('MVP041: webhook equivocado no autoriza conexión',async()=>{
  const x=config({}, {'/settings':{...settings(),webhooks:[
-  {...settings().webhooks[0],url:'https://otro.com/api/whapi/webhook'}
+  {...settings().webhooks[0],url:'https://otro.com/api/integraciones/whapi'}
  ]}});
  const r=await auditarCanalWhapiMvp041(x.config);
  assert.equal(r.estado,'webhook_incorrecto');
@@ -171,12 +171,22 @@ test('MVP041: timeout de red no filtra token ni endpoint privado',async()=>{
  assert.equal(r.estado,'canal_sin_verificar');
  assert.equal(JSON.stringify(r).includes('TOKEN-PRIVATE-ERROR'),false);
 });
+test('MVP067: ruta antigua /api/whapi/webhook queda prohibida explícitamente',()=>{
+ assert.throws(()=>proponerWebhookWhapiMvp041(
+  'https://piloto.cotironda.example/api/whapi/webhook',secret),
+  /mvp041_auditoria_no_disponible/);
+ const x=config({webhookUrl:'https://piloto.cotironda.example/api/whapi/webhook'});
+ return auditarCanalWhapiMvp041(x.config).then(result=>{
+  assert.equal(result.estado,'configuracion_incompleta');
+  assert.equal(x.calls.length,0);
+ });
+});
 test('MVP041: URL con usuario o query y endpoint ajeno rechazado',()=>{
  for(const target of [
-  'http://sitio.test/api/whapi/webhook',
-  'https://sitio.test:443/api/whapi/webhook?token=secret',
-  'https://user:pass@sitio.test/api/whapi/webhook',
-  'https://gate.whapi.cloud/api/whapi/webhook'
+  'http://sitio.test/api/integraciones/whapi',
+  'https://sitio.test:443/api/integraciones/whapi?token=secret',
+  'https://user:pass@sitio.test/api/integraciones/whapi',
+  'https://gate.whapi.cloud/api/integraciones/whapi'
  ]){
   assert.throws(()=>proponerWebhookWhapiMvp041(target,secret),
    /mvp041_auditoria_no_disponible|Invalid URL/);
