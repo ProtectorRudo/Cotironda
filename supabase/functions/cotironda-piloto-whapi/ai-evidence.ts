@@ -102,7 +102,7 @@ export function verifyAiBuyerSourceEvidence(
   return reject('source_quantity_omitted');
  // Where the independent parser *can* read some lines, never contradict it.
  if(local.items.some(x=>!items.some(y=>x.quantity===y.quantity&&
-   x.unit===y.unit&&x.family===y.family&&fold(y.description)===fold(x.description))))
+   x.unit===y.unit&&x.family===y.family&&fold(y.description).replace(/[.!?]+$/u,'')===fold(x.description).replace(/[.!?]+$/u,''))))
   return reject('conflicts_with_independent_line');
  if(local.city===null)return {state:'missing_zone',parsed:null,reason:'zone_required'};
  return {state:'verified',reason:'literal_evidence_and_curated_catalogue',

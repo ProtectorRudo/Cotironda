@@ -34,6 +34,7 @@ const apiResponse=answer=>({status:'completed',
  output:[{type:'message',role:'assistant',
   content:[{type:'output_text',text:JSON.stringify(answer)}]}]});
 const key='sk-test123456789abcdefghijklmnop';
+const familyCodes=['cemento_gris_obra','hidrofugo'];
 
 test('MVP094: fuente real y dos líneas verificadas pueden pasar al filtro de SQL',()=>{
  const d=decidePilotAIAction(source,candidate(),'buyer');
@@ -99,7 +100,7 @@ test('MVP094: saludos, bromas y órdenes maliciosas no provocan envío',()=>{
 });
 test('MVP094: Output estricto JSON, sin herramientas, ni contenido libre',async()=>{
  const r=await interpretPilotBuyerWithAI({
-  text:source,apiKey:key,enabled:true,fetchImpl:mock(apiResponse(candidate()))
+  text:source,apiKey:key,enabled:true,familyCodes,fetchImpl:mock(apiResponse(candidate()))
  });
  assert.deepEqual(r,candidate());
  assert.equal(BUSINESS_AI_SCHEMA.additionalProperties,false);
@@ -114,7 +115,7 @@ test('MVP094: modelo no puede inventar campos, emitir un resultado incompleto o 
   {...candidate(),unresolved:['1','2'],items:[]},
  ]){
   const result=await interpretPilotBuyerWithAI({
-   text:source,apiKey:key,enabled:true,fetchImpl:mock(apiResponse(answer))
+   text:source,apiKey:key,enabled:true,familyCodes,fetchImpl:mock(apiResponse(answer))
   }).catch(e=>e.message);
   if(answer.intent==='hack'||'providerPhone' in answer)
    assert.equal(result,'pilot_ai_schema_rejected');
@@ -124,23 +125,23 @@ test('MVP094: modelo no puede inventar campos, emitir un resultado incompleto o 
 });
 test('MVP094: API sin clave, error, rechazo, timeout y payload inexacto fallan cerrado',async()=>{
  await assert.rejects(
-  interpretPilotBuyerWithAI({text:source,apiKey:key,enabled:false}),
+  interpretPilotBuyerWithAI({text:source,apiKey:key,enabled:false,familyCodes}),
   /pilot_ai_disabled/);
  await assert.rejects(
-  interpretPilotBuyerWithAI({text:source,apiKey:'',enabled:true}),
+  interpretPilotBuyerWithAI({text:source,apiKey:'',enabled:true,familyCodes}),
   /pilot_ai_key_missing/);
  for(const [status,expected] of [[429,'pilot_ai_quota'],[401,'pilot_ai_http_error']]){
   await assert.rejects(interpretPilotBuyerWithAI({
-   text:source,apiKey:key,enabled:true,
+   text:source,apiKey:key,enabled:true,familyCodes,
    fetchImpl:mock({error:'fake'},status)
   }),new RegExp(expected));
  }
  await assert.rejects(interpretPilotBuyerWithAI({
-  text:source,apiKey:key,enabled:true,
+  text:source,apiKey:key,enabled:true,familyCodes,
   fetchImpl:async()=>{throw Error('network')}
  }),/pilot_ai_transport_error/);
  await assert.rejects(interpretPilotBuyerWithAI({
-  text:source,apiKey:key,enabled:true,
+  text:source,apiKey:key,enabled:true,familyCodes,
   fetchImpl:mock({status:'incomplete',output:[]})
  }),/pilot_ai_not_completed/);
 });
