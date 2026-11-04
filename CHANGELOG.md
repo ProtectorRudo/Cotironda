@@ -1,3 +1,6 @@
+## MVP184 — Base IVA por renglón, sin doble conteo (04/11/2026, desarrollo)
+- El contrato de `TerminosAuditados` exige `tratamientoIva` comprobado, incluido/excluido. Cotizaciones con precio SIN IVA concilian su base original y el comparador calcula el bruto final con la tasa acreditada; IVA incluido se concilia contra bruto. Faltantes o inconsistencias quedan visibles sin comparar. Cuatro regresiones; no SQL, Supabase, Vercel ni producción. Docs/304, issue #535.
+
 ## MVP183 — Usar cotizaciones parciales corroboradas para una canasta completa (04/11/2026, desarrollo)
 - PR #560 conserva renglones verificados de cada oferta parcial, con faltantes explícitos. El comparador existente evalúa canasta completa de hasta dos proveedores, sin comparar subtotales de parciales. Tres regresiones propuestas; no alterar Supabase, WhatsApp, dominios ni producción. Docs/303, issues #535/#524.
 
