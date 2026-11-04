@@ -22,7 +22,7 @@ const identity=()=>({
  venceMs:T+1000000
 });
 const source=(documentId=DOC)=>({
- state:'authorized_original',documentoId,
+ state:'authorized_original',documentoId:documentId,
  autorizacion:{
   politicaDesdeMs:T-900000,
   ronda:{id:RID,compradorId:USER,empresaId:COMPANY,
