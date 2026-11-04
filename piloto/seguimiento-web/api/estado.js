@@ -192,8 +192,13 @@ function buyerView(parsed){
         articleSet.add(art.itemId);
         art.ofertasConAlternativa.forEach(x=>used.add(x));
       }
-      return articleSet.size===optionSet.requested_items&&
-        used.size===providers.length;
+      if(articleSet.size!==optionSet.requested_items||
+         used.size!==providers.length)return false;
+      if(opt.modo==="complementaria"&&providers.some(provider=>
+        !opt.articulos.some(item=>
+          item.ofertasConAlternativa.length===1&&
+          item.ofertasConAlternativa[0]===provider)))return false;
+      return true;
     });
     if(correctCounts&&counts.size===labels.length&&
        sum===safe.coverage.commercial_alternatives&&correctOptions){
