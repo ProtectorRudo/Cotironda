@@ -188,6 +188,7 @@ function showEconomy(d){
    "Se revisaron las condiciones declaradas en "+e.quotations+
    (e.quotations===1?" presupuesto habilitado.":" presupuestos habilitados.")+
    ivaConvention+
+   " Los datos ausentes no significan IVA cero, flete gratis ni falta de stock."+
    " El flete, la disponibilidad y las condiciones no informadas siguen pendientes; no se presentan ganadores por este resumen.");
  el("economySection").hidden=false;
 }
