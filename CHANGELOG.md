@@ -1,3 +1,6 @@
+## MVP192 — Catálogo de originales por ronda y proveedor consentido (04/11/2026, solo desarrollo)
+- Selector SQL server-only para enlistar TODOS los originales vigentes de proveedores con consentimiento específico de ronda prospectiva, con vínculo Auth PILOTO/WhatsApp, cierre, archivo inmutable SHA, última versión y anti-duplicados. Detalle interno único para MVP190. Proyección pública de lista blanca sin SHA, ruta, nombres de proveedores, contactos, totales ni URLs. Ensayo PostgreSQL de migración transaccional con rollback. Sin usuarios Auth, política, endpoint ni publicación. Docs/312; #525 abierto.
+
 ## MVP191 — Vínculo de Auth con contacto WhatsApp verificado (04/11/2026, desarrollo)
 - Prepara RPC booleana con sesión JWT Auth PILOTO actual, teléfono OTP confirmado y contacto privado de Whapi, sin nuevas tablas ni revelar identidad/archivo, bloqueando rondas históricas por política OFF y fecha de activación. MVP190 ahora exige comprobar ese vínculo **antes y después** de leer Storage. Prueba reversible REAL en PostgreSQL del piloto: no autenticado denegado, ACL y política OFF, ROLLBACK comprobado; no se instalaron funciones ni se crearon Auth users. Docs/311; #525 sigue abierto.
 
