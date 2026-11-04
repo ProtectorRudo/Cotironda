@@ -8,8 +8,10 @@
  * revisión vigente, SHA y ledger económico de fuente. No usar JSON del modelo.
  */
 import {elegirParExacto25} from './comparacion-pares-exacta.ts';
+import {interpretarBolsonAridosMvp164} from './aridos-bolson-mvp164.ts';
 import {centavosFuenteMvp162,cantidadFuenteMvp162,
- type DocumentoFuente,type CorrelacionFuente,type HechosPresentacionMvp170
+ type DocumentoFuente,type CorrelacionFuente,type HechosPresentacionMvp170,
+ type PruebaBolsonMvp165
 } from './adaptador-documental-mvp162.ts';
 import type {PedidoComparable,MonedaCotizada,UnidadCotizada} from './comparacion-ofertas.ts';
 import type {AuditoriaDescuentosMvp166} from './auditoria-descuentos-mvp166.ts';
@@ -27,6 +29,9 @@ export type EntradaOfertaMvp185=Readonly<{
   condiciones:ResultadoCondicionesMvp167;
  }>;
  correlaciones:readonly CorrelacionFuente[];
+ /** Only from the PRIVATE buyer request and the same verified supplier line.
+  * A conventional BIG BAG is nominal 1m³, NOT a stock or fiscal proof. */
+ pruebasBolson?:readonly PruebaBolsonMvp165[];
  /** Corroborada fuera del modelo por el servicio privado. Nunca por defecto. */
  moneda:MonedaCotizada|null;
 }>;
@@ -38,7 +43,8 @@ export type OpcionCotizadaMvp185=Readonly<{
  subtotalMaterialesCotizadoSinIva:string;
  ordenPorPrecioCotizado:number;
  advertencias:readonly ('iva_no_informado'|'flete_no_incluido_en_comparacion'|
-  'stock_no_corroborado'|'minimos_y_pago_no_evaluados')[];
+  'stock_no_corroborado'|'minimos_y_pago_no_evaluados'|
+  'bolson_1m3_nominal_sin_stock')[];
 }>;
 export type ResultadoPreciosCotizadosMvp185=Readonly<{
  estado:'proyeccion_informativa'|'insumos_invalidos';
@@ -91,7 +97,8 @@ export function interpretarSilencioIvaMvp185(
 type ValidOffer={
  label:string;interpretacion:EstadoComercialIvaMvp185;
  moneda:MonedaCotizada|null;
- prices:Map<string,bigint>;usable:boolean;motivo:string|null
+ prices:Map<string,bigint>;nominalBigBagItems:Set<string>;
+ usable:boolean;motivo:string|null
 };
 const invalid=():ResultadoPreciosCotizadosMvp185=>Object.freeze({
  estado:'insumos_invalidos' as const,ofertas:[],opcionesCotizadas:[],
@@ -133,7 +140,8 @@ function verifyOffer(pedido:PedidoComparable,entry:EntradaOfertaMvp185,
  const iva=entry?.economia?.condiciones?.iva?.estado as EstadoIvaMvp167;
  const interpretacion=interpretarSilencioIvaMvp185(iva);
  const blocked=(motivo:string):ValidOffer=>({
-  label,interpretacion,moneda:null,prices:new Map(),usable:false,motivo
+  label,interpretacion,moneda:null,prices:new Map(),
+  nominalBigBagItems:new Set(),usable:false,motivo
  });
  const {doc,fuente,economia}=entry;
  if(!isValidDoc(doc)||doc.requestId!==requestId||
@@ -182,7 +190,28 @@ function verifyOffer(pedido:PedidoComparable,entry:EntradaOfertaMvp185,
  }
  if(!entry.correlaciones.length||entry.correlaciones.length>pedido.items.length)
   return blocked('sin_lineas_asignadas');
+ // A nominal bag conversion must come with a line-bound proof from the
+ // authenticated buyer request, not a guessed unit inserted by AI.
+ const proofs=new Map<string,PruebaBolsonMvp165>();
+ if(entry.pruebasBolson!==undefined){
+  if(!Array.isArray(entry.pruebasBolson)||
+     entry.pruebasBolson.length>doc.lineas.length)
+   return blocked('prueba_bolson_invalida');
+  for(const proof of entry.pruebasBolson){
+   const paired=entry.correlaciones.find(x=>x.itemId===proof?.itemId);
+   if(!proof||!paired||paired.lineNo!==proof.lineNo||
+      proof.sourceSha256!==doc.sourceSha256||
+      proofs.has(proof.itemId)||
+      typeof proof.pedidoDescripcionLiteral!=='string'||
+      !proof.pedidoDescripcionLiteral.trim()||
+      proof.pedidoDescripcionLiteral.length>500||
+      !['big_bag','bolson'].includes(proof.presentacionFuente))
+    return blocked('prueba_bolson_invalida');
+   proofs.set(proof.itemId,proof);
+  }
+ }
  const prices=new Map<string,bigint>(),usedLines=new Set<number>();
+ const nominalBigBagItems=new Set<string>();
  for(const match of entry.correlaciones){
   const target=pedido.items.find(item=>item.id===match.itemId);
   const line=sourceLines.get(match.lineNo),fact=facts.get(match.lineNo);
@@ -193,27 +222,48 @@ function verifyOffer(pedido:PedidoComparable,entry:EntradaOfertaMvp185,
    return blocked('equivalencia_o_asignacion_sin_acreditar');
   // An original quote line or its independent source-fact ledger must
   // explicitly prove the unit. Never infer units from a generic name.
-  const explicit=fact.unitStatus==='explicit'&&
-   fact.page!==null&&fact.row!==null?fact.unit:null;
+  const sourceLocated=Number.isSafeInteger(fact.page)&&fact.page>=1&&
+    Number.isSafeInteger(fact.row)&&fact.row>=1;
+  const explicit=fact.unitStatus==='explicit'&&sourceLocated?fact.unit:null;
   const sourceUnit=unit(line.unitLiteral);
-  // The document's unitLiteral may originate in an AI transcription.
-  // Require an independent PDF/Excel source fact, even if the draft names
-  // a plausible unit. Unknown source unit is NOT source-proven coverage.
-  if(explicit===null||sourceUnit!==null&&sourceUnit!==explicit||
-    explicit!==target.unidad)
-   return blocked('unidad_sin_acreditar');
+  const explicitMatch=explicit!==null&&explicit===target.unidad&&
+    (sourceUnit===null||sourceUnit===explicit);
+  // All other commercial presentations remain NOT comparable without
+  // independent unit evidence. Only BIG BAG of source-matched aggregates
+  // may be treated as nominal 1m³ for a PRELIMINARY materials subtotal.
+  let nominal=false;
+  const proof=proofs.get(target.id);
+  if(!explicitMatch&&sourceLocated&&proof&&target.unidad==='m3'&&
+     match.equivalencia==='comercial_razonable'&&
+     fact.unitStatus==='not_explicit'&&fact.unit===null&&
+     line.unitLiteral===null&&fact.presentation===proof.presentacionFuente){
+    const check=interpretarBolsonAridosMvp164({
+     pedidoDescripcion:proof.pedidoDescripcionLiteral,
+     pedidoCantidad:target.cantidad,pedidoUnidad:target.unidad,
+     ofertaDescripcion:line.descriptionLiteral,
+     ofertaCantidad:line.quantityLiteral??'',
+     presentacionFuente:proof.presentacionFuente,
+     fuenteVerificada:true,presentacionComprobada:true
+    });
+    nominal=check.cantidadNominalCoincide===true&&
+     check.origen==='convencion_nominal'&&
+     ['compatible_con_aclaracion','compatible_comercialmente'].includes(check.estado);
+  }
+  if(!explicitMatch&&!nominal)return blocked('unidad_sin_acreditar');
   const q=cantidadFuenteMvp162(line.quantityLiteral);
   if(q===null||milli(q)!==milli(target.cantidad))
    return blocked('cantidad_incompatible');
   const value=centavosFuenteMvp162(line.lineTotalLiteral);
   if(value===null||value>MONEY_MAX)return blocked('importe_fuente_no_conciliado');
   usedLines.add(match.lineNo);prices.set(target.id,value);
+  if(nominal)nominalBigBagItems.add(target.id);
  }
  // Pallets, additional charges and unassigned lines must NEVER disappear
  // from a price-based comparison (even if their totals were source-verified).
  if(usedLines.size!==doc.lineas.length)
   return blocked('cargos_o_lineas_sin_asignar');
- return {label,interpretacion,moneda:entry.moneda,prices,usable:true,motivo:null};
+ return {label,interpretacion,moneda:entry.moneda,prices,
+  nominalBigBagItems,usable:true,motivo:null};
 }
 type Candidate={providers:string[];assignment:string[];moneda:MonedaCotizada;value:bigint};
 export function compararPreciosCotizadosMvp185(input:Readonly<{
@@ -288,6 +338,9 @@ export function compararPreciosCotizadosMvp185(input:Readonly<{
    ordenPorPrecioCotizado:rank,
    advertencias:Object.freeze([
     ...(hasUnknown?['iva_no_informado' as const]:[]),
+    ...(itemIds.some((itemId,i)=>verified.find(q=>q.label===x.assignment[i])?.
+       nominalBigBagItems.has(itemId))?
+       ['bolson_1m3_nominal_sin_stock' as const]:[]),
     'flete_no_incluido_en_comparacion' as const,
     'stock_no_corroborado' as const,
     'minimos_y_pago_no_evaluados' as const
