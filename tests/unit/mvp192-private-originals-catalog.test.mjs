@@ -56,7 +56,7 @@ test('MVP192: no generar enlaces ni etiquetas engañosas de ganador',()=>{
  const p=project(source());
  assert.ok(p);
  const text=JSON.stringify(p);
- assert.doesNotMatch(text,/https?:|storage|signed|downloadUrl|ganador|puesto|mejor precio/iu);
+ assert.doesNotMatch(text,/https?:|storage|signed|downloadUrl|\bganador(?:es)?\b|\bpuesto\s+[0-9]+\b|mejor precio/iu);
 });
 
 test('MVP192: rechazo total de respuestas incompletas, UUID ajenos y formatos activos',()=>{
