@@ -23,3 +23,14 @@ Solo la URL GET 302 del archivo `supabase/functions/cotironda-piloto-seguimiento
 5. La Preview es una URL inmutable pero no un dominio estable. Resolver alias/dominio estable solo después y con permiso específico. No cambiar `cotironda.com`, `main`, SSO ni facturación.
 
 **Pendiente:** ranking de precios reales, consentimiento de originales con Auth de comprador, cierre/avisos, E2E WhatsApp. La sección muestra **ausencia de datos** y no convierte un IVA/flete/stock no declarado en cero.
+
+## Ejecución real posterior al despliegue — SOLO PILOTO
+
+- PR #559: seis controles GitHub PASS para la revisión de código anterior a documentar el despliegue; pruebas de regresión del destino actualizado aprobadas. Volver a verificar CI en el SHA definitivo del PR.
+- Edge `cotironda-piloto-seguimiento-economia-staging` v2 **ACTIVE**, 9 archivos idénticos a la versión GitHub salvo su origen de publicación, paquete SHA256 `d4e17d56b9bb55a22db7d0f4e4c8689bca0b05740c590693f446276ab8c944ed`. Smoke GET → HTML 200 con `economySection` y header `Location` exacto a Preview económica; GET con query → 400; POST token ficticio → `{"state":"not_found"}`.
+- **Edge activa PILOTO** `cotironda-piloto-seguimiento` actualizada de v11 a **v12 ACTIVE**, con exactamente el mismo paquete de nueve archivos/hash de staging. Todos los archivos compartidos con v11 son idénticos; las únicas diferencias son la inserción del reductor económico ya auditado y el destino GET. **La función de WhatsApp activa queda en v45 y finalistas sigue OFF**. No despliegue en producción ni en `cotironda.com`.
+- Smoke HTTP posdespliegue: GET seguimiento devuelve HTML económico 200 con `Location` de Preview exacta; GET con query impropia devuelve 400; POST token ficticio devuelve 200 `not_found`. No se mostró ninguna oferta sin token autorizado.
+- SQL **solo lectura posdespliegue**: **2 enlaces vigentes**, **2 rondas legibles**, **4 ofertas visibles**, **2 resúmenes económicos de fuente vigente**, **4 fuentes económicas revisadas**, **0 acuses**, ACK diferido `enabled=false`, finalistas `enabled=false`, **0 avisos**, **0 usuarios Auth**. No se modificaron rondas ni presupuestos.
+- La nueva página es una **Preview inmutable de Vercel**, cuyos cuatro archivos son iguales a los del GitHub integrado. Sigue pendiente probar visualización real con los dos enlaces privados desde el navegador de cada titular y establecer un alias/dominio estable. Un HTTP GET anónimo no certifica por sí solo el E2E del comprador.
+
+**Rollback operativo si hay incidente:** volver a desplegar el paquete original completo de la Edge de seguimiento **v11**, SHA256 `88c366a694bbfcabff7a36a7987c7af21b62ba9f8d9ad92aa35d8f2aabab30dd`, conservando configuración JWT; comprobar luego GET, POST token ficticio y la base de dos enlaces. No cambiar originales, consentimientos ni mensajes.
