@@ -126,7 +126,8 @@ test('MVP171: never presume ranking, contacto o precio fiscal desde rubro acredi
   const r=evaluar(x);
   assert.equal(r.rankingHabilitado,false);
   assert.equal(r.contactosRevelados,false);
-  assert.equal(JSON.stringify(r).includes('iva'),false);
+  assert.equal(Object.hasOwn(r,'ivaPorcentaje'),false);
+  assert.equal(Object.hasOwn(r,'precioUnitarioNeto'),false);
  }
 });
 test('MVP171: comprador sin exclusividad: arena fina => BIG BAG arena, con aclaración',()=>{
