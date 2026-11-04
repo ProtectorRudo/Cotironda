@@ -172,11 +172,15 @@ test('MVP181: source verification proceeds while Whapi ACK is unresolved',async(
  const a=recoveryHarness();
  let release=()=>{};
  const delayed=new Promise(resolve=>{release=resolve;});
- a.onSupplierReceipt=async()=>{await delayed;};
+ let signalStarted=()=>{};
+ const started=new Promise(resolve=>{signalStarted=resolve;});
+ a.onSupplierReceipt=async()=>{signalStarted();await delayed;};
  const job=recoverOneStoredDocument({
   ...a,enabled:true,apiKey:'mock',triggerChatHmac:chat
  });
- await new Promise(resolve=>setTimeout(resolve,0));
+ // Crypto/AI-source mock preprocessing is asynchronous: wait for the
+ // ACK task to start, not an arbitrary event-loop tick.
+ await started;
  assert.equal(a.records.includes(
   'cotironda_piloto_compare_supplier_readings_mvp102'),true,
   'source comparison is not blocked by a delayed WhatsApp network call');
