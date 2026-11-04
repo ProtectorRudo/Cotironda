@@ -13,7 +13,7 @@ const PILOT_URL='https://'+PILOT_REF+'.supabase.co';
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/iu;
 const COMPANY=/^[a-z0-9_-]{3,100}$/u;
 const JWT_PART=/^[A-Za-z0-9_-]+$/u;
-const SHA=/^[a-f0-9]{64}$/u;
+const RELEASE_SHA=/^[a-f0-9]{40}$/u;
 
 export type PilotoEnv=Record<string,string|undefined>;
 export type SupabaseUserPiloto=Readonly<{
@@ -44,7 +44,7 @@ export function originalesHTTPHabilitados(env:PilotoEnv):boolean{
   env.COTIRONDA_PILOT_SUPABASE_URL===PILOT_URL&&
   env.COTIRONDA_PILOT_SUPABASE_PUBLISHABLE_KEY?.startsWith('sb_publishable_')===true&&
   env.COTIRONDA_PILOT_SUPABASE_SECRET_KEY?.startsWith('sb_secret_')===true&&
-  typeof sha==='string'&&SHA.test(sha)&&
+  typeof sha==='string'&&RELEASE_SHA.test(sha)&&
   env.VERCEL_GIT_COMMIT_SHA===sha;
 }
 
@@ -70,7 +70,7 @@ export function claimsDeJwtValidado(jwt:string,usuarioId:string,nowMs:number):
   if(!object(parsed)||parsed.iss!==PILOT_URL+'/auth/v1'||
      parsed.role!=='authenticated'||parsed.aud!=='authenticated'||
      parsed.sub!==usuarioId||!UUID.test(usuarioId)||
-     !UUID.test(parsed.session_id)||!Number.isSafeInteger(parsed.exp)||
+     (typeof parsed.session_id!=='string'||!UUID.test(parsed.session_id))||!Number.isSafeInteger(parsed.exp)||
      typeof parsed.exp!=='number'||parsed.exp*1000<=nowMs||
      parsed.exp*1000>Number.MAX_SAFE_INTEGER)return null;
   return Object.freeze({
