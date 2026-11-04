@@ -222,7 +222,7 @@ export function adaptarDocumentoMvp162(
   if(unitPrice===null)return grade(doc.anonId,'visible_no_comparable',
    true,[],[],['importe_sin_acreditar'],null);
   const base=round(unitPrice*milli(line.cantidadDisponible),1000n);
-  const gross=base+round(base*vat[proof.ivaExplicito],10000n);
+  const gross=base+round(base*vat[proof.ivaExplicito as IvaExplicito],10000n);
   if(gross!==totals.get(corresponding.lineNo))
    return grade(doc.anonId,'visible_no_comparable',
     true,[],[],['importe_no_conciliado'],null);
