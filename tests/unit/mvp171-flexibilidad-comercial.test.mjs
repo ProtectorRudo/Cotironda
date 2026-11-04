@@ -180,7 +180,7 @@ test('MVP171: comparador permite alternativa comercial con advertencia SIN compa
    equivalencia:'comercial_razonable',precioUnitarioNeto:amount,ivaPorcentaje:iva}]});
  const result=comparar(pedido,[offer('anon_a','100.00')]);
  assert.equal(result.cobertura[0].lineasCompletas,1);
- assert.equal(result.cobertura[0].lineas[0].advertencia,'variante_no_especificada_por_proveedor');
+ assert.equal(result.cobertura[0].lineas[0].advertencia,'alternativa_comercial_con_aclaracion');
  assert.equal(result.opcionesCompletas[0].advertencias[0].itemId,'arena_001');
  assert.equal(result.opcionesCompletas[0].totalFinal,'121.00');
  assert.equal(result.adjudicacionAutomatica,false);
@@ -230,7 +230,7 @@ test('MVP171: recomendación combinada conserva la advertencia del proveedor asi
  assert.equal(result.opcionesCompletas.length,1);
  assert.deepEqual(result.opcionesCompletas[0].proveedoresAnonimos,['anon_a','anon_b']);
  assert.deepEqual(result.opcionesCompletas[0].advertencias,
-  [{itemId:'arena_001',tipo:'variante_no_especificada_por_proveedor'}]);
+  [{itemId:'arena_001',tipo:'alternativa_comercial_con_aclaracion'}]);
  assert.equal(result.adjudicacionAutomatica,false);
 });
 
