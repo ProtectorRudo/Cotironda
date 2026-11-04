@@ -105,7 +105,7 @@ export function auditarCondicionesFuenteMvp167(
  if(!doc||!p||!HASH.test(hashBytesVerificado)||
   hashBytesVerificado!==doc.sourceSha256||p.sourceSha256!==doc.sourceSha256||
   p.requestId!==doc.requestId||p.messageHmac!==doc.messageHmac||
-  p.state!=='verified'||p.reason!=='covered'||p.version<9||
+  p.state!=='verified'||p.reason!=='covered'||!Number.isSafeInteger(p.version)||p.version<9||
   p.rankingAllowed!==false||p.revisionVigente!==true||p.cotizacionVigente!==true||
   !Array.isArray(doc.lineas)||p.lineCount!==doc.lineas.length||
   !Array.isArray(filas)||filas.length<1||filas.length>5000||
