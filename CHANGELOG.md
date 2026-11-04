@@ -1,3 +1,6 @@
+## MVP186 — Referencias de importe por artículo con seguimiento privado sin formularios (04/11/2026, desarrollo)
+- Se reutiliza selector de fuente privado MVP172/MVP175 y doble guardia de IVA/resumen MVP180; vínculo inequívoco de texto anónimo aprobado con la fuente v9. Componente Vercel muestra importes originales por artículo, presentaciones y salvedades sin generar puestos de ranking, contactos, stock, flete ni WhatsApps. La RPC MVP172 requerirá agregar una clave privada `publicText` y probar su instalación reversible antes del despliegue. Docs/306; issues #529/#535/#525.
+
 ## MVP185 — Convención para presupuestos que no mencionan IVA (04/11/2026, desarrollo)
 - Por regla comercial del usuario, el silencio IVA se presenta como **precio cotizado sin IVA solo para comparación de materiales**, sin inventar tasa fiscal. Módulo offline de comparación orientativa: fuentes v9+SHA, descuentos conciliados, cobertura de hasta dos proveedores, canasta completa, monedas separadas, sin líneas extra ocultas; no modifica ranking final MVP118 ni adjudica. Copia de seguimiento piloto explica convención sin desplegar. Pruebas con importes ficticios y fallos seguros. Docs/305.
 
