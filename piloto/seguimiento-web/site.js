@@ -90,11 +90,13 @@ function offerCard(title,body){
 }
 // MVP176: revoke all visible private details on an invalid token or outage.
 function clearPrivateView(){
- for(const id of ["offers","receipts","finalists","coverageGrid","economyGrid","itemPricesGrid","coverageOptionsCounts","coverageOptionsGrid"])el(id).replaceChildren();
+ for(const id of ["offers","receipts","finalists","coverageGrid","economyGrid","itemPricesGrid","pricedCoverageGrid","coverageOptionsCounts","coverageOptionsGrid"])el(id).replaceChildren();
  el("economySection").hidden=true;
  displayText("economyCaption","");
  el("itemPricesSection").hidden=true;
  displayText("itemPricesCaption","");
+ el("pricedCoverageSection").hidden=true;
+ displayText("pricedCoverageCaption","");
  el("coverageOptionsSection").hidden=true;
  displayText("coverageOptionsCaption","");
  el("resultsSection").hidden=true;
@@ -224,6 +226,90 @@ function showItemPrices(d){
   p.requested_items+" artículos del pedido. No son totales finales ni una clasificación de proveedores.");
  el("itemPricesSection").hidden=false;
 }
+// MVP194 — full-basket SOURCE AMOUNT coverage, not economic competitiveness.
+// Only CLOSED round and independently rechecked against the MVP186 projection.
+function showPricedCoverage(d){
+ const grid=el("pricedCoverageGrid");grid.replaceChildren();
+ el("pricedCoverageSection").hidden=true;
+ displayText("pricedCoverageCaption","");
+ const p=d?.priced_coverage,original=d?.item_prices;
+ if(d?.state!=="closed"||d?.can_open!==true||!p||!original||
+    p.state!=="cobertura_importes_sin_ranking"||
+    ["ranking_allowed","price_comparable","tax_calculated",
+     "freight_calculated","stock_confirmed","contacts_revealed",
+     "automatic_award","finalists_selected","whatsapp_sent",
+     "originals_downloadable"].some(k=>p[k]!==false)||
+    p.quotations!==d.offers?.length||
+    p.quotations!==original.quotations||
+    p.requested_items!==original.requested_items||
+    !Array.isArray(p.coberturaPorOferta)||
+    p.coberturaPorOferta.length!==p.quotations||
+    !Array.isArray(p.parejasConImportesParaTodos)||
+    p.parejasConImportesParaTodos.length>45)return;
+ const labels=d.offers.map(x=>x?.label);
+ if(labels.some(x=>typeof x!=="string"||!x)||
+    new Set(labels).size!==labels.length)return;
+ const items=original.articulos;
+ if(!Array.isArray(items)||items.length!==p.requested_items)return;
+ const sources=new Map(labels.map(label=>[label,new Set()]));
+ for(const item of items){
+  if(!/^item_\d{3}$/.test(item?.itemId)||!Array.isArray(item.referencias)||
+     item.referencias.length!==labels.length)return;
+  for(const r of item.referencias){
+   if(!sources.has(r.oferta))return;
+   if(r.importeCotizado!==null)sources.get(r.oferta).add(item.itemId);
+  }
+ }
+ if(!p.coberturaPorOferta.every((row,i)=>row&&
+    row.oferta===labels[i]&&row.articulosSolicitados===items.length&&
+    row.articulosConImporte===sources.get(row.oferta).size))return;
+ const possibilities=[];
+ for(let i=0;i<labels.length;i++)for(let j=i+1;j<labels.length;j++){
+  const left=sources.get(labels[i]),right=sources.get(labels[j]);
+  if(left.size===items.length||right.size===items.length||
+     items.some(item=>!left.has(item.itemId)&&!right.has(item.itemId))||
+     !items.some(item=>left.has(item.itemId)&&!right.has(item.itemId))||
+     !items.some(item=>right.has(item.itemId)&&!left.has(item.itemId)))continue;
+  possibilities.push([labels[i],labels[j]]);
+ }
+ if(possibilities.length!==p.parejasConImportesParaTodos.length||
+    !p.parejasConImportesParaTodos.every((pair,i)=>{
+     const expected=possibilities[i];
+     return pair&&Array.isArray(pair.ofertasAnonimas)&&
+      pair.ofertasAnonimas.length===2&&
+      pair.ofertasAnonimas[0]===expected[0]&&
+      pair.ofertasAnonimas[1]===expected[1]&&
+      Array.isArray(pair.articulos)&&pair.articulos.length===items.length&&
+      pair.articulos.every((line,j)=>line?.itemId===items[j].itemId&&
+       Array.isArray(line.ofertasConImporte)&&
+       line.ofertasConImporte.join("|")===expected.filter(id=>
+        sources.get(id).has(line.itemId)).join("|"));
+    }))return;
+ for(const row of p.coberturaPorOferta){
+  const card=element("div","itemprices-card");
+  card.append(element("strong","",row.oferta),
+   element("p","itemprices-request",row.articulosConImporte+" de "+
+     row.articulosSolicitados+" artículos con importes originales vinculados."+
+     (row.articulosConImporte===row.articulosSolicitados?
+       " Aun así, no hay precio final comparable.":"")));
+  grid.appendChild(card);
+ }
+ for(const pair of p.parejasConImportesParaTodos){
+  const card=element("div","itemprices-card");
+  card.append(element("strong","",pair.ofertasAnonimas.join(" + ")),
+   element("p","itemprices-request",
+    "Estas dos ofertas reúnen importes respaldados para todos los artículos. "+
+    "No se sumaron importes ni se eligió quién suministra cada material."));
+  grid.appendChild(card);
+ }
+ displayText("pricedCoverageCaption",
+  "Ronda cerrada · "+p.quotations+" presupuestos revisados. "+
+  p.parejasConImportesParaTodos.length+
+  " combinaciones complementarias con referencias de importe para toda la lista. "+
+  "Se muestran todas las ofertas; ninguna se adjudica automáticamente.");
+ el("pricedCoverageSection").hidden=false;
+}
+
 // MVP189 — only closed-round *coverage possibilities*. No economic ranking.
 function showCoverageOptions(d){
  const counts=el("coverageOptionsCounts"),grid=el("coverageOptionsGrid");
@@ -426,6 +512,7 @@ function render(data){
  showCoverage(d);
  showEconomy(d);
  showItemPrices(d);
+ showPricedCoverage(d);
  showCoverageOptions(d);
  if(d.state==="cancelled"){
   el("resultsSection").hidden=true;displayText("resultsCaption","");
