@@ -144,14 +144,12 @@ test('MVP186: contradicción o IVA incluido no homologado retiene oferta, sin pr
   assert.equal(r.articulos[0].referencias[1].importeCotizado,'$ 90,00');
  }
 });
-test('MVP186: si la unidad fuente no se acredita, no publica un precio por artículo',()=>{
+test('MVP186: ubicación de fuente ausente invalida la proyección sin filtrar importes',()=>{
  const p=sample();
  p.quotations[0].fuente.lines[0].page=null;
- const r=summarize(tracking(),p);
- assert.ok(r);
- assert.equal(r.articulos[0].referencias[0].importeCotizado,null);
- assert.equal(r.articulos[0].referencias[0].estado,'sin_importe_asignable');
- assert.equal(r.articulos[1].referencias[0].importeCotizado,'$ 200,00');
+ // The line no longer has the same independently accredited page/row as
+ // the source discount auditor. Do not silently publish a different amount.
+ assert.equal(summarize(tracking(),p),null);
 });
 test('MVP186: verificador descarta adulteración de precios, cantidades y posición original',()=>{
  for(const modify of [
