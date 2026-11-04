@@ -26,5 +26,17 @@ Nunca consultar ni mostrar el secreto del Vault. Nunca utilizar un `publishable 
 
 **Importante:** los datos del archivo son no confiables. Todo resultado permanece **diagnóstico**, no habilita neto fiscal, IVA cero, flete gratis, stock ni ranking; MVP166/MVP167 devuelven `rankingAllowed=false`. Sin ranking de dos ganadores ni liberación de contactos.
 
-## Resultado
-Se deben anotar aquí el commit/PR, Deno y tests, versión desplegada en staging, HTTP y cantidad real en tabla de hechos económicos antes de declarar que la lectura original funcionó. Sin esos resultados la prueba **NO está terminada**.
+## Resultado real verificado — 04/11/2026 (PILOTO)
+
+- **GitHub:** PR #545, workflow CI **6 de 6 aprobados**, Deno real PASS y **1.938/1.938** pruebas unitarias PASS, con 11 escenarios MVP169.
+- **Edge staging:** `cotironda-piloto-economic-staging` **v2 ACTIVE**, `verify_jwt=false` con **autenticación interna obligatoria** por token 96 hex de Vault validado por RPC. El recuperador operativo `cotironda-piloto-document-recovery` **permanece v25**, sin reemplazo.
+- **Prueba no autorizada:** petición de `pg_net` 269 sin token: **HTTP 401 `unauthorized`**, 0 datos procesados.
+- **Cuatro invocaciones autorizadas one-shot:** solicitudes 271, 272, 273 y 274; **las cuatro HTTP 200 `economic_facts_recorded`**, con token enviado directamente desde Vault a la cabecera interna SQL, **sin mostrar el valor**.
+- **Resultados privados:** 4 registros de `supplier_economic_facts_mvp168` (`source_checked`), **3 PDF y 1 Excel**, total **10 de 10 precios unitarios comerciales conciliados** (renglones 2+3+3+2), 0 pendientes; el selector responde `none`. No se escribieron detalles del original en la proyección pública.
+- **Condiciones:** IVA `no_informado` en los 4 documentos; un PDF con flete `a_convenir`, otros tres sin flete informado. Tres PDF declaran pago al contado, Excel no informa pago.
+- **Seguridad:** `rankingAllowed=false` en los 4; **0 finalistas activados, 0 mensajes en outbox de finalistas, 0 cron para staging**. La evidencia documental previa se mantiene: 4 fuentes v9 + 4 hechos MVP163.
+- **Idempotencia:** la RPC de escritura ya pasó smoke SQL reversible, y el ledger usa clave primaria de mensaje sin actualización; las 4 invocaciones procesaron **cuatro documentos diferentes**, no constituyen por sí solas una prueba de reenvío del mismo mensaje.
+- **Sin publicación en producción**, no se activaron contactos ni ranking. El procesamiento fue real de archivo desde Storage en PILOTO; no sustituye el E2E desde nuevo WhatsApp ni la comprobación fiscal/stock/flete.
+
+**Conclusión:** cierre de la subetapa de lectura económica de origen MVP168/169. Mantener #535 abierto para obtener netos fiscales comparables, condiciones y ranking verdadero antes de activar finalistas.
+
