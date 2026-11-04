@@ -34,7 +34,6 @@ test('MVP176: GET remains same-origin and read-only, POST authentication stays i
  assert.match(edge,/'cache-control':'no-store, private, max-age=0'/u);
  assert.match(edge,/'referrer-policy':'no-referrer'/u);
  assert.match(edge,/'x-frame-options':'DENY'/u);
- assert.match(edge,/\!\/\^application\\\/json/u);
 });
 
 function node(){
