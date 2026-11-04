@@ -1,3 +1,6 @@
+## MVP178 — Precondición privada de originales al cierre (04/11/2026, desarrollo)
+- Política inicialmente OFF, consentimiento individual con prueba de mensaje y revocación, barrera no retroactiva y preflight SQL solo service_role, sin URLs/documentos ni cambios a WhatsApp. Ensayo real BEGIN/ROLLBACK PostgreSQL 17 PILOTO y confirmación de ausencia de tablas/función después. 8 pruebas nuevas, 2.058/2.058 unitarias PASS. Docs/298, PR #554.
+
 ## MVP177 — Resultados de cierre no excluyentes (04/11/2026, desarrollo)
 - Nueva sección de cierre del comprador: conserva todas las ofertas habilitadas, muestra cuántas de las recibidas están visibles, advierte pendientes y no elimina parciales ni obliga a comprar recomendados. Respeta revocación, ausencia de autorización y conteos desconocidos; pruebas sintéticas de 4 y 30 ofertas y estados de privacidad. Sin acceso a originales, ranking, base, WhatsApp o producción; ver docs/297.
 
