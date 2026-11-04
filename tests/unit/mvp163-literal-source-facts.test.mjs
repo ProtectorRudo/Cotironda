@@ -136,3 +136,13 @@ test('MVP163: fuente alterada por 1 byte impide todo registro',async()=>{
  });
  assert.equal(state,'failed');assert.equal(recorded,false);
 });
+
+test('MVP164: lector fuente reconoce BIG BIAG como errata comercial, no volumen explícito',()=>{
+ const p=make('BIG BIAG de Arena',null,'1,00');
+ const facts=extractLiteralFactsMvp163(p,rows(
+  '1,00 BIG BIAG de Arena $ 100,00 $ 300,00','TOTAL $ 300,00'));
+ assert.equal(facts.state,'source_checked');
+ assert.equal(facts.lines[0].presentation,'big_bag');
+ assert.equal(facts.lines[0].unitStatus,'not_explicit');
+ assert.equal(facts.rankingAllowed,false);
+});
