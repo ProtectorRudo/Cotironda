@@ -39,7 +39,7 @@ La prueba documental v9 es la identidad de cotización; una revisión posterior 
 
 ## Actualización comprobada el 04/11/2026 — instalación PILOTO, sin ejecución económica real
 
-La primera prueba reversibile `BEGIN/ROLLBACK` aprobó, luego se instaló el esquema privado en `cotironda-piloto` mediante migración aditiva, con ACL/RLS comprobados y smoke reversible PASS. Se desplegó una Edge de staging v1 protegida por JWT y sin cron. La Edge documental habitual sigue v25. El ledger tiene 0 registros económicos; **ningún presupuesto real fue procesado por MVP168**. Ver [docs/287](287-mvp168-verificacion-real-piloto-sql-stage.md). El apartado histórico siguiente describe la situación de desarrollo antes de esta verificación.
+La primera prueba reversible `BEGIN/ROLLBACK` aprobó, luego se instaló el esquema privado en `cotironda-piloto` mediante migración aditiva, con ACL/RLS comprobados y smoke reversible PASS. Se desplegó una Edge de staging v1 protegida por JWT y sin cron. La Edge documental habitual sigue v25. El ledger tiene 0 registros económicos; **ningún presupuesto real fue procesado por MVP168**. Ver [docs/287](287-mvp168-verificacion-real-piloto-sql-stage.md). El apartado histórico siguiente describe la situación de desarrollo antes de esta verificación.
 
 ## Instalación futura (NO ejecutada)
 
