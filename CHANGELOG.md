@@ -1,3 +1,6 @@
+## MVP190 — Transporte de originales protegidos con verificación de bytes SHA (04/11/2026, solo desarrollo)
+- Nuevo manejador HTTP fail-closed, sin endpoint abierto ni despliegue, para descargar documentos PDF/Excel/Word/imagen auténticos con sesión/empresa y consentimiento documental específicos, evidencia vigente y lectura privada de Storage. SHA-256 de bytes reales y segunda verificación de revocación tras I/O; headers privados, sin URL pública ni PII. Se cierra además el caso de consentimiento anterior a ronda/política. Falta puente de identidad Auth PILOTO, selector privado/almacenamiento y E2E nuevo. Docs/310, #525.
+
 ## MVP189 — Combinaciones comerciales de hasta dos proveedores después del cierre (04/11/2026, desarrollo)
 - Nuevo módulo fuente verificada v9 que proyecta combinaciones de cobertura uno/dos proveedores **sin dinero, puestos ni ganadores** y preserva todas las ofertas parciales. Solo con enlace del comprador autorizado tras cierre y doble guardia privado de seguimiento/cobertura/economía; saneamiento adicional Edge/Vercel/UI, revocación y anonimato. Suite de combinaciones y seguridad. No implementa IVA/flete/stock final, no despliega piloto ni WhatsApp. Docs/309.
 
