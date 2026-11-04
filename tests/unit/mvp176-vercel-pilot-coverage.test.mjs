@@ -129,7 +129,7 @@ test("MVP176: a stale network error cannot erase a newer valid response",async()
  release({error:true});
  await new Promise(resolve=>setTimeout(resolve,0));
  assert.equal(page.node("offers").children.length,1);
- assert.equal(page.node("state").textContent,"Ronda abierta · presupuestos anónimos");
+ assert.equal(page.node("state").textContent,"Ronda abierta · presupuestos anónimos disponibles");
 });
 
 test("MVP176: finalistas are never rendered when can_open is false",async()=>{
@@ -147,5 +147,14 @@ test("MVP176: BIG BAG y bolsón se explican como presentación nominal usual de 
   assert.match(page.node("equivalence").textContent,/1 m³ nominal/);
   assert.match(page.node("equivalence").textContent,/capacidad distinta/);
   assert.doesNotMatch(page.node("equivalence").textContent,/Presentación a confirmar/);
+ }
+});
+
+test("MVP176: no presenta ofertas como disponibles cuando no están habilitadas",async()=>{
+ for(const state of ["waiting","closed"]){
+  const page=await simulate([{...allowed(),state,can_open:false}]);
+  assert.match(page.node("state").textContent,/esperando presupuestos verificados|sin presupuestos habilitados/);
+  assert.equal(page.node("offers").children.length,0);
+  assert.equal(page.node("finalists").children.length,0);
  }
 });
