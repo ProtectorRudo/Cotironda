@@ -46,3 +46,15 @@ footer{font-size:12px;color:#777;margin-top:18px;text-align:center}
  .offer-item-values{grid-template-columns:repeat(2,minmax(0,1fr))}
  .offer-subtotal{grid-column:1 / -1}
 }
+
+/* MVP176 — Cobertura agregada sin confundir artículos con puestos de precios. */
+[hidden]{display:none!important}
+.coverage-panel{border:1px solid #dce5ef;border-radius:12px;padding:20px;margin:18px 0;background:#f8fbff}
+.coverage-panel h2{margin:0 0 8px;font-size:17px;letter-spacing:-.02em;color:#193350}
+.coverage-caption{font-size:13px;color:#617389;line-height:1.5;margin:0 0 14px}
+.coverage-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:9px}
+.coverage-metric{display:flex;align-items:center;gap:10px;padding:13px;border:1px solid #dbe5ed;border-radius:9px;background:white}
+.coverage-metric strong{font-size:22px;color:#193b59;font-variant-numeric:tabular-nums}
+.coverage-metric span{font-size:12px;line-height:1.4;color:#536677}
+.coverage-note{color:#596b80;font-size:12px;line-height:1.65;margin:16px 0 0}
+@media(max-width:560px){.coverage-panel{padding:16px}.coverage-grid{grid-template-columns:1fr 1fr}.coverage-metric{padding:10px;gap:7px}}
