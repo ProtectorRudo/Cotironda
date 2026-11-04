@@ -51,7 +51,7 @@ test("MVP146: static pilot page is CSP constrained; no token in GET URLs",()=>{
 test("MVP179: legacy buyer link redirects to verified pilot Preview without a token in Location",()=>{
   const src=readFileSync(new URL("../../supabase/functions/cotironda-piloto-seguimiento/index.ts",import.meta.url),"utf8");
   assert.match(src,/status:302/);
-  assert.ok(src.includes('https://cotironda-seguimiento-vista-piloto-8bfvf7vu1.vercel.app/seguimiento'));
+  assert.ok(src.includes('https://cotironda-seguimiento-vista-piloto-boqnfg2gk.vercel.app/seguimiento'));
   assert.ok(!src.includes('https://cotironda-seguimiento-vista-piloto.vercel.app/seguimiento'));
   assert.doesNotMatch(src,/Location:[^\n]*#\$\{/);
   assert.match(src,/if\(req\.method!==\x27POST\x27\)/);
