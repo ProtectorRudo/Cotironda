@@ -14,9 +14,12 @@ const rollback=readFileSync(new URL(
 
 test('MVP188: readiness SQL es exclusivamente de SOLO LECTURA',()=>{
  const noComments=sql.replace(/^\s*--.*$/gmu,'');
- assert.match(noComments,/^\s*WITH\s+tokens\s+AS\s+MATERIALIZED/iu);
- assert.doesNotMatch(noComments,/\b(?:CREATE|ALTER|INSERT|UPDATE|DELETE|TRUNCATE|DROP|GRANT|REVOKE|COPY|EXECUTE|CALL|DO|PERFORM)\b/iu);
- assert.doesNotMatch(noComments,/\b(?:pg_sleep|dblink|http_post|net\.http_post|pg_notify)\s*\(/iu);
+ // SQL ACL checks legitimately contain the *string* 'EXECUTE'.
+ // Strip quoted literals before detecting executable SQL statements.
+ const executableSql=noComments.replace(/'(?:''|[^'])*'/gu,"''");
+ assert.match(executableSql,/^\s*WITH\s+tokens\s+AS\s+MATERIALIZED/iu);
+ assert.doesNotMatch(executableSql,/\b(?:CREATE|ALTER|INSERT|UPDATE|DELETE|TRUNCATE|DROP|GRANT|REVOKE|COPY|EXECUTE|CALL|DO|PERFORM)\b/iu);
+ assert.doesNotMatch(executableSql,/\b(?:pg_sleep|dblink|http_post|net\.http_post|pg_notify)\s*\(/iu);
  assert.match(sql,/production_or_whatsapp_authorized/iu);
  assert.match(sql,/false AS production_or_whatsapp_authorized/iu);
 });
