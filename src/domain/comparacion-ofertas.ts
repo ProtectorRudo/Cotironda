@@ -15,7 +15,7 @@ export type PedidoComparable = Readonly<{
 }>;
 export type LineaOfertaConfirmada = Readonly<{
   itemId:string;unidad:UnidadCotizada;cantidadDisponible:string;
-  equivalencia:'verificada'|'sin_verificar'|'incompatible';
+  equivalencia:'verificada'|'comercial_razonable'|'sin_verificar'|'incompatible';
   precioUnitarioNeto:string|null;ivaPorcentaje:IvaExplicito|null;
 }>;
 export type OfertaComparable = Readonly<{
@@ -28,7 +28,7 @@ export type CoberturaProveedor = Readonly<{
   anonId:string;confirmada:boolean;lineasCompletas:number;lineasTotales:number;
   lineas:readonly Readonly<{
     itemId:string;unidad:UnidadCotizada;solicitada:string;cotizable:string;
-    completa:boolean;motivo:string|null
+    completa:boolean;motivo:string|null;advertencia?:'variante_no_especificada_por_proveedor'
   }>[];
   totalComparable:string|null;motivos:readonly string[];
 }>;
@@ -37,6 +37,8 @@ export type OpcionComparacion = Readonly<{
   moneda:MonedaCotizada;formaPago:FormaPago;plazoEntregaDias:number;
   totalFinal:string;materialesConIva:string;fletesFinal:string;
   puestoDentroDeCondiciones:number|null;grupoCondiciones:string;
+  /** Alternative material is commercially plausible, NOT identical. */
+  advertencias?:readonly Readonly<{itemId:string;tipo:'variante_no_especificada_por_proveedor'}>[];
 }>;
 export type ResultadoComparacion = Readonly<{
   estado:'comparacion_offline_sin_adjudicacion';
@@ -83,7 +85,7 @@ function qty(v:bigint):string{
 function roundDiv(n:bigint,d:bigint):bigint{return (n+d/2n)/d}
 function validLine(q:Q,item:Item):Line|null{
   const v=q.lines.get(item.id);
-  return v&&v.equivalencia==='verificada'&&v.unidad===item.unidad?v:null;
+  return v&&['verificada','comercial_razonable'].includes(v.equivalencia)&&v.unidad===item.unidad?v:null;
 }
 function linePrice(v:Line,quantity:bigint):bigint|null{
   if(v.neto===null||v.iva===null)return null;
@@ -107,7 +109,7 @@ function buildOffer(raw:OfertaComparable,items:Item[],ids:Set<string>):Q{
     exactKeys(v,['itemId','unidad','cantidadDisponible','equivalencia','precioUnitarioNeto','ivaPorcentaje']);
     if(!id(v.itemId)||!known.has(v.itemId)||seen.has(v.itemId)||
       !UNIDADES.has(v.unidad)||
-      !['verificada','sin_verificar','incompatible'].includes(v.equivalencia)||
+      !['verificada','comercial_razonable','sin_verificar','incompatible'].includes(v.equivalencia)||
       !(v.ivaPorcentaje===null||Object.hasOwn(IVA,v.ivaPorcentaje)))error();
     seen.add(v.itemId);
     const q=dec(v.cantidadDisponible,3);
@@ -201,11 +203,14 @@ export function compararCotizacionesOffline(pedido:PedidoComparable,
       let motivo:string|null=null;
       if(!q.src.confirmada)motivo='oferta_no_confirmada';
       else if(!source)motivo='item_no_cotizado';
-      else if(source.equivalencia!=='verificada')motivo='equivalencia_no_verificada';
+      else if(!['verificada','comercial_razonable'].includes(source.equivalencia))motivo='equivalencia_no_verificada';
       else if(source.unidad!==item.unidad)motivo='unidad_diferente';
       else if(offered<item.q)motivo='cantidad_insuficiente';
       return {itemId:item.id,unidad:item.unidad,solicitada:qty(item.q),
-        cotizable:qty(offered),completa:offered===item.q,motivo};
+        cotizable:qty(offered),completa:offered===item.q,motivo,
+        ...(valid?.equivalencia==='comercial_razonable'?{
+         advertencia:'variante_no_especificada_por_proveedor' as const
+        }:{})};
     });
     const full=lines.filter(x=>x.completa).length;
     const reasons:string[]=[];
@@ -244,11 +249,17 @@ export function compararCotizacionesOffline(pedido:PedidoComparable,
   const options:OpcionComparacion[]=candidates.map(c=>{
     if(c.group!==lastGroup){lastGroup=c.group;lastTotal=null;rank=0}
     if(lastTotal===null||lastTotal!==c.total){rank++;lastTotal=c.total}
+    const warnings=items.flatMap((item,i)=>{
+      const q=qs.find(q=>q.src.anonId===c.assignment[i]);
+      return q?.lines.get(item.id)?.equivalencia==='comercial_razonable'
+       ?[{itemId:item.id,tipo:'variante_no_especificada_por_proveedor' as const}]:[];
+    });
     return {proveedoresAnonimos:c.ids,asignacion:items.map((x,i)=>({itemId:x.id,anonId:c.assignment[i]})),
       moneda:c.currency,formaPago:c.pay,plazoEntregaDias:c.days,totalFinal:money(c.total),
       materialesConIva:money(c.materials),fletesFinal:money(c.freight),
       grupoCondiciones:c.group,
-      puestoDentroDeCondiciones:(groupCounts.get(c.group)??0)>1?rank:null};
+      puestoDentroDeCondiciones:(groupCounts.get(c.group)??0)>1?rank:null,
+      ...(warnings.length?{advertencias:warnings}:{})};
   });
   return {estado:'comparacion_offline_sin_adjudicacion',cobertura:coverage,
     opcionesCompletas:options,gruposComparables:groupCounts.size,
