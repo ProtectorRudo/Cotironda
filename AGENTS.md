@@ -1,5 +1,7 @@
 # AGENTS.md — Contrato técnico de Cotironda
 
+> **MVP168 / 04-11-2026 (solo rama de desarrollo):** enlazado lector de originales con pruebas económicas MVP166/167 y ledger privado append-only propuesto. Verificar bytes originales y SHA v9 siempre; activar worker solo con RPCs privadas probadas y flag explícito; no suponer que el SQL o Edge está instalado. `rankingAllowed=false`; no contactos, cierre ni originales públicos. Ver docs/286, Issue #535.
+
 > **MVP167 / 04-11-2026 (solo desarrollo):** el auditor de IVA, flete y pago únicamente devuelve declaraciones categóricas de fuente v9 y SHA comprobados, con página/fila, nunca un precio final. Diferenciar IVA incluido/excluido/tasa sin base, flete incluido/gratis/adicional/no definido y pagos alternativos. No inventar IVA=0, costo logístico=0 o stock. No producir TerminosAuditados ni ranking sin evidencias adicionales. Ver docs/285, Issue #535.
 
 > **MVP166 / 04-11-2026 (solo desarrollo):** al auditar descuentos, exigir extracción de archivo privado verificado por SHA de bytes, coincidencia de renglón/importe, tasas explícitas y conciliación centavo a centavo. El precio comercial tras descuento NO es automáticamente neto fiscal ni habilita IVA, stock, flete o ranking. No exponer texto original, hash ni contactos. Ver docs/284 e Issue #535.

@@ -10,6 +10,7 @@ import {diagnoseOneStoredQuote} from './quote-reconciliation.ts';
 import {correctArchivedSupplierRole} from './supplier-role-recovery.ts';
 import {auditStoredSupplierQuote} from './supplier-evidence.ts';
 import {auditStoredSourceFactsMvp163} from './source-facts.ts';
+import {auditarOriginalEconomicoMvp168} from './source-economics-mvp168.ts';
 import {guardScheduledRecovery} from './scheduled-auth.ts';
 import {dispatchPendingPilotSupplierPdfs} from './whapi-dispatch.ts';
 const REF='ilggkalaafhtiysyzlmg';
@@ -125,6 +126,25 @@ Deno.serve(async(req)=>{
        return {data,error};
       }
     }),
+    // Disabled by default. Requires audited PRIVATE RPCs + ledger installed
+    // before turning this isolated pilot flag on. No automatic deployment.
+    ...(Deno.env.get('COTIRONDA_PILOT_ECONOMIC_FACTS_ENABLED')==='true'?{
+     economics:async()=>auditarOriginalEconomicoMvp168({
+      lookup:async()=>{
+       const {data,error}=await db.rpc('cotironda_piloto_next_economic_facts_mvp168');
+       return {data,error};
+      },
+      download:async(path)=>{
+       const {data,error}=await db.storage.from('cotironda-piloto-originals')
+        .download(path);
+       return {data,error};
+      },
+      record:async(params)=>{
+       const {data,error}=await db.rpc('cotironda_piloto_record_economic_facts_mvp168',params);
+       return {data,error};
+      }
+     })
+    }:{}),
     review:async()=>diagnoseOneStoredQuote({
      lookup:async()=>{
       const {data,error}=await db.rpc('cotironda_piloto_next_reconciliation_mvp134');

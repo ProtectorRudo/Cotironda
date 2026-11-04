@@ -8,6 +8,7 @@ type IO={
  reclassify?:()=>Promise<'none'|'reclassified_private'|'failed'>;
  audit?:()=>Promise<'none'|'verified_anonymous'|'needs_source_review'|'failed'>;
  sourceFacts?:()=>Promise<'none'|'facts_recorded'|'failed'>;
+ economics?:()=>Promise<'none'|'economic_facts_recorded'|'failed'>;
 };
 const TOKEN=/^[a-f0-9]{64}$/u;
 const isRecord=(v:unknown):v is Record<string,unknown>=>
@@ -45,6 +46,13 @@ export async function runRecoveryService(
    const facts=await io.sourceFacts();
    if(facts==='failed')return response(503,'source_facts_unavailable');
    if(facts==='facts_recorded')return response(200,'source_facts_recorded');
+  }
+  // Optional, separately gated. No economic proof becomes ranking or contacts.
+  if(x.data.state==='none'&&io.economics){
+   const checked=await io.economics();
+   if(checked==='failed')return response(503,'economic_facts_unavailable');
+   if(checked==='economic_facts_recorded')
+    return response(200,'economic_facts_recorded');
   }
   if(x.data.state==='none'||x.data.state==='disabled')
    return response(200,'no_eligible_document');
