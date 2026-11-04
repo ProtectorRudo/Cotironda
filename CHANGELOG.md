@@ -1,3 +1,6 @@
+## Originales — conexión privada de identidad, catálogo y descarga (04/11/2026, SOLO desarrollo)
+- Nuevo adaptador servidor `src/server/originales-piloto-conexion-segura.ts`: vincula Auth y sesión PILOTO al RPC autenticado MVP191, consulta MVP192 con servicio privado, proyecta lista segura de **todos** los documentos consentidos y deriva descarga a MVP190 con SHA de bytes y doble revalidación post-I/O. Crea pruebas de acceso positivo simulado, aislamiento, cambio de sesión, revocación, fuente cambiada, falta de consentimiento, archivo adulterado y flag OFF. No crea endpoint ni despliega SQL/Supabase/WhatsApp/producción; #525/#529 abiertos. Docs/314.
+
 ## Seguimiento — aislamiento al cambiar token privado (04/11/2026, solo desarrollo)
 - Corregida transición segura entre enlaces de distintas rondas en una misma pestaña: borrado inmediato, rechazo de respuestas antiguas, recuperación de token revocado solo mediante hash nuevo y ausencia de consultas con token inválido. Se agregaron seis pruebas de carrera, revocación, pérdida de conexión y privacidad. Sin despliegue ni WhatsApp. Docs/313; #528/#529 siguen abiertos hasta E2E real.
 
