@@ -27,7 +27,7 @@ export function proyectarCatalogoOriginalesMvp192(raw:unknown):
  CatalogoOriginalesMvp192|null{
  if(!object(raw)||raw.state!=='authorized_catalog'||
     !Array.isArray(raw.originals)||
-    !Number.isSafeInteger(raw.total)||
+    typeof raw.total!=='number'||!Number.isSafeInteger(raw.total)||
     raw.total!==raw.originals.length||
     raw.total<0||raw.total>100)return null;
  const used=new Set<string>();
