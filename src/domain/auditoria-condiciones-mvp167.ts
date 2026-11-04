@@ -50,7 +50,8 @@ function fr(note:string):{estado:Exclude<EstadoFleteMvp167,'no_informado'>;impor
  if(!/\b(?:flete|envio|transporte|entrega)\b/u.test(s)||uncertain.test(note))return null;
  const isAgree=/\b(?:flete|envio|transporte|entrega)\s+(?:a convenir|a cotizar|a definir)\b/u.test(s);
  const free=/(?:\b(?:flete|envio|transporte|entrega)\s+(?:sin cargo|gratis|gratuito)\b|\b(?:sin cargo|gratis)\s+(?:el\s+)?(?:flete|envio|transporte)\b)/u.test(s);
- const included=/(?:\b(?:flete|envio|transporte)\s+incluido\b|\b(?:incluye|incluido|con)\s+(?:el\s+)?(?:flete|envio|transporte)\b)/u.test(s);
+ const withoutNegation=s.replace(/\bno\s+incluye\s+(?:el\s+)?(?:flete|envio|transporte)\b/gu,'');
+ const included=/(?:\b(?:flete|envio|transporte)\s+incluido\b|\b(?:incluye|incluido|con)\s+(?:el\s+)?(?:flete|envio|transporte)\b)/u.test(withoutNegation);
  const additional=/(?:\b(?:flete|envio|transporte)\s+(?:adicional|aparte|no incluido|a cargo del comprador)\b|\b(?:no incluye|sin)\s+(?:el\s+)?(?:flete|envio|transporte)\b)/u.test(s);
  const count=[isAgree,free,included,additional].filter(Boolean).length;
  if(count>1)return {estado:'contradictorio',importe:null};
