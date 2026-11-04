@@ -1,6 +1,6 @@
 # AGENTS.md — Contrato técnico de Cotironda
 
-> **MVP174 SOLO DESARROLLO:** cemento e hidrófugo con peso/volumen por envase, sin inventar stock ni IVA. 2.008 tests y 6/6 CI OK; Edge staging v1 NO actualizada. Docs/293, PR #549.
+> **MVP174 (PILOTO staging v2 desplegada; autenticación completa pendiente):** cemento e hidrófugo con peso/volumen por envase, sin inventar stock ni IVA. 2.011 tests y 6/6 CI PASS; Edge staging **v2 ACTIVE**, 401 sin token/con token falso. SQL real sin revelar PII: 9 coincidencias de volumen/masa y 1 presentación ausente. La llamada autorizada del TypeScript no se completó porque el control de seguridad bloqueó acceso al token de Vault; NO afirmar E2E v2. Docs/293, PR #549.
 
 > **MVP173 (04/11/2026, PILOTO comprobado):** RPC read-only v172 instalada SOLO en `cotironda-piloto` y Edge `cotironda-piloto-round-preview-staging` v1 JWT OFF con autenticación Vault dentro del código, sin cron. Solicitud sin token HTTP 401; 2 rondas/4 ofertas/5 artículos comprobados vía TS MVP172, 4 alternativas comerciales razonables, 6 `no_aplica` (aún sin cotejo genérico, no incompatibles), sin ranking, contactos, originales públicos ni WhatsApp. Recuperador v25 intacto. Ver docs/292, PR #548.
 
