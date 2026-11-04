@@ -1,3 +1,6 @@
+## MVP164 — Bolsón/BIG BAG de áridos ≈ 1 m³ nominal comercial
+- Regla comercial argentina del proyecto: un bolsón estándar de árido es 1 m³ nominal, con tamaño expreso prioritario. Se distingue variante genérica de arena fina/piedra partida, sin asumir IVA/flete/stock ni alterar documentos. Módulo puro y tests; propuesta privada en PILOTO; docs/282, Issue #538. No adjudica.
+
 ## MVP163 — Segunda lectura de unidades y condiciones desde fuente PDF/XLSX
 - Auditoría privada append-only de originales fuente-verificados v9, con unit literal separado de producto, presentaciones BIG BAG, pistas de términos, localizadores y SHA; no inventa m³/IVA/flete ni activa ranking. Recuperador un archivo por tick. Issue #536, docs/281. PILOTO aislado.
 
