@@ -1,3 +1,6 @@
+## MVP176 — Seguimiento Supabase same-origin (desarrollo, 04/11/2026)
+- Detectado el redirect fijo del enlace WhatsApp hacia un Vercel viejo: en Preview HTTP 200 para `/seguimiento` pero contenido antiguo y 404 de assets/API. En desarrollo GET del tracking devuelve HTML/CSS/JS completos desde la misma Edge; POST sigue privado por hash y rol comprador; limpieza también del contador/fecha al revocar/fallar. Sin activar finalistas, ranking, originales o mensajes. Tests + docs/295; CI y smoke piloto pendientes.
+
 ## MVP175 — Resumen seguro de cobertura en seguimiento del comprador (desarrollo)
 - Nuevo selector privado por hash del enlace comprador, con validación independiente de consentimiento, revocación y vencimiento, service_role-only. Edge de seguimiento existente reduce fuentes MVP172/174 a conteos agregados y UI de Cotironda muestra alternativas, envases no acreditados, no evaluados y diferencias; sin precios, ranking o identidad. Smoke PostgreSQL 17 con BEGIN/ROLLBACK y POST-instalación SOLO en cotironda-piloto: 2/2 rondas, 4 ofertas, 5 artículos; anon/auth denegados, token falso not_found; 0 mensajes/finalistas. **2.028/2.028 unitarios y 6/6 GitHub CI PASS**. Docs/294; Edge de seguimiento y web del comprador todavía NO desplegadas ni publicadas.
 
