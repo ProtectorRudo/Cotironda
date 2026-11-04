@@ -167,7 +167,7 @@ begin
   where f.message_hmac=p_message_hmac)
  then return jsonb_build_object('state','already_checked');end if;
  if p_state='unreadable' then
-  if p_facts->'descuentos' is not null or p_facts->'condiciones' is not null
+  if p_facts->>'descuentos' is not null or p_facts->>'condiciones' is not null
    then return jsonb_build_object('state','invalid');end if;
  else
   if jsonb_typeof(p_facts->'descuentos')<>'object'
