@@ -1,3 +1,6 @@
+## MVP181 — ACK diferido de archivos del proveedor, sin retroactividad (04/11/2026, desarrollo)
+- Recuperación documental opcional puede agradecer una vez después de registrar una cotización nueva PDF/Excel/imagen, con reserva SQL por mensaje y reuso de ledger de entrega; respuesta Whapi incierta terminal, sin renegociación de importes. Política DB inicialmente OFF, activación con reloj servidor y flag Edge independiente, ambas sin habilitar. SQL real BEGIN/ROLLBACK en PILOTO: cuatro presupuestos históricos bloqueados y 0 ACK; 11 pruebas de unidad creadas. Docs/301, issue #526.
+
 ## MVP180 — Resumen económico anónimo para el comprador (04/11/2026, desarrollo)
 - SQL privado service_role-only con token buyer y comparación exacta multiconjunto de ofertas habilitadas contra fuente v9/SHA, sin revelar nombres ni precios normalizados. Prueba BEGIN/ROLLBACK en PostgreSQL 17 PILOTO: 2 resúmenes/4 ofertas; IVA 4 sin informar, flete 3 no informado + 1 a convenir, stock 4 sin corroborar; RPC luego instalada SOLO en PILOTO con permisos anon/auth revocados y service_role habilitado; Edge económica en staging (9 archivos) con smoke GET/POST falso aprobado. Frontend y proxy preparados en PR; nueva Preview Vercel bloqueada por cuota 402, sin publicar UI. No WhatsApp/contactos/originales modificados. Docs/300.
 
