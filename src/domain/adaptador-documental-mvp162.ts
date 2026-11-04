@@ -26,7 +26,7 @@ export type DocumentoFuente=Readonly<{
 }>;
 export type CorrelacionFuente=Readonly<{
  itemId:string;lineNo:number;sourceSha256:string;
- equivalencia:'verificada'|'sin_verificar'|'incompatible';
+ equivalencia:'verificada'|'comercial_razonable'|'sin_verificar'|'incompatible';
  /** Buyer quantity in source is NOT proof that seller has stock. */
  disponibilidadCorroborada:boolean;
 }>;
@@ -220,7 +220,7 @@ export function adaptarDocumentoMvp162(
   const quantity=cantidadFuenteMvp162(line.quantityLiteral);
   const unit=normUnit(line.unitLiteral);
   if(quantity===null){uncovered.push(item.id);reasons.push('cantidad_sin_acreditar');continue}
-  if(map.equivalencia!=='verificada'){
+  if(!['verificada','comercial_razonable'].includes(map.equivalencia)){
    uncovered.push(item.id);reasons.push('equivalencia_sin_acreditar');continue;
   }
   // For áridos only, verified 1 m³ NOMINAL per BIG BAG allows the SAME
@@ -228,6 +228,7 @@ export function adaptarDocumentoMvp162(
   // Other capacities require a separately audited price conversion: reject.
   // The source unitLiteral stays untouched and technical variety is checked.
   let effectiveUnit=unit;
+  let effectiveEquivalence:LineaOfertaConfirmada['equivalencia']=map.equivalencia;
   if(effectiveUnit!==item.unidad){
    const proof=bolsones.get(item.id);
    if(item.unidad==='m3'&&(unit===null||unit==='bag')&&proof){
@@ -238,9 +239,11 @@ export function adaptarDocumentoMvp162(
      presentacionFuente:proof.presentacionFuente,
      fuenteVerificada:true,presentacionComprobada:true
     });
-    if(r.estado==='compatible_comercialmente'&&
+    if(['compatible_comercialmente','compatible_con_aclaracion'].includes(r.estado)&&
      r.volumenM3PorUnidad==='1.000'&&r.cantidadNominalCoincide){
      effectiveUnit='m3';
+     if(r.estado==='compatible_con_aclaracion')
+      effectiveEquivalence='comercial_razonable';
     }else{
      const reason:Motivo=r.estado==='variedad_no_informada'||
       r.estado==='variedad_distinta'||r.estado==='familia_distinta'
@@ -261,7 +264,7 @@ export function adaptarDocumentoMvp162(
    uncovered.push(item.id);reasons.push('disponibilidad_sin_acreditar');continue;
   }
   verified.push({itemId:item.id,unidad:effectiveUnit,cantidadDisponible:quantity,
-   equivalencia:'verificada',precioUnitarioNeto:null,ivaPorcentaje:null});
+   equivalencia:effectiveEquivalence,precioUnitarioNeto:null,ivaPorcentaje:null});
  }
  if(reasons.length||uncovered.length)
   return grade(doc.anonId,'visible_no_comparable',true,uncovered,unused,reasons,null);
@@ -346,6 +349,7 @@ export type HechosPresentacionMvp170=Readonly<{
 export type MotivoPresentacionMvp170=
  'no_aplica'|'sin_presentacion_corroborada'|'cantidad_diferente'|
  'variedad_no_acreditada'|'variedad_diferente'|'presentacion_ambigua'|
+ 'alternativa_comercial_con_aclaracion'|
  'coincide_volumen_nominal_sin_stock';
 export type ResultadoPresentacionMvp170=Readonly<{
  estado:'fuente_no_verificada'|'preparacion_offline';
@@ -458,6 +462,8 @@ export function prepararPresentacionesAridosMvp170(
    const estado:MotivoPresentacionMvp170=
     r.estado==='compatible_comercialmente'
     ?'coincide_volumen_nominal_sin_stock':
+    r.estado==='compatible_con_aclaracion'
+    ?'alternativa_comercial_con_aclaracion':
     r.estado==='variedad_no_informada'
     ?'variedad_no_acreditada':
     r.estado==='variedad_distinta'
@@ -488,11 +494,13 @@ export function prepararPresentacionesAridosMvp170(
    itemId:x.itemId,lineNo:conflicting?null:x.lineNo,
    estado:conflicting?'presentacion_ambigua':x.estado
   }));
-  if(!conflicting&&x.estado==='coincide_volumen_nominal_sin_stock'&&
+  if(!conflicting&&['coincide_volumen_nominal_sin_stock',
+   'alternativa_comercial_con_aclaracion'].includes(x.estado)&&
    x.lineNo!==null&&x.presentacionFuente!==null){
    correlations.push(Object.freeze({
     itemId:x.itemId,lineNo:x.lineNo,sourceSha256:doc.sourceSha256,
-    equivalencia:'verificada' as const,
+    equivalencia:x.estado==='alternativa_comercial_con_aclaracion'?
+     'comercial_razonable' as const:'verificada' as const,
     disponibilidadCorroborada:false as const
    }));
    proofs.push(Object.freeze({
