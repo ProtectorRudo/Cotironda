@@ -106,9 +106,13 @@ export async function recoverOneStoredDocument(args:{
   // This is a genuinely NEW supplier-media receipt, already private and
   // durably bound to its source. Async thank-you is an independent option;
   // duplicate revisions and failed sender transports never retry.
-  if(received.state==='stored_unverified'&&args.onSupplierReceipt){
-   try{await args.onSupplierReceipt(h)}catch{/* Independent from document review. */}
-  }
+  // Process the document while the independent thank-you is in flight.
+  // A slow Whapi response must never delay source checking. The finalizer
+  // still awaits ACK reconciliation before releasing the background lease.
+  const ackTask=received.state==='stored_unverified'&&args.onSupplierReceipt
+   ?Promise.resolve().then(()=>args.onSupplierReceipt!(h)).catch(()=>{})
+   :null;
+  try{
   const compared=data(await io.rpc('cotironda_piloto_compare_supplier_readings_mvp102',{
    p_message_hmac:h,p_second_proposal:first&&second?second:null
   }));
@@ -132,6 +136,9 @@ export async function recoverOneStoredDocument(args:{
    });
   }
   return 'recovered_private';
+  }finally{
+   if(ackTask)await ackTask;
+  }
  }catch(err){
   if(h)await fail(io,h,err instanceof Error?err.message:'internal_error');
   return 'failed';
