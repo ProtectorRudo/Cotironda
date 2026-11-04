@@ -1,3 +1,6 @@
+## MVP161 — autorización previa para originales de todos los candidatos
+- Puerta pura y fail-closed por comprador, empresa, ronda cerrada, consentimiento anterior a invitación, fuente privada SHA y no retroactividad. Sin activar descargas ni tocar producción. Issue #525, docs/279.
+
 ## MVP160 — plan maestro y recomendaciones económicas sin adjudicación
 - Issues #524–#529 ordenados por prioridad. Añadido recomendador puro sobre comparador existente; hasta dos proveedores por opción completa, nunca rankings entre condiciones divergentes, sin desempates inventados ni PII. Descarga de TODOS los originales consentidos al cierre queda prevista, sin liberar documentos previos. Docs/278. Solo rama de desarrollo.
 
