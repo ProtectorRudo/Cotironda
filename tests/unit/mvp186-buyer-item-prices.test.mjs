@@ -228,8 +228,9 @@ test('MVP187: el contexto del comprador no sustituye cantidades del proveedor',(
  assert.equal(result.articulos[0].descripcionSolicitada,
    'Arena gruesa - equivalente a considerar');
  assert.equal(result.articulos[0].cantidadSolicitada,'15.000');
- assert.equal(result.articulos[0].referencias[0].cantidadCotizadaLiteral,'1,00');
- assert.equal(result.articulos[0].referencias[0].importeCotizado,'$ 100,00');
+ assert.equal(result.articulos[0].referencias[0].cantidadCotizadaLiteral,null);
+ assert.equal(result.articulos[0].referencias[0].importeCotizado,null);
+ assert.equal(result.articulos[0].referencias[0].estado,'sin_importe_asignable');
  assert.equal(result.price_comparable,false);
 });
 
