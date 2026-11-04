@@ -1,3 +1,5 @@
+> **MVP167 (solo desarrollo):** evidencia comercial de IVA, flete y pago con citas por página/fila, SHA y control de contradicciones. Nunca supone IVA=0 ni flete gratis ni disponibilidad. Falta conectar verificaciones al piloto y comparador real. Ver [docs/285](docs/285-mvp167-condiciones-fuente.md).
+
 > **MVP166 (solo desarrollo):** auditoría determinista de descuentos comerciales con renglones originales posicionados, SHA de archivo y conciliación exacta de importes, sin presumir precio neto de IVA ni habilitar ranking. Ver [docs/284](docs/284-mvp166-auditoria-descuentos-fuente.md). No conectado a PILOTO ni producción.
 
 > **MVP165 (solo rama de desarrollo):** puente documentado entre la convención nominal de BIG BAG/bolsón y el comparador económico. Solo acredita m³ nominal cuando coinciden variedad técnica explícita, cantidad y fuente; no presume stock, IVA, flete ni descuento. No conectado a la ronda real ni a WhatsApp. Ver [docs/283](docs/283-mvp165-puente-aridos-comparador.md) y [Issue #535](https://github.com/ProtectorRudo/Cotironda/issues/535).
