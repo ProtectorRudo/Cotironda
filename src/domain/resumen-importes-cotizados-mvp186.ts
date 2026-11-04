@@ -6,7 +6,7 @@
  */
 import {diagnosticarRondaPrivadaMvp172,
  type InsumoRondaPrivadoMvp172} from './diagnostico-ronda-mvp172.ts';
-import {centavosFuenteMvp162} from './adaptador-documental-mvp162.ts';
+import {centavosFuenteMvp162,cantidadFuenteMvp162} from './adaptador-documental-mvp162.ts';
 
 export type ReferenciaPrecioMvp186=Readonly<{
  oferta:string;
@@ -127,6 +127,19 @@ export function resumirImportesCotizadosCompradorMvp186(
        typeof a.unitarioComercialTrasDescuento!=='string'||
        (a.pagina!==null&&!Number.isSafeInteger(a.pagina))||
        (a.fila!==null&&!Number.isSafeInteger(a.fila)))return null;
+     // Reconcile every commercially discounted unit price against the
+     // immutable source line and its independently located original row.
+     const line=q.doc.lineas.find(x=>x.lineNo===a.linea);
+     const located=q.fuente.lines.find(x=>x.lineNo===a.linea);
+     const quantity=cantidadFuenteMvp162(line?.quantityLiteral);
+     const unit=centavosFuenteMvp162(a.unitarioComercialTrasDescuento);
+     const source=centavosFuenteMvp162(line?.lineTotalLiteral);
+     if(!line||!located||a.pagina!==located.page||
+       a.fila!==located.row||quantity===null||unit===null||
+       source===null)return null;
+     const [whole,fraction='']=quantity.split('.');
+     const milli=BigInt(whole)*1000n+BigInt(fraction.padEnd(3,'0')||'0');
+     if((unit*milli+500n)/1000n!==source)return null;
      proven.set(a.linea as number,true);
     }
    }
