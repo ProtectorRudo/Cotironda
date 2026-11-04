@@ -85,9 +85,9 @@ function locations(rows:readonly {loc:UbicacionMvp167}[]):readonly UbicacionMvp1
 }
 function empty():ResultadoCondicionesMvp167{
  return Object.freeze({
-  estado:'fuente_no_acreditada',iva:{estado:'no_informado',tasa:null,ubicaciones:[]},
-  flete:{estado:'no_informado',importe:null,ubicaciones:[]},
-  pago:{estado:'no_informado',ubicaciones:[]},
+  estado:'fuente_no_acreditada',iva:{estado:'no_informado' as const,tasa:null,ubicaciones:[]},
+  flete:{estado:'no_informado' as const,importe:null,ubicaciones:[]},
+  pago:{estado:'no_informado' as const,ubicaciones:[]},
   netoSinIvaAcreditado:false,stockCorroborado:false,
   plazoCorroborado:false,minimoCompraCorroborado:false,
   rankingHabilitado:false,originalesModificados:false,contactosRevelados:false
