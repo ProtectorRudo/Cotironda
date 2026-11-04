@@ -1,3 +1,6 @@
+## MVP182 — Ofertas parciales verificadas como entradas del comparador (04/11/2026, desarrollo)
+- Corrección del puente MVP162: ausencia de artículos no invalida precios auditados de los artículos sí cotizados; se preservan faltantes y no se compara subtotal parcial con canasta completa. Cargos extra sin clasificar y pruebas faltantes siguen bloqueando. Tres regresiones agregadas, incluida combinación de dos ofertas parciales. Sin SQL, despliegues, cambios de flags ni WhatsApp. Ver docs/302, issues #524/#535.
+
 ## MVP181 — ACK diferido de archivos del proveedor, sin retroactividad (04/11/2026, desarrollo)
 - Recuperación documental opcional puede agradecer una vez después de registrar una cotización nueva PDF/Excel/imagen, con reserva SQL por mensaje y reuso de ledger de entrega; respuesta Whapi incierta terminal, sin renegociación de importes. Política DB inicialmente OFF, activación con reloj servidor y flag Edge independiente, ambas sin habilitar. SQL real BEGIN/ROLLBACK y posterior instalación SOLO en PILOTO con política OFF: 4 presupuestos históricos bloqueados y 0 ACK. Edge staging v1 (19 archivos) ACTIVE, webhook de WhatsApp activo v45 intacto; HTTP GET 405 y POST no firmado probe_only, sin envíos. 11 pruebas agregadas; 2.086/2.086 unitarias y 6/6 CI PASS. Docs/301, issue #526.
 
