@@ -74,7 +74,7 @@ end;$fn$;
 create or replace function public.cotironda_piloto_record_source_facts_mvp163(
  p_message_hmac text,p_source_sha256 text,p_state text,p_facts jsonb)
 returns jsonb language plpgsql security definer set search_path='' as $fn$
-declare q record; l jsonb; has_row boolean:=false; ordinal int:=0;
+declare q record; l jsonb; inserted integer:=0; ordinal int:=0;
 begin
  if coalesce(p_message_hmac,'') !~ '^[a-f0-9]{64}$'
   or coalesce(p_source_sha256,'') !~ '^[a-f0-9]{64}$'
@@ -143,8 +143,8 @@ begin
   message_hmac,request_id,supplier_key,source_sha256,state,facts)
  values(p_message_hmac,q.request_id,q.supplier_key,p_source_sha256,p_state,p_facts)
  on conflict(message_hmac) do nothing;
- get diagnostics has_row=row_count;
- return jsonb_build_object('state',case when has_row then
+ get diagnostics inserted=row_count;
+ return jsonb_build_object('state',case when inserted=1 then
   'recorded' else 'already_checked' end);
 end;$fn$;
 
