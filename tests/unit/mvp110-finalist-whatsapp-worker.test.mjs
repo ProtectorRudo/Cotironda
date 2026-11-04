@@ -121,6 +121,7 @@ test('MVP110: private buyer token unlocks finalist contacts only on closed conse
   '../../supabase/piloto/mvp110_buyer_finalists_tracking.sql',import.meta.url),'utf8');
  const portal=readFileSync(new URL(
   '../../supabase/functions/cotironda-piloto-seguimiento/index.ts',import.meta.url),'utf8');
+ const ui=readFileSync(new URL('../../site/seguimiento/app.js',import.meta.url),'utf8');
  for(const term of ['t.token_hash=p_token_hash','t.revoked_at is null',
   't.expires_at>clock_timestamp()',"req.state='closed'",
   'req.closes_at<=clock_timestamp()',"b.participant_role='buyer'",
@@ -134,9 +135,9 @@ test('MVP110: private buyer token unlocks finalist contacts only on closed conse
  assert.match(portal,/decodeContacts\(finals\.data/);
  assert.match(portal,/publicResult=\{\.\.\.publicResult,finalists:list,/);
  assert.match(portal,/joint_supplier_coverage/);
- assert.match(portal,/targetFinalists\.replaceChildren\(\)/);
- assert.match(portal,/card\.textContent=finalist\.name/);
- assert.doesNotMatch(portal,/\binnerHTML\b/);
+ assert.match(ui,/clean\(receipts\); clean\(offers\); clean\(finalists\)/);
+ assert.match(ui,/card\(finalists, f\.name, 'WhatsApp: ' \+ f\.whatsapp\)/);
+ assert.doesNotMatch(ui,/\binnerHTML\b/);
  for(const id of ['mvp110_premature_portal_contact_release',
   'mvp110_portal_reveal_not_authorized','mvp110_wrong_token_access_to_contacts',
   'mvp110_revoked_contact_visible_in_portal'])assert.ok(smoke.includes(id),id);
