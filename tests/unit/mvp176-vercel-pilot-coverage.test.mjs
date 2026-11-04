@@ -212,3 +212,61 @@ test("MVP177: contador no verificado jamás se presenta como cero recibidos",asy
  assert.match(page.node("resultsCaption").textContent,/total de recepciones sin acreditar/);
  assert.equal(page.node("count").textContent,"—");
 });
+
+const econ180=()=>({
+ state:"economia_observada_sin_ranking",quotations:1,
+ iva_not_informed:1,freight_not_informed:0,freight_to_agree:1,
+ stock_unverified:1,payment_not_informed:0,net_unverified:1,
+ delivery_unverified:1,minimum_unverified:1,
+ ranking_allowed:false,price_comparable:false,contacts_revealed:false
+});
+test("MVP180 buyer: real source-backed gap counts, never final price or ranking",async()=>{
+ const page=await simulate([{...allowed(),economy:econ180()}]);
+ assert.equal(page.node("economySection").hidden,false);
+ assert.equal(page.node("economyGrid").children.length,6);
+ const labels=JSON.stringify(page.node("economyGrid").children.map(c=>c.children.map(n=>n.textContent)));
+ assert.match(labels,/IVA no especificado/);
+ assert.match(labels,/Flete a convenir/);
+ assert.match(labels,/Disponibilidad sin acreditar/);
+ assert.match(page.node("economyCaption").textContent,/no significan IVA cero/);
+ assert.equal(page.node("offers").children.length,1);
+ assert.doesNotMatch(labels,/puesto|ganador|descuento obligado/iu);
+ assert.match(html,/id="economySection"/);
+ assert.match(css,/\.economy-panel/);
+});
+test("MVP180 buyer: different candidate counts cannot be conflated",async()=>{
+ for(const e of [
+  {...econ180(),quotations:2},
+  {...econ180(),freight_not_informed:1},
+  {...econ180(),iva_not_informed:null},
+  {...econ180(),ranking_allowed:true},
+  {...econ180(),price_comparable:true},
+  {...econ180(),contacts_revealed:true},
+  {...econ180(),stock_unverified:2}
+ ]){
+  const page=await simulate([{...allowed(),economy:e}]);
+  assert.equal(page.node("economySection").hidden,true,JSON.stringify(e));
+  assert.equal(page.node("economyGrid").children.length,0);
+ }
+});
+test("MVP180 buyer: no economic summary without valid source or authorization",async()=>{
+ for(const d of [
+  {...allowed(),economy:undefined},
+  {...allowed(),can_open:false,economy:econ180()},
+  {...allowed(),state:"cancelled",economy:econ180()},
+  {...allowed(),state:"not_found",economy:econ180()}
+ ]){
+  const page=await simulate([d]);
+  assert.equal(page.node("economySection").hidden,true);
+ }
+});
+test("MVP180 buyer: revoke and network error wipe previously visible economic facts",async()=>{
+ for(const next of [{state:"not_found"},{error:true}]){
+  const page=await simulate([{...allowed(),economy:econ180()},next]);
+  assert.equal(page.node("economySection").hidden,false);
+  await page.refresh();
+  assert.equal(page.node("economySection").hidden,true);
+  assert.equal(page.node("economyGrid").children.length,0);
+  assert.equal(page.node("economyCaption").textContent,"");
+ }
+});
