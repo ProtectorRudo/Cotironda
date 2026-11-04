@@ -7,6 +7,7 @@
 import {createClient} from 'npm:@supabase/supabase-js@2.118.0';
 import {hex,decodeContacts} from '../_shared/cotironda-finalist-notice.ts';
 import {resumirCoberturaCompradorMvp175} from '../../../src/domain/resumen-cobertura-comprador-mvp175.ts';
+import {resumirEconomiaCompradorMvp180} from '../../../src/domain/resumen-economia-comprador-mvp180.ts';
 const ref='ilggkalaafhtiysyzlmg';
 const html=`<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -178,6 +179,22 @@ Deno.serve(async req=>{
        if(safe)publicResult={...publicResult,coverage:safe};
      }
    }catch{/* Existing tracking remains available, with no coverage. */}
+ }
+
+ // Economic facts are an independent source-only gate. The service-role
+ // RPC repeats token ownership/expiry and matches EVERY displayed reviewed
+ // quote's text as a multiset. Never forward the private DB envelope.
+ if(publicResult?.can_open===true&&
+    (publicResult.state==='waiting'||publicResult.state==='closed')){
+   try{
+     const econ=await db.rpc('cotironda_piloto_buyer_economy_summary_mvp180',{
+       p_token_hash:digest
+     });
+     if(!econ.error){
+       const summary=resumirEconomiaCompradorMvp180(publicResult,econ.data);
+       if(summary)publicResult={...publicResult,economy:summary};
+     }
+   }catch{/* An unavailable audit must NOT block existing anonymous offers. */}
  }
 
  // Private, source-authorized contact reveal only after verified closure.
