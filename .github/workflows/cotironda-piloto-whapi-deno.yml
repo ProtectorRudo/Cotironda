@@ -4,6 +4,7 @@ on:
     paths:
       - 'supabase/functions/cotironda-piloto-whapi/**'
       - 'supabase/functions/cotironda-piloto-document-recovery/**'
+      - 'supabase/functions/cotironda-piloto-economic-staging/**'
       - '.github/workflows/cotironda-piloto-whapi-deno.yml'
   push:
     branches:
@@ -31,6 +32,7 @@ jobs:
           deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/index.ts
           deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/supplier-source-pdf-general.ts
           deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-document-recovery/index.ts
+          deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-economic-staging/index.ts
           deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-document-recovery/scheduled-auth.ts
           deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-document-recovery/quote-reconciliation.ts
       - name: Exercise unpdf runtime with a real two-page PDF (synthetic content)
