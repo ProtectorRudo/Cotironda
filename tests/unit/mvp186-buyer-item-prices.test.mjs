@@ -212,7 +212,7 @@ test('MVP186: Edge y proxy nunca envían el insumo privado en crudo',()=>{
   '../../piloto/seguimiento-web/api/estado.js',import.meta.url),'utf8');
  assert.match(edge,/verifiedRoundInputs=source\.data/);
  assert.match(edge,/resumirImportesCotizadosCompradorMvp186/);
- assert.match(edge,/if\(itemPrices\)publicResult=\{\.\.\.publicResult,item_prices:itemPrices\}/);
+ assert.match(edge,/if\(itemPrices\)\s*\{\s*publicResult=\{\.\.\.publicResult,item_prices:itemPrices\}/);
  assert.doesNotMatch(edge,/item_prices:verifiedRoundInputs|item_prices:source\.data/);
  assert.match(proxy,/safe\.item_prices=\{/);
  assert.doesNotMatch(proxy,/safe\.item_prices=p;/);

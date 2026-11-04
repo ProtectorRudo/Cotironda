@@ -224,6 +224,88 @@ function buyerView(parsed){
     }
   }
 
+  // MVP194 — a second boundary independently recalculates source-priced
+  // article COVERAGE from the already-whitelisted MVP186 document values.
+  // Never let an Edge future field supply its own money, supplier IDs or
+  // ranking. Only AFTER closure; invalid projections are omitted.
+  const pc=parsed.priced_coverage;
+  if(parsed.state==="closed"&&safe.can_open===true&&safe.item_prices&&
+     safe.economy&&pc&&typeof pc==="object"&&!Array.isArray(pc)&&
+     pc.state==="cobertura_importes_sin_ranking"&&
+     ["ranking_allowed","price_comparable","tax_calculated",
+      "freight_calculated","stock_confirmed","contacts_revealed",
+      "automatic_award","finalists_selected","whatsapp_sent",
+      "originals_downloadable"].every(k=>pc[k]===false)&&
+     pc.quotations===safe.offers?.length&&
+     pc.quotations===safe.item_prices.quotations&&
+     pc.requested_items===safe.item_prices.requested_items&&
+     Array.isArray(pc.coberturaPorOferta)&&
+     pc.coberturaPorOferta.length===pc.quotations&&
+     Array.isArray(pc.parejasConImportesParaTodos)&&
+     pc.parejasConImportesParaTodos.length<=45){
+    const labels=safe.offers.map(x=>x.label);
+    const items=safe.item_prices.articulos;
+    const priceMap=new Map(labels.map(label=>[label,new Set()]));
+    for(const item of items){
+      for(const ref of item.referencias){
+        if(ref.importeCotizado!==null)priceMap.get(ref.oferta)?.add(item.itemId);
+      }
+    }
+    const allRows=pc.coberturaPorOferta;
+    const complete=allRows.every((r,i)=>r&&typeof r==="object"&&
+      r.oferta===labels[i]&&r.articulosSolicitados===items.length&&
+      r.articulosConImporte===priceMap.get(r.oferta)?.size);
+    const eligible=[];
+    for(let i=0;i<labels.length;i++)for(let j=i+1;j<labels.length;j++){
+      const aa=labels[i],bb=labels[j],left=priceMap.get(aa),right=priceMap.get(bb);
+      if(left.size===items.length||right.size===items.length||
+        items.some(x=>!left.has(x.itemId)&&!right.has(x.itemId))||
+        !items.some(x=>left.has(x.itemId)&&!right.has(x.itemId))||
+        !items.some(x=>right.has(x.itemId)&&!left.has(x.itemId)))continue;
+      eligible.push([aa,bb]);
+    }
+    const proposed=pc.parejasConImportesParaTodos;
+    const correct=proposed.length===eligible.length&&
+      proposed.every((pair,index)=>{
+       const ids=eligible[index];
+       return pair&&typeof pair==="object"&&
+        Array.isArray(pair.ofertasAnonimas)&&
+        pair.ofertasAnonimas.length===2&&
+        pair.ofertasAnonimas[0]===ids[0]&&
+        pair.ofertasAnonimas[1]===ids[1]&&
+        Array.isArray(pair.articulos)&&
+        pair.articulos.length===items.length&&
+        pair.articulos.every((line,n)=>{
+         if(!line||line.itemId!==items[n].itemId||
+            !Array.isArray(line.ofertasConImporte))return false;
+         const expected=ids.filter(id=>priceMap.get(id).has(line.itemId));
+         return line.ofertasConImporte.length===expected.length&&
+           line.ofertasConImporte.every((id,k)=>id===expected[k]);
+        });
+      });
+    if(complete&&correct){
+      safe.priced_coverage={
+       state:"cobertura_importes_sin_ranking",quotations:labels.length,
+       requested_items:items.length,
+       coberturaPorOferta:allRows.map(x=>({
+        oferta:x.oferta,articulosConImporte:x.articulosConImporte,
+        articulosSolicitados:x.articulosSolicitados
+       })),
+       parejasConImportesParaTodos:proposed.map(pair=>({
+        ofertasAnonimas:pair.ofertasAnonimas.slice(),
+        articulos:pair.articulos.map(x=>({
+         itemId:x.itemId,ofertasConImporte:x.ofertasConImporte.slice()
+        }))
+       })),
+       ranking_allowed:false,price_comparable:false,tax_calculated:false,
+       freight_calculated:false,stock_confirmed:false,
+       contacts_revealed:false,automatic_award:false,
+       finalists_selected:false,whatsapp_sent:false,
+       originals_downloadable:false
+      };
+    }
+  }
+
   if(parsed.state==="closed"&&Array.isArray(parsed.finalists)){
     if(parsed.finalists.length>2||!parsed.finalists.every(f=>f&&
       typeof f==="object"&&!Array.isArray(f)&&

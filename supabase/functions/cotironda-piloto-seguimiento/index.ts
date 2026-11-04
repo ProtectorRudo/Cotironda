@@ -12,6 +12,8 @@ import {resumirImportesCotizadosCompradorMvp186} from
  '../../../src/domain/resumen-importes-cotizados-mvp186.ts';
 import {resumirAlternativasCoberturaMvp189} from
  '../../../src/domain/alternativas-cobertura-mvp189.ts';
+import {resumirCoberturaImportesMvp194} from
+ '../../../src/domain/cobertura-importes-cierre-mvp194.ts';
 const ref='ilggkalaafhtiysyzlmg';
 const html=`<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -218,7 +220,20 @@ Deno.serve(async req=>{
        publicResult as Parameters<typeof resumirImportesCotizadosCompradorMvp186>[0],
        verifiedRoundInputs
      );
-     if(itemPrices)publicResult={...publicResult,item_prices:itemPrices};
+     if(itemPrices){
+       publicResult={...publicResult,item_prices:itemPrices};
+       // This is a cross-check of source-backed ARTICLE AMOUNTS, not a
+       // currency/tax/freight ranking. Only on CLOSED consented rounds.
+       // Never expose the private HMAC-ordered SQL envelope.
+       if(publicResult.state==='closed'){
+         const pricedCoverage=resumirCoberturaImportesMvp194(
+           publicResult as Parameters<typeof resumirCoberturaImportesMvp194>[0],
+           itemPrices
+         );
+         if(pricedCoverage)publicResult={...publicResult,
+           priced_coverage:pricedCoverage};
+       }
+     }
    }catch{/* Optional price references never block reviewed offers. */}
  }
 
