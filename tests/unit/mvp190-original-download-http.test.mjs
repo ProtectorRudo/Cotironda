@@ -51,15 +51,20 @@ function context(id=DOC,opts={}){
  return item;
 }
 function fixture(){
- const calls={sessions:0,contexts:0,files:0,requested:[]};
+ const calls={sessions:0,contexts:0,files:0,links:0,requested:[]};
  return {
   calls,enabled:true,now:T+800000,
   session:session(),first:context(),second:context(),
-  data:bytes,
+  data:bytes,linkFirst:true,linkSecond:true,
   make(){
    return {
     habilitado:this.enabled,ahora:()=>this.now,
     verificarSesion:async()=>{calls.sessions++;return structuredClone(this.session)},
+    verificarVinculoPiloto:async id=>{
+     calls.links++;
+     assert.equal(id,RID);
+     return calls.links===1?this.linkFirst:this.linkSecond;
+    },
     leerContexto:async selector=>{
      calls.contexts++;calls.requested.push(selector);
      return structuredClone(calls.contexts===1?this.first:this.second)
@@ -83,7 +88,8 @@ test('MVP190: GET autorizado sirve ORIGINAL exactamente, sin URL firmada ni iden
  assert.match(res.headers.get('content-security-policy'),/sandbox/);
  assert.equal(res.headers.get('referrer-policy'),'no-referrer');
  assert.deepEqual(new Uint8Array(await res.arrayBuffer()),bytes);
- assert.deepEqual([f.calls.sessions,f.calls.contexts,f.calls.files],[2,2,1]);
+ assert.deepEqual([f.calls.sessions,f.calls.contexts,f.calls.files,f.calls.links],
+  [2,2,1,2]);
  assert.deepEqual(f.calls.requested[0],{
   rondaId:RID,documentoId:DOC,usuarioId:'persona_alfa',empresaId:'empresa_alfa'
  });
