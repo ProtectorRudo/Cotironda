@@ -116,7 +116,7 @@ test('MVP194: prueba de dos compañías — etiqueta ajena nunca se vincula como
 
 test('MVP194: proxy revalida cada artículo y elimina dinero, hashes y teléfonos',()=>{
  const x=state();
- x.priced_coverage=summarize(x,x.item_prices);
+ x.priced_coverage=structuredClone(summarize(x,x.item_prices));
  x.priced_coverage.contacto='5492215000000';
  x.priced_coverage.parejasConImportesParaTodos[0].subtotal='999999';
  const v=view(x);
@@ -144,7 +144,7 @@ test('MVP194: proxy omite vista alterada sin ocultar ofertas ni precios previame
   x=>x.economy=null,
   x=>x.item_prices=null
  ]){
-  const x=state();x.priced_coverage=summarize(x,x.item_prices);
+  const x=state();x.priced_coverage=structuredClone(summarize(x,x.item_prices));
   change(x);const v=view(x);
   assert.equal(v.priced_coverage,undefined);
   assert.equal(v.offers.length,2);
@@ -156,7 +156,7 @@ test('MVP194: el proxy nunca deja una pareja sin prueba de ambos aportes exclusi
  // Both offers price one article but neither covers the second.
  x.item_prices.articulos[0].referencias[0]=ref(labels[1],'$ 190,00');
  x.item_prices.articulos[1].referencias[1]=ref(labels[1],null);
- x.priced_coverage=summarize(x,x.item_prices);
+ x.priced_coverage=structuredClone(summarize(x,x.item_prices));
  assert.equal(x.priced_coverage.parejasConImportesParaTodos.length,0);
  const v=view(x);
  assert.deepEqual(v.priced_coverage.parejasConImportesParaTodos,[]);
