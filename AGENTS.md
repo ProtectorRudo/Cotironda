@@ -1,5 +1,7 @@
 # AGENTS.md — Contrato técnico de Cotironda
 
+> **MVP168 / 04-11-2026 — Instalación aislada verificada en PILOTO:** ledger privado y dos RPCs SQL instalados tras smoke PostgreSQL 17.11 + `ROLLBACK` PASS. Edge nueva `cotironda-piloto-economic-staging` v1 JWT ACTIVE sin cron; recuperador original v25 conservado. 0 resultados económicos reales, 0 finalistas. No marcar #535 terminado ni activar flag, comparador o contactos sin nueva prueba. Ver docs/287.
+
 > **MVP168 / 04-11-2026 (solo rama de desarrollo):** enlazado lector de originales con pruebas económicas MVP166/167 y ledger privado append-only propuesto. Verificar bytes originales y SHA v9 siempre; activar worker solo con RPCs privadas probadas y flag explícito; no suponer que el SQL o Edge está instalado. `rankingAllowed=false`; no contactos, cierre ni originales públicos. Ver docs/286, Issue #535.
 
 > **MVP167 / 04-11-2026 (solo desarrollo):** el auditor de IVA, flete y pago únicamente devuelve declaraciones categóricas de fuente v9 y SHA comprobados, con página/fila, nunca un precio final. Diferenciar IVA incluido/excluido/tasa sin base, flete incluido/gratis/adicional/no definido y pagos alternativos. No inventar IVA=0, costo logístico=0 o stock. No producir TerminosAuditados ni ranking sin evidencias adicionales. Ver docs/285, Issue #535.
