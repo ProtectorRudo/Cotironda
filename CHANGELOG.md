@@ -1,3 +1,6 @@
+## MVP159 — finalistas de PDFs verificados sin falsas equivalencias
+- El plan de cobertura acepta fuente verificada v9 y fuente histórica, invalidando correcciones pendientes, manteniendo comparación estricta y avisos finalistas apagados. Issue #521, docs/277. Solo PILOTO.
+
 ## MVP158 — Seguimiento móvil legible y hora de 24 horas
 - Total e ítems por tarjeta con transcripción original; aviso BIG BAG sin equivalencia presunta; fecha límite en Argentina 16:30 y no 04:30. Issue #519, docs/276. Solo PILOTO.
 
