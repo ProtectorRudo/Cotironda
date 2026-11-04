@@ -78,7 +78,7 @@ function result(
  });
 }
 const invalid=()=>result('insumos_invalidos',0,[]);
-const estados=new Set<MotivoPresentacionMvp170>([
+const estados=new Set<EstadoPreview>([
  'no_aplica','sin_presentacion_corroborada','cantidad_diferente',
  'variedad_no_acreditada','variedad_diferente','presentacion_ambigua',
  'coincide_volumen_nominal_sin_stock','alternativa_comercial_con_aclaracion',
