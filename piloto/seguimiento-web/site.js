@@ -297,6 +297,10 @@ function showCoverageOptions(d){
   }
   if(ids.size!==o.requested_items||used.size!==option.ofertasAnonimas.length)
     return;
+  if(option.modo==="complementaria"&&option.ofertasAnonimas.some(provider=>
+    !option.articulos.some(item=>
+      item.ofertasConAlternativa.length===1&&
+      item.ofertasConAlternativa[0]===provider)))return;
  }
  for(const label of labels){
   const line=element("p","coverage-options-count",
