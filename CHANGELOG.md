@@ -1,3 +1,6 @@
+## MVP174 — Despliegue staging v2 y auditoría real SQL (04/11/2026)
+- Edge `cotironda-piloto-round-preview-staging` v2 ACTIVE, 10 archivos, solo piloto; 401 sin token y con token falso. Consultas SQL de solo lectura confirman 9 coincidencias de cantidades nominales y 1 presentación sin litros acreditados entre los 10 cruces. Auditoría: 4 originales v9, 4 registros económicos, 0 cron/outbox/finalistas; recuperador v25 intacto. **2.011/2.011 pruebas PASS y 6/6 GitHub CI PASS.** No se ejecutó HTTP autenticado v2 por bloqueo de controles de seguridad para uso del token Vault; ranking fiscal/contactos siguen OFF. PR #549 y docs/293.
+
 ## MVP174 — Cotejo de cemento e hidrófugo por presentación acreditada (desarrollo)
 - Agrega pesos de bolsas y litros por envase al diagnóstico privado de fuentes verificadas. Si falta la presentación, registra `presentacion_sin_acreditar` sin descartar oferta. 8 tests nuevos, 2.008/2.008 unitarios y 6/6 GitHub CI PASS. PR #549, docs/293. Staging sigue en v1: herramienta bloqueó la actualización; WhatsApp y ranking intactos.
 
