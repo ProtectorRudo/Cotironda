@@ -11,7 +11,7 @@ function buyerView(parsed){
   const opened=parsed.can_open===true;
   const safe={state:parsed.state,can_open:opened};
   for(const key of ["received_count","files_pending_review"]){
-    const n=Number(parsed[key]);
+    const n=parsed[key];
     if(Number.isSafeInteger(n)&&n>=0)safe[key]=n;
   }
   if(typeof parsed.deadline==="string"&&parsed.deadline.length<=96)
@@ -33,6 +33,25 @@ function buyerView(parsed){
       "explicit_differences","technical_uncertainty","ranking_allowed",
       "price_comparable","contacts_revealed"];
     safe.coverage=Object.fromEntries(keys.map(k=>[k,c[k]]));
+  }
+  // Independent ECONOMIC counts, after edge+RPC checks. No prices, PII
+  // or arbitrary fields may pass the public proxy. Invalid means OMIT.
+  const e=parsed.economy;
+  if(e&&typeof e==="object"&&!Array.isArray(e)&&
+     e.state==="economia_observada_sin_ranking"&&
+     e.ranking_allowed===false&&e.price_comparable===false&&
+     e.contacts_revealed===false&&Array.isArray(safe.offers)&&
+     Number.isSafeInteger(e.quotations)&&e.quotations===safe.offers.length&&
+     e.quotations>=1&&e.quotations<=100){
+    const counters=["iva_not_informed","freight_not_informed",
+      "freight_to_agree","stock_unverified","payment_not_informed",
+      "net_unverified","delivery_unverified","minimum_unverified"];
+    if(counters.every(k=>Number.isSafeInteger(e[k])&&e[k]>=0&&
+       e[k]<=e.quotations)&&
+       e.freight_not_informed+e.freight_to_agree<=e.quotations)
+      safe.economy=Object.fromEntries(["state","quotations",...counters,
+       "ranking_allowed","price_comparable","contacts_revealed"]
+       .map(k=>[k,e[k]]));
   }
   if(parsed.state==="closed"&&Array.isArray(parsed.finalists)){
     if(parsed.finalists.length>2||!parsed.finalists.every(f=>f&&
