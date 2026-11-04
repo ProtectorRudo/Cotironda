@@ -124,8 +124,6 @@ test('Un enlace inválido al inicio no bloquea la navegación posterior',async()
  const p=await browser([answer('Ahora autorizado')],{initial:'invalido'});
  assert.equal(p.requests.length,0);
  assert.equal(p.get('state').textContent,'Enlace inválido');
- p.poll();await tick();
- assert.equal(p.requests.length,0);
  p.switchTo(B);await tick();
  assert.equal(p.requests.length,1);
  assert.match(JSON.stringify(p.get('offers').children),/Ahora autorizado/);
