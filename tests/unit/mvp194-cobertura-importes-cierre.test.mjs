@@ -67,9 +67,9 @@ test('MVP194: los dos presupuestos parciales tienen importes de fuente para toda
 
 test('MVP194: oferta ya completa NO exige un segundo negocio, pero conserva a todos',()=>{
  const x=prices();
- x.articulos[1].referencias[1].importeCotizado='$ 200,00';
- x.articulos[1].referencias[1].cantidadCotizadaLiteral='1';
- x.articulos[1].referencias[1].estado='alternativa_comercial_con_aclaracion';
+ x.articulos[1].referencias[0].importeCotizado='$ 200,00';
+ x.articulos[1].referencias[0].cantidadCotizadaLiteral='1';
+ x.articulos[1].referencias[0].estado='alternativa_comercial_con_aclaracion';
  const out=summarize(tracking(),x);
  assert.deepEqual(out.coberturaPorOferta.map(y=>y.articulosConImporte),[2,1]);
  assert.equal(out.parejasConImportesParaTodos.length,0);
