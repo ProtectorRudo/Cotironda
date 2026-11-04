@@ -158,7 +158,7 @@ function render(data){
   clearPrivateView();displayText("state","Estado no disponible");return;
  }
  displayText("error","");
- const count=Number(d.received_count);
+ const count=typeof d.received_count==="number"?d.received_count:NaN;
  displayText("count",Number.isSafeInteger(count)&&count>=0?String(count):"—");
  const files=Number(d.files_pending_review);
  displayText("files",Number.isSafeInteger(files)&&files>0?files+" archivo(s) pendiente(s) de verificación.":"");
@@ -172,7 +172,10 @@ function render(data){
  el("offers").replaceChildren();el("receipts").replaceChildren();
  el("finalists").replaceChildren();displayText("equivalence","");
  showCoverage(d);
- if(d.state==="cancelled"){displayText("state","Ronda cancelada");return;}
+ if(d.state==="cancelled"){
+  el("resultsSection").hidden=true;displayText("resultsCaption","");
+  displayText("state","Ronda cancelada");return;
+ }
  if(d.state!=="waiting"&&d.state!=="closed"){
   displayText("state","Estado no disponible");return;
  }
