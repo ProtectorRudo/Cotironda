@@ -17,7 +17,7 @@ En la **carpeta que Vercel realmente utiliza** se agregan:
 - Conservación de la CSP fuerte `script-src 'self'`, assets locales `site.js/site.css`, proxy POST, `no-store` y privacidad. Backend, base, Whapi y `main` intactos.
 
 ## Criterios de aceptación
-1. 2.032 tests existentes más los nuevos 5 tests DOM del piloto; Deno, Next, SQL y sitio CI PASS.
+1. **2.033/2.033 pruebas unitarias PASS** (2.028 anteriores + 5 nuevas de navegador simulado), y controles CI de sitio, PostgREST, PostgreSQL 17 y Next.js PASS sobre el commit `d3b0e8db55ef4880282e329baac59c79929dda44`. Ningún test sustituye la Preview web real aún bloqueada.
 2. Nueva Preview Vercel de `cotironda-seguimiento-vista-piloto` construida desde commit exacto y carpeta `piloto/seguimiento-web` cuando se libere la cuota 402.
 3. Probar GET `/seguimiento` HTML correcto, GET `/site.js` con código nuevo, GET `/site.css`, POST `/api/estado` con token **ficticio**, ambos enlaces reales del comprador sin imprimirlos y revocación/aislamiento.
 4. Solo después actualizar el destino de redirect GET del backend de piloto, si el alias no queda apuntando a la nueva Preview de manera confiable. Revalidar cero finalistas, cero outbox, recuperador v25 y 4 originales intactos.
