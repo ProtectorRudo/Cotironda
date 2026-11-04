@@ -79,6 +79,17 @@ test('MVP186: la fuente v9 se vincula por texto público exacto, NUNCA por índi
  assert.equal(r?.state,'importes_por_articulo_sin_ranking');
  assert.equal(r.quotations,2);
  assert.equal(r.requested_items,2);
+ assert.deepEqual(r.articulos.map(x=>({
+  descripcion:x.descripcionSolicitada,cantidad:x.cantidadSolicitada,
+  unidad:x.unidadSolicitada
+ })),[
+  {descripcion:'arena fina',cantidad:'1.000',unidad:'m3'},
+  {descripcion:'piedra partida',cantidad:'2.000',unidad:'m3'}
+ ]);
+ assert.deepEqual(r.articulos[0].referencias.map(x=>x.cantidadCotizadaLiteral),
+  ['1,00','1,00']);
+ assert.deepEqual(r.articulos[1].referencias.map(x=>x.cantidadCotizadaLiteral),
+  ['2,00','2,00']);
  assert.deepEqual(r.articulos.map(x=>x.referencias.map(y=>y.oferta)),[
   ['Presupuesto 2','Presupuesto 1'],['Presupuesto 2','Presupuesto 1']
  ]);
@@ -206,4 +217,30 @@ test('MVP186: Edge y proxy nunca envían el insumo privado en crudo',()=>{
  assert.match(proxy,/safe\.item_prices=\{/);
  assert.doesNotMatch(proxy,/safe\.item_prices=p;/);
  assert.match(proxy,/new Set\(row\.referencias\.map\(ref=>ref\.oferta\)\)/);
+});
+
+test('MVP187: el contexto del comprador no sustituye cantidades del proveedor',()=>{
+ const p=sample();
+ p.requestItems[0].descripcionLiteral='Arena gruesa - equivalente a considerar';
+ p.requestItems[0].cantidad='15.000';
+ const result=summarize(tracking(),p);
+ assert.ok(result);
+ assert.equal(result.articulos[0].descripcionSolicitada,
+   'Arena gruesa - equivalente a considerar');
+ assert.equal(result.articulos[0].cantidadSolicitada,'15.000');
+ assert.equal(result.articulos[0].referencias[0].cantidadCotizadaLiteral,'1,00');
+ assert.equal(result.articulos[0].referencias[0].importeCotizado,'$ 100,00');
+ assert.equal(result.price_comparable,false);
+});
+
+test('MVP187: nunca incluir nombre de comercio, HMAC ni datos de fuente en el contexto del comprador',()=>{
+ const p=sample(),result=summarize(tracking(),p);
+ assert.ok(result);
+ const out=JSON.stringify(result);
+ for(const sensitive of [RID,p.quotations[0].doc.messageHmac,
+   p.quotations[1].doc.sourceSha256,p.quotations[0].publicText,
+   'BIG BAG de Piedra'])
+  assert.ok(!out.includes(sensitive),sensitive);
+ assert.equal(result.contactosRevelados,undefined);
+ assert.equal(result.contacts_revealed,false);
 });
