@@ -45,7 +45,8 @@ const fail=async(io:RecoveryIO,h:string,code:string)=>{
 };
 export async function recoverOneStoredDocument(args:{
  io:RecoveryIO;triggerChatHmac:string;apiKey:string;
- enabled:boolean;read?:typeof proposeDocumentAI
+ enabled:boolean;read?:typeof proposeDocumentAI;
+ onSupplierReceipt?:(messageHmac:string)=>Promise<void>
 }):Promise<'none'|'recovered_private'|'failed'>{
  const {io,triggerChatHmac,apiKey}=args;
  if(!args.enabled||!HEX.test(triggerChatHmac))return 'none';
@@ -102,6 +103,18 @@ export async function recoverOneStoredDocument(args:{
   }));
   if(received?.state!=='stored_unverified'&&received?.state!=='duplicate')
    return 'recovered_private';
+  // This is a genuinely NEW supplier-media receipt, already private and
+  // durably bound to its source. Async thank-you is an independent option;
+  // duplicate revisions and failed sender transports never retry.
+  // Process the document while the independent thank-you is in flight.
+  // A slow Whapi response must never delay source checking. The finalizer
+  // still awaits ACK reconciliation before releasing the background lease.
+  const receiptHmac=h;
+  const ackTask=received.state==='stored_unverified'&&args.onSupplierReceipt
+   ?Promise.resolve().then(()=>args.onSupplierReceipt!(receiptHmac!))
+     .catch(()=>{})
+   :null;
+  try{
   const compared=data(await io.rpc('cotironda_piloto_compare_supplier_readings_mvp102',{
    p_message_hmac:h,p_second_proposal:first&&second?second:null
   }));
@@ -125,6 +138,9 @@ export async function recoverOneStoredDocument(args:{
    });
   }
   return 'recovered_private';
+  }finally{
+   if(ackTask)await ackTask;
+  }
  }catch(err){
   if(h)await fail(io,h,err instanceof Error?err.message:'internal_error');
   return 'failed';

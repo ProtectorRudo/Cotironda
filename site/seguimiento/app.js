@@ -22,14 +22,72 @@
     }
     target.appendChild(item);
   };
+  // Revoke stale visible private content on expired/revoked link or outage.
+  // Otherwise a previous refresh could remain on-screen after access is lost.
+  function clearPrivateView() {
+    clean(el('receipts'));
+    clean(el('approvedOffers'));
+    clean(el('finalists'));
+    clean(el('coverageGrid'));
+    el('coverageSection').hidden = true;
+    el('coverageCaption').textContent = '';
+    el('pendingFiles').textContent = '';
+  }
+  // Public presentation of ONLY the bounded, token-authorized server summary.
+  // Never identify a supplier, infer a per-offer ranking or parse totals here.
+  function showCoverage(data) {
+    const section = el('coverageSection');
+    const grid = el('coverageGrid');
+    section.hidden = true;
+    clean(grid);
+    el('coverageCaption').textContent = '';
+    const c = data?.coverage;
+    if (data?.can_open !== true || !['waiting', 'closed'].includes(data?.state) ||
+        !c || c.state !== 'cobertura_revisada' ||
+        c.ranking_allowed !== false || c.price_comparable !== false ||
+        c.contacts_revealed !== false) return;
+    const fields = ['commercial_alternatives', 'packaging_unproven',
+      'not_evaluated', 'explicit_differences', 'technical_uncertainty'];
+    const counts = [c.quotations, c.requested_items, c.comparisons,
+      ...fields.map(k => c[k])];
+    if (!counts.every(n => Number.isSafeInteger(n) && n >= 0 && n <= 250) ||
+        c.quotations < 1 || c.requested_items < 1 ||
+        c.comparisons !== c.quotations * c.requested_items ||
+        fields.reduce((sum, k) => sum + c[k], 0) !== c.comparisons) return;
+    const legend = [
+      ['commercial_alternatives', 'Alternativas comerciales razonables'],
+      ['packaging_unproven', 'Presentaciones sin acreditar'],
+      ['not_evaluated', 'Artículos todavía sin cotejar'],
+      ['explicit_differences', 'Diferencias de cantidad o material'],
+      ['technical_uncertainty', 'Especificaciones por revisar']
+    ];
+    for (const [key, label] of legend) {
+      if (c[key] === 0) continue;
+      const item = document.createElement('div');
+      item.className = 'coverage-metric';
+      const number = document.createElement('strong');
+      number.textContent = String(c[key]);
+      const description = document.createElement('span');
+      description.textContent = label;
+      item.append(number, description);
+      grid.appendChild(item);
+    }
+    el('coverageCaption').textContent =
+      c.comparisons + ' cruces de artículos entre ' + c.quotations +
+      ' presupuestos revisados y ' + c.requested_items + ' artículos solicitados.';
+    section.hidden = false;
+  }
   function show(data) {
+    showCoverage(data);
     if (data.state === 'not_found') {
+      clearPrivateView();
       pill('Enlace inválido o vencido', 'bad');
       el('stateText').textContent = 'No encontramos una solicitud vigente para este enlace privado.';
       el('count').textContent = '—';
       return;
     }
     if (!['waiting', 'closed', 'cancelled'].includes(data.state)) {
+      clearPrivateView();
       throw Error('unknown_state');
     }
     const count = data.received_count;
@@ -78,6 +136,7 @@
   async function refresh() {
     if (busy) return;
     if (!/^[a-f0-9]{64}$/.test(token)) {
+      clearPrivateView();
       pill('Enlace no válido', 'bad');
       el('stateText').textContent = 'Revisá el enlace privado que te envió Cotironda por WhatsApp.';
       el('count').textContent = '—';
@@ -99,6 +158,7 @@
       el('lastUpdated').textContent = 'Actualizado: ' +
         new Date().toLocaleTimeString('es-AR', {timeZone: 'America/Argentina/Buenos_Aires', timeStyle: 'short'});
     } catch {
+      clearPrivateView();
       pill('Sin conexión', 'warn');
       el('stateText').textContent = 'No pudimos actualizar tu ronda. Probá nuevamente en unos instantes.';
     } finally {

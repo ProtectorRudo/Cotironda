@@ -15,6 +15,7 @@ import {checkSupplierPdfSource} from './supplier-source-pdf.ts';
 import {proposeDocumentAI,documentFailureCode} from './document-ai-draft.ts';
 import {promoteVerifiedSupplierQuote} from './supplier-role-hint.ts';
 import {recoverOneStoredDocument} from './private-document-recovery.ts';
+import {sendDeferredSupplierAckMvp181} from './supplier-deferred-ack.ts';
 import {interpretPilotBuyerWithAI} from './ai-interpreter.ts';
 import {decidePilotAIAction,shortBusinessReply,type ReplyCode} from './business-ai-policy.ts';
 const REF='ilggkalaafhtiysyzlmg';
@@ -293,6 +294,7 @@ async function respond(req:Request):Promise<Response>{
  const now=Math.floor(Date.now()/1000);
  const db=client(sec);
  let recoveryTriggerHmac:string|null=null;
+ let recoveryTriggerChatId:string|null=null;
  for(const row of event.messages){
   if(row&&typeof row==='object'&&(row as Record<string,unknown>).from_me===true)continue;
   if(!validMessage(row,now))return json(422,'invalid_message');
@@ -313,6 +315,7 @@ async function respond(req:Request):Promise<Response>{
    }
   }
   recoveryTriggerHmac=chatHash;
+  recoveryTriggerChatId=row.chat_id;
   const media=row.type==='text'?null:makeMediaManifest(row,row.type);
   // Store media ID, size, MIME and caption in the AES-GCM encrypted
   // inbox instead of losing every attachment as an empty string.
@@ -950,7 +953,41 @@ async function respond(req:Request):Promise<Response>{
   try{
    EdgeRuntime.waitUntil(recoverOneStoredDocument({
     triggerChatHmac,apiKey:Deno.env.get('COTIRONDA_PILOT_OPENAI_API_KEY')??'',
-    enabled:true,io:{
+    enabled:true,
+    // A recovery ACK is only for a NEW, consented supplier document in
+    // a round created after the DB activation barrier. No historical
+    // backfill and no resend of uncertain Whapi delivery.
+    onSupplierReceipt:async(messageHmac)=>{
+     if(!sec.outbound||!recoveryTriggerChatId||
+        Deno.env.get('COTIRONDA_PILOT_DEFERRED_SUPPLIER_ACK_ENABLED')!=='true')
+       return;
+     await sendDeferredSupplierAckMvp181({
+      enabled:true,messageHmac,triggerChatHmac,
+      recipientChatId:recoveryTriggerChatId,
+      io:{
+       rpc:async(name,params)=>{
+        const r=await db.rpc(name,params);
+        return {data:r.data,error:r.error};
+       },
+       sendText:async(to,body)=>{
+        const response=await fetch('https://gate.whapi.cloud/messages/text',{
+         method:'POST',headers:{Authorization:'Bearer '+sec.token,
+          'Content-Type':'application/json'},
+         body:JSON.stringify({to,body}),signal:AbortSignal.timeout(12000)
+        });
+        const data=response.ok?await response.json().catch(()=>null):null;
+        const obj=data&&typeof data==='object'?
+         data as Record<string,unknown>:null;
+        const message=obj?.message&&typeof obj.message==='object'?
+         obj.message as Record<string,unknown>:null;
+        const id=obj?.message_id??message?.id;
+        return {sent:response.ok&&obj?.sent===true,
+         id:typeof id==='string'?id:null};
+       }
+      }
+     });
+    },
+    io:{
      rpc:async(name,params)=>{
       const r=await db.rpc(name,params);
       return {data:r.data,error:r.error};

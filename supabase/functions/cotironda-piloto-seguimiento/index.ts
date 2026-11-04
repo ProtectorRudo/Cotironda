@@ -6,6 +6,8 @@
  */
 import {createClient} from 'npm:@supabase/supabase-js@2.118.0';
 import {hex,decodeContacts} from '../_shared/cotironda-finalist-notice.ts';
+import {resumirCoberturaCompradorMvp175} from '../../../src/domain/resumen-cobertura-comprador-mvp175.ts';
+import {resumirEconomiaCompradorMvp180} from '../../../src/domain/resumen-economia-comprador-mvp180.ts';
 const ref='ilggkalaafhtiysyzlmg';
 const html=`<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -130,7 +132,7 @@ Deno.serve(async req=>{
  if(req.method==='GET'){
   if(new URL(req.url).search) return new Response('Bad request',{status:400,headers:headers('text/plain')});
   return new Response(null,{status:302,headers:{...headers('text/plain'),
-   Location:'https://cotironda-seguimiento-vist-git-43f7cf-protector-rudo-s-projects.vercel.app/seguimiento'}});
+   Location:'https://cotironda-seguimiento-vista-piloto-8bfvf7vu1.vercel.app/seguimiento'}});
  }
  if(req.method!=='POST')return new Response('',{status:405,headers:headers('text/plain')});
  if(new URL(req.url).search)return new Response('',{status:400,headers:headers('text/plain')});
@@ -162,6 +164,39 @@ Deno.serve(async req=>{
  const result=await db.rpc('cotironda_piloto_tracking_status_mvp091',{p_token_hash:digest});
  if(result.error)return new Response('',{status:503,headers:headers('text/plain')});
  let publicResult=result.data as Record<string,unknown>;
+
+ // Only a valid, consented buyer tracking token can reach this gate.
+ // The SECOND RPC repeats buyer consent/revocation/round validation.
+ // NEVER relay the private RPC object, which contains supplier originals.
+ if(publicResult?.can_open===true&&
+   (publicResult.state==='waiting'||publicResult.state==='closed')){
+   try{
+     const source=await db.rpc('cotironda_piloto_buyer_coverage_inputs_mvp175',{
+       p_token_hash:digest
+     });
+     if(!source.error){
+       const safe=resumirCoberturaCompradorMvp175(publicResult,source.data);
+       if(safe)publicResult={...publicResult,coverage:safe};
+     }
+   }catch{/* Existing tracking remains available, with no coverage. */}
+ }
+
+ // Economic facts are an independent source-only gate. The service-role
+ // RPC repeats token ownership/expiry and matches EVERY displayed reviewed
+ // quote's text as a multiset. Never forward the private DB envelope.
+ if(publicResult?.can_open===true&&
+    (publicResult.state==='waiting'||publicResult.state==='closed')){
+   try{
+     const econ=await db.rpc('cotironda_piloto_buyer_economy_summary_mvp180',{
+       p_token_hash:digest
+     });
+     if(!econ.error){
+       const summary=resumirEconomiaCompradorMvp180(publicResult,econ.data);
+       if(summary)publicResult={...publicResult,economy:summary};
+     }
+   }catch{/* An unavailable audit must NOT block existing anonymous offers. */}
+ }
+
  // Private, source-authorized contact reveal only after verified closure.
  // Ciphertext is NEVER sent to the browser, even on a decoding error.
  if(publicResult?.state==='closed'&&
@@ -174,9 +209,9 @@ Deno.serve(async req=>{
        const idRaw=hex(Deno.env.get('COTIRONDA_PILOT_ID_HMAC_HEX')??'');
        const channel=Deno.env.get('COTIRONDA_PILOT_WHAPI_CHANNEL')??'';
        if(!aesRaw||!idRaw||!channel)throw Error('keys_unavailable');
-       const aes=await crypto.subtle.importKey('raw',aesRaw,'AES-GCM',
+       const aes=await crypto.subtle.importKey('raw',Uint8Array.from(aesRaw).buffer,'AES-GCM',
           false,['decrypt']);
-       const idKey=await crypto.subtle.importKey('raw',idRaw,{
+       const idKey=await crypto.subtle.importKey('raw',Uint8Array.from(idRaw).buffer,{
           name:'HMAC',hash:'SHA-256'},false,['sign']);
        const contacts=await decodeContacts(finals.data,aes,idKey,channel);
        const keys=finals.data.supplier_keys as unknown;
