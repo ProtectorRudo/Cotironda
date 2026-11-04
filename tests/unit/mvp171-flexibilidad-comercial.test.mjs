@@ -233,3 +233,18 @@ test('MVP171: recomendación combinada conserva la advertencia del proveedor asi
   [{itemId:'arena_001',tipo:'variante_no_especificada_por_proveedor'}]);
  assert.equal(result.adjudicacionAutomatica,false);
 });
+
+test('MVP171: negocio sin catálogo no queda afuera si su archivo acredita la familia',()=>{
+ const x={...base(),familiaCatalogoAcreditada:false,
+  familiaCotejadaEnTextoFuente:true,atributosOferta:[]};
+ const r=evaluar(x);
+ assert.equal(r.estado,'alternativa_comercial_con_aclaracion');
+ assert.equal(r.equivalenciaParaComparador,'comercial_razonable');
+ assert.equal(r.contactosRevelados,false);
+});
+test('MVP171: la IA sola sin fuente ni catálogo no habilita emparejamientos',()=>{
+ const r=evaluar({...base(),familiaCatalogoAcreditada:false,
+  familiaCotejadaEnTextoFuente:false});
+ assert.equal(r.estado,'no_acreditado');
+ assert.equal(r.rankingHabilitado,false);
+});
