@@ -1,3 +1,6 @@
+## MVP169 — Worker económico one-shot aislado (solo PILOTO staging)
+- Nuevo entrypoint/handler que reutiliza token Vault de 96 hex y RPC de autorización, selecciona/descarga/audita/guarda un único presupuesto real con MVP168, sin rutas de Whapi, IA o ranking. 11 pruebas nuevas y typecheck Deno del nuevo entrypoint. Docs/288. Antes de ejecutar en piloto requiere CI, despliegue staging aislado e invocación explícita por pg_net.
+
 ## MVP168 — Registro económico probado e instalado en PILOTO (04/11/2026)
 - PostgreSQL 17.11: schema/RPCs de MVP168 ensayados `BEGIN/ROLLBACK`, migración aditiva aplicada SOLO a `cotironda-piloto`; smoke reversible PASS, ACL/RLS verificados. Edge de staging v1 ACTIVE con JWT y sin cron, recuperador actual v25 intacto; 0 hechos económicos reales y 0 WhatsApp/finalistas. Auditoría docs/287. No producción, sin activar ranking, no E2E PDF real.
 
