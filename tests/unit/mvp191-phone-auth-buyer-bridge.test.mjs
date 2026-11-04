@@ -21,7 +21,7 @@ test('MVP191: verificación de identidad no agrega contactos, endpoints ni tabla
  assert.match(sql,/\) returns boolean[\s\S]*language sql volatile security definer/iu);
  assert.doesNotMatch(sql,/create table|insert into|update auth\.|delete from|http_post|net\.http_post/iu);
  assert.doesNotMatch(sql,/returns jsonb|returns text|phone\s+as|contact_sha256\s+as/iu);
- const executable=sql.replace(/^\\s*--.*$/gmu,'');
+ const executable=sql.replace(/^\s*--.*$/gmu,'');
  assert.doesNotMatch(executable,/raw_user_meta_data|user_metadata|p_phone|p_chat_hmac|p_token_hash/iu);
  assert.match(sql,/returns boolean/iu);
  assert.match(handler,/verificarVinculoPiloto/);
