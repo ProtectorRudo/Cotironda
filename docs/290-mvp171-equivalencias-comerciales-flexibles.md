@@ -11,7 +11,7 @@ Un corralón cotiza como trabaja: pone «arena», «piedra», «cemento», «hid
 Tres resultados operativos:
 
 1. **Equivalente acreditado:** misma familia, magnitud y especificaciones necesarias explícitas.
-2. **Alternativa comercial razonable:** misma familia y cantidad comercial comprobada, el proveedor usa un nombre genérico o una marca distinta, y el comprador **no exige exclusividad**. Puede participar en comparación económica con el aviso **«Variante no especificada por el proveedor»**. El documento original no se edita, la oferta sigue visible y no se fuerza consulta al proveedor ni se le pide nueva cotización.
+2. **Alternativa comercial razonable:** misma familia y cantidad comercial comprobada, el proveedor usa un nombre genérico o una marca distinta, y el comprador **no exige exclusividad**. Puede participar en comparación económica con el aviso **«Alternativa comercial: puede diferir alguna especificación o marca»**. El documento original no se edita, la oferta sigue visible y no se fuerza consulta al proveedor ni se le pide nueva cotización.
 3. **Diferencia material real / especificación excluyente:** familias distintas, variantes explícitamente contrarias (arena gruesa por fina, piedra rodada por partida), medidas que no alcanzan, tipo o sección de cable distintos o pedido «exclusivamente / excluyente / debe ser». No afirmar equivalencia.
 
 **Ejemplos:**
@@ -32,7 +32,7 @@ Tres resultados operativos:
 
 - \`aridos-bolson-mvp164.ts\`: agrega \`compatible_con_aclaracion\`. El adjetivo no mencionado no bloquea la alternativa comercial, salvo lenguaje de exigencia excluyente. Una variedad distinta declarada sí bloquea.
 - \`adaptador-documental-mvp162.ts\`: aprovecha el puente y la preparación de hechos de fuente MVP163, crea correlación \`comercial_razonable\` y **no altera** unidades literales del proveedor. Si el stock o fiscalidad no están acreditados, sigue \`visible_no_comparable\` por causas económicas, no por el nombre genérico.
-- \`comparacion-ofertas.ts\`: acepta la categoría \`comercial_razonable\` en cobertura/opciones offline; agrega \`advertencia: variante_no_especificada_por_proveedor\` en líneas y una \`advertencias\` por artículo en la opción económica. Se exigen igualmente unidades, cantidades, IVA, flete, mínimos, moneda, pago y disponibilidad cuando corresponda. **Una alternativa no se presenta como identidad exacta.**
+- \`comparacion-ofertas.ts\`: acepta la categoría \`comercial_razonable\` en cobertura/opciones offline; agrega \`advertencia: alternativa_comercial_con_aclaracion\` en líneas y una \`advertencias\` por artículo en la opción económica. Se exigen igualmente unidades, cantidades, IVA, flete, mínimos, moneda, pago y disponibilidad cuando corresponda. **Una alternativa no se presenta como identidad exacta.**
 - \`equivalencia-catalogo-mvp171.ts\`: regla reutilizable por **familia canónica y atributos de catálogo comprobados**, sin una tabla fija de frases. La IA puede sugerir familia/atributos, pero **el backend debe cotejar que coinciden con el archivo original o con el catálogo del proveedor**; sin esa prueba no existe equivalencia. **El catálogo NO es obligatorio**: un comercio que no lo cargó puede cotizar por WhatsApp y el verificador puede reconocer la familia comercial corroborándola contra el archivo original. Las marcas solo son excluyentes si el comprador las declara así; las medidas físicas incompatibles no se perdonan.
 
 ## Límites
