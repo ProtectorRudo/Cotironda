@@ -179,12 +179,11 @@ Deno.serve(async req=>{
      });
      if(!source.error){
        const safe=resumirCoberturaCompradorMvp175(publicResult,source.data);
-       if(safe){
-         publicResult={...publicResult,coverage:safe};
-         // Reuse the SAME authenticated private RPC result to prepare prices.
-         // This variable never goes into an HTTP response or a log.
-         verifiedRoundInputs=source.data;
-       }
+       // Preserve original MVP175 contract and its security regression.
+       if(safe)publicResult={...publicResult,coverage:safe};
+       // Reuse the SAME authenticated private RPC result to prepare prices.
+       // This variable never goes into an HTTP response or a log.
+       if(safe)verifiedRoundInputs=source.data;
      }
    }catch{/* Existing tracking remains available, with no coverage. */}
  }
