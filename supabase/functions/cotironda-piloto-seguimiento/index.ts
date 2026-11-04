@@ -10,6 +10,8 @@ import {resumirCoberturaCompradorMvp175} from '../../../src/domain/resumen-cober
 import {resumirEconomiaCompradorMvp180} from '../../../src/domain/resumen-economia-comprador-mvp180.ts';
 import {resumirImportesCotizadosCompradorMvp186} from
  '../../../src/domain/resumen-importes-cotizados-mvp186.ts';
+import {resumirAlternativasCoberturaMvp189} from
+ '../../../src/domain/alternativas-cobertura-mvp189.ts';
 const ref='ilggkalaafhtiysyzlmg';
 const html=`<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -218,6 +220,22 @@ Deno.serve(async req=>{
      );
      if(itemPrices)publicResult={...publicResult,item_prices:itemPrices};
    }catch{/* Optional price references never block reviewed offers. */}
+ }
+
+ // Source-backed *potential commercial coverage* only AFTER closure.
+ // Covers one supplier or a genuinely complementary pair, never a ranking,
+ // finalist selection, identity reveal, original download or outbound message.
+ if(publicResult?.state==='closed'&&publicResult.can_open===true&&
+    verifiedRoundInputs!==null&&publicResult.economy&&publicResult.coverage){
+   try{
+     const coverageOptions=resumirAlternativasCoberturaMvp189(
+       publicResult as Parameters<typeof resumirAlternativasCoberturaMvp189>[0],
+       verifiedRoundInputs
+     );
+     if(coverageOptions)publicResult={
+       ...publicResult,coverage_options:coverageOptions
+     };
+   }catch{/* Optional prospective coverage must not block existing offers. */}
  }
 
  // Private, source-authorized contact reveal only after verified closure.
