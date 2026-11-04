@@ -42,6 +42,8 @@ export type TerminosAuditados=Readonly<{
  precios:readonly Readonly<{
   lineNo:number;sourceSha256:string;
   unitarioNetoTrasDescuento:string;ivaExplicito:IvaExplicito|null;
+  /** Source-audited VAT basis FOR THIS LINE; never default from the rate. */
+  tratamientoIva:'incluido_en_total'|'excluido_del_total'|null;
  }>[];
 }>;
 /** MVP165: authenticated server-side verifier supplies the ORIGINAL buyer description
@@ -302,12 +304,20 @@ export function adaptarDocumentoMvp162(
    proof.ivaExplicito===null||!allowedIVA.has(proof.ivaExplicito))
    return grade(doc.anonId,'visible_no_comparable',true,uncovered,unused,
     [...reasons,'importe_sin_acreditar'],null);
+  // "Sin IVA" and "IVA incluido" yield different SOURCE totals. Even a
+  // documented 21% rate does not prove which one the supplier wrote.
+  if(!['incluido_en_total','excluido_del_total'].includes(proof.tratamientoIva??''))
+   return grade(doc.anonId,'visible_no_comparable',true,uncovered,unused,
+    [...reasons,'condiciones_sin_acreditar'],null);
   const unitPrice=centavosFuenteMvp162(proof.unitarioNetoTrasDescuento);
   if(unitPrice===null)return grade(doc.anonId,'visible_no_comparable',
    true,uncovered,unused,[...reasons,'importe_sin_acreditar'],null);
   const base=round(unitPrice*milli(line.cantidadDisponible),1000n);
   const gross=base+round(base*vat[proof.ivaExplicito as IvaExplicito],10000n);
-  if(gross!==totals.get(corresponding.lineNo))
+  // The existing comparator always computes the FINAL amount with audited
+  // VAT. The archived supplier's row, however, may explicitly EXCLUDE VAT.
+  const expectedSource=proof.tratamientoIva==='excluido_del_total'?base:gross;
+  if(expectedSource!==totals.get(corresponding.lineNo))
    return grade(doc.anonId,'visible_no_comparable',
     true,uncovered,unused,[...reasons,'importe_no_conciliado'],null);
   final.push({...line,precioUnitarioNeto:money(unitPrice),
