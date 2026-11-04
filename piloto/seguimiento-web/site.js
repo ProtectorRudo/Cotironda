@@ -85,13 +85,57 @@ function offerCard(title,body){
  card.appendChild(details);
  return card;
 }
+// MVP176: revoke all visible private details on an invalid token or outage.
+function clearPrivateView(){
+ for(const id of ["offers","receipts","finalists","coverageGrid"])el(id).replaceChildren();
+ el("coverageSection").hidden=true;
+ for(const id of ["files","equivalence","coverageCaption","deadline"])displayText(id,"");
+ displayText("count","—");
+}
+// Only the service-reduced anonymous summary may be rendered.
+// Each comparison is one quote x requested item, never a price ranking.
+function showCoverage(d){
+ const grid=el("coverageGrid");
+ grid.replaceChildren();
+ el("coverageSection").hidden=true;
+ displayText("coverageCaption","");
+ const c=d?.coverage;
+ if(d?.can_open!==true||!["waiting","closed"].includes(d?.state)||
+    !c||c.state!=="cobertura_revisada"||
+    c.ranking_allowed!==false||c.price_comparable!==false||
+    c.contacts_revealed!==false)return;
+ const fields=[
+  ["commercial_alternatives","Alternativas comerciales razonables"],
+  ["packaging_unproven","Presentaciones sin acreditar"],
+  ["not_evaluated","Artículos pendientes de cotejo"],
+  ["explicit_differences","Diferencias de cantidad o material"],
+  ["technical_uncertainty","Especificaciones por revisar"]
+ ];
+ const valid=n=>Number.isSafeInteger(n)&&n>=0&&n<=250;
+ if(![c.quotations,c.requested_items,c.comparisons,...fields.map(([k])=>c[k])].every(valid)||
+    c.quotations<1||c.requested_items<1||
+    c.comparisons!==c.quotations*c.requested_items||
+    fields.reduce((sum,[key])=>sum+c[key],0)!==c.comparisons)return;
+ for(const [key,label] of fields){
+  if(c[key]===0)continue;
+  const card=element("div","coverage-metric");
+  card.append(element("strong","",String(c[key])),element("span","",label));
+  grid.appendChild(card);
+ }
+ displayText("coverageCaption",c.comparisons+" cruces de artículos entre "+
+  c.quotations+" presupuestos y "+c.requested_items+" artículos solicitados.");
+ el("coverageSection").hidden=false;
+}
 function render(data){
  const d=data&&typeof data==="object"?data:{};
  if(d.state==="not_found"){
+  clearPrivateView();
   displayText("state","Enlace vencido o revocado");
-  displayText("equivalence","");
-  el("offers").replaceChildren();el("receipts").replaceChildren();
-  el("finalists").replaceChildren();return;
+  displayText("error","No encontramos una solicitud vigente para este enlace.");
+  return;
+ }
+ if(!["waiting","closed","cancelled"].includes(d.state)){
+  clearPrivateView();displayText("state","Estado no disponible");return;
  }
  displayText("error","");
  const count=Number(d.received_count);
@@ -107,6 +151,7 @@ function render(data){
   })+" h":"");
  el("offers").replaceChildren();el("receipts").replaceChildren();
  el("finalists").replaceChildren();displayText("equivalence","");
+ showCoverage(d);
  if(d.state==="cancelled"){displayText("state","Ronda cancelada");return;}
  if(d.state!=="waiting"&&d.state!=="closed"){
   displayText("state","Estado no disponible");return;
@@ -141,7 +186,7 @@ async function refresh(){
    headers:{"content-type":"application/json"},body:JSON.stringify({token})});
   if(!r.ok)throw Error("response");
   render(await r.json());
- }catch{displayText("error","No pudimos actualizar el seguimiento. Intentá nuevamente más tarde.");}
+ }catch{clearPrivateView();displayText("state","Sin conexión");displayText("error","No pudimos actualizar el seguimiento. Intentá nuevamente más tarde.");}
 }
 if(!/^[a-f0-9]{64}$/.test(token)){
  displayText("state","Enlace inválido");
