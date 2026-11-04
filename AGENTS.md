@@ -1,5 +1,7 @@
 # AGENTS.md — Contrato técnico de Cotironda
 
+> **MVP173 (04/11/2026, PILOTO comprobado):** RPC read-only v172 instalada SOLO en `cotironda-piloto` y Edge `cotironda-piloto-round-preview-staging` v1 JWT OFF con autenticación Vault dentro del código, sin cron. Solicitud sin token HTTP 401; 2 rondas/4 ofertas/5 artículos comprobados vía TS MVP172, 4 alternativas comerciales razonables, 6 `no_aplica` (aún sin cotejo genérico, no incompatibles), sin ranking, contactos, originales públicos ni WhatsApp. Recuperador v25 intacto. Ver docs/292, PR #548.
+
 > **MVP173 (04/11/2026, PILOTO staging únicamente):** primera ruta de diagnóstico real con RPC privada y adaptador MVP172, token Vault verificado ANTES de leer; respuesta solo con conteos anónimos, sin presupuesto/importes/nombres, sin Whapi, cron, ranking ni finalistas. NO reemplazar el recuperador activo ni habilitar esta ruta para compradores sin rediseñar autorización por empresa. Ver docs/292.
 
 > **MVP172 (04/11/2026, desarrollo):** selector SQL privado read-only vincula el pedido completo con TODAS las ofertas, fuentes v9/MVP163 y economía MVP168, sin devolver subconjuntos ni datos al portal. Probado en transacción reversible PostgreSQL 17: 2 rondas, 4 ofertas, 5 ítems, ACL solo service_role, ranking OFF. Proyección TypeScript de cobertura puramente anónima sin precios ni contactos; SQL no instalado. Ver docs/291 y #535.
