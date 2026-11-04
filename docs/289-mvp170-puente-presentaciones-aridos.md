@@ -1,5 +1,7 @@
 # MVP170 — Enlace del pedido real con presentaciones de áridos acreditadas
 
+> **Actualización de criterio MVP171 (04/11/2026):** el comprador aprobó flexibilizar la equivalencia comercial. Donde MVP170 rechazaba la variante no informada por el proveedor, MVP171 la conserva como **alternativa comercial razonable con advertencia** si la variante no fue marcada excluyente. Una variante expresamente contraria, cantidad diferente o requisito obligatorio no verificado sigue bloqueando esa equivalencia. Ver [docs/290](290-mvp171-equivalencias-comerciales-flexibles.md). El resto de este documento conserva el diagnóstico histórico.
+
 **04/11/2026 · Issues #535 y #529 · SOLO DESARROLLO.** No modificar \`main\`, portal, WhatsApp, datos del piloto ni producción.
 
 ## Motivo y evidencia del piloto
