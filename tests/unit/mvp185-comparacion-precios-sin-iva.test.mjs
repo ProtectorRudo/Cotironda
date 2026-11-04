@@ -124,11 +124,18 @@ test('MVP185: una oferta completa y dos parciales: ordenar CANASTAS por precio d
  c.doc.prueba.sourceSha256=c.doc.sourceSha256;c.economia.sourceSha256=c.doc.sourceSha256;
  c.correlaciones[0].sourceSha256=c.doc.sourceSha256;
  const out=run([a,b,c]);
- assert.equal(out.opcionesCotizadas.length,2);
- assert.equal(out.opcionesCotizadas[0].subtotalMaterialesCotizadoSinIva,'250.50');
- assert.deepEqual(out.opcionesCotizadas[0].proveedoresAnonimos,['oferta_002','oferta_003']);
- assert.equal(out.opcionesCotizadas[1].subtotalMaterialesCotizadoSinIva,'260.50');
+ // Un proveedor completo puede también integrar una opción de dos.
+ // No ocultar otras canastas válidas ni adjudicar automáticamente.
+ assert.equal(out.opcionesCotizadas.length,4);
+ assert.deepEqual(out.opcionesCotizadas.map(x=>x.subtotalMaterialesCotizadoSinIva),
+  ['250.50','250.50','260.50','260.50']);
+ assert.ok(out.opcionesCotizadas.some(x=>
+  x.proveedoresAnonimos.join('|')==='oferta_002|oferta_003'));
+ assert.ok(out.opcionesCotizadas.some(x=>
+  x.proveedoresAnonimos.join('|')==='oferta_001'));
  assert.equal(out.opcionesCotizadas[0].ordenPorPrecioCotizado,1);
+ assert.equal(out.opcionesCotizadas[1].ordenPorPrecioCotizado,1);
+ assert.equal(out.opcionesCotizadas[2].ordenPorPrecioCotizado,2);
  assert.equal(out.adjudicacion,false);
 });
 
@@ -174,6 +181,8 @@ test('MVP185: no infiere moneda, ni IVA 0, ni flete ni stock de fuente silencios
 });
 test('MVP185: línea de pallet o recargo sin asignar impide ordenar barato artificialmente',()=>{
  const a=source('a',[cemento,arena,{id:'pallet',q:'1',unit:'unidad',unitCents:1000,totalCents:1000}]);
+ // El pallet figura en el original pero NO es un artículo del pedido.
+ a.correlaciones=a.correlaciones.slice(0,2);
  const r=run([a]);
  assert.equal(r.ofertas[0].motivoExclusion,'cargos_o_lineas_sin_asignar');
  assert.equal(r.opcionesCotizadas.length,0);
