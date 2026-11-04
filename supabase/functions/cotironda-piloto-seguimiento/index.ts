@@ -5,120 +5,10 @@
  * Never supplier source files, names, contacts or raw offer versions.
  */
 import {createClient} from 'npm:@supabase/supabase-js@2.118.0';
+import {buyerTrackingPageMvp176} from './buyer-page-mvp176.ts';
 import {hex,decodeContacts} from '../_shared/cotironda-finalist-notice.ts';
 import {resumirCoberturaCompradorMvp175} from '../../../src/domain/resumen-cobertura-comprador-mvp175.ts';
 const ref='ilggkalaafhtiysyzlmg';
-const html=`<!doctype html><html lang="es"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="referrer" content="no-referrer"><title>Cotironda · Seguimiento</title>
-<style>
-*{box-sizing:border-box}body{font:16px system-ui,-apple-system,sans-serif;
- color:#172c52;background:#f5f7fb;margin:0}.wrap{max-width:670px;margin:0 auto;padding:36px 22px}
-.brand{font-size:22px;font-weight:800;letter-spacing:.04em;color:#183e8d;margin-bottom:40px}
-.card{background:#fff;border:1px solid #dfe6f1;border-radius:15px;padding:28px}
-h1{font-size:23px;line-height:1.2;margin:0 0 12px}p{color:#65738a;line-height:1.6;margin:8px 0 22px}
-.count{font-size:56px;font-weight:750;color:#183e8d;margin:20px 0 0;font-variant-numeric:tabular-nums}
-.caption{color:#65738a;font-size:13px}.deadline{border-top:1px solid #e3e9f3;padding-top:19px;margin-top:24px}
-.quote{white-space:pre-wrap;padding:16px 18px;background:#f6f8fc;border-radius:9px;
- margin-top:16px;overflow-wrap:anywhere;color:#172c52;font-size:14px}
-small{color:#65738a}.status{font-weight:650;color:#34558f;margin-top:16px}
-</style></head><body><div class="wrap"><div class="brand">COTIRONDA</div>
-<main class="card"><h1>Seguimiento de cotizaciones</h1>
-<p>Acá se actualizan las cotizaciones a medida que llegan y se revisan.
-Vas a ver sus datos y precios aprobados sin saber qué negocio cotizó.
-Al cierre se revelan los datos únicamente de los finalistas habilitados.</p>
-<div class="count" id="count" aria-live="polite">—</div>
-<div class="caption">Presupuestos recibidos</div>
-<div class="deadline"><b id="state">Consultando…</b><p id="deadline"></p></div>
-<div id="files" class="caption" aria-live="polite"></div>
-<div id="receipts" aria-live="polite"></div>
-<div id="offers" aria-live="polite"></div><div id="finalists" aria-live="polite"></div></main>
-<p><small>Enlace privado. No lo compartas con otras personas.</small></p>
-</div><script>
-"use strict";
-const token=location.hash.slice(1);
-const $=id=>document.getElementById(id);
-if(!/^[a-f0-9]{64}$/.test(token)){
- $("state").textContent="Enlace no válido";
-}else{
- const refresh=async()=>{
-  try{
-   const res=await fetch(location.pathname,{method:"POST",
-    headers:{"content-type":"application/json"},cache:"no-store",
-    credentials:"omit",body:JSON.stringify({token})});
-   if(!res.ok)throw Error("bad");
-   const d=await res.json();
-   if(d.state==="not_found"){ $("state").textContent="Enlace vencido o revocado";return }
-   $("count").textContent=String(d.received_count);
-   const files=Number(d.files_pending_review);
-   $("files").textContent=Number.isSafeInteger(files)&&files>0
-    ?files+" archivo(s) de proveedores pendiente(s) de verificar. No son presupuestos validados."
-    :"";
-   $("deadline").textContent="Fecha límite: "+
-     new Date(d.deadline).toLocaleString("es-AR",{timeZone:"America/Argentina/Buenos_Aires"});
-   // Only the server-provided reviewed anonymous projection is displayed.
-   // All untrusted strings enter the DOM via textContent only.
-   const showApproved=()=>{
-     const target=$("offers");target.replaceChildren();
-     if(d.can_open&&Array.isArray(d.offers)){
-       for(const offer of d.offers){
-         if(!offer||typeof offer.label!=="string"||
-            typeof offer.text!=="string")continue;
-         const card=document.createElement("div");card.className="quote";
-         const heading=document.createElement("strong");
-         heading.textContent=offer.label;
-         const p=document.createElement("p");p.textContent=offer.text;
-         card.append(heading,p);target.appendChild(card);
-       }
-     }
-   };
-   const targetFinalists=$("finalists");
-   targetFinalists.replaceChildren();
-   if(d.state==="closed"&&Array.isArray(d.finalists)){
-     const title=document.createElement("h2");
-     title.textContent=d.joint_supplier_coverage===true
-       ?"Dos negocios que juntos cubren el pedido"
-       :"Contactos de las alternativas completas";
-     targetFinalists.appendChild(title);
-     const explanation=document.createElement("p");
-     explanation.textContent=d.joint_supplier_coverage===true
-       ?"Ninguno cubre todo por separado. Juntos pueden cubrir los materiales. Coordiná qué artículos aporta cada negocio y confirmá IVA, flete, pago y disponibilidad; no existe un precio total comparado."
-       :"La selección refleja cobertura de materiales, no un ranking de menor precio. Consultá IVA, flete, pago y disponibilidad con los negocios.";
-     targetFinalists.appendChild(explanation);
-     for(const finalist of d.finalists){
-       if(!finalist||typeof finalist.name!=="string"||
-          typeof finalist.whatsapp!=="string")continue;
-       const card=document.createElement("div");card.className="quote";
-       card.textContent=finalist.name+" · WhatsApp: "+finalist.whatsapp;
-       targetFinalists.appendChild(card);
-     }
-   }
-   if(d.state==="waiting"){
-     $("state").textContent=d.can_open
-       ?"Ronda abierta · presupuestos anónimos disponibles"
-       :"Ronda abierta · esperando cotizaciones verificadas";
-     showApproved();
-     const receipts=$("receipts");receipts.replaceChildren();
-     // Each box is a RECEIPT, not an economic ranking position.
-     const count=Number(d.received_count);
-     for(let i=0;i<Math.min(25,Number.isSafeInteger(count)&&count>0?count:0);i++){
-       const card=document.createElement("div");card.className="quote";
-       card.textContent="Presupuesto anónimo "+(i+1)+" · recibido · en revisión";
-       receipts.appendChild(card);
-     }
-   }else if(d.state==="cancelled"){
-     $("state").textContent="Ronda cancelada";$("offers").replaceChildren();$("receipts").replaceChildren();
-   }else{
-     $("receipts").replaceChildren();
-     $("state").textContent=d.can_open?"Ronda cerrada · presupuestos habilitados":
-       "Ronda cerrada · esperando verificación de los presupuestos";
-     showApproved();
-   }
-  }catch{$("state").textContent="No pudimos actualizar. Probá nuevamente más tarde."}
- };
- refresh();setInterval(refresh,45000);
-}
-</script></body></html>`;
 function headers(type:string){
  return {'content-type':type,'cache-control':'no-store, private, max-age=0',
  'referrer-policy':'no-referrer','x-content-type-options':'nosniff',
@@ -130,8 +20,10 @@ function headers(type:string){
 Deno.serve(async req=>{
  if(req.method==='GET'){
   if(new URL(req.url).search) return new Response('Bad request',{status:400,headers:headers('text/plain')});
-  return new Response(null,{status:302,headers:{...headers('text/plain'),
-   Location:'https://cotironda-seguimiento-vist-git-43f7cf-protector-rudo-s-projects.vercel.app/seguimiento'}});
+  // Return the buyer page at the SAME origin as the token-authorized POST.
+  // No external redirect: the URL fragment (bearer token) never crosses hosts.
+  return new Response(buyerTrackingPageMvp176,{status:200,
+   headers:headers('text/html; charset=utf-8')});
  }
  if(req.method!=='POST')return new Response('',{status:405,headers:headers('text/plain')});
  if(new URL(req.url).search)return new Response('',{status:400,headers:headers('text/plain')});
