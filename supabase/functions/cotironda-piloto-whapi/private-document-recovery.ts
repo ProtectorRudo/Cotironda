@@ -45,7 +45,8 @@ const fail=async(io:RecoveryIO,h:string,code:string)=>{
 };
 export async function recoverOneStoredDocument(args:{
  io:RecoveryIO;triggerChatHmac:string;apiKey:string;
- enabled:boolean;read?:typeof proposeDocumentAI
+ enabled:boolean;read?:typeof proposeDocumentAI;
+ onSupplierReceipt?:(messageHmac:string)=>Promise<void>
 }):Promise<'none'|'recovered_private'|'failed'>{
  const {io,triggerChatHmac,apiKey}=args;
  if(!args.enabled||!HEX.test(triggerChatHmac))return 'none';
@@ -102,6 +103,12 @@ export async function recoverOneStoredDocument(args:{
   }));
   if(received?.state!=='stored_unverified'&&received?.state!=='duplicate')
    return 'recovered_private';
+  // This is a genuinely NEW supplier-media receipt, already private and
+  // durably bound to its source. Async thank-you is an independent option;
+  // duplicate revisions and failed sender transports never retry.
+  if(received.state==='stored_unverified'&&args.onSupplierReceipt){
+   try{await args.onSupplierReceipt(h)}catch{/* Independent from document review. */}
+  }
   const compared=data(await io.rpc('cotironda_piloto_compare_supplier_readings_mvp102',{
    p_message_hmac:h,p_second_proposal:first&&second?second:null
   }));
