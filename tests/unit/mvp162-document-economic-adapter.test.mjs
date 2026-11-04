@@ -30,6 +30,7 @@ const run=(d=doc(),m=mapping(),t=terms(),p=req)=>
 test('MVP162: formato monetario argentino e internacional sin confundir 1.000',()=>{
  assert.equal(centavosFuenteMvp162('$414.564,04'),41456404n);
  assert.equal(centavosFuenteMvp162('$1,000.00'),100000n);
+ assert.equal(centavosFuenteMvp162('USD 1,000.00'),100000n);
  assert.equal(centavosFuenteMvp162('$ 100,00'),10000n);
  assert.equal(centavosFuenteMvp162('1.000'),null);
  assert.equal(centavosFuenteMvp162(''),null);
@@ -206,4 +207,14 @@ test('MVP162: ordinales discontinuos de fuente se conservan, no se inventan reng
  const r=run(d,[{...mapping()[0],lineNo:2}]);
  assert.equal(r.estado,'visible_no_comparable');
  assert.ok(r.motivos.includes('origen_inconsistente'));
+});
+
+test('MVP162: BIG BAG explicitamente cotizado como envase se normaliza a bolsa, NUNCA a m3',()=>{
+ const d=doc();d.lineas[0].unitLiteral='BIG BAG';
+ const ok=run(d);
+ assert.equal(ok.estado,'comparable');
+ assert.equal(ok.ofertaComparable.items[0].unidad,'bag');
+ const bad=run(d,mapping(),terms(),{items:[{id:'cemento_001',cantidad:'2',unidad:'m3'}]});
+ assert.equal(bad.estado,'visible_no_comparable');
+ assert.ok(bad.motivos.includes('unidad_sin_acreditar'));
 });
