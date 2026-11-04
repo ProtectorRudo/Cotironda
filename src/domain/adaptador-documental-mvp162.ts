@@ -316,3 +316,198 @@ export function adaptarDocumentoMvp162(
  };
  return grade(doc.anonId,'comparable',true,[],[],[],oferta);
 }
+
+
+/**
+ * MVP170 — correlación prudente de áridos con hechos documentales MVP163.
+ *
+ * La lectura del PDF/Excel original (con SHA corroborado de bytes), sus hechos
+ * inmutables y el pedido deben llegar desde el backend PRIVADO, nunca desde
+ * un navegador ni del JSON libre de un modelo.
+ *
+ * Integra la evidencia de presentación con adaptarDocumentoMvp162, sin editar
+ * unitLiteral=null, sin tomar la cantidad cotizada como prueba de STOCK y
+ * sin construir TerminosAuditados cuando el IVA/flete siguen sin acreditar.
+ */
+export type PedidoItemOriginalMvp170=Readonly<{
+ id:string;descripcionLiteral:string;cantidad:string;unidad:UnidadCotizada;
+}>;
+export type HechosPresentacionMvp170=Readonly<{
+ requestId:string;messageHmac:string;sourceSha256:string;
+ state:'source_checked'|'unreadable';
+ rankingAllowed:false;sourceImmutabilityPreserved:true;
+ lines:readonly Readonly<{
+  lineNo:number;unitStatus:'explicit'|'not_explicit'|'ambiguous'|'not_found';
+  unit:UnidadCotizada|null;
+  presentation:'big_bag'|'bolson'|'bag_weight'|'none';
+  page:number|null;row:number|null;
+ }>[];
+}>;
+export type MotivoPresentacionMvp170=
+ 'no_aplica'|'sin_presentacion_corroborrada'|'cantidad_diferente'|
+ 'variedad_no_acreditada'|'variedad_diferente'|'presentacion_ambigua'|
+ 'coincide_volumen_nominal_sin_stock';
+export type ResultadoPresentacionMvp170=Readonly<{
+ estado:'fuente_no_verificada'|'preparacion_offline';
+ diagnosticos:readonly Readonly<{
+  itemId:string;lineNo:number|null;estado:MotivoPresentacionMvp170
+ }>[];
+ correlaciones:readonly CorrelacionFuente[];
+ pruebasBolson:readonly PruebaBolsonMvp165[];
+ puente:ResultadoPuente|null;
+ rankingHabilitado:false;contactosRevelados:false;
+}>;
+
+const failPresentation=():ResultadoPresentacionMvp170=>Object.freeze({
+ estado:'fuente_no_verificada' as const,diagnosticos:[],
+ correlaciones:[],pruebasBolson:[],puente:null,
+ rankingHabilitado:false as const,contactosRevelados:false as const
+});
+/** Contiene claves de fuente privadas; NO exportar el resultado al portal. */
+export function prepararPresentacionesAridosMvp170(
+ pedidoOriginal:readonly PedidoItemOriginalMvp170[],
+ doc:DocumentoFuente,
+ fuente:HechosPresentacionMvp170
+):ResultadoPresentacionMvp170{
+ const p=doc?.prueba;
+ if(!Array.isArray(pedidoOriginal)||pedidoOriginal.length<1||
+  pedidoOriginal.length>25||
+  pedidoOriginal.some(x=>!x||!ID.test(x.id)||
+   !['unit','bag','box','kg','g','l','ml','m','m2','m3','roll','pack'].includes(x.unidad)||
+   !saneQuantity(x.cantidad)||
+   typeof x.descripcionLiteral!=='string'||!x.descripcionLiteral.trim()||
+   x.descripcionLiteral.length>500)||
+  new Set(pedidoOriginal.map(x=>x.id)).size!==pedidoOriginal.length||
+  !doc||!p||!fuente||!HASH.test(doc.sourceSha256)||
+  !HASH.test(doc.messageHmac)||
+  fuente.requestId!==doc.requestId||
+  fuente.messageHmac!==doc.messageHmac||
+  fuente.sourceSha256!==doc.sourceSha256||
+  fuente.state!=='source_checked'||
+  fuente.rankingAllowed!==false||
+  fuente.sourceImmutabilityPreserved!==true||
+  p.requestId!==doc.requestId||p.messageHmac!==doc.messageHmac||
+  p.sourceSha256!==doc.sourceSha256||p.version!==9||
+  p.state!=='verified'||p.reason!=='covered'||
+  p.rankingAllowed!==false||p.revisionVigente!==true||
+  p.cotizacionVigente!==true||
+  !Array.isArray(doc.lineas)||!Array.isArray(fuente.lines)||
+  !Number.isSafeInteger(p.lineCount)||p.lineCount<1||
+  p.lineCount!==doc.lineas.length||fuente.lines.length!==doc.lineas.length||
+  p.sumLineCents===null||p.declaredTotalCents===null||
+  !/^\d{1,15}$/u.test(p.declaredTotalCents)||
+  p.sumLineCents!==p.declaredTotalCents||
+  centavosFuenteMvp162(doc.declaredTotalLiteral)!==BigInt(p.declaredTotalCents))
+  return failPresentation();
+ const lines=new Map<number,LineaFuente>();
+ let sum=0n;
+ for(const line of doc.lineas){
+  const cents=centavosFuenteMvp162(line.lineTotalLiteral);
+  if(!Number.isSafeInteger(line.lineNo)||line.lineNo<1||
+   lines.has(line.lineNo)||cents===null||
+   typeof line.descriptionLiteral!=='string'||!line.descriptionLiteral.trim())
+   return failPresentation();
+  lines.set(line.lineNo,line);sum+=cents;
+ }
+ if(sum!==BigInt(p.declaredTotalCents)||lines.size!==p.lineCount||
+  [...lines.keys()].sort((a,b)=>a-b).some((v,i)=>v!==i+1))
+  return failPresentation();
+ const facts=new Map<number,HechosPresentacionMvp170['lines'][number]>();
+ for(const line of fuente.lines){
+  if(!Number.isSafeInteger(line?.lineNo)||!lines.has(line.lineNo)||
+   facts.has(line.lineNo)||
+   !['explicit','not_explicit','ambiguous','not_found'].includes(line.unitStatus)||
+   !['big_bag','bolson','bag_weight','none'].includes(line.presentation)||
+   !(line.unit===null||['unit','bag','box','kg','g','l','ml','m','m2','m3','roll','pack'].includes(line.unit))||
+   !(line.page===null||Number.isSafeInteger(line.page)&&line.page>=1)||
+   !(line.row===null||Number.isSafeInteger(line.row)&&line.row>=1))
+   return failPresentation();
+  facts.set(line.lineNo,line);
+ }
+ const pre: {itemId:string;lineNo:number|null;estado:MotivoPresentacionMvp170;
+  presentacionFuente:'big_bag'|'bolson'|null;pedidoDescripcionLiteral:string}[]=[];
+ const pedido:PedidoComparable={items:pedidoOriginal.map(x=>({
+  id:x.id,cantidad:x.cantidad,unidad:x.unidad
+ }))};
+ for(const item of pedidoOriginal){
+  if(item.unidad!=='m3'){
+   pre.push({itemId:item.id,lineNo:null,estado:'no_aplica',
+    presentacionFuente:null,pedidoDescripcionLiteral:item.descripcionLiteral});
+   continue;
+  }
+  const matches:{lineNo:number;estado:MotivoPresentacionMvp170;
+   presentacionFuente:'big_bag'|'bolson'}[]=[];
+  for(const [lineNo,line] of lines){
+   const evidence=facts.get(lineNo)!;
+   if((evidence.presentation!=='big_bag'&&evidence.presentation!=='bolson')||
+    !['explicit','not_explicit'].includes(evidence.unitStatus)||
+    evidence.page===null||evidence.row===null||
+    (evidence.unit!==null&&evidence.unit!=='bag')||
+    cantidadFuenteMvp162(line.quantityLiteral)===null)
+    continue;
+   const r=interpretarBolsonAridosMvp164({
+    pedidoDescripcion:item.descripcionLiteral,
+    pedidoCantidad:item.cantidad,pedidoUnidad:item.unidad,
+    ofertaDescripcion:line.descriptionLiteral,
+    ofertaCantidad:cantidadFuenteMvp162(line.quantityLiteral)!,
+    presentacionFuente:evidence.presentation,
+    fuenteVerificada:true,presentacionComprobada:true
+   });
+   if(['no_aplica','familia_distinta','fuente_no_acreditada'].includes(r.estado))
+    continue;
+   const estado:MotivoPresentacionMvp170=
+    r.estado==='compatible_comercialmente'
+    ?'coincide_volumen_nominal_sin_stock':
+    r.estado==='variedad_no_informada'
+    ?'variedad_no_acreditada':
+    r.estado==='variedad_distinta'
+    ?'variedad_diferente':
+    r.estado==='volumen_distinto'
+    ?'cantidad_diferente':'presentacion_ambigua';
+   matches.push({lineNo,estado,presentacionFuente:evidence.presentation});
+  }
+  if(matches.length!==1){
+   pre.push({itemId:item.id,lineNo:null,
+    estado:matches.length?'presentacion_ambigua':'sin_presentacion_corroborrada',
+    presentacionFuente:null,pedidoDescripcionLiteral:item.descripcionLiteral});
+   continue;
+  }
+  pre.push({...matches[0],itemId:item.id,
+   pedidoDescripcionLiteral:item.descripcionLiteral});
+ }
+ // Never attribute one supplier line to two different buyer items.
+ const used=new Map<number,number>();
+ for(const x of pre)if(x.lineNo!==null)
+  used.set(x.lineNo,(used.get(x.lineNo)??0)+1);
+ const diagnostics:ResultadoPresentacionMvp170['diagnosticos'][number][]=[];
+ const correlations:CorrelacionFuente[]=[];
+ const proofs:PruebaBolsonMvp165[]=[];
+ for(const x of pre){
+  const conflicting=x.lineNo!==null&&(used.get(x.lineNo)??0)>1;
+  diagnostics.push(Object.freeze({
+   itemId:x.itemId,lineNo:conflicting?null:x.lineNo,
+   estado:conflicting?'presentacion_ambigua':x.estado
+  }));
+  if(!conflicting&&x.estado==='coincide_volumen_nominal_sin_stock'&&
+   x.lineNo!==null&&x.presentacionFuente!==null){
+   correlations.push(Object.freeze({
+    itemId:x.itemId,lineNo:x.lineNo,sourceSha256:doc.sourceSha256,
+    equivalencia:'verificada' as const,
+    disponibilidadCorroborada:false as const
+   }));
+   proofs.push(Object.freeze({
+    itemId:x.itemId,lineNo:x.lineNo,sourceSha256:doc.sourceSha256,
+    pedidoDescripcionLiteral:x.pedidoDescripcionLiteral,
+    presentacionFuente:x.presentacionFuente
+   }));
+  }
+ }
+ return Object.freeze({
+  estado:'preparacion_offline' as const,
+  diagnosticos:Object.freeze(diagnostics),
+  correlaciones:Object.freeze(correlations),
+  pruebasBolson:Object.freeze(proofs),
+  puente:adaptarDocumentoMvp162(pedido,doc,correlations,null,proofs),
+  rankingHabilitado:false as const,contactosRevelados:false as const
+ });
+}
