@@ -7,7 +7,7 @@ const sql=readFileSync(new URL(
 const smoke=readFileSync(new URL(
  '../../supabase/piloto/mvp105_smoke_rollback.sql',import.meta.url),'utf8');
 const page=readFileSync(new URL(
- '../../supabase/functions/cotironda-piloto-seguimiento/index.ts',
+ '../../site/seguimiento/app.js',
  import.meta.url),'utf8');
 
 test('MVP105: only an approved latest revision may become anonymously visible',()=>{
@@ -25,15 +25,15 @@ test('MVP105: only an approved latest revision may become anonymously visible',(
  assert.doesNotMatch(sql,/original_quote|return.*supplier_key/i);
 });
 test('MVP105: page updates approved prices before close without exposing HTML',()=>{
- assert.match(page,/const showApproved=\(\)=>/);
- assert.match(page,/if\(d\.state==="waiting"\)/);
- assert.match(page,/showApproved\(\)/g);
- assert.match(page,/heading.textContent=offer.label/);
- assert.match(page,/p.textContent=offer.text/);
+ assert.match(page,/data\.can_open === true && Array\.isArray\(data\.offers\)/);
+ assert.match(page,/if \(data\.state === 'waiting'\)/);
+ assert.match(page,/card\(offers, offer.label, offer.text\)/);
+ assert.match(page,/heading\.textContent = title/);
+ assert.match(page,/detail\.textContent = description/);
  assert.doesNotMatch(page,/\binnerHTML\b/);
- assert.match(page,/setInterval\(refresh,45000\)/);
+ assert.match(page,/setInterval\(\(\) =>/);
  assert.match(page,/location.hash.slice\(1\)/);
- assert.match(page,/credentials:"omit"/);
+ assert.match(page,/credentials: 'omit'/);
 });
 test('MVP105: reversible tests cover live projection and stale rejection',()=>{
  for(const t of ['mvp105_live_anonymized_offer_not_visible',
