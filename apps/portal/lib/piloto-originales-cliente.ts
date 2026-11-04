@@ -5,9 +5,9 @@
  */
 import {createClient} from '@supabase/supabase-js';
 import type {PilotoOriginalesPorts,SupabaseUserPiloto}
- from '../../../../src/server/originales-piloto-http-runtime.ts';
+ from '../../../src/server/originales-piloto-http-runtime.ts';
 import type {ConsultaPrivadaOriginales}
- from '../../../../src/server/originales-piloto-conexion-segura.ts';
+ from '../../../src/server/originales-piloto-conexion-segura.ts';
 
 const PILOT_URL='https://ilggkalaafhtiysyzlmg.supabase.co';
 const STORAGE_BUCKET='cotironda-piloto-originals';
