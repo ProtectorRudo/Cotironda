@@ -18,6 +18,11 @@ const cantidad=(value:unknown):bigint|null=>{
  const [w,d='']=v.split('.');
  return BigInt(w)*1000n+BigInt(d.padEnd(3,'0')||'0');
 };
+const pedidoMili=(s:string):bigint|null=>{
+ if(!/^(?:0|[1-9]\d{0,8})(?:\.\d{1,3})?$/u.test(s))return null;
+ const [w,d='']=s.split('.');
+ return BigInt(w)*1000n+BigInt(d.padEnd(3,'0')||'0');
+};
 const envase=(s:string,re:RegExp):bigint|null=>{
  const found=[...normal(s).matchAll(re)];
  if(found.length!==1)return null;
@@ -45,7 +50,7 @@ export function cotejarPresentacionObraMvp174(
   !(item.familia==='cemento_gris_obra'?item.unidad==='bag':item.unidad==='l'))
   return salida(item?.id??'item_invalido');
  const buyer=normal(item.descripcionLiteral);
- const requested=cantidad(item.cantidad);
+ const requested=pedidoMili(item.cantidad);
  const buyerPack=item.familia==='cemento_gris_obra'?envase(buyer,peso):100n;
  if(requested===null||requested<=0n||buyerPack===null)
   return salida(item.id,'presentacion_sin_acreditar');
