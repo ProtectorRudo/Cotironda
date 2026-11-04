@@ -23,8 +23,9 @@ test('MVP125: secure same-origin proxy maps only tracking status to isolated pil
  assert.equal(api?.destination,
   'https://ilggkalaafhtiysyzlmg.supabase.co/functions/v1/cotironda-piloto-seguimiento');
  assert.equal(rules.rewrites.length,2);
- assert.match(script,/fetch\('\/api\/seguimiento'/u);
+ assert.match(script,/location\.pathname\?\.startsWith\('\/functions\/v1\/'\)/u);
  assert.match(script,/location\.hash\.slice\(1\)/u);
+ assert.ok(script.includes("'/api/seguimiento'"));
  assert.match(script,/method: 'POST'/u);
  assert.match(script,/body: JSON\.stringify\(\{token\}\)/u);
  assert.doesNotMatch(html+script,/SUPABASE_SERVICE_ROLE_KEY|COTIRONDA_PILOT_AES_HEX|document\.write|innerHTML|sessionStorage|localStorage/u);
