@@ -198,3 +198,37 @@ test('MVP171: alternativa no sustituye a una oferta incompatible ni fracciona un
  assert.equal(result.opcionesCompletas.length,0);
  assert.equal(result.cobertura[2].lineas[0].motivo,'cantidad_insuficiente');
 });
+
+test('MVP171: descripción con dos variedades opuestas NO pasa como genérica',()=>{
+ for(const entrada of [
+  {pedido:'arena fina',cotizado:'BIG BAG de arena fina y gruesa'},
+  {pedido:'piedra partida',cotizado:'BIG BAG piedra partida o rodada'}
+ ]){
+  const r=arido({
+   pedidoDescripcion:entrada.pedido,pedidoCantidad:'1',pedidoUnidad:'m3',
+   ofertaDescripcion:entrada.cotizado,ofertaCantidad:'1',
+   presentacionFuente:'big_bag',fuenteVerificada:true,presentacionComprobada:true
+  });
+  assert.equal(r.estado,'variedad_distinta',entrada.cotizado);
+ }
+});
+test('MVP171: recomendación combinada conserva la advertencia del proveedor asignado',()=>{
+ const pedido={items:[
+  {id:'arena_001',cantidad:'1',unidad:'m3'},
+  {id:'cable_001',cantidad:'1',unidad:'m'}
+ ]};
+ const a={anonId:'anon_a',version:9,confirmada:true,moneda:'ARS',
+  formaPago:'contado',plazoEntregaDias:2,fleteFinal:'0.00',minimoCompraFinal:'0.00',
+  items:[{itemId:'arena_001',unidad:'m3',cantidadDisponible:'1',
+   equivalencia:'comercial_razonable',precioUnitarioNeto:'20.00',ivaPorcentaje:'21'}]};
+ const b={anonId:'anon_b',version:9,confirmada:true,moneda:'ARS',
+  formaPago:'contado',plazoEntregaDias:2,fleteFinal:'0.00',minimoCompraFinal:'0.00',
+  items:[{itemId:'cable_001',unidad:'m',cantidadDisponible:'1',
+   equivalencia:'verificada',precioUnitarioNeto:'10.00',ivaPorcentaje:'21'}]};
+ const result=comparar(pedido,[a,b]);
+ assert.equal(result.opcionesCompletas.length,1);
+ assert.deepEqual(result.opcionesCompletas[0].proveedoresAnonimos,['anon_a','anon_b']);
+ assert.deepEqual(result.opcionesCompletas[0].advertencias,
+  [{itemId:'arena_001',tipo:'variante_no_especificada_por_proveedor'}]);
+ assert.equal(result.adjudicacionAutomatica,false);
+});
