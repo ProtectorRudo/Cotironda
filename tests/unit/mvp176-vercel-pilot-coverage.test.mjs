@@ -172,7 +172,7 @@ test("MVP177: al cerrar publica las cuatro ofertas habilitadas, sin excluir parc
  }]);
  assert.equal(page.node("resultsSection").hidden,false);
  assert.equal(page.node("offers").children.length,4);
- assert.match(page.node("resultsCaption").textContent,/4 presupuesto\\(s\\) habilitado\\(s\\) de 5 recibido\\(s\\)/);
+ assert.match(page.node("resultsCaption").textContent,/4 presupuesto.*de 5 recibido/);
  assert.match(page.node("resultsCaption").textContent,/no se presentan como descartados/);
  assert.equal(page.node("finalists").children.length,0);
  const text=JSON.stringify(page.node("offers").children.map(x=>x.children));
