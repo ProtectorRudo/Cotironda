@@ -30,3 +30,10 @@ Backend debe devolver **todos los candidatos autorizados** con una distinción v
 - Consulta `SELECT` a `cotironda-piloto` (sin revelar tokens/identidades/importes) con la **RPC REAL** `cotironda_piloto_tracking_status_mvp091`: **2 enlaces vigentes, 2 rondas legibles, 4 respuestas, 4 presupuestos habilitados, 2 enlaces con ofertas**.
 - Inspección de la definición de la RPC: obtiene la última revisión por proveedor, solo publica la proyección anónima permitida y usa `jsonb_agg` sin `LIMIT` visible en las tarjetas. Puede omitir documentos aún no verificados o contenido con datos identificatorios; no se garantiza que todos los proveedores hayan autorizado originales. Esta comprobación **no equivale** a pruebas de cierre real, de descarga ni a una simulación de 30 proveedores en PostgreSQL.
 - No se actualizó ni escribió en la base. No se habilitaron ranking, finalistas o mensajes.
+
+## Verificación de despliegue y bloqueo externo
+
+- Vercel creó deployment de **Preview** `dpl_FWb5kuSe1B3aBtti7jBcPckA5KkK`, estado `READY`, commit exacto `db61ec308ffcf26889f9859ccdc2ac00a9a0829c` del PR #553, proyecto `cotironda-seguimiento-web-piloto`. **No se conectó el redirect de WhatsApp.**
+- **SSO está activo** en este proyecto de Preview (`ssoProtection.enabled=true`, `deploymentType=all_except_custom_domains`). Smoke HTTP GET sin token a `/seguimiento`, `/site.js` y `/site.css` obtuvo status 200 pero en los tres casos HTML del panel de Vercel (no contenido de Cotironda). Un `200` sin verificar cuerpo y tipo MIME es **falso positivo**. No deshabilitar SSO sin cambio autorizado.
+- El otro proyecto `cotironda-seguimiento-vista-piloto` tiene SSO apagado, pero el reintento del mismo SHA en Vercel devolvió `402 api-deployments-free-per-day`, con `retryAfter=86400`. No existe deployment verificable de MVP177 allí.
+- **Bloqueo P0-B2r sigue abierto**: hasta poder acceder a la Preview exacta con un método autenticado autorizado o desplegar una vista pública del piloto después de recuperar cuota, no cambiar redirecciones, dominios ni declarar E2E real.
