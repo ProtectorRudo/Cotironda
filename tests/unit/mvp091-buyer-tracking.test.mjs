@@ -7,6 +7,7 @@ const sql=file('supabase/piloto/mvp091_buyer_tracking_pdf_guard.sql');
 const gate=file('supabase/piloto/mvp091_next_round_limited_dispatch.sql');
 const rollback=file('supabase/piloto/mvp091_smoke_rollback.sql');
 const view=file('supabase/functions/cotironda-piloto-seguimiento/index.ts');
+const frontend=file('site/seguimiento/app.js');
 const whapi=file('supabase/functions/cotironda-piloto-whapi/index.ts');
 
 test('MVP091: token nunca en SQL en claro ni en query de URL',()=>{
@@ -16,11 +17,11 @@ test('MVP091: token nunca en SQL en claro ni en query de URL',()=>{
  assert.match(sql,/r\.source_hmac=p_source_hmac/);
  assert.match(sql,/p\.chat_hmac=p_buyer_chat_hmac/);
  assert.match(sql,/r\.created_at>clock_timestamp\(\)-interval '5 minutes'/);
- assert.match(view,/location\.hash\.slice\(1\)/);
- assert.match(view,/method:"POST"/);
+ assert.match(frontend,/location\.hash\.slice\(1\)/);
+ assert.match(frontend,/method: 'POST'/);
  assert.match(view,/referrer-policy':'no-referrer'/);
  assert.match(view,/cache-control':'no-store/);
- assert.doesNotMatch(view,/location\.search.*token|URLSearchParams|localStorage|sessionStorage/);
+ assert.doesNotMatch(frontend,/location\.search.*token|URLSearchParams|localStorage|sessionStorage/);
 });
 test('MVP091: el comprador ve solo número y plazo, no ofertas hasta cierre verdadero',()=>{
  assert.match(sql,/count\(distinct v\.supplier_key\)/);
@@ -29,10 +30,10 @@ test('MVP091: el comprador ve solo número y plazo, no ofertas hasta cierre verd
  assert.match(sql,/anonymous_offers_mvp091/);
  assert.match(sql,/latest\.last_revision=a\.revision_no/);
  assert.doesNotMatch(sql,/jsonb_agg\(.*original_quote/);
- assert.match(view,/d\.state==="waiting"/);
- assert.match(view,/d\.can_open&&Array\.isArray\(d\.offers\)/);
- assert.match(view,/textContent=offer\.text/);
- assert.doesNotMatch(view,/innerHTML\s*=/);
+ assert.match(frontend,/data\.state === 'waiting'/);
+ assert.match(frontend,/data\.can_open === true && Array\.isArray\(data\.offers\)/);
+ assert.match(frontend,/card\(offers, offer.label, offer.text\)/);
+ assert.doesNotMatch(frontend,/innerHTML\s*=/);
 });
 test('MVP091: el archivo enviado por Whapi es PDF privado y la fuente está validada',()=>{
  assert.match(whapi,/generarSolicitudPdfMvp091/);
@@ -68,13 +69,13 @@ test('MVP091: smoke reversible valida privacidad incluso con oferta aprobada ant
 });
 
 test('MVP091: seguimiento visible muestra recibos anónimos, no posiciones económicas inventadas',()=>{
- assert.match(view,/Presupuesto anónimo /);
- assert.match(view,/Ronda abierta · presupuestos anónimos disponibles/);
- assert.match(view,/Ronda abierta · esperando cotizaciones verificadas/);
- assert.match(view,/· recibido · en revisión/);
- assert.match(view,/const showApproved=/);
- assert.match(view,/receipts\.replaceChildren\(\)/);
- assert.doesNotMatch(view,/ranking provisional|ganador provisional|mejor precio/iu);
+ assert.match(frontend,/Presupuesto anónimo /);
+ assert.match(frontend,/Ronda en curso/);
+ assert.match(frontend,/Estamos reuniendo y verificando/);
+ assert.match(frontend,/Recibido\. La cotización se verifica/);
+ assert.match(frontend,/data\.can_open === true && Array\.isArray\(data\.offers\)/);
+ assert.match(frontend,/clean\(receipts\)/);
+ assert.doesNotMatch(frontend,/ranking provisional|ganador provisional|mejor precio/iu);
 });
 
 test('MVP091: HTTP 2xx de PDF no basta sin sent=true de Whapi',()=>{
