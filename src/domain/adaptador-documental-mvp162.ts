@@ -266,7 +266,12 @@ export function adaptarDocumentoMvp162(
   verified.push({itemId:item.id,unidad:effectiveUnit,cantidadDisponible:quantity,
    equivalencia:effectiveEquivalence,precioUnitarioNeto:null,ivaPorcentaje:null});
  }
- if(reasons.length||uncovered.length)
+ // Falta de artículos NO invalida los renglones efectivamente cotizados.
+ // El motor MVP118/160 solo considera opciones que cubren TODA la canasta,
+ // eventualmente mediante dos proveedores. Extras no clasificados, stock,
+ // IVA y unidades sin prueba sí impiden una comparación monetaria.
+ if(unused.length||verified.length===0||
+  reasons.some(reason=>reason!=='faltan_articulos'))
   return grade(doc.anonId,'visible_no_comparable',true,uncovered,unused,reasons,null);
  if(!terminos||terminos.sourceSha256!==doc.sourceSha256||
   terminos.sourceVerified!==true||
@@ -281,12 +286,12 @@ export function adaptarDocumentoMvp162(
   (terminos.tratamientoFlete==='fuera_del_total'&&
     centavosFuenteMvp162(terminos.fleteFinal)===0n)||
   !Array.isArray(terminos.precios))
-  return grade(doc.anonId,'visible_no_comparable',true,[],[],
-   ['condiciones_sin_acreditar'],null);
+  return grade(doc.anonId,'visible_no_comparable',true,uncovered,unused,
+   [...reasons,'condiciones_sin_acreditar'],null);
  const prices=new Map(terminos.precios.map(x=>[x.lineNo,x]));
  if(prices.size!==verified.length||prices.size!==terminos.precios.length)
-  return grade(doc.anonId,'visible_no_comparable',true,[],[],
-   ['importe_sin_acreditar'],null);
+  return grade(doc.anonId,'visible_no_comparable',true,uncovered,unused,
+   [...reasons,'importe_sin_acreditar'],null);
  const final:OfertaComparable['items'][number][]=[];
  const vat:Readonly<Record<IvaExplicito,bigint>>={'0':0n,'10.5':1050n,'21':2100n};
  for(const line of verified){
@@ -295,16 +300,16 @@ export function adaptarDocumentoMvp162(
   if(!proof||proof.sourceSha256!==doc.sourceSha256||
    !saneMoney(proof.unitarioNetoTrasDescuento)||
    proof.ivaExplicito===null||!allowedIVA.has(proof.ivaExplicito))
-   return grade(doc.anonId,'visible_no_comparable',true,[],[],
-    ['importe_sin_acreditar'],null);
+   return grade(doc.anonId,'visible_no_comparable',true,uncovered,unused,
+    [...reasons,'importe_sin_acreditar'],null);
   const unitPrice=centavosFuenteMvp162(proof.unitarioNetoTrasDescuento);
   if(unitPrice===null)return grade(doc.anonId,'visible_no_comparable',
-   true,[],[],['importe_sin_acreditar'],null);
+   true,uncovered,unused,[...reasons,'importe_sin_acreditar'],null);
   const base=round(unitPrice*milli(line.cantidadDisponible),1000n);
   const gross=base+round(base*vat[proof.ivaExplicito as IvaExplicito],10000n);
   if(gross!==totals.get(corresponding.lineNo))
    return grade(doc.anonId,'visible_no_comparable',
-    true,[],[],['importe_no_conciliado'],null);
+    true,uncovered,unused,[...reasons,'importe_no_conciliado'],null);
   final.push({...line,precioUnitarioNeto:money(unitPrice),
    ivaPorcentaje:proof.ivaExplicito});
  }
@@ -317,7 +322,9 @@ export function adaptarDocumentoMvp162(
   minimoCompraFinal:terminos.minimoCompraFinal as string,
   items:final
  };
- return grade(doc.anonId,'comparable',true,[],[],[],oferta);
+ // 'comparable' se refiere SOLO a las líneas acreditadas, nunca a la
+ // cobertura total. Se conservan faltantes para mostrar la oferta parcial.
+ return grade(doc.anonId,'comparable',true,uncovered,[],reasons,oferta);
 }
 
 
