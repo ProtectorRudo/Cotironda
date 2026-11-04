@@ -1,3 +1,6 @@
+## MVP162 — Contrato documental fuente para costos comparables
+- Reutiliza el comparador existente mediante adaptador offline con SHA de fuente, todas las líneas originales, unidades/cantidades literales, equivalencia técnica independiente, términos comerciales/IVA explícitos y cálculo exacto de importes. Si faltan datos, PDF permanece visible pero sin ranking. Issue #533; docs/280. Sin cambios a Whapi/DB/producción.
+
 ## MVP161 — autorización previa para originales de todos los candidatos
 - Puerta pura y fail-closed por comprador, empresa, ronda cerrada, consentimiento anterior a invitación, fuente privada SHA y no retroactividad. Sin activar descargas ni tocar producción. Issue #525, docs/279.
 
