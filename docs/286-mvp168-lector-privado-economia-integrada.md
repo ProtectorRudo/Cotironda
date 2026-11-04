@@ -37,6 +37,10 @@ La prueba documental v9 es la identidad de cotización; una revisión posterior 
 - Regression de MVP163; condiciones y descuentos sintéticos con cantidades reales de la ronda; PDF multipágina, archivo alterado, layout ilegible, moneda/IVA no declarados, función apagada.
 - CI de Node y TS para el código; Deno Edge y **SQL smoke contra PG17** obligatorios antes de instalar/activar en piloto.
 
+## Actualización comprobada el 04/11/2026 — instalación PILOTO, sin ejecución económica real
+
+La primera prueba reversibile `BEGIN/ROLLBACK` aprobó, luego se instaló el esquema privado en `cotironda-piloto` mediante migración aditiva, con ACL/RLS comprobados y smoke reversible PASS. Se desplegó una Edge de staging v1 protegida por JWT y sin cron. La Edge documental habitual sigue v25. El ledger tiene 0 registros económicos; **ningún presupuesto real fue procesado por MVP168**. Ver [docs/287](287-mvp168-verificacion-real-piloto-sql-stage.md). El apartado histórico siguiente describe la situación de desarrollo antes de esta verificación.
+
 ## Instalación futura (NO ejecutada)
 
 En entorno autorizado y con backup verificado: revisar SQL en PostgreSQL 17, correr propuesta de esquema en transacción segura, ejecutar smoke reversible, instalar RPCs y desplegar el paquete COMPLETO de la Edge Function (no reemplazar otros archivos de versión vigente). **Solo después** activar la variable de entorno; evaluar en modo solo lectura con la ronda original, sin activar ranking ni finalistas. Para producción se requiere nueva autorización explícita.
