@@ -89,7 +89,9 @@ function offerCard(title,body){
 }
 // MVP176: revoke all visible private details on an invalid token or outage.
 function clearPrivateView(){
- for(const id of ["offers","receipts","finalists","coverageGrid"])el(id).replaceChildren();
+ for(const id of ["offers","receipts","finalists","coverageGrid","economyGrid"])el(id).replaceChildren();
+ el("economySection").hidden=true;
+ displayText("economyCaption","");
  el("resultsSection").hidden=true;
  displayText("resultsCaption","");
  el("coverageSection").hidden=true;
@@ -146,6 +148,45 @@ function showAllClosedResults(d,approved,receivedCount){
  displayText("resultsCaption",caption);
  el("resultsSection").hidden=false;
 }
+// No economic order is possible until source facts actually support it.
+// The only permitted input is a count-only projection from verified originals.
+function showEconomy(d){
+ const grid=el("economyGrid");grid.replaceChildren();
+ el("economySection").hidden=true;
+ displayText("economyCaption","");
+ const e=d?.economy;
+ if(d?.can_open!==true||!["waiting","closed"].includes(d?.state)||
+    !e||e.state!=="economia_observada_sin_ranking"||
+    e.ranking_allowed!==false||e.price_comparable!==false||
+    e.contacts_revealed!==false||!Array.isArray(d.offers)||
+    !Number.isSafeInteger(e.quotations)||e.quotations<1||
+    e.quotations>100||e.quotations!==d.offers.length)return;
+ const fields=[
+   ["iva_not_informed","IVA no especificado"],
+   ["freight_not_informed","Flete no informado"],
+   ["freight_to_agree","Flete a convenir"],
+   ["stock_unverified","Disponibilidad sin acreditar"],
+   ["payment_not_informed","Forma de pago no informada"],
+   ["net_unverified","Precio neto sin acreditar"],
+   ["delivery_unverified","Plazo de entrega sin acreditar"],
+   ["minimum_unverified","Mínimo de compra sin acreditar"]
+ ];
+ const valid=n=>Number.isSafeInteger(n)&&n>=0&&n<=e.quotations;
+ if(!fields.every(([key])=>valid(e[key]))||
+    e.freight_not_informed+e.freight_to_agree>e.quotations)return;
+ for(const [key,label] of fields){
+   if(e[key]===0)continue;
+   const card=element("div","economy-metric");
+   card.append(element("strong","",String(e[key])),
+    element("span","",label));
+   grid.appendChild(card);
+ }
+ displayText("economyCaption",
+   "Se revisaron las condiciones declaradas en "+e.quotations+
+   (e.quotations===1?" presupuesto habilitado.":" presupuestos habilitados.")+
+   " Los datos ausentes no significan IVA cero, flete gratis ni falta de stock.");
+ el("economySection").hidden=false;
+}
 function render(data){
  const d=data&&typeof data==="object"?data:{};
  if(d.state==="not_found"){
@@ -172,6 +213,7 @@ function render(data){
  el("offers").replaceChildren();el("receipts").replaceChildren();
  el("finalists").replaceChildren();displayText("equivalence","");
  showCoverage(d);
+ showEconomy(d);
  if(d.state==="cancelled"){
   el("resultsSection").hidden=true;displayText("resultsCaption","");
   displayText("state","Ronda cancelada");return;
