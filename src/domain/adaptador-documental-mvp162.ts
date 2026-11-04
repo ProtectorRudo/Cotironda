@@ -1,5 +1,5 @@
 import type {
- OfertaComparable, PedidoComparable, UnidadCotizada, IvaExplicito,
+ OfertaComparable, PedidoComparable, LineaOfertaConfirmada, UnidadCotizada, IvaExplicito,
  FormaPago, MonedaCotizada
 } from './comparacion-ofertas.ts';
 import {interpretarBolsonAridosMvp164} from './aridos-bolson-mvp164.ts';
