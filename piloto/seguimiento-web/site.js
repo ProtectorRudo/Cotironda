@@ -89,11 +89,13 @@ function offerCard(title,body){
 }
 // MVP176: revoke all visible private details on an invalid token or outage.
 function clearPrivateView(){
- for(const id of ["offers","receipts","finalists","coverageGrid","economyGrid","itemPricesGrid"])el(id).replaceChildren();
+ for(const id of ["offers","receipts","finalists","coverageGrid","economyGrid","itemPricesGrid","coverageOptionsCounts","coverageOptionsGrid"])el(id).replaceChildren();
  el("economySection").hidden=true;
  displayText("economyCaption","");
  el("itemPricesSection").hidden=true;
  displayText("itemPricesCaption","");
+ el("coverageOptionsSection").hidden=true;
+ displayText("coverageOptionsCaption","");
  el("resultsSection").hidden=true;
  displayText("resultsCaption","");
  el("coverageSection").hidden=true;
@@ -221,6 +223,116 @@ function showItemPrices(d){
   p.requested_items+" artículos del pedido. No son totales finales ni una clasificación de proveedores.");
  el("itemPricesSection").hidden=false;
 }
+// MVP189 — only closed-round *coverage possibilities*. No economic ranking.
+function showCoverageOptions(d){
+ const counts=el("coverageOptionsCounts"),grid=el("coverageOptionsGrid");
+ counts.replaceChildren();grid.replaceChildren();
+ el("coverageOptionsSection").hidden=true;
+ displayText("coverageOptionsCaption","");
+ const o=d?.coverage_options,c=d?.coverage,e=d?.economy;
+ if(d?.state!=="closed"||d.can_open!==true||
+    !o||o.state!=="alternativas_cobertura_sin_ranking"||
+    !c||c.state!=="cobertura_revisada"||
+    !e||e.state!=="economia_observada_sin_ranking"||
+    c.ranking_allowed!==false||c.price_comparable!==false||
+    c.contacts_revealed!==false||
+    e.ranking_allowed!==false||e.price_comparable!==false||
+    e.contacts_revealed!==false||
+    ["ranking_allowed","price_comparable","tax_calculated",
+     "freight_calculated","stock_confirmed","contacts_revealed",
+     "automatic_award","finalists_selected","whatsapp_sent",
+     "originals_downloadable"].some(key=>o[key]!==false)||
+    !Array.isArray(d.offers)||!Array.isArray(o.coberturaPorOferta)||
+    !Array.isArray(o.alternativas)||
+    !Number.isSafeInteger(o.quotations)||o.quotations<1||o.quotations>10||
+    o.quotations!==d.offers.length||o.quotations!==e.quotations||
+    o.quotations!==c.quotations||
+    !Number.isSafeInteger(o.requested_items)||o.requested_items<1||
+    o.requested_items>25||o.requested_items!==c.requested_items||
+    o.coberturaPorOferta.length!==o.quotations||
+    o.alternativas.length>55)return;
+ const labels=d.offers.map(x=>x?.label);
+ if(labels.some(x=>typeof x!=="string"||!x)||
+    new Set(labels).size!==labels.length)return;
+ const countMap=new Map();
+ for(const row of o.coberturaPorOferta){
+  if(!row||!labels.includes(row.oferta)||countMap.has(row.oferta)||
+     !Number.isSafeInteger(row.articulosConAlternativa)||
+     row.articulosConAlternativa<0||
+     row.articulosConAlternativa>o.requested_items||
+     row.articulosSolicitados!==o.requested_items)return;
+  countMap.set(row.oferta,row.articulosConAlternativa);
+ }
+ if(countMap.size!==labels.length||
+    [...countMap.values()].reduce((sum,n)=>sum+n,0)!==
+      c.commercial_alternatives)return;
+ const seen=new Set();
+ for(const option of o.alternativas){
+  if(!option||!["individual","complementaria"].includes(option.modo)||
+     !Array.isArray(option.ofertasAnonimas)||
+     option.ofertasAnonimas.length!==(option.modo==="individual"?1:2)||
+     new Set(option.ofertasAnonimas).size!==option.ofertasAnonimas.length||
+     option.ofertasAnonimas.some(x=>!labels.includes(x))||
+     !Array.isArray(option.articulos)||
+     option.articulos.length!==o.requested_items)return;
+  const key=option.ofertasAnonimas.slice().sort().join("|");
+  if(seen.has(key))return;seen.add(key);
+  if(option.modo==="individual"&&
+    countMap.get(option.ofertasAnonimas[0])!==o.requested_items)return;
+  if(option.modo==="complementaria"&&
+    option.ofertasAnonimas.some(x=>countMap.get(x)>=o.requested_items))
+    return;
+  const ids=new Set(),used=new Set();
+  for(const item of option.articulos){
+   if(!item||!/^item_\d{3}$/.test(item.itemId)||ids.has(item.itemId)||
+      !Array.isArray(item.ofertasConAlternativa)||
+      item.ofertasConAlternativa.length<1||
+      item.ofertasConAlternativa.length>option.ofertasAnonimas.length||
+      new Set(item.ofertasConAlternativa).size!==
+       item.ofertasConAlternativa.length||
+      item.ofertasConAlternativa.some(x=>!option.ofertasAnonimas.includes(x)))
+      return;
+   ids.add(item.itemId);
+   item.ofertasConAlternativa.forEach(x=>used.add(x));
+  }
+  if(ids.size!==o.requested_items||used.size!==option.ofertasAnonimas.length)
+    return;
+ }
+ for(const label of labels){
+  const line=element("p","coverage-options-count",
+   label+" · "+countMap.get(label)+" de "+o.requested_items+
+    " artículos con alternativa comercial; no equivale a stock confirmado.");
+  counts.appendChild(line);
+ }
+ const articleNames=new Map();
+ for(const item of d.item_prices?.articulos??[]){
+  if(item&&/^item_\d{3}$/.test(item.itemId)&&
+     typeof item.descripcionSolicitada==="string"&&
+     item.descripcionSolicitada.length<=500)
+    articleNames.set(item.itemId,item.descripcionSolicitada);
+ }
+ for(const option of o.alternativas){
+  const card=element("details","coverage-options-card");
+  const name=option.ofertasAnonimas.join(" + ");
+  card.appendChild(element("summary","",
+   option.modo==="individual"?"Alternativa individual: "+name:
+   "Combinación complementaria: "+name));
+  const list=element("ul","coverage-options-list");
+  for(const item of option.articulos){
+   const description=articleNames.get(item.itemId)?:
+    "Artículo "+Number(item.itemId.slice(-3));
+   const choices=item.ofertasConAlternativa.join(" o ");
+   list.appendChild(element("li","",description+" · "+choices));
+  }
+  card.appendChild(list);grid.appendChild(card);
+ }
+ const message=o.alternativas.length===0
+  ?"No encontramos un presupuesto ni una pareja que cubra comercialmente toda la lista. Revisá igualmente las ofertas parciales."
+  :o.alternativas.length+" alternativa(s) de cobertura posible para "+
+    o.requested_items+" artículos. No son ganadores ni se compararon precios finales.";
+ displayText("coverageOptionsCaption",message);
+ el("coverageOptionsSection").hidden=false;
+}
 // Buyer-visible closeout is descriptive, not an adjudication or ranking.
 function showAllClosedResults(d,approved,receivedCount){
  el("resultsSection").hidden=true;
@@ -309,6 +421,7 @@ function render(data){
  showCoverage(d);
  showEconomy(d);
  showItemPrices(d);
+ showCoverageOptions(d);
  if(d.state==="cancelled"){
   el("resultsSection").hidden=true;displayText("resultsCaption","");
   displayText("state","Ronda cancelada");return;
