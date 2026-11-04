@@ -15,7 +15,7 @@ import {evaluarDescargaOriginalMvp161,
 
 export type SesionDescargaMvp190=Readonly<{
  usuarioId:string;empresaId:string;autenticada:true;rol:'buyer';
- emailVerificado:true;anonima:false;
+ identidadVerificada:true;anonima:false;
  venceMs:number;revocadaMs:null;
 }>;
 export type ContextoDescargaMvp190=Readonly<{
@@ -67,7 +67,7 @@ function validSession(s:SesionDescargaMvp190|null,now:number):s is SesionDescarg
  return s!==null&&typeof s==='object'&&
   UID.test(s.usuarioId)&&UID.test(s.empresaId)&&
   s.autenticada===true&&s.rol==='buyer'&&
-  s.emailVerificado===true&&s.anonima===false&&
+  s.identidadVerificada===true&&s.anonima===false&&
   Number.isSafeInteger(s.venceMs)&&s.venceMs>now&&
   s.revocadaMs===null;
 }
