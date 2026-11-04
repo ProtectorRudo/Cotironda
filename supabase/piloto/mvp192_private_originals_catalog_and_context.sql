@@ -213,6 +213,10 @@ begin
  if p_document_id is null then
    return jsonb_build_object(
       'state','authorized_catalog',
+      -- SERVER-ONLY: used to derive the buyer's organisation from the
+      -- very same verified phone/session/round scope; the browser projection
+      -- MUST omit this field.
+      'buyerKey',v_buyer,
       'total',v_total,
       'originals',v_docs
    );
