@@ -344,7 +344,7 @@ export type HechosPresentacionMvp170=Readonly<{
  }>[];
 }>;
 export type MotivoPresentacionMvp170=
- 'no_aplica'|'sin_presentacion_corroborrada'|'cantidad_diferente'|
+ 'no_aplica'|'sin_presentacion_corroborada'|'cantidad_diferente'|
  'variedad_no_acreditada'|'variedad_diferente'|'presentacion_ambigua'|
  'coincide_volumen_nominal_sin_stock';
 export type ResultadoPresentacionMvp170=Readonly<{
@@ -468,7 +468,7 @@ export function prepararPresentacionesAridosMvp170(
   }
   if(matches.length!==1){
    pre.push({itemId:item.id,lineNo:null,
-    estado:matches.length?'presentacion_ambigua':'sin_presentacion_corroborrada',
+    estado:matches.length?'presentacion_ambigua':'sin_presentacion_corroborada',
     presentacionFuente:null,pedidoDescripcionLiteral:item.descripcionLiteral});
    continue;
   }
