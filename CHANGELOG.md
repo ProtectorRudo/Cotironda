@@ -1,3 +1,6 @@
+## MVP185 — Convención para presupuestos que no mencionan IVA (04/11/2026, desarrollo)
+- Por regla comercial del usuario, el silencio IVA se presenta como **precio cotizado sin IVA solo para comparación de materiales**, sin inventar tasa fiscal. Módulo offline de comparación orientativa: fuentes v9+SHA, descuentos conciliados, cobertura de hasta dos proveedores, canasta completa, monedas separadas, sin líneas extra ocultas; no modifica ranking final MVP118 ni adjudica. Copia de seguimiento piloto explica convención sin desplegar. Pruebas con importes ficticios y fallos seguros. Docs/305.
+
 ## MVP184 — Base IVA por renglón, sin doble conteo (04/11/2026, desarrollo)
 - El contrato de `TerminosAuditados` exige `tratamientoIva` comprobado, incluido/excluido. Cotizaciones con precio SIN IVA concilian su base original y el comparador calcula el bruto final con la tasa acreditada; IVA incluido se concilia contra bruto. Faltantes o inconsistencias quedan visibles sin comparar. Cuatro regresiones; no SQL, Supabase, Vercel ni producción. Docs/304, issue #535.
 
