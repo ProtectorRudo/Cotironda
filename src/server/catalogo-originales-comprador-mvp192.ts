@@ -35,12 +35,12 @@ export function proyectarCatalogoOriginalesMvp192(raw:unknown):
  for(const entry of raw.originals){
   if(!object(entry)||typeof entry.documentId!=='string'||
     !UUID.test(entry.documentId)||used.has(entry.documentId)||
-    typeof entry.mime!=='string'||!(entry.mime in FORMATS)||
+    typeof entry.mime!=='string'||!Object.hasOwn(FORMATS,entry.mime)||
     (entry.kind!=='document'&&entry.kind!=='image'))return null;
   used.add(entry.documentId);
   documents.push(Object.freeze({
    documentoId:entry.documentId,
-   nombre:'Presupuesto original '+documents.length.toString().padStart(2,'0'),
+   nombre:'Presupuesto original '+(documents.length+1).toString().padStart(2,'0'),
    formato:FORMATS[entry.mime]
   }));
  }
