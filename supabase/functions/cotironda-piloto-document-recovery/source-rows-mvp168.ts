@@ -44,7 +44,10 @@ export async function leerOriginalPrivadoMvp168(
  let bytes:Uint8Array,hash:string;
  try{
   bytes=new Uint8Array(await file.arrayBuffer());
-  hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),
+  // Deno/WebCrypto requires an ArrayBuffer, not a shared-backed BufferSource.
+  const cleanBuffer=new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(cleanBuffer).set(bytes);
+  hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',cleanBuffer)),
    b=>b.toString(16).padStart(2,'0')).join('');
  }catch{return rejected()}
  if(hash!==input.sourceSha256)return rejected();
