@@ -1,5 +1,7 @@
 # AGENTS.md — Contrato técnico de Cotironda
 
+> **MVP166 / 04-11-2026 (solo desarrollo):** al auditar descuentos, exigir extracción de archivo privado verificado por SHA de bytes, coincidencia de renglón/importe, tasas explícitas y conciliación centavo a centavo. El precio comercial tras descuento NO es automáticamente neto fiscal ni habilita IVA, stock, flete o ranking. No exponer texto original, hash ni contactos. Ver docs/284 e Issue #535.
+
 > **MVP165 / 04-11-2026 (desarrollo):** una equivalencia BIG BAG/bolsón ≈1 m³ nominal puede alimentar el contrato económico SOLO con línea + SHA + descripción del pedido auténtica, variedad técnica acreditada, cantidad, stock, IVA/precio neto/flete/pago auditados. Una presentación diferente de 1 m³ nominal por envase no hereda precio unitario por m³. No alterar original ni activar ranking real sin verificador privado. Ver docs/283 e Issue #535.
 
 ## Rol
