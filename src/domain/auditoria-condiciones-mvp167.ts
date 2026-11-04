@@ -33,19 +33,19 @@ const normAmount=(literal:string):string|null=>{
  const c=centavosFuenteMvp162(literal.replace(/^ar\s*\$/iu,'$'));
  return c===null?null:String(c/100n)+'.'+String(c%100n).padStart(2,'0');
 };
-function iv(note:string):{estado:Exclude<EstadoIvaMvp167,'no_informado'|'contradictorio'>;tasa:'0'|'10.5'|'21'|null}|null{
+function iv(note:string):{estado:Exclude<EstadoIvaMvp167,'no_informado'>;tasa:'0'|'10.5'|'21'|null}|null{
  const s=clean(note);
  if(!ivaToken.test(s)||uncertain.test(note))return null;
  const incl=/(?:\biva\s+(?:incluido|incluida|incl\.)\b|\b(?:precio|total|importe|precios)\s+(?:final(?:es)?\s+)?(?:con|incluye)\s+iva\b|\biva\s*(?:al\s*)?(?:21|10[.,]5|0)\s*%\s*incluido\b)/u.test(s);
  const excl=/(?:\b(?:sin|mas|no incluye|no incluido|no se incluye)\s+(?:el\s+)?iva\b|\biva\s+(?:no\s+incluido|excluido|aparte|adicional)\b|\biva\s*(?:al\s*)?(?:21|10[.,]5|0)\s*%\s*(?:aparte|no incluido)\b)/u.test(s);
  const all=[...s.matchAll(ivaRate)].map(m=>(m[1]??m[2]).replace(',','.'));
  const unique=[...new Set(all)];
- if(unique.length>1||incl&&excl)return null;
+ if(unique.length>1||incl&&excl||incl&&/\bno incluido\b/u.test(s))return {estado:'contradictorio',tasa:null};
  const tasa=unique.length===1?unique[0] as '0'|'10.5'|'21':null;
  if(!incl&&!excl&&tasa===null)return null;
  return {estado:incl?'incluido':excl?'no_incluido':'tasa_sin_base',tasa};
 }
-function fr(note:string):{estado:Exclude<EstadoFleteMvp167,'no_informado'|'contradictorio'>;importe:string|null}|null{
+function fr(note:string):{estado:Exclude<EstadoFleteMvp167,'no_informado'>;importe:string|null}|null{
  const s=clean(note);
  if(!/\b(?:flete|envio|transporte|entrega)\b/u.test(s)||uncertain.test(note))return null;
  const isAgree=/\b(?:flete|envio|transporte|entrega)\s+(?:a convenir|a cotizar|a definir)\b/u.test(s);
@@ -53,7 +53,7 @@ function fr(note:string):{estado:Exclude<EstadoFleteMvp167,'no_informado'|'contr
  const included=/(?:\b(?:flete|envio|transporte)\s+incluido\b|\b(?:incluye|incluido|con)\s+(?:el\s+)?(?:flete|envio|transporte)\b)/u.test(s);
  const additional=/(?:\b(?:flete|envio|transporte)\s+(?:adicional|aparte|no incluido|a cargo del comprador)\b|\b(?:no incluye|sin)\s+(?:el\s+)?(?:flete|envio|transporte)\b)/u.test(s);
  const count=[isAgree,free,included,additional].filter(Boolean).length;
- if(count>1)return null;
+ if(count>1)return {estado:'contradictorio',importe:null};
  const matches=[...s.matchAll(new RegExp(priceRe.source,'giu'))];
  // Un importe en la misma frase no necesariamente es el importe del flete:
  // exigir un ÚNICO monto y que se vincule al término.
@@ -127,8 +127,8 @@ export function auditarCondicionesFuenteMvp167(
   seen.add(line.lineNo);sum+=value;
  }
  if(sum!==declared)return empty();
- const ivaEntries:({loc:UbicacionMvp167;estado:Exclude<EstadoIvaMvp167,'no_informado'|'contradictorio'>;tasa:'0'|'10.5'|'21'|null})[]=[];
- const fleteEntries:({loc:UbicacionMvp167;estado:Exclude<EstadoFleteMvp167,'no_informado'|'contradictorio'>;importe:string|null})[]=[];
+ const ivaEntries:({loc:UbicacionMvp167;estado:Exclude<EstadoIvaMvp167,'no_informado'>;tasa:'0'|'10.5'|'21'|null})[]=[];
+ const fleteEntries:({loc:UbicacionMvp167;estado:Exclude<EstadoFleteMvp167,'no_informado'>;importe:string|null})[]=[];
  const pagoEntries:({loc:UbicacionMvp167;estado:EstadoPagoMvp167})[]=[];
  for(const row of filas){
   const note=row.texto.trim();
@@ -142,11 +142,11 @@ export function auditarCondicionesFuenteMvp167(
  }
  const ivaStates=[...new Set(ivaEntries.map(x=>x.estado))];
  const rates=[...new Set(ivaEntries.map(x=>x.tasa).filter((x):x is '0'|'10.5'|'21'=>x!==null))];
- const ivaConflicts=ivaStates.length>1||rates.length>1;
+ const ivaConflicts=ivaStates.length>1||rates.length>1||ivaStates.includes('contradictorio');
  const ivaEstado:EstadoIvaMvp167=ivaConflicts?'contradictorio':ivaStates[0]??'no_informado';
  const freightStates=[...new Set(fleteEntries.map(x=>x.estado))];
  const freightAmounts=[...new Set(fleteEntries.map(x=>x.importe).filter((x):x is string=>x!==null))];
- const freightConflict=freightStates.length>1||freightAmounts.length>1;
+ const freightConflict=freightStates.length>1||freightAmounts.length>1||freightStates.includes('contradictorio');
  const freightEstado:EstadoFleteMvp167=freightConflict?'contradictorio':freightStates[0]??'no_informado';
  const pays=[...new Set(pagoEntries.map(x=>x.estado))];
  const pagoEstado:EstadoPagoMvp167=pays.length>1||pays.includes('multiple')
