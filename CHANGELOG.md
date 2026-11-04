@@ -1,3 +1,6 @@
+## MVP183 — Usar cotizaciones parciales corroboradas para una canasta completa (04/11/2026, desarrollo)
+- PR #560 conserva renglones verificados de cada oferta parcial, con faltantes explícitos. El comparador existente evalúa canasta completa de hasta dos proveedores, sin comparar subtotales de parciales. Tres regresiones propuestas; no alterar Supabase, WhatsApp, dominios ni producción. Docs/303, issues #535/#524.
+
 ## MVP182 — Seguimiento económico visible SOLO PILOTO (04/11/2026)
 - PR #558 MERGED por squash únicamente a rama de desarrollo, 39/39 blobs idénticos al HEAD MVP181 y 2.087/2.087 unitarias y 6/6 CI PASS; PR previos #550/#552–#557 cerrados como SUPERADOS sin merge individual. Preview Vercel READY existente `dpl_9merKhfKMDACowaQqtsLyPc3XRoJ` probada por HTTP, cuatro archivos frontend idénticos a integración.
 - Edge privada buyer v12 ACTIVE SOLO en `cotironda-piloto`, staging económico v2, 9 archivos, paquete igual. GET redirección a nueva vista económica, GET query 400, POST token falso not_found. SQL 2 enlaces, 4 ofertas visibles, 2 resúmenes económicos, 0 finalistas/avisos, 0 ACK, 0 usuarios web. No producción/WhatsApp/originales alterados. Falta prueba E2E con tokens del comprador; docs/302.

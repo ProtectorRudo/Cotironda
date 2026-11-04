@@ -4,6 +4,7 @@ import {
  adaptarDocumentoMvp162,centavosFuenteMvp162,cantidadFuenteMvp162
 } from '../../src/domain/adaptador-documental-mvp162.ts';
 import {compararCotizacionesOffline} from '../../src/domain/comparacion-ofertas.ts';
+import {recomendarHastaDosOffline} from '../../src/domain/recomendaciones-mvp160.ts';
 
 const H='a'.repeat(64),M='b'.repeat(64),R='469cb459-5f00-49c2-b0b9-bc8b11e5c900';
 const req={items:[{id:'cemento_001',cantidad:'2',unidad:'bag'}]};
@@ -217,4 +218,75 @@ test('MVP162: BIG BAG explicitamente cotizado como envase se normaliza a bolsa, 
  const bad=run(d,mapping(),terms(),{items:[{id:'cemento_001',cantidad:'2',unidad:'m3'}]});
  assert.equal(bad.estado,'visible_no_comparable');
  assert.ok(bad.motivos.includes('unidad_sin_acreditar'));
+});
+
+
+test('MVP183: dos PDFs parciales verificados pueden cubrir juntos la canasta, sin atribuir cobertura total a ninguno',()=>{
+ const pedido={items:[
+  {id:'cemento_001',cantidad:'2',unidad:'bag'},
+  {id:'arena_001',cantidad:'1',unidad:'bag'}
+ ]};
+ const a=run(doc(),mapping(),terms(),pedido);
+ assert.equal(a.estado,'comparable');
+ assert.deepEqual(a.articulosSinCobertura,['arena_001']);
+ assert.deepEqual(a.motivos,['faltan_articulos']);
+ assert.equal(a.ofertaComparable.items.length,1);
+ assert.equal(compararCotizacionesOffline(pedido,[a.ofertaComparable]).opcionesCompletas.length,0);
+
+ const B='c'.repeat(64),BM='d'.repeat(64);
+ const bdoc=doc();
+ bdoc.anonId='anon_bbb';bdoc.sourceSha256=B;bdoc.messageHmac=BM;
+ bdoc.declaredTotalLiteral='$ 60,50';
+ bdoc.lineas[0]={lineNo:1,descriptionLiteral:'Arena en bolsa',quantityLiteral:'1',
+  unitLiteral:'bolsa',unitPriceLiteral:'$ 50,00',lineTotalLiteral:'$ 60,50'};
+ bdoc.prueba={...bdoc.prueba,sourceSha256:B,messageHmac:BM,
+  sumLineCents:'6050',declaredTotalCents:'6050'};
+ const bmap=[{itemId:'arena_001',lineNo:1,sourceSha256:B,
+  equivalencia:'verificada',disponibilidadCorroborada:true}];
+ const bterms={...terms(),sourceSha256:B,
+  precios:[{lineNo:1,sourceSha256:B,unitarioNetoTrasDescuento:'50.00',ivaExplicito:'21'}]};
+ const b=run(bdoc,bmap,bterms,pedido);
+ assert.equal(b.estado,'comparable');
+ assert.deepEqual(b.articulosSinCobertura,['cemento_001']);
+ const result=recomendarHastaDosOffline(pedido,[a.ofertaComparable,b.ofertaComparable]);
+ assert.equal(result.estado,'alternativas_comparables');
+ assert.deepEqual(result.recomendadosAnonimos,['anon_aaa','anon_bbb']);
+ assert.equal(result.opcionPrincipal.totalFinal,'302.50');
+ assert.equal(result.opcionPrincipal.asignacion.length,2);
+ assert.deepEqual(result.cobertura.map(x=>x.lineasCompletas),[1,1]);
+ assert.equal(result.contactosRevelados,false);
+ assert.equal(result.adjudicacion,false);
+});
+
+test('MVP183: parcial sin IVA/flete o disponibilidad NO se vuelve comparable',()=>{
+ const pedido={items:[...req.items,{id:'arena_001',cantidad:'1',unidad:'bag'}]};
+ const noFlete=run(doc(),mapping(),{...terms(),fleteFinal:null},pedido);
+ assert.equal(noFlete.estado,'visible_no_comparable');
+ assert.equal(noFlete.ofertaComparable,null);
+ assert.deepEqual(noFlete.articulosSinCobertura,['arena_001']);
+ assert.ok(noFlete.motivos.includes('condiciones_sin_acreditar'));
+ const noStock=mapping();noStock[0].disponibilidadCorroborada=false;
+ const sinStock=run(doc(),noStock,terms(),pedido);
+ assert.equal(sinStock.estado,'visible_no_comparable');
+ assert.equal(sinStock.ofertaComparable,null);
+ assert.ok(sinStock.motivos.includes('disponibilidad_sin_acreditar'));
+});
+
+test('MVP183: renglones ajenos no clasificados y oferta sin renglones asignados nunca ingresan a ranking',()=>{
+ const pedido={items:[...req.items,{id:'arena_001',cantidad:'1',unidad:'bag'}]};
+ const conExtra=doc();conExtra.lineas.push({
+  lineNo:2,descriptionLiteral:'Pallet',quantityLiteral:'1',unitLiteral:'unidad',
+  unitPriceLiteral:'$ 10,00',lineTotalLiteral:'$ 10,00'
+ });
+ conExtra.prueba.lineCount=2;conExtra.prueba.sumLineCents='25200';
+ conExtra.prueba.declaredTotalCents='25200';conExtra.declaredTotalLiteral='$ 252,00';
+ const a=run(conExtra,mapping(),terms(),pedido);
+ assert.equal(a.estado,'visible_no_comparable');
+ assert.equal(a.ofertaComparable,null);
+ assert.deepEqual(a.lineasNoAsignadas,[2]);
+ assert.ok(a.motivos.includes('extras_sin_clasificar'));
+ const b=run(doc(),[],terms(),pedido);
+ assert.equal(b.estado,'visible_no_comparable');
+ assert.equal(b.ofertaComparable,null);
+ assert.ok(b.motivos.includes('extras_sin_clasificar'));
 });
