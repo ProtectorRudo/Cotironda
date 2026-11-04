@@ -59,7 +59,7 @@ const source=(which,items,iva='no_informado')=>{
   requestId:REQ,messageHmac:hmac,sourceSha256:sha,
   state:'source_checked',rankingAllowed:false,sourceImmutabilityPreserved:true,
   lines:lines.map((x,i)=>({
-   lineNo:i+1,unitStatus:'explicit',unit:x.unit.startsWith('bols')?'bag':'unit',
+   lineNo:i+1,unitStatus:'explicit',unit:x.unitLiteral.startsWith('bols')?'bag':'unit',
    presentation:'none',page:1,row:i+1
   }))
  };
