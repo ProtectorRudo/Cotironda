@@ -89,9 +89,11 @@ function offerCard(title,body){
 }
 // MVP176: revoke all visible private details on an invalid token or outage.
 function clearPrivateView(){
- for(const id of ["offers","receipts","finalists","coverageGrid","economyGrid"])el(id).replaceChildren();
+ for(const id of ["offers","receipts","finalists","coverageGrid","economyGrid","itemPricesGrid"])el(id).replaceChildren();
  el("economySection").hidden=true;
  displayText("economyCaption","");
+ el("itemPricesSection").hidden=true;
+ displayText("itemPricesCaption","");
  el("resultsSection").hidden=true;
  displayText("resultsCaption","");
  el("coverageSection").hidden=true;
@@ -131,6 +133,69 @@ function showCoverage(d){
  displayText("coverageCaption",c.comparisons+" cruces de artículos entre "+
   c.quotations+" presupuestos y "+c.requested_items+" artículos solicitados.");
  el("coverageSection").hidden=false;
+}
+// MVP186 — a quote's SOURCE amount, by requested item; never a final rank.
+function showItemPrices(d){
+ const grid=el("itemPricesGrid");grid.replaceChildren();
+ el("itemPricesSection").hidden=true;displayText("itemPricesCaption","");
+ const p=d?.item_prices,e=d?.economy;
+ if(d?.can_open!==true||!["waiting","closed"].includes(d?.state)||
+   !p||p.state!=="importes_por_articulo_sin_ranking"||
+   p.ranking_allowed!==false||p.price_comparable!==false||
+   p.contacts_revealed!==false||p.adjudicacion!==false||
+   p.originales_descargables!==false||p.IVA_calculado!==false||
+   p.flete_calculado!==false||p.stock_confirmado!==false||
+   !e||e.state!=="economia_observada_sin_ranking"||
+   e.ranking_allowed!==false||e.price_comparable!==false||
+   !Array.isArray(d.offers)||!Array.isArray(p.articulos)||
+   !Number.isSafeInteger(p.quotations)||p.quotations<1||
+   p.quotations!==d.offers.length||p.quotations!==e.quotations||
+   !Number.isSafeInteger(p.requested_items)||p.requested_items<1||
+   p.requested_items>25||p.articulos.length!==p.requested_items)return;
+ const labels=d.offers.map(o=>o?.label);
+ if(labels.some(x=>typeof x!=="string"||!x)||new Set(labels).size!==labels.length)
+   return;
+ const allowedStates=new Set(["alternativa_comercial_con_aclaracion",
+  "coincide_volumen_nominal_sin_stock","no_homologable","sin_importe_asignable"]);
+ const allowedIva=new Set(["sin_iva_por_convencion","sin_iva_declarado",
+  "iva_incluido_no_homologado","iva_ambiguo"]);
+ if(p.articulos.some(item=>!item||!/^item_\\d{3}$/.test(item.itemId)||
+   !Array.isArray(item.referencias)||item.referencias.length!==labels.length||
+   item.referencias.some(r=>!r||!labels.includes(r.oferta)||
+    !allowedStates.has(r.estado)||!allowedIva.has(r.iva)||
+    !(r.importeCotizado===null||
+     typeof r.importeCotizado==="string"&&r.importeCotizado.length<=48&&
+     /^(?:\\s*(?:ARS|USD)?\\s*\\$?\\s*)?[\\d.,]+\\s*$/i.test(r.importeCotizado)))||
+   new Set(item.referencias.map(r=>r.oferta)).size!==labels.length))return;
+ if(new Set(p.articulos.map(item=>item.itemId)).size!==p.articulos.length)return;
+ let withPrices=0;
+ for(const item of p.articulos){
+  const card=element("article","itemprices-card");
+  card.appendChild(element("h3","","Artículo "+Number(item.itemId.slice(-3))));
+  for(const ref of item.referencias){
+   const row=element("div","itemprices-row");
+   const amount=ref.importeCotizado??"Sin importe asociable";
+   if(ref.importeCotizado!==null)withPrices++;
+   const note=ref.importeCotizado===null
+     ?"Falta una equivalencia o una base de precio homologable."
+     :ref.iva==="sin_iva_por_convencion"
+       ?"Sin IVA por convención (el presupuesto no lo aclara)."
+       :"Sin IVA expresamente declarado.";
+   const alternative=ref.importeCotizado!==null
+     ?(ref.estado==="coincide_volumen_nominal_sin_stock"
+       ?" Presentación nominal; disponibilidad no acreditada."
+       :" Alternativa comercial; verificar especificación y disponibilidad.")
+     :"";
+   row.append(element("strong","",ref.oferta),
+    element("span","itemprices-amount",amount),
+    element("span","itemprices-detail",note+alternative));
+   card.appendChild(row);
+  }
+  grid.appendChild(card);
+ }
+ displayText("itemPricesCaption",withPrices+" importes de origen vinculados a "+
+  p.requested_items+" artículos del pedido. No son totales finales ni una clasificación de proveedores.");
+ el("itemPricesSection").hidden=false;
 }
 // Buyer-visible closeout is descriptive, not an adjudication or ranking.
 function showAllClosedResults(d,approved,receivedCount){
@@ -219,6 +284,7 @@ function render(data){
  el("finalists").replaceChildren();displayText("equivalence","");
  showCoverage(d);
  showEconomy(d);
+ showItemPrices(d);
  if(d.state==="cancelled"){
   el("resultsSection").hidden=true;displayText("resultsCaption","");
   displayText("state","Ronda cancelada");return;
