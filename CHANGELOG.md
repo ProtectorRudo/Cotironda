@@ -1,3 +1,6 @@
+## MVP173 — Diagnóstico privado ejecutable para una ronda real (desarrollo)
+- Edge staging separada de recuperación/Whapi. Token Vault obligatorio y RPC solo service_role; payload UUID, retorno estadístico sin originales, SHA, importes ni contactos. Integra SQL MVP172 con adaptador flexible TS. 14 pruebas específicas + Deno check. Docs/292; no rank ni finalistas.
+
 ## MVP172 — Unión de fuente real y diagnóstico privado de ronda (desarrollo)
 - SQL service_role read-only cruza pedido original, todas las ofertas, v9 vigente, fuente MVP163 y evidencias económicas MVP168. Ensayo REAL en PostgreSQL 17 piloto con BEGIN/ROLLBACK: 2/2 rondas, 4/4 cotizaciones, 5/5 artículos, revocación de acceso público y ranking OFF; sin instalar RPC. Diagnóstico TS anónimo reutiliza adaptador MVP170/171 y mantiene precios finales/contactos/WhatsApp desactivados. Docs/291, issue #535.
 
