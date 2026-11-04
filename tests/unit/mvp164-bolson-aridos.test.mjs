@@ -121,3 +121,10 @@ test('MVP164: cantidad ambigua o falsa evita normalización',()=>{
    'capacidad_ambigua');
  }
 });
+
+test('MVP164: mini o jumbo con volumen explícito prevalece sobre el nombre comercial',()=>{
+ const a=check(sample('BIG BAG mini de arena fina 0,5 m3','arena fina','2','1'));
+ assert.equal(a.estado,'compatible_comercialmente');
+ assert.equal(a.volumenM3PorUnidad,'0.500');
+ assert.equal(a.origen,'capacidad_expresa');
+});

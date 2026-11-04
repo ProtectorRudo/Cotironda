@@ -58,14 +58,15 @@ function pack(d:string):ResultadoBolson['presentacion']{
 function volume(d:string):bigint|null|'ambigua'{
  // If source declares small/jumbo/fraction or weight-only BIG BAG,
  // never silently replace that declared format with standard nominal.
- if(/\b(?:medio|media|mini|chico|pequeno|jumbo|1\s*\/\s*2|1\s*\/\s*4)\b/u.test(d)||
-  /\b\d+(?:[.,]\d+)?\s*(?:kg|kilos?|toneladas?)\b/u.test(d))
-  return 'ambigua';
+ const fraction=/\b(?:1\s*\/\s*2|1\s*\/\s*4)\b/u.test(d);
+ const small=/\b(?:medio|media|mini|chico|pequeno|jumbo)\b/u.test(d);
+ const weight=/\b\d+(?:[.,]\d+)?\s*(?:kg|kilos?|toneladas?)\b/u.test(d);
+ if(fraction)return 'ambigua';
  const matches=[...d.matchAll(
   /(?:^|[^\p{L}\p{N}])(\d{1,4}(?:[.,]\d{1,3})?)\s*(?:m3|metros?\s+cubicos?)(?![\p{L}\p{N}])/gu
  )];
  if(matches.length>1)return 'ambigua';
- if(matches.length===0)return null;
+ if(matches.length===0)return small||weight?'ambigua':null;
  return num(matches[0][1])??'ambigua';
 }
 const out=(estado:ResultadoBolson['estado'],f:Arido,

@@ -43,7 +43,7 @@ const empty:SourceTerms={iva:'not_stated',freight:'not_stated',
 const cleaned=(v:string)=>v.replace(/;\s*dscto\.?\s*:?\s*\d{1,2}(?:[.,]\d{1,2})\s*%$/iu,'').trim();
 function presentation(desc:string):LineFact['presentation']{
  const v=norm(desc);
- if(/\bbig[\s-]*bag\b/u.test(v))return 'big_bag';
+ if(/\bbig[\s-]*b(?:a|ia)g\b/u.test(v))return 'big_bag';
  if(/\b(?:bolson|bolsones)\b/u.test(v))return 'bolson';
  if(/\b(?:bolsa|saco)\s*(?:de\s*)?\d+(?:[.,]\d+)?\s*kg\b/u.test(v))
   return 'bag_weight';
