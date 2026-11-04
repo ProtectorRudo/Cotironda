@@ -1,3 +1,5 @@
+> **MVP168 (solo desarrollo):** conectados el lector REAL de archivos privados y los auditores MVP166/167 mediante SHA/v9 y propuesta de ledger SQL privado, sin reescribir el presupuesto. Callback del recuperador OFF por defecto. No instalado en piloto: requiere SQL/Edge/rollback y autorización; no activa ranking, WhatsApp ni datos de contacto. Ver [docs/286](docs/286-mvp168-lector-privado-economia-integrada.md).
+
 > **MVP167 (solo desarrollo):** evidencia comercial de IVA, flete y pago con citas por página/fila, SHA y control de contradicciones. Nunca supone IVA=0 ni flete gratis ni disponibilidad. Falta conectar verificaciones al piloto y comparador real. Ver [docs/285](docs/285-mvp167-condiciones-fuente.md).
 
 > **MVP166 (solo desarrollo):** auditoría determinista de descuentos comerciales con renglones originales posicionados, SHA de archivo y conciliación exacta de importes, sin presumir precio neto de IVA ni habilitar ranking. Ver [docs/284](docs/284-mvp166-auditoria-descuentos-fuente.md). No conectado a PILOTO ni producción.
