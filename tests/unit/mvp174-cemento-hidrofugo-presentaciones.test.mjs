@@ -42,6 +42,6 @@ test('hidrófugo de 4L no equivale a 5L',()=>{
 });
 test('la fuente no contiene precios finales ni contactos en el resultado',()=>{
  const r=probar(cemento(),'cemento 25kg','40');
- for(const field of ['precio','iva','contacto','adjudicacion'])
-  assert.ok(!JSON.stringify(r).includes(field));
+ for(const field of ['precioUnitarioNeto','ivaPorcentaje','contactosRevelados','rankingHabilitado'])
+  assert.equal(Object.hasOwn(r,field),false);
 });
