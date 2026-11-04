@@ -159,13 +159,13 @@ function showItemPrices(d){
   "coincide_volumen_nominal_sin_stock","no_homologable","sin_importe_asignable"]);
  const allowedIva=new Set(["sin_iva_por_convencion","sin_iva_declarado",
   "iva_incluido_no_homologado","iva_ambiguo"]);
- if(p.articulos.some(item=>!item||!/^item_\\d{3}$/.test(item.itemId)||
+ if(p.articulos.some(item=>!item||!/^item_\d{3}$/.test(item.itemId)||
    !Array.isArray(item.referencias)||item.referencias.length!==labels.length||
    item.referencias.some(r=>!r||!labels.includes(r.oferta)||
     !allowedStates.has(r.estado)||!allowedIva.has(r.iva)||
     !(r.importeCotizado===null||
      typeof r.importeCotizado==="string"&&r.importeCotizado.length<=48&&
-     /^(?:\\s*(?:ARS|USD)?\\s*\\$?\\s*)?[\\d.,]+\\s*$/i.test(r.importeCotizado)))||
+     /^(?:\s*(?:ARS|USD)?\s*\$?\s*)?[\d.,]+\s*$/i.test(r.importeCotizado)))||
    new Set(item.referencias.map(r=>r.oferta)).size!==labels.length))return;
  if(new Set(p.articulos.map(item=>item.itemId)).size!==p.articulos.length)return;
  let withPrices=0;
