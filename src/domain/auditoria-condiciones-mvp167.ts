@@ -27,7 +27,7 @@ const clean=(s:string)=>s.normalize('NFKC').toLocaleLowerCase('es-AR')
  .normalize('NFD').replace(/\p{M}/gu,'').replace(/\s+/gu,' ').trim();
 const uncertain=/(?:[¿?]|\b(?:consultar|confirmar|preguntar|pendiente|sujeto a|a definir|por definir|no se (?:indica|informa|sabe|aclara)|sin aclarar|podria|quizas|tal vez|si incluye|si se incluye)\b)/iu;
 const ivaToken=/\biva\b/u;
-const ivaRate=/\biva\s*(?:al\s*)?(21|10[.,]5|0)\s*%|\b(21|10[.,]5|0)\s*%\s*(?:de\s*)?iva\b/gu;
+const ivaRate=/\biva\s*(?:(?:al|incluido|incluida|no\s+incluido|no\s+incluida|aparte)\s*)?(21|10[.,]5|0)\s*%|\b(21|10[.,]5|0)\s*%\s*(?:de\s*)?iva\b/gu;
 const priceRe=/((?:ar\s*\$|\$)\s*(?:0|[1-9]\d{0,2}(?:\.\d{3})*|[1-9]\d{0,8})(?:,\d{1,2})?)/iu;
 const normAmount=(literal:string):string|null=>{
  const c=centavosFuenteMvp162(literal.replace(/^ar\s*\$/iu,'$'));
