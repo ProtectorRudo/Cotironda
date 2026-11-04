@@ -116,3 +116,41 @@ test("MVP176 proxy: upstream outage returns only a generic error",async()=>{
  assert.deepEqual(r.payload,{state:"unavailable"});
  assert.equal(JSON.stringify(r.payload).includes(token),false);
 });
+
+const economy180=()=>({
+ state:"economia_observada_sin_ranking",quotations:1,
+ iva_not_informed:1,freight_not_informed:0,freight_to_agree:1,
+ stock_unverified:1,payment_not_informed:0,net_unverified:1,
+ delivery_unverified:1,minimum_unverified:1,
+ ranking_allowed:false,price_comparable:false,contacts_revealed:false
+});
+test("MVP180 proxy: only economic counts reach buyer, never source or identity",async()=>{
+ const data=sample();
+ data.economy={...economy180(),supplier_phone:"+5491112345678",
+   message_hmac:"secret",price_cents:"999999999",other:"source"};
+ const h=harness(data),r=await h.invoke();
+ assert.equal(r.statusCode,200);
+ assert.deepEqual(r.payload.economy,economy180());
+ assert.doesNotMatch(JSON.stringify(r.payload),/supplier_phone|message_hmac|price_cents|999999999|\+54911/);
+ assert.equal(r.payload.offers[0].text,data.offers[0].text);
+});
+test("MVP180 proxy: suppress unauthorized, cancelled, mismatched or fabricated economics",async()=>{
+ for(const candidate of [
+  {...sample(),can_open:false,economy:economy180()},
+  {...sample(),state:"cancelled",economy:economy180()},
+  {...sample(),economy:{...economy180(),quotations:2}},
+  {...sample(),economy:{...economy180(),freight_not_informed:1}},
+  {...sample(),economy:{...economy180(),stock_unverified:null}},
+  {...sample(),economy:{...economy180(),ranking_allowed:true}}
+ ]){
+  const h=harness(candidate),r=await h.invoke();
+  assert.equal(r.payload.economy,undefined,JSON.stringify(candidate));
+ }
+});
+test("MVP180 proxy: null counts are never turned into verified zero",async()=>{
+ const h=harness({...sample(),received_count:null,files_pending_review:null});
+ const r=await h.invoke();
+ assert.equal(r.statusCode,200);
+ assert.equal(r.payload.received_count,undefined);
+ assert.equal(r.payload.files_pending_review,undefined);
+});
