@@ -249,3 +249,19 @@ test('MVP190: protección extra contra consentimiento capturado antes de crear r
  assert.equal(guard({...f,consentimiento:{...f.consentimiento,
   aceptadoMs:f.politicaDesdeMs-1}}).permitido,false);
 });
+
+test('MVP191: vínculo Auth-WhatsApp obligatorio antes de leer un archivo',async()=>{
+ const f=fixture();f.linkFirst=false;
+ const res=await serve(request(),RID,DOC,f.make());
+ assert.equal(res.status,404);
+ assert.deepEqual([f.calls.sessions,f.calls.links,f.calls.contexts,f.calls.files],
+  [1,1,0,0]);
+});
+
+test('MVP191: baja de vínculo Auth-WhatsApp durante Storage impide devolver bytes',async()=>{
+ const f=fixture();f.linkSecond=false;
+ const res=await serve(request(),RID,DOC,f.make());
+ assert.equal(res.status,404);
+ assert.deepEqual([f.calls.sessions,f.calls.links,f.calls.contexts,f.calls.files],
+  [2,2,1,1]);
+});
