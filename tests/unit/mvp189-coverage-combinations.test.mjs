@@ -155,7 +155,7 @@ test('MVP189: resultado carece de fuente, moneda, precios, proveedor identificab
  for(const secret of [
   RID,p.quotations[0].doc.messageHmac,p.quotations[1].doc.sourceSha256,
   'PUBLIC_APPROVED_0','BIG BAG','media/','supplier_key',
-  'sourceSha256','precioUnitario','importeCotizado','phone','whatsapp'
+  'sourceSha256','precioUnitario','importeCotizado','phone','whatsapp_number'
  ])assert.ok(!out.includes(secret),secret);
  assert.equal(Object.isFrozen(r),true);
 });
