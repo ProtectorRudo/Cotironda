@@ -1,3 +1,6 @@
+## MVP163 — Segunda lectura de unidades y condiciones desde fuente PDF/XLSX
+- Auditoría privada append-only de originales fuente-verificados v9, con unit literal separado de producto, presentaciones BIG BAG, pistas de términos, localizadores y SHA; no inventa m³/IVA/flete ni activa ranking. Recuperador un archivo por tick. Issue #536, docs/281. PILOTO aislado.
+
 ## MVP162 — Contrato documental fuente para costos comparables
 - Reutiliza el comparador existente mediante adaptador offline con SHA de fuente, todas las líneas originales, unidades/cantidades literales, equivalencia técnica independiente, términos comerciales/IVA explícitos y cálculo exacto de importes. Si faltan datos, PDF permanece visible pero sin ranking. Issue #533; docs/280. Sin cambios a Whapi/DB/producción.
 
