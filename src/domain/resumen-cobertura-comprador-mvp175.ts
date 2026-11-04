@@ -24,7 +24,7 @@ export type BuyerCoverageMvp175=Readonly<{
 }>;
 
 type TrackingStatus=Readonly<{
- state:unknown;can_open?:unknown;
+ state?:unknown;can_open?:unknown;
 }>;
 function isObject(v:unknown):v is Record<string,unknown>{
  return v!==null&&typeof v==='object'&&!Array.isArray(v);
