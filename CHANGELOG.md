@@ -1,3 +1,6 @@
+## MVP174 — Cotejo de cemento e hidrófugo por presentación acreditada (desarrollo)
+- Agrega pesos de bolsas y litros por envase al diagnóstico privado de fuentes verificadas. Si falta la presentación, registra `presentacion_sin_acreditar` sin descartar oferta. 8 tests nuevos, 2.008/2.008 unitarios y 6/6 GitHub CI PASS. PR #549, docs/293. Staging sigue en v1: herramienta bloqueó la actualización; WhatsApp y ranking intactos.
+
 ## MVP173 — Diagnóstico real de dos rondas mediante backend privado (PILOTO 04/11/2026)
 - RPC privada instalada en cotironda-piloto (anon/auth sin EXECUTE); Edge staging v1 solo lectura con Vault, sin cron ni afectar recuperador v25. HTTP 401 sin token; dos llamadas reales HTTP 200: 2/2 rondas, 4/4 ofertas, 5/5 artículos, 4 alternativas comerciales razonables en áridos, 6 cruces aún sin cotejo genérico (NO incompatibles). 2.000/2.000 unitarios PASS y 6/6 CI GitHub, ranking, finalistas, mensajes OFF. Docs/292, PR #548.
 
