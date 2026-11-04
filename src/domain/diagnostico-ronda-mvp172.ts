@@ -8,6 +8,7 @@
  * comparación final con IVA/flete completos.
  */
 import {prepararPresentacionesAridosMvp170} from './adaptador-documental-mvp162.ts';
+import {cotejarPresentacionObraMvp174} from './cotejo-presentaciones-mvp174.ts';
 import type {
  DocumentoFuente,HechosPresentacionMvp170,PedidoItemOriginalMvp170,
  MotivoPresentacionMvp170
