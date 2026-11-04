@@ -34,6 +34,9 @@ export type ResultadoComercialMvp171=Readonly<{
 }>;
 const NUM=/^(?:0|[1-9]\d{0,8})(?:\.\d{1,3})?$/u;
 const KEY=/^[a-z][a-z0-9_]{1,49}$/u;
+/** Atributos físicos que no admiten suposición ni en ausencia de exigencia textual. */
+const ESENCIALES=new Set(['tension_v','seccion_mm2','amperaje_a',
+ 'potencia_w','presion_bar','resistencia','norma_seguridad','diametro_mm']);
 const text=(s:string)=>s.normalize('NFKC').toLocaleLowerCase('es-AR')
  .normalize('NFD').replace(/\p{M}/gu,'').replace(/\s+/gu,' ').trim();
 const milli=(v:string):bigint|null=>{
@@ -89,7 +92,8 @@ export function evaluarEquivalenciaCatalogoMvp171(
  for(const attribute of x.atributosPedido){
   const offered=source.get(attribute.clave);
   if(offered===undefined){
-   if(attribute.obligatorio)return out('no_acreditado',['exigencia_no_acreditada']);
+   if(attribute.obligatorio||ESENCIALES.has(attribute.clave))
+    return out('no_acreditado',['exigencia_no_acreditada']);
    alternative=true;reasons.push('variante_no_declarada');continue;
   }
   if(text(offered)!==text(attribute.valor)){
