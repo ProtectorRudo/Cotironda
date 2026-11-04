@@ -1,3 +1,6 @@
+## MVP167 — Auditoría de condiciones IVA, flete y pago desde fuente (solo desarrollo)
+- Módulo independiente lee declaraciones acreditadas por SHA de archivo y página/fila sobre IVA, flete y pago, detecta conflictos y distingue tasa sin base, costo adicional vs incluido y modalidades alternativas. No acredita neto fiscal/stock/plazo/mínimo, no produce precio comparable ni ranking. 22 pruebas nuevas; docs/285, Issue #535. Sin SQL, piloto, WhatsApp ni producción.
+
 ## MVP166 — Auditoría de descuentos por documento y renglón (solo desarrollo)
 - Nuevo módulo puro para comprobar tasas comerciales por renglón PDF/Excel, cantidad, precio de lista y total con BigInt y evidencia de localizador, SHA y versión vigente. Calcula precio comercial descontado pero declara IVA aún no acreditado y ranking inhabilitado; 14 pruebas. Documentación docs/284, #535; sin piloto, base, WhatsApp ni producción.
 
