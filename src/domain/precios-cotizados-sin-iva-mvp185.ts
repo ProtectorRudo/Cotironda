@@ -43,7 +43,7 @@ export type OpcionCotizadaMvp185=Readonly<{
 export type ResultadoPreciosCotizadosMvp185=Readonly<{
  estado:'proyeccion_informativa'|'insumos_invalidos';
  ofertas:readonly Readonly<{
-  oferta:string;articulosCubiertos:number;articulosSolicitados:number;
+  oferta:string;lineasConPrecioBaseComparable:number;articulosSolicitados:number;
   interpretacionIva:EstadoComercialIvaMvp185;
   motivoExclusion:string|null;
  }>[];
@@ -297,7 +297,7 @@ export function compararPreciosCotizadosMvp185(input:Readonly<{
  return Object.freeze({
   estado:'proyeccion_informativa' as const,
   ofertas:Object.freeze(verified.map(x=>Object.freeze({
-   oferta:x.label,articulosCubiertos:x.prices.size,
+   oferta:x.label,lineasConPrecioBaseComparable:x.prices.size,
    articulosSolicitados:itemIds.length,
    interpretacionIva:x.interpretacion,motivoExclusion:x.motivo
   }))),
