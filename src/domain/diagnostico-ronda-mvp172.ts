@@ -44,7 +44,7 @@ type EstadoPreview='alternativa_comercial_con_aclaracion'|
  'coincide_volumen_nominal_sin_stock'|
  'variedad_diferente'|'cantidad_diferente'|
  'variedad_no_acreditada'|'presentacion_ambigua'|
- 'sin_presentacion_corroborada'|'no_aplica';
+ 'sin_presentacion_corroborada'|'presentacion_sin_acreditar'|'no_aplica';
 export type ResultadoPreviewMvp172=Readonly<{
  estado:'insumos_invalidos'|'diagnostico_privado';
  rondaResumen:Readonly<{articulosSolicitados:number;cotizacionesTotales:number;
