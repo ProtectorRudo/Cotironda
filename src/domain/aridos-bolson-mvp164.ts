@@ -8,7 +8,7 @@ export type Arido='arena'|'piedra'|'cascote'|'otro';
 export type ResultadoBolson=Readonly<{
  estado:'no_aplica'|'fuente_no_acreditada'|'capacidad_ambigua'|
  'familia_distinta'|'volumen_distinto'|'variedad_distinta'|
- 'variedad_no_informada'|'compatible_comercialmente';
+ 'variedad_no_informada'|'compatible_con_aclaracion'|'compatible_comercialmente';
  familia:Arido;
  presentacion:'big_bag'|'bolson'|'none';
  volumenM3PorUnidad:string|null;
@@ -24,6 +24,11 @@ export type EntradaBolson=Readonly<{
  presentacionFuente:'big_bag'|'bolson'|'bag_weight'|'none';
  fuenteVerificada:boolean;presentacionComprobada:boolean;
 }>;
+/**
+ * Las palabras del material no son por defecto exigencias excluyentes.
+ * Solo una orden expresa de NO aceptar sustitución obliga a acreditar subtipo.
+ */
+const excluyente=(s:string)=>/\b(?:exclusivamente|unicamente|estrictamente|obligatoriamente|excluyente|sin sustitutos?|sin equivalentes|no aceptar (?:otra|otros|equivalentes)|debe ser|tiene que ser|solo si)\b/u.test(s);
 const norm=(v:string)=>v.normalize('NFKC').toLocaleLowerCase('es-AR')
  .normalize('NFD').replace(/\p{M}/gu,'').replace(/\s+/gu,' ').trim();
 const fixed=(v:bigint)=>String(v/1000n)+'.'+String(v%1000n).padStart(3,'0');
@@ -42,12 +47,12 @@ function subtype(d:string,f:Arido):string{
  if(f==='cascote')return 'cascote';
  if(f==='arena'){
   const a=/\bfin[ao]\b/u.test(d),b=/\bgrues[ao]\b/u.test(d);
-  return a===b?'generica':a?'fina':'gruesa';
+  return a&&b?'mixta':!a&&!b?'generica':a?'fina':'gruesa';
  }
  if(f==='piedra'){
   const a=/\b(?:partid[ao]|triturad[ao])\b/u.test(d);
   const b=/\b(?:rodad[ao]|canto\s+rodado)\b/u.test(d);
-  return a===b?'generica':a?'partida':'rodada';
+  return a&&b?'mixta':!a&&!b?'generica':a?'partida':'rodada';
  }
  return 'generica';
 }
@@ -97,10 +102,12 @@ export function interpretarBolsonAridosMvp164(x:EntradaBolson):ResultadoBolson{
  const origen=v===null?'convencion_nominal':'capacidad_expresa';
  const coinciden=(per*qty+500n)/1000n===requested;
  const reqVariant=subtype(pedido,required),offerVariant=subtype(oferta,f);
- const species=reqVariant==='generica'||offerVariant===reqVariant?'corroborada':
+ const species=offerVariant==='mixta'?'contradictoria':
+  reqVariant==='generica'||reqVariant==='mixta'||offerVariant===reqVariant?'corroborada':
   offerVariant==='generica'?'generica':'contradictoria';
  const state:ResultadoBolson['estado']=!coinciden?'volumen_distinto':
   species==='contradictoria'?'variedad_distinta':
-  species==='generica'?'variedad_no_informada':'compatible_comercialmente';
+  species==='generica'?(excluyente(pedido)?'variedad_no_informada':'compatible_con_aclaracion'):
+  'compatible_comercialmente';
  return out(state,f,p,per,qty,origen,species,coinciden);
 }

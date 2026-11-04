@@ -75,16 +75,19 @@ test('MVP165: no normaliza ARIDOS sin prueba de presentación exacta',()=>{
  }
 });
 
-test('MVP165: dos PDF reales con arena genérica y piedra genérica no acreditan fina/partida',()=>{
+test('MVP171: arena y piedra genéricas son alternativas razonables, no sustitución textual exacta',()=>{
  for(const anon of ['anon_ailin','anon_nahuel']){
   const d=documento();d.anonId=anon;
   d.lineas[0].descriptionLiteral='BIG BAG de Arena; Dscto. 22.4%';
   d.lineas[1].descriptionLiteral='BIG BAG de Piedra; Dscto. 0.0%';
   const r=adaptar(d);
-  assert.equal(r.estado,'visible_no_comparable');
-  assert.deepEqual(r.articulosSinCobertura,['arena_001','piedra_001']);
-  assert.ok(r.motivos.includes('equivalencia_sin_acreditar'));
-  assert.equal(r.ofertaComparable,null);
+  assert.equal(r.estado,'comparable');
+  assert.deepEqual(r.articulosSinCobertura,[]);
+  assert.deepEqual(r.ofertaComparable.items.slice(0,2).map(x=>x.equivalencia),
+   ['comercial_razonable','comercial_razonable']);
+  const ranking=recomendarHastaDosOffline(pedido(),[r.ofertaComparable]);
+  assert.equal(ranking.opcionPrincipal.advertencias.length,2);
+  assert.equal(ranking.contactosRevelados,false);
  }
 });
 

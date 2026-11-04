@@ -1,3 +1,9 @@
+## MVP171 — Equivalencias comerciales flexibles para todos los rubros (desarrollo)
+- Las descripciones genéricas del proveedor ya no excluyen automáticamente oferta con especificación no excluyente: la fuente lleva `comercial_razonable`, con advertencias en cobertura y opciones offline. Áridos nominales 1 m³/BIG BAG; marca de hidrófugo flexible salvo exigencia; motor catálogo reutilizable para cemento, electricidad, pintura y más, sin validar unidades o atributos peligrosos por suposición. Docs/290 y pruebas de regresión. Sin despliegue de piloto ni ranking real.
+
+## MVP170 — Cruce de presentaciones de áridos con pedido y fuente (solo desarrollo)
+- Integración en el adaptador documental MVP162: enlaza hechos privados de BIG BAG/bolsón MVP163 con cantidades y descripciones del pedido mediante MVP164. Separa volumen nominal y variedad técnica, no inventa unidad, stock, IVA ni ranking. 19 nuevas pruebas; consulta SQL de piloto: 10 unidades ausentes, 4 BIG BAG fuente. Docs/289.
+
 ## MVP168 — Registro económico probado e instalado en PILOTO (04/11/2026)
 - PostgreSQL 17.11: schema/RPCs de MVP168 ensayados `BEGIN/ROLLBACK`, migración aditiva aplicada SOLO a `cotironda-piloto`; smoke reversible PASS, ACL/RLS verificados. Edge de staging v1 ACTIVE con JWT y sin cron, recuperador actual v25 intacto; 0 hechos económicos reales y 0 WhatsApp/finalistas. Auditoría docs/287. No producción, sin activar ranking, no E2E PDF real.
 

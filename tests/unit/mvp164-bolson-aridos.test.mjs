@@ -14,8 +14,8 @@ test('MVP164: cotización real Ailín, BIG BAG arena 1 / piedra 2 => 1 y 2 m3 no
  assert.equal(a.volumenM3Cotizado,'1.000');
  assert.equal(b.volumenM3Cotizado,'2.000');
  assert.equal(a.origen,'convencion_nominal');
- assert.equal(a.estado,'variedad_no_informada');
- assert.equal(b.estado,'variedad_no_informada');
+ assert.equal(a.estado,'compatible_con_aclaracion');
+ assert.equal(b.estado,'compatible_con_aclaracion');
  assert.equal(a.permiteRanking,false);
 });
 test('MVP164: cotización real Nahuel descuento 0,0 no altera la equivalencia de volumen',()=>{
@@ -67,7 +67,7 @@ test('MVP164: piedra rodada no pasa por partida; piedra genérica informa varian
  const a=check(sample('BIG BAG piedra rodada','piedra partida','2','2'));
  const b=check(sample('BIG BAG piedra','piedra partida','2','2'));
  assert.equal(a.estado,'variedad_distinta');
- assert.equal(b.estado,'variedad_no_informada');
+ assert.equal(b.estado,'compatible_con_aclaracion');
 });
 test('MVP164: arena fina y piedra partida expresas compatibles',()=>{
  const a=check(sample('BIG BAG arena fina','arena fina'));

@@ -1,5 +1,9 @@
 # AGENTS.md — Contrato técnico de Cotironda
 
+> **MVP171 (04/11/2026, desarrollo):** NO bloquear por descripciones genéricas ni exigir que cada proveedor repita los adjetivos del comprador. Si familia, cantidad y fuente acreditadas coinciden y no hay exclusividad, tratar como `comercial_razonable` y mostrar advertencia; diferencias expresas de variedad/medidas o exigencia excluyente siguen bloqueadas. Política transversal para rubros vía catálogo comprobado. No inventar IVA, stock o flete, no forzar ranking. Ver docs/290 y PR #546.
+
+> **MVP170 (04/11/2026, SOLO DESARROLLO):** enlazamos el pedido con hechos comerciales MVP163 desde la misma fuente v9, usando el puente MVP162 y normalizador MVP164. En piloto se comprobaron 4 BIG BAG comerciales entre 10 líneas sin unidad literal. Nunca afirmar que arena genérica es fina ni piedra genérica es partida, ni stock, IVA o ranking. Ver docs/289 y #535.
+
 > **MVP168 / 04-11-2026 — Instalación aislada verificada en PILOTO:** ledger privado y dos RPCs SQL instalados tras smoke PostgreSQL 17.11 + `ROLLBACK` PASS. Edge nueva `cotironda-piloto-economic-staging` v1 JWT ACTIVE sin cron; recuperador original v25 conservado. 0 resultados económicos reales, 0 finalistas. No marcar #535 terminado ni activar flag, comparador o contactos sin nueva prueba. Ver docs/287.
 
 > **MVP168 / 04-11-2026 (solo rama de desarrollo):** enlazado lector de originales con pruebas económicas MVP166/167 y ledger privado append-only propuesto. Verificar bytes originales y SHA v9 siempre; activar worker solo con RPCs privadas probadas y flag explícito; no suponer que el SQL o Edge está instalado. `rankingAllowed=false`; no contactos, cierre ni originales públicos. Ver docs/286, Issue #535.
