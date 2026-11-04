@@ -83,6 +83,6 @@ test('Headers sin caché ni detalles internos; límite de Storage y permisos pri
  assert.match(http,/x-content-type-options/);
  assert.match(http,/vary':'Authorization/);
  assert.match(sdk,/data\.size>8388608/);
- assert.match(sdk,/^ const STORAGE_BUCKET='cotironda-piloto-originals'/mu);
+ assert.match(sdk,/^const STORAGE_BUCKET='cotironda-piloto-originals'/mu);
  assert.match(sdk,/^  readOriginal:async\(bucket,path\)=>\{/mu);
 });
