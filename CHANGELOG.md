@@ -1,3 +1,6 @@
+## MVP172 — Unión de fuente real y diagnóstico privado de ronda (desarrollo)
+- SQL service_role read-only cruza pedido original, todas las ofertas, v9 vigente, fuente MVP163 y evidencias económicas MVP168. Ensayo REAL en PostgreSQL 17 piloto con BEGIN/ROLLBACK: 2/2 rondas, 4/4 cotizaciones, 5/5 artículos, revocación de acceso público y ranking OFF; sin instalar RPC. Diagnóstico TS anónimo reutiliza adaptador MVP170/171 y mantiene precios finales/contactos/WhatsApp desactivados. Docs/291, issue #535.
+
 ## MVP171 — Equivalencias comerciales flexibles para todos los rubros (desarrollo)
 - Las descripciones genéricas del proveedor ya no excluyen automáticamente oferta con especificación no excluyente: la fuente lleva `comercial_razonable`, con advertencias en cobertura y opciones offline. Áridos nominales 1 m³/BIG BAG; marca de hidrófugo flexible salvo exigencia; motor catálogo reutilizable para cemento, electricidad, pintura y más, sin validar unidades o atributos peligrosos por suposición. Docs/290 y pruebas de regresión. Sin despliegue de piloto ni ranking real.
 
