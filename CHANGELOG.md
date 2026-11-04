@@ -1,3 +1,6 @@
+## MVP166 — Auditoría de descuentos por documento y renglón (solo desarrollo)
+- Nuevo módulo puro para comprobar tasas comerciales por renglón PDF/Excel, cantidad, precio de lista y total con BigInt y evidencia de localizador, SHA y versión vigente. Calcula precio comercial descontado pero declara IVA aún no acreditado y ranking inhabilitado; 14 pruebas. Documentación docs/284, #535; sin piloto, base, WhatsApp ni producción.
+
 ## MVP165 — Puente de bolsones a contrato económico (solo desarrollo)
 - MVP162 admite una prueba separada de presentación de áridos ligada a item/línea/SHA y descripción auténtica del pedido. MVP164 valida familia, variedad y 1 m³ nominal por envase antes de permitir unidad m³ al comparador. El IVA, descuento neto, stock, flete y pago siguen siendo requisitos independientes; documentos sin evidencia permanecen visibles sin ranking. Tests específicos y docs/283; #535. Sin migración, WhatsApp, contactos ni producción.
 
