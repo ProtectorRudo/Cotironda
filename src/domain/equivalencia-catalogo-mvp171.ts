@@ -12,7 +12,10 @@ export type AtributoComercialMvp171=Readonly<{
 }>;
 export type EntradaComercialMvp171=Readonly<{
  familiaPedido:string;familiaOferta:string;
- familiaCatalogoAcreditada:boolean;fuenteProveedorAcreditada:boolean;
+ /** La familia puede venir de catalogo O del propio original corroborado. */
+ familiaCatalogoAcreditada:boolean;
+ familiaCotejadaEnTextoFuente?:boolean;
+ fuenteProveedorAcreditada:boolean;
  unidadCanonicaPedido:string;unidadCanonicaOferta:string;
  cantidadCanonicaPedido:string;cantidadCanonicaOferta:string;
  conversionPresentacionAcreditada:boolean;
@@ -62,7 +65,7 @@ function out(estado:EstadoComercialMvp171,
 export function evaluarEquivalenciaCatalogoMvp171(
  x:EntradaComercialMvp171
 ):ResultadoComercialMvp171{
- if(!x||x.familiaCatalogoAcreditada!==true||
+ if(!x||(x.familiaCatalogoAcreditada!==true&&x.familiaCotejadaEnTextoFuente!==true)||
   x.fuenteProveedorAcreditada!==true||
   !Array.isArray(x.atributosPedido)||!Array.isArray(x.atributosOferta)||
   x.atributosPedido.length>30||x.atributosOferta.length>30||
