@@ -66,7 +66,10 @@ set search_path='' as $fn$
         then (auth.jwt()->>'session_id')::uuid
         else null::uuid end
       and (sess.not_after is null or sess.not_after>clock_timestamp())
-      and case when (auth.jwt()->>'exp') ~ '^[0-9]{9,11}
+      and case when (auth.jwt()->>'exp') ~ '^[0-9]{9,11}$'
+       then (auth.jwt()->>'exp')::bigint >
+         extract(epoch from clock_timestamp())::bigint
+       else false end
       and r.state='closed'
       and r.closed_at is not null
       and r.closed_at>=r.closes_at
