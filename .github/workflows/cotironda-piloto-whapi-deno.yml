@@ -4,6 +4,7 @@ on:
     paths:
       - 'supabase/functions/cotironda-piloto-whapi/**'
       - 'supabase/functions/cotironda-piloto-document-recovery/**'
+      - 'supabase/functions/cotironda-piloto-round-preview-staging/**'
       - '.github/workflows/cotironda-piloto-whapi-deno.yml'
   push:
     branches:
@@ -33,6 +34,7 @@ jobs:
           deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-document-recovery/index.ts
           deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-document-recovery/scheduled-auth.ts
           deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-document-recovery/quote-reconciliation.ts
+          deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-round-preview-staging/index.ts
       - name: Exercise unpdf runtime with a real two-page PDF (synthetic content)
         run: deno run --node-modules-dir=auto tests/unit/mvp130-unpdf-deno-runtime.smoke.ts
       - name: Verify no raw supplier document is printed
