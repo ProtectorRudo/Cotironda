@@ -55,7 +55,7 @@ test('MVP172: dos presupuestos de fuente real sintética conservan alternativas 
  assert.deepEqual(r.proveedoresAnonimos.map(x=>x.oferta),['oferta_001','oferta_002']);
  assert.deepEqual(r.proveedoresAnonimos[0].articulos.map(x=>x.estado),[
   'alternativa_comercial_con_aclaracion',
-  'alternativa_comercial_con_aclaracion','no_aplica'
+  'alternativa_comercial_con_aclaracion','presentacion_sin_acreditar'
  ]);
  assert.deepEqual(r.proveedoresAnonimos[0].articulos.map(x=>x.lineaFuente),[1,2,null]);
  assert.equal(r.rankingHabilitado,false);
