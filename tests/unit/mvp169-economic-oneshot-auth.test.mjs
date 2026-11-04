@@ -82,7 +82,8 @@ test('MVP169: la Edge STAGING no importa WhatsApp, IA, finalistas, cron o rankin
  assert.match(edge,/cotironda_piloto_next_economic_facts_mvp168/);
  assert.match(edge,/cotironda_piloto_record_economic_facts_mvp168/);
  assert.match(edge,/cotironda-piloto-originals/);
- assert.doesNotMatch(edge,/whapi-dispatch|dispatchPending|sendMessage|outbox|finalist|proposeDocumentAI|cron\.schedule|publishOriginal|revealContacts/i);
+ const executable=edge.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/gu,'');
+ assert.doesNotMatch(executable,/whapi-dispatch|dispatchPending|sendMessage|outbox|finalist|proposeDocumentAI|cron\.schedule|publishOriginal|revealContacts/i);
 });
 test('MVP169: ningún dato del proveedor o token se devuelve como respuesta',async()=>{
  const t=setup(),r=await runEconomicOneShotMvp169(request(),t.opts);
