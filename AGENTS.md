@@ -1,5 +1,7 @@
 # AGENTS.md — Contrato técnico de Cotironda
 
+> **MVP172 (04/11/2026, desarrollo):** selector SQL privado read-only vincula el pedido completo con TODAS las ofertas, fuentes v9/MVP163 y economía MVP168, sin devolver subconjuntos ni datos al portal. Probado en transacción reversible PostgreSQL 17: 2 rondas, 4 ofertas, 5 ítems, ACL solo service_role, ranking OFF. Proyección TypeScript de cobertura puramente anónima sin precios ni contactos; SQL no instalado. Ver docs/291 y #535.
+
 > **MVP171 (04/11/2026, desarrollo):** NO bloquear por descripciones genéricas ni exigir que cada proveedor repita los adjetivos del comprador. Si familia, cantidad y fuente acreditadas coinciden y no hay exclusividad, tratar como `comercial_razonable` y mostrar advertencia; diferencias expresas de variedad/medidas o exigencia excluyente siguen bloqueadas. Política transversal para rubros vía catálogo comprobado. No inventar IVA, stock o flete, no forzar ranking. Ver docs/290 y PR #546.
 
 > **MVP170 (04/11/2026, SOLO DESARROLLO):** enlazamos el pedido con hechos comerciales MVP163 desde la misma fuente v9, usando el puente MVP162 y normalizador MVP164. En piloto se comprobaron 4 BIG BAG comerciales entre 10 líneas sin unidad literal. Nunca afirmar que arena genérica es fina ni piedra genérica es partida, ni stock, IVA o ranking. Ver docs/289 y #535.
