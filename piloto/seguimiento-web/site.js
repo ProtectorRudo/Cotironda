@@ -323,8 +323,8 @@ function showCoverageOptions(d){
    "Combinación complementaria: "+name));
   const list=element("ul","coverage-options-list");
   for(const item of option.articulos){
-   const description=articleNames.get(item.itemId)?:
-    "Artículo "+Number(item.itemId.slice(-3));
+   const description=articleNames.get(item.itemId)??
+    ("Artículo "+Number(item.itemId.slice(-3)));
    const choices=item.ofertasConAlternativa.join(" o ");
    list.appendChild(element("li","",description+" · "+choices));
   }
