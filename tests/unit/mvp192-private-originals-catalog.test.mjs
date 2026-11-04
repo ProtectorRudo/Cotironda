@@ -31,7 +31,7 @@ test('MVP192: catálogo contiene TODOS los originales consentidos sin clasificac
  assert.deepEqual(p.documentos.map(x=>x.documentoId),[uuid1,uuid2]);
  assert.deepEqual(p.documentos.map(x=>x.formato),['PDF','Excel']);
  assert.deepEqual(p.documentos.map(x=>x.nombre),[
-  'Presupuesto original 00','Presupuesto original 01'
+  'Presupuesto original 01','Presupuesto original 02'
  ]);
  assert.equal(Object.isFrozen(p),true);
  assert.equal(Object.isFrozen(p.documentos),true);
