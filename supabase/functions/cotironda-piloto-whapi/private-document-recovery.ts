@@ -109,8 +109,10 @@ export async function recoverOneStoredDocument(args:{
   // Process the document while the independent thank-you is in flight.
   // A slow Whapi response must never delay source checking. The finalizer
   // still awaits ACK reconciliation before releasing the background lease.
+  const receiptHmac=h;
   const ackTask=received.state==='stored_unverified'&&args.onSupplierReceipt
-   ?Promise.resolve().then(()=>args.onSupplierReceipt!(h)).catch(()=>{})
+   ?Promise.resolve().then(()=>args.onSupplierReceipt!(receiptHmac!))
+     .catch(()=>{})
    :null;
   try{
   const compared=data(await io.rpc('cotironda_piloto_compare_supplier_readings_mvp102',{
