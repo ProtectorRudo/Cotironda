@@ -1,3 +1,6 @@
+## MVP191 — Vínculo de Auth con contacto WhatsApp verificado (04/11/2026, desarrollo)
+- Prepara RPC booleana con sesión JWT Auth PILOTO actual, teléfono OTP confirmado y contacto privado de Whapi, sin nuevas tablas ni revelar identidad/archivo, bloqueando rondas históricas por política OFF y fecha de activación. MVP190 ahora exige comprobar ese vínculo **antes y después** de leer Storage. Prueba reversible REAL en PostgreSQL del piloto: no autenticado denegado, ACL y política OFF, ROLLBACK comprobado; no se instalaron funciones ni se crearon Auth users. Docs/311; #525 sigue abierto.
+
 ## MVP190 — Transporte de originales protegidos con verificación de bytes SHA (04/11/2026, solo desarrollo)
 - Nuevo manejador HTTP fail-closed, sin endpoint abierto ni despliegue, para descargar documentos PDF/Excel/Word/imagen auténticos con sesión/empresa y consentimiento documental específicos, evidencia vigente y lectura privada de Storage. SHA-256 de bytes reales y segunda verificación de revocación tras I/O; headers privados, sin URL pública ni PII. Se cierra además el caso de consentimiento anterior a ronda/política. Falta puente de identidad Auth PILOTO, selector privado/almacenamiento y E2E nuevo. Docs/310, #525.
 

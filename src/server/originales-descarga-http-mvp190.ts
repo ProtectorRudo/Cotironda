@@ -26,6 +26,10 @@ export type DependenciasDescargaMvp190=Readonly<{
  habilitado:boolean;
  /** Must verify live Supabase Auth + its real session + current membership. */
  verificarSesion:()=>Promise<SesionDescargaMvp190|null>;
+ /** MVP191: MUST call the PILOT authenticated-JWT phone+session gate,
+  * cotironda_piloto_buyer_identity_mvp191(rondaId), using the SAME
+  * cookie-bound session. Never use service_role or a WhatsApp bearer. */
+ verificarVinculoPiloto:(rondaId:string)=>Promise<boolean>;
  /** Resolve documentId against round AND authenticated buyer, in ONE private
   * authorized SQL query. No user supplied supplier/HMAC is trusted. */
  leerContexto:(args:Readonly<{
@@ -129,6 +133,7 @@ export async function procesarDescargaOriginalMvp190(
   if(!Number.isSafeInteger(now)||now<=0)return failure(503);
   const session=await deps.verificarSesion();
   if(!validSession(session,now))return failure(401);
+  if(await deps.verificarVinculoPiloto(rondaId)!==true)return failure(404);
   const selector={rondaId,documentoId,usuarioId:session.usuarioId,
    empresaId:session.empresaId};
   const first=await deps.leerContexto(selector);
@@ -151,6 +156,7 @@ export async function procesarDescargaOriginalMvp190(
   const sessionAgain=await deps.verificarSesion();
   if(!validSession(sessionAgain,later)||sessionAgain.usuarioId!==session.usuarioId||
     sessionAgain.empresaId!==session.empresaId)return failure(404);
+  if(await deps.verificarVinculoPiloto(rondaId)!==true)return failure(404);
   const second=await deps.leerContexto(selector);
   if(!allowedContext(second,{rondaId,documentoId},sessionAgain,later)||
     !sameSource(first,second))return failure(404);
