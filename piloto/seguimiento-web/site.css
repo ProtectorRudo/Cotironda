@@ -76,3 +76,17 @@ footer{font-size:12px;color:#777;margin-top:18px;text-align:center}
 .economy-note{font-size:12px;line-height:1.6;color:#656565;margin:14px 0 0}
 @media(max-width:560px){.economy-panel{padding:16px}.economy-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:410px){.economy-grid{grid-template-columns:1fr}}
+
+/* MVP186 — Sin formularios: referencias originales por articulo, no ranking. */
+.itemprices-panel{border:1px solid #dce5ef;border-radius:12px;padding:20px;margin:18px 0;background:#f8fbff}
+.itemprices-panel h2{font-size:17px;letter-spacing:-.02em;margin:0 0 8px}
+.itemprices-caption{font-size:13px;color:#536779;line-height:1.55;margin:0 0 14px}
+.itemprices-grid{display:grid;gap:12px}
+.itemprices-card{background:#fff;border:1px solid #dfe5eb;border-radius:10px;padding:13px 15px}
+.itemprices-card h3{font-size:14px;margin:0 0 12px}
+.itemprices-row{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 14px;padding:9px 0;border-top:1px solid #e8edf3}
+.itemprices-row strong{min-width:110px;font-size:13px}
+.itemprices-amount{font-variant-numeric:tabular-nums;font-weight:690;font-size:15px}
+.itemprices-detail{font-size:12px;color:#66727f;flex:1 1 170px}
+.itemprices-note{font-size:12px;color:#596b80;line-height:1.65;margin:14px 0 0}
+@media(max-width:560px){.itemprices-panel{padding:16px}.itemprices-row{display:grid;grid-template-columns:1fr 1fr}.itemprices-detail{grid-column:1 / -1}}
