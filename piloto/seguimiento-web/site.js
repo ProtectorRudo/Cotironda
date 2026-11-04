@@ -499,13 +499,19 @@ function onPrivateLinkChange(){
  }
  displayText("state","Verificando enlace privado");
  displayText("error","");
+ startPrivatePolling();
  void refresh();
+}
+let pollingStarted=false;
+function startPrivatePolling(){
+ if(pollingStarted)return;
+ pollingStarted=true;
+ setInterval(refresh,45000);
 }
 window.addEventListener?.("hashchange",onPrivateLinkChange);
 if(!validToken(token)){
  displayText("state","Enlace inválido");
  displayText("error","Usá el enlace privado completo que recibiste por WhatsApp.");
-}else{void refresh();}
-// Keep polling active after an invalid or revoked link: only a NEW valid
-// hash may restore requests; refresh() itself rejects invalid/revoked tokens.
-setInterval(refresh,45000);
+}else{void refresh();startPrivatePolling();}
+// An initially invalid link starts no timer. A subsequent valid hash
+// installs exactly one periodic refresh; revoked links remain fail-closed.
