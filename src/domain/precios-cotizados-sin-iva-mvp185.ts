@@ -32,6 +32,8 @@ export type EntradaOfertaMvp185=Readonly<{
 }>;
 export type OpcionCotizadaMvp185=Readonly<{
  proveedoresAnonimos:readonly string[];
+ /** Nunca ordenar ARS y USD en el mismo grupo. */
+ moneda:MonedaCotizada;
  asignacion:readonly Readonly<{itemId:string;oferta:string}>[];
  subtotalMaterialesCotizadoSinIva:string;
  ordenPorPrecioCotizado:number;
@@ -88,6 +90,7 @@ export function interpretarSilencioIvaMvp185(
 }
 type ValidOffer={
  label:string;interpretacion:EstadoComercialIvaMvp185;
+ moneda:MonedaCotizada|null;
  prices:Map<string,bigint>;usable:boolean;motivo:string|null
 };
 const invalid=():ResultadoPreciosCotizadosMvp185=>Object.freeze({
@@ -130,7 +133,7 @@ function verifyOffer(pedido:PedidoComparable,entry:EntradaOfertaMvp185,
  const iva=entry?.economia?.condiciones?.iva?.estado as EstadoIvaMvp167;
  const interpretacion=interpretarSilencioIvaMvp185(iva);
  const blocked=(motivo:string):ValidOffer=>({
-  label,interpretacion,prices:new Map(),usable:false,motivo
+  label,interpretacion,moneda:null,prices:new Map(),usable:false,motivo
  });
  const {doc,fuente,economia}=entry;
  if(!isValidDoc(doc)||doc.requestId!==requestId||
@@ -208,9 +211,9 @@ function verifyOffer(pedido:PedidoComparable,entry:EntradaOfertaMvp185,
  // from a price-based comparison (even if their totals were source-verified).
  if(usedLines.size!==doc.lineas.length)
   return blocked('cargos_o_lineas_sin_asignar');
- return {label,interpretacion,prices,usable:true,motivo:null};
+ return {label,interpretacion,moneda:entry.moneda,prices,usable:true,motivo:null};
 }
-type Candidate={providers:string[];assignment:string[];value:bigint};
+type Candidate={providers:string[];assignment:string[];moneda:MonedaCotizada;value:bigint};
 export function compararPreciosCotizadosMvp185(input:Readonly<{
  pedido:PedidoComparable;ofertas:readonly EntradaOfertaMvp185[];
 }>):ResultadoPreciosCotizadosMvp185{
@@ -243,11 +246,13 @@ export function compararPreciosCotizadosMvp185(input:Readonly<{
  for(const q of verified){
   if(!q.usable||itemIds.some(id=>!q.prices.has(id)))continue;
   const value=itemIds.reduce((n,id)=>n+q.prices.get(id)!,0n);
-  options.push({providers:[q.label],assignment:itemIds.map(()=>q.label),value});
+  if(value<=MONEY_MAX)
+   options.push({providers:[q.label],assignment:itemIds.map(()=>q.label),
+    moneda:q.moneda as MonedaCotizada,value});
  }
  for(let i=0;i<verified.length;i++)for(let j=i+1;j<verified.length;j++){
   const a=verified[i],b=verified[j];
-  if(!a.usable||!b.usable||itemIds.length<2)continue;
+  if(!a.usable||!b.usable||a.moneda!==b.moneda||itemIds.length<2)continue;
   const assignment=elegirParExacto25({
    precios:itemIds.map(id=>({a:a.prices.get(id)??null,b:b.prices.get(id)??null})),
    // Only a provisional MATERIALS comparison, not confirmation that a
@@ -258,18 +263,23 @@ export function compararPreciosCotizadosMvp185(input:Readonly<{
   const arr=assignment.map(useA=>useA?a.label:b.label);
   const value=itemIds.reduce((sum,id,k)=>
    sum+(assignment[k]?a.prices.get(id)!:b.prices.get(id)!),0n);
-  options.push({providers:[a.label,b.label].sort(),assignment:arr,value});
+  if(value<=MONEY_MAX)
+   options.push({providers:[a.label,b.label].sort(),assignment:arr,
+    moneda:a.moneda as MonedaCotizada,value});
  }
- options.sort((a,b)=>a.value<b.value?-1:a.value>b.value?1:0||
+ options.sort((a,b)=>a.moneda.localeCompare(b.moneda)||
+  (a.value<b.value?-1:a.value>b.value?1:0)||
   a.providers.join('|').localeCompare(b.providers.join('|'))||
   a.assignment.join('|').localeCompare(b.assignment.join('|')));
- let rank=0,previous:bigint|null=null;
+ let rank=0,previous:bigint|null=null,previousCurrency:MonedaCotizada|null=null;
  const visible=options.map((x)=>{
+  if(previousCurrency!==x.moneda){rank=0;previous=null;previousCurrency=x.moneda}
   if(previous===null||previous!==x.value){rank++;previous=x.value}
   const hasUnknown=x.providers.some(label=>verified.find(q=>q.label===label)?.
     interpretacion==='sin_iva_por_convencion');
   return Object.freeze({
    proveedoresAnonimos:Object.freeze([...x.providers]),
+   moneda:x.moneda,
    asignacion:Object.freeze(itemIds.map((itemId,i)=>
     Object.freeze({itemId,oferta:x.assignment[i]}))),
    subtotalMaterialesCotizadoSinIva:format(x.value),
