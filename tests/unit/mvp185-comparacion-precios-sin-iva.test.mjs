@@ -256,3 +256,118 @@ test('MVP185: la vista piloto explica que silencio IVA se toma sin IVA sin calcu
  assert.match(app,/no significa IVA 0%/);
  assert.match(app,/no se presentan ganadores/);
 });
+
+/** MVP193: presentación de áridos corroborada nominalmente, nunca stock. */
+function bolsonNominal(which,itemId='arena_001',material='arena',precio=150000){
+ const entry=source(which,[{id:itemId,q:'1',unit:'',unitCents:precio,totalCents:precio}]);
+ entry.doc.lineas[0].descriptionLiteral='Bolsón de '+material;
+ entry.doc.lineas[0].unitLiteral=null;
+ entry.fuente.lines[0].unitStatus='not_explicit';
+ entry.fuente.lines[0].unit=null;
+ entry.fuente.lines[0].presentation='bolson';
+ entry.correlaciones[0].equivalencia='comercial_razonable';
+ entry.pruebasBolson=[{
+  itemId,lineNo:1,sourceSha256:entry.doc.sourceSha256,
+  pedidoDescripcionLiteral:material+' 1 m3 para obra',
+  presentacionFuente:'bolson'
+ }];
+ return entry;
+}
+const pedidoAridos={items:[
+ {id:'arena_001',cantidad:'1',unidad:'m3'},
+ {id:'piedra_001',cantidad:'1',unidad:'m3'}
+]};
+
+test('MVP193: 1 bolsón = 1 m³ NOMINAL de áridos con prueba SHA, sin IVA ni stock inventado',()=>{
+ const a=bolsonNominal('a');
+ const r=run([a],{items:pedidoAridos.items.slice(0,1)});
+ assert.equal(r.estado,'proyeccion_informativa');
+ assert.equal(r.ofertas[0].lineasConPrecioBaseComparable,1);
+ assert.equal(r.opcionesCotizadas.length,1);
+ assert.equal(r.opcionesCotizadas[0].subtotalMaterialesCotizadoSinIva,'1500.00');
+ assert.ok(r.opcionesCotizadas[0].advertencias.includes('bolson_1m3_nominal_sin_stock'));
+ assert.ok(r.opcionesCotizadas[0].advertencias.includes('iva_no_informado'));
+ assert.equal(r.stockConfirmado,false);
+ assert.equal(r.rankingFinalHabilitado,false);
+ assert.equal(r.originalesDescargables,false);
+ assert.equal(r.contactosRevelados,false);
+});
+
+test('MVP193: dos ofertas parciales de áridos se unen sin comparar parciales como totales',()=>{
+ const a=bolsonNominal('a','arena_001','arena',150000);
+ const b=bolsonNominal('b','piedra_001','piedra',170000);
+ const r=run([a,b],pedidoAridos);
+ assert.deepEqual(r.ofertas.map(x=>x.lineasConPrecioBaseComparable),[1,1]);
+ assert.equal(r.opcionesCotizadas.length,1);
+ assert.equal(r.opcionesCotizadas[0].subtotalMaterialesCotizadoSinIva,'3200.00');
+ assert.deepEqual(r.opcionesCotizadas[0].proveedoresAnonimos,['oferta_001','oferta_002']);
+ assert.deepEqual(r.opcionesCotizadas[0].asignacion.map(x=>x.oferta),['oferta_001','oferta_002']);
+ assert.ok(r.opcionesCotizadas[0].advertencias.includes('bolson_1m3_nominal_sin_stock'));
+ assert.equal(r.adjudicacion,false);
+});
+
+test('MVP193: SIN prueba de pedido y línea de fuente no reemplazar unidad ausente',()=>{
+ const r={items:[pedidoAridos.items[0]]};
+ for(const alter of [
+  x=>{delete x.pruebasBolson},
+  x=>{x.pruebasBolson[0].sourceSha256='f'.repeat(64)},
+  x=>{x.pruebasBolson[0].lineNo=2},
+  x=>{x.pruebasBolson[0].itemId='item_999'},
+  x=>{x.pruebasBolson[0].pedidoDescripcionLiteral='piedra 1 m3'},
+  x=>{x.pruebasBolson[0].presentacionFuente='big_bag'},
+  x=>{x.fuente.lines[0].presentation='none'},
+  x=>{x.fuente.lines[0].page=null},
+  x=>{x.fuente.lines[0].row=null},
+  x=>{x.fuente.lines[0].unit='m3'},
+  x=>{x.doc.lineas[0].unitLiteral='kg'},
+  x=>{x.correlaciones[0].equivalencia='sin_verificar'}
+ ]){
+  const a=bolsonNominal('a');alter(a);
+  const v=run([a],r);
+  assert.equal(v.opcionesCotizadas.length,0,JSON.stringify({
+   proof:a.pruebasBolson?.[0],line:a.doc.lineas[0].unitLiteral,
+   fact:a.fuente.lines[0],equiv:a.correlaciones[0].equivalencia
+  }));
+  assert.ok(v.ofertas[0].motivoExclusion!==null);
+ }
+});
+
+test('MVP193: bolsón chico, peso/capacidad contradictoria y cantidades diferentes NO se convierten',()=>{
+ const r={items:[pedidoAridos.items[0]]};
+ for(const alter of [
+  x=>{x.doc.lineas[0].descriptionLiteral='Bolsón chico de arena'},
+  x=>{x.doc.lineas[0].descriptionLiteral='Bolsón arena 500 kg'},
+  x=>{x.doc.lineas[0].descriptionLiteral='Bolsón arena de 0.5 m3'},
+  x=>{x.doc.lineas[0].quantityLiteral='2'},
+  x=>{x.doc.lineas[0].descriptionLiteral='Bolsón piedra'},
+  x=>{x.doc.lineas[0].descriptionLiteral='Arena suelta'},
+  x=>{x.pruebasBolson[0].pedidoDescripcionLiteral='arena fina exclusivamente 1 m3';
+     x.doc.lineas[0].descriptionLiteral='Bolsón arena'}
+ ]){
+  const a=bolsonNominal('a');alter(a);
+  const o=run([a],r);
+  assert.equal(o.opcionesCotizadas.length,0,JSON.stringify(a.doc.lineas[0]));
+  assert.equal(o.rankingFinalHabilitado,false);
+ }
+});
+
+test('MVP193: líneas extras del original no ocultan pallet ni cargos',()=>{
+ const a=source('a',[
+  {id:'arena_001',q:'1',unit:'',unitCents:150000,totalCents:150000},
+  {id:'pallet',q:'1',unit:'unidad',unitCents:10000,totalCents:10000}
+ ]);
+ a.doc.lineas[0].descriptionLiteral='Bolsón arena';
+ a.doc.lineas[0].unitLiteral=null;
+ a.fuente.lines[0].unitStatus='not_explicit';
+ a.fuente.lines[0].unit=null;
+ a.fuente.lines[0].presentation='bolson';
+ a.correlaciones=a.correlaciones.slice(0,1);
+ a.correlaciones[0].equivalencia='comercial_razonable';
+ a.pruebasBolson=[{
+  itemId:'arena_001',lineNo:1,sourceSha256:a.doc.sourceSha256,
+  pedidoDescripcionLiteral:'arena 1 m3',presentacionFuente:'bolson'
+ }];
+ const o=run([a],{items:[pedidoAridos.items[0]]});
+ assert.equal(o.ofertas[0].motivoExclusion,'cargos_o_lineas_sin_asignar');
+ assert.equal(o.opcionesCotizadas.length,0);
+});
