@@ -155,12 +155,16 @@ export function adaptarDocumentoMvp162(
    !l.descriptionLiteral.trim())return grade(doc.anonId,
     'fuente_no_verificada',false,[],[],['origen_inconsistente'],null);
   const cents=centavosFuenteMvp162(l.lineTotalLiteral);
-  if(cents===null)return grade(doc.anonId,'fuente_no_verificada',
-   false,[],[],['origen_inconsistente'],null);
+  if(cents===null)return grade(doc.anonId,'visible_no_comparable',
+   true,[],[l.lineNo],['importe_sin_acreditar'],null);
   originals.set(l.lineNo,l);totals.set(l.lineNo,cents);sum+=cents;
  }
  if(sum!==BigInt(p.declaredTotalCents))
-  return grade(doc.anonId,'fuente_no_verificada',false,[],[],
+  return grade(doc.anonId,'visible_no_comparable',true,[],[],
+   ['importe_no_conciliado'],null);
+ const ordinals=[...originals.keys()].sort((a,b)=>a-b);
+ if(ordinals.some((lineNo,index)=>lineNo!==index+1))
+  return grade(doc.anonId,'visible_no_comparable',true,[],ordinals,
    ['origen_inconsistente'],null);
  const items=new Map(pedido.items.map(x=>[x.id,x]));
  if(items.size!==pedido.items.length||!pedido.items.length||
@@ -184,6 +188,9 @@ export function adaptarDocumentoMvp162(
   const map=correlated.get(item.id);
   if(!map){uncovered.push(item.id);reasons.push('faltan_articulos');continue}
   const line=originals.get(map.lineNo)!;
+  if(centavosFuenteMvp162(line.unitPriceLiteral)===null){
+   uncovered.push(item.id);reasons.push('importe_sin_acreditar');continue;
+  }
   const quantity=cantidadFuenteMvp162(line.quantityLiteral);
   const unit=normUnit(line.unitLiteral);
   if(quantity===null){uncovered.push(item.id);reasons.push('cantidad_sin_acreditar');continue}
