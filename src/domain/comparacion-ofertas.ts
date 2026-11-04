@@ -28,7 +28,7 @@ export type CoberturaProveedor = Readonly<{
   anonId:string;confirmada:boolean;lineasCompletas:number;lineasTotales:number;
   lineas:readonly Readonly<{
     itemId:string;unidad:UnidadCotizada;solicitada:string;cotizable:string;
-    completa:boolean;motivo:string|null;advertencia?:'variante_no_especificada_por_proveedor'
+    completa:boolean;motivo:string|null;advertencia?:'alternativa_comercial_con_aclaracion'
   }>[];
   totalComparable:string|null;motivos:readonly string[];
 }>;
@@ -38,7 +38,7 @@ export type OpcionComparacion = Readonly<{
   totalFinal:string;materialesConIva:string;fletesFinal:string;
   puestoDentroDeCondiciones:number|null;grupoCondiciones:string;
   /** Alternative material is commercially plausible, NOT identical. */
-  advertencias?:readonly Readonly<{itemId:string;tipo:'variante_no_especificada_por_proveedor'}>[];
+  advertencias?:readonly Readonly<{itemId:string;tipo:'alternativa_comercial_con_aclaracion'}>[];
 }>;
 export type ResultadoComparacion = Readonly<{
   estado:'comparacion_offline_sin_adjudicacion';
@@ -209,7 +209,7 @@ export function compararCotizacionesOffline(pedido:PedidoComparable,
       return {itemId:item.id,unidad:item.unidad,solicitada:qty(item.q),
         cotizable:qty(offered),completa:offered===item.q,motivo,
         ...(valid?.equivalencia==='comercial_razonable'?{
-         advertencia:'variante_no_especificada_por_proveedor' as const
+         advertencia:'alternativa_comercial_con_aclaracion' as const
         }:{})};
     });
     const full=lines.filter(x=>x.completa).length;
@@ -252,7 +252,7 @@ export function compararCotizacionesOffline(pedido:PedidoComparable,
     const warnings=items.flatMap((item,i)=>{
       const q=qs.find(q=>q.src.anonId===c.assignment[i]);
       return q?.lines.get(item.id)?.equivalencia==='comercial_razonable'
-       ?[{itemId:item.id,tipo:'variante_no_especificada_por_proveedor' as const}]:[];
+       ?[{itemId:item.id,tipo:'alternativa_comercial_con_aclaracion' as const}]:[];
     });
     return {proveedoresAnonimos:c.ids,asignacion:items.map((x,i)=>({itemId:x.id,anonId:c.assignment[i]})),
       moneda:c.currency,formaPago:c.pay,plazoEntregaDias:c.days,totalFinal:money(c.total),
