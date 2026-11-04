@@ -138,13 +138,23 @@ export function diagnosticarRondaPrivadaMvp172(
    analysis.diagnosticos.length!==input.requestItems.length||
    analysis.diagnosticos.some(x=>!ids.has(x.itemId)||!estados.has(x.estado)))
    return invalid();
+  // Preserve all v9/SHA checks above. Additional rubros only refine no_aplica.
+  const diagnostics=analysis.diagnosticos.map((line,index)=>{
+   if(line.estado!=='no_aplica')return line;
+   const extra=cotejarPresentacionObraMvp174(
+    input.requestItems[index],doc.lineas,fuente.lines
+   );
+   return extra.estado==='no_aplica'?line:extra;
+  });
+  if(diagnostics.some((x,i)=>x.itemId!==analysis.diagnosticos[i].itemId||
+   !estados.has(x.estado)))return invalid();
   outputs.push(Object.freeze({
    oferta:'oferta_'+String(i+1).padStart(3,'0'),
    precioTotalComparable:null as null,
    fiscalidad:'sin_base_comparable' as const,
    flete:'no_acreditado_para_total' as const,
    disponibilidad:'no_acreditada' as const,
-   articulos:Object.freeze(analysis.diagnosticos.map(x=>Object.freeze({
+   articulos:Object.freeze(diagnostics.map(x=>Object.freeze({
     itemId:x.itemId,estado:x.estado as EstadoPreview,lineaFuente:x.lineNo
    })))
   }));
