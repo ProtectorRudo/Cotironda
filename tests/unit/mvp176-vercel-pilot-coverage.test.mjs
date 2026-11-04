@@ -140,3 +140,12 @@ test("MVP176: finalistas are never rendered when can_open is false",async()=>{
  assert.equal(page.node("finalists").children.length,0);
  assert.equal(page.node("offers").children.length,0);
 });
+
+test("MVP176: BIG BAG y bolsón se explican como presentación nominal usual de áridos",async()=>{
+ for(const description of ["BIG BAG arena","bolsón piedra"]){
+  const page=await simulate([{...allowed(),offers:[{label:"Presupuesto 1",text:description}]}]);
+  assert.match(page.node("equivalence").textContent,/1 m³ nominal/);
+  assert.match(page.node("equivalence").textContent,/capacidad distinta/);
+  assert.doesNotMatch(page.node("equivalence").textContent,/Presentación a confirmar/);
+ }
+});
