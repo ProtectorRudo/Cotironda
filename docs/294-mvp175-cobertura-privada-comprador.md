@@ -26,8 +26,15 @@ El SQL exacto del nuevo selector se ejecutó en PostgreSQL 17 de cotironda-pilot
 - Suite MVP175 de fuente y privacidad: las dos rondas representativas, restricciones v9/SHA, estado, datos ajenos, permisos de SQL y contrato Edge.
 - Suite MVP175 DOM: navegador simulado, visualización legítima, cancelación y revocación, datos malformados, no filtración de campos adicionales.
 - CI Deno compila el entrypoint exacto de la Edge de seguimiento, además de los checks habituales de Next.js, PostgreSQL, PostgREST, unitarios y web.
-- **No instalado ni desplegado** en el portal o Edge activa. PR de desarrollo apilado sobre #549. No se enviaron WhatsApp ni se habilitaron ranking, finalistas o descarga de originales.
+- **La RPC ya está instalada SOLO en cotironda-piloto; la nueva Edge y la web del comprador NO están desplegadas/publicadas**. PR de desarrollo apilado sobre #549. No se enviaron WhatsApp ni se habilitaron ranking, finalistas o descarga de originales.
 
 ## Próximos criterios de aceptación
 
 Tras CI verde: revisar ACL y permisos con un nuevo ensayo; integrar en PILOTO solamente bajo revisión de rollback, validar con los dos enlaces reales y comprobar que ninguna empresa vea otra ronda. Para precio comparable y descarga de TODOS los originales tras cierre aún faltan reglas y verificaciones independientes.
+## Comprobación de instalación en PILOTO — 04/11/2026
+
+- Después de las 2.028 pruebas unitarias PASS y **6/6 checks GitHub CI PASS** del código, se instaló la migración aditiva `mvp175_buyer_coverage_token_gated_pilot_only` exclusivamente en el proyecto Supabase `cotironda-piloto`. No se alteraron tablas, cotizaciones o mensajes.
+- El smoke POST-instalación confirmó: `rpc_installed=true`; `anon_can_execute=false`; `authenticated_can_execute=false`; `service_can_execute=true`; 2 enlaces vigentes recuperaron 2 rondas, 4 ofertas y 5 artículos. Hash falso devuelve `not_found`. 0 outbox a finalistas, 0 finalistas activos.
+- Se guardó `supabase/piloto/mvp175_buyer_coverage_smoke_readonly.sql` para repetir esa auditoría sin imprimir ningún token ni hash.
+- **La Edge de seguimiento actual y el sitio Cotironda NO se desplegaron** en este avance. Activar la vista es una etapa posterior: requiere verificar rollback, comprobar enlace real en navegador y revisar cuota de Vercel. No se habilitan ranking, contacto, originales descargables ni adjudicaciones.
+- Las pruebas del navegador incluyen ahora el caso en que un enlace se revoca o la red falla *después* de mostrar datos: la vista elimina las ofertas antiguas para que no queden visibles.
