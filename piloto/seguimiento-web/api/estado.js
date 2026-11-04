@@ -53,6 +53,56 @@ function buyerView(parsed){
        "ranking_allowed","price_comparable","contacts_revealed"]
        .map(k=>[k,e[k]]));
   }
+  // MVP186: only the Edge's already reduced per-article price REFERENCES
+  // can pass. The private envelope, HMACs, source hashes, file paths and
+  // identity fields are never serialised by this proxy.
+  const p=parsed.item_prices;
+  if(safe.economy&&p&&typeof p==="object"&&!Array.isArray(p)&&
+     p.state==="importes_por_articulo_sin_ranking"&&
+     p.ranking_allowed===false&&p.price_comparable===false&&
+     p.contacts_revealed===false&&p.adjudicacion===false&&
+     p.originales_descargables===false&&p.IVA_calculado===false&&
+     p.flete_calculado===false&&p.stock_confirmado===false&&
+     Number.isSafeInteger(p.quotations)&&p.quotations===safe.offers.length&&
+     p.quotations===safe.economy.quotations&&
+     Number.isSafeInteger(p.requested_items)&&p.requested_items>=1&&
+     p.requested_items<=25&&Array.isArray(p.articulos)&&
+     p.articulos.length===p.requested_items){
+    const labels=safe.offers.map(o=>o.label);
+    const allowedStates=new Set(["alternativa_comercial_con_aclaracion",
+      "coincide_volumen_nominal_sin_stock","no_homologable",
+      "sin_importe_asignable"]);
+    const allowedVat=new Set(["sin_iva_por_convencion","sin_iva_declarado",
+      "iva_incluido_no_homologado","iva_ambiguo"]);
+    const goodRows=p.articulos.every(row=>row&&typeof row==="object"&&
+      /^item_\d{3}$/.test(row.itemId)&&Array.isArray(row.referencias)&&
+      row.referencias.length===labels.length&&
+      row.referencias.every(ref=>ref&&typeof ref==="object"&&
+        labels.includes(ref.oferta)&&allowedStates.has(ref.estado)&&
+        allowedVat.has(ref.iva)&&
+        (ref.importeCotizado===null||
+         typeof ref.importeCotizado==="string"&&
+         ref.importeCotizado.length<=48&&
+         /^(?:\s*(?:ARS|USD)?\s*\$?\s*)?[\d.,]+\s*$/i.test(ref.importeCotizado)))&&
+      new Set(row.referencias.map(ref=>ref.oferta)).size===labels.length);
+    if(goodRows&&new Set(p.articulos.map(row=>row.itemId)).size===p.articulos.length&&
+       new Set(labels).size===labels.length){
+      safe.item_prices={
+       state:"importes_por_articulo_sin_ranking",
+       quotations:p.quotations,requested_items:p.requested_items,
+       articulos:p.articulos.map(row=>({
+        itemId:row.itemId,
+        referencias:row.referencias.map(ref=>({
+         oferta:ref.oferta,importeCotizado:ref.importeCotizado,
+         estado:ref.estado,iva:ref.iva
+        }))
+       })),
+       ranking_allowed:false,price_comparable:false,contacts_revealed:false,
+       adjudicacion:false,originales_descargables:false,
+       IVA_calculado:false,flete_calculado:false,stock_confirmado:false
+      };
+    }
+  }
   if(parsed.state==="closed"&&Array.isArray(parsed.finalists)){
     if(parsed.finalists.length>2||!parsed.finalists.every(f=>f&&
       typeof f==="object"&&!Array.isArray(f)&&
