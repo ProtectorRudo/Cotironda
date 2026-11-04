@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {
  interpretarSilencioIvaMvp185,compararPreciosCotizadosMvp185
 } from '../../src/domain/precios-cotizados-sin-iva-mvp185.ts';
@@ -224,4 +225,25 @@ test('MVP185: salidas nunca incluyen SHA, HMAC, IDs ni textos privados',()=>{
  for(const hidden of [H,M,REQ,'Proveedor Privado','541199999999','anon_private'])
   assert.ok(!out.includes(hidden),hidden);
  assert.equal(r.originalesDescargables,false);
+});
+
+test('MVP185: dos monedas no pueden sumarse ni compararse como si fueran iguales',()=>{
+ const a=source('a',[cemento]);a.moneda='ARS';
+ const b=source('b',[arena]);b.moneda='USD';
+ const pair=run([a,b]);
+ assert.equal(pair.opcionesCotizadas.length,0);
+ const wholeA=source('a',[cemento,arena]);
+ const wholeB=source('b',[cemento,arena]);wholeB.moneda='USD';
+ const result=run([wholeA,wholeB]);
+ assert.equal(result.opcionesCotizadas.length,2);
+ assert.deepEqual(result.opcionesCotizadas.map(x=>x.moneda),['ARS','USD']);
+ assert.deepEqual(result.opcionesCotizadas.map(x=>x.ordenPorPrecioCotizado),[1,1]);
+});
+
+test('MVP185: la vista piloto explica que silencio IVA se toma sin IVA sin calcular impuesto',()=>{
+ const app=readFileSync(new URL('../../piloto/seguimiento-web/site.js',import.meta.url),'utf8');
+ assert.match(app,/e\.iva_not_informed>0/);
+ assert.match(app,/SIN IVA solo para referencias comerciales/);
+ assert.match(app,/no significa IVA 0%/);
+ assert.match(app,/no se presentan ganadores/);
 });
