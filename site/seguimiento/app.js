@@ -32,6 +32,9 @@
     el('coverageSection').hidden = true;
     el('coverageCaption').textContent = '';
     el('pendingFiles').textContent = '';
+    el('count').textContent = '—';
+    el('deadline').textContent = 'Sin datos disponibles';
+    el('lastUpdated').textContent = 'Sin actualización';
   }
   // Public presentation of ONLY the bounded, token-authorized server summary.
   // Never identify a supplier, infer a per-offer ranking or parse totals here.
@@ -145,7 +148,9 @@
     busy = true;
     refreshButton.disabled = true;
     try {
-      const r = await fetch('/api/seguimiento', {
+      const endpoint = location.pathname?.startsWith('/functions/v1/')
+        ? location.pathname : '/api/seguimiento';
+      const r = await fetch(endpoint, {
         method: 'POST',
         credentials: 'omit',
         cache: 'no-store',
