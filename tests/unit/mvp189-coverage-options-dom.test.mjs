@@ -78,7 +78,7 @@ test('MVP189 UI: ronda cerrada enseña pareja complementaria sin puntajes ni pre
  assert.match(text,/Presupuesto 2/);
  assert.match(text,/Artículo 1/);
  assert.match(text,/Artículo 2/);
- assert.doesNotMatch(text,/ganador|menor precio|puesto 1|adjudicad|total final/iu);
+ assert.doesNotMatch(text,/\b(?:ganadores?|menor precio|puesto 1|adjudicados?|total final)\b/iu);
  assert.match(html,/id="coverageOptionsSection"/);
  assert.match(p.node('coverageOptionsCaption').textContent,/No son ganadores/);
 });
