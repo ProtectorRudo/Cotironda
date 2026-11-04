@@ -40,7 +40,7 @@ export async function decodeContacts(data:Record<string,unknown>,aes:CryptoKey,h
    name:'AES-GCM',iv:Uint8Array.from(iv).buffer,
    additionalData:te.encode(item.chat_hmac+'|cotironda-contact-v1'),
    tagLength:128
-  },aes,b64(item.ciphertext_b64));
+  },aes,Uint8Array.from(b64(item.ciphertext_b64)).buffer);
   const address=new TextDecoder('utf-8',{fatal:true}).decode(plain);
   if(!/^[1-9][0-9]{7,16}@s\.whatsapp\.net$/u.test(address))
    throw Error('not_direct_whatsapp');
