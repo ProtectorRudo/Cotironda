@@ -47,10 +47,11 @@ test('MVP170: arena fina + piedra partida del pedido NO se inventan desde BIG BA
  const r=preparar(pedido(),doc(),source());
  assert.equal(r.estado,'preparacion_offline');
  assert.deepEqual(r.diagnosticos.map(x=>x.estado),[
-  'variedad_no_acreditada','variedad_no_acreditada','no_aplica'
+  'alternativa_comercial_con_aclaracion','alternativa_comercial_con_aclaracion','no_aplica'
  ]);
- assert.equal(r.correlaciones.length,0);
- assert.equal(r.pruebasBolson.length,0);
+ assert.equal(r.correlaciones.length,2);
+ assert.equal(r.pruebasBolson.length,2);
+ assert.ok(r.correlaciones.every(x=>x.equivalencia==='comercial_razonable'&&x.disponibilidadCorroborada===false));
  check(r);
 });
 test('MVP170: arena y piedra genéricas sí admiten nominal 1m3/BIG BAG y 2m3/2 BIG BAG',()=>{
