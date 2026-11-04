@@ -1,3 +1,6 @@
+## MVP168 — Registro económico probado e instalado en PILOTO (04/11/2026)
+- PostgreSQL 17.11: schema/RPCs de MVP168 ensayados `BEGIN/ROLLBACK`, migración aditiva aplicada SOLO a `cotironda-piloto`; smoke reversible PASS, ACL/RLS verificados. Edge de staging v1 ACTIVE con JWT y sin cron, recuperador actual v25 intacto; 0 hechos económicos reales y 0 WhatsApp/finalistas. Auditoría docs/287. No producción, sin activar ranking, no E2E PDF real.
+
 ## MVP168 — Integración de lector privado con evidencia económica (solo desarrollo)
 - El recuperador ahora comparte lector de bytes con SHA para prueba MVP163 y nueva auditoría privada MVP166+167 de PDF/Excel/Word/TXT, con registro SQL append-only/RLS propuesto, callback opt-in OFF y pruebas E2E sintéticas. No se ha instalado SQL ni desplegado Edge en Supabase; ranking, originales, contactos y Whapi intactos. Docs/286, issue #535.
 
