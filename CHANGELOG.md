@@ -1,3 +1,6 @@
+## MVP168 — Integración de lector privado con evidencia económica (solo desarrollo)
+- El recuperador ahora comparte lector de bytes con SHA para prueba MVP163 y nueva auditoría privada MVP166+167 de PDF/Excel/Word/TXT, con registro SQL append-only/RLS propuesto, callback opt-in OFF y pruebas E2E sintéticas. No se ha instalado SQL ni desplegado Edge en Supabase; ranking, originales, contactos y Whapi intactos. Docs/286, issue #535.
+
 ## MVP167 — Auditoría de condiciones IVA, flete y pago desde fuente (solo desarrollo)
 - Módulo independiente lee declaraciones acreditadas por SHA de archivo y página/fila sobre IVA, flete y pago, detecta conflictos y distingue tasa sin base, costo adicional vs incluido y modalidades alternativas. No acredita neto fiscal/stock/plazo/mínimo, no produce precio comparable ni ranking. 22 pruebas nuevas; docs/285, Issue #535. Sin SQL, piloto, WhatsApp ni producción.
 
