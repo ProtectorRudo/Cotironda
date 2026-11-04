@@ -90,6 +90,8 @@ function offerCard(title,body){
 // MVP176: revoke all visible private details on an invalid token or outage.
 function clearPrivateView(){
  for(const id of ["offers","receipts","finalists","coverageGrid"])el(id).replaceChildren();
+ el("resultsSection").hidden=true;
+ displayText("resultsCaption","");
  el("coverageSection").hidden=true;
  for(const id of ["files","equivalence","coverageCaption","deadline"])displayText(id,"");
  displayText("count","—");
@@ -127,6 +129,22 @@ function showCoverage(d){
  displayText("coverageCaption",c.comparisons+" cruces de artículos entre "+
   c.quotations+" presupuestos y "+c.requested_items+" artículos solicitados.");
  el("coverageSection").hidden=false;
+}
+// Buyer-visible closeout is descriptive, not an adjudication or ranking.
+function showAllClosedResults(d,approved,receivedCount){
+ el("resultsSection").hidden=true;
+ displayText("resultsCaption","");
+ if(d.state!=="closed"||d.can_open!==true)return;
+ const visible=approved.length;
+ const counted=Number.isSafeInteger(receivedCount)&&receivedCount>=0;
+ const caption=!counted
+  ?visible+" presupuesto(s) verificado(s) habilitado(s); total de recepciones sin acreditar."
+  :receivedCount<visible
+    ?visible+" presupuesto(s) habilitado(s); contador de recibidos pendiente de conciliación."
+    :visible+" presupuesto(s) habilitado(s) de "+receivedCount+" recibido(s)."+
+      (receivedCount>visible?" Los demás siguen sin publicación verificada; no se presentan como descartados.":"");
+ displayText("resultsCaption",caption);
+ el("resultsSection").hidden=false;
 }
 function render(data){
  const d=data&&typeof data==="object"?data:{};
@@ -168,6 +186,7 @@ function render(data){
  if(approved.some(o=>/\b(?:big[\s-]*bag|bols[oó]n(?:es)?)\b/iu.test(o.text))){
   displayText("equivalence","En áridos, BIG BAG o bolsón suele referirse a 1 m³ nominal embolsado. Se respeta cualquier capacidad distinta indicada y no se presume la variedad del material ni su disponibilidad.");
  }
+ showAllClosedResults(d,approved,count);
  approved.forEach(o=>el("offers").appendChild(offerCard(o.label,o.text)));
  const missing=Math.max(0,Math.min(25,count)-approved.length);
  if(d.state==="waiting"&&Number.isSafeInteger(count)&&count>0)
