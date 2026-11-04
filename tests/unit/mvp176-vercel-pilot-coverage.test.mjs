@@ -29,7 +29,7 @@ const allowed=()=>({
  coverage:coverage()
 });
 async function simulate(responses){
- const nodes=new Map(), timers=[];
+ const nodes=new Map(), timers=[];let fetchCalls=0;
  const getElementById=id=>{if(!nodes.has(id))nodes.set(id,new Node());return nodes.get(id)};
  const context={
   window:{location:{hash:"#"+ "a".repeat(64)}},
@@ -37,7 +37,8 @@ async function simulate(responses){
   fetch:async(url,options)=>{
    assert.equal(url,"/api/estado");assert.equal(options.method,"POST");
    assert.equal(JSON.parse(options.body).token,"a".repeat(64));
-   const reply=responses.shift();
+   fetchCalls++;
+   const reply=await responses.shift();
    if(reply?.error)throw Error("offline");
    return {ok:true,json:async()=>reply};
   },
@@ -45,7 +46,7 @@ async function simulate(responses){
  };
  vm.runInNewContext(code,context,{timeout:1000});
  await new Promise(resolve=>setTimeout(resolve,0));
- return {node:getElementById,refresh:async()=>{
+ return {node:getElementById,calls:()=>fetchCalls,refresh:async()=>{
   if(timers.length)timers[0]();
   await new Promise(resolve=>setTimeout(resolve,0));
  }};
@@ -99,4 +100,43 @@ test("MVP176: network outage erases previously visible private data",async()=>{
  assert.equal(page.node("coverageSection").hidden,true);
  assert.equal(page.node("count").textContent,"—");
  assert.equal(page.node("state").textContent,"Sin conexión");
+});
+
+test("MVP176: a stale authorized response cannot resurrect an already revoked link",async()=>{
+ let release;
+ const delayed=new Promise(resolve=>{release=resolve;});
+ const page=await simulate([allowed(),delayed,{state:"not_found"},allowed()]);
+ await page.refresh(); // prior request stays in flight
+ await page.refresh(); // revocation arrives first
+ assert.equal(page.node("offers").children.length,0);
+ assert.equal(page.node("coverageSection").hidden,true);
+ release(allowed()); // the older in-flight authorized response arrives late
+ await new Promise(resolve=>setTimeout(resolve,0));
+ assert.equal(page.node("offers").children.length,0);
+ assert.equal(page.node("state").textContent,"Enlace vencido o revocado");
+ const calls=page.calls();
+ await page.refresh();
+ assert.equal(page.calls(),calls,"no new POST once revoked");
+});
+
+test("MVP176: a stale network error cannot erase a newer valid response",async()=>{
+ let release;
+ const delayed=new Promise(resolve=>{release=resolve;});
+ const page=await simulate([allowed(),delayed,allowed()]);
+ await page.refresh();
+ await page.refresh();
+ assert.equal(page.node("offers").children.length,1);
+ release({error:true});
+ await new Promise(resolve=>setTimeout(resolve,0));
+ assert.equal(page.node("offers").children.length,1);
+ assert.equal(page.node("state").textContent,"Ronda abierta · presupuestos anónimos");
+});
+
+test("MVP176: finalistas are never rendered when can_open is false",async()=>{
+ const page=await simulate([{
+  ...allowed(),state:"closed",can_open:false,
+  finalists:[{name:"No habilitado",whatsapp:"+5491111111111"}]
+ }]);
+ assert.equal(page.node("finalists").children.length,0);
+ assert.equal(page.node("offers").children.length,0);
 });
