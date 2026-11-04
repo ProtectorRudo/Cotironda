@@ -196,9 +196,11 @@ function verifyOffer(pedido:PedidoComparable,entry:EntradaOfertaMvp185,
   const explicit=fact.unitStatus==='explicit'&&
    fact.page!==null&&fact.row!==null?fact.unit:null;
   const sourceUnit=unit(line.unitLiteral);
-  if(sourceUnit===null&&explicit===null||
-    sourceUnit!==null&&explicit!==null&&sourceUnit!==explicit||
-    (sourceUnit??explicit)!==target.unidad)
+  // The document's unitLiteral may originate in an AI transcription.
+  // Require an independent PDF/Excel source fact, even if the draft names
+  // a plausible unit. Unknown source unit is NOT source-proven coverage.
+  if(explicit===null||sourceUnit!==null&&sourceUnit!==explicit||
+    explicit!==target.unidad)
    return blocked('unidad_sin_acreditar');
   const q=cantidadFuenteMvp162(line.quantityLiteral);
   if(q===null||milli(q)!==milli(target.cantidad))
