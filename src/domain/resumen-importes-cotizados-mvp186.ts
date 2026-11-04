@@ -24,9 +24,10 @@ export type ResumenImportesMvp186=Readonly<{
  adjudicacion:false;originales_descargables:false;
  IVA_calculado:false;flete_calculado:false;stock_confirmado:false;
 }>;
+type PricedQuote=InsumoRondaPrivadoMvp172['quotations'][number]&
+ Readonly<{publicText:string}>;
 type PriceInput=InsumoRondaPrivadoMvp172&Readonly<{
- quotations:readonly (InsumoRondaPrivadoMvp172['quotations'][number]&
-  Readonly<{publicText:string}>)[]>;
+ quotations:readonly PricedQuote[];
 }>;
 type Status=Readonly<{
  state?:unknown;can_open?:unknown;
