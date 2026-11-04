@@ -24,3 +24,9 @@ El seguimiento mostraba ofertas mientras la ronda estaba abierta, pero al cerrar
 Backend debe devolver **todos los candidatos autorizados** con una distinción verificable de cobertura por artículo, incluyendo ofertas parciales; auditar permisos entre empresas y revisión v9. No se puede asegurar únicamente con esta vista que el backend haya suministrado cada candidato. Descargas de archivos originales #525, recomendaciones económicas #524, cierre/avisos #523 y E2E WhatsApp continúan abiertos.
 
 **Sin Supabase, Whapi, SQL, contactos, originales ni producción modificados.** El bloqueo Vercel 402 impide todavía acreditar la vista web desde un enlace auténtico.
+
+## Evidencia adicional de GitHub y del PILOTO (solo lectura)
+- **2.050/2.050 unitarias PASS**, y **5/5 GitHub Actions PASS** (sitio, PostgREST, PostgreSQL 17, Next.js y unitarias), commit `e6d765c4e938088ba55ab5768d349506e6ad906a`.
+- Consulta `SELECT` a `cotironda-piloto` (sin revelar tokens/identidades/importes) con la **RPC REAL** `cotironda_piloto_tracking_status_mvp091`: **2 enlaces vigentes, 2 rondas legibles, 4 respuestas, 4 presupuestos habilitados, 2 enlaces con ofertas**.
+- Inspección de la definición de la RPC: obtiene la última revisión por proveedor, solo publica la proyección anónima permitida y usa `jsonb_agg` sin `LIMIT` visible en las tarjetas. Puede omitir documentos aún no verificados o contenido con datos identificatorios; no se garantiza que todos los proveedores hayan autorizado originales. Esta comprobación **no equivale** a pruebas de cierre real, de descarga ni a una simulación de 30 proveedores en PostgreSQL.
+- No se actualizó ni escribió en la base. No se habilitaron ranking, finalistas o mensajes.
