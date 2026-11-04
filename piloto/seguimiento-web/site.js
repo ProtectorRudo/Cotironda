@@ -162,8 +162,8 @@ function render(data){
   d.offers.filter(o=>o&&typeof o.label==="string"&&typeof o.text==="string"):[];
  displayText("state",d.state==="waiting"?
   "Ronda abierta · presupuestos anónimos":"Ronda cerrada · presupuestos disponibles");
- if(approved.some(o=>/\bbig[\s-]*bag\b/iu.test(o.text))){
-  displayText("equivalence","Presentación a confirmar: BIG BAG no indica por sí solo su volumen exacto ni otras características del material. Los importes no acreditan equivalencia técnica entre productos.");
+ if(approved.some(o=>/\b(?:big[\s-]*bag|bols[oó]n(?:es)?)\b/iu.test(o.text))){
+  displayText("equivalence","En áridos, BIG BAG o bolsón suele referirse a 1 m³ nominal embolsado. Se respeta cualquier capacidad distinta indicada y no se presume la variedad del material ni su disponibilidad.");
  }
  approved.forEach(o=>el("offers").appendChild(offerCard(o.label,o.text)));
  const missing=Math.max(0,Math.min(25,count)-approved.length);
