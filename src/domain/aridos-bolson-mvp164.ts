@@ -8,7 +8,7 @@ export type Arido='arena'|'piedra'|'cascote'|'otro';
 export type ResultadoBolson=Readonly<{
  estado:'no_aplica'|'fuente_no_acreditada'|'capacidad_ambigua'|
  'familia_distinta'|'volumen_distinto'|'variedad_distinta'|
- 'variedad_no_informada'|'compatible_comercialmente';
+ 'variedad_no_informada'|'compatible_con_aclaracion'|'compatible_comercialmente';
  familia:Arido;
  presentacion:'big_bag'|'bolson'|'none';
  volumenM3PorUnidad:string|null;
@@ -24,6 +24,11 @@ export type EntradaBolson=Readonly<{
  presentacionFuente:'big_bag'|'bolson'|'bag_weight'|'none';
  fuenteVerificada:boolean;presentacionComprobada:boolean;
 }>;
+/**
+ * Las palabras del material no son por defecto exigencias excluyentes.
+ * Solo una orden expresa de NO aceptar sustitución obliga a acreditar subtipo.
+ */
+const excluyente=(s:string)=>/\b(?:exclusivamente|unicamente|estrictamente|obligatoriamente|excluyente|sin sustitutos?|sin equivalentes|no aceptar (?:otra|otros|equivalentes)|debe ser|tiene que ser|solo si)\b/u.test(s);
 const norm=(v:string)=>v.normalize('NFKC').toLocaleLowerCase('es-AR')
  .normalize('NFD').replace(/\p{M}/gu,'').replace(/\s+/gu,' ').trim();
 const fixed=(v:bigint)=>String(v/1000n)+'.'+String(v%1000n).padStart(3,'0');
@@ -101,6 +106,7 @@ export function interpretarBolsonAridosMvp164(x:EntradaBolson):ResultadoBolson{
   offerVariant==='generica'?'generica':'contradictoria';
  const state:ResultadoBolson['estado']=!coinciden?'volumen_distinto':
   species==='contradictoria'?'variedad_distinta':
-  species==='generica'?'variedad_no_informada':'compatible_comercialmente';
+  species==='generica'?(excluyente(pedido)?'variedad_no_informada':'compatible_con_aclaracion'):
+  'compatible_comercialmente';
  return out(state,f,p,per,qty,origen,species,coinciden);
 }
