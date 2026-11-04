@@ -181,10 +181,15 @@ function showEconomy(d){
     element("span","",label));
    grid.appendChild(card);
  }
+ const ivaConvention=e.iva_not_informed>0
+   ? " Cuando un presupuesto no aclara IVA, Cotironda interpreta el precio cotizado como SIN IVA solo para referencias comerciales; no significa IVA 0% ni calcula un total fiscal."
+   : "";
  displayText("economyCaption",
    "Se revisaron las condiciones declaradas en "+e.quotations+
    (e.quotations===1?" presupuesto habilitado.":" presupuestos habilitados.")+
-   " Los datos ausentes no significan IVA cero, flete gratis ni falta de stock.");
+   ivaConvention+
+   " Los datos ausentes no significan IVA cero, flete gratis ni falta de stock."+
+   " El flete, la disponibilidad y las condiciones no informadas siguen pendientes; no se presentan ganadores por este resumen.");
  el("economySection").hidden=false;
 }
 function render(data){
