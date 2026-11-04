@@ -19,7 +19,7 @@ const request=(id=DOC)=>new Request('https://cotironda.test/api/rondas/'+RID+
  '/originales/'+id,{method:'GET'});
 const session=()=>({
  usuarioId:'persona_alfa',empresaId:'empresa_alfa',autenticada:true,
- emailVerificado:true,anonima:false,
+ identidadVerificada:true,anonima:false,
  rol:'buyer',venceMs:T+1000000,revocadaMs:null
 });
 function context(id=DOC,opts={}){
@@ -118,7 +118,7 @@ test('MVP190: sesión inexistente, suplente o caducada no consulta archivo',asyn
   {...session(),venceMs:T+100},
   {...session(),revocadaMs:T-1},
   {...session(),autenticada:false},
-  {...session(),emailVerificado:false},
+  {...session(),identidadVerificada:false},
   {...session(),anonima:true}
  ];
  for(const actor of variations){
