@@ -148,7 +148,7 @@ begin
   'joint_supplier_coverage',result_state='two_supplier_combination',
   'price_ranked',false,'contacts_revealed',false,
   'messages_sent',false,'purchase_awarded',false);
-end;$function$
+end;$function$;
 revoke all on function public.cotironda_piloto_plan_coverage_finalists_mvp108(uuid)
  from public,anon,authenticated;
 grant execute on function public.cotironda_piloto_plan_coverage_finalists_mvp108(uuid)
