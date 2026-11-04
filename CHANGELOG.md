@@ -1,3 +1,6 @@
+## MVP160 — plan maestro y recomendaciones económicas sin adjudicación
+- Issues #524–#529 ordenados por prioridad. Añadido recomendador puro sobre comparador existente; hasta dos proveedores por opción completa, nunca rankings entre condiciones divergentes, sin desempates inventados ni PII. Descarga de TODOS los originales consentidos al cierre queda prevista, sin liberar documentos previos. Docs/278. Solo rama de desarrollo.
+
 ## MVP159 — finalistas de PDFs verificados sin falsas equivalencias
 - El plan de cobertura acepta fuente verificada v9 y fuente histórica, invalidando correcciones pendientes, manteniendo comparación estricta y avisos finalistas apagados. Issue #521, docs/277. Solo PILOTO.
 
