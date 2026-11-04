@@ -81,7 +81,8 @@ const invalid=()=>result('insumos_invalidos',0,[]);
 const estados=new Set<MotivoPresentacionMvp170>([
  'no_aplica','sin_presentacion_corroborada','cantidad_diferente',
  'variedad_no_acreditada','variedad_diferente','presentacion_ambigua',
- 'coincide_volumen_nominal_sin_stock','alternativa_comercial_con_aclaracion'
+ 'coincide_volumen_nominal_sin_stock','alternativa_comercial_con_aclaracion',
+ 'presentacion_sin_acreditar'
 ]);
 
 export function diagnosticarRondaPrivadaMvp172(
