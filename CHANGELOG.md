@@ -1,3 +1,6 @@
+## MVP193 — bolsones de áridos m³ nominal en comparación preliminar (04/11/2026, SOLO desarrollo)
+- El motor MVP185 reutiliza el cotejador MVP164 y el contrato privado de fuentes MVP165 para convertir 1 bolsón de áridos = 1 m³ nominal cuando hay cotejo de pedido, original v9/SHA, página/fila, presentación y familia/cantidad compatibles. Desbloquea referencias de material sin inventar unidad escrita, IVA, stock ni costo de entrega; advierte a cada opción. Pruebas de oferta individual, dos proveedores parciales, capacidad/diferencias/pallet y negativas. PILOTO: 4/10 líneas fuente big_bag y 10/10 unidades no explícitas; **no está probado ranking real**. No SQL, Edge, web piloto, WhatsApp, main o producción. Docs/316.
+
 ## Portal originales: rutas Next.js PILOTO con barreras completas, solo DESARROLLO (04/11/2026)
 - Conexión Auth PILOTO independiente del portal DEV; rutas protegidas de catálogo íntegro y descarga por ID opaco; normal user JWT validado por `getUser(jwt)` y comprobación MVP191, servicio privado MVP192 con `buyerKey` exclusivamente servidor, almacenamiento SHA/revocación MVP190, 8 MiB. Habilitación OFF y pin exacto SHA de deployment Preview, tests negativos y positivos sintéticos. No hay OTP/Auth usuario PILOTO ni ruta habilitada ni descarga real; tampoco Vercel, WhatsApp o `main`. Docs/315, #525/#529.
 
