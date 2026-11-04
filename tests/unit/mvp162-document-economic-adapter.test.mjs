@@ -24,7 +24,7 @@ const terms=()=>({sourceSha256:H,sourceVerified:true,moneda:'ARS',
  pago:'contado',plazoEntregaDias:2,fleteFinal:'0.00',minimoCompraFinal:'0.00',
  tratamientoFlete:'sin_cargo',
  precios:[{lineNo:1,sourceSha256:H,unitarioNetoTrasDescuento:'100.00',
-  ivaExplicito:'21'}]});
+  ivaExplicito:'21',tratamientoIva:'incluido_en_total'}]});
 const run=(d=doc(),m=mapping(),t=terms(),p=req)=>
  adaptarDocumentoMvp162(p,d,m,t);
 
@@ -244,7 +244,7 @@ test('MVP183: dos PDFs parciales verificados pueden cubrir juntos la canasta, si
  const bmap=[{itemId:'arena_001',lineNo:1,sourceSha256:B,
   equivalencia:'verificada',disponibilidadCorroborada:true}];
  const bterms={...terms(),sourceSha256:B,
-  precios:[{lineNo:1,sourceSha256:B,unitarioNetoTrasDescuento:'50.00',ivaExplicito:'21'}]};
+  precios:[{lineNo:1,sourceSha256:B,unitarioNetoTrasDescuento:'50.00',ivaExplicito:'21',tratamientoIva:'incluido_en_total'}]};
  const b=run(bdoc,bmap,bterms,pedido);
  assert.equal(b.estado,'comparable');
  assert.deepEqual(b.articulosSinCobertura,['cemento_001']);
@@ -289,4 +289,87 @@ test('MVP183: renglones ajenos no clasificados y oferta sin renglones asignados 
  assert.equal(b.estado,'visible_no_comparable');
  assert.equal(b.ofertaComparable,null);
  assert.ok(b.motivos.includes('extras_sin_clasificar'));
+});
+
+
+test('MVP184: proveedor expresa 21% FUERA del total; precio base concilia y motor suma IVA solo una vez',()=>{
+ const d=doc();
+ d.declaredTotalLiteral='$ 200,00';
+ d.lineas[0].lineTotalLiteral='$ 200,00';
+ d.prueba.declaredTotalCents='20000';
+ d.prueba.sumLineCents='20000';
+ const t=terms();
+ t.precios[0].tratamientoIva='excluido_del_total';
+ const bridge=run(d,mapping(),t);
+ assert.equal(bridge.estado,'comparable');
+ assert.equal(bridge.fuenteCuadra,true);
+ assert.equal(bridge.ofertaComparable.items[0].precioUnitarioNeto,'100.00');
+ assert.equal(bridge.ofertaComparable.items[0].ivaPorcentaje,'21');
+ const ranked=compararCotizacionesOffline(req,[bridge.ofertaComparable]);
+ assert.equal(ranked.opcionesCompletas[0].materialesConIva,'242.00');
+ assert.equal(ranked.opcionesCompletas[0].totalFinal,'242.00');
+ assert.equal(bridge.contactosRevelados,false);
+});
+
+test('MVP184: base IVA no acreditada se rechaza aun con alícuota explícita',()=>{
+ for(const basis of [null,undefined,'desconocido']){
+  const t=terms();
+  t.precios[0].tratamientoIva=basis;
+  const result=run(doc(),mapping(),t);
+  assert.equal(result.estado,'visible_no_comparable',String(basis));
+  assert.equal(result.ofertaComparable,null);
+  assert.ok(result.motivos.includes('condiciones_sin_acreditar'));
+ }
+ // "Sin IVA" sin alícuota comprobada jamás equivale a 21% por defecto.
+ const d=doc();d.lineas[0].lineTotalLiteral='$ 200,00';
+ d.declaredTotalLiteral='$ 200,00';
+ d.prueba.sumLineCents='20000';d.prueba.declaredTotalCents='20000';
+ const noRate=terms();
+ noRate.precios[0].tratamientoIva='excluido_del_total';
+ noRate.precios[0].ivaExplicito=null;
+ const result=run(d,mapping(),noRate);
+ assert.equal(result.estado,'visible_no_comparable');
+ assert.equal(result.ofertaComparable,null);
+ assert.ok(result.motivos.includes('importe_sin_acreditar'));
+});
+
+test('MVP184: equivocarse de base incluido/excluido NO acredita el importe documental',()=>{
+ const included=terms();
+ included.precios[0].tratamientoIva='excluido_del_total';
+ const a=run(doc(),mapping(),included);
+ assert.equal(a.estado,'visible_no_comparable');
+ assert.ok(a.motivos.includes('importe_no_conciliado'));
+ const d=doc();d.lineas[0].lineTotalLiteral='$ 200,00';
+ d.declaredTotalLiteral='$ 200,00';
+ d.prueba.sumLineCents='20000';d.prueba.declaredTotalCents='20000';
+ const b=run(d,mapping(),terms());
+ assert.equal(b.estado,'visible_no_comparable');
+ assert.ok(b.motivos.includes('importe_no_conciliado'));
+});
+
+test('MVP184: dos artículos del MISMO presupuesto con base IVA distinta se concilian por línea, sin falsificar total',()=>{
+ const d=doc();
+ d.declaredTotalLiteral='$ 260,50';
+ d.lineas[0].lineTotalLiteral='$ 200,00';
+ d.lineas.push({
+  lineNo:2,descriptionLiteral:'Bolsa de arena comercial',
+  quantityLiteral:'1',unitLiteral:'bolsa',unitPriceLiteral:'$ 50,00',
+  lineTotalLiteral:'$ 60,50'
+ });
+ d.prueba.lineCount=2;d.prueba.sumLineCents='26050';
+ d.prueba.declaredTotalCents='26050';
+ const t=terms();
+ t.precios[0].tratamientoIva='excluido_del_total';
+ t.precios.push({lineNo:2,sourceSha256:H,unitarioNetoTrasDescuento:'50.00',
+  ivaExplicito:'21',tratamientoIva:'incluido_en_total'});
+ const order={items:[...req.items,{id:'arena_001',cantidad:'1',unidad:'bag'}]};
+ const mapping2=[...mapping(),{itemId:'arena_001',lineNo:2,sourceSha256:H,
+  equivalencia:'verificada',disponibilidadCorroborada:true}];
+ const result=run(d,mapping2,t,order);
+ assert.equal(result.estado,'comparable');
+ assert.equal(result.ofertaComparable.items.length,2);
+ const comparison=compararCotizacionesOffline(order,[result.ofertaComparable]);
+ assert.equal(comparison.opcionesCompletas[0].totalFinal,'302.50');
+ assert.equal(d.declaredTotalLiteral,'$ 260,50');
+ assert.equal(result.originalesDescargables,false);
 });
