@@ -74,7 +74,7 @@ end;$fn$;
 create or replace function public.cotironda_piloto_record_source_facts_mvp163(
  p_message_hmac text,p_source_sha256 text,p_state text,p_facts jsonb)
 returns jsonb language plpgsql security definer set search_path='' as $fn$
-declare q record; l jsonb; inserted integer:=0; ordinal int:=0;
+declare quote_ record; l jsonb; inserted integer:=0; ordinal int:=0;
 begin
  if coalesce(p_message_hmac,'') !~ '^[a-f0-9]{64}$'
   or coalesce(p_source_sha256,'') !~ '^[a-f0-9]{64}$'
@@ -99,7 +99,7 @@ begin
  or (select count(*) from jsonb_object_keys(p_facts->'terms'))<>4
  then return jsonb_build_object('state','invalid');end if;
  select q.message_hmac,q.request_id,q.supplier_key,q.line_count
- into q from cotironda_piloto_privado.supplier_media_quotes_mvp098 q
+ into quote_ from cotironda_piloto_privado.supplier_media_quotes_mvp098 q
  join cotironda_piloto_privado.media_archive_mvp095 m
   on m.message_hmac=q.message_hmac and m.request_id=q.request_id
   and m.content_sha256=q.source_sha256 and m.participant_key=q.supplier_key
@@ -117,7 +117,7 @@ begin
   where f.message_hmac=p_message_hmac)
  then return jsonb_build_object('state','already_checked');end if;
  if p_state='source_checked' and
-   jsonb_array_length(p_facts->'lines')<>q.line_count
+   jsonb_array_length(p_facts->'lines')<>quote_.line_count
   or p_state='unreadable' and
    jsonb_array_length(p_facts->'lines')<>0
  then return jsonb_build_object('state','invalid_lines');end if;
@@ -141,7 +141,7 @@ begin
  end loop;
  insert into cotironda_piloto_privado.supplier_source_facts_mvp163(
   message_hmac,request_id,supplier_key,source_sha256,state,facts)
- values(p_message_hmac,q.request_id,q.supplier_key,p_source_sha256,p_state,p_facts)
+ values(p_message_hmac,quote_.request_id,quote_.supplier_key,p_source_sha256,p_state,p_facts)
  on conflict(message_hmac) do nothing;
  get diagnostics inserted=row_count;
  return jsonb_build_object('state',case when inserted=1 then
