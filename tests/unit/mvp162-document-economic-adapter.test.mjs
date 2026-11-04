@@ -15,11 +15,13 @@ const doc=()=>({
   lineTotalLiteral:'$ 242,00'}],
  prueba:{requestId:R,messageHmac:M,sourceSha256:H,version:9,
   state:'verified',reason:'covered',lineCount:1,sumLineCents:'24200',
-  declaredTotalCents:'24200',rankingAllowed:false}
+  declaredTotalCents:'24200',rankingAllowed:false,
+  revisionVigente:true,cotizacionVigente:true}
 });
-const mapping=()=>[{itemId:'cemento_001',lineNo:1,sourceSha256:H,equivalencia:'verificada'}];
+const mapping=()=>[{itemId:'cemento_001',lineNo:1,sourceSha256:H,equivalencia:'verificada',disponibilidadCorroborada:true}];
 const terms=()=>({sourceSha256:H,sourceVerified:true,moneda:'ARS',
  pago:'contado',plazoEntregaDias:2,fleteFinal:'0.00',minimoCompraFinal:'0.00',
+ tratamientoFlete:'sin_cargo',
  precios:[{lineNo:1,sourceSha256:H,unitarioNetoTrasDescuento:'100.00',
   ivaExplicito:'21'}]});
 const run=(d=doc(),m=mapping(),t=terms(),p=req)=>
@@ -70,7 +72,7 @@ test('MVP162: BIG BAG no equivale a m3 aunque IA diga verificada',()=>{
  d.lineas[0].descriptionLiteral='BIG BAG de Arena';
  d.lineas[0].unitLiteral='bolsa';
  const request={items:[{id:'arena_001',cantidad:'2',unidad:'m3'}]};
- const m=[{itemId:'arena_001',lineNo:1,sourceSha256:H,equivalencia:'verificada'}];
+ const m=[{itemId:'arena_001',lineNo:1,sourceSha256:H,equivalencia:'verificada',disponibilidadCorroborada:true}];
  const r=run(d,m,terms(),request);
  assert.equal(r.estado,'visible_no_comparable');
  assert.ok(r.motivos.includes('unidad_sin_acreditar'));
@@ -84,7 +86,8 @@ test('MVP162: equivalencia IA sin corroborar no habilita comparación',()=>{
 test('MVP162: IVA, forma de pago, moneda, plazo y flete NO se infieren',()=>{
  for(const override of [
   {sourceVerified:false},{pago:null},{moneda:null},{plazoEntregaDias:null},
-  {fleteFinal:null},{minimoCompraFinal:null}
+  {fleteFinal:null},{minimoCompraFinal:null},
+  {tratamientoFlete:null},{tratamientoFlete:'fuera_del_total'}
  ]){
   const r=run(doc(),mapping(),{...terms(),...override});
   assert.equal(r.estado,'visible_no_comparable',JSON.stringify(override));
@@ -109,6 +112,8 @@ test('MVP162: importe original fuente distinto, SHA distinta o revisión pendien
   {...doc(),sourceSha256:'d'.repeat(64)},
   {...doc(),declaredTotalLiteral:'$ 241,00'},
   {...doc(),prueba:{...doc().prueba,state:'needs_source_review'}},
+  {...doc(),prueba:{...doc().prueba,revisionVigente:false}},
+  {...doc(),prueba:{...doc().prueba,cotizacionVigente:false}},
   {...doc(),prueba:{...doc().prueba,declaredTotalCents:'24000'}},
   {...doc(),lineas:[{...doc().lineas[0],lineTotalLiteral:'$ 241,00'}]}
  ]){
@@ -157,4 +162,28 @@ test('MVP162: medio de comparación y datos privados nunca salen del puente',()=
  assert.equal(JSON.stringify(r).includes(R),false);
  assert.equal(JSON.stringify(r).includes('whatsapp'),false);
  assert.equal(r.ofertaComparable?.anonId,'anon_aaa');
+});
+
+test('MVP162: disponibilidad no es igual a cantidad cotizada',()=>{
+ const m=mapping();m[0].disponibilidadCorroborada=false;
+ const r=run(doc(),m);
+ assert.equal(r.estado,'visible_no_comparable');
+ assert.deepEqual(r.motivos,['disponibilidad_sin_acreditar']);
+});
+test('MVP162: flete adicional solo con tratamiento explicitamente corroborado',()=>{
+ const positive={...terms(),fleteFinal:'25.00',tratamientoFlete:'fuera_del_total'};
+ const r=run(doc(),mapping(),positive);
+ assert.equal(r.estado,'comparable');
+ assert.equal(r.ofertaComparable.fleteFinal,'25.00');
+ const withShipping=compararCotizacionesOffline(req,[r.ofertaComparable]);
+ assert.equal(withShipping.opcionesCompletas[0].totalFinal,'267.00');
+ for(const bad of [
+  {...positive,tratamientoFlete:'sin_cargo'},
+  {...positive,tratamientoFlete:'incluido_en_precios'},
+  {...positive,fleteFinal:'0.00'}
+ ]){
+  const result=run(doc(),mapping(),bad);
+  assert.equal(result.estado,'visible_no_comparable');
+  assert.ok(result.motivos.includes('condiciones_sin_acreditar'));
+ }
 });
