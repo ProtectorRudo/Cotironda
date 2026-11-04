@@ -74,12 +74,25 @@ function buyerView(parsed){
       "sin_importe_asignable"]);
     const allowedVat=new Set(["sin_iva_por_convencion","sin_iva_declarado",
       "iva_incluido_no_homologado","iva_ambiguo"]);
+    const allowedUnits=new Set(["unit","bag","box","kg","g","l","ml",
+      "m","m2","m3","roll","pack"]);
     const goodRows=p.articulos.every(row=>row&&typeof row==="object"&&
-      /^item_\d{3}$/.test(row.itemId)&&Array.isArray(row.referencias)&&
+      /^item_\d{3}$/.test(row.itemId)&&
+      typeof row.descripcionSolicitada==="string"&&
+      row.descripcionSolicitada.trim().length>=1&&
+      row.descripcionSolicitada.length<=500&&
+      typeof row.cantidadSolicitada==="string"&&
+      /^(?:0|[1-9]\d{0,8})\.\d{3}$/.test(row.cantidadSolicitada)&&
+      allowedUnits.has(row.unidadSolicitada)&&
+      Array.isArray(row.referencias)&&
       row.referencias.length===labels.length&&
       row.referencias.every(ref=>ref&&typeof ref==="object"&&
         labels.includes(ref.oferta)&&allowedStates.has(ref.estado)&&
         allowedVat.has(ref.iva)&&
+        (ref.importeCotizado===null&&ref.cantidadCotizadaLiteral===null||
+         typeof ref.importeCotizado==="string"&&
+         typeof ref.cantidadCotizadaLiteral==="string"&&
+         /^[0-9][0-9., ]{0,47}$/.test(ref.cantidadCotizadaLiteral))&&
         (ref.importeCotizado===null||
          typeof ref.importeCotizado==="string"&&
          ref.importeCotizado.length<=48&&
@@ -92,8 +105,12 @@ function buyerView(parsed){
        quotations:p.quotations,requested_items:p.requested_items,
        articulos:p.articulos.map(row=>({
         itemId:row.itemId,
+        descripcionSolicitada:row.descripcionSolicitada,
+        cantidadSolicitada:row.cantidadSolicitada,
+        unidadSolicitada:row.unidadSolicitada,
         referencias:row.referencias.map(ref=>({
          oferta:ref.oferta,importeCotizado:ref.importeCotizado,
+         cantidadCotizadaLiteral:ref.cantidadCotizadaLiteral,
          estado:ref.estado,iva:ref.iva
         }))
        })),

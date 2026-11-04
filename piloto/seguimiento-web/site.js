@@ -159,10 +159,22 @@ function showItemPrices(d){
   "coincide_volumen_nominal_sin_stock","no_homologable","sin_importe_asignable"]);
  const allowedIva=new Set(["sin_iva_por_convencion","sin_iva_declarado",
   "iva_incluido_no_homologado","iva_ambiguo"]);
+ const allowedUnits=new Set(["unit","bag","box","kg","g","l","ml",
+  "m","m2","m3","roll","pack"]);
  if(p.articulos.some(item=>!item||!/^item_\d{3}$/.test(item.itemId)||
+   typeof item.descripcionSolicitada!=="string"||
+   item.descripcionSolicitada.trim().length<1||
+   item.descripcionSolicitada.length>500||
+   typeof item.cantidadSolicitada!=="string"||
+   !/^(?:0|[1-9]\d{0,8})\.\d{3}$/.test(item.cantidadSolicitada)||
+   !allowedUnits.has(item.unidadSolicitada)||
    !Array.isArray(item.referencias)||item.referencias.length!==labels.length||
    item.referencias.some(r=>!r||!labels.includes(r.oferta)||
     !allowedStates.has(r.estado)||!allowedIva.has(r.iva)||
+    !(r.importeCotizado===null&&r.cantidadCotizadaLiteral===null||
+     typeof r.importeCotizado==="string"&&
+     typeof r.cantidadCotizadaLiteral==="string"&&
+     /^[0-9][0-9., ]{0,47}$/.test(r.cantidadCotizadaLiteral))||
     !(r.importeCotizado===null||
      typeof r.importeCotizado==="string"&&r.importeCotizado.length<=48&&
      /^(?:\s*(?:ARS|USD)?\s*\$?\s*)?[\d.,]+\s*$/i.test(r.importeCotizado)))||
@@ -171,7 +183,16 @@ function showItemPrices(d){
  let withPrices=0;
  for(const item of p.articulos){
   const card=element("article","itemprices-card");
-  card.appendChild(element("h3","","Artículo "+Number(item.itemId.slice(-3))));
+  // Display the BUYER'S requested material, not an unverifiable supplier
+  // product label; the original supplier quantity remains unconverted.
+  const units={m2:"m²",m3:"m³",unit:"unidades",bag:"bolsas",
+   box:"cajas",roll:"rollos",pack:"paquetes"};
+  const qty=item.cantidadSolicitada.replace(/\.(\d{3})$/,(_,f)=>
+   f==="000"?"":","+f.replace(/0+$/,""));
+  card.appendChild(element("h3","","Artículo "+
+   Number(item.itemId.slice(-3))+" · "+item.descripcionSolicitada));
+  card.appendChild(element("p","itemprices-request","Pedido: "+qty+
+   " "+(units[item.unidadSolicitada]??item.unidadSolicitada)));
   for(const ref of item.referencias){
    const row=element("div","itemprices-row");
    const amount=ref.importeCotizado??"Sin importe asociable";
@@ -181,6 +202,9 @@ function showItemPrices(d){
      :ref.iva==="sin_iva_por_convencion"
        ?"Sin IVA por convención (el presupuesto no lo aclara)."
        :"Sin IVA expresamente declarado.";
+   const quantity=ref.cantidadCotizadaLiteral===null?""
+     :" Cantidad que figura en la oferta: "+ref.cantidadCotizadaLiteral+
+      " (presentación del proveedor; sin conversión automática).";
    const alternative=ref.importeCotizado!==null
      ?(ref.estado==="coincide_volumen_nominal_sin_stock"
        ?" Presentación nominal; disponibilidad no acreditada."
@@ -188,7 +212,7 @@ function showItemPrices(d){
      :"";
    row.append(element("strong","",ref.oferta),
     element("span","itemprices-amount",amount),
-    element("span","itemprices-detail",note+alternative));
+    element("span","itemprices-detail",note+quantity+alternative));
    card.appendChild(row);
   }
   grid.appendChild(card);

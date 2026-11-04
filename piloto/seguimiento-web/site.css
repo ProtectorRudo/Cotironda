@@ -90,3 +90,6 @@ footer{font-size:12px;color:#777;margin-top:18px;text-align:center}
 .itemprices-detail{font-size:12px;color:#66727f;flex:1 1 170px}
 .itemprices-note{font-size:12px;color:#596b80;line-height:1.65;margin:14px 0 0}
 @media(max-width:560px){.itemprices-panel{padding:16px}.itemprices-row{display:grid;grid-template-columns:1fr 1fr}.itemprices-detail{grid-column:1 / -1}}
+
+/* MVP187 — solicitud visible junto al importe de origen, sin ranking. */
+.itemprices-request{font-size:12px;color:#607183;margin:0 0 11px;line-height:1.45;overflow-wrap:anywhere}

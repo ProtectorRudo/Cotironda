@@ -1,3 +1,6 @@
+## MVP187 — Comprador ve el material y ambas cantidades (04/11/2026, desarrollo)
+- Extiende proyección MVP186 del comprador con nombre, unidad y cantidad **del pedido**; cantidad literal de cada oferta solo cuando el importe de origen está auditado. Evita presentar dos subtotales de presentaciones diferentes como si fueran equivalentes. Validación repetida en dominio, proxy y navegador, sin PII de proveedor ni HTML interpretado. Tests de regresión, XSS, revocación, cantidades divergentes y whitelist. No despliegue. Docs/307.
+
 ## MVP186 — Referencias de importe por artículo con seguimiento privado sin formularios (04/11/2026, desarrollo)
 - Se reutiliza selector de fuente privado MVP172/MVP175 y doble guardia de IVA/resumen MVP180; vínculo inequívoco de texto anónimo aprobado con la fuente v9. Componente Vercel muestra importes originales por artículo, presentaciones y salvedades sin generar puestos de ranking, contactos, stock, flete ni WhatsApps. La RPC MVP172 requerirá agregar una clave privada `publicText` y probar su instalación reversible antes del despliegue. Docs/306; issues #529/#535/#525.
 

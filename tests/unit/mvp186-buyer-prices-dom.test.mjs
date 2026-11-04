@@ -24,10 +24,15 @@ const prices=()=>({
  state:'importes_por_articulo_sin_ranking',quotations:2,requested_items:2,
  articulos:[1,2].map((j)=>({
   itemId:'item_'+String(j).padStart(3,'0'),
+  descripcionSolicitada:j===1?'Arena fina':'Piedra partida',
+  cantidadSolicitada:j===1?'1.000':'2.500',
+  unidadSolicitada:'m3',
   referencias:[
    {oferta:'Presupuesto 1',importeCotizado:j===1?'$ 90,00':'$ 190,00',
+    cantidadCotizadaLiteral:j===1?'1,00':'40',
     estado:'alternativa_comercial_con_aclaracion',iva:'sin_iva_por_convencion'},
    {oferta:'Presupuesto 2',importeCotizado:j===1?'$ 100,00':'$ 200,00',
+    cantidadCotizadaLiteral:j===1?'1,00':'20',
     estado:'coincide_volumen_nominal_sin_stock',iva:'sin_iva_declarado'}
   ]
  })),
@@ -66,6 +71,11 @@ test('MVP186 UI: muestra importes por artículo, sin ordenar como ganadores',asy
  assert.match(all,/90,00/);
  assert.match(all,/100,00/);
  assert.match(all,/convención/);
+ assert.match(all,/Arena fina/);
+ assert.match(all,/Piedra partida/);
+ assert.match(all,/Pedido: 1 m³/);
+ assert.match(all,/Pedido: 2,5 m³/);
+ assert.match(all,/Cantidad que figura en la oferta: 40/);
  assert.match(v.node('itemPricesCaption').textContent,/4 importes/);
  assert.doesNotMatch(all,/Ganador|1er puesto|mejor proveedor|adjudicado/iu);
  assert.match(html,/id="itemPricesGrid"/u);
@@ -87,6 +97,10 @@ test('MVP186 UI: permisos, cotización ajena y flags de ranking falsos ocultan l
   d=>d.item_prices.quotations=1,
   d=>d.item_prices.articulos[0].referencias[0].oferta='Proveedor secreto',
   d=>d.item_prices.articulos[1].referencias[0].importeCotizado='http://malicious',
+  d=>d.item_prices.articulos[0].descripcionSolicitada=' ',
+  d=>d.item_prices.articulos[0].cantidadSolicitada='1e99',
+  d=>d.item_prices.articulos[0].unidadSolicitada='money',
+  d=>d.item_prices.articulos[0].referencias[0].cantidadCotizadaLiteral='40;exec()',
   d=>d.economy.price_comparable=true
  ]){
   const d=response();mutate(d);
@@ -113,6 +127,26 @@ test('MVP186 UI: oferta no puede restaurarse con respuesta vieja tras revocació
  v.next();await v.next();
  release(response());
  await new Promise(res=>setTimeout(res,0));
+ assert.equal(v.node('itemPricesSection').hidden,true);
+ assert.equal(v.node('itemPricesGrid').children.length,0);
+});
+
+test('MVP187 UI: el material original del comprador nunca se interpreta como HTML',async()=>{
+ const d=response();
+ d.item_prices.articulos[0].descripcionSolicitada='<img src=x onerror=alert(1)>';
+ const v=await page([d]);
+ assert.equal(v.node('itemPricesSection').hidden,false);
+ const cards=v.node('itemPricesGrid').children;
+ const heading=cards[0].children[0].textContent;
+ assert.match(heading,/<img src=x onerror=alert\(1\)>/u);
+ assert.equal(v.node('itemPricesGrid').children.length,2);
+ assert.doesNotMatch(script,/\.innerHTML\s*=/u);
+});
+
+test('MVP187 UI: un importe sin cantidad original no puede simular precio comparable',async()=>{
+ const d=response();
+ d.item_prices.articulos[0].referencias[0].cantidadCotizadaLiteral=null;
+ const v=await page([d]);
  assert.equal(v.node('itemPricesSection').hidden,true);
  assert.equal(v.node('itemPricesGrid').children.length,0);
 });
