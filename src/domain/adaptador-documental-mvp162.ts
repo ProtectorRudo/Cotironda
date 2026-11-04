@@ -2,6 +2,7 @@ import type {
  OfertaComparable, PedidoComparable, UnidadCotizada, IvaExplicito,
  FormaPago, MonedaCotizada
 } from './comparacion-ofertas.ts';
+import {interpretarBolsonAridosMvp164} from './aridos-bolson-mvp164.ts';
 
 /** MVP162. Private-input, pure bridge. No network, files, identities or ranking.
  * Caller MUST populate from authoritative DB and independently corroborated
@@ -42,6 +43,14 @@ export type TerminosAuditados=Readonly<{
   lineNo:number;sourceSha256:string;
   unitarioNetoTrasDescuento:string;ivaExplicito:IvaExplicito|null;
  }>[];
+}>;
+/** MVP165: authenticated server-side verifier supplies the ORIGINAL buyer description
+ * and supplier presentation tied to the SAME source revision and line.
+ * These are proof references, never buyer/client/LLM authority to rank.
+ * Do not fill unitLiteral or overwrite a source line with this evidence. */
+export type PruebaBolsonMvp165=Readonly<{
+ itemId:string;lineNo:number;sourceSha256:string;
+ pedidoDescripcionLiteral:string;presentacionFuente:'big_bag'|'bolson';
 }>;
 export type Motivo =
  'fuente_no_verificada'|'origen_inconsistente'|'faltan_articulos'
@@ -128,12 +137,13 @@ export function cantidadFuenteMvp162(input:unknown):string|null{
 export function adaptarDocumentoMvp162(
  pedido:PedidoComparable,doc:DocumentoFuente,
  equivalencias:readonly CorrelacionFuente[],
- terminos:TerminosAuditados|null
+ terminos:TerminosAuditados|null,
+ pruebasBolson:readonly PruebaBolsonMvp165[]=[]
 ):ResultadoPuente{
  const rejected=()=>grade(doc?.anonId??'anon_invalid',
   'fuente_no_verificada',false,[],[],['fuente_no_verificada'],null);
  if(!doc||!pedido||!Array.isArray(pedido.items)||
-  !Array.isArray(doc.lineas)||!Array.isArray(equivalencias)||
+  !Array.isArray(doc.lineas)||!Array.isArray(equivalencias)||!Array.isArray(pruebasBolson)||
   !doc.prueba||!ID.test(doc.anonId)||!doc.anonId.startsWith('anon_')||
   !HASH.test(doc.sourceSha256)||!HASH.test(doc.messageHmac))return rejected();
  const p=doc.prueba;
@@ -181,6 +191,21 @@ export function adaptarDocumentoMvp162(
     ['origen_inconsistente'],null);
   correlated.set(match.itemId,match);seen.add(match.lineNo);
  }
+ // Every commercial convention must be anchored to one source-correlated line.
+ // Missing, crossed and duplicate proofs are never treated as ranking evidence.
+ const bolsones=new Map<string,PruebaBolsonMvp165>();
+ for(const proof of pruebasBolson){
+  const match=correlated.get(proof?.itemId);
+  if(!match||match.lineNo!==proof.lineNo||
+   proof.sourceSha256!==doc.sourceSha256||bolsones.has(proof.itemId)||
+   typeof proof.pedidoDescripcionLiteral!=='string'||
+   !proof.pedidoDescripcionLiteral.trim()||
+   proof.pedidoDescripcionLiteral.length>500||
+   !['big_bag','bolson'].includes(proof.presentacionFuente))
+   return grade(doc.anonId,'fuente_no_verificada',true,[],[],
+    ['origen_inconsistente'],null);
+  bolsones.set(proof.itemId,proof);
+ }
  const unused=[...originals.keys()].filter(n=>!seen.has(n)).sort((a,b)=>a-b);
  const reasons:Motivo[]=unused.length?['extras_sin_clasificar']:[];
  const uncovered:string[]=[];
@@ -195,11 +220,39 @@ export function adaptarDocumentoMvp162(
   const quantity=cantidadFuenteMvp162(line.quantityLiteral);
   const unit=normUnit(line.unitLiteral);
   if(quantity===null){uncovered.push(item.id);reasons.push('cantidad_sin_acreditar');continue}
-  if(unit===null||unit!==item.unidad){
-   uncovered.push(item.id);reasons.push('unidad_sin_acreditar');continue;
-  }
   if(map.equivalencia!=='verificada'){
    uncovered.push(item.id);reasons.push('equivalencia_sin_acreditar');continue;
+  }
+  // For áridos only, verified 1 m³ NOMINAL per BIG BAG allows the SAME
+  // numeric quantity and unit net price to be interpreted per m³ nominal.
+  // Other capacities require a separately audited price conversion: reject.
+  // The source unitLiteral stays untouched and technical variety is checked.
+  let effectiveUnit=unit;
+  if(effectiveUnit!==item.unidad){
+   const proof=bolsones.get(item.id);
+   if(item.unidad==='m3'&&(unit===null||unit==='bag')&&proof){
+    const r=interpretarBolsonAridosMvp164({
+     pedidoDescripcion:proof.pedidoDescripcionLiteral,
+     pedidoCantidad:item.cantidad,pedidoUnidad:item.unidad,
+     ofertaDescripcion:line.descriptionLiteral,ofertaCantidad:quantity,
+     presentacionFuente:proof.presentacionFuente,
+     fuenteVerificada:true,presentacionComprobada:true
+    });
+    if(r.estado==='compatible_comercialmente'&&
+     r.volumenM3PorUnidad==='1.000'&&r.cantidadNominalCoincide){
+     effectiveUnit='m3';
+    }else{
+     const reason:Motivo=r.estado==='variedad_no_informada'||
+      r.estado==='variedad_distinta'||r.estado==='familia_distinta'
+       ?'equivalencia_sin_acreditar':
+      r.estado==='volumen_distinto'?'cantidad_sin_acreditar':
+      'unidad_sin_acreditar';
+     uncovered.push(item.id);reasons.push(reason);continue;
+    }
+   }
+  }
+  if(effectiveUnit===null||effectiveUnit!==item.unidad){
+   uncovered.push(item.id);reasons.push('unidad_sin_acreditar');continue;
   }
   if(milli(quantity)!==milli(item.cantidad)){
    uncovered.push(item.id);reasons.push('cantidad_sin_acreditar');continue;
@@ -207,7 +260,7 @@ export function adaptarDocumentoMvp162(
   if(map.disponibilidadCorroborada!==true){
    uncovered.push(item.id);reasons.push('disponibilidad_sin_acreditar');continue;
   }
-  verified.push({itemId:item.id,unidad:unit,cantidadDisponible:quantity,
+  verified.push({itemId:item.id,unidad:effectiveUnit,cantidadDisponible:quantity,
    equivalencia:'verificada',precioUnitarioNeto:null,ivaPorcentaje:null});
  }
  if(reasons.length||uncovered.length)
