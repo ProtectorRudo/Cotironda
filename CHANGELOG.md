@@ -1,3 +1,6 @@
+## MVP173 — Diagnóstico real de dos rondas mediante backend privado (PILOTO 04/11/2026)
+- RPC privada instalada en cotironda-piloto (anon/auth sin EXECUTE); Edge staging v1 solo lectura con Vault, sin cron ni afectar recuperador v25. HTTP 401 sin token; dos llamadas reales HTTP 200: 2/2 rondas, 4/4 ofertas, 5/5 artículos, 4 alternativas comerciales razonables en áridos, 6 cruces aún sin cotejo genérico (NO incompatibles). 2.000/2.000 unitarios PASS y 6/6 CI GitHub, ranking, finalistas, mensajes OFF. Docs/292, PR #548.
+
 ## MVP173 — Diagnóstico privado ejecutable para una ronda real (desarrollo)
 - Edge staging separada de recuperación/Whapi. Token Vault obligatorio y RPC solo service_role; payload UUID, retorno estadístico sin originales, SHA, importes ni contactos. Integra SQL MVP172 con adaptador flexible TS. 14 pruebas específicas + Deno check. Docs/292; no rank ni finalistas.
 
