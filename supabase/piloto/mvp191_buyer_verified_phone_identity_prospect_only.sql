@@ -96,33 +96,3 @@ revoke all on function
 grant execute on function
  public.cotironda_piloto_buyer_identity_mvp191(uuid)
  to authenticated;
-
-       then (auth.jwt()->>'exp')::bigint >
-         extract(epoch from clock_timestamp())::bigint
-       else false end
-      and r.state='closed'
-      and r.closed_at is not null
-      and r.closed_at>=r.closes_at
-      and r.closed_at<=clock_timestamp()
-      and not exists(
-       select 1
-       from cotironda_piloto_privado.participant_channels_mvp109 duplicate
-       join cotironda_piloto_privado.participants buyer2
-        on buyer2.key=duplicate.participant_key
-       where duplicate.contact_sha256=contact.contact_sha256
-        and duplicate.participant_key<>buyer.key
-        and buyer2.participant_role='buyer'
-        and buyer2.opted_out_at is null
-      )
-  );
-$fn$;
-
--- SECURITY DEFINER functions default to PUBLIC execute.
--- Remove all grants, including service_role: only the normal JWT of a
--- verified authenticated user is allowed to invoke this boolean check.
-revoke all on function
- public.cotironda_piloto_buyer_identity_mvp191(uuid)
- from public,anon,authenticated,service_role;
-grant execute on function
- public.cotironda_piloto_buyer_identity_mvp191(uuid)
- to authenticated;
