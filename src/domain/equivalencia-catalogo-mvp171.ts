@@ -34,6 +34,7 @@ export type ResultadoComercialMvp171=Readonly<{
 }>;
 const NUM=/^(?:0|[1-9]\d{0,8})(?:\.\d{1,3})?$/u;
 const KEY=/^[a-z][a-z0-9_]{1,49}$/u;
+const UNIT=/^(?:unit|bag|box|kg|g|l|ml|m|m2|m3|roll|pack)$/u;
 /** Atributos físicos que no admiten suposición ni en ausencia de exigencia textual. */
 const ESENCIALES=new Set(['tension_v','seccion_mm2','amperaje_a',
  'potencia_w','presion_bar','resistencia','norma_seguridad','diametro_mm']);
@@ -69,7 +70,7 @@ export function evaluarEquivalenciaCatalogoMvp171(
   !KEY.test(x.familiaPedido)||!KEY.test(x.familiaOferta)||
   typeof x.unidadCanonicaPedido!=='string'||
   typeof x.unidadCanonicaOferta!=='string'||
-  !KEY.test(x.unidadCanonicaPedido)||!KEY.test(x.unidadCanonicaOferta)||
+  !UNIT.test(x.unidadCanonicaPedido)||!UNIT.test(x.unidadCanonicaOferta)||
   ![...x.atributosPedido,...x.atributosOferta].every(a=>
    a&&typeof a.clave==='string'&&KEY.test(a.clave)&&
    typeof a.valor==='string'&&a.valor.length>0&&a.valor.length<=100&&
