@@ -64,3 +64,15 @@ footer{font-size:12px;color:#777;margin-top:18px;text-align:center}
 .results-panel h2{font-size:18px;margin:0 0 7px;letter-spacing:-.02em}
 .results-panel p{font-size:13px;line-height:1.6;margin:7px 0;color:#454545}
 .results-panel .results-note{color:#606060}
+
+/* MVP180 — Evidence gaps are not zero tax, zero freight or a stockout. */
+.economy-panel{border:1px solid #dedede;border-radius:12px;padding:20px;margin:18px 0;background:#fafafa}
+.economy-panel h2{margin:0 0 8px;font-size:17px;letter-spacing:-.02em}
+.economy-caption{color:#555;font-size:13px;margin:0 0 14px}
+.economy-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:9px}
+.economy-metric{display:flex;align-items:center;gap:10px;border:1px solid #e2e2e2;border-radius:9px;background:white;padding:12px}
+.economy-metric strong{font-size:22px;font-variant-numeric:tabular-nums}
+.economy-metric span{font-size:12px;line-height:1.4;color:#505050}
+.economy-note{font-size:12px;line-height:1.6;color:#656565;margin:14px 0 0}
+@media(max-width:560px){.economy-panel{padding:16px}.economy-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:410px){.economy-grid{grid-template-columns:1fr}}
