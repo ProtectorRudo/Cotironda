@@ -74,20 +74,20 @@ round_validation AS (
  FROM tokens t
 ),
 source_lines AS (
- SELECT v.request_id,v.line,
-   l->>'quantityLiteral' quantity_text,
-   l->>'lineTotalLiteral' total_text,
-   a->>'unitarioComercialTrasDescuento' unit_text,
-   a->>'pagina' audit_page,a->>'fila' audit_row,
-   fact->>'page' fact_page,fact->>'row' fact_row,
-   a->>'estado' discount_state
+ SELECT v.request_id,l.line,
+   l.line->>'quantityLiteral' quantity_text,
+   l.line->>'lineTotalLiteral' total_text,
+   mapped.a->>'unitarioComercialTrasDescuento' unit_text,
+   mapped.a->>'pagina' audit_page,mapped.a->>'fila' audit_row,
+   mapped.fact->>'page' fact_page,mapped.fact->>'row' fact_row,
+   mapped.a->>'estado' discount_state
  FROM tokens v
  CROSS JOIN LATERAL jsonb_array_elements(
    CASE WHEN v.coverage->>'state'='private_inputs'
    THEN v.coverage->'quotations' ELSE '[]'::jsonb END
  ) q
  CROSS JOIN LATERAL jsonb_array_elements(q->'doc'->'lineas')
- WITH ORDINALITY AS l(line,line)
+ WITH ORDINALITY AS l(line,ordinal)
  LEFT JOIN LATERAL (
     SELECT a FROM jsonb_array_elements(q->'economia'->'descuentos'->'precios') a
     WHERE a->>'linea'=l.line->>'lineNo'
