@@ -192,9 +192,9 @@ Deno.serve(async req=>{
        const idRaw=hex(Deno.env.get('COTIRONDA_PILOT_ID_HMAC_HEX')??'');
        const channel=Deno.env.get('COTIRONDA_PILOT_WHAPI_CHANNEL')??'';
        if(!aesRaw||!idRaw||!channel)throw Error('keys_unavailable');
-       const aes=await crypto.subtle.importKey('raw',aesRaw,'AES-GCM',
+       const aes=await crypto.subtle.importKey('raw',Uint8Array.from(aesRaw).buffer,'AES-GCM',
           false,['decrypt']);
-       const idKey=await crypto.subtle.importKey('raw',idRaw,{
+       const idKey=await crypto.subtle.importKey('raw',Uint8Array.from(idRaw).buffer,{
           name:'HMAC',hash:'SHA-256'},false,['sign']);
        const contacts=await decodeContacts(finals.data,aes,idKey,channel);
        const keys=finals.data.supplier_keys as unknown;
