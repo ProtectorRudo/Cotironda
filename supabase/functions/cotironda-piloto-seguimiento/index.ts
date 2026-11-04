@@ -8,6 +8,8 @@ import {createClient} from 'npm:@supabase/supabase-js@2.118.0';
 import {hex,decodeContacts} from '../_shared/cotironda-finalist-notice.ts';
 import {resumirCoberturaCompradorMvp175} from '../../../src/domain/resumen-cobertura-comprador-mvp175.ts';
 import {resumirEconomiaCompradorMvp180} from '../../../src/domain/resumen-economia-comprador-mvp180.ts';
+import {resumirImportesCotizadosCompradorMvp186} from
+ '../../../src/domain/resumen-importes-cotizados-mvp186.ts';
 const ref='ilggkalaafhtiysyzlmg';
 const html=`<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -165,6 +167,7 @@ Deno.serve(async req=>{
  if(result.error)return new Response('',{status:503,headers:headers('text/plain')});
  let publicResult=result.data as Record<string,unknown>;
 
+ let verifiedRoundInputs:unknown=null;
  // Only a valid, consented buyer tracking token can reach this gate.
  // The SECOND RPC repeats buyer consent/revocation/round validation.
  // NEVER relay the private RPC object, which contains supplier originals.
@@ -176,7 +179,12 @@ Deno.serve(async req=>{
      });
      if(!source.error){
        const safe=resumirCoberturaCompradorMvp175(publicResult,source.data);
-       if(safe)publicResult={...publicResult,coverage:safe};
+       if(safe){
+         publicResult={...publicResult,coverage:safe};
+         // Reuse the SAME authenticated private RPC result to prepare prices.
+         // This variable never goes into an HTTP response or a log.
+         verifiedRoundInputs=source.data;
+       }
      }
    }catch{/* Existing tracking remains available, with no coverage. */}
  }
@@ -195,6 +203,22 @@ Deno.serve(async req=>{
        if(summary)publicResult={...publicResult,economy:summary};
      }
    }catch{/* An unavailable audit must NOT block existing anonymous offers. */}
+ }
+
+ // The economic summary repeats buyer consent, expiry and the full multiset
+ // of reviewed offer texts. A new per-article price reference is allowed only
+ // if BOTH private guards succeeded and every source maps to its exact
+ // reviewed anonymous offer; never by quote-array index/HMAC order.
+ if(publicResult?.can_open===true&&
+    (publicResult.state==='waiting'||publicResult.state==='closed')&&
+    verifiedRoundInputs!==null&&publicResult.economy){
+   try{
+     const itemPrices=resumirImportesCotizadosCompradorMvp186(
+       publicResult as Parameters<typeof resumirImportesCotizadosCompradorMvp186>[0],
+       verifiedRoundInputs
+     );
+     if(itemPrices)publicResult={...publicResult,item_prices:itemPrices};
+   }catch{/* Optional price references never block reviewed offers. */}
  }
 
  // Private, source-authorized contact reveal only after verified closure.
