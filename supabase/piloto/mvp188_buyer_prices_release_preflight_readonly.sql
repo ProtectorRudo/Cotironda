@@ -85,15 +85,15 @@ source_lines AS (
  CROSS JOIN LATERAL jsonb_array_elements(
    CASE WHEN v.coverage->>'state'='private_inputs'
    THEN v.coverage->'quotations' ELSE '[]'::jsonb END
- ) q
- CROSS JOIN LATERAL jsonb_array_elements(q->'doc'->'lineas')
+ ) AS q(obj)
+ CROSS JOIN LATERAL jsonb_array_elements(q.obj->'doc'->'lineas')
  WITH ORDINALITY AS l(line,ordinal)
  LEFT JOIN LATERAL (
-    SELECT a FROM jsonb_array_elements(q->'economia'->'descuentos'->'precios') a
+    SELECT a FROM jsonb_array_elements(q.obj->'economia'->'descuentos'->'precios') a
     WHERE a->>'linea'=l.line->>'lineNo'
  ) prices ON true
  LEFT JOIN LATERAL (
-    SELECT f fact FROM jsonb_array_elements(q->'fuente'->'lines') f
+    SELECT f fact FROM jsonb_array_elements(q.obj->'fuente'->'lines') f
     WHERE f->>'lineNo'=l.line->>'lineNo'
  ) facts ON true
  CROSS JOIN LATERAL (SELECT prices.a AS a, facts.fact AS fact) mapped
