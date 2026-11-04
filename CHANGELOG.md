@@ -1,3 +1,6 @@
+## MVP189 — Combinaciones comerciales de hasta dos proveedores después del cierre (04/11/2026, desarrollo)
+- Nuevo módulo fuente verificada v9 que proyecta combinaciones de cobertura uno/dos proveedores **sin dinero, puestos ni ganadores** y preserva todas las ofertas parciales. Solo con enlace del comprador autorizado tras cierre y doble guardia privado de seguimiento/cobertura/economía; saneamiento adicional Edge/Vercel/UI, revocación y anonimato. Suite de combinaciones y seguridad. No implementa IVA/flete/stock final, no despliega piloto ni WhatsApp. Docs/309.
+
 ## MVP188 — Prueba reproducible y rollback de activación de precios (04/11/2026, desarrollo)
 - Script SQL de solo lectura comprueba los dos enlaces buyer, cuatro originales v9, correlación exacta de las ofertas, cinco artículos, conciliación de diez líneas a centavos y permisos service_role, sin PII. SQL nuevo y versión previa de rollback se instalaron temporalmente con BEGIN/ROLLBACK en cotironda-piloto, comprobando ausencia de cambios permanentes. No SQL instalado, Edge/Web desplegados, WhatsApp ni finalistas. Docs/308, #529/#528.
 

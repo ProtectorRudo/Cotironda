@@ -120,6 +120,110 @@ function buyerView(parsed){
       };
     }
   }
+  // MVP189 — potential full commercial coverage ONLY AFTER closure.
+  // No seller identity, contacts, economic totals, tax, award, or access to
+  // originals. Re-validate labels/counts and whitelist the entire payload.
+  const optionSet=parsed.coverage_options;
+  if(parsed.state==="closed"&&safe.can_open===true&&
+     safe.coverage?.state==="cobertura_revisada"&&
+     safe.coverage.ranking_allowed===false&&
+     safe.coverage.price_comparable===false&&
+     safe.coverage.contacts_revealed===false&&safe.economy&&
+     optionSet&&typeof optionSet==="object"&&!Array.isArray(optionSet)&&
+     optionSet.state==="alternativas_cobertura_sin_ranking"&&
+     ["ranking_allowed","price_comparable","tax_calculated",
+      "freight_calculated","stock_confirmed","contacts_revealed",
+      "automatic_award","finalists_selected","whatsapp_sent",
+      "originals_downloadable"].every(k=>optionSet[k]===false)&&
+     Number.isSafeInteger(optionSet.quotations)&&
+     optionSet.quotations===safe.offers?.length&&
+     optionSet.quotations===safe.coverage.quotations&&
+     optionSet.quotations===safe.economy.quotations&&
+     optionSet.quotations>=1&&optionSet.quotations<=10&&
+     Number.isSafeInteger(optionSet.requested_items)&&
+     optionSet.requested_items===safe.coverage.requested_items&&
+     optionSet.requested_items>=1&&optionSet.requested_items<=25&&
+     Array.isArray(optionSet.coberturaPorOferta)&&
+     optionSet.coberturaPorOferta.length===optionSet.quotations&&
+     Array.isArray(optionSet.alternativas)&&
+     optionSet.alternativas.length<=55){
+    const labels=safe.offers.map(o=>o.label);
+    const rows=optionSet.coberturaPorOferta;
+    const counts=new Map();
+    const correctCounts=rows.every(r=>r&&typeof r==="object"&&
+      labels.includes(r.oferta)&&!counts.has(r.oferta)&&
+      Number.isSafeInteger(r.articulosConAlternativa)&&
+      r.articulosConAlternativa>=0&&
+      r.articulosConAlternativa<=optionSet.requested_items&&
+      r.articulosSolicitados===optionSet.requested_items&&
+      (counts.set(r.oferta,r.articulosConAlternativa),true));
+    const sum=rows.reduce((v,r)=>v+(r?.articulosConAlternativa||0),0);
+    const seen=new Set();
+    const correctOptions=optionSet.alternativas.every(opt=>{
+      if(!opt||typeof opt!=="object"||
+        !["individual","complementaria"].includes(opt.modo)||
+        !Array.isArray(opt.ofertasAnonimas)||
+        opt.ofertasAnonimas.length!==(opt.modo==="individual"?1:2)||
+        new Set(opt.ofertasAnonimas).size!==opt.ofertasAnonimas.length||
+        opt.ofertasAnonimas.some(x=>!labels.includes(x))||
+        !Array.isArray(opt.articulos)||
+        opt.articulos.length!==optionSet.requested_items)return false;
+      const providers=opt.ofertasAnonimas;
+      const key=providers.slice().sort().join("|");
+      if(seen.has(key))return false;
+      seen.add(key);
+      if(opt.modo==="individual"&&
+         counts.get(providers[0])!==optionSet.requested_items)return false;
+      if(opt.modo==="complementaria"&&(
+        counts.get(providers[0])>=optionSet.requested_items||
+        counts.get(providers[1])>=optionSet.requested_items))return false;
+      const articleSet=new Set(),used=new Set();
+      for(const art of opt.articulos){
+        if(!art||typeof art!=="object"||
+          !/^item_\d{3}$/.test(art.itemId)||
+          articleSet.has(art.itemId)||
+          !Array.isArray(art.ofertasConAlternativa)||
+          art.ofertasConAlternativa.length<1||
+          art.ofertasConAlternativa.length>providers.length||
+          new Set(art.ofertasConAlternativa).size!==
+            art.ofertasConAlternativa.length||
+          art.ofertasConAlternativa.some(x=>!providers.includes(x)))
+          return false;
+        articleSet.add(art.itemId);
+        art.ofertasConAlternativa.forEach(x=>used.add(x));
+      }
+      if(articleSet.size!==optionSet.requested_items||
+         used.size!==providers.length)return false;
+      if(opt.modo==="complementaria"&&providers.some(provider=>
+        !opt.articulos.some(item=>
+          item.ofertasConAlternativa.length===1&&
+          item.ofertasConAlternativa[0]===provider)))return false;
+      return true;
+    });
+    if(correctCounts&&counts.size===labels.length&&
+       sum===safe.coverage.commercial_alternatives&&correctOptions){
+      safe.coverage_options={
+       state:"alternativas_cobertura_sin_ranking",
+       quotations:optionSet.quotations,requested_items:optionSet.requested_items,
+       coberturaPorOferta:rows.map(r=>({
+        oferta:r.oferta,articulosConAlternativa:r.articulosConAlternativa,
+        articulosSolicitados:r.articulosSolicitados
+       })),
+       alternativas:optionSet.alternativas.map(o=>({
+        modo:o.modo,ofertasAnonimas:o.ofertasAnonimas.slice(),
+        articulos:o.articulos.map(a=>({
+          itemId:a.itemId,
+          ofertasConAlternativa:a.ofertasConAlternativa.slice()
+        }))
+       })),
+       ranking_allowed:false,price_comparable:false,tax_calculated:false,
+       freight_calculated:false,stock_confirmed:false,contacts_revealed:false,
+       automatic_award:false,finalists_selected:false,whatsapp_sent:false,
+       originals_downloadable:false
+      };
+    }
+  }
+
   if(parsed.state==="closed"&&Array.isArray(parsed.finalists)){
     if(parsed.finalists.length>2||!parsed.finalists.every(f=>f&&
       typeof f==="object"&&!Array.isArray(f)&&
