@@ -9,6 +9,7 @@ const consent=read('supabase/piloto/mvp109_encrypted_contacts_consents.sql');
 const outbox=read('supabase/piloto/mvp110_finalists_whapi_outbox.sql');
 const buyer=read('supabase/piloto/mvp110_buyer_finalists_tracking.sql');
 const portal=read('supabase/functions/cotironda-piloto-seguimiento/index.ts');
+const ui=read('site/seguimiento/app.js');
 const smoke=read('supabase/piloto/mvp115_joint_supplier_smoke_rollback.sql');
 const complete=read('supabase/piloto/mvp112_roundtrip_e2e_rollback.sql');
 const contacts=[
@@ -81,6 +82,6 @@ test('MVP115: independently complete alternatives keep their previous message',(
  assert.match(body,/alternativa\(s\) completas verificadas/);
  assert.doesNotMatch(body,/Ninguno cotizó el pedido completo/);
  assert.match(portal,/joint_supplier_coverage===true/);
- assert.match(portal,/textContent=/);
- assert.doesNotMatch(portal,/\binnerHTML\b/);
+ assert.match(ui,/\.textContent =/);
+ assert.doesNotMatch(ui,/\binnerHTML\b/);
 });
