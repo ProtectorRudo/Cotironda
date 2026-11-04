@@ -20,7 +20,11 @@ test('MVP160: dos proveedores completos: orden por costo verificable de canasta'
  assert.equal(r.estado,'alternativas_comparables');
  assert.deepEqual(r.recomendadosAnonimos,['anon_bbb','anon_aaa']);
  assert.equal(r.opcionPrincipal.totalFinal,'205.70');
- assert.equal(r.segundaAlternativa.totalFinal,'266.20');
+ // La segunda alternativa real es COMBINAR B cemento + A arena,
+ // no comprar todo a A: 80 + 100 = 180; IVA 21% = 217.80.
+ assert.equal(r.segundaAlternativa.totalFinal,'217.80');
+ assert.deepEqual(r.segundaAlternativa.proveedoresAnonimos,['anon_aaa','anon_bbb']);
+ assert.equal(r.segundaAlternativa.asignacion.length,2);
  assert.equal(r.contactosRevelados,false);
  assert.equal(r.adjudicacion,false);
  assert.equal(r.compraObligatoria,false);
