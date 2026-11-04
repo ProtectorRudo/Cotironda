@@ -1,6 +1,6 @@
 -- MVP180 — only buyer-token-authorized, SOURCE-VERIFIED AGGREGATE of missing
 -- commercial conditions. No price ranking, no original, no supplier id.
--- Install only in cotironda-piloto after reversible smoke and review.
+-- Installed exclusively in cotironda-piloto after reversible smoke; production untouched.
 create or replace function public.cotironda_piloto_buyer_economy_summary_mvp180(
  p_token_hash text
 ) returns jsonb language plpgsql volatile security definer set search_path='' as $fn$
