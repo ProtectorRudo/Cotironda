@@ -1,3 +1,6 @@
+## Portal originales: rutas Next.js PILOTO con barreras completas, solo DESARROLLO (04/11/2026)
+- Conexión Auth PILOTO independiente del portal DEV; rutas protegidas de catálogo íntegro y descarga por ID opaco; normal user JWT validado por `getUser(jwt)` y comprobación MVP191, servicio privado MVP192 con `buyerKey` exclusivamente servidor, almacenamiento SHA/revocación MVP190, 8 MiB. Habilitación OFF y pin exacto SHA de deployment Preview, tests negativos y positivos sintéticos. No hay OTP/Auth usuario PILOTO ni ruta habilitada ni descarga real; tampoco Vercel, WhatsApp o `main`. Docs/315, #525/#529.
+
 ## Originales — conexión privada de identidad, catálogo y descarga (04/11/2026, SOLO desarrollo)
 - Nuevo adaptador servidor `src/server/originales-piloto-conexion-segura.ts`: vincula Auth y sesión PILOTO al RPC autenticado MVP191, consulta MVP192 con servicio privado, proyecta lista segura de **todos** los documentos consentidos y deriva descarga a MVP190 con SHA de bytes y doble revalidación post-I/O. Crea pruebas de acceso positivo simulado, aislamiento, cambio de sesión, revocación, fuente cambiada, falta de consentimiento, archivo adulterado y flag OFF. No crea endpoint ni despliega SQL/Supabase/WhatsApp/producción; #525/#529 abiertos. Docs/314.
 
