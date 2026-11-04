@@ -1,3 +1,123 @@
+## MVP168 — Registro económico probado e instalado en PILOTO (04/11/2026)
+- PostgreSQL 17.11: schema/RPCs de MVP168 ensayados `BEGIN/ROLLBACK`, migración aditiva aplicada SOLO a `cotironda-piloto`; smoke reversible PASS, ACL/RLS verificados. Edge de staging v1 ACTIVE con JWT y sin cron, recuperador actual v25 intacto; 0 hechos económicos reales y 0 WhatsApp/finalistas. Auditoría docs/287. No producción, sin activar ranking, no E2E PDF real.
+
+## MVP168 — Integración de lector privado con evidencia económica (solo desarrollo)
+- El recuperador ahora comparte lector de bytes con SHA para prueba MVP163 y nueva auditoría privada MVP166+167 de PDF/Excel/Word/TXT, con registro SQL append-only/RLS propuesto, callback opt-in OFF y pruebas E2E sintéticas. No se ha instalado SQL ni desplegado Edge en Supabase; ranking, originales, contactos y Whapi intactos. Docs/286, issue #535.
+
+## MVP167 — Auditoría de condiciones IVA, flete y pago desde fuente (solo desarrollo)
+- Módulo independiente lee declaraciones acreditadas por SHA de archivo y página/fila sobre IVA, flete y pago, detecta conflictos y distingue tasa sin base, costo adicional vs incluido y modalidades alternativas. No acredita neto fiscal/stock/plazo/mínimo, no produce precio comparable ni ranking. 22 pruebas nuevas; docs/285, Issue #535. Sin SQL, piloto, WhatsApp ni producción.
+
+## MVP166 — Auditoría de descuentos por documento y renglón (solo desarrollo)
+- Nuevo módulo puro para comprobar tasas comerciales por renglón PDF/Excel, cantidad, precio de lista y total con BigInt y evidencia de localizador, SHA y versión vigente. Calcula precio comercial descontado pero declara IVA aún no acreditado y ranking inhabilitado; 14 pruebas. Documentación docs/284, #535; sin piloto, base, WhatsApp ni producción.
+
+## MVP165 — Puente de bolsones a contrato económico (solo desarrollo)
+- MVP162 admite una prueba separada de presentación de áridos ligada a item/línea/SHA y descripción auténtica del pedido. MVP164 valida familia, variedad y 1 m³ nominal por envase antes de permitir unidad m³ al comparador. El IVA, descuento neto, stock, flete y pago siguen siendo requisitos independientes; documentos sin evidencia permanecen visibles sin ranking. Tests específicos y docs/283; #535. Sin migración, WhatsApp, contactos ni producción.
+
+## MVP164 — Bolsón/BIG BAG de áridos ≈ 1 m³ nominal comercial
+- Regla comercial argentina del proyecto: un bolsón estándar de árido es 1 m³ nominal, con tamaño expreso prioritario. Se distingue variante genérica de arena fina/piedra partida, sin asumir IVA/flete/stock ni alterar documentos. Módulo puro y tests; propuesta privada en PILOTO; docs/282, Issue #538. No adjudica.
+
+## MVP163 — Segunda lectura de unidades y condiciones desde fuente PDF/XLSX
+- Auditoría privada append-only de originales fuente-verificados v9, con unit literal separado de producto, presentaciones BIG BAG, pistas de términos, localizadores y SHA; no inventa m³/IVA/flete ni activa ranking. Recuperador un archivo por tick. Issue #536, docs/281. PILOTO aislado.
+
+## MVP162 — Contrato documental fuente para costos comparables
+- Reutiliza el comparador existente mediante adaptador offline con SHA de fuente, todas las líneas originales, unidades/cantidades literales, equivalencia técnica independiente, términos comerciales/IVA explícitos y cálculo exacto de importes. Si faltan datos, PDF permanece visible pero sin ranking. Issue #533; docs/280. Sin cambios a Whapi/DB/producción.
+
+## MVP161 — autorización previa para originales de todos los candidatos
+- Puerta pura y fail-closed por comprador, empresa, ronda cerrada, consentimiento anterior a invitación, fuente privada SHA y no retroactividad. Sin activar descargas ni tocar producción. Issue #525, docs/279.
+
+## MVP160 — plan maestro y recomendaciones económicas sin adjudicación
+- Issues #524–#529 ordenados por prioridad. Añadido recomendador puro sobre comparador existente; hasta dos proveedores por opción completa, nunca rankings entre condiciones divergentes, sin desempates inventados ni PII. Descarga de TODOS los originales consentidos al cierre queda prevista, sin liberar documentos previos. Docs/278. Solo rama de desarrollo.
+
+## MVP159 — finalistas de PDFs verificados sin falsas equivalencias
+- El plan de cobertura acepta fuente verificada v9 y fuente histórica, invalidando correcciones pendientes, manteniendo comparación estricta y avisos finalistas apagados. Issue #521, docs/277. Solo PILOTO.
+
+## MVP158 — Seguimiento móvil legible y hora de 24 horas
+- Total e ítems por tarjeta con transcripción original; aviso BIG BAG sin equivalencia presunta; fecha límite en Argentina 16:30 y no 04:30. Issue #519, docs/276. Solo PILOTO.
+
+## MVP157 — Descuento en columna PDF con verificación independiente v9
+- Contrastar sufijo Dscto de la IA con porcentaje y aritmética fuente original sin exigirlo como texto pegado al producto; evidencia append-only v9, status comprador sin ampliar permisos. Issue #517, docs/275. Solo piloto.
+
+## MVP156 — Asociación contextual con evidencia multirrubro y cantidades
+- PDF de proveedor con nombres abreviados de materiales podrá asociarse a ronda única si hay ≥2 familias distintas y cantidades exactas. La pertenencia no prueba equivalencia comercial. Issue #515; docs/274. Solo PILOTO.
+
+## MVP155 — archivos de proveedores sin cita, atribuidos automáticamente con evidencia
+- Con varias rondas, cotejar todos los materiales con catálogo real y atribuir solo a solicitud única; preservar extras, precios y originales. Issue #513, docs/273. Solo piloto.
+
+## MVP153 — Vista de seguimiento del PILOTO sin HTML crudo
+- Recupera el diseño y las pruebas de MVP146 sobre la base actual de Cotironda: micrositio estático y API de seguimiento en Vercel PILOTO, con GET 302 de Supabase habilitado solo después de probar el despliegue. Issue #497, PR #498 sustituida por PR nueva basada en código actualizado. Sin producción.
+
+## MVP152 — Interpretación IA libre con evidencia y catálogo real
+- Evita segundo parser rígido cuando el modelo extrae con evidencia corroborada, todas las cantidades cubiertas y zona/catalogo reales. Issue #509, docs/271. Sin cambios en producción.
+
+## MVP151 — Asociación por respuesta al PDF original en WhatsApp
+- Presupuestos de proveedor vinculados al mensaje citado, incluso entre rondas simultáneas; documentos sin identidad de ronda quedan conservados sin atribución inventada. Issue #507, docs/270.
+
+## MVP150 — Pedidos naturales sin límite artificial de 8 renglones
+- Texto/IA/SQL alineados a la capacidad de 25 renglones del PDF actual; más formatos claros de materiales y unidades, controles de fuente intactos. Issue #505, docs/269. Solo piloto.
+
+## MVP149 — Recuperación autónoma de PDF a proveedores en PILOTO
+- Despacho seguro de pendientes con cron ya autenticado, claim+HMAC+PDF fuente y ledger sin duplicados ni reintentos de resultados inciertos. Issue #503, docs/268. No afecta producción.
+
+## MVP148 — Envío PILOTO por solicitud autenticada y catálogo curado
+- Reemplazo de la ventana única del viejo MVP091, manteniendo 1 comprador y 2 proveedores, con evaluación determinista por cada línea/familia y consentimiento vigente. Issue #501, docs/267. Sin secretos ni llamadas Whapi en migración.
+
+## MVP147 — Mensajes completos del comprador sin falsos faltantes
+- La lista clara con saludo y encabezado no queda bloqueada por `ask_material`: fast-path seguro del parser local, sin borrar líneas desconocidas. Solo piloto, Issue #499, docs/266.
+
+## MVP145 — Encabezados comerciales PDF frente a condiciones verificadas
+- Revisión v8 append-only. No confundir metadatos de tabla, correo y ceros con condiciones omitidas; precios, IVA, flete, plazos y descuentos permanecen exigidos. Solo piloto. Ver docs/264 e Issue #488.
+
+## MVP144 — Aclaraciones PDF acreditadas sin imponer orden de extracción
+- Verificador v7 de texto comercial original reordenado y descuento visible en presentación Cotironda. Sin ocultar cargos, números ni negaciones; sin tocar producción. Ver docs/263 e Issue #488.
+
+## MVP143 — PDF total sin etiqueta reconocida, con evidencia matemática
+- Corrige bloqueo PDF Ailín cuando importe único y suma exacta acreditan el total; verificación v6 append-only. Documento docs/262. Solo PILOTO.
+
+## MVP142 — Presupuestos reales: hojas Excel vacías y total de contado en PDF
+- Verificación v5 de fuente original, preservación de cifras y notas, pruebas adversarias. Solo PILOTO. Ver docs/261 y #488.
+
+## MVP141 — Lectura real de PDF y XLSX en PILOTO
+- PDF: total literal único separado de la etiqueta respaldado por suma exacta; XLSX: filas vacías autoconclusivas; comprobación v4 append-only. Ver docs/260 e Issue #488.
+
+## MVP140 — Lectura de múltiples hojas Excel y totales PDF contiguos (desarrollo)
+- Revisión de fuente v3 append-only con retrocompatibilidad del seguimiento, detección de cargos sin símbolo monetario y pruebas ZIP/PDF. Sin despliegue de producción; ver docs/259. Issue #488.
+
+## MVP139 — Mejoras source PDF/XLSX v2 (piloto)
+- Comprueba descuento explícito en columna separada con centavos exactos; admite planillas formateadas y cacheadas, nunca ejecuta fórmulas. Conserva auditoría v1 y source SHA, sin publicación no verificada. Issue #488.
+
+## MVP138 — Fuente original económica y publicación sin fricción (piloto)
+- Revisión unificada de documentos archivados sin exigir doble coincidencia de metadatos ni multiplicación sin descuentos; proyección anónima inmutable, IVA no supuesto y token comprador conservado. Issue #488.
+
+## MVP137 — Clasificación contextual de documentos de proveedor por identidad verificada
+- Evita que Excel con precios y total de proveedor consentido se trate como solicitud de comprador. Solo routing privado y source checks intactos, sin migración SQL. Rescate de archivo antiguo se conserva separado en issue #485.
+
+## MVP-136 — rescate autónomo de Excel proveedor mal clasificado (desarrollo)
+- Reclasifica borradores con precios, proveedor e invitación comprobados, originales SHA256 y auditoría inmutable. Solo cotización recibida, sin ranking. Issue #485.
+
+## MVP-135-B — las aclaraciones también requieren prueba de fuente
+- Verificación bidireccional de notas comerciales en PDF y TXT/CSV. Una cláusula inventada o importe extra camuflado se retiene. Prueba reversible de proyección en PostgreSQL con source-gates conservados.
+
+## MVP-135 — aclaraciones completas de proveedores (desarrollo, 03/11/2026)
+- Extraer y conservar precios de lista/contado, flete, pallets retornables y demás condiciones en el presupuesto propio, sin renombrar importes ni pedir reconfirmación. PDF con cantidad decimal sin unidad literal y evidencia independiente. El ranking económico sigue bloqueado con incertidumbre. Issue #482.
+
+## MVP-134 — conciliación autónoma de PDFs retenidos, solo privada (desarrollo)
+- Cron diagnostica el PDF original de cotizaciones retenidas sin pedir reenvíos, no saltea doble lectura ni publica presupuestos sin respaldo. Issue #480.
+
+## MVP-133 — cotejo de borradores reales sin rechazos artificiales (03/11/2026)
+- Admite condiciones y evidencia multilínea y descripciones amplias en borradores PRIVADOS sin relajar reglas de publicación. Issue #478. La ronda no publica propuestas sin fuente verificada.
+
+## MVP-132 - cron documental autónomo con Vault (desarrollo, 03/11/2026)
+- Recuperación automática sin permisos repetidos ni reenvíos, token generado en Vault y verificador RPC exclusivo de service_role. Respeta baja, cuota, plazo y privacidad. Issue #476, despliegue solo a PILOTO tras pruebas.
+
+## MVP-131 — recuperación de archivos sin mensaje WhatsApp posterior (DEV, 03/11/2026)
+- Worker Edge aislado service-to-service con autenticación por clave secreta, bandera OFF y RPC de selección privada solo para service_role. Reusa recuperación MVP128, archivo original, doble lectura y auditoría económica, sin enviar WhatsApp.
+- Issue #473. Pendiente: CI, SQL smoke aislado, autorización de despliegue PILOTO y verificación del PDF original de Ailín. No tocar producción.
+
+## MVP-130 — cotejo PDF multicolumna, fuentes y varios folios (03/11/2026)
+- Lector `unpdf@2.1.0` (PDF.js serverless) pinneado para evidencias de texto posicionado sobre el original privado, después del verificador de PDF simple. Límite de páginas/tiempo/memoria y falla cerrada para escaneos, OCR oculto, filas largas o ilegibles.
+- Cobertura por renglón y por importe como multiconjunto exacto; prohíbe omitir cargos, fletes, pallets, IVA, condiciones, subtotales, números y total del presupuesto real. Si algo no está respaldado por la fuente, se mantiene en revisión privada.
+- Pruebas sintéticas de dos páginas, IVA, costos extra, cambios de precio, subtotal/total no conciliado y escaneo, documentación en docs/249. Issue #468. Sin declaración de lectura real de Ailín hasta verificarla.
+
 ## MVP-128 — recuperación privada de PDF histórico sin reenvío (03/11/2026)
 - Worker dedicado `private-document-recovery.ts` descarga solo el original en Storage, verifica SHA256/tamaño/MIME y vuelve a ejecutar dos lecturas independientes con las puertas de lectura, fuente y aritmética ya existentes. Nunca envía invitaciones ni publica PDFs sin verificación determinista.
 - La cola segura solo identifica una fuente elegible con consentimiento, ronda abierta, HMAC de mensaje y cuota; `legacy_unclassified` preserva la incertidumbre del error del piloto inicial. Reserva con bloqueo de fila, espera mínima y tope de tres intentos.

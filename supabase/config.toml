@@ -12,3 +12,7 @@ verify_jwt = false
 # Edge handler. JWT is deliberately disabled because the worker is invoked
 # by scheduled GitHub Actions, not a Supabase user session.
 verify_jwt = false
+
+[functions.cotironda-piloto-document-recovery]
+# Service-to-service only: withSupabase auth secret; never publish this API key.
+verify_jwt = false

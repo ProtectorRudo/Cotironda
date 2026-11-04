@@ -3,7 +3,7 @@
  * No WhatsApp outgoing; no tokens or phones in source.
  */
 import {createClient} from 'npm:@supabase/supabase-js@2.118.0';
-import {parseBuyerPilot,canPrepareBuyerPilot,validMessage,standaloneDeliveryCity} from './core.ts';
+import {parseBuyerPilot,canPrepareBuyerPilot,validMessage,standaloneDeliveryCity,quotedWhapiMessageId} from './core.ts';
 import {generarSolicitudPdfMvp091} from './request-pdf.ts';
 import {makeMediaManifest} from './media-intake.ts';
 import {parseDocumentClarification} from './document-clarification.ts';
@@ -13,6 +13,7 @@ import {checkSupplierTextSource} from './supplier-source-text.ts';
 import {checkSupplierOfficeSource} from './supplier-source-office.ts';
 import {checkSupplierPdfSource} from './supplier-source-pdf.ts';
 import {proposeDocumentAI,documentFailureCode} from './document-ai-draft.ts';
+import {promoteVerifiedSupplierQuote} from './supplier-role-hint.ts';
 import {recoverOneStoredDocument} from './private-document-recovery.ts';
 import {interpretPilotBuyerWithAI} from './ai-interpreter.ts';
 import {decidePilotAIAction,shortBusinessReply,type ReplyCode} from './business-ai-policy.ts';
@@ -132,8 +133,8 @@ async function secrets():Promise<Secrets|null>{
    return null;
   }
  }
- const key=await crypto.subtle.importKey('raw',raw,{name:'HMAC',hash:'SHA-256'},false,['sign']);
- const aes=await crypto.subtle.importKey('raw',rawAes,'AES-GCM',false,['encrypt','decrypt']);
+ const key=await crypto.subtle.importKey('raw',new Uint8Array(raw).buffer,{name:'HMAC',hash:'SHA-256'},false,['sign']);
+ const aes=await crypto.subtle.importKey('raw',new Uint8Array(rawAes).buffer,'AES-GCM',false,['encrypt','decrypt']);
  return {key,aes,channel,webhookSecret,url,roleKey,outbound,token,recipients};
 }
 function client(s:Secrets){
@@ -299,6 +300,18 @@ async function respond(req:Request):Promise<Response>{
   ids.add(row.id);
   const chatHash=await hmac(sec.key,'cotironda|pilot|chat|'+sec.channel+'|'+row.chat_id);
   const messageHash=await hmac(sec.key,'cotironda|pilot|msg|'+sec.channel+'|'+row.id);
+  // Only an authenticated sender already in the two approved supplier
+  // destinations may use Whapi's quoted_id to identify a supplier PDF.
+  // Do NOT reinterpret a buyer's quoted reply as their delivery city.
+  const quotedId=quotedWhapiMessageId(row);
+  let supplierQuotedId:string|null=null;
+  if(quotedId&&sec.outbound){
+   for(const number of Object.values(sec.recipients)){
+    const expected=await hmac(sec.key,'cotironda|pilot|chat|'+sec.channel+
+      '|'+number+'@s.whatsapp.net');
+    if(equalSecret(expected,chatHash)){supplierQuotedId=quotedId;break}
+   }
+  }
   recoveryTriggerHmac=chatHash;
   const media=row.type==='text'?null:makeMediaManifest(row,row.type);
   // Store media ID, size, MIME and caption in the AES-GCM encrypted
@@ -361,6 +374,7 @@ async function respond(req:Request):Promise<Response>{
   // durable, one-per-HMAC, buyer-only and capped at 12 calls per day.
   // Supplier quote ingestion never passes through this classifier.
   if(row.type==='text'&&!webLinkCode&&
+     !canPrepareBuyerPilot(local)&&
      Deno.env.get('COTIRONDA_PILOT_AI_ENABLED')==='true'){
     const preflight=await db.rpc('cotironda_piloto_reserve_ai_mvp094',{
       p_chat_hmac:chatHash,p_message_hmac:messageHash
@@ -370,11 +384,20 @@ async function respond(req:Request):Promise<Response>{
       parsed={city:local.city,items:[],unresolved:['ai_unavailable']};
     }else if(preflight.data===true){
       try{
+        const categories=await db.rpc('cotironda_piloto_curated_families_mvp152',{
+          p_buyer_chat_hmac:chatHash,p_city:local.city
+        });
+        if(categories.error||!Array.isArray(categories.data)||
+          categories.data.length<1||categories.data.length>100||
+          !categories.data.every((s:unknown)=>typeof s==='string'&&
+            /^[a-z][a-z0-9_]{2,49}$/u.test(s)))
+          throw Error('pilot_ai_catalogue_unavailable');
+        const familyCodes=categories.data as string[];
         const model=await interpretPilotBuyerWithAI({
           text:body,apiKey:Deno.env.get('COTIRONDA_PILOT_OPENAI_API_KEY')??'',
-          enabled:true
+          enabled:true,familyCodes
         });
-        const decision=decidePilotAIAction(body,model,'buyer');
+        const decision=decidePilotAIAction(body,model,'buyer',familyCodes);
         // Success means a structurally valid model answer, not commercial
         // authorization. Store only intent/decision codes, never content.
         const audit=await db.rpc('cotironda_piloto_finish_ai_mvp096',{
@@ -423,7 +446,8 @@ async function respond(req:Request):Promise<Response>{
    p_nonce_b64:c.nonce,p_ciphertext_b64:c.ciphertext,
    p_source_unix:row.timestamp,
    p_plaintext:body,
-   p_city:parsed.city,p_items:canPrepareBuyerPilot(parsed)?parsed.items:null
+   p_city:supplierQuotedId?'__quoted_supplier_reply__':parsed.city,
+   p_items:canPrepareBuyerPilot(parsed)?parsed.items:null
   });
   if(out.error)return json(503,'storage_unavailable');
   if(!['recorded','duplicate','unrecognized_contact','needs_zone',
@@ -457,6 +481,17 @@ async function respond(req:Request):Promise<Response>{
     continue;
   }
   if(outcome(out.data)==='quote_recorded')supplierAckMode='text_quote';
+  // A supplier can have several open invitations. A quoted PDF ID is
+  // checked against the exact accepted Whapi outbox for this same seller.
+  if(row.type==='text'&&supplierQuotedId&&
+     outcome(out.data)==='unmatched_quote'){
+    const binding=await db.rpc('cotironda_piloto_link_quoted_text_mvp151',{
+      p_message_hmac:messageHash,p_chat_hmac:chatHash,
+      p_quoted_id:supplierQuotedId,p_plaintext:body
+    });
+    if(binding.error)return json(503,'supplier_quote_context_unavailable');
+    if(binding.data?.state==='linked')supplierAckMode='text_quote';
+  }
   // Archive original incoming PDF, Excel, Word or photo ONLY after
   // committed authenticated inbox and supplier/buyer consent SQL check.
   // No interpretation can distribute until independently reviewed.
@@ -471,6 +506,15 @@ async function respond(req:Request):Promise<Response>{
     });
     if(reservation.error)return json(503,'media_reservation_unavailable');
     if(reservation.data===true){
+      // Resolve supplier documents BEFORE interpreting bytes or publishing
+      // any amount. A stale/wrong quote must not land on a newer round.
+      if(supplierQuotedId){
+        const binding=await db.rpc('cotironda_piloto_link_quoted_media_mvp151',{
+          p_message_hmac:messageHash,p_chat_hmac:chatHash,
+          p_quoted_id:supplierQuotedId
+        });
+        if(binding.error)return json(503,'supplier_media_context_unavailable');
+      }
       let status:'stored'|'uncertain'='uncertain';
       let contentHash:string|null=null,contentSize:number|null=null;
       let downloadedForReview:Awaited<ReturnType<typeof getVerifiedWhapiMedia>>|null=null;
@@ -505,9 +549,18 @@ async function respond(req:Request):Promise<Response>{
             // Two parallel readings reduce copy errors without extra
             // WhatsApp actions. Each is untrusted until source corroboration;
             // disagreement MUST NOT create a commercial invitation.
+            // PILOTO: compare the already-verified sender HMAC to the two
+            // configured, previously approved supplier recipients. The
+            // reserve_media RPC has ALREADY checked consent + supplier invite.
+            // No buyer is promoted and no phone is logged or returned.
+            const verifiedSupplier=(await Promise.all(
+              Object.values(sec.recipients).map(async number=>
+                hmac(sec.key,'cotironda|pilot|chat|'+sec.channel+'|'+
+                  number+'@s.whatsapp.net'))))
+              .some(expected=>equalSecret(expected,chatHash));
             const args={manifest:media,file:downloadedForReview,
               apiKey:Deno.env.get('COTIRONDA_PILOT_OPENAI_API_KEY')??'',
-              enabled:true};
+              enabled:true,verifiedSupplier};
             const readings=await Promise.allSettled([
               proposeDocumentAI({...args,perspective:'primary'}),
               proposeDocumentAI({...args,perspective:'corroboration'})
@@ -515,10 +568,12 @@ async function respond(req:Request):Promise<Response>{
             // If one read fails, preserve the other's private draft, but do
             // NOT call it a corroboration or publish its economic contents.
             const proposal=readings[0].status==='fulfilled'
-              ?readings[0].value:
-              readings[1].status==='fulfilled'?readings[1].value:null;
+              ?promoteVerifiedSupplierQuote(readings[0].value,verifiedSupplier):
+              readings[1].status==='fulfilled'
+                ?promoteVerifiedSupplierQuote(readings[1].value,verifiedSupplier):null;
             const corroboration=readings[0].status==='fulfilled'&&
-              readings[1].status==='fulfilled'?readings[1].value:null;
+              readings[1].status==='fulfilled'
+                ?promoteVerifiedSupplierQuote(readings[1].value,verifiedSupplier):null;
             if(!proposal)throw readings[0].status==='rejected'
               ?readings[0].reason:Error('doc_ai_response_incomplete');
             diagnosticPhase='storage';
@@ -536,7 +591,7 @@ async function respond(req:Request):Promise<Response>{
               // The per-line planner is internal and NEVER sends invitations.
               // Supplier original files get a separate, unverified receipt:
               // totals and extra charges remain available in source storage.
-              if(proposal.kind==='buyer_request'){
+              if(proposal.kind==='buyer_request'&&!verifiedSupplier){
                 const plan=await db.rpc('cotironda_piloto_plan_document_mvp098',{
                   p_message_hmac:messageHash
                 });
@@ -571,6 +626,15 @@ async function respond(req:Request):Promise<Response>{
                 if(!mediaClarificationBody&&proposal.delivery_city===null&&
                    proposal.lines.length>0)aiReply='zone';
               }else if(proposal.kind==='supplier_quote'){
+                // A new unquoted file may match exactly one already-sent RFQ.
+                // Quoted replies (including wrong quotes) always use MVP151.
+                if(!quotedId&&verifiedSupplier){
+                  const match=await db.rpc('cotironda_piloto_autolink_unquoted_media_mvp155',{
+                    p_message_hmac:messageHash,p_chat_hmac:chatHash
+                  });
+                  if(match.error)
+                    console.warn('cotironda_supplier_unquoted_match_unavailable');
+                }
                 const receipt=await db.rpc('cotironda_piloto_record_supplier_media_mvp098',{
                   p_message_hmac:messageHash
                 });

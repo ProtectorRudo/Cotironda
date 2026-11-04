@@ -1,5 +1,15 @@
 # AGENTS.md — Contrato técnico de Cotironda
 
+> **MVP168 / 04-11-2026 — Instalación aislada verificada en PILOTO:** ledger privado y dos RPCs SQL instalados tras smoke PostgreSQL 17.11 + `ROLLBACK` PASS. Edge nueva `cotironda-piloto-economic-staging` v1 JWT ACTIVE sin cron; recuperador original v25 conservado. 0 resultados económicos reales, 0 finalistas. No marcar #535 terminado ni activar flag, comparador o contactos sin nueva prueba. Ver docs/287.
+
+> **MVP168 / 04-11-2026 (solo rama de desarrollo):** enlazado lector de originales con pruebas económicas MVP166/167 y ledger privado append-only propuesto. Verificar bytes originales y SHA v9 siempre; activar worker solo con RPCs privadas probadas y flag explícito; no suponer que el SQL o Edge está instalado. `rankingAllowed=false`; no contactos, cierre ni originales públicos. Ver docs/286, Issue #535.
+
+> **MVP167 / 04-11-2026 (solo desarrollo):** el auditor de IVA, flete y pago únicamente devuelve declaraciones categóricas de fuente v9 y SHA comprobados, con página/fila, nunca un precio final. Diferenciar IVA incluido/excluido/tasa sin base, flete incluido/gratis/adicional/no definido y pagos alternativos. No inventar IVA=0, costo logístico=0 o stock. No producir TerminosAuditados ni ranking sin evidencias adicionales. Ver docs/285, Issue #535.
+
+> **MVP166 / 04-11-2026 (solo desarrollo):** al auditar descuentos, exigir extracción de archivo privado verificado por SHA de bytes, coincidencia de renglón/importe, tasas explícitas y conciliación centavo a centavo. El precio comercial tras descuento NO es automáticamente neto fiscal ni habilita IVA, stock, flete o ranking. No exponer texto original, hash ni contactos. Ver docs/284 e Issue #535.
+
+> **MVP165 / 04-11-2026 (desarrollo):** una equivalencia BIG BAG/bolsón ≈1 m³ nominal puede alimentar el contrato económico SOLO con línea + SHA + descripción del pedido auténtica, variedad técnica acreditada, cantidad, stock, IVA/precio neto/flete/pago auditados. Una presentación diferente de 1 m³ nominal por envase no hereda precio unitario por m³. No alterar original ni activar ranking real sin verificador privado. Ver docs/283 e Issue #535.
+
 ## Rol
 Actuar como director técnico, desarrollador, analista de producto y auditor. Priorizar calidad comercial, simplicidad, confidencialidad y costos sostenibles.
 
@@ -42,6 +52,7 @@ Ver [docs/89](docs/89-ux-cero-friccion-whatsapp-first.md), decisión UX-001, Iss
 - El comprador autoriza la distribución al enviar la lista; NO revisa ni confirma cada línea antes del despacho. Los ítems ambiguos se retienen; el resto continúa automáticamente.
 - Proveedores elegidos por catálogo confirmado y zona, no por rubro genérico solamente.
 - Marcas flexibles salvo exigencia de marca obligatoria; equivalencia técnica comprobable.
+- **D016 / MVP164 (04/11/2026):** vocabulario argentino de áridos: «BIG BAG», «big biag», «bigbag» y «bolsón» de arena/piedra/granza/ripio/cascote implican generalmente **1 m³ NOMINAL por bolsón** en su presentación comercial. Es convención curada, no volumen físico ni especificación confirmada: una capacidad explícita diferente prevalece; no aplicar a bolsas de cemento ni paquetes de peso especial. Separar **cantidad nominal cubierta** de **variante técnica** (arena ≠ necesariamente arena fina; piedra ≠ necesariamente piedra partida). No reescribir cotización ni usar esa convención sola para activar ranking, IVA/flete/stock o adjudicación. Ver docs/282 e Issue #538.
 - Ofertas parciales nunca ganan un ranking general por su total menor.
 - **Fidelidad absoluta del presupuesto del proveedor (01/11/2026, MVP-063):** conservar íntegros el texto/archivo original, orden de TODOS los renglones, cantidad, unidad, descripción, importes unitarios, totales por línea, cargos, descuentos, embalajes (pallets/bolsones vacíos), condiciones y **TOTAL declarado exactamente como fueron enviados**, aunque el comprador no los haya solicitado. Fuente inmutable/versionada + hash; si el total no concuerda, señalar diferencia pero JAMÁS cambiarlo silenciosamente. Distinguir «Presupuesto original», «Suma comprobada de conceptos» y «Costo comparable de materiales solicitados». Las líneas adicionales se muestran, no se descartan, y su obligatoriedad se verifica antes de compararlas. La IA interpreta y sugiere, no altera el original. **No presentar el lector D060/MVP014 de solo ítems del comprador como presupuesto completo** hasta crear ledger+vista íntegros D093 y probar archivos. Ver docs/183, Issue #339.
 

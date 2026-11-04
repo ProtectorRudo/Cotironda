@@ -22,7 +22,7 @@ test('MVP102: uses already-paid independent second read of exact original',()=>{
  assert.match(edge,/readings\[1\]\.status==='fulfilled'/);
  assert.match(edge,/p_second_proposal:corroboration/);
  assert.match(edge,/readings\[0\]\.status==='fulfilled'&&/);
- assert.match(edge,/readings\[1\]\.status==='fulfilled'\?readings\[1\]\.value:null/);
+ assert.match(edge,/readings\[1\]\.status==='fulfilled'\s*\?promoteVerifiedSupplierQuote\(readings\[1\]\.value,verifiedSupplier\):null/);
 });
 
 test('MVP102: compares every economic line and metadata but does not publish prices',()=>{

@@ -1,0 +1,43 @@
+name: Cotironda PILOTO Whapi - Deno typecheck
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/cotironda-piloto-whapi/**'
+      - 'supabase/functions/cotironda-piloto-document-recovery/**'
+      - '.github/workflows/cotironda-piloto-whapi-deno.yml'
+  push:
+    branches:
+      - feat/mvp-119-whapi-delivery-receipts-private
+    paths:
+      - 'supabase/functions/cotironda-piloto-whapi/**'
+      - '.github/workflows/cotironda-piloto-whapi-deno.yml'
+permissions:
+  contents: read
+jobs:
+  deno-whapi:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout pinned action
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Install Deno 2
+        uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb
+        with:
+          deno-version: v2.x
+      - name: Typecheck the EXACT production pilot webhook and PDF readers
+        run: |
+          deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/index.ts
+          deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/supplier-source-pdf-general.ts
+          deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-document-recovery/index.ts
+          deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-document-recovery/scheduled-auth.ts
+          deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-document-recovery/quote-reconciliation.ts
+      - name: Exercise unpdf runtime with a real two-page PDF (synthetic content)
+        run: deno run --node-modules-dir=auto tests/unit/mvp130-unpdf-deno-runtime.smoke.ts
+      - name: Verify no raw supplier document is printed
+        run: |
+          if grep -R -E 'console\.(log|error)\(.*(bytes|proposal|file\.data|sourceText)' supabase/functions/cotironda-piloto-whapi; then
+            echo "::error::Potential PDF or supplier data logging"
+            exit 1
+          fi

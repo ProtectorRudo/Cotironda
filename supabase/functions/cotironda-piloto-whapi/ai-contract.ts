@@ -11,12 +11,12 @@ export const PILOT_AI_SCHEMA={
   intent:{type:'string',enum:['quote_request','other']},
   city:{type:['string','null']},
   delivery_note:{type:['string','null']},
-  items:{type:'array',maxItems:8,items:{
+  items:{type:'array',maxItems:25,items:{
     type:'object',additionalProperties:false,
     properties:{
      description:{type:'string'},
      quantity:{type:'string'},
-     unit:{type:'string',enum:['bag','l','kg','m3','unit']},
+     unit:{type:'string',enum:['bag','l','kg','m3','unit','box','m','m2','roll','pack']},
      family:{type:'string'},
      source_evidence:{type:'string'}
     },
@@ -53,7 +53,7 @@ export function validateAiBuyerProposal(data:unknown,sourceText:string|null):Dec
    (x.city===null||typeof x.city==='string'&&x.city.length>=3&&x.city.length<=80)||
    !(x.delivery_note===null||typeof x.delivery_note==='string'&&
      x.delivery_note.length<=90)||
-   !Array.isArray(x.items)||x.items.length===0||x.items.length>8||
+   !Array.isArray(x.items)||x.items.length===0||x.items.length>25||
    !Array.isArray(x.unresolved)||x.unresolved.length>20||
    !x.unresolved.every(s=>typeof s==='string'&&s.length<=180))
   return review('ambiguous_or_unrecognized');
@@ -66,7 +66,7 @@ export function validateAiBuyerProposal(data:unknown,sourceText:string|null):Dec
   if(typeof v.description!=='string'||v.description.length<3||
     v.description.length>150||typeof v.quantity!=='string'||
     !/^(?:0|[1-9]\d{0,5})(?:\.\d{1,3})?$/u.test(v.quantity)||
-    Number(v.quantity)<=0||!['bag','l','kg','m3','unit'].includes(String(v.unit))||
+    Number(v.quantity)<=0||!['bag','l','kg','m3','unit','box','m','m2','roll','pack'].includes(String(v.unit))||
     typeof v.family!=='string'||!/^[a-z][a-z0-9_]{2,50}$/u.test(v.family)||
     typeof v.source_evidence!=='string'||v.source_evidence.length<4||
     v.source_evidence.length>250)

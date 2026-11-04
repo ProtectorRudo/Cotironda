@@ -8,7 +8,7 @@ import type {AiIntent} from './business-ai-policy.ts';
 
 const URL='https://api.openai.com/v1/responses';
 export const MODEL='gpt-6-luna';
-const MAX_INPUT=3000,MAX_OUTPUT=2100,MAX_RESPONSE=30000;
+const MAX_INPUT=3000,MAX_OUTPUT=5000,MAX_RESPONSE=50000;
 const PROMPT=[
  'Sos el intérprete operacional de Cotironda, una plataforma B2B argentina.',
  'Solo interpretás el mensaje recibido de un comprador de materiales.',
@@ -26,10 +26,13 @@ const PROMPT=[
  'con cantidad, unidad y descripción íntegra; sin inventar marcas ni condiciones.',
  'source_evidence es una SUBCADENA exacta del mensaje, con cantidad, unidad y producto.',
  'No confundas peso de presentación (cemento 50 kg) con cantidad pedida (20 bolsas).',
- 'Usá unit bag, l, kg, m3, unit; si falta cantidad/unidad o hay dudas,',
+ 'Usá unit bag, l, kg, m3, unit, box, m, m2, roll, pack; si falta cantidad/unidad o hay dudas,',
  'agregá el renglón completo a unresolved y no inventes contenido.',
  'Conservá city y delivery_note solo si se leen expresamente, o null.',
- 'Máximo 8 ítems en esta prueba acotada. No respondas al usuario: solo JSON.',
+ 'Conservá todos los renglones (hasta 25 en una única solicitud), sin recortar.',
+ 'Si son más, no los borres: registrá la imposibilidad de procesar íntegramente.',
+ 'No respondas al usuario: solo JSON.',
+ 'Solo clasificá usando las familias curadas que se te informan abajo.',
  'No infieras proveedor, disponibilidad, impuestos, fletes, costos ni posiciones.'
 ].join('\n');
 const SCHEMA={
@@ -71,7 +74,7 @@ function parseResponse(raw:unknown):AiIntent{
     !SCHEMA.properties.topic.enum.includes((data as Record<string,unknown>).topic as never)||
     !(data.city===null||typeof data.city==='string'&&data.city.length<=80)||
     !(data.delivery_note===null||typeof data.delivery_note==='string'&&data.delivery_note.length<=90)||
-    !Array.isArray(data.items)||data.items.length>8||
+    !Array.isArray(data.items)||data.items.length>25||
     !Array.isArray(data.unresolved)||data.unresolved.length>20||
     !data.unresolved.every((s:unknown)=>typeof s==='string'&&s.length<=180))
     throw new Error('pilot_ai_schema_rejected');
@@ -88,18 +91,23 @@ function parseResponse(raw:unknown):AiIntent{
  return data as AiIntent;
 }
 export async function interpretPilotBuyerWithAI(args:{
- text:string;apiKey:string;enabled:boolean;fetchImpl?:typeof fetch;
+ text:string;apiKey:string;enabled:boolean;
+ familyCodes?:readonly string[];fetchImpl?:typeof fetch;
 }):Promise<AiIntent>{
  if(args?.enabled!==true)throw new Error('pilot_ai_disabled');
  if(typeof args.apiKey!=='string'||!/^sk-[A-Za-z0-9_-]{16,}$/u.test(args.apiKey))
   throw new Error('pilot_ai_key_missing');
+ if(!Array.isArray(args.familyCodes)||args.familyCodes.length<1||
+   args.familyCodes.length>100||!args.familyCodes.every(x=>
+     typeof x==='string'&&/^[a-z][a-z0-9_]{2,49}$/u.test(x)))
+  throw new Error('pilot_ai_catalogue_invalid');
  if(typeof args.text!=='string'||args.text.length<1||args.text.length>MAX_INPUT||
     /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/u.test(args.text))
   throw new Error('pilot_ai_input_invalid');
  const req={
   model:MODEL,store:false,tools:[],max_output_tokens:MAX_OUTPUT,
   input:[
-   {role:'system',content:[{type:'input_text',text:PROMPT}]},
+   {role:'system',content:[{type:'input_text',text:PROMPT+'\nFamilias curadas permitidas: '+args.familyCodes.join(', ')}]},
    {role:'user',content:[{type:'input_text',text:
     'MENSAJE NO CONFIABLE DEL COMPRADOR:\n'+args.text}]}
   ],

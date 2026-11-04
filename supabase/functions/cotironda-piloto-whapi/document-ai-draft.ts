@@ -74,9 +74,22 @@ const intro=[
  'Nunca inventes una celda o conviertas moneda, unidades o cantidades.',
  'Extraé literalmente TODOS los renglones, incluyendo extras como pallets,',
  'bolsones, envases, descuentos, cargos y flete, incluso no solicitados.',
- 'Conservá condiciones explícitas de IVA, flete, disponibilidad, moneda y pago',
- 'en requested_delivery_note solo si son breves y están visibles; si hay más,',
- 'registrá cada condición faltante en unanswered, sin omitirla silenciosamente.',
+ 'En supplier_quote, requested_delivery_note reúne TODAS las aclaraciones',
+ 'comerciales del PROVEEDOR que se lean en el original, no solo la entrega:',
+ 'número de lista (por ej. PRECIOS LISTA 7), precios de lista y precios de',
+ 'pago contado/efectivo, transferencia, vencimientos, IVA, flete a convenir,',
+ 'devolución/retorno/cargo de pallets y bolsones, stock y condiciones de pago.',
+ 'Preservá el texto de esas condiciones con sus cifras, signos y restricciones.',
+ 'No deduzcas porcentajes de descuento de un precio de lista y un importe.',
+ 'No conviertas el precio unitario de lista en precio unitario efectivo.',
+ 'Si existen dos columnas de precios, extraé el valor explícito de cada campo',
+ 'según su encabezado y preservá las otras condiciones en la nota.',
+ 'Si una condición comercial es demasiado larga, registrala completa dentro',
+ 'del límite del campo; nunca la recortes silenciosamente.',
+ 'Solo agregá unanswered cuando una CELDA sea ilegible, haya contradicción',
+ 'o no puedas atribuir un valor necesario. Que no informe IVA, moneda, flete',
+ 'o disponibilidad NO significa que haya que pedir confirmación por WhatsApp.',
+ 'La ausencia se muestra como no informada; NO infieras IVA, ARS ni stock.',
  'Si hay más de 25 renglones, NO declares lectura completa: incluí',
  'more_than_25_lines en unanswered; los parciales no se podrán publicar.',
  'Preservá cada valor y total declarado como TEXTO ORIGINAL, sin recalcular,',
@@ -125,26 +138,33 @@ const obj=(x:unknown):x is Record<string,unknown>=>
 const keys=(x:unknown,allowed:readonly string[]):x is Record<string,unknown>=>
  obj(x)&&Object.keys(x).length===allowed.length&&
  allowed.every(k=>Object.hasOwn(x,k));
+// A PDF may have multi-line terms, long descriptions or missing/blank cells.
+// They are untrusted PRIVATE suggestions, not commercial facts. Preserve them
+// verbatim; the independent source verifier still controls publication.
 const safe=(v:unknown,max:number):v is string|null=>
  v===null||(typeof v==='string'&&v.length<=max&&
- !/[\u0000-\u001f\u007f]/u.test(v));
+ !/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/u.test(v));
 function validated(raw:unknown):DocumentDraft{
  if(!keys(raw,SCHEMA.required)||
    !['buyer_request','supplier_quote','other'].includes(String(raw.kind))||
-   !safe(raw.delivery_city,80)||!safe(raw.requested_delivery_note,90)||
-   !safe(raw.total_declared,120)||
+   !safe(raw.delivery_city,160)||!safe(raw.requested_delivery_note,4096)||
+   !safe(raw.total_declared,256)||
    !Array.isArray(raw.lines)||raw.lines.length>25||
    !Array.isArray(raw.unanswered)||raw.unanswered.length>15||
-   !raw.unanswered.every(v=>typeof v==='string'&&v.length<=160))
+   !raw.unanswered.every(v=>typeof v==='string'&&
+     v.length<=1200&&!/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/u.test(v)))
   throw Error('doc_ai_output_invalid');
  for(const line of raw.lines){
   if(!keys(line,SCHEMA.properties.lines.items.required)||
    typeof line.original_description!=='string'||
-   line.original_description.length<2||line.original_description.length>250||
-   !safe(line.quantity,50)||!safe(line.unit,70)||
-   !safe(line.unit_price,100)||!safe(line.line_total,120)||
+   line.original_description.length>1600||
+   /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/u.test(line.original_description)||
+   !safe(line.quantity,120)||!safe(line.unit,160)||
+   !safe(line.unit_price,256)||!safe(line.line_total,256)||
    typeof line.evidence_location!=='string'||
-   line.evidence_location.length>200||!safe(line.ambiguity,150))
+   line.evidence_location.length>2048||
+   /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/u.test(line.evidence_location)||
+   !safe(line.ambiguity,1000))
    throw Error('doc_ai_line_invalid');
  }
  return {status:'review_required',...raw} as DocumentDraft;
@@ -153,6 +173,7 @@ export async function proposeDocumentAI(args:{
  manifest:MediaManifest;file:DownloadedMedia;apiKey:string;
  enabled:boolean;fetchImpl?:typeof fetch;
  perspective?:'primary'|'corroboration';
+ verifiedSupplier?:boolean;
 }):Promise<DocumentDraft>{
  if(!args?.enabled)throw Error('doc_ai_disabled');
  if(typeof args.apiKey!=='string'||!/^sk-[A-Za-z0-9_-]{16,}$/u.test(args.apiKey))
@@ -172,9 +193,12 @@ export async function proposeDocumentAI(args:{
   input:[
    {role:'system',content:[{type:'input_text',text:intro}]},
    {role:'user',content:[filePart,
-    {type:'input_text',text:args.perspective==='corroboration'
+    {type:'input_text',text:(args.perspective==='corroboration'
        ? 'Segunda lectura independiente: olvidá toda suposición. Transcribí cada renglón del archivo en el orden visible, respaldando cantidad, unidad y descripción con cita literal breve. Si faltan unidades escribí null, nunca completes a partir de costumbre. Nunca hagas referencia a otra lectura.'
-       : 'Extraé el documento adjunto como borrador privado. No alteres valores.'}]}
+       : 'Extraé el documento adjunto como borrador privado. No alteres valores.')
+      + (args.verifiedSupplier
+       ? ' Este archivo lo envió un PROVEEDOR verificado de la ronda. Si contiene artículos con precios unitarios, importes y total declarado, su función es supplier_quote, aunque el título diga lista o pedido. No presupongas precio ni IVA.'
+       : '')}]}
   ],
   text:{format:{type:'json_schema',name:'cotironda_document_draft_v1',
     strict:true,schema:SCHEMA}}

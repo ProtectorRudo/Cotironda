@@ -1,0 +1,9 @@
+{
+  "name": "cotironda-seguimiento-piloto",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "description": "Web aislada de seguimiento de cotizaciones; no incluye secretos ni WhatsApp."
+}

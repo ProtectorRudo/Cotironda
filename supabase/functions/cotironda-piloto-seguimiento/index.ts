@@ -129,7 +129,8 @@ function headers(type:string){
 Deno.serve(async req=>{
  if(req.method==='GET'){
   if(new URL(req.url).search) return new Response('Bad request',{status:400,headers:headers('text/plain')});
-  return new Response(html,{status:200,headers:headers('text/html; charset=utf-8')});
+  return new Response(null,{status:302,headers:{...headers('text/plain'),
+   Location:'https://cotironda-seguimiento-vist-git-43f7cf-protector-rudo-s-projects.vercel.app/seguimiento'}});
  }
  if(req.method!=='POST')return new Response('',{status:405,headers:headers('text/plain')});
  if(new URL(req.url).search)return new Response('',{status:400,headers:headers('text/plain')});
