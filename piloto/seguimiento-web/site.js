@@ -1,6 +1,8 @@
 "use strict";
 const token=window.location.hash.slice(1);
 const el=id=>document.getElementById(id);
+let refreshRevision=0;
+let tokenRevoked=false;
 function displayText(id,value){el(id).textContent=value;}
 function element(tag,cls,text){
  const x=document.createElement(tag);
@@ -168,7 +170,7 @@ function render(data){
  if(d.state==="waiting"&&Number.isSafeInteger(count)&&count>0)
   for(let i=0;i<missing;i++)
    el("receipts").appendChild(offerCard("Presupuesto recibido","Esperando verificación de su contenido."));
- if(d.state==="closed"&&Array.isArray(d.finalists)&&d.finalists.length){
+ if(d.state==="closed"&&d.can_open===true&&Array.isArray(d.finalists)&&d.finalists.length){
   const h=element("h2","","Finalistas de la ronda");el("finalists").appendChild(h);
   const note=element("p","",d.joint_supplier_coverage===true?
    "Los negocios cubren el pedido entre ambos. Confirmá condiciones e importes directamente con ellos.":
@@ -181,12 +183,23 @@ function render(data){
  }
 }
 async function refresh(){
+ if(tokenRevoked)return;
+ // Ignore out-of-order POSTs: an older authorized answer must not restore
+ // private data after a newer revocation or an updated response.
+ const revision=++refreshRevision;
  try{
   const r=await fetch("/api/estado",{method:"POST",credentials:"omit",cache:"no-store",
    headers:{"content-type":"application/json"},body:JSON.stringify({token})});
   if(!r.ok)throw Error("response");
-  render(await r.json());
- }catch{clearPrivateView();displayText("state","Sin conexión");displayText("error","No pudimos actualizar el seguimiento. Intentá nuevamente más tarde.");}
+  const answer=await r.json();
+  if(revision!==refreshRevision||tokenRevoked)return;
+  if(answer?.state==="not_found")tokenRevoked=true;
+  render(answer);
+ }catch{
+  if(revision!==refreshRevision||tokenRevoked)return;
+  clearPrivateView();displayText("state","Sin conexión");
+  displayText("error","No pudimos actualizar el seguimiento. Intentá nuevamente más tarde.");
+ }
 }
 if(!/^[a-f0-9]{64}$/.test(token)){
  displayText("state","Enlace inválido");
