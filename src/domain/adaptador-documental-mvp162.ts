@@ -15,6 +15,8 @@ export type PruebaFuente=Readonly<{
  version:number;state:'verified'|'needs_source_review';reason:string;
  lineCount:number;sumLineCents:string|null;declaredTotalCents:string|null;
  rankingAllowed:boolean;
+ /** Independently queried latest revision for this supplier and request. */
+ revisionVigente:boolean;cotizacionVigente:boolean;
 }>;
 export type DocumentoFuente=Readonly<{
  requestId:string;anonId:string;messageHmac:string;sourceSha256:string;
@@ -24,6 +26,8 @@ export type DocumentoFuente=Readonly<{
 export type CorrelacionFuente=Readonly<{
  itemId:string;lineNo:number;sourceSha256:string;
  equivalencia:'verificada'|'sin_verificar'|'incompatible';
+ /** Buyer quantity in source is NOT proof that seller has stock. */
+ disponibilidadCorroborada:boolean;
 }>;
 /** Authenticated server-side source-evidence verifier must produce these data.
  * In particular netUnitPrice is AFTER every source discount and BEFORE VAT.
@@ -32,6 +36,8 @@ export type TerminosAuditados=Readonly<{
  sourceSha256:string;sourceVerified:boolean;
  moneda:MonedaCotizada|null;pago:FormaPago|null;
  plazoEntregaDias:number|null;fleteFinal:string|null;minimoCompraFinal:string|null;
+ /** Required to prevent double-counting freight already in source prices. */
+ tratamientoFlete:'fuera_del_total'|'incluido_en_precios'|'sin_cargo'|null;
  precios:readonly Readonly<{
   lineNo:number;sourceSha256:string;
   unitarioNetoTrasDescuento:string;ivaExplicito:IvaExplicito|null;
@@ -40,7 +46,7 @@ export type TerminosAuditados=Readonly<{
 export type Motivo =
  'fuente_no_verificada'|'origen_inconsistente'|'faltan_articulos'
  |'unidad_sin_acreditar'|'cantidad_sin_acreditar'
- |'equivalencia_sin_acreditar'|'extras_sin_clasificar'
+ |'equivalencia_sin_acreditar'|'disponibilidad_sin_acreditar'|'extras_sin_clasificar'
  |'condiciones_sin_acreditar'|'importe_sin_acreditar'|'importe_no_conciliado';
 export type ResultadoPuente=Readonly<{
  anonId:string;estado:'fuente_no_verificada'|'visible_no_comparable'|'comparable';
@@ -133,7 +139,8 @@ export function adaptarDocumentoMvp162(
  if(p.requestId!==doc.requestId||p.messageHmac!==doc.messageHmac||
   p.sourceSha256!==doc.sourceSha256||p.state!=='verified'||
   p.reason!=='covered'||!Number.isSafeInteger(p.version)||p.version<2||
-  p.rankingAllowed!==false||!Number.isSafeInteger(p.lineCount)||
+  p.rankingAllowed!==false||p.revisionVigente!==true||
+  p.cotizacionVigente!==true||!Number.isSafeInteger(p.lineCount)||
   p.lineCount<1||p.lineCount!==doc.lineas.length||
   p.sumLineCents===null||p.declaredTotalCents===null||
   !/^\d{1,15}$/u.test(p.declaredTotalCents)||
@@ -189,6 +196,9 @@ export function adaptarDocumentoMvp162(
   if(milli(quantity)!==milli(item.cantidad)){
    uncovered.push(item.id);reasons.push('cantidad_sin_acreditar');continue;
   }
+  if(map.disponibilidadCorroborada!==true){
+   uncovered.push(item.id);reasons.push('disponibilidad_sin_acreditar');continue;
+  }
   verified.push({itemId:item.id,unidad:unit,cantidadDisponible:quantity,
    equivalencia:'verificada',precioUnitarioNeto:null,ivaPorcentaje:null});
  }
@@ -201,6 +211,11 @@ export function adaptarDocumentoMvp162(
   !Number.isSafeInteger(terminos.plazoEntregaDias)||
   (terminos.plazoEntregaDias??-1)<0||(terminos.plazoEntregaDias??121)>120||
   !saneMoney(terminos.fleteFinal)||!saneMoney(terminos.minimoCompraFinal)||
+  terminos.tratamientoFlete===null||
+  !['fuera_del_total','incluido_en_precios','sin_cargo'].includes(terminos.tratamientoFlete)||
+  (terminos.tratamientoFlete!=='fuera_del_total'&&terminos.fleteFinal!=='0.00')||
+  (terminos.tratamientoFlete==='fuera_del_total'&&
+    centavosFuenteMvp162(terminos.fleteFinal)===0n)||
   !Array.isArray(terminos.precios))
   return grade(doc.anonId,'visible_no_comparable',true,[],[],
    ['condiciones_sin_acreditar'],null);
