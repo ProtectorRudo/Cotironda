@@ -1,3 +1,6 @@
+## MVP180 — Resumen económico anónimo para el comprador (04/11/2026, desarrollo)
+- SQL privado service_role-only con token buyer y comparación exacta multiconjunto de ofertas habilitadas contra fuente v9/SHA, sin revelar nombres ni precios normalizados. Prueba BEGIN/ROLLBACK en PostgreSQL 17 PILOTO: 2 resúmenes/4 ofertas; IVA 4 sin informar, flete 3 no informado + 1 a convenir, stock 4 sin corroborar; sin cambios persistentes. Edge, Vercel proxy y vista con listas blancas, limpieza por revocación y no-ranking; pruebas agregadas. Docs/300.
+
 ## MVP178 — Precondición privada de originales al cierre (04/11/2026, desarrollo)
 - Política inicialmente OFF, consentimiento individual con prueba de mensaje y revocación, barrera no retroactiva y preflight SQL solo service_role, sin URLs/documentos ni cambios a WhatsApp. Ensayo real BEGIN/ROLLBACK PostgreSQL 17 PILOTO y confirmación de ausencia de tablas/función después. 8 pruebas nuevas, 2.058/2.058 unitarias PASS. Docs/298, PR #554.
 
