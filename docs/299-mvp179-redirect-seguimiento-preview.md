@@ -20,3 +20,14 @@ Archivo `supabase/functions/cotironda-piloto-seguimiento/index.ts`: GET HTTPS 30
 
 ## Estado
 **Desarrollo** al crear el PR. El despliegue de la Edge activa y el E2E con tokens reales todavía no se acreditan; completar con evidencia de staging y CI.
+
+## Ejecución REAL sobre Supabase, solo PILOTO — 04/11/2026
+
+1. **Staging separado** `cotironda-piloto-seguimiento-mvp179-staging` v1 ACTIVE, `verify_jwt=false` por validación propia de token de 64 hex; paquete de 8 archivos de la Edge activa v10, cambiando solamente GET `Location`. Se comprobó de nuevo que **los 7 archivos dependientes son idénticos** y el fuente `index.ts` difiere solo en esa línea.
+2. HTTP real sobre staging: GET a la función siguió la redirección y devolvió la nueva página de Cotironda (`200 text/html` después del seguimiento, con header `Location` correcto y secciones `resultsSection` y `coverageSection`); GET con query no autorizada `400`; POST con token ficticio de 64 ceros `200 {"state":"not_found"}`. GET activo antes del cambio aún apuntaba al dominio anterior.
+3. **Función activa del PILOTO actualizada de v10 a v11**, paquete hash `88c366a694bbfcabff7a36a7987c7af21b62ba9f8d9ad92aa35d8f2aabab30dd`, sin cambiar rutas POST, el token/RPC, consentimiento, base, recuperador documental, Whapi ni finalistas. Se preservó el paquete anterior v10 para reversión.
+4. **HTTP real posterior** a función activa: `Location` exacta a `https://cotironda-seguimiento-vista-piloto-8bfvf7vu1.vercel.app/seguimiento`; respuesta final HTML con secciones nuevas; GET con query `400`; POST token ficticio `200 not_found`. En la Preview se verificaron además CSP `script-src 'self'`, `no-store`, `no-referrer`, `nosniff` y `X-Frame-Options: DENY`.
+5. **SQL post-deploy solo lectura**: dos enlaces vigentes, dos rondas `waiting`, 4 respuestas, 4 ofertas visibles, 4 registros económicos intactos, cero planes de finalistas, cero avisos y bandera de finalistas `false`. No hay nuevos contactos liberados, modificaciones en originales ni WhatsApp enviado.
+6. **GitHub CI del PR #555:** seis workflows (incluido Deno) están en cola al registrar la evidencia; no atribuirles PASS hasta verificar su resultado. Los PR previos de esta pila tenían 2.058/2.058 unitarias y 5/5 CI PASS. El cambio del PR #555 contiene cuatro pruebas de contrato adicionales.
+
+**Pendiente para P0-B2r:** validar dos enlaces PRIVADOS auténticos desde navegador de comprador, revocación, aislamiento por empresa y render de una ronda cerrada. No se intentó recuperar tokens en claro, ni se probó descarga de originales o ranking económico. No tocar producción `cotironda.com`.
