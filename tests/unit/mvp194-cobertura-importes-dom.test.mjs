@@ -75,7 +75,7 @@ test('MVP194 UI: presenta las 2 ofertas y una combinación con importes respalda
  assert.match(lines,/1 de 2 artículos/);
  assert.match(lines,/referencias|importes respaldados/u);
  assert.doesNotMatch(lines,/150,00|170,00|1.er puesto|Ganador/i);
- assert.match(b.node('pricedCoverageCaption').textContent,/no.*adjudica automáticamente/i);
+ assert.match(b.node('pricedCoverageCaption').textContent,/ninguna se adjudica automáticamente/i);
  assert.match(html,/id="pricedCoverageSection"/);
 });
 test('MVP194 UI: durante la ronda no se muestra una pareja potencial, pero sí las ofertas',async()=>{
