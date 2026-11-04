@@ -9,6 +9,7 @@ import {runRecoveryService} from './logic.ts';
 import {diagnoseOneStoredQuote} from './quote-reconciliation.ts';
 import {correctArchivedSupplierRole} from './supplier-role-recovery.ts';
 import {auditStoredSupplierQuote} from './supplier-evidence.ts';
+import {auditStoredSourceFactsMvp163} from './source-facts.ts';
 import {guardScheduledRecovery} from './scheduled-auth.ts';
 import {dispatchPendingPilotSupplierPdfs} from './whapi-dispatch.ts';
 const REF='ilggkalaafhtiysyzlmg';
@@ -106,6 +107,21 @@ Deno.serve(async(req)=>{
       },
       record:async(params)=>{
        const {data,error}=await db.rpc('cotironda_piloto_record_supplier_evidence_mvp138',params);
+       return {data,error};
+      }
+    }),
+    sourceFacts:async()=>auditStoredSourceFactsMvp163({
+      lookup:async()=>{
+       const {data,error}=await db.rpc('cotironda_piloto_next_source_facts_mvp163');
+       return {data,error};
+      },
+      download:async(path)=>{
+       const {data,error}=await db.storage.from('cotironda-piloto-originals')
+        .download(path);
+       return {data,error};
+      },
+      record:async(params)=>{
+       const {data,error}=await db.rpc('cotironda_piloto_record_source_facts_mvp163',params);
        return {data,error};
       }
     }),
