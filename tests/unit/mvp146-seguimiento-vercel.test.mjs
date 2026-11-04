@@ -48,11 +48,14 @@ test("MVP146: static pilot page is CSP constrained; no token in GET URLs",()=>{
   assert.deepEqual(vercel.rewrites,[{source:"/seguimiento",destination:"/index.html"}]);
   assert.match(vercel.headers[0].headers.find(x=>x.key==="Content-Security-Policy").value,/script-src 'self'/);
 });
-test("MVP146: legacy pilot link redirects by GET without a fragment or token in Location",()=>{
-  const src=readFileSync(new URL("../../supabase/functions/cotironda-piloto-seguimiento/index.ts",import.meta.url),"utf8");
-  assert.match(src,/status:302/);
-  assert.ok(src.includes('https://cotironda-seguimiento-vist-git-43f7cf-protector-rudo-s-projects.vercel.app/seguimiento'));
-  assert.ok(!src.includes('https://cotironda-seguimiento-vista-piloto.vercel.app/seguimiento'));
-  assert.doesNotMatch(src,/Location:[^\n]*#\$\{/);
-  assert.match(src,/if\(req\.method!==\x27POST\x27\)/);
+test("MVP176: existing WhatsApp link serves tracking in Supabase, no stale redirect",()=>{
+ const src=readFileSync(new URL("../../supabase/functions/cotironda-piloto-seguimiento/index.ts",import.meta.url),"utf8");
+ const ui=readFileSync(new URL("../../site/seguimiento/app.js",import.meta.url),"utf8");
+ assert.match(src,/new Response\(buyerTrackingPageMvp176,\{status:200/);
+ assert.doesNotMatch(src,/status:302|Location:'https:\/\/cotironda-seguimiento/);
+ assert.match(src,/if\(new URL\(req.url\).search\) return new Response\('Bad request'/);
+ assert.match(src,/if\(req.method!=='POST'\)/);
+ assert.match(ui,/location\.hash\.slice\(1\)/);
+ assert.match(ui,/location\.pathname\?\.startsWith/);
+ assert.doesNotMatch(ui,/location\.search|fetch\('https:\/\//);
 });
