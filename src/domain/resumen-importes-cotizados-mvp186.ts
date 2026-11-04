@@ -11,6 +11,8 @@ import {centavosFuenteMvp162,cantidadFuenteMvp162} from './adaptador-documental-
 export type ReferenciaPrecioMvp186=Readonly<{
  oferta:string;
  importeCotizado:string|null;
+ /** Original supplier quantity; never converted to the buyer's unit. */
+ cantidadCotizadaLiteral:string|null;
  estado:'alternativa_comercial_con_aclaracion'|'coincide_volumen_nominal_sin_stock'|
  'no_homologable'|'sin_importe_asignable';
  iva:'sin_iva_por_convencion'|'sin_iva_declarado'|
@@ -19,7 +21,9 @@ export type ReferenciaPrecioMvp186=Readonly<{
 export type ResumenImportesMvp186=Readonly<{
  state:'importes_por_articulo_sin_ranking';
  quotations:number;requested_items:number;
- articulos:readonly Readonly<{itemId:string;referencias:readonly ReferenciaPrecioMvp186[]}>[];
+ articulos:readonly Readonly<{itemId:string;
+  descripcionSolicitada:string;cantidadSolicitada:string;unidadSolicitada:string;
+  referencias:readonly ReferenciaPrecioMvp186[]}>[];
  ranking_allowed:false;price_comparable:false;contacts_revealed:false;
  adjudicacion:false;originales_descargables:false;
  IVA_calculado:false;flete_calculado:false;stock_confirmado:false;
@@ -98,10 +102,22 @@ export function resumirImportesCotizadosCompradorMvp186(
     checked.proveedoresAnonimos.length!==input.quotations.length)
    return null;
   const incomingTexts=new Set<string>();
-  const byItem=new Map<string,ReferenciaPrecioMvp186[]>();
+  const byItem=new Map<string,{
+   descripcionSolicitada:string;cantidadSolicitada:string;unidadSolicitada:string;
+   referencias:ReferenciaPrecioMvp186[]
+  }>();
   for(const item of input.requestItems){
    if(!safeId.test(item.id)||byItem.has(item.id))return null;
-   byItem.set(item.id,[]);
+   // This is the BUYER'S own request, not a supplier source description.
+   // It can safely be returned ONLY inside this token-authorized buyer view.
+   if(typeof item.descripcionLiteral!=='string'||
+      item.descripcionLiteral.trim().length<1||
+      item.descripcionLiteral.length>500)return null;
+   byItem.set(item.id,{
+    descripcionSolicitada:item.descripcionLiteral,
+    cantidadSolicitada:item.cantidad,unidadSolicitada:item.unidad,
+    referencias:[]
+   });
   }
   for(let i=0;i<input.quotations.length;i++){
    const q=input.quotations[i],preview=checked.proveedoresAnonimos[i];
@@ -151,7 +167,7 @@ export function resumirImportesCotizadosCompradorMvp186(
        (useCount.get(p.lineaFuente)??0)+1);
    }
    for(const p of preview.articulos){
-    const refs=byItem.get(p.itemId);
+    const refs=byItem.get(p.itemId)?.referencias;
     if(!refs)return null;
     const provisional=p.estado==='alternativa_comercial_con_aclaracion'||
       p.estado==='coincide_volumen_nominal_sin_stock';
@@ -166,6 +182,7 @@ export function resumirImportesCotizadosCompradorMvp186(
     const ref:ReferenciaPrecioMvp186=Object.freeze({
      oferta:label,
      importeCotizado:admissible?literal!.trim():null,
+     cantidadCotizadaLiteral:admissible?line!.quantityLiteral!.trim():null,
      estado:!provisional?'sin_importe_asignable':
        !admissible?'no_homologable':p.estado,
      iva
@@ -174,14 +191,19 @@ export function resumirImportesCotizadosCompradorMvp186(
    }
   }
   if(incomingTexts.size!==labels.size||
-    [...byItem.values()].some(refs=>refs.length!==status.offers?.length))
+    [...byItem.values()].some(item=>item.referencias.length!==status.offers?.length))
    return null;
   return Object.freeze({
    state:'importes_por_articulo_sin_ranking' as const,
    quotations:status.offers.length,
    requested_items:byItem.size,
-   articulos:Object.freeze([...byItem.entries()].map(([itemId,referencias])=>
-     Object.freeze({itemId,referencias:Object.freeze(referencias)}))),
+   articulos:Object.freeze([...byItem.entries()].map(([itemId,item])=>
+     Object.freeze({itemId,
+      descripcionSolicitada:item.descripcionSolicitada,
+      cantidadSolicitada:item.cantidadSolicitada,
+      unidadSolicitada:item.unidadSolicitada,
+      referencias:Object.freeze(item.referencias)
+     }))),
    ranking_allowed:false as const,price_comparable:false as const,
    contacts_revealed:false as const,adjudicacion:false as const,
    originales_descargables:false as const,IVA_calculado:false as const,
