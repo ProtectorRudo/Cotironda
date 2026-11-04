@@ -1,3 +1,5 @@
+> **MVP169 (verificado en PILOTO el 04/11/2026):** worker económico **staging v2** autenticado por Vault y sin cron, 4 archivos reales de Storage procesados (3 PDF, 1 Excel), **10/10 precios comerciales conciliados**, IVA sin presuponer, ranking OFF y outbox finalistas 0. Recuperador habitual v25 intacto; no producción. Ver [docs/288](docs/288-mvp169-primer-economico-oneshot-piloto.md).
+
 > **MVP169 (desarrollo):** staging económico separado con autenticación Vault/RPC y una única cotización por solicitud, sin enviar WhatsApp ni tocar ranking. Ver [docs/288](docs/288-mvp169-primer-economico-oneshot-piloto.md). Una lectura real solo se considera realizada tras verificar ledger privado.
 
 > **MVP168 (comprobado 04/11/2026 en piloto):** tabla y RPCs económicas **instaladas únicamente en `cotironda-piloto`** después de SQL + prueba `ROLLBACK` PASS. Edge `cotironda-piloto-economic-staging` v1 desplegada separada con JWT, sin cron; recuperador original v25 preservado. **0 registros económicos reales, ranking y WhatsApp sin cambios**; faltan invocación autorizada y pruebas contra documentos reales. Ver [docs/287](docs/287-mvp168-verificacion-real-piloto-sql-stage.md).
