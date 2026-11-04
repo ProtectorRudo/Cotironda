@@ -1,3 +1,6 @@
+## MVP188 — Prueba reproducible y rollback de activación de precios (04/11/2026, desarrollo)
+- Script SQL de solo lectura comprueba los dos enlaces buyer, cuatro originales v9, correlación exacta de las ofertas, cinco artículos, conciliación de diez líneas a centavos y permisos service_role, sin PII. SQL nuevo y versión previa de rollback se instalaron temporalmente con BEGIN/ROLLBACK en cotironda-piloto, comprobando ausencia de cambios permanentes. No SQL instalado, Edge/Web desplegados, WhatsApp ni finalistas. Docs/308, #529/#528.
+
 ## MVP187 — Comprador ve el material y ambas cantidades (04/11/2026, desarrollo)
 - Extiende proyección MVP186 del comprador con nombre, unidad y cantidad **del pedido**; cantidad literal de cada oferta solo cuando el importe de origen está auditado. Evita presentar dos subtotales de presentaciones diferentes como si fueran equivalentes. Validación repetida en dominio, proxy y navegador, sin PII de proveedor ni HTML interpretado. Tests de regresión, XSS, revocación, cantidades divergentes y whitelist. No despliegue. Docs/307.
 
