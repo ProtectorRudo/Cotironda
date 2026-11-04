@@ -115,7 +115,6 @@ test('MVP162: importe original fuente distinto, SHA distinta o revisión pendien
   {...doc(),prueba:{...doc().prueba,revisionVigente:false}},
   {...doc(),prueba:{...doc().prueba,cotizacionVigente:false}},
   {...doc(),prueba:{...doc().prueba,declaredTotalCents:'24000'}},
-  {...doc(),lineas:[{...doc().lineas[0],lineTotalLiteral:'$ 241,00'}]}
  ]){
   assert.equal(run(d).estado,'fuente_no_verificada');
   assert.equal(run(d).ofertaComparable,null);
@@ -186,4 +185,25 @@ test('MVP162: flete adicional solo con tratamiento explicitamente corroborado',(
   assert.equal(result.estado,'visible_no_comparable');
   assert.ok(result.motivos.includes('condiciones_sin_acreditar'));
  }
+});
+
+test('MVP162: PDF verificado con ajuste negativo, importe divergente o unitario ausente SIGUE VISIBLE',()=>{
+ for(const patch of [
+  {lineTotalLiteral:'-$ 10,00'},
+  {lineTotalLiteral:'$ 241,00'},
+  {unitPriceLiteral:null}
+ ]){
+  const d=doc();
+  d.lineas[0]={...d.lineas[0],...patch};
+  const r=run(d);
+  assert.equal(r.estado,'visible_no_comparable',JSON.stringify(patch));
+  assert.equal(r.fuenteCuadra,true);
+  assert.equal(r.ofertaComparable,null);
+ }
+});
+test('MVP162: ordinales discontinuos de fuente se conservan, no se inventan renglones',()=>{
+ const d=doc();d.lineas[0].lineNo=2;
+ const r=run(d,[{...mapping()[0],lineNo:2}]);
+ assert.equal(r.estado,'visible_no_comparable');
+ assert.ok(r.motivos.includes('origen_inconsistente'));
 });
