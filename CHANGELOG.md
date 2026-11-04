@@ -1,3 +1,6 @@
+## MVP165 — Puente de bolsones a contrato económico (solo desarrollo)
+- MVP162 admite una prueba separada de presentación de áridos ligada a item/línea/SHA y descripción auténtica del pedido. MVP164 valida familia, variedad y 1 m³ nominal por envase antes de permitir unidad m³ al comparador. El IVA, descuento neto, stock, flete y pago siguen siendo requisitos independientes; documentos sin evidencia permanecen visibles sin ranking. Tests específicos y docs/283; #535. Sin migración, WhatsApp, contactos ni producción.
+
 ## MVP164 — Bolsón/BIG BAG de áridos ≈ 1 m³ nominal comercial
 - Regla comercial argentina del proyecto: un bolsón estándar de árido es 1 m³ nominal, con tamaño expreso prioritario. Se distingue variante genérica de arena fina/piedra partida, sin asumir IVA/flete/stock ni alterar documentos. Módulo puro y tests; propuesta privada en PILOTO; docs/282, Issue #538. No adjudica.
 
