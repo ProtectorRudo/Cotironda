@@ -161,7 +161,10 @@ function render(data){
  const approved=d.can_open&&Array.isArray(d.offers)?
   d.offers.filter(o=>o&&typeof o.label==="string"&&typeof o.text==="string"):[];
  displayText("state",d.state==="waiting"?
-  "Ronda abierta · presupuestos anónimos":"Ronda cerrada · presupuestos disponibles");
+  (approved.length?"Ronda abierta · presupuestos anónimos disponibles":
+   "Ronda abierta · esperando presupuestos verificados"):
+  (approved.length?"Ronda cerrada · presupuestos disponibles":
+   "Ronda cerrada · sin presupuestos habilitados"));
  if(approved.some(o=>/\b(?:big[\s-]*bag|bols[oó]n(?:es)?)\b/iu.test(o.text))){
   displayText("equivalence","En áridos, BIG BAG o bolsón suele referirse a 1 m³ nominal embolsado. Se respeta cualquier capacidad distinta indicada y no se presume la variedad del material ni su disponibilidad.");
  }
