@@ -14,10 +14,11 @@ En la **carpeta que Vercel realmente utiliza** se agregan:
 - Sección de cobertura agregada por ronda, con alternativas comerciales razonables, envases sin acreditar, pendientes de cotejo, diferencias y especificaciones inciertas. Nunca calcula precios, posiciones ni adjudica.
 - Validación estricta de sumas y banderas (`ranking_allowed=false`, `price_comparable=false`, `contacts_revealed=false`). Proyección solo si el backend dice `can_open=true` y estado válido. Al mostrar ofertas sigue usando `textContent` y parser existente: no reescribe el presupuesto original.
 - Limpieza de contador, fecha, archivos, tarjetas, finalistas y cobertura ante revocación, token inválido, estado inválido o pérdida de conexión.
+- Protección ante respuestas HTTP fuera de orden: descarta respuestas anteriores a la actualización más reciente, bloquea nuevas consultas una vez revocado el token (`not_found`) y no muestra finalistas si `can_open` no es verdadero. Evita recuperar contenido privado por una respuesta obsoleta.
 - Conservación de la CSP fuerte `script-src 'self'`, assets locales `site.js/site.css`, proxy POST, `no-store` y privacidad. Backend, base, Whapi y `main` intactos.
 
 ## Criterios de aceptación
-1. **2.033/2.033 pruebas unitarias PASS** (2.028 anteriores + 5 nuevas de navegador simulado), y controles CI de sitio, PostgREST, PostgreSQL 17 y Next.js PASS sobre el commit `d3b0e8db55ef4880282e329baac59c79929dda44`. Ningún test sustituye la Preview web real aún bloqueada.
+1. **2.036/2.036 pruebas unitarias PASS** (2.028 anteriores + 5 de cobertura web + 3 nuevas de respuestas tardías/revocación/finalistas), en GitHub Actions del commit `3b154c552276df0b17c04d027448b4dd1fdb33c4`. Controles de sitio, PostgREST y PostgreSQL 17 PASS; Next.js en verificación al registrar esta evidencia. La Preview web real sigue bloqueada por cuota Vercel y no está acreditada por estas pruebas.
 2. Nueva Preview Vercel de `cotironda-seguimiento-vista-piloto` construida desde commit exacto y carpeta `piloto/seguimiento-web` cuando se libere la cuota 402.
 3. Probar GET `/seguimiento` HTML correcto, GET `/site.js` con código nuevo, GET `/site.css`, POST `/api/estado` con token **ficticio**, ambos enlaces reales del comprador sin imprimirlos y revocación/aislamiento.
 4. Solo después actualizar el destino de redirect GET del backend de piloto, si el alias no queda apuntando a la nueva Preview de manera confiable. Revalidar cero finalistas, cero outbox, recuperador v25 y 4 originales intactos.
