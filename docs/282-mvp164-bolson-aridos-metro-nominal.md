@@ -2,6 +2,8 @@
 
 **Decisión del negocio, 04/11/2026. Issue #538; plan #529, ranking #535.**
 
+**Compatibilidad:** El lector MVP163 conserva el campo `unitStatus=not_explicit`; un servicio privado MVP164 deriva el volumen nominal por separado. Nunca sobrescribir unidad literal con una convención.
+
 ## Regla incorporada
 
 En Argentina, un *BIG BAG*, *bigbag*, *big biag* (errata frecuente) o *bolsón* de **arena, piedra, granza, grava, ripio o cascote** se comercializa habitualmente como **un metro cúbico nominal embolsado**. Ejemplos de catálogos argentinos: https://dimazconstrucciones.com.ar/categoria/corralon/arena/ y https://materialesvialero.com.ar/producto/piedra-partida-6-20-por-bolson-1m3/. El volumen nominal es una convención de venta, **no** medición del material entregado.

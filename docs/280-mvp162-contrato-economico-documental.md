@@ -3,7 +3,7 @@
 Fecha: 03/11/2026. Issue #533, plan maestro #529. Implementación pura en rama de desarrollo, sin despliegue.
 
 ## Auditoría real
-Las dos cotizaciones PDF de la ronda 469cb459... tienen 3 artículos cada una. Fuente v9 verificada, sumas y originales íntegros, pero las 6 unidades `unit_literal` son NULL. El comprador pidió arena fina 1 m³, piedra partida 2 m³ y cemento gris 25 bolsas de 25 kg. Los PDF ofrecen BIG BAG sin acreditar equivalencia de volumen y granulometría. Además `ranking_allowed=false` y no constan atestaciones independientes de pago, IVA, flete, mínimo y condiciones. Deben permanecer visibles y sin recomendación económica hasta que un verificador autónomo aporte hechos respaldados.
+Las dos cotizaciones PDF de la ronda 469cb459... tienen 3 artículos cada una. Fuente v9 verificada, sumas y originales íntegros, pero las 6 unidades `unit_literal` son NULL. El comprador pidió arena fina 1 m³, piedra partida 2 m³ y cemento gris 25 bolsas de 25 kg. Los PDF ofrecen BIG BAG sin unidades literales ni granulometría. La convención comercial MVP164 reconoce **1 m³ NOMINAL por BIG BAG de áridos**, pero el documento no demuestra por sí solo arena fina/piedra partida ni los términos económicos. Además `ranking_allowed=false` y no constan atestaciones independientes de pago, IVA, flete, mínimo y condiciones. Deben permanecer visibles y sin recomendación económica hasta que un verificador autónomo aporte hechos respaldados.
 
 ## Cambio implementado
 El módulo `src/domain/adaptador-documental-mvp162.ts` NO reemplaza el lector ni el comparador. Convierte la fila fuente privada y su evidencia en `OfertaComparable` únicamente si:
