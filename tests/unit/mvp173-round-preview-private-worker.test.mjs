@@ -5,10 +5,10 @@ import {runRoundPreviewMvp173 as run} from
  '../../supabase/functions/cotironda-piloto-round-preview-staging/logic.ts';
 
 const REQ='469cb459-5f00-49c2-b0b9-bc8b11e5c900';
-const URL='https://example.invalid/functions/v1/cotironda-piloto-round-preview-staging';
+const ENDPOINT='https://example.invalid/functions/v1/cotironda-piloto-round-preview-staging';
 const TOKEN='a'.repeat(96);
 function request(token=TOKEN,body=JSON.stringify({requestId:REQ}),method='POST'){
- return new Request(URL,{method,headers:{
+ return new Request(ENDPOINT,{method,headers:{
   'content-type':'application/json','x-cotironda-recovery-token':token
  },body:method==='POST'?body:undefined});
 }
@@ -104,7 +104,7 @@ test('MVP173: payload muy largo o con cabecera de tamaño prohibido se bloquea',
  const x=io();
  let r=await run(request(TOKEN,JSON.stringify({requestId:REQ})+' '.repeat(120)),x.options);
  assert.equal(r.status,400);assert.equal(x.calls.lookup,0);
- r=await run(new Request(URL,{method:'POST',headers:{
+ r=await run(new Request(ENDPOINT,{method:'POST',headers:{
   'content-type':'application/json','x-cotironda-recovery-token':TOKEN,
   'content-length':'999'},body:'{}'}),x.options);
  assert.equal(r.status,413);assert.equal(x.calls.lookup,0);
