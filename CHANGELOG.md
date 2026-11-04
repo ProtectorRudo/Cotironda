@@ -1,3 +1,6 @@
+## Seguimiento — aislamiento al cambiar token privado (04/11/2026, solo desarrollo)
+- Corregida transición segura entre enlaces de distintas rondas en una misma pestaña: borrado inmediato, rechazo de respuestas antiguas, recuperación de token revocado solo mediante hash nuevo y ausencia de consultas con token inválido. Se agregaron seis pruebas de carrera, revocación, pérdida de conexión y privacidad. Sin despliegue ni WhatsApp. Docs/313; #528/#529 siguen abiertos hasta E2E real.
+
 ## MVP192 — Catálogo de originales por ronda y proveedor consentido (04/11/2026, solo desarrollo)
 - Selector SQL server-only para enlistar TODOS los originales vigentes de proveedores con consentimiento específico de ronda prospectiva, con vínculo Auth PILOTO/WhatsApp, cierre, archivo inmutable SHA, última versión y anti-duplicados. Detalle interno único para MVP190. Proyección pública de lista blanca sin SHA, ruta, nombres de proveedores, contactos, totales ni URLs. Ensayo PostgreSQL de migración transaccional con rollback. Sin usuarios Auth, política, endpoint ni publicación. Docs/312; #525 abierto.
 

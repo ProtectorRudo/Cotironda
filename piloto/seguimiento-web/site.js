@@ -1,5 +1,6 @@
 "use strict";
-const token=window.location.hash.slice(1);
+let token=window.location.hash.slice(1);
+const validToken=value=>/^[a-f0-9]{64}$/.test(value);
 const el=id=>document.getElementById(id);
 let refreshRevision=0;
 let tokenRevoked=false;
@@ -462,25 +463,55 @@ function render(data){
  }
 }
 async function refresh(){
- if(tokenRevoked)return;
+ if(tokenRevoked||!validToken(token))return;
  // Ignore out-of-order POSTs: an older authorized answer must not restore
  // private data after a newer revocation or an updated response.
  const revision=++refreshRevision;
+ const requestedToken=token;
  try{
   const r=await fetch("/api/estado",{method:"POST",credentials:"omit",cache:"no-store",
-   headers:{"content-type":"application/json"},body:JSON.stringify({token})});
+   headers:{"content-type":"application/json"},body:JSON.stringify({token:requestedToken})});
   if(!r.ok)throw Error("response");
   const answer=await r.json();
-  if(revision!==refreshRevision||tokenRevoked)return;
+  if(revision!==refreshRevision||tokenRevoked||requestedToken!==token)return;
   if(answer?.state==="not_found")tokenRevoked=true;
   render(answer);
  }catch{
-  if(revision!==refreshRevision||tokenRevoked)return;
+  if(revision!==refreshRevision||tokenRevoked||requestedToken!==token)return;
   clearPrivateView();displayText("state","Sin conexión");
   displayText("error","No pudimos actualizar el seguimiento. Intentá nuevamente más tarde.");
  }
 }
-if(!/^[a-f0-9]{64}$/.test(token)){
+// Every hash identifies a different private round. Invalidate all in-flight
+// responses and remove the previous buyer's data BEFORE requesting the new one.
+// Never include the bearer token in a query string, redirect or browser storage.
+function onPrivateLinkChange(){
+ const nextToken=window.location.hash.slice(1);
+ if(nextToken===token)return;
+ token=nextToken;
+ ++refreshRevision;
+ tokenRevoked=false;
+ clearPrivateView();
+ if(!validToken(token)){
+  displayText("state","Enlace inválido");
+  displayText("error","Usá el enlace privado completo que recibiste por WhatsApp.");
+  return;
+ }
+ displayText("state","Verificando enlace privado");
+ displayText("error","");
+ startPrivatePolling();
+ void refresh();
+}
+let pollingStarted=false;
+function startPrivatePolling(){
+ if(pollingStarted)return;
+ pollingStarted=true;
+ setInterval(refresh,45000);
+}
+window.addEventListener?.("hashchange",onPrivateLinkChange);
+if(!validToken(token)){
  displayText("state","Enlace inválido");
  displayText("error","Usá el enlace privado completo que recibiste por WhatsApp.");
-}else{refresh();setInterval(refresh,45000);}
+}else{void refresh();startPrivatePolling();}
+// An initially invalid link starts no timer. A subsequent valid hash
+// installs exactly one periodic refresh; revoked links remain fail-closed.
