@@ -158,3 +158,57 @@ test("MVP176: no presenta ofertas como disponibles cuando no están habilitadas"
   assert.equal(page.node("finalists").children.length,0);
  }
 });
+
+test("MVP177: al cerrar publica las cuatro ofertas habilitadas, sin excluir parciales",async()=>{
+ const documents=[
+  {label:"Presupuesto 1",text:"Cemento 40 bolsas y arena"},
+  {label:"Presupuesto 2",text:"Solo cemento - cotización parcial"},
+  {label:"Presupuesto 3",text:"Arena 1 metro cúbico"},
+  {label:"Presupuesto 4",text:"Cable y pintura"}
+ ];
+ const page=await simulate([{
+  ...allowed(),state:"closed",received_count:5,offers:documents,
+  coverage:null,finalists:[]
+ }]);
+ assert.equal(page.node("resultsSection").hidden,false);
+ assert.equal(page.node("offers").children.length,4);
+ assert.match(page.node("resultsCaption").textContent,/4 presupuesto\\(s\\) habilitado\\(s\\) de 5 recibido\\(s\\)/);
+ assert.match(page.node("resultsCaption").textContent,/no se presentan como descartados/);
+ assert.equal(page.node("finalists").children.length,0);
+ const text=JSON.stringify(page.node("offers").children.map(x=>x.children));
+ assert.match(text,/cotización parcial/);
+ assert.match(html,/no son comparables/);
+ assert.match(html,/no te obliga a comprarle/);
+});
+test("MVP177: no trunca la lista de cotizaciones habilitadas por el límite 25",async()=>{
+ const offers=Array.from({length:30},(_,i)=>({label:"Presupuesto "+(i+1),text:"Cotización "+(i+1)}));
+ const page=await simulate([{...allowed(),state:"closed",
+  received_count:30,offers,coverage:null}]);
+ assert.equal(page.node("offers").children.length,30);
+ assert.equal(page.node("resultsSection").hidden,false);
+ assert.match(page.node("resultsCaption").textContent,/30 presupuesto/);
+});
+test("MVP177: no habilita resumen de cierre sin autorización o en ronda abierta",async()=>{
+ for(const candidate of [
+  {...allowed(),state:"waiting"},
+  {...allowed(),state:"closed",can_open:false},
+  {...allowed(),state:"cancelled"}
+ ]){
+  const page=await simulate([candidate]);
+  assert.equal(page.node("resultsSection").hidden,true);
+  assert.equal(page.node("resultsCaption").textContent,"");
+ }
+});
+test("MVP177: revocar enlace también elimina el resumen de ofertas de cierre",async()=>{
+ const page=await simulate([{...allowed(),state:"closed"}, {state:"not_found"}]);
+ assert.equal(page.node("resultsSection").hidden,false);
+ await page.refresh();
+ assert.equal(page.node("resultsSection").hidden,true);
+ assert.equal(page.node("resultsCaption").textContent,"");
+ assert.equal(page.node("offers").children.length,0);
+});
+test("MVP177: contador no verificado jamás se presenta como cero recibidos",async()=>{
+ const page=await simulate([{...allowed(),state:"closed",received_count:null}]);
+ assert.match(page.node("resultsCaption").textContent,/total de recepciones sin acreditar/);
+ assert.equal(page.node("count").textContent,"—");
+});
