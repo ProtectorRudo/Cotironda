@@ -167,3 +167,19 @@ test('MVP181: failure of thank-you does NOT corrupt supplier document recovery',
  assert.equal(r,'recovered_private');
  assert.equal(a.records.includes('cotironda_piloto_compare_supplier_readings_mvp102'),true);
 });
+
+test('MVP181: source verification proceeds while Whapi ACK is unresolved',async()=>{
+ const a=recoveryHarness();
+ let release=()=>{};
+ const delayed=new Promise(resolve=>{release=resolve;});
+ a.onSupplierReceipt=async()=>{await delayed;};
+ const job=recoverOneStoredDocument({
+  ...a,enabled:true,apiKey:'mock',triggerChatHmac:chat
+ });
+ await new Promise(resolve=>setTimeout(resolve,0));
+ assert.equal(a.records.includes(
+  'cotironda_piloto_compare_supplier_readings_mvp102'),true,
+  'source comparison is not blocked by a delayed WhatsApp network call');
+ release();
+ assert.equal(await job,'recovered_private');
+});
