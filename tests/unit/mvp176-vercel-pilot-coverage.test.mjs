@@ -1,0 +1,102 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
+import vm from "node:vm";
+
+const root=new URL("../../piloto/seguimiento-web/",import.meta.url);
+const code=readFileSync(new URL("site.js",root),"utf8");
+const html=readFileSync(new URL("index.html",root),"utf8");
+const css=readFileSync(new URL("site.css",root),"utf8");
+const vercel=JSON.parse(readFileSync(new URL("vercel.json",root),"utf8"));
+const proxy=readFileSync(new URL("api/estado.js",root),"utf8");
+
+class Node{
+ constructor(){this.children=[];this.textContent="";this.hidden=false;this.className="";}
+ append(...items){this.children.push(...items);}
+ appendChild(item){this.children.push(item);return item;}
+ replaceChildren(){this.children=[];}
+}
+const coverage=()=>({
+ state:"cobertura_revisada",quotations:2,requested_items:3,comparisons:6,
+ commercial_alternatives:4,packaging_unproven:1,not_evaluated:1,
+ explicit_differences:0,technical_uncertainty:0,
+ ranking_allowed:false,price_comparable:false,contacts_revealed:false
+});
+const allowed=()=>({
+ state:"waiting",can_open:true,received_count:2,files_pending_review:0,
+ deadline:"2026-11-10T18:00:00Z",
+ offers:[{label:"Presupuesto 1",text:"Oferta revisada de prueba"}],
+ coverage:coverage()
+});
+async function simulate(responses){
+ const nodes=new Map(), timers=[];
+ const getElementById=id=>{if(!nodes.has(id))nodes.set(id,new Node());return nodes.get(id)};
+ const context={
+  window:{location:{hash:"#"+ "a".repeat(64)}},
+  document:{getElementById,createElement:()=>new Node()},
+  fetch:async(url,options)=>{
+   assert.equal(url,"/api/estado");assert.equal(options.method,"POST");
+   assert.equal(JSON.parse(options.body).token,"a".repeat(64));
+   const reply=responses.shift();
+   if(reply?.error)throw Error("offline");
+   return {ok:true,json:async()=>reply};
+  },
+  setInterval:fn=>{timers.push(fn);}
+ };
+ vm.runInNewContext(code,context,{timeout:1000});
+ await new Promise(resolve=>setTimeout(resolve,0));
+ return {node:getElementById,refresh:async()=>{
+  if(timers.length)timers[0]();
+  await new Promise(resolve=>setTimeout(resolve,0));
+ }};
+}
+test("MVP176: real Vercel pilot directory serves the new coverage section with strict CSP",()=>{
+ assert.match(html,/id="coverageGrid"/);
+ assert.match(html,/id="coverageSection"/);
+ assert.match(html,/href="\/site.css"/);
+ assert.match(html,/src="\/site.js"/);
+ assert.match(css,/\.coverage-panel/);
+ assert.match(css,/\[hidden\]/);
+ assert.equal(vercel.rewrites.find(x=>x.source==="/seguimiento")?.destination,"/index.html");
+ assert.match(vercel.headers[0].headers.find(x=>x.key==="Content-Security-Policy").value,/script-src 'self'/);
+ assert.doesNotMatch(code,/\binnerHTML\b/);
+ assert.match(proxy,/cotironda-piloto-seguimiento/);
+ assert.match(proxy,/upstream=await fetch/);
+});
+test("MVP176: buyer sees commercial alternatives but no made-up positions",async()=>{
+ const page=await simulate([allowed()]);
+ assert.equal(page.node("coverageSection").hidden,false);
+ assert.equal(page.node("coverageGrid").children.length,3);
+ assert.match(page.node("coverageCaption").textContent,/6 cruces de artículos/);
+ const labels=page.node("coverageGrid").children.flatMap(x=>x.children.map(y=>y.textContent)).join("|");
+ assert.match(labels,/Alternativas comerciales razonables/);
+ assert.match(labels,/Presentaciones sin acreditar/);
+ assert.match(labels,/Artículos pendientes de cotejo/);
+ assert.doesNotMatch(labels,/ganador|primer puesto|mejor precio/iu);
+ assert.equal(page.node("offers").children.length,1);
+});
+test("MVP176: forged coverage is suppressed even if normal anonymous offers exist",async()=>{
+ for(const c of [{ranking_allowed:true},{comparisons:8},{packaging_unproven:99},
+  {contacts_revealed:true},{requested_items:0},{commercial_alternatives:-1}]){
+  const page=await simulate([{...allowed(),coverage:{...coverage(),...c}}]);
+  assert.equal(page.node("coverageSection").hidden,true,JSON.stringify(c));
+  assert.equal(page.node("coverageGrid").children.length,0);
+ }
+});
+test("MVP176: revoked token erases prior offers, counts and coverage",async()=>{
+ const page=await simulate([allowed(),{state:"not_found"}]);
+ assert.equal(page.node("offers").children.length,1);
+ await page.refresh();
+ assert.equal(page.node("offers").children.length,0);
+ assert.equal(page.node("coverageSection").hidden,true);
+ assert.equal(page.node("count").textContent,"—");
+ assert.equal(page.node("deadline").textContent,"");
+});
+test("MVP176: network outage erases previously visible private data",async()=>{
+ const page=await simulate([allowed(),{error:true}]);
+ await page.refresh();
+ assert.equal(page.node("offers").children.length,0);
+ assert.equal(page.node("coverageSection").hidden,true);
+ assert.equal(page.node("count").textContent,"—");
+ assert.equal(page.node("state").textContent,"Sin conexión");
+});
