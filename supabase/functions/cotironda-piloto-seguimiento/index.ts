@@ -132,7 +132,7 @@ Deno.serve(async req=>{
  if(req.method==='GET'){
   if(new URL(req.url).search) return new Response('Bad request',{status:400,headers:headers('text/plain')});
   return new Response(null,{status:302,headers:{...headers('text/plain'),
-   Location:'https://cotironda-seguimiento-vista-piloto-8bfvf7vu1.vercel.app/seguimiento'}});
+   Location:'https://cotironda-seguimiento-vista-piloto-boqnfg2gk.vercel.app/seguimiento'}});
  }
  if(req.method!=='POST')return new Response('',{status:405,headers:headers('text/plain')});
  if(new URL(req.url).search)return new Response('',{status:400,headers:headers('text/plain')});

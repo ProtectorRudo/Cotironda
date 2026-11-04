@@ -1,4 +1,4 @@
-# MVP182 — Que una oferta parcial verificada pueda complementar otra sin crear un ranking ficticio
+# MVP183 — Que una oferta parcial verificada pueda complementar otra sin crear un ranking ficticio
 
 **04/11/2026 · Issues #524, #535 y #529. Estado: código y pruebas propuestos en rama de desarrollo. No desplegado.**
 
@@ -25,4 +25,4 @@ El comparador monetario offline MVP118 y las recomendaciones MVP160 ya admitían
 - E2E de ronda nueva con un PDF y un Excel parciales consentidos, y otro documento con extras: comprobar que el comprador ve **todos** los presupuestos, los faltantes y solo opciones completas comparables.
 - Ensayos de dos compradores, revocación, 25 artículos/10 ofertas, empates y distintas condiciones; no habilitar finalistas, originales ni WhatsApp hasta cerrar las demás barreras.
 
-**Criterio de cierre de MVP182:** CI verde en el SHA exacto, regresión del adaptador + recomendador, diff auditado y PR de desarrollo. El E2E real queda separado y pendiente en #535/#529.
+**Criterio de cierre de MVP183:** CI verde en el SHA exacto, regresión del adaptador + recomendador, diff auditado y PR de desarrollo. El E2E real queda separado y pendiente en #535/#529.

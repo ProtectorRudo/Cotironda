@@ -221,7 +221,7 @@ test('MVP162: BIG BAG explicitamente cotizado como envase se normaliza a bolsa, 
 });
 
 
-test('MVP182: dos PDFs parciales verificados pueden cubrir juntos la canasta, sin atribuir cobertura total a ninguno',()=>{
+test('MVP183: dos PDFs parciales verificados pueden cubrir juntos la canasta, sin atribuir cobertura total a ninguno',()=>{
  const pedido={items:[
   {id:'cemento_001',cantidad:'2',unidad:'bag'},
   {id:'arena_001',cantidad:'1',unidad:'bag'}
@@ -258,7 +258,7 @@ test('MVP182: dos PDFs parciales verificados pueden cubrir juntos la canasta, si
  assert.equal(result.adjudicacion,false);
 });
 
-test('MVP182: parcial sin IVA/flete o disponibilidad NO se vuelve comparable',()=>{
+test('MVP183: parcial sin IVA/flete o disponibilidad NO se vuelve comparable',()=>{
  const pedido={items:[...req.items,{id:'arena_001',cantidad:'1',unidad:'bag'}]};
  const noFlete=run(doc(),mapping(),{...terms(),fleteFinal:null},pedido);
  assert.equal(noFlete.estado,'visible_no_comparable');
@@ -272,7 +272,7 @@ test('MVP182: parcial sin IVA/flete o disponibilidad NO se vuelve comparable',()
  assert.ok(sinStock.motivos.includes('disponibilidad_sin_acreditar'));
 });
 
-test('MVP182: renglones ajenos no clasificados y oferta sin renglones asignados nunca ingresan a ranking',()=>{
+test('MVP183: renglones ajenos no clasificados y oferta sin renglones asignados nunca ingresan a ranking',()=>{
  const pedido={items:[...req.items,{id:'arena_001',cantidad:'1',unidad:'bag'}]};
  const conExtra=doc();conExtra.lineas.push({
   lineNo:2,descriptionLiteral:'Pallet',quantityLiteral:'1',unitLiteral:'unidad',
