@@ -106,7 +106,7 @@ test('MVP185: dos presupuestos parciales complementarios se comparan juntos, nun
  const a=source('a',[cemento]);
  const b=source('b',[arena]);
  const result=run([a,b]);
- assert.deepEqual(result.ofertas.map(x=>x.articulosCubiertos),[1,1]);
+ assert.deepEqual(result.ofertas.map(x=>x.lineasConPrecioBaseComparable),[1,1]);
  assert.equal(result.opcionesCotizadas.length,1);
  assert.deepEqual(result.opcionesCotizadas[0].proveedoresAnonimos,['oferta_001','oferta_002']);
  assert.equal(result.opcionesCotizadas[0].subtotalMaterialesCotizadoSinIva,'260.50');
