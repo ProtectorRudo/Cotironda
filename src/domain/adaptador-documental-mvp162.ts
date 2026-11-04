@@ -59,6 +59,7 @@ export type ResultadoPuente=Readonly<{
 const unitAliases:Readonly<Record<string,UnidadCotizada>>={
  'u':'unit','unidad':'unit','unidades':'unit','unit':'unit',
  'bolsa':'bag','bolsas':'bag','saco':'bag','sacos':'bag','bag':'bag',
+ 'bolson':'bag','bolsones':'bag','big bag':'bag','bigbag':'bag',
  'caja':'box','cajas':'box','box':'box',
  'kg':'kg','kilo':'kg','kilos':'kg','kilogramo':'kg','kilogramos':'kg',
  'g':'g','gramo':'g','gramos':'g','l':'l','lt':'l','litro':'l','litros':'l',
@@ -102,7 +103,7 @@ const grade=(id:string,estado:ResultadoPuente['estado'],sourceOK:boolean,
 /** Reject notation 1.000 (ambiguous without decimal digits), not the whole PDF. */
 export function centavosFuenteMvp162(input:unknown):bigint|null{
  if(typeof input!=='string'||input.length>48)return null;
- const x=input.trim().replace(/^(?:AR\$|\$)\s*/iu,'');
+ const x=input.trim().replace(/^(?:AR\$|US\$|U\$S|USD|\$)\s*/iu,'');
  let canonical:string;
  if(/^[1-9]\d{0,2}(?:\.\d{3})+,\d{2}$/u.test(x))
   canonical=x.replace(/\./gu,'').replace(',','.');
