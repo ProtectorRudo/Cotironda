@@ -28,3 +28,10 @@ Se agrega `src/domain/cotejo-presentaciones-mvp174.ts` y se conecta al diagnóst
 ## Siguiente etapa
 
 Ampliar el cotejo por familia y atributo sin inventar marcas, y presentar advertencias en el portal. No publicar ranking fiscal ni ganadores hasta auditar IVA, flete, disponibilidad y condiciones por artículo.
+
+## Estado de verificación del 04/11/2026
+
+- GitHub PR #549: **8 pruebas nuevas**, **2.008 de 2.008 unitarias PASS** y **6 de 6 controles GitHub CI PASS** (incluido Deno, PostgreSQL 17, Next.js y PostgREST). Código probado en rama de desarrollo.
+- Se preparó el paquete completo de 10 archivos para staging, pero la herramienta bloqueó repetidamente la acción de despliegue. **La Edge de diagnóstico del piloto permanece v1**, sin el cotejo MVP174. El recuperador operativo conserva v25.
+- La evidencia real citada arriba proviene de consultar las descripciones ya registradas; los conteos del **nuevo diagnóstico TS sobre datos reales no están verificados todavía**. No atribuirle HTTP 200 ni nuevos resultados del piloto.
+- Ninguna adjudicación, mensaje, ranking ni cotización original se modificó en esta subetapa.
