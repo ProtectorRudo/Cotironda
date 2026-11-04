@@ -6,6 +6,7 @@
  */
 import {createClient} from 'npm:@supabase/supabase-js@2.118.0';
 import {hex,decodeContacts} from '../_shared/cotironda-finalist-notice.ts';
+import {resumirCoberturaCompradorMvp175} from '../../../src/domain/resumen-cobertura-comprador-mvp175.ts';
 const ref='ilggkalaafhtiysyzlmg';
 const html=`<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -162,6 +163,23 @@ Deno.serve(async req=>{
  const result=await db.rpc('cotironda_piloto_tracking_status_mvp091',{p_token_hash:digest});
  if(result.error)return new Response('',{status:503,headers:headers('text/plain')});
  let publicResult=result.data as Record<string,unknown>;
+
+ // Only a valid, consented buyer tracking token can reach this gate.
+ // The SECOND RPC repeats buyer consent/revocation/round validation.
+ // NEVER relay the private RPC object, which contains supplier originals.
+ if(publicResult?.can_open===true&&
+   (publicResult.state==='waiting'||publicResult.state==='closed')){
+   try{
+     const source=await db.rpc('cotironda_piloto_buyer_coverage_inputs_mvp175',{
+       p_token_hash:digest
+     });
+     if(!source.error){
+       const safe=resumirCoberturaCompradorMvp175(publicResult,source.data);
+       if(safe)publicResult={...publicResult,coverage:safe};
+     }
+   }catch{/* Existing tracking remains available, with no coverage. */}
+ }
+
  // Private, source-authorized contact reveal only after verified closure.
  // Ciphertext is NEVER sent to the browser, even on a decoding error.
  if(publicResult?.state==='closed'&&
