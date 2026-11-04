@@ -59,6 +59,9 @@ export function evaluarDescargaOriginalMvp161(d:AccesoOriginal):ResultadoAcceso{
  if(!c||c.alcance!=='original_identificable_tras_cierre'||
    c.version!=='cotironda-originales-v1'||c.rondaId!==r.id||
    c.proveedorId!==a.proveedorId||!time(c.aceptadoMs)||
+   // No consent captured before this round or the future-only policy start.
+   // A general earlier WhatsApp opt-in is NOT permission to share originals.
+   c.aceptadoMs<r.creadaMs||c.aceptadoMs<d.politicaDesdeMs!||
    c.aceptadoMs>i.enviadaMs||c.revocadoMs!==null)
   return out('sin_consentimiento');
  if(i.rondaId!==r.id||i.proveedorId!==a.proveedorId||
