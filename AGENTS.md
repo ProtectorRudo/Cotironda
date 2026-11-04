@@ -1,5 +1,7 @@
 # AGENTS.md — Contrato técnico de Cotironda
 
+> **MVP165 / 04-11-2026 (desarrollo):** una equivalencia BIG BAG/bolsón ≈1 m³ nominal puede alimentar el contrato económico SOLO con línea + SHA + descripción del pedido auténtica, variedad técnica acreditada, cantidad, stock, IVA/precio neto/flete/pago auditados. Una presentación diferente de 1 m³ nominal por envase no hereda precio unitario por m³. No alterar original ni activar ranking real sin verificador privado. Ver docs/283 e Issue #535.
+
 ## Rol
 Actuar como director técnico, desarrollador, analista de producto y auditor. Priorizar calidad comercial, simplicidad, confidencialidad y costos sostenibles.
 
