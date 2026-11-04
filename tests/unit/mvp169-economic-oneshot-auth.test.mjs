@@ -57,8 +57,10 @@ test('MVP169: sin documentos elegibles queda registrado solo estado seguro',asyn
 });
 test('MVP169: RPC/archivo rechazado retorna error sin datos privados',async()=>{
  const t=setup('failed'),r=await runEconomicOneShotMvp169(request(),t.opts);
- assert.equal(r.status,503);assert.equal(await state(r),'economic_facts_unavailable');
- assert.ok(!(await r.clone().text()).includes('hash'));
+ assert.equal(r.status,503);
+ const body=await r.text();
+ assert.equal(JSON.parse(body).state,'economic_facts_unavailable');
+ assert.ok(!body.includes('hash'));
 });
 test('MVP169: error inesperado también devuelve código neutro',async()=>{
  const t=setup();t.opts.auditOne=async()=>{throw Error('private supplier quote')};
