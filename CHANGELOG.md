@@ -1,3 +1,6 @@
+## MVP175 — Resumen seguro de cobertura en seguimiento del comprador (desarrollo)
+- Nuevo selector privado por hash del enlace comprador, con validación independiente de consentimiento, revocación y vencimiento, service_role-only. Edge de seguimiento existente reduce fuentes MVP172/174 a conteos agregados y UI de Cotironda muestra alternativas, envases no acreditados, no evaluados y diferencias; sin precios, ranking o identidad. Smoke PostgreSQL 17 real con BEGIN/ROLLBACK: 2/2 rondas, 4 ofertas, 5 artículos; anon/auth denegados, secreto inválido no_found. Docs/294; aún no instalado ni publicado.
+
 ## MVP174 — Despliegue staging v2 y auditoría real SQL (04/11/2026)
 - Edge `cotironda-piloto-round-preview-staging` v2 ACTIVE, 10 archivos, solo piloto; 401 sin token y con token falso. Consultas SQL de solo lectura confirman 9 coincidencias de cantidades nominales y 1 presentación sin litros acreditados entre los 10 cruces. Auditoría: 4 originales v9, 4 registros económicos, 0 cron/outbox/finalistas; recuperador v25 intacto. **2.011/2.011 pruebas PASS y 6/6 GitHub CI PASS.** No se ejecutó HTTP autenticado v2 por bloqueo de controles de seguridad para uso del token Vault; ranking fiscal/contactos siguen OFF. PR #549 y docs/293.
 
