@@ -305,7 +305,9 @@ function showPricedCoverage(d){
  displayText("pricedCoverageCaption",
   "Ronda cerrada · "+p.quotations+" presupuestos revisados. "+
   p.parejasConImportesParaTodos.length+
-  " combinaciones complementarias con referencias de importe para toda la lista. "+
+  (p.parejasConImportesParaTodos.length===1?
+    " combinación complementaria":" combinaciones complementarias")+
+  " con referencias de importe para toda la lista. "+
   "Se muestran todas las ofertas; ninguna se adjudica automáticamente.");
  el("pricedCoverageSection").hidden=false;
 }
