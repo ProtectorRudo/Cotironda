@@ -47,12 +47,12 @@ function subtype(d:string,f:Arido):string{
  if(f==='cascote')return 'cascote';
  if(f==='arena'){
   const a=/\bfin[ao]\b/u.test(d),b=/\bgrues[ao]\b/u.test(d);
-  return a===b?'generica':a?'fina':'gruesa';
+  return a&&b?'mixta':!a&&!b?'generica':a?'fina':'gruesa';
  }
  if(f==='piedra'){
   const a=/\b(?:partid[ao]|triturad[ao])\b/u.test(d);
   const b=/\b(?:rodad[ao]|canto\s+rodado)\b/u.test(d);
-  return a===b?'generica':a?'partida':'rodada';
+  return a&&b?'mixta':!a&&!b?'generica':a?'partida':'rodada';
  }
  return 'generica';
 }
@@ -102,7 +102,8 @@ export function interpretarBolsonAridosMvp164(x:EntradaBolson):ResultadoBolson{
  const origen=v===null?'convencion_nominal':'capacidad_expresa';
  const coinciden=(per*qty+500n)/1000n===requested;
  const reqVariant=subtype(pedido,required),offerVariant=subtype(oferta,f);
- const species=reqVariant==='generica'||offerVariant===reqVariant?'corroborada':
+ const species=offerVariant==='mixta'?'contradictoria':
+  reqVariant==='generica'||reqVariant==='mixta'||offerVariant===reqVariant?'corroborada':
   offerVariant==='generica'?'generica':'contradictoria';
  const state:ResultadoBolson['estado']=!coinciden?'volumen_distinto':
   species==='contradictoria'?'variedad_distinta':
