@@ -1,3 +1,9 @@
+## MVP169 — Primera lectura económica REAL comprobada en PILOTO (04/11/2026)
+- Edge staging v2 con Vault/RPC, sin Whapi ni cron. Control negativo HTTP 401; 4 llamadas autorizadas HTTP 200, 4 originales (3 PDF, 1 XLSX), 10/10 líneas de precios conciliadas desde bytes SHA, ledger privado append-only, 0 pendientes. IVA no informado en las 4, ranking/contactos/finalistas OFF. Trabajador operativo v25 conservado. PR #545, docs/288; no producción ni E2E nuevo WhatsApp.
+
+## MVP169 — Worker económico one-shot aislado (solo PILOTO staging)
+- Nuevo entrypoint/handler que reutiliza token Vault de 96 hex y RPC de autorización, selecciona/descarga/audita/guarda un único presupuesto real con MVP168, sin rutas de Whapi, IA o ranking. 11 pruebas nuevas y typecheck Deno del nuevo entrypoint. Docs/288. Antes de ejecutar en piloto requiere CI, despliegue staging aislado e invocación explícita por pg_net.
+
 ## MVP168 — Registro económico probado e instalado en PILOTO (04/11/2026)
 - PostgreSQL 17.11: schema/RPCs de MVP168 ensayados `BEGIN/ROLLBACK`, migración aditiva aplicada SOLO a `cotironda-piloto`; smoke reversible PASS, ACL/RLS verificados. Edge de staging v1 ACTIVE con JWT y sin cron, recuperador actual v25 intacto; 0 hechos económicos reales y 0 WhatsApp/finalistas. Auditoría docs/287. No producción, sin activar ranking, no E2E PDF real.
 

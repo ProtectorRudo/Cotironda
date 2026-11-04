@@ -1,5 +1,9 @@
 # AGENTS.md — Contrato técnico de Cotironda
 
+> **04/11/2026 — MVP169 PILOTO (comprobado):** staging one-shot v2 con token Vault verificó 3 PDF + 1 Excel archivados, 10/10 líneas conciliadas, sin IVA acreditado, ranking OFF, outbox y finalistas 0, sin cron. Recuperador habitual v25 intacto. No habilitar ranking/originales públicos. Ver docs/288.
+
+> **MVP169 (04-11-2026, PILOTO staging solamente):** para probar el primer presupuesto real NUNCA invocar staging con recuperador amplio/Whapi. Usar Edge `cotironda-piloto-economic-staging` económica-only, token Vault verificado vía RPC, una cotización por request y resultado sin datos privados. No cron ni finalistas ni ranking. Ver docs/288.
+
 > **MVP168 / 04-11-2026 — Instalación aislada verificada en PILOTO:** ledger privado y dos RPCs SQL instalados tras smoke PostgreSQL 17.11 + `ROLLBACK` PASS. Edge nueva `cotironda-piloto-economic-staging` v1 JWT ACTIVE sin cron; recuperador original v25 conservado. 0 resultados económicos reales, 0 finalistas. No marcar #535 terminado ni activar flag, comparador o contactos sin nueva prueba. Ver docs/287.
 
 > **MVP168 / 04-11-2026 (solo rama de desarrollo):** enlazado lector de originales con pruebas económicas MVP166/167 y ledger privado append-only propuesto. Verificar bytes originales y SHA v9 siempre; activar worker solo con RPCs privadas probadas y flag explícito; no suponer que el SQL o Edge está instalado. `rankingAllowed=false`; no contactos, cierre ni originales públicos. Ver docs/286, Issue #535.
