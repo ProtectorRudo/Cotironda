@@ -145,7 +145,12 @@ export function resumirMaterialesCotizadosCompradorMvp210(
      equivalencia:'comercial_razonable',
      disponibilidadCorroborada:false
     });
-    if(row.estado==='coincide_volumen_nominal_sin_stock'&&
+    // A reasonable generic aggregate (arena/piedra) may be classified as
+    // "alternativa_comercial_con_aclaracion", not just "coincide_volumen".
+    // Attach source-backed BIG BAG evidence in BOTH cases. The existing
+    // MVP185/MVP164 validator still rechecks material family, amount,
+    // original wording, nominal m³, quantity and SHA before pricing.
+    if(request.unidad==='m3'&&
        (fact.presentation==='big_bag'||fact.presentation==='bolson')){
       bags.push({
        itemId:row.itemId,lineNo:row.lineaFuente,
