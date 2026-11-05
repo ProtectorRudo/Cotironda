@@ -40,14 +40,18 @@ export async function prepararPlanesPrivadosMvp197(
   if(due.error||!isObject(due.data)||
      due.data.state!=='candidate_due'||!Array.isArray(due.data.rounds)||
      due.data.rounds.length>10)return response('verified_planner_unavailable');
-  let plans=0,ambiguous=0;
+  // Validate the ENTIRE batch before any insertion. A duplicate or
+  // malformed later round must never leave an earlier plan committed.
   const seen=new Set<string>();
   for(const round of due.data.rounds){
    if(!isObject(round)||round.closureChecked!==true||
       typeof round.requestId!=='string'||!ID.test(round.requestId)||
       seen.has(round.requestId)||!isObject(round.privateInputs))
-    return response('verified_round_invalid',plans,ambiguous);
+    return response('verified_round_invalid');
    seen.add(round.requestId);
+  }
+  let plans=0,ambiguous=0;
+  for(const round of due.data.rounds){
    const result=seleccionarComercialmenteMvp196({
     closureChecked:true,
     privateInputs:round.privateInputs as
