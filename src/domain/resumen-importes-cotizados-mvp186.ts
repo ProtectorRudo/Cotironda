@@ -43,7 +43,7 @@ type Status=Readonly<{
 }>;
 
 const safeId=/^item_\d{3}$/u;
-const sourceTotal=/^(?:\s*(?:ARS|USD)?\s*\$?\s*)?[\d.,]+\s*$/iu;
+const sourceTotal=/^\s*(?:(?:AR\$|US\$|U\$S|(?:ARS|USD)\s*\$?|\$)\s*)?[\d.,]+\s*$/iu;
 const isObject=(v:unknown):v is Record<string,unknown>=>
  v!==null&&typeof v==='object'&&!Array.isArray(v);
 const classifyIva=(value:string):

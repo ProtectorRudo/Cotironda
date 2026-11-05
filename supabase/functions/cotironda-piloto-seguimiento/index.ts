@@ -16,6 +16,8 @@ import {resumirCoberturaImportesMvp194} from
  '../../../src/domain/cobertura-importes-cierre-mvp194.ts';
 import {resumirCondicionesEconomicasPorOfertaMvp204} from
  '../../../src/domain/condiciones-economicas-por-oferta-mvp204.ts';
+import {resumirMaterialesCotizadosCompradorMvp210} from
+ '../../../src/domain/materiales-cotizados-comprador-mvp210.ts';
 const ref='ilggkalaafhtiysyzlmg';
 const html=`<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -242,6 +244,13 @@ Deno.serve(async req=>{
          );
          if(pricedCoverage)publicResult={...publicResult,
            priced_coverage:pricedCoverage};
+         // Buyer-visible materials-only options from existing MVP185.
+         // No private envelope, HMAC, contact, document or final price.
+         const baskets=resumirMaterialesCotizadosCompradorMvp210(
+           publicResult as Parameters<typeof resumirMaterialesCotizadosCompradorMvp210>[0],
+           verifiedRoundInputs,itemPrices
+         );
+         if(baskets)publicResult={...publicResult,material_baskets:baskets};
        }
      }
    }catch{/* Optional price references never block reviewed offers. */}
