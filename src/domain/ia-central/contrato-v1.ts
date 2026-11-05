@@ -65,7 +65,7 @@ export function localizarEvidenciasV1(
   let pos=origen.indexOf(evidence);
   while(pos>=0&&intervals.some(x=>
    pos<x.fin&&pos+evidence.length>x.inicio))
-   pos=origen.indexOf(raw.evidencia,pos+1);
+   pos=origen.indexOf(evidence,pos+1);
   if(pos<0)return null;
   const end=pos+evidence.length;
   intervals.push({inicio:pos,fin:end});
