@@ -13,7 +13,7 @@ const planning=readFileSync(new URL(
 
 test('MVP197: con despacho OFF, planificador se ejecuta antes de acceder al token Whapi',()=>{
  const at=(s)=>worker.indexOf(s);
- const auth=at('const provided=req.headers.get');
+ const auth=at('const mode=await verificarModoWorkerMvp209(');
  const database=at('const db=createClient(');
  const plans=at('const planned=await prepararPlanesPrivadosMvp197(');
  const dispatch=at("if(Deno.env.get('COTIRONDA_PILOT_FINALIST_DISPATCH_MVP196_ENABLED')!=='true')");
