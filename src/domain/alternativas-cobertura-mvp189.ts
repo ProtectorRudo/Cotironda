@@ -58,7 +58,7 @@ export function resumirAlternativasCoberturaMvp189(
  try{
   if(!status||status.state!=='closed'||status.can_open!==true||
     !Array.isArray(status.offers)||status.offers.length<1||
-    status.offers.length>10||
+    status.offers.length>12||
     status.economy?.state!=='economia_observada_sin_ranking'||
     status.economy.quotations!==status.offers.length||
     status.economy.ranking_allowed!==false||
@@ -87,7 +87,7 @@ export function resumirAlternativasCoberturaMvp189(
     diagnosed.rondaResumen.articulosSolicitados!==status.coverage.requested_items)
    return null;
   const itemIds=privateRound.requestItems.map(x=>x.id);
-  if(itemIds.length<1||itemIds.length>25||
+  if(itemIds.length<1||itemIds.length>30||
     itemIds.some(x=>!id.test(x))||
     new Set(itemIds).size!==itemIds.length)return null;
 
