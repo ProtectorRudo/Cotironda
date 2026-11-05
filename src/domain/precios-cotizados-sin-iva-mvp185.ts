@@ -9,6 +9,7 @@
  */
 import {elegirParExacto25} from './comparacion-pares-exacta.ts';
 import {interpretarBolsonAridosMvp164} from './aridos-bolson-mvp164.ts';
+import {cotejarPresentacionObraMvp174} from './cotejo-presentaciones-mvp174.ts';
 import {centavosFuenteMvp162,cantidadFuenteMvp162,
  type DocumentoFuente,type CorrelacionFuente,type HechosPresentacionMvp170,
  type PruebaBolsonMvp165
@@ -20,6 +21,14 @@ import type {ResultadoCondicionesMvp167,EstadoIvaMvp167} from './auditoria-condi
 export type EstadoComercialIvaMvp185=
  'sin_iva_por_convencion'|'sin_iva_declarado'|'iva_incluido_sin_base_homogenea'|
  'iva_no_determinable';
+/** Proof from the private buyer request, not a text supplied by the bidder.
+ * This is NEVER enough by itself: both the v9 source and economic ledger
+ * must independently corroborate the matching supplier line. */
+export type PruebaEnvaseObraMvp195=Readonly<{
+ itemId:string;lineNo:number;sourceSha256:string;
+ pedidoDescripcionLiteral:string;
+ familia:'cemento_gris_obra'|'hidrofugo';
+}>;
 export type EntradaOfertaMvp185=Readonly<{
  doc:DocumentoFuente;
  fuente:HechosPresentacionMvp170;
@@ -32,6 +41,8 @@ export type EntradaOfertaMvp185=Readonly<{
  /** Only from the PRIVATE buyer request and the same verified supplier line.
   * A conventional BIG BAG is nominal 1m³, NOT a stock or fiscal proof. */
  pruebasBolson?:readonly PruebaBolsonMvp165[];
+ /** Only source-verified pack sizes from a buyer-matched v9 document. */
+ pruebasEnvasesObra?:readonly PruebaEnvaseObraMvp195[];
  /** Corroborada fuera del modelo por el servicio privado. Nunca por defecto. */
  moneda:MonedaCotizada|null;
 }>;
@@ -44,7 +55,8 @@ export type OpcionCotizadaMvp185=Readonly<{
  ordenPorPrecioCotizado:number;
  advertencias:readonly ('iva_no_informado'|'flete_no_incluido_en_comparacion'|
   'stock_no_corroborado'|'minimos_y_pago_no_evaluados'|
-  'bolson_1m3_nominal_sin_stock')[];
+  'bolson_1m3_nominal_sin_stock'|
+  'presentacion_envase_diferente_misma_cantidad_sin_stock')[];
 }>;
 export type ResultadoPreciosCotizadosMvp185=Readonly<{
  estado:'proyeccion_informativa'|'insumos_invalidos';
@@ -98,7 +110,7 @@ type ValidOffer={
  label:string;interpretacion:EstadoComercialIvaMvp185;
  moneda:MonedaCotizada|null;
  prices:Map<string,bigint>;nominalBigBagItems:Set<string>;
- usable:boolean;motivo:string|null
+ envaseObraItems:Set<string>;usable:boolean;motivo:string|null
 };
 const invalid=():ResultadoPreciosCotizadosMvp185=>Object.freeze({
  estado:'insumos_invalidos' as const,ofertas:[],opcionesCotizadas:[],
@@ -141,7 +153,8 @@ function verifyOffer(pedido:PedidoComparable,entry:EntradaOfertaMvp185,
  const interpretacion=interpretarSilencioIvaMvp185(iva);
  const blocked=(motivo:string):ValidOffer=>({
   label,interpretacion,moneda:null,prices:new Map(),
-  nominalBigBagItems:new Set(),usable:false,motivo
+  nominalBigBagItems:new Set(),envaseObraItems:new Set(),
+  usable:false,motivo
  });
  const {doc,fuente,economia}=entry;
  if(!isValidDoc(doc)||doc.requestId!==requestId||
@@ -186,6 +199,19 @@ function verifyOffer(pedido:PedidoComparable,entry:EntradaOfertaMvp185,
     discounts.has(a.linea)||a.unitarioComercialTrasDescuento===null||
     !['descuento_explicito_conciliado','importe_sin_ajuste_conciliado'].includes(a.estado))
    return blocked('importe_fuente_no_conciliado');
+  // A verified source total does NOT alone prove that a claimed discount
+  // or unit price belongs to that line. Reconcile at exact page/row and
+  // decimal cents before any base-price comparison or pair is computed.
+  const line=sourceLines.get(a.linea)!,fact=facts.get(a.linea);
+  const q=cantidadFuenteMvp162(line.quantityLiteral);
+  const unitNet=centavosFuenteMvp162(a.unitarioComercialTrasDescuento);
+  const lineTotal=centavosFuenteMvp162(line.lineTotalLiteral);
+  if(!fact||!Number.isSafeInteger(fact.page)||fact.page<1||
+    !Number.isSafeInteger(fact.row)||fact.row<1||
+    a.pagina!==fact.page||a.fila!==fact.row||q===null||
+    unitNet===null||lineTotal===null||
+    (unitNet*milli(q)+500n)/1000n!==lineTotal)
+   return blocked('importe_fuente_no_conciliado');
   discounts.set(a.linea,a);
  }
  if(!entry.correlaciones.length||entry.correlaciones.length>pedido.items.length)
@@ -210,8 +236,27 @@ function verifyOffer(pedido:PedidoComparable,entry:EntradaOfertaMvp185,
    proofs.set(proof.itemId,proof);
   }
  }
+ const packProofs=new Map<string,PruebaEnvaseObraMvp195>();
+ if(entry.pruebasEnvasesObra!==undefined){
+  if(!Array.isArray(entry.pruebasEnvasesObra)||
+     entry.pruebasEnvasesObra.length>doc.lineas.length)
+    return blocked('prueba_envase_obra_invalida');
+  for(const proof of entry.pruebasEnvasesObra){
+   const paired=entry.correlaciones.find(x=>x.itemId===proof?.itemId);
+   if(!proof||!paired||paired.lineNo!==proof.lineNo||
+      proof.sourceSha256!==doc.sourceSha256||
+      packProofs.has(proof.itemId)||proofs.has(proof.itemId)||
+      typeof proof.pedidoDescripcionLiteral!=='string'||
+      !proof.pedidoDescripcionLiteral.trim()||
+      proof.pedidoDescripcionLiteral.length>500||
+      !['cemento_gris_obra','hidrofugo'].includes(proof.familia))
+    return blocked('prueba_envase_obra_invalida');
+   packProofs.set(proof.itemId,proof);
+  }
+ }
  const prices=new Map<string,bigint>(),usedLines=new Set<number>();
  const nominalBigBagItems=new Set<string>();
+ const envaseObraItems=new Set<string>();
  for(const match of entry.correlaciones){
   const target=pedido.items.find(item=>item.id===match.itemId);
   const line=sourceLines.get(match.lineNo),fact=facts.get(match.lineNo);
@@ -249,21 +294,41 @@ function verifyOffer(pedido:PedidoComparable,entry:EntradaOfertaMvp185,
      check.origen==='convencion_nominal'&&
      ['compatible_con_aclaracion','compatible_comercialmente'].includes(check.estado);
   }
-  if(!explicitMatch&&!nominal)return blocked('unidad_sin_acreditar');
+  let normalizedPack=false;
+  const packaging=packProofs.get(target.id);
+  if(sourceLocated&&packaging&&
+     match.equivalencia==='comercial_razonable'&&
+     fact.unitStatus==='not_explicit'&&fact.unit===null&&
+     line.unitLiteral===null&&
+     (target.unidad==='bag'&&packaging.familia==='cemento_gris_obra'||
+      target.unidad==='l'&&packaging.familia==='hidrofugo')){
+   const checked=cotejarPresentacionObraMvp174({
+    id:target.id,cantidad:target.cantidad,unidad:target.unidad,
+    descripcionLiteral:packaging.pedidoDescripcionLiteral,
+    familia:packaging.familia
+   },[line],[fact]);
+   normalizedPack=checked.itemId===target.id&&
+     checked.lineNo===line.lineNo&&
+     checked.estado==='alternativa_comercial_con_aclaracion';
+  }
+  if(!explicitMatch&&!nominal&&!normalizedPack)
+   return blocked('unidad_sin_acreditar');
   const q=cantidadFuenteMvp162(line.quantityLiteral);
-  if(q===null||milli(q)!==milli(target.cantidad))
+  if(q===null||!normalizedPack&&!nominal&&
+     milli(q)!==milli(target.cantidad))
    return blocked('cantidad_incompatible');
   const value=centavosFuenteMvp162(line.lineTotalLiteral);
   if(value===null||value>MONEY_MAX)return blocked('importe_fuente_no_conciliado');
   usedLines.add(match.lineNo);prices.set(target.id,value);
   if(nominal)nominalBigBagItems.add(target.id);
+  if(normalizedPack)envaseObraItems.add(target.id);
  }
  // Pallets, additional charges and unassigned lines must NEVER disappear
  // from a price-based comparison (even if their totals were source-verified).
  if(usedLines.size!==doc.lineas.length)
   return blocked('cargos_o_lineas_sin_asignar');
  return {label,interpretacion,moneda:entry.moneda,prices,
-  nominalBigBagItems,usable:true,motivo:null};
+  nominalBigBagItems,envaseObraItems,usable:true,motivo:null};
 }
 type Candidate={providers:string[];assignment:string[];moneda:MonedaCotizada;value:bigint};
 export function compararPreciosCotizadosMvp185(input:Readonly<{
@@ -341,6 +406,9 @@ export function compararPreciosCotizadosMvp185(input:Readonly<{
     ...(itemIds.some((itemId,i)=>verified.find(q=>q.label===x.assignment[i])?.
        nominalBigBagItems.has(itemId))?
        ['bolson_1m3_nominal_sin_stock' as const]:[]),
+    ...(itemIds.some((itemId,i)=>verified.find(q=>q.label===x.assignment[i])?.
+       envaseObraItems.has(itemId))?
+       ['presentacion_envase_diferente_misma_cantidad_sin_stock' as const]:[]),
     'flete_no_incluido_en_comparacion' as const,
     'stock_no_corroborado' as const,
     'minimos_y_pago_no_evaluados' as const
