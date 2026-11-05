@@ -12,7 +12,7 @@ import {centavosFuenteMvp162} from './adaptador-documental-mvp162.ts';
 
 type SourceMatch=Readonly<{itemId:string;lineNo:number}>;
 export type FuenteSeleccionadaMvp196=Readonly<{
- messageHmac:string;sourceSha256:string;
+ oferta:string;messageHmac:string;sourceSha256:string;
  matches:readonly SourceMatch[];
 }>;
 export type SeleccionPrivadaMvp196=Readonly<{
@@ -143,7 +143,6 @@ export function seleccionarComercialmenteMvp196(input:Readonly<{
  else if(complete.length>2){
   return negative('multiples_opciones_no_desempatadas',requestId,allOffers);
  }else{
-  const pairs:readonly [ValidCandidate,ValidCandidate][]=[];
   const list:[ValidCandidate,ValidCandidate][]=[];
   for(let i=0;i<candidates.length;i++)for(let j=i+1;j<candidates.length;j++){
    const a=candidates[i],b=candidates[j];
@@ -163,7 +162,7 @@ export function seleccionarComercialmenteMvp196(input:Readonly<{
  }
  if(!mode)return negative('sin_cobertura_completa',requestId,allOffers);
  const selected=Object.freeze(chosen.map(x=>Object.freeze({
-  messageHmac:x.quote.doc.messageHmac,
+  oferta:x.oferta,messageHmac:x.quote.doc.messageHmac,
   sourceSha256:x.quote.doc.sourceSha256,
   matches:Object.freeze(x.matched.map(y=>Object.freeze({...y})))
  })));
@@ -180,20 +179,12 @@ export function resumirSeleccionComercialMvp196(
 ):Readonly<{state:SeleccionPrivadaMvp196['state'];mode:SeleccionPrivadaMvp196['mode'];
  ofertas:SeleccionPrivadaMvp196['allOffers'];recomendadosAnonimos:readonly string[];
  rankingAllowed:false;contactsRevealed:false;messagesSent:false}>{
- const rec=result.state==='plan_ready'?
-  result.allOffers.filter(x=>result.selected.some((s)=> {
-   // Only labels within an independently validated internal result.
-   const n=Number(x.oferta.slice(-3))-1;
-   return result.allOffers[n]===x&&result.selected.some(v=>v.messageHmac!==''&&
-    result.allOffers[n]===x&&result.selected.indexOf(s)>=0&&
-    result.allOffers.length>=result.selected.length);
-  })).map(x=>x.oferta):[];
- // Label mapping is deliberately not derived here: no source order
- // identifier must be guessed in a public projection.
+ const recommended=result.state==='plan_ready'?
+  result.selected.map(s=>s.oferta):[];
  return Object.freeze({
   state:result.state,mode:result.mode,
   ofertas:result.allOffers,
-  recomendadosAnonimos:Object.freeze(result.state==='plan_ready'?[]:rec),
+  recomendadosAnonimos:Object.freeze(recommended),
   rankingAllowed:false,contactsRevealed:false,messagesSent:false
  });
 }
