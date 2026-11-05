@@ -166,7 +166,19 @@ export function resumirMaterialesCotizadosCompradorMvp210(
    }
    ordered.push({
     doc:quote.doc,fuente:quote.fuente,
-    economia:quote.economia as EntradaOfertaMvp185['economia'],
+    economia:{
+      ...quote.economia,
+      // MVP172 source ledger records the audited price rows but older
+      // source facts omit these invariant action flags. Adding FALSE
+      // cannot authorize calculation or disclosure; MVP185 rechecks
+      // the source amount, document, discounts and authorization.
+      descuentos:{
+       ...quote.economia.descuentos,
+       rankingHabilitado:false,
+       contactosRevelados:false,
+       originalesModificados:false
+      }
+    } as EntradaOfertaMvp185['economia'],
     correlaciones:correlation,pruebasBolson:bags,
     pruebasEnvasesObra:packs,
     // Source-only. Never infer ARS from a bare '$', even in Argentina.
