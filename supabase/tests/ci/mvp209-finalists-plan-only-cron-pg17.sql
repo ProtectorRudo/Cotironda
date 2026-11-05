@@ -58,7 +58,7 @@ CREATE FUNCTION net.http_post(url text,body jsonb,
 DECLARE ret bigint;
 BEGIN
  INSERT INTO net.test_requests(url,body,headers,timeout_ms)
- VALUES(url,body,headers,timeout_milliseconds)
+ VALUES($1,$2,$4,$5)
  RETURNING request_id INTO ret;
  RETURN ret;
 END;$fn$;
