@@ -41,7 +41,7 @@ END$guard$;
 CREATE OR REPLACE FUNCTION public.cotironda_piloto_finalists_plan_tick_mvp209()
 RETURNS jsonb LANGUAGE plpgsql VOLATILE SECURITY DEFINER
 SET search_path='' AS $fn$
-DECLARE v_token text;v_request_id bigint;
+DECLARE v_token text;v_request_id bigint;v_errstate text;
 BEGIN
  -- The scheduler is inert until prospective activation. Never include old
  -- rounds or already-materialized finalists. No external call when idle.
@@ -82,9 +82,11 @@ BEGIN
   'request_id',v_request_id,'messages_sent',false,
   'contacts_revealed',false);
 EXCEPTION WHEN others THEN
- -- Do not log SQL errors or contacts: pg_net and Vault exceptions may
- -- contain sensitive context. Backoff is naturally the next 5-min tick.
- RETURN jsonb_build_object('state','plan_unavailable');
+ -- Return only an opaque five-character SQLSTATE code to the private
+ -- scheduler for safe operational diagnostics. NEVER return exception
+ -- text, SQL or contact/secret headers.
+ GET STACKED DIAGNOSTICS v_errstate = RETURNED_SQLSTATE;
+ RETURN jsonb_build_object('state','plan_unavailable','error_code',v_errstate);
 END;$fn$;
 
 REVOKE ALL ON FUNCTION public.cotironda_piloto_finalists_plan_tick_mvp209()
