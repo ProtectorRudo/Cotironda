@@ -29,6 +29,11 @@ export type PilotoOriginalesPorts=Readonly<{
  privateOriginals:(query:ConsultaPrivadaOriginales)=>Promise<unknown>;
  /** MUST read PILOT Storage privately, not generate signed/public URLs. */
  readOriginal:(bucket:string,path:string)=>Promise<Uint8Array|null>;
+ /** Mandatory persistence in the PILOT via a server-only RPC. */
+ auditOriginal:(q:Readonly<{
+  rondaId:string;documentoId:string;usuarioId:string;empresaId:string;
+  authSessionId:string;sourceSha256:string;byteCount:number
+ }>)=>Promise<boolean>;
 }>;
 
 function object(x:unknown):x is Record<string,unknown>{
@@ -135,6 +140,18 @@ export function conectarOriginalesAuthPiloto(
    if(bucket!=='cotironda-piloto-originals'||!/^media\/[a-f0-9]{64}$/u.test(path))
     return null;
    return ports.readOriginal(bucket,path);
+  },
+  registrarDescarga:async event=>{
+   if(!jwt||event.rondaId!==rondaId)return false;
+   const user=await identity();
+   if(!user||event.usuarioId!==user.usuarioId||
+      event.empresaId!==user.empresaId)return false;
+   try{
+    if(await ports.buyerIdentity(jwt,rondaId)!==true)return false;
+    return await ports.auditOriginal({
+     ...event,authSessionId:user.authSessionId
+    })===true;
+   }catch{return false}
   }
  };
 }

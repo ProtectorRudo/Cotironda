@@ -59,6 +59,18 @@ export function puertosOriginalesSupabasePiloto(
    if(error)throw new Error('originales_fuente_no_disponible');
    return data;
   },
+  auditOriginal:async q=>{
+   const {data,error}=await privateClient.rpc(
+    'cotironda_piloto_record_original_download_mvp201',{
+     p_request_id:q.rondaId,
+     p_auth_user_id:q.usuarioId,
+     p_auth_session_id:q.authSessionId,
+     p_document_id:q.documentoId,
+     p_source_sha256:q.sourceSha256,
+     p_byte_count:q.byteCount
+    });
+   return !error&&data===true;
+  },
   readOriginal:async(bucket,path)=>{
    if(bucket!==STORAGE_BUCKET||
       !/^media\/[a-f0-9]{64}$/u.test(path))return null;

@@ -51,7 +51,8 @@ const catalog=()=>({
 function fixture(){
  const state={on:true,auth:identity(),linked:true,now:T+800000,
   source:source(),catalog:catalog(),data:FILE,
-  queries:[],reads:[],links:0,authCalls:0,readCallback:null};
+  queries:[],reads:[],links:0,authCalls:0,readCallback:null,
+  audit:[],auditOK:true};
  const deps={
   get habilitado(){return state.on},
   ahora:()=>state.now,
@@ -71,6 +72,10 @@ function fixture(){
    state.reads.push({bucket,ruta});
    state.readCallback?.();
    return state.data;
+  },
+  registrarDescarga:async event=>{
+   state.audit.push(structuredClone(event));
+   return state.auditOK;
   }
  };
  return {state,deps};
@@ -139,6 +144,10 @@ test('GET original autorizado: misma sesión, selector y hash, bytes exactos',as
  assert.match(res.headers.get('cache-control'),/no-store/);
  assert.deepEqual(new Uint8Array(await res.arrayBuffer()),FILE);
  assert.equal(f.state.reads.length,1);
+ assert.deepEqual(f.state.audit,[{
+  rondaId:RID,documentoId:DOC,usuarioId:USER,empresaId:COMPANY,
+  sourceSha256:SHA,byteCount:FILE.byteLength
+ }]);
  assert.deepEqual(f.state.reads[0],{
   bucket:'cotironda-piloto-originals',ruta:'media/'+H
  });
@@ -147,6 +156,15 @@ test('GET original autorizado: misma sesión, selector y hash, bytes exactos',as
   q.usuarioId===USER&&q.documentoId===DOC));
  const headers=JSON.stringify([...res.headers]);
  assert.doesNotMatch(headers,/sourceHmac|corralon_a|\bmedia\//);
+});
+
+test('Si no se logra auditar después de verificar SHA, deniega los bytes',async()=>{
+ const f=fixture();f.state.auditOK=false;
+ const res=await descargarOriginalPiloto(request(),RID,DOC,f.deps);
+ assert.equal(res.status,503);
+ assert.equal(f.state.reads.length,1);
+ assert.equal(f.state.audit.length,1);
+ assert.doesNotMatch(await res.text(),/corralon_a|media\/|[a-f0-9]{64}/u);
 });
 
 test('No sirve originales sin fuente consentida, ronda propia y vigente',async()=>{

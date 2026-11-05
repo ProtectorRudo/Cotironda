@@ -6,6 +6,7 @@ on:
       - 'supabase/piloto/mvp178_original_share_consent_private.sql'
       - 'supabase/piloto/mvp191_buyer_verified_phone_identity_prospect_only.sql'
       - 'supabase/piloto/mvp192_private_originals_catalog_and_context.sql'
+      - 'supabase/piloto/mvp201_original_download_audit_private.sql'
       - 'supabase/tests/ci/mvp200-originals-v9-pg17-rollback.sql'
       - '.github/workflows/cotironda-piloto-originales-mvp200-pg17.yml'
   workflow_dispatch:

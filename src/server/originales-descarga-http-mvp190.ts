@@ -39,6 +39,11 @@ export type DependenciasDescargaMvp190=Readonly<{
  leerArchivo:(bucket:string,ruta:string)=>Promise<Uint8Array|null>;
  /** Host-controlled monotonic/current wall clock, NEVER client input. */
  ahora:()=>number;
+ /** Optional legacy transport hook; PILOT MUST provide it. Return false on audit failure. */
+ registrarEntrega?:(event:Readonly<{
+  rondaId:string;documentoId:string;usuarioId:string;empresaId:string;
+  sourceSha256:string;byteCount:number
+ }>)=>Promise<boolean>;
 }>;
 
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
@@ -160,6 +165,12 @@ export async function procesarDescargaOriginalMvp190(
   const second=await deps.leerContexto(selector);
   if(!allowedContext(second,{rondaId,documentoId},sessionAgain,later)||
     !sameSource(first,second))return failure(404);
+  // The PILOT adapter always supplies this hook. Never send verified bytes
+  // if its private database audit cannot be persisted after revalidation.
+  if(deps.registrarEntrega&&await deps.registrarEntrega({
+   rondaId,documentoId,usuarioId:session.usuarioId,empresaId:session.empresaId,
+   sourceSha256:sum,byteCount:bytes.byteLength
+  })!==true)return failure(503);
   const extension=MIME_EXT[archivo.mime];
   const safeFile='cotironda-original-'+documentoId.slice(0,8)+'.'+extension;
   return new Response(bytes.buffer,{

@@ -34,6 +34,11 @@ export type DependenciasOriginalesPiloto=Readonly<{
  consultarOriginalesPrivados:(q:ConsultaPrivadaOriginales)=>Promise<unknown>;
  /** Private Storage API, exact bucket/path from source-only MVP192. */
  leerArchivo:(bucket:string,ruta:string)=>Promise<Uint8Array|null>;
+ /** Mandatory on PILOT: private, durable audit after SHA/source checks. */
+ registrarDescarga:(e:Readonly<{
+  rondaId:string;documentoId:string;usuarioId:string;empresaId:string;
+  sourceSha256:string;byteCount:number
+ }>)=>Promise<boolean>;
 }>;
 
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/iu;
@@ -157,6 +162,12 @@ export async function descargarOriginalPiloto(
    const raw=await g.privateQuery(q.rondaId,q.documentoId);
    return projectContext(raw,q.rondaId,q.documentoId,auth,deps.ahora());
   },
-  leerArchivo:deps.leerArchivo
+  leerArchivo:deps.leerArchivo,
+  // Do not return a successful attachment without a durable audit event.
+  // In the PILOT this hook cannot be omitted, unlike the standalone MVP190.
+  registrarEntrega:async event=>{
+   if(!deps.registrarDescarga)return false;
+   return await deps.registrarDescarga(event)===true;
+  }
  });
 }

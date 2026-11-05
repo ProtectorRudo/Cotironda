@@ -79,6 +79,7 @@ CREATE TABLE cotironda_piloto_privado.offer_versions(
 \ir ../../piloto/mvp178_original_share_consent_private.sql
 \ir ../../piloto/mvp191_buyer_verified_phone_identity_prospect_only.sql
 \ir ../../piloto/mvp192_private_originals_catalog_and_context.sql
+\ir ../../piloto/mvp201_original_download_audit_private.sql
 
 DO $test$
 DECLARE
@@ -102,6 +103,12 @@ BEGIN
    'public.cotironda_piloto_originals_private_mvp192(uuid,uuid,uuid,uuid)','EXECUTE')
  OR NOT has_function_privilege('service_role',
    'public.cotironda_piloto_originals_private_mvp192(uuid,uuid,uuid,uuid)','EXECUTE')
+ OR has_function_privilege('anon',
+   'public.cotironda_piloto_record_original_download_mvp201(uuid,uuid,uuid,uuid,text,integer)','EXECUTE')
+ OR has_function_privilege('authenticated',
+   'public.cotironda_piloto_record_original_download_mvp201(uuid,uuid,uuid,uuid,text,integer)','EXECUTE')
+ OR NOT has_function_privilege('service_role',
+   'public.cotironda_piloto_record_original_download_mvp201(uuid,uuid,uuid,uuid,text,integer)','EXECUTE')
  THEN RAISE EXCEPTION 'originals_acl_broken';END IF;
 
  INSERT INTO auth.users(id,phone,phone_confirmed_at)
@@ -181,6 +188,23 @@ BEGIN
   result_->'autorizacion'->'prueba'->>'verificada'<>'true'
  THEN RAISE EXCEPTION 'valid_original_not_authorized';END IF;
 
+ -- Download audit is a mandatory, privately persisted permission gate.
+ -- A valid verified PDF may be released; its bytes and source SHA must agree.
+ IF public.cotironda_piloto_record_original_download_mvp201(
+  rid,buyer,sess,document_::uuid,da,1000)<>true
+ THEN RAISE EXCEPTION 'valid_audit_not_persisted';END IF;
+ IF (SELECT count(*) FROM cotironda_piloto_privado.original_download_audit_mvp201)<>1
+ THEN RAISE EXCEPTION 'audit_missing_or_duplicated';END IF;
+ IF public.cotironda_piloto_record_original_download_mvp201(
+  rid,buyer,sess,document_::uuid,repeat('0',64),1000)<>false
+ OR public.cotironda_piloto_record_original_download_mvp201(
+  rid,buyer,sess,document_::uuid,da,999)<>false
+ OR public.cotironda_piloto_record_original_download_mvp201(
+  rid,buyer,sess,'b9000000-1111-4111-a111-111111111111'::uuid,da,1000)<>false
+ THEN RAISE EXCEPTION 'mismatched_file_was_audited';END IF;
+ IF (SELECT count(*) FROM cotironda_piloto_privado.original_download_audit_mvp201)<>1
+ THEN RAISE EXCEPTION 'audit_for_invalid_request';END IF;
+
  -- Supplier B: same round, genuine explicit consent and latest V9 proof.
  UPDATE cotironda_piloto_privado.supplier_evidence_mvp138
  SET verifier_version=9 WHERE message_hmac=hb;
@@ -225,5 +249,10 @@ BEGIN
  IF public.cotironda_piloto_buyer_identity_mvp191(rid)<>false OR
   public.cotironda_piloto_originals_private_mvp192(rid,buyer,sess,null) IS NOT NULL
  THEN RAISE EXCEPTION 'expired_session_reveals_originals';END IF;
+ IF public.cotironda_piloto_record_original_download_mvp201(
+  rid,buyer,sess,document_::uuid,da,1000)<>false
+ THEN RAISE EXCEPTION 'revoked_session_audit_allowed';END IF;
+ IF (SELECT count(*) FROM cotironda_piloto_privado.original_download_audit_mvp201)<>1
+ THEN RAISE EXCEPTION 'audit_written_after_revocation';END IF;
 END$test$;
 ROLLBACK;

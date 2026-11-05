@@ -49,7 +49,8 @@ function fx(token=jwt()){
  const state={on:true,user:{
   id:USER,phone:'5492215551234',phone_confirmed_at:'2026-11-04T17:00:00Z',
   is_anonymous:false},buyer:true,org:ORG,policy:true,document:source(),
-  bytes:FILE,queries:[],files:0,authCalls:0,buyerCalls:0,authChanged:false};
+  bytes:FILE,queries:[],files:0,authCalls:0,buyerCalls:0,authChanged:false,
+  audit:[],auditAvailable:true};
  const ports={
   getUser:async claim=>{state.authCalls++;
    return state.user&&claim===token?structuredClone(state.user):null},
@@ -68,6 +69,10 @@ function fx(token=jwt()){
    assert.equal(path,'media/'+H);
    if(state.authChanged)state.org='buyer_empresa_b';
    return state.bytes;
+  },
+  auditOriginal:async q=>{
+   state.audit.push(structuredClone(q));
+   return state.auditAvailable;
   }
  };
  const deps=conectarOriginalesAuthPiloto(request(token),ROUND,ports,true,()=>T+800000);
@@ -141,8 +146,29 @@ test('Con permiso y hash fuente inmutable entrega bytes PDF exactos',async()=>{
  assert.equal(res.status,200);
  assert.deepEqual(new Uint8Array(await res.arrayBuffer()),FILE);
  assert.equal(f.state.files,1);
+ assert.equal(f.state.audit.length,1);
+ assert.deepEqual(f.state.audit[0],{
+  rondaId:ROUND,documentoId:DOC,usuarioId:USER,empresaId:ORG,
+  sourceSha256:HASH,byteCount:FILE.length,authSessionId:SESSION
+ });
  assert.ok(f.state.queries.filter(x=>x.documentoId===DOC).length>=2);
  assert.match(res.headers.get('cache-control'),/no-store/);
+});
+
+test('Sin auditoría persistente no entrega bytes aunque SHA y sesión sean válidos',async()=>{
+ const f=fx();f.state.auditAvailable=false;
+ const res=await descargarOriginalPiloto(request(f.token),ROUND,DOC,f.deps);
+ assert.equal(res.status,503);
+ assert.equal(f.state.files,1);
+ assert.equal(f.state.audit.length,1);
+ assert.doesNotMatch(await res.text(),/seller_123|media\/|[a-f0-9]{64}/u);
+});
+
+test('Permiso revocado antes de auditar bloquea también la entrega',async()=>{
+ const f=fx();
+ f.ports.auditOriginal=async()=>{throw new Error('db_temporarily_offline')};
+ const res=await descargarOriginalPiloto(request(f.token),ROUND,DOC,f.deps);
+ assert.notEqual(res.status,200);
 });
 
 test('Sin usuario/teléfono confirmado/rol comprador no consulta originales ni Storage',async()=>{

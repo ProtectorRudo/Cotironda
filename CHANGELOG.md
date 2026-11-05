@@ -1,3 +1,8 @@
+## 2026-11-05 — MVP201 (solo desarrollo, sin despliegue)
+
+- Auditoría persistente privada para descargas de originales del comprador: RPC `service_role`, control cruzado SHA/tamaño/vigencia desde MVP192 y denegación de bytes si no se puede registrar; evento de preparación de respuesta, no confirmación de descarga final.
+- Pruebas de caso válido, bases inaccesibles, bytes falsos, ACL y sesión revocada (Node + PostgreSQL17 aislado). Ningún efecto en WhatsApp, `main`, PILOTO ni producción. Docs/325, #525.
+
 ## MVP200 — originales privados condicionados a fuente v9 e invitación vigente (05/11/2026, solo desarrollo)
 - SQL de catálogo MVP192 refuerza cruce exacto con verificador documental v9 `verified/covered` para cada presupuesto, invitación en estado `prepared` y bloqueo ante edición posterior. No exige ser recomendado: incluye TODOS los originales autorizados. PG17 aislado nuevo prueba instalación secuencial de políticas/Auth/catálogo, consentimiento individual, PDF/Excel, sesión, fuente errónea, vencimientos y revocaciones; workflow y tests unitarios nuevos. No se modificó el piloto, producción, WhatsApp, Vercel ni datos reales; política originales aún inexistente en PILOTO. docs/324 y #525.
 
