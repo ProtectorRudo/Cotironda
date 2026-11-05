@@ -118,7 +118,7 @@ CREATE FUNCTION public.cotironda_piloto_private_round_inputs_mvp172(
  FROM cotironda_piloto_privado.supplier_media_quotes_mvp098 q
  WHERE q.request_id=p_request_id
 $f$;
-DO $
+DO $$
 DECLARE
  v uuid:='57918430-95a7-4ae9-bfb8-182e987b1732'::uuid;
  h text:=repeat('a',64);sha text:=repeat('b',64);
@@ -188,6 +188,6 @@ BEGIN
  SET opted_out_at=clock_timestamp() WHERE key='buyer';
  IF public.cotironda_piloto_source_plan_sendable_mvp196(v) IS DISTINCT FROM false
  THEN RAISE EXCEPTION 'mvp197_revoked_buyer_still_sendable';END IF;
-END$;
+END$$;
 
 ROLLBACK;
