@@ -59,13 +59,15 @@ export function localizarEvidenciasV1(
  const intervals:{inicio:number;fin:number}[]=[];
  const complete:Record<string,unknown>[]=[];
  for(const raw of propuesta.articulos){
-  if(!obj(raw)||!texto(raw.evidencia,1500))return null;
-  let pos=origen.indexOf(raw.evidencia);
+  if(!obj(raw))return null;
+  const evidence=raw.evidencia;
+  if(!texto(evidence,1500))return null;
+  let pos=origen.indexOf(evidence);
   while(pos>=0&&intervals.some(x=>
-   pos<x.fin&&pos+raw.evidencia.length>x.inicio))
+   pos<x.fin&&pos+evidence.length>x.inicio))
    pos=origen.indexOf(raw.evidencia,pos+1);
   if(pos<0)return null;
-  const end=pos+raw.evidencia.length;
+  const end=pos+evidence.length;
   intervals.push({inicio:pos,fin:end});
   complete.push({...raw,inicio:pos,fin:end});
  }
@@ -99,18 +101,20 @@ export function evaluarLecturasSemanticasV1(
  const accepted:PropuestaArticulo[]=[];
  const intervals:{inicio:number;fin:number}[]=[];
  for(const entry of primera.articulos){
-  if(!obj(entry)||!texto(entry.evidencia,1500)||
-     !Number.isSafeInteger(entry.inicio)||!Number.isSafeInteger(entry.fin)||
-     entry.inicio<0||entry.fin<=entry.inicio||
-     entry.fin>origen.length||origen.slice(entry.inicio,entry.fin)!==entry.evidencia||
+  if(!obj(entry))return rejection('articulo_sin_evidencia_verificable');
+  const start=entry.inicio,end=entry.fin,ev=entry.evidencia;
+  if(!texto(ev,1500)||typeof start!=='number'||typeof end!=='number'||
+     !Number.isSafeInteger(start)||!Number.isSafeInteger(end)||
+     start<0||end<=start||end>origen.length||
+     origen.slice(start,end)!==ev||
      !texto(entry.descripcion,500)||!cantidad(entry.cantidad)||
      !texto(entry.unidad,80)||!rubro(entry.rubro)||
      !(entry.presentacion===null||texto(entry.presentacion,200))||
      !(entry.aclaracion===null||texto(entry.aclaracion,250)))
    return rejection('articulo_sin_evidencia_verificable');
-  if(intervals.some(x=>entry.inicio<x.fin&&entry.fin>x.inicio))
+  if(intervals.some(x=>start<x.fin&&end>x.inicio))
    return rejection('evidencias_superpuestas');
-  intervals.push({inicio:entry.inicio,fin:entry.fin});
+  intervals.push({inicio:start,fin:end});
   accepted.push(entry as unknown as PropuestaArticulo);
  }
  if(segunda.integridad!=='completa'||
