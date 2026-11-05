@@ -30,8 +30,10 @@ export function vistaCotizacionesRubrosMvp227(input:unknown):
     !Array.isArray(input.items)||input.items.length<1||
     input.items.length>200||
     !Array.isArray(input.ofertas)||input.ofertas.length>25||
+    typeof input.recibidos!=='number'||
     !Number.isSafeInteger(input.recibidos)||input.recibidos<0||
     input.recibidos>25||
+    typeof input.pendientes_revision!=='number'||
     !Number.isSafeInteger(input.pendientes_revision)||
     input.pendientes_revision<0||input.pendientes_revision>100)
    return null;
@@ -76,6 +78,7 @@ export function vistaCotizacionesRubrosMvp227(input:unknown):
   for(const r of offer.rubros){
    if(!obj(r)||typeof r.rubro!=='string'||
       !Object.hasOwn(RUBROS_MVP216,r.rubro)||
+      typeof r.solicitados!=='number'||typeof r.respondidos!=='number'||
       !Number.isSafeInteger(r.solicitados)||!Number.isSafeInteger(r.respondidos)||
       r.solicitados<1||r.respondidos<0||r.respondidos>r.solicitados||
       !['completa','parcial','sin_cobertura'].includes(String(r.cobertura)))
