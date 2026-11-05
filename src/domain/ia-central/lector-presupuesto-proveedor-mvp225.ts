@@ -101,8 +101,143 @@ function verifyRead(source:string,raw:unknown,requested:readonly PedidoLineaMvp2
    !Array.isArray(raw.vinculos)||raw.vinculos.length>200)return false;
  for(const key of ['moneda','iva','flete','pago'] as const){
   const marker=raw[key+'Evidencia'];
+  const currencyARS=key==='moneda'&&raw.moneda==='ARS'&&
+    marker===null&&source.includes('
+ }
+ // Una etiqueta ARS puede inferirse de $ si no hay indicio USD;
+ // exigir el símbolo original, no una cifra imaginada.
+ if(raw.moneda==='ARS'&&raw.monedaEvidencia===null&&!source.includes('$'))
+  return false;
+ const numbers=new Set<number>();
+ for(const line of raw.lineas){
+  if(!obj(line)||typeof line.numero!=='number'||
+     !Number.isSafeInteger(line.numero)||line.numero<1||line.numero>200||
+     numbers.has(line.numero)||!valid(line.textoOriginal,1500)||
+     !source.includes(line.textoOriginal)||!valid(line.descripcion,500)||
+     !['material','cargo_adicional','aclaracion'].includes(String(line.tipo))||
+     !['cantidad','unidad','precioUnitarioLiteral','totalLineaLiteral'].every(k=>
+      line[k]===null||typeof line[k]==='string'&&
+        (line[k] as string).length<=100)
+   )return false;
+  for(const k of ['precioUnitarioLiteral','totalLineaLiteral'] as const){
+   if(line[k]!==null&&!line.textoOriginal.includes(line[k] as string))
+    return false;
+  }
+  numbers.add(line.numero);
+ }
+ const ids=new Set(requested.map(r=>r.id));
+ const used=new Set<number>(),targets=new Set<string>();
+ for(const link of raw.vinculos){
+  if(!obj(link)||typeof link.lineaOferta!=='number'||
+     !Number.isSafeInteger(link.lineaOferta)||
+     !numbers.has(link.lineaOferta)||used.has(link.lineaOferta)||
+     typeof link.articuloPedido!=='string'||!ids.has(link.articuloPedido)||
+     targets.has(link.articuloPedido)||
+     !['misma_presentacion','alternativa_razonable','requiere_verificacion']
+       .includes(String(link.equivalencia))||
+     !valid(link.explicacion,250))
+   return false;
+  used.add(link.lineaOferta);targets.add(link.articuloPedido);
+ }
+ return true;
+}
+async function readOnce(args:{
+ fuente:string;pedido:readonly PedidoLineaMvp225[];
+ apiKey:string;model:Modelo;fetchImpl:typeof fetch
+}):Promise<unknown>{
+ const response=await args.fetchImpl('https://api.openai.com/v1/responses',{
+  method:'POST',headers:{
+   Authorization:'Bearer '+args.apiKey,'Content-Type':'application/json'
+  },
+  body:JSON.stringify({
+   model:args.model,store:false,tools:[],max_output_tokens:11000,
+   input:[{role:'system',content:[{type:'input_text',text:instructions}]},
+    {role:'user',content:[{type:'input_text',text:
+     'ARTICULOS DEL PEDIDO (datos de referencia, no precios):\n'+
+      JSON.stringify(args.pedido)+
+      '\nFUENTE LITERAL SIN CONFIANZA DEL PROVEEDOR:\n'+args.fuente}]}],
+   text:{format:{type:'json_schema',strict:true,
+    name:'cotironda_oferta_semantica_225',schema}}
+  }),
+  signal:AbortSignal.timeout(25000)
+ });
+ if(!response.ok)throw Error('upstream_failed');
+ const body=await response.text();
+ if(body.length>100000)throw Error('response_too_long');
+ const json:unknown=JSON.parse(body);
+ if(!obj(json)||json.status!=='completed'||!Array.isArray(json.output))
+  throw Error('response_invalid');
+ const messages=json.output.filter(x=>obj(x)&&x.type==='message'&&x.role==='assistant');
+ if(messages.length!==1||!obj(messages[0])||!Array.isArray(messages[0].content)||
+    messages[0].content.length!==1||!obj(messages[0].content[0])||
+    typeof messages[0].content[0].text!=='string')
+  throw Error('response_not_json');
+ return JSON.parse(messages[0].content[0].text);
+}
+/** Dos lecturas pueden explicar distinto una equivalencia pero NO
+ * pueden diferir en artículos, citas, montos, condiciones ni mapeos.
+ * No comparar prosa explicativa o claves JSON en orden artificial.
+ */
+function firmaEconomica(read:Record<string,unknown>):string{
+ const lines=(read.lineas as unknown[]).map(x=>{
+  const v=x as Record<string,unknown>;
+  return [v.numero,v.textoOriginal,v.descripcion,v.cantidad,v.unidad,
+   v.precioUnitarioLiteral,v.totalLineaLiteral,v.tipo];
+ });
+ const links=(read.vinculos as unknown[]).map(x=>{
+  const v=x as Record<string,unknown>;
+  return [v.lineaOferta,v.articuloPedido,v.equivalencia];
+ }).sort((a,b)=>Number(a[0])-Number(b[0]));
+ return JSON.stringify([read.intencion,read.moneda,read.monedaEvidencia,
+  read.iva,read.ivaEvidencia,read.flete,read.fleteEvidencia,
+  read.pago,read.pagoEvidencia,lines,links]);
+}
+export async function interpretarPresupuestoConIAMvp225(args:{
+ fuente:string;pedido:readonly PedidoLineaMvp225[];
+ etiquetaAnonima:string;apiKey:string;model:Modelo;fetchImpl?:typeof fetch;
+}):Promise<LecturaOfertaMvp225>{
+ const no=(motivo:string,estado:LecturaOfertaMvp225['estado']='requiere_revision'):
+  LecturaOfertaMvp225=>({estado,motivo,oferta:null,cobertura:null});
+ if(!args||!valid(args.fuente)||!Array.isArray(args.pedido)||
+    args.pedido.length<1||args.pedido.length>200||
+    !valid(args.etiquetaAnonima,80)||
+    typeof args.apiKey!=='string'||args.apiKey.length<18||
+    !['gpt-6-luna','gpt-6.1-sol'].includes(args.model))
+  return no('entrada_invalida');
+ try{
+  const fn=args.fetchImpl??fetch;
+  const first=await readOnce({...args,fetchImpl:fn});
+  if(!verifyRead(args.fuente,first,args.pedido))
+   return no('primera_lectura_sin_fuente');
+  if(first.intencion!=='presupuesto')
+   return no('no_es_presupuesto','sin_cotizacion');
+  // Segunda lectura INDEPENDIENTE del mismo original y pedido.
+  const second=await readOnce({...args,fetchImpl:fn});
+  if(!verifyRead(args.fuente,second,args.pedido)||
+     firmaEconomica(first)!==firmaEconomica(second))
+   return no('lecturas_no_coinciden');
+  const q=first;
+  const oferta:OfertaVerificadaMvp225={
+   etiquetaAnonima:args.etiquetaAnonima,fuente:args.fuente,
+   moneda:q.moneda as OfertaVerificadaMvp225['moneda'],
+   iva:q.iva as OfertaVerificadaMvp225['iva'],
+   flete:q.flete as OfertaVerificadaMvp225['flete'],
+   pago:q.pago as OfertaVerificadaMvp225['pago'],
+   lineas:q.lineas as OfertaLineaMvp225[],
+   vinculos:q.vinculos as VinculoSemanticoMvp225[]
+  };
+  const cobertura=compararPorRubroMvp225(args.pedido,[oferta]);
+  return {estado:'interpretada_para_revision',motivo:
+   cobertura.ofertas[0].estado==='verificada_para_comparacion'?
+     'doble_lectura_con_evidencia':'condiciones_pendientes_de_verificacion',
+   oferta,cobertura};
+ }catch{return no('modelo_no_disponible_o_fuente_invalida')}
+}
+)&&
+    !/(?:\\bUSD\\b|U\\$S|US\\$)/iu.test(source);
   if(!evidence(source,marker)||(
-    raw[key]!=='no_informada'&&raw[key]!=='no_informado'&&marker===null
+    raw[key]!=='no_informada'&&raw[key]!=='no_informado'&&
+    marker===null&&!currencyARS
   ))return false;
  }
  // Una etiqueta ARS puede inferirse de $ si no hay indicio USD;
