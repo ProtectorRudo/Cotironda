@@ -339,3 +339,31 @@ REVOKE ALL ON FUNCTION public.cotironda_piloto_commercial_queue_due_mvp196(integ
  FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.cotironda_piloto_commercial_queue_due_mvp196(integer)
  TO service_role;
+
+-- A tracking token cannot reveal identities merely because a legacy
+-- MVP159 plan exists. Repeat the buyer token/revocation and V196 attestation
+-- checks on the PRIVATE Edge before calling the legacy finalist decryptor.
+CREATE OR REPLACE FUNCTION public.cotironda_piloto_tracking_source_plan_mvp196(
+ p_token_hash text
+) RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER
+SET search_path='' AS $fn$
+DECLARE v_request uuid;
+BEGIN
+ IF p_token_hash IS NULL OR p_token_hash !~ '^[a-f0-9]{64}$'
+ THEN RETURN false;END IF;
+ SELECT r.id INTO v_request
+ FROM cotironda_piloto_privado.buyer_tracking_mvp091 t
+ JOIN cotironda_piloto_privado.requests r ON r.id=t.request_id
+ JOIN cotironda_piloto_privado.participants buyer
+  ON buyer.key=r.buyer_key AND buyer.participant_role='buyer'
+  AND buyer.consent_at IS NOT NULL AND buyer.opted_out_at IS NULL
+ WHERE t.token_hash=p_token_hash AND t.revoked_at IS NULL
+  AND t.expires_at>clock_timestamp()
+  AND r.state='closed' AND r.closes_at<=clock_timestamp();
+ IF NOT FOUND THEN RETURN false;END IF;
+ RETURN public.cotironda_piloto_source_plan_sendable_mvp196(v_request);
+END;$fn$;
+REVOKE ALL ON FUNCTION public.cotironda_piloto_tracking_source_plan_mvp196(text)
+ FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.cotironda_piloto_tracking_source_plan_mvp196(text)
+ TO service_role;
