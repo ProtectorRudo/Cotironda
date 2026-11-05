@@ -65,6 +65,7 @@ export function vistaCotizacionesRubrosMvp227(input:unknown):
      !Array.isArray(offer.precios)||offer.precios.length>25)return null;
   labels.add(offer.label);
   const price=new Map<string,string>();
+  const quotedRubros=new Set<string>();
   for(const line of offer.precios){
    if(!obj(line)||typeof line.pedidoId!=='string'||
       !items.has(line.pedidoId)||price.has(line.pedidoId)||
@@ -80,9 +81,14 @@ export function vistaCotizacionesRubrosMvp227(input:unknown):
       !['completa','parcial','sin_cobertura'].includes(String(r.cobertura)))
     return null;
    const rubro=r.rubro as RubroMvp216;
+   if(quotedRubros.has(rubro))return null;
+   quotedRubros.add(rubro);
    byRubro.set(rubro,(byRubro.get(rubro)??0)+1);
    const corresponding=[...items].filter(([,v])=>v.rubro===rubro);
-   if(corresponding.length!==r.solicitados)return null;
+   // La lista general del comprador puede contener MÁS artículos que
+   // los asignados a este negocio. Nunca inventar cobertura total.
+   if(r.solicitados>corresponding.length)return null;
+   if(r.respondidos>corresponding.length)return null;
    const details=corresponding.map(([id,v])=>
     v.descripcion+' ('+v.cantidad+' '+v.unidad+'): '+
     (price.has(id)?displayCentavos(price.get(id)!,offer.moneda as 'ARS'|'USD'):
@@ -93,10 +99,16 @@ export function vistaCotizacionesRubrosMvp227(input:unknown):
     offer.flete==='excluido_explicito'?'Flete no incluido':
     offer.flete==='a_convenir'?'Flete a convenir':'Flete no informado';
    offers.push({label:offer.label+' · '+RUBROS_MVP216[rubro],
-    text:'Cobertura: '+r.respondidos+' de '+r.solicitados+' artículos.\n'+
+    text:'Cotizó '+r.respondidos+' de '+r.solicitados+
+     ' artículos asignados a este negocio ('+corresponding.length+
+     ' solicitados en el rubro completo).\n'+
      details+'\n'+iva+' · '+flete+
      ' · Pago: '+offer.pago+'. Sin adjudicación automática.'});
   }
+  // Una línea de precio no puede aparecer en un rubro que el negocio
+  // no cotizó ni está acreditado por el reporte de la misma fuente.
+  if([...price.keys()].some(id=>!quotedRubros.has(items.get(id)!.rubro)))
+    return null;
  }
  const rubros=[...new Set([...items.values()].map(x=>x.rubro))]
    .map(rubro=>({rubro,titulo:RUBROS_MVP216[rubro],
