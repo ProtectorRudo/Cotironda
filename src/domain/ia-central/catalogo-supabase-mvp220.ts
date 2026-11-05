@@ -125,7 +125,9 @@ export function validarClasificacionCatalogosMvp220(
   suppliers.push({
    clave:source.clave,
    consentido:true, // Deriva EXCLUSIVAMENTE del RPC SQL protegido.
-   activo:source.catalogoConfirmado,
+   // Catálogo registrado + consentimiento habilitan INVITAR a cotizar.
+   // No suponen stock, precios, ni confirmación formal del catálogo.
+   activo:true,
    localidades:[source.localidad],
    articulos:classified
   });
@@ -179,7 +181,7 @@ export async function categorizarCatalogosConIAMvp220(args:{
     !['gpt-6-luna','gpt-6.1-sol'].includes(args.model))
   return failure('entrada_o_limites_invalidos');
  // Clasificar rubros aun en sombra, pero NUNCA marcar `activo`
- // a un catálogo que todavía no confirmó el proveedor.
+ // aunque el catálogo no tenga confirmación formal de cada línea.
  const source=snapshot.proveedores.map((p:CatalogoRealMvp220)=>({
   proveedor:p.clave,lineas:p.articulos.map((x:CatalogoRealMvp220['articulos'][number])=>({
    numero:x.numero,descripcionFuente:x.descripcion
