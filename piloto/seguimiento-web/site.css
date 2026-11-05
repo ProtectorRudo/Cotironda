@@ -97,7 +97,12 @@ footer{font-size:12px;color:#777;margin-top:18px;text-align:center}
 /* MVP189 — opciones de cobertura al cierre, sin clasificar precios. */
 .coverage-options-panel{border:1px solid #dce5ef;border-radius:12px;margin:18px 0;padding:20px;background:#f8fbff}
 .coverage-options-panel h2{font-size:17px;margin:0 0 9px;letter-spacing:-.01em}
-.coverage-options-caption,.orientacion-choice{padding:14px 16px;border:1px solid #dedede;background:#fafafa;border-radius:10px;overflow-wrap:anywhere}
+.coverage-options-caption,.economic-readiness-grid{display:grid;gap:10px;margin-top:13px}
+.economic-readiness-card{background:#fff;border:1px solid #e2e2e2;border-radius:10px;padding:14px 16px;overflow-wrap:anywhere}
+.economic-readiness-card strong{font-size:14px}
+.economic-readiness-list{margin:10px 0 0;padding-left:18px;font-size:13px;color:#515151}
+.economic-readiness-list li{margin-top:4px}
+.orientacion-choice{padding:14px 16px;border:1px solid #dedede;background:#fafafa;border-radius:10px;overflow-wrap:anywhere}
 .orientacion-choice strong{display:block;font-size:14px}
 .orientacion-choice p{margin:8px 0 0;color:#555;font-size:13px}
 .coverage-options-note{font-size:12px;color:#596b80;line-height:1.6}
