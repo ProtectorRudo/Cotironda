@@ -63,14 +63,14 @@ export function resumirCondicionesEconomicasPorOfertaMvp204(
  try{
   if(status?.state!=='closed'||status.can_open!==true||
     !Array.isArray(status.offers)||status.offers.length<1||
-    status.offers.length>10||status.economy?.state!=='economia_observada_sin_ranking'||
+    status.offers.length>12||status.economy?.state!=='economia_observada_sin_ranking'||
     status.economy.quotations!==status.offers.length||
     status.economy.ranking_allowed!==false||
     status.economy.price_comparable!==false||
     status.economy.contacts_revealed!==false||
     prices?.state!=='importes_por_articulo_sin_ranking'||
     prices.quotations!==status.offers.length||
-    prices.requested_items<1||prices.requested_items>25||
+    prices.requested_items<1||prices.requested_items>30||
     !Array.isArray(prices.articulos)||prices.articulos.length!==prices.requested_items||
     prices.ranking_allowed!==false||prices.price_comparable!==false||
     prices.contacts_revealed!==false||prices.adjudicacion!==false||
