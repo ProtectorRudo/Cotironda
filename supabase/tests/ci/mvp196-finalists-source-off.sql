@@ -232,6 +232,6 @@ BEGIN
   j->'rounds'->0->>'requestId'<>
    '57918430-95a7-4ae9-bfb8-182e987b1735'
  THEN RAISE EXCEPTION 'mvp198_earlier_empty_or_invalid_round_stalled_valid_round';END IF;
-END$;
+END$$;
 
 ROLLBACK;
