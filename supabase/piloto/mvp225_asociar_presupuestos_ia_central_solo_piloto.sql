@@ -38,7 +38,7 @@ AS $fn$
 DECLARE
  v_source record; v_supplier record; v_request uuid;
  v_count integer; v_legacy_count integer; v_sha text;
- v_method text;
+ v_method text; v_media_prelinked uuid;
 BEGIN
  IF p_message_hmac IS NULL OR p_message_hmac !~ '^[a-f0-9]{64}$'
  OR p_chat_hmac IS NULL OR p_chat_hmac !~ '^[a-f0-9]{64}$'
@@ -79,12 +79,11 @@ BEGIN
  ELSE
   IF p_original_text IS NOT NULL THEN
     RETURN jsonb_build_object('state','media_requires_original_archive');END IF;
-  SELECT a.content_sha256 INTO v_sha
+  SELECT a.content_sha256,a.request_id INTO v_sha,v_media_prelinked
   FROM cotironda_piloto_privado.media_archive_mvp095 a
   WHERE a.message_hmac=p_message_hmac AND a.chat_hmac=p_chat_hmac
    AND a.participant_key=v_supplier.key
    AND a.state='stored' AND a.content_sha256 ~ '^[a-f0-9]{64}$'
-   AND a.request_id IS NULL
   FOR UPDATE OF a;
   IF NOT FOUND THEN RETURN jsonb_build_object('state','media_not_archived');END IF;
  END IF;
@@ -131,6 +130,11 @@ BEGIN
   RETURN jsonb_build_object('state',
    CASE WHEN v_count>1 THEN 'ambiguous_round' ELSE 'not_matched' END);
  END IF;
+ -- El archivador antiguo puede preasignar una ronda. Conservarla
+ -- SOLO si coincide con la ronda acreditada por el mensaje citado.
+ IF v_source.kind IN('image','document') AND
+    v_media_prelinked IS NOT NULL AND v_media_prelinked<>v_request
+ THEN RETURN jsonb_build_object('state','media_context_conflict');END IF;
  -- Idempotencia y cambios de estado en la misma transacción.
  INSERT INTO cotironda_piloto_privado.ai_supplier_links_mvp225(
    message_hmac,request_id,supplier_key,kind,association,source_sha256)
@@ -141,7 +145,8 @@ BEGIN
  IF v_source.kind IN('image','document') THEN
   UPDATE cotironda_piloto_privado.media_archive_mvp095 a
   SET request_id=v_request
-  WHERE a.message_hmac=p_message_hmac AND a.request_id IS NULL
+  WHERE a.message_hmac=p_message_hmac
+    AND (a.request_id IS NULL OR a.request_id=v_request)
     AND a.content_sha256=v_sha AND a.state='stored';
   IF NOT FOUND THEN
    RAISE EXCEPTION 'mvp225_media_not_linked_atomically';

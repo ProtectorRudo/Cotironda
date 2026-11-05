@@ -6,6 +6,7 @@ import {createClient} from 'npm:@supabase/supabase-js@2.118.0';
 import {parseBuyerPilot,canPrepareBuyerPilot,validMessage,standaloneDeliveryCity,quotedWhapiMessageId} from './core.ts';
 import {generarSolicitudPdfMvp091} from './request-pdf.ts';
 import {despacharSolicitudCentralMvp223} from './ai-central-dispatch-mvp223.ts';
+import {procesarCompradorCentralMvp226} from './ai-central-buyer-mvp226.ts';
 import {makeMediaManifest} from './media-intake.ts';
 import {parseDocumentClarification} from './document-clarification.ts';
 import {getVerifiedWhapiMedia,storeVerifiedMedia} from './whapi-media-archive.ts';
@@ -368,8 +369,29 @@ async function respond(req:Request):Promise<Response>{
   // Only the Whapi-signed sender/chat and the persisted inbox can prove it.
   const webLinkCode=row.type==='text'
     ?/^VINCULAR ([A-F0-9]{24})$/u.exec(body)?.[1]??null:null;
-  const local=row.type==='text'&&!webLinkCode
-    ?parseBuyerPilot(body):{city:null,items:[],unresolved:[]};
+  // El proveedor sigue protegido por el circuito de precios actual.
+  // Solo el COMPRADOR del piloto ingresa por IA Central; sin palabras clave.
+  const centralConfigured=sec.outbound&&
+    Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_BUYER_ENABLED')==='true';
+  const supplierKnown=sec.outbound&&
+    (await Promise.all(Object.values(sec.recipients).map(async recipient=>
+      hmac(sec.key,'cotironda|pilot|chat|'+sec.channel+
+        '|'+recipient+'@s.whatsapp.net'))))
+      .some(expected=>equalSecret(expected,chatHash));
+  const centralBuyerText=centralConfigured&&row.type==='text'&&
+    !supplierKnown&&!webLinkCode;
+  let centralSupplier=false;
+  if(centralConfigured&&supplierKnown&&row.type==='text'){
+    const route=await db.rpc('cotironda_piloto_ia_is_supplier_mvp226',{
+      p_chat_hmac:chatHash
+    });
+    if(route.error)return json(503,'ai_central_supplier_guard_unavailable');
+    centralSupplier=route.data?.state==='central_supplier';
+  }
+  const local=centralBuyerText
+    ?{city:'sin solicitud',items:[],unresolved:['central_message_pending']}
+    :row.type==='text'&&!webLinkCode
+      ?parseBuyerPilot(body):{city:null,items:[],unresolved:[]};
   let parsed=local;
   let aiReply:ReplyCode|null=null;
   let mediaClarificationBody:string|null=null;
@@ -380,7 +402,7 @@ async function respond(req:Request):Promise<Response>{
   // OpenAI is optional and off by default. The server-side DB gate is
   // durable, one-per-HMAC, buyer-only and capped at 12 calls per day.
   // Supplier quote ingestion never passes through this classifier.
-  if(row.type==='text'&&!webLinkCode&&
+  if(row.type==='text'&&!webLinkCode&&!centralBuyerText&&
      !canPrepareBuyerPilot(local)&&
      Deno.env.get('COTIRONDA_PILOT_AI_ENABLED')==='true'){
     const preflight=await db.rpc('cotironda_piloto_reserve_ai_mvp094',{
@@ -453,8 +475,9 @@ async function respond(req:Request):Promise<Response>{
    p_nonce_b64:c.nonce,p_ciphertext_b64:c.ciphertext,
    p_source_unix:row.timestamp,
    p_plaintext:body,
-   p_city:supplierQuotedId?'__quoted_supplier_reply__':parsed.city,
-   p_items:canPrepareBuyerPilot(parsed)?parsed.items:null
+   p_city:supplierQuotedId||centralSupplier
+     ?'__quoted_supplier_reply__':parsed.city,
+   p_items:!centralBuyerText&&canPrepareBuyerPilot(parsed)?parsed.items:null
   });
   if(out.error)return json(503,'storage_unavailable');
   if(!['recorded','duplicate','unrecognized_contact','needs_zone',
@@ -486,6 +509,29 @@ async function respond(req:Request):Promise<Response>{
       // the dashboard to observe the linked state. Never log a linking code.
     }
     continue;
+  }
+  // La reserva SQL verifica identidad de comprador y cuota ANTES de
+  // gastar tokens. El mensaje ya fue almacenado cifrado y con SHA original.
+  if(centralBuyerText&&outcome(out.data)==='needs_review'){
+    const modelEnv=Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_MODEL');
+    const model=modelEnv==='gpt-6.1-sol'?'gpt-6.1-sol':'gpt-6-luna';
+    const result=await procesarCompradorCentralMvp226({
+      habilitado:true,publicar:sec.outbound&&
+        Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_DISPATCH_ENABLED')==='true',
+      autenticadoPorWebhook:true,chatHmac:chatHash,
+      messageHmac:messageHash,sourceSha256:textHash,
+      fuente:body,apiKey:Deno.env.get('COTIRONDA_PILOT_OPENAI_API_KEY')??'',
+      model,
+      rpc:async(name,params)=>{
+        const result=await db.rpc(name,params);
+        return {data:result.data,error:result.error};
+      }
+    });
+    if(result.estado==='conciliacion_requerida')
+      return json(503,'ai_central_reconciliation_required');
+    if(result.estado==='requiere_zona')aiReply='zone';
+    if(result.estado==='ronda_publicada')
+      preparedDocumentSourceHmac=messageHash;
   }
   if(outcome(out.data)==='quote_recorded')supplierAckMode='text_quote';
   // A supplier can have several open invitations. A quoted PDF ID is
@@ -662,7 +708,7 @@ async function respond(req:Request):Promise<Response>{
               }else if(proposal.kind==='supplier_quote'){
                 // A new unquoted file may match exactly one already-sent RFQ.
                 // Quoted replies (including wrong quotes) always use MVP151.
-                if(!quotedId&&verifiedSupplier){
+                if(!quotedId&&verifiedSupplier&&!centralSupplier){
                   const match=await db.rpc('cotironda_piloto_autolink_unquoted_media_mvp155',{
                     p_message_hmac:messageHash,p_chat_hmac:chatHash
                   });
