@@ -72,7 +72,7 @@ test('MVP225 oferta parcial NO compite por total global ni pierde materiales',()
  assert.equal(r.ofertas[1].rubros[0].cobertura,'parcial');
  assert.deepEqual(r.ofertas[1].rubros[0].faltantes,['piedra_03']);
  assert.equal(r.ofertas[1].rubros[1].cobertura,'sin_cobertura');
- assert.equal(r.comparables[0].situacion,'precio_unitario_comparable');
+ assert.equal(r.comparables[0].situacion,'importe_linea_comparable');
  assert.equal(r.comparables[0].alternativas[0].oferta,'Oferta parcial');
  assert.equal(r.comparables[2].situacion,'sin_base_suficiente');
  assert.deepEqual(r.comparables[2].alternativas,[]);
@@ -101,7 +101,18 @@ test('MVP225 no compara presentaciones distintas sin equivalencia acreditada',()
   {...v,equivalencia:'alternativa_razonable'}:v);
  const r=compararPorRubroMvp225(pedido,[one,two]);
  assert.equal(r.comparables[0].situacion,'sin_base_suficiente');
- assert.equal(r.comparables[1].situacion,'precio_unitario_comparable');
+ assert.equal(r.comparables[1].situacion,'importe_linea_comparable');
+});
+test('MVP225 cantidad distinta se marca para revisión sin inferir equivalencia',()=>{
+ const q=offer('A');
+ q.lineas=[{...q.lineas[0],textoOriginal:'10 bolsas de cemento CPC · $8.000 c/u · total $80.000',
+  cantidad:'10',totalLineaLiteral:'$80.000'},...q.lineas.slice(1)];
+ q.fuente=q.lineas.map(l=>l.textoOriginal).join('\n');
+ const r=evaluarCotizacionMvp225(pedido,q);
+ assert.equal(r.rubros[0].respondidos,3);
+ assert.equal(r.rubros[0].precioComprobado,2);
+ assert.equal(r.estado,'requiere_revision');
+ assert.ok(r.motivos.includes('cantidad_o_unidad_no_comparable'));
 });
 test('MVP225 conserva pallets, flete y otros extras del proveedor',()=>{
  const extra={numero:5,textoOriginal:'Pallet retornable $12.000',
