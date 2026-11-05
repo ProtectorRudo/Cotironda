@@ -48,8 +48,8 @@ async function run(req:Request):Promise<Response>{
    token.length<16||!aesBytes||!idBytes||!channel||
    Deno.env.get('COTIRONDA_PILOT_WHAPI_OUTBOUND_ENABLED')!=='true')
   return textResponse(503,'worker_config_unavailable');
- const aes=await crypto.subtle.importKey('raw',aesBytes,'AES-GCM',false,['decrypt']);
- const idKey=await crypto.subtle.importKey('raw',idBytes,{
+ const aes=await crypto.subtle.importKey('raw',Uint8Array.from(aesBytes).buffer,'AES-GCM',false,['decrypt']);
+ const idKey=await crypto.subtle.importKey('raw',Uint8Array.from(idBytes).buffer,{
   name:'HMAC',hash:'SHA-256'},false,['sign']);
  const db=createClient(url,roleKey,{auth:{
   persistSession:false,autoRefreshToken:false}});
