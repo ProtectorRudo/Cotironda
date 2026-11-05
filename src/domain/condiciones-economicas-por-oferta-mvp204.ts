@@ -2,11 +2,13 @@
  * MVP204 — buyer-safe per-offer economic readiness, from the SAME v9 source
  * already checked by MVP172/186. Never a ranking or a fiscal total.
  * A missing IVA statement means "sin IVA por convención comercial", NOT 0%.
- * Currency is not attested in MVP168; no amount can be compared as ARS/USD.
+ * MVP168 has no structured currency; only consistent, explicit ORIGINAL
+ * AR$/US$/U$S/USD v9 amounts can now attest it (MVP205).
  */
 import {diagnosticarRondaPrivadaMvp172,
  type InsumoRondaPrivadoMvp172} from './diagnostico-ronda-mvp172.ts';
 import type {ResumenImportesMvp186} from './resumen-importes-cotizados-mvp186.ts';
+import {monedaExplicitaFuenteMvp205} from './precios-cotizados-sin-iva-mvp185.ts';
 
 const IVA=new Set(['no_informado','incluido','no_incluido','tasa_sin_base','contradictorio']);
 const FLETE=new Set([
@@ -25,7 +27,7 @@ type EstadoPago='no_informado'|'contado'|'transferencia'|
 export type EstadoOfertaMvp204=Readonly<{
  oferta:string;articulosConImporte:number;articulosSolicitados:number;
  iva:EstadoIva;flete:EstadoFlete;pago:EstadoPago;
- moneda:'no_acreditada';stockCorroborado:false;
+ moneda:'no_acreditada'|'ARS'|'USD';stockCorroborado:false;
  plazoCorroborado:false;minimoCorroborado:false;
 }>;
 export type ResumenCondicionesMvp204=Readonly<{
@@ -145,7 +147,8 @@ export function resumirCondicionesEconomicasPorOfertaMvp204(
     iva:cond.iva.estado as EstadoIva,
     flete:cond.flete.estado as EstadoFlete,
     pago:cond.pago.estado as EstadoPago,
-    moneda:'no_acreditada' as const,stockCorroborado:false as const,
+    moneda:monedaExplicitaFuenteMvp205(quote.doc)??'no_acreditada',
+    stockCorroborado:false as const,
     plazoCorroborado:false as const,minimoCorroborado:false as const
    }));
   }
