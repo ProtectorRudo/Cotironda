@@ -217,6 +217,7 @@ CREATE TABLE cotironda_piloto_privado.buyer_tracking_mvp091(
  revoked_at timestamptz,
  expires_at timestamptz NOT NULL
 );
+\ir ../../piloto/mvp225_asociar_presupuestos_ia_central_solo_piloto.sql
 \ir ../../piloto/mvp227_presupuestos_rubros_ia_privados.sql
 CREATE TRIGGER enqueue_on_invitation
  AFTER INSERT ON cotironda_piloto_privado.invitations
@@ -303,7 +304,7 @@ END $test222$;
 
 -- Source association: whapi ID quoted, two simultaneous rounds,
 -- no fallback inference from product words, media original immutable.
-\ir ../../piloto/mvp225_asociar_presupuestos_ia_central_solo_piloto.sql
+
 -- MVP226: cuota y reserva durable del texto del comprador,
 -- sin volver a procesar fuente de un mensaje viejo.
 DO $mvp226$
