@@ -114,18 +114,18 @@ BEGIN
  IF v_supplier_count NOT BETWEEN 1 AND 25 OR v_pairs>625
  THEN RETURN jsonb_build_object('state','too_many_suppliers'); END IF;
 
- -- Revalidar los catálogos/zonas bajo lock de proveedor; nunca usar
- -- catálogo antiguo si cambió la descripción o si falta confirmación.
+ -- Revalidar catálogo/zonas bajo lock. La falta de confirmación formal
+ -- NO impide INVITAR a cotizar si el proveedor ya consintió el contacto.
  FOR sup IN
-  SELECT p.key,p.delivery_city,p.catalogue_confirmed_at
+  SELECT p.key,p.delivery_city
   FROM cotironda_piloto_privado.participants p
   JOIN (SELECT DISTINCT supplier_key FROM
     cotironda_piloto_privado.ai_shadow_destinos_mvp221
     WHERE request_id=v_round.id) d ON d.supplier_key=p.key
   ORDER BY p.key FOR UPDATE OF p
  LOOP
-  IF sup.catalogue_confirmed_at IS NULL OR sup.delivery_city IS NULL
-  THEN RETURN jsonb_build_object('state','catalogue_unconfirmed');END IF;
+  IF sup.delivery_city IS NULL
+  THEN RETURN jsonb_build_object('state','supplier_without_zone');END IF;
  END LOOP;
  IF EXISTS(
   SELECT 1 FROM cotironda_piloto_privado.ai_shadow_destinos_mvp221 d
@@ -138,9 +138,7 @@ BEGIN
     p.participant_role<>'supplier' OR p.chat_hmac IS NULL OR
     p.consent_at IS NULL OR p.opted_out_at IS NOT NULL OR
     lower(btrim(p.delivery_city))<>lower(btrim(v_round.delivery_city)) OR
-    p.catalogue_confirmed_at IS NULL OR c.line_no IS NULL OR
-    c.literal_description<>d.catalogue_description OR
-    c.created_at>p.catalogue_confirmed_at
+    c.line_no IS NULL OR c.literal_description<>d.catalogue_description
   )
  ) THEN RETURN jsonb_build_object('state','catalogue_or_identity_changed');END IF;
  IF EXISTS(SELECT 1 FROM
@@ -200,7 +198,7 @@ BEGIN
   AND r.state='prepared' AND r.closes_at>clock_timestamp()
   AND i.state='prepared' AND p.participant_role='supplier'
   AND p.chat_hmac IS NOT NULL AND p.consent_at IS NOT NULL
-  AND p.opted_out_at IS NULL AND p.catalogue_confirmed_at IS NOT NULL
+  AND p.opted_out_at IS NULL
   AND lower(btrim(r.delivery_city))=lower(btrim(p.delivery_city))
  ORDER BY d.supplier_key FOR UPDATE OF d SKIP LOCKED LIMIT 1;
  IF NOT FOUND THEN RETURN jsonb_build_object('state','empty');END IF;
@@ -241,7 +239,6 @@ AS $snapshot$
  WHERE r.id=p_request AND j.state='leased' AND j.lease_token=p_lease
   AND r.state='prepared' AND r.closes_at>clock_timestamp()
   AND s.consent_at IS NOT NULL AND s.opted_out_at IS NULL
-  AND s.catalogue_confirmed_at IS NOT NULL
   AND lower(btrim(s.delivery_city))=lower(btrim(r.delivery_city))
   AND EXISTS(SELECT 1 FROM cotironda_piloto_privado.invitations i
     WHERE i.request_id=r.id AND i.supplier_key=p_supplier
@@ -251,8 +248,7 @@ AS $snapshot$
     LEFT JOIN cotironda_piloto_privado.catalogue_lines c
       ON c.participant_key=d.supplier_key AND c.line_no=d.catalogue_line_no
     WHERE d.request_id=r.id AND d.supplier_key=p_supplier
-      AND (c.line_no IS NULL OR c.literal_description<>d.catalogue_description
-        OR c.created_at>s.catalogue_confirmed_at));
+      AND (c.line_no IS NULL OR c.literal_description<>d.catalogue_description));
 $snapshot$;
 
 CREATE OR REPLACE FUNCTION public.cotironda_piloto_ia_finish_mvp222(
