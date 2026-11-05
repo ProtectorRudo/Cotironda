@@ -119,3 +119,46 @@ test('MVP210: prefijos explícitos AR$ de documentos v9 sobreviven a MVP186 y MV
  assert.ok(r.ofertas.every(x=>x.motivo!=='moneda_sin_acreditar'));
  assert.ok(r.opciones.every(x=>x.moneda==='ARS'));
 });
+
+test('MVP210: canasta AR$ positiva con volumen nominal de árido acreditado en v9',()=>{
+ const {source,status}=sample(0);
+ const q=source.quotations[0];
+ source.requestItems=source.requestItems.slice(0,1);
+ source.quotations=[q];
+ status.offers=[{label:'Presupuesto 1',text:'ANON_V9_0'}];
+ status.economy.quotations=1;
+ status.economy.iva_not_informed=1;
+ status.economy.freight_not_informed=1;
+ status.economy.freight_to_agree=0;
+ status.economy.payment_not_informed=0;
+ status.economy.stock_unverified=1;
+ status.economy.net_unverified=1;
+ status.economy.delivery_unverified=1;
+ status.economy.minimum_unverified=1;
+ q.doc.lineas=q.doc.lineas.slice(0,1);
+ q.fuente.lines=q.fuente.lines.slice(0,1);
+ q.economia.descuentos.precios=q.economia.descuentos.precios.slice(0,1);
+ const line=q.doc.lineas[0];
+ const ar=x=>x.replace(/^\s*\$\s*/u,'AR$ ');
+ line.unitPriceLiteral=ar(line.unitPriceLiteral);
+ line.lineTotalLiteral=ar(line.lineTotalLiteral);
+ q.doc.declaredTotalLiteral=line.lineTotalLiteral;
+ q.doc.prueba.lineCount=1;
+ q.doc.prueba.sumLineCents='7083098';
+ q.doc.prueba.declaredTotalCents='7083098';
+ const prices=itemPrices(status,source);
+ assert.ok(prices,'precio de origen AR$ no se pierde');
+ assert.equal(prices.articulos[0].referencias[0].importeCotizado,
+  'AR$ 70.830,98');
+ const r=preview(status,source,prices);
+ assert.ok(r,'fuente verificada debe ser proyectable');
+ assert.equal(r.ofertas.length,1);
+ assert.equal(r.ofertas[0].motivo,null);
+ assert.equal(r.opciones.length,1,'una sola canasta integral sin emparejamiento inventado');
+ assert.equal(r.opciones[0].subtotalMaterialesSinIva,'70830.98');
+ assert.equal(r.opciones[0].moneda,'ARS');
+ assert.deepEqual(r.opciones[0].ofertasAnonimas,['Presupuesto 1']);
+ assert.deepEqual(r.opciones[0].asignacion,
+  [{itemId:'item_001',oferta:'Presupuesto 1'}]);
+ assert.equal(r.ranking_final,false);
+});
