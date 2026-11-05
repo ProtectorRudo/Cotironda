@@ -365,12 +365,23 @@ function buyerView(parsed){
      }
     }
     const rows=er.ofertas;
+    const currencyMatches=(label,currency)=>{
+      if(currency==="no_acreditada")return true;
+      if(currency!=="ARS"&&currency!=="USD")return false;
+      const refs=safe.item_prices.articulos.flatMap(item=>
+        item.referencias.filter(ref=>ref.oferta===label&&
+          ref.importeCotizado!==null).map(ref=>ref.importeCotizado));
+      return refs.every(v=>currency==="ARS"
+        ?/^\s*AR\$\s*/i.test(v)
+        :/^\s*(?:US\$|U\$S|USD\s*\$?)\s*/i.test(v));
+    };
     const correct=rows.every((r,i)=>r&&typeof r==="object"&&!Array.isArray(r)&&
      r.oferta===labels[i]&&r.articulosSolicitados===er.requested_items&&
      Number.isSafeInteger(r.articulosConImporte)&&
      r.articulosConImporte===counts.get(r.oferta)&&
      allowedIva.has(r.iva)&&allowedFreight.has(r.flete)&&
-     allowedPayment.has(r.pago)&&r.moneda==="no_acreditada"&&
+     allowedPayment.has(r.pago)&&
+       currencyMatches(r.oferta,r.moneda)&&
      r.stockCorroborado===false&&r.plazoCorroborado===false&&
      r.minimoCorroborado===false);
     const count=(key,value)=>rows.filter(r=>r[key]===value).length;
@@ -389,7 +400,7 @@ function buyerView(parsed){
         oferta:r.oferta,articulosConImporte:r.articulosConImporte,
         articulosSolicitados:r.articulosSolicitados,
         iva:r.iva,flete:r.flete,pago:r.pago,
-        moneda:"no_acreditada",
+        moneda:r.moneda,
         stockCorroborado:false,plazoCorroborado:false,
         minimoCorroborado:false
        })),
