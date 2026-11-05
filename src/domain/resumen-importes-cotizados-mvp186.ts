@@ -69,7 +69,7 @@ export function resumirImportesCotizadosCompradorMvp186(
   if(!status||status.can_open!==true||
     !['waiting','closed'].includes(String(status.state))||
     !Array.isArray(status.offers)||status.offers.length<1||
-    status.offers.length>10||
+    status.offers.length>12||
     !status.economy||
     status.economy.state!=='economia_observada_sin_ranking'||
     status.economy.ranking_allowed!==false||
