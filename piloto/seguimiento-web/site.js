@@ -90,11 +90,13 @@ function offerCard(title,body){
 }
 // MVP176: revoke all visible private details on an invalid token or outage.
 function clearPrivateView(){
- for(const id of ["offers","receipts","finalists","coverageGrid","economyGrid","itemPricesGrid","pricedCoverageGrid","coverageOptionsCounts","coverageOptionsGrid","orientacionGrid"])el(id).replaceChildren();
+ for(const id of ["offers","receipts","finalists","coverageGrid","economyGrid","itemPricesGrid","pricedCoverageGrid","coverageOptionsCounts","coverageOptionsGrid","orientacionGrid","economicReadinessGrid"])el(id).replaceChildren();
  el("economySection").hidden=true;
  displayText("economyCaption","");
  el("itemPricesSection").hidden=true;
  displayText("itemPricesCaption","");
+ el("economicReadinessSection").hidden=true;
+ displayText("economicReadinessCaption","");
  el("pricedCoverageSection").hidden=true;
  displayText("pricedCoverageCaption","");
  el("coverageOptionsSection").hidden=true;
@@ -227,6 +229,103 @@ function showItemPrices(d){
  displayText("itemPricesCaption",withPrices+" importes de origen vinculados a "+
   p.requested_items+" artículos del pedido. No son totales finales ni una clasificación de proveedores.");
  el("itemPricesSection").hidden=false;
+}
+// MVP204: compare the per-offer economic states against the already
+// verified and anonymous per-item source amounts. Never produce a rank.
+function showEconomicReadiness(d){
+ const grid=el("economicReadinessGrid");grid.replaceChildren();
+ el("economicReadinessSection").hidden=true;
+ displayText("economicReadinessCaption","");
+ const r=d?.economic_readiness,p=d?.item_prices,e=d?.economy;
+ if(d?.state!=="closed"||d.can_open!==true||
+  !Array.isArray(d.offers)||!p||!e||!r||
+  r.state!=="condiciones_por_oferta_sin_ranking"||
+  ["ranking_allowed","price_comparable","contacts_revealed",
+   "tax_calculated","freight_calculated","stock_confirmed",
+   "automatic_award","originals_downloadable"].some(k=>r[k]!==false)||
+  !Array.isArray(r.ofertas)||r.quotations!==d.offers.length||
+  r.quotations!==e.quotations||r.quotations!==p.quotations||
+  r.ofertas.length!==r.quotations||
+  r.requested_items!==p.requested_items||!Array.isArray(p.articulos)||
+  p.articulos.length!==r.requested_items)return;
+ const labels=d.offers.map(x=>x?.label);
+ if(labels.some(x=>typeof x!=="string"||!x)||
+  new Set(labels).size!==labels.length)return;
+ const ivaStates=new Set(["no_informado","incluido","no_incluido",
+  "tasa_sin_base","contradictorio"]);
+ const freightStates=new Set(["no_informado","incluido","sin_cargo",
+  "adicional_con_importe","adicional_sin_importe",
+  "importe_sin_tratamiento","a_convenir","contradictorio"]);
+ const payStates=new Set(["no_informado","contado","transferencia",
+  "cuenta_corriente_30_dias","multiple"]);
+ const priced=new Map(labels.map(x=>[x,0]));
+ for(const item of p.articulos){
+  if(!Array.isArray(item?.referencias)||
+    item.referencias.length!==labels.length||
+    new Set(item.referencias.map(x=>x?.oferta)).size!==labels.length)return;
+  for(const ref of item.referencias){
+   if(!priced.has(ref.oferta))return;
+   if(ref.importeCotizado!==null)
+    priced.set(ref.oferta,priced.get(ref.oferta)+1);
+  }
+ }
+ const rows=r.ofertas;
+ if(!rows.every((x,i)=>x&&x.oferta===labels[i]&&
+    x.articulosSolicitados===r.requested_items&&
+    Number.isSafeInteger(x.articulosConImporte)&&
+    x.articulosConImporte===priced.get(x.oferta)&&
+    ivaStates.has(x.iva)&&freightStates.has(x.flete)&&
+    payStates.has(x.pago)&&x.moneda==="no_acreditada"&&
+    x.stockCorroborado===false&&x.plazoCorroborado===false&&
+    x.minimoCorroborado===false))return;
+ const count=(key,val)=>rows.filter(x=>x[key]===val).length;
+ if(count("iva","no_informado")!==e.iva_not_informed||
+  count("flete","no_informado")!==e.freight_not_informed||
+  count("flete","a_convenir")!==e.freight_to_agree||
+  count("pago","no_informado")!==e.payment_not_informed||
+  rows.length!==e.stock_unverified||rows.length!==e.net_unverified||
+  rows.length!==e.delivery_unverified||rows.length!==e.minimum_unverified)return;
+ const iva={
+  no_informado:"IVA no informado: referencia comercial SIN IVA por convención, no IVA 0%",
+  no_incluido:"Presupuesto declara precios sin IVA",
+  incluido:"IVA incluido: base comparable todavía sin acreditar",
+  tasa_sin_base:"Alícuota mencionada, base fiscal sin acreditar",
+  contradictorio:"Declaraciones de IVA contradictorias"
+ };
+ const freight={
+  no_informado:"Flete no informado",
+  incluido:"Flete declarado incluido (sin cálculo final)",
+  sin_cargo:"Flete expresamente sin cargo",
+  adicional_con_importe:"Flete adicional con importe declarado",
+  adicional_sin_importe:"Flete adicional sin importe declarado",
+  importe_sin_tratamiento:"Flete con importe pero sin base de suma acreditada",
+  a_convenir:"Flete a convenir",
+  contradictorio:"Flete con declaraciones contradictorias"
+ };
+ const payment={
+  no_informado:"Forma de pago no informada",
+  contado:"Pago contado declarado",
+  transferencia:"Pago por transferencia declarado",
+  cuenta_corriente_30_dias:"Cuenta corriente a 30 días declarada",
+  multiple:"Modalidades de pago múltiples sin definición única"
+ };
+ for(const x of rows){
+  const card=element("article","economic-readiness-card");
+  card.append(element("strong","",x.oferta+" · "+x.articulosConImporte+
+   " de "+x.articulosSolicitados+" artículos con importe de origen asociable"));
+  const list=element("ul","economic-readiness-list");
+  for(const msg of [iva[x.iva],freight[x.flete],payment[x.pago],
+    "Moneda no acreditada en la evidencia estructurada",
+    "Stock, plazo y compra mínima sin acreditar"]){
+   list.appendChild(element("li","",msg));
+  }
+  card.appendChild(list);grid.appendChild(card);
+ }
+ displayText("economicReadinessCaption",
+  "Se muestran todas las ofertas verificadas por separado, también las parciales. "+
+  "No se comparan sus totales: faltan moneda, disponibilidad y condiciones "+
+  "para un cálculo económico final. No hace falta pedirle otra confirmación al negocio.");
+ el("economicReadinessSection").hidden=false;
 }
 // MVP194 — full-basket SOURCE AMOUNT coverage, not economic competitiveness.
 // Only CLOSED round and independently rechecked against the MVP186 projection.
@@ -566,6 +665,7 @@ function render(data){
  showCoverage(d);
  showEconomy(d);
  showItemPrices(d);
+ showEconomicReadiness(d);
  showPricedCoverage(d);
  showCoverageOptions(d);
  showOrientation(d);

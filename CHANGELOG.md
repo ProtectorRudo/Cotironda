@@ -1,3 +1,8 @@
+## 2026-11-05 — MVP204 (desarrollo, sin desplegar)
+
+- El seguimiento del comprador obtiene un panel por oferta anónima con cobertura de importes acreditados y estados de IVA/flete/pago desde el documento fuente verificado, sin formularios nuevos. Edge→Vercel→DOM vinculados por texto aprobado, contrapesados contra RPC económica MVP180; invalidación por revocación.
+- Moneda continúa **sin acreditar** en las cuatro cotizaciones reales del piloto; ni `$` aislado ni silencio sobre IVA producen un total fiscal o ranking económico. Documentación y tests en docs/328. Sin cambios en SQL/WhatsApp/producción.
+
 ## 2026-11-05 — MVP203 (desarrollo, sin desplegar)
 
 - Seguimiento comprador: orientación de cobertura al cierre derivada del MVP189 anónimo y previamente cotejado. Una o dos opciones individuales inequívocas o una pareja complementaria única, siempre sin orden de precio; situaciones ambiguas no eligen dos arbitrariamente. Se conservan todas las ofertas y sus parciales.
