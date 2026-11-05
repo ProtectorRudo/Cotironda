@@ -90,13 +90,15 @@ function offerCard(title,body){
 }
 // MVP176: revoke all visible private details on an invalid token or outage.
 function clearPrivateView(){
- for(const id of ["offers","receipts","finalists","coverageGrid","economyGrid","itemPricesGrid","pricedCoverageGrid","coverageOptionsCounts","coverageOptionsGrid","orientacionGrid","economicReadinessGrid"])el(id).replaceChildren();
+ for(const id of ["offers","receipts","finalists","coverageGrid","economyGrid","itemPricesGrid","pricedCoverageGrid","coverageOptionsCounts","coverageOptionsGrid","orientacionGrid","economicReadinessGrid","materialBasketsGrid"])el(id).replaceChildren();
  el("economySection").hidden=true;
  displayText("economyCaption","");
  el("itemPricesSection").hidden=true;
  displayText("itemPricesCaption","");
  el("economicReadinessSection").hidden=true;
  displayText("economicReadinessCaption","");
+ el("materialBasketsSection").hidden=true;
+ displayText("materialBasketsCaption","");
  el("pricedCoverageSection").hidden=true;
  displayText("pricedCoverageCaption","");
  el("coverageOptionsSection").hidden=true;
@@ -275,7 +277,13 @@ function showEconomicReadiness(d){
     Number.isSafeInteger(x.articulosConImporte)&&
     x.articulosConImporte===priced.get(x.oferta)&&
     ivaStates.has(x.iva)&&freightStates.has(x.flete)&&
-    payStates.has(x.pago)&&x.moneda==="no_acreditada"&&
+    payStates.has(x.pago)&&
+    ["no_acreditada","ARS","USD"].includes(x.moneda)&&
+    (x.moneda==="no_acreditada"||p.articulos.every(item=>
+      item.referencias.filter(ref=>ref.oferta===x.oferta&&
+        ref.importeCotizado!==null).every(ref=>x.moneda==="ARS"
+          ?/^\s*AR\$\s*/i.test(ref.importeCotizado)
+          :/^\s*(?:US\$|U\$S|USD\s*\$?)\s*/i.test(ref.importeCotizado))))&&
     x.stockCorroborado===false&&x.plazoCorroborado===false&&
     x.minimoCorroborado===false))return;
  const count=(key,val)=>rows.filter(x=>x[key]===val).length;
@@ -315,7 +323,9 @@ function showEconomicReadiness(d){
    " de "+x.articulosSolicitados+" artículos con importe de origen asociable"));
   const list=element("ul","economic-readiness-list");
   for(const msg of [iva[x.iva],freight[x.flete],payment[x.pago],
-    "Moneda no acreditada en la evidencia estructurada",
+    x.moneda==="no_acreditada"
+      ?"Moneda no acreditada: el símbolo $ por sí solo es ambiguo"
+      :"Moneda expresamente acreditada en el original: "+x.moneda,
     "Stock, plazo y compra mínima sin acreditar"]){
    list.appendChild(element("li","",msg));
   }
@@ -323,8 +333,9 @@ function showEconomicReadiness(d){
  }
  displayText("economicReadinessCaption",
   "Se muestran todas las ofertas verificadas por separado, también las parciales. "+
-  "No se comparan sus totales: faltan moneda, disponibilidad y condiciones "+
-  "para un cálculo económico final. No hace falta pedirle otra confirmación al negocio.");
+  "No se comparan sus totales: faltan disponibilidad y condiciones "+
+  "para un cálculo económico final, y algunas monedas pueden no estar acreditadas. "+
+  "No hace falta pedirle otra confirmación al negocio.");
  el("economicReadinessSection").hidden=false;
 }
 // MVP194 — full-basket SOURCE AMOUNT coverage, not economic competitiveness.
@@ -666,6 +677,7 @@ function render(data){
  showEconomy(d);
  showItemPrices(d);
  showEconomicReadiness(d);
+ showMaterialBaskets(d);
  showPricedCoverage(d);
  showCoverageOptions(d);
  showOrientation(d);
