@@ -23,6 +23,18 @@ Proyecto exclusivo: `cotironda-piloto`, ID `ilggkalaafhtiysyzlmg`, PostgreSQL 17
 - En DEV: PR #576/577/578 con PostgreSQL17 aislado y Deno; PR #579 validó los **4 originales estructuralmente anonimizados**, 10 líneas y las recomendaciones comerciales de ambas rondas (2 alternativas completas para áridos/cemento, 1 para cemento/hidrófugo); **2.285/2.285 pruebas unitarias** aprobadas y **5/5 workflows** de ese último PR.
 - **HTTP POST/GET realmente comprobados (05/11/2026, prueba posterior):** la red de las herramientas externas no resolvía el dominio, pero el sistema `pg_net` del MISMO proyecto sí permitió probar los endpoints públicos por HTTPS. Solicitudes `net._http_response.id` 596–600: `GET /functions/v1/cotironda-piloto-finalistas` → **405** `method_not_allowed`, `GET /functions/v1/cotironda-piloto-seguimiento` → **200 HTML**, `POST finalistas` sin secreto → **503** `worker_off`, `POST seguimiento` con token sintético de 64 caracteres → **200** `not_found`. Peticiones 601–602 con la **clave pública anon** de Supabase a `/rest/v1/rpc/cotironda_piloto_commercial_due_mvp196` y `...tracking_source_plan_mvp196` → ambas **401** `permission denied` (SQLSTATE `42501`). No se enviaron tokens privados reales ni mensajes. **Este es un smoke HTTP real** de seguridad y conectividad, **pero NO** una prueba de navegador interactivo ni un cierre E2E con comprador y proveedores.
 
+
+### Smoke HTTP de la web del comprador publicada (05/11/2026)
+
+También se probaron los archivos y la API de la web Vercel **ya publicada previamente**, sin cambiar su deployment:
+
+- `GET https://cotironda-seguimiento-vista-piloto-iwcpjiqao.vercel.app/seguimiento` → **200 HTML** (respuesta pg_net 604).
+- `GET /site.js` → **200 JavaScript** (606); inspección del código servido demuestra que el navegador consulta `POST /api/estado`, no `POST /seguimiento`.
+- `GET /site.css` → **200 CSS** (608).
+- `POST /api/estado` con token **sintético** de 64 caracteres hexadecimales → **200 JSON `{"state":"not_found"}`** (607). Se hizo un POST exploratorio a `/seguimiento` (605) que devolvió 405; **no es un fallo**, esa ruta HTML no es el endpoint utilizado por la app.
+
+Las peticiones fueron hechas por HTTPS desde el proyecto Supabase con `pg_net`. No se emplearon enlaces reales, tokens, nombres o contactos de compradores. **No hay prueba de navegador con sesión real ni de ronda cerrada; solo disponibilidad de web/activos, API y rechazo de token falso.**
+
 ## Banderas y pendientes
 
 La publicación **no habilita por sí sola las recomendaciones en rondas nuevas**: el interruptor SQL prospectivo de finalistas queda OFF, y no hay constancia de que los secretos/banderas del worker estén configurados para llamadas reales. Por diseño, el nuevo worker exige:
