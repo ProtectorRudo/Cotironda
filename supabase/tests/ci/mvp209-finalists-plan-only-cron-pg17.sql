@@ -114,7 +114,7 @@ BEGIN
     OR r->>'contacts_revealed'<>'false'
     OR (SELECT count(*) FROM net.test_requests)<>1
  THEN RAISE EXCEPTION 'mvp209_plan_only_tick_not_queued: state=%, network_records=%',
-    r->>'state',(SELECT count(*) FROM net.test_requests); END IF;
+    r->>'state'||'/'||coalesce(r->>'error_code','-'),(SELECT count(*) FROM net.test_requests); END IF;
  IF NOT EXISTS(
   SELECT 1 FROM net.test_requests
   WHERE url='https://ilggkalaafhtiysyzlmg.supabase.co/functions/v1/cotironda-piloto-finalistas'
