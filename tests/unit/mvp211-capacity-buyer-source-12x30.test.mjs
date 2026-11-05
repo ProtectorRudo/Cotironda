@@ -12,6 +12,8 @@ import {resumirAlternativasCoberturaMvp189} from
  '../../src/domain/alternativas-cobertura-mvp189.ts';
 import {resumirCoberturaImportesMvp194} from
  '../../src/domain/cobertura-importes-cierre-mvp194.ts';
+import {resumirCondicionesEconomicasPorOfertaMvp204} from
+ '../../src/domain/condiciones-economicas-por-oferta-mvp204.ts';
 
 const fixture=JSON.parse(readFileSync(new URL(
  '../fixtures/mvp199-pilot-shape-anonymized.json',import.meta.url),'utf8'));
@@ -185,4 +187,43 @@ test('MVP211: SQL y UI mantienen 25 renglones fuente por documento y límites co
  assert.match(proxy,/optionSet\.requested_items<=30/);
  assert.match(proxy,/optionSet\.alternativas\.length<=78/);
  assert.match(proxy,/pc\.parejasConImportesParaTodos\.length<=66/);
+});
+
+test('MVP211: navegador explica optimizador suspendido, conserva 12 ofertas y limpia la revocación',()=>{
+ const {input,status}=build();
+ const coverage=resumirCoberturaCompradorMvp175(status,input);
+ assert.ok(coverage);status.coverage=coverage;
+ const amount=resumirImportesCotizadosCompradorMvp186(status,input);
+ assert.ok(amount);status.item_prices=amount;
+ const options=resumirAlternativasCoberturaMvp189(status,input);
+ assert.ok(options);status.coverage_options=options;
+ const terms=resumirCondicionesEconomicasPorOfertaMvp204(status,input,amount);
+ assert.ok(terms);status.economic_readiness=terms;
+ const reduced=JSON.parse(JSON.stringify(buyerView(status)));
+ assert.ok(reduced?.economic_readiness);
+ class E{
+  constructor(){this.textContent='';this.children=[];this.hidden=false;this.className=''}
+  append(...xs){this.children.push(...xs)}
+  appendChild(x){this.children.push(x);return x}
+  replaceChildren(){this.children=[]}
+ }
+ const nodes=new Map(),get=id=>{
+  if(!nodes.has(id))nodes.set(id,new E());return nodes.get(id);
+ };
+ const render=vm.runInNewContext(browser+'\nrender',{
+  window:{location:{hash:'#'}},
+  document:{getElementById:get,createElement:()=>new E()},
+  setInterval:()=>{},fetch:async()=>{throw Error('unexpected network')}
+ },{timeout:1500});
+ render(reduced);
+ assert.equal(get('offers').children.length,12);
+ assert.equal(get('itemPricesSection').hidden,false);
+ assert.equal(get('materialBasketsSection').hidden,false);
+ assert.match(get('materialBasketsCaption').textContent,/mayor tamaño/);
+ assert.match(JSON.stringify(get('materialBasketsGrid').children),
+  /Todos los presupuestos/);
+ render({state:'not_found'});
+ assert.equal(get('materialBasketsSection').hidden,true);
+ assert.equal(get('materialBasketsGrid').children.length,0);
+ assert.equal(get('offers').children.length,0);
 });
