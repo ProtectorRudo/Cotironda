@@ -15,7 +15,7 @@ BEGIN
  OR NOT EXISTS(SELECT 1 FROM cotironda_piloto_privado.integration_flags
   WHERE only_row AND whatsapp_outbound_enabled)
  THEN RETURN jsonb_build_object('state','disabled');END IF;
- SELECT count(DISTINCT r.id),min(r.id) INTO n,rid
+ SELECT count(DISTINCT r.id),min(r.id::text)::uuid INTO n,rid
  FROM cotironda_piloto_privado.requests r
  JOIN cotironda_piloto_privado.ai_shadow_requests_mvp221 shadow
   ON shadow.request_id=r.id AND shadow.status='shadow'
