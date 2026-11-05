@@ -133,7 +133,7 @@ BEGIN
    RETURN jsonb_build_object('state','invalid_quantity');END IF;
  END LOOP;
 
- -- Propuesta de IA: destino EXISTENTE, confirmado, sin repetir número y
+ -- Propuesta IA: proveedor EXISTENTE, consentido, sin repetir índice y
  -- con catálogo que coincida BYTE-A-BYTE con la versión que vio el modelo.
  FOR v_destination IN SELECT value FROM jsonb_array_elements(p_destinos) LOOP
   v_supplier:=v_destination->>'proveedor';
@@ -146,9 +146,9 @@ BEGIN
    SELECT 1 FROM cotironda_piloto_privado.participants p
    WHERE p.key=v_supplier AND p.participant_role='supplier'
     AND p.chat_hmac IS NOT NULL AND p.consent_at IS NOT NULL
-    AND p.opted_out_at IS NULL AND p.catalogue_confirmed_at IS NOT NULL
+    AND p.opted_out_at IS NULL
     AND lower(btrim(p.delivery_city))=lower(btrim(p_city))
-  ) THEN RETURN jsonb_build_object('state','supplier_not_confirmed');END IF;
+  ) THEN RETURN jsonb_build_object('state','supplier_not_authorized');END IF;
   FOR v_match IN SELECT value FROM jsonb_array_elements(v_destination->'correspondencias')
   LOOP
    IF jsonb_typeof(v_match)<>'object'
@@ -170,8 +170,7 @@ BEGIN
     JOIN cotironda_piloto_privado.participants p ON p.key=c.participant_key
     WHERE c.participant_key=v_supplier AND c.line_no=v_number
       AND c.literal_description=v_original_catalogue
-      AND p.catalogue_confirmed_at IS NOT NULL
-      AND c.created_at<=p.catalogue_confirmed_at
+      -- Comparar la descripción fuente exacta: no inventar catálogo.
    ) THEN RETURN jsonb_build_object('state','catalogue_changed');END IF;
    v_dest_count:=v_dest_count+1;
   END LOOP;

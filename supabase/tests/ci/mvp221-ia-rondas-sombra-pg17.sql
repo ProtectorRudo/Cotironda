@@ -72,7 +72,7 @@ INSERT INTO cotironda_piloto_privado.participants
 VALUES
  ('arquitecto','buyer',null,repeat('a',64),now(),null,null),
  ('corralon_alfa','supplier','La Plata',repeat('1',64),now(),null,now()),
- ('pintureria_beta','supplier','La Plata',repeat('2',64),now(),null,now()),
+ ('pintureria_beta','supplier','La Plata',repeat('2',64),now(),null,null),
  ('electricidad_gamma','supplier','La Plata',repeat('3',64),now(),null,now()),
  ('sin_confirmar','supplier','La Plata',repeat('4',64),now(),null,null),
  ('revocado','supplier','La Plata',repeat('5',64),now(),now(),now());

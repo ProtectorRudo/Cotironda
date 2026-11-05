@@ -95,7 +95,8 @@ test('MVP220: IA categoriza 2 catálogos, pero solo confirma el que estaba confi
   apiKey:'sk-'+'a'.repeat(24),model:'gpt-6-luna',fetchImpl});
  assert.equal(r.estado,'catalogo_sin_confirmar');
  assert.equal(r.proveedores[0].activo,true);
- assert.equal(r.proveedores[1].activo,false);
+ // Habilitado para recibir un pedido, aunque NO confirmó stock o precios.
+ assert.equal(r.proveedores[1].activo,true);
  assert.equal(bodies[0].store,false);assert.deepEqual(bodies[0].tools,[]);
  assert.doesNotMatch(JSON.stringify(bodies),/whatsapp|telefono|source_hmac/i);
 });
@@ -120,18 +121,31 @@ test('MVP220: orquesta mensaje → catálogo real → rubros → proveedor sin e
  assert.equal(bodies.length,4);
  assert.deepEqual(rpcCalls.map(x=>x.name),['cotironda_piloto_ia_catalogo_mvp220']);
  const data=JSON.parse(bodies[3].input[1].content[0].text.split('\n').at(-1));
- assert.deepEqual(data.proveedores.map(x=>x.clave),['corralon_ailin']);
+ assert.deepEqual(data.proveedores.map(x=>x.clave),['corralon_ailin','corralon_nahuel']);
 });
-test('MVP220: catálogos no confirmados bloquean ANTES de gastar clasificación y ruteo',async()=>{
- const {fetchImpl,bodies}=responder(first,second);
+test('MVP224: catálogo registrado sin confirmar permite INVITAR a cotizar, sin inventar stock',async()=>{
+ const raw=real(false);
+ const matching={propuestas:[{
+  proveedor:'corralon_ailin',correspondencias:[
+   {indicePedido:0,numeroCatalogo:1,tipo:'producto_declarado',
+    explicacion:'Cemento registrado'},
+   {indicePedido:1,numeroCatalogo:3,tipo:'alternativa_razonable',
+    explicacion:'Bolsón registrado'}]
+ }]};
+ const {fetchImpl,bodies}=responder(first,second,classification(raw),matching);
  const r=await planificarMensajeAutenticadoMvp220({
-  chatHmac:'a'.repeat(64),messageHmac:'b'.repeat(64),textoOriginal:origen,
-  autenticadoPorWebhook:true,apiKey:'sk-'+'a'.repeat(24),
-  model:'gpt-6-luna',fetchImpl,
-  rpc:async()=>({data:real(false),error:null})
+  chatHmac:'a'.repeat(64),messageHmac:'b'.repeat(64),
+  textoOriginal:origen,autenticadoPorWebhook:true,
+  apiKey:'sk-'+'a'.repeat(24),model:'gpt-6-luna',fetchImpl,
+  rpc:async()=>({data:raw,error:null})
  });
- assert.equal(r.estado,'sin_catalogo_confirmado');
- assert.equal(bodies.length,2);
+ assert.equal(r.estado,'plan_validado_sin_envio');
+ assert.equal(r.motivo,'ruteo_sobre_catalogos_registrados_sin_confirmacion_formal');
+ assert.equal(r.catalogos[0].activo,true);
+ assert.equal(r.ruteo.propuestas.length,1);
+ assert.equal(r.whatsappEnviado,false);
+ assert.equal(r.baseModificada,false);
+ assert.equal(bodies.length,4);
 });
 test('MVP220: falla de autorización/lectura SQL no consulta catálogo real ni manda WhatsApp',async()=>{
  let calls=0;

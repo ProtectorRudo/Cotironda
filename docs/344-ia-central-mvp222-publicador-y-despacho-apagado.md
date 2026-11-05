@@ -1,3 +1,5 @@
+> **Actualización ADR 346 (05/11/2026):** la confirmación formal de catálogo ya NO es requisito para **invitar a cotizar** a un proveedor con consentimiento y productos registrados. Se conserva la marca real `catalogue_confirmed_at` sin inventarla y se siguen validando identidad, zona, existencia de la línea y cambios de precios. Ver [docs/346](346-mvp224-invitaciones-con-catalogo-registrado-sin-friccion.md). La restricción anterior en este documento queda sustituida solo para invitaciones.
+
 # Cotironda IA Central — MVP222: publicador controlado (sin activar)
 
 Fecha 05/11/2026. Continuación técnica de docs/340–343, plan #597.

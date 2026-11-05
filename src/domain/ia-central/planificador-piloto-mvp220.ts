@@ -75,9 +75,8 @@ export async function planificarMensajeAutenticadoMvp220(args:{
  const catalog=validarSnapshotCatalogosMvp220(raw);
  if(!catalog||!matchCity(catalog.localidad,city))
   return deny('rechazado','catalogo_rpc_no_conciliado');
- if(catalog.proveedores.length===0||
-    catalog.proveedores.every(x=>!x.catalogoConfirmado))
-  return deny('sin_catalogo_confirmado','ningun_catalogo_confirmado');
+ if(catalog.proveedores.length===0)
+  return deny('rechazado','sin_catalogos_consentidos');
  const classified=await categorizarCatalogosConIAMvp220({
   snapshot:catalog,apiKey:args.apiKey,
   model:args.model,fetchImpl:args.fetchImpl
@@ -95,7 +94,7 @@ export async function planificarMensajeAutenticadoMvp220(args:{
  return {
   estado:'plan_validado_sin_envio',
   motivo:classified.estado==='catalogo_sin_confirmar'?
-   'ruteo_parcial_solo_proveedores_confirmados':'ruteo_semantico_valido',
+   'ruteo_sobre_catalogos_registrados_sin_confirmacion_formal':'ruteo_semantico_valido',
   pedido,ruteo:route,catalogos:classified.proveedores,whatsappEnviado:false,baseModificada:false
  };
 }

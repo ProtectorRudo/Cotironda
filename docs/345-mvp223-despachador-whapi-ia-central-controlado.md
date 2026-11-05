@@ -1,3 +1,5 @@
+> **Actualización ADR 346 (05/11/2026):** la confirmación formal de catálogo ya NO es requisito para **invitar a cotizar** a un proveedor con consentimiento y productos registrados. Se conserva la marca real `catalogue_confirmed_at` sin inventarla y se siguen validando identidad, zona, existencia de la línea y cambios de precios. Ver [docs/346](346-mvp224-invitaciones-con-catalogo-registrado-sin-friccion.md). La restricción anterior en este documento queda sustituida solo para invitaciones.
+
 # MVP223 — despachador IA Central protegido detrás de dos barreras
 
 **Fecha** 2026-11-05. **Estado:** código para DESARROLLO, no publicado
