@@ -7,6 +7,7 @@ import {parseBuyerPilot,canPrepareBuyerPilot,validMessage,standaloneDeliveryCity
 import {generarSolicitudPdfMvp091} from './request-pdf.ts';
 import {despacharSolicitudCentralMvp223} from './ai-central-dispatch-mvp223.ts';
 import {procesarCompradorCentralMvp226} from './ai-central-buyer-mvp226.ts';
+import {procesarPresupuestoCentralMvp227} from './ai-central-supplier-mvp227.ts';
 import {makeMediaManifest} from './media-intake.ts';
 import {parseDocumentClarification} from './document-clarification.ts';
 import {getVerifiedWhapiMedia,storeVerifiedMedia} from './whapi-media-archive.ts';
@@ -559,8 +560,31 @@ async function respond(req:Request):Promise<Response>{
       p_quoted_whapi_id:supplierQuotedId,p_original_text:body
     });
     if(linked.error)return json(503,'ai_supplier_quote_link_unavailable');
-    if(linked.data?.state==='linked_for_semantic_review')
+    if(linked.data?.state==='linked_for_semantic_review'){
       supplierAckMode='text_quote';
+      // Solo FUENTE ya asociada, buyer/supplier comprobados por SQL.
+      // La IA interpreta libremente; SQL almacena exclusivamente el
+      // resumen por rubro, sin originales, ganadores ni datos privados.
+      if(Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_QUOTE_ANALYSIS_ENABLED')==='true'){
+        const modelEnv=Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_MODEL');
+        const model=modelEnv==='gpt-6.1-sol'?'gpt-6.1-sol':'gpt-6-luna';
+        const processed=await procesarPresupuestoCentralMvp227({
+          habilitado:true,webhookAutenticado:true,
+          messageHmac:messageHash,chatHmac:chatHash,
+          apiKey:Deno.env.get('COTIRONDA_PILOT_OPENAI_API_KEY')??'',
+          model,
+          rpc:async(name,params)=>{
+            const response=await db.rpc(name,params);
+            return {data:response.data,error:response.error};
+          },
+          decrypt:async(nonce,ciphertext)=>decryptArchivedText(
+            sec.aes,nonce,ciphertext,chatHash+'|'+messageHash+'|text'),
+          shaText:sha
+        });
+        if(processed.estado==='conciliacion_requerida')
+          return json(503,'ai_supplier_economy_reconciliation_required');
+      }
+    }
   }
   // Archive original incoming PDF, Excel, Word or photo ONLY after
   // committed authenticated inbox and supplier/buyer consent SQL check.
