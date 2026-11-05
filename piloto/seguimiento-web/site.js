@@ -130,7 +130,7 @@ function showCoverage(d){
   ["explicit_differences","Diferencias de cantidad o material"],
   ["technical_uncertainty","Especificaciones por revisar"]
  ];
- const valid=n=>Number.isSafeInteger(n)&&n>=0&&n<=250;
+ const valid=n=>Number.isSafeInteger(n)&&n>=0&&n<=360;
  if(![c.quotations,c.requested_items,c.comparisons,...fields.map(([k])=>c[k])].every(valid)||
     c.quotations<1||c.requested_items<1||
     c.comparisons!==c.quotations*c.requested_items||
@@ -162,7 +162,7 @@ function showItemPrices(d){
    !Number.isSafeInteger(p.quotations)||p.quotations<1||
    p.quotations!==d.offers.length||p.quotations!==e.quotations||
    !Number.isSafeInteger(p.requested_items)||p.requested_items<1||
-   p.requested_items>25||p.articulos.length!==p.requested_items)return;
+   p.requested_items>30||p.articulos.length!==p.requested_items)return;
  const labels=d.offers.map(o=>o?.label);
  if(labels.some(x=>typeof x!=="string"||!x)||new Set(labels).size!==labels.length)
    return;
@@ -520,7 +520,7 @@ function showPricedCoverage(d){
     !Array.isArray(p.coberturaPorOferta)||
     p.coberturaPorOferta.length!==p.quotations||
     !Array.isArray(p.parejasConImportesParaTodos)||
-    p.parejasConImportesParaTodos.length>45)return;
+    p.parejasConImportesParaTodos.length>66)return;
  const labels=d.offers.map(x=>x?.label);
  if(labels.some(x=>typeof x!=="string"||!x)||
     new Set(labels).size!==labels.length)return;
@@ -608,13 +608,13 @@ function showCoverageOptions(d){
      "originals_downloadable"].some(key=>o[key]!==false)||
     !Array.isArray(d.offers)||!Array.isArray(o.coberturaPorOferta)||
     !Array.isArray(o.alternativas)||
-    !Number.isSafeInteger(o.quotations)||o.quotations<1||o.quotations>10||
+    !Number.isSafeInteger(o.quotations)||o.quotations<1||o.quotations>12||
     o.quotations!==d.offers.length||o.quotations!==e.quotations||
     o.quotations!==c.quotations||
     !Number.isSafeInteger(o.requested_items)||o.requested_items<1||
-    o.requested_items>25||o.requested_items!==c.requested_items||
+    o.requested_items>30||o.requested_items!==c.requested_items||
     o.coberturaPorOferta.length!==o.quotations||
-    o.alternativas.length>55)return;
+    o.alternativas.length>78)return;
  const labels=d.offers.map(x=>x?.label);
  if(labels.some(x=>typeof x!=="string"||!x)||
     new Set(labels).size!==labels.length)return;
