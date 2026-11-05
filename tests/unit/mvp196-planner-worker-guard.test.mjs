@@ -55,7 +55,7 @@ test('MVP196: el worker NO llama al selector SQL literal MVP159 ni envía durant
  assert.match(worker,/commercial_selector_off/);
  assert.match(worker,/COTIRONDA_PILOT_FINALIST_DISPATCH_MVP196_ENABLED/);
  assert.match(worker,/planned_no_whatsapp/);
- assert.match(worker,/api_accepted:0,uncertain:0/);
+ assert.match(planner,/api_accepted:0 as const,uncertain:0 as const/);
  assert.match(planner,/cotironda_piloto_commit_commercial_plan_mvp196/);
  assert.match(worker,/cotironda_piloto_commercial_queue_due_mvp196/);
  assert.match(worker,/cotironda_piloto_source_plan_sendable_mvp196/);
