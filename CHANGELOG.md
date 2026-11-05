@@ -1,3 +1,8 @@
+## 2026-11-05 — MVP203 (desarrollo, sin desplegar)
+
+- Seguimiento comprador: orientación de cobertura al cierre derivada del MVP189 anónimo y previamente cotejado. Una o dos opciones individuales inequívocas o una pareja complementaria única, siempre sin orden de precio; situaciones ambiguas no eligen dos arbitrariamente. Se conservan todas las ofertas y sus parciales.
+- Proxy y UI repiten la comprobación, ocultan la propuesta alterada y limpian al revocar token. Pruebas de permisos, opciones múltiples, incompletos, tokens y datos privados. Ningún despliegue, WhatsApp, contactos ni descargas.
+
 ## 2026-11-05 — MVP202 (desarrollo, sin publicar)
 
 - Comparador económico: cobertura sin truncar de hasta 200 proveedores y 100 artículos, pareja exacta con máximo 25 líneas flexibles y suspensión explícita de toda clasificación de pares si el costo global excede presupuesto. Ofertas individuales completas permanecen visibles sin puesto ni orden por precio.
