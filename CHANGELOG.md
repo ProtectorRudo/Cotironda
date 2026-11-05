@@ -1,3 +1,9 @@
+## 2026-11-05 — IA Central (decisión 340; desarrollo, sin publicación)
+
+- Aprobado rediseño semántico: dos lecturas OpenAI Responses con evidencias literales verificables, ruteo de rubros sobre proveedores autorizados y asociación inequívoca de cotizaciones a ronda; sin diccionarios cerrados para material. Nuevo contrato de herramientas/seguridad, pruebas de jerga y omisiones.
+- Seguidor comprador: proyección por rubro validada en Edge→proxy→DOM, agrupando materiales de obra gruesa, pintura, electricidad, construcción en seco, sanitarios, ferretería y otros; preserva todos los originales/partiales y nunca suma totales incompatibles.
+- Elaborado nuevo plan de seis fases y criterios de salida en docs/340. **Sin reemplazar webhook publicado, sin enviar mensajes, sin publicar producción o piloto**. Checklist #529 permanece abierto.
+
 ## 2026-11-05 — MVP212 (solo desarrollo): URL real de seguimiento del comprador
 
 - Corregido origen del enlace privado emitido por Whapi: ahora apunta al alias estable de Vercel del proyecto de seguimiento, no al endpoint JSON Supabase con redirect a preview antiguo. La Edge previa conserva redirect de enlaces históricos al alias estable; token permanece en fragmento y el navegador usa POST mismo origen.
