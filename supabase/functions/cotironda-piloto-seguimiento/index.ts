@@ -18,6 +18,7 @@ import {resumirCondicionesEconomicasPorOfertaMvp204} from
  '../../../src/domain/condiciones-economicas-por-oferta-mvp204.ts';
 import {resumirMaterialesCotizadosCompradorMvp210} from
  '../../../src/domain/materiales-cotizados-comprador-mvp210.ts';
+import {DESTINO_SEGUIMIENTO_PILOTO_MVP212} from '../../../src/domain/enlace-seguimiento-piloto-mvp212.ts';
 const ref='ilggkalaafhtiysyzlmg';
 const html=`<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -142,7 +143,7 @@ Deno.serve(async req=>{
  if(req.method==='GET'){
   if(new URL(req.url).search) return new Response('Bad request',{status:400,headers:headers('text/plain')});
   return new Response(null,{status:302,headers:{...headers('text/plain'),
-   Location:'https://cotironda-seguimiento-vista-piloto-boqnfg2gk.vercel.app/seguimiento'}});
+   Location:DESTINO_SEGUIMIENTO_PILOTO_MVP212}});
  }
  if(req.method!=='POST')return new Response('',{status:405,headers:headers('text/plain')});
  if(new URL(req.url).search)return new Response('',{status:400,headers:headers('text/plain')});

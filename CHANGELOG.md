@@ -1,3 +1,8 @@
+## 2026-11-05 — MVP212 (solo desarrollo): URL real de seguimiento del comprador
+
+- Corregido origen del enlace privado emitido por Whapi: ahora apunta al alias estable de Vercel del proyecto de seguimiento, no al endpoint JSON Supabase con redirect a preview antiguo. La Edge previa conserva redirect de enlaces históricos al alias estable; token permanece en fragmento y el navegador usa POST mismo origen.
+- Validada propiedad/alias Vercel READY vía conector, añadidas pruebas seguridad/token y no reenvíos. Sin despliegue, sin WhatsApps nuevos, sin cambios de estado en ronda, producción ni `main`. docs/337.
+
 ## 2026-11-05 — MVP211 (desarrollo): primera capacidad integrada del seguimiento 12×30
 
 - Auditoría solo lectura en Supabase PILOTO: pedidos 200 renglones posibles, originales de proveedor hasta 25 cada uno, rondas reales actuales 3 ítems/2 ofertas como máximo. Detectado límite artificial 10/25 en SQL privado, TS y Vercel. Nueva migración propuesta, sin instalar: seleccionar 12 documentos v9 por ronda con 30 artículos solicitados, conservando cada original de hasta 25 líneas.

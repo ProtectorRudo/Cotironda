@@ -9,11 +9,11 @@ const frontend=readFileSync(
  new URL("../../piloto/seguimiento-web/site.js",import.meta.url),"utf8");
 const proxy=readFileSync(
  new URL("../../piloto/seguimiento-web/api/estado.js",import.meta.url),"utf8");
-const target="https://cotironda-seguimiento-vista-piloto-boqnfg2gk.vercel.app/seguimiento";
+const target="https://cotironda-seguimiento-vista-piloto-protector-rudo-s-projects.vercel.app/seguimiento";
 const oldTarget="cotironda-seguimiento-vist-git-43f7cf-protector-rudo-s-projects.vercel.app";
 
-test("MVP179: GET redirect is pinned to exact tested pilot Preview",()=>{
- assert.match(edge,/Location:'https:\/\/cotironda-seguimiento-vista-piloto-boqnfg2gk\.vercel\.app\/seguimiento'/u);
+test("MVP179/MVP212: GET redirect points at stable owned pilot PROJECT alias",()=>{
+ assert.match(edge,/Location:DESTINO_SEGUIMIENTO_PILOTO_MVP212/u);
  assert.equal(edge.includes(oldTarget),false);
  const url=new URL(target);
  assert.equal(url.protocol,"https:");

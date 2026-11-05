@@ -18,6 +18,7 @@ import {recoverOneStoredDocument} from './private-document-recovery.ts';
 import {sendDeferredSupplierAckMvp181} from './supplier-deferred-ack.ts';
 import {interpretPilotBuyerWithAI} from './ai-interpreter.ts';
 import {decidePilotAIAction,shortBusinessReply,type ReplyCode} from './business-ai-policy.ts';
+import {crearEnlacePrivadoSeguimientoMvp212} from '../../../src/domain/enlace-seguimiento-piloto-mvp212.ts';
 const REF='ilggkalaafhtiysyzlmg';
 const NAME='cotironda-piloto-whapi';
 const encoder=new TextEncoder();
@@ -859,8 +860,8 @@ async function respond(req:Request):Promise<Response>{
    });
    if(issue.error)return json(503,'tracking_unavailable');
    if(issue.data?.state==='issued'){
-    const link='https://'+REF+
-     '.supabase.co/functions/v1/cotironda-piloto-seguimiento#'+token;
+    const link=crearEnlacePrivadoSeguimientoMvp212(token);
+    if(link===null)return json(503,'tracking_link_invalid');
     // Buyer chat comes from a Whapi-signed inbound event; the SQL issue
     // independently proves buyer role, consent and source message ownership.
     try{
