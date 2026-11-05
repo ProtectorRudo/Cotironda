@@ -487,8 +487,8 @@ END $mvp225$;
 DO $mvp227$
 DECLARE rid uuid; response jsonb; report jsonb; item_id text;
 BEGIN
- SELECT request_id INTO rid FROM cotironda_piloto_privado.ai_shadow_requests_mvp221
- ORDER BY request_id LIMIT 1;
+ SELECT request_id INTO rid FROM cotironda_piloto_privado.ai_supplier_links_mvp225
+ WHERE message_hmac=repeat('d',64);
  UPDATE cotironda_piloto_privado.whapi_inbox
  SET nonce_b64=repeat('A',16),ciphertext_b64=repeat('B',120)
  WHERE message_hmac=repeat('d',64);
