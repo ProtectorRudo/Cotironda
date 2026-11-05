@@ -121,7 +121,7 @@ test('MVP220: orquesta mensaje → catálogo real → rubros → proveedor sin e
  assert.equal(bodies.length,4);
  assert.deepEqual(rpcCalls.map(x=>x.name),['cotironda_piloto_ia_catalogo_mvp220']);
  const data=JSON.parse(bodies[3].input[1].content[0].text.split('\n').at(-1));
- assert.deepEqual(data.proveedores.map(x=>x.clave),['corralon_ailin']);
+ assert.deepEqual(data.proveedores.map(x=>x.clave),['corralon_ailin','corralon_nahuel']);
 });
 test('MVP224: catálogo registrado sin confirmar permite INVITAR a cotizar, sin inventar stock',async()=>{
  const raw=real(false);
