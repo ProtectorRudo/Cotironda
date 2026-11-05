@@ -23,7 +23,7 @@ const route={estado:'ruteo_valido_para_preparacion',motivo:'catalogue',
  {indicePedido:1,proveedoresAutorizados:1}],whatsappEnviado:false};
 const plan={
  estado:'plan_validado_sin_envio',motivo:'catalogo',
- pedido,ruteo,whatsappEnviado:false,baseModificada:false,
+ pedido,ruteo:route,whatsappEnviado:false,baseModificada:false,
  catalogos:[{clave:'corralon_ailin',consentido:true,activo:true,
   localidades:['La Plata'],articulos:[
    {numero:1,descripcion:'Cemento CPC bolsa 50kg',rubro:'obra_gruesa'},
