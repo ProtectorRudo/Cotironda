@@ -76,10 +76,17 @@ CREATE TABLE cotironda_piloto_privado.offer_versions(
  request_id uuid NOT NULL,supplier_key text NOT NULL,created_at timestamptz NOT NULL
 );
 
+-- Before installation: the SAME read-only preflight used against PILOTO
+-- must report compatible dependencies and zero originals permissions.
+\ir ../../piloto/mvp208_originals_preinstall_readonly.sql
 \ir ../../piloto/mvp178_original_share_consent_private.sql
 \ir ../../piloto/mvp191_buyer_verified_phone_identity_prospect_only.sql
 \ir ../../piloto/mvp192_private_originals_catalog_and_context.sql
 \ir ../../piloto/mvp201_original_download_audit_private.sql
+-- After installation: policy remains OFF and no browser/anon/normal client
+-- can read private tables. Results are explicitly checked below too.
+\ir ../../piloto/mvp208_originals_preinstall_readonly.sql
+\ir ../../piloto/mvp208_originals_postinstall_readonly.sql
 
 DO $test$
 DECLARE
@@ -93,7 +100,61 @@ DECLARE
  now_ timestamptz:=clock_timestamp();
  first_ jsonb; document_ text; second_ jsonb; result_ jsonb;
 BEGIN
- IF NOT has_function_privilege('authenticated',
+ IF EXISTS (
+   SELECT 1 FROM cotironda_piloto_privado.original_share_policy_mvp178
+   WHERE singleton IS DISTINCT FROM true
+    OR enabled IS DISTINCT FROM false
+    OR activated_at IS NOT NULL
+ ) OR (SELECT count(*) FROM cotironda_piloto_privado.original_share_policy_mvp178)<>1
+ OR (SELECT count(*) FROM cotironda_piloto_privado.original_share_consents_mvp178)<>0
+ OR (SELECT count(*) FROM cotironda_piloto_privado.original_download_audit_mvp201)<>0
+ THEN RAISE EXCEPTION 'originals_new_install_not_off_or_not_empty';END IF;
+ -- The postinstall inspection is a read-only report; CI also asserts its
+ -- essential RLS/ACL conditions here, not merely that the SELECT compiles.
+ IF has_table_privilege('anon',
+      'cotironda_piloto_privado.original_share_consents_mvp178',
+      'SELECT,INSERT,UPDATE,DELETE')
+ OR has_table_privilege('authenticated',
+      'cotironda_piloto_privado.original_share_policy_mvp178',
+      'SELECT,INSERT,UPDATE,DELETE')
+ OR has_table_privilege('service_role',
+      'cotironda_piloto_privado.original_share_policy_mvp178',
+      'SELECT,INSERT,UPDATE,DELETE')
+ OR has_table_privilege('anon',
+      'cotironda_piloto_privado.original_download_audit_mvp201',
+      'SELECT,INSERT,UPDATE,DELETE')
+ OR has_table_privilege('authenticated',
+      'cotironda_piloto_privado.original_download_audit_mvp201',
+      'SELECT,INSERT,UPDATE,DELETE')
+ OR has_table_privilege('service_role',
+      'cotironda_piloto_privado.original_share_consents_mvp178',
+      'SELECT,INSERT,UPDATE,DELETE')
+ OR has_function_privilege('anon',
+      'public.cotironda_piloto_original_consent_preflight_mvp178(uuid,text)','EXECUTE')
+ OR has_function_privilege('authenticated',
+      'public.cotironda_piloto_original_consent_preflight_mvp178(uuid,text)','EXECUTE')
+ OR NOT has_function_privilege('service_role',
+      'public.cotironda_piloto_original_consent_preflight_mvp178(uuid,text)','EXECUTE')
+ OR has_function_privilege('service_role',
+      'public.cotironda_piloto_buyer_identity_mvp191(uuid)','EXECUTE')
+ THEN RAISE EXCEPTION 'originals_postinstall_unauthorized_access';END IF;
+ IF (SELECT count(*) FROM pg_class c JOIN pg_namespace n
+     ON n.oid=c.relnamespace
+     WHERE n.nspname='cotironda_piloto_privado'
+       AND c.relname IN ('original_share_policy_mvp178',
+         'original_share_consents_mvp178',
+         'original_download_audit_mvp201')
+       AND c.relrowsecurity)=3 IS NOT TRUE
+ OR has_table_privilege('anon',
+     'cotironda_piloto_privado.original_share_policy_mvp178',
+     'SELECT,INSERT,UPDATE,DELETE')
+ OR has_table_privilege('authenticated',
+     'cotironda_piloto_privado.original_share_consents_mvp178',
+     'SELECT,INSERT,UPDATE,DELETE')
+ OR has_table_privilege('service_role',
+     'cotironda_piloto_privado.original_download_audit_mvp201',
+     'SELECT,INSERT,UPDATE,DELETE')
+ OR NOT has_function_privilege('authenticated',
    'public.cotironda_piloto_buyer_identity_mvp191(uuid)','EXECUTE')
  OR has_function_privilege('anon',
    'public.cotironda_piloto_buyer_identity_mvp191(uuid)','EXECUTE')
