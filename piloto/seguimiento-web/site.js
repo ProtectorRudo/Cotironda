@@ -279,11 +279,14 @@ function showEconomicReadiness(d){
     ivaStates.has(x.iva)&&freightStates.has(x.flete)&&
     payStates.has(x.pago)&&
     ["no_acreditada","ARS","USD"].includes(x.moneda)&&
-    (x.moneda==="no_acreditada"||p.articulos.every(item=>
+    (x.moneda==="no_acreditada"||(
+      p.articulos.some(item=>item.referencias.some(ref=>
+        ref.oferta===x.oferta&&ref.importeCotizado!==null))&&
+      p.articulos.every(item=>
       item.referencias.filter(ref=>ref.oferta===x.oferta&&
         ref.importeCotizado!==null).every(ref=>x.moneda==="ARS"
           ?/^\s*AR\$\s*/i.test(ref.importeCotizado)
-          :/^\s*(?:US\$|U\$S|USD\s*\$?)\s*/i.test(ref.importeCotizado))))&&
+          :/^\s*(?:US\$|U\$S|USD\s*\$?)\s*/i.test(ref.importeCotizado)))))&&
     x.stockCorroborado===false&&x.plazoCorroborado===false&&
     x.minimoCorroborado===false))return;
  const count=(key,val)=>rows.filter(x=>x[key]===val).length;
