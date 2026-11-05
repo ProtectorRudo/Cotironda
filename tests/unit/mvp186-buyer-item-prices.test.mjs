@@ -150,9 +150,12 @@ test('MVP186: contradicción o IVA incluido no homologado retiene oferta, sin pr
   const p=sample();p.quotations[0].economia.condiciones.iva.estado=value;
   const r=summarize(tracking(),p);
   assert.ok(r);
-  assert.equal(r.articulos[0].referencias[0].importeCotizado,null);
-  assert.equal(r.articulos[0].referencias[0].estado,'no_homologable');
-  assert.equal(r.articulos[0].referencias[1].importeCotizado,'$ 90,00');
+  // RPC source index 0 is Presupuesto 2; the visible list starts at 1.
+  assert.equal(r.articulos[0].referencias[0].oferta,'Presupuesto 1');
+  assert.equal(r.articulos[0].referencias[0].importeCotizado,'$ 90,00');
+  assert.equal(r.articulos[0].referencias[1].oferta,'Presupuesto 2');
+  assert.equal(r.articulos[0].referencias[1].importeCotizado,null);
+  assert.equal(r.articulos[0].referencias[1].estado,'no_homologable');
  }
 });
 test('MVP186: ubicación de fuente ausente invalida la proyección sin filtrar importes',()=>{
