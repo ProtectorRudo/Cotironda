@@ -68,10 +68,10 @@ export function autorizarPropuestasCatalogoV2(
   if(!p||!KEY.test(p.clave)||authorized.has(p.clave)||
      !Array.isArray(p.articulos)||p.articulos.length>500||
      !Array.isArray(p.localidades)||p.localidades.length>80||
-     p.localidades.some(x=>!text(x,120))||
-     p.articulos.some(x=>!x||!Number.isSafeInteger(x.numero)||
+     p.localidades.some((x:unknown)=>!text(x,120))||
+     p.articulos.some((x:LineaCatalogoV2)=>!x||!Number.isSafeInteger(x.numero)||
       x.numero<1||x.numero>500||!text(x.descripcion,250)||!rubric(x.rubro))||
-     new Set(p.articulos.map(x=>x.numero)).size!==p.articulos.length)
+     new Set(p.articulos.map((x:LineaCatalogoV2)=>x.numero)).size!==p.articulos.length)
    return fail('proveedor_o_catalogo_invalido');
   authorized.set(p.clave,p);
  }
@@ -79,12 +79,15 @@ export function autorizarPropuestasCatalogoV2(
  const good:PropuestaProveedorV2[]=[];
  const covered=Array.from({length:pedido.articulos.length},()=>0);
  for(const raw of propuestas){
-  if(!obj(raw)||!KEY.test(raw.proveedor)||assigned.has(raw.proveedor)||
+  if(!obj(raw))return fail('propuesta_invalida');
+  const supplierKey=raw.proveedor;
+  if(typeof supplierKey!=='string'||!KEY.test(supplierKey)||
+     assigned.has(supplierKey)||
      !Array.isArray(raw.correspondencias)||
      raw.correspondencias.length<1||
      raw.correspondencias.length>pedido.articulos.length)
    return fail('propuesta_invalida');
-  const supplier=authorized.get(raw.proveedor);
+  const supplier=authorized.get(supplierKey);
   if(!supplier||supplier.consentido!==true||supplier.activo!==true||
      !supplier.localidades.some(z=>zonaIgual(z,pedido.zona_entrega!)))
    return fail('proveedor_no_habilitado_en_zona');
@@ -92,23 +95,27 @@ export function autorizarPropuestasCatalogoV2(
   const seen=new Set<number>();
   const matches:CorrespondenciaV2[]=[];
   for(const entry of raw.correspondencias){
-   if(!obj(entry)||!Number.isSafeInteger(entry.indicePedido)||
-      entry.indicePedido<0||entry.indicePedido>=pedido.articulos.length||
-      !Number.isSafeInteger(entry.numeroCatalogo)||
-      seen.has(entry.indicePedido)||
-      !TIPO.has(entry.tipo)||!text(entry.explicacion,240))
+   if(!obj(entry))return fail('correspondencia_invalida');
+   const idx=entry.indicePedido,lineNo=entry.numeroCatalogo,
+    tipo=entry.tipo,explicacion=entry.explicacion;
+   if(typeof idx!=='number'||!Number.isSafeInteger(idx)||
+      idx<0||idx>=pedido.articulos.length||
+      typeof lineNo!=='number'||!Number.isSafeInteger(lineNo)||
+      seen.has(idx)||
+      typeof tipo!=='string'||!TIPO.has(tipo)||
+      !text(explicacion,240))
     return fail('correspondencia_invalida');
-   const source=catalog.get(entry.numeroCatalogo);
-   const requested=pedido.articulos[entry.indicePedido];
+   const source=catalog.get(lineNo);
+   const requested=pedido.articulos[idx];
    if(!source||!requested||source.rubro!==requested.rubro)
     return fail('rubro_o_catalogo_no_declarado');
-   seen.add(entry.indicePedido);
-   covered[entry.indicePedido]++;
+   seen.add(idx);
+   covered[idx]++;
    matches.push({
-    indicePedido:entry.indicePedido,
-    numeroCatalogo:entry.numeroCatalogo,
-    tipo:entry.tipo as CorrespondenciaV2['tipo'],
-    explicacion:entry.explicacion
+    indicePedido:idx,
+    numeroCatalogo:lineNo,
+    tipo:tipo as CorrespondenciaV2['tipo'],
+    explicacion
    });
   }
   assigned.add(supplier.clave);
@@ -192,8 +199,10 @@ export async function proponerRuteoCatalogoConIAV2(args:{
     !['gpt-6-luna','gpt-6.1-sol'].includes(args.model))
   return fail('credencial_o_modelo_invalido');
  // Reject oversize entirely; never silently drop lines from an architect's job.
- if(!pedido||pedido.articulos.length>30||proveedores.length>25||
-    proveedores.some(p=>p.articulos.length>150))
+ if(!pedido||!Array.isArray(pedido.articulos)||
+    !Array.isArray(proveedores)||pedido.articulos.length>30||
+    proveedores.length>25||
+    proveedores.some(p=>!p||!Array.isArray(p.articulos)||p.articulos.length>150))
   return fail('ruteo_excede_presupuesto_por_lote');
  const eligible=proveedores.filter(p=>p.consentido&&p.activo&&
   p.localidades.some(z=>zonaIgual(z,pedido.zona_entrega??'')));
