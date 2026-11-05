@@ -1,3 +1,8 @@
+## 2026-11-05 — MVP202 (desarrollo, sin publicar)
+
+- Comparador económico: cobertura sin truncar de hasta 200 proveedores y 100 artículos, pareja exacta con máximo 25 líneas flexibles y suspensión explícita de toda clasificación de pares si el costo global excede presupuesto. Ofertas individuales completas permanecen visibles sin puesto ni orden por precio.
+- Nuevas pruebas de 50 líneas forzadas/flexibles, 120 proveedores×50 artículos, 12 proveedores/66 pares, condiciones comerciales ausentes y topes explícitos. **No se desplegó en PILOTO ni producción.** Docs/326, #532 abierto.
+
 ## 2026-11-05 — MVP201 (solo desarrollo, sin despliegue)
 
 - Auditoría persistente privada para descargas de originales del comprador: RPC `service_role`, control cruzado SHA/tamaño/vigencia desde MVP192 y denegación de bytes si no se puede registrar; evento de preparación de respuesta, no confirmación de descarga final.
