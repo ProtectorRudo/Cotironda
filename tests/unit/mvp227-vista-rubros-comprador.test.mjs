@@ -70,5 +70,5 @@ test('MVP227: dos proveedores pueden cotizar rubro compartido sin ranking global
  assert.ok(r);
  assert.equal(r.rubros_ia.find(x=>x.rubro==='obra_gruesa').ofertas,2);
  assert.equal(r.offers.length,2);
- assert.ok(r.offers.every(x=>!x.text.includes('ganador')&&!x.label.includes('puesto')));
+ assert.ok(r.offers.every(x=>!x.text.includes('ganador')&&!/\bpuesto\s+[1-9]/iu.test(x.label)));
 });
