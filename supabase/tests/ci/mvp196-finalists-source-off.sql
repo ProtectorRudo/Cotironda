@@ -36,7 +36,8 @@ BEGIN
  'public.cotironda_piloto_commercial_due_mvp196(integer)',
  'public.cotironda_piloto_commit_commercial_plan_mvp196(uuid,text,jsonb)',
  'public.cotironda_piloto_source_plan_sendable_mvp196(uuid)',
- 'public.cotironda_piloto_commercial_queue_due_mvp196(integer)'
+ 'public.cotironda_piloto_commercial_queue_due_mvp196(integer)',
+ 'public.cotironda_piloto_tracking_source_plan_mvp196(text)'
  ] LOOP
   IF to_regprocedure(f) IS NULL THEN
    RAISE EXCEPTION 'missing_function: %',f;
@@ -58,6 +59,8 @@ BEGIN
     AND tgname='finalist_source_immutable_mvp196') THEN
   RAISE EXCEPTION 'source_plan_immutable_trigger_missing';
  END IF;
+ IF public.cotironda_piloto_tracking_source_plan_mvp196(null) IS DISTINCT FROM false
+ THEN RAISE EXCEPTION 'no_token_must_never_unlock_contacts';END IF;
  IF public.cotironda_piloto_source_plan_sendable_mvp196(null) IS DISTINCT FROM false
  THEN RAISE EXCEPTION 'nullable_send_guard_fails_open';END IF;
  IF public.cotironda_piloto_commercial_due_mvp196(1)->>'state'<>'pilot_finalist_off'
