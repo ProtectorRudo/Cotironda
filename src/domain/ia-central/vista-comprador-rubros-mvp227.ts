@@ -31,12 +31,12 @@ export function vistaCotizacionesRubrosMvp227(input:unknown):
     input.items.length>200||
     !Array.isArray(input.ofertas)||input.ofertas.length>25||
     typeof input.recibidos!=='number'||
-    (typeof input.recibidos!=='number'||!Number.isSafeInteger(input.recibidos))||
+    (typeof input.recibidos!=='number'||typeof input.recibidos!=='number'||!Number.isSafeInteger(input.recibidos))||
     (input.recibidos as number)<0||
     (input.recibidos as number)>25||
     typeof input.pendientes_revision!=='number'||
     (typeof input.pendientes_revision!=='number'||
-      !Number.isSafeInteger(input.pendientes_revision))||
+      typeof input.pendientes_revision!=='number'||!Number.isSafeInteger(input.pendientes_revision))||
     (input.pendientes_revision as number)<0||
     (input.pendientes_revision as number)>100)
    return null;
@@ -82,8 +82,8 @@ export function vistaCotizacionesRubrosMvp227(input:unknown):
    if(!obj(r)||typeof r.rubro!=='string'||
       !Object.hasOwn(RUBROS_MVP216,r.rubro)||
       typeof r.solicitados!=='number'||typeof r.respondidos!=='number'||
-      typeof r.solicitados!=='number'||!Number.isSafeInteger(r.solicitados)||
-      typeof r.respondidos!=='number'||!Number.isSafeInteger(r.respondidos)||
+      typeof r.solicitados!=='number'||typeof r.solicitados!=='number'||!Number.isSafeInteger(r.solicitados)||
+      typeof r.respondidos!=='number'||typeof r.respondidos!=='number'||!Number.isSafeInteger(r.respondidos)||
       (r.solicitados as number)<1||(r.respondidos as number)<0||
       (r.respondidos as number)>(r.solicitados as number)||
       !['completa','parcial','sin_cobertura'].includes(String(r.cobertura)))
