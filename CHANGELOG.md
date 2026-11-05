@@ -1,3 +1,9 @@
+## 2026-11-05 — MVP213: integración real de componentes en `cotironda-piloto`
+
+- Vercel PILOTO: alias estable de seguimiento asignado a `dpl_6fGJqCF4azBZK67nBuEXY47CKsBy` READY (SHA web `18c55f5`) tras GET HTML/JS/CSS 200 y POST falso a API `not_found`. Sin nuevo build: Vercel devuelve 402 por límite Hobby.
+- Supabase PILOTO: Edge seguimiento **v14→v15** SHA `14ed7b14`; Whapi **v45→v46** SHA `25e427eb`, ambos primero en staging aislado y luego con POST HTTP real: token falso 200 `not_found`, probe 200, evento no autenticado 401. Se instaló selector privado 12×30 tras prueba PG17 y rollback real, ACL anon/auth false/service_role true y 2 rondas v9 aún válidas. Cierre cron intacto, 0 Auth, 0 plan/avisos finalistas, banderas de finalistas OFF. No WhatsApps enviados ni producción.
+- Aviso de exactitud: web lista para rondas pequeñas pero deploy web PREVIO a guardas finales 12×30; ranking real, originales descargables, memoria, aviso finalistas y prueba E2E continúan pendientes. [docs/338](docs/338-mvp213-acta-publicacion-integrada-piloto.md), #529 ABIERTO.
+
 ## 2026-11-05 — MVP212 (solo desarrollo): URL real de seguimiento del comprador
 
 - Corregido origen del enlace privado emitido por Whapi: ahora apunta al alias estable de Vercel del proyecto de seguimiento, no al endpoint JSON Supabase con redirect a preview antiguo. La Edge previa conserva redirect de enlaces históricos al alias estable; token permanece en fragmento y el navegador usa POST mismo origen.
