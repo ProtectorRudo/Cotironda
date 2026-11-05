@@ -8,7 +8,7 @@
  */
 import {diagnosticarRondaPrivadaMvp172,
  type InsumoRondaPrivadoMvp172} from './diagnostico-ronda-mvp172.ts';
-import {centavosFuenteMvp162} from './adaptador-documental-mvp162.ts';
+import {centavosFuenteMvp162,cantidadFuenteMvp162} from './adaptador-documental-mvp162.ts';
 
 type SourceMatch=Readonly<{itemId:string;lineNo:number}>;
 export type FuenteSeleccionadaMvp196=Readonly<{
@@ -107,6 +107,37 @@ export function seleccionarComercialmenteMvp196(input:Readonly<{
     byFact.has(fact.lineNo))return negative('insumos_invalidos');
    byFact.set(fact.lineNo,fact);
   }
+  // The economic line ledger MUST be source-reconciled even though this
+  // planner never ranks by money. A corrupted discount/total cannot produce
+  // a recommendation indirectly via "coverage".
+  if(quote.economia.descuentos.estado!=='descuentos_conciliados_sin_iva')
+   return negative('insumos_invalidos');
+  const byPrice=new Set<number>();
+  for(const price of quote.economia.descuentos.precios){
+   if(!price||typeof price!=='object'||Array.isArray(price))
+    return negative('insumos_invalidos');
+   const p=price as Record<string,unknown>;
+   const no=p.linea;
+   if(!Number.isSafeInteger(no)||!byLine.has(no as number)||
+     byPrice.has(no as number)||typeof p.unitarioComercialTrasDescuento!=='string'||
+     !['descuento_explicito_conciliado','importe_sin_ajuste_conciliado']
+       .includes(String(p.estado)))return negative('insumos_invalidos');
+   const line=byLine.get(no as number)!,fact=byFact.get(no as number);
+   const qty=cantidadFuenteMvp162(line.quantityLiteral);
+   const net=centavosFuenteMvp162(p.unitarioComercialTrasDescuento);
+   const total=centavosFuenteMvp162(line.lineTotalLiteral);
+   if(!fact||!Number.isSafeInteger(fact.page)||fact.page<1||
+     !Number.isSafeInteger(fact.row)||fact.row<1||
+     p.pagina!==fact.page||p.fila!==fact.row||
+     qty===null||net===null||total===null)
+    return negative('insumos_invalidos');
+   const [whole,frac='']=qty.split('.');
+   const milli=BigInt(whole)*1000n+BigInt(frac.padEnd(3,'0')||'0');
+   if((net*milli+500n)/1000n!==total)
+    return negative('insumos_invalidos');
+   byPrice.add(no as number);
+  }
+  if(byPrice.size!==doc.lineas.length)return negative('insumos_invalidos');
   const matched:SourceMatch[]=[];
   const itemSeen=new Set<string>(),usedLines=new Set<number>();
   for(const x of preview.articulos){
