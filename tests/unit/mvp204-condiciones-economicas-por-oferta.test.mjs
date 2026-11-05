@@ -27,7 +27,8 @@ function sample(caseNumber=1){
   contacts_revealed:false
  };
  const status={state:'closed',can_open:true,offers,economy};
- const prices=pricesFromSource(status,source);
+ const audited=pricesFromSource(status,source);
+ const prices=audited?structuredClone(audited):null;
  return {source,status,prices};
 }
 
