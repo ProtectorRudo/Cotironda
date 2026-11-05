@@ -97,7 +97,7 @@ export function validarClasificacionCatalogosMvp220(
  });
  if(!snapshot||!Array.isArray(snapshot.proveedores)||!Array.isArray(propuesta)||
     propuesta.length!==snapshot.proveedores.length)return invalid('cantidad_de_catalogos');
- const map=new Map(snapshot.proveedores.map(p=>[p.clave,p]));
+ const map=new Map<string,CatalogoRealMvp220>(snapshot.proveedores.map((p:CatalogoRealMvp220)=>[p.clave,p] as const));
  const used=new Set<string>();
  const suppliers:ProveedorCatalogoV2[]=[];
  for(const raw of propuesta){
@@ -107,7 +107,7 @@ export function validarClasificacionCatalogosMvp220(
   if(!source||raw.lineas.length!==source.articulos.length)
    return invalid('catalogo_incompleto');
   used.add(raw.proveedor);
-  const byId=new Map(source.articulos.map(x=>[x.numero,x]));
+  const byId=new Map<number,CatalogoRealMvp220['articulos'][number]>(source.articulos.map((x:CatalogoRealMvp220['articulos'][number])=>[x.numero,x] as const));
   const visited=new Set<number>();
   const classified:LineaCatalogoV2[]=[];
   for(const row of raw.lineas){
@@ -174,14 +174,14 @@ export async function categorizarCatalogosConIAMvp220(args:{
  });
  if(!snapshot||!Array.isArray(snapshot.proveedores)||
     snapshot.proveedores.length<1||snapshot.proveedores.length>25||
-    snapshot.proveedores.some(x=>x.articulos.length>150)||
+    snapshot.proveedores.some((x:CatalogoRealMvp220)=>x.articulos.length>150)||
     typeof args.apiKey!=='string'||!/^sk-[A-Za-z0-9_-]{16,}$/u.test(args.apiKey)||
     !['gpt-6-luna','gpt-6.1-sol'].includes(args.model))
   return failure('entrada_o_limites_invalidos');
  // Clasificar rubros aun en sombra, pero NUNCA marcar `activo`
  // a un catálogo que todavía no confirmó el proveedor.
- const source=snapshot.proveedores.map(p=>({
-  proveedor:p.clave,lineas:p.articulos.map(x=>({
+ const source=snapshot.proveedores.map((p:CatalogoRealMvp220)=>({
+  proveedor:p.clave,lineas:p.articulos.map((x:CatalogoRealMvp220['articulos'][number])=>({
    numero:x.numero,descripcionFuente:x.descripcion
   }))
  }));
