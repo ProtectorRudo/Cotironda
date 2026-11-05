@@ -45,6 +45,34 @@ function cantidad(v:unknown):v is string{
 const rejection=(motivo:string):ResultadoLectura=>
  Object.freeze({estado:'rechazado',motivo,pedido:null});
 
+/** El modelo devuelve citas textuales exactas, NO posiciones numéricas.
+ * Resolver offsets en el servidor para no hacerle contar UTF-16 ni exigir
+ * un vocabulario predefinido. Permitir repeticiones de un mismo producto
+ * cuando la fuente contiene realmente dos menciones separadas.
+ */
+export function localizarEvidenciasV1(
+ origen:string,propuesta:Record<string,unknown>
+):Record<string,unknown>|null{
+ if(!texto(origen,12000)||!obj(propuesta)||
+    !Array.isArray(propuesta.articulos)||propuesta.articulos.length>200)
+  return null;
+ const intervals:{inicio:number;fin:number}[]=[];
+ const complete:Record<string,unknown>[]=[];
+ for(const raw of propuesta.articulos){
+  if(!obj(raw)||!texto(raw.evidencia,1500))return null;
+  let pos=origen.indexOf(raw.evidencia);
+  while(pos>=0&&intervals.some(x=>
+   pos<x.fin&&pos+raw.evidencia.length>x.inicio))
+   pos=origen.indexOf(raw.evidencia,pos+1);
+  if(pos<0)return null;
+  const end=pos+raw.evidencia.length;
+  intervals.push({inicio:pos,fin:end});
+  complete.push({...raw,inicio:pos,fin:end});
+ }
+ return {...propuesta,articulos:complete};
+}
+
+
 /** Dos lecturas sobre la MISMA evidencia, no sobre texto reescrito por IA.
  * Se acepta cualquier jerga, typo o sinónimo: no se compara vocabulario
  * de materiales. Si ambos lectores no coinciden, se requiere aclaración.
