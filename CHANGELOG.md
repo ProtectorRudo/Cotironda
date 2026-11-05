@@ -1,3 +1,6 @@
+## MVP200 — originales privados condicionados a fuente v9 e invitación vigente (05/11/2026, solo desarrollo)
+- SQL de catálogo MVP192 refuerza cruce exacto con verificador documental v9 `verified/covered` para cada presupuesto, invitación en estado `prepared` y bloqueo ante edición posterior. No exige ser recomendado: incluye TODOS los originales autorizados. PG17 aislado nuevo prueba instalación secuencial de políticas/Auth/catálogo, consentimiento individual, PDF/Excel, sesión, fuente errónea, vencimientos y revocaciones; workflow y tests unitarios nuevos. No se modificó el piloto, producción, WhatsApp, Vercel ni datos reales; política originales aún inexistente en PILOTO. docs/324 y #525.
+
 ## MVP199 — regresión con estructura real de 4 presupuestos v9 anonimizados (05/11/2026; solo desarrollo)
 - Nueva fixture anónima de 2 solicitudes con 4 presupuestos originales v9 y 10 líneas comerciales conciliadas del piloto real: no conserva identificadores reales, contactos ni texto de chat. Testea los mismos JSON de entrada del diagnóstico privado MVP172 y del selector MVP196, parser económico argentino y rechazo ante versión/archivo alterados. No cambia datos reales del piloto, Whapi, producción ni `main`; SQL/Edge v196 todavía sin publicar. docs/322.
 
