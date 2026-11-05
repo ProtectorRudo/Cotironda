@@ -15,7 +15,7 @@ const snippets=[
 ];
 function item(e,description,quantity,rubro,unidad='m3'){
  const start=source.indexOf(e);
- return {evidencia:e,inicio:start,fin:start+e.length,descripcion,
+ return {evidencia:e,inicio:start,fin:start+e.length,descripcion:description,
   cantidad:String(quantity),unidad,rubro,presentacion:null,aclaracion:null};
 }
 const proposal={intencion:'cotizar',zona_entrega:'La Plata',dudas:[],articulos:[
