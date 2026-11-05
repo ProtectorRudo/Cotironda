@@ -371,7 +371,7 @@ function buyerView(parsed){
       const refs=safe.item_prices.articulos.flatMap(item=>
         item.referencias.filter(ref=>ref.oferta===label&&
           ref.importeCotizado!==null).map(ref=>ref.importeCotizado));
-      return refs.every(v=>currency==="ARS"
+      return refs.length>0&&refs.every(v=>currency==="ARS"
         ?/^\s*AR\$\s*/i.test(v)
         :/^\s*(?:US\$|U\$S|USD\s*\$?)\s*/i.test(v));
     };
@@ -543,7 +543,7 @@ function buyerView(parsed){
           oferta:o.oferta,articulosConBase:o.articulosConBase,
           motivo:o.motivo
         })),
-        opciones,
+        opciones:options,
         ranking_final:false,iva_calculado:false,flete_calculado:false,
         stock_confirmado:false,contactos_revelados:false,
         adjudicacion:false,originales_descargables:false,
