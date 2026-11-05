@@ -152,8 +152,8 @@ const isValidDoc=(doc:DocumentoFuente):boolean=>{
 const currencyMarker=(literal:string|null):MonedaCotizada|null=>{
  if(typeof literal!=='string')return null;
  const value=literal.trim();
- if(/^AR\\$\\s*/iu.test(value))return 'ARS';
- if(/^(?:US\\$|U\\$S|USD)\\s*/iu.test(value))return 'USD';
+ if(/^AR\$\s*/iu.test(value))return 'ARS';
+ if(/^(?:US\$|U\$S|USD)\s*/iu.test(value))return 'USD';
  return null;
 };
 const sourceCurrencyMarkers=(doc:DocumentoFuente)=>([
