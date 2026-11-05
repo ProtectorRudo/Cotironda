@@ -300,3 +300,23 @@ test('MVP202: falta de IVA, flete o pago nunca se normaliza para ganar en 50 lí
  assert.ok(r.cobertura[1].motivos.includes('flete_desconocido'));
  assert.ok(r.cobertura[1].motivos.includes('forma_pago_desconocida'));
 });
+
+test('MVP202: 200 proveedores parciales y 100 artículos no generan millones de parejas',()=>{
+ const ids=Array.from({length:100},(_,i)=>'sku_'+String(i+1).padStart(3,'0'));
+ const p=pedido(...ids.map(id=>[id,'1']));
+ const qs=Array.from({length:200},(_,i)=>oferta(
+  'anon_'+String(i+1).padStart(3,'0'),
+  (i%2===0?ids.slice(0,50):ids.slice(50)).map(id=>
+   linea(id,'1.00',{ivaPorcentaje:'0'}))
+ ));
+ const r=run(p,qs);
+ assert.equal(r.cobertura.length,200);
+ assert.equal(r.cobertura.reduce((sum,o)=>sum+o.lineas.length,0),20000);
+ assert.ok(r.cobertura.every(x=>x.lineasCompletas===50&&
+  x.totalComparable===null));
+ assert.equal(r.comparacionPares,'suspendida_por_complejidad');
+ assert.equal(r.paresCalculados,0);
+ assert.deepEqual(r.opcionesCompletas,[]);
+ assert.equal(r.contactoRevelado,false);
+ assert.equal(r.adjudicacionAutomatica,false);
+});
