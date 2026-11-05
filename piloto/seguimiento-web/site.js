@@ -338,6 +338,166 @@ function showEconomicReadiness(d){
   "No hace falta pedirle otra confirmación al negocio.");
  el("economicReadinessSection").hidden=false;
 }
+// MVP210 — only a materials SUBTOTAL from an audited, full source basket.
+// No winning positions, price-final classification, contact or download.
+function showMaterialBaskets(d){
+ const grid=el("materialBasketsGrid");grid.replaceChildren();
+ el("materialBasketsSection").hidden=true;
+ displayText("materialBasketsCaption","");
+ const m=d?.material_baskets,p=d?.item_prices,e=d?.economic_readiness;
+ if(d?.state!=="closed"||d.can_open!==true||
+   !m||!p||!e||!Array.isArray(d.offers)||
+   m.state!=="referencia_materiales_sin_precio_final"||
+   ["ranking_final","iva_calculado","flete_calculado",
+    "stock_confirmado","contactos_revelados","adjudicacion",
+    "originales_descargables","whatsapp_enviado"].some(k=>m[k]!==false)||
+   !Array.isArray(m.ofertas)||!Array.isArray(m.opciones)||
+   m.opciones.length>55||m.quotations!==d.offers.length||
+   m.quotations!==p.quotations||m.requested_items!==p.requested_items||
+   !Array.isArray(p.articulos)||p.articulos.length!==m.requested_items||
+   !Array.isArray(e.ofertas)||e.ofertas.length!==m.quotations)return;
+ const names=d.offers.map(x=>x.label);
+ if(names.some(x=>typeof x!=="string"||!x)||
+   new Set(names).size!==names.length)return;
+ const conditions=new Map(e.ofertas.map(x=>[x.oferta,x]));
+ if(conditions.size!==names.length)return;
+ const exclusion=new Set([
+  "fuente_no_acreditada","iva_incluido_no_normalizado",
+  "tratamiento_iva_ambiguo","iva_silencioso_inconsistente",
+  "moneda_contradictoria_en_original","moneda_sin_acreditar",
+  "hecho_fuente_inconsistente","importe_fuente_no_conciliado",
+  "sin_lineas_asignadas","prueba_bolson_invalida",
+  "prueba_envase_obra_invalida","equivalencia_o_asignacion_sin_acreditar",
+  "unidad_sin_acreditar","cantidad_incompatible",
+  "cargos_o_lineas_sin_asignar"
+ ]);
+ const allowedWarnings=new Set([
+  "iva_no_informado","flete_no_incluido_en_comparacion",
+  "stock_no_corroborado","minimos_y_pago_no_evaluados",
+  "bolson_1m3_nominal_sin_stock",
+  "presentacion_envase_diferente_misma_cantidad_sin_stock"
+ ]);
+ const counts=new Map(names.map(name=>[name,0]));
+ for(const line of p.articulos){
+  if(!Array.isArray(line.referencias)||line.referencias.length!==names.length)
+   return;
+  for(const ref of line.referencias){
+   if(!counts.has(ref.oferta))return;
+   if(ref.importeCotizado!==null)
+    counts.set(ref.oferta,counts.get(ref.oferta)+1);
+  }
+ }
+ if(m.ofertas.length!==names.length||m.ofertas.some((x,i)=>
+   !x||x.oferta!==names[i]||!Number.isSafeInteger(x.articulosConBase)||
+   x.articulosConBase<0||x.articulosConBase>counts.get(x.oferta)||
+   !(x.motivo===null||exclusion.has(x.motivo))))return;
+ const cents=(s,currency)=>{
+  if(typeof s!=="string")return null;
+  const prefix=currency==="ARS"?/^\s*AR\$\s*/i:
+   /^\s*(?:US\$|U\$S|USD\s*\$?)\s*/i;
+  if(!prefix.test(s))return null;
+  const lit=s.replace(prefix,"").trim();
+  let int,fract;
+  if(/^(?:\d{1,3}(?:\.\d{3})+|\d+),\d{2}$/.test(lit)){
+   [int,fract]=lit.split(",");int=int.replace(/\./g,"");
+  }else if(/^\d+\.\d{2}$/.test(lit)){[int,fract]=lit.split(".")}
+  else if(/^\d+$/.test(lit)){int=lit;fract="00"}
+  else return null;
+  try{return BigInt(int)*100n+BigInt(fract)}catch{return null}
+ };
+ const safe=[];
+ const seen=new Set();
+ for(const option of m.opciones){
+  if(!option||!Array.isArray(option.ofertasAnonimas)||
+    option.ofertasAnonimas.length<1||option.ofertasAnonimas.length>2||
+    option.ofertasAnonimas.some(x=>!names.includes(x))||
+    new Set(option.ofertasAnonimas).size!==option.ofertasAnonimas.length||
+    !["ARS","USD"].includes(option.moneda)||
+    !/^(?:0|[1-9]\d{0,11})\.\d{2}$/.test(option.subtotalMaterialesSinIva)||
+    !Array.isArray(option.asignacion)||
+    option.asignacion.length!==p.articulos.length||
+    !Array.isArray(option.advertencias)||
+    option.advertencias.some(x=>!allowedWarnings.has(x))||
+    new Set(option.advertencias).size!==option.advertencias.length||
+    ["flete_no_incluido_en_comparacion","stock_no_corroborado",
+      "minimos_y_pago_no_evaluados"].some(x=>!option.advertencias.includes(x)))
+   return;
+  const used=new Set();
+  let sum=0n;
+  for(let i=0;i<p.articulos.length;i++){
+   const item=p.articulos[i],pick=option.asignacion[i];
+   if(!pick||pick.itemId!==item.itemId||
+     !option.ofertasAnonimas.includes(pick.oferta)||
+     conditions.get(pick.oferta)?.moneda!==option.moneda)return;
+   const ref=item.referencias.find(x=>x.oferta===pick.oferta);
+   if(!ref||ref.importeCotizado===null||
+      !["alternativa_comercial_con_aclaracion",
+       "coincide_volumen_nominal_sin_stock"].includes(ref.estado)||
+      !["sin_iva_por_convencion","sin_iva_declarado"].includes(ref.iva))
+    return;
+   const n=cents(ref.importeCotizado,option.moneda);
+   if(n===null||n>1000000000000n)return;
+   sum+=n;used.add(pick.oferta);
+  }
+  const decimal=String(sum/100n)+"."+String(sum%100n).padStart(2,"0");
+  const key=option.moneda+":"+option.ofertasAnonimas.join("|")+":"+
+   option.asignacion.map(x=>x.oferta).join("|");
+  const ivaUnknown=option.ofertasAnonimas.some(x=>
+   conditions.get(x).iva==="no_informado");
+  if(used.size!==option.ofertasAnonimas.length||
+     decimal!==option.subtotalMaterialesSinIva||
+     option.advertencias.includes("iva_no_informado")!==ivaUnknown||
+     seen.has(key))return;
+  seen.add(key);safe.push(option);
+ }
+ const reason={
+  moneda_sin_acreditar:"Moneda no acreditada en el original",
+  moneda_contradictoria_en_original:"Declaraciones contradictorias de moneda",
+  unidad_sin_acreditar:"Unidad o presentación sin acreditar",
+  cantidad_incompatible:"Cantidad no homologable",
+  cargos_o_lineas_sin_asignar:"Hay cargos o renglones adicionales sin asignar",
+  iva_incluido_no_normalizado:"IVA incluido sin base homogénea",
+  tratamiento_iva_ambiguo:"Tratamiento de IVA ambiguo",
+  sin_lineas_asignadas:"No hay artículos asignables con prueba suficiente"
+ };
+ if(safe.length){
+  for(const option of safe){
+   const card=element("article","economic-readiness-card");
+   card.appendChild(element("strong","",
+    "Canasta completa con "+option.ofertasAnonimas.join(" + ")));
+   const list=element("ul","economic-readiness-list");
+   const [whole,dec]=option.subtotalMaterialesSinIva.split(".");
+   const grouped=whole.replace(/\B(?=(\d{3})+(?!\d))/g,".");
+   list.appendChild(element("li","",
+    "Subtotal de materiales: "+option.moneda+" "+grouped+","+dec));
+   list.appendChild(element("li","",
+    option.ofertasAnonimas.length===1?
+     "Un presupuesto cubre los artículos incluidos en esta referencia.":
+     "Combinación de dos presupuestos: no comparar con totales parciales."));
+   list.appendChild(element("li","",
+    "Sin IVA calculado ni flete, disponibilidad o mínimos acreditados."));
+   card.appendChild(list);grid.appendChild(card);
+  }
+  displayText("materialBasketsCaption",
+   safe.length+" canasta(s) de materiales con moneda y evidencia suficientes. "+
+   "Son referencias de importes, no ofertas finales comparables ni ganadores.");
+ }else{
+  for(const o of m.ofertas){
+   const card=element("article","economic-readiness-card");
+   card.appendChild(element("strong","",
+    o.oferta+" · "+o.articulosConBase+" de "+m.requested_items+
+    " artículo(s) con base comercial comprobable"));
+   card.appendChild(element("p","",
+    reason[o.motivo]??"No hay subtotal de materiales completo y acreditado."));
+   grid.appendChild(card);
+  }
+  displayText("materialBasketsCaption",
+   "Todavía no hay una canasta completa de materiales calculable con "+
+   "moneda y unidades acreditadas. Todos los presupuestos siguen disponibles.");
+ }
+ el("materialBasketsSection").hidden=false;
+}
+
 // MVP194 — full-basket SOURCE AMOUNT coverage, not economic competitiveness.
 // Only CLOSED round and independently rechecked against the MVP186 projection.
 function showPricedCoverage(d){
