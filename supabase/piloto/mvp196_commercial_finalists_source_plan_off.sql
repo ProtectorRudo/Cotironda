@@ -299,3 +299,43 @@ REVOKE ALL ON FUNCTION public.cotironda_piloto_source_plan_sendable_mvp196(uuid)
  FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.cotironda_piloto_source_plan_sendable_mvp196(uuid)
  TO service_role;
+
+-- Only prospective, v9-attested private plans are eligible for a future
+-- separately authorized queue. This routine never queues or sends.
+CREATE OR REPLACE FUNCTION public.cotironda_piloto_commercial_queue_due_mvp196(
+ p_limit integer DEFAULT 10
+) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER
+SET search_path='' AS $fn$
+DECLARE v_requests jsonb;
+BEGIN
+ IF p_limit IS NULL OR p_limit NOT BETWEEN 1 AND 25 THEN
+  RETURN jsonb_build_object('state','invalid_limit');END IF;
+ IF NOT EXISTS(
+  SELECT 1 FROM cotironda_piloto_privado.finalist_activation_mvp113 a
+  WHERE a.only_row AND a.enabled AND a.activated_at<=clock_timestamp()
+ ) THEN RETURN jsonb_build_object('state','pilot_finalist_off');END IF;
+ SELECT coalesce(jsonb_agg(id),'[]'::jsonb) INTO v_requests FROM (
+  SELECT req.id FROM cotironda_piloto_privado.requests req
+  JOIN cotironda_piloto_privado.finalist_activation_mvp113 a
+   ON a.only_row AND a.enabled AND a.activated_at<=clock_timestamp()
+    AND req.created_at>=a.activated_at
+  JOIN cotironda_piloto_privado.finalist_source_plans_mvp196 verified
+   ON verified.request_id=req.id AND verified.verifier_version=196
+  JOIN cotironda_piloto_privado.finalist_coverage_plans_mvp108 p
+   ON p.request_id=req.id AND cardinality(verified.source_hmacs)=p.candidate_count
+  WHERE req.state='closed' AND req.closes_at<=clock_timestamp()
+   AND p.state IN('one_complete_alternative','two_complete_alternatives',
+                  'two_supplier_combination')
+   AND NOT EXISTS(
+    SELECT 1 FROM cotironda_piloto_privado.finalist_whapi_outbox_mvp110 w
+    WHERE w.request_id=req.id
+   )
+  ORDER BY req.closes_at,req.id LIMIT p_limit
+ ) s;
+ RETURN jsonb_build_object('state','queue_candidates',
+  'requestIds',v_requests,'messages_sent',false);
+END;$fn$;
+REVOKE ALL ON FUNCTION public.cotironda_piloto_commercial_queue_due_mvp196(integer)
+ FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.cotironda_piloto_commercial_queue_due_mvp196(integer)
+ TO service_role;
