@@ -262,7 +262,32 @@ BEGIN
   p_supplier IS NULL OR p_lease IS NULL OR
   (p_message_id IS NOT NULL AND
    (length(p_message_id) NOT BETWEEN 8 AND 160 OR
-    p_message_id !~ '^[A-Za-z0-9_-]+$'))
+    p_message_id !~ '^[A-Za-z0-9._:-]+))
+ THEN RETURN false;END IF;
+ UPDATE cotironda_piloto_privado.ai_dispatch_jobs_mvp222
+ SET state=p_state,
+     whapi_message_id=CASE WHEN p_state='api_accepted' THEN p_message_id ELSE NULL END,
+     finished_at=clock_timestamp()
+ WHERE request_id=p_request AND supplier_key=p_supplier
+   AND state='leased' AND lease_token=p_lease;
+ GET DIAGNOSTICS n=ROW_COUNT;
+ RETURN n=1;
+END;
+$finish$;
+
+REVOKE ALL ON FUNCTION
+ public.cotironda_piloto_ia_publish_mvp222(uuid),
+ public.cotironda_piloto_ia_claim_mvp222(uuid),
+ public.cotironda_piloto_ia_pdf_snapshot_mvp222(uuid,text,uuid),
+ public.cotironda_piloto_ia_finish_mvp222(uuid,text,uuid,text,text)
+ FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION
+ public.cotironda_piloto_ia_publish_mvp222(uuid),
+ public.cotironda_piloto_ia_claim_mvp222(uuid),
+ public.cotironda_piloto_ia_pdf_snapshot_mvp222(uuid,text,uuid),
+ public.cotironda_piloto_ia_finish_mvp222(uuid,text,uuid,text,text)
+ TO service_role;
+))
  THEN RETURN false;END IF;
  UPDATE cotironda_piloto_privado.ai_dispatch_jobs_mvp222
  SET state=p_state,
