@@ -1,3 +1,8 @@
+## 2026-11-05 — MVP211 (desarrollo): primera capacidad integrada del seguimiento 12×30
+
+- Auditoría solo lectura en Supabase PILOTO: pedidos 200 renglones posibles, originales de proveedor hasta 25 cada uno, rondas reales actuales 3 ítems/2 ofertas como máximo. Detectado límite artificial 10/25 en SQL privado, TS y Vercel. Nueva migración propuesta, sin instalar: seleccionar 12 documentos v9 por ronda con 30 artículos solicitados, conservando cada original de hasta 25 líneas.
+- Capacidad alineada en diagnóstico, cobertura, referencias por artículo, alternativas completas, pares, proxy y página; límite de respuesta 512KiB con fallo total y no truncamiento. Prueba PG17 aislado y pruebas unitarias 12×30, fuentes faltantes, autorización, revocación y casos 13/31, sin WhatsApps ni cambios en PILOTO. MVP185/210 mantiene límite monetario anterior y se oculta sin ranking falso en casos grandes. docs/336; P0-H sin cerrar.
+
 ## 2026-11-05 — MVP210: comparador de materiales conectado al comprador (solo desarrollo)
 
 - Nuevo adaptador de fuente v9 a comparador MVP185 desde el seguimiento privado al cierre: verificaciones de texto público/etiqueta, SHA, descuentos, unidades y canasta de uno o dos, sin contactos ni adjudicación. Vercel y DOM recalculan subtotales de materiales con BigInt en vez de confiar en el importe enviado por Edge.
