@@ -99,6 +99,33 @@ async function run(req:Request):Promise<Response>{
    api_accepted:0,uncertain:0,details_exposed:false
   }),{status:200,headers:{'content-type':'application/json',
    'cache-control':'no-store','x-content-type-options':'nosniff'}});
+ // Even with the independent dispatch flag ON, only plans produced by
+ // the source-attested V196 transaction are eligible to enter the outbox.
+ // The existing queue RPC still checks all parties' explicit opt-in.
+ const dueQueue=await db.rpc('cotironda_piloto_commercial_queue_due_mvp196',{
+  p_limit:10
+ });
+ if(dueQueue.error||!isObj(dueQueue.data)||
+    dueQueue.data.state!=='queue_candidates'||
+    !Array.isArray(dueQueue.data.requestIds)||
+    dueQueue.data.requestIds.length>10)
+  return textResponse(503,'commercial_queue_unavailable');
+ for(const id of dueQueue.data.requestIds){
+  if(typeof id!=='string')return textResponse(503,'invalid_queue_request');
+  const allowed=await db.rpc('cotironda_piloto_source_plan_sendable_mvp196',{
+   p_request:id
+  });
+  if(allowed.error||allowed.data!==true)
+   return textResponse(503,'unverified_commercial_plan');
+  const queued=await db.rpc('cotironda_piloto_queue_finalists_mvp110',{
+   p_request:id
+  });
+  if(queued.error||!isObj(queued.data))
+   return textResponse(503,'consented_queue_unavailable');
+  if(!['queued','consent_or_contact_missing','outbound_disabled',
+        'not_eligible'].includes(String(queued.data.state)))
+   return textResponse(503,'consented_queue_rejected');
+ }
  let accepted=0,uncertain=0;
  // Bounded 3 outbound attempts per invocation. Never blind-retry leased rows.
  for(let i=0;i<3;i++){
@@ -112,6 +139,22 @@ async function run(req:Request):Promise<Response>{
    return textResponse(503,'claim_invalid');
   const args={p_request:claim.request_id,p_recipient:claim.recipient_key,
    p_lease:claim.lease_token};
+  // A legacy unverified plan may exist in the old outbox. Claimed rows
+  // must carry the V196 immutable source marker or NO network request
+  // is permitted; record 'uncertain' for manual reconciliation.
+  const v196=await db.rpc('cotironda_piloto_source_plan_sendable_mvp196',{
+   p_request:claim.request_id
+  });
+  if(v196.error||v196.data!==true){
+   const rejected=await db.rpc('cotironda_piloto_finish_finalist_whapi_mvp110',{
+    ...args,p_state:'uncertain',p_message_id:null
+   });
+   if(rejected.error||rejected.data!==true)
+    return textResponse(503,'unverified_claim_reconciliation_required');
+   uncertain++;
+   continue;
+  }
+
   let state:'api_accepted'|'uncertain'='uncertain';
   let messageId:string|null=null;
   try{
