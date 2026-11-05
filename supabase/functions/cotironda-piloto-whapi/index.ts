@@ -490,6 +490,7 @@ async function respond(req:Request):Promise<Response>{
   if(outcome(out.data)==='quote_recorded')supplierAckMode='text_quote';
   // A supplier can have several open invitations. A quoted PDF ID is
   // checked against the exact accepted Whapi outbox for this same seller.
+  let legacySupplierQuoteLinked=false;
   if(row.type==='text'&&supplierQuotedId&&
      outcome(out.data)==='unmatched_quote'){
     const binding=await db.rpc('cotironda_piloto_link_quoted_text_mvp151',{
@@ -497,7 +498,23 @@ async function respond(req:Request):Promise<Response>{
       p_quoted_id:supplierQuotedId,p_plaintext:body
     });
     if(binding.error)return json(503,'supplier_quote_context_unavailable');
-    if(binding.data?.state==='linked')supplierAckMode='text_quote';
+    if(binding.data?.state==='linked'){
+      supplierAckMode='text_quote';
+      legacySupplierQuoteLinked=true;
+    }
+  }
+  // Nueva asociación IA Central: solo texto FUENTE a ronda exacta.
+  // No publica precios ni asigna ganadores; bandera OFF por defecto.
+  if(row.type==='text'&&outcome(out.data)==='unmatched_quote'&&
+     !legacySupplierQuoteLinked&&
+     Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_QUOTE_LINK_ENABLED')==='true'){
+    const linked=await db.rpc('cotironda_piloto_ia_link_supplier_mvp225',{
+      p_message_hmac:messageHash,p_chat_hmac:chatHash,
+      p_quoted_whapi_id:supplierQuotedId,p_original_text:body
+    });
+    if(linked.error)return json(503,'ai_supplier_quote_link_unavailable');
+    if(linked.data?.state==='linked_for_semantic_review')
+      supplierAckMode='text_quote';
   }
   // Archive original incoming PDF, Excel, Word or photo ONLY after
   // committed authenticated inbox and supplier/buyer consent SQL check.
@@ -543,6 +560,16 @@ async function respond(req:Request):Promise<Response>{
       });
       if(completed.error||completed.data!==true)
         return json(503,'media_reconciliation_required');
+      // Solo tras almacenar y verificar SHA del archivo, intentar
+      // vincular la respuesta al trabajo IA Central. No adjudicar.
+      if(status==='stored'&&
+         Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_QUOTE_LINK_ENABLED')==='true'){
+        const linked=await db.rpc('cotironda_piloto_ia_link_supplier_mvp225',{
+          p_message_hmac:messageHash,p_chat_hmac:chatHash,
+          p_quoted_whapi_id:supplierQuotedId,p_original_text:null
+        });
+        if(linked.error)return json(503,'ai_supplier_media_link_unavailable');
+      }
       // The model only proposes a PRIVATE DRAFT; cannot create an invitation,
       // offer, winner or public view without separate independent verification.
       if(status==='stored'&&downloadedForReview&&
