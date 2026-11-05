@@ -224,6 +224,36 @@ function buyerView(parsed){
     }
   }
 
+  // MVP203: guidance is derived EXCLUSIVELY from the MVP189 source-bound,
+  // buyer-token-gated and fully whitelisted coverage options above.
+  // Never pick two by arrival order or an incomplete economic ranking.
+  // Every offer remains in safe.offers, including partial candidates.
+  if(parsed.state==="closed"&&safe.can_open===true&&safe.coverage_options){
+    const complete=safe.coverage_options.alternativas;
+    const individual=complete.filter(x=>x.modo==="individual");
+    const combinations=complete.filter(x=>x.modo==="complementaria");
+    let tipo="multiples_sin_preferencia",ofertasAnonimas=[];
+    if(complete.length===0)tipo="sin_cobertura_completa";
+    else if(combinations.length===0&&individual.length===1){
+      tipo="una_individual";ofertasAnonimas=individual[0].ofertasAnonimas.slice();
+    }else if(combinations.length===0&&individual.length===2){
+      tipo="dos_individuales";
+      ofertasAnonimas=individual.map(x=>x.ofertasAnonimas[0]);
+    }else if(individual.length===0&&combinations.length===1){
+      tipo="pareja_complementaria";
+      ofertasAnonimas=combinations[0].ofertasAnonimas.slice();
+    }
+    safe.orientacion={
+      state:"orientacion_de_cobertura_no_economica",
+      tipo,ofertasAnonimas,
+      alternativasCompletas:complete.length,
+      presupuestosRevisados:safe.offers.length,
+      ranking_allowed:false,price_comparable:false,
+      contacts_revealed:false,automatic_award:false,
+      originales_descargables:false
+    };
+  }
+
   // MVP194 — a second boundary independently recalculates source-priced
   // article COVERAGE from the already-whitelisted MVP186 document values.
   // Never let an Edge future field supply its own money, supplier IDs or
