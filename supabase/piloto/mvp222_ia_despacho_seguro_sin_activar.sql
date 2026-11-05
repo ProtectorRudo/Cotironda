@@ -262,7 +262,7 @@ BEGIN
   p_supplier IS NULL OR p_lease IS NULL OR
   (p_message_id IS NOT NULL AND
    (length(p_message_id) NOT BETWEEN 8 AND 160 OR
-    p_message_id !~ '^[A-Za-z0-9._:-]+))
+    p_message_id !~ '^[A-Za-z0-9._:-]+$'))
  THEN RETURN false;END IF;
  UPDATE cotironda_piloto_privado.ai_dispatch_jobs_mvp222
  SET state=p_state,
