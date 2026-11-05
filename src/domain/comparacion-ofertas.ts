@@ -64,7 +64,7 @@ const MAX_ITEMS=100,MAX_OFERTAS=200,MAX_AMOUNT=1000000000000n; // 10.000 millone
 // Deterministic CPU ceiling, not a list truncation. At this limit the engine
 // still shows every offer's coverage and comparable individual total, but it
 // suspends ALL pair rankings instead of presenting a deceptive partial search.
-const PAIR_WORK_BUDGET=180000;
+const PAIR_WORK_BUDGET=500000;
 function error():never{throw new TypeError('comparacion_entrada_invalida');}
 function record(x:unknown):x is Record<string,unknown>{
   return x!==null&&typeof x==='object'&&!Array.isArray(x);
