@@ -254,10 +254,10 @@ BEGIN
   IF snap IS NULL OR jsonb_array_length(snap->'items')<>1
   THEN RAISE EXCEPTION 'mvp222_cross_supplier_pdf'; END IF;
   IF NOT public.cotironda_piloto_ia_finish_mvp222(
-   rid,supplier,lease,'api_accepted',('abc1234567'||j::text))
+   rid,supplier,lease,'api_accepted',(CASE WHEN j=1 THEN 'wamid.HBgAAA111' ELSE 'abc1234567'||j::text END))
   THEN RAISE EXCEPTION 'mvp222_finish_failed';END IF;
   IF public.cotironda_piloto_ia_finish_mvp222(
-   rid,supplier,lease,'api_accepted',('abc1234567'||j::text))
+   rid,supplier,lease,'api_accepted',(CASE WHEN j=1 THEN 'wamid.HBgAAA111' ELSE 'abc1234567'||j::text END))
   THEN RAISE EXCEPTION 'mvp222_double_send_accepted';END IF;
   sent:=sent+1;
  END LOOP;
@@ -301,7 +301,7 @@ BEGIN
  );
  -- Wrong original text and wrong quoted ID must never write links.
  result:=public.cotironda_piloto_ia_link_supplier_mvp225(
-  repeat('d',64),repeat('1',64),'abc12345671',text_quote||' mal');
+  repeat('d',64),repeat('1',64),'wamid.HBgAAA111',text_quote||' mal');
  IF result->>'state'<>'text_source_mismatch'
  THEN RAISE EXCEPTION 'mvp225_original_not_verified';END IF;
  result:=public.cotironda_piloto_ia_link_supplier_mvp225(
@@ -311,13 +311,13 @@ BEGIN
  IF (SELECT count(*) FROM cotironda_piloto_privado.ai_supplier_links_mvp225)<>0
  THEN RAISE EXCEPTION 'mvp225_wrong_quote_did_mutate'; END IF;
  result:=public.cotironda_piloto_ia_link_supplier_mvp225(
-  repeat('d',64),repeat('1',64),'abc12345671',text_quote);
+  repeat('d',64),repeat('1',64),'wamid.HBgAAA111',text_quote);
  IF result->>'state'<>'linked_for_semantic_review' OR
   (result->>'request_id')::uuid<>rid OR
   result->>'association'<>'quoted_whapi_id'
  THEN RAISE EXCEPTION 'mvp225_quoted_source_not_linked_%',result;END IF;
  IF public.cotironda_piloto_ia_link_supplier_mvp225(
-  repeat('d',64),repeat('1',64),'abc12345671',text_quote
+  repeat('d',64),repeat('1',64),'wamid.HBgAAA111',text_quote
  )->>'state'<>'already_linked'
  THEN RAISE EXCEPTION 'mvp225_duplicate_quote';END IF;
  IF (SELECT count(*) FROM cotironda_piloto_privado.ai_supplier_links_mvp225)<>1
