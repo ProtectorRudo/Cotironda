@@ -195,6 +195,8 @@ CREATE TABLE cotironda_piloto_privado.integration_flags(
  whatsapp_outbound_enabled boolean NOT NULL
 );
 INSERT INTO cotironda_piloto_privado.integration_flags VALUES(true,true);
+ALTER TABLE cotironda_piloto_privado.integration_flags
+ ADD COLUMN whatsapp_inbound_enabled boolean NOT NULL DEFAULT true;
 
 CREATE TABLE cotironda_piloto_privado.media_archive_mvp095(
  message_hmac text PRIMARY KEY REFERENCES cotironda_piloto_privado.whapi_inbox(message_hmac),
