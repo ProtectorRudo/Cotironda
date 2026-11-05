@@ -1,3 +1,7 @@
+## 2026-11-05 — MVP232: respuestas de rondas IA tras cierre de gates (desarrollo)
+
+- Corrige clasificación del proveedor en webhook: el permiso SQL `quote_link` para un PDF `api_accepted` sigue en IA Central aunque se apague el control de nuevas rondas. Mantiene la asociación segura y la revisión de presupuestos dentro de la ronda, sin reactivar nuevos pedidos o envíos. Regresión `mvp232-proveedor-tras-gates`, ADR 354; solo rama/PR, sin despliegue ni WhatsApps.
+
 ## 2026-11-05 — IA Central (decisión 340; desarrollo, sin publicación)
 
 - Aprobado rediseño semántico: dos lecturas OpenAI Responses con evidencias literales verificables, ruteo de rubros sobre proveedores autorizados y asociación inequívoca de cotizaciones a ronda; sin diccionarios cerrados para material. Nuevo contrato de herramientas/seguridad, pruebas de jerga y omisiones.
