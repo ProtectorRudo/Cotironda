@@ -156,7 +156,9 @@ CREATE OR REPLACE FUNCTION public.cotironda_piloto_ia_is_supplier_mvp226(
 ) RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO ''
 AS $fn$
  SELECT jsonb_build_object('state',
-  CASE WHEN EXISTS(
+  CASE WHEN EXISTS(SELECT 1 FROM cotironda_piloto_privado.ai_central_control_mvp226 g
+    WHERE g.only_row AND g.enabled AND g.activated_at IS NOT NULL)
+   AND EXISTS(
    SELECT 1 FROM cotironda_piloto_privado.participants p
    JOIN cotironda_piloto_privado.ai_dispatch_jobs_mvp222 j ON j.supplier_key=p.key
    JOIN cotironda_piloto_privado.requests r ON r.id=j.request_id
