@@ -114,9 +114,10 @@ function precioConfirmado(line:OfertaLineaMvp225):bigint|null{
  }
  // En ausencia del total declarado, evitar que una cantidad normalizada
  // por IA (pero ausente en el mensaje) termine creando un importe falso.
- const rawQuantity=line.cantidad.replace('.', '[.,]');
- const qtyEvidence=new RegExp('(?:^|[^\\d])'+rawQuantity+'(?=$|[^\\d])','u');
- if(!qtyEvidence.test(line.textoOriginal))return null;
+ const withoutPrice=line.textoOriginal.replace(line.precioUnitarioLiteral,'');
+ const visibleNumbers=withoutPrice.match(/\d+(?:[.,]\d+)*/gu)??[];
+ if(!visibleNumbers.some(token=>token.replace(',','.')===line.cantidad))
+  return null;
  // Si el proveedor sí escribió "total" o un segundo importe monetario,
  // NO descartarlo para favorecer un subtotal deducido.
  if(/\b(?:total|subtotal|importe)\s*[:=]?\s*\$?\s*\d/iu.test(line.textoOriginal))
