@@ -348,6 +348,27 @@ function showMaterialBaskets(d){
  el("materialBasketsSection").hidden=true;
  displayText("materialBasketsCaption","");
  const m=d?.material_baskets,p=d?.item_prices,e=d?.economic_readiness;
+ // For larger rounds the exact MVP185/MVP210 economic optimizer is
+ // intentionally suspended. Say so explicitly instead of displaying an
+ // arbitrary cheaper "top ten" or hiding the limitation.
+ if(d?.state==="closed"&&d.can_open===true&&!m&&
+   Array.isArray(d.offers)&&d.offers.length>=1&&
+   (d.offers.length>10||p?.requested_items>25)&&
+   p?.state==="importes_por_articulo_sin_ranking"&&
+   e?.state==="condiciones_por_oferta_sin_ranking"&&
+   p.quotations===d.offers.length&&e.quotations===d.offers.length&&
+   p.requested_items===e.requested_items&&
+   Array.isArray(p.articulos)&&p.articulos.length===p.requested_items){
+   displayText("materialBasketsCaption",
+    "Pedido de mayor tamaño: todavía no hay cálculo global de "+
+    "canasta validado para este volumen.");
+   grid.appendChild(element("p","",
+    "Todos los presupuestos y sus importes por artículo siguen "+
+    "disponibles. No se muestra una clasificación de solo algunos "+
+    "proveedores ni se supone un precio final."));
+   el("materialBasketsSection").hidden=false;
+   return;
+ }
  if(d?.state!=="closed"||d.can_open!==true||
    !m||!p||!e||!Array.isArray(d.offers)||
    m.state!=="referencia_materiales_sin_precio_final"||
