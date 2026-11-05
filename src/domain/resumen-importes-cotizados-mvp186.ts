@@ -90,13 +90,16 @@ export function resumirImportesCotizadosCompradorMvp186(
     checked.rondaResumen.cotizacionesAuditadas!==status.offers.length)
    return null;
   const labels=new Map<string,string>();
-  for(const offer of status.offers){
+  const positions=new Map<string,number>();
+  for(const [i,offer] of status.offers.entries()){
    if(!offer||typeof offer.text!=='string'||offer.text.length<1||
      offer.text.length>16000||
      typeof offer.label!=='string'||offer.label.length<1||
-     offer.label.length>100||labels.has(offer.text))
-    return null; // duplicate public texts cannot be assigned securely
+     offer.label.length>100||labels.has(offer.text)||
+     positions.has(offer.label))
+    return null; // neither duplicate texts NOR duplicate buyer labels
    labels.set(offer.text,offer.label);
+   positions.set(offer.label,i);
   }
   if(checked.rondaResumen.articulosSolicitados!==input.requestItems.length||
     checked.proveedoresAnonimos.length!==input.quotations.length)
@@ -202,7 +205,12 @@ export function resumirImportesCotizadosCompradorMvp186(
       descripcionSolicitada:item.descripcionSolicitada,
       cantidadSolicitada:item.cantidadSolicitada,
       unidadSolicitada:item.unidadSolicitada,
-      referencias:Object.freeze(item.referencias)
+      // RPC rows come sorted by HMAC, NOT by buyer-visible labels.
+      // Keep each source's verified label/value together but present every
+      // article in the SAME order as the buyer's reviewed offer list.
+      referencias:Object.freeze([...item.referencias].sort((a,b)=>
+       positions.get(a.oferta)!-positions.get(b.oferta)!)
+      )
      }))),
    ranking_allowed:false as const,price_comparable:false as const,
    contacts_revealed:false as const,adjudicacion:false as const,

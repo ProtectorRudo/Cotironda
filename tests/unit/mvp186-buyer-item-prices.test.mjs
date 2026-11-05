@@ -91,12 +91,12 @@ test('MVP186: la fuente v9 se vincula por texto público exacto, NUNCA por índi
  assert.deepEqual(r.articulos[1].referencias.map(x=>x.cantidadCotizadaLiteral),
   ['2,00','2,00']);
  assert.deepEqual(r.articulos.map(x=>x.referencias.map(y=>y.oferta)),[
-  ['Presupuesto 2','Presupuesto 1'],['Presupuesto 2','Presupuesto 1']
+  ['Presupuesto 1','Presupuesto 2'],['Presupuesto 1','Presupuesto 2']
  ]);
  assert.deepEqual(r.articulos[0].referencias.map(x=>x.importeCotizado),
-  ['$ 100,00','$ 90,00']);
+  ['$ 90,00','$ 100,00']);
  assert.deepEqual(r.articulos[1].referencias.map(x=>x.importeCotizado),
-  ['$ 200,00','$ 190,00']);
+  ['$ 190,00','$ 200,00']);
  assert.equal(r.articulos[0].referencias[0].iva,'sin_iva_por_convencion');
  assert.equal(r.ranking_allowed,false);
  assert.equal(r.price_comparable,false);
@@ -150,9 +150,12 @@ test('MVP186: contradicción o IVA incluido no homologado retiene oferta, sin pr
   const p=sample();p.quotations[0].economia.condiciones.iva.estado=value;
   const r=summarize(tracking(),p);
   assert.ok(r);
-  assert.equal(r.articulos[0].referencias[0].importeCotizado,null);
-  assert.equal(r.articulos[0].referencias[0].estado,'no_homologable');
-  assert.equal(r.articulos[0].referencias[1].importeCotizado,'$ 90,00');
+  // RPC source index 0 is Presupuesto 2; the visible list starts at 1.
+  assert.equal(r.articulos[0].referencias[0].oferta,'Presupuesto 1');
+  assert.equal(r.articulos[0].referencias[0].importeCotizado,'$ 90,00');
+  assert.equal(r.articulos[0].referencias[1].oferta,'Presupuesto 2');
+  assert.equal(r.articulos[0].referencias[1].importeCotizado,null);
+  assert.equal(r.articulos[0].referencias[1].estado,'no_homologable');
  }
 });
 test('MVP186: ubicación de fuente ausente invalida la proyección sin filtrar importes',()=>{
@@ -244,4 +247,22 @@ test('MVP187: nunca incluir nombre de comercio, HMAC ni datos de fuente en el co
   assert.ok(!out.includes(sensitive),sensitive);
  assert.equal(result.contactosRevelados,undefined);
  assert.equal(result.contacts_revealed,false);
+});
+
+test('MVP206: misma referencia y precio aunque cambie el orden interno de HMAC',()=>{
+ const t=tracking();
+ const original=sample();
+ const reverse=structuredClone(original);
+ reverse.quotations.reverse();
+ const a=summarize(t,original),b=summarize(t,reverse);
+ assert.ok(a&&b);
+ assert.deepEqual(a,b);
+ assert.deepEqual(a.articulos.map(item=>item.referencias.map(x=>x.oferta)),[
+  ['Presupuesto 1','Presupuesto 2'],['Presupuesto 1','Presupuesto 2']
+ ]);
+});
+
+test('MVP206: dos textos aprobados con una etiqueta de presupuesto repetida se rechazan',()=>{
+ const t=tracking();t.offers[1].label=t.offers[0].label;
+ assert.equal(summarize(t,sample()),null);
 });
