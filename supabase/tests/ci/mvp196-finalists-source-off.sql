@@ -106,7 +106,7 @@ CREATE FUNCTION public.cotironda_piloto_private_round_inputs_mvp172(
 ) RETURNS jsonb LANGUAGE sql STABLE SET search_path='' AS $f$
  SELECT pg_catalog.jsonb_build_object(
   'state','private_inputs',
-  'quotations',pg_catalog.coalesce(pg_catalog.jsonb_agg(
+  'quotations',coalesce(pg_catalog.jsonb_agg(
    pg_catalog.jsonb_build_object('doc',pg_catalog.jsonb_build_object(
     'messageHmac',q.message_hmac,
     'sourceSha256',q.source_sha256,
