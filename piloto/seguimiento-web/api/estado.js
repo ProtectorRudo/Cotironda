@@ -120,6 +120,28 @@ function buyerView(parsed){
       };
     }
   }
+  // MVP216: only a complete per-item, source-gated, anonymous rubric map.
+  // Never accept arbitrary metadata, texts, supplier names or money here.
+  const rubros=parsed.rubros;
+  if(safe.item_prices&&rubros&&typeof rubros==="object"&&
+     !Array.isArray(rubros)&&rubros.state==="rubros_por_articulo"&&
+     rubros.ranking_allowed===false&&
+     rubros.contacts_revealed===false&&rubros.automatic_award===false&&
+     Array.isArray(rubros.items)&&
+     rubros.items.length===safe.item_prices.articulos.length){
+    const ids=safe.item_prices.articulos.map(item=>item.itemId);
+    const allowed=new Set(["obra_gruesa","pintura","electricidad",
+      "construccion_seca","sanitarios","ferreteria","otros"]);
+    if(rubros.items.every((x,i)=>x&&typeof x==="object"&&
+       !Array.isArray(x)&&Object.keys(x).length===2&&
+       x.itemId===ids[i]&&allowed.has(x.rubro))){
+      safe.rubros={
+       state:"rubros_por_articulo",
+       items:rubros.items.map(x=>({itemId:x.itemId,rubro:x.rubro})),
+       ranking_allowed:false,contacts_revealed:false,automatic_award:false
+      };
+    }
+  }
   // MVP189 — potential full commercial coverage ONLY AFTER closure.
   // No seller identity, contacts, economic totals, tax, award, or access to
   // originals. Re-validate labels/counts and whitelist the entire payload.
