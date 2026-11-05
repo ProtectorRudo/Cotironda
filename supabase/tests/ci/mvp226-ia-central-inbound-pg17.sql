@@ -244,8 +244,8 @@ BEGIN
  IF (SELECT state FROM cotironda_piloto_privado.requests WHERE id=rid)<>'prepared'
  THEN RAISE EXCEPTION 'mvp222_did_not_prepare_round';END IF;
  IF public.cotironda_piloto_ia_is_supplier_mvp226(repeat('1',64))
-    ->>'state'<>'central_supplier'
- THEN RAISE EXCEPTION 'mvp226_supplier_wrong_router';END IF;
+    ->>'state'<>'not_central_supplier'
+ THEN RAISE EXCEPTION 'mvp226_supplier_wrong_router_when_gate_off';END IF;
  IF public.cotironda_piloto_ia_is_supplier_mvp226(repeat('9',64))
     ->>'state'<>'not_central_supplier'
  THEN RAISE EXCEPTION 'mvp226_unknown_supplier_can_route';END IF;
@@ -307,6 +307,9 @@ BEGIN
 
  UPDATE cotironda_piloto_privado.ai_central_control_mvp226
  SET enabled=true,activated_at=now() WHERE only_row;
+ IF public.cotironda_piloto_ia_is_supplier_mvp226(repeat('1',64))
+   ->>'state'<>'central_supplier'
+ THEN RAISE EXCEPTION 'mvp226_supplier_router_gate_on';END IF;
  src:='Necesito cotizar 7 bolsas cement y 2 bolsones. Entrega en La Plata.';
  INSERT INTO cotironda_piloto_privado.whapi_inbox(
   message_hmac,participant_key,chat_hmac,kind,processing_state,plaintext_sha256)
