@@ -17,7 +17,8 @@ test('MVP228: presupuesto libre sin $ o con abreviaciones se vincula si la ronda
  assert.match(edge,/row\.type==='text'&&centralSupplier&&/u);
  assert.match(edge,/cotironda_piloto_ia_link_supplier_mvp225/u);
  assert.match(edge,/p_original_text:body/u);
- assert.match(edge,/COTIRONDA_PILOT_AI_CENTRAL_QUOTE_LINK_ENABLED/u);
+ assert.match(edge,/trialActive&&trial\.quote_link===true/u);
+ assert.match(edge,/cotironda_piloto_ia_trial_flags_mvp229/u);
  assert.match(edge,/if\(!quotedId&&verifiedSupplier&&!centralSupplier\)/u);
 });
 test('MVP228: datos personales y fuente económica permanecen en tablas privadas',()=>{

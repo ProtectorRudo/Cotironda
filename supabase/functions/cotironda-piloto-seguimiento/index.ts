@@ -332,8 +332,10 @@ Deno.serve(async req=>{
  // El RPC vuelve a verificar el token, identidad, vencimiento y estado.
  // No mezclar fuentes crudas ni rangos de proveedores con la respuesta.
  // El flag está APAGADO por defecto. El camino histórico sigue igual.
- if(Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_BUYER_VIEW_ENABLED')==='true'&&
-   (publicResult?.state==='waiting'||publicResult?.state==='closed')){
+ // La ventana de prueba puede vencer, pero el comprador conserva el
+ // acceso a SUS ofertas ya verificadas por token, sin flags de entorno.
+ // El RPC revisa token, revocación, propietario y estado antes de devolver datos.
+ if(publicResult?.state==='waiting'||publicResult?.state==='closed'){
    try{
      const ai=await db.rpc('cotironda_piloto_ia_buyer_rubros_mvp227',{
        p_token_hash:digest

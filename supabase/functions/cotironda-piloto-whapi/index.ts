@@ -297,7 +297,7 @@ async function respond(req:Request):Promise<Response>{
  const ids=new Set<string>();
  const now=Math.floor(Date.now()/1000);
  const db=client(sec);
- const aiCentralSignedChats=new Set<string>();
+ const trialDispatchChats=new Set<string>();
  let recoveryTriggerHmac:string|null=null;
  let recoveryTriggerChatId:string|null=null;
  for(const row of event.messages){
@@ -306,7 +306,7 @@ async function respond(req:Request):Promise<Response>{
   if(ids.has(row.id))return json(422,'duplicate_batch');
   ids.add(row.id);
   const chatHash=await hmac(sec.key,'cotironda|pilot|chat|'+sec.channel+'|'+row.chat_id);
-  if(row.type==='text')aiCentralSignedChats.add(chatHash);
+  
   const messageHash=await hmac(sec.key,'cotironda|pilot|msg|'+sec.channel+'|'+row.id);
   // Only an authenticated sender already in the two approved supplier
   // destinations may use Whapi's quoted_id to identify a supplier PDF.
@@ -372,8 +372,17 @@ async function respond(req:Request):Promise<Response>{
     ?/^VINCULAR ([A-F0-9]{24})$/u.exec(body)?.[1]??null:null;
   // El proveedor sigue protegido por el circuito de precios actual.
   // Solo el COMPRADOR del piloto ingresa por IA Central; sin palabras clave.
-  const centralConfigured=sec.outbound&&
-    Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_BUYER_ENABLED')==='true';
+  // Configuración privada acotada por remitente, caducidad y gates SQL.
+  // Nunca activar IA únicamente por un secreto de entorno.
+  const trialResponse=await db.rpc('cotironda_piloto_ia_trial_flags_mvp229',{
+    p_chat_hmac:chatHash
+  });
+  if(trialResponse.error||!trialResponse.data||
+     typeof trialResponse.data!=='object')
+    return json(503,'ai_trial_config_unavailable');
+  const trial=trialResponse.data as Record<string,unknown>;
+  const trialActive=trial.state==='active';
+  const centralConfigured=sec.outbound&&trialActive&&trial.buyer===true;
   const supplierKnown=sec.outbound&&
     (await Promise.all(Object.values(sec.recipients).map(async recipient=>
       hmac(sec.key,'cotironda|pilot|chat|'+sec.channel+
@@ -520,8 +529,7 @@ async function respond(req:Request):Promise<Response>{
     const modelEnv=Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_MODEL');
     const model=modelEnv==='gpt-6.1-sol'?'gpt-6.1-sol':'gpt-6-luna';
     const result=await procesarCompradorCentralMvp226({
-      habilitado:true,publicar:sec.outbound&&
-        Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_DISPATCH_ENABLED')==='true',
+      habilitado:true,publicar:sec.outbound&&trial.dispatch===true,
       autenticadoPorWebhook:true,chatHmac:chatHash,
       messageHmac:messageHash,sourceSha256:textHash,
       fuente:body,apiKey:Deno.env.get('COTIRONDA_PILOT_OPENAI_API_KEY')??'',
@@ -534,8 +542,10 @@ async function respond(req:Request):Promise<Response>{
     if(result.estado==='conciliacion_requerida')
       return json(503,'ai_central_reconciliation_required');
     if(result.estado==='requiere_zona')aiReply='zone';
-    if(result.estado==='ronda_publicada')
+    if(result.estado==='ronda_publicada'){
       preparedDocumentSourceHmac=messageHash;
+      if(trial.dispatch===true)trialDispatchChats.add(chatHash);
+    }
   }
   if(outcome(out.data)==='quote_recorded')supplierAckMode='text_quote';
   // A supplier can have several open invitations. A quoted PDF ID is
@@ -561,7 +571,7 @@ async function respond(req:Request):Promise<Response>{
   if(row.type==='text'&&centralSupplier&&
      ['unmatched_quote','needs_review'].includes(outcome(out.data))&&
      !legacySupplierQuoteLinked&&
-     Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_QUOTE_LINK_ENABLED')==='true'){
+     trialActive&&trial.quote_link===true){
     const linked=await db.rpc('cotironda_piloto_ia_link_supplier_mvp225',{
       p_message_hmac:messageHash,p_chat_hmac:chatHash,
       p_quoted_whapi_id:supplierQuotedId,p_original_text:body
@@ -572,7 +582,7 @@ async function respond(req:Request):Promise<Response>{
       // Solo FUENTE ya asociada, buyer/supplier comprobados por SQL.
       // La IA interpreta libremente; SQL almacena exclusivamente el
       // resumen por rubro, sin originales, ganadores ni datos privados.
-      if(Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_QUOTE_ANALYSIS_ENABLED')==='true'){
+      if(trialActive&&trial.quote_analysis===true){
         const modelEnv=Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_MODEL');
         const model=modelEnv==='gpt-6.1-sol'?'gpt-6.1-sol':'gpt-6-luna';
         const processed=await procesarPresupuestoCentralMvp227({
@@ -639,8 +649,8 @@ async function respond(req:Request):Promise<Response>{
         return json(503,'media_reconciliation_required');
       // Solo tras almacenar y verificar SHA del archivo, intentar
       // vincular la respuesta al trabajo IA Central. No adjudicar.
-      if(status==='stored'&&
-         Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_QUOTE_LINK_ENABLED')==='true'){
+      if(status==='stored'&&centralSupplier&&trialActive&&
+         trial.quote_link===true){
         const linked=await db.rpc('cotironda_piloto_ia_link_supplier_mvp225',{
           p_message_hmac:messageHash,p_chat_hmac:chatHash,
           p_quoted_whapi_id:supplierQuotedId,p_original_text:null
@@ -1055,9 +1065,8 @@ async function respond(req:Request):Promise<Response>{
  try{await dispatchTwo(sec,db)}catch{return json(503,'dispatch_reconciliation_required')}
  // Fuente firmada + lista real de proveedores + doble gate OFF por defecto.
  // Solo despacha un pedido YA preparado por SQL, sin reinterpretar materiales.
- if(sec.outbound&&
-    Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_DISPATCH_ENABLED')==='true'){
-  for(const signedChat of aiCentralSignedChats){
+ if(sec.outbound&&trialDispatchChats.size>0){
+  for(const signedChat of trialDispatchChats){
    const ready=await db.rpc('cotironda_piloto_ia_ready_for_chat_mvp223',{
     p_buyer_chat_hmac:signedChat
    });
