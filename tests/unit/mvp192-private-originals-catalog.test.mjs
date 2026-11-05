@@ -35,7 +35,13 @@ test('MVP192: catálogo contiene TODOS los originales consentidos sin clasificac
  ]);
  assert.equal(Object.isFrozen(p),true);
  assert.equal(Object.isFrozen(p.documentos),true);
- assert.doesNotMatch(body,/ranking_allowed|ranked|finalist|\badjudicad\w*\b|winner/iu);
+ // Verifying a source's ranking_allowed=false is NOT a price ranking.
+ // Ignore ONLY this explicitly false verifier guard; still reject any
+ // algorithm that uses ranked/finalist/award to filter original downloads.
+ assert.match(body,/ev\.ranking_allowed=false/);
+ const noVerifierGuard=body.replace(/and\s+ev\.ranking_allowed=false/gu,'');
+ assert.doesNotMatch(noVerifierGuard,
+  /ranking_allowed|ranked|finalist|\badjudicad\w*\b|winner/iu);
 });
 
 test('MVP192: nunca copiar HMAC, ruta de Storage, proveedor o precio al navegador',()=>{
