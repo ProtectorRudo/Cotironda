@@ -202,20 +202,20 @@ export async function proponerRuteoCatalogoConIAV2(args:{
  if(!pedido||!Array.isArray(pedido.articulos)||
     !Array.isArray(proveedores)||pedido.articulos.length>30||
     proveedores.length>25||
-    proveedores.some(p=>!p||!Array.isArray(p.articulos)||p.articulos.length>150))
+    proveedores.some((p:ProveedorCatalogoV2)=>!p||!Array.isArray(p.articulos)||p.articulos.length>150))
   return fail('ruteo_excede_presupuesto_por_lote');
  const eligible=proveedores.filter(p=>p.consentido&&p.activo&&
   p.localidades.some(z=>zonaIgual(z,pedido.zona_entrega??'')));
  if(eligible.length===0)return fail('sin_proveedores_autorizados');
  const input={pedido:{
   zona:pedido.zona_entrega,
-  articulos:pedido.articulos.map((x,i)=>({
+  articulos:pedido.articulos.map((x:PropuestaPedido['articulos'][number],i:number)=>({
    indicePedido:i,descripcion:x.descripcion,cantidad:x.cantidad,
    unidad:x.unidad,presentacion:x.presentacion,rubro:x.rubro
   }))
- },proveedores:eligible.map(p=>({
+ },proveedores:eligible.map((p:ProveedorCatalogoV2)=>({
   clave:p.clave,
-  catalogo:p.articulos.map(x=>({
+  catalogo:p.articulos.map((x:LineaCatalogoV2)=>({
    numero:x.numero,descripcion:x.descripcion,rubro:x.rubro
   }))
  }))};
