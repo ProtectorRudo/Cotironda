@@ -73,7 +73,8 @@ test('MVP126: signed Whapi source identity is checked against stored inbox and o
  assert.match(edge,/cotironda_piloto_complete_web_link_mvp126/u);
  assert.match(edge,/p_message_hmac:messageHash,p_code:webLinkCode/u);
  assert.match(edge,/if\(webLinkCode\)\{/u);
- assert.ok(edge.includes("continue;\n  }\n  if(outcome(out.data)==='quote_recorded')"));
+ assert.match(edge,/if\(webLinkCode\)\{[\s\S]{0,1500}?continue;\s*\}/u);
+ assert.match(edge,/if\(outcome\(out\.data\)==='quote_recorded'\)/u);
 });
 
 test('MVP126: rollback-only smoke covers two roles, invalid code, wrong chat and logout',()=>{
