@@ -1,5 +1,61 @@
 # MVP213 — Acta de integración real de PILOTO (5 noviembre 2026)
 
+## Continuación autorizada — paquete de originales instalado OFF (05/11/2026)
+
+Autorización explícita del propietario: terminar el piloto, incluidos
+cambios y prueba controlada **solo en `cotironda-piloto`**. Sin producción.
+
+**Ejecución real:**
+
+1. Preflight MVP208 de la base PILOTO: PostgreSQL 17, roles y esquema
+   compatibles, **0/7 objetos instalados**, sin Auth users y sin migraciones
+   parciales; `listo_para_instalacion_apagada_con_publicalo`.
+2. Dry run del paquete de cuatro SQL, en orden
+   **MVP178 → MVP191 → MVP192 → MVP201**, con `BEGIN; ... ROLLBACK;`:
+   instalación de objetos simulada sin errores, guardas de política OFF
+   y denegación de EXECUTE público verificadas.
+3. Cuatro migraciones reales aplicadas al proyecto
+   **`ilggkalaafhtiysyzlmg` (cotironda-piloto)**:
+   - `20261105163750 mvp178_original_share_consent_private_pilot_only`
+   - `20261105163854 mvp191_buyer_verified_phone_identity_prospect_only_pilot_only`
+   - `20261105163901 mvp192_private_originals_catalog_and_context_pilot_only`
+   - `20261105164004 mvp201_original_download_audit_private_pilot_only`
+4. Postcheck original MVP208 desde GitHub:
+   `politica_apagada=true`, `tablas_con_rls=true`,
+   `sin_acceso_directo=true`, `funciones_acl_estricto=true`,
+   `consentimientos_existentes=0`, `auditorias_existentes=0`.
+   Estado exacto `instalado_apagado_sin_descargas_habilitadas`.
+5. Revalidación postinstalación: 3 rondas `prepared`, 0 `closed`,
+   0 finalistas en outbox, 0 Auth users, política de originales OFF,
+   cron de finalistas 0, activación de finalistas OFF.
+6. RPC privada `cotironda_piloto_private_round_inputs_mvp172` consultada
+   solo por métricas para las dos rondas con 4 fuentes v9:
+   ambas `private_inputs`; 2 y 3 materiales solicitados,
+   2 ofertas por ronda; `rankingAllowed=false` y
+   `contactsRevealed=false`. No se inventó ranking económico.
+
+**Estado de WhatsApp al momento del control:** se observaron 5 filas
+`whapi_outbox.state=api_accepted` y 2 enlaces comprador con
+`buyer_tracking.send_state=api_accepted`. **API aceptó no equivale
+a entrega ni apertura comprobada.** La autorización histórica
+`whapi_test_send_scope_mvp089` figura vencida, pero el código activo
+`allow_next_pilot_send_mvp091`/ `allow_document_send_mvp099`
+NO depende de ella; por lo tanto **no se modificó ni renovó**.
+
+**Bloqueo comprobado del programador:** el preflight MVP209 retorna
+`bloqueado_falta_credencial_plan_exclusiva`: falta secreto
+`cotironda_piloto_finalists_plan_only_v1` de Vault, así como cron;
+mantener selector/finalistas OFF. No improvisar credencial de despacho
+en `pg_net`. El entorno tampoco tiene compradores Auth provisionados,
+ni consentimientos prospectivos de originales, de modo que aún no se
+puede certificar descarga HTTP ni E2E en navegador. Para nuevas rondas
+el inicio permitido es un **mensaje real entrante del comprador**, no
+inyectar datos directamente ni suplantar un webhook autenticado.
+
+**No se enviaron WhatsApps nuevos, no se alteraron las rondas vigentes,
+no se descargaron originales, no se activó finalistas y no se tocó
+`main`/producción.** No cerrar checklist #529 ni afirmar piloto terminado.
+
 ## Actualización posterior: web integrada publicada (05/11/2026)
 
 Este apartado **sustituye el diagnóstico de bloqueo web y desfase** narrado
