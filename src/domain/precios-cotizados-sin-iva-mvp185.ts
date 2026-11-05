@@ -436,24 +436,24 @@ export function compararPreciosCotizadosMvp185(input:Readonly<{
  * enough: the declared total, line totals and unit prices must all agree.
  * This evidence can complement an independently verified server currency,
  * but must never silently overrule a conflicting one. */
+const currencyMarker=(literal:string|null):MonedaCotizada|null=>{
+ if(typeof literal!=='string')return null;
+ const value=literal.trim();
+ if(/^AR\$\s*/iu.test(value))return 'ARS';
+ if(/^(?:US\$|U\$S|USD)\s*/iu.test(value))return 'USD';
+ return null;
+};
+const sourceCurrencyMarkers=(doc:DocumentoFuente)=>([
+ doc.declaredTotalLiteral,
+ ...doc.lineas.flatMap(l=>[l.unitPriceLiteral,l.lineTotalLiteral])
+]).map(currencyMarker);
 export function monedaExplicitaFuenteMvp205(
  doc:DocumentoFuente
 ):MonedaCotizada|null{
  if(!isValidDoc(doc))return null;
- const marker=(literal:string|null):MonedaCotizada|null=>{
-  if(typeof literal!=='string')return null;
-  const value=literal.trim();
-  if(/^AR\$\s*/iu.test(value))return 'ARS';
-  if(/^(?:US\$|U\$S|USD)\s*/iu.test(value))return 'USD';
-  return null;
- };
- const amounts=[
-  doc.declaredTotalLiteral,
-  ...doc.lineas.flatMap(l=>[l.unitPriceLiteral,l.lineTotalLiteral])
- ];
- const currencies=amounts.map(marker);
- return currencies.length>0&&currencies.every(x=>x!==null&&x===currencies[0])
-  ?currencies[0]:null;
+ const markers=sourceCurrencyMarkers(doc);
+ return markers.length>0&&markers.every(x=>x!==null&&x===markers[0])
+  ?markers[0]:null;
 }
 function verifyOffer(pedido:PedidoComparable,entry:EntradaOfertaMvp185,
  index:number,requestId:string):ValidOffer{
@@ -740,11 +740,14 @@ export function compararPreciosCotizadosMvp185(input:Readonly<{
  });
 }
  as pesos by default.
+ const markers=sourceCurrencyMarkers(doc);
+ const stated=[...new Set(markers.filter((x):x is MonedaCotizada=>x!==null))];
+ if(stated.length>1)return blocked('moneda_contradictoria_en_original');
  const sourceCurrency=monedaExplicitaFuenteMvp205(doc);
  if(entry.moneda!==null&&entry.moneda!=='ARS'&&entry.moneda!=='USD')
   return blocked('moneda_sin_acreditar');
- if(sourceCurrency!==null&&entry.moneda!==null&&
-    sourceCurrency!==entry.moneda)
+ if(stated.length===1&&entry.moneda!==null&&
+    stated[0]!==entry.moneda)
   return blocked('moneda_contradictoria_en_original');
  const corroboratedCurrency=sourceCurrency??entry.moneda;
  if(corroboratedCurrency!=='ARS'&&corroboratedCurrency!=='USD')
