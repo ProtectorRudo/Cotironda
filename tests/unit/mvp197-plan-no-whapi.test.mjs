@@ -99,7 +99,6 @@ test('MVP197: fuente incompleta o inexacta bloquea sin seleccionar a nadie',asyn
   x=>{x.quotations[0].economia.descuentos.precios[0]
    .unitarioComercialTrasDescuento='999.00'},
   x=>{x.quotations[0].fuente.lines[0].page=null},
-  x=>{x.quotations[0].doc.lineas[0].descriptionLiteral='piedra'},
   x=>{x.quotations[0].doc.prueba.revisionVigente=false}
  ]){
   const s=source();modify(s);
@@ -112,6 +111,15 @@ test('MVP197: fuente incompleta o inexacta bloquea sin seleccionar a nadie',asyn
   assert.deepEqual(names,['cotironda_piloto_commercial_due_mvp196']);
   assert.equal(result.plans_created,0);
  }
+});
+test('MVP197: una oferta de otra familia no se elige pero conserva la ronda',async()=>{
+ const x=source();x.quotations[0].doc.lineas[0].descriptionLiteral='piedra';
+ const names=[];
+ const result=await plan(async n=>{names.push(n);return due([round(x)])});
+ assert.equal(result.state,'planned_no_whatsapp');
+ assert.equal(result.plans_created,0);
+ assert.equal(result.without_unique_commercial_plan,1);
+ assert.deepEqual(names,['cotironda_piloto_commercial_due_mvp196']);
 });
 test('MVP197: proveedor parcial no fabrica cobertura total ni segundo destinatario',async()=>{
  const s=source();
@@ -136,7 +144,8 @@ test('MVP197: fecha, request, duplicado o shape falsos nunca quedan planificados
   const name=[];
   const result=await plan(async n=>{
    name.push(n);
-   return due(rounds);
+   return n==='cotironda_piloto_commercial_due_mvp196'?
+    due(rounds):{data:{state:'planned'},error:null};
   });
   assert.ok(result.state==='verified_round_invalid'||
    result.state==='verified_planner_unavailable',result.state);
