@@ -392,7 +392,7 @@ export function prepararPresentacionesAridosMvp170(
 ):ResultadoPresentacionMvp170{
  const p=doc?.prueba;
  if(!Array.isArray(pedidoOriginal)||pedidoOriginal.length<1||
-  pedidoOriginal.length>25||
+  pedidoOriginal.length>30||
   pedidoOriginal.some(x=>!x||!ID.test(x.id)||
    !['unit','bag','box','kg','g','l','ml','m','m2','m3','roll','pack'].includes(x.unidad)||
    !saneQuantity(x.cantidad)||
