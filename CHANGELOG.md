@@ -1,3 +1,7 @@
+## 2026-11-05 — MVP205 (desarrollo, sin desplegar)
+
+- Comparador MVP185: moneda ARS/USD acreditable directamente de importes originales v9 solo con marcadores explícitos consistentes en unitarios, renglones y total. Contradicciones o `$` ambiguo bloquean la comparación; si hay fuente externa, se exige que no contradiga el documento. Mantiene todas las advertencias IVA/flete/stock y ningún efecto de despacho. Docs/329.
+
 ## 2026-11-05 — MVP204 (desarrollo, sin desplegar)
 
 - El seguimiento del comprador obtiene un panel por oferta anónima con cobertura de importes acreditados y estados de IVA/flete/pago desde el documento fuente verificado, sin formularios nuevos. Edge→Vercel→DOM vinculados por texto aprobado, contrapesados contra RPC económica MVP180; invalidación por revocación.
