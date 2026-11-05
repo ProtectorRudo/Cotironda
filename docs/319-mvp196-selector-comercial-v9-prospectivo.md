@@ -58,7 +58,12 @@ eso de cualquier permiso de contacto**.
    `source_plan_sendable_mvp196` comprueba nuevamente el sello v196
    y la ronda cerrada; si falla marca la reserva `uncertain` sin
    transmitir ni reintentar a ciegas.
-7. El resultado para el comprador se reduce mediante
+7. El seguimiento privado (Edge `cotironda-piloto-seguimiento`)
+   consulta `cotironda_piloto_tracking_source_plan_mvp196` antes del
+   desencriptado de finalistas: token vigente, no revocado, comprador
+   consentido, ronda cerrada y sello documental v196. Un plan MVP159
+   histórico nunca autoriza por sí mismo la revelación de contactos.
+8. El resultado para el comprador se reduce mediante
    `resumirSeleccionComercialMvp196`, SIN supplier_key, hash, dinero ni
    teléfonos. La recomendación **no es un ranking económico ni obliga
    a comprar**. Al cierre, deben verse todas las cotizaciones.
