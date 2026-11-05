@@ -204,8 +204,9 @@ export async function proponerRuteoCatalogoConIAV2(args:{
     proveedores.length>25||
     proveedores.some((p:ProveedorCatalogoV2)=>!p||!Array.isArray(p.articulos)||p.articulos.length>150))
   return fail('ruteo_excede_presupuesto_por_lote');
- const eligible=proveedores.filter(p=>p.consentido&&p.activo&&
-  p.localidades.some(z=>zonaIgual(z,pedido.zona_entrega??'')));
+ const eligible=proveedores.filter((p:ProveedorCatalogoV2)=>
+  p.consentido&&p.activo&&
+  p.localidades.some((z:string)=>zonaIgual(z,pedido.zona_entrega??'')));
  if(eligible.length===0)return fail('sin_proveedores_autorizados');
  const input={pedido:{
   zona:pedido.zona_entrega,
