@@ -20,6 +20,7 @@ import {resumirMaterialesCotizadosCompradorMvp210} from
  '../../../src/domain/materiales-cotizados-comprador-mvp210.ts';
 import {DESTINO_SEGUIMIENTO_PILOTO_MVP212} from '../../../src/domain/enlace-seguimiento-piloto-mvp212.ts';
 import {resumirRubrosCompradorMvp216} from '../../../src/domain/rubros-comprador-mvp216.ts';
+import {vistaCotizacionesRubrosMvp227} from '../../../src/domain/ia-central/vista-comprador-rubros-mvp227.ts';
 const ref='ilggkalaafhtiysyzlmg';
 const html=`<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -326,6 +327,38 @@ Deno.serve(async req=>{
          joint_supplier_coverage:finals.data.joint_supplier_coverage===true};
      }catch{/* Keep the ordinary anonymous view, no partial release. */}
    }
+ }
+ // MVP227: visualización privada por rubro de IA Central.
+ // El RPC vuelve a verificar el token, identidad, vencimiento y estado.
+ // No mezclar fuentes crudas ni rangos de proveedores con la respuesta.
+ // El flag está APAGADO por defecto. El camino histórico sigue igual.
+ if(Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_BUYER_VIEW_ENABLED')==='true'&&
+   (publicResult?.state==='waiting'||publicResult?.state==='closed')){
+   try{
+     const ai=await db.rpc('cotironda_piloto_ia_buyer_rubros_mvp227',{
+       p_token_hash:digest
+     });
+     if(!ai.error){
+       const safe=vistaCotizacionesRubrosMvp227(ai.data);
+       if(safe){
+         const historical=Array.isArray(publicResult.offers)?
+           publicResult.offers.filter(x=>x&&typeof x==='object'&&
+             typeof (x as Record<string,unknown>).label==='string'&&
+             typeof (x as Record<string,unknown>).text==='string'):[];
+         publicResult={
+           ...publicResult,
+           can_open:publicResult.can_open===true||safe.offers.length>0,
+           received_count:Math.max(
+             Number(publicResult.received_count)||0,safe.received_count),
+           files_pending_review:Math.max(
+             Number(publicResult.files_pending_review)||0,
+             safe.files_pending_review),
+           offers:[...historical,...safe.offers],
+           rubros_ia:safe.rubros_ia
+         };
+       }
+     }
+   }catch{/* No exponer resultados sin verificación y no romper legacy. */}
  }
  return new Response(JSON.stringify(publicResult),{
    status:200,headers:headers('application/json; charset=utf-8')});
