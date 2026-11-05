@@ -157,21 +157,30 @@ test('MVP206: durante una ronda abierta no hay finalistas, orientación ni condi
  assert.equal(p.node('economicReadinessSection').hidden,true);
 });
 
-test('MVP206: fuente v8 o SHA distinto no genera proyecciones documentales nuevas',()=>{
+test('MVP206: fuente v8, revisión vieja o SHA distinto bloquea toda cobertura documental',()=>{
  for(const mutation of [
   q=>{q.doc.prueba.version=8},
   q=>{q.doc.prueba.revisionVigente=false},
-  q=>{q.fuente.sourceSha256='f'.repeat(64)},
-  q=>{q.economia.descuentos.precios[0].fila=299}
+  q=>{q.fuente.sourceSha256='f'.repeat(64)}
  ]){
   const {input,edge}=fromVerifiedOriginals(0);
   mutation(input.quotations[0]);
-  const invalid=coverageSource(edge,input);
-  assert.equal(invalid,null);
-  assert.equal(pricesSource(edge,input),null);
-  assert.equal(termsSource(edge,input,edge.item_prices),null);
+  assert.equal(coverageSource(edge,input),null);
+  const prices=pricesSource(edge,input);
+  assert.equal(prices,null);
+  assert.equal(termsSource(edge,input,prices),null);
   assert.equal(optionsSource(edge,input),null);
  }
+});
+
+test('MVP206: descuento con fila alterada bloquea importes, pero no borra cobertura comercial válida',()=>{
+ const {input,edge}=fromVerifiedOriginals(0);
+ input.quotations[0].economia.descuentos.precios[0].fila=299;
+ assert.ok(coverageSource(edge,input),'los hechos físicos del material permanecen verificados');
+ assert.ok(optionsSource(edge,input),'cobertura no depende de la conciliación económica');
+ const prices=pricesSource(edge,input);
+ assert.equal(prices,null,'importe contaminado no debe aparecer');
+ assert.equal(termsSource(edge,input,prices),null,'sin precios íntegros no hay panel económico');
 });
 
 test('MVP206: token revocado o red caída vacía de inmediato TODOS los paneles',async()=>{
