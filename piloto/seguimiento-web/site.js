@@ -186,7 +186,7 @@ function showItemPrices(d){
      /^[0-9][0-9., ]{0,47}$/.test(r.cantidadCotizadaLiteral))||
     !(r.importeCotizado===null||
      typeof r.importeCotizado==="string"&&r.importeCotizado.length<=48&&
-     /^(?:\s*(?:ARS|USD)?\s*\$?\s*)?[\d.,]+\s*$/i.test(r.importeCotizado)))||
+     /^\s*(?:(?:AR\$|US\$|U\$S|(?:ARS|USD)\s*\$?|\$)\s*)?[\d.,]+\s*$/i.test(r.importeCotizado)))||
    new Set(item.referencias.map(r=>r.oferta)).size!==labels.length))return;
  if(new Set(p.articulos.map(item=>item.itemId)).size!==p.articulos.length)return;
  let withPrices=0;
