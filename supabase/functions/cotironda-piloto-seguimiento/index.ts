@@ -14,6 +14,8 @@ import {resumirAlternativasCoberturaMvp189} from
  '../../../src/domain/alternativas-cobertura-mvp189.ts';
 import {resumirCoberturaImportesMvp194} from
  '../../../src/domain/cobertura-importes-cierre-mvp194.ts';
+import {resumirCondicionesEconomicasPorOfertaMvp204} from
+ '../../../src/domain/condiciones-economicas-por-oferta-mvp204.ts';
 const ref='ilggkalaafhtiysyzlmg';
 const html=`<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -226,6 +228,14 @@ Deno.serve(async req=>{
        // currency/tax/freight ranking. Only on CLOSED consented rounds.
        // Never expose the private HMAC-ordered SQL envelope.
        if(publicResult.state==='closed'){
+         // Same token-gated buyer, source revision and reviewed public texts
+         // as MVP186. This exposes conditions per OFFER, not source details.
+         const readiness=resumirCondicionesEconomicasPorOfertaMvp204(
+           publicResult as Parameters<typeof resumirCondicionesEconomicasPorOfertaMvp204>[0],
+           verifiedRoundInputs,itemPrices
+         );
+         if(readiness)publicResult={...publicResult,
+           economic_readiness:readiness};
          const pricedCoverage=resumirCoberturaImportesMvp194(
            publicResult as Parameters<typeof resumirCoberturaImportesMvp194>[0],
            itemPrices
