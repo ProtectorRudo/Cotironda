@@ -118,6 +118,10 @@ function precioConfirmado(line:OfertaLineaMvp225):bigint|null{
  const visibleNumbers=withoutPrice.match(/\d+(?:[.,]\d+)*/gu)??[];
  if(!visibleNumbers.some(token=>token.replace(',','.')===line.cantidad))
   return null;
+ // No equiparar un importe aislado con valor por unidad.
+ // El proveedor debe explicitar precio unitario con vocabulario libre.
+ if(!/(?:c\/u|p\/u|unitari[oa]s?|cada\s+(?:una?|bolsa|bols[oó]n|unidad)|por\s+(?:unidad|bolsa|bols[oó]n|litro|kg|metro|m3|m²|m³)|\bx\s*\$)/iu.test(line.textoOriginal))
+  return null;
  // Si el proveedor sí escribió "total" o un segundo importe monetario,
  // NO descartarlo para favorecer un subtotal deducido.
  if(/\b(?:total|subtotal|importe)\s*[:=]?\s*\$?\s*\d/iu.test(line.textoOriginal))
