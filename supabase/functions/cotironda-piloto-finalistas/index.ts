@@ -6,8 +6,7 @@
 import {createClient} from 'npm:@supabase/supabase-js@2.118.0';
 const REF='ilggkalaafhtiysyzlmg';
 import {hex,decodeContacts,prepareMessage} from '../_shared/cotironda-finalist-notice.ts';
-import {seleccionarComercialmenteMvp196} from
- '../../../src/domain/seleccion-finalistas-v9-mvp196.ts';
+import {prepararPlanesPrivadosMvp197} from './plan-only-mvp197.ts';
 const te=new TextEncoder();
 const textResponse=(status:number,code:string)=>new Response(JSON.stringify({state:code}),{
  status,headers:{'content-type':'application/json','cache-control':'no-store',
@@ -40,17 +39,9 @@ async function run(req:Request):Promise<Response>{
   try{roleKey=JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS')??'{}').default??''}
   catch{return textResponse(503,'database_unavailable')}
  }
- const token=Deno.env.get('COTIRONDA_PILOT_WHAPI_TOKEN')??'';
- const aesBytes=hex(Deno.env.get('COTIRONDA_PILOT_AES_HEX')??'');
- const idBytes=hex(Deno.env.get('COTIRONDA_PILOT_ID_HMAC_HEX')??'');
- const channel=Deno.env.get('COTIRONDA_PILOT_WHAPI_CHANNEL')??'';
- if(url!=='https://'+REF+'.supabase.co'||roleKey.length<20||
-   token.length<16||!aesBytes||!idBytes||!channel||
-   Deno.env.get('COTIRONDA_PILOT_WHAPI_OUTBOUND_ENABLED')!=='true')
-  return textResponse(503,'worker_config_unavailable');
- const aes=await crypto.subtle.importKey('raw',Uint8Array.from(aesBytes).buffer,'AES-GCM',false,['decrypt']);
- const idKey=await crypto.subtle.importKey('raw',Uint8Array.from(idBytes).buffer,{
-  name:'HMAC',hash:'SHA-256'},false,['sign']);
+ // Source-only planning has no dependency on outbound, cipher keys or Whapi.
+ if(url!=='https://'+REF+'.supabase.co'||roleKey.length<20)
+  return textResponse(503,'database_unavailable');
  const db=createClient(url,roleKey,{auth:{
   persistSession:false,autoRefreshToken:false}});
  // Only SQL, no HTTP, for closure and queue setup.
@@ -58,47 +49,35 @@ async function run(req:Request):Promise<Response>{
  if(closed.error)return textResponse(503,'close_reconciliation_required');
  // The old SQL planner compares literal strings/units, incorrectly
  // rejecting same-material 25kg vs 50kg. NEVER invoke it from this worker.
- const due=await db.rpc('cotironda_piloto_commercial_due_mvp196',{
-  p_limit:10
+ const planned=await prepararPlanesPrivadosMvp197(async (name,args)=>{
+  const result=await db.rpc(name,args);
+  return {data:result.data,error:result.error};
  });
- if(due.error||!isObj(due.data)||due.data.state!=='candidate_due'||
-    !Array.isArray(due.data.rounds)||due.data.rounds.length>10)
-  return textResponse(503,'verified_planner_unavailable');
- let plans=0,ambiguous=0;
- for(const round of due.data.rounds){
-  if(!isObj(round)||round.closureChecked!==true||
-     typeof round.requestId!=='string'||!isObj(round.privateInputs))
-   return textResponse(503,'verified_round_invalid');
-  const preview=seleccionarComercialmenteMvp196({
-   closureChecked:true,
-   privateInputs:round.privateInputs as
-    Parameters<typeof seleccionarComercialmenteMvp196>[0]['privateInputs']
-  });
-  if(preview.state==='insumos_invalidos'||
-     preview.requestId!==round.requestId)
-   return textResponse(503,'verified_source_invalid');
-  if(preview.state!=='plan_ready'){ambiguous++;continue;}
-  // Insert only a private source-matched plan. SQL revalidates closure,
-  // activation timestamp, current source revisions and coverage matrix.
-  const committed=await db.rpc('cotironda_piloto_commit_commercial_plan_mvp196',{
-   p_request:round.requestId,p_mode:preview.mode,p_sources:preview.selected
-  });
-  if(committed.error||!isObj(committed.data)||
-     !['planned','already_planned'].includes(String(committed.data.state)))
-   return textResponse(503,'verified_plan_rejected');
-  if(committed.data.state==='planned')plans++;
- }
+ if(planned.state!=='planned_no_whatsapp')
+  return textResponse(503,planned.state);
  // Staging-first requirement: source plan materialization can be tested
  // independently, but network delivery MUST remain separately OFF.
  // This flag cannot be used until prospective consent, new-round E2E,
  // protected claim RPC and release authorization are independently proven.
  if(Deno.env.get('COTIRONDA_PILOT_FINALIST_DISPATCH_MVP196_ENABLED')!=='true')
-  return new Response(JSON.stringify({
-   state:'planned_no_whatsapp',plans_created:plans,
-   without_unique_commercial_plan:ambiguous,
-   api_accepted:0,uncertain:0,details_exposed:false
-  }),{status:200,headers:{'content-type':'application/json',
-   'cache-control':'no-store','x-content-type-options':'nosniff'}});
+  return new Response(JSON.stringify(planned),{status:200,
+   headers:{'content-type':'application/json','cache-control':'no-store',
+    'x-content-type-options':'nosniff'}});
+ // The additional OUTBOUND flag and secrets apply ONLY to the dispatch
+ // path. Do not require any WhatsApp configuration during plan-only tests.
+ if(Deno.env.get('COTIRONDA_PILOT_WHAPI_OUTBOUND_ENABLED')!=='true')
+  return textResponse(503,'dispatch_outbound_off');
+ const token=Deno.env.get('COTIRONDA_PILOT_WHAPI_TOKEN')??'';
+ const aesBytes=hex(Deno.env.get('COTIRONDA_PILOT_AES_HEX')??'');
+ const idBytes=hex(Deno.env.get('COTIRONDA_PILOT_ID_HMAC_HEX')??'');
+ const channel=Deno.env.get('COTIRONDA_PILOT_WHAPI_CHANNEL')??'';
+ if(token.length<16||!aesBytes||!idBytes||!channel)
+  return textResponse(503,'dispatch_config_unavailable');
+ const aes=await crypto.subtle.importKey('raw',
+  Uint8Array.from(aesBytes).buffer,'AES-GCM',false,['decrypt']);
+ const idKey=await crypto.subtle.importKey('raw',
+  Uint8Array.from(idBytes).buffer,{
+   name:'HMAC',hash:'SHA-256'},false,['sign']);
  // Even with the independent dispatch flag ON, only plans produced by
  // the source-attested V196 transaction are eligible to enter the outbox.
  // The existing queue RPC still checks all parties' explicit opt-in.

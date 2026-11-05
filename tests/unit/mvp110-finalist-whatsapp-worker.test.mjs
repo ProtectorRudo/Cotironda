@@ -104,8 +104,12 @@ test('MVP110: network worker fail closed and no blind retries',()=>{
  assert.match(worker,/COTIRONDA_PILOT_FINALIST_WORKER_ENABLED/);
  assert.match(worker,/COTIRONDA_PILOT_FINALIST_WORKER_SECRET/);
  assert.match(worker,/cotironda_piloto_close_due_v1/);
- assert.match(worker,/cotironda_piloto_commercial_due_mvp196/);
- assert.match(worker,/cotironda_piloto_commit_commercial_plan_mvp196/);
+ const planner=readFileSync(new URL(
+  '../../supabase/functions/cotironda-piloto-finalistas/plan-only-mvp197.ts',
+  import.meta.url),'utf8');
+ assert.match(planner,/cotironda_piloto_commercial_due_mvp196/);
+ assert.match(planner,/cotironda_piloto_commit_commercial_plan_mvp196/);
+ assert.match(worker,/prepararPlanesPrivadosMvp197/);
  assert.match(worker,/COTIRONDA_PILOT_COMMERCIAL_SELECTOR_MVP196_ENABLED/);
  assert.match(worker,/COTIRONDA_PILOT_FINALIST_DISPATCH_MVP196_ENABLED/);
  assert.match(worker,/cotironda_piloto_source_plan_sendable_mvp196/);
