@@ -266,8 +266,16 @@ CREATE OR REPLACE FUNCTION public.cotironda_piloto_source_plan_sendable_mvp196(
  p_request uuid
 ) RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER
 SET search_path='' AS $fn$
+DECLARE v_snapshot jsonb;
 BEGIN
  IF p_request IS NULL THEN RETURN false;END IF;
+ -- Never accept only an old immutable HMAC marker as current consent
+ -- or current source. A supplier may opt out or amend a quote after the
+ -- private coverage plan is written; fail closed immediately.
+ v_snapshot:=public.cotironda_piloto_private_round_inputs_mvp172(p_request);
+ IF v_snapshot->>'state'<>'private_inputs' OR
+    jsonb_typeof(v_snapshot->'quotations')<>'array'
+ THEN RETURN false;END IF;
  RETURN EXISTS(
   SELECT 1 FROM cotironda_piloto_privado.finalist_source_plans_mvp196 proof
   JOIN cotironda_piloto_privado.finalist_coverage_plans_mvp108 plan
@@ -277,10 +285,18 @@ BEGIN
   JOIN cotironda_piloto_privado.finalist_activation_mvp113 a
    ON a.only_row AND a.enabled AND a.activated_at<=clock_timestamp()
     AND r.created_at>=a.activated_at
+  JOIN cotironda_piloto_privado.participants buyer
+   ON buyer.key=r.buyer_key AND buyer.participant_role='buyer'
+   AND buyer.consent_at IS NOT NULL AND buyer.opted_out_at IS NULL
   WHERE proof.request_id=p_request
    AND proof.verifier_version=196
+   AND plan.candidate_count BETWEEN 1 AND 2
    AND cardinality(proof.source_hmacs)=plan.candidate_count
    AND cardinality(proof.source_shas)=plan.candidate_count
+   AND cardinality(plan.supplier_keys)=plan.candidate_count
+   AND cardinality(array(
+    SELECT DISTINCT unnest(proof.source_hmacs)
+   ))=plan.candidate_count
    AND r.state='closed' AND r.closes_at<=clock_timestamp()
    AND plan.state IN(
     'one_complete_alternative','two_complete_alternatives',
@@ -290,9 +306,43 @@ BEGIN
       AS src(hmac,sha)
     LEFT JOIN cotironda_piloto_privado.supplier_media_quotes_mvp098 q
      ON q.message_hmac=src.hmac AND q.source_sha256=src.sha
-      AND q.request_id=p_request
-    WHERE q.message_hmac IS NULL OR NOT q.supplier_key=ANY(plan.supplier_keys)
-   )
+      AND q.request_id=p_request AND q.received_at<=r.closes_at
+    LEFT JOIN cotironda_piloto_privado.participants supplier
+     ON supplier.key=q.supplier_key
+      AND supplier.participant_role='supplier'
+      AND supplier.consent_at IS NOT NULL
+      AND supplier.opted_out_at IS NULL
+    WHERE q.message_hmac IS NULL OR supplier.key IS NULL OR
+     NOT q.supplier_key=ANY(plan.supplier_keys) OR
+     NOT EXISTS(
+      SELECT 1 FROM jsonb_array_elements(v_snapshot->'quotations') current_
+      WHERE current_->'doc'->>'messageHmac'=src.hmac
+       AND current_->'doc'->>'sourceSha256'=src.sha
+       AND current_->'doc'->'prueba'->>'version'='9'
+       AND current_->'doc'->'prueba'->>'revisionVigente'='true'
+       AND current_->'doc'->'prueba'->>'cotizacionVigente'='true'
+     ) OR
+     EXISTS(
+      SELECT 1 FROM cotironda_piloto_privado.supplier_media_quotes_mvp098 newer
+      WHERE newer.request_id=p_request
+       AND newer.supplier_key=q.supplier_key
+       AND newer.received_at<=r.closes_at
+       AND (newer.received_at,newer.message_hmac)>
+           (q.received_at,q.message_hmac)
+     ) OR
+     EXISTS(
+      SELECT 1 FROM cotironda_piloto_privado.offer_versions later
+      WHERE later.request_id=p_request
+       AND later.supplier_key=q.supplier_key
+       AND later.created_at<=r.closes_at
+       AND later.created_at>=q.received_at
+     )
+   ) AND (
+    SELECT count(DISTINCT selected.supplier_key)
+    FROM cotironda_piloto_privado.supplier_media_quotes_mvp098 selected
+    WHERE selected.request_id=p_request AND
+     selected.message_hmac=ANY(proof.source_hmacs)
+   )=plan.candidate_count
  );
 END;$fn$;
 REVOKE ALL ON FUNCTION public.cotironda_piloto_source_plan_sendable_mvp196(uuid)
@@ -326,6 +376,7 @@ BEGIN
   WHERE req.state='closed' AND req.closes_at<=clock_timestamp()
    AND p.state IN('one_complete_alternative','two_complete_alternatives',
                   'two_supplier_combination')
+   AND public.cotironda_piloto_source_plan_sendable_mvp196(req.id)
    AND NOT EXISTS(
     SELECT 1 FROM cotironda_piloto_privado.finalist_whapi_outbox_mvp110 w
     WHERE w.request_id=req.id
