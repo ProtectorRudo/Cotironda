@@ -91,9 +91,9 @@ export function diagnosticarRondaPrivadaMvp172(
  if(!input||input.state!=='private_inputs'||input.rankingAllowed!==false||
   input.contactsRevealed!==false||
   !Array.isArray(input.requestItems)||input.requestItems.length<1||
-  input.requestItems.length>25||
+  input.requestItems.length>30||
   !Array.isArray(input.quotations)||input.quotations.length<1||
-  input.quotations.length>10)return invalid();
+  input.quotations.length>12)return invalid();
  const ids=new Set<string>();
  for(const item of input.requestItems){
   if(!item||!ID.test(item.id)||ids.has(item.id)||
