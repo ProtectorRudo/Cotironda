@@ -52,8 +52,9 @@ CREATE FUNCTION public.cotironda_piloto_commit_commercial_plan_mvp196(
 CREATE TABLE net.test_requests(
  request_id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
  url text,body jsonb,headers jsonb,timeout_ms integer);
-CREATE FUNCTION net.http_post(url text,body jsonb,
- params jsonb,headers jsonb,timeout_milliseconds integer)
+CREATE FUNCTION net.http_post(url text,body jsonb DEFAULT '{}'::jsonb,
+ params jsonb DEFAULT '{}'::jsonb,headers jsonb DEFAULT '{}'::jsonb,
+ timeout_milliseconds integer DEFAULT 2000)
  RETURNS bigint LANGUAGE plpgsql AS $fn$
 DECLARE ret bigint;
 BEGIN
