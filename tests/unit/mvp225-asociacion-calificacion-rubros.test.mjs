@@ -57,6 +57,54 @@ test('MVP225 conserva los cuatro rubros/materiales y audita las sumas',()=>{
  assert.equal(r.precios.length,4);
  assert.equal(r.precios[0].centavos,16000000n);
 });
+test('MVP231: unitario explícito sin total permite cálculo exacto en backend',()=>{
+ const q=offer();
+ q.lineas=[{...q.lineas[0],
+  textoOriginal:'20 bolsas cemento CPC 50kg a $8.000 c/u',
+  totalLineaLiteral:null},...q.lineas.slice(1)];
+ q.fuente=q.lineas.map(x=>x.textoOriginal).join('\n');
+ const r=evaluarCotizacionMvp225(pedido,q);
+ assert.equal(r.estado,'verificada_para_comparacion');
+ assert.equal(r.rubros[0].precioComprobado,3);
+ assert.equal(r.precios[0].centavos,16000000n);
+});
+test('MVP231: no usar cantidad supuesta ni confundirla con números del precio',()=>{
+ for(const original of [
+  'Cemento CPC bolsa 50kg a $8.000 c/u',
+  'Cemento CPC x $20.000 c/u',
+  '20 bolsas cemento CPC $8.000'
+ ]){
+  const q=offer();
+  q.lineas=[{...q.lineas[0],textoOriginal:original,
+    precioUnitarioLiteral:original.includes('$20.000')?'$20.000':'$8.000',
+    totalLineaLiteral:null},...q.lineas.slice(1)];
+  q.fuente=q.lineas.map(x=>x.textoOriginal).join('\n');
+  const r=evaluarCotizacionMvp225(pedido,q);
+  assert.equal(r.estado,'requiere_revision',original);
+  assert.ok(r.motivos.includes('importe_sin_conciliacion'),original);
+ }
+});
+test('MVP231: no ignorar un total declarado distinto al unitario',()=>{
+ const q=offer();
+ q.lineas=[{...q.lineas[0],
+  textoOriginal:'20 bolsas cemento CPC a $8.000 c/u, total $170.000',
+  totalLineaLiteral:null},...q.lineas.slice(1)];
+ q.fuente=q.lineas.map(x=>x.textoOriginal).join('\n');
+ const r=evaluarCotizacionMvp225(pedido,q);
+ assert.equal(r.estado,'requiere_revision');
+ assert.equal(r.rubros[0].precioComprobado,2);
+});
+test('MVP231: no calcular fracciones menores al centavo',()=>{
+ const q=offer();
+ q.lineas=[{...q.lineas[0],
+  textoOriginal:'0,001 bolsa CPC a $0,01 c/u',
+  cantidad:'0.001',precioUnitarioLiteral:'$0,01',
+  totalLineaLiteral:null},...q.lineas.slice(1)];
+ q.fuente=q.lineas.map(x=>x.textoOriginal).join('\n');
+ const r=evaluarCotizacionMvp225(pedido,q);
+ assert.equal(r.rubros[0].precioComprobado,2);
+ assert.equal(r.estado,'requiere_revision');
+});
 test('MVP225 oferta parcial NO compite por total global ni pierde materiales',()=>{
  const full=offer('Oferta completa');
  const partialLines=lines.slice(0,2).map((x,i)=>i===0?
