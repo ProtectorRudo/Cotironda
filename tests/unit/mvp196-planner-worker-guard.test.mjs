@@ -8,6 +8,9 @@ const sql=readFileSync(new URL(
 const worker=readFileSync(new URL(
  '../../supabase/functions/cotironda-piloto-finalistas/index.ts',
  import.meta.url),'utf8');
+const planner=readFileSync(new URL(
+ '../../supabase/functions/cotironda-piloto-finalistas/plan-only-mvp197.ts',
+ import.meta.url),'utf8');
 
 test('MVP196: los RPCs de selección son privados y nunca exponen documentos ni mensajes',()=>{
  for(const fn of [
@@ -47,16 +50,17 @@ test('MVP196: SQL comprueba cierre real, activación prospectiva y archivo fuent
  assert.doesNotMatch(sql,/UPDATE\s+cotironda_piloto_privado\.finalist_activation_mvp113/);
 });
 test('MVP196: el worker NO llama al selector SQL literal MVP159 ni envía durante planificación',()=>{
- assert.match(worker,/seleccionarComercialmenteMvp196/);
+ assert.match(planner,/seleccionarComercialmenteMvp196/);
+ assert.match(worker,/prepararPlanesPrivadosMvp197/);
  assert.match(worker,/commercial_selector_off/);
  assert.match(worker,/COTIRONDA_PILOT_FINALIST_DISPATCH_MVP196_ENABLED/);
  assert.match(worker,/planned_no_whatsapp/);
  assert.match(worker,/api_accepted:0,uncertain:0/);
- assert.match(worker,/cotironda_piloto_commit_commercial_plan_mvp196/);
+ assert.match(planner,/cotironda_piloto_commit_commercial_plan_mvp196/);
  assert.match(worker,/cotironda_piloto_commercial_queue_due_mvp196/);
  assert.match(worker,/cotironda_piloto_source_plan_sendable_mvp196/);
  assert.doesNotMatch(worker,/db\.rpc\('cotironda_piloto_prepare_finalists_due_mvp110'/);
- const planning=worker.indexOf('const committed=await db.rpc(');
+ const planning=worker.indexOf('const planned=await prepararPlanesPrivadosMvp197(');
  const dispatch=worker.indexOf('COTIRONDA_PILOT_FINALIST_DISPATCH_MVP196_ENABLED');
  const whapi=worker.indexOf("fetch('https://gate.whapi.cloud/messages/text'");
  assert.ok(planning>0&&dispatch>planning&&whapi>dispatch);
