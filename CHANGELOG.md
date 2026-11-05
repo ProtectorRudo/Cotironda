@@ -1,3 +1,7 @@
+## 2026-11-05 — MVP206 (desarrollo, sin desplegar)
+
+- Prueba end-to-end de contratos buyer v9 (dos rondas anonimizadas MVP199, cuatro fuentes, diez líneas) conectando MVP175/180/186/189/194/204 con `buyerView` Vercel y DOM del seguimiento, con revocación y casos hostiles. Corrige orden de referencias por etiqueta visible en MVP186, no por orden HMAC de SQL; etiquetas duplicadas bloqueadas. Distingue fallos de prueba física frente a fallos puramente económicos. No es E2E real por WhatsApp ni implica publicación. Docs/330, P0-G abierto.
+
 ## 2026-11-05 — MVP205 (desarrollo, sin desplegar)
 
 - Comparador MVP185: moneda ARS/USD acreditable directamente de importes originales v9 solo con marcadores explícitos consistentes en unitarios, renglones y total. Contradicciones o `$` ambiguo bloquean la comparación; si hay fuente externa, se exige que no contradiga el documento. Mantiene todas las advertencias IVA/flete/stock y ningún efecto de despacho. Docs/329.
