@@ -6,7 +6,7 @@ import {planificarMensajeAutenticadoMvp220} from '../../../src/domain/ia-central
 import {armarPreparacionSombraMvp221,guardarRondaSombraMvp221} from
  '../../../src/domain/ia-central/puente-sql-rondas-mvp221.ts';
 const HEX=/^[0-9a-f]{64}$/u;
-const CITY=/^[\\p{L}\\s()'.,-]{3,80}$/u;
+const CITY=/^[\p{L}\s()'.,-]{3,80}$/u;
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 type Model='gpt-6-luna'|'gpt-6.1-sol';
 type Rpc=(name:string,params:Record<string,unknown>)=>
@@ -18,7 +18,7 @@ type Result=Readonly<{
 }>;
 const result=(estado:Result['estado'],h:string|null=null,id:string|null=null):Result=>
  ({estado,sourceHmac:h,requestId:id});
-const fold=(s:string)=>s.normalize('NFD').replace(/[\\u0300-\\u036f]/gu,'')
+const fold=(s:string)=>s.normalize('NFD').replace(/[\u0300-\u036f]/gu,'')
  .trim().toLocaleLowerCase('es');
 export async function continuarZonaCentralMvp233(args:{
  autenticadoPorWebhook:boolean;chatHmac:string;sourceHmac:string;
@@ -57,7 +57,7 @@ export async function continuarZonaCentralMvp233(args:{
    throw Error('sha_mismatch');
   // La localidad es el ÚNICO contexto externo. Todas las citas de material
   // deben existir literalmente en original, corroboradas de nuevo por SQL.
-  const context=original+'\\nLocalidad de entrega: '+args.ciudadConfirmada;
+  const context=original+'\nLocalidad de entrega: '+args.ciudadConfirmada;
   if(context.length>4000)throw Error('context_too_long');
   const plan=await (args.planificar??planificarMensajeAutenticadoMvp220)({
    chatHmac:args.chatHmac,messageHmac:args.sourceHmac,
