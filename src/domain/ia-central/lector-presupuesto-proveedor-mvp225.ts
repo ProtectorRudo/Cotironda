@@ -197,21 +197,6 @@ function firmaEconomica(read:Record<string,unknown>):string{
   read.iva,read.ivaEvidencia,read.flete,read.fleteEvidencia,
   read.pago,read.pagoEvidencia,lines,links]);
 }
-/** Difieren explicaciones libres, NO datos económicos o vínculos. */
-function firmaEconomica(read:Record<string,unknown>):string{
- const lines=(read.lineas as unknown[]).map(x=>{
-  const v=x as Record<string,unknown>;
-  return [v.numero,v.textoOriginal,v.descripcion,v.cantidad,v.unidad,
-   v.precioUnitarioLiteral,v.totalLineaLiteral,v.tipo];
- });
- const links=(read.vinculos as unknown[]).map(x=>{
-  const v=x as Record<string,unknown>;
-  return [v.lineaOferta,v.articuloPedido,v.equivalencia];
- }).sort((a,b)=>Number(a[0])-Number(b[0]));
- return JSON.stringify([read.intencion,read.moneda,read.monedaEvidencia,
-  read.iva,read.ivaEvidencia,read.flete,read.fleteEvidencia,
-  read.pago,read.pagoEvidencia,lines,links]);
-}
 export async function interpretarPresupuestoConIAMvp225(args:{
  fuente:string;pedido:readonly PedidoLineaMvp225[];
  etiquetaAnonima:string;apiKey:string;model:Modelo;fetchImpl?:typeof fetch;
