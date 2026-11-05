@@ -88,22 +88,47 @@ export function dineroCentavosLiteral(raw:string):bigint|null{
  const result=BigInt(integer)*100n+BigInt(decimal.padEnd(2,'0'));
  return result>=0n&&result<=100000000000000n?result:null;
 }
-/** Sólo se considera precio acreditado si ambos importes constan
- * textualmente EN la cita original de la línea y la suma cierra al centavo. */
+/** El valor unitario debe aparecer literalmente en la fuente.
+ * Si el proveedor NO declaró un total, el backend puede calcularlo,
+ * exclusivamente con una cantidad visible en esa MISMA línea.
+ * Si sí declaró total, debe reconciliar al centavo; nunca reemplazarlo.
+ */
 function precioConfirmado(line:OfertaLineaMvp225):bigint|null{
  if(!TEXT(line.textoOriginal,1500)||
     !TEXT(line.cantidad,40)||!TEXT(line.unidad,30)||
     !unit.test(line.unidad)||!TEXT(line.precioUnitarioLiteral,80)||
-    !TEXT(line.totalLineaLiteral,80)||
-    !line.textoOriginal.includes(line.precioUnitarioLiteral)||
-    !line.textoOriginal.includes(line.totalLineaLiteral))
+    !line.textoOriginal.includes(line.precioUnitarioLiteral))
   return null;
- const q=cantidadMil(line.cantidad),unitPrice=dineroCentavosLiteral(line.precioUnitarioLiteral),
-  expected=dineroCentavosLiteral(line.totalLineaLiteral);
- if(q===null||unitPrice===null||expected===null)return null;
- if((unitPrice*q)%1000n!==0n)return null;
- const total=(unitPrice*q)/1000n;
- return total===expected?total:null;
+ const q=cantidadMil(line.cantidad);
+ const unitPrice=dineroCentavosLiteral(line.precioUnitarioLiteral);
+ if(q===null||unitPrice===null)return null;
+ const product=unitPrice*q;
+ if(product%1000n!==0n)return null;
+ const total=product/1000n;
+ if(line.totalLineaLiteral!==null){
+  if(!TEXT(line.totalLineaLiteral,80)||
+     !line.textoOriginal.includes(line.totalLineaLiteral))
+   return null;
+  const declared=dineroCentavosLiteral(line.totalLineaLiteral);
+  return declared!==null&&total===declared?total:null;
+ }
+ // En ausencia del total declarado, evitar que una cantidad normalizada
+ // por IA (pero ausente en el mensaje) termine creando un importe falso.
+ const withoutPrice=line.textoOriginal.replace(line.precioUnitarioLiteral,'');
+ const visibleNumbers=withoutPrice.match(/\d+(?:[.,]\d+)*/gu)??[];
+ if(!visibleNumbers.some(token=>token.replace(',','.')===line.cantidad))
+  return null;
+ // No equiparar un importe aislado con valor por unidad.
+ // El proveedor debe explicitar precio unitario con vocabulario libre.
+ if(!/(?:c\/u|p\/u|unitari[oa]s?|cada\s+(?:una?|bolsa|bols[oó]n|unidad)|por\s+(?:unidad|bolsa|bols[oó]n|litro|kg|metro|m3|m²|m³)|\bx\s*\$)/iu.test(line.textoOriginal))
+  return null;
+ // Si el proveedor sí escribió "total" o un segundo importe monetario,
+ // NO descartarlo para favorecer un subtotal deducido.
+ if(/\b(?:total|subtotal|importe)\s*[:=]?\s*\$?\s*\d/iu.test(line.textoOriginal))
+  return null;
+ if(([...line.textoOriginal.matchAll(/\$\s*\d[\d.,]*/gu)].length)>1)
+  return null;
+ return total;
 }
 export function evaluarCotizacionMvp225(
  pedido:readonly PedidoLineaMvp225[],oferta:OfertaVerificadaMvp225
