@@ -42,6 +42,20 @@ function cantidad(v:unknown):v is string{
  return typeof v==='string'&&decimal.test(v)&&
  Number.isFinite(Number(v))&&Number(v)>0&&Number(v)<=1000000;
 }
+/** Verifica cifras evidentes sin conocer una sola palabra del producto.
+ * «tres» (cantidad escrita con palabras) requiere doble lector semántico. */
+function cantidadRespaldada(evidencia:string,cant:string):boolean{
+ const numbers=evidencia.match(/\d+(?:[.,]\d{1,3})*/gu)??[];
+ if(numbers.length===0)return true;
+ const requested=Number(cant);
+ return numbers.some(raw=>{
+  const variants=new Set<number>();
+  variants.add(Number(raw.replace(',','.')));
+  if(/^\d{1,3}(?:\.\d{3})+$/u.test(raw))
+   variants.add(Number(raw.replace(/\./gu,'')));
+  return variants.has(requested);
+ });
+}
 const rejection=(motivo:string):ResultadoLectura=>
  Object.freeze({estado:'rechazado',motivo,pedido:null});
 
@@ -108,6 +122,7 @@ export function evaluarLecturasSemanticasV1(
      start<0||end<=start||end>origen.length||
      origen.slice(start,end)!==ev||
      !texto(entry.descripcion,500)||!cantidad(entry.cantidad)||
+     !cantidadRespaldada(ev,entry.cantidad)||
      !texto(entry.unidad,80)||!rubro(entry.rubro)||
      !(entry.presentacion===null||texto(entry.presentacion,200))||
      !(entry.aclaracion===null||texto(entry.aclaracion,250)))
