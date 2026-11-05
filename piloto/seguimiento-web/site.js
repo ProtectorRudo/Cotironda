@@ -90,7 +90,7 @@ function offerCard(title,body){
 }
 // MVP176: revoke all visible private details on an invalid token or outage.
 function clearPrivateView(){
- for(const id of ["offers","receipts","finalists","coverageGrid","economyGrid","itemPricesGrid","pricedCoverageGrid","coverageOptionsCounts","coverageOptionsGrid"])el(id).replaceChildren();
+ for(const id of ["offers","receipts","finalists","coverageGrid","economyGrid","itemPricesGrid","pricedCoverageGrid","coverageOptionsCounts","coverageOptionsGrid","orientacionGrid"])el(id).replaceChildren();
  el("economySection").hidden=true;
  displayText("economyCaption","");
  el("itemPricesSection").hidden=true;
@@ -99,6 +99,8 @@ function clearPrivateView(){
  displayText("pricedCoverageCaption","");
  el("coverageOptionsSection").hidden=true;
  displayText("coverageOptionsCaption","");
+ el("orientacionSection").hidden=true;
+ displayText("orientacionCaption","");
  el("resultsSection").hidden=true;
  displayText("resultsCaption","");
  el("coverageSection").hidden=true;
@@ -426,6 +428,56 @@ function showCoverageOptions(d){
  displayText("coverageOptionsCaption",message);
  el("coverageOptionsSection").hidden=false;
 }
+// MVP203: Only the buyer-verified CLOSED MVP189 report may suggest who to
+// review for commercial COVERAGE. Independently recompute recommendations
+// from complete options already checked by showCoverageOptions().
+function showOrientation(d){
+ const grid=el("orientacionGrid");grid.replaceChildren();
+ el("orientacionSection").hidden=true;displayText("orientacionCaption","");
+ const x=d?.orientacion,o=d?.coverage_options;
+ if(d?.state!=="closed"||d.can_open!==true||
+  el("coverageOptionsSection").hidden===true||!x||!o||
+  x.state!=="orientacion_de_cobertura_no_economica"||
+  ["ranking_allowed","price_comparable","contacts_revealed",
+   "automatic_award","originales_descargables"].some(k=>x[k]!==false)||
+  !Array.isArray(d.offers)||!Array.isArray(x.ofertasAnonimas)||
+  !Array.isArray(o.alternativas)||x.presupuestosRevisados!==d.offers.length||
+  x.alternativasCompletas!==o.alternativas.length)return;
+ const singles=o.alternativas.filter(y=>y.modo==="individual");
+ const pairs=o.alternativas.filter(y=>y.modo==="complementaria");
+ let kind="multiples_sin_preferencia",selected=[];
+ if(o.alternativas.length===0)kind="sin_cobertura_completa";
+ else if(pairs.length===0&&singles.length===1){
+  kind="una_individual";selected=singles[0].ofertasAnonimas.slice();
+ }else if(pairs.length===0&&singles.length===2){
+  kind="dos_individuales";selected=singles.map(y=>y.ofertasAnonimas[0]);
+ }else if(singles.length===0&&pairs.length===1){
+  kind="pareja_complementaria";selected=pairs[0].ofertasAnonimas.slice();
+ }
+ if(kind!==x.tipo||selected.length!==x.ofertasAnonimas.length||
+  selected.some((label,i)=>label!==x.ofertasAnonimas[i])||
+  x.ofertasAnonimas.some(label=>!d.offers.some(z=>z.label===label))||
+  x.ofertasAnonimas.length>2)return;
+ if(selected.length){
+  const card=element("article","orientacion-choice");
+  const title=kind==="pareja_complementaria"
+   ?"Estas dos ofertas podrían cubrir el pedido en conjunto: "
+   :selected.length===2
+    ?"Estas dos ofertas presentan alternativas individuales para la lista: "
+    :"Esta oferta presenta alternativas comerciales para toda la lista: ";
+  card.append(element("strong","",title+selected.join(" + ")));
+  card.append(element("p","",
+   "No implica menor precio ni equivalencia exacta; confirmá IVA, flete, stock, pago y especificaciones."));
+  grid.appendChild(card);
+  displayText("orientacionCaption",
+   "Orientación por cobertura comercial, no por competitividad económica. Podés elegir cualquiera de las ofertas, incluidas las parciales.");
+ }else{
+  displayText("orientacionCaption",kind==="sin_cobertura_completa"
+   ?"No hay una propuesta o pareja con cobertura comercial completa acreditada. Todas las ofertas parciales permanecen disponibles."
+   :"Hay varias combinaciones posibles; Cotironda no selecciona dos arbitrariamente sin condiciones económicas comparables. Revisá todas las alternativas.");
+ }
+ el("orientacionSection").hidden=false;
+}
 // Buyer-visible closeout is descriptive, not an adjudication or ranking.
 function showAllClosedResults(d,approved,receivedCount){
  el("resultsSection").hidden=true;
@@ -516,6 +568,7 @@ function render(data){
  showItemPrices(d);
  showPricedCoverage(d);
  showCoverageOptions(d);
+ showOrientation(d);
  if(d.state==="cancelled"){
   el("resultsSection").hidden=true;displayText("resultsCaption","");
   displayText("state","Ronda cancelada");return;

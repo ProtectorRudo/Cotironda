@@ -132,3 +132,99 @@ test('MVP189 proxy: una alternativa individual debe cubrir TODOS los artículos'
  assert.equal(v.coverage_options.alternativas[0].modo,'individual');
  assert.equal(v.coverage_options.alternativas[0].ofertasAnonimas.length,1);
 });
+
+test('MVP203 proxy: pareja única orienta por cobertura, nunca por precio ni contactos',()=>{
+ const d=request();
+ d.coverage_options.alternativas[0].totalEconomicoFalso='999999';
+ const v=view(d);
+ assert.deepEqual(v.orientacion,{
+  state:'orientacion_de_cobertura_no_economica',
+  tipo:'pareja_complementaria',ofertasAnonimas:['Presupuesto 1','Presupuesto 2'],
+  alternativasCompletas:1,presupuestosRevisados:2,
+  ranking_allowed:false,price_comparable:false,contacts_revealed:false,
+  automatic_award:false,originales_descargables:false
+ });
+ assert.equal(v.offers.length,2);
+ assert.ok(!JSON.stringify(v).includes('totalEconomicoFalso'));
+});
+
+test('MVP203 proxy: una o dos ofertas completas, todas las parciales siguen visibles',()=>{
+ const d=request();
+ d.coverage_options.coberturaPorOferta[0].articulosConAlternativa=2;
+ d.coverage.commercial_alternatives=3;
+ const a={
+  modo:'individual',ofertasAnonimas:['Presupuesto 1'],
+  articulos:[
+   {itemId:'item_001',ofertasConAlternativa:['Presupuesto 1']},
+   {itemId:'item_002',ofertasConAlternativa:['Presupuesto 1']}
+  ]
+ };
+ d.coverage_options.alternativas=[a];
+ assert.equal(view(d).orientacion.tipo,'una_individual');
+ assert.deepEqual(view(d).orientacion.ofertasAnonimas,['Presupuesto 1']);
+ d.coverage_options.coberturaPorOferta[1].articulosConAlternativa=2;
+ d.coverage.commercial_alternatives=4;
+ d.coverage_options.alternativas=[
+  a,{modo:'individual',ofertasAnonimas:['Presupuesto 2'],
+    articulos:[
+     {itemId:'item_001',ofertasConAlternativa:['Presupuesto 2']},
+     {itemId:'item_002',ofertasConAlternativa:['Presupuesto 2']}
+    ]}
+ ];
+ const result=view(d);
+ assert.equal(result.orientacion.tipo,'dos_individuales');
+ assert.deepEqual(result.orientacion.ofertasAnonimas,
+  ['Presupuesto 1','Presupuesto 2']);
+ assert.equal(result.offers.length,2);
+});
+
+test('MVP203 proxy: tres alternativas completas no se convierten en dos preferidas arbitrarias',()=>{
+ const d=request();
+ const extraName='Presupuesto 3';
+ d.offers.push({label:extraName,text:'Revisado C'});
+ d.economy.quotations=3;
+ d.coverage.quotations=3;d.coverage.comparisons=6;
+ d.coverage.commercial_alternatives=6;
+ d.coverage.not_evaluated=0;
+ d.coverage_options.quotations=3;
+ d.coverage_options.coberturaPorOferta=[
+  ...d.coverage_options.coberturaPorOferta.map(x=>({
+   ...x,articulosConAlternativa:2
+  })),
+  {oferta:extraName,articulosConAlternativa:2,articulosSolicitados:2}
+ ];
+ d.coverage_options.alternativas=d.offers.map(x=>({
+  modo:'individual',ofertasAnonimas:[x.label],
+  articulos:['item_001','item_002'].map(itemId=>({
+   itemId,ofertasConAlternativa:[x.label]
+  }))
+ }));
+ const v=view(d);
+ assert.equal(v.coverage_options.alternativas.length,3);
+ assert.equal(v.orientacion.tipo,'multiples_sin_preferencia');
+ assert.deepEqual(v.orientacion.ofertasAnonimas,[]);
+ assert.equal(v.offers.length,3);
+});
+
+test('MVP203 proxy: sin cobertura total no inventa recomendados',()=>{
+ const d=request();d.coverage_options.alternativas=[];
+ const v=view(d);
+ assert.equal(v.orientacion.tipo,'sin_cobertura_completa');
+ assert.deepEqual(v.orientacion.ofertasAnonimas,[]);
+ assert.equal(v.offers.length,2);
+});
+
+test('MVP203 proxy: nunca orienta antes de cierre, sin token válido o ante proyección alterada',()=>{
+ for(const mutate of [
+  d=>{d.state='waiting'},
+  d=>{d.can_open=false},
+  d=>{d.coverage_options.automatic_award=true},
+  d=>{d.coverage_options.alternativas[0].ofertasAnonimas[0]='proveedor real'},
+  d=>{d.economy.price_comparable=true},
+  d=>{d.coverage.commercial_alternatives=100}
+ ]){
+  const d=request();mutate(d);
+  const v=view(d);
+  assert.equal(v.orientacion,undefined);
+ }
+});
