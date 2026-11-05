@@ -255,8 +255,20 @@ Deno.serve(async req=>{
 
  // Private, source-authorized contact reveal only after verified closure.
  // Ciphertext is NEVER sent to the browser, even on a decoding error.
+ // Legacy finalists cannot be revealed merely because a plan exists.
+ // The V196 proof also binds this buyer's CURRENT private token and checks
+ // the consented round and immutable source plan before decrypting contacts.
+ let verifiedFinalistPlan=false;
  if(publicResult?.state==='closed'&&
     Deno.env.get('COTIRONDA_PILOT_FINALIST_VIEW_ENABLED')==='true'){
+   try{
+    const check=await db.rpc('cotironda_piloto_tracking_source_plan_mvp196',{
+     p_token_hash:digest
+    });
+    verifiedFinalistPlan=!check.error&&check.data===true;
+   }catch{/* Never fall back to the legacy finalist projection. */}
+ }
+ if(publicResult?.state==='closed'&&verifiedFinalistPlan){
    const finals=await db.rpc('cotironda_piloto_tracking_finalists_mvp110',{
      p_token_hash:digest});
    if(!finals.error&&finals.data?.state==='ready_private'){
