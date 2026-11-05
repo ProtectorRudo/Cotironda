@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {
- interpretarSilencioIvaMvp185,compararPreciosCotizadosMvp185
+ interpretarSilencioIvaMvp185,compararPreciosCotizadosMvp185,
+ monedaExplicitaFuenteMvp205
 } from '../../src/domain/precios-cotizados-sin-iva-mvp185.ts';
 import {compararCotizacionesOffline} from '../../src/domain/comparacion-ofertas.ts';
 
@@ -531,4 +532,85 @@ test('MVP195: caso representativo del PILOTO 310359,22 vs oferta parcial más ba
  assert.equal(r.ofertas[1].motivoExclusion,'unidad_sin_acreditar');
  assert.equal(r.rankingFinalHabilitado,false);
  assert.equal(r.contactosRevelados,false);
+});
+
+const changeCurrency=(entry,currency)=>{
+ const prefix=currency==='ARS'?'AR$':currency==='USD'?'US$':'$';
+ const set=x=>x.replace(/^\$\s*/u,prefix+' ');
+ entry.doc.declaredTotalLiteral=set(entry.doc.declaredTotalLiteral);
+ for(const line of entry.doc.lineas){
+  line.unitPriceLiteral=set(line.unitPriceLiteral);
+  line.lineTotalLiteral=set(line.lineTotalLiteral);
+ }
+ return entry;
+};
+
+test('MVP205: origen v9 con AR$ explícito en TODOS los importes permite referencia comercial sin otra pregunta',()=>{
+ const a=changeCurrency(source('a',[cemento,arena]),'ARS');a.moneda=null;
+ assert.equal(monedaExplicitaFuenteMvp205(a.doc),'ARS');
+ const r=run([a]);
+ assert.equal(r.ofertas[0].motivoExclusion,null);
+ assert.equal(r.opcionesCotizadas.length,1);
+ assert.equal(r.opcionesCotizadas[0].moneda,'ARS');
+ assert.equal(r.opcionesCotizadas[0].subtotalMaterialesCotizadoSinIva,'260.50');
+ assert.ok(r.opcionesCotizadas[0].advertencias.includes('iva_no_informado'));
+ assert.equal(r.rankingFinalHabilitado,false);
+ assert.equal(r.whatsappEnviado,false);
+});
+
+test('MVP205: AR$ y US$ explícitos se mantienen en grupos separados, sin conversión entre monedas',()=>{
+ const a=changeCurrency(source('a',[cemento,arena]),'ARS');a.moneda=null;
+ const b=changeCurrency(source('b',[cemento,arena]),'USD');b.moneda=null;
+ assert.equal(monedaExplicitaFuenteMvp205(b.doc),'USD');
+ const r=run([a,b]);
+ assert.equal(r.opcionesCotizadas.length,2);
+ assert.deepEqual(r.opcionesCotizadas.map(x=>x.moneda),['ARS','USD']);
+ assert.deepEqual(r.opcionesCotizadas.map(x=>x.ordenPorPrecioCotizado),[1,1]);
+ assert.equal(r.opcionesCotizadas.some(x=>x.proveedoresAnonimos.length===2),false);
+});
+
+test('MVP205: $ a secas, marca parcial o total aislado NO acreditan moneda',()=>{
+ for(const mutate of [
+  a=>{},
+  a=>{a.doc.declaredTotalLiteral='AR$ '+a.doc.declaredTotalLiteral.slice(2)},
+  a=>{a.doc.lineas[0].lineTotalLiteral='AR$ '+a.doc.lineas[0].lineTotalLiteral.slice(2)}
+ ]){
+  const a=source('a',[cemento,arena]);a.moneda=null;mutate(a);
+  assert.equal(monedaExplicitaFuenteMvp205(a.doc),null);
+  assert.equal(run([a]).ofertas[0].motivoExclusion,'moneda_sin_acreditar');
+  assert.equal(run([a]).opcionesCotizadas.length,0);
+ }
+});
+
+test('MVP205: USD en un renglón contradice AR$ aunque exista moneda externa',()=>{
+ for(const external of [null,'ARS','USD']){
+  const a=changeCurrency(source('a',[cemento,arena]),'ARS');
+  a.doc.lineas[0].lineTotalLiteral=a.doc.lineas[0].lineTotalLiteral.replace('AR$','US$');
+  a.moneda=external;
+  assert.equal(monedaExplicitaFuenteMvp205(a.doc),null);
+  const r=run([a]);
+  assert.equal(r.ofertas[0].motivoExclusion,'moneda_contradictoria_en_original');
+  assert.equal(r.opcionesCotizadas.length,0);
+ }
+});
+
+test('MVP205: una atestación externa opuesta al original explícito siempre bloquea',()=>{
+ const a=changeCurrency(source('a',[cemento,arena]),'USD');a.moneda='ARS';
+ const r=run([a]);
+ assert.equal(r.ofertas[0].motivoExclusion,'moneda_contradictoria_en_original');
+ assert.equal(r.opcionesCotizadas.length,0);
+});
+
+test('MVP205: falsear SHA/version o total impide acreditar la moneda',()=>{
+ for(const mutate of [
+  a=>a.doc.prueba.version=8,
+  a=>a.doc.prueba.revisionVigente=false,
+  a=>a.doc.sourceSha256='f'.repeat(64),
+  a=>a.doc.prueba.sumLineCents='5'
+ ]){
+  const a=changeCurrency(source('a',[cemento,arena]),'ARS');
+  a.moneda=null;mutate(a);
+  assert.equal(monedaExplicitaFuenteMvp205(a.doc),null);
+  assert.equal(run([a]).opcionesCotizadas.length,0);
+ }
 });

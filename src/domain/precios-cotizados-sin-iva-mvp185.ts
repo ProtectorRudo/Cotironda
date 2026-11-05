@@ -146,6 +146,31 @@ const isValidDoc=(doc:DocumentoFuente):boolean=>{
  }
  return sum===total;
 };
+/** Source-backed currency: consistent, explicit markers on ALL v9 monetary
+ * literals (unit price, line total, declared total), never on bare '$'.
+ * Source revision, SHA and reconciled totals are checked before use. */
+const currencyMarker=(literal:string|null):MonedaCotizada|null=>{
+ if(typeof literal!=='string')return null;
+ const value=literal.trim();
+ if(/^AR\$\s*/iu.test(value))return 'ARS';
+ if(/^(?:US\$|U\$S|USD)\s*/iu.test(value))return 'USD';
+ return null;
+};
+const sourceCurrencyMarkers=(doc:DocumentoFuente)=>([
+ doc.declaredTotalLiteral,
+ ...doc.lineas.flatMap(l=>[l.unitPriceLiteral,l.lineTotalLiteral])
+]).map(currencyMarker);
+/** Returns null if any source amount lacks a qualifier or denominations mix.
+ * An explicit contradiction is separately detected even if an external
+ * attestation happens to be present. */
+export function monedaExplicitaFuenteMvp205(
+ doc:DocumentoFuente
+):MonedaCotizada|null{
+ if(!isValidDoc(doc))return null;
+ const markers=sourceCurrencyMarkers(doc);
+ return markers.length>0&&markers.every(x=>x!==null&&x===markers[0])
+  ?markers[0]:null;
+}
 function verifyOffer(pedido:PedidoComparable,entry:EntradaOfertaMvp185,
  index:number,requestId:string):ValidOffer{
  const label='oferta_'+String(index+1).padStart(3,'0');
@@ -183,7 +208,19 @@ function verifyOffer(pedido:PedidoComparable,entry:EntradaOfertaMvp185,
    (economia.condiciones.iva.tasa!==null||
     economia.condiciones.iva.ubicaciones.length!==0))
   return blocked('iva_silencioso_inconsistente');
- if(entry.moneda!=='ARS'&&entry.moneda!=='USD')
+ // A separate server attestation may supply currency. Do not overrule
+ // contradicting explicit original values or assume ARS from '$'.
+ const markers=sourceCurrencyMarkers(doc);
+ const stated=[...new Set(markers.filter((x):x is MonedaCotizada=>x!==null))];
+ if(stated.length>1)return blocked('moneda_contradictoria_en_original');
+ const sourceCurrency=monedaExplicitaFuenteMvp205(doc);
+ if(entry.moneda!==null&&entry.moneda!=='ARS'&&entry.moneda!=='USD')
+  return blocked('moneda_sin_acreditar');
+ if(stated.length===1&&entry.moneda!==null&&
+    stated[0]!==entry.moneda)
+  return blocked('moneda_contradictoria_en_original');
+ const corroboratedCurrency=sourceCurrency??entry.moneda;
+ if(corroboratedCurrency!=='ARS'&&corroboratedCurrency!=='USD')
   return blocked('moneda_sin_acreditar');
  const sourceLines=new Map<number,typeof doc.lineas[number]>();
  for(const x of doc.lineas)sourceLines.set(x.lineNo,x);
@@ -327,7 +364,7 @@ function verifyOffer(pedido:PedidoComparable,entry:EntradaOfertaMvp185,
  // from a price-based comparison (even if their totals were source-verified).
  if(usedLines.size!==doc.lineas.length)
   return blocked('cargos_o_lineas_sin_asignar');
- return {label,interpretacion,moneda:entry.moneda,prices,
+ return {label,interpretacion,moneda:corroboratedCurrency,prices,
   nominalBigBagItems,envaseObraItems,usable:true,motivo:null};
 }
 type Candidate={providers:string[];assignment:string[];moneda:MonedaCotizada;value:bigint};
