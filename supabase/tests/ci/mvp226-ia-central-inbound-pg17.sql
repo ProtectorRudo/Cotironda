@@ -204,6 +204,7 @@ CREATE TABLE cotironda_piloto_privado.media_archive_mvp095(
 );
 \ir ../../piloto/mvp222_ia_despacho_seguro_sin_activar.sql
 \ir ../../piloto/mvp223_ia_buyer_dispatch_lookup_private.sql
+\ir ../../piloto/mvp226_ia_central_ingesta_durable.sql
 CREATE TRIGGER enqueue_on_invitation
  AFTER INSERT ON cotironda_piloto_privado.invitations
  FOR EACH ROW EXECUTE FUNCTION cotironda_piloto_privado.queue_invitation_whapi_v1();
@@ -290,7 +291,6 @@ END $test222$;
 -- Source association: whapi ID quoted, two simultaneous rounds,
 -- no fallback inference from product words, media original immutable.
 \ir ../../piloto/mvp225_asociar_presupuestos_ia_central_solo_piloto.sql
-\ir ../../piloto/mvp226_ia_central_ingesta_durable.sql
 -- MVP226: cuota y reserva durable del texto del comprador,
 -- sin volver a procesar fuente de un mensaje viejo.
 DO $mvp226$
