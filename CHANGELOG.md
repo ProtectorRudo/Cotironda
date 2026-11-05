@@ -1,3 +1,8 @@
+## 2026-11-05 — MVP208 (preflight reales solo lectura + CI rollback)
+
+- Auditada directamente la base PILOTO sin modificación: PG17, Auth, roles, digest y columnas de las cuatro migraciones de originales compatibles (0 errores), 0/7 objetos privados instalados, 0 usuarios Auth y tres rondas preparadas, ninguna vencida a la fecha.
+- Nuevos reportes SQL pre/post instalación de solo lectura, sin HMAC ni teléfonos, que detectan dependencias/instalación parcial y después aseguran política OFF, RLS y ACL estricto. CI PG17 sintético extendido para ejecutar ambas comprobaciones dentro de su rollback; tests de seguridad y documentación docs/332. No hubo despliegues, mensajes ni descargas.
+
 ## 2026-11-05 — MVP207 (solo desarrollo)
 
 - Nuevo acceso autenticado a originales PILOTO en Next.js mediante OTP SMS para comprador preaprovisionado, sin autorregistro y sin secretos en navegador. Se reutilizan catalogo, descarga, consentimiento y auditoría de las rutas privadas existentes. Contrato público y pruebas adversariales de UUID, JWT, fuentes manipuladas, bloqueo Preview y aislamiento Auth DEV.
