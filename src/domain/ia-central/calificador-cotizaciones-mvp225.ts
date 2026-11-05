@@ -59,7 +59,7 @@ export type ComparacionMvp225=Readonly<{
   alternativas:readonly Readonly<{
    oferta:string;centavos:bigint;
   }>[];
-  situacion:'precio_unitario_comparable'|'sin_base_suficiente';
+  situacion:'importe_linea_comparable'|'sin_base_suficiente';
  }>[];
  rankingGlobalPermitido:false;
  adjudicacionAutomatica:false;
@@ -172,7 +172,14 @@ export function evaluarCotizacionMvp225(
     priced++;
    }else if(equivalencia==='requiere_verificacion'){
     missing('equivalencia_no_acreditada');
-   }else if(total===null)missing('importe_sin_conciliacion');
+   }else if(total===null){
+    missing('importe_sin_conciliacion');
+   }else if(equivalencia==='misma_presentacion'&&(
+     line.cantidad===null||line.unidad===null||
+     cantidadMil(line.cantidad)!==cantidadMil(item.cantidad)||
+     line.unidad!==item.unidad)){
+    missing('cantidad_o_unidad_no_comparable');
+   }
   }
   rubros.push({rubro,solicitados:all.length,respondidos:replied,
    precioComprobado:priced,
@@ -232,7 +239,7 @@ export function compararPorRubroMvp225(
    alternativas:available.map(c=>({oferta:c.result.etiquetaAnonima,
     centavos:c.price.centavos})).sort((a,b)=>
      a.centavos<b.centavos?-1:a.centavos>b.centavos?1:0),
-   situacion:'precio_unitario_comparable'});
+   situacion:'importe_linea_comparable'});
  }
  return {estado:'analisis_por_rubro_sin_adjudicacion',
   ofertas,comparables,rankingGlobalPermitido:false,
