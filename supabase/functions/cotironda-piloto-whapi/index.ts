@@ -571,7 +571,7 @@ async function respond(req:Request):Promise<Response>{
   if(row.type==='text'&&centralSupplier&&
      ['unmatched_quote','needs_review'].includes(outcome(out.data))&&
      !legacySupplierQuoteLinked&&
-     trialActive&&trial.quote_link===true){
+     trial.quote_link===true){
     const linked=await db.rpc('cotironda_piloto_ia_link_supplier_mvp225',{
       p_message_hmac:messageHash,p_chat_hmac:chatHash,
       p_quoted_whapi_id:supplierQuotedId,p_original_text:body
@@ -582,7 +582,7 @@ async function respond(req:Request):Promise<Response>{
       // Solo FUENTE ya asociada, buyer/supplier comprobados por SQL.
       // La IA interpreta libremente; SQL almacena exclusivamente el
       // resumen por rubro, sin originales, ganadores ni datos privados.
-      if(trialActive&&trial.quote_analysis===true){
+      if(trial.quote_analysis===true){
         const modelEnv=Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_MODEL');
         const model=modelEnv==='gpt-6.1-sol'?'gpt-6.1-sol':'gpt-6-luna';
         const processed=await procesarPresupuestoCentralMvp227({
@@ -649,7 +649,7 @@ async function respond(req:Request):Promise<Response>{
         return json(503,'media_reconciliation_required');
       // Solo tras almacenar y verificar SHA del archivo, intentar
       // vincular la respuesta al trabajo IA Central. No adjudicar.
-      if(status==='stored'&&centralSupplier&&trialActive&&
+      if(status==='stored'&&centralSupplier&&
          trial.quote_link===true){
         const linked=await db.rpc('cotironda_piloto_ia_link_supplier_mvp225',{
           p_message_hmac:messageHash,p_chat_hmac:chatHash,
