@@ -1,3 +1,8 @@
+## 2026-11-05 — MVP210: comparador de materiales conectado al comprador (solo desarrollo)
+
+- Nuevo adaptador de fuente v9 a comparador MVP185 desde el seguimiento privado al cierre: verificaciones de texto público/etiqueta, SHA, descuentos, unidades y canasta de uno o dos, sin contactos ni adjudicación. Vercel y DOM recalculan subtotales de materiales con BigInt en vez de confiar en el importe enviado por Edge.
+- Los valores explícitos `AR$`/`US$`/`U$S` ahora atraviesan las proyecciones MVP186/204, proxy y pantalla; `$` ambiguo continúa bloqueando el cálculo. Pruebas del circuito real anonimizado, manipulaciones y revocación. No se modificó SQL, Whapi, producción ni PILOTO. docs/335.
+
 ## 2026-11-05 — MVP209, planificación autónoma de cierre (solo desarrollo)
 
 - Auditoría de Supabase PILOTO solo lectura: cron de cierre activo con 890 corridas exitosas y ninguna ronda vencida, 0 planes, 0 cron de finalistas, activación OFF. pg_cron, pg_net y Vault compatibles; falta secreto exclusivo plan-only.
