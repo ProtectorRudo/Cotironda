@@ -10,6 +10,26 @@
 --     inserts an immutable private plan (does NOT queue contacts/messages).
 --
 -- No public/browser token, no seller IDs or raw documents in success result.
+-- A source attestation is inseparable from the immutable planner row.
+-- The old MVP159 SQL planner never creates this marker.
+CREATE TABLE IF NOT EXISTS cotironda_piloto_privado.finalist_source_plans_mvp196(
+ request_id uuid PRIMARY KEY REFERENCES cotironda_piloto_privado.requests(id),
+ verifier_version integer NOT NULL DEFAULT 196 CHECK(verifier_version=196),
+ source_hmacs text[] NOT NULL,
+ source_shas text[] NOT NULL,
+ recorded_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+ CHECK(cardinality(source_hmacs) BETWEEN 1 AND 2),
+ CHECK(cardinality(source_hmacs)=cardinality(source_shas))
+);
+ALTER TABLE cotironda_piloto_privado.finalist_source_plans_mvp196
+ ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON cotironda_piloto_privado.finalist_source_plans_mvp196
+ FROM PUBLIC,anon,authenticated,service_role;
+CREATE TRIGGER finalist_source_immutable_mvp196
+ BEFORE UPDATE OR DELETE ON cotironda_piloto_privado.finalist_source_plans_mvp196
+ FOR EACH ROW EXECUTE FUNCTION
+ cotironda_piloto_privado.reject_supplier_line_mutation_mvp101();
+
 CREATE OR REPLACE FUNCTION public.cotironda_piloto_commercial_due_mvp196(
  p_limit integer DEFAULT 5
 ) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER
@@ -64,7 +84,8 @@ DECLARE r_ record;v_snapshot jsonb;v_docs jsonb;v_items jsonb;
  v_quote jsonb;v_source jsonb;v_match jsonb;v_ref jsonb;
  v_supplier text;v_key text;v_hmac text;v_sha text;v_item text;v_line integer;
  v_all_count integer;v_n integer;v_source_count integer;v_match_count integer;
- v_keys text[]:=array[]::text[];v_items_per_source text[];v_item_ids text[];
+ v_keys text[]:=array[]::text[];v_shas text[]:=array[]::text[];
+ v_items_per_source text[];v_item_ids text[];
  v_seen text[]:=array[]::text[];v_matrix jsonb:='[]'::jsonb;
  v_count_a integer;v_count_b integer;v_state text;
 BEGIN
@@ -156,6 +177,7 @@ BEGIN
   IF v_supplier IS NULL OR v_supplier=ANY(v_keys)
   THEN RETURN jsonb_build_object('state','supplier_not_unique_or_current');END IF;
   v_keys:=array_append(v_keys,v_supplier);
+  v_shas:=array_append(v_shas,v_sha);
   v_match_count:=jsonb_array_length(v_source->'matches');
   IF v_match_count<1 OR v_match_count>v_all_count
   THEN RETURN jsonb_build_object('state','invalid_coverage');END IF;
@@ -222,6 +244,9 @@ BEGIN
  v_state:=CASE p_mode WHEN 'one_complete_alternative'
   THEN 'one_complete_alternative' WHEN 'two_complete_alternatives'
   THEN 'two_complete_alternatives' ELSE 'two_supplier_combination' END;
+ INSERT INTO cotironda_piloto_privado.finalist_source_plans_mvp196(
+  request_id,source_hmacs,source_shas
+ ) VALUES(p_request,v_seen,v_shas);
  INSERT INTO cotironda_piloto_privado.finalist_coverage_plans_mvp108(
   request_id,state,candidate_count,supplier_keys
  ) VALUES(p_request,v_state,v_n,v_keys);
@@ -234,3 +259,43 @@ REVOKE ALL ON FUNCTION public.cotironda_piloto_commit_commercial_plan_mvp196(
  uuid,text,jsonb) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.cotironda_piloto_commit_commercial_plan_mvp196(
  uuid,text,jsonb) TO service_role;
+
+-- Independent last-moment guard for the legacy Whapi claim/authorize path:
+-- no attestation from this source-aware planner -> NO SEND.
+CREATE OR REPLACE FUNCTION public.cotironda_piloto_source_plan_sendable_mvp196(
+ p_request uuid
+) RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER
+SET search_path='' AS $fn$
+BEGIN
+ IF p_request IS NULL THEN RETURN false;END IF;
+ RETURN EXISTS(
+  SELECT 1 FROM cotironda_piloto_privado.finalist_source_plans_mvp196 proof
+  JOIN cotironda_piloto_privado.finalist_coverage_plans_mvp108 plan
+   ON plan.request_id=proof.request_id
+  JOIN cotironda_piloto_privado.requests r
+   ON r.id=proof.request_id
+  JOIN cotironda_piloto_privado.finalist_activation_mvp113 a
+   ON a.only_row AND a.enabled AND a.activated_at<=clock_timestamp()
+    AND r.created_at>=a.activated_at
+  WHERE proof.request_id=p_request
+   AND proof.verifier_version=196
+   AND cardinality(proof.source_hmacs)=plan.candidate_count
+   AND cardinality(proof.source_shas)=plan.candidate_count
+   AND r.state='closed' AND r.closes_at<=clock_timestamp()
+   AND plan.state IN(
+    'one_complete_alternative','two_complete_alternatives',
+    'two_supplier_combination')
+   AND NOT EXISTS(
+    SELECT 1 FROM unnest(proof.source_hmacs,proof.source_shas)
+      AS src(hmac,sha)
+    LEFT JOIN cotironda_piloto_privado.supplier_media_quotes_mvp098 q
+     ON q.message_hmac=src.hmac AND q.source_sha256=src.sha
+      AND q.request_id=p_request
+    WHERE q.message_hmac IS NULL OR NOT q.supplier_key=ANY(plan.supplier_keys)
+   )
+ );
+END;$fn$;
+REVOKE ALL ON FUNCTION public.cotironda_piloto_source_plan_sendable_mvp196(uuid)
+ FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.cotironda_piloto_source_plan_sendable_mvp196(uuid)
+ TO service_role;
