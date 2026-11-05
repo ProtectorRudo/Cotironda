@@ -1,5 +1,41 @@
 # MVP213 — Acta de integración real de PILOTO (5 noviembre 2026)
 
+## Actualización posterior: web integrada publicada (05/11/2026)
+
+Este apartado **sustituye el diagnóstico de bloqueo web y desfase** narrado
+más abajo, que queda como registro histórico de la primera publicación.
+
+- Se comprobó en Vercel que el deployment **`dpl_GMv4GjtKK31LFZoMrGwd6b52n4ds`**
+  estaba **READY**, proyecto exacto **`cotironda-seguimiento-vista-piloto`**,
+  commit GitHub **`12a3c92a149a680b37ca5375e9d6584f108add83`**.
+  Comparación GitHub contra el SHA integrado **`cfb2d0f`**: un solo
+  commit por delante, **únicamente la adición del acta docs/338**,
+  sin cambios en web/proxy/código. Estados de despliegue Vercel: SUCCESS.
+- Se reasignó **exclusivamente el alias estable del seguimiento PILOTO**
+  **`cotironda-seguimiento-vista-piloto-protector-rudo-s-projects.vercel.app`**
+  desde **`dpl_6fGJqCF4azBZK67nBuEXY47CKsBy`** al deployment
+  **`dpl_GMv4GjtKK31LFZoMrGwd6b52n4ds`**; una consulta posterior
+  **get_alias** confirmó la nueva asignación. No se promocionó producción.
+- Comprobación HTTP desde pg_net del MISMO Supabase PILOTO con solicitudes
+  no comerciales: **GET /seguimiento = 200** (request 743),
+  **GET /site.js = 200** (744), **GET /site.css = 200** (745),
+  **POST /api/estado** con 64 ceros ficticios = **200, {state:not_found}** (746).
+  El JS realmente servido incluye las guardas **`o.quotations>12`** y
+  **`requested_items>30`** y recibe el token solo en el fragmento `#`.
+  Esto verifica conectividad y contrato negativo, **NO navegador auténtico ni
+  una ronda real de 12×30 con precios**.
+- Postcontrol SQL en `cotironda_piloto_privado`: **3 requests prepared**,
+  **0** finalist_coverage_plans, **0** finalist_source_plans, **0** finalist_whapi_outbox,
+  **0** usuarios Auth. Sin nuevos WhatsApps, revelación, originales ni producción.
+- El límite 402 documentado más abajo afectó los intentos *previos*;
+  no hace falta intentar otro build para este cutover porque se reutilizó
+  un deployment READY que **sí incluye el código integrado**.
+
+**Pendiente real:** token privado autorizado en navegador, presupuesto
+verificado de extremo a extremo, descarga original con Auth y consentimiento
+prospectivo, cron plan-only y cierre/finalistas seguros. Checklist #529
+**permanece abierto; no declarar 14/14**.
+
 **Entorno único autorizado por el pedido contextual «dale integralo»:**
 `cotironda-piloto` (Supabase `ilggkalaafhtiysyzlmg`) y el proyecto
 independiente Vercel **`cotironda-seguimiento-vista-piloto`**.
