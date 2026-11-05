@@ -1,3 +1,8 @@
+## 2026-11-05 — MVP209, planificación autónoma de cierre (solo desarrollo)
+
+- Auditoría de Supabase PILOTO solo lectura: cron de cierre activo con 890 corridas exitosas y ninguna ronda vencida, 0 planes, 0 cron de finalistas, activación OFF. pg_cron, pg_net y Vault compatibles; falta secreto exclusivo plan-only.
+- Separada en la Edge la autenticación de planificación de la credencial completa de avisos: plan_only termina ANTES de Whapi/contactos incluso si flags de envío están habilitadas. Propuesto cron seguro de solo planificación cada 5 minutos con Vault, preflight SQL y smoke PG17 sin HTTP real con rollback. Sin cambios al PILOTO desplegado ni mensajes. Documentada decisión de consentimiento de alta sin fricción para nuevas cuentas. Docs/333/334.
+
 ## 2026-11-05 — MVP208 (preflight reales solo lectura + CI rollback)
 
 - Auditada directamente la base PILOTO sin modificación: PG17, Auth, roles, digest y columnas de las cuatro migraciones de originales compatibles (0 errores), 0/7 objetos privados instalados, 0 usuarios Auth y tres rondas preparadas, ninguna vencida a la fecha.

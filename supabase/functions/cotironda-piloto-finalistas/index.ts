@@ -7,6 +7,7 @@ import {createClient} from 'npm:@supabase/supabase-js@2.118.0';
 const REF='ilggkalaafhtiysyzlmg';
 import {hex,decodeContacts,prepareMessage} from '../_shared/cotironda-finalist-notice.ts';
 import {prepararPlanesPrivadosMvp197} from './plan-only-mvp197.ts';
+import {verificarModoWorkerMvp209} from './worker-mode-mvp209.ts';
 const te=new TextEncoder();
 const textResponse=(status:number,code:string)=>new Response(JSON.stringify({state:code}),{
  status,headers:{'content-type':'application/json','cache-control':'no-store',
@@ -28,11 +29,11 @@ async function run(req:Request):Promise<Response>{
  // worker/migration flag must fail closed, with ZERO contact disclosure.
  if(Deno.env.get('COTIRONDA_PILOT_COMMERCIAL_SELECTOR_MVP196_ENABLED')!=='true')
   return textResponse(503,'commercial_selector_off');
- const provided=req.headers.get('x-cotironda-finalist-worker-secret')??'';
- const expected=Deno.env.get('COTIRONDA_PILOT_FINALIST_WORKER_SECRET')??'';
- if(expected.length<48||provided.length>256||
-   !(await equalDigest(provided,expected)))
-  return textResponse(401,'unauthorized');
+ const mode=await verificarModoWorkerMvp209(req.headers,{
+  planOnly:Deno.env.get('COTIRONDA_PILOT_FINALIST_PLAN_SECRET')??'',
+  dispatch:Deno.env.get('COTIRONDA_PILOT_FINALIST_WORKER_SECRET')??''
+ },equalDigest);
+ if(mode===null)return textResponse(401,'unauthorized');
  const url=Deno.env.get('SUPABASE_URL')??'';
  let roleKey=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')??'';
  if(!roleKey){
@@ -55,6 +56,13 @@ async function run(req:Request):Promise<Response>{
  });
  if(planned.state!=='planned_no_whatsapp')
   return textResponse(503,planned.state);
+ // The cron-only credential can NEVER enter the dispatch branch, even if
+ // an administrator independently enables all dispatch/Whapi flags.
+ // Only the stronger separate worker key can authorize that branch.
+ if(mode==='plan_only')return new Response(JSON.stringify(planned),{
+  status:200,headers:{'content-type':'application/json',
+   'cache-control':'no-store','x-content-type-options':'nosniff'}
+ });
  // Staging-first requirement: source plan materialization can be tested
  // independently, but network delivery MUST remain separately OFF.
  // This flag cannot be used until prospective consent, new-round E2E,
