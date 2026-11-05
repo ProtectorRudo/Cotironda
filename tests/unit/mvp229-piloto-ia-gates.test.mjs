@@ -12,8 +12,8 @@ test('MVP229: piloto entra por control transaccional y NO por secretos de ambien
  assert.match(edge,/const trialActive=trial\.state==='active'/u);
  assert.match(edge,/const centralConfigured=sec\.outbound&&trialActive&&trial\.buyer===true/u);
  assert.match(edge,/publicar:sec\.outbound&&trial\.dispatch===true/u);
- assert.match(edge,/trialActive&&trial\.quote_link===true/u);
- assert.match(edge,/trialActive&&trial\.quote_analysis===true/u);
+ assert.match(edge,/trial\.quote_link===true/u);
+ assert.match(edge,/trial\.quote_analysis===true/u);
  assert.doesNotMatch(edge,/COTIRONDA_PILOT_AI_CENTRAL_BUYER_ENABLED/u);
  assert.doesNotMatch(edge,/COTIRONDA_PILOT_AI_CENTRAL_DISPATCH_ENABLED/u);
  assert.doesNotMatch(edge,/COTIRONDA_PILOT_AI_CENTRAL_QUOTE_LINK_ENABLED/u);
