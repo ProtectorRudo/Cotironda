@@ -29,7 +29,7 @@ type TrackingStatus=Readonly<{
 function isObject(v:unknown):v is Record<string,unknown>{
  return v!==null&&typeof v==='object'&&!Array.isArray(v);
 }
-const good=(n:number)=>Number.isSafeInteger(n)&&n>=0&&n<=250;
+const good=(n:number)=>Number.isSafeInteger(n)&&n>=0&&n<=360;
 
 /** Omit, rather than show incomplete data, when sources differ or fail. */
 export function resumirCoberturaCompradorMvp175(

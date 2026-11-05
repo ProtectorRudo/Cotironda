@@ -7,6 +7,8 @@ on:
       - 'supabase/piloto/mvp209_finalists_plan_only_cron.sql'
       - 'supabase/piloto/mvp209_finalists_plan_readiness_readonly.sql'
       - 'supabase/tests/ci/mvp209-finalists-plan-only-cron-pg17.sql'
+      - 'supabase/piloto/mvp211_private_round_inputs_capacity_12x30.sql'
+      - 'supabase/tests/ci/mvp211-capacity-12x30-pg17.sql'
       - '.github/workflows/cotironda-piloto-finalistas-v196-pg17.yml'
   workflow_dispatch:
 
@@ -45,3 +47,5 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/mvp196-finalists-source-off.sql > /dev/null
       - name: Plan cron restringido MVP209, sin HTTP real y rollback completo
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/mvp209-finalists-plan-only-cron-pg17.sql > /dev/null
+      - name: Fuente v9 MVP211 12x30, ACL, sin truncamiento y rollback
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/mvp211-capacity-12x30-pg17.sql > /dev/null

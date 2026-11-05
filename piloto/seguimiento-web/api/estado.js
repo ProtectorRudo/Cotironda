@@ -66,7 +66,7 @@ function buyerView(parsed){
      Number.isSafeInteger(p.quotations)&&p.quotations===safe.offers.length&&
      p.quotations===safe.economy.quotations&&
      Number.isSafeInteger(p.requested_items)&&p.requested_items>=1&&
-     p.requested_items<=25&&Array.isArray(p.articulos)&&
+     p.requested_items<=30&&Array.isArray(p.articulos)&&
      p.articulos.length===p.requested_items){
     const labels=safe.offers.map(o=>o.label);
     const allowedStates=new Set(["alternativa_comercial_con_aclaracion",
@@ -139,14 +139,14 @@ function buyerView(parsed){
      optionSet.quotations===safe.offers?.length&&
      optionSet.quotations===safe.coverage.quotations&&
      optionSet.quotations===safe.economy.quotations&&
-     optionSet.quotations>=1&&optionSet.quotations<=10&&
+     optionSet.quotations>=1&&optionSet.quotations<=12&&
      Number.isSafeInteger(optionSet.requested_items)&&
      optionSet.requested_items===safe.coverage.requested_items&&
-     optionSet.requested_items>=1&&optionSet.requested_items<=25&&
+     optionSet.requested_items>=1&&optionSet.requested_items<=30&&
      Array.isArray(optionSet.coberturaPorOferta)&&
      optionSet.coberturaPorOferta.length===optionSet.quotations&&
      Array.isArray(optionSet.alternativas)&&
-     optionSet.alternativas.length<=55){
+     optionSet.alternativas.length<=78){
     const labels=safe.offers.map(o=>o.label);
     const rows=optionSet.coberturaPorOferta;
     const counts=new Map();
@@ -272,7 +272,7 @@ function buyerView(parsed){
      Array.isArray(pc.coberturaPorOferta)&&
      pc.coberturaPorOferta.length===pc.quotations&&
      Array.isArray(pc.parejasConImportesParaTodos)&&
-     pc.parejasConImportesParaTodos.length<=45){
+     pc.parejasConImportesParaTodos.length<=66){
     const labels=safe.offers.map(x=>x.label);
     const items=safe.item_prices.articulos;
     const priceMap=new Map(labels.map(label=>[label,new Set()]));
@@ -579,7 +579,7 @@ export default async function handler(req,res){
       body:JSON.stringify({token:d.token}),signal:AbortSignal.timeout(9000)});
     if(!upstream.ok)return res.status(502).json({state:"unavailable"});
     const body=await upstream.text();
-    if(body.length>65536)return res.status(502).json({state:"unavailable"});
+    if(body.length>524288)return res.status(502).json({state:"unavailable"});
     const safe=buyerView(JSON.parse(body));
     if(!safe)return res.status(502).json({state:"unavailable"});
     return res.status(200).json(safe);

@@ -52,7 +52,7 @@ export function resumirCoberturaImportesMvp194(
   // During an active round never suggest a one/two-provider pairing.
   if(status?.state!=='closed'||status.can_open!==true||
      !Array.isArray(status.offers)||status.offers.length<1||
-     status.offers.length>10||
+     status.offers.length>12||
      status.economy?.state!=='economia_observada_sin_ranking'||
      status.economy.quotations!==status.offers.length||
      status.economy.ranking_allowed!==false||
@@ -61,7 +61,7 @@ export function resumirCoberturaImportesMvp194(
      validatedMvp186?.state!=='importes_por_articulo_sin_ranking'||
      validatedMvp186.quotations!==status.offers.length||
      validatedMvp186.requested_items<1||
-     validatedMvp186.requested_items>25||
+     validatedMvp186.requested_items>30||
      !Array.isArray(validatedMvp186.articulos)||
      validatedMvp186.articulos.length!==validatedMvp186.requested_items||
      validatedMvp186.ranking_allowed!==false||

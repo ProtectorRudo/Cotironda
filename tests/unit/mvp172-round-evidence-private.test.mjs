@@ -143,9 +143,14 @@ test('MVP172: IVA desconocido no se sustituye por IVA cero ni precio final',()=>
  }
 });
 test('MVP172: una ronda con límites excedidos no se recorta silenciosamente',()=>{
- const x=sample();x.quotations=Array.from({length:11},(_,i)=>seed(i+1));
+ const x=sample();x.quotations=Array.from({length:13},(_,i)=>{const q=seed(1);
+  const h=String(i+1).padStart(64,'a'),d=String(i+1).padStart(64,'b');
+  q.doc.messageHmac=h;q.doc.prueba.messageHmac=h;q.fuente.messageHmac=h;
+  q.doc.sourceSha256=d;q.doc.prueba.sourceSha256=d;
+  q.fuente.sourceSha256=d;q.economia.sourceSha256=d;return q;
+ });
  assert.equal(preview(x).estado,'insumos_invalidos');
- const y=sample();y.requestItems=Array.from({length:26},(_,i)=>({
+ const y=sample();y.requestItems=Array.from({length:31},(_,i)=>({
   id:'item_'+String(i+1).padStart(3,'0'),descripcionLiteral:'Piedra',
   cantidad:'1.000',unidad:'m3',familia:'piedra'
  }));
