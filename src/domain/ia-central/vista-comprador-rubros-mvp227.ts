@@ -31,11 +31,14 @@ export function vistaCotizacionesRubrosMvp227(input:unknown):
     input.items.length>200||
     !Array.isArray(input.ofertas)||input.ofertas.length>25||
     typeof input.recibidos!=='number'||
-    !Number.isSafeInteger(input.recibidos)||input.recibidos<0||
-    input.recibidos>25||
+    (typeof input.recibidos!=='number'||!Number.isSafeInteger(input.recibidos))||
+    (input.recibidos as number)<0||
+    (input.recibidos as number)>25||
     typeof input.pendientes_revision!=='number'||
-    !Number.isSafeInteger(input.pendientes_revision)||
-    input.pendientes_revision<0||input.pendientes_revision>100)
+    (typeof input.pendientes_revision!=='number'||
+      !Number.isSafeInteger(input.pendientes_revision))||
+    (input.pendientes_revision as number)<0||
+    (input.pendientes_revision as number)>100)
    return null;
  const seen=new Set<string>();
  const items=new Map<string,Readonly<{
@@ -79,19 +82,23 @@ export function vistaCotizacionesRubrosMvp227(input:unknown):
    if(!obj(r)||typeof r.rubro!=='string'||
       !Object.hasOwn(RUBROS_MVP216,r.rubro)||
       typeof r.solicitados!=='number'||typeof r.respondidos!=='number'||
-      !Number.isSafeInteger(r.solicitados)||!Number.isSafeInteger(r.respondidos)||
-      r.solicitados<1||r.respondidos<0||r.respondidos>r.solicitados||
+      typeof r.solicitados!=='number'||!Number.isSafeInteger(r.solicitados)||
+      typeof r.respondidos!=='number'||!Number.isSafeInteger(r.respondidos)||
+      (r.solicitados as number)<1||(r.respondidos as number)<0||
+      (r.respondidos as number)>(r.solicitados as number)||
       !['completa','parcial','sin_cobertura'].includes(String(r.cobertura)))
     return null;
    const rubro=r.rubro as RubroMvp216;
+   const nSolicitados=r.solicitados as number;
+   const nRespondidos=r.respondidos as number;
    if(quotedRubros.has(rubro))return null;
    quotedRubros.add(rubro);
    byRubro.set(rubro,(byRubro.get(rubro)??0)+1);
    const corresponding=[...items].filter(([,v])=>v.rubro===rubro);
    // La lista general del comprador puede contener MÁS artículos que
    // los asignados a este negocio. Nunca inventar cobertura total.
-   if(r.solicitados>corresponding.length)return null;
-   if(r.respondidos>corresponding.length)return null;
+   if(nSolicitados>corresponding.length)return null;
+   if(nRespondidos>corresponding.length)return null;
    const details=corresponding.map(([id,v])=>
     v.descripcion+' ('+v.cantidad+' '+v.unidad+'): '+
     (price.has(id)?displayCentavos(price.get(id)!,offer.moneda as 'ARS'|'USD'):
@@ -102,7 +109,7 @@ export function vistaCotizacionesRubrosMvp227(input:unknown):
     offer.flete==='excluido_explicito'?'Flete no incluido':
     offer.flete==='a_convenir'?'Flete a convenir':'Flete no informado';
    offers.push({label:offer.label+' · '+RUBROS_MVP216[rubro],
-    text:'Cotizó '+r.respondidos+' de '+r.solicitados+
+    text:'Cotizó '+nRespondidos+' de '+nSolicitados+
      ' artículos asignados a este negocio ('+corresponding.length+
      ' solicitados en el rubro completo).\n'+
      details+'\n'+iva+' · '+flete+
