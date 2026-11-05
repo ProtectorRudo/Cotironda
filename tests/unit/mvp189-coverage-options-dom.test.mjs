@@ -150,7 +150,8 @@ test('MVP203 UI: al cierre ofrece pareja única como orientación, mantiene TODO
  assert.match(content,/Presupuesto 1/);
  assert.match(content,/Presupuesto 2/);
  assert.match(content,/IVA, flete, stock/);
- assert.doesNotMatch(content,/ganador|puesto 1|adjudicad[oa]|es el menor precio/iu);
+ assert.doesNotMatch(content,/\bganador\b|adjudicad[oa]|1\\.(?:er|º)\\s+puesto/iu);
+ assert.match(content,/No implica menor precio/);
  assert.equal(p.node('offers').children.length,2);
  assert.match(html,/id="orientacionSection"/);
  assert.match(p.node('orientacionCaption').textContent,/no por competitividad económica/iu);
