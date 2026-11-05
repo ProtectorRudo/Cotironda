@@ -84,6 +84,24 @@ test('MVP199: 10 montos del libro económico real conciliados por página/fila s
  }
  assert.equal(lines,10);
 });
+test('MVP199: las dos rondas del piloto generan alternativas comerciales respaldadas, no ganador por total',()=>{
+ const [aridos,cemento]=cases.map(e=>selected(e.input));
+ assert.equal(aridos.state,'plan_ready','3 materiales en bolson/cemento');
+ assert.equal(aridos.mode,'two_complete_alternatives');
+ assert.equal(aridos.selected.length,2);
+ assert.deepEqual(aridos.allOffers.map(x=>x.articulosCubiertos),[3,3]);
+
+ assert.equal(cemento.state,'plan_ready','cemento y producto hidrofugo');
+ assert.equal(cemento.mode,'one_complete_alternative');
+ assert.equal(cemento.selected.length,1);
+ assert.deepEqual(cemento.allOffers.map(x=>x.articulosCubiertos).sort(),[1,2]);
+ for(const output of [aridos,cemento]){
+  assert.equal(output.priceRanked,false);
+  assert.equal(output.automaticAward,false);
+  assert.equal(output.contactsRevealed,false);
+ }
+});
+
 test('MVP199: edición documental, origen de la línea o descuentos falsos nunca habilitan finales',()=>{
  for(const r of cases){
   for(const mutation of [
