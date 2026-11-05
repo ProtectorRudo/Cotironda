@@ -112,7 +112,7 @@ export async function despacharSolicitudCentralMvp223(args:{
    const sent=await args.sendWhapi(recipient,pdf);
    valid=sent.accepted===true;
    messageId=valid&&typeof sent.messageId==='string'&&
-    /^[A-Za-z0-9_-]{8,160}$/u.test(sent.messageId)?sent.messageId:null;
+    /^[A-Za-z0-9._:-]{8,160}$/u.test(sent.messageId)?sent.messageId:null;
   }catch{/* Bloqueo, timeout o estado remoto incierto: NUNCA reintentar. */}
   try{await finalize(valid?'api_accepted':'uncertain',messageId)}
   catch{return result('requiere_conciliacion',claimed,accepted,uncertain)}
