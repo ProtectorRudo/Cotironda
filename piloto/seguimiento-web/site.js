@@ -191,6 +191,41 @@ function showItemPrices(d){
      /^\s*(?:(?:AR\$|US\$|U\$S|(?:ARS|USD)\s*\$?|\$)\s*)?[\d.,]+\s*$/i.test(r.importeCotizado)))||
    new Set(item.referencias.map(r=>r.oferta)).size!==labels.length))return;
  if(new Set(p.articulos.map(item=>item.itemId)).size!==p.articulos.length)return;
+ // MVP216: rubric metadata must match EVERY source-backed request item.
+ const rubricNames={
+  obra_gruesa:"Obra gruesa / Corralón",
+  pintura:"Pintura",electricidad:"Electricidad",
+  construccion_seca:"Construcción en seco",
+  sanitarios:"Sanitarios",ferreteria:"Ferretería y fijaciones",
+  otros:"Otros materiales"
+ };
+ const metadata=d.rubros;
+ let bucketForItem=null;
+ if(metadata?.state==="rubros_por_articulo"&&
+    metadata.ranking_allowed===false&&metadata.contacts_revealed===false&&
+    metadata.automatic_award===false&&
+    Array.isArray(metadata.items)&&metadata.items.length===p.articulos.length&&
+    metadata.items.every((x,i)=>x&&x.itemId===p.articulos[i].itemId&&
+      Object.hasOwn(rubricNames,x.rubro))){
+  const sections=new Map();
+  bucketForItem=new Map();
+  const requested=new Map(metadata.items.map(x=>[x.rubro,0]));
+  for(const x of metadata.items)requested.set(x.rubro,requested.get(x.rubro)+1);
+  for(const rubro of Object.keys(rubricNames)){
+   const count=requested.get(rubro);
+   if(!count)continue;
+   const section=element("section","rubro-section");
+   const header=element("div","rubro-header");
+   header.append(element("h3","rubro-title",rubricNames[rubro]),
+     element("span","rubro-count",count+
+       (count===1?" material solicitado":" materiales solicitados")));
+   const inner=element("div","rubro-items");
+   section.append(header,inner);grid.appendChild(section);
+   sections.set(rubro,inner);
+  }
+  for(const x of metadata.items)
+   bucketForItem.set(x.itemId,sections.get(x.rubro));
+ }
  let withPrices=0;
  for(const item of p.articulos){
   const card=element("article","itemprices-card");
@@ -226,7 +261,7 @@ function showItemPrices(d){
     element("span","itemprices-detail",note+quantity+alternative));
    card.appendChild(row);
   }
-  grid.appendChild(card);
+  (bucketForItem?.get(item.itemId)??grid).appendChild(card);
  }
  displayText("itemPricesCaption",withPrices+" importes de origen vinculados a "+
   p.requested_items+" artículos del pedido. No son totales finales ni una clasificación de proveedores.");

@@ -19,6 +19,7 @@ import {resumirCondicionesEconomicasPorOfertaMvp204} from
 import {resumirMaterialesCotizadosCompradorMvp210} from
  '../../../src/domain/materiales-cotizados-comprador-mvp210.ts';
 import {DESTINO_SEGUIMIENTO_PILOTO_MVP212} from '../../../src/domain/enlace-seguimiento-piloto-mvp212.ts';
+import {resumirRubrosCompradorMvp216} from '../../../src/domain/rubros-comprador-mvp216.ts';
 const ref='ilggkalaafhtiysyzlmg';
 const html=`<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -227,6 +228,11 @@ Deno.serve(async req=>{
      );
      if(itemPrices){
        publicResult={...publicResult,item_prices:itemPrices};
+       // Same token-checked source; no supplier names, prices or PII exposed.
+       const rubros=resumirRubrosCompradorMvp216(
+         publicResult,verifiedRoundInputs,itemPrices
+       );
+       if(rubros)publicResult={...publicResult,rubros};
        // This is a cross-check of source-backed ARTICLE AMOUNTS, not a
        // currency/tax/freight ranking. Only on CLOSED consented rounds.
        // Never expose the private HMAC-ordered SQL envelope.
