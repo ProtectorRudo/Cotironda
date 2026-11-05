@@ -5,6 +5,7 @@
 import {createClient} from 'npm:@supabase/supabase-js@2.118.0';
 import {parseBuyerPilot,canPrepareBuyerPilot,validMessage,standaloneDeliveryCity,quotedWhapiMessageId} from './core.ts';
 import {generarSolicitudPdfMvp091} from './request-pdf.ts';
+import {despacharSolicitudCentralMvp223} from './ai-central-dispatch-mvp223.ts';
 import {makeMediaManifest} from './media-intake.ts';
 import {parseDocumentClarification} from './document-clarification.ts';
 import {getVerifiedWhapiMedia,storeVerifiedMedia} from './whapi-media-archive.ts';
@@ -294,6 +295,7 @@ async function respond(req:Request):Promise<Response>{
  const ids=new Set<string>();
  const now=Math.floor(Date.now()/1000);
  const db=client(sec);
+ const aiCentralSignedChats=new Set<string>();
  let recoveryTriggerHmac:string|null=null;
  let recoveryTriggerChatId:string|null=null;
  for(const row of event.messages){
@@ -302,6 +304,7 @@ async function respond(req:Request):Promise<Response>{
   if(ids.has(row.id))return json(422,'duplicate_batch');
   ids.add(row.id);
   const chatHash=await hmac(sec.key,'cotironda|pilot|chat|'+sec.channel+'|'+row.chat_id);
+  if(row.type==='text')aiCentralSignedChats.add(chatHash);
   const messageHash=await hmac(sec.key,'cotironda|pilot|msg|'+sec.channel+'|'+row.id);
   // Only an authenticated sender already in the two approved supplier
   // destinations may use Whapi's quoted_id to identify a supplier PDF.
@@ -946,6 +949,59 @@ async function respond(req:Request):Promise<Response>{
  }
  }
  try{await dispatchTwo(sec,db)}catch{return json(503,'dispatch_reconciliation_required')}
+ // Fuente firmada + lista real de proveedores + doble gate OFF por defecto.
+ // Solo despacha un pedido YA preparado por SQL, sin reinterpretar materiales.
+ if(sec.outbound&&
+    Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_DISPATCH_ENABLED')==='true'){
+  for(const signedChat of aiCentralSignedChats){
+   const ready=await db.rpc('cotironda_piloto_ia_ready_for_chat_mvp223',{
+    p_buyer_chat_hmac:signedChat
+   });
+   if(ready.error)return json(503,'ai_central_lookup_unavailable');
+   if(ready.data?.state==='disabled'||ready.data?.state==='empty')continue;
+   if(ready.data?.state==='ambiguous')continue;
+   if(ready.data?.state!=='ready'||typeof ready.data.request_id!=='string')
+    return json(503,'ai_central_lookup_inconsistent');
+   const result=await despacharSolicitudCentralMvp223({
+    enabled:true,requestId:ready.data.request_id,
+    recipients:sec.recipients,maxJobs:2,
+    rpc:async(name,params)=>{
+     const response=await db.rpc(name,params);
+     return {data:response.data,error:response.error};
+    },
+    authorizeChatHmac:async(recipient,expectedHash)=>{
+     const computed=await hmac(sec.key,'cotironda|pilot|chat|'+sec.channel+
+       '|'+recipient+'@s.whatsapp.net');
+     return equalSecret(computed,expectedHash);
+    },
+    createPdf:generarSolicitudPdfMvp091,
+    sendWhapi:async(recipient,pdf)=>{
+     const response=await fetch('https://gate.whapi.cloud/messages/document',{
+      method:'POST',
+      headers:{Authorization:'Bearer '+sec.token,
+       'Content-Type':'application/json'},
+      body:JSON.stringify({
+       to:recipient,media:'data:application/pdf;name=Solicitud-Cotironda.pdf;base64,'+b64(pdf),
+       mime_type:'application/pdf',filename:'Solicitud-Cotironda.pdf',
+       caption:'Cotironda · Nueva solicitud de cotización'
+      }),
+      signal:AbortSignal.timeout(12000)
+     });
+     const payload=response.ok?await response.json().catch(()=>null):null;
+     const value=payload&&typeof payload==='object'?
+       payload as Record<string,unknown>:null;
+     const message=value?.message&&typeof value.message==='object'?
+       value.message as Record<string,unknown>:null;
+     const id=value?.message_id??message?.id??value?.id;
+     return {accepted:response.ok&&value?.sent===true,
+      messageId:typeof id==='string'?id:null};
+    }
+   });
+   if(result.estado==='requiere_conciliacion')
+    return json(503,'ai_central_dispatch_reconciliation_required');
+  }
+ }
+
  // Opportunistic recovery needs a signed Whapi event, an already-consented
  // pilot participant and a DB-leased private file. Never block the user reply
  // and NEVER send supplier invitations or expose source bytes.
