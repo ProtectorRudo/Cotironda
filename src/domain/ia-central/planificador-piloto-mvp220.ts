@@ -14,6 +14,7 @@ import {categorizarCatalogosConIAMvp220,
 import {proponerRuteoCatalogoConIAV2} from './ruteador-catalogos-v2.ts';
 import type {PropuestaPedido} from './contrato-v1.ts';
 import type {ResultadoCatalogoV2} from './ruteador-catalogos-v2.ts';
+import type {ProveedorCatalogoV2} from './ruteador-catalogos-v2.ts';
 
 type Rpc= (name:string,params:Readonly<Record<string,string>>)=>
  Promise<{data:unknown;error:unknown}>;
@@ -24,12 +25,14 @@ export type PlanMvp220=Readonly<{
  motivo:string;
  pedido:PropuestaPedido|null;
  ruteo:ResultadoCatalogoV2|null;
+ /** Fuente del catálogo únicamente para el broker server-side. NO serializar al comprador. */
+ catalogos:readonly ProveedorCatalogoV2[]|null;
  whatsappEnviado:false;
  baseModificada:false;
 }>;
 const KEY=/^[a-f0-9]{64}$/u;
 const deny=(estado:PlanMvp220['estado'],motivo:string):PlanMvp220=>({
- estado,motivo,pedido:null,ruteo:null,whatsappEnviado:false,baseModificada:false
+ estado,motivo,pedido:null,ruteo:null,catalogos:null,whatsappEnviado:false,baseModificada:false
 });
 const matchCity=(a:string,b:string):boolean=>
  a.normalize('NFD').replace(/[\u0300-\u036f]/gu,'').trim().toLowerCase()===
@@ -93,6 +96,6 @@ export async function planificarMensajeAutenticadoMvp220(args:{
   estado:'plan_validado_sin_envio',
   motivo:classified.estado==='catalogo_sin_confirmar'?
    'ruteo_parcial_solo_proveedores_confirmados':'ruteo_semantico_valido',
-  pedido,ruteo:route,whatsappEnviado:false,baseModificada:false
+  pedido,ruteo:route,catalogos:classified.proveedores,whatsappEnviado:false,baseModificada:false
  };
 }
