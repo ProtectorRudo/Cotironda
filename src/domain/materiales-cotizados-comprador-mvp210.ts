@@ -23,7 +23,7 @@ type Status=Readonly<{
   price_comparable?:unknown;contacts_revealed?:unknown;
  }> |null;
 }>;
-type Input=InsumoRondaPrivadoMvp172&Readonly<{
+type Input=Omit<InsumoRondaPrivadoMvp172,'quotations'>&Readonly<{
  quotations:readonly (InsumoRondaPrivadoMvp172['quotations'][number]&
   Readonly<{publicText:string}>)[];
 }>;
