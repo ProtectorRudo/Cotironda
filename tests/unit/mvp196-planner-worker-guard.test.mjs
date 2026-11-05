@@ -14,7 +14,8 @@ test('MVP196: los RPCs de selección son privados y nunca exponen documentos ni 
   'cotironda_piloto_commercial_due_mvp196',
   'cotironda_piloto_commit_commercial_plan_mvp196',
   'cotironda_piloto_source_plan_sendable_mvp196',
-  'cotironda_piloto_commercial_queue_due_mvp196'
+  'cotironda_piloto_commercial_queue_due_mvp196',
+  'cotironda_piloto_tracking_source_plan_mvp196'
  ]){
   assert.match(sql,new RegExp('CREATE OR REPLACE FUNCTION public\\.'+fn+'\\('));
   assert.match(sql,new RegExp('REVOKE ALL ON FUNCTION public\\.'+fn));
@@ -62,6 +63,15 @@ test('MVP196: el worker NO llama al selector SQL literal MVP159 ni envía durant
  assert.doesNotMatch(worker,/console\.log|console\.warn/);
 });
 test('MVP196: fuentes no selladas v9 nunca entran a envío por plan viejo',()=>{
+ const portal=readFileSync(new URL(
+ '../../supabase/functions/cotironda-piloto-seguimiento/index.ts',
+ import.meta.url),'utf8');
+ assert.match(portal,/cotironda_piloto_tracking_source_plan_mvp196/);
+ assert.match(portal,/verifiedFinalistPlan=!check\.error&&check\.data===true/);
+ assert.match(portal,/if\(publicResult\?\.state==='closed'&&verifiedFinalistPlan\)/);
+ assert.match(sql,/t\.revoked_at IS NULL/);
+ assert.match(sql,/t\.expires_at>clock_timestamp\(\)/);
+
  assert.match(worker,/if\(v196\.error\|\|v196\.data!==true\)/);
  assert.match(worker,/p_state:'uncertain'/);
  assert.match(worker,/continue;/);
