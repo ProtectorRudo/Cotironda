@@ -96,7 +96,7 @@ function buyerView(parsed){
         (ref.importeCotizado===null||
          typeof ref.importeCotizado==="string"&&
          ref.importeCotizado.length<=48&&
-         /^(?:\s*(?:ARS|USD)?\s*\$?\s*)?[\d.,]+\s*$/i.test(ref.importeCotizado)))&&
+         /^\s*(?:(?:AR\$|US\$|U\$S|(?:ARS|USD)\s*\$?|\$)\s*)?[\d.,]+\s*$/i.test(ref.importeCotizado)))&&
       new Set(row.referencias.map(ref=>ref.oferta)).size===labels.length);
     if(goodRows&&new Set(p.articulos.map(row=>row.itemId)).size===p.articulos.length&&
        new Set(labels).size===labels.length){
