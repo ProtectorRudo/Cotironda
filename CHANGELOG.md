@@ -1,3 +1,8 @@
+## 2026-11-05 — MVP207 (solo desarrollo)
+
+- Nuevo acceso autenticado a originales PILOTO en Next.js mediante OTP SMS para comprador preaprovisionado, sin autorregistro y sin secretos en navegador. Se reutilizan catalogo, descarga, consentimiento y auditoría de las rutas privadas existentes. Contrato público y pruebas adversariales de UUID, JWT, fuentes manipuladas, bloqueo Preview y aislamiento Auth DEV.
+- **Sin despliegue ni SMS enviados.** En PILOTO aún no hay Auth users ni migraciones de originales activas: #525/#528/#529 abiertos. docs/331.
+
 ## 2026-11-05 — MVP206 (desarrollo, sin desplegar)
 
 - Prueba end-to-end de contratos buyer v9 (dos rondas anonimizadas MVP199, cuatro fuentes, diez líneas) conectando MVP175/180/186/189/194/204 con `buyerView` Vercel y DOM del seguimiento, con revocación y casos hostiles. Corrige orden de referencias por etiqueta visible en MVP186, no por orden HMAC de SQL; etiquetas duplicadas bloqueadas. Distingue fallos de prueba física frente a fallos puramente económicos. No es E2E real por WhatsApp ni implica publicación. Docs/330, P0-G abierto.
