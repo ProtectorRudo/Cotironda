@@ -1,3 +1,6 @@
+## MVP198 — ronda cerrada sin cotizaciones no bloquea finalistas (04/11/2026, SOLO desarrollo)
+- Auditoría solo lectura de la base PILOTO confirmó una solicitud sin ofertas antes de dos con documentos v9. SQL propuesta ahora excluye ronda vacía del selector, continúa ante documentación incompleta, cuenta omitidas y no pierde rondas verificadas posteriores; verificación de invitación actual `prepared` antes de plan y de despacho/revelación. PG17 aislado incluye ronda vacía, inválida y válida y prueba cancelación de invitación; unitarios y documentación. No deploy, main, WhatsApp ni contactos. docs/321.
+
 ## MVP197 — planificación fuente v9 sin Whapi y revalidación de revocaciones (04/11/2026; solo desarrollo)
 - El worker de finalistas ya puede planificar por RPC privada aun con mensajes OFF y sin secretos Whapi/AES/HMAC: la barrera de despacho es independiente. Lógica plan-only extraída a función testeable, con resultados anónimos acotados, sin red ni efectos de comunicación. SQL propuesto MVP196 refuerza permiso de fuente antes de cola/contactos mediante relectura expediente, confirmación de consentimientos, hash y última versión. Nuevas pruebas de selección/errores/mocks y orden de barreras. Sin deploy/activación/envíos. Docs/320; #523/#528/#529 siguen abiertos.
 

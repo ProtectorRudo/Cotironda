@@ -83,6 +83,11 @@ CREATE TABLE cotironda_piloto_privado.supplier_media_quotes_mvp098(
  supplier_key text NOT NULL,source_sha256 text NOT NULL,
  received_at timestamptz NOT NULL
 );
+CREATE TABLE cotironda_piloto_privado.invitations(
+ request_id uuid NOT NULL,supplier_key text NOT NULL,
+ state text NOT NULL DEFAULT 'prepared',
+ PRIMARY KEY(request_id,supplier_key)
+);
 CREATE TABLE cotironda_piloto_privado.offer_versions(
  request_id uuid NOT NULL,supplier_key text NOT NULL,
  created_at timestamptz NOT NULL
@@ -105,7 +110,10 @@ CREATE FUNCTION public.cotironda_piloto_private_round_inputs_mvp172(
  p_request_id uuid
 ) RETURNS jsonb LANGUAGE sql STABLE SET search_path='' AS $f$
  SELECT pg_catalog.jsonb_build_object(
-  'state','private_inputs',
+  'state',CASE WHEN EXISTS(
+   SELECT 1 FROM cotironda_piloto_privado.supplier_media_quotes_mvp098 bad
+   WHERE bad.request_id=p_request_id AND bad.source_sha256=repeat('f',64)
+  ) THEN 'incomplete_evidence' ELSE 'private_inputs' END,
   'quotations',coalesce(pg_catalog.jsonb_agg(
    pg_catalog.jsonb_build_object('doc',pg_catalog.jsonb_build_object(
     'messageHmac',q.message_hmac,
@@ -136,6 +144,8 @@ BEGIN
   clock_timestamp()-interval '1 hour');
  INSERT INTO cotironda_piloto_privado.supplier_media_quotes_mvp098
  VALUES(h,v,'seller',sha,clock_timestamp()-interval '2 hours');
+ INSERT INTO cotironda_piloto_privado.invitations
+ VALUES(v,'seller','prepared');
  INSERT INTO cotironda_piloto_privado.finalist_coverage_plans_mvp108
  VALUES(v,'one_complete_alternative',1,ARRAY['seller']);
  INSERT INTO cotironda_piloto_privado.finalist_source_plans_mvp196(
@@ -165,6 +175,15 @@ BEGIN
  UPDATE cotironda_piloto_privado.participants
  SET opted_out_at=null WHERE key='seller';
 
+ UPDATE cotironda_piloto_privado.invitations
+ SET state='cancelled' WHERE request_id=v AND supplier_key='seller';
+ IF public.cotironda_piloto_source_plan_sendable_mvp196(v) IS DISTINCT FROM false
+ THEN RAISE EXCEPTION 'mvp198_cancelled_invitation_still_sendable';END IF;
+ UPDATE cotironda_piloto_privado.invitations
+ SET state='prepared' WHERE request_id=v AND supplier_key='seller';
+ IF public.cotironda_piloto_source_plan_sendable_mvp196(v) IS DISTINCT FROM true
+ THEN RAISE EXCEPTION 'mvp198_reinstated_invitation_not_sendable';END IF;
+
  INSERT INTO cotironda_piloto_privado.offer_versions
  VALUES(v,'seller',clock_timestamp()-interval '90 minutes');
  IF public.cotironda_piloto_source_plan_sendable_mvp196(v) IS DISTINCT FROM false
@@ -188,6 +207,31 @@ BEGIN
  SET opted_out_at=clock_timestamp() WHERE key='buyer';
  IF public.cotironda_piloto_source_plan_sendable_mvp196(v) IS DISTINCT FROM false
  THEN RAISE EXCEPTION 'mvp197_revoked_buyer_still_sendable';END IF;
+ -- Empty earlier round, invalid documentary quote next, then valid v9.
+ UPDATE cotironda_piloto_privado.participants
+ SET opted_out_at=null WHERE key='buyer';
+ INSERT INTO cotironda_piloto_privado.requests(
+  id,buyer_key,state,created_at,closes_at)
+ VALUES
+  ('57918430-95a7-4ae9-bfb8-182e987b1733','buyer','closed',
+   clock_timestamp()-interval '7 hours',clock_timestamp()-interval '6 hours'),
+  ('57918430-95a7-4ae9-bfb8-182e987b1734','buyer','closed',
+   clock_timestamp()-interval '6 hours',clock_timestamp()-interval '5 hours'),
+  ('57918430-95a7-4ae9-bfb8-182e987b1735','buyer','closed',
+   clock_timestamp()-interval '5 hours',clock_timestamp()-interval '4 hours');
+ INSERT INTO cotironda_piloto_privado.supplier_media_quotes_mvp098
+ VALUES
+  (repeat('3',64),'57918430-95a7-4ae9-bfb8-182e987b1734',
+   'seller',repeat('f',64),clock_timestamp()-interval '5.5 hours'),
+  (repeat('4',64),'57918430-95a7-4ae9-bfb8-182e987b1735',
+   'seller',repeat('5',64),clock_timestamp()-interval '4.5 hours');
+ j:=public.cotironda_piloto_commercial_due_mvp196(1);
+ IF j->>'state'<>'candidate_due' OR
+  (j->>'skipped_unverified')::integer<>1 OR
+  jsonb_array_length(j->'rounds')<>1 OR
+  j->'rounds'->0->>'requestId'<>
+   '57918430-95a7-4ae9-bfb8-182e987b1735'
+ THEN RAISE EXCEPTION 'mvp198_earlier_empty_or_invalid_round_stalled_valid_round';END IF;
 END$$;
 
 ROLLBACK;

@@ -35,6 +35,7 @@ CREATE OR REPLACE FUNCTION public.cotironda_piloto_commercial_due_mvp196(
 ) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER
 SET search_path='' AS $fn$
 DECLARE row_ record;v_inputs jsonb;v_rounds jsonb:='[]'::jsonb;
+ v_valid integer:=0;v_skipped integer:=0;
 BEGIN
  IF p_limit IS NULL OR p_limit NOT BETWEEN 1 AND 10 THEN
   RETURN jsonb_build_object('state','invalid_limit');
@@ -52,24 +53,34 @@ BEGIN
    ON buyer.key=req.buyer_key AND buyer.participant_role='buyer'
    AND buyer.consent_at IS NOT NULL AND buyer.opted_out_at IS NULL
   WHERE req.state='closed' AND req.closes_at<=clock_timestamp()
+   -- A valid no-offer round must close normally, not poison future batches.
+   AND EXISTS(
+    SELECT 1 FROM cotironda_piloto_privado.supplier_media_quotes_mvp098 offered
+    WHERE offered.request_id=req.id
+   )
    AND NOT EXISTS(
     SELECT 1 FROM cotironda_piloto_privado.finalist_coverage_plans_mvp108 plan
     WHERE plan.request_id=req.id
    )
-  ORDER BY req.closes_at,req.id LIMIT p_limit
+  -- Bounded wider window prevents a bad preceding source from blocking
+  -- the later two verified supplier rounds indefinitely at small scale.
+  ORDER BY req.closes_at,req.id LIMIT p_limit*10
  LOOP
   v_inputs:=public.cotironda_piloto_private_round_inputs_mvp172(row_.id);
-  IF v_inputs->>'state'<>'private_inputs' THEN
-   RETURN jsonb_build_object('state','unverified_source');
+  IF v_inputs IS NULL OR v_inputs->>'state' IS DISTINCT FROM 'private_inputs' THEN
+   v_skipped:=v_skipped+1;
+   CONTINUE;
   END IF;
   v_rounds:=v_rounds||jsonb_build_array(jsonb_build_object(
     'requestId',row_.id,'privateInputs',v_inputs,'closureChecked',true));
+  v_valid:=v_valid+1;
+  EXIT WHEN v_valid>=p_limit;
  END LOOP;
  IF length(v_rounds::text)>1400000 THEN
   RETURN jsonb_build_object('state','capacity_exceeded');
  END IF;
  RETURN jsonb_build_object('state','candidate_due','rounds',v_rounds,
-  'contacts_revealed',false,'messages_sent',false);
+  'skipped_unverified',v_skipped,'contacts_revealed',false,'messages_sent',false);
 END;$fn$;
 REVOKE ALL ON FUNCTION public.cotironda_piloto_commercial_due_mvp196(integer)
  FROM PUBLIC,anon,authenticated;
@@ -158,6 +169,7 @@ BEGIN
    AND ev.verifier_version=9 AND ev.state='verified' AND ev.reason='covered'
   JOIN cotironda_piloto_privado.invitations inv
    ON inv.request_id=q.request_id AND inv.supplier_key=q.supplier_key
+   AND inv.state='prepared'
   JOIN cotironda_piloto_privado.participants supp
    ON supp.key=q.supplier_key AND supp.participant_role='supplier'
    AND supp.consent_at IS NOT NULL AND supp.opted_out_at IS NULL
@@ -312,7 +324,12 @@ BEGIN
       AND supplier.participant_role='supplier'
       AND supplier.consent_at IS NOT NULL
       AND supplier.opted_out_at IS NULL
+    LEFT JOIN cotironda_piloto_privado.invitations invitation
+     ON invitation.request_id=p_request
+      AND invitation.supplier_key=q.supplier_key
+      AND invitation.state='prepared'
     WHERE q.message_hmac IS NULL OR supplier.key IS NULL OR
+     invitation.supplier_key IS NULL OR
      NOT q.supplier_key=ANY(plan.supplier_keys) OR
      NOT EXISTS(
       SELECT 1 FROM jsonb_array_elements(v_snapshot->'quotations') current_
