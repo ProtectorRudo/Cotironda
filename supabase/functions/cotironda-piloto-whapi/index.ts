@@ -379,16 +379,19 @@ async function respond(req:Request):Promise<Response>{
       hmac(sec.key,'cotironda|pilot|chat|'+sec.channel+
         '|'+recipient+'@s.whatsapp.net'))))
       .some(expected=>equalSecret(expected,chatHash));
-  const centralBuyerText=centralConfigured&&row.type==='text'&&
-    !supplierKnown&&!webLinkCode;
+  // La protección de una ronda YA DESPACHADA no depende de que el
+  // administrador deje activada la IA de compras. Incluye archivos y
+  // respuestas sin precio escrito en un formato determinado.
   let centralSupplier=false;
-  if(centralConfigured&&supplierKnown&&row.type==='text'){
+  if(!webLinkCode){
     const route=await db.rpc('cotironda_piloto_ia_is_supplier_mvp226',{
       p_chat_hmac:chatHash
     });
     if(route.error)return json(503,'ai_central_supplier_guard_unavailable');
     centralSupplier=route.data?.state==='central_supplier';
   }
+  const centralBuyerText=centralConfigured&&row.type==='text'&&
+    !supplierKnown&&!centralSupplier&&!webLinkCode;
   const local=centralBuyerText
     ?{city:'sin solicitud',items:[],unresolved:['central_message_pending']}
     :row.type==='text'&&!webLinkCode
@@ -552,7 +555,11 @@ async function respond(req:Request):Promise<Response>{
   }
   // Nueva asociación IA Central: solo texto FUENTE a ronda exacta.
   // No publica precios ni asigna ganadores; bandera OFF por defecto.
-  if(row.type==='text'&&outcome(out.data)==='unmatched_quote'&&
+  // Un proveedor puede escribir «cemento 8500 por bolsa» sin signo $.
+  // El receptor heredado lo deja needs_review: IA Central debe poder
+  // asociarlo a la ronda EXACTA igual que los presupuestos formales.
+  if(row.type==='text'&&centralSupplier&&
+     ['unmatched_quote','needs_review'].includes(outcome(out.data))&&
      !legacySupplierQuoteLinked&&
      Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_QUOTE_LINK_ENABLED')==='true'){
     const linked=await db.rpc('cotironda_piloto_ia_link_supplier_mvp225',{
