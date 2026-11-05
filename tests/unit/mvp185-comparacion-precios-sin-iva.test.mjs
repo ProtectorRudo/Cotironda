@@ -371,3 +371,115 @@ test('MVP193: líneas extras del original no ocultan pallet ni cargos',()=>{
  assert.equal(o.ofertas[0].motivoExclusion,'cargos_o_lineas_sin_asignar');
  assert.equal(o.opcionesCotizadas.length,0);
 });
+
+
+/** MVP195 — packages tied to the same v9 supplier document + buyer request. */
+const requestedCement={items:[{id:'cemento_001',cantidad:'20',unidad:'bag'}]};
+const requestedWaterproof={items:[{id:'hidrofugo_001',cantidad:'5',unidad:'l'}]};
+function verifiedPack(which,{itemId='cemento_001',quantity='40',name='cemento avellaneda x 25 kg',
+ unitCents=1000,totalCents=40000,familia='cemento_gris_obra',
+ buyer='cemento CPC 50 kg'}={}){
+ const a=source(which,[{id:itemId,q:quantity,unit:'',unitCents,totalCents}]);
+ a.doc.lineas[0].descriptionLiteral=name;
+ a.doc.lineas[0].unitLiteral=null;
+ a.fuente.lines[0].unitStatus='not_explicit';
+ a.fuente.lines[0].unit=null;
+ a.fuente.lines[0].presentation='none';
+ a.correlaciones[0].equivalencia='comercial_razonable';
+ a.pruebasEnvasesObra=[{
+  itemId,lineNo:1,sourceSha256:a.doc.sourceSha256,
+  pedidoDescripcionLiteral:buyer,familia
+ }];
+ return a;
+}
+test('MVP195: 20 bolsas de cemento 50 kg frente a 40 de 25 kg comparan MATERIAL total, no bolsas sueltas',()=>{
+ const a=verifiedPack('a');
+ const r=run([a],requestedCement);
+ assert.equal(r.estado,'proyeccion_informativa');
+ assert.equal(r.ofertas[0].lineasConPrecioBaseComparable,1);
+ assert.equal(r.opcionesCotizadas.length,1);
+ assert.equal(r.opcionesCotizadas[0].subtotalMaterialesCotizadoSinIva,'400.00');
+ assert.ok(r.opcionesCotizadas[0].advertencias.includes(
+  'presentacion_envase_diferente_misma_cantidad_sin_stock'));
+ for(const f of ['stockConfirmado','rankingFinalHabilitado','contactosRevelados',
+  'fleteCalculado','adjudicacion','originalesDescargables'])
+  assert.equal(r[f],false,f);
+});
+test('MVP195: hidrófugo 5 litros permite cotizar UN bidón original de 5 L',()=>{
+ const a=verifiedPack('a',{
+  itemId:'hidrofugo_001',quantity:'1',
+  name:'Sinteplast Hidrofugo 5lts',unitCents:75000,totalCents:75000,
+  familia:'hidrofugo',buyer:'hidrófugo'
+ });
+ const r=run([a],requestedWaterproof);
+ assert.equal(r.opcionesCotizadas.length,1);
+ assert.equal(r.opcionesCotizadas[0].subtotalMaterialesCotizadoSinIva,'750.00');
+ assert.ok(r.opcionesCotizadas[0].advertencias.includes(
+  'presentacion_envase_diferente_misma_cantidad_sin_stock'));
+});
+test('MVP195: dos envases equivalentes son dos opciones completas de materiales, no ranking final',()=>{
+ const a=verifiedPack('a');
+ const b=verifiedPack('b',{
+  quantity:'20',name:'CEMENTO CPC 50 KG',
+  unitCents:1900,totalCents:38000
+ });
+ const r=run([a,b],requestedCement);
+ assert.deepEqual(r.opcionesCotizadas.map(x=>x.subtotalMaterialesCotizadoSinIva),
+  ['380.00','400.00']);
+ assert.deepEqual(r.opcionesCotizadas[0].proveedoresAnonimos,['oferta_002']);
+ assert.equal(r.rankingFinalHabilitado,false);
+ assert.equal(r.adjudicacion,false);
+ assert.equal(r.impuestosCalculados,false);
+});
+test('MVP195: rechaza falta de prueba, descripción, familia, páginas, SHA o correlación manipulada',()=>{
+ for(const patch of [
+  x=>{delete x.pruebasEnvasesObra},
+  x=>{x.pruebasEnvasesObra[0].sourceSha256='f'.repeat(64)},
+  x=>{x.pruebasEnvasesObra[0].itemId='otro_001'},
+  x=>{x.pruebasEnvasesObra[0].lineNo=2},
+  x=>{x.pruebasEnvasesObra[0].pedidoDescripcionLiteral='piedra partida'},
+  x=>{x.pruebasEnvasesObra[0].familia='hidrofugo'},
+  x=>{x.fuente.lines[0].row=null},
+  x=>{x.fuente.lines[0].page=null},
+  x=>{x.fuente.lines[0].unit='bag'},
+  x=>{x.doc.lineas[0].unitLiteral='kg'},
+  x=>{x.correlaciones[0].equivalencia='sin_verificar'},
+  x=>{x.doc.prueba.revisionVigente=false},
+  x=>{x.doc.lineas[0].descriptionLiteral='piedra partida x 25 kg'},
+  x=>{x.doc.lineas[0].descriptionLiteral='hidrofugo 5 litros'},
+  x=>{x.doc.lineas[0].descriptionLiteral='cemento avellaneda x 25 kg y 50 kg'}
+ ]){
+  const a=verifiedPack('a');patch(a);
+  const r=run([a],requestedCement);
+  assert.equal(r.opcionesCotizadas.length,0,JSON.stringify({
+   source:a.doc.lineas[0].descriptionLiteral,
+   proof:a.pruebasEnvasesObra?.[0],unit:a.fuente.lines[0].unit
+  }));
+ }
+});
+test('MVP195: 40 bolsas 25 kg NO alcanzan un pedido de 25 bolsas 50 kg',()=>{
+ const a=verifiedPack('a');
+ const r=run([a],{items:[{id:'cemento_001',cantidad:'25',unidad:'bag'}]});
+ assert.equal(r.opcionesCotizadas.length,0);
+});
+test('MVP195: 5L de hidrófugo no equivalen a 5 unidades SIN contenido declarado',()=>{
+ const a=verifiedPack('a',{
+  itemId:'hidrofugo_001',quantity:'5',name:'HIDROFUGO EN PASTA',
+  unitCents:15000,totalCents:75000,familia:'hidrofugo',buyer:'hidrófugo'
+ });
+ assert.equal(run([a],requestedWaterproof).opcionesCotizadas.length,0);
+});
+test('MVP195: descuentos, precios después del descuento y coordenadas exactas son obligatorios',()=>{
+ for(const mutate of [
+  x=>{x.economia.descuentos.precios[0].unitarioComercialTrasDescuento='9999.00'},
+  x=>{x.economia.descuentos.precios[0].pagina=99},
+  x=>{x.economia.descuentos.precios[0].fila=99},
+  x=>{x.economia.descuentos.precios[0].unitarioComercialTrasDescuento=null},
+  x=>{x.doc.lineas[0].lineTotalLiteral='$ 999,00'}
+ ]){
+  const a=verifiedPack('a');mutate(a);
+  const r=run([a],requestedCement);
+  assert.equal(r.opcionesCotizadas.length,0);
+  assert.ok(r.ofertas[0].motivoExclusion!==null);
+ }
+});
