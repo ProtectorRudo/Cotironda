@@ -180,7 +180,9 @@ function pairInputs(items:Item[],qs:Q[],a:number,b:number):
  // A missing article is never filled from a third supplier or price 0.
  if(prices.some(p=>p.a===null&&p.b===null))return null;
  const flex=prices.filter(p=>p.a!==null&&p.b!==null).length;
- return {prices,work:flex>25?null:2**Math.ceil(flex/2)};
+ // Include linear output cost as well: 200 suppliers × 100 lines with
+ // forced pair allocations would otherwise generate millions of results.
+ return {prices,work:flex>25?null:2**Math.ceil(flex/2)+items.length*5};
 }
 /** Exact allocation for a pair with at most 25 FLEXIBLE lines; other
  * requested lines may be forced to one provider. No price approximation. */
