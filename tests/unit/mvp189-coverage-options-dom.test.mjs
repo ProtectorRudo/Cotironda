@@ -134,3 +134,83 @@ test('MVP189 UI: entradas con HTML hostil quedan como texto, nunca se interpreta
  assert.match(JSON.stringify(p.node('coverageOptionsGrid').children),/<img onerror=alert\(1\)>/);
  assert.doesNotMatch(script,/\.innerHTML\s*=/);
 });
+
+const orientation=(tipo='pareja_complementaria',ofertasAnonimas=['Presupuesto 1','Presupuesto 2'],n=1)=>({
+ state:'orientacion_de_cobertura_no_economica',tipo,ofertasAnonimas,
+ alternativasCompletas:n,presupuestosRevisados:2,
+ ranking_allowed:false,price_comparable:false,contacts_revealed:false,
+ automatic_award:false,originales_descargables:false
+});
+test('MVP203 UI: al cierre ofrece pareja única como orientación, mantiene TODOS los originales anónimos',async()=>{
+ const d=data();d.orientacion=orientation();
+ const p=await page([d]);
+ assert.equal(p.node('orientacionSection').hidden,false);
+ assert.equal(p.node('orientacionGrid').children.length,1);
+ const content=JSON.stringify(p.node('orientacionGrid').children);
+ assert.match(content,/Presupuesto 1/);
+ assert.match(content,/Presupuesto 2/);
+ assert.match(content,/IVA, flete, stock/);
+ assert.doesNotMatch(content,/ganador|menor precio|puesto 1|adjudicación/iu);
+ assert.equal(p.node('offers').children.length,2);
+ assert.match(html,/id="orientacionSection"/);
+ assert.match(p.node('orientacionCaption').textContent,/no por competitividad económica/iu);
+});
+test('MVP203 UI: al cancelar o perder acceso elimina orientación y todas las ofertas',async()=>{
+ for(const next of [{state:'not_found'},{networkError:true}]){
+  const d=data();d.orientacion=orientation();
+  const p=await page([d,next]);
+  assert.equal(p.node('orientacionSection').hidden,false);
+  await p.next();
+  assert.equal(p.node('orientacionSection').hidden,true);
+  assert.equal(p.node('orientacionGrid').children.length,0);
+  assert.equal(p.node('orientacionCaption').textContent,'');
+  assert.equal(p.node('offers').children.length,0);
+ }
+});
+test('MVP203 UI: estado abierto, parámetros alterados y recomendación suplantada fallan cerrados',async()=>{
+ for(const mutate of [
+  d=>d.state='waiting',
+  d=>d.can_open=false,
+  d=>d.orientacion.price_comparable=true,
+  d=>d.orientacion.ranking_allowed=true,
+  d=>d.orientacion.tipo='dos_individuales',
+  d=>d.orientacion.ofertasAnonimas=['Presupuesto 1'],
+  d=>d.orientacion.ofertasAnonimas=['Presupuesto 1','Negocio particular'],
+  d=>d.orientacion.alternativasCompletas=2,
+  d=>d.coverage_options.alternativas=[],
+  d=>d.coverage_options.automatic_award=true
+ ]){
+  const d=data();d.orientacion=orientation();mutate(d);
+  const p=await page([d]);
+  assert.equal(p.node('orientacionSection').hidden,true);
+  assert.equal(p.node('orientacionGrid').children.length,0);
+ }
+});
+test('MVP203 UI: ambigüedad o ausencia de cobertura no inventa recomendados',async()=>{
+ for(const [tipo,alternativas,n,caption] of [
+  ['sin_cobertura_completa',[],0,/No hay una propuesta/],
+  ['multiples_sin_preferencia',[options().alternativas[0],{
+    modo:'individual',ofertasAnonimas:['Presupuesto 1'],
+    articulos:[
+     {itemId:'item_001',ofertasConAlternativa:['Presupuesto 1']},
+     {itemId:'item_002',ofertasConAlternativa:['Presupuesto 1']}
+    ]
+  }],2,/no selecciona dos arbitrariamente/]
+ ]){
+  const d=data();d.coverage_options.alternativas=alternativas;
+  if(tipo==='multiples_sin_preferencia'){
+   d.coverage_options.coberturaPorOferta[0].articulosConAlternativa=2;
+   d.coverage.commercial_alternatives=3;
+   // Complementary option is not admissible when one provider covers all:
+   // the UI should deny the WHOLE forged coverage envelope.
+   const p=await page([d]);assert.equal(p.node('orientacionSection').hidden,true);
+   continue;
+  }
+  d.orientacion=orientation(tipo,[],n);
+  const p=await page([d]);
+  assert.equal(p.node('orientacionSection').hidden,false);
+  assert.equal(p.node('orientacionGrid').children.length,0);
+  assert.match(p.node('orientacionCaption').textContent,caption);
+  assert.equal(p.node('offers').children.length,2);
+ }
+});
