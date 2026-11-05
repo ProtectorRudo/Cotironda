@@ -71,6 +71,14 @@ export async function continuarZonaCentralMvp233(args:{
    await finish('review','zone_continuation_review');
    return result('requiere_revision');
   }
+  // La segunda lectura vio localidad agregada al contexto, pero los
+  // MATERIALES sólo pueden citar el texto de origen sin agregados.
+  // Esta comprobación anticipada no sustituye el control SHA+evidencia SQL.
+  if(plan.pedido.articulos.some(line=>
+     typeof line.evidencia!=='string'||!original.includes(line.evidencia))){
+    await finish('review','zone_evidence_not_verified');
+    return result('requiere_revision');
+  }
   const prepared=armarPreparacionSombraMvp221({
    chatHmac:args.chatHmac,messageHmac:args.sourceHmac,
    textoOriginal:original,autenticadoPorWebhook:true,plan
