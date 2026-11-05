@@ -104,6 +104,15 @@ test('MVP223 PDF vacío o de una ronda ajena nunca se envía',async()=>{
   city:'La Plata',deadlineIso:'2026-11-10T12:00:00Z',
   deliveryNote:null,items:[samples[0]]},id),null);
 });
+test('MVP225 preserva ID Whapi con punto para asociación de respuesta citada',async()=>{
+ const x=fixture();
+ const r=await despacharSolicitudCentralMvp223({
+  enabled:true,requestId:id,...x,maxJobs:1,
+  sendWhapi:async()=>({accepted:true,messageId:'wamid.HBgAAA111'})
+ });
+ assert.equal(r.apiAceptados,1);
+ assert.equal(x.state.finished[0].p_message_id,'wamid.HBgAAA111');
+});
 test('MVP223 API acepta pero no manda id, queda aceptado sin inventar id',async()=>{
  const x=fixture();
  const r=await despacharSolicitudCentralMvp223({
