@@ -8,6 +8,7 @@ import {generarSolicitudPdfMvp091} from './request-pdf.ts';
 import {despacharSolicitudCentralMvp223} from './ai-central-dispatch-mvp223.ts';
 import {procesarCompradorCentralMvp226} from './ai-central-buyer-mvp226.ts';
 import {procesarPresupuestoCentralMvp227} from './ai-central-supplier-mvp227.ts';
+import {proveedorConRondaCentralMvp232} from './ai-central-supplier-route-mvp232.ts';
 import {makeMediaManifest} from './media-intake.ts';
 import {parseDocumentClarification} from './document-clarification.ts';
 import {getVerifiedWhapiMedia,storeVerifiedMedia} from './whapi-media-archive.ts';
@@ -397,7 +398,10 @@ async function respond(req:Request):Promise<Response>{
       p_chat_hmac:chatHash
     });
     if(route.error)return json(503,'ai_central_supplier_guard_unavailable');
-    centralSupplier=route.data?.state==='central_supplier';
+    // El permiso de respuesta MVP230 sobrevive al apagado administrativo
+    // del gate de NUEVOS pedidos; nunca reabre el despacho.
+    centralSupplier=proveedorConRondaCentralMvp232(
+      trial.quote_link,route.data?.state);
   }
   const centralBuyerText=centralConfigured&&row.type==='text'&&
     !supplierKnown&&!centralSupplier&&!webLinkCode;
