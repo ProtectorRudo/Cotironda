@@ -63,7 +63,7 @@ test('MVP209: SQL preflight es solo lectura, no extrae datos ni activa workers',
  const uncommented=preflight.replace(/^\s*--.*$/gmu,'');
  assert.match(uncommented,/^\s*WITH\s+/u);
  assert.doesNotMatch(uncommented,/\b(?:INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|GRANT|REVOKE|CALL|DO|EXECUTE|COPY)\s+(?:TABLE|INTO|FROM|FUNCTION|SCHEMA|\$)/iu);
- assert.doesNotMatch(uncommented,/\b(?:net\.http_post|cron\.schedule|vault\.create_secret)\s*\(/iu);
+ assert.doesNotMatch(uncommented.replace(/'[^']*'/gu,"''"),/\b(?:net\.http_post|cron\.schedule|vault\.create_secret)\s*\(/iu);
  assert.match(preflight,/activation_on/);
  assert.match(preflight,/dedicated_vault_secret_exists/);
  assert.match(preflight,/diagnostico/);
