@@ -87,6 +87,17 @@ begin
       i.created_at invited_at,c.accepted_at consent_at,
       r.created_at round_created,r.closes_at,r.closed_at
    from cotironda_piloto_privado.supplier_media_quotes_mvp098 q
+   -- A stored SHA alone is not proof that every product, price and total was
+   -- verified. Demand the CURRENT immutable verifier V9 for this exact
+   -- request/supplier/message/source digest before exposing any original.
+   join cotironda_piloto_privado.supplier_evidence_mvp138 ev
+     on ev.message_hmac=q.message_hmac
+     and ev.request_id=q.request_id
+     and ev.supplier_key=q.supplier_key
+     and ev.source_sha256=q.source_sha256
+     and ev.verifier_version=9
+     and ev.state='verified' and ev.reason='covered'
+     and ev.ranking_allowed=false
    join cotironda_piloto_privado.requests r
      on r.id=q.request_id and r.buyer_key=v_buyer
    join cotironda_piloto_privado.media_archive_mvp095 m
@@ -109,6 +120,7 @@ begin
    join cotironda_piloto_privado.invitations i
      on i.request_id=q.request_id and i.supplier_key=q.supplier_key
      and i.created_at between r.created_at and r.closes_at
+     and i.state='prepared'
    join cotironda_piloto_privado.participants supplier
      on supplier.key=q.supplier_key
      and supplier.participant_role='supplier'
@@ -131,6 +143,16 @@ begin
      and q.source_sha256 ~ '^[a-f0-9]{64}$'
      and q.received_at between i.created_at and r.closes_at
      and source_msg.received_at between i.created_at and r.closes_at
+     -- A later text/portal correction voids the previous source approval.
+     -- Never expose the original as still-current while a new version
+     -- awaits verification; no automatic backfill/reinterpretation.
+     and not exists (
+       select 1 from cotironda_piloto_privado.offer_versions change_
+       where change_.request_id=q.request_id
+         and change_.supplier_key=q.supplier_key
+         and change_.created_at>=q.received_at
+         and change_.created_at<=r.closes_at
+     )
      and not exists (
        -- Do not leak superseded quotes. Equal timestamps are ambiguous.
        select 1
