@@ -483,3 +483,52 @@ test('MVP195: descuentos, precios después del descuento y coordenadas exactas s
   assert.ok(r.ofertas[0].motivoExclusion!==null);
  }
 });
+
+test('MVP195: caso representativo del PILOTO 310359,22 vs oferta parcial más barata sin litros',()=>{
+ // Fixture of two supplier source lines, NOT live private identifiers.
+ const a=source('a',[
+  {id:'cemento_001',q:'40',unit:'',unitCents:760370,totalCents:30414800},
+  {id:'hidrofugo_001',q:'1',unit:'',unitCents:621122,totalCents:621122}
+ ]);
+ a.doc.lineas[0].descriptionLiteral='cemento avellaneda x 25 kg';
+ a.doc.lineas[1].descriptionLiteral='Sinteplast Hidrofugo 5lts';
+ for(let i=0;i<2;i++){
+  a.doc.lineas[i].unitLiteral=null;
+  a.fuente.lines[i].unitStatus='not_explicit';
+  a.fuente.lines[i].unit=null;
+  a.correlaciones[i].equivalencia='comercial_razonable';
+ }
+ a.pruebasEnvasesObra=[
+  {itemId:'cemento_001',lineNo:1,sourceSha256:a.doc.sourceSha256,
+   pedidoDescripcionLiteral:'cemento CPC 50 kg',familia:'cemento_gris_obra'},
+  {itemId:'hidrofugo_001',lineNo:2,sourceSha256:a.doc.sourceSha256,
+   pedidoDescripcionLiteral:'hidrófugo',familia:'hidrofugo'}
+ ];
+ const b=source('b',[
+  {id:'cemento_001',q:'20',unit:'',unitCents:1025000,totalCents:20500000},
+  {id:'hidrofugo_001',q:'5',unit:'',unitCents:305000,totalCents:1525000}
+ ]);
+ b.doc.lineas[0].descriptionLiteral='CEMENTO CPC 50 KG';
+ b.doc.lineas[1].descriptionLiteral='HIDROFUGO EN PASTA';
+ for(let i=0;i<2;i++){
+  b.doc.lineas[i].unitLiteral=null;
+  b.fuente.lines[i].unitStatus='not_explicit';
+  b.fuente.lines[i].unit=null;
+  b.correlaciones[i].equivalencia='comercial_razonable';
+ }
+ b.pruebasEnvasesObra=[
+  {itemId:'cemento_001',lineNo:1,sourceSha256:b.doc.sourceSha256,
+   pedidoDescripcionLiteral:'cemento CPC 50 kg',familia:'cemento_gris_obra'},
+  {itemId:'hidrofugo_001',lineNo:2,sourceSha256:b.doc.sourceSha256,
+   pedidoDescripcionLiteral:'hidrófugo',familia:'hidrofugo'}
+ ];
+ const req={items:[{id:'cemento_001',cantidad:'20',unidad:'bag'},
+                   {id:'hidrofugo_001',cantidad:'5',unidad:'l'}]};
+ const r=run([a,b],req);
+ assert.deepEqual(r.opcionesCotizadas.map(x=>x.subtotalMaterialesCotizadoSinIva),
+  ['310359.22']);
+ assert.deepEqual(r.opcionesCotizadas[0].proveedoresAnonimos,['oferta_001']);
+ assert.equal(r.ofertas[1].motivoExclusion,'unidad_sin_acreditar');
+ assert.equal(r.rankingFinalHabilitado,false);
+ assert.equal(r.contactosRevelados,false);
+});
