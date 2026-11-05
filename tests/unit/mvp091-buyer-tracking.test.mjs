@@ -41,7 +41,8 @@ test('MVP091: el archivo enviado por Whapi es PDF privado y la fuente está vali
  assert.match(whapi,/data:application\/pdf;name=/);
  assert.match(whapi,/mime_type:'application\/pdf'/);
  assert.match(whapi,/cotironda_piloto_issue_tracking_mvp091/);
- assert.match(whapi,/\.supabase\.co\/functions\/v1\/cotironda-piloto-seguimiento#/);
+ assert.match(whapi,/crearEnlacePrivadoSeguimientoMvp212\(token\)/);
+ assert.doesNotMatch(whapi,/\.supabase\.co\/functions\/v1\/cotironda-piloto-seguimiento#/);
  assert.match(whapi,/cotironda_piloto_finish_tracking_mvp091/);
  assert.match(sql,/o\.state='leased' and o\.lease_token=p_lease/);
 });
