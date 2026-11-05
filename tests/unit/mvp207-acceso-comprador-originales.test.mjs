@@ -17,7 +17,7 @@ const routes=[
 const ID='469cb459-5f00-49c2-b0b9-bc8b11e5c900';
 const D1='a3c659f4-40b7-4fbe-a246-c2de912811a3';
 const D2='a3c659f4-40b7-4fbe-a246-c2de912811a4';
-const fakeJwt=['e30','eyJzdWIiOiJ1c2VyIn0','x'.repeat(64)].join('.');
+const fakeJwt=['eyJhbGciOiJIUzI1NiJ9','eyJzdWIiOiJ1c2VyIn0','x'.repeat(64)].join('.');
 const catalog=()=>({
  estado:'originales_consentidos',total:2,
  aviso:'Solo originales de proveedores que autorizaron compartirlos.',
