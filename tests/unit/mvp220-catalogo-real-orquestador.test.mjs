@@ -57,31 +57,29 @@ test('MVP220: lee TODOS los productos del catálogo sin asumir confirmación',()
  assert.equal(r.proveedores[0].articulos.length,3);
  assert.equal(r.proveedores[0].catalogoConfirmado,false);
  assert.equal(validarClasificacionCatalogosMvp220(r,
-  classification(r)).estado,'catalogo_sin_confirmar');
+  classification(r).proveedores).estado,'catalogo_sin_confirmar');
 });
-test('MVP220: rechaza catálogos truncados, falsos o editados por IA',()=>{
- for(const mutate of [
+test('MVP220: rechaza campos falsos y categorías que alteran el catálogo',()=>{
+ const invalidCases=[
   r=>r.proveedoresSinConfirmar=0,
-  r=>r.proveedores[0].articulos.pop(),
   r=>r.proveedores[1].clave='corralon_ailin',
   r=>r.proveedores[1].articulos[0].numero=999,
   r=>r.proveedores[0].articulos[0].familiaAnterior='in valid',
   r=>r.proveedores[0].catalogoConfirmado='si'
- ]){
+ ];
+ for(const mutate of invalidCases){
   const raw=real();mutate(raw);
-  if(mutate.toString().includes('articulos.pop')){
-   const parsed=validarSnapshotCatalogosMvp220(raw);
-   assert.ok(parsed); // El SQL puede devolver una lista legítima más corta.
-   const proposed=classification(parsed);
-   proposed.proveedores[0].lineas.push({numero:999,descripcionFuente:'inexistente',rubro});
-   assert.equal(validarClasificacionCatalogosMvp220(parsed,proposed).estado,'catalogo_invalido');
-  }else if(mutate.toString().includes('numero=999')){
-   assert.ok(validarSnapshotCatalogosMvp220(raw)); // Tiene que cotejar por fuente.
-  }else assert.equal(validarSnapshotCatalogosMvp220(raw),null);
+  assert.equal(validarSnapshotCatalogosMvp220(raw),null);
  }
+ const shorter=real();shorter.proveedores[0].articulos.pop();
+ const parsed=validarSnapshotCatalogosMvp220(shorter);
+ assert.ok(parsed); // Un catálogo corto puede ser válido si el SQL lo respalda.
+ const added=classification(parsed).proveedores;
+ added[0].lineas.push({numero:999,descripcionFuente:'inexistente',rubro});
+ assert.equal(validarClasificacionCatalogosMvp220(parsed,added).estado,'catalogo_invalido');
  const snapshot=validarSnapshotCatalogosMvp220(real());
- const bad=classification(snapshot);
- bad.proveedores[0].lineas[0].descripcionFuente='Cemento inventado';
+ const bad=classification(snapshot).proveedores;
+ bad[0].lineas[0].descripcionFuente='Cemento inventado';
  assert.equal(validarClasificacionCatalogosMvp220(snapshot,bad).estado,'catalogo_invalido');
 });
 test('MVP220: una propuesta de categoría incompleta nunca se aprueba',()=>{
