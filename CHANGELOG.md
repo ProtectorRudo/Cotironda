@@ -1,3 +1,6 @@
+## MVP199 — regresión con estructura real de 4 presupuestos v9 anonimizados (05/11/2026; solo desarrollo)
+- Nueva fixture anónima de 2 solicitudes con 4 presupuestos originales v9 y 10 líneas comerciales conciliadas del piloto real: no conserva identificadores reales, contactos ni texto de chat. Testea los mismos JSON de entrada del diagnóstico privado MVP172 y del selector MVP196, parser económico argentino y rechazo ante versión/archivo alterados. No cambia datos reales del piloto, Whapi, producción ni `main`; SQL/Edge v196 todavía sin publicar. docs/322.
+
 ## MVP198 — ronda cerrada sin cotizaciones no bloquea finalistas (04/11/2026, SOLO desarrollo)
 - Auditoría solo lectura de la base PILOTO confirmó una solicitud sin ofertas antes de dos con documentos v9. SQL propuesta ahora excluye ronda vacía del selector, continúa ante documentación incompleta, cuenta omitidas y no pierde rondas verificadas posteriores; verificación de invitación actual `prepared` antes de plan y de despacho/revelación. PG17 aislado incluye ronda vacía, inválida y válida y prueba cancelación de invitación; unitarios y documentación. No deploy, main, WhatsApp ni contactos. docs/321.
 
