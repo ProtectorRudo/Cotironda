@@ -1,3 +1,7 @@
+## 2026-11-05 — MVP233: localidad posterior sin repetir el pedido (desarrollo)
+
+- IA Central retoma el único pedido previo `needs_zone` después de un mensaje de localidad del mismo comprador. SQL privado enlaza fuente HMAC y respuesta atómicamente dentro de ventana y gates, vuelve a corroborar originales cifrados SHA y realiza doble lectura semántica. La ronda resultante conserva el original inmutable; no duplica invitaciones ni envía mensajes fuera de los permisos de despacho. Agregados tests Node y PostgreSQL 17 (rollback), docs/355. **No publicado en piloto ni producción; E2E real pendiente.**
+
 ## 2026-11-05 — MVP232: respuestas de rondas IA tras cierre de gates (desarrollo)
 
 - Corrige clasificación del proveedor en webhook: el permiso SQL `quote_link` para un PDF `api_accepted` sigue en IA Central aunque se apague el control de nuevas rondas. Mantiene la asociación segura y la revisión de presupuestos dentro de la ronda, sin reactivar nuevos pedidos o envíos. Regresión `mvp232-proveedor-tras-gates`, ADR 354; solo rama/PR, sin despliegue ni WhatsApps.

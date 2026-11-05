@@ -7,6 +7,7 @@ import {parseBuyerPilot,canPrepareBuyerPilot,validMessage,standaloneDeliveryCity
 import {generarSolicitudPdfMvp091} from './request-pdf.ts';
 import {despacharSolicitudCentralMvp223} from './ai-central-dispatch-mvp223.ts';
 import {procesarCompradorCentralMvp226} from './ai-central-buyer-mvp226.ts';
+import {continuarZonaCentralMvp233} from './ai-central-zone-mvp233.ts';
 import {procesarPresupuestoCentralMvp227} from './ai-central-supplier-mvp227.ts';
 import {proveedorConRondaCentralMvp232} from './ai-central-supplier-route-mvp232.ts';
 import {makeMediaManifest} from './media-intake.ts';
@@ -416,6 +417,7 @@ async function respond(req:Request):Promise<Response>{
   // locality clarification is what finally makes a round eligible.
   let preparedDocumentSourceHmac:string|null=null;
   let supplierAckMode:'text_quote'|'media_quote'|null=null;
+  let handledCentralZoneReply=false;
   // OpenAI is optional and off by default. The server-side DB gate is
   // durable, one-per-HMAC, buyer-only and capped at 12 calls per day.
   // Supplier quote ingestion never passes through this classifier.
@@ -529,7 +531,59 @@ async function respond(req:Request):Promise<Response>{
   }
   // La reserva SQL verifica identidad de comprador y cuota ANTES de
   // gastar tokens. El mensaje ya fue almacenado cifrado y con SHA original.
+  // Un mensaje breve que aporta la localidad continúa el único pedido
+  // IA Central previo, sin interpretar "La Plata" como otro presupuesto.
+  // La RPC revalida autor, SHA, ventana de tiempo, trial y gates.
   if(centralBuyerText&&outcome(out.data)==='needs_review'){
+    const city=standaloneDeliveryCity(body);
+    if(city){
+      const claimed=await db.rpc('cotironda_piloto_ia_claim_zone_mvp233',{
+        p_chat_hmac:chatHash,p_reply_hmac:messageHash,
+        p_reply_text:body,p_city:city
+      });
+      if(claimed.error)return json(503,'ai_central_zone_claim_unavailable');
+      const previous=claimed.data;
+      if(previous?.state==='resumed'){
+        handledCentralZoneReply=true;
+        if(typeof previous.source_hmac!=='string'||
+           typeof previous.source_sha256!=='string'||
+           typeof previous.nonce!=='string'||
+           typeof previous.ciphertext!=='string'||
+           previous.delivery_city!==city)
+          return json(503,'ai_central_zone_source_reconciliation_required');
+        const modelEnv=Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_MODEL');
+        const model=modelEnv==='gpt-6.1-sol'?'gpt-6.1-sol':'gpt-6-luna';
+        const resumed=await continuarZonaCentralMvp233({
+          autenticadoPorWebhook:true,chatHmac:chatHash,
+          sourceHmac:previous.source_hmac,
+          originalSha256:previous.source_sha256,
+          ciudadConfirmada:city,nonce:previous.nonce,
+          ciphertext:previous.ciphertext,
+          apiKey:Deno.env.get('COTIRONDA_PILOT_OPENAI_API_KEY')??'',
+          model,publicar:sec.outbound&&trial.dispatch===true,
+          decrypt:async(nonce,ciphertext)=>decryptArchivedText(
+            sec.aes,nonce,ciphertext,
+            chatHash+'|'+previous.source_hmac+'|text'),
+          shaText:sha,
+          rpc:async(name,params)=>{
+            const r=await db.rpc(name,params);
+            return {data:r.data,error:r.error};
+          }
+        });
+        if(resumed.estado==='conciliacion_requerida'||
+           resumed.estado==='origen_invalido')
+          return json(503,'ai_central_zone_continuation_failed');
+        if(resumed.estado==='ronda_publicada'){
+          preparedDocumentSourceHmac=previous.source_hmac;
+          if(trial.dispatch===true)trialDispatchChats.add(chatHash);
+        }
+      }else if(previous?.state==='ambiguous'){
+        // Ninguna asignación arbitraria de localidad a pedido.
+        handledCentralZoneReply=true;
+      }
+    }
+  }
+  if(centralBuyerText&&!handledCentralZoneReply&&outcome(out.data)==='needs_review'){
     const modelEnv=Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_MODEL');
     const model=modelEnv==='gpt-6.1-sol'?'gpt-6.1-sol':'gpt-6-luna';
     const result=await procesarCompradorCentralMvp226({
@@ -842,7 +896,8 @@ async function respond(req:Request):Promise<Response>{
   // Clarifications are associated with exactly one outstanding,
   // consented document. Never reinterpret line numbers as quantities.
   let handledDocumentReply=false;
-  if(row.type==='text'&&['needs_review','needs_zone'].includes(outcome(out.data))){
+  if(row.type==='text'&&!handledCentralZoneReply&&
+     ['needs_review','needs_zone'].includes(outcome(out.data))){
     const details=parseDocumentClarification(body);
     if(details){
       const linked=await db.rpc('cotironda_piloto_apply_clarification_mvp100',{
@@ -863,7 +918,7 @@ async function respond(req:Request):Promise<Response>{
     }
   }
   // A bare locality reply remains accepted for buyers who only owe a city.
-  if(row.type==='text'&&!handledDocumentReply&&
+  if(row.type==='text'&&!handledDocumentReply&&!handledCentralZoneReply&&
      ['needs_review','needs_zone'].includes(outcome(out.data))){
     const zone=standaloneDeliveryCity(body);
     if(zone){
