@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'supabase/piloto/mvp236_asociacion_respuestas_invitaciones_acreditadas.sql'
+      - 'supabase/piloto/mvp237_ledger_asociacion_no_resuelta.sql'
       - 'supabase/tests/ci/mvp236_asociacion_respuestas_pg17.sql'
       - '.github/workflows/cotironda-mvp236-asociacion-respuestas-pg17.yml'
   workflow_dispatch:
