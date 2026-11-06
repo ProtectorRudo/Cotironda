@@ -21,7 +21,7 @@ test('MVP263: cuotas estrictas, concurrencia por bloqueo y bucket único',()=>{
   'CHECK(max_runs_utc_day BETWEEN 1 AND 96)',
   'bucket_utc timestamptz PRIMARY KEY',
   'WHERE only_row=true FOR UPDATE',
-  "date_bin('15 minutes',policy_.last_run_at,"
+  "date_bin('15 minutes',policy_.last_run_at,",
   'IF run_count_>=policy_.max_runs_utc_day',
   "date_bin('15 minutes',now_",
   'ON CONFLICT(bucket_utc) DO NOTHING',
