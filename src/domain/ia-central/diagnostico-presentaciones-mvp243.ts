@@ -54,7 +54,7 @@ function toMeasure(num:string,unit:string,span:string):Measure|null{
 function sizes(original:string):readonly Measure[]|null{
  const text=NORMAL(original);
  const candidates=[
-  ...text.matchAll(/\b(\d{1,6}(?:[.,]\d{1,3})?)\s*(kg|kilos?|kilogramos?|g|gramos|ml|mililitros|lts?|litros?|m3|metros? cubicos?)\b/gu)
+  ...text.matchAll(/\b(\d{1,6}(?:[.,]\d{1,3})?)\s*(kg|kilos?|kilogramos?|g|gramos|ml|mililitros|l|lt|lts|litro|litros|m3|metro cubico|metros cubicos)\b/gu)
  ];
  const result:Measure[]=[];
  for(const m of candidates){
