@@ -1,3 +1,9 @@
+## 2026-11-06 — MVP272: verificación age real de ZIP móvil (desarrollo)
+
+- Nuevo auditor local y desconectado `audit-pilot-mobile-ciphertext-mvp272.mjs` para los seis archivos age de ZIP MVP269; verifica SHA externo, nombres exactos, manifiesto, permisos, identidad age y autenticidad de descifrado sin escribir texto claro.
+- CI dedicada con cifrado real age sobre datos sintéticos, claves incorrectas, ciphertext alterado, ZIP adulterado y ausencia de afirmaciones falsas de restauración.
+- Se impide la ejecución con credenciales Postgres/Storage, en CI productiva, Vercel y carpetas inseguras. **No hubo copia auténtica ni restore del piloto, y no se habilitó una descarga móvil.** Decisión 397.
+
 ## 2026-11-06 — MVP271: comando privado para ZIP cifrado de todo el piloto (desarrollo)
 
 - Exportador SQL PostgreSQL 17 **solo cotironda-piloto** con URL fijada a la referencia de Supabase, snapshot compartido para datos y esquema, cifrado age en streaming y limpieza segura ante fallas.
