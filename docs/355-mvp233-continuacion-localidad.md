@@ -17,3 +17,10 @@ IA Central acepta un pedido libre sin localidad y registra un intento `needs_zon
 - Piloto solo después de autorización explícita; la prueba real WhatsApp del comprador + dos proveedores sigue pendiente. **No cerrar #597 ni #529 por este PR.**
 
 Riesgos conocidos: esta versión continúa solo mensajes de texto, no adjuntos del comprador. El manejo de múltiples pedidos pendientes queda en revisión explícita, nunca asignación automática arbitraria.
+
+## Estado posterior (5/11/2026)
+
+La migración MVP233 se instaló en el proyecto Supabase `cotironda-piloto` y
+la Edge de recepción quedó en versión 53, junto con la normalización MVP234.
+Controles privados apagados, sin mensajes reales ni cambios de producción.
+La prueba E2E completa sigue pendiente. Ver decisión 356.
