@@ -1,3 +1,10 @@
+## 2026-11-06 — Etapa 2 IA Central: integración MVP236-239 en piloto (sin WhatsApps)
+
+- Cuatro migraciones SQL instaladas en `cotironda-piloto` y Edge Whapi **v54 ACTIVE** con 37 archivos, código coincidente con la rama de desarrollo. Los PR #614 y #617 están integrados; los PR #615/#616 quedaron incluidos y cerrados sin duplicar cambios.
+- Atribución por envíos Whapi acreditados, registro privado de ambigüedades, continuidad segura de aviso y archivo, y aclaración mediante cita exacta del pedido original. Comprobados RLS, ACL, no-reintentos y controles de salida.
+- **25/25 controles de GitHub Actions SUCCESS** en el commit integrado de etapa 2. Comprobación SQL: tres gates privados OFF; rondas históricas conservadas, cero mensajes, cero despachos, cero nuevas asociaciones IA.
+- **La implementación técnica en piloto está completa.** No declaramos terminada la validación operativa hasta un E2E real con dos rondas y proveedores, según decisión 362. Producción sin cambios.
+
 ## 2026-11-06 — MVP239: aclaración segura de presupuestos ambiguos (etapa 2)
 
 - El proveedor puede contestar citando el mensaje ORIGINAL del pedido Whapi, sin volver a enviar el presupuesto. Una RPC vincula un único documento o texto pendiente al pedido exacto del mismo proveedor, sin seleccionar por similitud ni confundir el mensaje de aclaración con una oferta nueva.
