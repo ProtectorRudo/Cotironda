@@ -281,6 +281,11 @@ function showRubroComparer(d){
     data.ranking_global_permitido!==false||
     data.adjudicacion_automatica!==false||
     data.contactos_revelados!==false||
+    !Array.isArray(data.presupuestosAnonimos)||
+    data.presupuestosAnonimos.length>25||
+    !data.presupuestosAnonimos.every(x=>
+      /^Presupuesto [1-9][0-9]{0,2}$/u.test(x))||
+    new Set(data.presupuestosAnonimos).size!==data.presupuestosAnonimos.length||
     !Array.isArray(data.rubros)||data.rubros.length<1||
     data.rubros.length>7)return;
  const known={
@@ -298,30 +303,39 @@ function showRubroComparer(d){
  for(const r of data.rubros){
   if(!r||known[r.rubro]!==r.titulo||seen.has(r.rubro)||
      !isCount(r.solicitados,200)||r.solicitados<1||
+     !Array.isArray(r.articulosSolicitados)||
+     r.articulosSolicitados.length!==r.solicitados||
+     !r.articulosSolicitados.every(x=>id.test(x))||
+     !unique(r.articulosSolicitados)||
      !isCount(r.opcionesTotales,325)||!Array.isArray(r.opciones)||
      r.opciones.length>12||r.opciones.length>r.opcionesTotales||
      !Array.isArray(r.ofertasConRespuestaSinPrecio)||
      r.ofertasConRespuestaSinPrecio.length>25||
-     !r.ofertasConRespuestaSinPrecio.every(x=>label.test(x))||
+     !r.ofertasConRespuestaSinPrecio.every(x=>label.test(x)&&
+       data.presupuestosAnonimos.includes(x))||
      !unique(r.ofertasConRespuestaSinPrecio)||
      !Array.isArray(r.articulosConReferenciasCoincidentes)||
      r.articulosConReferenciasCoincidentes.length>r.solicitados||
-     !r.articulosConReferenciasCoincidentes.every(x=>id.test(x))||
+     !r.articulosConReferenciasCoincidentes.every(x=>id.test(x)&&
+       r.articulosSolicitados.includes(x))||
      !unique(r.articulosConReferenciasCoincidentes))return;
   seen.add(r.rubro);
   for(const o of r.opciones){
    if(!o||!Array.isArray(o.ofertasAnonimas)||
       o.ofertasAnonimas.length<1||o.ofertasAnonimas.length>2||
-      !o.ofertasAnonimas.every(x=>label.test(x))||
+      !o.ofertasAnonimas.every(x=>label.test(x)&&
+        data.presupuestosAnonimos.includes(x))||
       !unique(o.ofertasAnonimas)||
       !Array.isArray(o.articulosConPrecio)||
       o.articulosConPrecio.length<1||
       o.articulosConPrecio.length>r.solicitados||
-      !o.articulosConPrecio.every(x=>id.test(x))||
+      !o.articulosConPrecio.every(x=>id.test(x)&&
+        r.articulosSolicitados.includes(x))||
       !unique(o.articulosConPrecio)||
       !Array.isArray(o.articulosPendientes)||
       o.articulosPendientes.length>r.solicitados||
-      !o.articulosPendientes.every(x=>id.test(x))||
+      !o.articulosPendientes.every(x=>id.test(x)&&
+        r.articulosSolicitados.includes(x))||
       !unique(o.articulosPendientes)||
       !unique([...o.articulosConPrecio,...o.articulosPendientes])||
       o.articulosConPrecio.length+o.articulosPendientes.length!==r.solicitados||
