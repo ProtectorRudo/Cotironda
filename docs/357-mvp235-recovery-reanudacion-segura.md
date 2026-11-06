@@ -31,3 +31,17 @@ PG17 con ROLLBACK: reanudación reciente de pedido antiguo no se interrumpe,
 reanudación efectivamente vencida pasa a revisión, ausencia de reanudación
 continúa cerrándose, cuotas/reintentos y permisos no se relajan.
 Requerida verificación de SQL ejecutado en piloto y luego E2E real mañana.
+
+## Instalación y verificaciones del piloto (5/11/2026)
+
+- SQL instalado como `piloto_mvp235_recuperacion_segura_zona` en el
+  proyecto Supabase exclusivo `cotironda-piloto`.
+- Workflow PG17 de MVP235 en GitHub Actions: **SUCCESS** tras corregir
+  el cierre del cuerpo PL/pgSQL detectado en la primera ejecución.
+- Verificación SQL remota: definición activa usa la antigüedad efectiva de
+  la última reanudación, consulta `dry_run` sin pendientes.
+- Privilegios: `anon` y `authenticated` no ejecutan el RPC privado.
+- Cron de conciliación activo. Tres controles de IA desactivados; tres
+  rondas históricas conservadas; cero respuestas de zona consumidas.
+- No se modificaron las rondas, no hubo salidas Whapi ni despliegues a
+  producción. La prueba E2E con WhatsApp real queda pendiente.
