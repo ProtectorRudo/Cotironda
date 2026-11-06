@@ -27,7 +27,7 @@ const MAX_RESULT=120000;
 const MAX_OCR_TEXT=18000;
 const safe=(v:unknown):v is Record<string,unknown>=>
  !!v&&typeof v==='object'&&!Array.isArray(v);
-const err=(code:string):never=>{throw Error('visual_ocr_'+code)};
+function err(code:string):never {throw Error('visual_ocr_'+code)}
 function binaryBase64(bytes:Uint8Array):string{
  let s='';
  for(let i=0;i<bytes.length;i+=8192)
@@ -74,7 +74,7 @@ async function serviceAccountAssertion(c:{client_email:string;private_key:string
  try{der=Uint8Array.from(atob(clean),s=>s.charCodeAt(0))}
  catch{err('invalid_private_key')}
  let key:CryptoKey;
- try{key=await crypto.subtle.importKey('pkcs8',der,{
+ try{key=await crypto.subtle.importKey('pkcs8',Uint8Array.from(der),{
    name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'
  },false,['sign'])}catch{err('invalid_private_key')}
  const now=Math.floor(Date.now()/1000);
