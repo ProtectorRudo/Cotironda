@@ -4,14 +4,15 @@
  * TAR of Storage; then creates the already-tested one-file mobile ZIP (MVP269).
  * This NEVER publishes a URL, sends WhatsApp, provisions a host or tests restore.
  */
-import {lstat,rm} from 'node:fs/promises';
-import {isAbsolute,resolve,dirname,sep,relative} from 'node:path';
+import {lstat,rm,mkdir} from 'node:fs/promises';
+import {isAbsolute,resolve,dirname,sep,relative,parse,join} from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {exportPilotSqlEncrypted} from './export-encrypted-pilot-sql-mvp271.mjs';
 import {exportPilotStorageEncrypted} from './export-private-pilot-storage-mvp270.mjs';
 import {prepareMobilePilotZip,PILOT_REF} from './package-pilot-mobile-mvp269.mjs';
 
 const fail=code=>{throw Error('MVP271_BUNDLE_'+code)};
+const ROOT=resolve(dirname(fileURLToPath(import.meta.url)),'..','..');
 function localGuard(env){
  if(process.platform==='win32'||typeof process.getuid!=='function'||
    (Boolean(env.CI)&&env.CI!=='false')||Boolean(env.GITHUB_ACTIONS)||
@@ -19,6 +20,15 @@ function localGuard(env){
    Boolean(env.COTIRONDA_CI_AUTH_SANDBOX)||
    Boolean(env.COTIRONDA_CI_WA_PREVIEW_SANDBOX))
   fail('TRUSTED_LOCAL_ONLY');
+}
+async function safeParent(path){
+ const root=parse(path).root;
+ let at=root;
+ for(const name of path.slice(root.length).split(sep).filter(Boolean)){
+  at=join(at,name);
+  const st=await lstat(at).catch(()=>fail('UNSAFE_OUTPUT_PATH'));
+  if(st.isSymbolicLink()||!st.isDirectory())fail('UNSAFE_OUTPUT_PATH');
+ }
 }
 async function mustNotExist(path){
  try{await lstat(path)}catch(e){
@@ -39,12 +49,19 @@ export async function createPrivatePilotMobileBackup({
     !destinationZip.endsWith('.zip'))fail('ABSOLUTE_PRIVATE_PATHS_REQUIRED');
  const source=resolve(sourceDirectory),zip=resolve(destinationZip);
  if(zip===source||zip.startsWith(source+sep))fail('ZIP_INSIDE_SOURCE');
- if(source===zip||source.startsWith(dirname(zip)+sep))
-  fail('SOURCE_INSIDE_ARCHIVE_PARENT');
- // Never overwrite source or existing archive. Private directories and
- // symlink ancestors are independently checked by the component executors.
+ const relativeSource=relative(ROOT,source);
+ const relativeZip=relative(ROOT,zip);
+ if((!relativeSource.startsWith('..'+sep)&&relativeSource!=='..')||
+    (!relativeZip.startsWith('..'+sep)&&relativeZip!=='..'))
+  fail('REPOSITORY_PATH_FORBIDDEN');
+ // Fail before database access if either output is already present or
+ // has an untrusted parent (including symlinks).
+ await safeParent(dirname(source));
+ await safeParent(dirname(zip));
  await mustNotExist(source);
  await mustNotExist(zip);
+ // Exclusive claim prevents deleting a directory owned by a competing job.
+ await mkdir(source,{mode:0o700}).catch(()=>fail('SOURCE_CREATE_FAILED'));
  const connectionUrl=env.COTIRONDA_PILOT_DB_URL;
  const recipient=env.COTIRONDA_AGE_RECIPIENT;
  let sql,storage,bundle;
@@ -76,7 +93,8 @@ export async function createPrivatePilotMobileBackup({
   // Source was absent at entry and belongs solely to this execution.
   // Do not leave incomplete "backups" that could be mistaken as valid.
   await rm(source,{recursive:true,force:true}).catch(()=>{});
-  await rm(zip,{force:true}).catch(()=>{});
+  // ZIP packer deletes only its OWN partial file; never delete a file
+  // another process may have created at the destination concurrently.
   if(e instanceof Error&&/^MVP271_BUNDLE_[A-Z_]+$/u.test(e.message))
    throw e;
   fail('CREATION_FAILED');
