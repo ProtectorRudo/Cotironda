@@ -3,7 +3,8 @@
  * El original está en inbox AES-GCM, con SHA cotejado antes de la IA.
  */
 import {
- interpretarPresupuestoConIAMvp225
+ interpretarPresupuestoConIAMvp225,
+ type LecturaOfertaMvp225
 } from '../../../src/domain/ia-central/lector-presupuesto-proveedor-mvp225.ts';
 import {
  RUBROS_MVP216,type RubroMvp216
@@ -23,6 +24,38 @@ export type EstadoProveedorMvp227=Readonly<{
 const done=(estado:EstadoProveedorMvp227['estado'],codigo:string):
  EstadoProveedorMvp227=>({estado,codigo,whatsappEnviado:false});
 const read=(v:unknown):Record<string,unknown>|null=>OBJECT(v)?v:null;
+/** Proyección económica anónima de IA Central, compartida por fuente de
+ * texto y archivo. Nunca copiar fuente, WhatsApp, contacto ni SHA al panel.
+ */
+export function resumenPrivadoMvp245(
+ reading:LecturaOfertaMvp225
+):Record<string,unknown>|null{
+ if(reading?.estado!=='interpretada_para_revision'||!reading.oferta||
+    !reading.cobertura||reading.cobertura.ofertas.length!==1)return null;
+ const result=reading.cobertura.ofertas[0];
+ const summary={
+  estado:result.estado,
+  moneda:reading.oferta.moneda,iva:reading.oferta.iva,
+  flete:reading.oferta.flete,pago:reading.oferta.pago,
+  rubros:result.rubros.map(x=>({
+   rubro:x.rubro,solicitados:x.solicitados,
+   respondidos:x.respondidos,cobertura:x.cobertura
+  })),
+  precios:result.precios.map(x=>({
+   pedidoId:x.pedidoId,centavos:x.centavos.toString(),
+   cantidad:x.cantidad,unidad:x.unidad
+  })),
+  // Comparabilidad física NOMINAL, separada de los precios comparables.
+  // Nunca convierte una alternativa semántica en oferta ganadora.
+  presentaciones:(result.presentaciones??[]).map(x=>({
+   pedidoId:x.pedidoId,numeroOferta:x.numeroOferta,estado:x.estado,
+   unidadBase:x.unidadBase,pedidoBaseMil:x.pedidoBaseMil,
+   ofertaBaseMil:x.ofertaBaseMil,comparableTecnico:false,
+   comparableEconomico:false
+  }))
+ };
+ return summary;
+}
 export async function procesarPresupuestoCentralMvp227(args:{
  habilitado:boolean;webhookAutenticado:boolean;
  messageHmac:string;chatHmac:string;
@@ -95,27 +128,8 @@ export async function procesarPresupuestoCentralMvp227(args:{
   const result=reading.cobertura.ofertas[0];
   // Construcción por ALLOWLIST. Nunca guardar el texto del proveedor ni
   // datos de contacto en la proyección que podría ver el comprador.
-  const summary={
-   estado:result.estado,
-   moneda:reading.oferta.moneda,iva:reading.oferta.iva,
-   flete:reading.oferta.flete,pago:reading.oferta.pago,
-   rubros:result.rubros.map(x=>({
-    rubro:x.rubro,solicitados:x.solicitados,
-    respondidos:x.respondidos,cobertura:x.cobertura
-   })),
-   precios:result.precios.map(x=>({
-    pedidoId:x.pedidoId,centavos:x.centavos.toString(),
-    cantidad:x.cantidad,unidad:x.unidad
-   })),
-   // Comparabilidad física NOMINAL, separada de los precios comparables.
-   // Nunca convierte una alternativa semántica en oferta ganadora.
-   presentaciones:(result.presentaciones??[]).map(x=>({
-    pedidoId:x.pedidoId,numeroOferta:x.numeroOferta,estado:x.estado,
-    unidadBase:x.unidadBase,pedidoBaseMil:x.pedidoBaseMil,
-    ofertaBaseMil:x.ofertaBaseMil,comparableTecnico:false,
-    comparableEconomico:false
-   }))
-  };
+  const summary=resumenPrivadoMvp245(reading);
+  if(!summary)throw Error('private_summary_invalid');
   const verified=result.estado==='verificada_para_comparacion'&&
    ['ARS','USD'].includes(summary.moneda);
   await finish(verified?'verified':'review',
