@@ -12,6 +12,7 @@ import {ciudadDeRespuestaCentralMvp234,estadoClaimZonaMvp234} from './ai-central
 import {procesarPresupuestoCentralMvp227} from './ai-central-supplier-mvp227.ts';
 import {proveedorConRondaCentralMvp232} from './ai-central-supplier-route-mvp232.ts';
 import {esAvisoAdjuntoProveedorMvp238} from './ai-supplier-attachment-notice-mvp238.ts';
+import {respuestaCitaPedidoMvp239,CONSULTA_RONDA_MVP239} from './ai-supplier-clarification-mvp239.ts';
 import {makeMediaManifest} from './media-intake.ts';
 import {parseDocumentClarification} from './document-clarification.ts';
 import {getVerifiedWhapiMedia,storeVerifiedMedia} from './whapi-media-archive.ts';
@@ -422,6 +423,8 @@ async function respond(req:Request):Promise<Response>{
   let preparedDocumentSourceHmac:string|null=null;
   let supplierAckMode:'text_quote'|'media_quote'|null=null;
   let handledCentralZoneReply=false;
+  let clarificationSourceHmac:string|null=null;
+  let selectorClarification=false;
   // OpenAI is optional and off by default. The server-side DB gate is
   // durable, one-per-HMAC, buyer-only and capped at 12 calls per day.
   // Supplier quote ingestion never passes through this classifier.
@@ -615,11 +618,52 @@ async function respond(req:Request):Promise<Response>{
       if(trial.dispatch===true)trialDispatchChats.add(chatHash);
     }
   }
+  // Aclaración breve que cita el PDF ORIGINAL de Cotironda.
+  // Un mensaje «Es de este pedido» no debe entrar como cotización.
+  selectorClarification=row.type==='text'&&centralSupplier&&
+    trial.quote_link===true&&supplierQuotedId!==null&&
+    respuestaCitaPedidoMvp239(body);
+  if(selectorClarification&&
+     ['unmatched_quote','needs_review'].includes(outcome(out.data))){
+    const settled=await db.rpc('cotironda_piloto_ia_resolve_clarification_mvp239',{
+      p_reply_hmac:messageHash,p_chat_hmac:chatHash,
+      p_quoted_whapi_id:supplierQuotedId,p_original_text:body
+    });
+    if(settled.error)return json(503,'ai_supplier_clarification_unavailable');
+    const state=settled.data?.state;
+    if(!['resolved','ambiguous_source','no_pending_source',
+         'quoted_request_not_unique','not_authorized',
+         'already_resolved','invalid'].includes(state))
+      return json(503,'ai_supplier_clarification_state_invalid');
+    if(state==='resolved'&&settled.data?.source_kind==='text'&&
+       typeof settled.data.source_hmac==='string'&&
+       trial.quote_analysis===true){
+      const modelEnv=Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_MODEL');
+      const model=modelEnv==='gpt-6.1-sol'?'gpt-6.1-sol':'gpt-6-luna';
+      const processed=await procesarPresupuestoCentralMvp227({
+       habilitado:true,webhookAutenticado:true,
+       messageHmac:settled.data.source_hmac,chatHmac:chatHash,
+       apiKey:Deno.env.get('COTIRONDA_PILOT_OPENAI_API_KEY')??'',
+       model,
+       rpc:async(name,params)=>{
+        const reply=await db.rpc(name,params);
+        return {data:reply.data,error:reply.error};
+       },
+       decrypt:async(nonce,ciphertext)=>decryptArchivedText(
+        sec.aes,nonce,ciphertext,
+        chatHash+'|'+settled.data.source_hmac+'|text'),
+       shaText:sha
+      });
+      if(processed.estado==='conciliacion_requerida')
+        return json(503,'ai_supplier_clarification_review_required');
+    }
+  }
   if(outcome(out.data)==='quote_recorded')supplierAckMode='text_quote';
   // A supplier can have several open invitations. A quoted PDF ID is
   // checked against the exact accepted Whapi outbox for this same seller.
   let legacySupplierQuoteLinked=false;
   if(row.type==='text'&&supplierQuotedId&&!attachmentNotice&&
+     !selectorClarification&&
      outcome(out.data)==='unmatched_quote'){
     const binding=await db.rpc('cotironda_piloto_link_quoted_text_mvp151',{
       p_message_hmac:messageHash,p_chat_hmac:chatHash,
@@ -636,7 +680,7 @@ async function respond(req:Request):Promise<Response>{
   // Un proveedor puede escribir «cemento 8500 por bolsa» sin signo $.
   // El receptor heredado lo deja needs_review: IA Central debe poder
   // asociarlo a la ronda EXACTA igual que los presupuestos formales.
-  if(row.type==='text'&&centralSupplier&&
+  if(row.type==='text'&&centralSupplier&&!selectorClarification&&
      ['unmatched_quote','needs_review'].includes(outcome(out.data))&&
      !legacySupplierQuoteLinked&&
      trial.quote_link===true){
