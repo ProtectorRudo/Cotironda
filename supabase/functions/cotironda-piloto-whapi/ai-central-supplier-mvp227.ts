@@ -10,6 +10,7 @@ import {
  RUBROS_MVP216,type RubroMvp216
 } from '../../../src/domain/rubros-comprador-mvp216.ts';
 import {validarMemoriaProveedorMvp260} from './ai-central-memory-mvp260.ts';
+import {instrumentoOpenAiMvp264} from './ai-central-usage-mvp264.ts';
 const HASH=/^[a-f0-9]{64}$/u;
 const OBJECT=(o:unknown):o is Record<string,unknown>=>
  o!==null&&typeof o==='object'&&!Array.isArray(o);
@@ -67,6 +68,8 @@ export async function procesarPresupuestoCentralMvp227(args:{
  interpretar?:typeof interpretarPresupuestoConIAMvp225;
  commercialMemoryEnabled?:boolean;
  quoteVersioningEnabled?:boolean;
+ usageTraceEnabled?:boolean;
+ usageFetchImpl?:typeof fetch;
 }):Promise<EstadoProveedorMvp227>{
  if(!args?.habilitado)return done('apagado','flag_disabled');
  if(args.webhookAutenticado!==true||
@@ -134,7 +137,12 @@ export async function procesarPresupuestoCentralMvp227(args:{
   }
   const reading=await (args.interpretar??interpretarPresupuestoConIAMvp225)({
    fuente:original,pedido:requested,etiquetaAnonima:'Presupuesto privado',
-   apiKey:args.apiKey,model:args.model
+   apiKey:args.apiKey,model:args.model,
+   fetchImpl:args.usageTraceEnabled===true?instrumentoOpenAiMvp264({
+    messageHmac:args.messageHmac,chatHmac:args.chatHmac,
+    role:'supplier',model:args.model,rpc:args.rpc,
+    fetchImpl:args.usageFetchImpl
+   }):undefined
   });
   if(reading.estado!=='interpretada_para_revision'||!reading.oferta||
      !reading.cobertura||reading.cobertura.ofertas.length!==1){
