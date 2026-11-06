@@ -620,9 +620,10 @@ async function respond(req:Request):Promise<Response>{
   }
   // Aclaración breve que cita el PDF ORIGINAL de Cotironda.
   // Un mensaje «Es de este pedido» no debe entrar como cotización.
-  selectorClarification=row.type==='text'&&centralSupplier&&
-    trial.quote_link===true&&supplierQuotedId!==null&&
+  const isClarificationAnswer=row.type==='text'&&centralSupplier&&
     respuestaCitaPedidoMvp239(body);
+  selectorClarification=isClarificationAnswer&&
+    trial.quote_link===true&&supplierQuotedId!==null;
   if(selectorClarification&&
      ['unmatched_quote','needs_review'].includes(outcome(out.data))){
     const settled=await db.rpc('cotironda_piloto_ia_resolve_clarification_mvp239',{
@@ -664,7 +665,7 @@ async function respond(req:Request):Promise<Response>{
   // checked against the exact accepted Whapi outbox for this same seller.
   let legacySupplierQuoteLinked=false;
   if(row.type==='text'&&supplierQuotedId&&!attachmentNotice&&
-     !selectorClarification&&
+     !isClarificationAnswer&&
      outcome(out.data)==='unmatched_quote'){
     const binding=await db.rpc('cotironda_piloto_link_quoted_text_mvp151',{
       p_message_hmac:messageHash,p_chat_hmac:chatHash,
@@ -681,7 +682,7 @@ async function respond(req:Request):Promise<Response>{
   // Un proveedor puede escribir «cemento 8500 por bolsa» sin signo $.
   // El receptor heredado lo deja needs_review: IA Central debe poder
   // asociarlo a la ronda EXACTA igual que los presupuestos formales.
-  if(row.type==='text'&&centralSupplier&&!selectorClarification&&
+  if(row.type==='text'&&centralSupplier&&!isClarificationAnswer&&
      ['unmatched_quote','needs_review'].includes(outcome(out.data))&&
      !legacySupplierQuoteLinked&&
      trial.quote_link===true){
