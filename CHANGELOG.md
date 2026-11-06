@@ -1,3 +1,10 @@
+## 2026-11-06 — MVP270: exportador cifrado de Storage para respaldos móviles (desarrollo)
+
+- Exportación pasiva **solo PILOTO** de objetos de buckets privados a `storage_objects.tar.age`, mediante descarga autenticada, TAR de rutas opacas y cifrado streaming age. Nunca guarda PDFs/Excel/imágenes descifrados en disco.
+- Inventario antes/después, hash individual y cantidad exacta de bytes, límites explícitos, prevención de SSRF/redirecciones, errores de permisos, truncamientos y limpieza al fallar.
+- Seguridad: host Supabase hardcodeado, identidad age comprobada, credenciales solo del host privado y bloqueo expreso de CI/Vercel/Windows; Node tests sintéticos y workflow propio.
+- No es backup completo ni restore verificado; **aún faltan extracción PostgreSQL para PILOTO, ejecución real privada, restore y enlace móvil**. No se tocó el PILOTO ni producción.
+
 ## 2026-11-06 — MVP269: paquete ZIP móvil de respaldo cifrado (solo desarrollo)
 
 - Creador de un único ZIP que incluye exclusivamente cinco exportaciones SQL previamente cifradas con age y una exportación también cifrada de bytes de Storage; no descifra ni expone contenido.
