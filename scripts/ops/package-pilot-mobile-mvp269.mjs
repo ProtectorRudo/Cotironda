@@ -205,12 +205,12 @@ export async function prepareMobilePilotZip({
    zip.once('close',ok);zip.once('error',reject);
   });
   const [,zipExit]=await Promise.all([
-   pipeline(zip.stdout,file.createWriteStream({autoClose:false})),
+   pipeline(zip.stdout,file.createWriteStream({autoClose:true})),
    exited
   ]);
   if(zipExit!==0)fail('ZIP_WRITE_FAILED');
-  await file.sync();
-  await file.close();
+  // With autoClose:true the pipeline waits for the original FD to close.
+  // No path-based reopen, and no pending FileHandle close promise.
   openHandle=false;
   const stillOurs=async()=>{
    const now=await lstat(output).catch(()=>fail('OUTPUT_REPLACED'));
