@@ -219,3 +219,59 @@ test('MVP252: lector no hace HTTP con credenciales inválidas o archivo inválid
 function awaitMakePlaceholder(){
  return {mime:'image/jpeg',bytes:new Uint8Array(9),sha256:'a'.repeat(64)};
 }
+
+
+test('MVP252: recuperación nunca llama a Google si falta el permiso SQL por archivo',async()=>{
+ const {recoverOneStoredDocument}=await import(
+  '../../supabase/functions/cotironda-piloto-whapi/private-document-recovery.ts');
+ const original=await make();
+ const h='a'.repeat(64),chat='b'.repeat(64);
+ let remote=0,askedPermission=false;
+ const rpc=async (name,params)=>{
+  if(name==='cotironda_piloto_next_document_retry_mvp128')
+   return {data:{state:'candidate',message_hmac:h},error:null};
+  if(name==='cotironda_piloto_reserve_document_retry_mvp127')
+   return {data:{state:'reserved',mime:original.mime,
+     source_sha256:original.sha256,size_bytes:original.bytes.length},error:null};
+  if(name==='cotironda_piloto_note_media_proposal_mvp095')
+   return {data:true,error:null};
+  if(name==='cotironda_piloto_note_document_draft_mvp127')
+   return {data:true,error:null};
+  if(name==='cotironda_piloto_record_supplier_media_mvp098')
+   return {data:{state:'stored_unverified'},error:null};
+  if(name==='cotironda_piloto_compare_supplier_readings_mvp102')
+   return {data:{state:'model_readings_match'},error:null};
+  if(name==='cotironda_piloto_audit_supplier_amounts_mvp103')
+   return {data:{state:'balanced'},error:null};
+  if(name==='cotironda_piloto_visual_ocr_permission_mvp252'){
+   askedPermission=true;
+   assert.equal(params.p_message_hmac,h);
+   assert.equal(params.p_source_sha256,original.sha256);
+   return {data:null,error:{code:'PGRST202'}};
+  }
+  if(name==='cotironda_piloto_record_supplier_source_check_mvp106')
+   return {data:{state:'needs_source_review'},error:null};
+  if(name==='cotironda_piloto_publish_source_text_mvp107')
+   assert.fail('No puede publicar una foto sin procedencia SQL');
+  throw Error('Unexpected RPC '+name);
+ };
+ const done=await recoverOneStoredDocument({
+  enabled:true,triggerChatHmac:chat,apiKey:'sk-'+'x'.repeat(30),
+  io:{
+   rpc,
+   download:async(path)=>{
+    assert.equal(path,'media/'+h);
+    return {data:new Blob([original.bytes]),error:null};
+   }
+  },
+  read:async()=>structuredClone(quote),
+  visualOcr:{
+   enabled:true,externalConsent:true,
+   serviceAccountJson:await serviceAccount(),
+   fetchImpl:async()=>{remote++;throw Error('No network allowed')}
+  }
+ });
+ assert.equal(done,'recovered_private');
+ assert.equal(askedPermission,true);
+ assert.equal(remote,0);
+});
