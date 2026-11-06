@@ -1,3 +1,10 @@
+## 2026-11-06 — Etapa 7 / MVP263: vigilancia interna programable y alertas sin duplicados
+
+- Supervisor SQL preparado para ejecutarse en intervalos de 15 minutos, **desactivado y sin cron instalado por defecto**. Política privada de máximo 1–96 ejecuciones por día UTC, bloqueo para concurrencia y resumen sin identidades por bloque de 15 minutos.
+- Siete tipos de incidencia deduplicados por clave, con seguimiento de observaciones, resolución y reapertura. Historial agregado de ejecuciones con retención de 30 días; proyección privada `service_role`.
+- Ningún envío, adjudicación, modificación de presupuestos ni llamadas externas/LLM; sin costos monetarios supuestos. Script de activación cron separado y **MANUAL, no ejecutado**.
+- Pruebas PG17 reversibles y Node, decisión técnica 387. Solo desarrollo; no activado PILOTO ni producción.
+
 ## 2026-11-06 — Etapa 7 / MVP262: supervisor privado, solo lectura
 
 - Incorporado un diagnóstico privado de IA Central con señales deterministas sobre mensajes inciertos, leases vencidos, presupuestos en revisión, documentos recuperables, expedientes sin ID y memoria próxima a vencer. Severidad `ok`/`attention`/`blocked`, sin identificadores personales ni importes.
