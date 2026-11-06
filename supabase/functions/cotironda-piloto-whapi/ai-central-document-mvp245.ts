@@ -63,8 +63,7 @@ export function fuenteDeDocumentoMvp245(args:{
   // importe final, o carecer de cantidad/precio. No exigir ni inventar
   // un precio unitario de flete que el negocio nunca escribió.
   // Si la IA declaró unitario, debe haber cantidad y unidad literales.
-  if(line.unit_price!==null&&
-     (line.quantity===null||line.unit===null))return null;
+  if(line.unit_price!==null&&line.quantity===null)return null;
   const literal=[
    ...(line.quantity===null?[]:[line.quantity]),
    ...(line.unit===null?[]:[line.unit]),
