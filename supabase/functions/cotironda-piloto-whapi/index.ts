@@ -545,8 +545,14 @@ async function respond(req:Request):Promise<Response>{
       });
       if(claimed.error)return json(503,'ai_central_zone_claim_unavailable');
       const previous=claimed.data;
-      if(previous?.state==='resumed'){
-        handledCentralZoneReply=true;
+      // Una respuesta de localidad, incluso duplicada o sin pedido
+      // pendiente, no inicia una segunda cotización por su cuenta.
+      handledCentralZoneReply=true;
+      if(!previous||typeof previous!=='object'||
+         !['resumed','ambiguous','no_pending','already_consumed']
+           .includes(String(previous.state)))
+        return json(503,'ai_central_zone_state_reconciliation_required');
+      if(previous.state==='resumed'){
         if(typeof previous.source_hmac!=='string'||
            typeof previous.source_sha256!=='string'||
            typeof previous.nonce!=='string'||
