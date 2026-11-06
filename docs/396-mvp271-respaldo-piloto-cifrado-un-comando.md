@@ -44,6 +44,10 @@ node scripts/ops/create-private-pilot-mobile-backup-mvp271.mjs \
 
 **NUNCA** ejecutar en CI, Vercel o el propio celular; esos entornos están bloqueados por contrato. No incluir claves en argumentos CLI, instrucciones en Issues ni logs. El archivo ZIP no tiene contraseña convencional: sus seis componentes internos usan cifrado age cuya identidad privada debe permanecer **separada y custodiada**. Quien conserve solo el ZIP y pierda la clave no podrá restaurar su contenido.
 
+### Endurecimiento adicional del ZIP MVP269
+
+Durante la integración MVP271 se encontró una carrera entre reservar el nombre del ZIP y reabrir ese nombre para escribir. Se corrigió en `scripts/ops/package-pilot-mobile-mvp269.mjs`: ahora se escribe mediante el **mismo descriptor exclusivo** `wx`, se verifica la identidad de dispositivo/inodo antes y después de auditar el ZIP y el proceso elimina **únicamente su propio archivo** si falla. Si otra ejecución reemplazó el nombre, no se borra el archivo ajeno. Se agregaron pruebas de seguridad para impedir volver a abrir una ruta con `flags:'w'`. El archivo se cierra al finalizar la tubería para evitar dejar una operación pendiente.
+
 ## Pruebas, límites y bloqueos
 
 - Los tests usan simulaciones transparentes de pg_dump, age y Storage. El empaquetado ZIP sí se crea y verifica de verdad con bytes **sintéticos**. Las simulaciones de age **NO son cifrado real**.
