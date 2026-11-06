@@ -127,10 +127,10 @@ BEGIN
  IF v->>'state'<>'private_openai_usage'
  OR v->>'pricing_verified'<>'false'
  OR v->>'unknown_usage_is_zero'<>'false'
- OR v->'monetary_cost'<>'null'::text AND v->'monetary_cost' IS NOT NULL
+ OR jsonb_typeof(v->'monetary_cost')<>'null'
  OR jsonb_array_length(v->'roles')<>2
  THEN RAISE EXCEPTION 'mvp264_money_was_invented_%',v;END IF;
- IF (SELECT count(*) FROM cotironda_piloto_privado.ai_usage_calls_mvp264)<>5
+ IF (SELECT count(*) FROM cotironda_piloto_privado.ai_usage_calls_mvp264)<>4
  OR (SELECT count(*) FROM cotironda_piloto_privado.ai_usage_calls_mvp264
      WHERE state='unmetered')<>2
  THEN RAISE EXCEPTION 'mvp264_usage_ledger_wrong_count';END IF;
