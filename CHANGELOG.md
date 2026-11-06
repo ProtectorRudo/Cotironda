@@ -1,3 +1,10 @@
+## 2026-11-06 — MVP273: ensayo aislado de recuperación de ZIP móvil (solo desarrollo)
+
+- Nuevo replay estricto de TAR Storage descifrado: SHA-256 y tamaño físico de cada objeto versus índice, encabezados USTAR, rutas, padding, orden y cola, sin escribir documentos en claro.
+- Comando de comprobación del ZIP age que valida Storage por streaming y SQL cifrado en PostgreSQL17 efímero Docker, con `--network=none`, sin puertos, rootfs readonly, tmpfs, swap/logs deshabilitados, limpieza obligatoria.
+- Pruebas adversariales con TAR y ZIP age reales **de archivos ficticios**; CI para PostgreSQL 17 Docker real solo sobre tablas sintéticas, y regresiones generales.
+- El replay nunca afirma restaurar Supabase gestionado: `restore_verified:false` y descarga Android pendiente. **Sin acceso a datos reales, sin despliegue ni costos nuevos**. Decisión 398.
+
 ## 2026-11-06 — MVP272: verificación age real de ZIP móvil (desarrollo)
 
 - Nuevo auditor local y desconectado `audit-pilot-mobile-ciphertext-mvp272.mjs` para los seis archivos age de ZIP MVP269; verifica SHA externo, nombres exactos, manifiesto, permisos, identidad age y autenticidad de descifrado sin escribir texto claro.
