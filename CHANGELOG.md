@@ -1,3 +1,9 @@
+## 2026-11-06 — MVP241: evidencia determinista de moneda y cantidad (etapa 3, desarrollo)
+
+- La lectura comercial IA Central deja de convertir el signo ambiguo `$` en ARS; exige indicación explícita de ARS/USD y cita literal válida. Una fuente con ambas monedas pasa a revisión, no a un comparador global.
+- El cálculo exacto por línea exige que la cantidad conste en el original incluso cuando el total y el unitario parezcan reconciliarse aritméticamente. Ningún número deducido del precio se atribuye al proveedor.
+- La cotización conserva cobertura, artículos, importes y extras en revisión cuando falta evidencia. Tests MVP241 y regresiones MVP225/227, decisión 364. **Sin activar WhatsApp ni publicar piloto/producción; etapa 3 abierta.**
+
 ## 2026-11-06 — MVP240: smoke real de etapa 2 sin envíos ni datos de prueba persistentes
 
 - Ejecutado directamente en `cotironda-piloto` un control transaccional `BEGIN/ROLLBACK` con HMAC ficticios. Verifica las seis RPC de asociación/aclaración: todas rechazan fuentes no autorizadas; permisos públicos denegados, RLS y tres gates OFF.
