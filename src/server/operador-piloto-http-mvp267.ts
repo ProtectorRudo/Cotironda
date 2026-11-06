@@ -26,7 +26,7 @@ const HEADERS={
  'vary':'Authorization'
 };
 type Env=Record<string,string|undefined>;
-type Action='queue'|'case'|'review';
+type Action='queue'|'usage'|'case'|'review';
 type Rpc=(name:string,params:Record<string,unknown>)=>Promise<{
  data:unknown;error:unknown
 }>;
@@ -103,6 +103,23 @@ function safePayload(action:Action,value:unknown):Record<string,unknown>|null{
   }
   return {state:value.state,cases};
  }
+ if(action==='usage'){
+  if(value.state!=='private_openai_usage'||!Array.isArray(value.roles)||value.roles.length>2||
+   value.pricing_verified!==false||value.provider_invoice_reconciled!==false||
+   value.monetary_cost!==null||value.unknown_usage_is_zero!==false)return null;
+  const roles=[];
+  for(const raw of value.roles){
+   if(!obj(raw)||!['buyer','supplier'].includes(raw.role as string))return null;
+   const metrics=['requests','usage_observed','usage_unknown','input_tokens_observed',
+    'output_tokens_observed','total_tokens_observed'];
+   if(metrics.some(k=>!Number.isSafeInteger(raw[k])||(raw[k] as number)<0))return null;
+   roles.push({role:raw.role,requests:raw.requests,usage_observed:raw.usage_observed,
+    usage_unknown:raw.usage_unknown,input_tokens_observed:raw.input_tokens_observed,
+    output_tokens_observed:raw.output_tokens_observed,total_tokens_observed:raw.total_tokens_observed});
+  }
+  return {state:value.state,roles,monetary_cost:null,pricing_verified:false,
+   provider_invoice_reconciled:false,unknown_usage_is_zero:false};
+ }
  if(action==='case'){
   return ['recorded_private','already_recorded'].includes(value.state)?
     {state:value.state}:null;
@@ -117,12 +134,12 @@ export async function responderOperadorPiloto(
  req:Request,action:Action,env:Env,ports?:Ports
 ):Promise<Response>{
  if(!operadorPilotoHabilitado(env))return result(503,'operador_desactivado');
- const method=action==='queue'?'GET':'POST';
+ const method=action==='queue'||action==='usage'?'GET':'POST';
  if(req.method!==method)return result(405,'metodo_no_permitido');
  const url=new URL(req.url);
  if(url.search||url.hash||url.origin!==env.COTIRONDA_PILOT_OPERATOR_ORIGIN)
   return result(400,'solicitud_invalida');
- if(action!=='queue'&&req.headers.get('origin')!==url.origin)
+ if(method==='POST'&&req.headers.get('origin')!==url.origin)
   return result(403,'origen_no_autorizado');
  const jwt=bearerPiloto(req);
  if(!jwt)return result(401,'sesion_requerida');
@@ -134,10 +151,11 @@ export async function responderOperadorPiloto(
    return result(401,'sesion_no_valida');
   let params:Record<string,unknown>={};
   let methodName='cotironda_piloto_operator_queue_auth_mvp267';
-  if(action!=='queue'){
-   const n=Number(req.headers.get('content-length'));
-   if(!Number.isFinite(n)||n<1||n>2048||
-    req.headers.get('content-type')?.split(';')[0]?.trim()!=='application/json')
+  if(method==='POST'){
+   const length=req.headers.get('content-length');
+   if(length!==null&&(!/^[0-9]+$/u.test(length)||Number(length)<1||Number(length)>2048))
+    return result(400,'solicitud_invalida');
+   if(req.headers.get('content-type')?.split(';')[0]?.trim()!=='application/json')
     return result(400,'solicitud_invalida');
    const text=await req.text();
    if(text.length>2048)return result(400,'solicitud_invalida');
@@ -150,6 +168,7 @@ export async function responderOperadorPiloto(
     'cotironda_piloto_operator_case_action_auth_mvp267':
     'cotironda_piloto_operator_usage_review_auth_mvp267';
   }
+  if(action==='usage')methodName='cotironda_piloto_operator_usage_auth_mvp267';
   const {data,error}=await ports.rpc(methodName,params);
   if(error||!obj(data))return result(503,'operador_no_disponible');
   if(data.state==='not_authorized')return result(403,'operador_no_autorizado');
