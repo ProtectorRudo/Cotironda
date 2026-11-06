@@ -87,6 +87,16 @@ test('MVP245: únicamente archivo con fuente, líneas y hash corroborados',()=>{
    JSON.stringify(changes).slice(0,140));
  }
 });
+test('MVP246: notas comerciales multilínea se conservan sin cortes',()=>{
+ const extra={...draft,requested_delivery_note:
+  'IVA no incluido\\nFlete a convenir\\nPago por transferencia'.replaceAll('\\n','\n')};
+ const source=fuenteDeDocumentoMvp245({...args,draft:extra});
+ assert.equal(typeof source,'string');
+ assert.ok(source.includes('IVA no incluido\nFlete a convenir'));
+ assert.ok(source.includes('Pago por transferencia'));
+ const invalid={...draft,requested_delivery_note:'IVA incluido\u0000Flete gratis'};
+ assert.equal(fuenteDeDocumentoMvp245({...args,draft:invalid}),null);
+});
 test('MVP245: soporta PDF, XLSX, DOCX, CSV y TXT corroborados',()=>{
  for(const mime of [
   'application/pdf',
