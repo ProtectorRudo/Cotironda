@@ -74,8 +74,13 @@ INSERT INTO cotironda_piloto_privado.uncertain_triage_cases_mvp258 VALUES
  ('00000000-0000-4000-8000-000000000001');
 INSERT INTO cotironda_piloto_privado.commercial_context_events_mvp259 VALUES
  (clock_timestamp()+interval '12 hours');
+-- Simulate the prior cron arriving milliseconds before this bucket:
+-- the next fixed 15-minute bucket must run even if <15 min elapsed.
 UPDATE cotironda_piloto_privado.supervisor_policy_mvp263
- SET enabled=true WHERE only_row=true;
+ SET enabled=true,
+ last_run_at=date_bin('15 minutes',clock_timestamp(),
+   '2000-01-01 00:00:00+00'::timestamptz)-interval '1 millisecond'
+ WHERE only_row=true;
 
 DO $first$
 DECLARE v jsonb;v2 jsonb;list_ jsonb;
