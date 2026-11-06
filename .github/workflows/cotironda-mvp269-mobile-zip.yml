@@ -23,8 +23,8 @@ jobs:
           node-version: '22.16.0'
       - name: Verify archive utilities
         run: |
-          zip -v | head -n 2
-          unzip -v | head -n 2
+          command -v zip
+          command -v unzip
       - name: Test isolated synthetic encrypted package only
         run: node --test tests/unit/mvp269-mobile-backup-zip.test.mjs
 # This workflow never connects to Supabase, exports real data or uploads artifacts.
