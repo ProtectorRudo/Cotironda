@@ -37,6 +37,7 @@ test('MVP234: mensajes comerciales o ambiguos no se hacen pasar por ciudad',()=>
   'En 1900',
   'En City Bell\n20 bolsas de cemento',
   'Hola',
+  'Hola Buenos Aires',
   'Gracias',
   '',
   null,
