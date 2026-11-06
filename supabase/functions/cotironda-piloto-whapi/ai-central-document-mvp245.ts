@@ -65,9 +65,12 @@ export function fuenteDeDocumentoMvp245(args:{
    'unitario:',line.unit_price,'total:',line.line_total].join(' '));
  }
  const note=draft.requested_delivery_note;
- if(note!==null&&(!sourceString(note,4000)||
-    note.split(/[;]+/u).length>30))return null;
- const text=[...rows,...(note?[note]:[]),
+ // Las notas del proveedor pueden ser varias líneas de IVA, flete, pago
+ // y vencimientos: no imponer un único renglón como si fuera plantilla.
+ if(note!==null&&(typeof note!=='string'||note.length>4000||
+    CONTROL.test(note)||note.split(/[;\r\n]+/u).length>30))return null;
+ const safeNote=note?.replace(/\r\n|\r/gu,'\n')??'';
+ const text=[...rows,...(safeNote?[safeNote]:[]),
   'TOTAL GENERAL '+draft.total_declared].join('\n');
  return text.length<=15000?text:null;
 }
