@@ -1,3 +1,9 @@
+## 2026-11-06 — MVP242: IVA, flete y pago con evidencia semántica (etapa 3, desarrollo)
+
+- Las dos lecturas de IA ya no pueden acreditar IVA, flete o pago con cualquier cita que aparezca en el texto: una verificación determinista exige que la cita y la fuente respalden exactamente el mismo estado comercial.
+- Reconoce frases libres habituales: con IVA, sin IVA, más IVA, flete incluido/aparte/a convenir, pago contado/transferencia/crédito. Datos omitidos se conservan como `no_informado`, sin añadir impuestos ni inventar entrega.
+- Condiciones contradictorias o múltiples opciones quedan en revisión, conservando todas las líneas y extras. Se refuerza también el comparador invocado directamente. Pruebas y ADR 365; sin SQL ni Whapi ni despliegue al piloto.
+
 ## 2026-11-06 — MVP241: evidencia determinista de moneda y cantidad (etapa 3, desarrollo)
 
 - La lectura comercial IA Central deja de convertir el signo ambiguo `$` en ARS; exige indicación explícita de ARS/USD y cita literal válida. Una fuente con ambas monedas pasa a revisión, no a un comparador global.
