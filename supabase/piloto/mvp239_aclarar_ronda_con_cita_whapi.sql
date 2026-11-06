@@ -161,7 +161,7 @@ BEGIN
   AND u.resolved_request_id IS NULL AND source.request_id IS NULL
   AND source.kind=u.kind AND source.processing_state IN('needs_review','unmatched_quote')
   AND source.received_at<v_received_at
-  AND source.received_at>=v_received_at-interval '10 minutes'
+  AND source.received_at>=v_received_at-interval '24 hours'
   AND ((source.kind='text' AND source.plaintext_sha256=u.source_sha256)
    OR (source.kind IN('image','document') AND EXISTS(
       SELECT 1 FROM cotironda_piloto_privado.media_archive_mvp095 a
@@ -179,6 +179,20 @@ BEGIN
   AND source.request_id IS NULL
  FOR UPDATE OF u,source;
  IF NOT FOUND THEN RETURN jsonb_build_object('state','already_resolved');END IF;
+ -- Una cotización antigua NO puede adjudicarse a una solicitud enviada
+ -- después de que llegó el presupuesto, aunque el proveedor la cite hoy.
+ IF NOT EXISTS(
+   SELECT 1 FROM cotironda_piloto_privado.ai_dispatch_jobs_mvp222 d
+   WHERE d.request_id=v_target AND d.supplier_key=v_supplier
+    AND d.state='api_accepted' AND d.whapi_message_id=p_quoted_whapi_id
+    AND d.finished_at<=v_source.received_at
+ ) AND NOT EXISTS(
+   SELECT 1 FROM cotironda_piloto_privado.whapi_outbox o
+   WHERE o.request_id=v_target AND o.supplier_key=v_supplier
+    AND o.state='api_accepted' AND o.whapi_message_id=p_quoted_whapi_id
+    AND o.sent_at<=v_source.received_at
+ )
+ THEN RETURN jsonb_build_object('state','invitation_after_source');END IF;
  -- Solo una asociación nueva: source, adjunto y resolución en UNA transacción.
  UPDATE cotironda_piloto_privado.whapi_inbox
  SET request_id=v_target,processing_state='needs_review'
