@@ -91,10 +91,10 @@ export async function checkSupplierImageSourceMvp251(
  if(hashed!==source.sha256)return result(source,'invalid_source',count);
  // No se aceptan fuentes con remitente/identidad incluida en los campos
  // del borrador. Este control NO sustituye revisar el píxel original.
- if(first&&claimedPII(first)||second&&claimedPII(second))
-  return result(source,'unsafe_contact',count);
  if(!validReading(first)||!validReading(second))
   return result(source,'unresolved',count);
+ if(claimedPII(first)||claimedPII(second))
+  return result(source,'unsafe_contact',count);
  if(signatureOfReading(first)!==signatureOfReading(second))
   return result(source,'unresolved',count);
  // Incluso dos modelos que coinciden podrían haber omitido la misma cifra.
