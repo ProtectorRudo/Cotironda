@@ -19,10 +19,12 @@ type Opcion=Readonly<{
 }>;
 export type ProyeccionRubrosMvp255=Readonly<{
  state:'alternativas_rubro_con_importes_sin_ranking';
+ presupuestosAnonimos:readonly string[];
  rubros:readonly Readonly<{
   rubro:RubroMvp216;
   titulo:string;
   solicitados:number;
+  articulosSolicitados:readonly string[];
   opciones:readonly Opcion[];
   opcionesTotales:number;
   ofertasConRespuestaSinPrecio:readonly string[];
@@ -178,6 +180,7 @@ export function resumirAlternativasRubrosMvp255(
   });
   return Object.freeze({
    rubro,titulo:RUBROS_MVP216[rubro],solicitados:asked.length,
+   articulosSolicitados:Object.freeze(asked.slice()),
    opciones:Object.freeze(opciones),opcionesTotales:groups.length,
    ofertasConRespuestaSinPrecio:Object.freeze(checked.filter(q=>{
     const x=q.byRubro.get(rubro);
@@ -188,6 +191,7 @@ export function resumirAlternativasRubrosMvp255(
  });
  return Object.freeze({
   state:'alternativas_rubro_con_importes_sin_ranking',
+  presupuestosAnonimos:Object.freeze([...knownLabels]),
   rubros:Object.freeze(result),
   ranking_global_permitido:false,
   adjudicacion_automatica:false,
