@@ -42,6 +42,10 @@ INSERT INTO cotironda_piloto_privado.whapi_outbox VALUES
 UPDATE cotironda_piloto_privado.supervisor_policy_mvp263 SET enabled=true
  WHERE only_row=true;
 SELECT public.cotironda_piloto_supervisor_tick_mvp263();
+-- Synthetic time travel for an overdue operator SLA; does not touch PILOT.
+UPDATE cotironda_piloto_privado.supervisor_alerts_mvp263
+ SET first_seen_at=clock_timestamp()-interval '2 hours'
+ WHERE signal_code='outbound_uncertain';
 INSERT INTO cotironda_piloto_privado.supervisor_operators_mvp265(
  operator_ref,active,role) VALUES
  ('00000000-0000-4000-8000-000000000010',true,'incident_manager'),
