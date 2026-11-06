@@ -41,6 +41,7 @@ CREATE TABLE cotironda_piloto_privado.ai_supplier_links_mvp225(
  kind text,association text,source_sha256 text
 );
 \ir ../../piloto/mvp236_asociacion_respuestas_invitaciones_acreditadas.sql
+\ir ../../piloto/mvp237_ledger_asociacion_no_resuelta.sql
 INSERT INTO cotironda_piloto_privado.participants VALUES
  ('arquitecto',repeat('a',64),'buyer',now(),NULL),
  ('corralon_ailin',repeat('b',64),'supplier',now(),NULL),
@@ -107,10 +108,30 @@ BEGIN
  IF res->>'state'<>'ambiguous_round' THEN RAISE EXCEPTION 'mvp236 multiple IA rounds not protected: %',res;END IF;
  IF (SELECT count(*) FROM cotironda_piloto_privado.ai_supplier_links_mvp225)<>2
  THEN RAISE EXCEPTION 'mvp236 created unauthorized link';END IF;
+ -- La ambigüedad queda en registro privado sin ronda sugerida ni precio.
+ IF (SELECT count(*) FROM cotironda_piloto_privado.ai_supplier_unresolved_mvp237)<>4
+ THEN RAISE EXCEPTION 'mvp237 unresolved sources not persisted';END IF;
+ IF (SELECT count(*) FROM cotironda_piloto_privado.ai_supplier_unresolved_mvp237
+      WHERE state='ambiguous_round')<>2
+ THEN RAISE EXCEPTION 'mvp237 ambiguous sources missing';END IF;
+ IF (SELECT count(*) FROM cotironda_piloto_privado.ai_supplier_unresolved_mvp237
+      WHERE state='not_matched')<>2
+ THEN RAISE EXCEPTION 'mvp237 no_match sources missing';END IF;
+ res:=public.cotironda_piloto_ia_link_supplier_mvp225(repeat('e',64),repeat('b',64),NULL,'cemento 8000 bolsa');
+ IF res->>'state'<>'ambiguous_round' OR
+    (SELECT count(*) FROM cotironda_piloto_privado.ai_supplier_unresolved_mvp237)<>4
+ THEN RAISE EXCEPTION 'mvp237 duplicate unresolved source';END IF;
+ IF (SELECT relrowsecurity FROM pg_class
+     WHERE oid='cotironda_piloto_privado.ai_supplier_unresolved_mvp237'::regclass) IS DISTINCT FROM true
+ THEN RAISE EXCEPTION 'mvp237 no RLS';END IF;
+ IF has_table_privilege('anon','cotironda_piloto_privado.ai_supplier_unresolved_mvp237','SELECT')
+ OR has_table_privilege('authenticated','cotironda_piloto_privado.ai_supplier_unresolved_mvp237','SELECT')
+ OR has_table_privilege('service_role','cotironda_piloto_privado.ai_supplier_unresolved_mvp237','SELECT')
+ THEN RAISE EXCEPTION 'mvp237 ledger exposed';END IF;
  IF has_function_privilege('anon','public.cotironda_piloto_ia_link_supplier_mvp225(text,text,text,text)','EXECUTE')
  OR has_function_privilege('authenticated','public.cotironda_piloto_ia_link_supplier_mvp225(text,text,text,text)','EXECUTE')
  OR NOT has_function_privilege('service_role','public.cotironda_piloto_ia_link_supplier_mvp225(text,text,text,text)','EXECUTE')
  THEN RAISE EXCEPTION 'mvp236 unsafe privileges'; END IF;
 END $tests$;
-SELECT 'PASS 7 cases: real deliveries only, ambiguity, source quote, supplier isolation, replay and ACL' as result;
+SELECT 'PASS 7 cases + private unresolved ledger: deliveries, ambiguity, exact quotes, isolation, idempotence and ACL' as result;
 ROLLBACK;
