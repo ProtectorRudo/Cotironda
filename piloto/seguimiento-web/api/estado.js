@@ -150,6 +150,11 @@ function buyerView(parsed){
      cmp.ranking_global_permitido===false&&
      cmp.adjudicacion_automatica===false&&
      cmp.contactos_revelados===false&&
+     Array.isArray(cmp.presupuestosAnonimos)&&
+     cmp.presupuestosAnonimos.length<=25&&
+     cmp.presupuestosAnonimos.every(x=>
+       /^Presupuesto [1-9][0-9]{0,2}$/u.test(x))&&
+     new Set(cmp.presupuestosAnonimos).size===cmp.presupuestosAnonimos.length&&
      Array.isArray(cmp.rubros)&&cmp.rubros.length>=1&&cmp.rubros.length<=7&&
      Array.isArray(parsed.rubros_ia)&&parsed.rubros_ia.length===cmp.rubros.length){
     const allowed=new Set(["obra_gruesa","pintura","electricidad",
@@ -172,16 +177,22 @@ function buyerView(parsed){
          !allowed.has(r.rubro)||seen.has(r.rubro)||
          r.titulo!==names[r.rubro]||
          !int(r.solicitados,200)||r.solicitados<1||
+         !Array.isArray(r.articulosSolicitados)||
+         r.articulosSolicitados.length!==r.solicitados||
+         !r.articulosSolicitados.every(x=>id.test(x))||
+         !unique(r.articulosSolicitados)||
          !int(r.opcionesTotales,325)||
          !Array.isArray(r.opciones)||r.opciones.length>12||
          r.opciones.length>r.opcionesTotales||
          !Array.isArray(r.ofertasConRespuestaSinPrecio)||
          r.ofertasConRespuestaSinPrecio.length>25||
-         !r.ofertasConRespuestaSinPrecio.every(x=>label.test(x))||
+         !r.ofertasConRespuestaSinPrecio.every(x=>label.test(x)&&
+           cmp.presupuestosAnonimos.includes(x))||
          !unique(r.ofertasConRespuestaSinPrecio)||
          !Array.isArray(r.articulosConReferenciasCoincidentes)||
          r.articulosConReferenciasCoincidentes.length>r.solicitados||
-         !r.articulosConReferenciasCoincidentes.every(x=>id.test(x))||
+         !r.articulosConReferenciasCoincidentes.every(x=>id.test(x)&&
+           r.articulosSolicitados.includes(x))||
          !unique(r.articulosConReferenciasCoincidentes)||
          !parsed.rubros_ia.some(x=>x&&x.rubro===r.rubro&&
            x.titulo===r.titulo&&x.solicitados===r.solicitados)){
@@ -193,16 +204,19 @@ function buyerView(parsed){
         if(!option||typeof option!=="object"||Array.isArray(option)||
            !Array.isArray(option.ofertasAnonimas)||
            option.ofertasAnonimas.length<1||option.ofertasAnonimas.length>2||
-           !option.ofertasAnonimas.every(x=>label.test(x))||
+           !option.ofertasAnonimas.every(x=>label.test(x)&&
+             cmp.presupuestosAnonimos.includes(x))||
            !unique(option.ofertasAnonimas)||
            !Array.isArray(option.articulosConPrecio)||
            option.articulosConPrecio.length<1||
            option.articulosConPrecio.length>r.solicitados||
-           !option.articulosConPrecio.every(x=>id.test(x))||
+           !option.articulosConPrecio.every(x=>id.test(x)&&
+             r.articulosSolicitados.includes(x))||
            !unique(option.articulosConPrecio)||
            !Array.isArray(option.articulosPendientes)||
            option.articulosPendientes.length>r.solicitados||
-           !option.articulosPendientes.every(x=>id.test(x))||
+           !option.articulosPendientes.every(x=>id.test(x)&&
+             r.articulosSolicitados.includes(x))||
            !unique(option.articulosPendientes)||
            !unique([...option.articulosConPrecio,...option.articulosPendientes])||
            option.articulosConPrecio.length+option.articulosPendientes.length!==
@@ -226,6 +240,7 @@ function buyerView(parsed){
       if(!valid)break;
       normalized.push({
         rubro:r.rubro,titulo:r.titulo,solicitados:r.solicitados,
+        articulosSolicitados:r.articulosSolicitados.slice(),
         opciones:options,opcionesTotales:r.opcionesTotales,
         ofertasConRespuestaSinPrecio:r.ofertasConRespuestaSinPrecio.slice(),
         articulosConReferenciasCoincidentes:
@@ -235,6 +250,7 @@ function buyerView(parsed){
     if(valid&&seen.size===parsed.rubros_ia.length)
       safe.comparador_rubros_ia={
         state:"alternativas_rubro_con_importes_sin_ranking",
+        presupuestosAnonimos:cmp.presupuestosAnonimos.slice(),
         rubros:normalized,
         ranking_global_permitido:false,
         adjudicacion_automatica:false,
