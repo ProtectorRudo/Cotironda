@@ -2,7 +2,7 @@
 
 - Detectada condición de carrera: un pedido antiguo reanudado por MVP233 conserva su fecha original; el cron MVP230 podía confundir una reserva nueva con una operación abandonada.
 - Corregida conciliación para usar la fecha más reciente entre creación y enlace de reanudación, sin borrar historial ni alterar otros estados de proveedor o despacho.
-- Migración SQL versionada, regresión PostgreSQL 17 con rollback y decisión 357. Publicación en piloto sujeta a validación previa; WhatsApp y tres gates permanecen OFF.
+- Migración SQL versionada, regresión PostgreSQL 17 con rollback y decisión 357. **Aplicado únicamente en Supabase piloto:** migración `piloto_mvp235_recuperacion_segura_zona`; PG17 y preflight remoto aprobados, cron activo. WhatsApp y tres gates siguen OFF; E2E real pendiente.
 
 ## 2026-11-05 — MVP234: interpretar respuestas naturales de localidad (solo desarrollo)
 
