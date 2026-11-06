@@ -138,7 +138,7 @@ BEGIN
   'request_id',v_request,'supplier_key',v_supplier.key,
   'association',v_method);
 END;
-$function$
+$function$;
 
 REVOKE ALL ON FUNCTION public.cotironda_piloto_ia_link_supplier_mvp225(text,text,text,text)
  FROM PUBLIC,anon,authenticated;
