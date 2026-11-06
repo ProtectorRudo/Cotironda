@@ -52,6 +52,20 @@ BEGIN
  p_event_unix<extract(epoch from clock_timestamp()-interval '7 days')::bigint OR
  p_event_unix>extract(epoch from clock_timestamp()+interval '5 minutes')::bigint
  THEN RETURN jsonb_build_object('state','invalid');END IF;
+ -- Reject reused IDs even when only one recipient hash matches. A reused
+ -- ID across companies or outbox types is ambiguous, never proof.
+ IF (
+  (SELECT count(*) FROM cotironda_piloto_privado.whapi_outbox
+   WHERE whapi_message_id=p_whapi_message_id)+
+  (SELECT count(*) FROM cotironda_piloto_privado.ai_dispatch_jobs_mvp222
+   WHERE whapi_message_id=p_whapi_message_id)+
+  (SELECT count(*) FROM cotironda_piloto_privado.buyer_tracking_mvp091
+   WHERE whapi_message_id=p_whapi_message_id)+
+  (SELECT count(*) FROM cotironda_piloto_privado.supplier_ack_mvp104
+   WHERE whapi_message_id=p_whapi_message_id)+
+  (SELECT count(*) FROM cotironda_piloto_privado.finalist_whapi_outbox_mvp110
+   WHERE whapi_message_id=p_whapi_message_id)
+ )<>1 THEN RETURN jsonb_build_object('state','unmatched');END IF;
  -- Each opaque Whapi message ID must correspond to EXACTLY one existing
  -- uncertain entry AND recipient. Source membership is never inferred.
  SELECT count(*),max(x.source_kind),max(x.request_id::text)::uuid,
