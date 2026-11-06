@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {mkdtemp,mkdir,writeFile,readFile,readdir,stat,rm} from 'node:fs/promises';
 import {spawnSync} from 'node:child_process';
+import {readFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {createPrivatePilotMobileBackup}
@@ -118,3 +119,12 @@ test('MVP271 does not accept fake successful backup or restore certification',
   /MVP271_BUNDLE_SQL_NOT_VERIFIED/u);
   assert.deepEqual(await readdir(p.root),['downloads']);
  }));
+
+test('MVP271: ZIP keeps exclusive file handle, no reopened overwrite or competitor deletion',()=>{
+ const source=readFileSync(new URL(
+  '../../scripts/ops/package-pilot-mobile-mvp269.mjs',import.meta.url),'utf8');
+ assert.match(source,/file\.createWriteStream\(\{autoClose:false\}\)/u);
+ assert.doesNotMatch(source,/createWriteStream\(output,\{flags:'w'/u);
+ assert.match(source,/now\.dev===owned\.dev&&now\.ino===owned\.ino/u);
+ assert.match(source,/await stillOurs\(\)/u);
+});
