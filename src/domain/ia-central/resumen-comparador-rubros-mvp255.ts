@@ -130,10 +130,11 @@ export function resumirAlternativasRubrosMvp255(
       !seenItems.has(price.pedidoId)||used.has(price.pedidoId)||
       typeof price.centavos!=='string'||!money.test(price.centavos))
     return fail();
-   used.add(price.pedidoId);
-   const rubro=[...byRubro].find(([,ids])=>ids.includes(price.pedidoId))?.[0];
+   const priceId=price.pedidoId as string;
+   used.add(priceId);
+   const rubro=[...byRubro].find(([,ids])=>ids.includes(priceId))?.[0];
    if(!rubro||!own.has(rubro))return fail();
-   own.get(rubro)!.precioIds.push(price.pedidoId);
+   own.get(rubro)!.precioIds.push(priceId);
   }
   if([...own.values()].some(x=>
     x.precioIds.length!==x.precioComprobado||
