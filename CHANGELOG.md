@@ -1,3 +1,9 @@
+## 2026-11-06 — Etapa 7 / MVP265: protocolo privado de incidentes con operador
+
+- Bitácora de `acknowledge`, `investigate`, `escalate`, conciliación manual y revisión posterior a resolución, por señal y episodio. Un operador deshabilitado o sin inscripción no puede registrar acciones; una nota nunca modifica la fuente ni da por entregado un WhatsApp.
+- Cola privada de operatoria con umbrales orientativos de 30/120 minutos, identificación de falta de acuse, historial idempotente de evidencia SHA256 y separación de reaperturas. Proyección sin teléfonos, importes, fuente ni nombres.
+- Controles RLS/ACL y RPC `service_role`, sin consola ni autenticación humana aún. Pruebas PostgreSQL 17 reversibles, contrato Node y decisión 389. **Solo desarrollo; sin alertas externas, cron ni mensajes activados.**
+
 ## 2026-11-06 — Etapa 7 / MVP263: vigilancia interna programable y alertas sin duplicados
 
 - Supervisor SQL preparado para ejecutarse en intervalos de 15 minutos, **desactivado y sin cron instalado por defecto**. Política privada de máximo 1–96 ejecuciones por día UTC, bloqueo para concurrencia y resumen sin identidades por bloque de 15 minutos.
