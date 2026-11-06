@@ -128,9 +128,7 @@ BEGIN
   v->>'pricing_verified'<>'false' OR
   v->>'unknown_usage_is_zero'<>'false'
  THEN RAISE EXCEPTION 'mvp267_usage_not_private_%',v;END IF;
- SELECT first_seen_at INTO episode_
- FROM cotironda_piloto_privado.supervisor_alerts_mvp263
- WHERE signal_code='outbound_uncertain';
+ episode_:=(v->'cases'->0->>'opened_at')::timestamptz;
  v:=public.cotironda_piloto_operator_case_action_auth_mvp267(
   'outbound_uncertain',episode_,'acknowledge',repeat('b',64));
  IF v->>'state'<>'recorded_private'
