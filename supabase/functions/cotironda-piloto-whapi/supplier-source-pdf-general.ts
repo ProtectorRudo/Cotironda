@@ -123,7 +123,7 @@ export async function checkGeneralPdfSource(
   return invalid(f,n,'invalid_source');
  if(p.unanswered.length||!p.total_declared||p.lines.some(v=>
    v.ambiguity!==null||!v.original_description||
-   (v.unit_price!==null&&(v.quantity===null||v.unit===null))||
+   (v.unit_price!==null&&v.quantity===null)||
    (v.quantity===null&&v.unit!==null)||
    !v.evidence_location.trim()))
   return invalid(f,n,'unresolved');
