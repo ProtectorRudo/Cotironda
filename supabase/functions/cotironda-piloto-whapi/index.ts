@@ -738,13 +738,15 @@ async function respond(req:Request):Promise<Response>{
           if(context.error)return json(503,'ai_supplier_attachment_link_unavailable');
           attachmentState=context.data?.state;
           if(!['linked_from_preamble','already_attached','no_context',
-               'ambiguous','not_eligible','context_consumed'].includes(attachmentState))
+               'ambiguous','context_blocked','not_eligible',
+               'context_consumed'].includes(attachmentState))
             return json(503,'ai_supplier_attachment_state_invalid');
         }
         // Si hay avisos ambiguos, se conserva el archivo sin asignarlo.
         // Un mensaje citado se resuelve por su propio identificador Whapi.
         if(!['linked_from_preamble','already_attached',
-             'ambiguous','context_consumed'].includes(attachmentState??'')){
+             'ambiguous','context_blocked',
+             'context_consumed'].includes(attachmentState??'')){
           const linked=await db.rpc('cotironda_piloto_ia_link_supplier_mvp225',{
             p_message_hmac:messageHash,p_chat_hmac:chatHash,
             p_quoted_whapi_id:supplierQuotedId,p_original_text:null
