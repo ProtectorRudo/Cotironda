@@ -104,11 +104,11 @@ export function resumirAlternativasRubrosMvp255(
       !byRubro.has(summary.rubro as RubroMvp216)||
       own.has(summary.rubro as RubroMvp216)||
       !int(summary.solicitados,200)||summary.solicitados===0||
-      summary.solicitados>(byRubro.get(summary.rubro as RubroMvp216)?.length??0)||
+      Number(summary.solicitados)>(byRubro.get(summary.rubro as RubroMvp216)?.length??0)||
       !int(summary.respondidos,summary.solicitados as number)||
       !int(summary.precioComprobado,summary.respondidos as number)||
       !Array.isArray(summary.faltantes)||
-      summary.faltantes.length!==summary.solicitados-summary.respondidos||
+      summary.faltantes.length!==Number(summary.solicitados)-Number(summary.respondidos)||
       summary.faltantes.some(x=>typeof x!=='string'||
        !byRubro.get(summary.rubro as RubroMvp216)!.includes(x))||
       new Set(summary.faltantes).size!==summary.faltantes.length||
