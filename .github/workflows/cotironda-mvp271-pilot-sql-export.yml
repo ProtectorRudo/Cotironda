@@ -8,6 +8,7 @@ on:
       - 'scripts/ops/validate-pilot-dsn-mvp271.mjs'
       - 'tests/unit/mvp271-pilot-sql-encrypted-export.test.mjs'
       - 'scripts/ops/create-private-pilot-mobile-backup-mvp271.mjs'
+      - 'scripts/ops/package-pilot-mobile-mvp269.mjs'
       - 'tests/unit/mvp271-pilot-mobile-bundle.test.mjs'
       - '.github/workflows/cotironda-mvp271-pilot-sql-export.yml'
   workflow_dispatch:
@@ -29,8 +30,10 @@ jobs:
           node --check scripts/ops/export-encrypted-pilot-sql-mvp271.mjs
           node --check scripts/ops/validate-pilot-dsn-mvp271.mjs
           node --check scripts/ops/create-private-pilot-mobile-backup-mvp271.mjs
+          node --check scripts/ops/package-pilot-mobile-mvp269.mjs
       - name: Ensayo contra falso Postgres 17 sin secretos ni red
         run: |
           node --test tests/unit/mvp271-pilot-sql-encrypted-export.test.mjs
           node --test tests/unit/mvp271-pilot-mobile-bundle.test.mjs
+          node --test tests/unit/mvp269-mobile-backup-zip.test.mjs
 # These test processes use synthetic pg_dump/age. No live project, no artifacts.
