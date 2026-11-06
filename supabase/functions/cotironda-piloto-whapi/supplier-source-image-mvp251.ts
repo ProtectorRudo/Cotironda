@@ -72,6 +72,15 @@ function signatureOfReading(read:DocumentDraft):string{
  });
 }
 
+/** Requisito independiente del motor OCR: sin dos lecturas, no cotejar. */
+export function lecturasVisualesConcordantesMvp252(
+ first:DocumentDraft|null,second:DocumentDraft|null
+):boolean{
+ return validReading(first)&&validReading(second)&&
+  !claimedPII(first)&&!claimedPII(second)&&
+  signatureOfReading(first)===signatureOfReading(second);
+}
+
 /** SIEMPRE retorna needs_source_review. Nunca autoriza publicación visual. */
 export async function checkSupplierImageSourceMvp251(
  source:DownloadedMedia,

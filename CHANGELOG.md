@@ -1,3 +1,10 @@
+## 2026-11-06 — MVP252: OCR independiente para imágenes y PDF escaneados, en recuperación privada
+
+- Se implementó un lector independiente opcional de Google Cloud Vision con JWT de cuenta de servicio en secretos, SHA de original, confianza mínima, límites de tamaño/páginas y llamadas HTTPS fijas.
+- Cotejador visual contrasta las dos lecturas de IA Central con texto OCR completo mediante las reglas de líneas, cantidades, precios, extras y condiciones. El diagnóstico permanece **privado, no publica ni rankea**.
+- Integración solo en recuperador con dos flags apagados por defecto y sin demorar el webhook principal. Faltan consentimiento externo, control de costo, procedencia SQL y E2E autorizado antes de habilitarlo.
+- Tests sintéticos sin Google real; decisión 376. Ninguna modificación de PILOTO o producción.
+
 ## 2026-11-06 — MVP251: revisión segura de presupuestos fotografiados
 
 - Las imágenes JPEG/PNG/WebP recibidas por Whapi ahora tienen diagnóstico explícito en ingreso y recuperación: MIME/firma/hash, coherencia entre dos lecturas, PII y diferencias económicas. Conserva todo en el ámbito privado.

@@ -8,6 +8,7 @@ import {checkSupplierPdfSource} from './supplier-source-pdf.ts';
 import {checkSupplierImageSourceMvp251} from './supplier-source-image-mvp251.ts';
 import {checkSupplierOfficeSource} from './supplier-source-office.ts';
 import {checkSupplierTextSource} from './supplier-source-text.ts';
+import {auditarFuenteVisualOCRMvp252} from './supplier-visual-ocr-audit-mvp252.ts';
 import type {MediaManifest} from './media-intake.ts';
 import type {DownloadedMedia} from './whapi-media-archive.ts';
 
@@ -47,7 +48,11 @@ const fail=async(io:RecoveryIO,h:string,code:string)=>{
 export async function recoverOneStoredDocument(args:{
  io:RecoveryIO;triggerChatHmac:string;apiKey:string;
  enabled:boolean;read?:typeof proposeDocumentAI;
- onSupplierReceipt?:(messageHmac:string)=>Promise<void>
+ onSupplierReceipt?:(messageHmac:string)=>Promise<void>;
+ visualOcr?:{
+  enabled:boolean;externalConsent:boolean;serviceAccountJson:string;
+  fetchImpl?:typeof fetch;
+ }
 }):Promise<'none'|'recovered_private'|'failed'>{
  const {io,triggerChatHmac,apiKey}=args;
  if(!args.enabled||!HEX.test(triggerChatHmac))return 'none';
@@ -131,6 +136,31 @@ export async function recoverOneStoredDocument(args:{
    mime.includes('openxmlformats-officedocument')?
     await checkSupplierOfficeSource(file,proposal):
     checkSupplierTextSource(file,proposal);
+  // OCR independiente se ejecuta SOLO en recuperación, nunca dentro del
+  // webhook crítico de WhatsApp, con dos autorizaciones y cuotas previas.
+  // El resultado NO cambia source.state ni se usa para publicar precios:
+  // el SQL MVP106 todavía prohíbe imágenes sin fuente acreditada.
+  if(source.state!=='source_text_covered'&&
+     (mime.startsWith('image/')||mime==='application/pdf')&&
+     args.visualOcr?.enabled===true&&args.visualOcr.externalConsent===true){
+    // Tercer gate obligatorio: consentimiento EXTERNO y cuota registrados
+    // por proveedor+archivo en SQL, NO solo una variable del servidor.
+    // RPC aún no instalada: falla cerrado y no envía bytes a Google.
+    const permission=data(await io.rpc('cotironda_piloto_visual_ocr_permission_mvp252',{
+      p_message_hmac:h,p_source_sha256:actual
+    }).catch(()=>({data:null,error:true})));
+    if(permission?.state==='approved_for_private_processing'&&
+       permission.source_sha256===actual){
+      const visual=await auditarFuenteVisualOCRMvp252({
+        source:file,primary:proposal,secondary:second,
+        enabled:true,externalConsent:true,
+        serviceAccountJson:args.visualOcr.serviceAccountJson,
+        fetchImpl:args.visualOcr.fetchImpl
+      });
+      // Única telemetría permitida: estado, sin ID, nombre, texto o precio.
+      console.info('cotironda_visual_ocr_'+visual.state);
+    }
+  }
   const sourceResult=data(await io.rpc('cotironda_piloto_record_supplier_source_check_mvp106',{
    p_message_hmac:h,p_source_sha256:actual,p_state:source.state,
    p_reason:source.reason,p_line_count:proposal.lines.length

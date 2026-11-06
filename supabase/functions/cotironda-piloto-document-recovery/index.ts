@@ -162,7 +162,15 @@ Deno.serve(async(req)=>{
      }
     }),
     recover:async(triggerChatHmac)=>recoverOneStoredDocument({
-     triggerChatHmac,apiKey:s.apiKey,enabled:true,io:{
+     triggerChatHmac,apiKey:s.apiKey,enabled:true,
+     // OFF por defecto: no se manda un original a servicios externos sin
+     // permiso específico y presupuesto/costo controlados en la operación.
+     visualOcr:{
+      enabled:Deno.env.get('COTIRONDA_PILOT_VISUAL_OCR_ENABLED')==='true',
+      externalConsent:Deno.env.get('COTIRONDA_PILOT_VISUAL_OCR_EXTERNAL_CONSENT')==='true',
+      serviceAccountJson:Deno.env.get('COTIRONDA_PILOT_VISUAL_OCR_SERVICE_ACCOUNT_JSON')??''
+     },
+     io:{
       rpc:async(name,params)=>{
        const {data,error}=await db.rpc(name,params);
        return {data,error};
