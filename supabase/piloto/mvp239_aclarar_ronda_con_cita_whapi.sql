@@ -149,7 +149,7 @@ BEGIN
     AND r.state='prepared' AND r.created_at<=v_received_at
     AND r.closes_at>v_received_at AND r.closes_at>clock_timestamp()
  )
- SELECT count(*),min(id) INTO v_target_count,v_target FROM targets;
+ SELECT count(*),min(id::text)::uuid INTO v_target_count,v_target FROM targets;
  IF v_target_count<>1 OR v_target IS NULL
  THEN RETURN jsonb_build_object('state','quoted_request_not_unique');END IF;
  SELECT count(*),min(u.message_hmac) INTO v_source_count,v_source_hmac
