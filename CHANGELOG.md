@@ -1,3 +1,7 @@
+## 2026-11-05 — MVP236: asociación de presupuestos por despacho acreditado (etapa 2, desarrollo)
+
+- El enlace de respuestas IA Central ya no considera candidatas las rondas LEGACY preparadas que nunca tuvieron un envío `api_accepted` con ID de Whapi y fecha anterior a la respuesta. El criterio evita ambigüedades artificiales y mantiene el bloqueo cuando existen varias solicitudes realmente enviadas. Cotizaciones citadas conservan vínculo exacto y cotejo de remitente; mensajes duplicados no se reinsertan. CI PostgreSQL 17 con casos adversarios y decisión 358. **Sin despliegue ni WhatsApps; etapa 2 abierta.**
+
 ## 2026-11-05 — MVP235: recuperador compatible con localidad reanudada (piloto)
 
 - Detectada condición de carrera: un pedido antiguo reanudado por MVP233 conserva su fecha original; el cron MVP230 podía confundir una reserva nueva con una operación abandonada.
