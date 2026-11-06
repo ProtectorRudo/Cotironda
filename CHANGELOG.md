@@ -1,3 +1,8 @@
+## 2026-11-06 — MVP250: marcas comerciales reconocidas en documentos multirrubro
+
+- El publicador privado de presupuestos acepta algunas marcas comerciales conocidas delante de la categoría del material: «Sinteplast Hidrofugo», «Alba Pintura», «FV Grifería», etc. No acepta encabezados con nombres arbitrarios ni elimina controles de CUIT, WhatsApp, correo, razón social o URL.
+- Preserva la validación por SHA, la doble lectura, los totales, el consentimiento y el anonimato. Descripciones con marcas desconocidas quedan para revisión. Pruebas PostgreSQL 17 y decisión 373. Solo desarrollo.
+
 ## 2026-11-06 — MVP248: publicador comercial multirrubro con privacidad intacta
 
 - Amplía la admisión de descripciones documentales de un pequeño diccionario de corralón a familias de pintura, electricidad, sanitarios, construcción en seco, ferretería y extras comerciales, sin habilitar texto arbitrario ni borrar controles de PII.
