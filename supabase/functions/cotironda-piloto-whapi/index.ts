@@ -739,7 +739,7 @@ async function respond(req:Request):Promise<Response>{
           attachmentState=context.data?.state;
           if(!['linked_from_preamble','already_attached','no_context',
                'ambiguous','context_blocked','not_eligible',
-               'context_consumed'].includes(attachmentState))
+               'context_consumed'].includes(attachmentState??''))
             return json(503,'ai_supplier_attachment_state_invalid');
         }
         // Si hay avisos ambiguos, se conserva el archivo sin asignarlo.
