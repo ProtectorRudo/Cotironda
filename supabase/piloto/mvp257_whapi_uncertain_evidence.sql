@@ -44,10 +44,10 @@ BEGIN
  p_recipient_chat_hmac IS NULL OR
  p_recipient_chat_hmac !~ '^[a-f0-9]{64}$' OR
  p_status NOT IN('failed','pending','sent','delivered','read','played','deleted') OR
- p_status_code IS DISTINCT FROM CASE p_status
+ p_status_code IS DISTINCT FROM (CASE p_status
   WHEN 'failed' THEN 0 WHEN 'pending' THEN 1 WHEN 'sent' THEN 2
   WHEN 'delivered' THEN 3 WHEN 'read' THEN 4 WHEN 'played' THEN 5
-  WHEN 'deleted' THEN 6 ELSE -1 END OR
+  WHEN 'deleted' THEN 6 ELSE -1 END) OR
  p_event_unix IS NULL OR
  p_event_unix<extract(epoch from clock_timestamp()-interval '7 days')::bigint OR
  p_event_unix>extract(epoch from clock_timestamp()+interval '5 minutes')::bigint
