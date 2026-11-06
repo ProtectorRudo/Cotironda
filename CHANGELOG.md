@@ -1,3 +1,9 @@
+## 2026-11-06 — Etapa 6 / MVP261: versiones de fuentes comerciales sin mezclar precios
+
+- Versionado privado e idempotente de cada nueva respuesta asociada a la ronda y proveedor, con secuencia de HMAC/SHA y estado económico `verified` o `review`. No mezcla correcciones incompletas con importes anteriores ni modifica el presupuesto histórico.
+- Broker del proveedor integrado tras guardar la evaluación económica, con bandera `COTIRONDA_PILOT_QUOTE_VERSIONS_ENABLED` **OFF por defecto**. Mensajes viejos o fuera de orden pasan a conciliación, sin reenviar WhatsApp ni repetir lectura de IA.
+- Pruebas PG17 reversibles y contratos Node, decisión 385. **Solo desarrollo; no se publicó PILOTO.**
+
 ## 2026-11-06 — Etapa 6 / MVP260: memoria como guardia de contexto de proveedor
 
 - IA Central puede consultar un snapshot privado por fuente/ronda/proveedor, cruzar sus rubros y cantidades de artículos con el pedido original y bloquear una lectura de IA si la memoria contradice el alcance SQL. No introduce precios, marcas ni condiciones de la memoria en la cotización.
