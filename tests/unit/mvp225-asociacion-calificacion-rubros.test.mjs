@@ -45,7 +45,12 @@ test('MVP225 precio AR: decimal con coma y miles con punto sin coma flotante',()
  assert.equal(dineroCentavosLiteral('8.000.123,89'),800012389n);
  assert.equal(dineroCentavosLiteral('1,000'),null);
  assert.equal(dineroCentavosLiteral('1.23.45'),null);
- assert.equal(dineroCentavosLiteral('AR$ 12,0'),null);
+ assert.equal(dineroCentavosLiteral('AR$ 12,0'),1200n);
+ assert.equal(dineroCentavosLiteral('US$ 12,0'),1200n);
+ assert.equal(dineroCentavosLiteral('U$S 1.234,56'),123456n);
+ assert.equal(dineroCentavosLiteral('ARS 12.000'),1200000n);
+ assert.equal(dineroCentavosLiteral('USD 12.000'),1200000n);
+ assert.equal(dineroCentavosLiteral('EUR 12,00'),null);
  assert.equal(cantidadMil('2.5'),2500n);
  assert.equal(cantidadMil('0'),null);
 });
