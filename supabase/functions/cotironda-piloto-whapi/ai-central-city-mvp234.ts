@@ -17,7 +17,11 @@ export function ciudadDeRespuestaCentralMvp234(raw:unknown):string|null{
  const candidate=body.replace(PREFIX,'').trim();
  if(candidate===body && /^(?:la\s+(?:entrega|obra)|(?:es|ser[ií]a|mejor)\s+(?:en|para))\b/iu.test(body))
   return null;
- const city=standaloneDeliveryCity(candidate);
- if(!city||NOT_CITY.test(city))return null;
- return city;
+ // El validador común rechaza «buenos» como saludo, incluso dentro
+ // del nombre geográfico «Buenos Aires». Comprobar la misma cadena con
+ // esa única expresión neutralizada evita bloquear la localidad válida.
+ const validated=standaloneDeliveryCity(
+  candidate.replace(/\bBuenos\s+Aires\b/giu,'Baires'));
+ if(!validated||NOT_CITY.test(candidate))return null;
+ return candidate.replace(/[.]\s*$/u,'').trim();
 }
