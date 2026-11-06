@@ -131,11 +131,11 @@ test('MVP255: ante campos privados adicionales solo sale una lista blanca de dat
  f.document_original='CONFIDENTIAL';
  f.ofertas[0].supplier_phone='+54 221 111 2222';
  f.ofertas[0].chat_hmac='a'.repeat(64);
- const projected=resumirAlternativasRubrosMvp255(f,vista);
- assert.ok(projected);
- const encoded=JSON.stringify(projected);
+ const preview=resumirAlternativasRubrosMvp255(f,vista);
+ assert.ok(preview);
+ const encoded=JSON.stringify(preview);
  assert.doesNotMatch(encoded,/supplier_real|CONFIDENTIAL|supplier_phone|chat_hmac|\+54|document_original/);
- assert.equal(projected.rubros.length,3);
+ assert.equal(preview.rubros.length,3);
 });
 test('MVP255: mismo token RPC / Edge / proxy; nunca pasa un payload sin validación',()=>{
  assert.match(edge,/resumirAlternativasRubrosMvp255\(ai\.data,safe\)/);
