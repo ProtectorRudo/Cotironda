@@ -1,6 +1,6 @@
 ## 2026-11-05 — MVP234: interpretar respuestas naturales de localidad (solo desarrollo)
 
-- IA Central reconoce frases como «La entrega es en City Bell», «Es en Berisso» o «La obra queda en Tolosa» sin guardar esas expresiones como localidad ni crear un segundo pedido. El RPC MVP233 mantiene el vínculo único al mensaje firmado, el contexto original y los controles de autorización; documentos y respuestas de proveedores quedan intactos. Pruebas adversarias y regresión en workflow propio, ADR 356. **Sin publicación en piloto ni producción y sin WhatsApps.**
+- IA Central reconoce frases como «La entrega es en City Bell», «Es en Berisso» o «La obra queda en Tolosa» sin guardar esas expresiones como localidad ni crear un segundo pedido. El RPC MVP233 mantiene el vínculo único al mensaje firmado, el contexto original y los controles de autorización; documentos y respuestas de proveedores quedan intactos. Pruebas adversarias y regresión en workflow propio, ADR 356. **Publicada exclusivamente en piloto:** migración MVP233 + Edge Whapi v53. Tres controles privados OFF, sin WhatsApps, con continuidad E2E pendiente. Producción sin cambios.
 
 ## 2026-11-05 — MVP233: localidad posterior sin repetir el pedido (desarrollo)
 
