@@ -1,3 +1,9 @@
+## 2026-11-06 — Prioridad: completar siete etapas IA Central; MVP256 recuperación documental
+
+- Se estableció priorizar el cierre verificable de las siete capacidades de IA Central antes de más publicaciones parciales del piloto. Estados y pendientes en decisión 380.
+- MVP256 reemplaza cuatro funciones SQL del recuperador existente para **bloquear reintentos automáticos de errores permanentes**, permitir solo causas transitorias, aplicar intervalos de 3/9 minutos y detener la tercera falla. Mantiene SHA, cuota, invitaciones, consentimiento y acceso restringido.
+- Prueba PostgreSQL 17 reversible y regresiones Node contra worker previo. Solo desarrollo; **no** se instala en PILOTO ni toca WhatsApp, Vercel, producción ni los mensajes de clientes.
+
 ## 2026-11-06 — MVP255: comparador por rubro en seguimiento privado (solo desarrollo)
 
 - Integrado el comparador de cobertura MVP254 en la misma consulta verificada por token de IA Central MVP227, sin abrir otra vista ni convertir resúmenes en fuentes económicas falsas. Solo cobertura mínima por **artículos con importe cotejado**; hasta dos presupuestos anónimos y sin ranking por totales parciales.
