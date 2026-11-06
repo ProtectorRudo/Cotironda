@@ -145,7 +145,7 @@ test('MVP270: any changing catalog forces failure, deletes partial ciphertext',
  async()=>fixture(async dir=>{
   await assert.rejects(
    exportPilotStorageEncrypted(args(dir,{fetchFn:fakeStorage({mutate:true}).fetchFn})),
-   /MVP270_AGE_ENCRYPTION_FAILED/u);
+   /MVP270_STORAGE_CHANGED_DURING_EXPORT/u);
   assert.deepEqual(await readdir(dir),[]);
  }));
 test('MVP270: refuses unsafe folder names, public buckets, redirects and truncated files',
