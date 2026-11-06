@@ -1,0 +1,63 @@
+name: Cotironda IA Central etapa 6 - versiones inmutables proveedor MVP261
+on:
+  pull_request:
+    branches:
+      - feat/mvp174-supplier-packaging-equivalence
+    paths:
+      - 'supabase/piloto/mvp261_source_versions_commercial.sql'
+      - 'supabase/tests/ci/mvp261-commercial-version-chain-pg17.sql'
+      - 'supabase/functions/cotironda-piloto-whapi/ai-central-supplier-mvp227.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/index.ts'
+      - 'tests/unit/mvp261-comercial-versionado-fuente.test.mjs'
+      - '.github/workflows/cotironda-mvp261-supplier-versions.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pg17-versiones-fuente:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: test_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: 'PG17: versionar 2 empresas y bloquear fuente vieja, replay, optout'
+        run: >-
+          psql -X -v ON_ERROR_STOP=1
+          -f supabase/tests/ci/mvp261-commercial-version-chain-pg17.sql
+  node-supplier-revision:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: 'Node: dos rutas, flag OFF y nuevas cotizaciones sin herencia económica'
+        run: >-
+          node --experimental-strip-types --test
+          tests/unit/mvp261-comercial-versionado-fuente.test.mjs
+          tests/unit/mvp260-ia-central-memory-bridge.test.mjs
+          tests/unit/mvp227-recepcion-presupuesto-evaluado.test.mjs
+# No LLM, no WhatsApp, no deployment.
