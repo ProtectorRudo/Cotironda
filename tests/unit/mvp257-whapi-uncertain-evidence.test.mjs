@@ -34,7 +34,7 @@ test('MVP257: no mutar tablas de envíos, reenviar o revelar PII',()=>{
 test('MVP257: estado incierto no equivale a entrega; no retrocede de delivered a failed',()=>{
  assert.match(sql,/WHEN 'delivered' THEN 3 WHEN 'read' THEN 4 WHEN 'played' THEN 5/u);
  assert.match(sql,/IF new_rank_<=old_rank_/u);
- assert.match(sql,/p_status_code IS DISTINCT FROM CASE p_status/u);
+ assert.match(sql,/p_status_code IS DISTINCT FROM \(CASE p_status/u);
  assert.match(sql,/p_event_unix<extract\(epoch from clock_timestamp\(\)-interval '7 days'\)/u);
  assert.match(sql,/p_event_unix>extract\(epoch from clock_timestamp\(\)\+interval '5 minutes'\)/u);
  assert.match(sql,/JOIN cotironda_piloto_privado.participants p/u);
