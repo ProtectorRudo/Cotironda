@@ -4,6 +4,7 @@
  * NUNCA publicar un presupuesto a partir solo de este módulo.
  */
 import {RUBROS_MVP216,type RubroMvp216} from '../rubros-comprador-mvp216.ts';
+import {monedaFuenteMvp241} from './evidencia-moneda-mvp241.ts';
 
 export type PedidoLineaMvp225=Readonly<{
  id:string;descripcion:string;rubro:RubroMvp216;
@@ -102,6 +103,16 @@ function precioConfirmado(line:OfertaLineaMvp225):bigint|null{
  const q=cantidadMil(line.cantidad);
  const unitPrice=dineroCentavosLiteral(line.precioUnitarioLiteral);
  if(q===null||unitPrice===null)return null;
+ // Aunque el proveedor haya declarado un total que coincide aritméticamente,
+ // el modelo NO puede inventar la cantidad del pedido para explicarlo.
+ // Sacar ambas citas monetarias antes de verificar una cantidad independiente
+ // expresada literalmente en la misma línea (incluye decimales con coma).
+ const withoutAmounts=line.textoOriginal
+  .replace(line.precioUnitarioLiteral,' ')
+  .replace(line.totalLineaLiteral??'',' ');
+ const visibleNumbers=withoutAmounts.match(/\d+(?:[.,]\d+)*/gu)??[];
+ if(!visibleNumbers.some(token=>
+   cantidadMil(token.replace(',','.'))===q))return null;
  const product=unitPrice*q;
  if(product%1000n!==0n)return null;
  const total=product/1000n;
@@ -112,12 +123,7 @@ function precioConfirmado(line:OfertaLineaMvp225):bigint|null{
   const declared=dineroCentavosLiteral(line.totalLineaLiteral);
   return declared!==null&&total===declared?total:null;
  }
- // En ausencia del total declarado, evitar que una cantidad normalizada
- // por IA (pero ausente en el mensaje) termine creando un importe falso.
- const withoutPrice=line.textoOriginal.replace(line.precioUnitarioLiteral,'');
- const visibleNumbers=withoutPrice.match(/\d+(?:[.,]\d+)*/gu)??[];
- if(!visibleNumbers.some(token=>token.replace(',','.')===line.cantidad))
-  return null;
+ // La cantidad ya fue acreditada en la fuente antes de toda aritmética.
  // No equiparar un importe aislado con valor por unidad.
  // El proveedor debe explicitar precio unitario con vocabulario libre.
  if(!/(?:c\/u|p\/u|unitari[oa]s?|cada\s+(?:una?|bolsa|bols[oó]n|unidad)|por\s+(?:unidad|bolsa|bols[oó]n|litro|kg|metro|m3|m²|m³)|\bx\s*\$)/iu.test(line.textoOriginal))
@@ -212,6 +218,8 @@ export function evaluarCotizacionMvp225(
     replied===0?'sin_cobertura':'parcial',faltantes});
  }
  if(oferta.moneda==='no_informada')missing('moneda_no_informada');
+ if(!monedaFuenteMvp241(oferta.fuente,oferta.moneda))
+  missing('moneda_sin_evidencia_explicita');
  if(!['ARS','USD','no_informada'].includes(oferta.moneda)||
     !['incluido_explicito','sin_iva_explicito','no_informado'].includes(oferta.iva)||
     !['incluido_explicito','excluido_explicito','a_convenir','no_informado'].includes(oferta.flete)||
