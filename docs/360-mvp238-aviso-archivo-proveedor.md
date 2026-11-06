@@ -55,7 +55,8 @@ sintético con rollback: SHA/texto adulterado, remitente diferente, vínculo
 válido, archivo duplicado, segundo archivo, dos avisos, mensaje
 intermedio, invitación posterior y ACL/RLS. Deno typecheck y CI global.
 
-**Estado**: solo rama de desarrollo apilada sobre PR #615. No
-instalado en Supabase PILOTO, no enviado ningún WhatsApp y no publicado
-en producción. Etapa 2 sigue abierta por validación WhatsApp real con
-adjuntos en dos rondas simultáneas.
+**Estado verificado 06/11/2026:** integrado mediante PR #617 en la
+rama de desarrollo, SQL MVP238 instalado y Edge Whapi **v54 ACTIVE**
+en `cotironda-piloto`. Los tres gates siguen OFF, no enviamos WhatsApps,
+producción no modificada. Queda prueba real de adjuntos con dos rondas
+simultáneas para el cierre definitivo (decisión 362).

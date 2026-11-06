@@ -68,6 +68,14 @@ archivo, duplicados, plazo y permisos. Pruebas Node de intención humana,
 no-confusión con cotización y mensaje sin datos personales. Regresión
 Deno/Next y seguridad previa.
 
-La integración de MVP236-239 a `cotironda-piloto` y la prueba E2E con
-dos rondas de WhatsApp reales son hitos separados y se informan con
-evidencia. No declaramos completada la etapa 2 sin verificar ambos.
+**Integración verificada 06/11/2026:** migraciones MVP236–MVP239
+aplicadas al proyecto Supabase `cotironda-piloto`. Edge Whapi v54
+`ACTIVE`, código exacto de GitHub, 25 controles CI del merge aprobados,
+RPCs sin acceso público, tres gates privados en OFF, tres rondas
+históricas conservadas y cero nuevas fuentes IA vinculadas.
+La bandera `COTIRONDA_PILOT_AMBIGUITY_PROMPTS_ENABLED` permanece
+OFF por defecto: ningún envío de aclaración fue ejecutado.
+
+**Pendiente para declarar completada la etapa 2:** prueba real E2E con
+dos rondas de WhatsApp simultáneas y documentos de distintos proveedores
+(decisión 362). No se realizaron mensajes reales en esta integración.

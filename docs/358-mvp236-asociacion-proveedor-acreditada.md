@@ -50,5 +50,7 @@ cita inventada, cita ajena, dos rondas IA, duplicados y ACL.
 3. E2E de WhatsApp y documentos con dos rondas simultáneas para validar
    identidad, orden de llegada y reintentos.
 
-Estos puntos quedan abiertos: MVP236 es la **primera corrección**, no el
-cierre de la etapa 2.
+Los puntos 1 y 2 tienen implementación posterior en MVP237–MVP239.
+**MVP236 está instalado en `cotironda-piloto`** con PR #617 integrado,
+Edge v54 y controles apagados (06/11/2026). El punto 3, la prueba real
+con dos rondas simultáneas, continúa pendiente. Evidencia: decisión 362.
