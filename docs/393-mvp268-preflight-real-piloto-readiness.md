@@ -35,6 +35,16 @@ Los módulos ausentes son `256,257,258,259,260,261,262,263,264,265,266,267`. El 
 - Tests Node contra mutaciones SQL prohibidas, filtración de datos, lista completa de 12 módulos y ausencia de afirmaciones falsas.
 - CI exclusiva de desarrollo; ningún job llama a APIs pagas, WhatsApp, bases remotas ni Vercel.
 
+## Advertencias del asesor de seguridad Supabase (solo lectura)
+
+El asesor **Security** del proyecto real, consultado el 06/11/2026, informó:
+
+- **WARN** `extension_in_public` (1): `pg_net` está en esquema `public`. No moverlo a ciegas: comprobar dependencias de cron, Edge y webhooks y planificar migración con rollback.
+- **WARN** `authenticated_security_definer_function_executable` (3): `cotironda_piloto_buyer_identity_mvp191`, `cotironda_piloto_my_rounds_mvp126` y `cotironda_piloto_new_web_link_mvp126`. Sus funciones manejan identidad en el servidor. El aviso no demuestra por sí solo una vulnerabilidad, pero **hay que completar pruebas de permisos/sesiones** antes de activar Auth y documentar por qué el `SECURITY DEFINER` resulta indispensable.
+- **INFO** `rls_enabled_no_policy` (60 tablas de esquema privado). Son tablas privadas con aislamiento intencional por RPC, pero se debe auditar ACL y exposición de esquema antes de cualquier publicación.
+
+La salud general respondió sin incidencias. No se deshabilitaron funciones, no se movieron extensiones y no se modificaron políticas. Fuentes de remediación: https://supabase.com/docs/guides/database/database-linter?lint=0014_extension_in_public y https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable.
+
 ## Orden de instalación posterior a una autorización `Publicalo en cotironda-piloto`
 
 Instalar en orden de dependencia, siempre previa copia de seguridad y ensayo PG17 transaccional sobre un esquema compatible:
