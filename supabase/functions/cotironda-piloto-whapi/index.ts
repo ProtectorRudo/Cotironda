@@ -8,7 +8,7 @@ import {generarSolicitudPdfMvp091} from './request-pdf.ts';
 import {despacharSolicitudCentralMvp223} from './ai-central-dispatch-mvp223.ts';
 import {procesarCompradorCentralMvp226} from './ai-central-buyer-mvp226.ts';
 import {continuarZonaCentralMvp233} from './ai-central-zone-mvp233.ts';
-import {ciudadDeRespuestaCentralMvp234} from './ai-central-city-mvp234.ts';
+import {ciudadDeRespuestaCentralMvp234,estadoClaimZonaMvp234} from './ai-central-city-mvp234.ts';
 import {procesarPresupuestoCentralMvp227} from './ai-central-supplier-mvp227.ts';
 import {proveedorConRondaCentralMvp232} from './ai-central-supplier-route-mvp232.ts';
 import {makeMediaManifest} from './media-intake.ts';
@@ -548,11 +548,10 @@ async function respond(req:Request):Promise<Response>{
       // Una respuesta de localidad, incluso duplicada o sin pedido
       // pendiente, no inicia una segunda cotización por su cuenta.
       handledCentralZoneReply=true;
-      if(!previous||typeof previous!=='object'||
-         !['resumed','ambiguous','no_pending','already_consumed']
-           .includes(String(previous.state)))
+      const claimState=estadoClaimZonaMvp234(previous);
+      if(claimState==='inconsistent')
         return json(503,'ai_central_zone_state_reconciliation_required');
-      if(previous.state==='resumed'){
+      if(claimState==='resume'){
         if(typeof previous.source_hmac!=='string'||
            typeof previous.source_sha256!=='string'||
            typeof previous.nonce!=='string'||
