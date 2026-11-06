@@ -296,6 +296,17 @@ async function respond(req:Request):Promise<Response>{
     p_event_unix:entry.eventUnix
    });
    if(receipt.error)return json(503,'status_storage_unavailable');
+   // Passive reconciliation, ONLY for an existing uncertain outbound whose
+   // opaque Whapi ID is already known. The RPC verifies exact recipient,
+   // unique origin and event rank. It NEVER marks an outbox resendable.
+   if(receipt.data?.state==='unmatched'){
+    const uncertain=await db.rpc('cotironda_piloto_observe_uncertain_whapi_mvp257',{
+     p_whapi_message_id:entry.messageId,p_status:entry.status,
+     p_status_code:entry.code,p_recipient_chat_hmac:recipientHmac,
+     p_event_unix:entry.eventUnix
+    });
+    if(uncertain.error)return json(503,'status_storage_unavailable');
+   }
   }
   return json(200,'statuses_processed');
  }
