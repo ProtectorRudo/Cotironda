@@ -129,10 +129,18 @@ test('MVP247: material con solo total se conserva sin crear precio unitario',()=
  assert.ok(text.includes('total: AR$ 178.000'));
  assert.equal(text.includes('unitario:'),false);
 });
+test('MVP249: cantidad 40,00 con precio explícito y unidad omitida es válida',()=>{
+ const quantityWithoutUnit={...draft,lines:[{
+  ...draft.lines[0],quantity:'40,00',unit:null,
+  original_description:'Cemento CPC 25 kg'
+ }]};
+ const text=fuenteDeDocumentoMvp245({...args,draft:quantityWithoutUnit});
+ assert.equal(typeof text,'string');
+ assert.ok(text.includes('40,00 Cemento CPC 25 kg unitario: AR$ 8.900'));
+});
 test('MVP247: no inventar precio unitario si falta unidad o cantidad',()=>{
  for(const changes of [
   {quantity:null,unit:'bolsa',unit_price:'AR$ 100'},
-  {quantity:'3',unit:null,unit_price:'AR$ 100'},
   {quantity:null,unit:null,unit_price:'AR$ 100'}
  ]){
   const malformed={...draft,lines:[
