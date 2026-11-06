@@ -35,5 +35,7 @@ pendientes y pedir una **única aclaración corta** al proveedor, sin exponer
 compradores ni inventar a cuál pedido correspondía el presupuesto. Nunca
 se envía un mensaje ni se asigna una ronda desde esta migración.
 
-**Estado: desarrollo.** No instalada en piloto ni producción. No hay
-Whapi ni gastos de IA adicionales. Etapa 2 aún abierta.
+**Estado verificado 06/11/2026:** MVP237 instalado exclusivamente en
+Supabase `cotironda-piloto`, ledger vacío y RLS activo; sin nuevos
+WhatsApps ni gastos de IA. MVP239 implementa la aclaración posterior.
+La prueba WhatsApp real de etapa 2 continúa pendiente (decisión 362).
