@@ -1,3 +1,10 @@
+## 2026-11-06 — MVP271: comando privado para ZIP cifrado de todo el piloto (desarrollo)
+
+- Exportador SQL PostgreSQL 17 **solo cotironda-piloto** con URL fijada a la referencia de Supabase, snapshot compartido para datos y esquema, cifrado age en streaming y limpieza segura ante fallas.
+- Proceso único que reúne cinco piezas SQL y el TAR cifrado de Storage MVP270, sella el manifiesto MVP269 y entrega un único ZIP de ciphertext con SHA-256 sin generar enlaces públicos.
+- Se impide sobrescribir salidas y borrar ZIP de otra operación; fuente reservada con mkdir exclusivo; no CI, Vercel, otras instancias, ni exportaciones en texto claro.
+- Pruebas sintéticas de snapshot, conexión a proyecto equivocado, recuperabilidad del destinatario, composición ZIP y situaciones adversas. **No se hizo extracción real, validación de restore ni publicación.** Decisión 396.
+
 ## 2026-11-06 — MVP270: exportador cifrado de Storage para respaldos móviles (desarrollo)
 
 - Exportación pasiva **solo PILOTO** de objetos de buckets privados a `storage_objects.tar.age`, mediante descarga autenticada, TAR de rutas opacas y cifrado streaming age. Nunca guarda PDFs/Excel/imágenes descifrados en disco.
