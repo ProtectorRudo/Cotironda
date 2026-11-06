@@ -22,6 +22,9 @@ repetir la ronda ni etiquetar el archivo manualmente.
 5. Si hay dos avisos, otro remitente, pérdida de fuente, archivo antiguo,
    nuevo despacho, mensaje intermedio o conflicto, no se atribuye por
    parecido de materiales: se conserva en revisión sin abrir contacto.
+   Un aviso previo no consumido mantiene bloqueada la atribución genérica
+   durante 24 horas si la continuación no es segura (`context_blocked`);
+   no se «salta» al último pedido aunque sea el único abierto.
 6. Las respuestas con ID citado de WhatsApp mantienen el mecanismo previo
    de asociación fuerte, sin inferir por conversación.
 7. Se guarda asociación `prior_supplier_preamble` en la fuente original,
