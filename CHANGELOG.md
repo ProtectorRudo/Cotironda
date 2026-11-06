@@ -1,3 +1,9 @@
+## 2026-11-06 — MVP255: comparador por rubro en seguimiento privado (solo desarrollo)
+
+- Integrado el comparador de cobertura MVP254 en la misma consulta verificada por token de IA Central MVP227, sin abrir otra vista ni convertir resúmenes en fuentes económicas falsas. Solo cobertura mínima por **artículos con importe cotejado**; hasta dos presupuestos anónimos y sin ranking por totales parciales.
+- Proxy Vercel con lista blanca y verificación de rubros, ofertas y artículos; UI de comprador en la página actual, usando `textContent`. Revocación, cambio de token o falla de red borran la nueva sección junto con las ofertas privadas.
+- Contrato CI Edge→proxy→DOM con escenarios parciales, condiciones incompatibles, permisos, PII y revocación. Decisión 379. **No desplegado en PILOTO ni producción.**
+
 ## 2026-11-06 — MVP254: corpus de contratos 1–3 e inicio de etapa 4
 
 - Nueva suite de 336 escenarios sintéticos de contrato (224 formulaciones de siete rubros y 112 mutaciones adversariales), más pruebas de rondas simultáneas, ruteo y seis proveedores; **no equivale** a 150 respuestas reales de IA ni a E2E WhatsApp.

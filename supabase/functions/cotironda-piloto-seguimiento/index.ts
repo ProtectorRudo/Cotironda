@@ -21,6 +21,7 @@ import {resumirMaterialesCotizadosCompradorMvp210} from
 import {DESTINO_SEGUIMIENTO_PILOTO_MVP212} from '../../../src/domain/enlace-seguimiento-piloto-mvp212.ts';
 import {resumirRubrosCompradorMvp216} from '../../../src/domain/rubros-comprador-mvp216.ts';
 import {vistaCotizacionesRubrosMvp227} from '../../../src/domain/ia-central/vista-comprador-rubros-mvp227.ts';
+import {resumirAlternativasRubrosMvp255} from '../../../src/domain/ia-central/resumen-comparador-rubros-mvp255.ts';
 const ref='ilggkalaafhtiysyzlmg';
 const html=`<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -335,7 +336,8 @@ Deno.serve(async req=>{
  // La ventana de prueba puede vencer, pero el comprador conserva el
  // acceso a SUS ofertas ya verificadas por token, sin flags de entorno.
  // El RPC revisa token, revocación, propietario y estado antes de devolver datos.
- if(publicResult?.state==='waiting'||publicResult?.state==='closed'){
+ if(publicResult?.can_open===true&&
+    (publicResult.state==='waiting'||publicResult.state==='closed')){
    try{
      const ai=await db.rpc('cotironda_piloto_ia_buyer_rubros_mvp227',{
        p_token_hash:digest
@@ -358,6 +360,12 @@ Deno.serve(async req=>{
            offers:[...historical,...safe.offers],
            rubros_ia:safe.rubros_ia
          };
+         // MVP255: uses the SAME private token-verified RPC response, without
+         // relaying the original request/supplier envelope to the browser.
+         // A failed shape check adds NO comparador data, never a guess.
+         const comparison=resumirAlternativasRubrosMvp255(ai.data,safe);
+         if(comparison)publicResult={...publicResult,
+           comparador_rubros_ia:comparison};
        }
      }
    }catch{/* No exponer resultados sin verificación y no romper legacy. */}

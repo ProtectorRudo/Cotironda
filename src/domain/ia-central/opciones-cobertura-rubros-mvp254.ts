@@ -46,6 +46,33 @@ function compatibilidad(a:OfertaVerificadaMvp225,b:OfertaVerificadaMvp225){
   a.flete===b.flete&&a.pago===b.pago;
 }
 
+/** Núcleo compartido MVP254/MVP255: parejas solo si aumentan cobertura.
+ * Recibe identificadores acreditados, no precios ni datos personales.
+ * El orden es informativo: más cobertura y menos participantes, NO precio. */
+export function gruposCoberturaMvp254(
+ conjuntos:readonly (readonly string[])[]
+):readonly (readonly number[])[]{
+ if(!Array.isArray(conjuntos)||conjuntos.length>50||
+    conjuntos.some(x=>!Array.isArray(x)||x.length>200||
+      x.some(id=>typeof id!=='string'||!/^item_[1-9][0-9]{0,2}$|^[a-z][a-z0-9_-]{1,79}$/u.test(id))||
+      new Set(x).size!==x.length))
+  throw new TypeError('mvp254_cobertura_invalida');
+ const result:{indexes:number[];count:number}[]=[];
+ for(let i=0;i<conjuntos.length;i++){
+  if(conjuntos[i].length===0)continue;
+  result.push({indexes:[i],count:conjuntos[i].length});
+  for(let j=i+1;j<conjuntos.length;j++){
+   const union=new Set([...conjuntos[i],...conjuntos[j]]);
+   if(union.size>Math.max(conjuntos[i].length,conjuntos[j].length))
+    result.push({indexes:[i,j],count:union.size});
+  }
+ }
+ result.sort((a,b)=>b.count-a.count||
+  a.indexes.length-b.indexes.length||
+  a.indexes.join(',').localeCompare(b.indexes.join(',')));
+ return Object.freeze(result.map(x=>Object.freeze(x.indexes)));
+}
+
 export function opcionesPorRubroMvp254(
  pedido:readonly PedidoLineaMvp225[],
  presupuestos:readonly OfertaVerificadaMvp225[]
@@ -111,17 +138,8 @@ export function opcionesPorRubroMvp254(
      totalGlobalComparable:false
     }));
    }
-   for(let a=0;a<verified.length;a++){
-    add([verified[a]]);
-    for(let b=a+1;b<verified.length;b++){
-     const one=new Set(verified[a].replied);
-     const two=new Set(verified[b].replied);
-     const union=new Set([...one,...two]);
-     // Una pareja se ofrece solo si aporta cobertura adicional.
-     // Si ambos ya cubren lo mismo, comparar sólo sus artículos.
-     if(union.size>Math.max(one.size,two.size))add([verified[a],verified[b]]);
-    }
-   }
+   for(const indexes of gruposCoberturaMvp254(verified.map(x=>x.replied)))
+    add(indexes.map(i=>verified[i]));
    // Orden por COBERTURA, nunca menor subtotal de presupuestos parciales.
    // No se truncan opciones; el consumidor futuro debe paginarlas.
    choices.sort((a,b)=>{

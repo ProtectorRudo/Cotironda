@@ -90,7 +90,7 @@ function offerCard(title,body){
 }
 // MVP176: revoke all visible private details on an invalid token or outage.
 function clearPrivateView(){
- for(const id of ["offers","receipts","finalists","coverageGrid","economyGrid","itemPricesGrid","pricedCoverageGrid","coverageOptionsCounts","coverageOptionsGrid","orientacionGrid","economicReadinessGrid","materialBasketsGrid"])el(id).replaceChildren();
+ for(const id of ["offers","receipts","finalists","coverageGrid","economyGrid","itemPricesGrid","pricedCoverageGrid","coverageOptionsCounts","coverageOptionsGrid","orientacionGrid","economicReadinessGrid","materialBasketsGrid","rubroCompareGrid"])el(id).replaceChildren();
  el("economySection").hidden=true;
  displayText("economyCaption","");
  el("itemPricesSection").hidden=true;
@@ -101,6 +101,8 @@ function clearPrivateView(){
  displayText("materialBasketsCaption","");
  el("pricedCoverageSection").hidden=true;
  displayText("pricedCoverageCaption","");
+ el("rubroCompareSection").hidden=true;
+ displayText("rubroCompareCaption","");
  el("coverageOptionsSection").hidden=true;
  displayText("coverageOptionsCaption","");
  el("orientacionSection").hidden=true;
@@ -267,6 +269,132 @@ function showItemPrices(d){
   p.requested_items+" artículos del pedido. No son totales finales ni una clasificación de proveedores.");
  el("itemPricesSection").hidden=false;
 }
+// MVP255: only the token-checked, Vercel-whitelisted IA Central summary.
+// No source documents, provider names, contact or cross-coverage total.
+function showRubroComparer(d){
+ const grid=el("rubroCompareGrid");grid.replaceChildren();
+ el("rubroCompareSection").hidden=true;
+ displayText("rubroCompareCaption","");
+ const data=d?.comparador_rubros_ia;
+ if(d?.can_open!==true||!["waiting","closed"].includes(d?.state)||
+    !data||data.state!=="alternativas_rubro_con_importes_sin_ranking"||
+    data.ranking_global_permitido!==false||
+    data.adjudicacion_automatica!==false||
+    data.contactos_revelados!==false||
+    !Array.isArray(data.presupuestosAnonimos)||
+    data.presupuestosAnonimos.length>25||
+    !data.presupuestosAnonimos.every(x=>
+      /^Presupuesto [1-9][0-9]{0,2}$/u.test(x))||
+    new Set(data.presupuestosAnonimos).size!==data.presupuestosAnonimos.length||
+    !Array.isArray(data.rubros)||data.rubros.length<1||
+    data.rubros.length>7)return;
+ const known={
+  obra_gruesa:"Obra gruesa / Corralón",pintura:"Pintura",
+  electricidad:"Electricidad",construccion_seca:"Construcción en seco",
+  sanitarios:"Sanitarios",ferreteria:"Ferretería y fijaciones",
+  otros:"Otros materiales"
+ };
+ const id=/^item_[1-9][0-9]{0,2}$/u;
+ const label=/^Presupuesto [1-9][0-9]{0,2}$/u;
+ const unique=a=>new Set(a).size===a.length;
+ const isCount=(n,max)=>Number.isSafeInteger(n)&&n>=0&&n<=max;
+ const seen=new Set();
+ // Validate the ENTIRE envelope BEFORE painting any private offer.
+ for(const r of data.rubros){
+  if(!r||known[r.rubro]!==r.titulo||seen.has(r.rubro)||
+     !isCount(r.solicitados,200)||r.solicitados<1||
+     !Array.isArray(r.articulosSolicitados)||
+     r.articulosSolicitados.length!==r.solicitados||
+     !r.articulosSolicitados.every(x=>id.test(x))||
+     !unique(r.articulosSolicitados)||
+     !isCount(r.opcionesTotales,325)||!Array.isArray(r.opciones)||
+     r.opciones.length>12||r.opciones.length>r.opcionesTotales||
+     !Array.isArray(r.ofertasConRespuestaSinPrecio)||
+     r.ofertasConRespuestaSinPrecio.length>25||
+     !r.ofertasConRespuestaSinPrecio.every(x=>label.test(x)&&
+       data.presupuestosAnonimos.includes(x))||
+     !unique(r.ofertasConRespuestaSinPrecio)||
+     !Array.isArray(r.articulosConReferenciasCoincidentes)||
+     r.articulosConReferenciasCoincidentes.length>r.solicitados||
+     !r.articulosConReferenciasCoincidentes.every(x=>id.test(x)&&
+       r.articulosSolicitados.includes(x))||
+     !unique(r.articulosConReferenciasCoincidentes))return;
+  seen.add(r.rubro);
+  for(const o of r.opciones){
+   if(!o||!Array.isArray(o.ofertasAnonimas)||
+      o.ofertasAnonimas.length<1||o.ofertasAnonimas.length>2||
+      !o.ofertasAnonimas.every(x=>label.test(x)&&
+        data.presupuestosAnonimos.includes(x))||
+      !unique(o.ofertasAnonimas)||
+      !Array.isArray(o.articulosConPrecio)||
+      o.articulosConPrecio.length<1||
+      o.articulosConPrecio.length>r.solicitados||
+      !o.articulosConPrecio.every(x=>id.test(x)&&
+        r.articulosSolicitados.includes(x))||
+      !unique(o.articulosConPrecio)||
+      !Array.isArray(o.articulosPendientes)||
+      o.articulosPendientes.length>r.solicitados||
+      !o.articulosPendientes.every(x=>id.test(x)&&
+        r.articulosSolicitados.includes(x))||
+      !unique(o.articulosPendientes)||
+      !unique([...o.articulosConPrecio,...o.articulosPendientes])||
+      o.articulosConPrecio.length+o.articulosPendientes.length!==r.solicitados||
+      !["parcial_con_importes","completa_con_importes"].includes(o.cobertura)||
+      (o.cobertura==="completa_con_importes")!==
+       (o.articulosPendientes.length===0)||
+      typeof o.condicionesDeclaradasIguales!=="boolean"||
+      o.totalGlobalComparable!==false)return;
+  }
+ }
+ function num(idValue){return idValue.slice(5)}
+ for(const r of data.rubros){
+  const box=element("section","rubro-section");
+  const head=element("div","rubro-header");
+  head.append(element("h3","rubro-title",r.titulo),
+   element("span","rubro-count",
+     r.solicitados+" materiales del pedido"));
+  box.appendChild(head);
+  if(!r.opciones.length)box.appendChild(element("p","itemprices-note",
+    "Aún no hay precios acreditados suficientes para proponer una cobertura."));
+  for(const o of r.opciones){
+   const row=element("article","itemprices-card");
+   const title=o.ofertasAnonimas.join(" + ");
+   row.append(element("strong","",title),
+    element("p","itemprices-request",
+     o.articulosConPrecio.length+" de "+r.solicitados+
+     " artículos del rubro con importe corroborado"+
+     (o.cobertura==="completa_con_importes"?" · cobertura acreditada":
+      " · cobertura parcial")));
+   row.append(element("p","itemprices-note",
+    "Artículos con importe: "+o.articulosConPrecio.map(num).join(", ")+
+    (o.articulosPendientes.length?
+      ". Sin precio comprobado: "+o.articulosPendientes.map(num).join(", "):"")+
+    ". Condiciones declaradas "+
+    (o.condicionesDeclaradasIguales?"coincidentes":"diferentes")+
+    "; no se compara ningún total global."));
+   box.appendChild(row);
+  }
+  if(r.opcionesTotales>r.opciones.length)
+   box.append(element("p","itemprices-note",
+    "Se muestran "+r.opciones.length+" de "+r.opcionesTotales+
+    " combinaciones posibles por cobertura. Todas las ofertas siguen disponibles abajo."));
+  if(r.ofertasConRespuestaSinPrecio.length)
+   box.append(element("p","itemprices-note",
+    "Respuestas sin importe directo comparable en este rubro: "+
+    r.ofertasConRespuestaSinPrecio.join(", ")+"."));
+  if(r.articulosConReferenciasCoincidentes.length)
+   box.append(element("p","itemprices-note",
+    r.articulosConReferenciasCoincidentes.length+
+    " artículos cuentan con al menos dos referencias bajo las mismas condiciones declaradas. "+
+    "Revisá precios, IVA y flete en cada presupuesto por separado."));
+  grid.appendChild(box);
+ }
+ displayText("rubroCompareCaption",
+  "Cobertura de artículos con precio comprobado por fuente. "+
+  "Una combinación no acredita stock ni precio final.");
+ el("rubroCompareSection").hidden=false;
+}
+
 // MVP204: compare the per-offer economic states against the already
 // verified and anonymous per-item source amounts. Never produce a rank.
 function showEconomicReadiness(d){
@@ -895,6 +1023,7 @@ function render(data){
  showCoverage(d);
  showEconomy(d);
  showItemPrices(d);
+ showRubroComparer(d);
  showEconomicReadiness(d);
  showMaterialBaskets(d);
  showPricedCoverage(d);

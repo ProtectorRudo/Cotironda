@@ -142,6 +142,122 @@ function buyerView(parsed){
       };
     }
   }
+  // MVP255 — same token-authenticated Edge projection of SQL-verified
+  // rubros. Strict whitelist: no raw quotes, original, supplier or HMAC.
+  const cmp=parsed.comparador_rubros_ia;
+  if(opened&&cmp&&typeof cmp==="object"&&!Array.isArray(cmp)&&
+     cmp.state==="alternativas_rubro_con_importes_sin_ranking"&&
+     cmp.ranking_global_permitido===false&&
+     cmp.adjudicacion_automatica===false&&
+     cmp.contactos_revelados===false&&
+     Array.isArray(cmp.presupuestosAnonimos)&&
+     cmp.presupuestosAnonimos.length<=25&&
+     cmp.presupuestosAnonimos.every(x=>
+       /^Presupuesto [1-9][0-9]{0,2}$/u.test(x))&&
+     new Set(cmp.presupuestosAnonimos).size===cmp.presupuestosAnonimos.length&&
+     Array.isArray(cmp.rubros)&&cmp.rubros.length>=1&&cmp.rubros.length<=7&&
+     Array.isArray(parsed.rubros_ia)&&parsed.rubros_ia.length===cmp.rubros.length){
+    const allowed=new Set(["obra_gruesa","pintura","electricidad",
+      "construccion_seca","sanitarios","ferreteria","otros"]);
+    const names={
+      obra_gruesa:"Obra gruesa / Corralón",pintura:"Pintura",
+      electricidad:"Electricidad",construccion_seca:"Construcción en seco",
+      sanitarios:"Sanitarios",ferreteria:"Ferretería y fijaciones",
+      otros:"Otros materiales"
+    };
+    const id=/^item_[1-9][0-9]{0,2}$/u;
+    const label=/^Presupuesto [1-9][0-9]{0,2}$/u;
+    const unique=arr=>new Set(arr).size===arr.length;
+    const int=(n,max)=>Number.isSafeInteger(n)&&n>=0&&n<=max;
+    const seen=new Set();
+    let valid=true;
+    const normalized=[];
+    for(const r of cmp.rubros){
+      if(!r||typeof r!=="object"||Array.isArray(r)||
+         !allowed.has(r.rubro)||seen.has(r.rubro)||
+         r.titulo!==names[r.rubro]||
+         !int(r.solicitados,200)||r.solicitados<1||
+         !Array.isArray(r.articulosSolicitados)||
+         r.articulosSolicitados.length!==r.solicitados||
+         !r.articulosSolicitados.every(x=>id.test(x))||
+         !unique(r.articulosSolicitados)||
+         !int(r.opcionesTotales,325)||
+         !Array.isArray(r.opciones)||r.opciones.length>12||
+         r.opciones.length>r.opcionesTotales||
+         !Array.isArray(r.ofertasConRespuestaSinPrecio)||
+         r.ofertasConRespuestaSinPrecio.length>25||
+         !r.ofertasConRespuestaSinPrecio.every(x=>label.test(x)&&
+           cmp.presupuestosAnonimos.includes(x))||
+         !unique(r.ofertasConRespuestaSinPrecio)||
+         !Array.isArray(r.articulosConReferenciasCoincidentes)||
+         r.articulosConReferenciasCoincidentes.length>r.solicitados||
+         !r.articulosConReferenciasCoincidentes.every(x=>id.test(x)&&
+           r.articulosSolicitados.includes(x))||
+         !unique(r.articulosConReferenciasCoincidentes)||
+         !parsed.rubros_ia.some(x=>x&&x.rubro===r.rubro&&
+           x.titulo===r.titulo&&x.solicitados===r.solicitados)){
+        valid=false;break;
+      }
+      seen.add(r.rubro);
+      const options=[];
+      for(const option of r.opciones){
+        if(!option||typeof option!=="object"||Array.isArray(option)||
+           !Array.isArray(option.ofertasAnonimas)||
+           option.ofertasAnonimas.length<1||option.ofertasAnonimas.length>2||
+           !option.ofertasAnonimas.every(x=>label.test(x)&&
+             cmp.presupuestosAnonimos.includes(x))||
+           !unique(option.ofertasAnonimas)||
+           !Array.isArray(option.articulosConPrecio)||
+           option.articulosConPrecio.length<1||
+           option.articulosConPrecio.length>r.solicitados||
+           !option.articulosConPrecio.every(x=>id.test(x)&&
+             r.articulosSolicitados.includes(x))||
+           !unique(option.articulosConPrecio)||
+           !Array.isArray(option.articulosPendientes)||
+           option.articulosPendientes.length>r.solicitados||
+           !option.articulosPendientes.every(x=>id.test(x)&&
+             r.articulosSolicitados.includes(x))||
+           !unique(option.articulosPendientes)||
+           !unique([...option.articulosConPrecio,...option.articulosPendientes])||
+           option.articulosConPrecio.length+option.articulosPendientes.length!==
+            r.solicitados||
+           !["parcial_con_importes","completa_con_importes"].includes(option.cobertura)||
+           (option.cobertura==="completa_con_importes")!==
+            (option.articulosPendientes.length===0)||
+           typeof option.condicionesDeclaradasIguales!=="boolean"||
+           option.totalGlobalComparable!==false){
+          valid=false;break;
+        }
+        options.push({
+          ofertasAnonimas:option.ofertasAnonimas.slice(),
+          articulosConPrecio:option.articulosConPrecio.slice(),
+          articulosPendientes:option.articulosPendientes.slice(),
+          cobertura:option.cobertura,
+          condicionesDeclaradasIguales:option.condicionesDeclaradasIguales,
+          totalGlobalComparable:false
+        });
+      }
+      if(!valid)break;
+      normalized.push({
+        rubro:r.rubro,titulo:r.titulo,solicitados:r.solicitados,
+        articulosSolicitados:r.articulosSolicitados.slice(),
+        opciones:options,opcionesTotales:r.opcionesTotales,
+        ofertasConRespuestaSinPrecio:r.ofertasConRespuestaSinPrecio.slice(),
+        articulosConReferenciasCoincidentes:
+          r.articulosConReferenciasCoincidentes.slice()
+      });
+    }
+    if(valid&&seen.size===parsed.rubros_ia.length)
+      safe.comparador_rubros_ia={
+        state:"alternativas_rubro_con_importes_sin_ranking",
+        presupuestosAnonimos:cmp.presupuestosAnonimos.slice(),
+        rubros:normalized,
+        ranking_global_permitido:false,
+        adjudicacion_automatica:false,
+        contactos_revelados:false
+      };
+  }
+
   // MVP189 — potential full commercial coverage ONLY AFTER closure.
   // No seller identity, contacts, economic totals, tax, award, or access to
   // originals. Re-validate labels/counts and whitelist the entire payload.
