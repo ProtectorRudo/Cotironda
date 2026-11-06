@@ -171,6 +171,7 @@ function octal(buf,offset,length,number){
 }
 export function tarHeader(name,size){
  if(!/^[a-z0-9._/-]+$/u.test(name)||name.length>100||
+    name.split('/').some(x=>!x||x==='.'||x==='..')||
     !Number.isSafeInteger(size)||size<0)fail('TAR_HEADER_INVALID');
  const h=Buffer.alloc(512);
  h.write(name,0,100,'ascii');
