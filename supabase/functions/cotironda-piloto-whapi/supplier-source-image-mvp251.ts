@@ -85,7 +85,7 @@ export async function checkSupplierImageSourceMvp251(
     !signature(source.bytes,source.mime))
   return result(source,'invalid_source',count);
  const hashed=Array.from(
-  new Uint8Array(await crypto.subtle.digest('SHA-256',source.bytes)),
+  new Uint8Array(await crypto.subtle.digest('SHA-256',Uint8Array.from(source.bytes))),
   b=>b.toString(16).padStart(2,'0')
  ).join('');
  if(hashed!==source.sha256)return result(source,'invalid_source',count);
