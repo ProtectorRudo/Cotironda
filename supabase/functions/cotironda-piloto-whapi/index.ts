@@ -1198,7 +1198,7 @@ async function respond(req:Request):Promise<Response>{
    }else if(!['already_reserved','disabled','not_eligible','daily_quota']
       .includes(reserved.data?.state))
      return json(503,'ai_supplier_clarification_reserve_invalid');
- }
+  }
  // Acknowledge a supplier ONLY after their authenticated quote was
  // durably captured. Media receipt is explicitly pending source review.
  // One ledger reservation per message; uncertain Whapi results never retry.
