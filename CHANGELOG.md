@@ -1,3 +1,9 @@
+## 2026-11-06 — MVP253: autorizaciones y presupuesto OCR por original
+
+- Nueva política privada por defecto OFF, sin consentimientos precargados y con límite cero, que exige consentimiento externo específico del comprador y proveedor, ronda e identidad correctas, doble lectura y cuotas mensuales antes de enviar originales a Cloud Vision.
+- Reserva única por archivo/HMAC con token, unidades y presupuesto estimado; resultado guardado como estado privado, confianza y hash del texto OCR, sin importes ni PII. Revocación posterior bloquea el resultado positivo.
+- Tests PostgreSQL 17 reversibles y regresión Node de lectura OCR simulada. No se habilitan nuevos precios públicos, WhatsApps, Google real ni producción. Decisión 377.
+
 ## 2026-11-06 — MVP252: OCR independiente para imágenes y PDF escaneados, en recuperación privada
 
 - Se implementó un lector independiente opcional de Google Cloud Vision con JWT de cuenta de servicio en secretos, SHA de original, confianza mínima, límites de tamaño/páginas y llamadas HTTPS fijas.
