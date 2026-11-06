@@ -8,6 +8,7 @@ import {generarSolicitudPdfMvp091} from './request-pdf.ts';
 import {despacharSolicitudCentralMvp223} from './ai-central-dispatch-mvp223.ts';
 import {procesarCompradorCentralMvp226} from './ai-central-buyer-mvp226.ts';
 import {continuarZonaCentralMvp233} from './ai-central-zone-mvp233.ts';
+import {ciudadDeRespuestaCentralMvp234,estadoClaimZonaMvp234} from './ai-central-city-mvp234.ts';
 import {procesarPresupuestoCentralMvp227} from './ai-central-supplier-mvp227.ts';
 import {proveedorConRondaCentralMvp232} from './ai-central-supplier-route-mvp232.ts';
 import {makeMediaManifest} from './media-intake.ts';
@@ -535,7 +536,8 @@ async function respond(req:Request):Promise<Response>{
   // IA Central previo, sin interpretar "La Plata" como otro presupuesto.
   // La RPC revalida autor, SHA, ventana de tiempo, trial y gates.
   if(centralBuyerText&&outcome(out.data)==='needs_review'){
-    const city=standaloneDeliveryCity(body);
+    // Ciudad normalizada únicamente; atribución de contexto y permisos en SQL.
+    const city=ciudadDeRespuestaCentralMvp234(body);
     if(city){
       const claimed=await db.rpc('cotironda_piloto_ia_claim_zone_mvp233',{
         p_chat_hmac:chatHash,p_reply_hmac:messageHash,
@@ -543,8 +545,13 @@ async function respond(req:Request):Promise<Response>{
       });
       if(claimed.error)return json(503,'ai_central_zone_claim_unavailable');
       const previous=claimed.data;
-      if(previous?.state==='resumed'){
-        handledCentralZoneReply=true;
+      // Una respuesta de localidad, incluso duplicada o sin pedido
+      // pendiente, no inicia una segunda cotización por su cuenta.
+      handledCentralZoneReply=true;
+      const claimState=estadoClaimZonaMvp234(previous);
+      if(claimState==='inconsistent')
+        return json(503,'ai_central_zone_state_reconciliation_required');
+      if(claimState==='resume'){
         if(typeof previous.source_hmac!=='string'||
            typeof previous.source_sha256!=='string'||
            typeof previous.nonce!=='string'||

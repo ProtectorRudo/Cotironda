@@ -1,3 +1,13 @@
+## 2026-11-05 — MVP235: recuperador compatible con localidad reanudada (piloto)
+
+- Detectada condición de carrera: un pedido antiguo reanudado por MVP233 conserva su fecha original; el cron MVP230 podía confundir una reserva nueva con una operación abandonada.
+- Corregida conciliación para usar la fecha más reciente entre creación y enlace de reanudación, sin borrar historial ni alterar otros estados de proveedor o despacho.
+- Migración SQL versionada, regresión PostgreSQL 17 con rollback y decisión 357. **Aplicado únicamente en Supabase piloto:** migración `piloto_mvp235_recuperacion_segura_zona`; PG17 y preflight remoto aprobados, cron activo. WhatsApp y tres gates siguen OFF; E2E real pendiente.
+
+## 2026-11-05 — MVP234: interpretar respuestas naturales de localidad (solo desarrollo)
+
+- IA Central reconoce frases como «La entrega es en City Bell», «Es en Berisso» o «La obra queda en Tolosa» sin guardar esas expresiones como localidad ni crear un segundo pedido. El RPC MVP233 mantiene el vínculo único al mensaje firmado, el contexto original y los controles de autorización; documentos y respuestas de proveedores quedan intactos. Pruebas adversarias y regresión en workflow propio, ADR 356. **Publicada exclusivamente en piloto:** migración MVP233 + Edge Whapi v53. Tres controles privados OFF, sin WhatsApps, con continuidad E2E pendiente. Producción sin cambios.
+
 ## 2026-11-05 — MVP233: localidad posterior sin repetir el pedido (desarrollo)
 
 - IA Central retoma el único pedido previo `needs_zone` después de un mensaje de localidad del mismo comprador. SQL privado enlaza fuente HMAC y respuesta atómicamente dentro de ventana y gates, vuelve a corroborar originales cifrados SHA y realiza doble lectura semántica. La ronda resultante conserva el original inmutable; no duplica invitaciones ni envía mensajes fuera de los permisos de despacho. Agregados tests Node y PostgreSQL 17 (rollback), docs/355. **No publicado en piloto ni producción; E2E real pendiente.**
