@@ -271,9 +271,8 @@ export async function exportPilotStorageEncrypted({
   const consumer=pipeline(child.stdout,createWriteStream(output,{
    flags:'w',mode:0o600
   }));
-  const outcomes=await Promise.allSettled([producers,consumer,closed]);
-  const error=outcomes.find(x=>x.status==='rejected');
-  if(error||outcomes[2].value!==0)fail('AGE_ENCRYPTION_FAILED');
+  const [,,exitCode]=await Promise.all([producers,consumer,closed]);
+  if(exitCode!==0)fail('AGE_ENCRYPTION_FAILED');
   const handle=await open(output,'r');
   let length=0;
   try{
