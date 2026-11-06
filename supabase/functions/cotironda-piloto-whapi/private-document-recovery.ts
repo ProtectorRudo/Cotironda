@@ -143,14 +143,23 @@ export async function recoverOneStoredDocument(args:{
   if(source.state!=='source_text_covered'&&
      (mime.startsWith('image/')||mime==='application/pdf')&&
      args.visualOcr?.enabled===true&&args.visualOcr.externalConsent===true){
-    const visual=await auditarFuenteVisualOCRMvp252({
-      source:file,primary:proposal,secondary:second,
-      enabled:true,externalConsent:true,
-      serviceAccountJson:args.visualOcr.serviceAccountJson,
-      fetchImpl:args.visualOcr.fetchImpl
-    });
-    // Única telemetría permitida: estado, sin ID, nombre, texto o precio.
-    console.info('cotironda_visual_ocr_'+visual.state);
+    // Tercer gate obligatorio: consentimiento EXTERNO y cuota registrados
+    // por proveedor+archivo en SQL, NO solo una variable del servidor.
+    // RPC aún no instalada: falla cerrado y no envía bytes a Google.
+    const permission=data(await io.rpc('cotironda_piloto_visual_ocr_permission_mvp252',{
+      p_message_hmac:h,p_source_sha256:actual
+    }).catch(()=>({data:null,error:true})));
+    if(permission?.state==='approved_for_private_processing'&&
+       permission.source_sha256===actual){
+      const visual=await auditarFuenteVisualOCRMvp252({
+        source:file,primary:proposal,secondary:second,
+        enabled:true,externalConsent:true,
+        serviceAccountJson:args.visualOcr.serviceAccountJson,
+        fetchImpl:args.visualOcr.fetchImpl
+      });
+      // Única telemetría permitida: estado, sin ID, nombre, texto o precio.
+      console.info('cotironda_visual_ocr_'+visual.state);
+    }
   }
   const sourceResult=data(await io.rpc('cotironda_piloto_record_supplier_source_check_mvp106',{
    p_message_hmac:h,p_source_sha256:actual,p_state:source.state,
