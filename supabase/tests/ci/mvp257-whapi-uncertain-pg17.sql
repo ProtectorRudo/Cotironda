@@ -116,6 +116,20 @@ BEGIN
  THEN RAISE EXCEPTION 'mvp257_lost_delivered_evidence';END IF;
  IF (SELECT count(*) FROM cotironda_piloto_privado.uncertain_whapi_receipts_mvp257)<>1
  THEN RAISE EXCEPTION 'mvp257_duplicate_evidence';END IF;
+ -- ID collision in another outbox (different supplier) must not be trusted.
+ INSERT INTO cotironda_piloto_privado.ai_dispatch_jobs_mvp222 VALUES
+ ('00000000-0000-4000-8000-000000000001','supplier_b',
+  'uncertain','message_unknown_delivery_01',clock_timestamp());
+ result:=public.cotironda_piloto_observe_uncertain_whapi_mvp257(
+  'message_unknown_delivery_01','read',4,repeat('a',64),nowunix);
+ IF result->>'state'<>'unmatched'
+ THEN RAISE EXCEPTION 'mvp257_id_reused_across_companies_%',result;END IF;
+ DELETE FROM cotironda_piloto_privado.ai_dispatch_jobs_mvp222
+ WHERE whapi_message_id='message_unknown_delivery_01';
+ IF (SELECT state FROM cotironda_piloto_privado.uncertain_whapi_receipts_mvp257
+  WHERE message_id_sha256=digest)<>'delivered'
+ THEN RAISE EXCEPTION 'mvp257_reused_id_tampered_proof';END IF;
+
 
  result:=public.cotironda_piloto_uncertain_summary_mvp257();
  IF (result->>'observed_with_authenticated_status')::integer<>1 OR
