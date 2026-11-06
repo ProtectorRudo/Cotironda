@@ -179,6 +179,27 @@ END $mvp239$;
 -- solo un mensaje de origen queda abierto para el proveedor.
 DELETE FROM cotironda_piloto_privado.ai_supplier_unresolved_mvp237
  WHERE message_hmac IN(repeat('1',64),repeat('2',64));
+-- La cotización fuente precede esta invitación: citarla después no autoriza
+-- a atribuir retroactivamente el presupuesto al pedido nuevo.
+UPDATE cotironda_piloto_privado.ai_dispatch_jobs_mvp222
+ SET whapi_message_id='whapi-late-33333',
+     finished_at=clock_timestamp()-interval '30 seconds'
+ WHERE request_id='33333333-3333-4333-8333-333333333333';
+DO $late_quote$
+DECLARE r jsonb;
+BEGIN
+ r:=public.cotironda_piloto_ia_resolve_clarification_mvp239(
+  repeat('3',64),repeat('b',64),'whapi-late-33333','Es de este pedido');
+ IF r->>'state'<>'invitation_after_source'
+ THEN RAISE EXCEPTION 'mvp239 linked quote before invitation: %',r;END IF;
+ IF (SELECT request_id FROM cotironda_piloto_privado.whapi_inbox
+     WHERE message_hmac=repeat('e',64)) IS NOT NULL
+ THEN RAISE EXCEPTION 'mvp239 old source assigned retroactively';END IF;
+END $late_quote$;
+UPDATE cotironda_piloto_privado.ai_dispatch_jobs_mvp222
+ SET whapi_message_id='whapi-ai-33333333',
+     finished_at=clock_timestamp()-interval '8 minutes'
+ WHERE request_id='33333333-3333-4333-8333-333333333333';
 DO $resolvetext$
 DECLARE r jsonb;
 BEGIN
