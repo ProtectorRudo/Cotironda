@@ -110,7 +110,8 @@ test('MVP272 rejects extra ZIP member and altered semantic manifest',
   const m=JSON.parse(await readFile(join(source,META),'utf8'));
   m.restore_verified=true;
   await writeFile(join(source,META),JSON.stringify(m),{mode:0o600});
-  run('zip',['-q','-0','-X','-D','-f',zip,META],{cwd:source});
+  await rm(zip);
+  run('zip',['-q','-0','-X','-D',zip,...FILES,META],{cwd:source});
   await assert.rejects(auditMobilePilotZip({
    zipPath:zip,identityPath:key,expectedSha256:digest(await readFile(zip)),
    env:testEnv
@@ -125,7 +126,8 @@ test('MVP272 detects corrupted age authenticity after hashes are updated',
   const manifest=JSON.parse(await readFile(join(source,META),'utf8'));
   manifest.components[0].sha256=digest(b);
   await writeFile(join(source,META),JSON.stringify(manifest),{mode:0o600});
-  run('zip',['-q','-0','-X','-D','-f',zip,FILES[0],META],{cwd:source});
+  await rm(zip);
+  run('zip',['-q','-0','-X','-D',zip,...FILES,META],{cwd:source});
   await assert.rejects(auditMobilePilotZip({
    zipPath:zip,identityPath:key,expectedSha256:digest(await readFile(zip)),
    env:testEnv
