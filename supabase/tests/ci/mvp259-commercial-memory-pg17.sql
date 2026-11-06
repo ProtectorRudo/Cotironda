@@ -148,7 +148,8 @@ BEGIN
  THEN RAISE EXCEPTION 'mvp259_old_quote_wrongly_current_%',stopped;END IF;
 
  UPDATE cotironda_piloto_privado.commercial_context_events_mvp259
- SET expires_at=clock_timestamp()-interval '1 minute'
+ SET recorded_at=clock_timestamp()-interval '1 day',
+     expires_at=clock_timestamp()-interval '1 minute'
  WHERE participant_key='buyer_a';
  stopped:=public.cotironda_piloto_commercial_context_mvp259(req_a,repeat('a',64));
  IF stopped->>'buyer_city_source_remembered'<>'false' OR
