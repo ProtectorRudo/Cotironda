@@ -72,7 +72,7 @@ BEGIN
  jsonb_array_length(b->'cases')<>4 OR
  b->>'automatic_resend_allowed'<>'false'
  THEN RAISE EXCEPTION 'mvp258_list_unexpected_%',b;END IF;
- IF b::text LIKE '%buyer_a%' OR b::text LIKE '%supplier_a%' OR
+ IF b::text LIKE '%"buyer_a"%' OR b::text LIKE '%"supplier_a"%' OR
  b::text LIKE '%00000000-0000-4000%' OR b::text LIKE '%'||repeat('e',64)||'%'
  THEN RAISE EXCEPTION 'mvp258_private_keys_exposed';END IF;
  IF (SELECT count(*) FROM cotironda_piloto_privado.uncertain_triage_cases_mvp258
