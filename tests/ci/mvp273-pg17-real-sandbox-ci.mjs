@@ -4,6 +4,7 @@
  * Only executed by the dedicated workflow after pulling postgres:17-alpine.
  */
 import test from 'node:test';
+import {createHash} from 'node:crypto';
 import assert from 'node:assert/strict';
 import {spawnSync} from 'node:child_process';
 import {mkdtemp,mkdir,chmod,rm} from 'node:fs/promises';
@@ -47,7 +48,7 @@ function fakeStorageTar(){
    bucket:'synthetic',path:'dummy/test.txt',id:'fake',
    size:item.length,updated_at:'2026-11-06T13:00:00Z',
    archive_name:'objects/000001.bin',
-   sha256:(awaitedHash(item))
+   sha256:createHash('sha256').update(item).digest('hex')
   }],
   object_count:1,declared_total_bytes:item.length,
   inventory_rechecked:true,restore_verified:false
@@ -59,13 +60,6 @@ function fakeStorageTar(){
  }
  return Buffer.concat([entry('objects/000001.bin',item),
   entry('objects/index.json',idx),Buffer.alloc(1024)]);
-}
-function awaitedHash(bytes){
- const {createHash}=requireNever();
- return createHash('sha256').update(bytes).digest('hex');
-}
-function requireNever(){
- throw new Error('unreachable');
 }
 test('MVP273: real ephemeral PG17 replays age SQL streams, never publishes ports',
  {skip:process.env.COTIRONDA_MVP273_REAL_DOCKER!=='true'},async()=>{
