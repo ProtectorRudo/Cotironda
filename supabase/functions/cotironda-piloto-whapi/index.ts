@@ -21,6 +21,7 @@ import {isWhapiStatusEvent,parseWhapiDirectStatuses} from './delivery-status.ts'
 import {checkSupplierTextSource} from './supplier-source-text.ts';
 import {checkSupplierOfficeSource} from './supplier-source-office.ts';
 import {checkSupplierPdfSource} from './supplier-source-pdf.ts';
+import {checkSupplierImageSourceMvp251} from './supplier-source-image-mvp251.ts';
 import {proposeDocumentAI,documentFailureCode} from './document-ai-draft.ts';
 import {promoteVerifiedSupplierQuote} from './supplier-role-hint.ts';
 import {recoverOneStoredDocument} from './private-document-recovery.ts';
@@ -935,6 +936,9 @@ async function respond(req:Request):Promise<Response>{
                       // require review rather than trusting two model reads.
                       const checked=downloadedForReview.mime==='application/pdf'
                         ?await checkSupplierPdfSource(downloadedForReview,proposal)
+                        :downloadedForReview.mime.startsWith('image/')
+                          ?await checkSupplierImageSourceMvp251(
+                            downloadedForReview,proposal,corroboration)
                         :downloadedForReview.mime.includes(
                           'openxmlformats-officedocument')
                           ?await checkSupplierOfficeSource(downloadedForReview,proposal)

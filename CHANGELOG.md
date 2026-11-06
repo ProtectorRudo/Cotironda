@@ -1,3 +1,9 @@
+## 2026-11-06 — MVP251: revisión segura de presupuestos fotografiados
+
+- Las imágenes JPEG/PNG/WebP recibidas por Whapi ahora tienen diagnóstico explícito en ingreso y recuperación: MIME/firma/hash, coherencia entre dos lecturas, PII y diferencias económicas. Conserva todo en el ámbito privado.
+- Una fotografía visualmente coherente NO pasa a fuente independiente verificada: nunca autoriza publicar, rankear ni revelar contacto. Los PDF escaneados siguen pendientes de corroboración visual independiente.
+- Pruebas Node 22 y decisión 375; solo desarrollo, sin despliegues ni envíos.
+
 ## 2026-11-06 — Integración de desarrollo IA Central etapas 1–3 (contrato unificado)
 
 - MVP250 (#630) integrado en la rama de desarrollo; marcas comerciales de material delante del rubro conservan filtros de PII, SHA, permisos y doble lectura.
