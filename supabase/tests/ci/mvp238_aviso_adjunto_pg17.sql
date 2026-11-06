@@ -31,6 +31,13 @@ CREATE TABLE cotironda_piloto_privado.ai_supplier_links_mvp225(
  CONSTRAINT ai_supplier_links_mvp225_association_check
  CHECK(association IN('quoted_whapi_id','single_active_round')));
 CREATE TABLE cotironda_piloto_privado.ai_supplier_review_mvp227(message_hmac text PRIMARY KEY);
+CREATE TABLE cotironda_piloto_privado.ai_supplier_unresolved_mvp237(
+ message_hmac text PRIMARY KEY,supplier_key text,source_sha256 text,
+ kind text,state text CHECK(state IN('ambiguous_round','not_matched',
+ 'media_context_conflict')),candidate_count integer,
+ association_method text CHECK(association_method IN('quoted_whapi_id',
+ 'single_active_round')),recorded_at timestamptz DEFAULT clock_timestamp()
+);
 \ir ../../piloto/mvp238_aviso_proveedor_adjunto_una_ronda.sql
 
 INSERT INTO cotironda_piloto_privado.participants VALUES
@@ -204,5 +211,17 @@ BEGIN
  IF r->>'state' NOT IN ('context_blocked','ambiguous')
  THEN RAISE EXCEPTION 'mvp238 new invitation ignored: %',r;END IF;
 END $new_invite$;
-SELECT 'PASS MVP238: SHA, sender, exact round, one-use, replay, double context, interleaving, new dispatch, ACL' as result;
+DO $ledger$
+DECLARE n integer;
+BEGIN
+ SELECT count(*) INTO n FROM cotironda_piloto_privado.ai_supplier_unresolved_mvp237
+ WHERE state='context_blocked' AND
+ message_hmac IN(repeat('e',64),repeat('4',64),repeat('6',64))
+ AND association_method='prior_supplier_preamble'
+ AND source_sha256=repeat('f',64);
+ IF n<>3 THEN RAISE EXCEPTION 'mvp238 ambiguous media not audited privately: %',n;END IF;
+ IF (SELECT count(*) FROM cotironda_piloto_privado.ai_supplier_unresolved_mvp237)<>3
+ THEN RAISE EXCEPTION 'mvp238 ledger unexpected records';END IF;
+END $ledger$;
+SELECT 'PASS MVP238: SHA, sender, exact round, one-use, replay, double context, interleaving, new dispatch, private ledger and ACL' as result;
 ROLLBACK;
