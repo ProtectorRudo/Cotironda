@@ -1,3 +1,9 @@
+## 2026-11-06 — MVP245: integrar archivos corroborados al mismo motor IA Central (solo desarrollo)
+
+- El documento del proveedor ya archivado y con SHA binario verificado pasa del lector privado existente al análisis comercial IA Central **solo** cuando su fuente PDF/Excel/Word/TXT obtuvo cobertura independiente de cada renglón e importe. No se promocionan fotografías ni formatos que carecen de prueba original.
+- Un nuevo RPC privado enlaza media+SHA+proveedor consentido+invitación Whapi+misma ronda, reserva con cuota y guarda el resumen anónimo en la tabla que ya consulta el comprador por rubro. Se reutiliza el finalizador MVP227 preservando texto y se comparten los mismos cálculos y proyección sin contacto.
+- Entrada documental fail-closed ante dos lecturas divergentes, números no sustentados, fuente no verificada, imagen escaneada, duplicación o timeout. Flags adicionales OFF, sin desplegar piloto/producción ni enviar WhatsApps. Pruebas PG17/Node y decisión 368. La etapa 3 queda ABIERTA hasta E2E real y cobertura de imágenes.
+
 ## 2026-11-06 — MVP244: detectar líneas monetarias omitidas del presupuesto (etapa 3)
 
 - Una cotización interpretada ya no puede acreditarse económicamente si el original muestra un importe explícito en materiales, pallets, flete o descuento que no aparece en las líneas citadas. Se comparan frecuencias de importes literales y se detectan duplicados inventados.

@@ -202,8 +202,24 @@ CREATE TABLE cotironda_piloto_privado.media_archive_mvp095(
  message_hmac text PRIMARY KEY REFERENCES cotironda_piloto_privado.whapi_inbox(message_hmac),
  chat_hmac text NOT NULL,participant_key text NOT NULL,
  state text NOT NULL,content_sha256 text NOT NULL,
- request_id uuid REFERENCES cotironda_piloto_privado.requests(id)
+ request_id uuid REFERENCES cotironda_piloto_privado.requests(id),
+ mime text,proposal jsonb
 );
+CREATE TABLE cotironda_piloto_privado.supplier_media_quotes_mvp098(
+ message_hmac text PRIMARY KEY
+  REFERENCES cotironda_piloto_privado.media_archive_mvp095(message_hmac),
+ request_id uuid,supplier_key text,source_sha256 text,
+ state text,line_count smallint
+);
+CREATE TABLE cotironda_piloto_privado.supplier_source_checks_mvp106(
+ message_hmac text PRIMARY KEY
+ REFERENCES cotironda_piloto_privado.supplier_media_quotes_mvp098(message_hmac),
+ source_sha256 text,model_line_count smallint,
+ state text,reason text
+);
+ALTER TABLE cotironda_piloto_privado.media_archive_mvp095 ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cotironda_piloto_privado.supplier_media_quotes_mvp098 ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cotironda_piloto_privado.supplier_source_checks_mvp106 ENABLE ROW LEVEL SECURITY;
 \ir ../../piloto/mvp222_ia_despacho_seguro_sin_activar.sql
 \ir ../../piloto/mvp223_ia_buyer_dispatch_lookup_private.sql
 \ir ../../piloto/mvp226_ia_central_ingesta_durable.sql
@@ -219,6 +235,7 @@ CREATE TABLE cotironda_piloto_privado.buyer_tracking_mvp091(
 );
 \ir ../../piloto/mvp225_asociar_presupuestos_ia_central_solo_piloto.sql
 \ir ../../piloto/mvp227_presupuestos_rubros_ia_privados.sql
+\ir ../../piloto/mvp245_media_quote_ia_central_verified.sql
 CREATE TRIGGER enqueue_on_invitation
  AFTER INSERT ON cotironda_piloto_privado.invitations
  FOR EACH ROW EXECUTE FUNCTION cotironda_piloto_privado.queue_invitation_whapi_v1();
@@ -556,5 +573,108 @@ BEGIN
   'public.cotironda_piloto_ia_buyer_rubros_mvp227(text)','EXECUTE')
  THEN RAISE EXCEPTION 'mvp227_public_acl_failed';END IF;
 END $mvp227$;
+
+DO $mvp245$
+DECLARE rid uuid;response jsonb; report jsonb; proof jsonb;
+BEGIN
+ SELECT request_id INTO rid
+ FROM cotironda_piloto_privado.ai_supplier_links_mvp225
+ WHERE message_hmac=repeat('9',64);
+ IF rid IS NULL THEN RAISE EXCEPTION 'mvp245_missing_supplier_media_link';END IF;
+ -- This media already linked to Nahuel's accepted WhatsApp invitation
+ -- in the MVP225 test above. The digest is BINARY, NOT the inbox plaintext.
+ UPDATE cotironda_piloto_privado.media_archive_mvp095
+ SET mime='application/pdf',
+     proposal=jsonb_build_object('status','review_required',
+       'kind','supplier_quote','lines',jsonb_build_array(
+         jsonb_build_object('original_description','Cemento CPC 50 kg')))
+ WHERE message_hmac=repeat('9',64);
+ INSERT INTO cotironda_piloto_privado.supplier_media_quotes_mvp098(
+ message_hmac,request_id,supplier_key,source_sha256,state,line_count)
+ VALUES(repeat('9',64),rid,'corralon_nahuel',repeat('b',64),
+ 'awaiting_fidelity_check',1);
+ INSERT INTO cotironda_piloto_privado.supplier_source_checks_mvp106(
+ message_hmac,source_sha256,model_line_count,state,reason)
+ VALUES(repeat('9',64),repeat('b',64),1,'needs_source_review','unresolved');
+
+ -- Unchecked, wrong sender and wrong hash must never reserve AI.
+ response:=public.cotironda_piloto_ia_reserve_media_mvp245(
+  repeat('9',64),repeat('2',64),repeat('b',64),1);
+ IF response->>'state'<>'not_eligible'
+ THEN RAISE EXCEPTION 'mvp245_unverified_pdf_was_accepted';END IF;
+ UPDATE cotironda_piloto_privado.supplier_source_checks_mvp106
+ SET state='source_text_covered',reason='covered'
+ WHERE message_hmac=repeat('9',64);
+ IF public.cotironda_piloto_ia_reserve_media_mvp245(
+   repeat('9',64),repeat('3',64),repeat('b',64),1)->>'state'<>'not_eligible'
+ OR public.cotironda_piloto_ia_reserve_media_mvp245(
+   repeat('9',64),repeat('2',64),repeat('a',64),1)->>'state'<>'not_eligible'
+ OR public.cotironda_piloto_ia_reserve_media_mvp245(
+   repeat('9',64),repeat('2',64),repeat('b',64),2)->>'state'<>'not_eligible'
+ THEN RAISE EXCEPTION 'mvp245_foreign_sender_digest_or_line_count_accepted';END IF;
+ UPDATE cotironda_piloto_privado.media_archive_mvp095
+ SET mime='image/png' WHERE message_hmac=repeat('9',64);
+ IF public.cotironda_piloto_ia_reserve_media_mvp245(
+   repeat('9',64),repeat('2',64),repeat('b',64),1)->>'state'<>'not_eligible'
+ THEN RAISE EXCEPTION 'mvp245_image_without_independent_source_accepted';END IF;
+ UPDATE cotironda_piloto_privado.media_archive_mvp095
+ SET mime='application/pdf' WHERE message_hmac=repeat('9',64);
+ response:=public.cotironda_piloto_ia_reserve_media_mvp245(
+   repeat('9',64),repeat('2',64),repeat('b',64),1);
+ IF response->>'state'<>'reserved'
+ OR response->>'source_sha256'<>repeat('b',64)
+ OR jsonb_array_length(response->'items')<>1
+ OR response->'items'->0->>'id'<>'item_2'
+ THEN RAISE EXCEPTION 'mvp245_wrong_round_items_%',response;END IF;
+ IF public.cotironda_piloto_ia_reserve_media_mvp245(
+   repeat('9',64),repeat('2',64),repeat('b',64),1)->>'state'<>'already_reserved'
+ THEN RAISE EXCEPTION 'mvp245_duplicate_cost';END IF;
+ report:=jsonb_build_object(
+ 'estado','verificada_para_comparacion',
+ 'moneda','ARS','iva','no_informado','flete','no_informado',
+ 'pago','no_informado',
+ 'rubros',jsonb_build_array(jsonb_build_object(
+   'rubro','pintura','solicitados',1,'respondidos',1,'cobertura','completa')),
+ 'precios',jsonb_build_array(jsonb_build_object(
+   'pedidoId','item_2','centavos','5500000','cantidad','5','unidad','l'))
+ );
+ IF public.cotironda_piloto_ia_finish_quote_mvp227(
+   repeat('9',64),repeat('2',64),'verified','source_and_math_checked',
+   jsonb_set(report,'{precios,0,pedidoId}','"item_999"'::jsonb)
+  )->>'state'<>'price_without_request_source'
+ THEN RAISE EXCEPTION 'mvp245_cross_round_price_accepted';END IF;
+ IF public.cotironda_piloto_ia_finish_quote_mvp227(
+   repeat('9',64),repeat('3',64),'verified','source_and_math_checked',report
+  )->>'state'<>'already_finalized_or_ineligible'
+ THEN RAISE EXCEPTION 'mvp245_other_supplier_finished_foreign_media';END IF;
+ IF public.cotironda_piloto_ia_finish_quote_mvp227(
+   repeat('9',64),repeat('2',64),'verified','source_and_math_checked',report
+  )->>'state'<>'saved_private'
+ THEN RAISE EXCEPTION 'mvp245_checked_media_not_finalized';END IF;
+ IF public.cotironda_piloto_ia_finish_quote_mvp227(
+   repeat('9',64),repeat('2',64),'verified','source_and_math_checked',report
+  )->>'state'<>'already_finalized_or_ineligible'
+ THEN RAISE EXCEPTION 'mvp245_duplicate_finalization';END IF;
+ INSERT INTO cotironda_piloto_privado.buyer_tracking_mvp091(
+ request_id,token_hash,expires_at)
+ VALUES(rid,repeat('8',64),clock_timestamp()+interval '7 days');
+ response:=public.cotironda_piloto_ia_buyer_rubros_mvp227(repeat('8',64));
+ IF response->>'state'<>'rubros_por_articulo'
+ OR jsonb_array_length(response->'ofertas')<>2
+ OR response::text ~ '(corralon_ailin|corralon_nahuel|chat_hmac|message_hmac|source_sha256)'
+ THEN RAISE EXCEPTION 'mvp245_media_buyer_anon_projection_failed_%',response;END IF;
+ IF has_function_privilege('anon',
+  'public.cotironda_piloto_ia_reserve_media_mvp245(text,text,text,integer)','EXECUTE')
+ OR has_function_privilege('authenticated',
+  'public.cotironda_piloto_ia_reserve_media_mvp245(text,text,text,integer)','EXECUTE')
+ OR NOT has_function_privilege('service_role',
+  'public.cotironda_piloto_ia_reserve_media_mvp245(text,text,text,integer)','EXECUTE')
+ THEN RAISE EXCEPTION 'mvp245_exposed_media_reservation';END IF;
+ -- Source+recipient checks remain for both legacy text and media; nothing sent.
+ IF (SELECT count(*) FROM cotironda_piloto_privado.ai_supplier_review_mvp227
+     WHERE state='verified')<>2
+ THEN RAISE EXCEPTION 'mvp245_wrong_verified_count';END IF;
+ RAISE NOTICE 'PASS MVP245: linked, SHA-checked media, no image guessing, two anonymous offers';
+END $mvp245$;
 
 ROLLBACK;
