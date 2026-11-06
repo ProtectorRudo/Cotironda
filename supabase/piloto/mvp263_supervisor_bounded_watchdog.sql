@@ -90,8 +90,11 @@ BEGIN
  IF NOT FOUND OR NOT policy_.enabled THEN
   RETURN jsonb_build_object('state','disabled','messages_sent',false,
    'external_api_calls',0,'automatic_resend_allowed',false);END IF;
+ -- Compare fixed UTC buckets, not elapsed wall time. A job starting a few
+ -- seconds late must NOT cause the next quarter-hour cron to be skipped.
  IF policy_.last_run_at IS NOT NULL AND
-    policy_.last_run_at>now_-interval '15 minutes' THEN
+    date_bin('15 minutes',policy_.last_run_at,
+     '2000-01-01 00:00:00+00'::timestamptz)>=bucket_ THEN
   RETURN jsonb_build_object('state','interval_guard','messages_sent',false,
    'external_api_calls',0,'automatic_resend_allowed',false);END IF;
  SELECT count(*) INTO run_count_
