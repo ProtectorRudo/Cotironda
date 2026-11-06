@@ -1,3 +1,9 @@
+## 2026-11-06 — MVP240: smoke real de etapa 2 sin envíos ni datos de prueba persistentes
+
+- Ejecutado directamente en `cotironda-piloto` un control transaccional `BEGIN/ROLLBACK` con HMAC ficticios. Verifica las seis RPC de asociación/aclaración: todas rechazan fuentes no autorizadas; permisos públicos denegados, RLS y tres gates OFF.
+- La inspección real de triggers de `invitations` demostró que insertar dos rondas ficticias podría activar automatismos de despacho. Queda expresamente prohibido usar esa vía como prueba inocua; los casos sintéticos complejos continúan en PG17 aislado.
+- El piloto conserva tres rondas históricas y no recibió nuevos mensajes desde el 05/11/2026. Etapa 2 integrada técnicamente pero no cerrada sin E2E con WhatsApps reales y autorizados. Docs/363; sin cambios de producción.
+
 ## 2026-11-06 — Etapa 2 IA Central: integración MVP236-239 en piloto (sin WhatsApps)
 
 - Cuatro migraciones SQL instaladas en `cotironda-piloto` y Edge Whapi **v54 ACTIVE** con 37 archivos, código coincidente con la rama de desarrollo. Los PR #614 y #617 están integrados; los PR #615/#616 quedaron incluidos y cerrados sin duplicar cambios.
