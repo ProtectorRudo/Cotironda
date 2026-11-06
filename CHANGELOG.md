@@ -1,3 +1,8 @@
+## 2026-11-06 — MVP247: cargos y descuentos sin datos unitarios ficticios
+
+- El puente de documentos corroborados reconoce cargos de flete con solo total, descuentos sin cantidad y pallets sin cargo. Ningún renglón extra se descarta porque no tenga columnas propias de materiales; se preserva literal en la lectura comercial sin inventar precio unitario o cantidad.
+- Se mantiene la exigencia de fuente SHA y autorización del publicador privado. Pruebas de integridad y decisión 370. Solo desarrollo, sin despliegue ni mensajes.
+
 ## 2026-11-06 — MVP246: sin publicación documental acreditada no hay lectura económica IA Central
 
 - El puente de archivos MVP245 queda condicionado a la publicación anónima **ya aprobada y persistida** por el verificador legado MVP107; cobertura textual sola es insuficiente. SQL vuelve a exigir la misma fuente/empresa/ronda/SHA, dos lecturas concordantes, importes balanceados y consentimiento vigente. El finalizador repite la guarda antes de guardar cualquier precio.

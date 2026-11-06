@@ -79,7 +79,6 @@ test('MVP245: únicamente archivo con fuente, líneas y hash corroborados',()=>{
   {mime:'application/vnd.ms-excel'},
   {draft:{...draft,unanswered:['cell blurry']}},
   {draft:{...draft,lines:[{...draft.lines[0],ambiguity:'blurred'}]}},
-  {draft:{...draft,lines:[{...draft.lines[0],unit_price:null}]}},
   {draft:{...draft,lines:[{...draft.lines[0],quantity:null}]}},
   {draft:{...draft,lines:[{...draft.lines[0],original_description:'Cemento AR$ 8.900'}]}}
  ]){
@@ -96,6 +95,50 @@ test('MVP246: notas comerciales multilínea se conservan sin cortes',()=>{
  assert.ok(source.includes('Pago por transferencia'));
  const invalid={...draft,requested_delivery_note:'IVA incluido\u0000Flete gratis'};
  assert.equal(fuenteDeDocumentoMvp245({...args,draft:invalid}),null);
+});
+test('MVP247: flete con precio total sin unitario, descuento y pallet sin cargo',()=>{
+ const cargo={
+  ...draft,
+  lines:[...draft.lines,
+   {original_description:'Flete hasta la obra',
+    quantity:null,unit:null,unit_price:null,line_total:'AR$ 15.000',
+    evidence_location:'página 1, fila 4',ambiguity:null},
+   {original_description:'Descuento especial',
+    quantity:null,unit:null,unit_price:null,line_total:'-AR$ 3.000',
+    evidence_location:'página 1, fila 5',ambiguity:null},
+   {original_description:'Pallet retornable sin cargo',
+    quantity:null,unit:null,unit_price:null,line_total:null,
+    evidence_location:'página 1, fila 6',ambiguity:null}
+  ],total_declared:'AR$ 190.000'
+ };
+ const text=fuenteDeDocumentoMvp245({...args,draft:cargo,
+   comprobacion:{...check,lines:4}});
+ assert.equal(typeof text,'string');
+ assert.ok(text.includes('Flete hasta la obra total: AR$ 15.000'));
+ assert.ok(text.includes('Descuento especial total: -AR$ 3.000'));
+ assert.ok(text.includes('Pallet retornable sin cargo'));
+ assert.equal(text.includes('Flete hasta la obra unitario:'),false);
+ assert.equal(text.includes('Pallet retornable sin cargo total:'),false);
+ assert.ok(text.includes('TOTAL GENERAL AR$ 190.000'));
+});
+test('MVP247: material con solo total se conserva sin crear precio unitario',()=>{
+ const pricedOnlyTotal={...draft,
+  lines:[{...draft.lines[0],unit_price:null}]};
+ const text=fuenteDeDocumentoMvp245({...args,draft:pricedOnlyTotal});
+ assert.equal(typeof text,'string');
+ assert.ok(text.includes('total: AR$ 178.000'));
+ assert.equal(text.includes('unitario:'),false);
+});
+test('MVP247: no inventar precio unitario si falta unidad o cantidad',()=>{
+ for(const changes of [
+  {quantity:null,unit:'bolsa',unit_price:'AR$ 100'},
+  {quantity:'3',unit:null,unit_price:'AR$ 100'},
+  {quantity:null,unit:null,unit_price:'AR$ 100'}
+ ]){
+  const malformed={...draft,lines:[
+   {...draft.lines[0],...changes}]};
+  assert.equal(fuenteDeDocumentoMvp245({...args,draft:malformed}),null);
+ }
 });
 test('MVP245: soporta PDF, XLSX, DOCX, CSV y TXT corroborados',()=>{
  for(const mime of [
