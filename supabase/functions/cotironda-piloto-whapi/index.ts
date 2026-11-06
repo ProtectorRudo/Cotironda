@@ -689,6 +689,7 @@ async function respond(req:Request):Promise<Response>{
       p_quoted_whapi_id:supplierQuotedId,p_original_text:body
     });
     if(linked.error)return json(503,'ai_supplier_quote_link_unavailable');
+    if(linked.data?.state==='ambiguous_round')clarificationSourceHmac=messageHash;
     if(linked.data?.state==='linked_for_semantic_review'){
       if(attachmentNotice){
         // Un aviso no es cotización. Asociar el siguiente archivo a la
@@ -788,6 +789,8 @@ async function respond(req:Request):Promise<Response>{
         }
         // Si hay avisos ambiguos, se conserva el archivo sin asignarlo.
         // Un mensaje citado se resuelve por su propio identificador Whapi.
+        if(['ambiguous','context_blocked'].includes(attachmentState??''))
+          clarificationSourceHmac=messageHash;
         if(!['linked_from_preamble','already_attached',
              'ambiguous','context_blocked',
              'context_consumed'].includes(attachmentState??'')){
@@ -796,6 +799,8 @@ async function respond(req:Request):Promise<Response>{
             p_quoted_whapi_id:supplierQuotedId,p_original_text:null
           });
           if(linked.error)return json(503,'ai_supplier_media_link_unavailable');
+          if(linked.data?.state==='ambiguous_round')
+            clarificationSourceHmac=messageHash;
         }
       }
       // The model only proposes a PRIVATE DRAFT; cannot create an invitation,
