@@ -85,12 +85,14 @@ export function instrumentoOpenAiMvp264(args:{
    raw=JSON.parse(body);
   }catch{
    await finish('unmetered','response_read_failed',null);
-   return response;
+   throw Error('mvp264_unreadable_response');
   }
   const usage=usageOf(raw);
   if(!usage){
-   await finish('unmetered','usage_missing',null);
-   return response;
+   await finish('unmetered',
+    isObj(raw)&&Object.hasOwn(raw,'usage')?'invalid_usage':'usage_missing',null);
+   // Fail closed: never treat an unmetered model output as a free response.
+   throw Error('mvp264_usage_not_observed');
   }
   const digest=await sha(usage.id);
   await finish('observed',null,{...usage,digest});
