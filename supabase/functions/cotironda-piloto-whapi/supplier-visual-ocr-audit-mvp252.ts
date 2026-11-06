@@ -25,6 +25,9 @@ export type VisualAuditMvp252=Readonly<{
  sourceVerified:false;publicationAllowed:false;rankingAllowed:false;
  provider:'google_cloud_vision'|null;
  pages:number|null;
+ /** Digest of independently read text, never the text itself. */
+ ocrTextSha256:string|null;
+ minConfidenceMilli:number|null;
 }>;
 type Args=Readonly<{
  source:DownloadedMedia;primary:DocumentDraft|null;secondary:DocumentDraft|null;
@@ -35,11 +38,14 @@ type Args=Readonly<{
 const HASH=/^[a-f0-9]{64}$/u;
 const allowed=new Set(['image/jpeg','image/png','image/webp','application/pdf']);
 const audit=(state:Status,reason:string,source:DownloadedMedia|null,
- provider:VisualAuditMvp252['provider']=null,pages:number|null=null):
+ provider:VisualAuditMvp252['provider']=null,pages:number|null=null,
+ evidence:{ocrTextSha256:string;minConfidenceMilli:number}|null=null):
  VisualAuditMvp252=>Object.freeze({
   state,reason,sourceSha256:HASH.test(source?.sha256??'')?source!.sha256:null,
   sourceVerified:false,publicationAllowed:false,rankingAllowed:false,
-  provider,pages
+  provider,pages,
+  ocrTextSha256:evidence?.ocrTextSha256??null,
+  minConfidenceMilli:evidence?.minConfidenceMilli??null
  });
 
 export async function auditarFuenteVisualOCRMvp252(a:Args):
@@ -67,6 +73,7 @@ export async function auditarFuenteVisualOCRMvp252(a:Args):
    return audit('needs_review',conservative.reason,a.source);
  }
  let text:string;
+ let confidence=0;
  try{
   const recognized=await leerOCRGoogleMvp252(a.source,{
    enabled:true,consented:true,
@@ -77,6 +84,7 @@ export async function auditarFuenteVisualOCRMvp252(a:Args):
      recognized.mime!==a.source.mime||recognized.pages!==pages)
    return audit('needs_review','ocr_source_mismatch',a.source);
   text=recognized.text;
+  confidence=recognized.minConfidence;
  }catch(e){
   const code=e instanceof Error&&/^visual_ocr_[a-z_]+$/u.test(e.message)
    ?e.message:'visual_ocr_unavailable';
@@ -85,10 +93,17 @@ export async function auditarFuenteVisualOCRMvp252(a:Args):
  const checked=checkSupplierTextSource({
   mime:'text/plain',bytes:new TextEncoder().encode(text),sha256:a.source.sha256
  },a.primary!);
- // No exposición de texto OCR, de importes ni de identidad en salida o logs.
- return checked.state==='source_text_covered'&&
-   checked.sourceSha256===a.source.sha256
+ // Sin texto OCR, importes ni identidad en la respuesta o logs.
+ const verified=checked.state==='source_text_covered'&&
+   checked.sourceSha256===a.source.sha256;
+ const evidence=verified?{
+  ocrTextSha256:[...new Uint8Array(await crypto.subtle.digest(
+   'SHA-256',new TextEncoder().encode(text)))]
+   .map(b=>b.toString(16).padStart(2,'0')).join(''),
+  minConfidenceMilli:Math.floor(confidence*1000)
+ }:null;
+ return verified
    ?audit('source_ocr_covered_private','ocr_text_lines_covered',a.source,
-      'google_cloud_vision',pages)
+      'google_cloud_vision',pages,evidence)
    :audit('needs_review',checked.reason,a.source,'google_cloud_vision',pages);
 }
