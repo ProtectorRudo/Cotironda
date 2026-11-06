@@ -1,3 +1,9 @@
+## 2026-11-06 — Etapa 6 / MVP260: memoria como guardia de contexto de proveedor
+
+- IA Central puede consultar un snapshot privado por fuente/ronda/proveedor, cruzar sus rubros y cantidades de artículos con el pedido original y bloquear una lectura de IA si la memoria contradice el alcance SQL. No introduce precios, marcas ni condiciones de la memoria en la cotización.
+- La memoria solo se actualiza luego de guardar una cotización en estado `verified`; el guardado idempotente de evidencia y la conciliación de respuestas inciertas no reanalizan presupuestos ni reenvían WhatsApps. Dos rutas del webhook llevan bandera `COTIRONDA_PILOT_COMMERCIAL_MEMORY_ENABLED` **OFF por defecto**.
+- RPC service_role-only, PG17 transaccional y pruebas Node, ADR384. **Solo desarrollo; sin cambios en PILOTO o producción.**
+
 ## 2026-11-06 — Etapa 6 / MVP259: memoria comercial verificada y aislada
 
 - Contexto privado por ronda y participante, respaldado por la fuente original del pedido o una revisión verificada del presupuesto del proveedor. Guarda referencias de procedencia con SHA, no texto de conversación, teléfonos ni importes.

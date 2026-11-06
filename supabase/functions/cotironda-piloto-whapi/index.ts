@@ -657,6 +657,7 @@ async function respond(req:Request):Promise<Response>{
       const model=modelEnv==='gpt-6.1-sol'?'gpt-6.1-sol':'gpt-6-luna';
       const processed=await procesarPresupuestoCentralMvp227({
        habilitado:true,webhookAutenticado:true,
+       commercialMemoryEnabled:Deno.env.get('COTIRONDA_PILOT_COMMERCIAL_MEMORY_ENABLED')==='true',
        messageHmac:settled.data.source_hmac,chatHmac:chatHash,
        apiKey:Deno.env.get('COTIRONDA_PILOT_OPENAI_API_KEY')??'',
        model,
@@ -725,6 +726,7 @@ async function respond(req:Request):Promise<Response>{
         const model=modelEnv==='gpt-6.1-sol'?'gpt-6.1-sol':'gpt-6-luna';
         const processed=await procesarPresupuestoCentralMvp227({
           habilitado:true,webhookAutenticado:true,
+          commercialMemoryEnabled:Deno.env.get('COTIRONDA_PILOT_COMMERCIAL_MEMORY_ENABLED')==='true',
           messageHmac:messageHash,chatHmac:chatHash,
           apiKey:Deno.env.get('COTIRONDA_PILOT_OPENAI_API_KEY')??'',
           model,
