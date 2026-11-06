@@ -145,7 +145,7 @@ DO $two$
 DECLARE r jsonb;
 BEGIN
  r:=public.cotironda_piloto_ia_attach_supplier_media_mvp238(repeat('e',64),repeat('9',64));
- IF r->>'state' NOT IN ('no_context','ambiguous') THEN
+ IF r->>'state' NOT IN ('context_blocked','ambiguous') THEN
   RAISE EXCEPTION 'mvp238 guessed between two messages: %',r;END IF;
  IF (SELECT request_id FROM cotironda_piloto_privado.whapi_inbox WHERE message_hmac=repeat('e',64)) IS NOT NULL
  THEN RAISE EXCEPTION 'mvp238 assigned despite two pending notices'; END IF;
@@ -173,7 +173,7 @@ DO $interleaved$
 DECLARE r jsonb;
 BEGIN
  r:=public.cotironda_piloto_ia_attach_supplier_media_mvp238(repeat('4',64),repeat('9',64));
- IF r->>'state' NOT IN ('no_context','ambiguous')
+ IF r->>'state' NOT IN ('context_blocked','ambiguous')
  THEN RAISE EXCEPTION 'mvp238 ignored intervening message: %',r;END IF;
 END $interleaved$;
 DELETE FROM cotironda_piloto_privado.ai_supplier_preambles_mvp238
@@ -201,7 +201,7 @@ DO $new_invite$
 DECLARE r jsonb;
 BEGIN
  r:=public.cotironda_piloto_ia_attach_supplier_media_mvp238(repeat('6',64),repeat('9',64));
- IF r->>'state' NOT IN ('no_context','ambiguous')
+ IF r->>'state' NOT IN ('context_blocked','ambiguous')
  THEN RAISE EXCEPTION 'mvp238 new invitation ignored: %',r;END IF;
 END $new_invite$;
 SELECT 'PASS MVP238: SHA, sender, exact round, one-use, replay, double context, interleaving, new dispatch, ACL' as result;
