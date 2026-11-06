@@ -93,7 +93,7 @@ CREATE OR REPLACE FUNCTION public.cotironda_piloto_ia_attach_supplier_media_mvp2
 ) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
 AS $attach$
 DECLARE v_file record; v_context record; v_candidate_count integer;
- v_context_hmac text; v_rows integer;
+ v_context_hmac text; v_rows integer; v_recent_count integer;
 BEGIN
  IF p_media_hmac IS NULL OR p_media_hmac !~ '^[a-f0-9]{64}$'
  OR p_chat_hmac IS NULL OR p_chat_hmac !~ '^[a-f0-9]{64}$'
@@ -190,8 +190,18 @@ BEGIN
      AND newer.sent_at<=v_file.received_at
   );
  IF v_candidate_count<>1 THEN
+  -- Si hubo un aviso previo pero surgió un conflicto, NO caer al enlace
+  -- genérico de una ronda: podría ser otra cotización distinta.
+  SELECT count(*) INTO v_recent_count
+  FROM cotironda_piloto_privado.ai_supplier_preambles_mvp238 p
+  WHERE p.supplier_key=v_file.participant_key AND p.chat_hmac=p_chat_hmac
+   AND p.attachment_hmac IS NULL
+   AND p.received_at<v_file.received_at
+   AND p.received_at>=v_file.received_at-interval '24 hours';
   RETURN jsonb_build_object('state',
-   CASE WHEN v_candidate_count>1 THEN 'ambiguous' ELSE 'no_context' END);
+   CASE WHEN v_candidate_count>1 THEN 'ambiguous'
+    WHEN v_recent_count>0 THEN 'context_blocked'
+    ELSE 'no_context' END);
  END IF;
  SELECT p.request_id,p.supplier_key,p.attachment_hmac
  INTO v_context FROM cotironda_piloto_privado.ai_supplier_preambles_mvp238 p
