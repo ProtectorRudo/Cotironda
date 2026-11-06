@@ -42,6 +42,10 @@ repetir la ronda ni etiquetar el archivo manualmente.
   `SECURITY DEFINER`, `search_path=''` y ejecución solo por `service_role`.
 - El RPC original MVP225 sigue resolviendo archivos sin aviso y con
   ID citado. Si hay dos avisos válidos no se fuerza una ronda.
+- Una asociación bloqueada por aviso anterior queda registrada una sola
+  vez en `ai_supplier_unresolved_mvp237` con estado
+  `context_blocked`, SHA y proveedor interno; no guarda precios,
+  teléfono ni compradores, y no reintenta envío alguno.
 - La migración amplía el enum CHECK de `association`, sin reescribir
   presupuestos históricos.
 
