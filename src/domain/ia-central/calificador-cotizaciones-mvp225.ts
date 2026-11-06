@@ -68,10 +68,10 @@ export type ComparacionMvp225=Readonly<{
 }>;
 const ID=/^[a-zA-Z0-9_-]{2,80}$/u;
 const QTY=/^(?:0|[1-9]\d{0,7})(?:\.\d{1,3})?$/u;
-// Moneda expresamente identificada en el precio: no perder AR$/US$/USD
-// aunque el literal venga prefijado y debamos conservar la fuente exacta.
-const MONEY_PREFIX='(?:(?:AR\\$|US\\$|U\\$S|\\$)\\s*|(?:ARS|USD)\\s+)?';
-const CENTS=new RegExp('^'+MONEY_PREFIX+'(?:0|[1-9]\\d{0,8})(?:,\\d{1,2})?
+// Aceptar importes con símbolos comerciales expresos sin perder
+// la identidad de moneda: la acreditación ARS/USD es independiente.
+const CENTS=/^(?:(?:AR\$|US\$|U\$S|\$)\s*|(?:ARS|USD)\s+)?(?:0|[1-9]\d{0,8})(?:,\d{1,2})?$/iu;
+const GROUPED=/^(?:(?:AR\$|US\$|U\$S|\$)\s*|(?:ARS|USD)\s+)?[1-9]\d{0,2}(?:\.\d{3})+(?:,\d{1,2})?$/iu;
 const TEXT=(s:unknown,max:number):s is string=>typeof s==='string'&&
  s.trim().length>0&&s.length<=max&&!/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/u.test(s);
 const unit=/^(bag|unit|box|kg|g|l|ml|m|m2|m3|roll|pack)$/u;
