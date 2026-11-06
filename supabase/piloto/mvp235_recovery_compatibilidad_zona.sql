@@ -90,7 +90,7 @@ BEGIN
     'pending_quotes',v_reserved_supplier,
     'pending_leases',v_leased_dispatch);
 END
-$function$
+$function$;
 
 REVOKE ALL ON FUNCTION cotironda_piloto_privado.ai_central_reconcile_mvp230(boolean,integer) FROM PUBLIC,anon,authenticated;
 COMMENT ON FUNCTION cotironda_piloto_privado.ai_central_reconcile_mvp230(boolean,integer)
