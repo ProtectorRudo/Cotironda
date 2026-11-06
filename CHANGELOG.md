@@ -1,3 +1,8 @@
+## 2026-11-06 — MVP250: marcas comerciales reconocidas en documentos multirrubro
+
+- El publicador privado de presupuestos acepta algunas marcas comerciales conocidas delante de la categoría del material: «Sinteplast Hidrofugo», «Alba Pintura», «FV Grifería», etc. No acepta encabezados con nombres arbitrarios ni elimina controles de CUIT, WhatsApp, correo, razón social o URL.
+- Preserva la validación por SHA, la doble lectura, los totales, el consentimiento y el anonimato. Descripciones con marcas desconocidas quedan para revisión. Pruebas PostgreSQL 17 y decisión 373. Solo desarrollo.
+
 ## 2026-11-06 — MVP249: PDF con flete, descuentos y pallets sin unitario
 
 - El cotejador PDF independiente reconoce renglones de cargos sin cantidad ni unidad cuando realmente figuran así en el original, sin inventar precios unitarios. Rechaza importes que faltan, cifras de flete no justificadas, documentos escaneados y datos personales.
