@@ -40,7 +40,22 @@ como si fuera el nombre de una ciudad.
 
 ## Alcance y pendientes
 
-Desarrollo en rama: ninguna publicación ni cambio de producción.
-Para la prueba real faltan el despliegue autorizado, la verificación
-de que MVP233 esté instalado en `cotironda-piloto`, y el circuito
-WhatsApp desde pedido hasta presupuesto y ranking.
+## Publicación controlada del 5 de noviembre de 2026
+
+- Destino exclusivo: Supabase `cotironda-piloto` (`ilggkalaafhtiysyzlmg`).
+- Migración MVP233 instalada; el RPC y la tabla privada existen, RLS activo,
+  sin permiso EXECUTE para `anon` ni `authenticated`; `service_role`
+  conserva acceso.
+- Edge `cotironda-piloto-whapi` publicada como versión **53**. Se compararon
+  sus cuatro archivos alterados con la rama fuente; coincidencia exacta.
+- Tres controles privados OFF antes y después; sin invitar proveedores,
+  sin llamadas WhatsApp, sin nuevas rondas, 3 rondas históricas intactas.
+- Se corrigió adicionalmente el retorno de `already_consumed`,
+  `no_pending` y `ambiguous`: una localidad aislada no dispara un
+  pedido nuevo por accidente.
+- Verificados: CI normalización, regresión MVP233, Deno typecheck, permisos
+  de RPC y respuesta `disabled` de SQL con controles OFF.
+- **Pendiente** prueba completa E2E con WhatsApps firmados reales durante
+  una ventana autorizada; no se declara comprobado el comportamiento real
+  de IA Central de punta a punta.
+- Producción, Vercel y demás proyectos sin cambios.
