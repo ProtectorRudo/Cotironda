@@ -52,17 +52,27 @@ export function fuenteDeDocumentoMvp245(args:{
  const rows:string[]=[];
  for(const line of draft.lines){
   if(!sourceString(line.original_description,1000)||
-     !sourceString(line.quantity,30)||
-     !sourceString(line.unit,80)||
-     !sourceString(line.unit_price,80)||
-     !sourceString(line.line_total,80)||
+     (line.quantity!==null&&!sourceString(line.quantity,30))||
+     (line.unit!==null&&!sourceString(line.unit,80))||
+     (line.unit_price!==null&&!sourceString(line.unit_price,80))||
+     (line.line_total!==null&&!sourceString(line.line_total,80))||
      line.ambiguity!==null||
      MONETARY.test(line.original_description))
    return null;
-  // El unitario y el total están etiquetados, pero sus valores literales
-  // son exactamente los que fueron corroborados en el archivo.
-  rows.push([line.quantity,line.unit,line.original_description,
-   'unitario:',line.unit_price,'total:',line.line_total].join(' '));
+  // Un cargo adicional, descuento o pallet sin cargo puede tener SOLO
+  // importe final, o carecer de cantidad/precio. No exigir ni inventar
+  // un precio unitario de flete que el negocio nunca escribió.
+  // Si la IA declaró unitario, debe haber cantidad y unidad literales.
+  if(line.unit_price!==null&&
+     (line.quantity===null||line.unit===null))return null;
+  const literal=[
+   ...(line.quantity===null?[]:[line.quantity]),
+   ...(line.unit===null?[]:[line.unit]),
+   line.original_description,
+   ...(line.unit_price===null?[]:['unitario:',line.unit_price]),
+   ...(line.line_total===null?[]:['total:',line.line_total])
+  ];
+  rows.push(literal.join(' '));
  }
  const note=draft.requested_delivery_note;
  // Las notas del proveedor pueden ser varias líneas de IVA, flete, pago
