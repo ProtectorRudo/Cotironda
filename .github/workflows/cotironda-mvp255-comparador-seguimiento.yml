@@ -26,7 +26,7 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '22.16.0'
-      - name: Etapa 4: comparar solo importes autorizados y probar revocación de enlace
+      - name: 'Etapa 4: comparar solo importes autorizados y probar revocación de enlace'
         run: >-
           node --experimental-strip-types --test
           tests/unit/mvp255-seguimiento-comparador-rubros.test.mjs
