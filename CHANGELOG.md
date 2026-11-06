@@ -1,3 +1,8 @@
+## 2026-11-06 — MVP248: publicador comercial multirrubro con privacidad intacta
+
+- Amplía la admisión de descripciones documentales de un pequeño diccionario de corralón a familias de pintura, electricidad, sanitarios, construcción en seco, ferretería y extras comerciales, sin habilitar texto arbitrario ni borrar controles de PII.
+- El publicador MVP107/MVP135 conserva asociación por ronda, SHA binario, doble lectura, cálculos, privacidad y consentimiento. PostgreSQL 17 en transacción reversible y ACL del esquema privado. Solo desarrollo; no aplicado al piloto.
+
 ## 2026-11-06 — MVP247: cargos y descuentos sin datos unitarios ficticios
 
 - El puente de documentos corroborados reconoce cargos de flete con solo total, descuentos sin cantidad y pallets sin cargo. Ningún renglón extra se descarta porque no tenga columnas propias de materiales; se preserva literal en la lectura comercial sin inventar precio unitario o cantidad.
