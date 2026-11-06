@@ -1,3 +1,10 @@
+## 2026-11-06 — Etapa 7 / MVP264: contabilidad de tokens OpenAI y freno de incertidumbre
+
+- Registramos conteos `usage` realmente reportados por Responses API sobre una reserva IA Central acreditada, separando mensajes de comprador/proveedor. Incertidumbre HTTP, timeout o respuesta sin `usage` jamás equivale a consumo cero.
+- Tope privado por participante: 24 llamadas/24h y 200.000 tokens observados/24h, bloqueo de llamadas futuras si el consumo previo es desconocido, HMAC/fuente/consentimiento/rol validados y medición única por llamada. Tabla RLS y RPC `service_role`; sin texto, respuesta ni ID opaco sin hash.
+- Bandera `COTIRONDA_PILOT_AI_USAGE_TRACE_ENABLED` **OFF por defecto** en las rutas del comprador y proveedor. No se conoce aún costo monetario verificado ni hay conciliación contra factura: `monetary_cost=null`.
+- Pruebas PG17 reversibles y Node; decisión 388. **Solo desarrollo; sin instalar PILOTO, cron o envíos.**
+
 ## 2026-11-06 — Etapa 7 / MVP263: vigilancia interna programable y alertas sin duplicados
 
 - Supervisor SQL preparado para ejecutarse en intervalos de 15 minutos, **desactivado y sin cron instalado por defecto**. Política privada de máximo 1–96 ejecuciones por día UTC, bloqueo para concurrencia y resumen sin identidades por bloque de 15 minutos.
