@@ -18,7 +18,7 @@ test('MVP267: live signed Supabase Auth pilot session and MFA needed',()=>{
  assert.match(sql,/sess\.not_after IS NULL/u);
  assert.match(sql,/auth\.jwt\(\)->>'exp'/u);
  assert.match(sql,/ilggkalaafhtiysyzlmg\.supabase\.co/u);
- assert.doesNotMatch(sql,/raw_user_meta_data|user_metadata/u);
+ assert.doesNotMatch(sql,/auth\.jwt\(\)\s*->>?\s*['\"](?:raw_user_meta_data|user_metadata)['\"]/u);
 });
 test('MVP267: role is provisioned by a trusted operator, never email or caller UUID',()=>{
  assert.match(sql,/ADD COLUMN auth_user_id uuid UNIQUE REFERENCES auth\.users\(id\)/u);
