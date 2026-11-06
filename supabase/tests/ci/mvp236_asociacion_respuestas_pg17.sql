@@ -63,10 +63,10 @@ INSERT INTO cotironda_piloto_privado.whapi_inbox
 SELECT repeat(k,64),supplier,'corralon_ailin','text',now()-interval '2 minutes','needs_review',NULL,
  encode(sha256(convert_to('cemento 8000 bolsa','UTF8')),'hex')
  FROM (VALUES('d',repeat('b',64)),('e',repeat('b',64)),('f',repeat('b',64)),
-             ('g',repeat('c',64)),('h',repeat('b',64)),('i',repeat('b',64))) v(k,supplier);
+             ('0',repeat('c',64)),('1',repeat('b',64)),('2',repeat('b',64))) v(k,supplier);
 -- Alterar remitente del mensaje g a segundo proveedor; nunca usar la cita de Ailín.
 UPDATE cotironda_piloto_privado.whapi_inbox SET participant_key='corralon_nahuel'
- WHERE message_hmac=repeat('g',64);
+ WHERE message_hmac=repeat('0',64);
 
 DO $tests$
 DECLARE res jsonb; target uuid;
@@ -95,15 +95,15 @@ BEGIN
   OR res->>'association'<>'quoted_whapi_id'
  THEN RAISE EXCEPTION 'mvp236 quoted source mismatch: %',res; END IF;
  -- El segundo proveedor no puede robar un ID Whapi de Ailín.
- res:=public.cotironda_piloto_ia_link_supplier_mvp225(repeat('g',64),repeat('c',64),'whapi-ai-msg-12345','cemento 8000 bolsa');
+ res:=public.cotironda_piloto_ia_link_supplier_mvp225(repeat('0',64),repeat('c',64),'whapi-ai-msg-12345','cemento 8000 bolsa');
  IF res->>'state'<>'not_matched' THEN RAISE EXCEPTION 'mvp236 cross supplier misassigned: %',res;END IF;
  -- Una cita inventada por el remitente nunca se interpreta como autorización.
- res:=public.cotironda_piloto_ia_link_supplier_mvp225(repeat('h',64),repeat('b',64),'whapi-false-12345','cemento 8000 bolsa');
+ res:=public.cotironda_piloto_ia_link_supplier_mvp225(repeat('1',64),repeat('b',64),'whapi-false-12345','cemento 8000 bolsa');
  IF res->>'state'<>'not_matched' THEN RAISE EXCEPTION 'mvp236 unknown quote misassigned: %',res;END IF;
  -- Dos trabajos IA aceptados sin quote = situación ambigua aun con un solo legacy.
  INSERT INTO cotironda_piloto_privado.ai_dispatch_jobs_mvp222 VALUES
  ('33333333-3333-4333-8333-333333333333','corralon_ailin','api_accepted','whapi-ai-33333333',now()-interval '8 minutes');
- res:=public.cotironda_piloto_ia_link_supplier_mvp225(repeat('i',64),repeat('b',64),NULL,'cemento 8000 bolsa');
+ res:=public.cotironda_piloto_ia_link_supplier_mvp225(repeat('2',64),repeat('b',64),NULL,'cemento 8000 bolsa');
  IF res->>'state'<>'ambiguous_round' THEN RAISE EXCEPTION 'mvp236 multiple IA rounds not protected: %',res;END IF;
  IF (SELECT count(*) FROM cotironda_piloto_privado.ai_supplier_links_mvp225)<>2
  THEN RAISE EXCEPTION 'mvp236 created unauthorized link';END IF;
