@@ -1,0 +1,54 @@
+name: Cotironda IA Central — aviso de proveedor seguido de archivo MVP238
+on:
+  pull_request:
+    paths:
+      - 'supabase/piloto/mvp238_aviso_proveedor_adjunto_una_ronda.sql'
+      - 'supabase/tests/ci/mvp238_aviso_adjunto_pg17.sql'
+      - 'supabase/functions/cotironda-piloto-whapi/ai-supplier-attachment-notice-mvp238.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/index.ts'
+      - 'tests/unit/mvp238-aviso-adjunto-proveedor.test.mjs'
+      - '.github/workflows/cotironda-mvp238-aviso-adjunto.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  notice-classifier:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+      - name: 'MVP238: avisos sin confundir cotizaciones con precios'
+        run: node --experimental-strip-types --test tests/unit/mvp238-aviso-adjunto-proveedor.test.mjs
+  attachment-sql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: cotironda_ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: test_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: 'MVP238: vínculo cifrado/unívoco y guardas contra duplicados'
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/mvp238_aviso_adjunto_pg17.sql

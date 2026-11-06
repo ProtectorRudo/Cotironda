@@ -11,6 +11,8 @@ import {continuarZonaCentralMvp233} from './ai-central-zone-mvp233.ts';
 import {ciudadDeRespuestaCentralMvp234,estadoClaimZonaMvp234} from './ai-central-city-mvp234.ts';
 import {procesarPresupuestoCentralMvp227} from './ai-central-supplier-mvp227.ts';
 import {proveedorConRondaCentralMvp232} from './ai-central-supplier-route-mvp232.ts';
+import {esAvisoAdjuntoProveedorMvp238} from './ai-supplier-attachment-notice-mvp238.ts';
+import {respuestaCitaPedidoMvp239,CONSULTA_RONDA_MVP239} from './ai-supplier-clarification-mvp239.ts';
 import {makeMediaManifest} from './media-intake.ts';
 import {parseDocumentClarification} from './document-clarification.ts';
 import {getVerifiedWhapiMedia,storeVerifiedMedia} from './whapi-media-archive.ts';
@@ -405,6 +407,8 @@ async function respond(req:Request):Promise<Response>{
     centralSupplier=proveedorConRondaCentralMvp232(
       trial.quote_link,route.data?.state);
   }
+  const attachmentNotice=row.type==='text'&&centralSupplier&&
+    esAvisoAdjuntoProveedorMvp238(body);
   const centralBuyerText=centralConfigured&&row.type==='text'&&
     !supplierKnown&&!centralSupplier&&!webLinkCode;
   const local=centralBuyerText
@@ -419,6 +423,8 @@ async function respond(req:Request):Promise<Response>{
   let preparedDocumentSourceHmac:string|null=null;
   let supplierAckMode:'text_quote'|'media_quote'|null=null;
   let handledCentralZoneReply=false;
+  let clarificationSourceHmac:string|null=null;
+  let selectorClarification=false;
   // OpenAI is optional and off by default. The server-side DB gate is
   // durable, one-per-HMAC, buyer-only and capped at 12 calls per day.
   // Supplier quote ingestion never passes through this classifier.
@@ -612,11 +618,54 @@ async function respond(req:Request):Promise<Response>{
       if(trial.dispatch===true)trialDispatchChats.add(chatHash);
     }
   }
+  // Aclaración breve que cita el PDF ORIGINAL de Cotironda.
+  // Un mensaje «Es de este pedido» no debe entrar como cotización.
+  const isClarificationAnswer=row.type==='text'&&centralSupplier&&
+    respuestaCitaPedidoMvp239(body);
+  selectorClarification=isClarificationAnswer&&
+    trial.quote_link===true&&supplierQuotedId!==null;
+  if(selectorClarification&&
+     ['unmatched_quote','needs_review'].includes(outcome(out.data))){
+    const settled=await db.rpc('cotironda_piloto_ia_resolve_clarification_mvp239',{
+      p_reply_hmac:messageHash,p_chat_hmac:chatHash,
+      p_quoted_whapi_id:supplierQuotedId,p_original_text:body
+    });
+    if(settled.error)return json(503,'ai_supplier_clarification_unavailable');
+    const state=settled.data?.state;
+    if(!['resolved','ambiguous_source','no_pending_source',
+         'quoted_request_not_unique','not_authorized',
+         'already_resolved','invitation_after_source',
+         'invalid'].includes(state))
+      return json(503,'ai_supplier_clarification_state_invalid');
+    if(state==='resolved'&&settled.data?.source_kind==='text'&&
+       typeof settled.data.source_hmac==='string'&&
+       trial.quote_analysis===true){
+      const modelEnv=Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_MODEL');
+      const model=modelEnv==='gpt-6.1-sol'?'gpt-6.1-sol':'gpt-6-luna';
+      const processed=await procesarPresupuestoCentralMvp227({
+       habilitado:true,webhookAutenticado:true,
+       messageHmac:settled.data.source_hmac,chatHmac:chatHash,
+       apiKey:Deno.env.get('COTIRONDA_PILOT_OPENAI_API_KEY')??'',
+       model,
+       rpc:async(name,params)=>{
+        const reply=await db.rpc(name,params);
+        return {data:reply.data,error:reply.error};
+       },
+       decrypt:async(nonce,ciphertext)=>decryptArchivedText(
+        sec.aes,nonce,ciphertext,
+        chatHash+'|'+settled.data.source_hmac+'|text'),
+       shaText:sha
+      });
+      if(processed.estado==='conciliacion_requerida')
+        return json(503,'ai_supplier_clarification_review_required');
+    }
+  }
   if(outcome(out.data)==='quote_recorded')supplierAckMode='text_quote';
   // A supplier can have several open invitations. A quoted PDF ID is
   // checked against the exact accepted Whapi outbox for this same seller.
   let legacySupplierQuoteLinked=false;
-  if(row.type==='text'&&supplierQuotedId&&
+  if(row.type==='text'&&supplierQuotedId&&!attachmentNotice&&
+     !isClarificationAnswer&&
      outcome(out.data)==='unmatched_quote'){
     const binding=await db.rpc('cotironda_piloto_link_quoted_text_mvp151',{
       p_message_hmac:messageHash,p_chat_hmac:chatHash,
@@ -633,7 +682,7 @@ async function respond(req:Request):Promise<Response>{
   // Un proveedor puede escribir «cemento 8500 por bolsa» sin signo $.
   // El receptor heredado lo deja needs_review: IA Central debe poder
   // asociarlo a la ronda EXACTA igual que los presupuestos formales.
-  if(row.type==='text'&&centralSupplier&&
+  if(row.type==='text'&&centralSupplier&&!isClarificationAnswer&&
      ['unmatched_quote','needs_review'].includes(outcome(out.data))&&
      !legacySupplierQuoteLinked&&
      trial.quote_link===true){
@@ -642,7 +691,18 @@ async function respond(req:Request):Promise<Response>{
       p_quoted_whapi_id:supplierQuotedId,p_original_text:body
     });
     if(linked.error)return json(503,'ai_supplier_quote_link_unavailable');
+    if(linked.data?.state==='ambiguous_round')clarificationSourceHmac=messageHash;
     if(linked.data?.state==='linked_for_semantic_review'){
+      if(attachmentNotice){
+        // Un aviso no es cotización. Asociar el siguiente archivo a la
+        // única ronda acreditada, sin mensaje de agradecimiento ni gasto IA.
+        const noted=await db.rpc('cotironda_piloto_ia_note_supplier_preamble_mvp238',{
+          p_message_hmac:messageHash,p_chat_hmac:chatHash,
+          p_original_text:body
+        });
+        if(noted.error||!['noted','already_noted'].includes(noted.data?.state))
+          return json(503,'ai_supplier_preamble_reconciliation_required');
+      }else{
       supplierAckMode='text_quote';
       // Solo FUENTE ya asociada, buyer/supplier comprobados por SQL.
       // La IA interpreta libremente; SQL almacena exclusivamente el
@@ -665,6 +725,7 @@ async function respond(req:Request):Promise<Response>{
         });
         if(processed.estado==='conciliacion_requerida')
           return json(503,'ai_supplier_economy_reconciliation_required');
+      }
       }
     }
   }
@@ -716,11 +777,33 @@ async function respond(req:Request):Promise<Response>{
       // vincular la respuesta al trabajo IA Central. No adjudicar.
       if(status==='stored'&&centralSupplier&&
          trial.quote_link===true){
-        const linked=await db.rpc('cotironda_piloto_ia_link_supplier_mvp225',{
-          p_message_hmac:messageHash,p_chat_hmac:chatHash,
-          p_quoted_whapi_id:supplierQuotedId,p_original_text:null
-        });
-        if(linked.error)return json(503,'ai_supplier_media_link_unavailable');
+        let attachmentState:string|null=null;
+        if(!supplierQuotedId){
+          const context=await db.rpc('cotironda_piloto_ia_attach_supplier_media_mvp238',{
+            p_media_hmac:messageHash,p_chat_hmac:chatHash
+          });
+          if(context.error)return json(503,'ai_supplier_attachment_link_unavailable');
+          attachmentState=context.data?.state;
+          if(!['linked_from_preamble','already_attached','no_context',
+               'ambiguous','context_blocked','not_eligible',
+               'context_consumed'].includes(attachmentState??''))
+            return json(503,'ai_supplier_attachment_state_invalid');
+        }
+        // Si hay avisos ambiguos, se conserva el archivo sin asignarlo.
+        // Un mensaje citado se resuelve por su propio identificador Whapi.
+        if(['ambiguous','context_blocked'].includes(attachmentState??''))
+          clarificationSourceHmac=messageHash;
+        if(!['linked_from_preamble','already_attached',
+             'ambiguous','context_blocked',
+             'context_consumed'].includes(attachmentState??'')){
+          const linked=await db.rpc('cotironda_piloto_ia_link_supplier_mvp225',{
+            p_message_hmac:messageHash,p_chat_hmac:chatHash,
+            p_quoted_whapi_id:supplierQuotedId,p_original_text:null
+          });
+          if(linked.error)return json(503,'ai_supplier_media_link_unavailable');
+          if(linked.data?.state==='ambiguous_round')
+            clarificationSourceHmac=messageHash;
+        }
       }
       // The model only proposes a PRIVATE DRAFT; cannot create an invitation,
       // offer, winner or public view without separate independent verification.
@@ -1083,6 +1166,40 @@ async function respond(req:Request):Promise<Response>{
      // No automatic retry: unknown Whapi delivery is not safe to duplicate.
     }
    }
+  }
+ // Preguntar una única vez por la ronda, sin contactar compradores.
+ // SQL valida remitente, consentimiento, cuota y fuente irresuelta.
+ // OFF por defecto: habilitación separada para la prueba WhatsApp.
+ if(clarificationSourceHmac&&sec.outbound&&trial.quote_link===true&&
+    Deno.env.get('COTIRONDA_PILOT_AMBIGUITY_PROMPTS_ENABLED')==='true'){
+   const reserved=await db.rpc('cotironda_piloto_ia_reserve_clarification_mvp239',{
+     p_source_hmac:clarificationSourceHmac,p_chat_hmac:chatHash
+   });
+   if(reserved.error)return json(503,'ai_supplier_clarification_reservation_unavailable');
+   if(reserved.data?.state==='reserved'){
+     let sendState:'api_accepted'|'uncertain'='uncertain';
+     try{
+       const response=await fetch('https://gate.whapi.cloud/messages/text',{
+         method:'POST',headers:{Authorization:'Bearer '+sec.token,
+           'Content-Type':'application/json'},
+         body:JSON.stringify({to:row.chat_id,body:CONSULTA_RONDA_MVP239}),
+         signal:AbortSignal.timeout(12000)
+       });
+       if(response.ok){
+         const data=await response.json().catch(()=>null);
+         if(data&&typeof data==='object'&&
+            (data as Record<string,unknown>).sent===true)
+           sendState='api_accepted';
+       }
+     }catch{/* entrega incierta: no reintentar nunca automáticamente */}
+     const finished=await db.rpc('cotironda_piloto_ia_finish_clarification_mvp239',{
+       p_source_hmac:clarificationSourceHmac,p_state:sendState
+     });
+     if(finished.error||finished.data?.state!=='recorded')
+       return json(503,'ai_supplier_clarification_finish_unavailable');
+   }else if(!['already_reserved','disabled','not_eligible','daily_quota']
+      .includes(reserved.data?.state))
+     return json(503,'ai_supplier_clarification_reserve_invalid');
   }
  // Acknowledge a supplier ONLY after their authenticated quote was
  // durably captured. Media receipt is explicitly pending source review.

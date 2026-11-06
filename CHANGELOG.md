@@ -1,3 +1,19 @@
+## 2026-11-06 — MVP239: aclaración segura de presupuestos ambiguos (etapa 2)
+
+- El proveedor puede contestar citando el mensaje ORIGINAL del pedido Whapi, sin volver a enviar el presupuesto. Una RPC vincula un único documento o texto pendiente al pedido exacto del mismo proveedor, sin seleccionar por similitud ni confundir el mensaje de aclaración con una oferta nueva.
+- La pregunta automatizada se reserva una sola vez y está sujeta a cuota, consentimiento y bandera independiente **apagada por defecto**; los resultados inciertos no se reintentan. Tabla privada, idempotencia, pruebas PostgreSQL 17 y ADR 361.
+- Cambio inicialmente en desarrollo; sin WhatsApps reales ni publicación en producción. Validación integral pendiente.
+
+## 2026-11-06 — MVP238: aviso de proveedor + archivo posterior (etapa 2, desarrollo)
+
+- Un mensaje breve como «Te paso el presupuesto» se registra como **aviso de adjunto**, no como cotización ni como motivo de respuesta automática. Solo si el aviso está inequívocamente asociado a una invitación Whapi aceptada, el siguiente archivo almacenado y verificado puede consumir esa referencia.
+- Vínculo por HMAC/SHA, mismo proveedor y chat, máximo diez minutos, sin mensajes ni invitaciones intermedias, una sola fuente por aviso. Un aviso conflictivo bloquea el fallback a otra ronda durante 24 horas para evitar mezclar presupuestos.
+- Migración SQL privada, integración del webhook, pruebas Node y PostgreSQL 17, ADR 360. **Sin publicar en piloto o producción; no se activan controles ni se envían WhatsApps. Etapa 2 abierta.**
+
+## 2026-11-05 — MVP236: asociación de presupuestos por despacho acreditado (etapa 2, desarrollo)
+
+- El enlace de respuestas IA Central ya no considera candidatas las rondas LEGACY preparadas que nunca tuvieron un envío `api_accepted` con ID de Whapi y fecha anterior a la respuesta. El criterio evita ambigüedades artificiales y mantiene el bloqueo cuando existen varias solicitudes realmente enviadas. Cotizaciones citadas conservan vínculo exacto y cotejo de remitente; mensajes duplicados no se reinsertan. CI PostgreSQL 17 con casos adversarios y decisión 358. Complemento MVP237: ledger privado de mensajes no vinculados/ambiguos, una entrada por HMAC, sin precios ni contactos; decisión 359. **Sin despliegue ni WhatsApps; etapa 2 abierta.**
+
 ## 2026-11-05 — MVP235: recuperador compatible con localidad reanudada (piloto)
 
 - Detectada condición de carrera: un pedido antiguo reanudado por MVP233 conserva su fecha original; el cron MVP230 podía confundir una reserva nueva con una operación abandonada.
