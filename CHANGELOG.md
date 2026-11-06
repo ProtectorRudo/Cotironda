@@ -1,3 +1,10 @@
+## 2026-11-06 — Etapa 7 / MVP267: operador de IA Central con sesión Auth vigente y MFA
+
+- Vinculación única y privada de operador interno con usuario Supabase Auth exclusivo del PILOTO; ninguna alta automática. Un token con sesión ausente/revocada, JWT ajeno, cuenta anónima, operador inactivo o sin AAL2 no obtiene permisos.
+- Cuatro RPC de `authenticated` que resuelven al operador desde `auth.uid()` y `auth.sessions` — no aceptan UUID de operador entregado por el cliente — y reutilizan bitácora MVP265 y conciliación de consumo desconocido MVP266.
+- Backend Next.js privado con clave publicable y JWT del propio operador (sin `service_role`), endpoints para alertas, tokens, revisión de casos y gasto incierto. Gate Preview por SHA, origen y entorno, apagado por defecto, respuestas privadas y no-store.
+- Pruebas PG17 reversibles, contratos Node/HTTP y documento de decisión 391. **Solo desarrollo; no se creó operador Auth real, ni se migró PILOTO, ni se publicó Vercel, ni se activó cron/WhatsApp.**
+
 ## 2026-11-06 — Etapa 7 / MVP266: gasto OpenAI desconocido no expira a las 24 horas
 
 - Auditoría integral de las siete etapas IA Central con separación entre código en desarrollo y criterios operativos sin acreditar; decisión 390. **No declarar 7/7 ni piloto E2E** por pruebas sintéticas.
