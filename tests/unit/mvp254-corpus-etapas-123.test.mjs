@@ -176,3 +176,42 @@ test('corpus123 / dos rondas del mismo proveedor sin cita nunca se mezclan',()=>
   invitaciones:[...invitations,{...invitations[0]}]}),
   {estado:'ambigua',idRonda:null});
 });
+
+
+test('corpus123 / 3 rubros, 6 proveedores y cero destinatarios ajenos',()=>{
+ const evidence=[
+  '20 bolsas cemento CPC 50kg',
+  '5 latas látex interior 20 L',
+  '80 metros cable 2,5 mm'
+ ];
+ const src='Cotizame '+evidence.join(' y ')+' para entregar en La Plata';
+ const items=evidence.map((e,i)=>({
+  evidencia:e,descripcion:['Cemento CPC 50 kg','Látex interior','Cable 2,5 mm'][i],
+  cantidad:['20','5','80'][i],unidad:['bag','unit','m'][i],
+  rubro:['obra_gruesa','pintura','electricidad'][i],
+  presentacion:null,aclaracion:null
+ }));
+ const first=localizarEvidenciasV1(src,{intencion:'cotizar',
+  zona_entrega:'La Plata',articulos:items,dudas:[]});
+ const second={integridad:'completa',zona_entrega:'La Plata',
+  articulos:items.map(x=>({evidencia:x.evidencia,cantidad:x.cantidad,
+   unidad:x.unidad,rubro:x.rubro}))};
+ const result=evaluarLecturasSemanticasV1(src,first,second);
+ assert.equal(result.estado,'listo_para_preparar');
+ const providers=Array.from({length:6},(_,i)=>({
+  key:'proveedor_'+(i+1),consentido:true,activo:true,zona:'La Plata',
+  rubros:[['obra_gruesa','pintura','electricidad'][Math.floor(i/2)]]
+ }));
+ const selection=providers.map((p,i)=>({
+  proveedor:p.key,articulos:[Math.floor(i/2)]
+ }));
+ const route=validarRuteoSemanticoV1(result.pedido,providers,selection);
+ assert.equal(route.estado,'ruteo_verificado');
+ assert.equal(route.destinos.length,6);
+ const wrong=selection.map((x,i)=>i===5?{...x,articulos:[0]}:x);
+ assert.equal(validarRuteoSemanticoV1(result.pedido,providers,wrong)
+  .estado,'requiere_revision');
+ assert.equal(validarRuteoSemanticoV1(result.pedido,providers,
+  [...selection,{proveedor:'proveedor_siete',articulos:[2]}])
+  .estado,'requiere_revision');
+});
