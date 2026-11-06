@@ -5,6 +5,7 @@
  */
 import {RUBROS_MVP216,type RubroMvp216} from '../rubros-comprador-mvp216.ts';
 import {monedaFuenteMvp241} from './evidencia-moneda-mvp241.ts';
+import {condicionFuenteMvp242} from './evidencia-condiciones-mvp242.ts';
 
 export type PedidoLineaMvp225=Readonly<{
  id:string;descripcion:string;rubro:RubroMvp216;
@@ -226,6 +227,12 @@ export function evaluarCotizacionMvp225(
     !['incluido_explicito','excluido_explicito','a_convenir','no_informado'].includes(oferta.flete)||
     !['contado','transferencia','credito','no_informado'].includes(oferta.pago))
   missing('condiciones_invalidas');
+ // El cotejo directo también debe rechazar condiciones ajenas al
+ // original: dos lecturas de IA no son evidencia comercial suficiente.
+ for(const key of ['iva','flete','pago'] as const){
+  if(!condicionFuenteMvp242(oferta.fuente,key,oferta[key]))
+    missing('condicion_'+key+'_sin_evidencia');
+ }
  if(extras.some(x=>byLine.get(x.numero)?.tipo==='cargo_adicional'))
   missing('cargos_adicionales_sin_comparacion');
  return {etiquetaAnonima:oferta.etiquetaAnonima,
