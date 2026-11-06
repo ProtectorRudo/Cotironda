@@ -1,3 +1,9 @@
+## 2026-11-06 — MVP243: diagnóstico de presentaciones nominales (etapa 3)
+
+- IA Central preserva alternativas de proveedores aunque cambien envase y marca: 20 bolsas × 50 kg vs 40 × 25 kg, envases de 5 L, y bolsones con m³ explícitos. Su peso/volumen nominal se coteja en BigInt con datos LITERALES del proveedor, sin deducir bultos del precio, ni sustituir la acreditación técnica ni activar ranking.
+- Si una oferta contiene exclusivamente alternativas sin importes homogéneos no se marca verificada económicamente. Las demás líneas exactas conservan su comparabilidad por artículo y rubro.
+- El diagnóstico se almacena solo en resumen privado MVP227, con banderas `comparableTecnico=false` y `comparableEconomico=false`; no expone compradores, originales, ganadores, WhatsApps ni contactos. Nuevas pruebas/CI y decisión 366. **Solo desarrollo: no desplegar piloto/producción ni enviar mensajes.**
+
 ## 2026-11-06 — MVP242: IVA, flete y pago con evidencia semántica (etapa 3, desarrollo)
 
 - Las dos lecturas de IA ya no pueden acreditar IVA, flete o pago con cualquier cita que aparezca en el texto: una verificación determinista exige que la cita y la fuente respalden exactamente el mismo estado comercial.

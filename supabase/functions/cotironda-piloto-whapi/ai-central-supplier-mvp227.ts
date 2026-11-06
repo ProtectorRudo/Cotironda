@@ -106,6 +106,14 @@ export async function procesarPresupuestoCentralMvp227(args:{
    precios:result.precios.map(x=>({
     pedidoId:x.pedidoId,centavos:x.centavos.toString(),
     cantidad:x.cantidad,unidad:x.unidad
+   })),
+   // Comparabilidad física NOMINAL, separada de los precios comparables.
+   // Nunca convierte una alternativa semántica en oferta ganadora.
+   presentaciones:(result.presentaciones??[]).map(x=>({
+    pedidoId:x.pedidoId,numeroOferta:x.numeroOferta,estado:x.estado,
+    unidadBase:x.unidadBase,pedidoBaseMil:x.pedidoBaseMil,
+    ofertaBaseMil:x.ofertaBaseMil,comparableTecnico:false,
+    comparableEconomico:false
    }))
   };
   const verified=result.estado==='verificada_para_comparacion'&&
