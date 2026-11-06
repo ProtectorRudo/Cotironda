@@ -1165,6 +1165,40 @@ async function respond(req:Request):Promise<Response>{
     }
    }
   }
+ // Preguntar una única vez por la ronda, sin contactar compradores.
+ // SQL valida remitente, consentimiento, cuota y fuente irresuelta.
+ // OFF por defecto: habilitación separada para la prueba WhatsApp.
+ if(clarificationSourceHmac&&sec.outbound&&trial.quote_link===true&&
+    Deno.env.get('COTIRONDA_PILOT_AMBIGUITY_PROMPTS_ENABLED')==='true'){
+   const reserved=await db.rpc('cotironda_piloto_ia_reserve_clarification_mvp239',{
+     p_source_hmac:clarificationSourceHmac,p_chat_hmac:chatHash
+   });
+   if(reserved.error)return json(503,'ai_supplier_clarification_reservation_unavailable');
+   if(reserved.data?.state==='reserved'){
+     let sendState:'api_accepted'|'uncertain'='uncertain';
+     try{
+       const response=await fetch('https://gate.whapi.cloud/messages/text',{
+         method:'POST',headers:{Authorization:'Bearer '+sec.token,
+           'Content-Type':'application/json'},
+         body:JSON.stringify({to:row.chat_id,body:CONSULTA_RONDA_MVP239}),
+         signal:AbortSignal.timeout(12000)
+       });
+       if(response.ok){
+         const data=await response.json().catch(()=>null);
+         if(data&&typeof data==='object'&&
+            (data as Record<string,unknown>).sent===true)
+           sendState='api_accepted';
+       }
+     }catch{/* entrega incierta: no reintentar nunca automáticamente */}
+     const finished=await db.rpc('cotironda_piloto_ia_finish_clarification_mvp239',{
+       p_source_hmac:clarificationSourceHmac,p_state:sendState
+     });
+     if(finished.error||finished.data?.state!=='recorded')
+       return json(503,'ai_supplier_clarification_finish_unavailable');
+   }else if(!['already_reserved','disabled','not_eligible','daily_quota']
+      .includes(reserved.data?.state))
+     return json(503,'ai_supplier_clarification_reserve_invalid');
+ }
  // Acknowledge a supplier ONLY after their authenticated quote was
  // durably captured. Media receipt is explicitly pending source review.
  // One ledger reservation per message; uncertain Whapi results never retry.
