@@ -1,3 +1,10 @@
+## 2026-11-06 — MVP269: paquete ZIP móvil de respaldo cifrado (solo desarrollo)
+
+- Creador de un único ZIP que incluye exclusivamente cinco exportaciones SQL previamente cifradas con age y una exportación también cifrada de bytes de Storage; no descifra ni expone contenido.
+- Manifest SHA-256, comparación real ZIP ↔ fuente, permisos 0700/0600, rechazo de enlaces, rutas inseguras, CI/entorno público, archivos inesperados, componentes ausentes, cambios concurrentes y sobrescrituras.
+- Reconocimiento explícito: fuente real, cobertura Storage y restauración **NO acreditadas**. La copia real y el enlace privado aún no existen; plan de extracción/restore/entrega en decisión 394.
+- Supabase `cotironda-piloto` verificado en solo lectura: 3 rondas, 1 bucket privado, 6 objetos (302.406 bytes reportados por metadatos). Sin modificación de SQL, Vercel, WhatsApp o producción.
+
 ## 2026-11-06 — MVP268: preflight real y reproducible de activación del piloto (solo lectura)
 
 - Consulta nueva de diagnóstico SIN efectos secundarios en `cotironda-piloto`: PostgreSQL 17.11; cuatro gates OFF, 0/12 objetos MVP256–267 instalados, tres cron preexistentes activos, 0 usuarios Auth y sin salida `uncertain` en los dos ledgers observados.
