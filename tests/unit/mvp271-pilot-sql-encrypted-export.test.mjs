@@ -118,7 +118,7 @@ test('MVP271 rejects wrong Supabase project before disk creation', async () => f
   await assert.rejects(readdir(dest), /ENOENT/);
 }));
 test('MVP271 rejects extra connection URL options', async () => fixture(async dest => {
-  await assert.rejects(runExport({directory:dest, connectionUrl:url+'&host=otro', recipient}), /MVP271_UNEXPECTED_DSN_OPTIONS/);
+  await assert.rejects(runExport({directory:dest, connectionUrl:url+'&host=otro', recipient}), /MVP271_PILOT_CONNECTION_INVALID/);
 }));
 test('MVP271 rejects arbitrary age recipient', async () => fixture(async dest => {
   await assert.rejects(runExport({directory:dest, connectionUrl:url, recipient:'ssh-rsa NotAge'}), /MVP271_INVALID_INPUT/);
