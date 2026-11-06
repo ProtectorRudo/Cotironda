@@ -143,21 +143,36 @@ export async function recoverOneStoredDocument(args:{
   if(source.state!=='source_text_covered'&&
      (mime.startsWith('image/')||mime==='application/pdf')&&
      args.visualOcr?.enabled===true&&args.visualOcr.externalConsent===true){
-    // Tercer gate obligatorio: consentimiento EXTERNO y cuota registrados
-    // por proveedor+archivo en SQL, NO solo una variable del servidor.
-    // RPC aún no instalada: falla cerrado y no envía bytes a Google.
+    // Tercer gate: consentimiento EXTERNO de comprador y proveedor,
+    // presupuesto mensual y lease único por SHA en SQL MVP253.
+    // Con la política OFF por defecto jamás se envía un original.
     const permission=data(await io.rpc('cotironda_piloto_visual_ocr_permission_mvp252',{
       p_message_hmac:h,p_source_sha256:actual
     }).catch(()=>({data:null,error:true})));
+    const lease=permission?.reservation_token;
     if(permission?.state==='approved_for_private_processing'&&
-       permission.source_sha256===actual){
+       permission.source_sha256===actual&&
+       typeof lease==='string'&&
+       /^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/iu.test(lease)){
+      // El OCR es un intento facturable, aunque falle el proveedor.
+      // El ledger queda reservado; ningún retry vuelve a transmitirlo.
       const visual=await auditarFuenteVisualOCRMvp252({
         source:file,primary:proposal,secondary:second,
         enabled:true,externalConsent:true,
         serviceAccountJson:args.visualOcr.serviceAccountJson,
         fetchImpl:args.visualOcr.fetchImpl
       });
-      // Única telemetría permitida: estado, sin ID, nombre, texto o precio.
+      const positive=visual.state==='source_ocr_covered_private';
+      const persisted=data(await io.rpc('cotironda_piloto_visual_ocr_finish_mvp253',{
+        p_message_hmac:h,p_source_sha256:actual,p_reservation_token:lease,
+        p_state:positive?'covered_private':'needs_review',
+        p_reason:visual.reason,p_pages:visual.pages??0,
+        p_min_confidence_milli:positive?visual.minConfidenceMilli:null,
+        p_ocr_text_sha256:positive?visual.ocrTextSha256:null
+      }));
+      if(persisted?.state!=='saved_private')
+       throw Error('visual_ocr_private_ledger_reconciliation_required');
+      // Telemetría sin precios, archivo, participante ni huella HMAC.
       console.info('cotironda_visual_ocr_'+visual.state);
     }
   }
