@@ -90,7 +90,10 @@ function countWritten(line:OfertaLineaMvp225):boolean{
  if(qty===null)return false;
  const withoutMoney=line.textoOriginal
   .replace(line.precioUnitarioLiteral??'',' ')
-  .replace(line.totalLineaLiteral??'',' ');
+  .replace(line.totalLineaLiteral??'',' ')
+  // Si el modelo omitió la cita del precio, el importe en la fuente
+  // tampoco puede suplantar una cantidad de bolsas. Ej. $40.000.
+  .replace(/(?:AR\$|US\$|U\$S|\$)\s*\d[\d.,]*/giu,' ');
  const all=sizes(withoutMoney);
  if(!all)return false;
  // Excluir los números de los envases; "25 kg" no demuestra 25 bolsas.
@@ -102,7 +105,7 @@ function countWritten(line:OfertaLineaMvp225):boolean{
 function empty(itemId:string,lineNo:number,
  state:DiagnosticoPresentacionMvp243['estado']=
  'presentacion_sin_acreditar'):DiagnosticoPresentacionMvp243{
- return {pedidoId:itemId,numeroOferta:lineNo,estado,unidadBase:null,
+ return {pedidoId:itemId,numeroOferta:lineNo,estado:state,unidadBase:null,
   pedidoBaseMil:null,ofertaBaseMil:null,
   comparableTecnico:false,comparableEconomico:false};
 }
