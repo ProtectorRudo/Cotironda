@@ -1,3 +1,9 @@
+## 2026-11-06 — MVP246: sin publicación documental acreditada no hay lectura económica IA Central
+
+- El puente de archivos MVP245 queda condicionado a la publicación anónima **ya aprobada y persistida** por el verificador legado MVP107; cobertura textual sola es insuficiente. SQL vuelve a exigir la misma fuente/empresa/ronda/SHA, dos lecturas concordantes, importes balanceados y consentimiento vigente. El finalizador repite la guarda antes de guardar cualquier precio.
+- Mejora de lenguaje libre: las notas comerciales pueden incluir varios renglones de IVA/flete/pago, conservándose íntegras.
+- Test PG17 adversarial sobre documentos no publicados, lecturas divergentes, importes discordantes, comprador revocado y eliminación de evidencia entre reserva/cierre. Doc 369. **Solo desarrollo; sin alterar piloto, producción, WhatsApps ni permisos activos**.
+
 ## 2026-11-06 — MVP245: integrar archivos corroborados al mismo motor IA Central (solo desarrollo)
 
 - El documento del proveedor ya archivado y con SHA binario verificado pasa del lector privado existente al análisis comercial IA Central **solo** cuando su fuente PDF/Excel/Word/TXT obtuvo cobertura independiente de cada renglón e importe. No se promocionan fotografías ni formatos que carecen de prueba original.

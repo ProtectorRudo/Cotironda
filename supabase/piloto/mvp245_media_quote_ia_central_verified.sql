@@ -1,3 +1,5 @@
+-- MVP246 hardening: SOLO archivos con publicación anónima privada
+-- ya autorizada por documento original, dos lecturas e importes conciliados.
 -- MVP245: proyecto Cotironda. Integración controlada de archivos con IA Central.
 -- No activación de WhatsApp. Un file nunca reemplaza el texto original.
 -- La migración extiende FINISH existente (MVP227) sin quitar sus guardas
@@ -43,6 +45,23 @@ BEGIN
   AND sc.source_sha256=a.content_sha256
   AND sc.state='source_text_covered' AND sc.reason='covered'
   AND sc.model_line_count=p_line_count
+ -- El publicador anterior verificó el binario, las dos lecturas,
+ -- todas las líneas y las cifras y preservó una copia ANÓNIMA.
+ -- Sin esa prueba no alcanza con un "source_text_covered" aislado.
+ JOIN cotironda_piloto_privado.supplier_reading_checks_mvp102 dual
+  ON dual.message_hmac=a.message_hmac
+  AND dual.source_sha256=a.content_sha256
+  AND dual.state='model_readings_match' AND dual.line_count=p_line_count
+ JOIN cotironda_piloto_privado.supplier_amount_checks_mvp103 amounts
+  ON amounts.message_hmac=a.message_hmac
+  AND amounts.source_sha256=a.content_sha256
+  AND amounts.state='balanced' AND amounts.line_count=p_line_count
+ JOIN cotironda_piloto_privado.anonymous_supplier_docs_mvp107 published
+  ON published.message_hmac=a.message_hmac
+  AND published.request_id=l.request_id
+  AND published.supplier_key=l.supplier_key
+  AND published.source_sha256=a.content_sha256
+  AND published.line_count=p_line_count
  JOIN cotironda_piloto_privado.participants p
   ON p.key=l.supplier_key AND p.chat_hmac=p_chat_hmac
   AND p.participant_role='supplier' AND p.consent_at IS NOT NULL
@@ -50,6 +69,9 @@ BEGIN
  JOIN cotironda_piloto_privado.requests r
   ON r.id=l.request_id AND r.state='prepared'
   AND m.received_at>=r.created_at AND m.received_at<=r.closes_at
+ JOIN cotironda_piloto_privado.participants buyer
+  ON buyer.key=r.buyer_key AND buyer.participant_role='buyer'
+  AND buyer.consent_at IS NOT NULL AND buyer.opted_out_at IS NULL
  JOIN cotironda_piloto_privado.ai_shadow_requests_mvp221 sh
   ON sh.request_id=r.id
  JOIN cotironda_piloto_privado.ai_dispatch_jobs_mvp222 d
@@ -139,6 +161,11 @@ BEGIN
   AND quote.request_id=a.request_id
   AND quote.supplier_key=a.supplier_key
   AND quote.source_sha256=a.source_sha256
+ LEFT JOIN cotironda_piloto_privado.anonymous_supplier_docs_mvp107 published
+  ON published.message_hmac=a.message_hmac
+  AND published.request_id=a.request_id
+  AND published.supplier_key=a.supplier_key
+  AND published.source_sha256=a.source_sha256
  JOIN cotironda_piloto_privado.participants p ON p.key=a.supplier_key
   AND p.chat_hmac=p_chat_hmac AND p.consent_at IS NOT NULL
   AND p.opted_out_at IS NULL
@@ -155,6 +182,8 @@ BEGIN
     'text/plain','text/csv')
    AND checksrc.message_hmac IS NOT NULL
    AND quote.state='awaiting_fidelity_check'
+   AND published.message_hmac IS NOT NULL
+   AND published.line_count=quote.line_count
    AND checksrc.model_line_count=quote.line_count
    AND jsonb_typeof(media.proposal)='object'
    AND media.proposal->>'kind'='supplier_quote'
