@@ -4,6 +4,7 @@
  * NUNCA publicar un presupuesto a partir solo de este módulo.
  */
 import {RUBROS_MVP216,type RubroMvp216} from '../rubros-comprador-mvp216.ts';
+import {monedaFuenteMvp241} from './evidencia-moneda-mvp241.ts';
 
 export type PedidoLineaMvp225=Readonly<{
  id:string;descripcion:string;rubro:RubroMvp216;
@@ -67,8 +68,9 @@ export type ComparacionMvp225=Readonly<{
 }>;
 const ID=/^[a-zA-Z0-9_-]{2,80}$/u;
 const QTY=/^(?:0|[1-9]\d{0,7})(?:\.\d{1,3})?$/u;
-const CENTS=/^\$?\s*(?:0|[1-9]\d{0,8})(?:,\d{1,2})?$/u;
-const GROUPED=/^\$?\s*[1-9]\d{0,2}(?:\.\d{3})+(?:,\d{1,2})?$/u;
+// Reconocer literal monetario completo AR$/US$/U$S, ARS o USD.
+const CENTS=/^(?:(?:AR\$|US\$|U\$S|\$)\s*|(?:ARS|USD)\s+)?(?:0|[1-9]\d{0,8})(?:,\d{1,2})?$/iu;
+const GROUPED=/^(?:(?:AR\$|US\$|U\$S|\$)\s*|(?:ARS|USD)\s+)?[1-9]\d{0,2}(?:\.\d{3})+(?:,\d{1,2})?$/iu;
 const TEXT=(s:unknown,max:number):s is string=>typeof s==='string'&&
  s.trim().length>0&&s.length<=max&&!/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/u.test(s);
 const unit=/^(bag|unit|box|kg|g|l|ml|m|m2|m3|roll|pack)$/u;
@@ -82,7 +84,8 @@ export function dineroCentavosLiteral(raw:string):bigint|null{
  if(typeof raw!=='string')return null;
  const trimmed=raw.trim();
  if(!CENTS.test(trimmed)&&!GROUPED.test(trimmed))return null;
- const normalized=trimmed.replace(/[$\s.]/gu,'');
+ const normalized=trimmed.replace(/^(?:(?:AR\$|US\$|U\$S|\$)\s*|(?:ARS|USD)\s+)/iu,'')
+  .replace(/[\s.]/gu,'');
  const [integer,decimal='']=normalized.split(',');
  if(!/^\d+$/u.test(integer))return null;
  const result=BigInt(integer)*100n+BigInt(decimal.padEnd(2,'0'));
@@ -102,6 +105,15 @@ function precioConfirmado(line:OfertaLineaMvp225):bigint|null{
  const q=cantidadMil(line.cantidad);
  const unitPrice=dineroCentavosLiteral(line.precioUnitarioLiteral);
  if(q===null||unitPrice===null)return null;
+ // El total correcto NO acredita una cantidad inventada por IA:
+ // también debe constar literalmente en la misma línea, fuera de
+ // las citas del precio unitario y el total.
+ const withoutAmounts=line.textoOriginal
+  .replace(line.precioUnitarioLiteral,' ')
+  .replace(line.totalLineaLiteral??'',' ');
+ const visibleNumbers=withoutAmounts.match(/\d+(?:[.,]\d+)*/gu)??[];
+ if(!visibleNumbers.some(token=>
+   cantidadMil(token.replace(',','.'))===q))return null;
  const product=unitPrice*q;
  if(product%1000n!==0n)return null;
  const total=product/1000n;
@@ -112,12 +124,7 @@ function precioConfirmado(line:OfertaLineaMvp225):bigint|null{
   const declared=dineroCentavosLiteral(line.totalLineaLiteral);
   return declared!==null&&total===declared?total:null;
  }
- // En ausencia del total declarado, evitar que una cantidad normalizada
- // por IA (pero ausente en el mensaje) termine creando un importe falso.
- const withoutPrice=line.textoOriginal.replace(line.precioUnitarioLiteral,'');
- const visibleNumbers=withoutPrice.match(/\d+(?:[.,]\d+)*/gu)??[];
- if(!visibleNumbers.some(token=>token.replace(',','.')===line.cantidad))
-  return null;
+ // La cantidad ya se acreditó antes de esta multiplicación.
  // No equiparar un importe aislado con valor por unidad.
  // El proveedor debe explicitar precio unitario con vocabulario libre.
  if(!/(?:c\/u|p\/u|unitari[oa]s?|cada\s+(?:una?|bolsa|bols[oó]n|unidad)|por\s+(?:unidad|bolsa|bols[oó]n|litro|kg|metro|m3|m²|m³)|\bx\s*\$)/iu.test(line.textoOriginal))
@@ -212,6 +219,8 @@ export function evaluarCotizacionMvp225(
     replied===0?'sin_cobertura':'parcial',faltantes});
  }
  if(oferta.moneda==='no_informada')missing('moneda_no_informada');
+ if(!monedaFuenteMvp241(oferta.fuente,oferta.moneda))
+  missing('moneda_sin_evidencia_explicita');
  if(!['ARS','USD','no_informada'].includes(oferta.moneda)||
     !['incluido_explicito','sin_iva_explicito','no_informado'].includes(oferta.iva)||
     !['incluido_explicito','excluido_explicito','a_convenir','no_informado'].includes(oferta.flete)||

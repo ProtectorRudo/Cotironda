@@ -33,7 +33,7 @@ const vinculos=pedido.map((a,i)=>({
 function offer(label='Oferta A',included=lines){
  return {etiquetaAnonima:label,moneda:'ARS',iva:'no_informado',
   flete:'no_informado',pago:'no_informado',
-  fuente:included.map(x=>x.textoOriginal).join('\n'),
+  fuente:'Moneda: ARS\n'+included.map(x=>x.textoOriginal).join('\n'),
   lineas:included,vinculos:vinculos.filter(v=>
    included.some(l=>l.numero===v.lineaOferta))};
 }
@@ -45,7 +45,12 @@ test('MVP225 precio AR: decimal con coma y miles con punto sin coma flotante',()
  assert.equal(dineroCentavosLiteral('8.000.123,89'),800012389n);
  assert.equal(dineroCentavosLiteral('1,000'),null);
  assert.equal(dineroCentavosLiteral('1.23.45'),null);
- assert.equal(dineroCentavosLiteral('AR$ 12,0'),null);
+ assert.equal(dineroCentavosLiteral('AR$ 12,0'),1200n);
+ assert.equal(dineroCentavosLiteral('US$ 12,0'),1200n);
+ assert.equal(dineroCentavosLiteral('U$S 1.234,56'),123456n);
+ assert.equal(dineroCentavosLiteral('ARS 12.000'),1200000n);
+ assert.equal(dineroCentavosLiteral('USD 12.000'),1200000n);
+ assert.equal(dineroCentavosLiteral('EUR 12,00'),null);
  assert.equal(cantidadMil('2.5'),2500n);
  assert.equal(cantidadMil('0'),null);
 });
@@ -62,7 +67,7 @@ test('MVP231: unitario explícito sin total permite cálculo exacto en backend',
  q.lineas=[{...q.lineas[0],
   textoOriginal:'20 bolsas cemento CPC 50kg a $8.000 c/u',
   totalLineaLiteral:null},...q.lineas.slice(1)];
- q.fuente=q.lineas.map(x=>x.textoOriginal).join('\n');
+ q.fuente='Moneda: ARS\n'+q.lineas.map(x=>x.textoOriginal).join('\n');
  const r=evaluarCotizacionMvp225(pedido,q);
  assert.equal(r.estado,'verificada_para_comparacion');
  assert.equal(r.rubros[0].precioComprobado,3);
@@ -78,7 +83,7 @@ test('MVP231: no usar cantidad supuesta ni confundirla con números del precio',
   q.lineas=[{...q.lineas[0],textoOriginal:original,
     precioUnitarioLiteral:original.includes('$20.000')?'$20.000':'$8.000',
     totalLineaLiteral:null},...q.lineas.slice(1)];
-  q.fuente=q.lineas.map(x=>x.textoOriginal).join('\n');
+  q.fuente='Moneda: ARS\n'+q.lineas.map(x=>x.textoOriginal).join('\n');
   const r=evaluarCotizacionMvp225(pedido,q);
   assert.equal(r.estado,'requiere_revision',original);
   assert.ok(r.motivos.includes('importe_sin_conciliacion'),original);
@@ -89,7 +94,7 @@ test('MVP231: no ignorar un total declarado distinto al unitario',()=>{
  q.lineas=[{...q.lineas[0],
   textoOriginal:'20 bolsas cemento CPC a $8.000 c/u, total $170.000',
   totalLineaLiteral:null},...q.lineas.slice(1)];
- q.fuente=q.lineas.map(x=>x.textoOriginal).join('\n');
+ q.fuente='Moneda: ARS\n'+q.lineas.map(x=>x.textoOriginal).join('\n');
  const r=evaluarCotizacionMvp225(pedido,q);
  assert.equal(r.estado,'requiere_revision');
  assert.equal(r.rubros[0].precioComprobado,2);
@@ -100,7 +105,7 @@ test('MVP231: no calcular fracciones menores al centavo',()=>{
   textoOriginal:'0,001 bolsa CPC a $0,01 c/u',
   cantidad:'0.001',precioUnitarioLiteral:'$0,01',
   totalLineaLiteral:null},...q.lineas.slice(1)];
- q.fuente=q.lineas.map(x=>x.textoOriginal).join('\n');
+ q.fuente='Moneda: ARS\n'+q.lineas.map(x=>x.textoOriginal).join('\n');
  const r=evaluarCotizacionMvp225(pedido,q);
  assert.equal(r.rubros[0].precioComprobado,2);
  assert.equal(r.estado,'requiere_revision');
@@ -155,7 +160,7 @@ test('MVP225 cantidad distinta se marca para revisión sin inferir equivalencia'
  const q=offer('A');
  q.lineas=[{...q.lineas[0],textoOriginal:'10 bolsas de cemento CPC · $8.000 c/u · total $80.000',
   cantidad:'10',totalLineaLiteral:'$80.000'},...q.lineas.slice(1)];
- q.fuente=q.lineas.map(l=>l.textoOriginal).join('\n');
+ q.fuente='Moneda: ARS\n'+q.lineas.map(l=>l.textoOriginal).join('\n');
  const r=evaluarCotizacionMvp225(pedido,q);
  assert.equal(r.rubros[0].respondidos,3);
  assert.equal(r.rubros[0].precioComprobado,2);

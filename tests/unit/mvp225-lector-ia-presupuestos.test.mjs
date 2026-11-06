@@ -4,7 +4,7 @@ import {interpretarPresupuestoConIAMvp225} from
  '../../src/domain/ia-central/lector-presupuesto-proveedor-mvp225.ts';
 const pedido=[{id:'cemento_01',descripcion:'Cemento CPC 50 kg',
  rubro:'obra_gruesa',cantidad:'20',unidad:'bag'}];
-const fuente='Hola. 20 bolsas de cem CPC 50kg x $8.900 = $178.000. Pallet sin cargo.';
+const fuente='Hola. 20 bolsas de cem CPC 50kg x $8.900 = $178.000. Pallet sin cargo. Moneda: ARS.';
 const line={
  numero:1,textoOriginal:'20 bolsas de cem CPC 50kg x $8.900 = $178.000',
  descripcion:'Cemento CPC 50 kg',cantidad:'20',unidad:'bag',
@@ -16,7 +16,7 @@ const pallet={
  totalLineaLiteral:null,tipo:'aclaracion'
 };
 const quote={
- intencion:'presupuesto',moneda:'ARS',monedaEvidencia:null,
+ intencion:'presupuesto',moneda:'ARS',monedaEvidencia:'ARS',
  iva:'no_informado',ivaEvidencia:null,
  flete:'no_informado',fleteEvidencia:null,
  pago:'no_informado',pagoEvidencia:null,
