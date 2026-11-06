@@ -66,6 +66,7 @@ export async function procesarPresupuestoCentralMvp227(args:{
  shaText:(source:string)=>Promise<string>;
  interpretar?:typeof interpretarPresupuestoConIAMvp225;
  commercialMemoryEnabled?:boolean;
+ quoteVersioningEnabled?:boolean;
 }):Promise<EstadoProveedorMvp227>{
  if(!args?.habilitado)return done('apagado','flag_disabled');
  if(args.webhookAutenticado!==true||
@@ -149,6 +150,20 @@ export async function procesarPresupuestoCentralMvp227(args:{
    ['ARS','USD'].includes(String(summary.moneda));
   await finish(verified?'verified':'review',
    verified?'source_and_math_checked':'conditions_need_review',summary);
+  if(args.quoteVersioningEnabled===true){
+   // Register a new immutable source version; never add older missing
+   // items or prices to a partial correction. A lost SQL response is
+   // reconciled, not retried by re-running the LLM or sending WhatsApp.
+   try{
+    const revision=await db('cotironda_piloto_record_source_version_mvp261',{
+     p_chat_hmac:args.chatHmac,p_message_hmac:args.messageHmac,
+     p_source_sha256:source.source_sha256
+    });
+    if(!['version_recorded','already_versioned'].includes(
+      String(revision.state)))
+     return done('conciliacion_requerida','version_sync_unconfirmed');
+   }catch{return done('conciliacion_requerida','version_sync_unconfirmed')}
+  }
   if(verified&&args.commercialMemoryEnabled===true){
    // SQL refuses a memory pointer until the independent verified quote
    // has actually been committed. A missing acknowledgment is uncertain,

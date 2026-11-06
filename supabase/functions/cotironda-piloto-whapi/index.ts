@@ -658,6 +658,7 @@ async function respond(req:Request):Promise<Response>{
       const processed=await procesarPresupuestoCentralMvp227({
        habilitado:true,webhookAutenticado:true,
        commercialMemoryEnabled:Deno.env.get('COTIRONDA_PILOT_COMMERCIAL_MEMORY_ENABLED')==='true',
+       quoteVersioningEnabled:Deno.env.get('COTIRONDA_PILOT_QUOTE_VERSIONS_ENABLED')==='true',
        messageHmac:settled.data.source_hmac,chatHmac:chatHash,
        apiKey:Deno.env.get('COTIRONDA_PILOT_OPENAI_API_KEY')??'',
        model,
@@ -727,6 +728,7 @@ async function respond(req:Request):Promise<Response>{
         const processed=await procesarPresupuestoCentralMvp227({
           habilitado:true,webhookAutenticado:true,
           commercialMemoryEnabled:Deno.env.get('COTIRONDA_PILOT_COMMERCIAL_MEMORY_ENABLED')==='true',
+          quoteVersioningEnabled:Deno.env.get('COTIRONDA_PILOT_QUOTE_VERSIONS_ENABLED')==='true',
           messageHmac:messageHash,chatHmac:chatHash,
           apiKey:Deno.env.get('COTIRONDA_PILOT_OPENAI_API_KEY')??'',
           model,
