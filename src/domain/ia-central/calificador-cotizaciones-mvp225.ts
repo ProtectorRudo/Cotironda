@@ -6,6 +6,7 @@
 import {RUBROS_MVP216,type RubroMvp216} from '../rubros-comprador-mvp216.ts';
 import {monedaFuenteMvp241} from './evidencia-moneda-mvp241.ts';
 import {condicionFuenteMvp242} from './evidencia-condiciones-mvp242.ts';
+import {importesOriginalesRepresentadosMvp244} from './fidelidad-importes-fuente-mvp244.ts';
 import {diagnosticarPresentacionMvp243,
  type DiagnosticoPresentacionMvp243
 } from './diagnostico-presentaciones-mvp243.ts';
@@ -172,6 +173,10 @@ export function evaluarCotizacionMvp225(
     missing('oferta_sin_evidencia_original');
   else byLine.set(line.numero,line);
  }
+ // Aun en una invocación directa, una cifra monetaria omitida del
+ // documento original bloquea verificación económica de toda la oferta.
+ if(!importesOriginalesRepresentadosMvp244(oferta.fuente,oferta.lineas))
+  missing('importe_de_fuente_sin_renglon');
  const matched=new Map<string,{line:OfertaLineaMvp225;equivalencia:string}>();
  const seenLine=new Set<number>();
  for(const link of oferta.vinculos){

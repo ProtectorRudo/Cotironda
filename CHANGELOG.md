@@ -1,3 +1,9 @@
+## 2026-11-06 — MVP244: detectar líneas monetarias omitidas del presupuesto (etapa 3)
+
+- Una cotización interpretada ya no puede acreditarse económicamente si el original muestra un importe explícito en materiales, pallets, flete o descuento que no aparece en las líneas citadas. Se comparan frecuencias de importes literales y se detectan duplicados inventados.
+- El total global recapitulativo permanece en la fuente original sin duplicarse como artículo. Un importe no representado bloquea la verificación y requiere revisión, conservando líneas, cobertura y precios previamente cotejados.
+- Nueva verificación en doble lectura MVP225 y calificador directo, suite MVP244 y decisión 367. **Solo desarrollo**, sin SQL, mensajes WhatsApp ni publicación.
+
 ## 2026-11-06 — MVP243: diagnóstico de presentaciones nominales (etapa 3)
 
 - IA Central preserva alternativas de proveedores aunque cambien envase y marca: 20 bolsas × 50 kg vs 40 × 25 kg, envases de 5 L, y bolsones con m³ explícitos. Su peso/volumen nominal se coteja en BigInt con datos LITERALES del proveedor, sin deducir bultos del precio, ni sustituir la acreditación técnica ni activar ranking.

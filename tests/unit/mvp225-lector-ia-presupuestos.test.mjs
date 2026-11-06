@@ -78,12 +78,24 @@ test('MVP225 no inventa IVA cuando la fuente no lo menciona',async()=>{
  const r=await interpretarPresupuestoConIAMvp225({...args,fetchImpl});
  assert.equal(r.estado,'requiere_revision');
 });
-test('MVP225 saludo de proveedor no es una cotización',async()=>{
+test('MVP225 saludo real de proveedor no es una cotización',async()=>{
+ const other=structuredClone(quote);
+ other.intencion='otro';other.lineas=[];other.vinculos=[];
+ other.moneda='no_informada';other.monedaEvidencia=null;
+ const {fetchImpl,calls}=mockResponses(other);
+ const r=await interpretarPresupuestoConIAMvp225({
+  ...args,fuente:'Hola, buenos días',fetchImpl
+ });
+ assert.equal(r.estado,'sin_cotizacion');
+ assert.equal(calls.length,1);
+});
+test('MVP244: una cotización con importes no desaparece como saludo',async()=>{
  const other=structuredClone(quote);
  other.intencion='otro';other.lineas=[];other.vinculos=[];
  const {fetchImpl,calls}=mockResponses(other);
  const r=await interpretarPresupuestoConIAMvp225({...args,fetchImpl});
- assert.equal(r.estado,'sin_cotizacion');
+ assert.equal(r.estado,'requiere_revision');
+ assert.equal(r.motivo,'primera_lectura_sin_fuente');
  assert.equal(calls.length,1);
 });
 test('MVP225 API fallida se marca pendiente y no crea datos',async()=>{
