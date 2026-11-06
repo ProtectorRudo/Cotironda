@@ -217,6 +217,21 @@ CREATE TABLE cotironda_piloto_privado.supplier_source_checks_mvp106(
  source_sha256 text,model_line_count smallint,
  state text,reason text
 );
+CREATE TABLE cotironda_piloto_privado.supplier_reading_checks_mvp102(
+ message_hmac text PRIMARY KEY,source_sha256 text,
+ line_count smallint,state text
+);
+CREATE TABLE cotironda_piloto_privado.supplier_amount_checks_mvp103(
+ message_hmac text PRIMARY KEY,source_sha256 text,
+ line_count smallint,state text
+);
+CREATE TABLE cotironda_piloto_privado.anonymous_supplier_docs_mvp107(
+ message_hmac text PRIMARY KEY,request_id uuid,supplier_key text,
+ source_sha256 text,line_count smallint
+);
+ALTER TABLE cotironda_piloto_privado.supplier_reading_checks_mvp102 ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cotironda_piloto_privado.supplier_amount_checks_mvp103 ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cotironda_piloto_privado.anonymous_supplier_docs_mvp107 ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cotironda_piloto_privado.media_archive_mvp095 ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cotironda_piloto_privado.supplier_media_quotes_mvp098 ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cotironda_piloto_privado.supplier_source_checks_mvp106 ENABLE ROW LEVEL SECURITY;
@@ -605,6 +620,42 @@ BEGIN
  UPDATE cotironda_piloto_privado.supplier_source_checks_mvp106
  SET state='source_text_covered',reason='covered'
  WHERE message_hmac=repeat('9',64);
+ -- A covered file ALONE is insufficient: don't trust model agreement
+ -- or allow a buyer to see a quote before the approved source publisher.
+ INSERT INTO cotironda_piloto_privado.supplier_reading_checks_mvp102(
+ message_hmac,source_sha256,line_count,state)
+ VALUES(repeat('9',64),repeat('b',64),1,'model_readings_match');
+ INSERT INTO cotironda_piloto_privado.supplier_amount_checks_mvp103(
+ message_hmac,source_sha256,line_count,state)
+ VALUES(repeat('9',64),repeat('b',64),1,'balanced');
+ IF public.cotironda_piloto_ia_reserve_media_mvp245(
+   repeat('9',64),repeat('2',64),repeat('b',64),1)->>'state'<>'not_eligible'
+ THEN RAISE EXCEPTION 'mvp246_unpublished_source_reserved';END IF;
+ INSERT INTO cotironda_piloto_privado.anonymous_supplier_docs_mvp107(
+ message_hmac,request_id,supplier_key,source_sha256,line_count)
+ VALUES(repeat('9',64),rid,'corralon_nahuel',repeat('b',64),1);
+ UPDATE cotironda_piloto_privado.supplier_reading_checks_mvp102
+ SET state='needs_review' WHERE message_hmac=repeat('9',64);
+ IF public.cotironda_piloto_ia_reserve_media_mvp245(
+   repeat('9',64),repeat('2',64),repeat('b',64),1)->>'state'<>'not_eligible'
+ THEN RAISE EXCEPTION 'mvp246_divergent_model_readings_reserved';END IF;
+ UPDATE cotironda_piloto_privado.supplier_reading_checks_mvp102
+ SET state='model_readings_match' WHERE message_hmac=repeat('9',64);
+ UPDATE cotironda_piloto_privado.supplier_amount_checks_mvp103
+ SET state='difference' WHERE message_hmac=repeat('9',64);
+ IF public.cotironda_piloto_ia_reserve_media_mvp245(
+   repeat('9',64),repeat('2',64),repeat('b',64),1)->>'state'<>'not_eligible'
+ THEN RAISE EXCEPTION 'mvp246_unbalanced_amounts_reserved';END IF;
+ UPDATE cotironda_piloto_privado.supplier_amount_checks_mvp103
+ SET state='balanced' WHERE message_hmac=repeat('9',64);
+ UPDATE cotironda_piloto_privado.participants
+ SET opted_out_at=clock_timestamp() WHERE key='arquitecto';
+ IF public.cotironda_piloto_ia_reserve_media_mvp245(
+   repeat('9',64),repeat('2',64),repeat('b',64),1)->>'state'<>'not_eligible'
+ THEN RAISE EXCEPTION 'mvp246_revoked_buyer_permitted';END IF;
+ UPDATE cotironda_piloto_privado.participants
+ SET opted_out_at=NULL WHERE key='arquitecto';
+
  IF public.cotironda_piloto_ia_reserve_media_mvp245(
    repeat('9',64),repeat('3',64),repeat('b',64),1)->>'state'<>'not_eligible'
  OR public.cotironda_piloto_ia_reserve_media_mvp245(
@@ -647,6 +698,16 @@ BEGIN
    repeat('9',64),repeat('3',64),'verified','source_and_math_checked',report
   )->>'state'<>'already_finalized_or_ineligible'
  THEN RAISE EXCEPTION 'mvp245_other_supplier_finished_foreign_media';END IF;
+ DELETE FROM cotironda_piloto_privado.anonymous_supplier_docs_mvp107
+ WHERE message_hmac=repeat('9',64);
+ IF public.cotironda_piloto_ia_finish_quote_mvp227(
+   repeat('9',64),repeat('2',64),'verified','source_and_math_checked',report
+  )->>'state'<>'already_finalized_or_ineligible'
+ THEN RAISE EXCEPTION 'mvp246_published_evidence_removed_should_block_finish';END IF;
+ INSERT INTO cotironda_piloto_privado.anonymous_supplier_docs_mvp107(
+ message_hmac,request_id,supplier_key,source_sha256,line_count)
+ VALUES(repeat('9',64),rid,'corralon_nahuel',repeat('b',64),1);
+
  IF public.cotironda_piloto_ia_finish_quote_mvp227(
    repeat('9',64),repeat('2',64),'verified','source_and_math_checked',report
   )->>'state'<>'saved_private'
