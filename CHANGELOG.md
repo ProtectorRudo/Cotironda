@@ -1,3 +1,10 @@
+## 2026-11-06 — MVP268: preflight real y reproducible de activación del piloto (solo lectura)
+
+- Consulta nueva de diagnóstico SIN efectos secundarios en `cotironda-piloto`: PostgreSQL 17.11; cuatro gates OFF, 0/12 objetos MVP256–267 instalados, tres cron preexistentes activos, 0 usuarios Auth y sin salida `uncertain` en los dos ledgers observados.
+- Informe separado de **precondiciones técnicas para preparar instalación** frente a evidencia operativa faltante; nunca declara WhatsApp E2E, MFA real ni permiso de publicación. No confundir cinco `api_accepted` con entrega.
+- Contratos Node y ensayo PostgreSQL17 reversible de configuración conservadora/insegura, sin escribir en el proyecto conectado. Decisión 393.
+- **Solo desarrollo:** sin instalar migraciones, modificar flags, activar cron, publicar Vercel ni enviar WhatsApps.
+
 ## 2026-11-06 — Etapa 7 / MVP267: operador de IA Central con sesión Auth vigente y MFA
 
 - Vinculación única y privada de operador interno con usuario Supabase Auth exclusivo del PILOTO; ninguna alta automática. Un token con sesión ausente/revocada, JWT ajeno, cuenta anónima, operador inactivo o sin AAL2 no obtiene permisos.
