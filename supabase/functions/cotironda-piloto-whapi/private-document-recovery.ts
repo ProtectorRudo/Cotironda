@@ -5,6 +5,7 @@
  */
 import {proposeDocumentAI,documentFailureCode} from './document-ai-draft.ts';
 import {checkSupplierPdfSource} from './supplier-source-pdf.ts';
+import {checkSupplierImageSourceMvp251} from './supplier-source-image-mvp251.ts';
 import {checkSupplierOfficeSource} from './supplier-source-office.ts';
 import {checkSupplierTextSource} from './supplier-source-text.ts';
 import type {MediaManifest} from './media-intake.ts';
@@ -125,6 +126,8 @@ export async function recoverOneStoredDocument(args:{
   if(!audited||!['balanced','difference','needs_review'].includes(String(audited.state)))
    return 'recovered_private';
   const source=isPdf(mime)?await checkSupplierPdfSource(file,proposal):
+   mime.startsWith('image/')?
+    await checkSupplierImageSourceMvp251(file,proposal,second):
    mime.includes('openxmlformats-officedocument')?
     await checkSupplierOfficeSource(file,proposal):
     checkSupplierTextSource(file,proposal);
