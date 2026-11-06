@@ -154,6 +154,16 @@ BEGIN
   AND d.finished_at<=p.received_at
   AND buyer.participant_role='buyer'
   AND buyer.consent_at IS NOT NULL AND buyer.opted_out_at IS NULL
+  -- Dos avisos pendientes del mismo proveedor no permiten deducir
+  -- a cuál corresponde el adjunto, aunque uno sea más reciente.
+  AND NOT EXISTS(
+   SELECT 1 FROM cotironda_piloto_privado.ai_supplier_preambles_mvp238 other
+   WHERE other.supplier_key=p.supplier_key AND other.chat_hmac=p.chat_hmac
+    AND other.preamble_hmac<>p.preamble_hmac
+    AND other.attachment_hmac IS NULL
+    AND other.received_at>=v_file.received_at-interval '10 minutes'
+    AND other.received_at<v_file.received_at
+  )
   -- Cualquier texto o archivo intercalado rompe la continuidad segura.
   AND NOT EXISTS(
    SELECT 1 FROM cotironda_piloto_privado.whapi_inbox middle
