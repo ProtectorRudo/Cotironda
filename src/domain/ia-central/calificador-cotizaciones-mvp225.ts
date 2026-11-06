@@ -243,6 +243,9 @@ export function evaluarCotizacionMvp225(
  }
  if(extras.some(x=>byLine.get(x.numero)?.tipo==='cargo_adicional'))
   missing('cargos_adicionales_sin_comparacion');
+ // Una oferta solo de alternativas no puede quedar marcada como
+ // económicamente verificada cuando NO tiene ningún precio cotejable.
+ if(prices.length===0)missing('sin_precios_comparables');
  return {etiquetaAnonima:oferta.etiquetaAnonima,
   estado:motivos.length?'requiere_revision':'verificada_para_comparacion',
   motivos,rubros,extras,precios:prices,
