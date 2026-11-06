@@ -1,3 +1,8 @@
+## 2026-11-06 — MVP249: PDF con flete, descuentos y pallets sin unitario
+
+- El cotejador PDF independiente reconoce renglones de cargos sin cantidad ni unidad cuando realmente figuran así en el original, sin inventar precios unitarios. Rechaza importes que faltan, cifras de flete no justificadas, documentos escaneados y datos personales.
+- Sigue respetando el verificador de original, dos lecturas, autorización SQL por proveedor/ronda y la publicación anónima. Corpus de regresiones y decisión 372. Solo desarrollo, sin enviar WhatsApps ni publicar piloto/producción.
+
 ## 2026-11-06 — MVP248: publicador comercial multirrubro con privacidad intacta
 
 - Amplía la admisión de descripciones documentales de un pequeño diccionario de corralón a familias de pintura, electricidad, sanitarios, construcción en seco, ferretería y extras comerciales, sin habilitar texto arbitrario ni borrar controles de PII.
