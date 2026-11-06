@@ -1,0 +1,62 @@
+name: Cotironda IA Central etapa 5 - triage de WhatsApp sin ID MVP258
+on:
+  pull_request:
+    branches:
+      - feat/mvp174-supplier-packaging-equivalence
+    paths:
+      - 'supabase/piloto/mvp258_uncertain_noid_triage.sql'
+      - 'supabase/tests/ci/mvp258-uncertain-noid-pg17.sql'
+      - 'tests/unit/mvp258-whapi-uncertain-triage.test.mjs'
+      - '.github/workflows/cotironda-mvp258-uncertain-triage.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pg17-uncertain-no-id:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: test_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: 'PG17: casos sin ID, doble lectura, sin reenvio y ACL'
+        run: >-
+          psql -X -v ON_ERROR_STOP=1
+          -f supabase/tests/ci/mvp258-uncertain-noid-pg17.sql
+  triage-node:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: 'Node: privacidad y regresión de incertidumbre Whapi'
+        run: >-
+          node --experimental-strip-types --test
+          tests/unit/mvp258-whapi-uncertain-triage.test.mjs
+          tests/unit/mvp257-whapi-uncertain-evidence.test.mjs
+          tests/unit/mvp119-whapi-status-delivery.test.mjs
+          tests/unit/mvp256-safe-document-retry.test.mjs
+# NO llamadas a Whapi, no piloto, no producción.

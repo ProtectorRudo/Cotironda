@@ -1,3 +1,8 @@
+## 2026-11-06 — IA Central etapa 5: expedientes de Whapi sin ID MVP258
+
+- Scanner privado de salidas inciertas sin ID Whapi y leases antiguos de cinco colas, con expedientes únicos, fechas y diagnóstico limitado. Sin reenvíos ni cambios de estado de mensajes.
+- RPC internos de consulta y evidencia de revisión manual con SHA256, códigos cerrados y controles RLS/ACL; nunca certifica entrega sin prueba externa. Test PostgreSQL 17 reversible, contrato Node y decisión 382. **Solo desarrollo.**
+
 ## 2026-11-06 — Etapa 5 / MVP257: conciliación pasiva de Whapi incierto
 
 - Se implementó evidencia privada de comprobantes `statuses.post` autenticados para envíos que siguen `uncertain`, con ID de Whapi y destinatario HMAC exactamente vinculados a un único outbox; el orden de estados no puede retroceder ni se permite reenviar automáticamente.
