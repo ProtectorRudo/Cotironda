@@ -191,9 +191,12 @@ export async function prepareMobilePilotZip({
  if(parent===folder)fail('OUTPUT_INSIDE_SOURCE');
  const meta=await existingManifest(folder,pieces);
  const expected=[...pieces,{name:META,...meta}];
- // Atomic, exclusive file creation and streaming archive generation.
+ // Exclusive handle stays open: never reopen the path with flags:'w'.
+ // This also prevents a competing process from inserting its own ZIP between
+ // an initial O_EXCL check and the bytes being written.
  const file=await open(output,'wx',0o600).catch(()=>fail('OUTPUT_ALREADY_EXISTS'));
- await file.close();
+ const owned=await file.stat();
+ let openHandle=true;
  try{
   const zip=spawn('zip',['-q','-0','-X','-D','-',...INPUTS],{
    cwd:folder,env:{PATH:env.PATH||'/usr/bin:/bin',LANG:'C'},
@@ -201,10 +204,22 @@ export async function prepareMobilePilotZip({
   const exited=new Promise((ok,reject)=>{
    zip.once('close',ok);zip.once('error',reject);
   });
-  await pipeline(zip.stdout,createWriteStream(output,{flags:'w',mode:0o600}));
-  if((await exited)!==0)fail('ZIP_WRITE_FAILED');
-  // Two independent checks: compressed copy matches source hashes, then
-  // source files have not changed during packaging.
+  const [,zipExit]=await Promise.all([
+   pipeline(zip.stdout,file.createWriteStream({autoClose:true})),
+   exited
+  ]);
+  if(zipExit!==0)fail('ZIP_WRITE_FAILED');
+  // With autoClose:true the pipeline waits for the original FD to close.
+  // No path-based reopen, and no pending FileHandle close promise.
+  openHandle=false;
+  const stillOurs=async()=>{
+   const now=await lstat(output).catch(()=>fail('OUTPUT_REPLACED'));
+   if(!now.isFile()||now.dev!==owned.dev||now.ino!==owned.ino)
+    fail('OUTPUT_REPLACED');
+  };
+  await stillOurs();
+  // Validate every member against the independently hashed source, then
+  // compare inventory again. The ZIP file must still be OUR inode.
   await verifyZip(output,expected,env);
   const again=await inspectFiles(folder);
   const metaAgain=await existingManifest(folder,again);
@@ -212,6 +227,7 @@ export async function prepareMobilePilotZip({
      JSON.stringify(metaAgain)!==JSON.stringify(meta))
    fail('SOURCE_CHANGED_DURING_PACKAGING');
   const zipped=await shaFile(output);
+  await stillOurs();
   return Object.freeze({status:'MOBILE_ZIP_ENCRYPTED_CONTENT_CANDIDATE',
    filename:output.split(sep).at(-1),sha256:zipped.sha256,
    bytes:zipped.bytes,pieces:FILES.length,
@@ -219,7 +235,11 @@ export async function prepareMobilePilotZip({
    source_verified:false,storage_coverage_verified:false,
    download_link_created:false,public_upload:false});
  }catch(e){
-  await rm(output,{force:true}).catch(()=>{});
+  if(openHandle)await file.close().catch(()=>{});
+  // NEVER remove another process's ZIP if the path has been replaced.
+  const now=await lstat(output).catch(()=>null);
+  if(now?.dev===owned.dev&&now?.ino===owned.ino)
+   await rm(output,{force:true}).catch(()=>{});
   if(e instanceof Error&&/^MVP269_/.test(e.message))throw e;
   fail('ARCHIVE_FAILED');
  }
