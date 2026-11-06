@@ -80,7 +80,7 @@ BEGIN
   AND p.consent_at IS NOT NULL AND p.opted_out_at IS NULL
  FOR UPDATE;
  IF NOT FOUND THEN RETURN jsonb_build_object('state','not_authorized');END IF;
- SELECT version_no INTO existing_
+ SELECT revision_no INTO existing_
  FROM cotironda_piloto_privado.supplier_source_versions_mvp261
  WHERE message_hmac=p_message_hmac
   AND request_id=q_.request_id AND supplier_key=q_.supplier_key
