@@ -26,6 +26,21 @@ ALTER TABLE cotironda_piloto_privado.ai_supplier_preambles_mvp238
 REVOKE ALL ON TABLE cotironda_piloto_privado.ai_supplier_preambles_mvp238
  FROM PUBLIC,anon,authenticated,service_role;
 
+-- El registro MVP237 también debe explicar por qué un archivo no pudo
+-- heredar el contexto del aviso, sin guardar presupuestos ni contactos.
+ALTER TABLE cotironda_piloto_privado.ai_supplier_unresolved_mvp237
+ DROP CONSTRAINT IF EXISTS ai_supplier_unresolved_mvp237_state_check;
+ALTER TABLE cotironda_piloto_privado.ai_supplier_unresolved_mvp237
+ ADD CONSTRAINT ai_supplier_unresolved_mvp237_state_check
+ CHECK(state IN('ambiguous_round','not_matched','media_context_conflict',
+  'context_blocked'));
+ALTER TABLE cotironda_piloto_privado.ai_supplier_unresolved_mvp237
+ DROP CONSTRAINT IF EXISTS ai_supplier_unresolved_mvp237_association_method_check;
+ALTER TABLE cotironda_piloto_privado.ai_supplier_unresolved_mvp237
+ ADD CONSTRAINT ai_supplier_unresolved_mvp237_association_method_check
+ CHECK(association_method IN('quoted_whapi_id','single_active_round',
+  'prior_supplier_preamble'));
+
 -- El vínculo económico conserva la procedencia exacta en el campo association.
 ALTER TABLE cotironda_piloto_privado.ai_supplier_links_mvp225
  DROP CONSTRAINT IF EXISTS ai_supplier_links_mvp225_association_check;
@@ -198,6 +213,15 @@ BEGIN
    AND p.attachment_hmac IS NULL
    AND p.received_at<v_file.received_at
    AND p.received_at>=v_file.received_at-interval '24 hours';
+  IF v_recent_count>0 THEN
+    INSERT INTO cotironda_piloto_privado.ai_supplier_unresolved_mvp237
+    (message_hmac,supplier_key,source_sha256,kind,state,
+     candidate_count,association_method)
+    VALUES (p_media_hmac,v_file.participant_key,
+      v_file.content_sha256,v_file.kind,'context_blocked',
+      v_recent_count,'prior_supplier_preamble')
+    ON CONFLICT (message_hmac) DO NOTHING;
+  END IF;
   RETURN jsonb_build_object('state',
    CASE WHEN v_candidate_count>1 THEN 'ambiguous'
     WHEN v_recent_count>0 THEN 'context_blocked'
