@@ -633,7 +633,8 @@ async function respond(req:Request):Promise<Response>{
     const state=settled.data?.state;
     if(!['resolved','ambiguous_source','no_pending_source',
          'quoted_request_not_unique','not_authorized',
-         'already_resolved','invalid'].includes(state))
+         'already_resolved','invitation_after_source',
+         'invalid'].includes(state))
       return json(503,'ai_supplier_clarification_state_invalid');
     if(state==='resolved'&&settled.data?.source_kind==='text'&&
        typeof settled.data.source_hmac==='string'&&
