@@ -29,7 +29,12 @@ test('MVP239 antes de quoted fallback y con lease para un único WhatsApp',()=>{
  const resolver=code.indexOf("cotironda_piloto_ia_resolve_clarification_mvp239");
  const quoted=code.indexOf("cotironda_piloto_link_quoted_text_mvp151");
  assert.ok(resolver>0&&resolver<quoted);
- assert.match(code,/!selectorClarification&&/u);
+ assert.match(code,/!isClarificationAnswer&&/u);
+ assert.match(code,/selectorClarification=isClarificationAnswer&&/u);
+ // Una aclaración sin citar el pedido original nunca entra a quoted-text
+ // ni a la asociación automática de cotizaciones.
+ assert.ok(code.includes("supplierQuotedId&&!attachmentNotice&&\n     !isClarificationAnswer"));
+ assert.ok(code.includes("row.type==='text'&&centralSupplier&&!isClarificationAnswer"));
  assert.match(code,/COTIRONDA_PILOT_AMBIGUITY_PROMPTS_ENABLED/u);
  assert.match(code,/cotironda_piloto_ia_reserve_clarification_mvp239/u);
  assert.match(code,/cotironda_piloto_ia_finish_clarification_mvp239/u);
