@@ -1,3 +1,9 @@
+## 2026-11-06 — MVP239: aclaración segura de presupuestos ambiguos (etapa 2)
+
+- El proveedor puede contestar citando el mensaje ORIGINAL del pedido Whapi, sin volver a enviar el presupuesto. Una RPC vincula un único documento o texto pendiente al pedido exacto del mismo proveedor, sin seleccionar por similitud ni confundir el mensaje de aclaración con una oferta nueva.
+- La pregunta automatizada se reserva una sola vez y está sujeta a cuota, consentimiento y bandera independiente **apagada por defecto**; los resultados inciertos no se reintentan. Tabla privada, idempotencia, pruebas PostgreSQL 17 y ADR 361.
+- Cambio inicialmente en desarrollo; sin WhatsApps reales ni publicación en producción. Validación integral pendiente.
+
 ## 2026-11-06 — MVP238: aviso de proveedor + archivo posterior (etapa 2, desarrollo)
 
 - Un mensaje breve como «Te paso el presupuesto» se registra como **aviso de adjunto**, no como cotización ni como motivo de respuesta automática. Solo si el aviso está inequívocamente asociado a una invitación Whapi aceptada, el siguiente archivo almacenado y verificado puede consumir esa referencia.
