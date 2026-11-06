@@ -1,3 +1,9 @@
+## 2026-11-06 — MVP254: corpus de contratos 1–3 e inicio de etapa 4
+
+- Nueva suite de 336 escenarios sintéticos de contrato (224 formulaciones de siete rubros y 112 mutaciones adversariales), más pruebas de rondas simultáneas, ruteo y seis proveedores; **no equivale** a 150 respuestas reales de IA ni a E2E WhatsApp.
+- Comparador privado por rubro sobre evidencia económica MVP225: cobertura separada de precio comprobado, opciones complementarias de hasta dos presupuestos anónimos, condiciones homogéneas indicadas y cero ranking global o adjudicación.
+- Sin conexión nueva al navegador ni publicación; solo desarrollo. Control CI y decisión 378.
+
 ## 2026-11-06 — MVP253: autorizaciones y presupuesto OCR por original
 
 - Nueva política privada por defecto OFF, sin consentimientos precargados y con límite cero, que exige consentimiento externo específico del comprador y proveedor, ronda e identidad correctas, doble lectura y cuotas mensuales antes de enviar originales a Cloud Vision.
