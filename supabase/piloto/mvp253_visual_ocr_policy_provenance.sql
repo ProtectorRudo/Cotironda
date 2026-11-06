@@ -76,12 +76,12 @@ CREATE TABLE cotironda_piloto_privado.visual_ocr_attempt_mvp253(
   CHECK(state IN('reserved','covered_private','needs_review')),
  finished_at timestamptz,
  reason text CHECK(reason ~ '^[a-z][a-z0-9_]{2,63}$'),
- pages_seen smallint CHECK(pages_seen BETWEEN 1 AND 5),
+ pages_seen smallint CHECK(pages_seen BETWEEN 0 AND 5),
  min_confidence_milli smallint CHECK(min_confidence_milli BETWEEN 0 AND 1000),
  ocr_text_sha256 text CHECK(ocr_text_sha256 ~ '^[a-f0-9]{64}$'),
  CHECK((state='reserved')=(finished_at IS NULL)),
  CHECK(state <> 'covered_private' OR (
-  pages_seen IS NOT NULL AND
+  pages_seen IS NOT NULL AND pages_seen>=1 AND
   min_confidence_milli>=900 AND ocr_text_sha256 IS NOT NULL AND
   reason='ocr_text_lines_covered'
  )),
@@ -242,7 +242,7 @@ BEGIN
  OR p_reservation_token IS NULL
  OR p_state NOT IN('covered_private','needs_review')
  OR p_reason IS NULL OR p_reason !~ '^[a-z][a-z0-9_]{2,63}$'
- OR p_pages IS NULL OR p_pages NOT BETWEEN 1 AND 5
+ OR p_pages IS NULL OR p_pages NOT BETWEEN 0 AND 5
  OR (p_min_confidence_milli IS NOT NULL AND
      p_min_confidence_milli NOT BETWEEN 0 AND 1000)
  OR (p_ocr_text_sha256 IS NOT NULL AND
@@ -260,7 +260,7 @@ BEGIN
  IF attempt_.state<>'reserved'
  THEN RETURN jsonb_build_object('state','already_finalized');END IF;
  IF p_state='covered_private' AND (
-  p_reason<>'ocr_text_lines_covered'
+  p_pages<1 OR p_reason<>'ocr_text_lines_covered'
   OR p_ocr_text_sha256 IS NULL OR
   p_min_confidence_milli IS NULL OR
   p_min_confidence_milli<900)
