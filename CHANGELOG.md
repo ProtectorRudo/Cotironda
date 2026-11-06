@@ -1,3 +1,10 @@
+## 2026-11-06 — Etapa 7 / MVP266: gasto OpenAI desconocido no expira a las 24 horas
+
+- Auditoría integral de las siete etapas IA Central con separación entre código en desarrollo y criterios operativos sin acreditar; decisión 390. **No declarar 7/7 ni piloto E2E** por pruebas sintéticas.
+- Corregida la reserva de IA: un consumo `unmetered` o `reserved` sin revisión bloquea nuevas llamadas del participante incluso después de 24 horas. La cuota de llamadas/tokens observados sigue siendo móvil y verificable.
+- Revisión humana futura mediante RPC interna y operador previamente habilitado, con evidencia SHA, idempotencia, límite diario y prohibición de liberar una reserva reciente. Conservar estados desconocidos, sin fabricar costos ni tokens. Tabla privada RLS, `service_role` exclusivo y sin operadores activos por defecto.
+- Pruebas PG17 reversibles y contrato Node. **Solo desarrollo; no hay migración aplicada a PILOTO, backend de operador autenticado, cron, mensajes nuevos o publicación.**
+
 ## 2026-11-06 — Etapa 7 / MVP265: protocolo privado de incidentes con operador
 
 - Bitácora de `acknowledge`, `investigate`, `escalate`, conciliación manual y revisión posterior a resolución, por señal y episodio. Un operador deshabilitado o sin inscripción no puede registrar acciones; una nota nunca modifica la fuente ni da por entregado un WhatsApp.
