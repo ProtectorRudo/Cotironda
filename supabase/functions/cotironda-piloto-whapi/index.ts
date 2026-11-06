@@ -618,6 +618,7 @@ async function respond(req:Request):Promise<Response>{
       messageHmac:messageHash,sourceSha256:textHash,
       fuente:body,apiKey:Deno.env.get('COTIRONDA_PILOT_OPENAI_API_KEY')??'',
       model,
+      usageTraceEnabled:Deno.env.get('COTIRONDA_PILOT_AI_USAGE_TRACE_ENABLED')==='true',
       rpc:async(name,params)=>{
         const result=await db.rpc(name,params);
         return {data:result.data,error:result.error};
@@ -659,6 +660,7 @@ async function respond(req:Request):Promise<Response>{
        habilitado:true,webhookAutenticado:true,
        commercialMemoryEnabled:Deno.env.get('COTIRONDA_PILOT_COMMERCIAL_MEMORY_ENABLED')==='true',
        quoteVersioningEnabled:Deno.env.get('COTIRONDA_PILOT_QUOTE_VERSIONS_ENABLED')==='true',
+       usageTraceEnabled:Deno.env.get('COTIRONDA_PILOT_AI_USAGE_TRACE_ENABLED')==='true',
        messageHmac:settled.data.source_hmac,chatHmac:chatHash,
        apiKey:Deno.env.get('COTIRONDA_PILOT_OPENAI_API_KEY')??'',
        model,
@@ -729,6 +731,7 @@ async function respond(req:Request):Promise<Response>{
           habilitado:true,webhookAutenticado:true,
           commercialMemoryEnabled:Deno.env.get('COTIRONDA_PILOT_COMMERCIAL_MEMORY_ENABLED')==='true',
           quoteVersioningEnabled:Deno.env.get('COTIRONDA_PILOT_QUOTE_VERSIONS_ENABLED')==='true',
+          usageTraceEnabled:Deno.env.get('COTIRONDA_PILOT_AI_USAGE_TRACE_ENABLED')==='true',
           messageHmac:messageHash,chatHmac:chatHash,
           apiKey:Deno.env.get('COTIRONDA_PILOT_OPENAI_API_KEY')??'',
           model,
