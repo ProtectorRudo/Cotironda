@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {ciudadDeRespuestaCentralMvp234} from
+import {ciudadDeRespuestaCentralMvp234,estadoClaimZonaMvp234} from
  '../../supabase/functions/cotironda-piloto-whapi/ai-central-city-mvp234.ts';
 
 test('MVP234: respuestas cotidianas devuelven solo la localidad',()=>{
@@ -50,4 +50,16 @@ test('MVP234: sin diccionario de localidades inventado, preserva nombres válido
  assert.equal(ciudadDeRespuestaCentralMvp234('Los Hornos'),'Los Hornos');
  assert.equal(ciudadDeRespuestaCentralMvp234('En General Rodríguez'),'General Rodríguez');
  assert.equal(ciudadDeRespuestaCentralMvp234('En Mar del Plata'),'Mar del Plata');
+});
+
+test('MVP234: un claim repetido, ambiguo o sin pedido nunca abre nueva ronda',()=>{
+ for(const state of ['ambiguous','no_pending','already_consumed']){
+  assert.equal(estadoClaimZonaMvp234({state}),'consumed');
+ }
+ assert.equal(estadoClaimZonaMvp234({state:'resumed'}),'resume');
+ for(const bad of [null,undefined,{},[],{state:'disabled'},
+   {state:'not_authorized'},{state:'original_unavailable'},
+   {state:'unexpected'},'resumed']){
+  assert.equal(estadoClaimZonaMvp234(bad),'inconsistent');
+ }
 });
