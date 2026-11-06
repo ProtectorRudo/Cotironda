@@ -111,11 +111,13 @@ BEGIN
   'financial_exposure_accepted')
  OR p_evidence_sha256 IS NULL OR p_evidence_sha256 !~ '^[a-f0-9]{64}$'
  THEN RETURN jsonb_build_object('state','invalid');END IF;
- IF NOT EXISTS(
-  SELECT 1 FROM cotironda_piloto_privado.supervisor_operators_mvp265 o
-  WHERE o.operator_ref=p_operator_ref AND o.active AND o.revoked_at IS NULL
-   AND o.role='incident_manager'
- ) THEN RETURN jsonb_build_object('state','operator_not_authorized');END IF;
+ -- Serialize the operator's 100-reviews/24h quota and revocation checks.
+ PERFORM 1 FROM cotironda_piloto_privado.supervisor_operators_mvp265 o
+ WHERE o.operator_ref=p_operator_ref AND o.active AND o.revoked_at IS NULL
+  AND o.role='incident_manager'
+ FOR UPDATE;
+ IF NOT FOUND THEN
+  RETURN jsonb_build_object('state','operator_not_authorized');END IF;
  -- Serialize manual review against concurrent AI call reservations.
  SELECT p.key INTO person_
  FROM cotironda_piloto_privado.participants p
