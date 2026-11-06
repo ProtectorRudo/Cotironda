@@ -23,9 +23,11 @@ ni que rellene un formulario.
    citar el ID Whapi original de la invitación; se valida con los
    registros `api_accepted` del **mismo proveedor** y ronda abierta.
 5. Solo si hay exactamente **un** presupuesto original irresuelto de
-   ese proveedor en los últimos diez minutos, se vincula el origen
-   conservado al ID de la solicitud. No se asocia un texto «es este»
-   como si fuera la nueva cotización.
+   ese proveedor en las últimas 24 horas, se vincula el origen
+   conservado al ID de la solicitud. La invitación citada debe haber
+   sido enviada **antes de recibirse ese presupuesto**, no solamente
+   antes de la aclaración. No se asocia un texto «es este» como si fuera
+   la nueva cotización; tampoco si no cita el pedido original.
 6. Para adjuntos, se actualizan inbox, archivo original y ledger en
    **la misma transacción**. Para cotizaciones de texto, el flujo
    existente MVP227 puede leer el original AES-GCM y comprobar SHA.
@@ -35,6 +37,18 @@ ni que rellene un formulario.
    vencimiento o ambigüedad, se detiene sin inventar destinatario.
 
 ## Seguridad y operación
+
+El envío de preguntas exige además
+`integration_flags.whatsapp_inbound_enabled=true` y
+`whatsapp_outbound_enabled=true`, incluso aunque `quote_link` permita
+recibir cotizaciones de una ronda antigua con la prueba de compras
+apagada. El texto de aclaración no hace ACK de presupuesto.
+
+**Limitación explícita:** si la fuente textual original supera la ventana
+de diez minutos del lector económico MVP227, su ronda puede quedar
+correctamente asociada, pero el importe continúa en revisión para
+recuperación documental posterior. La asociación nunca acredita precios
+por sí misma.
 
 Las tres RPC son `SECURITY DEFINER` con `search_path=''`, y solo
 `service_role` puede ejecutarlas. El ledger y la tabla nueva tienen
