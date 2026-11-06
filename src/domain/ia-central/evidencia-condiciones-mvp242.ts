@@ -19,7 +19,7 @@ const pautas:Readonly<Record<CampoCondicionMvp242,
  Readonly<Record<string,readonly RegExp[]>>>>={
  iva:{
   incluido_explicito:[
-   /\biva\s*(?:(?:del?\s*)?\d{1,2}\s*%\s*)?incluid[oa]s?\b/u,
+   /\biva\s*[:=]?\s*(?:(?:del?\s*)?\d{1,2}\s*%\s*)?incluid[oa]s?\b/u,
    /\bcon\s+(?:el\s+)?iva\b/u,
    /\bc\s*\/\s*iva\b/u,
    /\b(?:precios?|importes?)\s+(?:(?:finales?|todos?)\s+)?con\s+(?:el\s+)?iva\b/u
@@ -27,24 +27,24 @@ const pautas:Readonly<Record<CampoCondicionMvp242,
   sin_iva_explicito:[
    /\bsin\s+(?:el\s+)?iva\b/u,
    /(?:\+|\bmas\b)\s*(?:el\s+)?iva\b/u,
-   /\biva\s*(?:no\s+incluid[oa]s?|aparte|excluid[oa]s?|adicional)\b/u,
+   /\biva\s*[:=]?\s*(?:no\s+incluid[oa]s?|aparte|excluid[oa]s?|adicional)\b/u,
    /\bno\s+incluy(?:e|en)\s+(?:el\s+)?iva\b/u
   ]
  },
  flete:{
   incluido_explicito:[
-   /\b(?:flete|envio|entrega)\s+(?:ya\s+)?incluid[oa]s?\b/u,
-   /\b(?:flete|envio|entrega)\s+(?:sin\s+cargo|gratis|bonificad[oa]s?)\b/u,
+   /\b(?:flete|envio|entrega)\s*[:=]?\s+(?:ya\s+)?incluid[oa]s?\b/u,
+   /\b(?:flete|envio|entrega)\s*[:=]?\s+(?:sin\s+cargo|gratis|bonificad[oa]s?)\b/u,
    /\bsin\s+cargo\s+(?:por\s+|de\s+)?(?:flete|envio|entrega)\b/u
   ],
   excluido_explicito:[
    /\bsin\s+(?:incluir\s+)?(?:flete|envio)\b/u,
-   /\b(?:flete|envio)\s+(?:aparte|no\s+incluid[oa]s?|excluid[oa]s?)\b/u,
+   /\b(?:flete|envio)\s*[:=]?\s+(?:aparte|no\s+incluid[oa]s?|excluid[oa]s?)\b/u,
    /\bno\s+incluy(?:e|en)\s+(?:el\s+)?(?:flete|envio)\b/u,
    /\b(?:flete|envio)\s+a\s+cargo\s+del?\s+(?:comprador|cliente)\b/u
   ],
   a_convenir:[
-   /\b(?:flete|envio)\s+(?:a\s+convenir|a\s+cotizar|a\s+confirmar|a\s+presupuestar|segun\s+(?:la\s+)?zona)\b/u,
+   /\b(?:flete|envio)\s*[:=]?\s+(?:a\s+convenir|a\s+cotizar|a\s+confirmar|a\s+presupuestar|segun\s+(?:la\s+)?zona)\b/u,
    /\b(?:costo|precio)\s+(?:del?\s+)?(?:flete|envio)\s+(?:a\s+convenir|a\s+cotizar)\b/u
   ]
  },
