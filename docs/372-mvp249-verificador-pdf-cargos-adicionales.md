@@ -19,7 +19,9 @@ original y su SHA hubieran sido acreditados.
   cantidad expresada y precio por unidad.
 - Los cargos, descuentos y pallets pueden carecer **conjuntamente**
   de cantidad y unidad si no las trae el original. Un precio unitario
-  declarado sin cantidad/unidad sigue bloqueado.
+  declarado sin **cantidad** sigue bloqueado. Una unidad omitida
+  con cantidad expresamente acreditada (por ejemplo «40,00»)
+  permanece válida: la fuente no debe inventar «bolsas» o «unidades».
 - Un importe final solo se acepta si aparece literalmente, con su
   propia frecuencia, en la misma fila del PDF.
 - Si una fila sin cantidad/unidad contiene números adicionales que
