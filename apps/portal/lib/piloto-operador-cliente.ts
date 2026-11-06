@@ -1,7 +1,5 @@
 /** PILOT-only operator adapter. Never touches DEV, production or service role. */
 import {createClient} from '@supabase/supabase-js';
-import type {PostgrestError} from '@supabase/supabase-js';
-import type {SessionUser} from './piloto-operador-identity-types';
 const PILOT_URL='https://ilggkalaafhtiysyzlmg.supabase.co';
 export function puertosOperadorSupabasePiloto(jwt:string){
  const url=process.env.COTIRONDA_PILOT_SUPABASE_URL;
@@ -17,7 +15,7 @@ export function puertosOperadorSupabasePiloto(jwt:string){
    if(token!==jwt)return null;
    const {data,error}=await client.auth.getUser(jwt);
    if(error||!data.user)return null;
-   return {id:data.user.id,is_anonymous:data.user.is_anonymous??null} satisfies SessionUser;
+   return {id:data.user.id,is_anonymous:data.user.is_anonymous??null};
   },
   rpc:async(name:string,params:Record<string,unknown>)=>{
    const methods=new Set([
@@ -28,7 +26,7 @@ export function puertosOperadorSupabasePiloto(jwt:string){
    ]);
    if(!methods.has(name))throw new Error('operador_rpc_no_permitida');
    const {data,error}=await client.rpc(name,params);
-   return {data,error:error as PostgrestError|null};
+   return {data,error};
   }
  };
 }
