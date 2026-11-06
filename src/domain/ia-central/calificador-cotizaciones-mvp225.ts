@@ -6,6 +6,9 @@
 import {RUBROS_MVP216,type RubroMvp216} from '../rubros-comprador-mvp216.ts';
 import {monedaFuenteMvp241} from './evidencia-moneda-mvp241.ts';
 import {condicionFuenteMvp242} from './evidencia-condiciones-mvp242.ts';
+import {diagnosticarPresentacionMvp243,
+ type DiagnosticoPresentacionMvp243
+} from './diagnostico-presentaciones-mvp243.ts';
 
 export type PedidoLineaMvp225=Readonly<{
  id:string;descripcion:string;rubro:RubroMvp216;
@@ -52,6 +55,8 @@ export type OfertaEvaluadaMvp225=Readonly<{
  rubros:readonly RubroResumenMvp225[];
  extras:readonly Readonly<{numero:number;textoOriginal:string}>[];
  precios:readonly EvidenciaPrecioMvp225[];
+ /** Solo evidencia física nominal de alternativas, NUNCA habilita ranking. */
+ presentaciones?:readonly DiagnosticoPresentacionMvp243[];
 }>;
 export type ComparacionMvp225=Readonly<{
  estado:'analisis_por_rubro_sin_adjudicacion';
@@ -185,6 +190,7 @@ export function evaluarCotizacionMvp225(
   .map(x=>({numero:x.numero,textoOriginal:x.textoOriginal}));
  const rubros:RubroResumenMvp225[]=[];
  const prices:EvidenciaPrecioMvp225[]=[];
+ const presentaciones:DiagnosticoPresentacionMvp243[]=[];
  for(const rubro of Object.keys(RUBROS_MVP216) as RubroMvp216[]){
   const all=pedido.filter(x=>x.rubro===rubro);
   if(all.length===0)continue;
@@ -195,6 +201,8 @@ export function evaluarCotizacionMvp225(
    if(!match){faltantes.push(item.id);continue;}
    replied++;
    const {line,equivalencia}=match;
+   if(equivalencia==='alternativa_razonable')
+     presentaciones.push(diagnosticarPresentacionMvp243(item,line));
    const total=precioConfirmado(line);
    if(equivalencia==='misma_presentacion'&&total!==null&&
       line.cantidad!==null&&line.unidad!==null&&
@@ -237,7 +245,8 @@ export function evaluarCotizacionMvp225(
   missing('cargos_adicionales_sin_comparacion');
  return {etiquetaAnonima:oferta.etiquetaAnonima,
   estado:motivos.length?'requiere_revision':'verificada_para_comparacion',
-  motivos,rubros,extras,precios:prices};
+  motivos,rubros,extras,precios:prices,
+  ...(presentaciones.length?{presentaciones}: {})};
 }
 /** Comparar SOLO el mismo artículo, unidad, cantidad, moneda, IVA,
  * flete y condición de pago. No se comparan totales de dos coberturas
