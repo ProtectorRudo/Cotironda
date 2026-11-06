@@ -1,3 +1,9 @@
+## 2026-11-06 — MVP238: aviso de proveedor + archivo posterior (etapa 2, desarrollo)
+
+- Un mensaje breve como «Te paso el presupuesto» se registra como **aviso de adjunto**, no como cotización ni como motivo de respuesta automática. Solo si el aviso está inequívocamente asociado a una invitación Whapi aceptada, el siguiente archivo almacenado y verificado puede consumir esa referencia.
+- Vínculo por HMAC/SHA, mismo proveedor y chat, máximo diez minutos, sin mensajes ni invitaciones intermedias, una sola fuente por aviso. Un aviso conflictivo bloquea el fallback a otra ronda durante 24 horas para evitar mezclar presupuestos.
+- Migración SQL privada, integración del webhook, pruebas Node y PostgreSQL 17, ADR 360. **Sin publicar en piloto o producción; no se activan controles ni se envían WhatsApps. Etapa 2 abierta.**
+
 ## 2026-11-05 — MVP236: asociación de presupuestos por despacho acreditado (etapa 2, desarrollo)
 
 - El enlace de respuestas IA Central ya no considera candidatas las rondas LEGACY preparadas que nunca tuvieron un envío `api_accepted` con ID de Whapi y fecha anterior a la respuesta. El criterio evita ambigüedades artificiales y mantiene el bloqueo cuando existen varias solicitudes realmente enviadas. Cotizaciones citadas conservan vínculo exacto y cotejo de remitente; mensajes duplicados no se reinsertan. CI PostgreSQL 17 con casos adversarios y decisión 358. Complemento MVP237: ledger privado de mensajes no vinculados/ambiguos, una entrada por HMAC, sin precios ni contactos; decisión 359. **Sin despliegue ni WhatsApps; etapa 2 abierta.**
