@@ -1,3 +1,9 @@
+## 2026-11-06 — Etapa 6 / MVP259: memoria comercial verificada y aislada
+
+- Contexto privado por ronda y participante, respaldado por la fuente original del pedido o una revisión verificada del presupuesto del proveedor. Guarda referencias de procedencia con SHA, no texto de conversación, teléfonos ni importes.
+- Snapshots frescos de localidad y cobertura por rubro limitada al catálogo del proveedor; la cotización anterior deja de figurar como actual cuando existe una revisión más reciente. Vencimiento máximo de 14 días tras cerrar la ronda, sin superar 30 días desde registro; bajas revocan lectura/escritura.
+- Pruebas de aislamiento y revocación PG17 reversible, CI Node, ADR383. Solo desarrollo, no publica la memoria ni la conecta aún a respuestas automáticas.
+
 ## 2026-11-06 — IA Central etapa 5: expedientes de Whapi sin ID MVP258
 
 - Scanner privado de salidas inciertas sin ID Whapi y leases antiguos de cinco colas, con expedientes únicos, fechas y diagnóstico limitado. Sin reenvíos ni cambios de estado de mensajes.
