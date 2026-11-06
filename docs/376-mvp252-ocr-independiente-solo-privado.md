@@ -18,6 +18,7 @@ La API de Google Cloud Vision soporta `DOCUMENT_TEXT_DETECTION` de imágenes y s
 - `supplier-visual-ocr-audit-mvp252.ts`: exige dos borradores concordantes, sin identificadores expuestos, y compara las líneas del OCR contra todas las descripciones, cantidades, importes, extras, total general y condiciones mediante el verificador de TXT estricto existente. Los valores no se redondean ni se reinterpretan.
 - Resultado positivo **solo** `source_ocr_covered_private`. Siempre `publicationAllowed=false`, `rankingAllowed=false`, `sourceVerified=false`. Esto es una corroboración técnica preliminar, no permiso comercial.
 - Conexión de diagnóstico únicamente al flujo privado de **recuperación de documentos**, después de la atribución de proveedor/ronda, doble lectura y auditoría de importes. El webhook crítico queda sin esperas de OCR. Se emite solo el estado, nunca el contenido ni datos personales.
+- **Tercer gate obligatorio:** la recuperación consulta `cotironda_piloto_visual_ocr_permission_mvp252` con HMAC del mensaje y SHA del archivo. Debe acreditar consentimiento externo individual y presupuesto/cuota para ese original. **La RPC todavía no está implementada en la base**, por lo que devuelve error y se bloquea el envío de bytes incluso si se configuran las dos flags. Este es un mecanismo intencional de seguridad hasta autorizar y probar el contrato SQL.
 
 ## Protección SQL y límites actuales
 
