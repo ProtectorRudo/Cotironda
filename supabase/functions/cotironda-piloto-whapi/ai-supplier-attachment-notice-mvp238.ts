@@ -15,7 +15,7 @@ export function esAvisoAdjuntoProveedorMvp238(raw:unknown):boolean{
  if(/[\r\n\u0000-\u001f$€\d]/u.test(raw))return false;
  const s=FOLD(raw);
  if(s.length<7||s.length>145||
-   /\b(?:no|nunca|todavia|despues|manana)\s+(?:te\s+)?(?:paso|mando|envio|adjunto|comparto|dejo)\b/u.test(s)||
+   /\b(?:no|nunca|todavia|despues|manana|luego|mas tarde)\b/u.test(s)||
    COMMERCIAL.test(s))return false;
  return ACTION.test(s)&&FILE.test(s);
 }
