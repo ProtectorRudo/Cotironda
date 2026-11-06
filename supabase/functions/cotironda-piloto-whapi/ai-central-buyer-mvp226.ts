@@ -5,6 +5,7 @@
 import {
  planificarMensajeAutenticadoMvp220,type PlanMvp220
 } from '../../../src/domain/ia-central/planificador-piloto-mvp220.ts';
+import {instrumentoOpenAiMvp264} from './ai-central-usage-mvp264.ts';
 import {
  armarPreparacionSombraMvp221,guardarRondaSombraMvp221
 } from '../../../src/domain/ia-central/puente-sql-rondas-mvp221.ts';
@@ -28,6 +29,8 @@ export type ArgsCompradorMvp226=Readonly<{
  fuente:string;sourceSha256:string;
  apiKey:string;model:Model;rpc:Rpc;
  planificar?:typeof planificarMensajeAutenticadoMvp220;
+ usageTraceEnabled?:boolean;
+ usageFetchImpl?:typeof fetch;
 }>;
 const done=(estado:ResultadoCompradorMvp226['estado'],
  codigo:string,requestId:string|null=null):ResultadoCompradorMvp226=>({
@@ -77,6 +80,11 @@ export async function procesarCompradorCentralMvp226(
    chatHmac:args.chatHmac,messageHmac:args.messageHmac,
    textoOriginal:args.fuente,autenticadoPorWebhook:true,
    apiKey:args.apiKey,model:args.model,
+   fetchImpl:args.usageTraceEnabled===true?instrumentoOpenAiMvp264({
+    messageHmac:args.messageHmac,chatHmac:args.chatHmac,
+    role:'buyer',model:args.model,rpc:args.rpc,
+    fetchImpl:args.usageFetchImpl
+   }):undefined,
    rpc:async(name,params)=>db(name,params)
   });
   if(p.estado==='requiere_aclaracion'&&
