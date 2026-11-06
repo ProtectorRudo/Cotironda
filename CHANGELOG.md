@@ -1,3 +1,9 @@
+## 2026-11-06 — Etapa 7 / MVP265: protocolo privado de incidentes con operador
+
+- Bitácora de `acknowledge`, `investigate`, `escalate`, conciliación manual y revisión posterior a resolución, por señal y episodio. Un operador deshabilitado o sin inscripción no puede registrar acciones; una nota nunca modifica la fuente ni da por entregado un WhatsApp.
+- Cola privada de operatoria con umbrales orientativos de 30/120 minutos, identificación de falta de acuse, historial idempotente de evidencia SHA256 y separación de reaperturas. Proyección sin teléfonos, importes, fuente ni nombres.
+- Controles RLS/ACL y RPC `service_role`, sin consola ni autenticación humana aún. Pruebas PostgreSQL 17 reversibles, contrato Node y decisión 389. **Solo desarrollo; sin alertas externas, cron ni mensajes activados.**
+
 ## 2026-11-06 — Etapa 7 / MVP264: contabilidad de tokens OpenAI y freno de incertidumbre
 
 - Registramos conteos `usage` realmente reportados por Responses API sobre una reserva IA Central acreditada, separando mensajes de comprador/proveedor. Incertidumbre HTTP, timeout o respuesta sin `usage` jamás equivale a consumo cero.
