@@ -1,3 +1,10 @@
+## 2026-11-06 — Integración de desarrollo IA Central etapas 1–3 (contrato unificado)
+
+- MVP250 (#630) integrado en la rama de desarrollo; marcas comerciales de material delante del rubro conservan filtros de PII, SHA, permisos y doble lectura.
+- Prueba offline inter-etapas: dos lecturas de pedido multirrubro → ruteo autorizado → asociación de dos rondas → ofertas parciales con importes comparables por artículo; impide inventar precio o ignorar un flete.
+- Nuevo gate CI que agrupa contratos Node y 12 pruebas PostgreSQL 17 reversibles; decisión 374.
+- Sin cambios en Supabase/Whapi/Vercel, sin producción. Aún falta confirmar CI de la integración y E2E real de fotos/escaneos y dos rondas.
+
 ## 2026-11-06 — MVP250: marcas comerciales reconocidas en documentos multirrubro
 
 - El publicador privado de presupuestos acepta algunas marcas comerciales conocidas delante de la categoría del material: «Sinteplast Hidrofugo», «Alba Pintura», «FV Grifería», etc. No acepta encabezados con nombres arbitrarios ni elimina controles de CUIT, WhatsApp, correo, razón social o URL.
