@@ -127,7 +127,7 @@ export async function replayPilotSqlInDisposablePg17({
  try{
   const cid=await shortOutput(spawnCommand,'docker',[
    'run','--detach','--rm','--pull=never','--network=none',
-   '--read-only','--cap-drop=ALL','--security-opt','no-new-privileges',
+   '--read-only','--cap-drop=NET_RAW','--security-opt','no-new-privileges',
    '--memory=1536m','--pids-limit=160','--cpus=1',
    '--tmpfs','/var/lib/postgresql/data:rw,nosuid,nodev,size=768m',
    '--tmpfs','/var/run/postgresql:rw,nosuid,nodev,size=16m',
