@@ -26,7 +26,9 @@ BEGIN
   'Caño PVC 110 mm','Bacha de acero inoxidable',
   'Grifería cromada','Pallet retornable',
   'Flete hasta La Plata','Descuento comercial 5%',
-  'Membrana impermeabilizante','Masilla para juntas'
+  'Membrana impermeabilizante','Masilla para juntas',
+  '20 bolsas de cemento CPC 50 kg','20 bolsas de arena fina',
+  '10 cajas de cable 2,5 mm','100 metros de cable unipolar'
  ] LOOP
   IF NOT cotironda_piloto_privado.descripcion_comercial_publicable_mvp248(label)
   THEN RAISE EXCEPTION 'mvp248_mercaderia_bloqueada_%',label;END IF;
