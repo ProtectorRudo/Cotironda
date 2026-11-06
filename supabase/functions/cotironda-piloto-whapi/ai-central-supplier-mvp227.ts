@@ -9,6 +9,7 @@ import {
 import {
  RUBROS_MVP216,type RubroMvp216
 } from '../../../src/domain/rubros-comprador-mvp216.ts';
+import {validarMemoriaProveedorMvp260} from './ai-central-memory-mvp260.ts';
 const HASH=/^[a-f0-9]{64}$/u;
 const OBJECT=(o:unknown):o is Record<string,unknown>=>
  o!==null&&typeof o==='object'&&!Array.isArray(o);
@@ -64,6 +65,7 @@ export async function procesarPresupuestoCentralMvp227(args:{
  decrypt:(nonce:string,ciphertext:string)=>Promise<string>;
  shaText:(source:string)=>Promise<string>;
  interpretar?:typeof interpretarPresupuestoConIAMvp225;
+ commercialMemoryEnabled?:boolean;
 }):Promise<EstadoProveedorMvp227>{
  if(!args?.habilitado)return done('apagado','flag_disabled');
  if(args.webhookAutenticado!==true||
@@ -116,6 +118,19 @@ export async function procesarPresupuestoCentralMvp227(args:{
   if(typeof original!=='string'||original.length<5||original.length>4000||
      await args.shaText(original)!==source.source_sha256)
    throw Error('source_sha_mismatch');
+  if(args.commercialMemoryEnabled===true){
+   // A SQL RPC resolves the ONLY associated request. Its snapshot must
+   // match the exact lines already reserved by the same supplier/source.
+   // Never pass memory to the model: the original is the sole price source.
+   const scope=await db('cotironda_piloto_memory_quote_context_mvp260',{
+    p_chat_hmac:args.chatHmac,p_message_hmac:args.messageHmac,
+    p_source_sha256:source.source_sha256
+   });
+   if(!validarMemoriaProveedorMvp260(scope,requested)){
+    await finish('review','memory_scope_conflict',null);
+    return done('requiere_revision','memory_scope_conflict');
+   }
+  }
   const reading=await (args.interpretar??interpretarPresupuestoConIAMvp225)({
    fuente:original,pedido:requested,etiquetaAnonima:'Presupuesto privado',
    apiKey:args.apiKey,model:args.model
@@ -134,6 +149,20 @@ export async function procesarPresupuestoCentralMvp227(args:{
    ['ARS','USD'].includes(String(summary.moneda));
   await finish(verified?'verified':'review',
    verified?'source_and_math_checked':'conditions_need_review',summary);
+  if(verified&&args.commercialMemoryEnabled===true){
+   // SQL refuses a memory pointer until the independent verified quote
+   // has actually been committed. A missing acknowledgment is uncertain,
+   // NOT a reason to reinterpret the source or resend anything.
+   try{
+    const stored=await db('cotironda_piloto_memory_sync_quote_mvp260',{
+     p_chat_hmac:args.chatHmac,p_message_hmac:args.messageHmac,
+     p_source_sha256:source.source_sha256
+    });
+    if(!['remembered_private','already_remembered'].includes(
+      String(stored.state)))
+     return done('conciliacion_requerida','memory_sync_unconfirmed');
+   }catch{return done('conciliacion_requerida','memory_sync_unconfirmed')}
+  }
   return done(verified?'verificado_privado':'requiere_revision',
    verified?'comparable_by_rubro':'conditions_need_review');
  }catch{
