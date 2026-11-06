@@ -131,7 +131,7 @@ export async function procesarPresupuestoCentralMvp227(args:{
   const summary=resumenPrivadoMvp245(reading);
   if(!summary)throw Error('private_summary_invalid');
   const verified=result.estado==='verificada_para_comparacion'&&
-   ['ARS','USD'].includes(summary.moneda);
+   ['ARS','USD'].includes(String(summary.moneda));
   await finish(verified?'verified':'review',
    verified?'source_and_math_checked':'conditions_need_review',summary);
   return done(verified?'verificado_privado':'requiere_revision',
