@@ -42,6 +42,10 @@ CREATE TABLE cotironda_piloto_privado.ai_supplier_links_mvp225(
 );
 \ir ../../piloto/mvp236_asociacion_respuestas_invitaciones_acreditadas.sql
 \ir ../../piloto/mvp237_ledger_asociacion_no_resuelta.sql
+CREATE TABLE cotironda_piloto_privado.integration_flags(
+ only_row boolean PRIMARY KEY,whatsapp_inbound_enabled boolean,
+ whatsapp_outbound_enabled boolean);
+INSERT INTO cotironda_piloto_privado.integration_flags VALUES(true,true,true);
 CREATE FUNCTION public.cotironda_piloto_ia_trial_flags_mvp229(text)
 RETURNS jsonb LANGUAGE sql AS $mock$ SELECT '{"quote_link":true}'::jsonb $mock$;
 \ir ../../piloto/mvp239_aclarar_ronda_con_cita_whapi.sql
@@ -152,6 +156,10 @@ VALUES
 DO $mvp239$
 DECLARE r jsonb;n integer;
 BEGIN
+ UPDATE cotironda_piloto_privado.integration_flags SET whatsapp_outbound_enabled=false WHERE only_row;
+ r:=public.cotironda_piloto_ia_reserve_clarification_mvp239(repeat('e',64),repeat('b',64));
+ IF r->>'state'<>'disabled' THEN RAISE EXCEPTION 'mvp239 ignored outbound gate: %',r;END IF;
+ UPDATE cotironda_piloto_privado.integration_flags SET whatsapp_outbound_enabled=true WHERE only_row;
  r:=public.cotironda_piloto_ia_reserve_clarification_mvp239(repeat('e',64),repeat('b',64));
  IF r->>'state'<>'reserved' THEN RAISE EXCEPTION 'mvp239 prompt not reserved: %',r;END IF;
  r:=public.cotironda_piloto_ia_reserve_clarification_mvp239(repeat('e',64),repeat('b',64));
