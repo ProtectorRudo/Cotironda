@@ -1,0 +1,28 @@
+name: Cotironda PILOTO - exportacion Storage privada MVP270
+on:
+  pull_request:
+    branches:
+      - feat/mvp174-supplier-packaging-equivalence
+    paths:
+      - 'scripts/ops/export-private-pilot-storage-mvp270.mjs'
+      - 'tests/unit/mvp270-private-pilot-storage-export.test.mjs'
+      - '.github/workflows/cotironda-mvp270-pilot-storage-export.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  synthetic-storage-backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Comprobar sintaxis de extractor local
+        run: node --check scripts/ops/export-private-pilot-storage-mvp270.mjs
+      - name: Ensayar archivos falsos, TAR, cambio de inventario y rechazo de redes inseguras
+        run: node --test tests/unit/mvp270-private-pilot-storage-export.test.mjs
+# Synthetic only: NO API keys, no remote Supabase, no real media and no artifacts.
