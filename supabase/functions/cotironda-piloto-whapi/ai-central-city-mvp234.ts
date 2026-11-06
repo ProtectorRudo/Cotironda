@@ -25,3 +25,16 @@ export function ciudadDeRespuestaCentralMvp234(raw:unknown):string|null{
  if(!validated||NOT_CITY.test(candidate))return null;
  return candidate.replace(/[.]\s*$/u,'').trim();
 }
+
+/** Responder una localidad nunca permite abrir un nuevo pedido: ni cuando
+ * no hay contexto, ni si ya se consumió una respuesta idéntica.
+ */
+export function estadoClaimZonaMvp234(raw:unknown):
+ 'resume'|'consumed'|'inconsistent'{
+ if(!raw||typeof raw!=='object'||Array.isArray(raw))return 'inconsistent';
+ const state=(raw as Record<string,unknown>).state;
+ if(state==='resumed')return 'resume';
+ if(state==='ambiguous'||state==='no_pending'||state==='already_consumed')
+  return 'consumed';
+ return 'inconsistent';
+}
