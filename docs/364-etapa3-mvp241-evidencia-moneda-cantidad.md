@@ -29,20 +29,24 @@ aritmética coherente con evidencia documental.
 2. Una fuente con solo `$` conserva `moneda=no_informada`; no
    certifica competitividad automática. Una fuente que menciona ambas
    monedas no se representa falsamente mediante una moneda global.
-3. El comparador por rubro aplica la misma regla al objeto tipado,
+3. Los valores monetarios literales ahora admiten también prefijos
+   completos `AR$`, `US$`, `U$S`, `ARS` y `USD`, manteniendo
+   aritmética exacta BigInt; no se elimina la indicación de moneda del
+   original ni se admiten formatos numéricos inconsistentes.
+4. El comparador por rubro aplica la misma regla al objeto tipado,
    aunque alguien lo invoque sin pasar por el lector. No compara
    monedas sin evidencia, pero **conserva cobertura, artículos y
    precios literales para revisión**.
-4. `precioConfirmado` verifica antes de cualquier multiplicación
+5. `precioConfirmado` verifica antes de cualquier multiplicación
    que la cantidad normalizada también esté expresada en la MISMA
    línea original, después de retirar unitario y total literal.
    Esto rige incluso si un total numéricamente compatible fue
    mencionado por el proveedor. Soporta decimal con coma y punto;
    no adivina cantidades por precio/total.
-5. No se cambia el tratamiento de IVA comercial `no_informado`
+6. No se cambia el tratamiento de IVA comercial `no_informado`
    (convención operativa sin IVA, **no** alícuota cero), flete,
    cargos adicionales, sinónimos ni equivalencias comerciales.
-6. No se llama a Whapi, no se editan tablas, no se ejecuta ninguna
+7. No se llama a Whapi, no se editan tablas, no se ejecuta ninguna
    migración ni se publica un presupuesto.
 
 ## Criterios de aceptación y prueba
