@@ -1,3 +1,9 @@
+## 2026-11-06 — Etapa 5 / MVP257: conciliación pasiva de Whapi incierto
+
+- Se implementó evidencia privada de comprobantes `statuses.post` autenticados para envíos que siguen `uncertain`, con ID de Whapi y destinatario HMAC exactamente vinculados a un único outbox; el orden de estados no puede retroceder ni se permite reenviar automáticamente.
+- Diagnóstico agregado de envíos inciertos con/sin ID y leases antiguos. Estados `uncertain` y `leased` permanecen inalterados y no se autoriza reenvío de WhatsApp.
+- Pruebas PG17 reversibles con colisiones de ID, destinatario equivocado, estados repetidos y revocación de evidencia; regresión de webhook MVP119. Solo desarrollo; decisión 381.
+
 ## 2026-11-06 — Prioridad: completar siete etapas IA Central; MVP256 recuperación documental
 
 - Se estableció priorizar el cierre verificable de las siete capacidades de IA Central antes de más publicaciones parciales del piloto. Estados y pendientes en decisión 380.
