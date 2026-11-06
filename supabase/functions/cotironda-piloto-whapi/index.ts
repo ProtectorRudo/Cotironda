@@ -963,7 +963,10 @@ async function respond(req:Request):Promise<Response>{
                         // HASH binario, doble lectura y conciliación económica.
                         // SQL acredita nuevamente invitación, empresa y ronda.
                         // Activación adicional OFF por defecto. Sin WhatsApp.
-                        if(centralSupplier&&trial.quote_link===true&&
+                        if(!published.error&&
+                           ['published_anonymous','already_published'].includes(
+                             published.data?.state??'')&&
+                           centralSupplier&&trial.quote_link===true&&
                            trial.quote_analysis===true&&
                            Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_DOCUMENT_QUOTE_ENABLED')==='true'){
                           const modelEnv=Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_MODEL');
