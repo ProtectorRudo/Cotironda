@@ -161,7 +161,7 @@ END$resolve$;
 UPDATE cotironda_piloto_privado.supervisor_policy_mvp263 SET
  last_run_at=clock_timestamp()-interval '1 hour' WHERE only_row=true;
 UPDATE cotironda_piloto_privado.supervisor_runs_mvp263
- SET bucket_utc=bucket_utc-interval '15 minutes'
+ SET bucket_utc=bucket_utc-interval '30 minutes'
  WHERE bucket_utc=date_bin('15 minutes',clock_timestamp(),
   '2000-01-01 00:00:00+00'::timestamptz);
 INSERT INTO cotironda_piloto_privado.whapi_outbox VALUES
