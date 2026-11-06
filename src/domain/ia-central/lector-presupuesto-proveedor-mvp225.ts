@@ -5,6 +5,7 @@
  */
 import {RUBROS_MVP216} from '../rubros-comprador-mvp216.ts';
 import {monedaExplicitaMvp241} from './evidencia-moneda-mvp241.ts';
+import {importesOriginalesRepresentadosMvp244} from './fidelidad-importes-fuente-mvp244.ts';
 import {evidenciaCondicionMvp242} from './evidencia-condiciones-mvp242.ts';
 import {compararPorRubroMvp225,
  type PedidoLineaMvp225,type OfertaVerificadaMvp225,
@@ -145,6 +146,9 @@ function verifyRead(source:string,raw:unknown,requested:readonly PedidoLineaMvp2
   }
   numbers.add(line.numero);
  }
+ // No se descarta una línea con importe comercial (pallet, flete,
+ // envase o descuento) solo porque la IA clasificó los materiales.
+ if(!importesOriginalesRepresentadosMvp244(source,raw.lineas))return false;
  const ids=new Set(requested.map(r=>r.id));
  const used=new Set<number>(),targets=new Set<string>();
  for(const link of raw.vinculos){
