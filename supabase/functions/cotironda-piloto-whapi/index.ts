@@ -10,6 +10,7 @@ import {procesarCompradorCentralMvp226} from './ai-central-buyer-mvp226.ts';
 import {continuarZonaCentralMvp233} from './ai-central-zone-mvp233.ts';
 import {ciudadDeRespuestaCentralMvp234,estadoClaimZonaMvp234} from './ai-central-city-mvp234.ts';
 import {procesarPresupuestoCentralMvp227} from './ai-central-supplier-mvp227.ts';
+import {procesarDocumentoCentralMvp245} from './ai-central-document-mvp245.ts';
 import {proveedorConRondaCentralMvp232} from './ai-central-supplier-route-mvp232.ts';
 import {esAvisoAdjuntoProveedorMvp238} from './ai-supplier-attachment-notice-mvp238.ts';
 import {respuestaCitaPedidoMvp239,CONSULTA_RONDA_MVP239} from './ai-supplier-clarification-mvp239.ts';
@@ -958,6 +959,30 @@ async function respond(req:Request):Promise<Response>{
                           });
                         if(published.error)
                           console.warn('cotironda_supplier_anonymous_projection_reconciliation_required');
+                        // El documento pasó lector PDF/Office/TXT independiente,
+                        // HASH binario, doble lectura y conciliación económica.
+                        // SQL acredita nuevamente invitación, empresa y ronda.
+                        // Activación adicional OFF por defecto. Sin WhatsApp.
+                        if(centralSupplier&&trial.quote_link===true&&
+                           trial.quote_analysis===true&&
+                           Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_DOCUMENT_QUOTE_ENABLED')==='true'){
+                          const modelEnv=Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_MODEL');
+                          const model=modelEnv==='gpt-6.1-sol'?'gpt-6.1-sol':'gpt-6-luna';
+                          const semantic=await procesarDocumentoCentralMvp245({
+                            habilitado:true,webhookAutenticado:true,
+                            messageHmac:messageHash,chatHmac:chatHash,
+                            sha256:downloadedForReview.sha256,
+                            mime:downloadedForReview.mime,
+                            draft:proposal,comprobacion:checked,
+                            apiKey:Deno.env.get('COTIRONDA_PILOT_OPENAI_API_KEY')??'',
+                            model,rpc:async(name,params)=>{
+                              const r=await db.rpc(name,params);
+                              return {data:r.data,error:r.error};
+                            }
+                          });
+                          if(semantic.estado==='conciliacion_requerida')
+                            console.warn('cotironda_document_commercial_reconciliation_required');
+                        }
                       }
                     }
                   }
