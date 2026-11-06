@@ -48,8 +48,8 @@ BEGIN
     p_chat_hmac !~ '^[a-f0-9]{64}$' OR
     p_message_hmac IS NULL OR p_message_hmac !~ '^[a-f0-9]{64}$' OR
     p_source_sha256 IS NULL OR p_source_sha256 !~ '^[a-f0-9]{64}$' OR
-    p_fact_kind NOT IN(
-      'buyer_delivery_city_verified','supplier_quote_verified')
+    (p_fact_kind IS NULL OR p_fact_kind NOT IN(
+      'buyer_delivery_city_verified','supplier_quote_verified'))
  THEN RETURN jsonb_build_object('state','invalid');END IF;
  SELECT count(*),min(p.key),min(p.participant_role),min(r.closes_at)
  INTO scope_count_,participant_,role_,deadline_
@@ -69,6 +69,13 @@ BEGIN
      AND i.state='prepared'))
   );
  IF scope_count_<>1 THEN RETURN jsonb_build_object('state','not_authorized');END IF;
+ -- Lock the participant so opt-out cannot race the memory reservation;
+ -- also serializes the 40-source quota under concurrent messages.
+ PERFORM 1 FROM cotironda_piloto_privado.participants p
+ WHERE p.key=participant_ AND p.chat_hmac=p_chat_hmac
+  AND p.consent_at IS NOT NULL AND p.opted_out_at IS NULL
+ FOR UPDATE;
+ IF NOT FOUND THEN RETURN jsonb_build_object('state','not_authorized');END IF;
  IF (role_='buyer' AND p_fact_kind<>'buyer_delivery_city_verified') OR
     (role_='supplier' AND p_fact_kind<>'supplier_quote_verified')
  THEN RETURN jsonb_build_object('state','not_authorized');END IF;
