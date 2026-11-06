@@ -126,6 +126,9 @@ BEGIN
    JOIN cotironda_piloto_privado.requests r ON r.id=d.request_id
    JOIN cotironda_piloto_privado.invitations i ON i.request_id=r.id
       AND i.supplier_key=d.supplier_key AND i.state='prepared'
+   JOIN cotironda_piloto_privado.participants buyer ON buyer.key=r.buyer_key
+     AND buyer.participant_role='buyer' AND buyer.consent_at IS NOT NULL
+     AND buyer.opted_out_at IS NULL
    WHERE d.supplier_key=v_supplier AND d.state='api_accepted'
     AND d.whapi_message_id=p_quoted_whapi_id
     AND d.finished_at<=v_received_at
@@ -137,6 +140,9 @@ BEGIN
    JOIN cotironda_piloto_privado.requests r ON r.id=o.request_id
    JOIN cotironda_piloto_privado.invitations i ON i.request_id=r.id
      AND i.supplier_key=o.supplier_key AND i.state='prepared'
+   JOIN cotironda_piloto_privado.participants buyer ON buyer.key=r.buyer_key
+     AND buyer.participant_role='buyer' AND buyer.consent_at IS NOT NULL
+     AND buyer.opted_out_at IS NULL
    WHERE o.supplier_key=v_supplier AND o.state='api_accepted'
     AND o.whapi_message_id=p_quoted_whapi_id
     AND o.sent_at<=v_received_at
