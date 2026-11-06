@@ -1,3 +1,9 @@
+## 2026-11-06 — Etapa 7 / MVP262: supervisor privado, solo lectura
+
+- Incorporado un diagnóstico privado de IA Central con señales deterministas sobre mensajes inciertos, leases vencidos, presupuestos en revisión, documentos recuperables, expedientes sin ID y memoria próxima a vencer. Severidad `ok`/`attention`/`blocked`, sin identificadores personales ni importes.
+- **Sin cron, avisos salientes, adjudicación, reintentos automáticos ni modificaciones del negocio.** Las sugerencias del supervisor son códigos para revisión humana; los costos se dejan explícitamente sin acreditar.
+- Tests SQL PostgreSQL 17 reversibles y contratos Node, decisión 386. Solo rama de desarrollo, no publicado PILOTO o producción.
+
 ## 2026-11-06 — Etapa 6 / MVP261: versiones de fuentes comerciales sin mezclar precios
 
 - Versionado privado e idempotente de cada nueva respuesta asociada a la ronda y proveedor, con secuencia de HMAC/SHA y estado económico `verified` o `review`. No mezcla correcciones incompletas con importes anteriores ni modifica el presupuesto histórico.
