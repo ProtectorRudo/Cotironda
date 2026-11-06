@@ -40,7 +40,8 @@ export function importesOriginalesRepresentadosMvp244(
   const part=segment.trim();
   return RESUMEN.test(part)?[]:montos(part);
  });
- const citedAmounts=(lineas as LineaCitadaMvp244[]).flatMap(line=>montos(line.textoOriginal));
+ const citedAmounts=(lineas as LineaCitadaMvp244[]).flatMap(line=>
+  RESUMEN.test(line.textoOriginal.trim())?[]:montos(line.textoOriginal));
  const source=FREQUENCY(sourceAmounts),cited=FREQUENCY(citedAmounts);
  // No duplicar importes ni reemplazar uno de la fuente por otro.
  if(source.size!==cited.size)return false;
