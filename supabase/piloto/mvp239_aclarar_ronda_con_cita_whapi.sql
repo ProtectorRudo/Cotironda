@@ -36,6 +36,9 @@ BEGIN
  IF p_source_hmac !~ '^[a-f0-9]{64}$' OR p_chat_hmac !~ '^[a-f0-9]{64}$'
  THEN RETURN jsonb_build_object('state','invalid');END IF;
  IF (public.cotironda_piloto_ia_trial_flags_mvp229(p_chat_hmac)->>'quote_link') IS DISTINCT FROM 'true'
+ OR NOT EXISTS(SELECT 1 FROM cotironda_piloto_privado.integration_flags f
+    WHERE f.only_row AND f.whatsapp_inbound_enabled
+      AND f.whatsapp_outbound_enabled)
  THEN RETURN jsonb_build_object('state','disabled');END IF;
  SELECT p.key INTO v_supplier
  FROM cotironda_piloto_privado.ai_supplier_unresolved_mvp237 u
