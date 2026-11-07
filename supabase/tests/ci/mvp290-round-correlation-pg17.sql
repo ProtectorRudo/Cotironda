@@ -111,6 +111,11 @@ BEGIN
   'AAAAAAAAAAAAAAAAAAAAAAAA',
   encode(sha256(convert_to('COTI '||choice,'UTF8')),'hex'),
   extract(epoch from clock_timestamp())::bigint,'needs_review');
+ -- The earlier synthetic bootstrap uses transaction-stable now() for
+ -- inbound timestamps, while real PILOTO uses clock_timestamp().
+ -- Exercise the real-time ordering: reply AFTER prompt delivery.
+ UPDATE cotironda_piloto_privado.whapi_inbox
+ SET received_at=clock_timestamp() WHERE message_hmac=reply;
  answer:=public.cotironda_piloto_resolve_supplier_choice_mvp290(
   reply,other_chat,'COTI '||choice);
  IF answer->>'state'='resolved_private' THEN
