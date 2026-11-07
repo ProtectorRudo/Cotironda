@@ -6,6 +6,10 @@ type EvidenceItem=Readonly<{descripcion:string;evidencia:string;
  inicio:number;fin:number}>;
 const CTL=/[\u0000-\u001f\u007f]/u;
 const AMOUNT=/^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$/u;
+const CONTACT=/(?:https?:\/\/|www\.|[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}|(?:\+?\d[\s.-]?){9,}|\b(?:whatsapp|tel[eé]fono|celular|cuit|cuil|correo|email|raz[oó]n social)\b)/iu;
+// The existing supplier PDF is strictly WinAnsi: reject unrenderable
+// characters before the buyer confirms, not after creating a dispatch lease.
+const pdfSafe=(s:string):boolean=>[...s].every(c=>c.codePointAt(0)!<=255);
 
 /** Retain exact source-supported packaging, brands and dimensions in the DB.
  * Display may later remove redundant packaging words but the DB never does.
@@ -40,6 +44,7 @@ export function descripcionOriginalVerificableMvp288(
   /^(?:[1-9]\d{0,5}(?:[.,]\d{1,3})?)\s+/u,''
  ).trim();
  if(result.length<3||result.length>75||CTL.test(result)||
+    !pdfSafe(result)||CONTACT.test(result)||
     result.split(/\s+/u).length<2)return null;
  return result;
 }
