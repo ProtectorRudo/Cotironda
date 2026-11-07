@@ -78,7 +78,7 @@ test('MVP275: literal TXT original, two readings, readonly plan, never dispatch'
 });
 test('MVP275: CSV preserves exactly same source bytes for planner',async()=>{
  const csv='Descripción,Cantidad,Unidad\n'+
-  'Cemento CPC 50 kg,20,bolsas\nCable unipolar 2,5 mm2,15,m\n'+
+  'Cemento CPC 50 kg,20,bolsas\n"Cable unipolar 2,5 mm2",15,m\n'+
   'Entrega: La Plata';
  const {execute,calls}=run({
   original:file(csv,'text/csv')
@@ -86,6 +86,15 @@ test('MVP275: CSV preserves exactly same source bytes for planner',async()=>{
  const r=await execute();
  assert.equal(r.estado,'plan_privado_validado');
  assert.equal(calls[0].params.textoOriginal,csv);
+});
+test('MVP275: CSV unquoted comma in technical dimension cannot fabricate cells',async()=>{
+ const invalid='Descripción,Cantidad,Unidad\n'+
+  'Cemento CPC 50 kg,20,bolsas\nCable unipolar 2,5 mm2,15,m\n'+
+  'Entrega: La Plata';
+ const {execute,calls}=run({original:file(invalid,'text/csv')});
+ const r=await execute();
+ assert.equal(r.estado,'requiere_revision');
+ assert.equal(calls.length,0);
 });
 test('MVP275: disabled or unconsented cannot contact AI or query catalogue',async()=>{
  for(const delta of [
