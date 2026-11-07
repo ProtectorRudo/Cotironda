@@ -6,6 +6,9 @@ on:
     paths:
       - 'supabase/piloto/mvp276_comprador_archivo_txt_csv_autoridad_sha.sql'
       - 'supabase/tests/ci/mvp276-buyer-media-sha-pg17.sql'
+      - 'supabase/functions/cotironda-piloto-whapi/ai-central-buyer-media-mvp276.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/index.ts'
+      - 'tests/unit/mvp276-buyer-media-central-broker.test.mjs'
       - '.github/workflows/cotironda-mvp276-media-source-pg17.yml'
   workflow_dispatch:
 permissions:
@@ -37,6 +40,11 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Verificar broker IA y fuentes simuladas sin red
+        run: node --experimental-strip-types --test tests/unit/mvp276-buyer-media-central-broker.test.mjs
       - name: Guardar logs SQL mínimos, ejecutar prueba transaccional sintética
         run: |
           set -euo pipefail
