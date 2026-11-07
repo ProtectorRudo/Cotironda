@@ -73,9 +73,20 @@ BEGIN
     rid,supplier,(claim->>'lease_token')::uuid) IS NULL
   THEN RAISE EXCEPTION 'mvp284_pdf_missing';END IF;
   original_id:='mvp284-supplier-send-'||idx::text;
-  IF NOT public.cotironda_piloto_ia_finish_mvp222(
-    rid,supplier,(claim->>'lease_token')::uuid,'api_accepted',original_id)
-  THEN RAISE EXCEPTION 'mvp284_lease_not_finished';END IF;
+  -- Simular un Whapi 2xx sin messageId para un tercer negocio:
+  -- nunca cuenta como solicitud efectivamente vinculable.
+  IF supplier='electricidad_gamma' THEN
+   IF public.cotironda_piloto_ia_finish_mvp222(
+      rid,supplier,(claim->>'lease_token')::uuid,'api_accepted',NULL)
+   THEN RAISE EXCEPTION 'mvp284_accepted_without_whapi_id';END IF;
+   IF NOT public.cotironda_piloto_ia_finish_mvp222(
+      rid,supplier,(claim->>'lease_token')::uuid,'uncertain',NULL)
+   THEN RAISE EXCEPTION 'mvp284_uncertain_not_recorded';END IF;
+  ELSE
+   IF NOT public.cotironda_piloto_ia_finish_mvp222(
+      rid,supplier,(claim->>'lease_token')::uuid,'api_accepted',original_id)
+   THEN RAISE EXCEPTION 'mvp284_lease_not_finished';END IF;
+  END IF;
   IF public.cotironda_piloto_ia_finish_mvp222(
     rid,supplier,(claim->>'lease_token')::uuid,'api_accepted',original_id)
   THEN RAISE EXCEPTION 'mvp284_duplicated_send';END IF;
