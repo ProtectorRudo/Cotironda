@@ -46,6 +46,7 @@ jobs:
         run: |
           node --experimental-strip-types --test \
             tests/unit/mvp302-puente-privado-finalistas.test.mjs \
+            tests/unit/mvp302-opciones-privadas-fuentes.test.mjs \
             tests/unit/mvp301-plan-finalistas-offline.test.mjs \
             tests/unit/mvp284-e2e-contract.test.mjs
           node scripts/piloto/mvp302-bridge-builder.mjs --check
