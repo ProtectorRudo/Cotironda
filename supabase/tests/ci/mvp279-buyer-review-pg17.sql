@@ -892,6 +892,15 @@ BEGIN
  IF (SELECT count(*) FROM cotironda_piloto_privado.ai_dispatch_jobs_mvp222
      WHERE request_id=round_id)<>1
  THEN RAISE EXCEPTION 'mvp279_no_synthetic_job';END IF;
+ -- Buyer may approve 2+ hours after staging. Previously the 30-minute
+ -- selector discarded valid confirmed buyer rounds. Isolate other test jobs.
+ UPDATE cotironda_piloto_privado.requests
+ SET created_at=clock_timestamp()-interval '3 hours'
+ WHERE state='prepared';
+ v_result:=public.cotironda_piloto_ia_ready_for_chat_mvp223(repeat('a',64));
+ IF v_result->>'state'<>'ready'
+ OR v_result->>'request_id'<>round_id::text
+ THEN RAISE EXCEPTION 'mvp279_late_confirmation_dispatch_lost: %',v_result;END IF;
  -- A changed destination after approval invalidates both claim and PDF,
  -- even if the SQL job itself has already been created.
  UPDATE cotironda_piloto_privado.ai_shadow_destinos_mvp221
