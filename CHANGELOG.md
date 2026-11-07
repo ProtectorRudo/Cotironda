@@ -1,3 +1,8 @@
+## 2026-11-07 — MVP290 (solo desarrollo)
+- Incorporada correlación privada de presupuestos de proveedores con varias rondas (legacy e IA Central). Si no hay referencia inequívoca, se ofrecen códigos de elección firmados al proveedor, no una asignación arbitraria.
+- Respuesta `COTI <código>` valida identidad, original archivado/SHA, despacho previo y vincula de modo atómico; reabre análisis documental del archivo privado sin reenvío y con segunda lectura/economía auditadas.
+- SQL service_role + RLS, Node y PG17 con ROLLBACK; flags de nueva función OFF hasta publicación autorizada. Issue #681, PR #682, docs/415.
+
 ## 2026-11-07 — MVP289 (solo desarrollo)
 - Corrige la ausencia de confirmación y enlace privado tras `CONFIRMAR COTI`: el bloque nuevo se ejecuta después de despachos aceptados y se reutiliza el seguimiento existente sin nuevas invitaciones.
 - Nueva RPC privada, idempotente, token único por ronda, registro de entrega Whapi y comando seguro `SEGUIMIENTO COTI` para rondas históricas confirmadas sin enlace. Pruebas Node y PG17 con rollback; no publicar sin autorización y verificación.
