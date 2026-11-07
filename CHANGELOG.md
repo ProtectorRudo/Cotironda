@@ -1,3 +1,14 @@
+## 2026-11-07 — Publicación piloto MVP295 y corrección MVP296
+
+- **Solo `cotironda-piloto`**: PR [#686](https://github.com/ProtectorRudo/Cotironda/pull/686) integrado (13/13 CI), migración 82 y seguimiento v23; PR [#687](https://github.com/ProtectorRudo/Cotironda/pull/687) integrado (12/12 CI), migración 83 y worker privado v8. `main`, producción, Whapi v66 y cron documental v31 intactos.
+- El texto histórico de Nahuel está ligado por correlación semántica única; una cola adicional permite interpretarlo económicamente con IA Central solo si están activos los 3 controles consentidos, la autorización en BD, consentimiento del comprador/proveedor, HMAC/SHA, invitación realmente enviada, vigencia y cuota/registro de llamadas. Antiguo análisis sin medidor desactivado; MVP295 instrumenta MVP264 y registra versión comercial.
+- Primera oferta verificada de IA Central podrá aparecer por rubro aunque `can_open` legacy sea falso. Datos de Ailín todavía indistinguibles quedan en revisión privada, sin adjudicación automática.
+- Seguridad publicada comprobada: RLS y ACL restrictivas en SQL, Edge con doble autorización y prueba HTTP sin credenciales `401`, archivos comparados con GitHub. **El resultado final del cron y la aparición de una oferta económica verificada siguen pendientes de auditoría E2E**. No declarar precio, ranking ni publicación comercial antes de ver las filas reales.
+- Registro de alcance: [decisión 421](docs/421-mvp295-continuidad-cotizacion-comercial-vinculada.md) y [decisión 422](docs/422-mvp296-activacion-controlada-recuperacion-comercial.md).
+
+
+- **Prueba real 16:45 UTC:** el cron procesó la fuente histórica de Nahuel una vez; quedó `ai_supplier_linked_replay_mvp295=review` y `ai_supplier_review_mvp227=review/semantic_review_required`, 2 llamadas de modelo con 3.503 tokens observados. No se publicó precio ni ranking; cero reintentos. El documento de Ailín sigue en revisión ambigua. La causa específica de la revisión semántica no se registra aún; no inventar una.
+
 ## 2026-11-07 — MVP295: de vínculo histórico a oferta comercial segura (desarrollo)
 
 - Auditoría piloto **solo lectura**: proveedor Nahuel respondió texto y la fuente fue vinculada automáticamente, pero no llegó a la revisión comercial; proveedor Ailín envió documento ambiguo que permanece privado. Cero publicaciones desde esas fuentes; existe una versión previa independiente de Ailín.
