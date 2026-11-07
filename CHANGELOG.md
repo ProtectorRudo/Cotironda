@@ -1,3 +1,9 @@
+## 07/11/2026 — MVP298 (desarrollo, no desplegado)
+
+- MVP225: cotejo de doble lectura por hechos económicos verificables, no glosas ni spans alternativos de citas igualmente fundadas.
+- Tres pruebas sintéticas nuevas: glosa/cita de moneda equivalente; IVA sustentado por distintas citas; cambio literal del importe unitario rechazado.
+- Sin SQL, WhatsApp, despliegue, llamadas OpenAI, producción o reanálisis histórico. Detalles y límites: [decisión 424](docs/424-mvp298-acuerdo-economico-doble-lectura.md).
+
 ## 2026-11-07 — MVP297: diagnóstico privado de revisión semántica (solo desarrollo)
 
 - Se conserva el primer motivo verificable de una futura revisión comercial: estructura, cita textual, moneda, IVA/flete/pago, cargos monetarios omitidos, mapeo de artículo, segunda lectura inválida, discrepancia entre dos lecturas o indisponibilidad del modelo. Sólo códigos de una allowlist, sin fuente ni importes, dentro de la tabla privada ya existente.
