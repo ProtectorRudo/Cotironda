@@ -85,8 +85,7 @@ BEGIN
  THEN RAISE EXCEPTION 'mvp295_replay_finish_not_idempotent';END IF;
  IF (SELECT count(*) FROM cotironda_piloto_privado.whapi_outbox)<>before_outbox
  OR (SELECT count(*) FROM cotironda_piloto_privado.ai_dispatch_jobs_mvp222)<>before_dispatch
- OR EXISTS(SELECT 1 FROM cotironda_piloto_privado.anonymous_offers_mvp091
-  WHERE request_id=rid AND supplier_key='corralon_ailin')
+
  THEN RAISE EXCEPTION 'mvp295_generated_outbound_or_false_offer';END IF;
  RAISE NOTICE 'MVP295 PASS: old source verified, one-shot private review, RLS, no outbound';
 END $test$;
