@@ -17,6 +17,7 @@ import {procesarDocumentoCompradorCentralMvp276} from './ai-central-buyer-media-
 import {contrastarDocumentoCompradorMvp277} from './ai-central-buyer-binary-mvp277.ts';
 import {prepararDocumentoBinarioCompradorMvp278} from './ai-central-buyer-binary-broker-mvp278.ts';
 import {esRespuestaConfirmacionMvp279,emitirRevisionCompradorMvp279,confirmarPedidoCompradorMvp279} from './ai-central-buyer-review-mvp279.ts';
+import {notificarSeguimientoMvp289} from './buyer-tracking-confirmation-mvp289.ts';
 import {proveedorConRondaCentralMvp232} from './ai-central-supplier-route-mvp232.ts';
 import {esAvisoAdjuntoProveedorMvp238} from './ai-supplier-attachment-notice-mvp238.ts';
 import {respuestaCitaPedidoMvp239,CONSULTA_RONDA_MVP239} from './ai-supplier-clarification-mvp239.ts';
@@ -322,6 +323,8 @@ async function respond(req:Request):Promise<Response>{
  const now=Math.floor(Date.now()/1000);
  const db=client(sec);
  const trialDispatchChats=new Set<string>();
+ const buyerLinkRequests:{mode:'confirmed'|'recovery';requestId:string|null;
+  chatHmac:string;eventHmac:string;recipient:string}[]=[];
  let recoveryTriggerHmac:string|null=null;
  let recoveryTriggerChatId:string|null=null;
  for(const row of event.messages){
@@ -395,6 +398,7 @@ async function respond(req:Request):Promise<Response>{
   const webLinkCode=row.type==='text'
     ?/^VINCULAR ([A-F0-9]{24})$/u.exec(body)?.[1]??null:null;
   const buyerReviewCommand=row.type==='text'&&esRespuestaConfirmacionMvp279(body);
+   const buyerLinkCommand=row.type==='text'&&body.trim()==='SEGUIMIENTO COTI';
   // El proveedor sigue protegido por el circuito de precios actual.
   // Solo el COMPRADOR del piloto ingresa por IA Central; sin palabras clave.
   // Configuración privada acotada por remitente, caducidad y gates SQL.
@@ -490,8 +494,9 @@ async function respond(req:Request):Promise<Response>{
   const attachmentNotice=row.type==='text'&&centralSupplier&&
     esAvisoAdjuntoProveedorMvp238(body);
   const centralBuyerText=centralConfigured&&row.type==='text'&&
-    !supplierKnown&&!centralSupplier&&!webLinkCode&&!buyerReviewCommand;
-  const local=buyerReviewCommand
+    !supplierKnown&&!centralSupplier&&!webLinkCode&&
+     !buyerReviewCommand&&!buyerLinkCommand;
+  const local=buyerReviewCommand||buyerLinkCommand
     ?{city:'sin solicitud',items:[],unresolved:['buyer_review_command']}
     :centralBuyerText
       ?{city:'sin solicitud',items:[],unresolved:['central_message_pending']}
@@ -511,7 +516,7 @@ async function respond(req:Request):Promise<Response>{
   // durable, one-per-HMAC, buyer-only and capped at 12 calls per day.
   // Supplier quote ingestion never passes through this classifier.
   if(row.type==='text'&&!webLinkCode&&!centralBuyerText&&
-     !buyerReviewCommand&&!canPrepareBuyerPilot(local)&&
+     !buyerReviewCommand&&!buyerLinkCommand&&!canPrepareBuyerPilot(local)&&
      Deno.env.get('COTIRONDA_PILOT_AI_ENABLED')==='true'){
     const preflight=await db.rpc('cotironda_piloto_reserve_ai_mvp094',{
       p_chat_hmac:chatHash,p_message_hmac:messageHash
@@ -636,11 +641,25 @@ async function respond(req:Request):Promise<Response>{
       });
       if(decision.estado==='conciliacion_requerida')
         return json(503,'buyer_review_confirmation_reconciliation');
-      if(decision.estado==='publicado')trialDispatchChats.add(chatHash);
+      if(decision.estado==='publicado'){
+        trialDispatchChats.add(chatHash);
+        buyerLinkRequests.push({mode:'confirmed',requestId:decision.requestId,
+         chatHmac:chatHash,eventHmac:messageHash,recipient:row.chat_id});
+       }
     }
     continue;
   }
-  // La reserva SQL verifica identidad de comprador y cuota ANTES de
+  // Recuperacion solicitada explicitamente para una ronda ya confirmada.
+   // Este comando NO crea rondas ni invita nuevamente a proveedores.
+   if(buyerLinkCommand){
+    if(!['duplicate','unrecognized_contact'].includes(outcome(out.data))&&
+       trial.buyer===true&&!supplierKnown&&!centralSupplier&&sec.outbound&&
+       pilotEnvNotDenied('COTIRONDA_PILOT_BUYER_TRACKING_ENABLED'))
+     buyerLinkRequests.push({mode:'recovery',requestId:null,
+      chatHmac:chatHash,eventHmac:messageHash,recipient:row.chat_id});
+    continue;
+   }
+   // La reserva SQL verifica identidad de comprador y cuota ANTES de
   // gastar tokens. El mensaje ya fue almacenado cifrado y con SHA original.
   // Un mensaje breve que aporta la localidad continúa el único pedido
   // IA Central previo, sin interpretar "La Plata" como otro presupuesto.
@@ -1577,6 +1596,36 @@ async function respond(req:Request):Promise<Response>{
   }
  }
 
+ // MVP289: supplier dispatch finishes before the buyer link. SQL revalidates
+ // all jobs and locks a single tracking token per request.
+ for(const notice of buyerLinkRequests){
+  if(!sec.outbound||Deno.env.get('COTIRONDA_PILOT_BUYER_TRACKING_ENABLED')==='false')continue;
+  const result=await notificarSeguimientoMvp289({
+   enabled:true,buyerVerified:true,...notice,
+   rpc:async(name,params)=>{
+    const r=await db.rpc(name,params);
+    return {data:r.data,error:r.error};
+   },
+   send:async(recipient,body)=>{
+    if(recipient!==notice.recipient)throw Error('buyer_tracking_recipient_changed');
+    const response=await fetch('https://gate.whapi.cloud/messages/text',{
+     method:'POST',headers:{Authorization:'Bearer '+sec.token,
+      'Content-Type':'application/json'},
+     body:JSON.stringify({to:recipient,body}),
+     signal:AbortSignal.timeout(12000)
+    });
+    const value=response.ok?await response.json().catch(()=>null):null;
+    const obj=value&&typeof value==='object'?value as Record<string,unknown>:null;
+    const nested=obj?.message&&typeof obj.message==='object'?
+     obj.message as Record<string,unknown>:null;
+    const id=obj?.message_id??nested?.id??null;
+    return {accepted:response.ok&&obj?.sent===true,
+     messageId:typeof id==='string'?id:null};
+   }
+  });
+  if(result.estado==='conciliacion_requerida')
+   return json(503,'buyer_tracking_reconciliation_required');
+ }
  // Opportunistic recovery needs a signed Whapi event, an already-consented
  // pilot participant and a DB-leased private file. Never block the user reply
  // and NEVER send supplier invitations or expose source bytes.
