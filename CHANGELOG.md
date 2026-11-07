@@ -1,3 +1,8 @@
+## 2026-11-07 — MVP291, correlación autónoma (desarrollo)
+- Sustituido el enfoque descartado de elección manual del proveedor (PR #682) por la correlación de ofertas documentales mediante dos lecturas IA Central + cuantificación determinista y despacho previo acreditado.
+- En caso inequívoco, SQL service_role vincula un único pedido, fuente/archivo SHA y auditoría atómicamente. Si existen dos candidatos indistinguibles, retiene sin enviar aclaraciones ni publicar precios.
+- Incluye PG17 sintético con rollback, contratos Node, RLS y flags OFF. Sin cambios en piloto real/producción. [Decisión 416](docs/416-mvp291-correlacion-automatica-sin-friccion.md), PR #683.
+
 ## 2026-11-07 — MVP289 (solo desarrollo)
 - Corrige la ausencia de confirmación y enlace privado tras `CONFIRMAR COTI`: el bloque nuevo se ejecuta después de despachos aceptados y se reutiliza el seguimiento existente sin nuevas invitaciones.
 - Nueva RPC privada, idempotente, token único por ronda, registro de entrega Whapi y comando seguro `SEGUIMIENTO COTI` para rondas históricas confirmadas sin enlace. Pruebas Node y PG17 con rollback; no publicar sin autorización y verificación.
