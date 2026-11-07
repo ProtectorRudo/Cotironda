@@ -74,6 +74,60 @@ function buyerView(parsed){
       contactos_revelados:false,adjudicacion_automatica:false
     };
   }
+  // MVP303: only AFTER closure, the buyer may see the identity of EVERY
+  // invited, currently consented supplier. No max-two finalist shortcut;
+  // no contacts, phone, HMAC, source, pricing or automatic award.
+  const roster=parsed.todos_proveedores_cierre;
+  if(roster!==undefined){
+    const exact=(x,keys)=>x&&typeof x==="object"&&!Array.isArray(x)&&
+      Object.keys(x).length===keys.length&&
+      keys.every(k=>Object.prototype.hasOwnProperty.call(x,k));
+    const keys=["state","proveedores","cantidad","invitados",
+      "solo_post_cierre","identidades_reveladas","telefonos_revelados",
+      "ranking_global_permitido","adjudicacion_automatica","mensajes_enviados"];
+    const rowKeys=["nombre","oferta","estado"];
+    const allowed=new Set(["presupuesto_verificado","respuesta_en_revision",
+      "sin_respuesta","envio_no_confirmado"]);
+    const aliases=new Set();
+    if(parsed.state!=="closed"||!exact(roster,keys)||
+       roster.state!=="proveedores_revelados_al_cierre"||
+       !Number.isSafeInteger(roster.cantidad)||
+       !Number.isSafeInteger(roster.invitados)||
+       roster.cantidad<0||roster.invitados<0||
+       roster.cantidad>100||roster.invitados>100||
+       !Array.isArray(roster.proveedores)||
+       roster.proveedores.length!==roster.cantidad||
+       roster.cantidad>roster.invitados||
+       roster.solo_post_cierre!==true||
+       roster.identidades_reveladas!==true||
+       roster.telefonos_revelados!==false||
+       roster.ranking_global_permitido!==false||
+       roster.adjudicacion_automatica!==false||
+       roster.mensajes_enviados!==false)return null;
+    const rows=[];
+    for(const x of roster.proveedores){
+      if(!exact(x,rowKeys)||typeof x.nombre!=="string"||
+         x.nombre.length<2||x.nombre.length>100||
+         x.nombre.trim()!==x.nombre||
+         /[<>\x00-\x1f\x7f]/u.test(x.nombre)||
+         /[0-9]{8,}/u.test(x.nombre)||
+         !allowed.has(x.estado)||
+         !(x.oferta===null||
+           (typeof x.oferta==="string"&&
+            /^Presupuesto (?:[1-9]|[1-9][0-9]|100)$/u.test(x.oferta)))||
+         (x.estado==="presupuesto_verificado")!==(x.oferta!==null)||
+         (x.oferta!==null&&aliases.has(x.oferta)))return null;
+      if(x.oferta!==null)aliases.add(x.oferta);
+      rows.push({nombre:x.nombre,oferta:x.oferta,estado:x.estado});
+    }
+    safe.todos_proveedores_cierre={
+      state:"proveedores_revelados_al_cierre",
+      proveedores:rows,cantidad:rows.length,invitados:roster.invitados,
+      solo_post_cierre:true,identidades_reveladas:true,
+      telefonos_revelados:false,ranking_global_permitido:false,
+      adjudicacion_automatica:false,mensajes_enviados:false
+    };
+  }
   if(!opened)return safe;
 
   // Preserve all reviewed offer text faithfully, without allowing extra
@@ -748,60 +802,6 @@ function buyerView(parsed){
     }
   }
 
-  // MVP303: only AFTER closure, the buyer may see the identity of EVERY
-  // invited, currently consented supplier. No max-two finalist shortcut;
-  // no contacts, phone, HMAC, source, pricing or automatic award.
-  const roster=parsed.todos_proveedores_cierre;
-  if(roster!==undefined){
-    const exact=(x,keys)=>x&&typeof x==="object"&&!Array.isArray(x)&&
-      Object.keys(x).length===keys.length&&
-      keys.every(k=>Object.prototype.hasOwnProperty.call(x,k));
-    const keys=["state","proveedores","cantidad","invitados",
-      "solo_post_cierre","identidades_reveladas","telefonos_revelados",
-      "ranking_global_permitido","adjudicacion_automatica","mensajes_enviados"];
-    const rowKeys=["nombre","oferta","estado"];
-    const allowed=new Set(["presupuesto_verificado","respuesta_en_revision",
-      "sin_respuesta","envio_no_confirmado"]);
-    const aliases=new Set();
-    if(parsed.state!=="closed"||!exact(roster,keys)||
-       roster.state!=="proveedores_revelados_al_cierre"||
-       !Number.isSafeInteger(roster.cantidad)||
-       !Number.isSafeInteger(roster.invitados)||
-       roster.cantidad<0||roster.invitados<0||
-       roster.cantidad>100||roster.invitados>100||
-       !Array.isArray(roster.proveedores)||
-       roster.proveedores.length!==roster.cantidad||
-       roster.cantidad>roster.invitados||
-       roster.solo_post_cierre!==true||
-       roster.identidades_reveladas!==true||
-       roster.telefonos_revelados!==false||
-       roster.ranking_global_permitido!==false||
-       roster.adjudicacion_automatica!==false||
-       roster.mensajes_enviados!==false)return null;
-    const rows=[];
-    for(const x of roster.proveedores){
-      if(!exact(x,rowKeys)||typeof x.nombre!=="string"||
-         x.nombre.length<2||x.nombre.length>100||
-         x.nombre.trim()!==x.nombre||
-         /[<>\x00-\x1f\x7f]/u.test(x.nombre)||
-         /[0-9]{8,}/u.test(x.nombre)||
-         !allowed.has(x.estado)||
-         !(x.oferta===null||
-           (typeof x.oferta==="string"&&
-            /^Presupuesto (?:[1-9]|[1-9][0-9]|100)$/u.test(x.oferta)))||
-         (x.estado==="presupuesto_verificado")!==(x.oferta!==null)||
-         (x.oferta!==null&&aliases.has(x.oferta)))return null;
-      if(x.oferta!==null)aliases.add(x.oferta);
-      rows.push({nombre:x.nombre,oferta:x.oferta,estado:x.estado});
-    }
-    safe.todos_proveedores_cierre={
-      state:"proveedores_revelados_al_cierre",
-      proveedores:rows,cantidad:rows.length,invitados:roster.invitados,
-      solo_post_cierre:true,identidades_reveladas:true,
-      telefonos_revelados:false,ranking_global_permitido:false,
-      adjudicacion_automatica:false,mensajes_enviados:false
-    };
-  }
   if(parsed.state==="closed"&&Array.isArray(parsed.finalists)){
     if(parsed.finalists.length>2||!parsed.finalists.every(f=>f&&
       typeof f==="object"&&!Array.isArray(f)&&
