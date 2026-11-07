@@ -1,3 +1,10 @@
+## 07/11/2026 — Publicación verificada MVP298 + MVP299 solo en Cotironda piloto
+
+- Autorización «Publicalo» aplicada solo a Supabase `cotironda-piloto` (Whapi **v68**, seguimiento **v24**, **84 migraciones**) y Vercel **cotironda-seguimiento-vista-piloto**; el alias estable del seguimiento del comprador se reasignó y verificó a `dpl_FoY1XhAXg5hWVjxmfYQnh6NEYjWc` (commit `55bba473`, estado READY).
+- RPC nueva `public.cotironda_piloto_ia_pending_coverage_mvp299(text)`: sólo `service_role` puede ejecutarla; prueba de token inválido y ronda válida sin respuestas nuevas aprobada. No exhibe fuente, importe, identidad ni ranking.
+- Módulos Edge cotejados byte a byte con Github y CI de desarrollo: MVP298 14/14; MVP299 27/27 y 34/34 focalizados. Históricos: una revisión privada, cero ofertas IA verificadas; sin relectura, mensajes, cambios de cron ni secretos.
+- Vercel informó build completo y READY; **sin smoke HTTP externo desde esta sesión**, ni ronda E2E real. No afecta el portal principal ni el branch `main`. [Acta 425](docs/425-mvp299-separacion-respuestas-sin-precio-comparable.md).
+
 ## 07/11/2026 — MVP299 (PR #692 fusionado solo a desarrollo; 27/27 CI y 34/34 pruebas específicas, sin publicar)
 
 - Nuevo resumen privado de fuente interpretada **sin precio comparable** (lista cerrada de motivos seguros). Una fuente no conciliada o atribuida de forma insegura permanece en revisión invisible.
