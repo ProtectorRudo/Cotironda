@@ -101,7 +101,7 @@ BEGIN
  IF result->>'state'<>'reserved' THEN
   RAISE EXCEPTION 'mvp291_snapshot_not_reserved: %',result;END IF;
  count_options:=jsonb_array_length(result->'candidates');
- IF count_options<>2 OR jsonb_array_length(result->'quote')<>2
+ IF count_options<2 OR count_options>8 OR jsonb_array_length(result->'quote')<>2
  THEN RAISE EXCEPTION 'mvp291_incomplete_snapshot: %',result;END IF;
  IF result::text LIKE '%unit_price%' OR result::text LIKE '%line_total%'
  OR result::text LIKE '%supplier_key%'
