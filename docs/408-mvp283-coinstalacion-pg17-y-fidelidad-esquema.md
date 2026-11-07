@@ -51,3 +51,12 @@ El respaldo contratado permanece en Plan B. Ninguna copia fiel, backup restaurab
 ## Criterios de liberación
 
 Falta verificación sobre dump real, autorización `Publicalo` para el entorno exacto, control de backup/riesgos, despliegue de Edge compatible, verificación en Vercel (actual cuota limita builds) y prueba E2E con arquitecto y proveedores consentidos. Sin esto se mantiene **NO PUBLICAR**.
+
+
+## Huella estructural reproducible (solo lectura)
+
+Se agregó `scripts/piloto/mvp283-catalog-fingerprint-readonly.sql`, ejecutado contra el PILOTO real sin consultar ninguna fila comercial ni copiar funciones. PostgreSQL17 informó **63 tablas privadas con RLS, 428 columnas, 411 constraints, 20 triggers, 20 rutinas privadas, 112 rutinas públicas Cotironda**. SHA-256 estructural del catálogo (columnas, tipos, nullability, constraints y triggers, no cuerpos de funciones):
+
+`deef31dbf7f9dd06683cc02b4f2e4e625984e415f129dd717524e265c3a348d2`
+
+Esta huella permite detectar divergencias en un futuro clon y debe recalcularse al momento de obtenerlo; **no** garantiza equivalencia semántica de rutinas, triggers ni extensiones, ni suple los originales de un dump privado. No publicar el dump ni copiar credenciales al repositorio público.
