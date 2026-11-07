@@ -1,3 +1,8 @@
+## 2026-11-07 — MVP292 texto de proveedores e históricos (SOLO desarrollo)
+- Incorporada interpretación de mensajes libres de proveedor por doble lectura con citas literales de materiales, cantidades y unidades, excluyendo precios para asignar identidad de ronda.
+- Implementado broker de SQL privado para texto con el motor de atribución MVP291, consentimientos, HMAC, SHA, despacho anterior y una asociación atómica; revisión económica comercial independiente.
+- Agregados registro de recuperación histórico de fuentes cifradas y documentos originales, cuotas y worker interno segregado de WhatsApp, con secreto independiente, gates OFF y cero envíos. Pruebas Node/Deno/PG17 sintético con ROLLBACK en PR #683; sin publicación ni E2E real. Decisión docs/417.
+
 ## 2026-11-07 — MVP291, correlación autónoma (desarrollo)
 - Sustituido el enfoque descartado de elección manual del proveedor (PR #682) por la correlación de ofertas documentales mediante dos lecturas IA Central + cuantificación determinista y despacho previo acreditado.
 - En caso inequívoco, SQL service_role vincula un único pedido, fuente/archivo SHA y auditoría atómicamente. Si existen dos candidatos indistinguibles, retiene sin enviar aclaraciones ni publicar precios.
