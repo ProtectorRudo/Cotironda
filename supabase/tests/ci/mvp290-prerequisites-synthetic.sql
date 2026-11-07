@@ -51,3 +51,12 @@ ALTER TABLE cotironda_piloto_privado.media_archive_mvp095 ADD COLUMN IF NOT EXIS
 ALTER TABLE cotironda_piloto_privado.media_archive_mvp095 ADD COLUMN IF NOT EXISTS request_id uuid REFERENCES cotironda_piloto_privado.requests(id);
 ALTER TABLE cotironda_piloto_privado.participants ADD COLUMN IF NOT EXISTS opted_out_at timestamptz;
 ALTER TABLE cotironda_piloto_privado.participants ADD COLUMN IF NOT EXISTS consent_at timestamptz;
+
+-- The old MVP225 cumulative fixture has an earlier pre-MVP239 association
+-- check. Real pilot already includes clarified_supplier_reply. Align CI only.
+ALTER TABLE cotironda_piloto_privado.ai_supplier_links_mvp225
+ DROP CONSTRAINT IF EXISTS ai_supplier_links_mvp225_association_check;
+ALTER TABLE cotironda_piloto_privado.ai_supplier_links_mvp225
+ ADD CONSTRAINT ai_supplier_links_mvp225_association_check CHECK(
+ association IN('quoted_whapi_id','single_active_round',
+ 'prior_supplier_preamble','clarified_supplier_reply'));
