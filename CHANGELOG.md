@@ -1,4 +1,4 @@
-## 07/11/2026 — MVP299 (solo desarrollo)
+## 07/11/2026 — MVP299 (PR #692 fusionado solo a desarrollo; 27/27 CI y 34/34 pruebas específicas, sin publicar)
 
 - Nuevo resumen privado de fuente interpretada **sin precio comparable** (lista cerrada de motivos seguros). Una fuente no conciliada o atribuida de forma insegura permanece en revisión invisible.
 - RPC opcional service_role + DTO estricto + Edge + proxy Vercel + pantalla por rubro, sin revelar identidad, fuente, precios, contactos o adjudicación.
