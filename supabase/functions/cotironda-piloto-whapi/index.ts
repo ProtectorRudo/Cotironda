@@ -493,6 +493,40 @@ async function respond(req:Request):Promise<Response>{
     });
     return delivery.estado!=='conciliacion_requerida';
   };
+  const supplierChoiceEnabled=
+  Deno.env.get('COTIRONDA_PILOT_SUPPLIER_CHOICES_MVP290_ENABLED')==='true';
+ const enviarConsultaRondaMvp290=async(sourceHmac:string):Promise<boolean>=>{
+  if(!supplierChoiceEnabled||!sec.outbound||trial.quote_link!==true||
+     Deno.env.get('COTIRONDA_PILOT_AMBIGUITY_PROMPTS_ENABLED')!=='true')
+   return true;
+  const prompt=await consultarRondaMvp290({
+   enabled:true,trustedSupplier:supplierKnown||centralSupplier,
+   sourceHmac,chatHmac:chatHash,
+   recipient:row.chat_id,
+   rpc:async(name,params)=>{
+    const r=await db.rpc(name,params);return {data:r.data,error:r.error};
+   },
+   send:async(to,body)=>{
+    if(to!==row.chat_id)throw Error('supplier_changed');
+    const response=await fetch('https://gate.whapi.cloud/messages/text',{
+     method:'POST',headers:{Authorization:'Bearer '+sec.token,
+      'Content-Type':'application/json'},
+     body:JSON.stringify({to,body}),signal:AbortSignal.timeout(12000)
+    });
+    const data=response.ok?await response.json().catch(()=>null):null;
+    const root=data&&typeof data==='object'?data as Record<string,unknown>:null;
+    const nested=root?.message&&typeof root.message==='object'?
+     root.message as Record<string,unknown>:null;
+    const id=root?.message_id??nested?.id??null;
+    return {accepted:response.ok&&root?.sent===true,
+     messageId:typeof id==='string'?id:null};
+   }
+  });
+  return prompt.state!=='reconciliation_required';
+ };
+
+  const supplierRecoveryCommand=row.type==='text'&&
+    (supplierKnown||centralSupplier)&&body.trim()==='REVISAR COTI';
   const supplierChoiceReply=row.type==='text'&&centralSupplier&&
     esCodigoDeRondaMvp290(body);
   const attachmentNotice=row.type==='text'&&centralSupplier&&
@@ -615,6 +649,23 @@ async function respond(req:Request):Promise<Response>{
     if(bound.error)return json(503,'contact_vault_reconciliation_required');
     if(bound.data?.state==='identity_conflict')
       return json(503,'contact_identity_reconciliation_required');
+  }
+  // Recover one ambiguous, archived original from the same consenting
+  // supplier, never by guessing based on its materials or recency.
+  if(supplierRecoveryCommand){
+   if(!['duplicate','unrecognized_contact'].includes(outcome(out.data))&&
+      supplierChoiceEnabled&&trial.quote_link===true){
+    const pending=await db.rpc('cotironda_piloto_lookup_unlinked_supplier_mvp290',{
+     p_event_hmac:messageHash,p_chat_hmac:chatHash
+    });
+    if(pending.error)return json(503,'supplier_recovery_lookup_unavailable');
+    if(pending.data?.state==='candidate'&&
+       typeof pending.data?.source_hmac==='string'&&
+       /^[a-f0-9]{64}$/u.test(pending.data.source_hmac)&&
+       !await enviarConsultaRondaMvp290(pending.data.source_hmac))
+     return json(503,'supplier_recovery_prompt_reconciliation_required');
+   }
+   continue;
   }
   if(webLinkCode){
     // A replay cannot create a second link or trigger a false quote.
@@ -1545,40 +1596,9 @@ async function respond(req:Request):Promise<Response>{
     }
    }
   }
- // MVP290: one and only one private prompt per original source. The
- // options come from SQL's previously accepted actual dispatches, never
- // from semantic similarity, prices or arrival order.
- const supplierChoiceEnabled=
-  Deno.env.get('COTIRONDA_PILOT_SUPPLIER_CHOICES_MVP290_ENABLED')==='true';
- if(supplierChoiceSourceHmac&&sec.outbound&&trial.quote_link===true&&
-    supplierChoiceEnabled&&
-    Deno.env.get('COTIRONDA_PILOT_AMBIGUITY_PROMPTS_ENABLED')==='true'){
-  const prompt=await consultarRondaMvp290({
-   enabled:true,trustedSupplier:supplierKnown||centralSupplier,
-   sourceHmac:supplierChoiceSourceHmac,chatHmac:chatHash,
-   recipient:row.chat_id,
-   rpc:async(name,params)=>{
-    const r=await db.rpc(name,params);return {data:r.data,error:r.error};
-   },
-   send:async(to,body)=>{
-    if(to!==row.chat_id)throw Error('supplier_changed');
-    const response=await fetch('https://gate.whapi.cloud/messages/text',{
-     method:'POST',headers:{Authorization:'Bearer '+sec.token,
-      'Content-Type':'application/json'},
-     body:JSON.stringify({to,body}),signal:AbortSignal.timeout(12000)
-    });
-    const data=response.ok?await response.json().catch(()=>null):null;
-    const root=data&&typeof data==='object'?data as Record<string,unknown>:null;
-    const nested=root?.message&&typeof root.message==='object'?
-     root.message as Record<string,unknown>:null;
-    const id=root?.message_id??nested?.id??null;
-    return {accepted:response.ok&&root?.sent===true,
-     messageId:typeof id==='string'?id:null};
-   }
-  });
-  if(prompt.state==='reconciliation_required')
-   return json(503,'supplier_choice_prompt_reconciliation_required');
- }
+ // MVP290: new and archived files share the same exactly-once sender prompt.
+ if(supplierChoiceSourceHmac&&!await enviarConsultaRondaMvp290(supplierChoiceSourceHmac))
+  return json(503,'supplier_choice_prompt_reconciliation_required');
  // Preguntar una única vez por la ronda, sin contactar compradores.
  // SQL valida remitente, consentimiento, cuota y fuente irresuelta.
  // OFF por defecto: habilitación separada para la prueba WhatsApp.
