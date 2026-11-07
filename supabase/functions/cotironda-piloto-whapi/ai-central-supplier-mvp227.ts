@@ -11,6 +11,8 @@ import {
 } from '../../../src/domain/rubros-comprador-mvp216.ts';
 import {validarMemoriaProveedorMvp260} from './ai-central-memory-mvp260.ts';
 import {instrumentoOpenAiMvp264} from './ai-central-usage-mvp264.ts';
+import {diagnosticoPermitidoMvp297} from
+ '../../../src/domain/ia-central/diagnostico-fuente-mvp297.ts';
 const HASH=/^[a-f0-9]{64}$/u;
 const OBJECT=(o:unknown):o is Record<string,unknown>=>
  o!==null&&typeof o==='object'&&!Array.isArray(o);
@@ -146,7 +148,13 @@ export async function procesarPresupuestoCentralMvp227(args:{
   });
   if(reading.estado!=='interpretada_para_revision'||!reading.oferta||
      !reading.cobertura||reading.cobertura.ofertas.length!==1){
-   await finish('review','semantic_review_required',null);
+   // MVP297: persist ONLY an allowlisted, private diagnostic code from
+   // the failed evidence gate. Historical messages retain their old,
+   // irrecoverable generic reason: NEVER re-call billable IA to guess it.
+   // This changes observability, NOT the evidence gate or buyer ranking.
+   const reason=diagnosticoPermitidoMvp297(reading.diagnostico)?
+    reading.diagnostico:'semantic_review_required';
+   await finish('review',reason,null);
    return done('requiere_revision','source_kept_private');
   }
   const result=reading.cobertura.ofertas[0];
