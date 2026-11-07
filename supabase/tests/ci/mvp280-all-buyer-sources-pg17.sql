@@ -944,7 +944,12 @@ BEGIN
    'cotironda_piloto_privado.fuente_revisable_mvp280(uuid)','EXECUTE')
  THEN RAISE EXCEPTION 'mvp280_grant_leak'; END IF;
 
+ -- Three separate fixture scenarios stand for three separate days.
+ -- Never change or bypass the production buyer quota.
  FOR mode IN SELECT unnest(ARRAY['text','txt','csv']) LOOP
+  UPDATE cotironda_piloto_privado.ai_central_attempts_mvp226
+  SET created_at=clock_timestamp()-interval '3 days'
+  WHERE buyer_key='arquitecto';
   v_src_hmac:=CASE mode WHEN 'text' THEN repeat('ab',32)
    WHEN 'txt' THEN repeat('cd',32) ELSE repeat('12',32) END;
   reply_hmac:=CASE mode WHEN 'text' THEN repeat('fa',32)
