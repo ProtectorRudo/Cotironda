@@ -41,6 +41,10 @@ BEGIN
  VALUES(rid_new,'corralon_ailin'),(rid_old,'corralon_ailin');
  INSERT INTO cotironda_piloto_privado.ai_shadow_requests_mvp221(request_id,source_hmac)
  VALUES(rid_new,encode(sha256(convert_to('mvp291_new_request','UTF8')),'hex'));
+ INSERT INTO cotironda_piloto_privado.ai_shadow_rubros_mvp221(
+  request_id,line_no,rubro,evidencia)
+ VALUES(rid_new,1,'obra_gruesa','Cemento CPC de 50 kg'),
+       (rid_new,2,'obra_gruesa','Bolsones de arena');
  INSERT INTO cotironda_piloto_privado.ai_shadow_destinos_mvp221(
   request_id,supplier_key,line_no,catalogue_line_no,catalogue_description,tipo,explicacion)
  VALUES(rid_new,'corralon_ailin',1,1,'Cemento', 'producto_declarado','Prueba'),
