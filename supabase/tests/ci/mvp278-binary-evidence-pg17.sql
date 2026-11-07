@@ -613,53 +613,53 @@ BEGIN
   message_hmac,participant_key,chat_hmac,kind,processing_state,
   plaintext_sha256,received_at
  ) VALUES(
-  repeat('7',64),'arquitecto',repeat('a',64),'document',
+  repeat('8',64),'arquitecto',repeat('a',64),'document',
   'needs_review',repeat('f',64),clock_timestamp()
  );
  INSERT INTO cotironda_piloto_privado.media_archive_mvp095(
   message_hmac,chat_hmac,participant_key,kind,mime,
   state,content_sha256,size_bytes,storage_path,finished_at
- ) VALUES(repeat('7',64),repeat('a',64),'arquitecto','document',
+ ) VALUES(repeat('8',64),repeat('a',64),'arquitecto','document',
   'application/pdf','stored',repeat('b',64),1024,
-  'media/'||repeat('7',64),clock_timestamp());
+  'media/'||repeat('8',64),clock_timestamp());
 
  -- Metadata alone is insufficient: object presence is mandatory.
  v_result:=public.cotironda_piloto_ia_attest_binary_mvp278(
-  repeat('a',64),repeat('7',64),repeat('b',64),body,
+  repeat('a',64),repeat('8',64),repeat('b',64),body,
   'application/pdf',1
  );
  IF v_result->>'state'<>'source_not_authorized' THEN
   RAISE EXCEPTION 'mvp278_storage_object_missing_accepted: %',v_result;
  END IF;
  INSERT INTO storage.objects(bucket_id,name) VALUES(
-  'cotironda-piloto-originals','media/'||repeat('7',64)
+  'cotironda-piloto-originals','media/'||repeat('8',64)
  );
  v_result:=public.cotironda_piloto_ia_attest_binary_mvp278(
-  repeat('a',64),repeat('7',64),repeat('c',64),body,
+  repeat('a',64),repeat('8',64),repeat('c',64),body,
   'application/pdf',1
  );
  IF v_result->>'state'<>'source_not_authorized'
  THEN RAISE EXCEPTION 'mvp278_wrong_binary_hash_allowed';END IF;
  v_result:=public.cotironda_piloto_ia_attest_binary_mvp278(
-  repeat('a',64),repeat('7',64),repeat('b',64),body,
+  repeat('a',64),repeat('8',64),repeat('b',64),body,
   'application/pdf',1
  );
  IF v_result->>'state'<>'attested'
  THEN RAISE EXCEPTION 'mvp278_pdf_attestation_failed: %',v_result;END IF;
  IF (SELECT count(*) FROM cotironda_piloto_privado.ai_buyer_binary_evidence_mvp278
-     WHERE message_hmac=repeat('7',64)
+     WHERE message_hmac=repeat('8',64)
       AND original_sha256=repeat('b',64)
       AND derived_text_sha256=v_derived_sha
       AND verified_items=1)<>1
  THEN RAISE EXCEPTION 'mvp278_sha_pair_not_recorded';END IF;
  v_result:=public.cotironda_piloto_ia_attest_binary_mvp278(
-  repeat('a',64),repeat('7',64),repeat('b',64),body,
+  repeat('a',64),repeat('8',64),repeat('b',64),body,
   'application/pdf',1
  );
  IF v_result->>'state'<>'already_attested'
  THEN RAISE EXCEPTION 'mvp278_idempotency_missed';END IF;
  v_result:=public.cotironda_piloto_ia_attest_binary_mvp278(
-  repeat('a',64),repeat('7',64),repeat('b',64),
+  repeat('a',64),repeat('8',64),repeat('b',64),
   body||E'\nEXTRA MATERIAL', 'application/pdf',1
  );
  IF v_result->>'state'<>'conflicting_evidence'
@@ -676,30 +676,30 @@ BEGIN
  THEN RAISE EXCEPTION 'mvp278_access_control_broken';END IF;
 
  IF cotironda_piloto_privado.fuente_binaria_comprador_mvp278(
-  repeat('7',64),repeat('a',64),'arquitecto',v_derived_sha,1) IS NOT TRUE
+  repeat('8',64),repeat('a',64),'arquitecto',v_derived_sha,1) IS NOT TRUE
  THEN RAISE EXCEPTION 'mvp278_valid_pdf_sha_pair_denied';END IF;
  IF cotironda_piloto_privado.fuente_binaria_comprador_mvp278(
-  repeat('7',64),repeat('a',64),'arquitecto',v_derived_sha,2) IS DISTINCT FROM false
+  repeat('8',64),repeat('a',64),'arquitecto',v_derived_sha,2) IS DISTINCT FROM false
  OR cotironda_piloto_privado.fuente_binaria_comprador_mvp278(
-  repeat('7',64),repeat('0',64),'arquitecto',v_derived_sha,1) IS DISTINCT FROM false
+  repeat('8',64),repeat('0',64),'arquitecto',v_derived_sha,1) IS DISTINCT FROM false
  OR cotironda_piloto_privado.fuente_binaria_comprador_mvp278(
-  repeat('7',64),repeat('a',64),'arquitecto',repeat('e',64),1) IS DISTINCT FROM false
+  repeat('8',64),repeat('a',64),'arquitecto',repeat('e',64),1) IS DISTINCT FROM false
  THEN RAISE EXCEPTION 'mvp278_wrong_count_identity_or_text_allowed';END IF;
 
  -- Content source-check is applied again in every broker gate.
  v_result:=public.cotironda_piloto_ia_reserve_buyer_mvp226(
-  repeat('a',64),repeat('7',64),v_derived_sha
+  repeat('a',64),repeat('8',64),v_derived_sha
  );
  IF v_result->>'state'<>'reserved'
  THEN RAISE EXCEPTION 'mvp278_binary_reservation_failed: %',v_result;END IF;
  v_stage:=public.cotironda_piloto_ia_shadow_prepare_mvp221(
-  repeat('a',64),repeat('7',64),body,'La Plata',
+  repeat('a',64),repeat('8',64),body,'La Plata',
   v_items||v_items,v_dest
  );
  IF v_stage->>'state'<>'source_not_authorized'
  THEN RAISE EXCEPTION 'mvp278_omitted_or_duplicate_item_allowed: %',v_stage;END IF;
  v_stage:=public.cotironda_piloto_ia_shadow_prepare_mvp221(
-  repeat('a',64),repeat('7',64),body,'La Plata',v_items,v_dest
+  repeat('a',64),repeat('8',64),body,'La Plata',v_items,v_dest
  );
  IF v_stage->>'state'<>'shadow_staged'
  THEN RAISE EXCEPTION 'mvp278_binary_stage_failed: %',v_stage;END IF;
@@ -709,17 +709,17 @@ BEGIN
    WHERE id=v_id) IS DISTINCT FROM body
  THEN RAISE EXCEPTION 'mvp278_binary_text_source_modified';END IF;
  IF public.cotironda_piloto_ia_shadow_prepare_mvp221(
-  repeat('a',64),repeat('7',64),body,'La Plata',v_items,v_dest
+  repeat('a',64),repeat('8',64),body,'La Plata',v_items,v_dest
  )->>'state'<>'already_staged'
  THEN RAISE EXCEPTION 'mvp278_duplicate_round_not_blocked';END IF;
  -- Off by default in actual PILOTO. Synthetic test already turned it on.
  UPDATE cotironda_piloto_privado.media_archive_mvp095
- SET content_sha256=repeat('c',64) WHERE message_hmac=repeat('7',64);
+ SET content_sha256=repeat('c',64) WHERE message_hmac=repeat('8',64);
  v_pub:=public.cotironda_piloto_ia_publish_mvp222(v_id);
  IF v_pub->>'state'<>'source_not_verified'
  THEN RAISE EXCEPTION 'mvp278_changed_binary_published: %',v_pub;END IF;
  UPDATE cotironda_piloto_privado.media_archive_mvp095
- SET content_sha256=repeat('b',64) WHERE message_hmac=repeat('7',64);
+ SET content_sha256=repeat('b',64) WHERE message_hmac=repeat('8',64);
  -- Alter count after staging: still no publication.
  INSERT INTO cotironda_piloto_privado.request_lines(
   request_id,line_no,original_description,quantity,unit
@@ -738,7 +738,7 @@ BEGIN
  UPDATE cotironda_piloto_privado.participants
  SET opted_out_at=clock_timestamp() WHERE key='arquitecto';
  IF cotironda_piloto_privado.fuente_binaria_comprador_mvp278(
-  repeat('7',64),repeat('a',64),'arquitecto',v_derived_sha,1) IS DISTINCT FROM false
+  repeat('8',64),repeat('a',64),'arquitecto',v_derived_sha,1) IS DISTINCT FROM false
  THEN RAISE EXCEPTION 'mvp278_consent_revocation_ignored';END IF;
 END $mvp278$;
 
