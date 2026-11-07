@@ -4,14 +4,14 @@
 DO $e2e$
 DECLARE
  rid uuid; rv jsonb; approved jsonb; dispatch jsonb; claim jsonb;
- pending_id text; source_hmac text:=repeat('b',64);
+ pending_id text; v_source_hmac text:=repeat('b',64);
  reply text; quote_text text; quote_hmac text; quote_sha text;
  supplier text; sup_chat text; original_id text; kind text;
  idx int; offered jsonb; readback jsonb; finish jsonb; round_key text;
 BEGIN
  SELECT request_id INTO STRICT rid
  FROM cotironda_piloto_privado.ai_shadow_requests_mvp221
- WHERE source_hmac=source_hmac;
+ WHERE source_hmac=v_source_hmac;
  -- No solicitud a proveedores sin aprobacion.
  UPDATE cotironda_piloto_privado.ai_central_control_mvp226
  SET enabled=true,activated_at=clock_timestamp() WHERE only_row;
@@ -24,7 +24,7 @@ BEGIN
  THEN RAISE EXCEPTION 'mvp284_continuous_buyer_not_active: %',rv;END IF;
  IF public.cotironda_piloto_ia_publish_mvp222(rid)->>'state'<>'buyer_review_required'
  THEN RAISE EXCEPTION 'mvp284_preapproval_dispatch_not_blocked';END IF;
- rv:=public.cotironda_piloto_ia_review_issue_mvp279(repeat('a',64),source_hmac);
+ rv:=public.cotironda_piloto_ia_review_issue_mvp279(repeat('a',64),v_source_hmac);
  IF rv->>'state'<>'issued' OR rv->>'items_count'<>'3'
  OR rv->>'city'<>'La Plata'
  THEN RAISE EXCEPTION 'mvp284_incomplete_buyer_review: %',rv;END IF;
