@@ -925,7 +925,7 @@ DECLARE
  'Entrega La Plata';
  src_sha text;source_hmac text;reply_hmac text;reply_body text;
  mode text;source_kind text;media_mime text;
- request_id uuid;json_result jsonb;review jsonb;code text;
+ v_rid uuid;json_result jsonb;review jsonb;code text;
  values_items jsonb:='[{"descripcion":"Cemento CPC 50 kg",
  "cantidad":"20","unidad":"bag","rubro":"obra_gruesa",
  "evidencia":"Cemento CPC 50 kg 20 bolsas"}]';
@@ -975,15 +975,15 @@ BEGIN
    repeat('a',64),source_hmac,source_text,'La Plata',values_items,values_route);
   IF json_result->>'state'<>'shadow_staged'
   THEN RAISE EXCEPTION 'mvp280_%_shadow_denied: %',mode,json_result;END IF;
-  request_id:=(json_result->>'request_id')::uuid;
-  IF NOT cotironda_piloto_privado.fuente_revisable_mvp280(request_id)
+  v_rid:=(json_result->>'v_rid')::uuid;
+  IF NOT cotironda_piloto_privado.fuente_revisable_mvp280(v_rid)
   THEN RAISE EXCEPTION 'mvp280_%_source_not_bound',mode;END IF;
-  IF cotironda_piloto_privado.confirmada_comprador_mvp280(request_id)
+  IF cotironda_piloto_privado.confirmada_comprador_mvp280(v_rid)
   THEN RAISE EXCEPTION 'mvp280_%_unreviewed_approved',mode;END IF;
-  json_result:=public.cotironda_piloto_ia_publish_mvp222(request_id);
+  json_result:=public.cotironda_piloto_ia_publish_mvp222(v_rid);
   IF json_result->>'state'<>'buyer_review_required'
    OR (SELECT count(*) FROM cotironda_piloto_privado.invitations
-      WHERE request_id=request_id)<>0
+      WHERE request_id=v_rid)<>0
   THEN RAISE EXCEPTION 'mvp280_%_unapproved_published: %',
    mode,json_result;END IF;
 
@@ -993,7 +993,7 @@ BEGIN
    DELETE FROM storage.objects o
    WHERE o.bucket_id='cotironda-piloto-originals'
      AND o.name='media/'||source_hmac;
-   IF cotironda_piloto_privado.fuente_revisable_mvp280(request_id)
+   IF cotironda_piloto_privado.fuente_revisable_mvp280(v_rid)
    THEN RAISE EXCEPTION 'mvp280_missing_txt_storage_allowed';END IF;
    INSERT INTO storage.objects(bucket_id,name)
    VALUES('cotironda-piloto-originals','media/'||source_hmac);
@@ -1023,7 +1023,7 @@ BEGIN
    )->>'state'<>'not_authorized_or_expired'
   THEN RAISE EXCEPTION 'mvp280_%_unsent_review_approved',mode;END IF;
   json_result:=public.cotironda_piloto_ia_review_delivery_mvp279(
-   request_id,'api_accepted','review-msg-'||mode||'-6789101112');
+   v_rid,'api_accepted','review-msg-'||mode||'-6789101112');
   IF json_result->>'state'<>'recorded'
   THEN RAISE EXCEPTION 'mvp280_%_review_delivery_unrecorded',mode;END IF;
   IF public.cotironda_piloto_ia_review_confirm_mvp279(
@@ -1034,32 +1034,32 @@ BEGIN
    repeat('a',64),reply_hmac,reply_body);
   IF json_result->>'state'<>'confirmed'
   THEN RAISE EXCEPTION 'mvp280_%_auth_reply_denied: %',mode,json_result;END IF;
-  IF NOT cotironda_piloto_privado.confirmada_comprador_mvp280(request_id)
+  IF NOT cotironda_piloto_privado.confirmada_comprador_mvp280(v_rid)
   THEN RAISE EXCEPTION 'mvp280_%_auth_confirm_not_bound',mode;END IF;
   IF public.cotironda_piloto_ia_review_confirm_mvp279(
    repeat('a',64),reply_hmac,reply_body
    )->>'state'<>'not_authorized_or_expired'
   THEN RAISE EXCEPTION 'mvp280_%_replay_accepted',mode;END IF;
-  json_result:=public.cotironda_piloto_ia_publish_mvp222(request_id);
+  json_result:=public.cotironda_piloto_ia_publish_mvp222(v_rid);
   IF json_result->>'state'<>'ready_for_delivery'
   THEN RAISE EXCEPTION 'mvp280_%_confirmed_not_published: %',
    mode,json_result;END IF;
 
   -- Every dispatch gate must honor approval; no bypass from service_role.
-  json_result:=public.cotironda_piloto_ia_claim_mvp222(request_id);
+  json_result:=public.cotironda_piloto_ia_claim_mvp222(v_rid);
   IF json_result->>'state'<>'leased'
   THEN RAISE EXCEPTION 'mvp280_%_claim_not_leased: %',mode,json_result;END IF;
   IF public.cotironda_piloto_ia_pdf_snapshot_mvp222(
-    request_id,'corralon_ailin',(json_result->>'lease_token')::uuid) IS NULL
+    v_rid,'corralon_ailin',(json_result->>'lease_token')::uuid) IS NULL
   THEN RAISE EXCEPTION 'mvp280_%_approved_pdf_unavailable',mode;END IF;
 
   UPDATE cotironda_piloto_privado.request_lines
   SET original_description='Material manipulado después de aprobación'
-  WHERE request_id=request_id AND line_no=1;
-  IF cotironda_piloto_privado.confirmada_comprador_mvp280(request_id)
+  WHERE request_id=v_rid AND line_no=1;
+  IF cotironda_piloto_privado.confirmada_comprador_mvp280(v_rid)
   THEN RAISE EXCEPTION 'mvp280_%_changed_line_still_approved',mode;END IF;
   IF public.cotironda_piloto_ia_pdf_snapshot_mvp222(
-    request_id,'corralon_ailin',(json_result->>'lease_token')::uuid) IS NOT NULL
+    v_rid,'corralon_ailin',(json_result->>'lease_token')::uuid) IS NOT NULL
   THEN RAISE EXCEPTION 'mvp280_%_modified_pdf_deliverable',mode;END IF;
   -- Confirmed record remains immutable and cannot be reapplied to revised
   -- article; no supplier WhatsApp was sent in this SQL-only test.
