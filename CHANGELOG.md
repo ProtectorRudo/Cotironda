@@ -1,3 +1,9 @@
+## 2026-11-06 — MVP282: ensayo integrado por cobertura (solo desarrollo)
+
+- Se vinculan los 21 SQL de MVP281 con 11 pruebas PostgreSQL17 ya existentes, verificando imports, BEGIN/ROLLBACK, aislamiento y ausencia de salida externa. Nuevo workflow de ejecución secuencial de los once fixtures y pruebas adversariales de conexión.
+- Precisión de auditoría: 11 fixtures rollback independientes **no demuestran** instalación simultánea de 21 SQL sobre esquema completo de piloto; queda bloqueada toda afirmación de publicación. Decisión 407 e Issue #665.
+- No se modificó Supabase PILOTO, Edge, Whapi, cron, Vercel ni costos.
+
 ## 2026-11-06 — MVP281: preflight de integración segura de IA Central (solo desarrollo)
 
 - Issue #663: manifiesto de 21 SQL candidatos MVP245–280, verificado en orden sin migraciones manuales, rollback ni cron supervisor.
