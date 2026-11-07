@@ -1,7 +1,7 @@
 -- MVP289: isolated PostgreSQL 17 verification, executed AFTER MVP288 fixture.
 -- All changes are inside the same outer BEGIN/ROLLBACK.
 DO $test$
-DECLARE rid uuid; answer jsonb;
+DECLARE rid uuid; rid_recovery uuid; moment timestamptz; answer jsonb;
  confirm_event text:=encode(sha256(convert_to('mvp289_confirm_signed_2026','UTF8')),'hex');
  recovery_event text:=encode(sha256(convert_to('mvp289_recovery_signed_2026','UTF8')),'hex');
  missing_event text:=encode(sha256(convert_to('mvp289_unsigned_event_2026','UTF8')),'hex');
@@ -77,5 +77,36 @@ BEGIN
  IF (SELECT count(*) FROM cotironda_piloto_privado.ai_dispatch_jobs_mvp222
   WHERE request_id=rid)<>1
  THEN RAISE EXCEPTION 'mvp289_requeued_supplier';END IF;
+ -- A second confirmed and dispatched round WITHOUT tracking is recoverable
+ -- by an explicitly signed message from the same buyer, without a new job.
+ SELECT id INTO rid_recovery FROM cotironda_piloto_privado.requests
+ WHERE source_hmac=repeat('0',64);
+ moment:=clock_timestamp();
+ UPDATE cotironda_piloto_privado.requests SET state='prepared'
+ WHERE id=rid_recovery;
+ INSERT INTO cotironda_piloto_privado.ai_buyer_review_mvp279(
+  request_id,buyer_key,chat_hmac,source_hmac,snapshot_sha256,code_sha256,
+  state,whapi_message_id,sent_at,confirmed_reply_hmac,confirmed_at,created_at,expires_at)
+ VALUES(rid_recovery,'arquitecto',repeat('a',64),repeat('0',64),
+  encode(sha256(convert_to('mvp289_snapshot_recovery','UTF8')),'hex'),
+  encode(sha256(convert_to('mvp289_code_recovery','UTF8')),'hex'),
+  'confirmed','mvp289-review-recovery-001',moment,
+  encode(sha256(convert_to('mvp289_previously_confirmed','UTF8')),'hex'),
+  moment,moment,moment+interval '1 hour');
+ INSERT INTO cotironda_piloto_privado.ai_dispatch_jobs_mvp222(
+  request_id,supplier_key,state,lease_token,leased_at,finished_at,whapi_message_id)
+ VALUES(rid_recovery,'corralon_ailin','api_accepted',gen_random_uuid(),
+        moment,moment,'mvp289-supplier-recovery-001');
+ answer:=public.cotironda_piloto_issue_confirmed_tracking_mvp289(
+  repeat('a',64),recovery_event,NULL,repeat('d',64),'recovery');
+ IF answer->>'state'<>'issued' OR answer->>'request_id'<>rid_recovery::text
+ THEN RAISE EXCEPTION 'mvp289_valid_recovery_denied: %',answer;END IF;
+ answer:=public.cotironda_piloto_issue_confirmed_tracking_mvp289(
+  repeat('a',64),recovery_event,NULL,repeat('e',64),'recovery');
+ IF answer->>'state'='issued'
+ THEN RAISE EXCEPTION 'mvp289_repeated_recovery_issued_second_token';END IF;
+ IF (SELECT count(*) FROM cotironda_piloto_privado.ai_dispatch_jobs_mvp222
+  WHERE request_id=rid_recovery)<>1
+ THEN RAISE EXCEPTION 'mvp289_recovery_resent_supplier';END IF;
  RAISE NOTICE 'MVP289 PASS: signed buyer, accepted supplier, one private token, no repeat dispatch';
 END $test$;
