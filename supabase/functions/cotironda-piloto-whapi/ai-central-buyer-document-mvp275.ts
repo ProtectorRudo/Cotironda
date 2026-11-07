@@ -51,13 +51,20 @@ const signature=(d:DocumentDraft)=>JSON.stringify({
 const textField=(value:unknown,max:number):value is string=>
  typeof value==='string'&&value.trim().length>0&&
  value.length<=max&&!CONTROL.test(value);
-const decimalInRow=(row:string,quantity:string):boolean=>{
- // Exact literal token, not 2 within 20 or 1 within 1.000.
- const at=row.indexOf(quantity);
- if(at<0)return false;
- const before=at===0?'':row[at-1],after=row[at+quantity.length]??'';
- return !/[0-9.,]/u.test(before)&&!/[0-9.,]/u.test(after);
+const literalToken=(row:string,value:string,boundary:RegExp):boolean=>{
+ let at=row.indexOf(value);
+ while(at>=0){
+  const before=at===0?'':row[at-1],after=row[at+value.length]??'';
+  if(!boundary.test(before)&&!boundary.test(after))return true;
+  at=row.indexOf(value,at+1);
+ }
+ return false;
 };
+const decimalInRow=(row:string,quantity:string):boolean=>
+ literalToken(row,quantity,/[0-9.,]/u);
+const unitInRow=(row:string,unit:string):boolean=>
+ literalToken(row.toLocaleLowerCase('es-AR'),
+  unit.toLocaleLowerCase('es-AR'),/[\p{L}\p{N}]/u);
 function corroboratedLines(source:string,read:DocumentDraft):boolean{
  if(read.lines.length<1||read.lines.length>MAX_ITEMS||
     read.unanswered.length!==0)return false;
@@ -75,8 +82,7 @@ function corroboratedLines(source:string,read:DocumentDraft):boolean{
    if(rows[i].toLocaleLowerCase('es-AR').includes(
        line.original_description.toLocaleLowerCase('es-AR'))&&
       decimalInRow(rows[i],line.quantity)&&
-      rows[i].toLocaleLowerCase('es-AR').includes(
-       line.unit.toLocaleLowerCase('es-AR'))){
+      unitInRow(rows[i],line.unit)){
     found=i;break;
    }
   }
