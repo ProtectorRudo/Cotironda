@@ -13,6 +13,7 @@ import {procesarPresupuestoCentralMvp227} from './ai-central-supplier-mvp227.ts'
 import {procesarDocumentoCentralMvp245} from './ai-central-document-mvp245.ts';
 import {previsualizarDocumentoCompradorMvp275} from './ai-central-buyer-document-mvp275.ts';
 import {procesarDocumentoCompradorCentralMvp276} from './ai-central-buyer-media-mvp276.ts';
+import {contrastarDocumentoCompradorMvp277} from './ai-central-buyer-binary-mvp277.ts';
 import {proveedorConRondaCentralMvp232} from './ai-central-supplier-route-mvp232.ts';
 import {esAvisoAdjuntoProveedorMvp238} from './ai-supplier-attachment-notice-mvp238.ts';
 import {respuestaCitaPedidoMvp239,CONSULTA_RONDA_MVP239} from './ai-supplier-clarification-mvp239.ts';
@@ -887,6 +888,22 @@ async function respond(req:Request):Promise<Response>{
                 // created while this experimental path is enabled; the
                 // text-only SQL broker MUST NOT be bypassed for media.
                 if(centralConfigured&&
+                   Deno.env.get('COTIRONDA_PILOT_BUYER_BINARY_CENTRAL_PREVIEW_ENABLED')==='true'&&
+                   ['application/pdf',
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'].includes(
+                      downloadedForReview.mime)){
+                  // MVP277 private proof: independent PDF text geometry or
+                  // exhaustive Office ZIP/XML rows. No rounds or dispatch,
+                  // because MVP276 SQL authorizes only TXT/CSV originals.
+                  // Do not log source text, buyer identity, prices or contacts.
+                  const reviewed=await contrastarDocumentoCompradorMvp277({
+                    habilitado:true,original:downloadedForReview,
+                    primera:proposal,segunda:corroboration
+                  });
+                  if(reviewed.estado!=='fuente_contrastada_privada')
+                    console.warn('cotironda_buyer_binary_source_review_required');
+                }else if(centralConfigured&&
                    Deno.env.get('COTIRONDA_PILOT_BUYER_DOCUMENT_CENTRAL_ACTIVE_ENABLED')==='true'){
                   // Source bytes and both documentary readings are checked
                   // before SQL's separate media buyer authorization. No
