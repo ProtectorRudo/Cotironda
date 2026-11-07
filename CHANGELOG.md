@@ -3,7 +3,8 @@
 - Extiende cuatro funciones SQL de reserva, staging, publicación y despacho, preservando la ruta de texto, con un helper privado que verifica origen Whapi + participante consentido + original Storage cifrado + MIME + SHA binario exacto.
 - Prueba transaccional `BEGIN/ROLLBACK` de la migración sobre PostgreSQL 17 de `cotironda-piloto`: compatibilidad y ACL comprobadas, helper no persistido, flags IA/despacho OFF.
 - Rollback manual a las cuatro funciones originales con precondiciones de ningún pedido documental abierto y puertas IA desactivadas.
-- Suite PostgreSQL 17 con compradores ficticios y pruebas adversariales; documentación decisión 401. **No se instaló en PILOTO, no se desplegó Edge ni se enviaron WhatsApps.**
+- Conexión de TXT/CSV al broker `procesarCompradorCentralMvp226` con plan semántico reusado una sola vez (sin repetir IA), preservación SHA del original, idempotencia y flags independientes para staging/publicación OFF por defecto.
+- Suite PostgreSQL 17 con compradores ficticios y pruebas adversariales Node/Deno; documentación decisión 401. **No se instaló en PILOTO, no se desplegó Edge ni se enviaron WhatsApps.**
 
 ## 2026-11-06 — MVP275: puente comprador documental IA Central (solo lectura)
 
