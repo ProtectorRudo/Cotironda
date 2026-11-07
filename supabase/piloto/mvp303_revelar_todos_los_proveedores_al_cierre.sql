@@ -113,7 +113,7 @@ BEGIN
    AND p.participant_role='supplier' AND p.consent_at IS NOT NULL
    AND p.opted_out_at IS NULL
    AND (p.display_label IS NULL OR length(trim(p.display_label)) NOT BETWEEN 2 AND 100
-      OR p.display_label ~ '[[:cntrl:]]'
+      OR p.display_label ~ '[[:cntrl:]<>]'
       OR p.display_label ~ '[0-9]{8,}')
  ) THEN RETURN jsonb_build_object('state','invalid_supplier_label');END IF;
  RETURN jsonb_build_object(
