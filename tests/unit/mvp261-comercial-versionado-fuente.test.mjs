@@ -101,7 +101,8 @@ test('MVP261: fuente anterior o respuesta DB incierta exige conciliación, sin r
 test('MVP261: dos rutas conservan bandera OFF por defecto y roles existentes',()=>{
  const edge=readFileSync(new URL(
  '../../supabase/functions/cotironda-piloto-whapi/index.ts',import.meta.url),'utf8');
- assert.equal((edge.match(/quoteVersioningEnabled:Deno\.env\.get\('COTIRONDA_PILOT_QUOTE_VERSIONS_ENABLED'\)==='true'/gu)??[]).length,2);
+ assert.equal((edge.match(/quoteVersioningEnabled:Deno\.env\.get\('COTIRONDA_PILOT_QUOTE_VERSIONS_ENABLED'\)==='true'/gu)??[]).length,3);
+ assert.match(edge,/supplier_text_auto_quote_review_required/u);
  const sql=readFileSync(new URL(
  '../../supabase/piloto/mvp261_source_versions_commercial.sql',import.meta.url),'utf8');
  assert.match(sql,/q\.state IN\('verified','review'\) AND q\.finished_at IS NOT NULL/u);
