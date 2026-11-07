@@ -426,6 +426,39 @@ async function respond(req:Request):Promise<Response>{
     centralSupplier=proveedorConRondaCentralMvp232(
       trial.quote_link,route.data?.state);
   }
+  // MVP280: one signed, exactly-once review path for text and document.
+  const emitirRevisionUnificada=async(sourceHmac:string):Promise<boolean>=>{
+    if(!centralConfigured||supplierKnown||centralSupplier||
+       Deno.env.get('COTIRONDA_PILOT_BUYER_REVIEW_SEND_ENABLED')!=='true')
+      return true; // switch OFF => private shadow round only.
+    const delivery=await emitirRevisionCompradorMvp279({
+      habilitado:true,compradorAutenticado:true,
+      chatHmac:chatHash,sourceHmac,destinatario:row.chat_id,
+      rpc:async(name,params)=>{
+        const result=await db.rpc(name,params);
+        return {data:result.data,error:result.error};
+      },
+      send:async(recipient,reviewText)=>{
+        if(recipient!==row.chat_id)throw Error('buyer_chat_changed');
+        const response=await fetch('https://gate.whapi.cloud/messages/text',{
+          method:'POST',
+          headers:{Authorization:'Bearer '+sec.token,
+            'Content-Type':'application/json'},
+          body:JSON.stringify({to:recipient,body:reviewText}),
+          signal:AbortSignal.timeout(12000)
+        });
+        const reply=response.ok?await response.json().catch(()=>null):null;
+        const msg=reply&&typeof reply==='object'?
+          reply as Record<string,unknown>:null;
+        const nested=msg?.message&&typeof msg.message==='object'?
+          msg.message as Record<string,unknown>:null;
+        const id=msg?.message_id??nested?.id??null;
+        return {accepted:response.ok&&msg?.sent===true,
+          messageId:typeof id==='string'?id:null};
+      }
+    });
+    return delivery.estado!=='conciliacion_requerida';
+  };
   const attachmentNotice=row.type==='text'&&centralSupplier&&
     esAvisoAdjuntoProveedorMvp238(body);
   const centralBuyerText=centralConfigured&&row.type==='text'&&
@@ -450,7 +483,7 @@ async function respond(req:Request):Promise<Response>{
   // durable, one-per-HMAC, buyer-only and capped at 12 calls per day.
   // Supplier quote ingestion never passes through this classifier.
   if(row.type==='text'&&!webLinkCode&&!centralBuyerText&&
-     !canPrepareBuyerPilot(local)&&
+     !buyerReviewCommand&&!canPrepareBuyerPilot(local)&&
      Deno.env.get('COTIRONDA_PILOT_AI_ENABLED')==='true'){
     const preflight=await db.rpc('cotironda_piloto_reserve_ai_mvp094',{
       p_chat_hmac:chatHash,p_message_hmac:messageHash
@@ -561,12 +594,12 @@ async function respond(req:Request):Promise<Response>{
   // supplier price or an instruction to the language model.
   if(buyerReviewCommand){
     if(!['duplicate','unrecognized_contact'].includes(outcome(out.data))&&
-       Deno.env.get('COTIRONDA_PILOT_BUYER_BINARY_REVIEW_CONFIRM_ENABLED')==='true'){
+       Deno.env.get('COTIRONDA_PILOT_BUYER_REVIEW_CONFIRM_ENABLED')==='true'){
       const decision=await confirmarPedidoCompradorMvp279({
         habilitado:true,
         liberar:sec.outbound&&trialActive&&trial.buyer===true&&
           trial.dispatch===true&&
-          Deno.env.get('COTIRONDA_PILOT_BUYER_BINARY_REVIEW_RELEASE_ENABLED')==='true',
+          Deno.env.get('COTIRONDA_PILOT_BUYER_REVIEW_RELEASE_ENABLED')==='true',
         compradorAutenticado:!supplierKnown&&!centralSupplier,
         chatHmac:chatHash,replyHmac:messageHash,textoOriginal:body,
         rpc:async(name,params)=>{
@@ -617,7 +650,7 @@ async function respond(req:Request):Promise<Response>{
           ciudadConfirmada:city,nonce:previous.nonce,
           ciphertext:previous.ciphertext,
           apiKey:Deno.env.get('COTIRONDA_PILOT_OPENAI_API_KEY')??'',
-          model,publicar:sec.outbound&&trial.dispatch===true,
+          model,publicar:false, // MVP280: no dispatch before review
           decrypt:async(nonce,ciphertext)=>decryptArchivedText(
             sec.aes,nonce,ciphertext,
             chatHash+'|'+previous.source_hmac+'|text'),
@@ -630,10 +663,11 @@ async function respond(req:Request):Promise<Response>{
         if(resumed.estado==='conciliacion_requerida'||
            resumed.estado==='origen_invalido')
           return json(503,'ai_central_zone_continuation_failed');
-        if(resumed.estado==='ronda_publicada'){
-          preparedDocumentSourceHmac=previous.source_hmac;
-          if(trial.dispatch===true)trialDispatchChats.add(chatHash);
-        }
+        if(resumed.estado==='ronda_publicada')
+          return json(503,'buyer_review_bypassed_by_zone_continuation');
+        if(resumed.estado==='ronda_en_sombra'&&
+           !await emitirRevisionUnificada(previous.source_hmac))
+          return json(503,'buyer_review_delivery_reconciliation_required');
       }else if(previous?.state==='ambiguous'){
         // Ninguna asignación arbitraria de localidad a pedido.
         handledCentralZoneReply=true;
@@ -644,7 +678,7 @@ async function respond(req:Request):Promise<Response>{
     const modelEnv=Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_MODEL');
     const model=modelEnv==='gpt-6.1-sol'?'gpt-6.1-sol':'gpt-6-luna';
     const result=await procesarCompradorCentralMvp226({
-      habilitado:true,publicar:sec.outbound&&trial.dispatch===true,
+      habilitado:true,publicar:false, // MVP280: buyer must approve
       autenticadoPorWebhook:true,chatHmac:chatHash,
       messageHmac:messageHash,sourceSha256:textHash,
       fuente:body,apiKey:Deno.env.get('COTIRONDA_PILOT_OPENAI_API_KEY')??'',
@@ -658,10 +692,11 @@ async function respond(req:Request):Promise<Response>{
     if(result.estado==='conciliacion_requerida')
       return json(503,'ai_central_reconciliation_required');
     if(result.estado==='requiere_zona')aiReply='zone';
-    if(result.estado==='ronda_publicada'){
-      preparedDocumentSourceHmac=messageHash;
-      if(trial.dispatch===true)trialDispatchChats.add(chatHash);
-    }
+    if(result.estado==='ronda_publicada')
+      return json(503,'buyer_review_bypassed_by_text_broker');
+    if(result.estado==='ronda_en_sombra'&&
+       !await emitirRevisionUnificada(messageHash))
+      return json(503,'buyer_review_delivery_reconciliation_required');
   }
   // Aclaración breve que cita el PDF ORIGINAL de Cotironda.
   // Un mensaje «Es de este pedido» no debe entrar como cotización.
@@ -941,41 +976,8 @@ async function respond(req:Request):Promise<Response>{
                   if(mediaPlan.estado==='conciliacion_requerida')
                     console.warn('cotironda_buyer_binary_attestation_or_broker_review');
                   if(mediaPlan.estado==='ronda_en_sombra'&&
-                     Deno.env.get('COTIRONDA_PILOT_BUYER_BINARY_REVIEW_SEND_ENABLED')==='true'){
-                    const delivery=await emitirRevisionCompradorMvp279({
-                      habilitado:true,
-                      compradorAutenticado:centralConfigured&&!verifiedSupplier,
-                      chatHmac:chatHash,sourceHmac:messageHash,
-                      destinatario:row.chat_id,
-                      rpc:async(name,params)=>{
-                        const r=await db.rpc(name,params);
-                        return {data:r.data,error:r.error};
-                      },
-                      send:async(recipient,reviewText)=>{
-                        // Recipient is exactly the signed buyer chat that
-                        // produced the archived source; never supplier.
-                        if(recipient!==row.chat_id)throw Error('buyer_chat_changed');
-                        const response=await fetch('https://gate.whapi.cloud/messages/text',{
-                          method:'POST',
-                          headers:{Authorization:'Bearer '+sec.token,
-                            'Content-Type':'application/json'},
-                          body:JSON.stringify({to:recipient,body:reviewText}),
-                          signal:AbortSignal.timeout(12000)
-                        });
-                        const responseBody=response.ok
-                          ?await response.json().catch(()=>null):null;
-                        const msg=responseBody&&typeof responseBody==='object'
-                          ?(responseBody as Record<string,unknown>):null;
-                        const nested=msg?.message&&typeof msg.message==='object'
-                          ?msg.message as Record<string,unknown>:null;
-                        const id=msg?.message_id??nested?.id??null;
-                        return {accepted:response.ok&&msg?.sent===true,
-                          messageId:typeof id==='string'?id:null};
-                      }
-                    });
-                    if(delivery.estado==='conciliacion_requerida')
-                      return json(503,'buyer_review_delivery_reconciliation_required');
-                  }
+                     !await emitirRevisionUnificada(messageHash))
+                    return json(503,'buyer_review_delivery_reconciliation_required');
                 }else if(centralConfigured&&
                    Deno.env.get('COTIRONDA_PILOT_BUYER_BINARY_CENTRAL_PREVIEW_ENABLED')==='true'&&
                    ['application/pdf',
@@ -1001,8 +1003,7 @@ async function respond(req:Request):Promise<Response>{
                   const model=modelEnv==='gpt-6.1-sol'?'gpt-6.1-sol':'gpt-6-luna';
                   const processed=await procesarDocumentoCompradorCentralMvp276({
                     habilitado:true,
-                    publicar:sec.outbound&&trial.dispatch===true&&
-                      Deno.env.get('COTIRONDA_PILOT_BUYER_DOCUMENT_CENTRAL_PUBLISH_ENABLED')==='true',
+                    publicar:false, // MVP280: uniform review for TXT/CSV
                     autenticadoPorWebhook:true,compradorAutorizado:true,
                     messageHmac:messageHash,chatHmac:chatHash,
                     original:downloadedForReview,
@@ -1014,10 +1015,12 @@ async function respond(req:Request):Promise<Response>{
                       return {data:r.data,error:r.error};
                     }
                   });
-                  if(processed.estado==='ronda_publicada'){
-                    preparedDocumentSourceHmac=messageHash;
-                    if(trial.dispatch===true)trialDispatchChats.add(chatHash);
-                  }else if(processed.estado==='conciliacion_requerida'){
+                  if(processed.estado==='ronda_publicada')
+                    return json(503,'buyer_review_bypassed_by_document_broker');
+                  if(processed.estado==='ronda_en_sombra'&&
+                     !await emitirRevisionUnificada(messageHash))
+                    return json(503,'buyer_review_delivery_reconciliation_required');
+                  if(processed.estado==='conciliacion_requerida'){
                     // The source is persisted; never retry an uncertain
                     // SQL commit or send duplicate invitations.
                     console.warn('cotironda_buyer_document_sql_reconciliation_required');
@@ -1044,6 +1047,10 @@ async function respond(req:Request):Promise<Response>{
                   // No prices, buyer details or document text in logs.
                   if(preview.estado!=='plan_privado_validado')
                     console.warn('cotironda_buyer_document_readonly_review_required');
+                }else if(centralConfigured&&
+                   Deno.env.get('COTIRONDA_PILOT_BUYER_REVIEW_REQUIRED_ENABLED')==='true'){
+                  // No legacy auto-invite for unsupported buyer documents.
+                  console.warn('cotironda_buyer_document_independent_source_required');
                 }else{
                 const plan=await db.rpc('cotironda_piloto_plan_document_mvp098',{
                   p_message_hmac:messageHash
