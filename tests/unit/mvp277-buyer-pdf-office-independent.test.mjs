@@ -136,7 +136,7 @@ function zip(entries){
   const name=Buffer.from(key),data=Buffer.from(val);
   const l=Buffer.alloc(30),c=Buffer.alloc(46);
   l.writeUInt32LE(0x04034b50,0);l.writeUInt16LE(20,4);
-  l.writeUInt16LE(crc32(data),14);l.writeUInt32LE(data.length,18);
+  l.writeUInt32LE(crc32(data),14);l.writeUInt32LE(data.length,18);
   l.writeUInt32LE(data.length,22);l.writeUInt16LE(name.length,26);
   c.writeUInt32LE(0x02014b50,0);c.writeUInt16LE(20,4);
   c.writeUInt16LE(20,6);c.writeUInt32LE(crc32(data),16);
