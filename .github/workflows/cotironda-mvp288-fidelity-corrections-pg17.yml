@@ -13,6 +13,12 @@ on:
       - 'supabase/tests/ci/mvp288-*'
       - 'scripts/piloto/mvp288-*'
       - 'tests/unit/mvp288-*'
+      - 'tests/unit/mvp289-*'
+      - 'supabase/piloto/mvp289_*'
+      - 'supabase/tests/ci/mvp289-*'
+      - 'scripts/piloto/mvp289-*'
+      - 'supabase/functions/cotironda-piloto-whapi/index.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/buyer-tracking-confirmation-mvp289.ts'
       - '.github/workflows/cotironda-mvp288-fidelity-corrections-pg17.yml'
   workflow_dispatch:
 permissions:
@@ -51,6 +57,7 @@ jobs:
         run: |
           node --experimental-strip-types --test \
             tests/unit/mvp288-fidelidad-presentaciones.test.mjs \
+            tests/unit/mvp289-buyer-tracking-confirmation.test.mjs \
             tests/unit/mvp288-correction-security-contract.test.mjs \
             tests/unit/mvp221-puente-sql-rubros.test.mjs \
             tests/unit/mvp279-buyer-whatsapp-review.test.mjs \
@@ -59,7 +66,7 @@ jobs:
       - name: Migraciones acumuladas y correccion PG17 en ROLLBACK unico
         run: |
           set -euo pipefail
-          node scripts/piloto/mvp288-fidelity-correction-builder.mjs --sql > supabase/tests/ci/.mvp288.sql
+          node scripts/piloto/mvp289-buyer-tracking-builder.mjs --sql > supabase/tests/ci/.mvp288.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/.mvp288.sql >/dev/null
           psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regnamespace('cotironda_piloto_privado') IS NULL" | grep -Fx 't'
           rm supabase/tests/ci/.mvp288.sql
