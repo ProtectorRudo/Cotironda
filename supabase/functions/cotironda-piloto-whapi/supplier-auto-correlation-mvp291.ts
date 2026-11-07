@@ -214,12 +214,16 @@ export async function correlacionAutomaticaMvp291(args:{
  };
  let reserved=false;
  try{
-  const prepared=await db(isText
-   ?'cotironda_piloto_auto_correlation_prepare_text_mvp292'
-   :'cotironda_piloto_auto_correlation_prepare_mvp291',{
-   p_source_hmac:args.sourceHmac,p_chat_hmac:args.chatHmac,
-   ...(isText?{p_source_sha256:args.textSha256,
-      p_materials:args.textQuote}: {})
+  if(isText){
+   const staged=await db('cotironda_piloto_stage_supplier_text_mvp292',{
+    p_source_hmac:args.sourceHmac,p_chat_hmac:args.chatHmac,
+    p_source_sha256:args.textSha256,p_materials:args.textQuote
+   });
+   if(!['staged','already_staged'].includes(String(staged.state)))
+    return result('not_eligible',String(staged.state));
+  }
+  const prepared=await db('cotironda_piloto_auto_correlation_prepare_mvp291',{
+   p_source_hmac:args.sourceHmac,p_chat_hmac:args.chatHmac
   });
   if(prepared.state!=='reserved')return result('not_eligible',String(prepared.state));
   reserved=true;
