@@ -1,3 +1,10 @@
+## 2026-11-07 — Publicación controlada MVP291/MVP292 en cotironda-piloto
+
+- Integrado [PR #683](https://github.com/ProtectorRudo/Cotironda/pull/683) mediante commit `b2dac7378c323f5f368f1da808664d00fab7f480`, **31/31 CI**.
+- Aplicadas tres migraciones privadas (total 81), webhook Whapi `v62 ACTIVE` y recuperador interno `v1 ACTIVE` con JWT obligatorio. RLS y RPC de nuevo módulo verificados: 0 permisos de ejecución para anon/auth.
+- Las nuevas rutas de atribución y recuperación necesitan activación explícita de secretos de Edge que este conector no administra; no se instaló scheduler ni se ejecutó backfill real. Sin E2E real no afirmar automatización comercial cerrada.
+- Evidencia, límites y pasos de habilitación: [entrega 418](docs/418-mvp291-mvp292-publicacion-piloto.md). Producción intacta.
+
 ## 2026-11-07 — MVP292 texto de proveedores e históricos (SOLO desarrollo)
 - Incorporada interpretación de mensajes libres de proveedor por doble lectura con citas literales de materiales, cantidades y unidades, excluyendo precios para asignar identidad de ronda.
 - Implementado broker de SQL privado para texto con el motor de atribución MVP291, consentimientos, HMAC, SHA, despacho anterior y una asociación atómica; revisión económica comercial independiente.
