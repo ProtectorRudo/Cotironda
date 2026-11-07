@@ -1,6 +1,6 @@
 # Acta 426 — MVP300: puerta de evidencia del recorrido completo del piloto
 
-**Fecha:** 07/11/2026. **Estado: solo desarrollo y auditoría real de SOLO LECTURA.** No publicar código de este MVP sin autorización separada. No WhatsApps, webhooks sintéticos a producción, consumidores de IA, actualizaciones DB, publicación Vercel, contactos ni cron.
+**Fecha:** 07/11/2026. **Estado: PR #693 INTEGRADO SOLO EN DESARROLLO; auditoría real de SOLO LECTURA, SIN PUBLICAR MVP300.** No publicar código de este MVP sin autorización separada. No WhatsApps, webhooks sintéticos a producción, consumidores de IA, actualizaciones DB, publicación Vercel, contactos ni cron.
 
 ## Alcance
 La orden «Luz verde» autoriza implementar y probar, **no desplegar** nuevos cambios. El piloto actual sí tiene MVP298/299 publicados (Whapi v68, seguimiento v24, 84 migraciones, web Vercel del seguimiento del comprador READY). La meta es comprobar una **ronda nueva y normal**, no reinterpretar el documento ambiguo de Ailín ni gastar otra lectura sobre la respuesta histórica de Nahuel.
@@ -50,3 +50,12 @@ Como el canal disponible en ChatGPT tiene conectores GitHub/Supabase/Vercel, **n
 
 ## Evidencia y alcance
 PR pendiente de pruebas CI al momento de redactar; `main`, producción, cotironda.com, secretos, base y temporizadores no cambiaron por este MVP. La publicación técnica de MVP298/299 está documentada en [acta 425](425-mvp299-separacion-respuestas-sin-precio-comparable.md).
+
+## Verificación final y pendientes — 07/11/2026
+
+- [PR #693](https://github.com/ProtectorRudo/Cotironda/pull/693) **fusionado** a la rama de desarrollo `feat/mvp174-supplier-packaging-equivalence`, commit `2ff3f7eb3a9330b2546a9e4b78d6fde5d48fb1b8`; **no** `main` ni producción.
+- **7 de 7** controles GitHub Actions aprobados, incluido el workflow específico `offline-witness`: **29/29 tests** aprobaron con Node, y las suites generales Next.js, PostgREST, PostgreSQL y seguridad pasaron.
+- Diagnóstico SQL agregado ejecutado y verificado en `cotironda-piloto`: comprador confirmado, dos pedidos con ID de Whapi, solo una respuesta de proveedor y cero precios IA verificados o visibles.
+- Revisión adicional **MVP209** de solo lectura: cierre periódico configurado (1 cron activo), pero planificación de finalistas v196/v209 **desactivada** (`activation_on=false`, sin secreto exclusivo Vault, sin cron de planificación, sin planes). Este subsistema puede impedir completar el último paso; su continuidad con las ofertas IA Central requiere auditoría específica antes de activar algo. Registro independiente: [Issue #694](https://github.com/ProtectorRudo/Cotironda/issues/694).
+- Logs Supabase consultados entre las 21:56 y 22:20 UTC: **81 eventos** de Edge/Functions y cero mensajes con texto `error` o `exception`. Este conteo no demuestra ausencia universal de fallos ni una cotización exitosa.
+- La prueba en navegador y el WhatsApp entrante nuevo **no se ejecutaron**: no hay capacidad de originar un mensaje auténtico desde el teléfono comprador mediante los conectores disponibles. No inventar ni consumir mensajes ni modelos para simularlo; no hubo acción nueva sobre Whapi, cron, Supabase o Vercel.
