@@ -37,8 +37,21 @@ export function resumenPrivadoMvp245(
  if(reading?.estado!=='interpretada_para_revision'||!reading.oferta||
     !reading.cobertura||reading.cobertura.ofertas.length!==1)return null;
  const result=reading.cobertura.ofertas[0];
+ // MVP299: this flag ONLY authorizes a separate, count-only buyer
+ // projection of an independently source-checked response.
+ // Bad mappings, unsupported IVA/freight evidence, mismatched source
+ // amounts or invalid request lines must NEVER become buyer coverage.
+ const nonComparableReasons=new Set([
+  'moneda_no_informada','importe_sin_conciliacion',
+  'cargos_adicionales_sin_comparacion','sin_precios_comparables'
+ ]);
+ const pendingCoverage=result.estado==='requiere_revision'&&
+  result.motivos.length>0&&
+  result.motivos.every(m=>nonComparableReasons.has(m))&&
+  result.rubros.some(r=>r.respondidos>0);
  const summary={
   estado:result.estado,
+  cobertura_pendiente_mvp299:pendingCoverage,
   moneda:reading.oferta.moneda,iva:reading.oferta.iva,
   flete:reading.oferta.flete,pago:reading.oferta.pago,
   rubros:result.rubros.map(x=>({
