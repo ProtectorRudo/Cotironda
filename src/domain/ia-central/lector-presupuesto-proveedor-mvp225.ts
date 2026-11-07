@@ -204,23 +204,28 @@ async function readOnce(args:{
   throw Error('response_not_json');
  return JSON.parse(messages[0].content[0].text);
 }
-/** Dos lecturas pueden explicar distinto una equivalencia pero NO
- * pueden diferir en artículos, citas, montos, condiciones ni mapeos.
- * No comparar prosa explicativa o claves JSON en orden artificial.
+/** MVP298: independent readers need ECONOMIC agreement, not identical
+ * explanatory prose or identical spans of an already-proved citation.
+ *
+ * verifyRead() independently verifies that EACH quoted currency/IVA/freight/
+ * payment evidence is literal and establishes its declared state.
+ * Only after both reads pass those gates may these alternative valid spans,
+ * and free-text display descriptions, differ. Still require identical
+ * original line citations, quantities, units, price literals, line types,
+ * request mappings and equivalence decisions. No price can be invented.
  */
 function firmaEconomica(read:Record<string,unknown>):string{
  const lines=(read.lineas as unknown[]).map(x=>{
   const v=x as Record<string,unknown>;
-  return [v.numero,v.textoOriginal,v.descripcion,v.cantidad,v.unidad,
+  return [v.numero,v.textoOriginal,v.cantidad,v.unidad,
    v.precioUnitarioLiteral,v.totalLineaLiteral,v.tipo];
  });
  const links=(read.vinculos as unknown[]).map(x=>{
   const v=x as Record<string,unknown>;
   return [v.lineaOferta,v.articuloPedido,v.equivalencia];
  }).sort((a,b)=>Number(a[0])-Number(b[0]));
- return JSON.stringify([read.intencion,read.moneda,read.monedaEvidencia,
-  read.iva,read.ivaEvidencia,read.flete,read.fleteEvidencia,
-  read.pago,read.pagoEvidencia,lines,links]);
+ return JSON.stringify([read.intencion,read.moneda,
+  read.iva,read.flete,read.pago,lines,links]);
 }
 export async function interpretarPresupuestoConIAMvp225(args:{
  fuente:string;pedido:readonly PedidoLineaMvp225[];
