@@ -90,8 +90,8 @@ BEGIN
   WHERE inv.request_id=v_request.id AND inv.state='prepared'
  ) SELECT
    coalesce(jsonb_agg(jsonb_build_object(
-    'nombre',display_label,
-    'oferta',CASE WHEN verified_number IS NOT NULL
+    'nombre',trim(display_label),
+    'oferta',CASE WHEN dispatch_state='api_accepted' AND verified_number IS NOT NULL
       THEN 'Presupuesto '||verified_number ELSE NULL END,
     'estado',CASE
      WHEN dispatch_state IS DISTINCT FROM 'api_accepted'
