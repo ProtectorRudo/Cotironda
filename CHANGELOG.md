@@ -1,3 +1,8 @@
+## 2026-11-07 — MVP289 (solo desarrollo)
+- Corrige la ausencia de confirmación y enlace privado tras `CONFIRMAR COTI`: el bloque nuevo se ejecuta después de despachos aceptados y se reutiliza el seguimiento existente sin nuevas invitaciones.
+- Nueva RPC privada, idempotente, token único por ronda, registro de entrega Whapi y comando seguro `SEGUIMIENTO COTI` para rondas históricas confirmadas sin enlace. Pruebas Node y PG17 con rollback; no publicar sin autorización y verificación.
+- Decisión: [414](docs/414-mvp289-confirmacion-y-enlace-seguimiento.md); Issue #679.
+
 ## 2026-11-07 — MVP288: evidencia original para descripciones comerciales, cantidades legibles y corrección ligada (desarrollo)
 
 - Preservación de presentaciones literales de la fuente verificada: «20 bolsas de cemento CPC de 50 kg», «3 bolsones de arena», sin truncar ni inventar medidas.
