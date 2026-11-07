@@ -121,7 +121,37 @@ BEGIN
  answer:=public.cotironda_piloto_resolve_supplier_choice_mvp290(
   reply,chat,'COTI '||choice);
  IF answer->>'state'<>'resolved_private' OR answer->>'source_hmac'<>src
- THEN RAISE EXCEPTION 'mvp290_link_failed: %',answer;END IF;
+ THEN RAISE EXCEPTION 'mvp290_link_failed: %, checks: %',answer,
+  (SELECT jsonb_build_object(
+   'reply_verified',(r.plaintext_sha256=encode(sha256(convert_to('COTI '||choice,'UTF8')),'hex')),
+   'reply_at',r.received_at,
+   'prompt_at',p.finished_at,
+   'prompt_before_reply',(p.finished_at<=r.received_at),
+   'source_at',a.reserved_at,
+   'source_received_at',o.received_at,
+   'source_before_reply',(o.received_at<=r.received_at),
+   'round_open',(q.state='prepared' AND q.closes_at>clock_timestamp()),
+   'source_after_round',(q.created_at<=o.received_at),
+   'previous_dispatch_exists',EXISTS(
+    SELECT 1 FROM cotironda_piloto_privado.ai_dispatch_jobs_mvp222 d
+    WHERE d.request_id=q.id AND d.supplier_key='corralon_ailin'
+    AND d.state='api_accepted' AND d.whapi_message_id IS NOT NULL
+    AND d.finished_at<=o.received_at),
+   'original_sha_ok',(a.content_sha256=original_sha),
+   'prompt_state',p.state,
+   'source_kind',o.kind,
+   'archive_kind',a.kind,
+   'link_state',u.state
+  ) FROM cotironda_piloto_privado.whapi_inbox r
+   JOIN cotironda_piloto_privado.ai_supplier_choice_options_mvp290 c ON c.choice_code=choice
+   JOIN cotironda_piloto_privado.ai_supplier_choice_prompts_mvp290 p ON p.source_hmac=c.source_hmac
+   JOIN cotironda_piloto_privado.whapi_inbox o ON o.message_hmac=c.source_hmac
+   JOIN cotironda_piloto_privado.media_archive_mvp095 a ON a.message_hmac=c.source_hmac
+   JOIN cotironda_piloto_privado.ai_supplier_unresolved_mvp237 u ON u.message_hmac=c.source_hmac
+   JOIN cotironda_piloto_privado.requests q ON q.id=c.request_id
+   WHERE r.message_hmac=reply
+  );
+ END IF;
  IF (SELECT request_id FROM cotironda_piloto_privado.media_archive_mvp095
      WHERE message_hmac=src)<>aid
  OR (SELECT request_id FROM cotironda_piloto_privado.whapi_inbox
