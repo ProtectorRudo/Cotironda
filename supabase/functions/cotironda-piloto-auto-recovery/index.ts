@@ -74,7 +74,10 @@ async function execute(req:Request):Promise<Response>{
  const outcome=await procesarPendienteAutomaticoMvp292({
   enabled:true,trustedWorker:true,apiKey,model,
   documentSemanticEnabled:Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_DOCUMENT_QUOTE_ENABLED')==='true',
-  textCommercialEnabled:Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_SUPPLIER_QUOTE_ENABLED')==='true',
+  // MVP296: historical inline text analysis (MVP292) lacked the
+  // mandatory MVP264 usage and MVP261 version controls. ALL historical
+  // commercial analysis goes through the isolated metered MVP295 queue.
+  textCommercialEnabled:false,
   shaText:digest,decrypt,
   rpc:async(name,params)=>{
    const r=await db.rpc(name,params);
