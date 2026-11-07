@@ -1,3 +1,10 @@
+## 2026-11-06 — MVP280: confirmación única del comprador en texto, TXT/CSV y PDF/Office (solo desarrollo)
+
+- La IA Central prepara rondas `en sombra` para texto, continuación de localidad, TXT/CSV y PDF/DOCX/XLSX; todas las rutas de publicación directa del webhook están deshabilitadas. El comprador revisa antes de generar invitaciones, mediante un único código firmado, no «sí» genérico.
+- Nueva fuente SQL `fuente_revisable_mvp280` corrobora el texto original de WhatsApp, SHA del TXT/CSV almacenado o doble SHA de PDF/Office, identidad, consentimientos y existencia del objeto privado. Los cuatro gates SQL de publicación, búsqueda, reclamación y PDF exigen la misma confirmación y revalidan la versión completa.
+- Switches `COTIRONDA_PILOT_BUYER_REVIEW_SEND_ENABLED`, `..._CONFIRM_ENABLED`, `..._RELEASE_ENABLED` y `..._REQUIRED_ENABLED`, todos OFF por defecto. Confirmaciones fuera de la IA, sin pérdida de materiales, sin enviar WhatsApps por un cambio de código.
+- PG17 sintético con tres fuentes, tests Node, Deno y regresiones, rollback manual conservando auditoría y decisión 405. **No hubo despliegue, nuevos gastos ni envío real; backup contratado continúa en Plan B.**
+
 ## 2026-11-06 — MVP279: revisión explícita comprador por WhatsApp (solo desarrollo)
 
 - Un pedido binario comprobado por IA Central queda en sombra hasta que el comprador apruebe una versión exacta de **todos** los materiales, cantidades, rubros y zona; el SHA incluye además destinos y fuentes originales. Código aleatorio de un solo uso y respuesta WhatsApp firmada vinculados a la versión, sin aceptar «sí» genérico.
