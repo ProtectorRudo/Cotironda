@@ -1,0 +1,61 @@
+name: Cotironda MVP302 - verified IA sources to manual finalist preview PG17
+on:
+  pull_request:
+    branches: [feat/mvp174-supplier-packaging-equivalence]
+    paths:
+      - 'supabase/piloto/mvp302_*'
+      - 'supabase/tests/ci/mvp302-*'
+      - 'scripts/piloto/mvp302-*'
+      - 'tests/unit/mvp302-*'
+      - 'docs/428-*'
+      - '.github/workflows/cotironda-mvp302-private-finalist-bridge.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  private-source-bridge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: test_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Unit, security and offline coverage
+        run: |
+          node --experimental-strip-types --test \
+            tests/unit/mvp302-puente-privado-finalistas.test.mjs \
+            tests/unit/mvp302-opciones-privadas-fuentes.test.mjs \
+            tests/unit/mvp301-plan-finalistas-offline.test.mjs \
+            tests/unit/mvp284-e2e-contract.test.mjs
+          node scripts/piloto/mvp302-bridge-builder.mjs --check
+      - name: PostgreSQL17 all-in-one rollback including latest IA source bridge
+        run: |
+          set -euo pipefail
+          node scripts/piloto/mvp302-bridge-builder.mjs --sql > supabase/tests/ci/.mvp302-private-bridge.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/.mvp302-private-bridge.sql >/dev/null
+          psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT (to_regnamespace('cotironda_piloto_privado') IS NULL AND to_regnamespace('auth') IS NULL AND to_regnamespace('storage') IS NULL)" | grep -Fx 't'
+          rm supabase/tests/ci/.mvp302-private-bridge.sql
+# No Supabase linked account, Whapi, payment, OpenAI or real identities.
+# Candidate source keys are service-only; no contact reveal or award ever.
