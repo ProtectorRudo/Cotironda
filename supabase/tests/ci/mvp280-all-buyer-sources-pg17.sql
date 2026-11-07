@@ -923,7 +923,7 @@ DECLARE
  source_text text:='PEDIDO DE MATERIALES'||E'\n'||
  'Cemento CPC 50 kg 20 bolsas'||E'\n'||
  'Entrega La Plata';
- src_sha text;source_hmac text;reply_hmac text;reply_body text;
+ src_sha text;v_src_hmac text;reply_hmac text;reply_body text;
  mode text;source_kind text;media_mime text;
  v_rid uuid;json_result jsonb;review jsonb;code text;
  values_items jsonb:='[{"descripcion":"Cemento CPC 50 kg",
@@ -945,7 +945,7 @@ BEGIN
  THEN RAISE EXCEPTION 'mvp280_grant_leak'; END IF;
 
  FOR mode IN SELECT unnest(ARRAY['text','txt','csv']) LOOP
-  source_hmac:=CASE mode WHEN 'text' THEN repeat('ab',32)
+  v_src_hmac:=CASE mode WHEN 'text' THEN repeat('ab',32)
    WHEN 'txt' THEN repeat('cd',32) ELSE repeat('12',32) END;
   reply_hmac:=CASE mode WHEN 'text' THEN repeat('fa',32)
    WHEN 'txt' THEN repeat('dc',32) ELSE repeat('98',32) END;
@@ -954,25 +954,25 @@ BEGIN
   INSERT INTO cotironda_piloto_privado.whapi_inbox(
    message_hmac,participant_key,chat_hmac,kind,processing_state,
    plaintext_sha256,received_at
-  ) VALUES(source_hmac,'arquitecto',repeat('a',64),source_kind,
+  ) VALUES(v_src_hmac,'arquitecto',repeat('a',64),source_kind,
    'needs_review',CASE WHEN mode='text' THEN src_sha ELSE repeat('f',64) END,
    clock_timestamp());
   IF mode<>'text' THEN
    INSERT INTO cotironda_piloto_privado.media_archive_mvp095(
     message_hmac,chat_hmac,participant_key,kind,mime,state,
     content_sha256,size_bytes,storage_path,finished_at
-   ) VALUES(source_hmac,repeat('a',64),'arquitecto','document',media_mime,
-    'stored',src_sha,length(source_text),'media/'||source_hmac,
+   ) VALUES(v_src_hmac,repeat('a',64),'arquitecto','document',media_mime,
+    'stored',src_sha,length(source_text),'media/'||v_src_hmac,
     clock_timestamp());
    INSERT INTO storage.objects(bucket_id,name)
-   VALUES('cotironda-piloto-originals','media/'||source_hmac);
+   VALUES('cotironda-piloto-originals','media/'||v_src_hmac);
   END IF;
   json_result:=public.cotironda_piloto_ia_reserve_buyer_mvp226(
-   repeat('a',64),source_hmac,src_sha);
+   repeat('a',64),v_src_hmac,src_sha);
   IF json_result->>'state'<>'reserved'
   THEN RAISE EXCEPTION 'mvp280_%_reserve_denied: %',mode,json_result;END IF;
   json_result:=public.cotironda_piloto_ia_shadow_prepare_mvp221(
-   repeat('a',64),source_hmac,source_text,'La Plata',values_items,values_route);
+   repeat('a',64),v_src_hmac,source_text,'La Plata',values_items,values_route);
   IF json_result->>'state'<>'shadow_staged'
   THEN RAISE EXCEPTION 'mvp280_%_shadow_denied: %',mode,json_result;END IF;
   v_rid:=(json_result->>'v_rid')::uuid;
@@ -980,13 +980,13 @@ BEGIN
   THEN RAISE EXCEPTION 'mvp280_%_source_not_bound: %',mode,
    (SELECT jsonb_build_object(
     'round_state',r.state,
-    'same_source',r.source_hmac=source_hmac,
+    'same_source',r.source_hmac=v_src_hmac,
     'linked',(SELECT count(*) FROM cotironda_piloto_privado.whapi_inbox m
-     WHERE m.message_hmac=source_hmac AND m.request_id=r.id),
+     WHERE m.message_hmac=v_src_hmac AND m.request_id=r.id),
     'sha_equal',(SELECT m.plaintext_sha256=
        encode(sha256(convert_to(r.original_request,'UTF8')),'hex')
      FROM cotironda_piloto_privado.whapi_inbox m
-     WHERE m.message_hmac=source_hmac),
+     WHERE m.message_hmac=v_src_hmac),
     'lines',(SELECT count(*) FROM cotironda_piloto_privado.request_lines l
      WHERE l.request_id=r.id),
     'closes_future',r.closes_at>clock_timestamp(),
@@ -1008,14 +1008,14 @@ BEGIN
    -- Storage object must remain present, independently of the model.
    DELETE FROM storage.objects o
    WHERE o.bucket_id='cotironda-piloto-originals'
-     AND o.name='media/'||source_hmac;
+     AND o.name='media/'||v_src_hmac;
    IF cotironda_piloto_privado.fuente_revisable_mvp280(v_rid)
    THEN RAISE EXCEPTION 'mvp280_missing_txt_storage_allowed';END IF;
    INSERT INTO storage.objects(bucket_id,name)
-   VALUES('cotironda-piloto-originals','media/'||source_hmac);
+   VALUES('cotironda-piloto-originals','media/'||v_src_hmac);
   END IF;
   review:=public.cotironda_piloto_ia_review_issue_mvp279(
-   repeat('a',64),source_hmac);
+   repeat('a',64),v_src_hmac);
   IF review->>'state'<>'issued'
    OR jsonb_array_length(review->'items')<>1
    OR review->'items'->0->>'quantity'<>'20'
@@ -1025,7 +1025,7 @@ BEGIN
   code:=review->>'code';
   reply_body:='CONFIRMAR COTI '||code;
   IF public.cotironda_piloto_ia_review_issue_mvp279(
-   repeat('a',64),source_hmac)->>'state'<>'already_issued'
+   repeat('a',64),v_src_hmac)->>'state'<>'already_issued'
   THEN RAISE EXCEPTION 'mvp280_%_duplicate_review_sent',mode;END IF;
   INSERT INTO cotironda_piloto_privado.whapi_inbox(
    message_hmac,participant_key,chat_hmac,kind,processing_state,
