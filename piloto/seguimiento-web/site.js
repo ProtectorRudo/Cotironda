@@ -90,7 +90,9 @@ function offerCard(title,body){
 }
 // MVP176: revoke all visible private details on an invalid token or outage.
 function clearPrivateView(){
- for(const id of ["offers","receipts","finalists","coverageGrid","economyGrid","itemPricesGrid","pricedCoverageGrid","coverageOptionsCounts","coverageOptionsGrid","orientacionGrid","economicReadinessGrid","materialBasketsGrid","rubroCompareGrid"])el(id).replaceChildren();
+ for(const id of ["pendingRubrosGrid","offers","receipts","finalists","coverageGrid","economyGrid","itemPricesGrid","pricedCoverageGrid","coverageOptionsCounts","coverageOptionsGrid","orientacionGrid","economicReadinessGrid","materialBasketsGrid","rubroCompareGrid"])el(id).replaceChildren();
+ el("pendingRubrosSection").hidden=true;
+ displayText("pendingRubrosCaption","");
  el("economySection").hidden=true;
  displayText("economyCaption","");
  el("itemPricesSection").hidden=true;
@@ -147,6 +149,53 @@ function showCoverage(d){
   c.quotations+" presupuestos y "+c.requested_items+" artículos solicitados.");
  el("coverageSection").hidden=false;
 }
+// MVP299: source-interpreted, but NOT economically verified. Read-only.
+function showPendingRubros(d){
+ const section=el("pendingRubrosSection"),grid=el("pendingRubrosGrid");
+ grid.replaceChildren();section.hidden=true;
+ displayText("pendingRubrosCaption","");
+ const p=d?.pendientes_rubros_ia;
+ if(!["waiting","closed"].includes(d?.state)||
+   !p||p.state!=="respuestas_interpretadas_sin_precio_comparable"||
+   p.ranking_permitido!==false||p.contactos_revelados!==false||
+   p.adjudicacion_automatica!==false||!Array.isArray(p.respuestas)||
+   p.respuestas.length<1||p.respuestas.length>25)return;
+ const names={
+  obra_gruesa:"Obra gruesa / Corralón",pintura:"Pintura",
+  electricidad:"Electricidad",construccion_seca:"Construcción en seco",
+  sanitarios:"Sanitarios",ferreteria:"Ferretería y fijaciones",
+  otros:"Otros materiales"
+ };
+ const out=[];
+ for(const [i,answer] of p.respuestas.entries()){
+  if(!answer||answer.label!=="Respuesta en revisión "+(i+1)||
+     !Array.isArray(answer.rubros)||answer.rubros.length<1||
+     answer.rubros.length>7)return;
+  const seen=new Set(),sections=[];
+  for(const r of answer.rubros){
+   if(!r||!Object.hasOwn(names,r.rubro)||
+      r.titulo!==names[r.rubro]||seen.has(r.rubro)||
+      !Number.isSafeInteger(r.solicitados)||r.solicitados<1||
+      r.solicitados>25||!Number.isSafeInteger(r.respondidos)||
+      r.respondidos<1||r.respondidos>r.solicitados)return;
+   seen.add(r.rubro);
+   sections.push(r.titulo+": "+r.respondidos+" de "+r.solicitados+
+     " artículos interpretados (sin precio comparable)");
+  }
+  out.push({label:answer.label,sections});
+ }
+ for(const answer of out){
+  const card=element("article","coverage-metric");
+  card.append(element("strong","",answer.label));
+  for(const line of answer.sections)card.append(element("p","",line));
+  grid.appendChild(card);
+ }
+ displayText("pendingRubrosCaption",out.length+
+   (out.length===1?" respuesta interpretada":" respuestas interpretadas")+
+   ". Ninguna constituye un precio verificado ni una posición.");
+ section.hidden=false;
+}
+
 // MVP186 — a quote's SOURCE amount, by requested item; never a final rank.
 function showItemPrices(d){
  const grid=el("itemPricesGrid");grid.replaceChildren();
@@ -1020,6 +1069,7 @@ function render(data){
   })+" h":"");
  el("offers").replaceChildren();el("receipts").replaceChildren();
  el("finalists").replaceChildren();displayText("equivalence","");
+ showPendingRubros(d);
  showCoverage(d);
  showEconomy(d);
  showItemPrices(d);
@@ -1040,15 +1090,21 @@ function render(data){
   d.offers.filter(o=>o&&typeof o.label==="string"&&typeof o.text==="string"):[];
  displayText("state",d.state==="waiting"?
   (approved.length?"Ronda abierta · presupuestos anónimos disponibles":
-   "Ronda abierta · esperando presupuestos verificados"):
+   d.pendientes_rubros_ia?.respuestas?.length?
+    "Ronda abierta · respuestas recibidas en revisión":
+    "Ronda abierta · esperando presupuestos verificados"):
   (approved.length?"Ronda cerrada · presupuestos disponibles":
-   "Ronda cerrada · sin presupuestos habilitados"));
+   d.pendientes_rubros_ia?.respuestas?.length?
+    "Ronda cerrada · respuestas recibidas en revisión":
+    "Ronda cerrada · sin presupuestos habilitados"));
  if(approved.some(o=>/\b(?:big[\s-]*bag|bols[oó]n(?:es)?)\b/iu.test(o.text))){
   displayText("equivalence","En áridos, BIG BAG o bolsón suele referirse a 1 m³ nominal embolsado. Se respeta cualquier capacidad distinta indicada y no se presume la variedad del material ni su disponibilidad.");
  }
  showAllClosedResults(d,approved,count);
  approved.forEach(o=>el("offers").appendChild(offerCard(o.label,o.text)));
- const missing=Math.max(0,Math.min(25,count)-approved.length);
+ const pendingCount=Array.isArray(d.pendientes_rubros_ia?.respuestas)?
+  d.pendientes_rubros_ia.respuestas.length:0;
+ const missing=Math.max(0,Math.min(25,count)-approved.length-pendingCount);
  if(d.state==="waiting"&&Number.isSafeInteger(count)&&count>0)
   for(let i=0;i<missing;i++)
    el("receipts").appendChild(offerCard("Presupuesto recibido","Esperando verificación de su contenido."));
