@@ -2,7 +2,8 @@
  * MVP-091 / Private buyer progress link. The bearer token is in the URL
  * FRAGMENT (never sent as GET query), then posted over HTTPS to a closed RPC.
  * During the round, RPC returns counts and only reviewed anonymous projections.
- * Never supplier source files, names, contacts or raw offer versions.
+ * No supplier identities before closure; after closure only consented company
+ * labels via the private MVP303 gate, never raw sources or phone numbers.
  */
 import {createClient} from 'npm:@supabase/supabase-js@2.118.0';
 import {hex,decodeContacts} from '../_shared/cotironda-finalist-notice.ts';
@@ -22,6 +23,7 @@ import {DESTINO_SEGUIMIENTO_PILOTO_MVP212} from '../../../src/domain/enlace-segu
 import {resumirRubrosCompradorMvp216} from '../../../src/domain/rubros-comprador-mvp216.ts';
 import {vistaCotizacionesRubrosMvp227} from '../../../src/domain/ia-central/vista-comprador-rubros-mvp227.ts';
 import {vistaPendientesRubrosMvp299} from '../../../src/domain/ia-central/vista-pendientes-rubros-mvp299.ts';
+import {vistaProveedoresCierreMvp303} from '../../../src/domain/ia-central/vista-proveedores-cierre-mvp303.ts';
 import {resumirAlternativasRubrosMvp255} from '../../../src/domain/ia-central/resumen-comparador-rubros-mvp255.ts';
 const ref='ilggkalaafhtiysyzlmg';
 const html=`<!doctype html><html lang="es"><head><meta charset="utf-8">
@@ -42,7 +44,7 @@ small{color:#65738a}.status{font-weight:650;color:#34558f;margin-top:16px}
 <main class="card"><h1>Seguimiento de cotizaciones</h1>
 <p>Acá se actualizan las cotizaciones a medida que llegan y se revisan.
 Vas a ver sus datos y precios aprobados sin saber qué negocio cotizó.
-Al cierre se revelan los datos únicamente de los finalistas habilitados.</p>
+Al cerrar la ronda se identifica a todos los proveedores invitados y se indica si cotizaron. Los teléfonos requieren autorización específica.</p>
 <div class="count" id="count" aria-live="polite">—</div>
 <div class="caption">Presupuestos recibidos</div>
 <div class="deadline"><b id="state">Consultando…</b><p id="deadline"></p></div>
@@ -90,7 +92,27 @@ if(!/^[a-f0-9]{64}$/.test(token)){
    };
    const targetFinalists=$("finalists");
    targetFinalists.replaceChildren();
-   if(d.state==="closed"&&Array.isArray(d.finalists)){
+   if(d.state==="closed"&&Array.isArray(d.todos_proveedores_cierre?.proveedores)){
+     const title=document.createElement("h2");
+     title.textContent="Todos los proveedores de la ronda";
+     targetFinalists.appendChild(title);
+     const explanation=document.createElement("p");
+     explanation.textContent="Al vencer el plazo se identifican todos los proveedores invitados, hayan cotizado o no. No implica adjudicación. Los teléfonos solo se comparten con consentimiento.";
+     targetFinalists.appendChild(explanation);
+     const statusNames={presupuesto_verificado:"Presupuesto verificado",
+       respuesta_en_revision:"Respuesta en revisión",
+       sin_respuesta:"Sin respuesta",
+       envio_no_confirmado:"Envío no confirmado"};
+     for(const supplier of d.todos_proveedores_cierre.proveedores){
+       if(!supplier||typeof supplier.nombre!=="string"||
+          !Object.hasOwn(statusNames,supplier.estado))continue;
+       const card=document.createElement("div");card.className="quote";
+       card.textContent=supplier.nombre+" · "+
+         (supplier.oferta?supplier.oferta+" · ":"")+
+         statusNames[supplier.estado];
+       targetFinalists.appendChild(card);
+     }
+   }else if(d.state==="closed"&&Array.isArray(d.finalists)){
      const title=document.createElement("h2");
      title.textContent=d.joint_supplier_coverage===true
        ?"Dos negocios que juntos cubren el pedido"
@@ -329,6 +351,24 @@ Deno.serve(async req=>{
          joint_supplier_coverage:finals.data.joint_supplier_coverage===true};
      }catch{/* Keep the ordinary anonymous view, no partial release. */}
    }
+ }
+ // MVP303: all invited suppliers become named ONLY after the automatic
+ // close and only for a valid prospective, consented buyer token.
+ // No winners, outbound WhatsApp or phone numbers.
+ if(publicResult?.state==='closed'){
+   try{
+     const all=await db.rpc('cotironda_piloto_all_suppliers_closed_mvp303',{
+       p_token_hash:digest
+     });
+     if(!all.error){
+       const reduced=vistaProveedoresCierreMvp303(all.data);
+       if(reduced){
+         publicResult={...publicResult,
+           todos_proveedores_cierre:reduced,
+           finalists:undefined,joint_supplier_coverage:undefined};
+       }
+     }
+   }catch{/* Missing migration or invalid source => no identity release. */}
  }
  // MVP227: visualización privada por rubro de IA Central.
  // El RPC vuelve a verificar el token, identidad, vencimiento y estado.
