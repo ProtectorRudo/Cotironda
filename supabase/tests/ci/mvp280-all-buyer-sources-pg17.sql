@@ -1011,6 +1011,12 @@ BEGIN
    OR review->'items'->0->>'rubro'<>'obra_gruesa'
    OR review->>'city'<>'La Plata'
   THEN RAISE EXCEPTION 'mvp280_%_issue_failed: %',mode,review;END IF;
+  -- Las rondas de este fixture vencen en cuatro dias:
+  -- la aprobacion debe durar exactamente 24h sin carrera entre relojes.
+  IF (SELECT expires_at=created_at+interval '24 hours'
+      FROM cotironda_piloto_privado.ai_buyer_review_mvp279
+      WHERE request_id=v_rid) IS DISTINCT FROM true
+  THEN RAISE EXCEPTION 'mvp280_%_review_ttl_microsecond_race',mode;END IF;
   code:=review->>'code';
   reply_body:='CONFIRMAR COTI '||code;
   IF public.cotironda_piloto_ia_review_issue_mvp279(

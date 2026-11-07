@@ -809,6 +809,10 @@ BEGIN
  OR review->'items'->0->>'rubro'<>'obra_gruesa'
  OR review->'items'->0->>'quantity'<>'20'
  THEN RAISE EXCEPTION 'mvp279_review_preview_incomplete: %',review;END IF;
+ IF (SELECT expires_at=created_at+interval '24 hours'
+     FROM cotironda_piloto_privado.ai_buyer_review_mvp279
+     WHERE request_id=round_id) IS DISTINCT FROM true
+ THEN RAISE EXCEPTION 'mvp279_review_ttl_microsecond_race';END IF;
  issued_code:=review->>'code';
  IF length(issued_code)<>16 OR issued_code<>upper(issued_code)
  THEN RAISE EXCEPTION 'mvp279_review_code_invalid';END IF;

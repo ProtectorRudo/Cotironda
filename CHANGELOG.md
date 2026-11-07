@@ -1,3 +1,16 @@
+## 2026-11-06 — MVP282 corrección de vencimiento de aprobación comprador y prueba de 21 SQL
+
+- Detectada una carrera real en PostgreSQL17: dos lecturas de reloj podían dejar `expires_at` unos microsegundos más tarde que `created_at + 24h`; constraint impedía emitir revisión. MVP279 y MVP280 ahora usan un único `issued_at` para ambas marcas temporales.
+- Agregada aserción exacta de 24 horas en fixtures PostgreSQL 17 de MVP279 y MVP280; sus dos workflows específicos y el ensayo de 11 fixtures MVP282 aprobaron tras corregir.
+- Preflight read-only ejecutado en `cotironda-piloto`: 19/19 dependencias examinadas presentes; sin migraciones instaladas ni cambios de estado.
+- **Riesgo residual explícito:** estas pruebas verifican cobertura modular de 21 SQL, no su instalación acumulativa sobre schema-only de MVP239; pendiente antes de publicar.
+
+## 2026-11-06 — MVP282: ensayo integrado por cobertura (solo desarrollo)
+
+- Se vinculan los 21 SQL de MVP281 con 11 pruebas PostgreSQL17 ya existentes, verificando imports, BEGIN/ROLLBACK, aislamiento y ausencia de salida externa. Nuevo workflow de ejecución secuencial de los once fixtures y pruebas adversariales de conexión.
+- Precisión de auditoría: 11 fixtures rollback independientes **no demuestran** instalación simultánea de 21 SQL sobre esquema completo de piloto; queda bloqueada toda afirmación de publicación. Decisión 407 e Issue #665.
+- No se modificó Supabase PILOTO, Edge, Whapi, cron, Vercel ni costos.
+
 ## 2026-11-06 — MVP281: preflight de integración segura de IA Central (solo desarrollo)
 
 - Issue #663: manifiesto de 21 SQL candidatos MVP245–280, verificado en orden sin migraciones manuales, rollback ni cron supervisor.
