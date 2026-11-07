@@ -111,7 +111,7 @@ CREATE OR REPLACE FUNCTION public.cotironda_piloto_ia_review_issue_mvp279(
 ) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
 AS $issue$
 DECLARE r record;snapshot jsonb;items jsonb;code text;digest text;
- counter int;sup_count int;total int;
+ counter int;sup_count int;total int;issued_at timestamptz;
 BEGIN
  IF p_chat_hmac IS NULL OR p_chat_hmac !~ '^[a-f0-9]{64}$'
  OR p_source_hmac IS NULL OR p_source_hmac !~ '^[a-f0-9]{64}$'
@@ -165,12 +165,15 @@ BEGIN
  THEN RETURN jsonb_build_object('state','preview_requires_alternative_view');END IF;
  digest:=encode(sha256(convert_to(snapshot::text,'UTF8')),'hex');
  code:=upper(substr(replace(gen_random_uuid()::text,'-',''),1,16));
+ -- Un solo instante para cumplir expires_at<=created_at+24h sin carreras
+ -- de microsegundos entre el DEFAULT y una segunda lectura del reloj.
+ issued_at:=clock_timestamp();
  INSERT INTO cotironda_piloto_privado.ai_buyer_review_mvp279(
   request_id,buyer_key,chat_hmac,source_hmac,snapshot_sha256,code_sha256,
-  expires_at
+  created_at,expires_at
  ) VALUES(r.id,r.buyer_key,r.chat_hmac,r.source_hmac,digest,
-   encode(sha256(convert_to(code,'UTF8')),'hex'),
-   least(clock_timestamp()+interval '24 hours',r.closes_at-interval '1 hour'));
+   encode(sha256(convert_to(code,'UTF8')),'hex'),issued_at,
+   least(issued_at+interval '24 hours',r.closes_at-interval '1 hour'));
  RETURN jsonb_build_object('state','issued',
   'request_id',r.id,'code',code,
   'city',snapshot->'city','note',snapshot->'note',
