@@ -1,3 +1,9 @@
+## 2026-11-07 — MVP287: segundo mensaje recibido, validación semántica y comprobantes de Whapi
+
+- Fuente del comprador coincidente por SHA256 con ejemplo recomendado; su lectura IA fue bloqueada por `lecturas_discrepan_en_articulo`, sin ronda. Se aceptarán subcitas literales solapadas del mismo artículo y unidades de conteo equivalentes sin convertir cantidades, presentaciones ni rubros.
+- Whapi había registrado un aviso como `api_accepted` con ID pero **sin evidencia delivered/read**. Se extiende el RPC de estados privados para avisos al comprador con validación de ID, HMAC, destinatario y precedencia; no retransmite.
+- Revisión de transporte: `sent:false` o fallo declarado por API nunca se considera aceptado aunque haya HTTP 200. Nuevas pruebas Node y PG17. Ver decisión 412 / Issue #675.
+
 ## 2026-11-07 — MVP286: comprador sin respuesta por fallo semántico IA Central (desarrollo)
 
 - Incidente real: Whapi recibió el mensaje del arquitecto a las 03:11 AR; IA Central finalizó en `review/semantic_review_required` antes de consultar catálogos; 0 rondas y 0 revisiones de comprador. No se puede recuperar la causa HTTP exacta anterior porque el código la ocultó y la traza de uso no fue persistida.
