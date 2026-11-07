@@ -192,6 +192,8 @@ export function elegirRondaUnicaMvp291(
 export async function correlacionAutomaticaMvp291(args:{
  enabled:boolean;webhookAuthenticated:boolean;sourceHmac:string;chatHmac:string;
  apiKey:string;model:Modelo;rpc:Rpc;fetchImpl?:typeof fetch;
+ // Text observations: independently source-backed before any candidate SQL.
+ textQuote?:readonly Line[];textSha256?:string;
  compare?:typeof modelRead;
 }):Promise<ResultMvp291>{
  if(!args?.enabled)return result('disabled','flag_off');
@@ -199,6 +201,11 @@ export async function correlacionAutomaticaMvp291(args:{
    !HEX.test(args.chatHmac)||typeof args.apiKey!=='string'||args.apiKey.length<18||
    typeof args.rpc!=='function')
   return result('not_eligible','invalid_context');
+ const isText=args.textQuote!==undefined||args.textSha256!==undefined;
+ if(isText&&(!HEX.test(args.textSha256??'')||!Array.isArray(args.textQuote)||
+    args.textQuote.length<1||args.textQuote.length>25||
+    !args.textQuote.every(goodLine)))
+  return result('not_eligible','unverified_text_materials');
  const db=async(name:string,params:Record<string,unknown>)=>{
   const res=await args.rpc(name,params);
   if(res.error||!object(res.data)||typeof res.data.state!=='string')
@@ -207,8 +214,12 @@ export async function correlacionAutomaticaMvp291(args:{
  };
  let reserved=false;
  try{
-  const prepared=await db('cotironda_piloto_auto_correlation_prepare_mvp291',{
-   p_source_hmac:args.sourceHmac,p_chat_hmac:args.chatHmac
+  const prepared=await db(isText
+   ?'cotironda_piloto_auto_correlation_prepare_text_mvp292'
+   :'cotironda_piloto_auto_correlation_prepare_mvp291',{
+   p_source_hmac:args.sourceHmac,p_chat_hmac:args.chatHmac,
+   ...(isText?{p_source_sha256:args.textSha256,
+      p_materials:args.textQuote}: {})
   });
   if(prepared.state!=='reserved')return result('not_eligible',String(prepared.state));
   reserved=true;
