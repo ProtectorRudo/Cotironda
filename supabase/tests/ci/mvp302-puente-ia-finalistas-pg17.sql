@@ -49,9 +49,19 @@ BEGIN
  ) THEN RAISE EXCEPTION 'mvp302_wrong_verified_candidates';END IF;
  IF raw::text ~ '(whatsapp.net|telefono|recipient_chat|ciphertext|contacto|900000|1500000)'
  THEN RAISE EXCEPTION 'mvp302_price_or_contact_leak';END IF;
- IF (SELECT count(*) FROM cotironda_piloto_privado.finalist_coverage_plans_mvp108)<>0
- OR (SELECT count(*) FROM cotironda_piloto_privado.finalist_whapi_outbox_mvp110)<>0
+ -- MVP283 creates the finalist outbox fixture, but not the legacy
+ -- coverage planner table; verify both without inventing dependencies.
+ IF (SELECT count(*) FROM cotironda_piloto_privado.finalist_whapi_outbox_mvp110)<>0
  THEN RAISE EXCEPTION 'mvp302_outbound_or_award_side_effect';END IF;
+ IF to_regclass('cotironda_piloto_privado.finalist_coverage_plans_mvp108') IS NOT NULL THEN
+  DECLARE plan_count integer;
+  BEGIN
+   EXECUTE 'SELECT count(*) FROM cotironda_piloto_privado.finalist_coverage_plans_mvp108'
+    INTO plan_count;
+   IF plan_count<>0 THEN
+    RAISE EXCEPTION 'mvp302_outbound_or_award_side_effect';END IF;
+  END;
+ END IF;
  -- A source update AFTER verification must fail closed, not become a plan.
  SELECT message_hmac INTO source_message
  FROM cotironda_piloto_privado.ai_supplier_review_mvp227
