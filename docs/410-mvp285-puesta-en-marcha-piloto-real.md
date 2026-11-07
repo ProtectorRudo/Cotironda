@@ -8,7 +8,7 @@ Fecha: 7/11/2026. Alcance autorizado por «Hacelo así lo pruebo»: **solo cotir
 - Se ensayaron **las 21 migraciones MVP245–280 sobre el esquema real**, en una sola transacción, con `ROLLBACK` confirmado. Después se instalaron en una **migración transaccional única**: `piloto_mvp285_integracion_ia_central_21_migraciones_off`.
 - Resguardo de contingencia **en el mismo proyecto** mediante `piloto_mvp285_resguardo_privado_pre_publicacion`: 63 tablas, 244 filas, 132 definiciones de funciones y 431 restricciones/triggers; roles `anon`, `authenticated` y `service_role` sin acceso al esquema. **No es backup externo ni restauración verificada**. No incluye archivos binarios de Storage.
 - Se aplicó `piloto_mvp285_operador_revision_comprador_off`: tabla de operador privada con RLS y solo service_role puede consultar su función; la tabla arranca **OFF**. Se verificaron ACL y estado.
-- La Edge Function `cotironda-piloto-whapi` pasó primero a v55 con el código IA Central y luego a **v56 ACTIVE**. Se comprobó el código de confirmación exacta y el manejo de Whapi API sin ID (`uncertain` terminal, jamás reenvío automático).
+- La Edge Function `cotironda-piloto-whapi` pasó primero a v55 con el código IA Central y luego a **v56 ACTIVE** y finalmente a **v57 ACTIVE** tras bloquear el fallback documental antiguo para compradores con IA Central activa. Se comprobó el código de confirmación exacta y el manejo de Whapi API sin ID (`uncertain` terminal, jamás reenvío automático).
 - Se ejecutó activación con `BEGIN/ROLLBACK` y comprobación real de `trial_flags` comprador + operador; después la activación efectiva quedó **ON** para comprador `arquitecto` y proveedores `corralon_ailin` / `corralon_nahuel`. Los tres conservan consentimiento válido. **No se envió ningún WhatsApp durante instalación o activación.**
 - `ai_trial_control_mvp229`: `enabled=true`, `activated_at` registrado, `expires_at=NULL` (**piloto continuo sin ventana de 90 minutos**). IA Central, puerta de despacho y autorización operador ON, cuotas de uso/costos, deduplicación y control de permisos intactos.
 - Las dos cuentas proveedor tienen 53 artículos de catálogo cada una, incluyendo entradas de cemento y arena. No se inventan stock, precios ni confirmaciones comerciales.
@@ -64,3 +64,7 @@ La desactivación corta **nuevos envíos**, pero conforme MVP230 las respuestas 
 ## Evidencia
 
 Scripts y CI: `supabase/piloto/mvp285_resguardo_interno_pre_publicacion.sql`, `supabase/piloto/mvp285_piloto_revision_operador_sql_gate.sql`, `supabase/tests/ci/mvp285-operator-gates-pg17.sql`, `scripts/piloto/mvp285-operator-gate-builder.mjs`, y workflow `cotironda-mvp285-pilot-operator-gates.yml`.
+
+## Endurecimiento posterior MVP285 / v57
+
+Para el comprador que tenga IA Central activa, un documento no contemplado por las rutas verificadas (PDF, Word, Excel o TXT/CSV, según configuración) **jamás** debe caer en el preparador documental antiguo de invitaciones automáticas, ni siquiera si la variable de entorno `COTIRONDA_PILOT_BUYER_REVIEW_REQUIRED_ENABLED` no está configurada. Se cambió el `else if` de `index.ts` para bloquear el fallback con `centralConfigured || ...`, con regresión en `tests/unit/mvp285-operator-review-gates.test.mjs`. La función **v57 ACTIVE** ya contiene este guard. No se generaron invitaciones durante el despliegue.
