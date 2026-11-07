@@ -51,8 +51,16 @@ test('MVP280: signed buyer confirmation is intercepted before ANY LLM',()=>{
  const plan=whapi.indexOf('procesarCompradorCentralMvp226({',intercept);
  assert.ok(preflight>0&&preflight<intercept&&intercept<plan);
  match(whapi.slice(preflight,preflight+240),/!buyerReviewCommand/u);
- match(whapi.slice(intercept,plan),/COTIRONDA_PILOT_BUYER_REVIEW_CONFIRM_ENABLED/u);
- match(whapi.slice(intercept,plan),/COTIRONDA_PILOT_BUYER_REVIEW_RELEASE_ENABLED/u);
+ // The independent SQL operator gate and environment vetoes are resolved
+ // BEFORE intercepting the confirmation command. No model can bypass them.
+ const gate=whapi.indexOf('cotironda_piloto_ia_review_launch_mvp285');
+ assert.ok(gate>0&&gate<intercept);
+ match(whapi.slice(gate,intercept),/reviewGate\.confirm===true/u);
+ match(whapi.slice(gate,intercept),/reviewGate\.release===true/u);
+ match(whapi,/COTIRONDA_PILOT_BUYER_REVIEW_CONFIRM_ENABLED/u);
+ match(whapi,/COTIRONDA_PILOT_BUYER_REVIEW_RELEASE_ENABLED/u);
+ match(whapi.slice(intercept,plan),/allowBuyerConfirmation/u);
+ match(whapi.slice(intercept,plan),/allowBuyerRelease/u);
  assert.ok(!esRespuestaConfirmacionMvp279('OK'));
  assert.ok(esRespuestaConfirmacionMvp279('CONFIRMAR COTI 0123456789ABCDEF'));
 });
@@ -60,8 +68,11 @@ test('MVP280: legacy document auto-invite blocked when review REQUIRED flag is O
  const at=whapi.indexOf('const plan=await db.rpc('+
   "'cotironda_piloto_plan_document_mvp098'");
  assert.ok(at>0);
- const preceding=whapi.slice(at-340,at);
+ // MVP285 also blocks legacy fallback when IA Central is active, even
+ // if the explicit REQUIRE_REVIEW env switch is absent.
+ const preceding=whapi.slice(at-750,at);
  match(preceding,/COTIRONDA_PILOT_BUYER_REVIEW_REQUIRED_ENABLED/u);
+ match(preceding,/else if\(centralConfigured\|\|/u);
  match(whapi,/COTIRONDA_PILOT_BUYER_REVIEW_SEND_ENABLED/u);
  assert.doesNotMatch(whapi,/COTIRONDA_PILOT_BUYER_DOCUMENT_CENTRAL_PUBLISH_ENABLED/u);
 });

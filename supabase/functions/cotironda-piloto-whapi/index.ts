@@ -407,6 +407,34 @@ async function respond(req:Request):Promise<Response>{
   const trial=trialResponse.data as Record<string,unknown>;
   const trialActive=trial.state==='active';
   const centralConfigured=sec.outbound&&trialActive&&trial.buyer===true;
+  // MVP285: operator-granted database gate is OFF by default. An unset
+  // deployment env variable is NOT permission by itself: SQL also needs
+  // active trial + central/dispatch flags and a consented buyer identity.
+  // An explicitly false env switch remains an independent kill switch.
+  const pilotEnvNotDenied=(key:string):boolean=>{
+    const value=Deno.env.get(key);
+    return value===undefined||value==='true';
+  };
+  let reviewGate:Record<string,unknown>|null=null;
+  if(centralConfigured){
+    const operator=await db.rpc('cotironda_piloto_ia_review_launch_mvp285',{
+      p_chat_hmac:chatHash
+    });
+    if(operator.error||!operator.data||typeof operator.data!=='object')
+      return json(503,'buyer_review_operator_gate_unavailable');
+    reviewGate=operator.data as Record<string,unknown>;
+    if(!['active','inactive'].includes(String(reviewGate.state)))
+      return json(503,'buyer_review_operator_gate_invalid');
+  }
+  const allowBuyerReview=reviewGate?.state==='active'&&
+    reviewGate.send===true&&
+    pilotEnvNotDenied('COTIRONDA_PILOT_BUYER_REVIEW_SEND_ENABLED');
+  const allowBuyerConfirmation=reviewGate?.state==='active'&&
+    reviewGate.confirm===true&&
+    pilotEnvNotDenied('COTIRONDA_PILOT_BUYER_REVIEW_CONFIRM_ENABLED');
+  const allowBuyerRelease=reviewGate?.state==='active'&&
+    reviewGate.release===true&&
+    pilotEnvNotDenied('COTIRONDA_PILOT_BUYER_REVIEW_RELEASE_ENABLED');
   const supplierKnown=sec.outbound&&
     (await Promise.all(Object.values(sec.recipients).map(async recipient=>
       hmac(sec.key,'cotironda|pilot|chat|'+sec.channel+
@@ -428,9 +456,8 @@ async function respond(req:Request):Promise<Response>{
   }
   // MVP280: one signed, exactly-once review path for text and document.
   const emitirRevisionUnificada=async(sourceHmac:string):Promise<boolean>=>{
-    if(!centralConfigured||supplierKnown||centralSupplier||
-       Deno.env.get('COTIRONDA_PILOT_BUYER_REVIEW_SEND_ENABLED')!=='true')
-      return true; // switch OFF => private shadow round only.
+    if(!centralConfigured||supplierKnown||centralSupplier||!allowBuyerReview)
+      return true; // operator and env kill switches OFF => shadow only.
     const delivery=await emitirRevisionCompradorMvp279({
       habilitado:true,compradorAutenticado:true,
       chatHmac:chatHash,sourceHmac,destinatario:row.chat_id,
@@ -594,12 +621,11 @@ async function respond(req:Request):Promise<Response>{
   // supplier price or an instruction to the language model.
   if(buyerReviewCommand){
     if(!['duplicate','unrecognized_contact'].includes(outcome(out.data))&&
-       Deno.env.get('COTIRONDA_PILOT_BUYER_REVIEW_CONFIRM_ENABLED')==='true'){
+       allowBuyerConfirmation){
       const decision=await confirmarPedidoCompradorMvp279({
         habilitado:true,
         liberar:sec.outbound&&trialActive&&trial.buyer===true&&
-          trial.dispatch===true&&
-          Deno.env.get('COTIRONDA_PILOT_BUYER_REVIEW_RELEASE_ENABLED')==='true',
+          trial.dispatch===true&&allowBuyerRelease,
         compradorAutenticado:!supplierKnown&&!centralSupplier,
         chatHmac:chatHash,replyHmac:messageHash,textoOriginal:body,
         rpc:async(name,params)=>{
@@ -1047,9 +1073,11 @@ async function respond(req:Request):Promise<Response>{
                   // No prices, buyer details or document text in logs.
                   if(preview.estado!=='plan_privado_validado')
                     console.warn('cotironda_buyer_document_readonly_review_required');
-                }else if(centralConfigured&&
+                }else if(centralConfigured||
                    Deno.env.get('COTIRONDA_PILOT_BUYER_REVIEW_REQUIRED_ENABLED')==='true'){
-                  // No legacy auto-invite for unsupported buyer documents.
+                  // MVP285: active central buyer may NEVER fall back to
+                  // legacy document auto-invite, even if the env gate is
+                  // absent. Unsupported formats remain archived for review.
                   console.warn('cotironda_buyer_document_independent_source_required');
                 }else{
                 const plan=await db.rpc('cotironda_piloto_plan_document_mvp098',{
