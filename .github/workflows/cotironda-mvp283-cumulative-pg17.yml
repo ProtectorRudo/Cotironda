@@ -48,6 +48,7 @@ jobs:
       - name: 21 archivos un esquema una transacción - rollback real PG17
         run: |
           set -euo pipefail
+          node scripts/piloto/mvp283-cumulative-builder.mjs --assert-local
           node scripts/piloto/mvp283-cumulative-builder.mjs --sql > supabase/tests/ci/.mvp283-cumulative-generated.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/.mvp283-cumulative-generated.sql >/dev/null
           psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT (to_regnamespace('cotironda_piloto_privado') IS NULL AND to_regnamespace('auth') IS NULL AND to_regnamespace('storage') IS NULL)" | grep -Fx 't'
