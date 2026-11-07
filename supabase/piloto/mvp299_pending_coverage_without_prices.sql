@@ -57,7 +57,38 @@ BEGIN
     AND supplier.participant_role='supplier'
     AND supplier.consent_at IS NOT NULL AND supplier.opted_out_at IS NULL
     AND d.state='api_accepted' AND d.finished_at<=m.received_at
-    AND l.source_sha256=coalesce(m.plaintext_sha256,l.source_sha256)
+    AND (
+     (l.kind='text' AND m.kind='text' AND
+      m.plaintext_sha256=l.source_sha256)
+     OR (
+      l.kind='document' AND m.kind='document'
+      AND EXISTS (
+       SELECT 1 FROM cotironda_piloto_privado.media_archive_mvp095 media
+       WHERE media.message_hmac=l.message_hmac
+        AND media.chat_hmac=m.chat_hmac
+        AND media.participant_key=l.supplier_key
+        AND media.request_id=l.request_id
+        AND media.state='stored'
+        AND media.content_sha256=l.source_sha256)
+      AND EXISTS (
+       SELECT 1 FROM cotironda_piloto_privado.supplier_source_checks_mvp106 evidence
+       WHERE evidence.message_hmac=l.message_hmac
+        AND evidence.source_sha256=l.source_sha256
+        AND evidence.state='source_text_covered' AND evidence.reason='covered')
+      AND EXISTS (
+       SELECT 1 FROM cotironda_piloto_privado.supplier_media_quotes_mvp098 quoted
+       WHERE quoted.message_hmac=l.message_hmac AND quoted.request_id=l.request_id
+        AND quoted.supplier_key=l.supplier_key
+        AND quoted.source_sha256=l.source_sha256
+        AND quoted.state='awaiting_fidelity_check')
+      AND EXISTS (
+       SELECT 1 FROM cotironda_piloto_privado.anonymous_supplier_docs_mvp107 published
+       WHERE published.message_hmac=l.message_hmac
+        AND published.request_id=l.request_id
+        AND published.supplier_key=l.supplier_key
+        AND published.source_sha256=l.source_sha256)
+     )
+    )
    ORDER BY l.supplier_key,m.received_at DESC,l.message_hmac DESC
   )
   SELECT l.supplier_key,l.message_hmac,rev.summary
