@@ -32,6 +32,13 @@ SELECT now() AS checked_at,
   IS NOT NULL) AS legacy_commercial_planner_installed,
  (to_regclass('cotironda_piloto_privado.ai_supplier_review_mvp227')
   IS NOT NULL) AS ai_central_supplier_ledger_installed,
- false AS ai_central_ledger_connected_to_legacy_planner,
+ (SELECT count(*)=2 AND bool_and(
+   position('ai_supplier_review_mvp227' IN pg_get_functiondef(p.oid))>0
+  )
+  FROM pg_proc p JOIN pg_namespace n ON p.pronamespace=n.oid
+  WHERE n.nspname='public' AND p.proname IN (
+    'cotironda_piloto_commercial_due_mvp196',
+    'cotironda_piloto_commit_commercial_plan_mvp196'
+  )) AS legacy_planner_explicitly_reads_ia_central,
  false AS real_end_to_end_certified
 FROM status;
