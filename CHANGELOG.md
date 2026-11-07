@@ -1,3 +1,10 @@
+## 2026-11-06 — MVP279: revisión explícita comprador por WhatsApp (solo desarrollo)
+
+- Un pedido binario comprobado por IA Central queda en sombra hasta que el comprador apruebe una versión exacta de **todos** los materiales, cantidades, rubros y zona; el SHA incluye además destinos y fuentes originales. Código aleatorio de un solo uso y respuesta WhatsApp firmada vinculados a la versión, sin aceptar «sí» genérico.
+- Previsualización de la lista completa para comprador (no precios/identidad de proveedores), sender Whapi con una única reserva y sin reenvío tras resultado incierto. Confirmación y liberación a proveedores tienen banderas independientes, todas OFF por defecto.
+- Las RPCs de publicación, selección, reclamación y PDF rechazan binarios sin aprobación válida, incluso si un servidor intenta saltarse el webhook. PG17 adversarial, Node+Deno, rollback manual que conserva evidencias y documentación decisión 404.
+- **Sin despliegue ni envío de WhatsApps reales; respaldo pago en plan B, prueba E2E y costos reales pendientes.**
+
 ## 2026-11-06 — MVP278: origen PDF/DOCX/XLSX autorizado por doble SHA (solo desarrollo)
 
 - PostgreSQL: atestación privada de original binario y texto derivado con dos SHA-256, versión de lector y cantidad completa de artículos acreditados; revalidación de Storage, HMAC, comprador y consentimiento en las cuatro puertas SQL de IA Central.

@@ -15,6 +15,7 @@ import {previsualizarDocumentoCompradorMvp275} from './ai-central-buyer-document
 import {procesarDocumentoCompradorCentralMvp276} from './ai-central-buyer-media-mvp276.ts';
 import {contrastarDocumentoCompradorMvp277} from './ai-central-buyer-binary-mvp277.ts';
 import {prepararDocumentoBinarioCompradorMvp278} from './ai-central-buyer-binary-broker-mvp278.ts';
+import {esRespuestaConfirmacionMvp279,emitirRevisionCompradorMvp279,confirmarPedidoCompradorMvp279} from './ai-central-buyer-review-mvp279.ts';
 import {proveedorConRondaCentralMvp232} from './ai-central-supplier-route-mvp232.ts';
 import {esAvisoAdjuntoProveedorMvp238} from './ai-supplier-attachment-notice-mvp238.ts';
 import {respuestaCitaPedidoMvp239,CONSULTA_RONDA_MVP239} from './ai-supplier-clarification-mvp239.ts';
@@ -392,6 +393,7 @@ async function respond(req:Request):Promise<Response>{
   // Only the Whapi-signed sender/chat and the persisted inbox can prove it.
   const webLinkCode=row.type==='text'
     ?/^VINCULAR ([A-F0-9]{24})$/u.exec(body)?.[1]??null:null;
+  const buyerReviewCommand=row.type==='text'&&esRespuestaConfirmacionMvp279(body);
   // El proveedor sigue protegido por el circuito de precios actual.
   // Solo el COMPRADOR del piloto ingresa por IA Central; sin palabras clave.
   // Configuración privada acotada por remitente, caducidad y gates SQL.
@@ -427,9 +429,11 @@ async function respond(req:Request):Promise<Response>{
   const attachmentNotice=row.type==='text'&&centralSupplier&&
     esAvisoAdjuntoProveedorMvp238(body);
   const centralBuyerText=centralConfigured&&row.type==='text'&&
-    !supplierKnown&&!centralSupplier&&!webLinkCode;
-  const local=centralBuyerText
-    ?{city:'sin solicitud',items:[],unresolved:['central_message_pending']}
+    !supplierKnown&&!centralSupplier&&!webLinkCode&&!buyerReviewCommand;
+  const local=buyerReviewCommand
+    ?{city:'sin solicitud',items:[],unresolved:['buyer_review_command']}
+    :centralBuyerText
+      ?{city:'sin solicitud',items:[],unresolved:['central_message_pending']}
     :row.type==='text'&&!webLinkCode
       ?parseBuyerPilot(body):{city:null,items:[],unresolved:[]};
   let parsed=local;
@@ -550,6 +554,29 @@ async function respond(req:Request):Promise<Response>{
       if(bound.error)return json(503,'web_link_reconciliation_required');
       // Deliberately no WhatsApp echo; the verified web session refreshes
       // the dashboard to observe the linked state. Never log a linking code.
+    }
+    continue;
+  }
+  // Buyer confirmation is NOT a new material request, zone clarification,
+  // supplier price or an instruction to the language model.
+  if(buyerReviewCommand){
+    if(!['duplicate','unrecognized_contact'].includes(outcome(out.data))&&
+       Deno.env.get('COTIRONDA_PILOT_BUYER_BINARY_REVIEW_CONFIRM_ENABLED')==='true'){
+      const decision=await confirmarPedidoCompradorMvp279({
+        habilitado:true,
+        liberar:sec.outbound&&trialActive&&trial.buyer===true&&
+          trial.dispatch===true&&
+          Deno.env.get('COTIRONDA_PILOT_BUYER_BINARY_REVIEW_RELEASE_ENABLED')==='true',
+        compradorAutenticado:!supplierKnown&&!centralSupplier,
+        chatHmac:chatHash,replyHmac:messageHash,textoOriginal:body,
+        rpc:async(name,params)=>{
+          const r=await db.rpc(name,params);
+          return {data:r.data,error:r.error};
+        }
+      });
+      if(decision.estado==='conciliacion_requerida')
+        return json(503,'buyer_review_confirmation_reconciliation');
+      if(decision.estado==='publicado')trialDispatchChats.add(chatHash);
     }
     continue;
   }
@@ -913,6 +940,42 @@ async function respond(req:Request):Promise<Response>{
                   });
                   if(mediaPlan.estado==='conciliacion_requerida')
                     console.warn('cotironda_buyer_binary_attestation_or_broker_review');
+                  if(mediaPlan.estado==='ronda_en_sombra'&&
+                     Deno.env.get('COTIRONDA_PILOT_BUYER_BINARY_REVIEW_SEND_ENABLED')==='true'){
+                    const delivery=await emitirRevisionCompradorMvp279({
+                      habilitado:true,
+                      compradorAutenticado:centralConfigured&&!verifiedSupplier,
+                      chatHmac:chatHash,sourceHmac:messageHash,
+                      destinatario:row.chat_id,
+                      rpc:async(name,params)=>{
+                        const r=await db.rpc(name,params);
+                        return {data:r.data,error:r.error};
+                      },
+                      send:async(recipient,reviewText)=>{
+                        // Recipient is exactly the signed buyer chat that
+                        // produced the archived source; never supplier.
+                        if(recipient!==row.chat_id)throw Error('buyer_chat_changed');
+                        const response=await fetch('https://gate.whapi.cloud/messages/text',{
+                          method:'POST',
+                          headers:{Authorization:'Bearer '+sec.token,
+                            'Content-Type':'application/json'},
+                          body:JSON.stringify({to:recipient,body:reviewText}),
+                          signal:AbortSignal.timeout(12000)
+                        });
+                        const responseBody=response.ok
+                          ?await response.json().catch(()=>null):null;
+                        const msg=responseBody&&typeof responseBody==='object'
+                          ?(responseBody as Record<string,unknown>):null;
+                        const nested=msg?.message&&typeof msg.message==='object'
+                          ?msg.message as Record<string,unknown>:null;
+                        const id=msg?.message_id??nested?.id??null;
+                        return {accepted:response.ok&&msg?.sent===true,
+                          messageId:typeof id==='string'?id:null};
+                      }
+                    });
+                    if(delivery.estado==='conciliacion_requerida')
+                      return json(503,'buyer_review_delivery_reconciliation_required');
+                  }
                 }else if(centralConfigured&&
                    Deno.env.get('COTIRONDA_PILOT_BUYER_BINARY_CENTRAL_PREVIEW_ENABLED')==='true'&&
                    ['application/pdf',
