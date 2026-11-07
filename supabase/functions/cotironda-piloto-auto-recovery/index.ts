@@ -4,6 +4,7 @@
  */
 import {createClient} from 'npm:@supabase/supabase-js@2.118.0';
 import {procesarPendienteAutomaticoMvp292} from '../cotironda-piloto-whapi/supplier-auto-recovery-worker-mvp292.ts';
+import {procesarTextoVinculadoMvp295} from '../cotironda-piloto-whapi/supplier-linked-text-replay-mvp295.ts';
 import {authorizeRecoveryMvp294} from './internal-auth-mvp294.ts';
 const REF='ilggkalaafhtiysyzlmg';
 const URL='https://'+REF+'.supabase.co';
@@ -86,6 +87,22 @@ async function execute(req:Request):Promise<Response>{
  });
  if(outcome.state==='reconciliation_required')
   return json(503,'reconciliation_required');
+ // On an EMPTY historical-correlation queue, consume at most ONE source
+ // already linked by verified IA Central. Never re-read the same source
+ // twice: SQL claim ledger + MVP227 review + MVP264 usage ledger.
+ if(outcome.state==='empty'&&
+    Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_SUPPLIER_QUOTE_ENABLED')==='true'){
+  const commercial=await procesarTextoVinculadoMvp295({
+   enabled:true,trustedInternalWorker:true,
+   apiKey,model,rpc:async(name,params)=>{
+    const r=await db.rpc(name,params);
+    return {data:r.data,error:r.error};
+   },decrypt,shaText:digest
+  });
+  if(commercial.state==='reconciliation_required')
+   return json(503,'commercial_reconciliation_required');
+  return json(200,commercial.state);
+ }
  return json(200,outcome.state);
 }
 Deno.serve((req)=>execute(req).catch(()=>{

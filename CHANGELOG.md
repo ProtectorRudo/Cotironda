@@ -1,3 +1,10 @@
+## 2026-11-07 — MVP295: de vínculo histórico a oferta comercial segura (desarrollo)
+
+- Auditoría piloto **solo lectura**: proveedor Nahuel respondió texto y la fuente fue vinculada automáticamente, pero no llegó a la revisión comercial; proveedor Ailín envió documento ambiguo que permanece privado. Cero publicaciones desde esas fuentes; existe una versión previa independiente de Ailín.
+- Corrección propuesta en rama: excepción de antigüedad de 7 días SOLO para textos ya auto-vinculados de forma única y consentidos, cola de interpretación idempotente, cupo 6/día, uso medido de IA Central MVP264, fuente/versiones inmutables, cero WhatsApps.
+- Se elimina la dependencia circular de `tracking.can_open` para que una primera oferta IA segura pueda abrir el seguimiento por rubro. Precios no verificados no se publican.
+- **NO publicado en Supabase**. [Decisión 421](docs/421-mvp295-continuidad-cotizacion-comercial-vinculada.md).
+
 ## 2026-11-07 — Publicación controlada MVP291/MVP292 en cotironda-piloto
 
 - Integrado [PR #683](https://github.com/ProtectorRudo/Cotironda/pull/683) mediante commit `b2dac7378c323f5f368f1da808664d00fab7f480`, **31/31 CI**.

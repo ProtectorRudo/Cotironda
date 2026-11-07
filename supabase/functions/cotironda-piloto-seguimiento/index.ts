@@ -336,7 +336,10 @@ Deno.serve(async req=>{
  // La ventana de prueba puede vencer, pero el comprador conserva el
  // acceso a SUS ofertas ya verificadas por token, sin flags de entorno.
  // El RPC revisa token, revocación, propietario y estado antes de devolver datos.
- if(publicResult?.can_open===true&&
+ // Unlike legacy sources, an IA-only first verified quote does not set
+ // tracking.can_open until the buyer-rubros RPC is called. Do not gate
+ // that independent authorization behind the old public can_open bit.
+ if(publicResult!==null&&
     (publicResult.state==='waiting'||publicResult.state==='closed')){
    try{
      const ai=await db.rpc('cotironda_piloto_ia_buyer_rubros_mvp227',{
