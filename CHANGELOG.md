@@ -1,3 +1,11 @@
+## 2026-11-06 — MVP277: verificación independiente de originales PDF/DOCX/XLSX comprador (solo desarrollo)
+
+- Lectura de PDF con posiciones reales de texto, y Office OpenXML con controles ZIP/CRC/hojas ocultas/fórmulas, reutilizando lectores existentes.
+- SHA-256 de bytes originales + doble lectura documental: prueba cantidades y unidades en su misma línea física; rechaza 26+ líneas, hojas escaneadas, cifras extra, materiales omitidos y fuentes alteradas.
+- Bandera Edge opt-in `COTIRONDA_PILOT_BUYER_BINARY_CENTRAL_PREVIEW_ENABLED`, inicialmente OFF, que produce **solo previsualización privada**; no crea rondas ni mensajes.
+- Pruebas sintéticas Node y PDF real generado con Deno/unpdf, documentación decisión 402. La RPC MVP276 sigue limitada a TXT/CSV; no hay autorización PDF/XLSX/DOCX para enviar, ni E2E real.
+- Sin migraciones, despliegue, cron, WhatsApp o gastos nuevos. Respaldo pagado en Plan B.
+
 ## 2026-11-06 — MVP276: autoridad de fuente documental TXT/CSV para IA Central (desarrollo)
 
 - Extiende cuatro funciones SQL de reserva, staging, publicación y despacho, preservando la ruta de texto, con un helper privado que verifica origen Whapi + participante consentido + original Storage cifrado + MIME + SHA binario exacto.
