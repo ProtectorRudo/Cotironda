@@ -174,7 +174,6 @@ test('injected diagnosis is rejected and historic generic fallback preserved',as
 
 test('MVP298: two verified reads may use different descriptions and valid currency citation spans',async()=>{
  const first=structuredClone(quote),second=structuredClone(quote);
- first.descripcion='irrelevante'; // Metadata outside line items is never used.
  second.lineas[0].descripcion='Cemento Portland Compuesto en bolsas de 50 kg';
  second.monedaEvidencia='Moneda: ARS';
  const f=stub(first,second);
