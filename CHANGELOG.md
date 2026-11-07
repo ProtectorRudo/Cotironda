@@ -1,3 +1,10 @@
+## 2026-11-07 — MVP285: activación controlada de cotironda-piloto (sin gastos)
+
+- Ensayo en base real PostgreSQL 17 de 21 migraciones MVP245–280, rollback verificado, luego instalación atómica (73 migraciones incluyendo resguardo interno). Gate operador SQL adicional instalado (74 migraciones), probado en laboratorio PG17 y solo service_role.
+- Resguardo interno dentro de Supabase: 63 tablas/244 filas, 132 rutinas y 431 constraints/triggers, RLS y ACL privadas. No equivale a backup externo ni restaura archivos Storage.
+- WhatsApp Edge v55/v56 ACTIVE. Nuevo gate operator SQL controla revisión, confirmación y publicación de comprador; variables explícitas false siguen vetando envío. Integración activa sólo para el comprador y los dos proveedores consentidos, prueba sin expiración corta.
+- Cero mensajes reales enviados por la instalación. Seguimiento, cotización de proveedores, ranking y notificaciones finales **pendientes de E2E con nuevo mensaje real**. Cuotas de costos intactas; tres crons preexistentes sin cambios. Ver decisión 410.
+
 ## 2026-11-06 — MVP284: E2E integrado sintético + despacho Whapi sin ID (solo desarrollo)
 
 - E2E PostgreSQL17 en una transacción: comprador con 3 rubros, revisión íntegra, confirmación de un solo uso, 3 PDFs de proveedores, 2 respuestas correlacionadas, proyección anónima y sin ranking engañoso; prueba modo continuo de recepción de respuestas tras apagado de nuevos pedidos y rollback integral.
