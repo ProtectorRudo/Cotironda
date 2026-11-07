@@ -36,3 +36,12 @@ test('21 migraciones, escenario y operador se ejecutan antes del rollback',()=>{
  assert.ok(i>0&&j>i&&k>j&&end>k);
  assert.equal(s.split(/^ROLLBACK;\s*$/gm).length,2);
 });
+
+test('comprador IA activo jamás cae al envío automático documental legacy',()=>{
+ const pos=source.indexOf("'cotironda_piloto_plan_document_mvp098'");
+ assert.ok(pos>0);
+ const guard=source.slice(pos-570,pos);
+ assert.match(guard,/else if\(centralConfigured\|\|/u);
+ assert.match(guard,/COTIRONDA_PILOT_BUYER_REVIEW_REQUIRED_ENABLED/u);
+ assert.match(guard,/independent_source_required/u);
+});
