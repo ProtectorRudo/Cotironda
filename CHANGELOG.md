@@ -1,3 +1,8 @@
+## 2026-11-07 — MVP297: diagnóstico privado de revisión semántica (solo desarrollo)
+
+- Se conserva el primer motivo verificable de una futura revisión comercial: estructura, cita textual, moneda, IVA/flete/pago, cargos monetarios omitidos, mapeo de artículo, segunda lectura inválida, discrepancia entre dos lecturas o indisponibilidad del modelo. Sólo códigos de una allowlist, sin fuente ni importes, dentro de la tabla privada ya existente.
+- Se preservan los resultados económicos, privacidad, cuotas, estado de publicación y decisión de cero reintentos de IA; no se modifica piloto ni producción. El motivo exacto del evento histórico de Nahuel no fue persistido y **no se inventa retrospectivamente**. Ver [Decisión 423](docs/423-mvp297-diagnostico-privado-revision-semantica.md).
+
 ## 2026-11-07 — Publicación piloto MVP295 y corrección MVP296
 
 - **Solo `cotironda-piloto`**: PR [#686](https://github.com/ProtectorRudo/Cotironda/pull/686) integrado (13/13 CI), migración 82 y seguimiento v23; PR [#687](https://github.com/ProtectorRudo/Cotironda/pull/687) integrado (12/12 CI), migración 83 y worker privado v8. `main`, producción, Whapi v66 y cron documental v31 intactos.
