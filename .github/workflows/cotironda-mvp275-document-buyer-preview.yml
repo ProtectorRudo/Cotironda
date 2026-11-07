@@ -23,5 +23,5 @@ jobs:
         with:
           node-version: '22.16.0'
       - name: Real unit cases, mock-only catalogue and LLM, no Whapi/network
-        run: node --test tests/unit/mvp275-buyer-document-central-preview.test.mjs
+        run: node --experimental-strip-types --test tests/unit/mvp275-buyer-document-central-preview.test.mjs
 # No SUPABASE_SERVICE_ROLE_KEY, API keys, real documents, network exports or artifacts.
