@@ -810,7 +810,8 @@ BEGIN
  OR review->'items'->0->>'quantity'<>'20'
  THEN RAISE EXCEPTION 'mvp279_review_preview_incomplete: %',review;END IF;
  issued_code:=review->>'code';
- IF length(issued_code)<>16 OR issued_code !~ '^[A-F0-9]{16}' THEN RAISE EXCEPTION 'mvp279_review_code_invalid';END IF;
+ IF length(issued_code)<>16 OR issued_code<>upper(issued_code)
+ THEN RAISE EXCEPTION 'mvp279_review_code_invalid';END IF;
  IF public.cotironda_piloto_ia_review_issue_mvp279(
   repeat('a',64),repeat('0',64))->>'state'<>'already_issued'
  THEN RAISE EXCEPTION 'mvp279_review_resent';END IF;
