@@ -1,6 +1,6 @@
 # Decisión 422 — MVP296: activar recuperación comercial sin un secreto adicional imprevisto
 
-Fecha: **07/11/2026**. Alcance: exclusivamente `cotironda-piloto`. **Estado: corrección en desarrollo, no publicada hasta nueva verificación de CI.**
+Fecha: **07/11/2026**. Alcance: exclusivamente `cotironda-piloto`. **Estado: publicado tras 12/12 controles CI exitosos**, [PR #687](https://github.com/ProtectorRudo/Cotironda/pull/687), commit `66fcfb4b2214ed2b061a93119a0cda28937d8423`, migración n.º 83 y worker v8 ACTIVE. **El resultado económico real aún necesita auditoría de fuentes y ranking.**
 
 ## Evidencia después de publicar MVP295
 
