@@ -17,7 +17,7 @@ signatures AS (
  FROM columns c
 ),
 cons AS (
- SELECT t.relname||':'||k.contype||':'||pg_get_constraintdef(k.oid,true) AS s
+ SELECT t.relname||':'||k.contype::text||':'||pg_get_constraintdef(k.oid,true) AS s
  FROM tables t JOIN pg_constraint k ON k.conrelid=t.oid
 ),
 triggers AS (
