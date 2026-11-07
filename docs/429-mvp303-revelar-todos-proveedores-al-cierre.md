@@ -1,6 +1,6 @@
 # Decisión 429 — MVP303: todos los proveedores se identifican automáticamente al cierre
 
-**Fecha:** 07/11/2026. **Estado:** desarrollo y pruebas, **NO PUBLICADO**. Autorización «Luz verde», sin desplegar ni reactivar Whapi.
+**Fecha:** 07/11/2026. **Estado:** PR #697 integrado en la rama de DESARROLLO, **NO PUBLICADO**. Autorización «Luz verde», sin desplegar ni reactivar Whapi.
 
 ## Regla de negocio corregida por el responsable de Cotironda
 Se **elimina** la regla de «dos ganadores/finalistas revelados automáticamente». Tras vencer el plazo de la ronda y efectuarse su cierre automático, **el comprador puede ver la identidad de TODOS los proveedores invitados a ESA ronda**, no solamente dos elegidos por un algoritmo, sin exigir que el proveedor haya cotizado ni que su presupuesto sea económicamente comparable.
@@ -37,3 +37,13 @@ Las menciones históricas a «dos ganadores revelados» o «hasta dos finalistas
 
 ### Pendientes
 Whapi sigue con prueba agotada: este desarrollo no valida el transporte real; se hará con canal habilitado. También falta confirmar el acuerdo de divulgación de contactos en el onboarding y hacer una ronda nueva en el piloto; no habilitar solo por publicar código.
+
+## Resultado de implementación y auditoría — 07/11/2026
+
+- [PR #697](https://github.com/ProtectorRudo/Cotironda/pull/697) **integrado** por squash en `feat/mvp174-supplier-packaging-equivalence`; commit `b86c0fc85e7e3a464012e29ad8b20d459bf0b1f7`.
+- CI GitHub de la última revisión: **18 de 18 trabajos aprobados**, incluyendo TypeScript Edge/Deno, Next.js, seguridad Postgres/RLS, API Vercel y regresiones generales.
+- Pruebas focales de MVP303: **19/19 aprobadas**. PostgreSQL 17 con 21 migraciones y la ronda sintética MVP284: **3 invitados, 2 cotizaciones acreditadas, 1 envío incierto**, todos identificados después del cierre; 0 identificados antes; token ajeno o revocado rechazado y retiro de consentimiento respetado.
+- El laboratorio PG17 termina con `ROLLBACK` y verificación de que no quedan esquemas ni identidades de prueba persistidas.
+- Se corrigió el proxy para que **también revele la lista con cero ofertas económicamente habilitadas**. La identidad depende del cierre, no de la existencia de una oferta verificada.
+- **No hubo publicación:** no se instaló la migración, no se activó el nuevo gate, no se desplegó Edge/Vercel, no se enviaron WhatsApps ni se modificaron los históricos.
+- Próximo paso exclusivo de publicación, tras orden `Publicalo`: aplicar migración al **piloto** con gate OFF, verificar ACL, publicar Edge del seguimiento incluyendo el nuevo módulo de vista y el proyecto Vercel específico; habilitar activación prospectiva en una ronda futura con consentimiento de negocio. Nunca activar automáticamente el viejo planificador de dos finalistas ni el revelado de teléfonos.
