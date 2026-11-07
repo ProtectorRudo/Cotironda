@@ -532,6 +532,10 @@ BEGIN
  THEN RAISE EXCEPTION 'mvp276_original_source_not_staged: %',staged;END IF;
  rid:=(staged->>'request_id')::uuid;
  IF rid IS NULL THEN RAISE EXCEPTION 'mvp276_no_request_id';END IF;
+ -- Only in this ROLLBACK-backed synthetic test: turn the independent
+ -- dispatch gate ON so publication checks the source proof, not just OFF.
+ UPDATE cotironda_piloto_privado.ai_dispatch_gate_mvp222
+ SET enabled=true,activated_at=clock_timestamp() WHERE only_row;
  IF public.cotironda_piloto_ia_shadow_prepare_mvp221(
   repeat('a',64),repeat('6',64),original,'La Plata',items,destinations
  )->>'state'<>'already_staged'
