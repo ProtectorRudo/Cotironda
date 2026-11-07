@@ -480,3 +480,41 @@ GRANT EXECUTE ON FUNCTION
  public.cotironda_piloto_ia_claim_mvp222(uuid),
  public.cotironda_piloto_ia_pdf_snapshot_mvp222(uuid,text,uuid)
  TO service_role;
+
+
+-- MVP284: a Whapi API acceptance without a usable message ID cannot
+-- associate a supplier reply to a specific invitation. Fail closed:
+-- preserve the leased job if the caller lies, then allow an explicit
+-- 'uncertain' terminal state with NO automatic retry. This overrides the
+-- older MVP222 RPC already present on cotironda-piloto at schema install.
+CREATE OR REPLACE FUNCTION public.cotironda_piloto_ia_finish_mvp222(
+ p_request uuid,p_supplier text,p_lease uuid,p_state text,
+ p_message_id text DEFAULT NULL
+) RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
+AS $finish$
+DECLARE n integer;
+BEGIN
+ IF p_request IS NULL OR p_supplier IS NULL OR p_lease IS NULL
+ OR p_state NOT IN('api_accepted','uncertain')
+ OR (p_state='api_accepted' AND
+   (p_message_id IS NULL OR length(p_message_id) NOT BETWEEN 8 AND 160
+    OR p_message_id !~ '^[A-Za-z0-9._:-]+$'))
+ OR (p_state='uncertain' AND p_message_id IS NOT NULL)
+ THEN RETURN false;END IF;
+ UPDATE cotironda_piloto_privado.ai_dispatch_jobs_mvp222
+ SET state=p_state,
+     whapi_message_id=CASE WHEN p_state='api_accepted'
+       THEN p_message_id ELSE NULL END,
+     finished_at=clock_timestamp()
+ WHERE request_id=p_request AND supplier_key=p_supplier
+   AND state='leased' AND lease_token=p_lease;
+ GET DIAGNOSTICS n=ROW_COUNT;
+ RETURN n=1;
+END
+$finish$;
+REVOKE ALL ON FUNCTION
+ public.cotironda_piloto_ia_finish_mvp222(uuid,text,uuid,text,text)
+ FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION
+ public.cotironda_piloto_ia_finish_mvp222(uuid,text,uuid,text,text)
+ TO service_role;
