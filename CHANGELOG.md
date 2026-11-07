@@ -1,3 +1,9 @@
+## 2026-11-06 — MVP278: origen PDF/DOCX/XLSX autorizado por doble SHA (solo desarrollo)
+
+- PostgreSQL: atestación privada de original binario y texto derivado con dos SHA-256, versión de lector y cantidad completa de artículos acreditados; revalidación de Storage, HMAC, comprador y consentimiento en las cuatro puertas SQL de IA Central.
+- El bridge Edge usa la lectura independiente MVP277 y pasa el texto derivado al broker, sin convertir un archivo en mensaje `kind=text`; documento solo puede quedar en **ronda en sombra, no envío ni publicación** hasta confirmación del comprador.
+- Pruebas adversariales PostgreSQL17/Node/Deno, rollback manual conservando tabla de evidencia y documentación decisión 403. Despliegue, crons, WhatsApp y consumo real sin cambios; infraestructura de backup pago sigue Plan B.
+
 ## 2026-11-06 — MVP277: verificación independiente de originales PDF/DOCX/XLSX comprador (solo desarrollo)
 
 - Lectura de PDF con posiciones reales de texto, y Office OpenXML con controles ZIP/CRC/hojas ocultas/fórmulas, reutilizando lectores existentes.
