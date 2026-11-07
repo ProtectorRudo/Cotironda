@@ -8,7 +8,7 @@ export function buildSupplierCorrelationSql(){
  const base=buildBuyerTrackingSql();
  if(base.split(tail).length!==2)throw Error('MVP290_MISSING_BOUNDARY');
  const result=base.replace(tail,
-  '\n\\ir ../../piloto/mvp290_opciones_correlacion_proveedor.sql'+
+  '\n\\ir ./mvp290-prerequisites-synthetic.sql'+'\n\\ir ../../piloto/mvp290_opciones_correlacion_proveedor.sql'+
   '\n\\ir ../../piloto/mvp290_reprocesar_archivo_asociado.sql'+
   '\n\\ir ./mvp290-round-correlation-pg17.sql'+tail);
  if(result.split(/^ROLLBACK;\s*$/gm).length!==2)
