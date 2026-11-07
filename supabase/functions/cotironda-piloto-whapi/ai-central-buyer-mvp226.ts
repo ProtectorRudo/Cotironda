@@ -10,6 +10,27 @@ import {
  armarPreparacionSombraMvp221,guardarRondaSombraMvp221
 } from '../../../src/domain/ia-central/puente-sql-rondas-mvp221.ts';
 const HMAC=/^[0-9a-f]{64}$/u;
+// MVP286: fixed, non-personal categories. Never persist raw model output.
+const SAFE_REVIEW_CODES=new Set([
+ 'ai_timeout','ai_upstream_unavailable','ai_upstream_failure',
+ 'ai_credentials_rejected','ai_rate_limited','ai_request_rejected',
+ 'ai_upstream_rejected','ai_response_too_large',
+ 'response_shape','response_not_completed','response_no_message',
+ 'response_bad_text','response_bad_json','ai_response_read_failed',
+ 'bad_first','modelo_no_disponible_o_salida_invalida',
+ 'entrada_o_credenciales_invalidas','citas_no_corresponden_al_original',
+ 'lecturas_incompletas_o_divergentes','lecturas_discrepan_en_articulo',
+ 'articulo_sin_evidencia_verificable','catalogo_rpc_indisponible',
+ 'catalogo_rpc_no_conciliado','sin_catalogos_consentidos',
+ 'lecturas_divergentes','ningun_proveedor_para_la_lista',
+ 'sin_articulos','esquema_invalido','campos_inseguros',
+ 'segunda_lectura_invalida','entrada_invalida','sin_catalogo_confirmado',
+ 'catalogo_invalido','ia_error_de_lectura'
+]);
+export function codigoRevisionSemanticaMvp286(reason:unknown):string{
+ return typeof reason==='string'&&SAFE_REVIEW_CODES.has(reason)
+  &&/^[a-z_]{3,64}$/u.test(reason)?reason:'semantic_review_required';
+}
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 type RpcResponse={data:unknown;error:unknown};
 type Rpc=(name:string,params:Record<string,unknown>)=>Promise<RpcResponse>;
@@ -93,8 +114,9 @@ export async function procesarCompradorCentralMvp226(
     return done('requiere_zona','delivery_city_missing');
   }
   if(p.estado!=='plan_validado_sin_envio'){
-   await finish('review','semantic_review_required');
-   return done('requiere_revision','semantic_review_required');
+   const code=codigoRevisionSemanticaMvp286(p.motivo);
+   await finish('review',code);
+   return done('requiere_revision',code);
   }
   const prepared=armarPreparacionSombraMvp221({
    chatHmac:args.chatHmac,messageHmac:args.messageHmac,
