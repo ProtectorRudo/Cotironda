@@ -1,6 +1,6 @@
 # Decisión 425 — MVP299: respuestas interpretadas separadas de ofertas económicamente verificadas
 
-**Fecha:** 07/11/2026. **Estado: EN DESARROLLO, NO publicado.** Referencias: [issue #691](https://github.com/ProtectorRudo/Cotironda/issues/691), [decisión 424](424-mvp298-acuerdo-economico-doble-lectura.md). Solo GitHub, tests offline y PostgreSQL 17 sintético; **ninguna modificación en cotironda-piloto, Whapi, Vercel, cron ni producción**.
+**Fecha:** 07/11/2026. **Estado: INTEGRADO EN RAMA DE DESARROLLO, NO publicado.** Referencias: [issue #691](https://github.com/ProtectorRudo/Cotironda/issues/691), [decisión 424](424-mvp298-acuerdo-economico-doble-lectura.md). Solo GitHub, tests offline y PostgreSQL 17 sintético; **ninguna modificación en cotironda-piloto, Whapi, Vercel, cron ni producción**.
 
 ## Hallazgo confirmado
 
@@ -27,6 +27,14 @@ Evidencia real de solo lectura anterior: WhatsApp piloto v67, seguimiento v23, r
 - Si faltan permisos, token, control de fuente, esquema, integridad de rubros o lectura de la nueva RPC: **no se muestra** sección nueva.
 - Pruebas: Node síntético para motivo seguro/no seguro, serializador Edge, proxy y datos inyectados; PostgreSQL 17 con rollback: ACL, dos compradores, respuesta válida, resumen privado con importe prohibido, semántica sin fuente, revocación, fuente posterior, versión desactualizada; Deno del webhook y seguimiento; regresiones MVP227/295/297 y JavaScript browser.
 - Verificar PR y CI real antes de cualquier integración. **La publicación futura necesita «Publicalo» aparte** y la secuencia preflight de entorno → migración → Edge WhatsApp + seguimiento → web, sin activar/repetir mensajes. Vercel puede estar limitado por cuota; no sustituir el endpoint con HTML inseguro.
+
+## Acta de integración y verificación — 07/11/2026
+
+- [PR #692](https://github.com/ProtectorRudo/Cotironda/pull/692) fusionado por squash a `feat/mvp174-supplier-packaging-equivalence`; commit `55bba4732d3947ef499753f2b69748861b36f5a0`. `main` y producción quedan fuera de alcance.
+- **27/27** GitHub Actions del PR finalizados en `success`, sin fallos. La suite focalizada `safe-pending-coverage` aprobó **34/34** pruebas, la SQL PG17 transaccional aprobó y verificó rollback; Deno y Next.js pasaron.
+- Vercel registró dos estados externos de despliegue por **límite de compilaciones diario** (no por un error de los controles locales). No se realizó ningún deploy Vercel.
+- Inspección de solo lectura del piloto: Whapi **v67**, seguimiento **v23**, recuperador **v8**, **83 migraciones**, `mvp299_installed=false`, 0 ofertas IA `verified`, 1 fuente histórica `review` con `summary=null`. Ninguna fuente histórica se reprocesó ni se enviaron mensajes.
+- La funcionalidad está **lista a nivel de desarrollo y CI**. El funcionamiento real de las futuras respuestas no está certificado sin `Publicalo` y una prueba E2E posterior.
 
 ## Lo que aún impide declarar E2E normal completo
 
