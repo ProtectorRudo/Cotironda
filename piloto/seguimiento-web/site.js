@@ -1108,7 +1108,36 @@ function render(data){
  if(d.state==="waiting"&&Number.isSafeInteger(count)&&count>0)
   for(let i=0;i<missing;i++)
    el("receipts").appendChild(offerCard("Presupuesto recibido","Esperando verificación de su contenido."));
- if(d.state==="closed"&&d.can_open===true&&Array.isArray(d.finalists)&&d.finalists.length){
+ // MVP303: reveal ALL invited business identities once the confirmed
+ // round closes, even if nobody produced a price-comparable quote.
+ // The bearer-protected RPC independently checked buyer consent, deadline,
+ // supplier consent, activation and token revocation. Never show phones.
+ const roster=d.todos_proveedores_cierre;
+ if(d.state==="closed"&&roster?.state==="proveedores_revelados_al_cierre"&&
+    Array.isArray(roster.proveedores)){
+  const heading=element("h2","","Todos los proveedores de la ronda");
+  el("finalists").appendChild(heading);
+  const visible=roster.proveedores.length;
+  const note=element("p","",visible+" proveedor"+(visible===1?"":"es")+
+    " identificado"+(visible===1?"":"s")+
+    " al cierre. Figuran todos los negocios invitados con consentimiento vigente, hayan cotizado o no. Esto no adjudica ni compara presupuestos. Los teléfonos requieren autorización específica.");
+  el("finalists").appendChild(note);
+  const statuses={
+   presupuesto_verificado:"Presupuesto verificado",
+   respuesta_en_revision:"Respuesta recibida, todavía en revisión",
+   sin_respuesta:"No presentó una respuesta",
+   envio_no_confirmado:"No se pudo confirmar el envío"
+  };
+  for(const p of roster.proveedores){
+   if(!p||typeof p.nombre!=="string"||
+      !Object.hasOwn(statuses,p.estado))continue;
+   const card=element("article","offer");
+   const subtitle=p.oferta?(" · "+p.oferta):"";
+   card.append(element("h3","offer-heading",p.nombre),
+    element("p","offer-subtitle",statuses[p.estado]+subtitle));
+   el("finalists").appendChild(card);
+  }
+ }else if(d.state==="closed"&&d.can_open===true&&Array.isArray(d.finalists)&&d.finalists.length){
   const h=element("h2","","Finalistas de la ronda");el("finalists").appendChild(h);
   const note=element("p","",d.joint_supplier_coverage===true?
    "Los negocios cubren el pedido entre ambos. Confirmá condiciones e importes directamente con ellos.":
