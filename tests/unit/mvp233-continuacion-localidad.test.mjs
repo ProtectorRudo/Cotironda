@@ -20,6 +20,12 @@ const plan={estado:'plan_validado_sin_envio',motivo:'catalogo',
    {numero:1,descripcion:'Cemento CPC bolsa de 50 kilos',rubro:'obra_gruesa'}]}],
  whatsappEnviado:false,baseModificada:false};
 
+// MVP288: source-linked offsets are mandatory in any plan test double.
+for(const item of plan.pedido.articulos){
+ item.inicio=original.indexOf(item.evidencia);
+ item.fin=item.inicio+item.evidencia.length;
+ assert.ok(item.inicio>=0);
+}
 const base={autenticadoPorWebhook:true,chatHmac:chat,sourceHmac:source,
  originalSha256:sha,ciudadConfirmada:'La Plata',nonce:'test',ciphertext:'test',
  apiKey:'test-key',model:'gpt-6-luna',publicar:true,

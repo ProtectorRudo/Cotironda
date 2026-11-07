@@ -20,7 +20,7 @@ const recipient='5492211234567@s.whatsapp.net';
 const reviewText=componerRevisionCompradorMvp279(review);
 test('MVP279: exact untruncated 2-rubro WhatsApp review, without supplier name',()=>{
  assert.ok(reviewText);
- assert.match(reviewText,/20 bag — Cemento CPC 50 kg/u);
+ assert.match(reviewText,/20 bolsas — Cemento CPC 50 kg/u);
  assert.match(reviewText,/15 m — Cable unipolar 2,5 mm²/u);
  assert.match(reviewText,/CONFIRMAR COTI 1A2B3C4D5E6F7071/u);
  assert.ok(!reviewText.includes('corralon_ailin'));

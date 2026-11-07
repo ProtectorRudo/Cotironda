@@ -13,6 +13,13 @@ const pedido={intencion:'cotizar',zona_entrega:'La Plata',dudas:[],articulos:[
   evidencia:'3 bolsones de arena',rubro:'obra_gruesa',
   presentacion:null,aclaracion:null}
 ]};
+// The real AI contract resolves literal offsets before staging; mock this
+// verification too, rather than fabricating an unverified item in tests.
+for(const item of pedido.articulos){
+ item.inicio=text.indexOf(item.evidencia);
+ item.fin=item.inicio+item.evidencia.length;
+ assert.ok(item.inicio>=0);
+}
 const route={estado:'ruteo_valido_para_preparacion',motivo:'catalogue',
  propuestas:[{proveedor:'corralon_ailin',correspondencias:[
   {indicePedido:0,numeroCatalogo:1,tipo:'producto_declarado',

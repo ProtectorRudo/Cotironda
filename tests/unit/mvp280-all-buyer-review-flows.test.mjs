@@ -116,8 +116,8 @@ test('MVP280: mixed materials always appear in full, not as a total price',()=>{
  ]};
  const text=componerRevisionCompradorMvp279(sample);
  assert.ok(text&&text.length<3300);
- assert.match(text,/20 bag — Cemento CPC 50 kg/u);
- assert.match(text,/5 unit — Pintura látex 20L/u);
+ assert.match(text,/20 bolsas — Cemento CPC 50 kg/u);
+ assert.match(text,/5 unidades — Pintura látex 20L/u);
  assert.match(text,/30 m — Cable 2,5 mm²/u);
  assert.ok(!text.includes('TOTAL'));
  assert.equal(componerRevisionCompradorMvp279({...sample,items_count:2}),null);
