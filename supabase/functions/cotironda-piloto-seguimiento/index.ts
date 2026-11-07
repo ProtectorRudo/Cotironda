@@ -21,6 +21,7 @@ import {resumirMaterialesCotizadosCompradorMvp210} from
 import {DESTINO_SEGUIMIENTO_PILOTO_MVP212} from '../../../src/domain/enlace-seguimiento-piloto-mvp212.ts';
 import {resumirRubrosCompradorMvp216} from '../../../src/domain/rubros-comprador-mvp216.ts';
 import {vistaCotizacionesRubrosMvp227} from '../../../src/domain/ia-central/vista-comprador-rubros-mvp227.ts';
+import {vistaPendientesRubrosMvp299} from '../../../src/domain/ia-central/vista-pendientes-rubros-mvp299.ts';
 import {resumirAlternativasRubrosMvp255} from '../../../src/domain/ia-central/resumen-comparador-rubros-mvp255.ts';
 const ref='ilggkalaafhtiysyzlmg';
 const html=`<!doctype html><html lang="es"><head><meta charset="utf-8">
@@ -369,6 +370,19 @@ Deno.serve(async req=>{
          const comparison=resumirAlternativasRubrosMvp255(ai.data,safe);
          if(comparison)publicResult={...publicResult,
            comparador_rubros_ia:comparison};
+         // MVP299: independent, token-authorized, count-only projection.
+         // This NEVER becomes a verified offer and MUST NOT change
+         // can_open, any economic comparison, winner or contact release.
+         try{
+           const pending=await db.rpc('cotironda_piloto_ia_pending_coverage_mvp299',{
+             p_token_hash:digest
+           });
+           if(!pending.error){
+             const reduced=vistaPendientesRubrosMvp299(pending.data,safe);
+             if(reduced)publicResult={...publicResult,
+               pendientes_rubros_ia:reduced};
+           }
+         }catch{/* Optional projection fails closed. */}
        }
      }
    }catch{/* No exponer resultados sin verificación y no romper legacy. */}
