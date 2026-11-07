@@ -31,3 +31,12 @@ No anunciar las 21 como «integradas en PILOTO» ni el lanzamiento sin esa últi
 - El respaldo contratado sigue siendo Plan B sin compras; permanece pendiente un ensayo de recuperación de datos reales del piloto.
 
 **Salida del MVP282:** cobertura verificada y prueba PG17 de once conjuntos; evidencia explícita de que todavía falta el ensayo acumulativo antes de la publicación.
+
+## Resultado real del ensayo y corrección
+
+- Primera ejecución de CI #666: 10 de 11 fixtures aprobaron; MVP280 falló por violación de `ai_buyer_review_mvp279_check`. La causa era la lectura de `clock_timestamp()` en instantes distintos para `created_at` (DEFAULT) y `expires_at`, haciendo que ocasionalmente `expires_at > created_at + interval '24 hours'` por microsegundos.
+- Corregido en **MVP279 y MVP280**: ambos calculan `issued_at := clock_timestamp()` y usan ese mismo instante para ambas columnas. Incorporada aserción de TTL exacto de 24 horas en ambos fixtures.
+- Segunda ejecución: workflow MVP282 **11/11 fixtures PASS** y workflows específicos MVP279 y MVP280 **PASS**. Todos los fixtures transaccionan con `ROLLBACK`.
+- Consulta `scripts/piloto/mvp282-preflight-dependencies-readonly.sql` ejecutada sobre base REAL `cotironda-piloto`: **19/19 dependencias principales presentes**, ningún dato privado transferido y ningún DDL realizado.
+- Esto valida el bug y su regresión; **no** certifica coinstalación acumulativa de los 21 SQL sobre esquema completo MVP239.
+
