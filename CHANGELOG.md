@@ -1,3 +1,10 @@
+## 07/11/2026 — MVP303, política comercial corregida: revelar TODOS los proveedores al cierre (SIN PUBLICAR)
+
+- Se reemplazó la política de hasta dos finalistas por la revelación de identidad de todos los proveedores invitados, una vez vencido el plazo y cerrada la ronda. Nunca antes. No es adjudicación ni comparación económica.
+- Nueva RPC propuesta con token privado, consentimiento, cierre, activación prospectiva OFF; incluye estados de respuesta, revisión y envío no confirmado, más alias de oferta verificada cuando existe. NO revela teléfonos ni contactos sin consentimiento propio.
+- Reducidor Edge y whitelisting independiente del proxy Vercel, vista móvil para lista sin máximo de dos, pruebas sintéticas de privacidad y PostgreSQL17 con rollback.
+- La optimización económica con hasta dos proveedores no selecciona quién se identifica. [Decisión 429](docs/429-mvp303-revelar-todos-proveedores-al-cierre.md).
+
 ## 07/11/2026 — MVP302, puente privado IA Central a finalistas (SOLO DESARROLLO)
 
 - Nueva RPC propuesta `cotironda_piloto_ia_finalist_sources_mvp302(uuid)`, service_role-only, sin escrituras ni envío, para última fuente verificada, cierre y consentimientos.
