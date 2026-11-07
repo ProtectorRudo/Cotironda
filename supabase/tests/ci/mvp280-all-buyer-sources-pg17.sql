@@ -977,7 +977,23 @@ BEGIN
   THEN RAISE EXCEPTION 'mvp280_%_shadow_denied: %',mode,json_result;END IF;
   v_rid:=(json_result->>'v_rid')::uuid;
   IF NOT cotironda_piloto_privado.fuente_revisable_mvp280(v_rid)
-  THEN RAISE EXCEPTION 'mvp280_%_source_not_bound',mode;END IF;
+  THEN RAISE EXCEPTION 'mvp280_%_source_not_bound: %',mode,
+   (SELECT jsonb_build_object(
+    'round_state',r.state,
+    'same_source',r.source_hmac=source_hmac,
+    'linked',(SELECT count(*) FROM cotironda_piloto_privado.whapi_inbox m
+     WHERE m.message_hmac=source_hmac AND m.request_id=r.id),
+    'sha_equal',(SELECT m.plaintext_sha256=
+       encode(sha256(convert_to(r.original_request,'UTF8')),'hex')
+     FROM cotironda_piloto_privado.whapi_inbox m
+     WHERE m.message_hmac=source_hmac),
+    'lines',(SELECT count(*) FROM cotironda_piloto_privado.request_lines l
+     WHERE l.request_id=r.id),
+    'closes_future',r.closes_at>clock_timestamp(),
+    'buyer_consent',(SELECT p.consent_at IS NOT NULL AND p.opted_out_at IS NULL
+      FROM cotironda_piloto_privado.participants p WHERE p.key=r.buyer_key)
+   ) FROM cotironda_piloto_privado.requests r WHERE r.id=v_rid);
+  END IF;
   IF cotironda_piloto_privado.confirmada_comprador_mvp280(v_rid)
   THEN RAISE EXCEPTION 'mvp280_%_unreviewed_approved',mode;END IF;
   json_result:=public.cotironda_piloto_ia_publish_mvp222(v_rid);
