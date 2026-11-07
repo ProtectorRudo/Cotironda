@@ -4,6 +4,8 @@
  * Dos lecturas independientes; comparación, dinero y ranking deterministas.
  */
 import {RUBROS_MVP216} from '../rubros-comprador-mvp216.ts';
+import {diagnosticarLecturaInvalidaMvp297,
+ type DiagnosticoMvp297} from './diagnostico-fuente-mvp297.ts';
 import {monedaExplicitaMvp241} from './evidencia-moneda-mvp241.ts';
 import {importesOriginalesRepresentadosMvp244} from './fidelidad-importes-fuente-mvp244.ts';
 import {evidenciaCondicionMvp242} from './evidencia-condiciones-mvp242.ts';
@@ -17,6 +19,10 @@ export type LecturaOfertaMvp225=Readonly<{
  estado:'interpretada_para_revision'|'sin_cotizacion'|'requiere_revision';
  motivo:string;oferta:OfertaVerificadaMvp225|null;
  cobertura:ReturnType<typeof compararPorRubroMvp225>|null;
+ /** Bounded PRIVATE status code for the FIRST failed source check.
+  * Never contains model output, price, WhatsApp or the source text.
+  * Historical reviews from before MVP297 do NOT have this. */
+ diagnostico?:DiagnosticoMvp297;
 }>;
 const STR={type:'string'} as const;
 const OPT={type:['string','null']} as const;
@@ -220,26 +226,32 @@ export async function interpretarPresupuestoConIAMvp225(args:{
  fuente:string;pedido:readonly PedidoLineaMvp225[];
  etiquetaAnonima:string;apiKey:string;model:Modelo;fetchImpl?:typeof fetch;
 }):Promise<LecturaOfertaMvp225>{
- const no=(motivo:string,estado:LecturaOfertaMvp225['estado']='requiere_revision'):
-  LecturaOfertaMvp225=>({estado,motivo,oferta:null,cobertura:null});
+ const no=(motivo:string,estado:LecturaOfertaMvp225['estado']='requiere_revision',
+  diagnostico:DiagnosticoMvp297='diagnosis_not_preserved'):
+  LecturaOfertaMvp225=>({estado,motivo,oferta:null,cobertura:null,diagnostico});
  if(!args||!valid(args.fuente)||!Array.isArray(args.pedido)||
     args.pedido.length<1||args.pedido.length>200||
     !valid(args.etiquetaAnonima,80)||
     typeof args.apiKey!=='string'||args.apiKey.length<18||
     !['gpt-6-luna','gpt-6.1-sol'].includes(args.model))
-  return no('entrada_invalida');
+  return no('entrada_invalida','requiere_revision','source_invalid');
  try{
   const fn=args.fetchImpl??fetch;
   const first=await readOnce({...args,fetchImpl:fn});
   if(!verifyRead(args.fuente,first,args.pedido))
-   return no('primera_lectura_sin_fuente');
+   return no('primera_lectura_sin_fuente','requiere_revision',
+    diagnosticarLecturaInvalidaMvp297(
+     args.fuente,first,args.pedido.map(item=>item.id),'first'));
   if(first.intencion!=='presupuesto')
-   return no('no_es_presupuesto','sin_cotizacion');
+   return no('no_es_presupuesto','sin_cotizacion','source_not_quote');
   // Segunda lectura INDEPENDIENTE del mismo original y pedido.
   const second=await readOnce({...args,fetchImpl:fn});
-  if(!verifyRead(args.fuente,second,args.pedido)||
-     firmaEconomica(first)!==firmaEconomica(second))
-   return no('lecturas_no_coinciden');
+  if(!verifyRead(args.fuente,second,args.pedido))
+   return no('lecturas_no_coinciden','requiere_revision',
+    diagnosticarLecturaInvalidaMvp297(
+     args.fuente,second,args.pedido.map(item=>item.id),'second'));
+  if(firmaEconomica(first)!==firmaEconomica(second))
+   return no('lecturas_no_coinciden','requiere_revision','readings_disagree');
   const q=first;
   const oferta:OfertaVerificadaMvp225={
    etiquetaAnonima:args.etiquetaAnonima,fuente:args.fuente,
@@ -255,5 +267,9 @@ export async function interpretarPresupuestoConIAMvp225(args:{
    cobertura.ofertas[0].estado==='verificada_para_comparacion'?
      'doble_lectura_con_evidencia':'condiciones_pendientes_de_verificacion',
    oferta,cobertura};
- }catch{return no('modelo_no_disponible_o_fuente_invalida')}
+ }catch{
+  // No error.message, prompt or original text is persisted to diagnostics.
+  return no('modelo_no_disponible_o_fuente_invalida','requiere_revision',
+   'model_or_response_unavailable');
+ }
 }
