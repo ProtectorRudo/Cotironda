@@ -137,7 +137,7 @@ test('Edge TypeScript: pedir, confirmar, dos PDFs, dos cotizaciones; replay y pr
     oferta:offer,cobertura};
    }
   });
-  assert.equal(result.estado,'verificado_privado',key);
+  assert.equal(result.estado,'verificado_privado',key+':'+result.codigo+':'+JSON.stringify(st.unexpected));
  }
  assert.equal(st.aiCalls,2);
  assert.equal(st.quotes.length,2);
