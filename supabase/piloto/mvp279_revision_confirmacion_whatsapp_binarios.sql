@@ -164,7 +164,7 @@ BEGIN
  IF total>2400 OR total<10
  THEN RETURN jsonb_build_object('state','preview_requires_alternative_view');END IF;
  digest:=encode(sha256(convert_to(snapshot::text,'UTF8')),'hex');
- code:=upper(encode(gen_random_bytes(8),'hex'));
+ code:=upper(substr(replace(gen_random_uuid()::text,'-',''),1,16));
  INSERT INTO cotironda_piloto_privado.ai_buyer_review_mvp279(
   request_id,buyer_key,chat_hmac,source_hmac,snapshot_sha256,code_sha256,
   expires_at
