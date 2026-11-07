@@ -20,7 +20,7 @@ const obj=(x:unknown):x is Record<string,unknown>=>
  x!==null&&typeof x==='object'&&!Array.isArray(x);
 const exactly=(x:Record<string,unknown>,keys:readonly string[])=>
  Object.keys(x).length===keys.length&&keys.every(k=>Object.hasOwn(x,k));
-const count=(n:unknown,max=200)=>typeof n==='number'&&
+const count=(n:unknown,max=200):n is number=>typeof n==='number'&&
  Number.isSafeInteger(n)&&n>=0&&n<=max;
 const label=/^Respuesta en revisión ([1-9][0-9]{0,1})$/u;
 export function vistaPendientesRubrosMvp299(
