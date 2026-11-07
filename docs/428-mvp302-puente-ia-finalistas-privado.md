@@ -14,6 +14,8 @@ El planificador anterior MVP196/MVP209 solo lee los documentos v9 `supplier_medi
 - Precios por artículo `item_N` con importe de centavos validado, cantidad, unidad y pertenencia al conjunto realmente asignado por catálogo/rubro al proveedor. Cantidades alternativas que no se pudieron conciliar nunca aparecen como cobertura comparable.
 - Respuesta solo para servicio: identificadores de fuente y cobertura; sin precios, texto original, nombres comerciales, teléfonos ni contactos. Prohibido enviarla al navegador; la vista compradora mantiene su proyección anónima independiente.
 
+La salida privada de la RPC se procesa **exclusivamente dentro del servicio** con `src/domain/ia-central/propuestas-fuentes-privadas-mvp302.ts`: valida forma, roles de fuente, SHA/HMAC, IDs de artículos, condiciones, etiquetas anónimas y devuelve alternativas completas de uno o dos proveedores sin identidad interna, costos o selección. Rechaza datos inyectados, proveedor/huella duplicados y fuentes sin cobertura total. `tests/unit/mvp302-opciones-privadas-fuentes.test.mjs` incorpora estas regresiones. La etiqueta anónima no es autorización para emitir contactos y debe reconciliarse con la última fuente privada en cada operación futura.
+
 Esta función **NO** escribe planes ni agrega filas a `finalist_coverage_plans_mvp108`, no activa finalistas, no contacta a negocios y no publica presupuesto. La decisión manual futura y el guardado seguro de una selección aún requieren etapa separada.
 
 ## Pruebas
