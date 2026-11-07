@@ -170,3 +170,45 @@ test('injected diagnosis is rejected and historic generic fallback preserved',as
  assert.equal(r.estado,'requiere_revision');
  assert.equal(reason,'semantic_review_required');
 });
+
+
+test('MVP298: two verified reads may use different descriptions and valid currency citation spans',async()=>{
+ const first=structuredClone(quote),second=structuredClone(quote);
+ second.lineas[0].descripcion='Cemento Portland Compuesto en bolsas de 50 kg';
+ second.monedaEvidencia='Moneda: ARS';
+ const f=stub(first,second);
+ const out=await interpretarPresupuestoConIAMvp225({...args,fetchImpl:f.fetchImpl});
+ assert.equal(f.calls(),2);
+ assert.equal(out.estado,'interpretada_para_revision');
+ assert.equal(out.motivo,'doble_lectura_con_evidencia');
+ assert.equal(out.diagnostico,undefined);
+ assert.equal(out.cobertura.ofertas[0].estado,'verificada_para_comparacion');
+ assert.equal(out.cobertura.ofertas[0].precios.length,1);
+});
+test('MVP298: two independent valid quotes can cite different spans proving the same IVA state',async()=>{
+ const withIva=fuente+' Precio con IVA, IVA incluido.';
+ const first=structuredClone(quote),second=structuredClone(quote);
+ first.iva=second.iva='incluido_explicito';
+ first.ivaEvidencia='con IVA';
+ second.ivaEvidencia='IVA incluido';
+ const f=stub(first,second);
+ const out=await interpretarPresupuestoConIAMvp225({
+  ...args,fuente:withIva,fetchImpl:f.fetchImpl
+ });
+ assert.equal(f.calls(),2);
+ assert.equal(out.estado,'interpretada_para_revision');
+ assert.equal(out.cobertura.ofertas[0].estado,'verificada_para_comparacion');
+});
+test('MVP298: changing the literal unit price still blocks verification even if both amounts exist in the source',async()=>{
+ const second=structuredClone(quote);
+ second.lineas[0].precioUnitarioLiteral='$178.000';
+ // This literal exists in the original, so independent source gates pass.
+ // The economic signatures MUST still disagree: never accept ambiguous price.
+ const f=stub(quote,second);
+ const out=await interpretarPresupuestoConIAMvp225({...args,fetchImpl:f.fetchImpl});
+ assert.equal(f.calls(),2);
+ assert.equal(out.estado,'requiere_revision');
+ assert.equal(out.motivo,'lecturas_no_coinciden');
+ assert.equal(out.diagnostico,'readings_disagree');
+ assert.equal(out.oferta,null);
+});
