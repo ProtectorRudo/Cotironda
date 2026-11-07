@@ -1,0 +1,73 @@
+name: Cotironda MVP288 - presentaciones y correccion enlazada
+on:
+  pull_request:
+    branches:
+      - feat/mvp174-supplier-packaging-equivalence
+    paths:
+      - 'src/domain/ia-central/fidelidad-pedido-mvp288.ts'
+      - 'src/domain/ia-central/puente-sql-rondas-mvp221.ts'
+      - 'src/domain/ia-central/cliente-openai-v1.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/request-pdf.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/ai-central-buyer-review-mvp279.ts'
+      - 'supabase/piloto/mvp288_*'
+      - 'supabase/tests/ci/mvp288-*'
+      - 'scripts/piloto/mvp288-*'
+      - 'tests/unit/mvp288-*'
+      - 'tests/unit/mvp289-*'
+      - 'supabase/piloto/mvp289_*'
+      - 'supabase/tests/ci/mvp289-*'
+      - 'scripts/piloto/mvp289-*'
+      - 'supabase/functions/cotironda-piloto-whapi/index.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/buyer-tracking-confirmation-mvp289.ts'
+      - '.github/workflows/cotironda-mvp288-fidelity-corrections-pg17.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-and-pg17:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: test_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Contratos Node sin APIs ni mensajes reales
+        run: |
+          node --experimental-strip-types --test \
+            tests/unit/mvp288-fidelidad-presentaciones.test.mjs \
+            tests/unit/mvp289-buyer-tracking-confirmation.test.mjs \
+            tests/unit/mvp288-correction-security-contract.test.mjs \
+            tests/unit/mvp221-puente-sql-rubros.test.mjs \
+            tests/unit/mvp279-buyer-whatsapp-review.test.mjs \
+            tests/unit/mvp091-solicitud-pdf.test.mjs
+          node scripts/piloto/mvp288-fidelity-correction-builder.mjs --assert-local
+      - name: Migraciones acumuladas y correccion PG17 en ROLLBACK unico
+        run: |
+          set -euo pipefail
+          node scripts/piloto/mvp289-buyer-tracking-builder.mjs --sql > supabase/tests/ci/.mvp288.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/.mvp288.sql >/dev/null
+          psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regnamespace('cotironda_piloto_privado') IS NULL" | grep -Fx 't'
+          rm supabase/tests/ci/.mvp288.sql
+# Solo CI local aislado. Sin pago, APIs externas, Supabase real ni Whapi.

@@ -13,6 +13,7 @@ import {auditStoredSourceFactsMvp163} from './source-facts.ts';
 import {auditarOriginalEconomicoMvp168} from './source-economics-mvp168.ts';
 import {guardScheduledRecovery} from './scheduled-auth.ts';
 import {dispatchPendingPilotSupplierPdfs} from './whapi-dispatch.ts';
+import {invokeAutoRecoveryMvp293} from './auto-recovery-tick-mvp293.ts';
 const REF='ilggkalaafhtiysyzlmg';
 const root='https://'+REF+'.supabase.co';
 type Secrets={roleKey:string;apiKey:string;url:string};
@@ -73,7 +74,7 @@ Deno.serve(async(req)=>{
      });
     }
    }
-   return runRecoveryService(req,{
+   const baseline=await runRecoveryService(req,{
     enabled:true,projectMatches:s.url===root,
     modelKeyAvailable:s.apiKey.length>=20
    },{
@@ -162,7 +163,15 @@ Deno.serve(async(req)=>{
      }
     }),
     recover:async(triggerChatHmac)=>recoverOneStoredDocument({
-     triggerChatHmac,apiKey:s.apiKey,enabled:true,io:{
+     triggerChatHmac,apiKey:s.apiKey,enabled:true,
+     // OFF por defecto: no se manda un original a servicios externos sin
+     // permiso específico y presupuesto/costo controlados en la operación.
+     visualOcr:{
+      enabled:Deno.env.get('COTIRONDA_PILOT_VISUAL_OCR_ENABLED')==='true',
+      externalConsent:Deno.env.get('COTIRONDA_PILOT_VISUAL_OCR_EXTERNAL_CONSENT')==='true',
+      serviceAccountJson:Deno.env.get('COTIRONDA_PILOT_VISUAL_OCR_SERVICE_ACCOUNT_JSON')??''
+     },
+     io:{
       rpc:async(name,params)=>{
        const {data,error}=await db.rpc(name,params);
        return {data,error};
@@ -175,6 +184,19 @@ Deno.serve(async(req)=>{
      }
     })
    });
+   // The legacy Vault-checked task remains authoritative and unaltered.
+   // Reuse this SAME approved internal cron; do not expose the MVP292
+   // secret to pg_cron or add a second recurring job.
+   const tick=await invokeAutoRecoveryMvp293({
+    enabled:Deno.env.get('COTIRONDA_PILOT_AUTO_CORRELATION_MVP291_ENABLED')==='true'&&
+      Deno.env.get('COTIRONDA_PILOT_AUTO_RECOVERY_MVP292_ENABLED')==='true',
+    pilotUrl:s.url,
+    serviceRoleJwt:s.roleKey,
+    recoverySecret:Deno.env.get('COTIRONDA_PILOT_AUTO_RECOVERY_SECRET')??'',
+    post:fetch
+   });
+   if(tick!=='off')console.info('cotironda_mvp293_internal_tick',tick);
+   return baseline;
   }
  });
 });

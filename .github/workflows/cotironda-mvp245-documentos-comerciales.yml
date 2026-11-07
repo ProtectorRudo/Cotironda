@@ -1,0 +1,64 @@
+name: Cotironda etapa 3 — documentos respaldados IA Central MVP245
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/cotironda-piloto-whapi/ai-central-document-mvp245.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/ai-central-supplier-mvp227.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/index.ts'
+      - 'src/domain/ia-central/**'
+      - 'supabase/piloto/mvp245_media_quote_ia_central_verified.sql'
+      - 'supabase/tests/ci/mvp227-cotizaciones-por-rubro-pg17.sql'
+      - 'tests/unit/mvp245-documentos-comerciales-ia-central.test.mjs'
+      - '.github/workflows/cotironda-mvp245-documentos-comerciales.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  typecheck-and-unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+      - name: 'MVP245 + regresión documental comercial por rubro'
+        run: >-
+          node --experimental-strip-types --test
+          tests/unit/mvp245-documentos-comerciales-ia-central.test.mjs
+          tests/unit/mvp227-recepcion-presupuesto-evaluado.test.mjs
+          tests/unit/mvp225-lector-ia-presupuestos.test.mjs
+          tests/unit/mvp241-evidencia-monetaria-cantidades.test.mjs
+          tests/unit/mvp242-condiciones-iva-flete-pago.test.mjs
+          tests/unit/mvp243-presentaciones-nominales-ia-central.test.mjs
+          tests/unit/mvp244-presupuestos-sin-omision-de-cargos.test.mjs
+  sql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: cotironda_ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: test_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: 'MVP245: dos proveedores, fuente SHA y ronda exacta PG17'
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/mvp227-cotizaciones-por-rubro-pg17.sql > /dev/null

@@ -11,7 +11,7 @@ function fold(s:string):string{
  return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
 }
 const QTY=String.raw`(\d{1,6}(?:[.,]\d{1,3})?)`;
-const U=String.raw`(bolsas?|bols?\.?|litros?|lts?\.?|l|kgs?|kilogramos?|m3|m³|unidades?|unid?\.?|u|cajas?|rollos?|barras?|placas?|metros?|mts?\.?|m2|m²|packs?)`;
+const U=String.raw`(bols[oó]n(?:es)?|big[\s-]?bags?|bolsas?|bols?\.?|litros?|lts?\.?|l|kgs?|kilogramos?|m3|m³|unidades?|unid?\.?|u|cajas?|rollos?|barras?|placas?|metros?|mts?\.?|m2|m²|packs?)`;
 const prefixLine=new RegExp('^'+QTY+'\\s*'+U+'\\s+(?:de\\s+)?(.{3,150})$','iu');
 const suffixLine=new RegExp('^(.{3,150}?)\\s*(?:[-–—:]\\s*|\\s+[x×]\\s*)'+QTY+'\\s*'+U+'$','iu');
 const CITY=/^[ \t]*(?:zona(?: de entrega)?|entrega|destino|obra|localidad|enviar|envi[oó]|despacho|envío)\s*(?::|\ben\s*:?|\ba\s*:?)\s*([^\n;.]{3,100})[ \t]*[.;]?/gimu;
@@ -22,6 +22,7 @@ function cityOnly(s:string):string{
 }
 function unit(raw:string):PilotItem['unit']|null{
  const s=fold(raw).replace(/\.$/u,'');
+ if(/^(?:bolson(?:es)?|big[\s-]?bags?)$/u.test(s))return 'm3';
  if(/^(?:bolsa|bolsas|bols|bol)$/u.test(s))return 'bag';
  if(/^(?:litro|litros|lt|lts|l)$/u.test(s))return 'l';
  if(/^(?:kg|kgs|kilogramo|kilogramos)$/u.test(s))return 'kg';
@@ -43,9 +44,13 @@ function familyOf(desc:string):string|null{
    !/(pintura|membrana|revestimiento)/u.test(n))return 'hidrofugo';
  if(/\barena (?:fina|zarandeada)\b/u.test(n))return 'arena_fina';
  if(/\barena gruesa\b/u.test(n))return 'arena_gruesa';
+ // No inventar "fina" ni "gruesa" si el comprador solo pidió arena.
+ if(/^arena(?:\s+para\s+(?:obra|construccion))?$/u.test(n))return 'arena_generica';
  if(/\bladrillo comun\b/u.test(n))return 'ladrillo_comun';
  if(/\bladrillo hueco\b/u.test(n))return 'ladrillo_hueco';
  if(/\bpiedra partida\b/u.test(n))return 'piedra_partida';
+ // Un pedido de piedra sin subtipo es cotizable: la variante sigue abierta.
+ if(/^piedras?$/u.test(n))return 'piedra_generica';
  if(/\bcal hidraulica\b/u.test(n))return 'cal_hidraulica';
  if(/\bcal (?:aerea|hidratada)\b/u.test(n))return 'cal_aerea';
  if(/\balambre\b.*\bgalvanizado\b/u.test(n))return 'alambre_galvanizado';
@@ -76,7 +81,7 @@ function stripOpener(s:string):string{
  let out=s.trim();
  out=out.replace(/^(?:(?:hola|buen dia|buenos dias|buenas tardes|buenas noches|buenas)\s*[,!:.]+\s*)+/iu,'');
  out=out.replace(/^(?:(?:por favor\s*,?\s*)?(?:necesito cotizar|me cotizan|me presupuestan|quisiera cotizar|necesitaria cotizar|les paso|te paso|te mando|les mando|cotizar|necesito precios de|necesito precio de|preciso precios de|me pasan precios de|me pasas precios de|me cotizas|quiero cotizar)\s*[:!,]?\s*)/iu,'');
- out=out.replace(/^(?:(?:los|las)\s+)?(?:siguientes\s+)?(?:materiales|productos)\s*:\s*/iu,'');
+ out=out.replace(/^(?:(?:estos|estas|los|las|siguientes)\s+)*(?:materiales|productos)\s*:\s*/iu,'');
  return out.trim();
 }
 export function parseBuyerPilot(raw:string):ParsedBuyer{
@@ -99,8 +104,8 @@ export function parseBuyerPilot(raw:string):ParsedBuyer{
  // Remove ONLY the city or explicit date lines; other material lines survive.
  let clean=text.replace(CITY,'\n').replace(DELIVERY,'\n');
  // Preserve decimal commas; split comma and conjunction only at next quantity.
- clean=clean.replace(/,\s+(?=\d{1,6}(?:[.,]\d{1,3})?\s*(?:bolsas?|litros?|lts?\.?|l\b|kgs?|kilogramos?|m3|m³|unidades?|cajas?|rollos?|barras?|placas?|metros?|m2))/giu,'\n');
- clean=clean.replace(/\s+y\s+(?=\d{1,6}(?:[.,]\d{1,3})?\s*(?:bolsas?|litros?|lts?\.?|l\b|kgs?|m3|m³|unidades?|cajas?|rollos?|barras?|placas?|metros?|m2))/giu,'\n');
+ clean=clean.replace(/,\s+(?=\d{1,6}(?:[.,]\d{1,3})?\s*(?:bols[oó]n(?:es)?|big[\s-]?bags?|bolsas?|litros?|lts?\.?|l\b|kgs?|kilogramos?|m3|m³|unidades?|cajas?|rollos?|barras?|placas?|metros?|m2))/giu,'\n');
+ clean=clean.replace(/\s+y\s+(?=\d{1,6}(?:[.,]\d{1,3})?\s*(?:bols[oó]n(?:es)?|big[\s-]?bags?|bolsas?|litros?|lts?\.?|l\b|kgs?|m3|m³|unidades?|cajas?|rollos?|barras?|placas?|metros?|m2))/giu,'\n');
  const lines=clean.split(/[\n;]+/u).map(s=>s.trim()).filter(Boolean);
  const items:PilotItem[]=[];
  for(const literal of lines){
@@ -114,13 +119,18 @@ export function parseBuyerPilot(raw:string):ParsedBuyer{
   const right=left?null:s.match(suffixLine);
   const quantityLiteral=left?.[1]??right?.[2];
   const unitLiteral=left?.[2]??right?.[3];
-  const description=(left?.[3]??right?.[1]??'').trim().replace(/[.!]+$/u,'').trim();
-  if(!quantityLiteral||!unitLiteral||!description){
+  const originalDescription=(left?.[3]??right?.[1]??'').trim().replace(/[.!]+$/u,'').trim();
+  if(!quantityLiteral||!unitLiteral||!originalDescription){
    unresolved.push(literal.slice(0,100));continue;
   }
   const quantity=Number(quantityLiteral.replace(',','.'));
   const resolvedUnit=unit(unitLiteral);
-  const family=familyOf(description);
+  const family=familyOf(originalDescription);
+  // Un bolsón de áridos equivale comercialmente a 1 m³ nominal embolsado.
+  // Preservar que se pidió embolsado, nunca confundirlo con entrega suelta.
+  const isBolson=/^(?:bolson(?:es)?|big[\s-]?bags?)$/u.test(fold(unitLiteral));
+  const description=isBolson
+   ?originalDescription+' (en bolsón de 1 m³ nominal)':originalDescription;
   if(!resolvedUnit||!family||!Number.isFinite(quantity)||
    quantity<=0||quantity>1000000){
    unresolved.push(literal.slice(0,100));continue;

@@ -1,0 +1,63 @@
+name: Cotironda IA Central — proveedor tras gates OFF
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/cotironda-piloto-whapi/index.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/ai-central-supplier-route-mvp232.ts'
+      - 'tests/unit/mvp232-proveedor-tras-gates.test.mjs'
+      - 'supabase/piloto/mvp233_localidad_central_continuacion.sql'
+      - 'supabase/tests/ci/mvp233-continuacion-zona-pg17.sql'
+      - 'supabase/functions/cotironda-piloto-whapi/ai-central-zone-mvp233.ts'
+      - 'tests/unit/mvp233-continuacion-localidad.test.mjs'
+      - '.github/workflows/cotironda-mvp232-proveedor-post-gates.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  supplier-reply-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+      - name: 'Verificar clasificación luego del vencimiento sin aceptar remitentes falsos'
+        run: node --experimental-strip-types --test tests/unit/mvp232-proveedor-tras-gates.test.mjs
+
+  buyer-zone-continuation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: postgres
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+      - name: 'MVP233: continuar contexto original sin reinterpretar fuentes'
+        run: node --experimental-strip-types --test tests/unit/mvp233-continuacion-localidad.test.mjs
+      - name: 'MVP233: Postgres 17 identidad, idempotencia y gates'
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/mvp233-continuacion-zona-pg17.sql

@@ -1,0 +1,920 @@
+-- Prueba SQL REAL PostgreSQL 17: buyer con Whapi auténtico simulado,
+-- catálogos de tres rubros, persistencia ATÓMICA sin invitaciones/outbox.
+-- Todo es SINTÉTICO, rollback completo.
+BEGIN;
+DO $bootstrap$
+BEGIN
+ IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='anon') THEN
+  CREATE ROLE anon NOLOGIN;
+ END IF;
+ IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN
+  CREATE ROLE authenticated NOLOGIN;
+ END IF;
+ IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='service_role') THEN
+  CREATE ROLE service_role NOLOGIN;
+ END IF;
+END $bootstrap$;
+CREATE SCHEMA cotironda_piloto_privado;
+CREATE TABLE cotironda_piloto_privado.participants(
+ key text PRIMARY KEY,participant_role text,delivery_city text,
+ chat_hmac text,consent_at timestamptz,opted_out_at timestamptz,
+ catalogue_confirmed_at timestamptz
+);
+CREATE TABLE cotironda_piloto_privado.catalogue_lines(
+ participant_key text NOT NULL REFERENCES cotironda_piloto_privado.participants(key),
+ line_no smallint NOT NULL,literal_description text NOT NULL,
+ family_code text,recognition_state text NOT NULL,
+ created_at timestamptz NOT NULL DEFAULT now(),
+ PRIMARY KEY(participant_key,line_no)
+);
+CREATE TABLE cotironda_piloto_privado.requests(
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+ buyer_key text NOT NULL REFERENCES cotironda_piloto_privado.participants(key),
+ delivery_city text NOT NULL,
+ original_request text NOT NULL,
+ source_hmac text UNIQUE,
+ state text NOT NULL DEFAULT 'draft',
+ created_at timestamptz NOT NULL DEFAULT now(),
+ closes_at timestamptz NOT NULL DEFAULT (now()+interval '4 days')
+);
+CREATE TABLE cotironda_piloto_privado.request_lines(
+ request_id uuid NOT NULL REFERENCES cotironda_piloto_privado.requests(id),
+ line_no smallint NOT NULL,original_description text NOT NULL,
+ quantity numeric NOT NULL,unit text NOT NULL,family_code text,
+ PRIMARY KEY(request_id,line_no)
+);
+CREATE TABLE cotironda_piloto_privado.whapi_inbox(
+ message_hmac text PRIMARY KEY,
+ participant_key text NOT NULL REFERENCES cotironda_piloto_privado.participants(key),
+ chat_hmac text NOT NULL,
+ kind text NOT NULL,
+ processing_state text NOT NULL,
+ plaintext_sha256 text NOT NULL,
+ request_id uuid REFERENCES cotironda_piloto_privado.requests(id),
+ received_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE TABLE cotironda_piloto_privado.invitations(
+ request_id uuid,supplier_key text,
+ PRIMARY KEY(request_id,supplier_key)
+);
+CREATE TABLE cotironda_piloto_privado.whapi_outbox(
+ request_id uuid,supplier_key text,
+ PRIMARY KEY(request_id,supplier_key)
+);
+ALTER TABLE cotironda_piloto_privado.participants ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cotironda_piloto_privado.catalogue_lines ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cotironda_piloto_privado.requests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cotironda_piloto_privado.request_lines ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cotironda_piloto_privado.whapi_inbox ENABLE ROW LEVEL SECURITY;
+
+INSERT INTO cotironda_piloto_privado.participants
+(key,participant_role,delivery_city,chat_hmac,consent_at,opted_out_at,catalogue_confirmed_at)
+VALUES
+ ('arquitecto','buyer',null,repeat('a',64),now(),null,null),
+ ('corralon_ailin','supplier','La Plata',repeat('1',64),now(),null,now()),
+ ('corralon_nahuel','supplier','La Plata',repeat('2',64),now(),null,null),
+ ('electricidad_gamma','supplier','La Plata',repeat('3',64),now(),null,now()),
+ ('sin_confirmar','supplier','La Plata',repeat('4',64),now(),null,null),
+ ('revocado','supplier','La Plata',repeat('5',64),now(),now(),now());
+INSERT INTO cotironda_piloto_privado.catalogue_lines
+ (participant_key,line_no,literal_description,family_code,recognition_state)
+VALUES
+ ('corralon_ailin',1,'Cemento CPC bolsa 50 kilos','cemento_gris_obra','curated_family'),
+ ('corralon_nahuel',1,'Látex para interior 5L',null,'pending_review'),
+ ('electricidad_gamma',1,'Cable unipolar 2,5 mm',null,'pending_review'),
+ ('sin_confirmar',1,'Cemento gris genérico',null,'pending_review'),
+ ('revocado',1,'Cemento que no debe usarse',null,'pending_review');
+\ir ../../piloto/mvp221_rondas_ia_sombra_y_pdf_por_proveedor.sql
+
+-- Datos de un nuevo mensaje, cifrado real fuera del test, aquí representado
+-- exclusivamente por SHA256 original y chat HMAC sintético.
+CREATE TEMP TABLE source_fixture(v text);
+INSERT INTO source_fixture VALUES(
+ 'Obra: 20 bols cem cpc, 5 lts latex y 50 mts cable 2.5. Entrega en La Plata.'
+);
+INSERT INTO cotironda_piloto_privado.whapi_inbox
+ (message_hmac,participant_key,chat_hmac,kind,processing_state,plaintext_sha256)
+SELECT repeat('b',64),'arquitecto',repeat('a',64),'text','needs_review',
+ encode(sha256(convert_to(v,'UTF8')),'hex') FROM source_fixture;
+
+DO $test$
+DECLARE
+ src text; items jsonb; destinations jsonb; result jsonb;
+ rid uuid; preview jsonb;
+BEGIN
+ SELECT v INTO src FROM source_fixture;
+ items:=jsonb_build_array(
+  jsonb_build_object('descripcion','Cemento CPC 50 kg','cantidad','20',
+    'unidad','bag','rubro','obra_gruesa','evidencia','20 bols cem cpc'),
+  jsonb_build_object('descripcion','Pintura látex interior','cantidad','5',
+    'unidad','l','rubro','pintura','evidencia','5 lts latex'),
+  jsonb_build_object('descripcion','Cable 2,5 mm²','cantidad','50',
+    'unidad','m','rubro','electricidad','evidencia','50 mts cable 2.5')
+ );
+ destinations:=jsonb_build_array(
+  jsonb_build_object('proveedor','corralon_ailin','correspondencias',
+    jsonb_build_array(jsonb_build_object('indicePedido',0,'numeroCatalogo',1,
+      'descripcionCatalogo','Cemento CPC bolsa 50 kilos','rubroCatalogo','obra_gruesa',
+      'tipo','producto_declarado','explicacion','Cemento coincidente'))),
+  jsonb_build_object('proveedor','corralon_nahuel','correspondencias',
+    jsonb_build_array(jsonb_build_object('indicePedido',1,'numeroCatalogo',1,
+      'descripcionCatalogo','Látex para interior 5L','rubroCatalogo','pintura',
+      'tipo','alternativa_razonable','explicacion','Pintura látex por litro'))),
+  jsonb_build_object('proveedor','electricidad_gamma','correspondencias',
+    jsonb_build_array(jsonb_build_object('indicePedido',2,'numeroCatalogo',1,
+      'descripcionCatalogo','Cable unipolar 2,5 mm','rubroCatalogo','electricidad',
+      'tipo','producto_declarado','explicacion','Cable solicitado')))
+ );
+ IF public.cotironda_piloto_ia_shadow_prepare_mvp221(
+   repeat('a',64),repeat('b',64),src||' MODIFICADO','La Plata',items,destinations
+  )->>'state' <> 'source_not_authorized'
+ THEN RAISE EXCEPTION 'mvp221_falsificacion_fuente_aceptada';END IF;
+ IF (SELECT count(*) FROM cotironda_piloto_privado.requests)<>0
+ THEN RAISE EXCEPTION 'mvp221_guardado_parcial_en_rechazo';END IF;
+
+ result:=public.cotironda_piloto_ia_shadow_prepare_mvp221(
+  repeat('a',64),repeat('b',64),src,'La Plata',items,destinations
+ );
+ IF result->>'state'<>'shadow_staged'
+ OR (result->>'items_staged')::int<>3
+ OR (result->>'matches_staged')::int<>3
+ OR (result->>'invitations_sent')::int<>0
+ THEN RAISE EXCEPTION 'mvp221_no_guardado_%',result;END IF;
+ rid:=(result->>'request_id')::uuid;
+ IF (SELECT count(*) FROM cotironda_piloto_privado.requests
+     WHERE id=rid AND state='draft')<>1
+ OR (SELECT count(*) FROM cotironda_piloto_privado.request_lines
+     WHERE request_id=rid)<>3
+ OR (SELECT count(*) FROM cotironda_piloto_privado.ai_shadow_rubros_mvp221
+     WHERE request_id=rid)<>3
+ OR (SELECT count(*) FROM cotironda_piloto_privado.ai_shadow_destinos_mvp221
+     WHERE request_id=rid)<>3
+ OR (SELECT count(*) FROM cotironda_piloto_privado.invitations)<>0
+ OR (SELECT count(*) FROM cotironda_piloto_privado.whapi_outbox)<>0
+ THEN RAISE EXCEPTION 'mvp221_persistencia_inconsistente_o_envio';END IF;
+ FOR preview IN SELECT public.cotironda_piloto_ia_pdf_preview_mvp221(
+    rid, unnest(ARRAY['corralon_ailin','corralon_nahuel','electricidad_gamma']))
+ LOOP
+  IF preview->>'state'<>'preview_only'
+    OR jsonb_array_length(preview->'items')<>1
+    OR preview->>'whatsappEnabled'<>'false'
+  THEN RAISE EXCEPTION 'mvp221_pdf_mezcla_rubros';END IF;
+ END LOOP;
+ IF public.cotironda_piloto_ia_pdf_preview_mvp221(rid,'revocado') IS NOT NULL
+ THEN RAISE EXCEPTION 'mvp221_filtra_pdf_no_invitado';END IF;
+ IF public.cotironda_piloto_ia_shadow_prepare_mvp221(
+   repeat('a',64),repeat('b',64),src,'La Plata',items,destinations
+  )->>'state'<>'already_staged'
+ THEN RAISE EXCEPTION 'mvp221_reproceso_no_idempotente';END IF;
+ IF has_function_privilege('anon',
+   'public.cotironda_piloto_ia_shadow_prepare_mvp221(text,text,text,text,jsonb,jsonb)',
+   'EXECUTE')
+ OR has_function_privilege('authenticated',
+   'public.cotironda_piloto_ia_pdf_preview_mvp221(uuid,text)','EXECUTE')
+ OR NOT has_function_privilege('service_role',
+   'public.cotironda_piloto_ia_shadow_prepare_mvp221(text,text,text,text,jsonb,jsonb)',
+   'EXECUTE')
+ THEN RAISE EXCEPTION 'mvp221_acceso_no_autorizado';END IF;
+END $test$;
+
+-- MVP222: probar la publicación de la misma ronda en tres proveedores.
+ALTER TABLE cotironda_piloto_privado.requests
+ ADD COLUMN requested_delivery_note text;
+ALTER TABLE cotironda_piloto_privado.invitations
+ ADD COLUMN state text NOT NULL DEFAULT 'prepared';
+CREATE TABLE cotironda_piloto_privado.invitation_lines_mvp099(
+ request_id uuid NOT NULL,
+ supplier_key text NOT NULL,
+ line_no smallint NOT NULL,
+ PRIMARY KEY(request_id,supplier_key,line_no),
+ FOREIGN KEY(request_id,supplier_key)
+ REFERENCES cotironda_piloto_privado.invitations(request_id,supplier_key)
+);
+CREATE TABLE cotironda_piloto_privado.integration_flags(
+ only_row boolean PRIMARY KEY,
+ whatsapp_outbound_enabled boolean NOT NULL
+);
+INSERT INTO cotironda_piloto_privado.integration_flags VALUES(true,true);
+ALTER TABLE cotironda_piloto_privado.integration_flags
+ ADD COLUMN whatsapp_inbound_enabled boolean NOT NULL DEFAULT true;
+
+CREATE TABLE cotironda_piloto_privado.media_archive_mvp095(
+ message_hmac text PRIMARY KEY REFERENCES cotironda_piloto_privado.whapi_inbox(message_hmac),
+ chat_hmac text NOT NULL,participant_key text NOT NULL,
+ state text NOT NULL,content_sha256 text NOT NULL,
+ request_id uuid REFERENCES cotironda_piloto_privado.requests(id),
+ kind text,mime text,size_bytes integer,storage_path text,finished_at timestamptz
+);
+\ir ../../piloto/mvp222_ia_despacho_seguro_sin_activar.sql
+\ir ../../piloto/mvp223_ia_buyer_dispatch_lookup_private.sql
+\ir ../../piloto/mvp226_ia_central_ingesta_durable.sql
+\ir ../../piloto/mvp276_comprador_archivo_txt_csv_autoridad_sha.sql
+-- Synthetic Storage registry, not Supabase remote data.
+CREATE SCHEMA storage;
+CREATE TABLE storage.objects(
+ bucket_id text NOT NULL,name text NOT NULL,
+ PRIMARY KEY(bucket_id,name)
+);
+\ir ../../piloto/mvp278_autorizacion_binarios_lectura_independiente.sql
+
+CREATE TRIGGER enqueue_on_invitation
+ AFTER INSERT ON cotironda_piloto_privado.invitations
+ FOR EACH ROW EXECUTE FUNCTION cotironda_piloto_privado.queue_invitation_whapi_v1();
+
+DO $test222$
+DECLARE rid uuid; r jsonb; claim jsonb; snap jsonb;
+ j integer; n integer; supplier text; lease uuid; sent int:=0;
+BEGIN
+ SELECT request_id INTO rid FROM cotironda_piloto_privado.ai_shadow_requests_mvp221;
+ IF rid IS NULL THEN RAISE EXCEPTION 'mvp222_missing_shadow_round';END IF;
+ IF (SELECT enabled FROM cotironda_piloto_privado.ai_dispatch_gate_mvp222
+ WHERE only_row) IS DISTINCT FROM false
+ THEN RAISE EXCEPTION 'mvp222_default_not_off';END IF;
+ IF public.cotironda_piloto_ia_ready_for_chat_mvp223(repeat('a',64))->>'state'<>'disabled'
+ THEN RAISE EXCEPTION 'mvp223_dispatch_lookup_enabled_without_gate';END IF;
+ r:=public.cotironda_piloto_ia_publish_mvp222(rid);
+ IF r->>'state'<>'dispatch_disabled'
+ THEN RAISE EXCEPTION 'mvp222_publish_without_gate';END IF;
+ IF (SELECT count(*) FROM cotironda_piloto_privado.invitations)<>0 OR
+ (SELECT count(*) FROM cotironda_piloto_privado.whapi_outbox)<>0
+ THEN RAISE EXCEPTION 'mvp222_accidental_send_before_gate';END IF;
+ UPDATE cotironda_piloto_privado.ai_dispatch_gate_mvp222
+ SET enabled=true,activated_at=now() WHERE only_row;
+ r:=public.cotironda_piloto_ia_publish_mvp222(rid);
+ IF public.cotironda_piloto_ia_ready_for_chat_mvp223(repeat('a',64))->>'state'<>'ready'
+ THEN RAISE EXCEPTION 'mvp223_failed_to_find_buyer_pending_job';END IF;
+ IF public.cotironda_piloto_ia_ready_for_chat_mvp223(repeat('b',64))->>'state'<>'empty'
+ THEN RAISE EXCEPTION 'mvp223_foreign_buyer_woke_dispatch';END IF;
+ IF r->>'state'<>'ready_for_delivery'
+ OR (r->>'suppliers')::int<>3 OR (r->>'mapped_lines')::int<>3
+ THEN RAISE EXCEPTION 'mvp222_publish_failed_%',r;END IF;
+ IF (SELECT count(*) FROM cotironda_piloto_privado.invitations)<>3
+ OR (SELECT count(*) FROM cotironda_piloto_privado.invitation_lines_mvp099)<>3
+ OR (SELECT count(*) FROM cotironda_piloto_privado.ai_dispatch_jobs_mvp222)<>3
+ OR (SELECT count(*) FROM cotironda_piloto_privado.whapi_outbox)<>0
+ THEN RAISE EXCEPTION 'mvp222_wrong_queue_count'; END IF;
+ IF (SELECT state FROM cotironda_piloto_privado.requests WHERE id=rid)<>'prepared'
+ THEN RAISE EXCEPTION 'mvp222_did_not_prepare_round';END IF;
+ IF public.cotironda_piloto_ia_is_supplier_mvp226(repeat('1',64))
+    ->>'state'<>'not_central_supplier'
+ THEN RAISE EXCEPTION 'mvp226_supplier_wrong_router_when_gate_off';END IF;
+ IF public.cotironda_piloto_ia_is_supplier_mvp226(repeat('9',64))
+    ->>'state'<>'not_central_supplier'
+ THEN RAISE EXCEPTION 'mvp226_unknown_supplier_can_route';END IF;
+ IF public.cotironda_piloto_ia_publish_mvp222(rid)->>'state'<>'already_published'
+ THEN RAISE EXCEPTION 'mvp222_duplicate_publish';END IF;
+ FOR j IN 1..3 LOOP
+  claim:=public.cotironda_piloto_ia_claim_mvp222(rid);
+  IF claim->>'state'<>'leased' THEN
+   RAISE EXCEPTION 'mvp222_no_lease_%',claim; END IF;
+  supplier:=claim->>'supplier_key';
+  lease:=(claim->>'lease_token')::uuid;
+  snap:=public.cotironda_piloto_ia_pdf_snapshot_mvp222(rid,supplier,lease);
+  IF snap IS NULL OR jsonb_array_length(snap->'items')<>1
+  THEN RAISE EXCEPTION 'mvp222_cross_supplier_pdf'; END IF;
+  IF NOT public.cotironda_piloto_ia_finish_mvp222(
+   rid,supplier,lease,'api_accepted',(CASE WHEN j=1 THEN 'wamid.HBgAAA111' ELSE 'abc1234567'||j::text END))
+  THEN RAISE EXCEPTION 'mvp222_finish_failed';END IF;
+  IF public.cotironda_piloto_ia_finish_mvp222(
+   rid,supplier,lease,'api_accepted',(CASE WHEN j=1 THEN 'wamid.HBgAAA111' ELSE 'abc1234567'||j::text END))
+  THEN RAISE EXCEPTION 'mvp222_double_send_accepted';END IF;
+  sent:=sent+1;
+ END LOOP;
+ IF public.cotironda_piloto_ia_ready_for_chat_mvp223(repeat('a',64))->>'state'<>'empty'
+ THEN RAISE EXCEPTION 'mvp223_finished_jobs_found';END IF;
+ IF sent<>3 OR public.cotironda_piloto_ia_claim_mvp222(rid)->>'state'<>'empty'
+ THEN RAISE EXCEPTION 'mvp222_claim_after_finished';END IF;
+ IF (SELECT count(*) FROM cotironda_piloto_privado.whapi_outbox)<>0
+ THEN RAISE EXCEPTION 'mvp222_legacy_outbox_was_mutated';END IF;
+ UPDATE cotironda_piloto_privado.ai_dispatch_gate_mvp222
+ SET enabled=false,activated_at=null WHERE only_row;
+ IF public.cotironda_piloto_ia_claim_mvp222(rid)->>'state'<>'disabled'
+ THEN RAISE EXCEPTION 'mvp222_gate_off_ignored';END IF;
+ IF has_function_privilege('anon','public.cotironda_piloto_ia_publish_mvp222(uuid)','EXECUTE')
+ OR has_function_privilege('authenticated',
+  'public.cotironda_piloto_ia_pdf_snapshot_mvp222(uuid,text,uuid)','EXECUTE')
+ OR has_function_privilege('anon',
+  'public.cotironda_piloto_ia_ready_for_chat_mvp223(text)','EXECUTE')
+ OR NOT has_function_privilege('service_role',
+  'public.cotironda_piloto_ia_claim_mvp222(uuid)','EXECUTE')
+ THEN RAISE EXCEPTION 'mvp222_privileges_invalid';END IF;
+END $test222$;
+
+-- Source association: whapi ID quoted, two simultaneous rounds,
+-- no fallback inference from product words, media original immutable.
+\ir ../../piloto/mvp225_asociar_presupuestos_ia_central_solo_piloto.sql
+-- MVP226: cuota y reserva durable del texto del comprador,
+-- sin volver a procesar fuente de un mensaje viejo.
+DO $mvp226$
+DECLARE r jsonb; rid uuid; src text;
+BEGIN
+ SELECT request_id INTO rid
+ FROM cotironda_piloto_privado.ai_shadow_requests_mvp221 LIMIT 1;
+ IF (SELECT enabled FROM cotironda_piloto_privado.ai_central_control_mvp226
+   WHERE only_row) IS DISTINCT FROM false
+ THEN RAISE EXCEPTION 'mvp226_starts_enabled';END IF;
+ IF public.cotironda_piloto_ia_reserve_buyer_mvp226(
+   repeat('a',64),repeat('7',64),repeat('1',64))->>'state'<>'disabled'
+ THEN RAISE EXCEPTION 'mvp226_gate_ignored';END IF;
+
+ UPDATE cotironda_piloto_privado.ai_central_control_mvp226
+ SET enabled=true,activated_at=now() WHERE only_row;
+ IF public.cotironda_piloto_ia_is_supplier_mvp226(repeat('1',64))
+   ->>'state'<>'central_supplier'
+ THEN RAISE EXCEPTION 'mvp226_supplier_router_gate_on';END IF;
+ src:='Necesito cotizar 7 bolsas cement y 2 bolsones. Entrega en La Plata.';
+ INSERT INTO cotironda_piloto_privado.whapi_inbox(
+  message_hmac,participant_key,chat_hmac,kind,processing_state,plaintext_sha256)
+ VALUES(repeat('7',64),'arquitecto',repeat('a',64),'text','needs_review',
+  encode(sha256(convert_to(src,'UTF8')),'hex'));
+ r:=public.cotironda_piloto_ia_reserve_buyer_mvp226(
+   repeat('a',64),repeat('7',64),encode(sha256(convert_to(src,'UTF8')),'hex'));
+ IF r->>'state'<>'reserved' THEN RAISE EXCEPTION 'mvp226_did_not_reserve_%',r;END IF;
+ IF public.cotironda_piloto_ia_reserve_buyer_mvp226(
+   repeat('a',64),repeat('7',64),encode(sha256(convert_to(src,'UTF8')),'hex'))
+   ->>'state'<>'already_reserved'
+ THEN RAISE EXCEPTION 'mvp226_duplicate_billed';END IF;
+ IF public.cotironda_piloto_ia_reserve_buyer_mvp226(
+   repeat('b',64),repeat('7',64),encode(sha256(convert_to(src,'UTF8')),'hex'))
+   ->>'state'<>'not_authorized'
+ THEN RAISE EXCEPTION 'mvp226_cross_buyer_authorized';END IF;
+ IF public.cotironda_piloto_ia_reserve_buyer_mvp226(
+   repeat('a',64),repeat('7',64),repeat('2',64))
+   ->>'state'<>'not_authorized'
+ THEN RAISE EXCEPTION 'mvp226_sha_changed_authorized';END IF;
+ IF public.cotironda_piloto_ia_finish_buyer_mvp226(
+   repeat('a',64),repeat('7',64),'review','semantic_review_required')
+   ->>'state'<>'finished'
+ THEN RAISE EXCEPTION 'mvp226_failed_review_finish';END IF;
+ IF public.cotironda_piloto_ia_finish_buyer_mvp226(
+   repeat('a',64),repeat('7',64),'review','semantic_review_required')
+   ->>'state'<>'already_finalized'
+ THEN RAISE EXCEPTION 'mvp226_finish_twice';END IF;
+ IF public.cotironda_piloto_ia_lookup_round_mvp226(
+   repeat('a',64),repeat('7',64))->>'state'<>'not_found'
+ THEN RAISE EXCEPTION 'mvp226_review_no_round_falsified';END IF;
+
+ -- Ronda IA en sombra existente: la búsqueda solo la muestra
+ -- cuando el buyer firmado y la propia fuente HMAC están asociados.
+ INSERT INTO cotironda_piloto_privado.ai_central_attempts_mvp226(
+  message_hmac,buyer_key,chat_hmac,source_sha256)
+ SELECT m.message_hmac,'arquitecto',m.chat_hmac,m.plaintext_sha256
+ FROM cotironda_piloto_privado.whapi_inbox m
+ WHERE m.message_hmac=repeat('b',64);
+ r:=public.cotironda_piloto_ia_lookup_round_mvp226(
+   repeat('a',64),repeat('b',64));
+ IF r->>'state'<>'linked' OR (r->>'request_id')::uuid<>rid
+ THEN RAISE EXCEPTION 'mvp226_fails_round_link_%',r;END IF;
+ IF public.cotironda_piloto_ia_lookup_round_mvp226(
+   repeat('f',64),repeat('b',64))->>'state'<>'not_found'
+ THEN RAISE EXCEPTION 'mvp226_cross_buyer_lookup';END IF;
+ IF has_function_privilege('anon',
+  'public.cotironda_piloto_ia_reserve_buyer_mvp226(text,text,text)','EXECUTE')
+ OR has_function_privilege('authenticated',
+  'public.cotironda_piloto_ia_lookup_round_mvp226(text,text)','EXECUTE')
+ OR NOT has_function_privilege('service_role',
+  'public.cotironda_piloto_ia_reserve_buyer_mvp226(text,text,text)','EXECUTE')
+ THEN RAISE EXCEPTION 'mvp226_bad_acl';END IF;
+END $mvp226$;
+
+DO $mvp225$
+DECLARE rid uuid; other_rid uuid; result jsonb; text_quote text;
+BEGIN
+ SELECT request_id INTO rid FROM cotironda_piloto_privado.ai_shadow_requests_mvp221
+ LIMIT 1;
+ IF rid IS NULL THEN RAISE EXCEPTION 'mvp225_no_original_round';END IF;
+ text_quote:='Hola, cemento CPC a $8.900 por bolsa, por favor';
+ INSERT INTO cotironda_piloto_privado.whapi_inbox(
+ message_hmac,participant_key,chat_hmac,kind,processing_state,
+ plaintext_sha256,received_at)
+ VALUES (
+ repeat('d',64),'corralon_ailin',repeat('1',64),'text','unmatched_quote',
+ encode(sha256(convert_to(text_quote,'UTF8')),'hex'),
+ clock_timestamp()+interval '2 seconds'
+ );
+ -- Wrong original text and wrong quoted ID must never write links.
+ result:=public.cotironda_piloto_ia_link_supplier_mvp225(
+  repeat('d',64),repeat('1',64),'wamid.HBgAAA111',text_quote||' mal');
+ IF result->>'state'<>'text_source_mismatch'
+ THEN RAISE EXCEPTION 'mvp225_original_not_verified';END IF;
+ result:=public.cotironda_piloto_ia_link_supplier_mvp225(
+  repeat('d',64),repeat('1',64),'notfound999999',text_quote);
+ IF result->>'state'<>'not_matched'
+ THEN RAISE EXCEPTION 'mvp225_wrong_quote_link';END IF;
+ IF (SELECT count(*) FROM cotironda_piloto_privado.ai_supplier_links_mvp225)<>0
+ THEN RAISE EXCEPTION 'mvp225_wrong_quote_did_mutate'; END IF;
+ result:=public.cotironda_piloto_ia_link_supplier_mvp225(
+  repeat('d',64),repeat('1',64),'wamid.HBgAAA111',text_quote);
+ IF result->>'state'<>'linked_for_semantic_review' OR
+  (result->>'request_id')::uuid<>rid OR
+  result->>'association'<>'quoted_whapi_id'
+ THEN RAISE EXCEPTION 'mvp225_quoted_source_not_linked_%',result;END IF;
+ IF public.cotironda_piloto_ia_link_supplier_mvp225(
+  repeat('d',64),repeat('1',64),'wamid.HBgAAA111',text_quote
+ )->>'state'<>'already_linked'
+ THEN RAISE EXCEPTION 'mvp225_duplicate_quote';END IF;
+ IF (SELECT count(*) FROM cotironda_piloto_privado.ai_supplier_links_mvp225)<>1
+ THEN RAISE EXCEPTION 'mvp225_duplicate_insert';END IF;
+
+ -- Two open rounds for Ailín: unquoted text MUST be ambiguous,
+ -- but a quoted whapi ID still uniquely selects its own round.
+ INSERT INTO cotironda_piloto_privado.requests(
+  buyer_key,delivery_city,original_request,source_hmac,state)
+ VALUES('arquitecto','La Plata','Otra lista de materiales',repeat('e',64),'prepared')
+ RETURNING id INTO other_rid;
+ INSERT INTO cotironda_piloto_privado.ai_shadow_requests_mvp221(
+  request_id,source_hmac) VALUES(other_rid,repeat('e',64));
+ INSERT INTO cotironda_piloto_privado.invitations(request_id,supplier_key)
+ VALUES(other_rid,'corralon_ailin');
+ INSERT INTO cotironda_piloto_privado.ai_dispatch_jobs_mvp222(
+  request_id,supplier_key,state,lease_token,leased_at,
+  finished_at,whapi_message_id)
+ VALUES(other_rid,'corralon_ailin','api_accepted',
+  gen_random_uuid(),clock_timestamp()-interval '1 hour',
+  clock_timestamp(),'abc11111111');
+ INSERT INTO cotironda_piloto_privado.whapi_inbox(
+  message_hmac,participant_key,chat_hmac,kind,processing_state,
+  plaintext_sha256,received_at)
+ VALUES (
+  repeat('f',64),'corralon_ailin',repeat('1',64),'text','unmatched_quote',
+  encode(sha256(convert_to(text_quote,'UTF8')),'hex'),
+  clock_timestamp()+interval '3 seconds'
+ );
+ result:=public.cotironda_piloto_ia_link_supplier_mvp225(
+  repeat('f',64),repeat('1',64),null,text_quote);
+ IF result->>'state'<>'ambiguous_round'
+ THEN RAISE EXCEPTION 'mvp225_unquoted_ambiguity_not_blocked_%',result;END IF;
+ IF (SELECT request_id FROM cotironda_piloto_privado.whapi_inbox
+  WHERE message_hmac=repeat('f',64)) IS NOT NULL
+ THEN RAISE EXCEPTION 'mvp225_attached_wrong_client';END IF;
+ result:=public.cotironda_piloto_ia_link_supplier_mvp225(
+  repeat('f',64),repeat('1',64),'abc11111111',text_quote);
+ IF result->>'state'<>'linked_for_semantic_review' OR
+  (result->>'request_id')::uuid<>other_rid
+ THEN RAISE EXCEPTION 'mvp225_explicit_message_did_not_disambiguate';END IF;
+
+ -- A PDF in archive: content hash is source of truth, not manifest text.
+ INSERT INTO cotironda_piloto_privado.whapi_inbox(
+ message_hmac,participant_key,chat_hmac,kind,processing_state,
+ plaintext_sha256,received_at)
+ VALUES (
+ repeat('9',64),'corralon_nahuel',repeat('2',64),'document','needs_review',
+ repeat('a',64),clock_timestamp()+interval '4 seconds'
+ );
+ INSERT INTO cotironda_piloto_privado.media_archive_mvp095(
+ message_hmac,chat_hmac,participant_key,state,content_sha256)
+ VALUES(repeat('9',64),repeat('2',64),'corralon_nahuel','stored',repeat('b',64));
+ result:=public.cotironda_piloto_ia_link_supplier_mvp225(
+  repeat('9',64),repeat('2',64),'abc12345672',null);
+ IF result->>'state'<>'linked_for_semantic_review' OR
+   (SELECT request_id FROM cotironda_piloto_privado.media_archive_mvp095
+    WHERE message_hmac=repeat('9',64))<>rid
+ THEN RAISE EXCEPTION 'mvp225_media_original_not_associated';END IF;
+ IF (SELECT source_sha256 FROM cotironda_piloto_privado.ai_supplier_links_mvp225
+  WHERE message_hmac=repeat('9',64))<>repeat('b',64)
+ THEN RAISE EXCEPTION 'mvp225_media_source_digest_wrong';END IF;
+
+ -- Unknown supplier and client cannot read or mutate the association.
+ IF has_function_privilege('anon',
+  'public.cotironda_piloto_ia_link_supplier_mvp225(text,text,text,text)','EXECUTE')
+ OR has_function_privilege('authenticated',
+  'public.cotironda_piloto_ia_link_supplier_mvp225(text,text,text,text)','EXECUTE')
+ OR NOT has_function_privilege('service_role',
+  'public.cotironda_piloto_ia_link_supplier_mvp225(text,text,text,text)','EXECUTE')
+ THEN RAISE EXCEPTION 'mvp225_rpc_exposed_publicly'; END IF;
+END $mvp225$;
+
+-- MVP276 TXT/CSV ORIGINAL: independently verified bytes, SHA from binary.
+-- Every request and "sent" counter is synthetic; transaction ROLLBACK.
+DO $mvp276$
+DECLARE
+ original text:='20 bolsas Cemento CPC 50 kg'||E'\n'||'Entrega en La Plata';
+ digest text; book jsonb; staged jsonb; published jsonb; located jsonb;
+ rid uuid;
+ items jsonb:='[{"descripcion":"Cemento CPC 50 kg","cantidad":"20",
+ "unidad":"bag","evidencia":"20 bolsas Cemento CPC 50 kg","rubro":"obra_gruesa"}]';
+ destinations jsonb:='[{"proveedor":"corralon_ailin","correspondencias":[{
+ "indicePedido":0,"numeroCatalogo":1,
+ "descripcionCatalogo":"Cemento CPC bolsa 50 kilos","rubroCatalogo":"obra_gruesa",
+ "tipo":"alternativa_razonable","explicacion":"misma bolsa de 50 kg"}]}]';
+BEGIN
+ digest:=encode(sha256(convert_to(original,'UTF8')),'hex');
+ -- Legacy text fixture remains valid; no grant expansion to public.
+ IF has_function_privilege('anon',
+  'cotironda_piloto_privado.fuente_original_documental_mvp276(text,text,text,text)','EXECUTE')
+ OR has_function_privilege('authenticated',
+  'public.cotironda_piloto_ia_publish_mvp222(uuid)','EXECUTE')
+ THEN RAISE EXCEPTION 'mvp276_acl_public';END IF;
+ INSERT INTO cotironda_piloto_privado.whapi_inbox(
+  message_hmac,participant_key,chat_hmac,kind,processing_state,
+  plaintext_sha256,received_at
+ ) VALUES(
+  repeat('6',64),'arquitecto',repeat('a',64),'document','needs_review',
+  repeat('d',64),clock_timestamp()
+ );
+ INSERT INTO cotironda_piloto_privado.media_archive_mvp095(
+  message_hmac,chat_hmac,participant_key,state,content_sha256,
+  kind,mime,size_bytes,storage_path,finished_at
+ ) VALUES(repeat('6',64),repeat('a',64),'arquitecto','stored',digest,
+ 'document','text/plain',length(convert_to(original,'UTF8')),
+ 'media/'||repeat('6',64),clock_timestamp());
+
+ IF cotironda_piloto_privado.fuente_original_documental_mvp276(
+  repeat('6',64),repeat('a',64),'arquitecto',digest) IS NOT TRUE
+ THEN RAISE EXCEPTION 'mvp276_valid_txt_not_authorized';END IF;
+ IF cotironda_piloto_privado.fuente_original_documental_mvp276(
+  repeat('6',64),repeat('2',64),'arquitecto',digest) IS DISTINCT FROM false
+ OR cotironda_piloto_privado.fuente_original_documental_mvp276(
+  repeat('6',64),repeat('a',64),'arquitecto',repeat('f',64)) IS DISTINCT FROM false
+ THEN RAISE EXCEPTION 'mvp276_wrong_owner_or_digest';END IF;
+ book:=public.cotironda_piloto_ia_reserve_buyer_mvp226(
+  repeat('a',64),repeat('6',64),digest);
+ IF book->>'state'<>'reserved'
+ THEN RAISE EXCEPTION 'mvp276_media_reservation_failed: %',book;END IF;
+ IF public.cotironda_piloto_ia_reserve_buyer_mvp226(
+  repeat('a',64),repeat('6',64),digest)->>'state'<>'already_reserved'
+ THEN RAISE EXCEPTION 'mvp276_double_reservation_allowed';END IF;
+ staged:=public.cotironda_piloto_ia_shadow_prepare_mvp221(
+  repeat('a',64),repeat('6',64),original,'La Plata',items,destinations);
+ IF staged->>'state'<>'shadow_staged'
+ THEN RAISE EXCEPTION 'mvp276_original_source_not_staged: %',staged;END IF;
+ rid:=(staged->>'request_id')::uuid;
+ IF rid IS NULL THEN RAISE EXCEPTION 'mvp276_no_request_id';END IF;
+ -- Only in this ROLLBACK-backed synthetic test: turn the independent
+ -- dispatch gate ON so publication checks the source proof, not just OFF.
+ UPDATE cotironda_piloto_privado.ai_dispatch_gate_mvp222
+ SET enabled=true,activated_at=clock_timestamp() WHERE only_row;
+ IF public.cotironda_piloto_ia_shadow_prepare_mvp221(
+  repeat('a',64),repeat('6',64),original,'La Plata',items,destinations
+ )->>'state'<>'already_staged'
+ THEN RAISE EXCEPTION 'mvp276_duplicate_round_created';END IF;
+ IF public.cotironda_piloto_ia_lookup_round_mvp226(
+  repeat('a',64),repeat('6',64))->>'state'<>'linked'
+ THEN RAISE EXCEPTION 'mvp276_lookup_failed';END IF;
+ -- Verify binary proof again at the publication gate, not only at entry.
+ UPDATE cotironda_piloto_privado.media_archive_mvp095
+ SET content_sha256=repeat('f',64) WHERE message_hmac=repeat('6',64);
+ published:=public.cotironda_piloto_ia_publish_mvp222(rid);
+ IF published->>'state'<>'source_not_verified'
+ THEN RAISE EXCEPTION 'mvp276_publish_accepts_tampered_source: %',published;END IF;
+ UPDATE cotironda_piloto_privado.media_archive_mvp095
+ SET content_sha256=digest WHERE message_hmac=repeat('6',64);
+ published:=public.cotironda_piloto_ia_publish_mvp222(rid);
+ IF published->>'state'<>'ready_for_delivery'
+ THEN RAISE EXCEPTION 'mvp276_document_cannot_publish: %',published;END IF;
+ SELECT public.cotironda_piloto_ia_ready_for_chat_mvp223(repeat('a',64))
+ INTO located;
+ IF located->>'state' NOT IN('ready','ambiguous')
+ THEN RAISE EXCEPTION 'mvp276_dispatch_lookup_failed: %',located;END IF;
+ IF (SELECT original_request FROM cotironda_piloto_privado.requests WHERE id=rid)
+    IS DISTINCT FROM original
+ THEN RAISE EXCEPTION 'mvp276_original_text_rewritten';END IF;
+ IF (SELECT count(*) FROM cotironda_piloto_privado.ai_shadow_requests_mvp221
+      WHERE request_id=rid)<>1
+ OR (SELECT count(*) FROM cotironda_piloto_privado.ai_dispatch_jobs_mvp222
+      WHERE request_id=rid)<>1
+ THEN RAISE EXCEPTION 'mvp276_missing_or_multiple_jobs';END IF;
+ -- Cross-tenant and MIME policy must remain fail closed.
+ UPDATE cotironda_piloto_privado.media_archive_mvp095
+ SET mime='application/pdf' WHERE message_hmac=repeat('6',64);
+ IF cotironda_piloto_privado.fuente_original_documental_mvp276(
+  repeat('6',64),repeat('a',64),'arquitecto',digest) IS DISTINCT FROM false
+ THEN RAISE EXCEPTION 'mvp276_pdf_without_reader_allowed';END IF;
+ UPDATE cotironda_piloto_privado.media_archive_mvp095
+ SET mime='text/plain' WHERE message_hmac=repeat('6',64);
+ UPDATE cotironda_piloto_privado.participants
+ SET opted_out_at=clock_timestamp() WHERE key='arquitecto';
+ IF cotironda_piloto_privado.fuente_original_documental_mvp276(
+  repeat('6',64),repeat('a',64),'arquitecto',digest) IS DISTINCT FROM false
+ THEN RAISE EXCEPTION 'mvp276_optout_ignored';END IF;
+END $mvp276$;
+
+-- MVP278: original PDF bytes and independently derived text have TWO hashes.
+-- No actual PDF is in PostgreSQL. Trusted Edge has done MVP277 verification.
+DO $mvp278$
+DECLARE
+ body text:='PEDIDO DE MATERIALES'||E'\n'||
+ 'Cemento CPC 50 kg 20 bolsas'||E'\n'||
+ 'Entrega La Plata';
+ v_derived_sha text;v_result jsonb;v_stage jsonb;v_pub jsonb;v_id uuid;
+ v_items jsonb:='[{"descripcion":"Cemento CPC 50 kg","cantidad":"20",
+ "unidad":"bag","rubro":"obra_gruesa",
+ "evidencia":"Cemento CPC 50 kg 20 bolsas"}]';
+ v_dest jsonb:='[{"proveedor":"corralon_ailin","correspondencias":[{
+ "indicePedido":0,"numeroCatalogo":1,"descripcionCatalogo":"Cemento CPC bolsa 50 kilos",
+ "rubroCatalogo":"obra_gruesa","tipo":"alternativa_razonable",
+ "explicacion":"mismo cemento de 50 kilos"}]}]';
+BEGIN
+ v_derived_sha:=encode(sha256(convert_to(body,'UTF8')),'hex');
+ -- Post MVP276 negative test buyer opted out, restore consent ONLY in
+ -- this synthetic transaction (entire fixture is ROLLBACK).
+ UPDATE cotironda_piloto_privado.participants
+ SET opted_out_at=NULL WHERE key='arquitecto';
+ INSERT INTO cotironda_piloto_privado.whapi_inbox(
+  message_hmac,participant_key,chat_hmac,kind,processing_state,
+  plaintext_sha256,received_at
+ ) VALUES(
+  repeat('8',64),'arquitecto',repeat('a',64),'document',
+  'needs_review',repeat('f',64),clock_timestamp()
+ );
+ INSERT INTO cotironda_piloto_privado.media_archive_mvp095(
+  message_hmac,chat_hmac,participant_key,kind,mime,
+  state,content_sha256,size_bytes,storage_path,finished_at
+ ) VALUES(repeat('8',64),repeat('a',64),'arquitecto','document',
+  'application/pdf','stored',repeat('b',64),1024,
+  'media/'||repeat('8',64),clock_timestamp());
+
+ -- Metadata alone is insufficient: object presence is mandatory.
+ v_result:=public.cotironda_piloto_ia_attest_binary_mvp278(
+  repeat('a',64),repeat('8',64),repeat('b',64),body,
+  'application/pdf',1
+ );
+ IF v_result->>'state'<>'source_not_authorized' THEN
+  RAISE EXCEPTION 'mvp278_storage_object_missing_accepted: %',v_result;
+ END IF;
+ INSERT INTO storage.objects(bucket_id,name) VALUES(
+  'cotironda-piloto-originals','media/'||repeat('8',64)
+ );
+ v_result:=public.cotironda_piloto_ia_attest_binary_mvp278(
+  repeat('a',64),repeat('8',64),repeat('c',64),body,
+  'application/pdf',1
+ );
+ IF v_result->>'state'<>'source_not_authorized'
+ THEN RAISE EXCEPTION 'mvp278_wrong_binary_hash_allowed';END IF;
+ v_result:=public.cotironda_piloto_ia_attest_binary_mvp278(
+  repeat('a',64),repeat('8',64),repeat('b',64),body,
+  'application/pdf',1
+ );
+ IF v_result->>'state'<>'attested'
+ THEN RAISE EXCEPTION 'mvp278_pdf_attestation_failed: %',v_result;END IF;
+ IF (SELECT count(*) FROM cotironda_piloto_privado.ai_buyer_binary_evidence_mvp278
+     WHERE message_hmac=repeat('8',64)
+      AND original_sha256=repeat('b',64)
+      AND derived_text_sha256=v_derived_sha
+      AND verified_items=1)<>1
+ THEN RAISE EXCEPTION 'mvp278_sha_pair_not_recorded';END IF;
+ v_result:=public.cotironda_piloto_ia_attest_binary_mvp278(
+  repeat('a',64),repeat('8',64),repeat('b',64),body,
+  'application/pdf',1
+ );
+ IF v_result->>'state'<>'already_attested'
+ THEN RAISE EXCEPTION 'mvp278_idempotency_missed';END IF;
+ v_result:=public.cotironda_piloto_ia_attest_binary_mvp278(
+  repeat('a',64),repeat('8',64),repeat('b',64),
+  body||E'\nEXTRA MATERIAL', 'application/pdf',1
+ );
+ IF v_result->>'state'<>'conflicting_evidence'
+ THEN RAISE EXCEPTION 'mvp278_rewrite_of_attestation_allowed';END IF;
+ IF has_function_privilege('anon',
+   'public.cotironda_piloto_ia_attest_binary_mvp278(text,text,text,text,text,integer)',
+   'EXECUTE')
+ OR has_function_privilege('authenticated',
+   'cotironda_piloto_privado.fuente_binaria_comprador_mvp278(text,text,text,text,integer)',
+   'EXECUTE')
+ OR has_table_privilege('service_role',
+   'cotironda_piloto_privado.ai_buyer_binary_evidence_mvp278',
+   'INSERT')
+ THEN RAISE EXCEPTION 'mvp278_access_control_broken';END IF;
+
+ IF cotironda_piloto_privado.fuente_binaria_comprador_mvp278(
+  repeat('8',64),repeat('a',64),'arquitecto',v_derived_sha,1) IS NOT TRUE
+ THEN RAISE EXCEPTION 'mvp278_valid_pdf_sha_pair_denied';END IF;
+ IF cotironda_piloto_privado.fuente_binaria_comprador_mvp278(
+  repeat('8',64),repeat('a',64),'arquitecto',v_derived_sha,2) IS DISTINCT FROM false
+ OR cotironda_piloto_privado.fuente_binaria_comprador_mvp278(
+  repeat('8',64),repeat('0',64),'arquitecto',v_derived_sha,1) IS DISTINCT FROM false
+ OR cotironda_piloto_privado.fuente_binaria_comprador_mvp278(
+  repeat('8',64),repeat('a',64),'arquitecto',repeat('e',64),1) IS DISTINCT FROM false
+ THEN RAISE EXCEPTION 'mvp278_wrong_count_identity_or_text_allowed';END IF;
+
+ -- Content source-check is applied again in every broker gate.
+ v_result:=public.cotironda_piloto_ia_reserve_buyer_mvp226(
+  repeat('a',64),repeat('8',64),v_derived_sha
+ );
+ IF v_result->>'state'<>'reserved'
+ THEN RAISE EXCEPTION 'mvp278_binary_reservation_failed: %',v_result;END IF;
+ v_stage:=public.cotironda_piloto_ia_shadow_prepare_mvp221(
+  repeat('a',64),repeat('8',64),body,'La Plata',
+  v_items||v_items,v_dest
+ );
+ IF v_stage->>'state'<>'source_not_authorized'
+ THEN RAISE EXCEPTION 'mvp278_omitted_or_duplicate_item_allowed: %',v_stage;END IF;
+ v_stage:=public.cotironda_piloto_ia_shadow_prepare_mvp221(
+  repeat('a',64),repeat('8',64),body,'La Plata',v_items,v_dest
+ );
+ IF v_stage->>'state'<>'shadow_staged'
+ THEN RAISE EXCEPTION 'mvp278_binary_stage_failed: %',v_stage;END IF;
+ v_id:=(v_stage->>'request_id')::uuid;
+ IF v_id IS NULL OR
+  (SELECT original_request FROM cotironda_piloto_privado.requests
+   WHERE id=v_id) IS DISTINCT FROM body
+ THEN RAISE EXCEPTION 'mvp278_binary_text_source_modified';END IF;
+ IF public.cotironda_piloto_ia_shadow_prepare_mvp221(
+  repeat('a',64),repeat('8',64),body,'La Plata',v_items,v_dest
+ )->>'state'<>'already_staged'
+ THEN RAISE EXCEPTION 'mvp278_duplicate_round_not_blocked';END IF;
+ -- Off by default in actual PILOTO. Synthetic test already turned it on.
+ UPDATE cotironda_piloto_privado.media_archive_mvp095
+ SET content_sha256=repeat('c',64) WHERE message_hmac=repeat('8',64);
+ v_pub:=public.cotironda_piloto_ia_publish_mvp222(v_id);
+ IF v_pub->>'state'<>'source_not_verified'
+ THEN RAISE EXCEPTION 'mvp278_changed_binary_published: %',v_pub;END IF;
+ UPDATE cotironda_piloto_privado.media_archive_mvp095
+ SET content_sha256=repeat('b',64) WHERE message_hmac=repeat('8',64);
+ -- Alter count after staging: still no publication.
+ INSERT INTO cotironda_piloto_privado.request_lines(
+  request_id,line_no,original_description,quantity,unit
+ ) VALUES(v_id,2,'EXTRA',1,'unit');
+ v_pub:=public.cotironda_piloto_ia_publish_mvp222(v_id);
+ IF v_pub->>'state'<>'source_not_verified'
+ THEN RAISE EXCEPTION 'mvp278_unproven_added_line_published: %',v_pub;END IF;
+ DELETE FROM cotironda_piloto_privado.request_lines
+ WHERE request_id=v_id AND line_no=2;
+ v_pub:=public.cotironda_piloto_ia_publish_mvp222(v_id);
+ IF v_pub->>'state'<>'ready_for_delivery'
+ THEN RAISE EXCEPTION 'mvp278_proven_binary_not_publishable: %',v_pub;END IF;
+ IF public.cotironda_piloto_ia_ready_for_chat_mvp223(
+  repeat('a',64))->>'state' NOT IN('ready','ambiguous')
+ THEN RAISE EXCEPTION 'mvp278_binary_dispatch_lookup_denied';END IF;
+ UPDATE cotironda_piloto_privado.participants
+ SET opted_out_at=clock_timestamp() WHERE key='arquitecto';
+ IF cotironda_piloto_privado.fuente_binaria_comprador_mvp278(
+  repeat('8',64),repeat('a',64),'arquitecto',v_derived_sha,1) IS DISTINCT FROM false
+ THEN RAISE EXCEPTION 'mvp278_consent_revocation_ignored';END IF;
+END $mvp278$;
+
+
+\ir ../../piloto/mvp279_revision_confirmacion_whatsapp_binarios.sql
+-- MVP279 synthetic: review EXACT source, all items, rubros, city and routing;
+-- send is simulated by a state transition only, no WhatsApp API/network.
+DO $mvp279$
+DECLARE
+ body text:='PEDIDO DE MATERIALES'||E'\n'||
+ 'Cemento CPC 50 kg 20 bolsas'||E'\n'||
+ 'Entrega La Plata';
+ digest text;review jsonb;issued_code text;v_result jsonb;round_id uuid;
+ text_confirm text;prev_des text;
+ items jsonb:='[{"descripcion":"Cemento CPC 50 kg","cantidad":"20",
+ "unidad":"bag","rubro":"obra_gruesa",
+ "evidencia":"Cemento CPC 50 kg 20 bolsas"}]';
+ routes jsonb:='[{"proveedor":"corralon_ailin","correspondencias":[{
+ "indicePedido":0,"numeroCatalogo":1,"descripcionCatalogo":"Cemento CPC bolsa 50 kilos",
+ "rubroCatalogo":"obra_gruesa","tipo":"alternativa_razonable",
+ "explicacion":"mismo cemento de 50 kilos"}]}]';
+BEGIN
+ -- Prior MVP278 test revoked consent, reset only in synthetic transaction.
+ UPDATE cotironda_piloto_privado.participants
+ SET opted_out_at=NULL WHERE key='arquitecto';
+ digest:=encode(sha256(convert_to(body,'UTF8')),'hex');
+ INSERT INTO cotironda_piloto_privado.whapi_inbox(
+  message_hmac,participant_key,chat_hmac,kind,processing_state,
+  plaintext_sha256,received_at
+ ) VALUES(repeat('0',64),'arquitecto',repeat('a',64),'document',
+  'needs_review',repeat('f',64),clock_timestamp());
+ INSERT INTO cotironda_piloto_privado.media_archive_mvp095(
+  message_hmac,chat_hmac,participant_key,kind,mime,state,
+  content_sha256,size_bytes,storage_path,finished_at
+ ) VALUES(repeat('0',64),repeat('a',64),'arquitecto','document',
+  'application/pdf','stored',repeat('c',64),2048,
+  'media/'||repeat('0',64),clock_timestamp());
+ INSERT INTO storage.objects(bucket_id,name)
+ VALUES('cotironda-piloto-originals','media/'||repeat('0',64));
+ v_result:=public.cotironda_piloto_ia_attest_binary_mvp278(
+  repeat('a',64),repeat('0',64),repeat('c',64),body,'application/pdf',1);
+ IF v_result->>'state'<>'attested'
+ THEN RAISE EXCEPTION 'mvp279_attest_fixture_failed: %',v_result;END IF;
+ v_result:=public.cotironda_piloto_ia_reserve_buyer_mvp226(
+  repeat('a',64),repeat('0',64),digest);
+ IF v_result->>'state'<>'reserved'
+ THEN RAISE EXCEPTION 'mvp279_reserve_fixture_failed: %',v_result;END IF;
+ v_result:=public.cotironda_piloto_ia_shadow_prepare_mvp221(
+  repeat('a',64),repeat('0',64),body,'La Plata',items,routes);
+ IF v_result->>'state'<>'shadow_staged'
+ THEN RAISE EXCEPTION 'mvp279_stage_fixture_failed: %',v_result;END IF;
+ round_id:=(v_result->>'request_id')::uuid;
+ -- Bypass attempt: no buyer approval -> NO supplier invitations.
+ v_result:=public.cotironda_piloto_ia_publish_mvp222(round_id);
+ IF v_result->>'state'<>'buyer_review_required'
+ OR (SELECT count(*) FROM cotironda_piloto_privado.invitations
+     WHERE request_id=round_id)<>0
+ THEN RAISE EXCEPTION 'mvp279_publish_bypass_allowed: %',v_result;END IF;
+ v_result:=public.cotironda_piloto_ia_claim_mvp222(round_id);
+ IF v_result->>'state'<>'empty'
+ THEN RAISE EXCEPTION 'mvp279_claim_no_review_not_empty';END IF;
+
+ review:=public.cotironda_piloto_ia_review_issue_mvp279(
+  repeat('a',64),repeat('0',64));
+ IF review->>'state'<>'issued' OR review->>'city'<>'La Plata'
+ OR jsonb_array_length(review->'items')<>1
+ OR review->'items'->0->>'rubro'<>'obra_gruesa'
+ OR review->'items'->0->>'quantity'<>'20'
+ THEN RAISE EXCEPTION 'mvp279_review_preview_incomplete: %',review;END IF;
+ IF (SELECT expires_at=created_at+interval '24 hours'
+     FROM cotironda_piloto_privado.ai_buyer_review_mvp279
+     WHERE request_id=round_id) IS DISTINCT FROM true
+ THEN RAISE EXCEPTION 'mvp279_review_ttl_microsecond_race';END IF;
+ issued_code:=review->>'code';
+ IF length(issued_code)<>16 OR issued_code<>upper(issued_code)
+ THEN RAISE EXCEPTION 'mvp279_review_code_invalid';END IF;
+ IF public.cotironda_piloto_ia_review_issue_mvp279(
+  repeat('a',64),repeat('0',64))->>'state'<>'already_issued'
+ THEN RAISE EXCEPTION 'mvp279_review_resent';END IF;
+ IF has_function_privilege('anon',
+  'public.cotironda_piloto_ia_review_issue_mvp279(text,text)','EXECUTE')
+ OR has_function_privilege('authenticated',
+  'public.cotironda_piloto_ia_review_confirm_mvp279(text,text,text)','EXECUTE')
+ OR has_table_privilege('service_role',
+  'cotironda_piloto_privado.ai_buyer_review_mvp279','SELECT')
+ THEN RAISE EXCEPTION 'mvp279_privileges_expanded';END IF;
+ text_confirm:='CONFIRMAR COTI '||issued_code;
+ INSERT INTO cotironda_piloto_privado.whapi_inbox(
+  message_hmac,participant_key,chat_hmac,kind,processing_state,
+  plaintext_sha256,received_at
+ ) VALUES(repeat('e',64),'arquitecto',repeat('a',64),'text',
+  'needs_review',encode(sha256(convert_to(text_confirm,'UTF8')),'hex'),
+  clock_timestamp());
+
+ -- The buyer must really have been sent an exact review; code alone
+ -- cannot approve while the Whapi review attempt is missing/uncertain.
+ v_result:=public.cotironda_piloto_ia_review_confirm_mvp279(
+  repeat('a',64),repeat('e',64),text_confirm);
+ IF v_result->>'state'<>'not_authorized_or_expired'
+ THEN RAISE EXCEPTION 'mvp279_unsent_review_approved';END IF;
+ v_result:=public.cotironda_piloto_ia_review_delivery_mvp279(
+  round_id,'api_accepted','outbound-review-id-00001');
+ IF v_result->>'state'<>'recorded'
+ THEN RAISE EXCEPTION 'mvp279_sent_state_not_recorded';END IF;
+ IF public.cotironda_piloto_ia_review_delivery_mvp279(
+  round_id,'api_accepted','outbound-review-id-00001')->>'state'<>'not_pending'
+ THEN RAISE EXCEPTION 'mvp279_delivery_reused';END IF;
+ -- An altered buyer draft, same code: must not authorize that version.
+ SELECT original_description INTO prev_des
+ FROM cotironda_piloto_privado.request_lines
+ WHERE request_id=round_id AND line_no=1;
+ UPDATE cotironda_piloto_privado.request_lines
+ SET original_description='Cemento cambiado por el proveedor'
+ WHERE request_id=round_id AND line_no=1;
+ v_result:=public.cotironda_piloto_ia_review_confirm_mvp279(
+  repeat('a',64),repeat('e',64),text_confirm);
+ IF v_result->>'state'<>'stale_review'
+ THEN RAISE EXCEPTION 'mvp279_changed_order_approved: %',v_result;END IF;
+ UPDATE cotironda_piloto_privado.request_lines
+ SET original_description=prev_des
+ WHERE request_id=round_id AND line_no=1;
+ -- A wrong-code or forged text SHA must not work.
+ IF public.cotironda_piloto_ia_review_confirm_mvp279(
+   repeat('a',64),repeat('e',64),'CONFIRMAR COTI 0000000000000000'
+  )->>'state'<>'not_authorized_or_expired'
+ THEN RAISE EXCEPTION 'mvp279_wrong_code_accepted';END IF;
+ IF public.cotironda_piloto_ia_review_confirm_mvp279(
+   repeat('3',64),repeat('e',64),text_confirm
+  )->>'state'<>'not_authorized_or_expired'
+ THEN RAISE EXCEPTION 'mvp279_wrong_buyer_accepted';END IF;
+ UPDATE cotironda_piloto_privado.participants
+ SET opted_out_at=clock_timestamp() WHERE key='arquitecto';
+ IF public.cotironda_piloto_ia_review_confirm_mvp279(
+   repeat('a',64),repeat('e',64),text_confirm
+  )->>'state'<>'not_authorized_or_expired'
+ THEN RAISE EXCEPTION 'mvp279_revoked_buyer_approved';END IF;
+ UPDATE cotironda_piloto_privado.participants
+ SET opted_out_at=NULL WHERE key='arquitecto';
+
+ v_result:=public.cotironda_piloto_ia_review_confirm_mvp279(
+  repeat('a',64),repeat('e',64),text_confirm);
+ IF v_result->>'state'<>'confirmed'
+ OR v_result->>'request_id'<>round_id::text
+ THEN RAISE EXCEPTION 'mvp279_authentic_reply_denied: %',v_result;END IF;
+ IF public.cotironda_piloto_ia_review_confirm_mvp279(
+  repeat('a',64),repeat('e',64),text_confirm
+ )->>'state'<>'not_authorized_or_expired'
+ THEN RAISE EXCEPTION 'mvp279_confirm_replayed';END IF;
+ IF cotironda_piloto_privado.confirmada_binaria_mvp279(round_id) IS NOT TRUE
+ THEN RAISE EXCEPTION 'mvp279_snapshot_confirm_not_seen';END IF;
+ v_result:=public.cotironda_piloto_ia_publish_mvp222(round_id);
+ IF v_result->>'state'<>'ready_for_delivery'
+ THEN RAISE EXCEPTION 'mvp279_confirmed_binary_not_publishable: %',v_result;END IF;
+ IF (SELECT count(*) FROM cotironda_piloto_privado.ai_dispatch_jobs_mvp222
+     WHERE request_id=round_id)<>1
+ THEN RAISE EXCEPTION 'mvp279_no_synthetic_job';END IF;
+ -- Buyer may approve 2+ hours after staging. Previously the 30-minute
+ -- selector discarded valid confirmed buyer rounds. Isolate other test jobs.
+ UPDATE cotironda_piloto_privado.requests
+ SET created_at=clock_timestamp()-interval '3 hours'
+ WHERE state='prepared';
+ v_result:=public.cotironda_piloto_ia_ready_for_chat_mvp223(repeat('a',64));
+ IF v_result->>'state'<>'ready'
+ OR v_result->>'request_id'<>round_id::text
+ THEN RAISE EXCEPTION 'mvp279_late_confirmation_dispatch_lost: %',v_result;END IF;
+ -- A changed destination after approval invalidates both claim and PDF,
+ -- even if the SQL job itself has already been created.
+ UPDATE cotironda_piloto_privado.ai_shadow_destinos_mvp221
+ SET explicacion='otra marca sin revisar'
+ WHERE request_id=round_id;
+ IF cotironda_piloto_privado.confirmada_binaria_mvp279(round_id) IS NOT FALSE
+ THEN RAISE EXCEPTION 'mvp279_changed_supplier_route_still_approved';END IF;
+ v_result:=public.cotironda_piloto_ia_claim_mvp222(round_id);
+ IF v_result->>'state'<>'empty'
+ THEN RAISE EXCEPTION 'mvp279_claim_after_change_allowed';END IF;
+END $mvp279$;
+
+ROLLBACK;

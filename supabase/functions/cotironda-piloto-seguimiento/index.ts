@@ -6,6 +6,22 @@
  */
 import {createClient} from 'npm:@supabase/supabase-js@2.118.0';
 import {hex,decodeContacts} from '../_shared/cotironda-finalist-notice.ts';
+import {resumirCoberturaCompradorMvp175} from '../../../src/domain/resumen-cobertura-comprador-mvp175.ts';
+import {resumirEconomiaCompradorMvp180} from '../../../src/domain/resumen-economia-comprador-mvp180.ts';
+import {resumirImportesCotizadosCompradorMvp186} from
+ '../../../src/domain/resumen-importes-cotizados-mvp186.ts';
+import {resumirAlternativasCoberturaMvp189} from
+ '../../../src/domain/alternativas-cobertura-mvp189.ts';
+import {resumirCoberturaImportesMvp194} from
+ '../../../src/domain/cobertura-importes-cierre-mvp194.ts';
+import {resumirCondicionesEconomicasPorOfertaMvp204} from
+ '../../../src/domain/condiciones-economicas-por-oferta-mvp204.ts';
+import {resumirMaterialesCotizadosCompradorMvp210} from
+ '../../../src/domain/materiales-cotizados-comprador-mvp210.ts';
+import {DESTINO_SEGUIMIENTO_PILOTO_MVP212} from '../../../src/domain/enlace-seguimiento-piloto-mvp212.ts';
+import {resumirRubrosCompradorMvp216} from '../../../src/domain/rubros-comprador-mvp216.ts';
+import {vistaCotizacionesRubrosMvp227} from '../../../src/domain/ia-central/vista-comprador-rubros-mvp227.ts';
+import {resumirAlternativasRubrosMvp255} from '../../../src/domain/ia-central/resumen-comparador-rubros-mvp255.ts';
 const ref='ilggkalaafhtiysyzlmg';
 const html=`<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -130,7 +146,7 @@ Deno.serve(async req=>{
  if(req.method==='GET'){
   if(new URL(req.url).search) return new Response('Bad request',{status:400,headers:headers('text/plain')});
   return new Response(null,{status:302,headers:{...headers('text/plain'),
-   Location:'https://cotironda-seguimiento-vist-git-43f7cf-protector-rudo-s-projects.vercel.app/seguimiento'}});
+   Location:DESTINO_SEGUIMIENTO_PILOTO_MVP212}});
  }
  if(req.method!=='POST')return new Response('',{status:405,headers:headers('text/plain')});
  if(new URL(req.url).search)return new Response('',{status:400,headers:headers('text/plain')});
@@ -162,10 +178,125 @@ Deno.serve(async req=>{
  const result=await db.rpc('cotironda_piloto_tracking_status_mvp091',{p_token_hash:digest});
  if(result.error)return new Response('',{status:503,headers:headers('text/plain')});
  let publicResult=result.data as Record<string,unknown>;
+
+ let verifiedRoundInputs:unknown=null;
+ // Only a valid, consented buyer tracking token can reach this gate.
+ // The SECOND RPC repeats buyer consent/revocation/round validation.
+ // NEVER relay the private RPC object, which contains supplier originals.
+ if(publicResult?.can_open===true&&
+   (publicResult.state==='waiting'||publicResult.state==='closed')){
+   try{
+     const source=await db.rpc('cotironda_piloto_buyer_coverage_inputs_mvp175',{
+       p_token_hash:digest
+     });
+     if(!source.error){
+       const safe=resumirCoberturaCompradorMvp175(publicResult,source.data);
+       // Preserve original MVP175 contract and its security regression.
+       if(safe)publicResult={...publicResult,coverage:safe};
+       // Reuse the SAME authenticated private RPC result to prepare prices.
+       // This variable never goes into an HTTP response or a log.
+       if(safe)verifiedRoundInputs=source.data;
+     }
+   }catch{/* Existing tracking remains available, with no coverage. */}
+ }
+
+ // Economic facts are an independent source-only gate. The service-role
+ // RPC repeats token ownership/expiry and matches EVERY displayed reviewed
+ // quote's text as a multiset. Never forward the private DB envelope.
+ if(publicResult?.can_open===true&&
+    (publicResult.state==='waiting'||publicResult.state==='closed')){
+   try{
+     const econ=await db.rpc('cotironda_piloto_buyer_economy_summary_mvp180',{
+       p_token_hash:digest
+     });
+     if(!econ.error){
+       const summary=resumirEconomiaCompradorMvp180(publicResult,econ.data);
+       if(summary)publicResult={...publicResult,economy:summary};
+     }
+   }catch{/* An unavailable audit must NOT block existing anonymous offers. */}
+ }
+
+ // The economic summary repeats buyer consent, expiry and the full multiset
+ // of reviewed offer texts. A new per-article price reference is allowed only
+ // if BOTH private guards succeeded and every source maps to its exact
+ // reviewed anonymous offer; never by quote-array index/HMAC order.
+ if(publicResult?.can_open===true&&
+    (publicResult.state==='waiting'||publicResult.state==='closed')&&
+    verifiedRoundInputs!==null&&publicResult.economy){
+   try{
+     const itemPrices=resumirImportesCotizadosCompradorMvp186(
+       publicResult as Parameters<typeof resumirImportesCotizadosCompradorMvp186>[0],
+       verifiedRoundInputs
+     );
+     if(itemPrices){
+       publicResult={...publicResult,item_prices:itemPrices};
+       // Same token-checked source; no supplier names, prices or PII exposed.
+       const rubros=resumirRubrosCompradorMvp216(
+         publicResult,verifiedRoundInputs,itemPrices
+       );
+       if(rubros)publicResult={...publicResult,rubros};
+       // This is a cross-check of source-backed ARTICLE AMOUNTS, not a
+       // currency/tax/freight ranking. Only on CLOSED consented rounds.
+       // Never expose the private HMAC-ordered SQL envelope.
+       if(publicResult.state==='closed'){
+         // Same token-gated buyer, source revision and reviewed public texts
+         // as MVP186. This exposes conditions per OFFER, not source details.
+         const readiness=resumirCondicionesEconomicasPorOfertaMvp204(
+           publicResult as Parameters<typeof resumirCondicionesEconomicasPorOfertaMvp204>[0],
+           verifiedRoundInputs,itemPrices
+         );
+         if(readiness)publicResult={...publicResult,
+           economic_readiness:readiness};
+         const pricedCoverage=resumirCoberturaImportesMvp194(
+           publicResult as Parameters<typeof resumirCoberturaImportesMvp194>[0],
+           itemPrices
+         );
+         if(pricedCoverage)publicResult={...publicResult,
+           priced_coverage:pricedCoverage};
+         // Buyer-visible materials-only options from existing MVP185.
+         // No private envelope, HMAC, contact, document or final price.
+         const baskets=resumirMaterialesCotizadosCompradorMvp210(
+           publicResult as Parameters<typeof resumirMaterialesCotizadosCompradorMvp210>[0],
+           verifiedRoundInputs,itemPrices
+         );
+         if(baskets)publicResult={...publicResult,material_baskets:baskets};
+       }
+     }
+   }catch{/* Optional price references never block reviewed offers. */}
+ }
+
+ // Source-backed *potential commercial coverage* only AFTER closure.
+ // Covers one supplier or a genuinely complementary pair, never a ranking,
+ // finalist selection, identity reveal, original download or outbound message.
+ if(publicResult?.state==='closed'&&publicResult.can_open===true&&
+    verifiedRoundInputs!==null&&publicResult.economy&&publicResult.coverage){
+   try{
+     const coverageOptions=resumirAlternativasCoberturaMvp189(
+       publicResult as Parameters<typeof resumirAlternativasCoberturaMvp189>[0],
+       verifiedRoundInputs
+     );
+     if(coverageOptions)publicResult={
+       ...publicResult,coverage_options:coverageOptions
+     };
+   }catch{/* Optional prospective coverage must not block existing offers. */}
+ }
+
  // Private, source-authorized contact reveal only after verified closure.
  // Ciphertext is NEVER sent to the browser, even on a decoding error.
+ // Legacy finalists cannot be revealed merely because a plan exists.
+ // The V196 proof also binds this buyer's CURRENT private token and checks
+ // the consented round and immutable source plan before decrypting contacts.
+ let verifiedFinalistPlan=false;
  if(publicResult?.state==='closed'&&
     Deno.env.get('COTIRONDA_PILOT_FINALIST_VIEW_ENABLED')==='true'){
+   try{
+    const check=await db.rpc('cotironda_piloto_tracking_source_plan_mvp196',{
+     p_token_hash:digest
+    });
+    verifiedFinalistPlan=!check.error&&check.data===true;
+   }catch{/* Never fall back to the legacy finalist projection. */}
+ }
+ if(publicResult?.state==='closed'&&verifiedFinalistPlan){
    const finals=await db.rpc('cotironda_piloto_tracking_finalists_mvp110',{
      p_token_hash:digest});
    if(!finals.error&&finals.data?.state==='ready_private'){
@@ -174,9 +305,9 @@ Deno.serve(async req=>{
        const idRaw=hex(Deno.env.get('COTIRONDA_PILOT_ID_HMAC_HEX')??'');
        const channel=Deno.env.get('COTIRONDA_PILOT_WHAPI_CHANNEL')??'';
        if(!aesRaw||!idRaw||!channel)throw Error('keys_unavailable');
-       const aes=await crypto.subtle.importKey('raw',aesRaw,'AES-GCM',
+       const aes=await crypto.subtle.importKey('raw',Uint8Array.from(aesRaw).buffer,'AES-GCM',
           false,['decrypt']);
-       const idKey=await crypto.subtle.importKey('raw',idRaw,{
+       const idKey=await crypto.subtle.importKey('raw',Uint8Array.from(idRaw).buffer,{
           name:'HMAC',hash:'SHA-256'},false,['sign']);
        const contacts=await decodeContacts(finals.data,aes,idKey,channel);
        const keys=finals.data.supplier_keys as unknown;
@@ -197,6 +328,50 @@ Deno.serve(async req=>{
          joint_supplier_coverage:finals.data.joint_supplier_coverage===true};
      }catch{/* Keep the ordinary anonymous view, no partial release. */}
    }
+ }
+ // MVP227: visualización privada por rubro de IA Central.
+ // El RPC vuelve a verificar el token, identidad, vencimiento y estado.
+ // No mezclar fuentes crudas ni rangos de proveedores con la respuesta.
+ // El flag está APAGADO por defecto. El camino histórico sigue igual.
+ // La ventana de prueba puede vencer, pero el comprador conserva el
+ // acceso a SUS ofertas ya verificadas por token, sin flags de entorno.
+ // El RPC revisa token, revocación, propietario y estado antes de devolver datos.
+ // Unlike legacy sources, an IA-only first verified quote does not set
+ // tracking.can_open until the buyer-rubros RPC is called. Do not gate
+ // that independent authorization behind the old public can_open bit.
+ if(publicResult!==null&&
+    (publicResult.state==='waiting'||publicResult.state==='closed')){
+   try{
+     const ai=await db.rpc('cotironda_piloto_ia_buyer_rubros_mvp227',{
+       p_token_hash:digest
+     });
+     if(!ai.error){
+       const safe=vistaCotizacionesRubrosMvp227(ai.data);
+       if(safe){
+         const historical=Array.isArray(publicResult.offers)?
+           publicResult.offers.filter(x=>x&&typeof x==='object'&&
+             typeof (x as Record<string,unknown>).label==='string'&&
+             typeof (x as Record<string,unknown>).text==='string'):[];
+         publicResult={
+           ...publicResult,
+           can_open:publicResult.can_open===true||safe.offers.length>0,
+           received_count:Math.max(
+             Number(publicResult.received_count)||0,safe.received_count),
+           files_pending_review:Math.max(
+             Number(publicResult.files_pending_review)||0,
+             safe.files_pending_review),
+           offers:[...historical,...safe.offers],
+           rubros_ia:safe.rubros_ia
+         };
+         // MVP255: uses the SAME private token-verified RPC response, without
+         // relaying the original request/supplier envelope to the browser.
+         // A failed shape check adds NO comparador data, never a guess.
+         const comparison=resumirAlternativasRubrosMvp255(ai.data,safe);
+         if(comparison)publicResult={...publicResult,
+           comparador_rubros_ia:comparison};
+       }
+     }
+   }catch{/* No exponer resultados sin verificación y no romper legacy. */}
  }
  return new Response(JSON.stringify(publicResult),{
    status:200,headers:headers('application/json; charset=utf-8')});

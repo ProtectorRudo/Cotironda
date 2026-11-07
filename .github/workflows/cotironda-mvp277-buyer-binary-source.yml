@@ -1,0 +1,35 @@
+name: Cotironda IA Central - PDF Office original comprador MVP277
+on:
+  pull_request:
+    branches:
+      - feat/mvp174-supplier-packaging-equivalence
+    paths:
+      - 'supabase/functions/cotironda-piloto-whapi/ai-central-buyer-binary-mvp277.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/index.ts'
+      - 'tests/unit/mvp277-buyer-pdf-office-independent.test.mjs'
+      - 'tests/unit/mvp277-real-pdf-deno.smoke.ts'
+      - '.github/workflows/cotironda-mvp277-buyer-binary-source.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  independent-binary-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Verify original DOCX and XLSX ZIP and adversarial PDF rows
+        run: node --experimental-strip-types --test tests/unit/mvp277-buyer-pdf-office-independent.test.mjs
+      - uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb
+        with:
+          deno-version: v2.x
+      - name: Real two-page PDF in Deno through unpdf, no network to external systems
+        run: deno run --node-modules-dir=auto tests/unit/mvp277-real-pdf-deno.smoke.ts
+      - name: Exact pilot webhook Deno typecheck
+        run: deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/index.ts
+# CI uses only fictitious buyer materials; no Whapi, Supabase or OpenAI secrets.

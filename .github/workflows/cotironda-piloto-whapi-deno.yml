@@ -5,6 +5,13 @@ on:
       - 'supabase/functions/cotironda-piloto-whapi/**'
       - 'supabase/functions/cotironda-piloto-document-recovery/**'
       - 'supabase/functions/cotironda-piloto-round-preview-staging/**'
+      - 'supabase/functions/cotironda-piloto-seguimiento/**'
+      - 'supabase/functions/cotironda-piloto-finalistas/**'
+      - 'src/domain/seleccion-finalistas-v9-mvp196.ts'
+      - 'supabase/piloto/mvp196_commercial_finalists_source_plan_off.sql'
+      - 'src/domain/resumen-cobertura-comprador-mvp175.ts'
+      - 'src/domain/cotejo-presentaciones-mvp174.ts'
+      - 'src/domain/diagnostico-ronda-mvp172.ts'
       - '.github/workflows/cotironda-piloto-whapi-deno.yml'
   push:
     branches:
@@ -35,6 +42,8 @@ jobs:
           deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-document-recovery/scheduled-auth.ts
           deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-document-recovery/quote-reconciliation.ts
           deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-round-preview-staging/index.ts
+          deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-seguimiento/index.ts
+          deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-finalistas/index.ts
       - name: Exercise unpdf runtime with a real two-page PDF (synthetic content)
         run: deno run --node-modules-dir=auto tests/unit/mvp130-unpdf-deno-runtime.smoke.ts
       - name: Verify no raw supplier document is printed

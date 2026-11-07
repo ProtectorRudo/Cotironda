@@ -1,0 +1,51 @@
+name: Cotironda PILOTO — selector v196 aislado PostgreSQL17
+on:
+  pull_request:
+    paths:
+      - 'supabase/piloto/mvp196_commercial_finalists_source_plan_off.sql'
+      - 'supabase/tests/ci/mvp196-finalists-source-off.sql'
+      - 'supabase/piloto/mvp209_finalists_plan_only_cron.sql'
+      - 'supabase/piloto/mvp209_finalists_plan_readiness_readonly.sql'
+      - 'supabase/tests/ci/mvp209-finalists-plan-only-cron-pg17.sql'
+      - 'supabase/piloto/mvp211_private_round_inputs_capacity_12x30.sql'
+      - 'supabase/tests/ci/mvp211-capacity-12x30-pg17.sql'
+      - '.github/workflows/cotironda-piloto-finalistas-v196-pg17.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mvp196-sql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: cotironda_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: test_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Migración solo en transacción PG17, permisos y rollback
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/mvp196-finalists-source-off.sql > /dev/null
+      - name: Plan cron restringido MVP209, sin HTTP real y rollback completo
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/mvp209-finalists-plan-only-cron-pg17.sql > /dev/null
+      - name: Fuente v9 MVP211 12x30, ACL, sin truncamiento y rollback
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/mvp211-capacity-12x30-pg17.sql > /dev/null

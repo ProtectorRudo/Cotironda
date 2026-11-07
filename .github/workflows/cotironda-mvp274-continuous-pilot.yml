@@ -1,0 +1,46 @@
+name: Cotironda PILOTO - modo continuo sin costos nuevos MVP274
+on:
+  pull_request:
+    branches:
+      - feat/mvp174-supplier-packaging-equivalence
+    paths:
+      - 'supabase/piloto/mvp274_continuous_pilot_optional_off.sql'
+      - 'supabase/piloto/mvp274_rollback_continuous_pilot_off_manual.sql'
+      - 'supabase/tests/ci/mvp274-continuous-pilot-pg17.sql'
+      - '.github/workflows/cotironda-mvp274-continuous-pilot.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  continuous-pilot-gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: test_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Probar contrato continuo en PG17 con rollback sin envios
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/mvp274-continuous-pilot-pg17.sql
+          # No project Supabase secrets, requests or files.
+# Development only: no SQL applied to pilot, Whapi, cron or Vercel.
