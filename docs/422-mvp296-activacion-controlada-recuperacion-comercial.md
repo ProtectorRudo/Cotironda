@@ -25,3 +25,13 @@ Fecha: **07/11/2026**. Alcance: exclusivamente `cotironda-piloto`. **Estado: pub
 - Actualizar solo `cotironda-piloto-auto-recovery` preservando bundle actual y comparar código exacto a GitHub.
 - Esperar ticks del cron Vault ya existente (sin activaciones extra). Comprobar registro de cola, estado privado del proveedor Nahuel, revisión económica MVP227, tokens MVP264 y ofertas por rubro si se verifican. No afirmar `oferta visible` si quedan condiciones por revisar; nunca asociar a la fuerza el documento ambiguo de Ailín.
 - Production y `main` NO tocan este cambio.
+
+## Primera recuperación económica real del piloto (16:45 UTC)
+
+Tras publicar la Edge **v8** y SQL mig.83, el cron Vault existente ejecutó la recuperación de la fuente histórica de **Nahuel** y produjo **una** fila `ai_supplier_linked_replay_mvp295` y **una** fila `ai_supplier_review_mvp227`. Se registraron exactamente **2 llamadas observadas** con **3.503 tokens** en `ai_usage_calls_mvp264`; no se estableció precio monetario de API (factura/precios del proveedor no conciliados).
+
+El análisis comercial devolvió **`review/semantic_review_required`**, con `summary IS NULL`. Por lo tanto hay **cero** revisiones `verified` y ninguna oferta por rubro o ranking nuevo publicada desde ese original. Las dos lecturas se contabilizaron; por idempotencia NO se vuelve a ejecutar la IA por la misma fuente. La explicación más específica de la revisión no está persistida actualmente: no corresponde atribuirla a moneda, IVA ni discrepancia de lecturas sin evidencia.
+
+Ailín permanece `review/multiple_indistinguishable_rounds` por su documento histórico. No hay motivos para forzar su vínculo ni solicitarle a los proveedores que repitan la cotización.
+
+**Resultado:** código, DB, cron, correlación, descifrado, doble análisis económico, metering y revisión privada verificados contra fuentes reales. **Aún NO verificados**: publicación económica de este presupuesto, aparición en ranking comprador, cierre/ganadores y E2E completo WhatsApp→navegador. Próximo trabajo: conservar un motivo diagnóstico seguro de la revisión semántica sin repetir llamadas facturables ni relajar evidencia comercial.
