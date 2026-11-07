@@ -2,7 +2,7 @@
 -- Exact recipient HMAC, unique Whapi ID and monotonic statuses preserved
 -- from MVP119; no phone numbers, tokens or raw messages stored in receipts.
 ALTER TABLE cotironda_piloto_privado.delivery_receipts_mvp119
- DROP CONSTRAINT delivery_receipts_mvp119_source_kind_check;
+ DROP CONSTRAINT IF EXISTS delivery_receipts_mvp119_source_kind_check;
 ALTER TABLE cotironda_piloto_privado.delivery_receipts_mvp119
  ADD CONSTRAINT delivery_receipts_mvp119_source_kind_check
  CHECK (source_kind IN
