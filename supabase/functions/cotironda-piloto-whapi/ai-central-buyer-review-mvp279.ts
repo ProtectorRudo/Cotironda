@@ -2,6 +2,7 @@
  * All writes stay behind SQL service_role, no AI interpretation or new
  * purchase. A Whapi timeout is UNCERTAIN; never automatically resend.
  */
+import {lineaComercialLegibleMvp288} from '../../../src/domain/ia-central/fidelidad-pedido-mvp288.ts';
 type Rpc=(name:string,params:Record<string,unknown>)=>
  Promise<{data:unknown;error:unknown}>;
 type Send=(to:string,body:string)=>
@@ -48,8 +49,11 @@ export function componerRevisionCompradorMvp279(raw:unknown):string|null{
      typeof item.unit!=='string'||!/^([a-z0-9]{1,12})$/u.test(item.unit)||
      typeof item.rubro!=='string'||!RUBROS.has(item.rubro))
    return null;
+  const human=lineaComercialLegibleMvp288(
+   item.quantity,item.unit,item.description);
+  if(!human)return null;
   const line=String(i+1)+'. ['+item.rubro.replaceAll('_',' ')+'] '+
-   item.quantity+' '+item.unit+' — '+item.description;
+   human.cantidad+' '+human.unidad+' — '+human.descripcion;
   lines.push(line);
  }
  lines.push('Si las cantidades, materiales y rubros son correctos, respondé exactamente:',
