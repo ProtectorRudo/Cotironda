@@ -3,7 +3,7 @@ const BACKEND="https://ilggkalaafhtiysyzlmg.supabase.co/functions/v1/cotironda-p
 // Reduce the trusted Edge payload to the fields the pilot buyer page needs.
 // This is a second privacy boundary: future backend fields must never be
 // forwarded to an unauthenticated browser by accident.
-export function buyerView(parsed){
+function buyerView(parsed){
   if(!parsed||typeof parsed!=="object"||Array.isArray(parsed)||
      !["waiting","closed","cancelled","not_found"].includes(parsed.state))return null;
   if(parsed.state==="not_found")return {state:"not_found"};
