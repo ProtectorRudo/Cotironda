@@ -16,6 +16,64 @@ function buyerView(parsed){
   }
   if(typeof parsed.deadline==="string"&&parsed.deadline.length<=96)
     safe.deadline=parsed.deadline;
+  // MVP299: verified offer opening and interpreted responses are
+  // INDEPENDENT. Do not hide source-reviewed pending coverage merely
+  // because no price is yet comparable. Strict per-field whitelist.
+  const pending=parsed.pendientes_rubros_ia;
+  const fields=["state","respuestas","ranking_permitido",
+    "contactos_revelados","adjudicacion_automatica"];
+  const same=(o,keys)=>o&&typeof o==="object"&&!Array.isArray(o)&&
+    Object.keys(o).length===keys.length&&
+    keys.every(k=>Object.hasOwn(o,k));
+  const allowed=new Set(["obra_gruesa","pintura","electricidad",
+    "construccion_seca","sanitarios","ferreteria","otros"]);
+  const titles={
+    obra_gruesa:"Obra gruesa / Corralón",pintura:"Pintura",
+    electricidad:"Electricidad",construccion_seca:"Construcción en seco",
+    sanitarios:"Sanitarios",ferreteria:"Ferretería y fijaciones",
+    otros:"Otros materiales"
+  };
+  const metadata=parsed.rubros_ia;
+  if(same(pending,fields)&&
+     pending.state==="respuestas_interpretadas_sin_precio_comparable"&&
+     pending.ranking_permitido===false&&
+     pending.contactos_revelados===false&&
+     pending.adjudicacion_automatica===false&&
+     Array.isArray(pending.respuestas)&&pending.respuestas.length<=25&&
+     Array.isArray(metadata)&&metadata.length>=1&&metadata.length<=7){
+    const known=new Map(),rows=[];
+    let valid=metadata.every(r=>r&&typeof r==="object"&&
+      allowed.has(r.rubro)&&r.titulo===titles[r.rubro]&&
+      Number.isSafeInteger(r.solicitados)&&r.solicitados>=1&&
+      r.solicitados<=200&&!known.has(r.rubro)&&
+      (known.set(r.rubro,r.solicitados),true));
+    if(valid)for(const [i,r] of pending.respuestas.entries()){
+      if(!same(r,["label","rubros"])||
+         r.label!=="Respuesta en revisión "+(i+1)||
+         !Array.isArray(r.rubros)||r.rubros.length<1||
+         r.rubros.length>known.size){valid=false;break;}
+      const used=new Set(),bucket=[];
+      for(const v of r.rubros){
+        if(!same(v,["rubro","titulo","respondidos","solicitados"])||
+           !allowed.has(v.rubro)||used.has(v.rubro)||
+           v.titulo!==titles[v.rubro]||
+           !Number.isSafeInteger(v.solicitados)||v.solicitados<1||
+           v.solicitados>25||v.solicitados>known.get(v.rubro)||
+           !Number.isSafeInteger(v.respondidos)||v.respondidos<1||
+           v.respondidos>v.solicitados){valid=false;break;}
+        used.add(v.rubro);
+        bucket.push({rubro:v.rubro,titulo:v.titulo,
+          solicitados:v.solicitados,respondidos:v.respondidos});
+      }
+      if(!valid)break;
+      rows.push({label:r.label,rubros:bucket});
+    }
+    if(valid)safe.pendientes_rubros_ia={
+      state:"respuestas_interpretadas_sin_precio_comparable",
+      respuestas:rows,ranking_permitido:false,
+      contactos_revelados:false,adjudicacion_automatica:false
+    };
+  }
   if(!opened)return safe;
 
   // Preserve all reviewed offer text faithfully, without allowing extra
