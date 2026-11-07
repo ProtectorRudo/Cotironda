@@ -13,6 +13,7 @@ import {ciudadDeRespuestaCentralMvp234,estadoClaimZonaMvp234} from './ai-central
 import {procesarPresupuestoCentralMvp227} from './ai-central-supplier-mvp227.ts';
 import {procesarDocumentoCentralMvp245} from './ai-central-document-mvp245.ts';
 import {correlacionAutomaticaMvp291} from './supplier-auto-correlation-mvp291.ts';
+import {extraerMaterialesTextoMvp292} from './supplier-text-materials-mvp292.ts';
 import {previsualizarDocumentoCompradorMvp275} from './ai-central-buyer-document-mvp275.ts';
 import {procesarDocumentoCompradorCentralMvp276} from './ai-central-buyer-media-mvp276.ts';
 import {contrastarDocumentoCompradorMvp277} from './ai-central-buyer-binary-mvp277.ts';
@@ -849,7 +850,57 @@ async function respond(req:Request):Promise<Response>{
       p_quoted_whapi_id:supplierQuotedId,p_original_text:body
     });
     if(linked.error)return json(503,'ai_supplier_quote_link_unavailable');
-    if(linked.data?.state==='ambiguous_round')clarificationSourceHmac=messageHash;
+    if(linked.data?.state==='ambiguous_round'){
+     clarificationSourceHmac=messageHash;
+     // No preguntarle al negocio: una sola fuente firmada puede compararse
+     // contra las rondas efectivamente enviadas, sin precio ni teléfono.
+     if(!attachmentNotice&&!supplierQuotedId&&
+        Deno.env.get('COTIRONDA_PILOT_AUTO_CORRELATION_MVP291_ENABLED')==='true'&&
+        Deno.env.get('COTIRONDA_PILOT_AUTO_TEXT_MVP292_ENABLED')==='true'){
+      const modelEnv=Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_MODEL');
+      const model=modelEnv==='gpt-6.1-sol'?'gpt-6.1-sol':'gpt-6-luna';
+      const apiKey=Deno.env.get('COTIRONDA_PILOT_OPENAI_API_KEY')??'';
+      const textMaterials=await extraerMaterialesTextoMvp292({
+       source:body,apiKey,model
+      });
+      if(textMaterials){
+       const linkedByEvidence=await correlacionAutomaticaMvp291({
+        enabled:true,webhookAuthenticated:true,
+        sourceHmac:messageHash,chatHmac:chatHash,
+        textQuote:textMaterials,textSha256:textHash,
+        apiKey,model,rpc:async(name,params)=>{
+         const r=await db.rpc(name,params);
+         return {data:r.data,error:r.error};
+        }
+       });
+       if(linkedByEvidence.state==='reconciliation_required')
+        return json(503,'supplier_text_auto_correlation_reconciliation_required');
+       if(linkedByEvidence.state==='linked_private'&&trial.quote_analysis===true){
+        // Consume the SAME ciphertext and SHA via the original double-read
+        // commercial quote validator; association is not publication.
+        const processed=await procesarPresupuestoCentralMvp227({
+         habilitado:true,webhookAutenticado:true,
+         commercialMemoryEnabled:Deno.env.get('COTIRONDA_PILOT_COMMERCIAL_MEMORY_ENABLED')==='true',
+         quoteVersioningEnabled:Deno.env.get('COTIRONDA_PILOT_QUOTE_VERSIONS_ENABLED')==='true',
+         usageTraceEnabled:Deno.env.get('COTIRONDA_PILOT_AI_USAGE_TRACE_ENABLED')==='true',
+         messageHmac:messageHash,chatHmac:chatHash,
+         apiKey,model,
+         rpc:async(name,params)=>{
+          const r=await db.rpc(name,params);
+          return {data:r.data,error:r.error};
+         },
+         decrypt:async(nonce,ciphertext)=>decryptArchivedText(
+          sec.aes,nonce,ciphertext,chatHash+'|'+messageHash+'|text'),
+         shaText:sha
+        });
+        if(processed.estado==='conciliacion_requerida')
+         return json(503,'supplier_text_auto_quote_review_required');
+        if(['verificado_privado','requiere_revision'].includes(processed.estado))
+         supplierAckMode='text_quote';
+       }
+      }
+     }
+    }
     if(linked.data?.state==='linked_for_semantic_review'){
       if(attachmentNotice){
         // Un aviso no es cotización. Asociar el siguiente archivo a la
