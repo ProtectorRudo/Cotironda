@@ -18,6 +18,8 @@ import {contrastarDocumentoCompradorMvp277} from './ai-central-buyer-binary-mvp2
 import {prepararDocumentoBinarioCompradorMvp278} from './ai-central-buyer-binary-broker-mvp278.ts';
 import {esRespuestaConfirmacionMvp279,emitirRevisionCompradorMvp279,confirmarPedidoCompradorMvp279} from './ai-central-buyer-review-mvp279.ts';
 import {notificarSeguimientoMvp289} from './buyer-tracking-confirmation-mvp289.ts';
+import {esCodigoDeRondaMvp290,consultarRondaMvp290,resolverEleccionMvp290} from './supplier-choice-mvp290.ts';
+import {procesarFuenteArchivadaMvp290} from './supplier-archived-replay-mvp290.ts';
 import {proveedorConRondaCentralMvp232} from './ai-central-supplier-route-mvp232.ts';
 import {esAvisoAdjuntoProveedorMvp238} from './ai-supplier-attachment-notice-mvp238.ts';
 import {respuestaCitaPedidoMvp239,CONSULTA_RONDA_MVP239} from './ai-supplier-clarification-mvp239.ts';
@@ -491,6 +493,8 @@ async function respond(req:Request):Promise<Response>{
     });
     return delivery.estado!=='conciliacion_requerida';
   };
+  const supplierChoiceReply=row.type==='text'&&centralSupplier&&
+    esCodigoDeRondaMvp290(body);
   const attachmentNotice=row.type==='text'&&centralSupplier&&
     esAvisoAdjuntoProveedorMvp238(body);
   const centralBuyerText=centralConfigured&&row.type==='text'&&
@@ -511,6 +515,7 @@ async function respond(req:Request):Promise<Response>{
   let supplierAckMode:'text_quote'|'media_quote'|null=null;
   let handledCentralZoneReply=false;
   let clarificationSourceHmac:string|null=null;
+  let supplierChoiceSourceHmac:string|null=null;
   let selectorClarification=false;
   // OpenAI is optional and off by default. The server-side DB gate is
   // durable, one-per-HMAC, buyer-only and capped at 12 calls per day.
@@ -848,7 +853,10 @@ async function respond(req:Request):Promise<Response>{
       p_quoted_whapi_id:supplierQuotedId,p_original_text:body
     });
     if(linked.error)return json(503,'ai_supplier_quote_link_unavailable');
-    if(linked.data?.state==='ambiguous_round')clarificationSourceHmac=messageHash;
+    if(linked.data?.state==='ambiguous_round'){
+      clarificationSourceHmac=messageHash;
+      supplierChoiceSourceHmac=messageHash;
+     }
     if(linked.data?.state==='linked_for_semantic_review'){
       if(attachmentNotice){
         // Un aviso no es cotización. Asociar el siguiente archivo a la
@@ -961,8 +969,10 @@ async function respond(req:Request):Promise<Response>{
             p_quoted_whapi_id:supplierQuotedId,p_original_text:null
           });
           if(linked.error)return json(503,'ai_supplier_media_link_unavailable');
-          if(linked.data?.state==='ambiguous_round')
+          if(linked.data?.state==='ambiguous_round'){
             clarificationSourceHmac=messageHash;
+            supplierChoiceSourceHmac=messageHash;
+           }
         }
       }
       // The model only proposes a PRIVATE DRAFT; cannot create an invitation,
@@ -1012,6 +1022,19 @@ async function respond(req:Request):Promise<Response>{
               p_proposal:proposal
             });
             if(!saved.error&&saved.data===true){
+              // Preserve second reading privately even if the round is
+              // ambiguous; later supplier selection will not reread Whapi.
+              if(verifiedSupplier&&proposal.kind==='supplier_quote'&&
+                 corroboration?.kind==='supplier_quote'&&
+                 Deno.env.get('COTIRONDA_PILOT_SUPPLIER_CHOICES_MVP290_ENABLED')==='true'){
+               const stage=await db.rpc('cotironda_piloto_stage_supplier_secondary_mvp290',{
+                p_message_hmac:messageHash,p_chat_hmac:chatHash,
+                p_second:corroboration
+               });
+               if(stage.error||!['staged','already_staged','not_eligible'].includes(
+                String(stage.data?.state)))
+                console.warn('cotironda_supplier_secondary_private_reconciliation_required');
+              }
               const noted=await db.rpc('cotironda_piloto_note_document_draft_mvp127',{
                 p_message_hmac:messageHash,p_needs_corrob:corroboration===null
               });
