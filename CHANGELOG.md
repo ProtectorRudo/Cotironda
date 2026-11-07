@@ -1,3 +1,10 @@
+## 2026-11-06 — MVP284: E2E integrado sintético + despacho Whapi sin ID (solo desarrollo)
+
+- E2E PostgreSQL17 en una transacción: comprador con 3 rubros, revisión íntegra, confirmación de un solo uso, 3 PDFs de proveedores, 2 respuestas correlacionadas, proyección anónima y sin ranking engañoso; prueba modo continuo de recepción de respuestas tras apagado de nuevos pedidos y rollback integral.
+- Adaptadores TypeScript de Edge probados juntos con RPC y Whapi simulados; regresiones existentes de cierre/finalistas y capacidad 12x30 ejecutadas separadamente sin redes.
+- Corrección: respuesta Whapi aceptada pero sin identificador válido pasa a `uncertain`, sin reenvío; MVP280 endurece el RPC de finalización de despacho. IDs ausentes ya no marcan entrega API aceptada que no pueda correlacionarse.
+- Sin alteración de la base piloto, Edge, Vercel, cron, secretos, WhatsApps ni costos. **Aún falta dump fiel PG17 y prueba real antes de publicar.** Ver decisión 409 / Issue #669.
+
 ## 2026-11-06 — MVP283: instalación acumulativa PG17 sintética (solo desarrollo)
 
 - Implementado un único ensayo SQL que instala sucesivamente las **21 migraciones MVP245–280** en un mismo esquema PostgreSQL17 sintético, con rollback integral. CI acumulativo PASS.
