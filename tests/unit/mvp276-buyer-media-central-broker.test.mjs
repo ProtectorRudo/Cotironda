@@ -159,9 +159,9 @@ test('MVP276: distinct OFF flags for staging vs sending, no legacy double prepar
  assert.ok(start>0&&end>start);
  const branch=code.slice(start,end);
  assert.match(branch,/COTIRONDA_PILOT_BUYER_DOCUMENT_CENTRAL_ACTIVE_ENABLED/u);
- assert.match(branch,/COTIRONDA_PILOT_BUYER_DOCUMENT_CENTRAL_PUBLISH_ENABLED/u);
+ assert.match(branch,/publicar:false, \/\/ MVP280: uniform review for TXT\/CSV/u);
  assert.match(branch,/procesarDocumentoCompradorCentralMvp276\(/u);
- assert.match(branch,/if\(processed.estado==='ronda_publicada'\)/u);
+ assert.match(branch,/buyer_review_bypassed_by_document_broker/u);
  assert.match(branch,/COTIRONDA_PILOT_BUYER_DOCUMENT_CENTRAL_PREVIEW_ENABLED/u);
  assert.match(branch,/\}else\{\s*const plan=await db\.rpc\('cotironda_piloto_plan_document_mvp098'/u);
 });
