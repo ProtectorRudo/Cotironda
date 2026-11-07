@@ -113,14 +113,20 @@ test('MVP225 preserva ID Whapi con punto para asociación de respuesta citada',a
  assert.equal(r.apiAceptados,1);
  assert.equal(x.state.finished[0].p_message_id,'wamid.HBgAAA111');
 });
-test('MVP223 API acepta pero no manda id, queda aceptado sin inventar id',async()=>{
- const x=fixture();
- const r=await despacharSolicitudCentralMvp223({
-  enabled:true,requestId:id,...x,maxJobs:1,
-  sendWhapi:async()=>({accepted:true,messageId:null})
- });
- assert.equal(r.apiAceptados,1);
- assert.equal(x.state.finished[0].p_message_id,null);
+test('MVP284 API responde accepted sin ID: terminal incierto, nunca publicable ni reintento',async()=>{
+ for(const messageId of [null,'invalid','a'.repeat(161)]){
+  const x=fixture();
+  const r=await despacharSolicitudCentralMvp223({
+   enabled:true,requestId:id,...x,maxJobs:1,
+   sendWhapi:async()=>({accepted:true,messageId})
+  });
+  assert.equal(r.apiAceptados,0);
+  assert.equal(r.inciertos,1);
+  assert.equal(x.state.sent.length,0);
+  assert.equal(x.state.finished[0].p_state,'uncertain');
+  assert.equal(x.state.finished[0].p_message_id,null);
+  assert.equal(x.state.finished.length,1);
+ }
 });
 test('MVP223 falla al finalizar → conciliación, sin reintentar el PDF',async()=>{
  const x=fixture();

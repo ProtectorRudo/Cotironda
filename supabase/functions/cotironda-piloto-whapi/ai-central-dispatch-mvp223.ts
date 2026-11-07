@@ -110,9 +110,11 @@ export async function despacharSolicitudCentralMvp223(args:{
    if(!(pdf instanceof Uint8Array)||pdf.length<40||pdf.length>100000)
     throw Error('pdf_invalid');
    const sent=await args.sendWhapi(recipient,pdf);
-   valid=sent.accepted===true;
-   messageId=valid&&typeof sent.messageId==='string'&&
+   // An HTTP 2xx or sent=true WITHOUT a verifiable Whapi ID cannot
+   // support quoted supplier replies. Treat it as UNCERTAIN, never retry.
+   messageId=typeof sent.messageId==='string'&&
     /^[A-Za-z0-9._:-]{8,160}$/u.test(sent.messageId)?sent.messageId:null;
+   valid=sent.accepted===true&&messageId!==null;
   }catch{/* Bloqueo, timeout o estado remoto incierto: NUNCA reintentar. */}
   try{await finalize(valid?'api_accepted':'uncertain',messageId)}
   catch{return result('requiere_conciliacion',claimed,accepted,uncertain)}
