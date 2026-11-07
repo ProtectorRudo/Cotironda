@@ -113,8 +113,20 @@ async function ask(args:{
   response=await args.fetchImpl(API,{method:'POST',
    headers:{Authorization:'Bearer '+args.apiKey,'Content-Type':'application/json'},
    body:JSON.stringify(req),signal:AbortSignal.timeout(18000)});
- }catch{throw Error('ai_upstream_unavailable')}
- if(!response.ok)throw Error('ai_upstream_failure');
+ }catch(e){
+  throw Error(e instanceof Error&&
+   ['TimeoutError','AbortError'].includes(e.name)
+   ?'ai_timeout':'ai_upstream_unavailable');
+ }
+ if(!response.ok){
+  // Preserve only fixed HTTP categories, never log API credentials,
+  // response bodies, raw prompts, or server-generated error text.
+  const c=response.status;
+  throw Error(c===401||c===403?'ai_credentials_rejected':
+   c===429?'ai_rate_limited':
+   c===400||c===404||c===422?'ai_request_rejected':
+   c>=500?'ai_upstream_failure':'ai_upstream_rejected');
+ }
  const length=Number(response.headers.get('content-length')??0);
  if(length>50000)throw Error('ai_response_too_large');
  let body:string;
@@ -151,8 +163,19 @@ export async function interpretarConIaCentralV1(args:{
   const verifier=await ask({apiKey:args.apiKey,model:args.model,
    source:args.fuente,purpose:'verifier',fetchImpl:args.fetchImpl??fetch});
   return evaluarLecturasSemanticasV1(args.fuente,withEvidence,verifier);
- }catch{
-  // Ningún texto fuente, secreto ni resultado del modelo en logs.
-  return {estado:'rechazado',motivo:'modelo_no_disponible_o_salida_invalida',pedido:null};
+ }catch(e){
+  // The application reports only a closed set of non-sensitive failure
+  // codes so SQL can distinguish 401, rate limits, malformed schema,
+  // timeouts and genuine reader disagreement. Never store the API body.
+  const safe=new Set([
+   'ai_timeout','ai_upstream_unavailable','ai_upstream_failure',
+   'ai_credentials_rejected','ai_rate_limited','ai_request_rejected',
+   'ai_upstream_rejected','ai_response_too_large','response_shape',
+   'response_not_completed','response_no_message','response_bad_text',
+   'response_bad_json','ai_response_read_failed','bad_first'
+  ]);
+  const reason=e instanceof Error&&safe.has(e.message)
+    ?e.message:'modelo_no_disponible_o_salida_invalida';
+  return {estado:'rechazado',motivo:reason,pedido:null};
  }
 }
