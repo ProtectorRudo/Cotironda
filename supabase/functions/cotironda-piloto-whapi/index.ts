@@ -12,6 +12,7 @@ import {ciudadDeRespuestaCentralMvp234,estadoClaimZonaMvp234} from './ai-central
 import {procesarPresupuestoCentralMvp227} from './ai-central-supplier-mvp227.ts';
 import {procesarDocumentoCentralMvp245} from './ai-central-document-mvp245.ts';
 import {previsualizarDocumentoCompradorMvp275} from './ai-central-buyer-document-mvp275.ts';
+import {procesarDocumentoCompradorCentralMvp276} from './ai-central-buyer-media-mvp276.ts';
 import {proveedorConRondaCentralMvp232} from './ai-central-supplier-route-mvp232.ts';
 import {esAvisoAdjuntoProveedorMvp238} from './ai-supplier-attachment-notice-mvp238.ts';
 import {respuestaCitaPedidoMvp239,CONSULTA_RONDA_MVP239} from './ai-supplier-clarification-mvp239.ts';
@@ -886,6 +887,36 @@ async function respond(req:Request):Promise<Response>{
                 // created while this experimental path is enabled; the
                 // text-only SQL broker MUST NOT be bypassed for media.
                 if(centralConfigured&&
+                   Deno.env.get('COTIRONDA_PILOT_BUYER_DOCUMENT_CENTRAL_ACTIVE_ENABLED')==='true'){
+                  // Source bytes and both documentary readings are checked
+                  // before SQL's separate media buyer authorization. No
+                  // artificial kind='text' or rephrased source is accepted.
+                  const modelEnv=Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_MODEL');
+                  const model=modelEnv==='gpt-6.1-sol'?'gpt-6.1-sol':'gpt-6-luna';
+                  const processed=await procesarDocumentoCompradorCentralMvp276({
+                    habilitado:true,
+                    publicar:sec.outbound&&trial.dispatch===true&&
+                      Deno.env.get('COTIRONDA_PILOT_BUYER_DOCUMENT_CENTRAL_PUBLISH_ENABLED')==='true',
+                    autenticadoPorWebhook:true,compradorAutorizado:true,
+                    messageHmac:messageHash,chatHmac:chatHash,
+                    original:downloadedForReview,
+                    primera:proposal,segunda:corroboration,
+                    apiKey:Deno.env.get('COTIRONDA_PILOT_OPENAI_API_KEY')??'',
+                    model,
+                    rpc:async(name,params)=>{
+                      const r=await db.rpc(name,params);
+                      return {data:r.data,error:r.error};
+                    }
+                  });
+                  if(processed.estado==='ronda_publicada'){
+                    preparedDocumentSourceHmac=messageHash;
+                    if(trial.dispatch===true)trialDispatchChats.add(chatHash);
+                  }else if(processed.estado==='conciliacion_requerida'){
+                    // The source is persisted; never retry an uncertain
+                    // SQL commit or send duplicate invitations.
+                    console.warn('cotironda_buyer_document_sql_reconciliation_required');
+                  }
+                }else if(centralConfigured&&
                    Deno.env.get('COTIRONDA_PILOT_BUYER_DOCUMENT_CENTRAL_PREVIEW_ENABLED')==='true'){
                   const modelEnv=Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_MODEL');
                   const model=modelEnv==='gpt-6.1-sol'?'gpt-6.1-sol':'gpt-6-luna';
