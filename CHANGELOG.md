@@ -1,3 +1,11 @@
+## 2026-11-06 — MVP274: modo de piloto continuo, sin costos nuevos (solo desarrollo)
+
+- Decisión 399: respaldos ZIP e infraestructura de ejecución privada a plan B; sin gastos nuevos. El objetivo inmediato es probar Cotironda de punta a punta con sus 3 participantes consentidos.
+- Ampliación segura del gate temporal MVP229: además de ventanas de hasta 4 horas, puede mantenerse indefinidamente en modo piloto SOLO mediante futura activación explícita `expires_at=NULL`; la instalación deja `enabled=false`.
+- La RPC conserva las protecciones MVP230 de respuestas de proveedores previamente invitados, allowlist, consentimiento, ACL exclusiva `service_role` y las puertas separadas de IA Central y despacho.
+- Se conservan cuotas y límites reales de capacidad: **sin vencimiento temporal no implica uso ilimitado de IA/WhatsApp**. PG17 sintético con rollback y restauración manual del modo previo.
+- SQL, Edge, WhatsApp y producción **sin cambios reales**; prueba E2E y estrategia de copia recuperable siguen pendientes.
+
 ## 2026-11-06 — MVP273: ensayo aislado de recuperación de ZIP móvil (solo desarrollo)
 
 - Nuevo replay estricto de TAR Storage descifrado: SHA-256 y tamaño físico de cada objeto versus índice, encabezados USTAR, rutas, padding, orden y cola, sin escribir documentos en claro.
