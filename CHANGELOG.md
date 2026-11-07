@@ -1,3 +1,9 @@
+## 07/11/2026 — MVP300 (solo desarrollo y auditoría real de lectura)
+
+- Testigo SQL read-only en piloto: IA/Whapi/dispatch ON; una ronda confirmada, 2 despachos `api_accepted` con ID, 1 proveedor que respondió, 1 revisión privada, 0 ofertas verificadas/visibles. No acredita dos respuestas ni el cierre/contactos E2E.
+- Clasificador determinista de etapas que rechaza certificación E2E por contadores de base o CI; tests sintéticos anti-PII y no WhatsApp, con regresión del circuito MVP284 y de MVP299.
+- No hay despliegue de MVP300, consumo de IA, mensajes o cambios de base. [Acta 426](docs/426-mvp300-testigo-e2e-piloto-solo-lectura.md).
+
 ## 07/11/2026 — Publicación verificada MVP298 + MVP299 solo en Cotironda piloto
 
 - Autorización «Publicalo» aplicada solo a Supabase `cotironda-piloto` (Whapi **v68**, seguimiento **v24**, **84 migraciones**) y Vercel **cotironda-seguimiento-vista-piloto**; el alias estable del seguimiento del comprador se reasignó y verificó a `dpl_FoY1XhAXg5hWVjxmfYQnh6NEYjWc` (commit `55bba473`, estado READY).
