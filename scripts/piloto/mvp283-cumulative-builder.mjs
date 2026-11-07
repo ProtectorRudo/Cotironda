@@ -6,6 +6,7 @@ import {resolve,dirname,join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 import {migrationFiles,checkManifest} from './mvp281-manifiesto-integracion.mjs';
+import {validateIsolation} from './mvp282-pg17-modular-rehearsal.mjs';
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'../..');
 const fixture=join(root,'supabase/tests/ci/mvp227-cotizaciones-por-rubro-pg17.sql');
@@ -99,8 +100,10 @@ export function summary(){
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  try{
   const arg=process.argv[2]||'--check';
-  if(process.argv.length>3||!['--check','--sql'].includes(arg))
+  if(process.argv.length>3||!['--check','--sql','--assert-local'].includes(arg))
    throw Error('MVP283_USAGE');
-  process.stdout.write(arg==='--sql'?buildCumulativeSql():JSON.stringify(summary())+'\n');
+  if(arg==='--assert-local'){
+   validateIsolation();process.stdout.write('MVP283_LOCAL_ONLY_OK\n');
+  }else process.stdout.write(arg==='--sql'?buildCumulativeSql():JSON.stringify(summary())+'\n');
  }catch(e){process.stderr.write('MVP283_INVALID: '+String(e.message)+'\n');process.exitCode=1;}
 }
