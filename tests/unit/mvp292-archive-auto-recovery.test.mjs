@@ -169,7 +169,12 @@ test('archive replay keeps economic publication behind original source checks',a
 test('internal recovery entrypoint gated separately from WhatsApp',()=>{
  const code=readFileSync(new URL('../../supabase/functions/cotironda-piloto-auto-recovery/index.ts',import.meta.url),'utf8');
  assert.match(code,/COTIRONDA_PILOT_AUTO_RECOVERY_MVP292_ENABLED/u);
- assert.match(code,/constantTimeMatch\(header,secret\)/u);
+ // Stronger MVP294 check delegates CONSTANT-TIME validation of TWO factors
+ // to a unit-tested helper, rather than comparing only one secret inline.
+ assert.match(code,/authorizeRecoveryMvp294/u);
+ assert.match(code,/privateHeader:req\.headers\.get\('x-cotironda-recovery-secret'\)/u);
+ assert.match(code,/apikeyHeader:req\.headers\.get\('apikey'\)/u);
+ assert.match(code,/legacyServiceRole:Deno\.env\.get\('SUPABASE_SERVICE_ROLE_KEY'\)/u);
  assert.match(code,/COTIRONDA_PILOT_AUTO_RECOVERY_SECRET/u);
  assert.doesNotMatch(code,/gate\.whapi\.cloud|messages\/text|messages\/document/u);
 });

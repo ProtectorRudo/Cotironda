@@ -4,6 +4,7 @@
  */
 import {createClient} from 'npm:@supabase/supabase-js@2.118.0';
 import {procesarPendienteAutomaticoMvp292} from '../cotironda-piloto-whapi/supplier-auto-recovery-worker-mvp292.ts';
+import {authorizeRecoveryMvp294} from './internal-auth-mvp294.ts';
 const REF='ilggkalaafhtiysyzlmg';
 const URL='https://'+REF+'.supabase.co';
 const json=(status:number,state:string)=>new Response(JSON.stringify({state}),{
@@ -13,13 +14,6 @@ const json=(status:number,state:string)=>new Response(JSON.stringify({state}),{
 const encoder=new TextEncoder();
 const HEX=/^[a-f0-9]{64}$/u;
 const W=/^[A-Za-z0-9+/=]{24,20000}$/u;
-function constantTimeMatch(a:string,b:string):boolean{
- const x=encoder.encode(a),y=encoder.encode(b);
- let difference=x.length^y.length;
- for(let i=0;i<Math.max(x.length,y.length);i++)
-  difference|=(x[i]??0)^(y[i]??0);
- return difference===0;
-}
 function hex(bytes:Uint8Array):string{
  return Array.from(bytes,n=>n.toString(16).padStart(2,'0')).join('');
 }
@@ -31,12 +25,17 @@ async function execute(req:Request):Promise<Response>{
  if(Deno.env.get('COTIRONDA_PILOT_AUTO_RECOVERY_MVP292_ENABLED')!=='true'||
     Deno.env.get('COTIRONDA_PILOT_AUTO_CORRELATION_MVP291_ENABLED')!=='true')
   return json(503,'worker_disabled');
- const secret=Deno.env.get('COTIRONDA_PILOT_AUTO_RECOVERY_SECRET')??'';
- const header=req.headers.get('x-cotironda-recovery-secret')??'';
- // Constant-time check; NO JWT fallback, query token, browser cookie, or
- // credentials in logs. Cron scheduler holds a separate rotatable secret.
- if(secret.length<32||secret.length>256||
-    !constantTimeMatch(header,secret))return json(401,'unauthorized');
+ // Do NOT rely on gateway verify_jwt for sb_secret_ (not a JWT).
+ // Strictly validate an INTERNAL admin credential PLUS the independent
+ // recovery secret before reading documents or invoking billable models.
+ if(!authorizeRecoveryMvp294({
+  privateHeader:req.headers.get('x-cotironda-recovery-secret')??'',
+  privateExpected:Deno.env.get('COTIRONDA_PILOT_AUTO_RECOVERY_SECRET')??'',
+  apikeyHeader:req.headers.get('apikey')??'',
+  authorizationHeader:req.headers.get('authorization')??'',
+  legacyServiceRole:Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')??'',
+  secretKeysJson:Deno.env.get('SUPABASE_SECRET_KEYS')??''
+ }))return json(401,'unauthorized');
  if(req.headers.get('content-length')&&
     Number(req.headers.get('content-length'))>100)
   return json(413,'payload_too_large');
