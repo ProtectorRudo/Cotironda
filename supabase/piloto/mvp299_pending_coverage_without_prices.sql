@@ -57,6 +57,19 @@ BEGIN
     AND supplier.participant_role='supplier'
     AND supplier.consent_at IS NOT NULL AND supplier.opted_out_at IS NULL
     AND d.state='api_accepted' AND d.finished_at<=m.received_at
+    -- A later linked source must hide this reply even if that newer
+    -- source cannot be verified yet. Otherwise old offers resurface.
+    AND NOT EXISTS (
+     SELECT 1 FROM cotironda_piloto_privado.ai_supplier_links_mvp225 newer
+     JOIN cotironda_piloto_privado.whapi_inbox newer_message
+      ON newer_message.message_hmac=newer.message_hmac
+       AND newer_message.participant_key=newer.supplier_key
+       AND newer_message.request_id=newer.request_id
+     WHERE newer.request_id=l.request_id
+       AND newer.supplier_key=l.supplier_key
+       AND (newer_message.received_at,newer.message_hmac)>
+           (m.received_at,l.message_hmac)
+    )
     AND (
      (l.kind='text' AND m.kind='text' AND
       m.plaintext_sha256=l.source_sha256)
