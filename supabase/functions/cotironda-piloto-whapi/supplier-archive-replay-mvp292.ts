@@ -40,6 +40,9 @@ export async function reprocesarOriginalHistoricoMvp292(args:{
  enabled:boolean;trustedInternalWorker:boolean;sourceHmac:string;chatHmac:string;
  rpc:Rpc;download:Download;apiKey:string;model:Modelo;
  documentSemanticEnabled:boolean;
+ // A second reading from the same verified binary may have already been
+ // computed by the authenticated recovery worker before attribution.
+ corroboration?:DocumentDraft;corroborationSha256?:string;
  // Test-only overridable reading/check, no HTTP calls in synthetic tests.
  read?:typeof proposeDocumentAI;
  sourceCheck?:(f:DownloadedMedia,first:DocumentDraft,second:DocumentDraft)=>Promise<SourceCheckResult>;
@@ -81,10 +84,13 @@ export async function reprocesarOriginalHistoricoMvp292(args:{
    filename:null,caption:null,providerSha256:null,
    state:'awaiting_secure_download'};
   // One independent corroboration of the already saved first draft.
-  const reread=await (args.read??proposeDocumentAI)({
-   manifest,file,apiKey:args.apiKey,enabled:true,
-   perspective:'corroboration',verifiedSupplier:true
-  });
+  const alreadyChecked=args.corroboration&&
+   args.corroborationSha256===sha&&validDraft(args.corroboration);
+  const reread=alreadyChecked?args.corroboration!:
+   await (args.read??proposeDocumentAI)({
+    manifest,file,apiKey:args.apiKey,enabled:true,
+    perspective:'corroboration',verifiedSupplier:true
+   });
   const second=promoteVerifiedSupplierQuote(reread,true);
   if(!validDraft(second))throw Error('secondary_document_invalid');
   const first=snapshot.draft as DocumentDraft;
