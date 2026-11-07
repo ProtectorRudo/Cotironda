@@ -20,7 +20,15 @@ const setup=[
  "CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $auth$ SELECT CASE WHEN (auth.jwt()->>'sub') ~* '^[a-f0-9-]{36}$' THEN (auth.jwt()->>'sub')::uuid ELSE NULL::uuid END $auth$;",
  'CREATE SCHEMA storage;',
  'CREATE TABLE storage.objects(bucket_id text NOT NULL,name text NOT NULL,PRIMARY KEY(bucket_id,name));',
- 'CREATE TABLE cotironda_piloto_privado.document_ai_diagnostics_mvp127(message_hmac text PRIMARY KEY,state text,attempt_count integer,next_retry_at timestamptz,last_attempt_at timestamptz,reason_code text);',
+ 'CREATE TABLE cotironda_piloto_privado.document_ai_diagnostics_mvp127(message_hmac text PRIMARY KEY,phase text,state text,updated_at timestamptz,reason_code text,attempt_count smallint,next_retry_at timestamptz,last_attempt_at timestamptz,first_failure_at timestamptz);',
+ // Legacy structural dependencies actually present on the 71-migration PILOTO.
+ 'CREATE TABLE cotironda_piloto_privado.delivery_receipts_mvp119(message_id_sha256 text PRIMARY KEY,request_id uuid,source_kind text,recipient_key text,state text,status_code integer,event_unix bigint,first_seen_at timestamptz,last_seen_at timestamptz);',
+ 'CREATE TABLE cotironda_piloto_privado.supplier_ack_mvp104(message_hmac text PRIMARY KEY,mode text,state text,chat_hmac text,finished_at timestamptz,reserved_at timestamptz,whapi_message_id text);',
+ 'CREATE TABLE cotironda_piloto_privado.finalist_whapi_outbox_mvp110(request_id uuid,recipient_key text,state text,leased_at timestamptz,created_at timestamptz,lease_token uuid,completed_at timestamptz,whapi_message_id text);',
+ 'ALTER TABLE cotironda_piloto_privado.buyer_tracking_mvp091 ADD COLUMN IF NOT EXISTS send_state text,ADD COLUMN IF NOT EXISTS whapi_message_id text,ADD COLUMN IF NOT EXISTS send_attempted_at timestamptz,ADD COLUMN IF NOT EXISTS created_at timestamptz;',
+ 'ALTER TABLE cotironda_piloto_privado.whapi_outbox ADD COLUMN IF NOT EXISTS whapi_message_id text,ADD COLUMN IF NOT EXISTS leased_at timestamptz,ADD COLUMN IF NOT EXISTS lease_token uuid,ADD COLUMN IF NOT EXISTS sent_at timestamptz,ADD COLUMN IF NOT EXISTS created_at timestamptz,ADD COLUMN IF NOT EXISTS state text;',
+ 'ALTER TABLE cotironda_piloto_privado.ai_dispatch_jobs_mvp222 ADD COLUMN IF NOT EXISTS whapi_message_id text,ADD COLUMN IF NOT EXISTS leased_at timestamptz;',
+
  '\\ir ../../piloto/mvp229_piloto_ia_central_control_temporal.sql',
  '\\ir ../../piloto/mvp230_continuidad_presupuestos_sin_nuevos_envios.sql'
 ].join('\n')+'\n';
