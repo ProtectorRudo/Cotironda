@@ -135,7 +135,7 @@ test('uncertain AI or duplicated source never binds, never sends WhatsApp',async
 test('webhook does not introduce supplier choice codes or require user action',()=>{
  const content=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/index.ts',import.meta.url),'utf8');
  const archived=content.indexOf("cotironda_piloto_note_media_proposal_mvp095");
- const automatic=content.indexOf('correlacionAutomaticaMvp291({');
+ const automatic=content.indexOf('correlacionAutomaticaMvp291({',archived);
  const receipt=content.indexOf("cotironda_piloto_record_supplier_media_mvp098");
  assert.ok(archived>0&&automatic>archived&&receipt>automatic);
  assert.match(content,/COTIRONDA_PILOT_AUTO_CORRELATION_MVP291_ENABLED/u);
