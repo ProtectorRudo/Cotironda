@@ -43,7 +43,10 @@ jobs:
           node-version: '22.16.0'
       - name: Contrato exacto de flujo y seguridad
         run: |
-          node --test tests/unit/mvp284-e2e-contract.test.mjs
+          node --experimental-strip-types --test \
+            tests/unit/mvp284-e2e-contract.test.mjs \
+            tests/unit/mvp284-edge-roundtrip.test.mjs \
+            tests/unit/mvp223-whapi-ia-central-despacho.test.mjs
           node scripts/piloto/mvp284-e2e-builder.mjs --check
       - name: PostgreSQL17 - misma transacción y rollback completo
         run: |
