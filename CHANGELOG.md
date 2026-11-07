@@ -1,3 +1,10 @@
+## 07/11/2026 — MVP301, finalistas offline (NO PUBLICADO)
+
+- Planificador determinista privado de cobertura de 1-2 proveedores, con validación real de importes MVP225; sin sumas engañosas, envío de WhatsApp, contactos, ganadores ni gastos.
+- Tests sintéticos de plan, cobertura, cierre y rechazo de precios sin respaldo; CI conjunta con la ronda simulada MVP284.
+- Auditoría SQL read-only del piloto: 0 ofertas IA Central verificadas, 1 revisión, 0 planes de finalistas; funciones v196 instaladas pero sin dependencia del ledger v227. Queda pendiente puente seguro y aprobación humana, por lo que E2E NO está certificado.
+- [Decisión 427](docs/427-mvp301-finalistas-offline-ia-central.md).
+
 ## 07/11/2026 — MVP300 (solo desarrollo y auditoría real de lectura)
 
 - Testigo SQL read-only en piloto: IA/Whapi/dispatch ON; una ronda confirmada, 2 despachos `api_accepted` con ID, 1 proveedor que respondió, 1 revisión privada, 0 ofertas verificadas/visibles. No acredita dos respuestas ni el cierre/contactos E2E.
