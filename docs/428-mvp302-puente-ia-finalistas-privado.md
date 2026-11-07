@@ -1,6 +1,6 @@
 # Decisión 428 — MVP302: puente privado de presupuestos IA Central hacia la planificación manual
 
-**Fecha:** 07/11/2026. **Estado:** propuesta de desarrollo y prueba PG17 aislada, **SIN PUBLICAR** y con finalistas OFF. No instalar en `cotironda-piloto` sin `Publicalo`.
+**Fecha:** 07/11/2026. **Estado:** PR #696 integrado SOLO EN DESARROLLO, **SIN PUBLICAR**, con finalistas OFF. No instalar en `cotironda-piloto` sin `Publicalo`.
 
 ## Causa
 El planificador anterior MVP196/MVP209 solo lee los documentos v9 `supplier_media_quotes_mvp098`, mientras que IA Central guarda los nuevos presupuestos interpretados en `ai_supplier_review_mvp227`. Con Whapi fuera del período gratuito, no corresponde pagar para probar todavía este vínculo.
@@ -28,3 +28,10 @@ Esta función **NO** escribe planes ni agrega filas a `finalist_coverage_plans_m
 El lector de fuentes aún necesita un **selector de cobertura seguro y una confirmación manual firmada/validada por empresa** antes de persistir una adjudicación o revelar contactos. La propuesta offline MVP301 puede ordenar opciones, pero no equivale a un circuito real de pago y mensajes.
 
 **No** declarar que el E2E está aprobado. Recién se certificará tras probar eventos genuinos de WhatsApp, análisis de originales, visualización real, cierre y revelado autorizado cuando se contrate nuevamente un canal de mensajería.
+
+## Auditoría de entrega — 07/11/2026
+
+- [PR #696](https://github.com/ProtectorRudo/Cotironda/pull/696) fusionado por squash a la rama de desarrollo `feat/mvp174-supplier-packaging-equivalence`. Commit `9f91684cbf39184f01216bc510ac8ebe8a5ba0b9`; no `main` ni publicación en el piloto.
+- CI del PR **11/11 controles aprobados**, incluidos Next.js, TypeScript, unidades generales, PostgreSQL/RLS, PostgREST HTTP y laboratorio PG17 de puente.
+- Pruebas específicas **23/23 aprobadas**; PostgreSQL17 `MVP302 PG17 PASS`: 2 fuentes simuladas aceptadas; una fuente adulterada por SHA se excluye, consentimiento del comprador revocado bloquea y las tablas de mensajes no se alteran. El ensayo se revierte en la misma transacción.
+- Deuda pendiente: **MVP303** persistencia y validación manual de elección por empresa con source-binding y política de revelado; pruebas comerciales reales cuando Whapi vuelva a estar activo. No confundir plan provisional con ganador.
