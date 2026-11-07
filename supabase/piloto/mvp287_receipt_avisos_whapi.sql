@@ -62,7 +62,7 @@ begin
    on p.key=k.recipient_key and p.chat_hmac=p_recipient_chat_hmac;
  if count_<>1 then return jsonb_build_object('state','unmatched');end if;
 
- hash_:=encode(extensions.digest(p_whapi_message_id,'sha256'),'hex');
+ hash_:=encode(sha256(convert_to(p_whapi_message_id,'UTF8')),'hex');
  new_rank:=case p_status
   when 'pending' then 0 when 'sent' then 1
   when 'failed' then 2 when 'deleted' then 2
