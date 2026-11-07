@@ -12,7 +12,7 @@ const AMOUNT=/^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$/u;
  * A long/orphan evidence fails closed, not silently shortened for the PDF.
  */
 export function descripcionOriginalVerificableMvp288(
- source:string,item:EvidenceItem
+ source:string,item:EvidenceItem,siguienteInicio?:number
 ):string|null{
  if(typeof source!=='string'||!item||typeof item.evidencia!=='string'||
     !Number.isSafeInteger(item.inicio)||!Number.isSafeInteger(item.fin)||
@@ -20,11 +20,23 @@ export function descripcionOriginalVerificableMvp288(
     source.slice(item.inicio,item.fin)!==item.evidencia||
     typeof item.descripcion!=='string'||item.descripcion.trim().length<3)
   return null;
- // Preserve every substantive word in the verifiable literal source span.
- // Remove only an initial numeric count: quantity is stored separately.
- const evidence=item.evidencia.trim();
- if(CTL.test(evidence)||evidence.length>75)return null;
- const result=evidence.replace(
+ // Model citations can be shorter than the actual item. Extend up to
+ // the start of the next item, never crossing into its quantity/specs.
+ // Strip only obvious sentence/list and delivery-locality boundaries.
+ const end=siguienteInicio===undefined?source.length:siguienteInicio;
+ if(!Number.isSafeInteger(end)||end<item.fin||end>source.length)
+  return null;
+ let literal=source.slice(item.inicio,end).trim();
+ const delimiter=/(?:[.;]\s+|\n|\r)/u.exec(literal);
+ if(delimiter)literal=literal.slice(0,delimiter.index).trim();
+ const city=/(?:\s+|[,;]\s*)(?:entrega\s+(?:en|a)\s+|obra\s+en\s+|para\s+entregar\s+en\s+)/iu.exec(literal);
+ if(city)literal=literal.slice(0,city.index).trim();
+ literal=literal.replace(/(?:\s+y\s*|[,;]\s*)$/iu,'').trim();
+ // The actual source citation must remain a literal prefix; if not,
+ // parsing may have mistakenly assigned another article to this line.
+ if(!literal.startsWith(item.evidencia.trim()))return null;
+ if(CTL.test(literal)||literal.length>75)return null;
+ const result=literal.replace(
   /^(?:[1-9]\d{0,5}(?:[.,]\d{1,3})?)\s+/u,''
  ).trim();
  if(result.length<3||result.length>75||CTL.test(result)||
