@@ -58,7 +58,8 @@ export function componerRevisionCompradorMvp279(raw:unknown):string|null{
  }
  lines.push('Si las cantidades, materiales y rubros son correctos, respondé exactamente:',
   'CONFIRMAR COTI '+o.code,
-  'Si algo está mal, NO confirmes: escribí la corrección para revisarla.');
+  'Si algo está mal, NO confirmes. Para reemplazar ESTA revisión enviá',
+  'CORREGIR COTI '+o.code+': <pedido completo corregido>');
  const body=lines.join('\n');
  // Never truncate descriptions or skip articles to fit WhatsApp limits.
  if(body.length>3300||CTL.test(body.replaceAll('\n','')))return null;
