@@ -23,7 +23,7 @@ test('MVP229: piloto entra por control transaccional y NO por secretos de ambien
 });
 test('MVP229: despacho solo después de publicar ronda buyer, nunca en texto no relacionado',()=>{
  assert.match(edge,/if\(result\.estado==='ronda_en_sombra'&&\s*!await emitirRevisionUnificada\(messageHash\)\)/u);
- assert.match(edge,/if\(decision\.estado==='publicado'\)trialDispatchChats\.add\(chatHash\)/u);
+ assert.match(edge,/if\(decision\.estado==='publicado'\)\{\s*trialDispatchChats\.add\(chatHash\)/u);
  assert.match(edge,/COTIRONDA_PILOT_BUYER_REVIEW_CONFIRM_ENABLED/u);
  assert.match(edge,/trialDispatchChats\.add\(chatHash\)/u);
  assert.match(edge,/if\(sec\.outbound&&trialDispatchChats\.size>0\)/u);

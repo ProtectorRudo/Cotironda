@@ -8,7 +8,7 @@ test('MVP230: solo comprador en prueba puede crear pedidos y despachar',()=>{
  assert.match(edge,/habilitado:true,publicar:false, \/\/ MVP280: buyer must approve/u);
  assert.match(edge,/liberar:sec\.outbound&&trialActive&&trial\.buyer===true&&\s*trial\.dispatch===true/u);
  assert.match(edge,/if\(result\.estado==='ronda_en_sombra'&&\s*!await emitirRevisionUnificada\(messageHash\)\)/u);
- assert.match(edge,/if\(decision\.estado==='publicado'\)trialDispatchChats\.add\(chatHash\)/u);
+ assert.match(edge,/if\(decision\.estado==='publicado'\)\{\s*trialDispatchChats\.add\(chatHash\)/u);
  assert.match(edge,/if\(sec\.outbound&&trialDispatchChats\.size>0\)/u);
  assert.match(sql,/v_buyer:=coalesce\(v_trial_active,false\)/u);
  assert.match(sql,/v_dispatch:=v_buyer/u);
