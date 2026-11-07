@@ -1,6 +1,6 @@
 # Decisión 425 — MVP299: respuestas interpretadas separadas de ofertas económicamente verificadas
 
-**Fecha:** 07/11/2026. **Estado: INTEGRADO EN RAMA DE DESARROLLO, NO publicado.** Referencias: [issue #691](https://github.com/ProtectorRudo/Cotironda/issues/691), [decisión 424](424-mvp298-acuerdo-economico-doble-lectura.md). Solo GitHub, tests offline y PostgreSQL 17 sintético; **ninguna modificación en cotironda-piloto, Whapi, Vercel, cron ni producción**.
+**Fecha:** 07/11/2026. **Estado actual: PUBLICADO Y VERIFICADO A NIVEL DE DESPLIEGUE SOLO EN EL PILOTO.** Referencias: [issue #691](https://github.com/ProtectorRudo/Cotironda/issues/691), [decisión 424](424-mvp298-acuerdo-economico-doble-lectura.md). El E2E comercial normal sigue pendiente; producción general, secretos, cron y datos históricos excluidos.
 
 ## Hallazgo confirmado
 
@@ -39,3 +39,14 @@ Evidencia real de solo lectura anterior: WhatsApp piloto v67, seguimiento v23, r
 ## Lo que aún impide declarar E2E normal completo
 
 La visualización preliminar de cobertura no equivale a dos cotizaciones económicamente verificadas. Persisten pruebas prospectivas comprador WhatsApp → confirma → PDF por rubro → proveedores → dos respuestas nuevas (texto/PDF/Excel) → lectura IA → comparación de fuentes → pantalla con token → vencimiento y cierre correcto → finalistas consentidos y contactos autorizados. No obligar a proveedores ni al comprador a etiquetar manualmente rondas. Los originales de Ailín y Nahuel permanecen protegidos.
+
+
+## Acta de publicación real MVP299 — 07/11/2026
+
+- Autorización expresa: **«Publicalo»**, limitada a los dos MVP en `cotironda-piloto`. Rama integrada `feat/mvp174-supplier-packaging-equivalence`; código fusionado del PR #692 en `55bba4732d3947ef499753f2b69748861b36f5a0`. CI de esa integración: **27/27 checks exitosos; 34/34 unitarios focalizados**.
+- Supabase piloto `ilggkalaafhtiysyzlmg`: migración `20261107215859_piloto_mvp299_respuestas_interpretadas_sin_precio_comparable`, total **84**. Consulta real comprobó `anon_execute=false`, `user_execute=false`, `service_execute=true`, token inválido `not_found`. Para una ronda preparada con token vigente, estado `respuestas_pendientes_por_rubro`, **0 respuestas**; los enlaces sin ronda IA válida devolvieron `not_found`.
+- WhatsApp `cotironda-piloto-whapi`: **v67 → v68 ACTIVE**, 58 archivos; fuente en dos módulos modificados coincide byte a byte con GitHub. Seguimiento `cotironda-piloto-seguimiento`: **v23 → v24 ACTIVE**, 27 archivos, añadiendo solo el DTO MVP299 y actualizando `index.ts`. Cotejados byte a byte contra el código fusionado. Cinco imports a archivos no incluidos eran preexistentes en el bundle v23 y son todos `import type` (no imports ejecutables); no se añadieron referencias sin resolver.
+- Vercel: desplegado únicamente en proyecto separado **`cotironda-seguimiento-vista-piloto`** (`prj_0kZzvuzEg7vL4FzsqbdARKeoHzLk`, no proyecto principal `cotironda`). Despliegue **`dpl_FoY1XhAXg5hWVjxmfYQnh6NEYjWc`**, `READY`, con `target=production` **solo dentro del proyecto web del piloto**, commit `55bba473`. El dominio estable usado por MVP212, `https://cotironda-seguimiento-vista-piloto-protector-rudo-s-projects.vercel.app/seguimiento`, estaba asociado a un despliegue viejo: se reasignó manualmente y después se verificó `get_alias.deploymentId` igual al despliegue nuevo, `READY`. El dominio propio/main y el portal de producción nunca se tocaron.
+- Logs de compilación Vercel: clonación del SHA indicado, build completo y `Deployment completed`; solo advertencias sobre rangos Node/npm. No hubo límite de builds en esta publicación.
+- Protección de fuentes: una revisión histórica persiste con `summary=null` y razón genérica; **0** ofertas IA `verified` y **0** versiones de origen al cierre de la verificación. No se reconsultó a la IA ni se envió WhatsApp. Es correcto que la página no muestre ofertas MVP299 de esas fuentes históricas.
+- **Límite de verificación:** no se pudo hacer smoke HTTP externo contra el sitio desde esta sesión (acceso web/DNS no disponible). La verificación positiva es de deploy/alias, estructura de RPC, bytes fuente y CI; no equivale a navegador funcionando, nueva oferta visible, cierre de ronda, adjudicación ni contactos probados E2E. Requiere ensayo prospectivo con usuarios ya consentidos.
