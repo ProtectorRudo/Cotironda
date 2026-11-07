@@ -422,7 +422,11 @@ BEGIN
  JOIN cotironda_piloto_privado.ai_dispatch_jobs_mvp222 job
   ON job.request_id=r.id AND job.state='pending'
  WHERE r.state='prepared' AND r.closes_at>clock_timestamp()
-  AND r.created_at>clock_timestamp()-interval '30 minutes'
+  AND (r.created_at>clock_timestamp()-interval '30 minutes'
+   OR (EXISTS(SELECT 1 FROM cotironda_piloto_privado.ai_buyer_review_mvp279 review
+     WHERE review.request_id=r.id AND review.state='confirmed'
+       AND review.confirmed_at>clock_timestamp()-interval '30 minutes')
+    AND cotironda_piloto_privado.confirmada_binaria_mvp279(r.id)))
   AND b.participant_role='buyer'
   AND b.chat_hmac=p_buyer_chat_hmac
   AND b.consent_at IS NOT NULL AND b.opted_out_at IS NULL
