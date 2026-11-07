@@ -31,10 +31,10 @@ export function buildMvp303Sql(reader=readFileSync){
   " WHEN 'corralon_nahuel' THEN 'Corralón B'",
   " WHEN 'electricidad_gamma' THEN 'Electricidad C'",
   " ELSE 'Comprador de prueba' END;"
- ].join('\\n');
+ ].join('\n');
  const text=base.replace(marker,
-  '\\n'+fixtureLabels+
-  '\\n\\\\ir ../../piloto/mvp303_revelar_todos_los_proveedores_al_cierre.sql'+
+  '\n'+fixtureLabels+
+  '\n\\ir ../../piloto/mvp303_revelar_todos_los_proveedores_al_cierre.sql'+
   '\n\\ir ./mvp303-proveedores-todos-cierre-pg17.sql'+marker);
  if(text.split(/^ROLLBACK;\s*$/gm).length!==2)
   throw Error('MVP303_MULTIPLE_ROLLBACKS');
