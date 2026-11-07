@@ -1,0 +1,60 @@
+name: Cotironda MVP286 - aviso de revision IA fail-closed
+on:
+  pull_request:
+    branches:
+      - feat/mvp174-supplier-packaging-equivalence
+    paths:
+      - 'supabase/piloto/mvp286_*'
+      - 'supabase/tests/ci/mvp286-*'
+      - 'supabase/functions/cotironda-piloto-whapi/ai-central-review-notice-mvp286.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/ai-central-buyer-mvp226.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/index.ts'
+      - 'src/domain/ia-central/cliente-openai-v1.ts'
+      - 'tests/unit/mvp286-*'
+      - 'scripts/piloto/mvp286-*'
+      - '.github/workflows/cotironda-mvp286-buyer-review-notice-pg17.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  guard-and-rollback:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: test_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Contratos Node / causas y avisos con ID
+        run: |
+          node --experimental-strip-types --test tests/unit/mvp286-buyer-failure-notice.test.mjs
+          node scripts/piloto/mvp286-review-notice-builder.mjs --assert-local
+      - name: Un solo PG17 local, 21 SQL y aviso de revisión, rollback integral
+        run: |
+          set -euo pipefail
+          node scripts/piloto/mvp286-review-notice-builder.mjs --sql > supabase/tests/ci/.mvp286.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/.mvp286.sql >/dev/null
+          psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regnamespace('cotironda_piloto_privado') IS NULL" | grep -Fx 't'
+          rm supabase/tests/ci/.mvp286.sql
+# No Whapi or OpenAI connection. No production, no user secrets.

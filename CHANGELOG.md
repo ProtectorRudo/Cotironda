@@ -1,3 +1,10 @@
+## 2026-11-07 — MVP286: comprador sin respuesta por fallo semántico IA Central (desarrollo)
+
+- Incidente real: Whapi recibió el mensaje del arquitecto a las 03:11 AR; IA Central finalizó en `review/semantic_review_required` antes de consultar catálogos; 0 rondas y 0 revisiones de comprador. No se puede recuperar la causa HTTP exacta anterior porque el código la ocultó y la traza de uso no fue persistida.
+- OpenAI: clasificación segura de fallas de autenticación, cuota, 400, 5xx, timeout y estructura, sin almacenar texto, tokens, respuestas ni credenciales. El broker registra un motivo allowlisted en SQL.
+- Aviso de fallo al comprador: reserva SQL privada con permiso y cuota de 2/24h, idempotencia por mensaje, 10 min, reconocimiento de Whapi ID verificable y estado `uncertain` sin reenvío si falta. No crea invitaciones ni cotizaciones.
+- Pruebas Node y PostgreSQL17 transaccionales en CI; ningún intento de retransmisión del mensaje del 03:11. Pendiente de publicación solo en PILOTO y prueba real de un nuevo pedido. Ver decisión 411 / Issue #673.
+
 ## 2026-11-07 — MVP285: activación controlada de cotironda-piloto (sin gastos)
 
 - Ensayo en base real PostgreSQL 17 de 21 migraciones MVP245–280, rollback verificado, luego instalación atómica (73 migraciones incluyendo resguardo interno). Gate operador SQL adicional instalado (74 migraciones), probado en laboratorio PG17 y solo service_role.
