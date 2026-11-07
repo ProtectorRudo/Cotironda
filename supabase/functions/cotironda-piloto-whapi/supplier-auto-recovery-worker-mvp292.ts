@@ -31,7 +31,7 @@ const sameMaterials=(a:DocumentDraft,b:DocumentDraft)=>a.lines.length===b.lines.
  a.lines.every((v,i)=>v.original_description===b.lines[i]?.original_description&&
   v.quantity===b.lines[i]?.quantity&&v.unit===b.lines[i]?.unit);
 async function verifyBytes(bytes:Uint8Array,expected:string):Promise<boolean>{
- const actual=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),
+ const actual=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',Uint8Array.from(bytes).buffer)),
   b=>b.toString(16).padStart(2,'0')).join('');
  return actual===expected;
 }
