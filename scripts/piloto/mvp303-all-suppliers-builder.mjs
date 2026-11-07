@@ -21,8 +21,20 @@ export function buildMvp303Sql(reader=readFileSync){
    throw Error('MVP303_UNSAFE_SQL');
  const base=buildRoundtripSql();
  if(base.split(marker).length!==2)throw Error('MVP303_ROLLBACK_ANCHOR_CHANGED');
+ // The MVP283 synthetic snapshot predates the live display_label column.
+ // Reproduce this one CURRENT-pilot schema field ONLY in disposable PG17;
+ // not a proposed migration and never a change to remote Supabase.
+ const fixtureLabels=[
+  'ALTER TABLE cotironda_piloto_privado.participants ADD COLUMN IF NOT EXISTS display_label text;',
+  "UPDATE cotironda_piloto_privado.participants SET display_label=CASE key",
+  " WHEN 'corralon_ailin' THEN 'Corralón A'",
+  " WHEN 'corralon_nahuel' THEN 'Corralón B'",
+  " WHEN 'electricidad_gamma' THEN 'Electricidad C'",
+  " ELSE 'Comprador de prueba' END;"
+ ].join('\\n');
  const text=base.replace(marker,
-  '\n\\ir ../../piloto/mvp303_revelar_todos_los_proveedores_al_cierre.sql'+
+  '\\n'+fixtureLabels+
+  '\\n\\\\ir ../../piloto/mvp303_revelar_todos_los_proveedores_al_cierre.sql'+
   '\n\\ir ./mvp303-proveedores-todos-cierre-pg17.sql'+marker);
  if(text.split(/^ROLLBACK;\s*$/gm).length!==2)
   throw Error('MVP303_MULTIPLE_ROLLBACKS');
