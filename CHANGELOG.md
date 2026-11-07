@@ -1,3 +1,10 @@
+## 07/11/2026 — MVP302, puente privado IA Central a finalistas (SOLO DESARROLLO)
+
+- Nueva RPC propuesta `cotironda_piloto_ia_finalist_sources_mvp302(uuid)`, service_role-only, sin escrituras ni envío, para última fuente verificada, cierre y consentimientos.
+- Selector TS privado de alternativas anónimas por cobertura de 1-2 proveedores, sin selección automática, precios ni datos de contacto en el resultado.
+- PG17 efímero simula ronda cerrada con dos proveedores, corrupción de SHA y opt-out; transacción se revierte. No se publica SQL ni se activan finalistas. Falta adjudicación manual autorizada e E2E real con Whapi activo.
+- [Decisión 428](docs/428-mvp302-puente-ia-finalistas-privado.md).
+
 ## 07/11/2026 — MVP301, finalistas offline (NO PUBLICADO)
 
 - Planificador determinista privado de cobertura de 1-2 proveedores, con validación real de importes MVP225; sin sumas engañosas, envío de WhatsApp, contactos, ganadores ni gastos.
