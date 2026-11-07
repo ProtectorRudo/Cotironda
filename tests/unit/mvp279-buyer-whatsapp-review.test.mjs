@@ -215,8 +215,8 @@ test('MVP279: webhook intercepts confirmation before buyer AI and uses two OFF f
  const buyerAi=s.indexOf('procesarCompradorCentralMvp226({',intercept);
  assert.ok(command>0&&ai>command&&intercept>ai&&buyerAi>intercept);
  assert.match(s,/!webLinkCode&&!buyerReviewCommand/u);
- assert.match(s,/COTIRONDA_PILOT_BUYER_BINARY_REVIEW_CONFIRM_ENABLED/u);
- assert.match(s,/COTIRONDA_PILOT_BUYER_BINARY_REVIEW_RELEASE_ENABLED/u);
- assert.match(s,/COTIRONDA_PILOT_BUYER_BINARY_REVIEW_SEND_ENABLED/u);
+ assert.match(s,/COTIRONDA_PILOT_BUYER_REVIEW_CONFIRM_ENABLED/u);
+ assert.match(s,/COTIRONDA_PILOT_BUYER_REVIEW_RELEASE_ENABLED/u);
+ assert.match(s,/COTIRONDA_PILOT_BUYER_REVIEW_SEND_ENABLED/u);
  assert.match(s,/trialDispatchChats.add\(chatHash\)/u);
 });

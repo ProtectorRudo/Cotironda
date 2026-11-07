@@ -5,8 +5,10 @@ const edge=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi
 const sql=readFileSync(new URL('../../supabase/piloto/mvp230_continuidad_presupuestos_sin_nuevos_envios.sql',import.meta.url),'utf8');
 test('MVP230: solo comprador en prueba puede crear pedidos y despachar',()=>{
  assert.match(edge,/const centralConfigured=sec\.outbound&&trialActive&&trial\.buyer===true/u);
- assert.match(edge,/habilitado:true,publicar:sec\.outbound&&trial\.dispatch===true/u);
- assert.match(edge,/if\(result\.estado==='ronda_publicada'\)\{/u);
+ assert.match(edge,/habilitado:true,publicar:false, \/\/ MVP280: buyer must approve/u);
+ assert.match(edge,/liberar:sec\.outbound&&trialActive&&trial\.buyer===true&&\s*trial\.dispatch===true/u);
+ assert.match(edge,/if\(result\.estado==='ronda_en_sombra'&&\s*!await emitirRevisionUnificada\(messageHash\)\)/u);
+ assert.match(edge,/if\(decision\.estado==='publicado'\)trialDispatchChats\.add\(chatHash\)/u);
  assert.match(edge,/if\(sec\.outbound&&trialDispatchChats\.size>0\)/u);
  assert.match(sql,/v_buyer:=coalesce\(v_trial_active,false\)/u);
  assert.match(sql,/v_dispatch:=v_buyer/u);
