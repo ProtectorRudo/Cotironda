@@ -13,7 +13,11 @@ const match=(t,r)=>assert.match(t,r);
 test('MVP280: source text AI Central can stage only; never auto-publishes',()=>{
  const at=whapi.indexOf('const result=await procesarCompradorCentralMvp226({');
  assert.ok(at>0);
- const area=whapi.slice(at,at+1600);
+ // Bound this check to the complete central-buyer branch: MVP286 adds a
+ // bounded failure notice before the original signed review sender.
+ const end=whapi.indexOf('  // Aclaración breve',at);
+ assert.ok(end>at);
+ const area=whapi.slice(at,end);
  match(area,/habilitado:true,publicar:false/u);
  match(area,/buyer_review_bypassed_by_text_broker/u);
  match(area,/emitirRevisionUnificada\(messageHash\)/u);
