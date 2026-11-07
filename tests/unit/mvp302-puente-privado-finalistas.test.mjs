@@ -41,8 +41,8 @@ test('MVP302: no permisos públicos, fuente vigente, consentimiento y despacho a
   "'contacts_revealed',false",
   "'whatsapp_sent',false"
  ])assert.ok(bridge.includes(value),value);
- assert.doesNotMatch(bridge,/\b(?:INSERT|UPDATE|DELETE|TRUNCATE|COPY|NOTIFY|PERFORM|net\.http_post|cron\.schedule)\b/iu);
- assert.doesNotMatch(bridge,/SELECT\s+\*/iu);
+ assert.doesNotMatch(bridge.replace(/^--.*$/gm,''),/\b(?:INSERT|UPDATE|DELETE|TRUNCATE|COPY|NOTIFY|PERFORM|net\.http_post|cron\.schedule)\b/iu);
+ assert.doesNotMatch(bridge.replace(/^--.*$/gm,''),/SELECT\s+\*/iu);
 });
 test('MVP302: caso sintético no implica envío ni altera la base tras rollback',()=>{
  assert.match(synthetic,/mvp302_pre_close_not_blocked/u);
