@@ -14,6 +14,10 @@ test('existing user-approved triple gate replaces the undocumented extra secret'
  assert.ok(commercial.includes("Deno.env.get('COTIRONDA_PILOT_AUTO_RECOVERY_MVP292_ENABLED')==='true'"));
  assert.ok(commercial.includes("if(outcome.state==='empty'&&"));
  assert.doesNotMatch(edge,/COTIRONDA_PILOT_AI_CENTRAL_SUPPLIER_QUOTE_ENABLED/u);
+ // MVP292's inline quote path did not meter its calls; it is disabled.
+ // Only the one-shot MVP295 interpreter may call the commercial model.
+ assert.match(edge,/textCommercialEnabled:false/u);
+ assert.match(edge,/const commercial=await procesarTextoVinculadoMvp295/u);
 });
 
 test('claim checks existing private IA Central activated state as second authorization',()=>{
