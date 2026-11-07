@@ -7,6 +7,7 @@ import {parseBuyerPilot,canPrepareBuyerPilot,validMessage,standaloneDeliveryCity
 import {generarSolicitudPdfMvp091} from './request-pdf.ts';
 import {despacharSolicitudCentralMvp223} from './ai-central-dispatch-mvp223.ts';
 import {procesarCompradorCentralMvp226} from './ai-central-buyer-mvp226.ts';
+import {avisarRevisionSemanticaMvp286} from './ai-central-review-notice-mvp286.ts';
 import {continuarZonaCentralMvp233} from './ai-central-zone-mvp233.ts';
 import {ciudadDeRespuestaCentralMvp234,estadoClaimZonaMvp234} from './ai-central-city-mvp234.ts';
 import {procesarPresupuestoCentralMvp227} from './ai-central-supplier-mvp227.ts';
@@ -718,6 +719,40 @@ async function respond(req:Request):Promise<Response>{
     if(result.estado==='conciliacion_requerida')
       return json(503,'ai_central_reconciliation_required');
     if(result.estado==='requiere_zona')aiReply='zone';
+    // MVP286: a failed semantic reading must never leave a recognized
+    // buyer in silence. SQL proves same signed text, consent, quotas and
+    // one-time delivery before we spend one outbound Whapi attempt.
+    if(result.estado==='requiere_revision'&&allowBuyerReview){
+      const notice=await avisarRevisionSemanticaMvp286({
+        habilitado:true,compradorAutenticado:!supplierKnown&&!centralSupplier,
+        chatHmac:chatHash,messageHmac:messageHash,
+        destinatario:row.chat_id,
+        rpc:async(name,params)=>{
+          const r=await db.rpc(name,params);
+          return {data:r.data,error:r.error};
+        },
+        send:async(recipient,noticeBody)=>{
+          if(recipient!==row.chat_id)throw Error('buyer_chat_changed');
+          const response=await fetch('https://gate.whapi.cloud/messages/text',{
+            method:'POST',
+            headers:{Authorization:'Bearer '+sec.token,
+              'Content-Type':'application/json'},
+            body:JSON.stringify({to:recipient,body:noticeBody}),
+            signal:AbortSignal.timeout(12000)
+          });
+          const reply=response.ok?await response.json().catch(()=>null):null;
+          const msg=reply&&typeof reply==='object'?
+            reply as Record<string,unknown>:null;
+          const nested=msg?.message&&typeof msg.message==='object'?
+            msg.message as Record<string,unknown>:null;
+          const id=msg?.message_id??nested?.id??null;
+          return {accepted:response.ok,
+            messageId:typeof id==='string'?id:null};
+        }
+      });
+      if(notice.estado==='conciliacion_requerida')
+        return json(503,'ai_central_review_notice_reconciliation_required');
+    }
     if(result.estado==='ronda_publicada')
       return json(503,'buyer_review_bypassed_by_text_broker');
     if(result.estado==='ronda_en_sombra'&&
