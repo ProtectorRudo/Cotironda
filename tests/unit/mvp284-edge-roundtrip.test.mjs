@@ -138,7 +138,7 @@ test('Edge TypeScript: pedir, confirmar, dos PDFs, dos cotizaciones; replay y pr
     oferta:offer,cobertura};
    }
   });
-  assert.equal(result.estado,'verificado_privado',key+':'+result.codigo+':'+JSON.stringify({unexpected:st.unexpected,calls:st.calls.slice(-5),quotes:st.quotes.length,aiCalls:st.aiCalls}));
+  assert.equal(result.estado,'verificado_privado',key+':'+result.codigo+':'+JSON.stringify({unexpected:st.unexpected,calls:st.calls.slice(-5),quotes:st.quotes.map(q=>({state:q.p_state,reason:q.p_reason,summary:q.p_summary===null?'null':'present'})),aiCalls:st.aiCalls}));
  }
  assert.equal(st.aiCalls,2);
  assert.equal(st.quotes.length,2);
