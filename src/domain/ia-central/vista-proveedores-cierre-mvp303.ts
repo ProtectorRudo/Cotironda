@@ -37,8 +37,8 @@ export function vistaProveedoresCierreMvp303(v:unknown):VistaProveedoresMvp303|n
  if(!isRecord(v)||!exact(v,schema)||
     v.state!=='proveedores_revelados_al_cierre'||
     !Array.isArray(v.proveedores)||
-    !Number.isSafeInteger(v.cantidad)||v.cantidad<0||v.cantidad>100||
-    !Number.isSafeInteger(v.invitados)||v.invitados<0||v.invitados>100||
+    typeof v.cantidad!=='number'||!Number.isSafeInteger(v.cantidad)||v.cantidad<0||v.cantidad>100||
+    typeof v.invitados!=='number'||!Number.isSafeInteger(v.invitados)||v.invitados<0||v.invitados>100||
     v.cantidad!==v.proveedores.length||v.cantidad>v.invitados||
     v.solo_post_cierre!==true||v.identidades_reveladas!==true||
     v.telefonos_revelados!==false||
