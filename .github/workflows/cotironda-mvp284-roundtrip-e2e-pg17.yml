@@ -56,4 +56,10 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/.mvp284-roundtrip.sql >/dev/null
           psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT (to_regnamespace('cotironda_piloto_privado') IS NULL AND to_regnamespace('auth') IS NULL AND to_regnamespace('storage') IS NULL)" | grep -Fx 't'
           rm supabase/tests/ci/.mvp284-roundtrip.sql
+      - name: Cierre y plan de finalistas en entorno aislado sin notificar
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/mvp196-finalists-source-off.sql >/dev/null
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/mvp209-finalists-plan-only-cron-pg17.sql >/dev/null
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/mvp211-capacity-12x30-pg17.sql >/dev/null
 # No Supabase remoto/Whapi/OpenAI. E2E REAL sigue sin certificarse.
