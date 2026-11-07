@@ -65,7 +65,42 @@ const decimalInRow=(row:string,quantity:string):boolean=>
 const unitInRow=(row:string,unit:string):boolean=>
  literalToken(row.toLocaleLowerCase('es-AR'),
   unit.toLocaleLowerCase('es-AR'),/[\p{L}\p{N}]/u);
-function corroboratedLines(source:string,read:DocumentDraft):boolean{
+function csvCells(row:string):string[]|null{
+ // Delimited Argentina CSV uses ';'; RFC4180 CSV uses ',' plus quotes.
+ const delimiter=row.includes(';')?';':',';
+ const fields:string[]=[];let field='',quoted=false,closed=false;
+ for(let i=0;i<row.length;i++){
+  const ch=row[i];
+  if(ch==='"'){
+   if(quoted){
+    if(row[i+1]==='"'){field+='"';i++;}
+    else {quoted=false;closed=true;}
+   }else if(field.trim()===''&&!closed)quoted=true;
+   else return null;
+  }else if(ch===delimiter&&!quoted){
+   fields.push(field.trim());field='';closed=false;
+  }else if(!quoted&&closed&&!/^[ \t]$/u.test(ch))return null;
+  else field+=ch;
+ }
+ if(quoted)return null;
+ fields.push(field.trim());
+ return fields.length>=2&&fields.length<=40?fields:null;
+}
+function literalRowMatches(row:string,line:DocumentDraft['lines'][number],
+ mime:string):boolean{
+ if(mime==='text/csv'){
+  const cells=csvCells(row);
+  return !!cells&&cells.some(cell=>cell.toLocaleLowerCase('es-AR').includes(
+   line.original_description.toLocaleLowerCase('es-AR')))&&
+   cells.includes(line.quantity!)&&
+   cells.some(cell=>cell.toLocaleLowerCase('es-AR')===
+    line.unit!.toLocaleLowerCase('es-AR'));
+ }
+ return row.toLocaleLowerCase('es-AR').includes(
+  line.original_description.toLocaleLowerCase('es-AR'))&&
+  decimalInRow(row,line.quantity!)&&unitInRow(row,line.unit!);
+}
+function corroboratedLines(source:string,read:DocumentDraft,mime:string):boolean{
  if(read.lines.length<1||read.lines.length>MAX_ITEMS||
     read.unanswered.length!==0)return false;
  const rows=source.split(/\r\n|\n|\r/u);
@@ -79,12 +114,7 @@ function corroboratedLines(source:string,read:DocumentDraft):boolean{
      line.evidence_location.trim().length===0)return false;
   let found=-1;
   for(let i=lastRow+1;i<rows.length;i++){
-   if(rows[i].toLocaleLowerCase('es-AR').includes(
-       line.original_description.toLocaleLowerCase('es-AR'))&&
-      decimalInRow(rows[i],line.quantity)&&
-      unitInRow(rows[i],line.unit)){
-    found=i;break;
-   }
+   if(literalRowMatches(rows[i],line,mime)){found=i;break;}
   }
   if(found<0)return false;
   lastRow=found;
@@ -131,7 +161,7 @@ export async function previsualizarDocumentoCompradorMvp275(args:{
     first.status!=='review_required'||second.status!=='review_required'||
     signature(first)!==signature(second))
   return result('requiere_revision','independent_readings_disagree',true);
- if(!corroboratedLines(source,first))
+ if(!corroboratedLines(source,first,input.mime))
   return result('requiere_revision','literal_rows_not_correlated',true,true);
  if(!textField(first.delivery_city,80)||
     !source.toLocaleLowerCase('es-AR').includes(
