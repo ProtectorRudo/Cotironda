@@ -36,7 +36,7 @@ test('MVP302: dos fuentes SQL verificadas por distintos rubros: cobertura comple
   assert.equal(r[k],false);
  assert.equal(r.aprobacionManualRequerida,true);
  assert.doesNotMatch(JSON.stringify(r),
-  /corralon_|message_hmac|source_sha256|sender|telefono|precio|whapi|centavos|contacto/i);
+  /corralon_|message_hmac|source_sha256|sender|telefono|precio|whapi|centavos|@s\\.whatsapp\\.net|221[0-9]{7}/i);
 });
 test('MVP302: dos fuentes completas alternativas no son dos ganadores',()=>{
  const c=copy();
