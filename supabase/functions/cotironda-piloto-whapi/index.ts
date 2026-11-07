@@ -14,6 +14,7 @@ import {procesarDocumentoCentralMvp245} from './ai-central-document-mvp245.ts';
 import {previsualizarDocumentoCompradorMvp275} from './ai-central-buyer-document-mvp275.ts';
 import {procesarDocumentoCompradorCentralMvp276} from './ai-central-buyer-media-mvp276.ts';
 import {contrastarDocumentoCompradorMvp277} from './ai-central-buyer-binary-mvp277.ts';
+import {prepararDocumentoBinarioCompradorMvp278} from './ai-central-buyer-binary-broker-mvp278.ts';
 import {proveedorConRondaCentralMvp232} from './ai-central-supplier-route-mvp232.ts';
 import {esAvisoAdjuntoProveedorMvp238} from './ai-supplier-attachment-notice-mvp238.ts';
 import {respuestaCitaPedidoMvp239,CONSULTA_RONDA_MVP239} from './ai-supplier-clarification-mvp239.ts';
@@ -888,6 +889,31 @@ async function respond(req:Request):Promise<Response>{
                 // created while this experimental path is enabled; the
                 // text-only SQL broker MUST NOT be bypassed for media.
                 if(centralConfigured&&
+                   Deno.env.get('COTIRONDA_PILOT_BUYER_BINARY_CENTRAL_ACTIVE_ENABLED')==='true'&&
+                   ['application/pdf',
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'].includes(
+                      downloadedForReview.mime)){
+                  // MVP278 verifies bytes and stages a shadow round via
+                  // separately guarded SQL. Publication is HARD OFF until
+                  // buyer-signed review and a distinct release are verified.
+                  const modelEnv=Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_MODEL');
+                  const model=modelEnv==='gpt-6.1-sol'?'gpt-6.1-sol':'gpt-6-luna';
+                  const mediaPlan=await prepararDocumentoBinarioCompradorMvp278({
+                    habilitado:true,autenticadoPorWebhook:true,
+                    compradorAutorizado:true,chatHmac:chatHash,
+                    messageHmac:messageHash,original:downloadedForReview,
+                    primera:proposal,segunda:corroboration,
+                    apiKey:Deno.env.get('COTIRONDA_PILOT_OPENAI_API_KEY')??'',
+                    model,
+                    rpc:async(name,params)=>{
+                      const r=await db.rpc(name,params);
+                      return {data:r.data,error:r.error};
+                    }
+                  });
+                  if(mediaPlan.estado==='conciliacion_requerida')
+                    console.warn('cotironda_buyer_binary_attestation_or_broker_review');
+                }else if(centralConfigured&&
                    Deno.env.get('COTIRONDA_PILOT_BUYER_BINARY_CENTRAL_PREVIEW_ENABLED')==='true'&&
                    ['application/pdf',
                     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
