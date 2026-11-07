@@ -2,7 +2,7 @@
 -- encrypted, archived supplier document. Synthetic data; rollback outer tx.
 DO $test$
 DECLARE
- aid uuid;lid uuid;src text;reply text;foreign_reply text;chat text;other_chat text;
+ aid uuid;lid uuid;src text;reply text;recover_event text;chat text;other_chat text;
  original_sha text;choice text;choice_other text;answer jsonb;options jsonb;
  expected_count integer;pre_jobs integer;post_jobs integer;pre_outbox integer;post_outbox integer;
  second jsonb;
@@ -82,6 +82,24 @@ BEGIN
   2,'single_active_round');
  answer:=public.cotironda_piloto_stage_supplier_secondary_mvp290(src,chat,second);
  IF answer->>'state'<>'staged' THEN RAISE EXCEPTION 'mvp290_second_not_staged: %',answer;END IF;
+ -- A previously archived unlinked document is recoverable only from
+ -- an exact, signed WhatsApp supplier command, no PDF retransmission.
+ recover_event:=encode(sha256(convert_to('mvp290_signed_recover','UTF8')),'hex');
+ INSERT INTO cotironda_piloto_privado.whapi_inbox(
+  message_hmac,chat_hmac,participant_key,kind,
+  nonce_b64,ciphertext_b64,plaintext_sha256,source_unix,processing_state)
+ VALUES(recover_event,chat,'corralon_ailin','text',
+  'AAAAAAAAAAAAAAAA','AAAAAAAAAAAAAAAAAAAAAAAA',
+  encode(sha256(convert_to('REVISAR COTI','UTF8')),'hex'),
+  extract(epoch from clock_timestamp())::bigint,'needs_review');
+ answer:=public.cotironda_piloto_lookup_unlinked_supplier_mvp290(
+  recover_event,other_chat);
+ IF answer->>'state'='candidate' THEN
+  RAISE EXCEPTION 'mvp290_foreign_recovery_allowed';END IF;
+ answer:=public.cotironda_piloto_lookup_unlinked_supplier_mvp290(
+  recover_event,chat);
+ IF answer->>'state'<>'candidate' OR answer->>'source_hmac'<>src THEN
+  RAISE EXCEPTION 'mvp290_archived_recovery_denied: %',answer;END IF;
  answer:=public.cotironda_piloto_reserve_supplier_choice_mvp290(src,other_chat);
  IF answer->>'state' IN('reserved','issued')
  THEN RAISE EXCEPTION 'mvp290_wrong_supplier_prompt';END IF;
@@ -91,6 +109,10 @@ BEGIN
  options:=answer->'options';
  IF jsonb_array_length(options)<>2 THEN
   RAISE EXCEPTION 'mvp290_expected_two_candidates: %',options;END IF;
+ answer:=public.cotironda_piloto_lookup_unlinked_supplier_mvp290(
+  recover_event,chat);
+ IF answer->>'state'='candidate' THEN
+  RAISE EXCEPTION 'mvp290_recovery_duplicated_existing_prompt';END IF;
  answer:=public.cotironda_piloto_reserve_supplier_choice_mvp290(src,chat);
  IF answer->>'state'<>'already_reserved' THEN
   RAISE EXCEPTION 'mvp290_duplicate_prompt: %',answer;END IF;
