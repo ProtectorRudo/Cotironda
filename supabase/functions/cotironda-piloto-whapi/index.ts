@@ -1073,9 +1073,11 @@ async function respond(req:Request):Promise<Response>{
                   // No prices, buyer details or document text in logs.
                   if(preview.estado!=='plan_privado_validado')
                     console.warn('cotironda_buyer_document_readonly_review_required');
-                }else if(centralConfigured&&
+                }else if(centralConfigured||
                    Deno.env.get('COTIRONDA_PILOT_BUYER_REVIEW_REQUIRED_ENABLED')==='true'){
-                  // No legacy auto-invite for unsupported buyer documents.
+                  // MVP285: active central buyer may NEVER fall back to
+                  // legacy document auto-invite, even if the env gate is
+                  // absent. Unsupported formats remain archived for review.
                   console.warn('cotironda_buyer_document_independent_source_required');
                 }else{
                 const plan=await db.rpc('cotironda_piloto_plan_document_mvp098',{
