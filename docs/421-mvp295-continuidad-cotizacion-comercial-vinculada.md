@@ -1,6 +1,6 @@
 # Decisión 421 — MVP295: de asociación histórica a cotización verificable sin intermediarios
 
-**Fecha:** 07/11/2026. **Estado:** desarrollado en rama, **NO publicado**. Solo la autorización `Publicalo` puede instalar la migración y desplegar las funciones en `cotironda-piloto`.
+**Fecha:** 07/11/2026. **Estado:** **publicado exclusivamente en `cotironda-piloto`** por [PR #686](https://github.com/ProtectorRudo/Cotironda/pull/686), migración n.º 82 y seguimiento v23/worker v7; luego corregida la activación del worker en MVP296 (v8 y migración n.º 83). **Publicación técnica acreditada; la oferta comercial real requiere verificación de resultados del cron.**
 
 ## Auditoría real previa (solo lectura)
 
