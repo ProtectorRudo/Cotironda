@@ -90,8 +90,15 @@ async function execute(req:Request):Promise<Response>{
  // On an EMPTY historical-correlation queue, consume at most ONE source
  // already linked by verified IA Central. Never re-read the same source
  // twice: SQL claim ledger + MVP227 review + MVP264 usage ledger.
+ // MVP296: the three user-approved correlation/text/recovery controls are
+ // the runtime enablement. The SQL claim independently requires the
+ // existing IA Central control (MVP226) and consented source/round guards.
+ // An additional, never-configured env flag would silently suppress
+ // recovery even after an authenticated accepted scheduled tick.
  if(outcome.state==='empty'&&
-    Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_SUPPLIER_QUOTE_ENABLED')==='true'){
+    Deno.env.get('COTIRONDA_PILOT_AUTO_CORRELATION_MVP291_ENABLED')==='true'&&
+    Deno.env.get('COTIRONDA_PILOT_AUTO_TEXT_MVP292_ENABLED')==='true'&&
+    Deno.env.get('COTIRONDA_PILOT_AUTO_RECOVERY_MVP292_ENABLED')==='true'){
   const commercial=await procesarTextoVinculadoMvp295({
    enabled:true,trustedInternalWorker:true,
    apiKey,model,rpc:async(name,params)=>{
