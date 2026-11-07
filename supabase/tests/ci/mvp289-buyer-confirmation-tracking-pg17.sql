@@ -1,7 +1,10 @@
 -- MVP289: isolated PostgreSQL 17 verification, executed AFTER MVP288 fixture.
 -- All changes are inside the same outer BEGIN/ROLLBACK.
 DO $test$
-DECLARE rid uuid; answer jsonb; rsrc text;
+DECLARE rid uuid; answer jsonb;
+ confirm_event text:=encode(sha256(convert_to('mvp289_confirm_signed_2026','UTF8')),'hex');
+ recovery_event text:=encode(sha256(convert_to('mvp289_recovery_signed_2026','UTF8')),'hex');
+ missing_event text:=encode(sha256(convert_to('mvp289_unsigned_event_2026','UTF8')),'hex');
 BEGIN
  IF has_function_privilege('anon',
   'public.cotironda_piloto_issue_confirmed_tracking_mvp289(text,text,uuid,text,text)','EXECUTE')
@@ -18,13 +21,13 @@ BEGIN
  INSERT INTO cotironda_piloto_privado.whapi_inbox(
    message_hmac,participant_key,chat_hmac,kind,processing_state,
    plaintext_sha256,received_at)
- VALUES(repeat('b',64),'arquitecto',repeat('a',64),'text','needs_review',
+ VALUES(confirm_event,'arquitecto',repeat('a',64),'text','needs_review',
    encode(sha256(convert_to('CONFIRMAR COTI 1234567890ABCDEF','UTF8')),'hex'),
    clock_timestamp());
  UPDATE cotironda_piloto_privado.ai_buyer_review_mvp279
  SET state='confirmed',whapi_message_id='mvp289-review-00001',
   sent_at=clock_timestamp(),confirmed_at=clock_timestamp(),
-  confirmed_reply_hmac=repeat('b',64)
+  confirmed_reply_hmac=confirm_event
  WHERE request_id=rid;
  -- This SQL fixture does not publish or dispatch through the real RPC.
  -- It constructs the same final persisted state for a read-only RPC test.
@@ -34,7 +37,7 @@ BEGIN
  VALUES(rid,'corralon_ailin','pending',NULL,NULL,NULL,NULL);
 
  answer:=public.cotironda_piloto_issue_confirmed_tracking_mvp289(
-  repeat('a',64),repeat('b',64),rid,repeat('e',64),'confirmed');
+  repeat('a',64),confirm_event,rid,repeat('e',64),'confirmed');
  IF answer->>'state'<>'not_eligible_or_issued' THEN
   RAISE EXCEPTION 'mvp289_premature_message: %',answer;END IF;
  UPDATE cotironda_piloto_privado.ai_dispatch_jobs_mvp222
@@ -43,19 +46,19 @@ BEGIN
    whapi_message_id='mvp289-supplier-00001'
  WHERE request_id=rid;
  answer:=public.cotironda_piloto_issue_confirmed_tracking_mvp289(
-  repeat('c',64),repeat('b',64),rid,repeat('e',64),'confirmed');
+  repeat('c',64),confirm_event,rid,repeat('e',64),'confirmed');
  IF answer->>'state' NOT IN ('not_authorized','not_eligible_or_issued')
  THEN RAISE EXCEPTION 'mvp289_wrong_buyer: %',answer;END IF;
  answer:=public.cotironda_piloto_issue_confirmed_tracking_mvp289(
-  repeat('a',64),repeat('c',64),rid,repeat('e',64),'confirmed');
+  repeat('a',64),missing_event,rid,repeat('e',64),'confirmed');
  IF answer->>'state'<>'not_authorized'
  THEN RAISE EXCEPTION 'mvp289_missing_signed_event: %',answer;END IF;
  answer:=public.cotironda_piloto_issue_confirmed_tracking_mvp289(
-  repeat('a',64),repeat('b',64),rid,repeat('e',64),'confirmed');
+  repeat('a',64),confirm_event,rid,repeat('e',64),'confirmed');
  IF answer->>'state'<>'issued' OR answer->>'request_id'<>rid::text
  THEN RAISE EXCEPTION 'mvp289_link_not_issued: %',answer;END IF;
  answer:=public.cotironda_piloto_issue_confirmed_tracking_mvp289(
-  repeat('a',64),repeat('b',64),rid,repeat('f',64),'confirmed');
+  repeat('a',64),confirm_event,rid,repeat('f',64),'confirmed');
  IF answer->>'state'='issued' THEN
   RAISE EXCEPTION 'mvp289_double_link';END IF;
  IF (SELECT count(*) FROM cotironda_piloto_privado.buyer_tracking_mvp091
@@ -64,11 +67,11 @@ BEGIN
  INSERT INTO cotironda_piloto_privado.whapi_inbox(
   message_hmac,participant_key,chat_hmac,kind,processing_state,
   plaintext_sha256,received_at)
- VALUES(repeat('c',64),'arquitecto',repeat('a',64),'text','needs_review',
+ VALUES(recovery_event,'arquitecto',repeat('a',64),'text','needs_review',
   encode(sha256(convert_to('SEGUIMIENTO COTI','UTF8')),'hex'),
   clock_timestamp());
  answer:=public.cotironda_piloto_issue_confirmed_tracking_mvp289(
-  repeat('a',64),repeat('c',64),NULL,repeat('d',64),'recovery');
+  repeat('a',64),recovery_event,NULL,repeat('d',64),'recovery');
  IF answer->>'state'='issued'
  THEN RAISE EXCEPTION 'mvp289_recovery_duplicated_existing_link';END IF;
  IF (SELECT count(*) FROM cotironda_piloto_privado.ai_dispatch_jobs_mvp222
