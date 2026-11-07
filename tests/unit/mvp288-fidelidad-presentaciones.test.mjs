@@ -93,3 +93,12 @@ test('MVP288: falla cerrado si evidencia es falsa, cruza ítems o se trunca',()=
   inicio:0,fin:25};
  assert.equal(descripcionOriginalVerificableMvp288(tooLong,x),null);
 });
+
+test('MVP288: evita que un teléfono u otro carácter no PDF llegue a proveedores',()=>{
+ const sources=['20 bolsas cemento por WhatsApp','20 bolsas de cemento — 50 kg'];
+ for(const source of sources){
+  const item={evidencia:source,descripcion:'Cemento CPC',
+   inicio:0,fin:source.length};
+  assert.equal(descripcionOriginalVerificableMvp288(source,item),null,source);
+ }
+});
