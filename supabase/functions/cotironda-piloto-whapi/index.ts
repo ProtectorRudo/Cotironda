@@ -1498,7 +1498,11 @@ async function respond(req:Request):Promise<Response>{
  // Preguntar una única vez por la ronda, sin contactar compradores.
  // SQL valida remitente, consentimiento, cuota y fuente irresuelta.
  // OFF por defecto: habilitación separada para la prueba WhatsApp.
- if(clarificationSourceHmac&&sec.outbound&&trial.quote_link===true&&
+ if(clarificationSourceHmac&&
+    // Zero-friction MVP291: never ask supplier/client to pick a round.
+    // Source stays private if AI evidence cannot distinguish requests.
+    Deno.env.get('COTIRONDA_PILOT_AUTO_CORRELATION_MVP291_ENABLED')!=='true'&&
+    sec.outbound&&trial.quote_link===true&&
     Deno.env.get('COTIRONDA_PILOT_AMBIGUITY_PROMPTS_ENABLED')==='true'){
    const reserved=await db.rpc('cotironda_piloto_ia_reserve_clarification_mvp239',{
      p_source_hmac:clarificationSourceHmac,p_chat_hmac:chatHash
