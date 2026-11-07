@@ -56,6 +56,50 @@ function cantidadRespaldada(evidencia:string,cant:string):boolean{
   return variants.has(requested);
  });
 }
+/** MVP287: dos modelos pueden citar subtramos distintos del MISMO ítem.
+ * La cita secundaria se busca en el ORIGINAL y debe solaparse con la
+ * primaria, demostrar la MISMA cantidad y no tomarla de otro artículo.
+ * No igualar unidades de volumen con bultos: eso cambia el presupuesto.
+ */
+function unidadCanonica(v:string):string{
+ const t=v.trim().normalize('NFD').replace(/[\u0300-\u036f]/gu,'')
+  .toLocaleLowerCase('es-AR');
+ if(['bag','bolsa','bolsas','bolson','bolsones','bigbag','big bag'].includes(t))
+  return 'bag';
+ if(['unit','unidad','unidades','unid','u','un'].includes(t))
+  return 'unit';
+ if(['m3','m³','metro cubico','metros cubicos'].includes(t))return 'm3';
+ if(['kg','kilo','kilos','kilogramo','kilogramos'].includes(t))return 'kg';
+ if(['l','lt','lts','litro','litros'].includes(t))return 'l';
+ if(['m','metro','metros'].includes(t))return 'm';
+ if(['m2','m²','metro cuadrado','metros cuadrados'].includes(t))return 'm2';
+ return t;
+}
+function unidadEquivalente(a:string,b:string,evidencia:string):boolean{
+ const x=unidadCanonica(a),y=unidadCanonica(b);
+ if(x===y)return true;
+ // Una bolsa/bolsón identificada expresamente se cuenta por piezas.
+ // Nunca convertir ese conteo en m³/kg ni asumir su capacidad.
+ const paquete=/\b(?:bolsas?|bolson(?:es)?|big\s?bags?)\b/iu.test(
+  evidencia.normalize('NFD').replace(/[\u0300-\u036f]/gu,''));
+ return paquete&&
+  ((x==='bag'&&y==='unit')||(x==='unit'&&y==='bag'));
+}
+function citaVerificadaDelMismoItem(origen:string,
+ primera:PropuestaArticulo,segunda:unknown):boolean{
+ if(!texto(segunda,1500))return false;
+ // El segundo lector también debe mostrar la cantidad numérica presente
+ // en la cita original; no basta con citar genéricamente el nombre.
+ if(/\d/u.test(primera.evidencia)&&!/\d/u.test(segunda))return false;
+ if(!cantidadRespaldada(segunda,primera.cantidad))return false;
+ let pos=origen.indexOf(segunda);
+ while(pos>=0){
+  const end=pos+segunda.length;
+  if(pos<primera.fin&&end>primera.inicio)return true;
+  pos=origen.indexOf(segunda,pos+1);
+ }
+ return false;
+}
 const rejection=(motivo:string):ResultadoLectura=>
  Object.freeze({estado:'rechazado',motivo,pedido:null});
 
@@ -141,9 +185,10 @@ export function evaluarLecturasSemanticasV1(
   });
  for(let i=0;i<accepted.length;i++){
   const a=accepted[i],b=segunda.articulos[i];
-  if(!obj(b)||b.evidencia!==a.evidencia||
+  if(!obj(b)||
+     !citaVerificadaDelMismoItem(origen,a,b.evidencia)||
      !cantidad(b.cantidad)||Number(b.cantidad)!==Number(a.cantidad)||
-     !texto(b.unidad,80)||b.unidad!==a.unidad||
+     !texto(b.unidad,80)||!unidadEquivalente(a.unidad,b.unidad,a.evidencia)||
      b.rubro!==a.rubro)
    return Object.freeze({
     estado:'requiere_aclaracion',motivo:'lecturas_discrepan_en_articulo',
