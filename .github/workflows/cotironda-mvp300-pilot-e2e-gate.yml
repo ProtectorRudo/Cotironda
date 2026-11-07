@@ -1,0 +1,37 @@
+name: Cotironda MVP300 - pilot E2E witness offline and no-send
+on:
+  pull_request:
+    branches: [feat/mvp174-supplier-packaging-equivalence]
+    paths:
+      - 'scripts/piloto/mvp300-*'
+      - 'tests/unit/mvp300-*'
+      - 'docs/426-*'
+      - '.github/workflows/cotironda-mvp300-pilot-e2e-gate.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-witness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Offline E2E gate and existing integrated circuit
+        run: |
+          node --experimental-strip-types --test \
+            tests/unit/mvp300-pilot-e2e-readonly-gate.test.mjs \
+            tests/unit/mvp284-e2e-contract.test.mjs \
+            tests/unit/mvp299-pending-coverage.test.mjs \
+            tests/unit/mvp227-recepcion-presupuesto-evaluado.test.mjs \
+            tests/unit/mvp295-linked-commercial-recovery.test.mjs
+      - name: SQL witness must not execute in CI or leak test data
+        run: |
+          node --check scripts/piloto/mvp300-gate-report.mjs
+          node --check piloto/seguimiento-web/site.js
+# Only synthetic fixtures: NEVER connect Supabase, Whapi, Vercel, OpenAI,
+# an external URL, a private token or a real contact in GitHub Actions.
