@@ -11,6 +11,7 @@ import {continuarZonaCentralMvp233} from './ai-central-zone-mvp233.ts';
 import {ciudadDeRespuestaCentralMvp234,estadoClaimZonaMvp234} from './ai-central-city-mvp234.ts';
 import {procesarPresupuestoCentralMvp227} from './ai-central-supplier-mvp227.ts';
 import {procesarDocumentoCentralMvp245} from './ai-central-document-mvp245.ts';
+import {previsualizarDocumentoCompradorMvp275} from './ai-central-buyer-document-mvp275.ts';
 import {proveedorConRondaCentralMvp232} from './ai-central-supplier-route-mvp232.ts';
 import {esAvisoAdjuntoProveedorMvp238} from './ai-supplier-attachment-notice-mvp238.ts';
 import {respuestaCitaPedidoMvp239,CONSULTA_RONDA_MVP239} from './ai-supplier-clarification-mvp239.ts';
@@ -881,6 +882,32 @@ async function respond(req:Request):Promise<Response>{
               // Supplier original files get a separate, unverified receipt:
               // totals and extra charges remain available in source storage.
               if(proposal.kind==='buyer_request'&&!verifiedSupplier){
+                // MVP275: closed READ-ONLY preview. No legacy round may be
+                // created while this experimental path is enabled; the
+                // text-only SQL broker MUST NOT be bypassed for media.
+                if(centralConfigured&&
+                   Deno.env.get('COTIRONDA_PILOT_BUYER_DOCUMENT_CENTRAL_PREVIEW_ENABLED')==='true'){
+                  const modelEnv=Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_MODEL');
+                  const model=modelEnv==='gpt-6.1-sol'?'gpt-6.1-sol':'gpt-6-luna';
+                  const preview=await previsualizarDocumentoCompradorMvp275({
+                    habilitado:true,webhookAutenticado:true,
+                    participanteComprador:true,
+                    messageHmac:messageHash,chatHmac:chatHash,
+                    original:downloadedForReview,
+                    primera:proposal,segunda:corroboration,
+                    apiKey:Deno.env.get('COTIRONDA_PILOT_OPENAI_API_KEY')??'',
+                    model,
+                    rpc:async(name,params)=>{
+                      const r=await db.rpc(name,params);
+                      return {data:r.data,error:r.error};
+                    }
+                  });
+                  // A successful preview stays private. The SQL authority
+                  // for actual media buyer rounds does NOT exist yet.
+                  // No prices, buyer details or document text in logs.
+                  if(preview.estado!=='plan_privado_validado')
+                    console.warn('cotironda_buyer_document_readonly_review_required');
+                }else{
                 const plan=await db.rpc('cotironda_piloto_plan_document_mvp098',{
                   p_message_hmac:messageHash
                 });
@@ -914,6 +941,7 @@ async function respond(req:Request):Promise<Response>{
                 // edits based on uncorroborated data or send suppliers.
                 if(!mediaClarificationBody&&proposal.delivery_city===null&&
                    proposal.lines.length>0)aiReply='zone';
+                }
               }else if(proposal.kind==='supplier_quote'){
                 // A new unquoted file may match exactly one already-sent RFQ.
                 // Quoted replies (including wrong quotes) always use MVP151.
