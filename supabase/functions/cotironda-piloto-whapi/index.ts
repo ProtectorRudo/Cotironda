@@ -777,6 +777,63 @@ async function respond(req:Request):Promise<Response>{
        !await emitirRevisionUnificada(messageHash))
       return json(503,'buyer_review_delivery_reconciliation_required');
   }
+  // MVP290: exact supplier choice is a control command, not a quote.
+  // SQL revalidates sender, archived source, candidate delivery and code.
+  if(supplierChoiceReply){
+   if(trial.quote_link===true&&
+      Deno.env.get('COTIRONDA_PILOT_SUPPLIER_CHOICES_MVP290_ENABLED')==='true'&&
+      ['needs_review','unmatched_quote'].includes(outcome(out.data))){
+    const chosen=await resolverEleccionMvp290({
+     enabled:true,trustedSupplier:supplierKnown||centralSupplier,
+     chatHmac:chatHash,replyHmac:messageHash,body,
+     rpc:async(name,params)=>{
+      const r=await db.rpc(name,params);return {data:r.data,error:r.error};
+     }
+    });
+    if(chosen.state==='reconciliation_required')
+     return json(503,'supplier_choice_sql_reconciliation_required');
+    if(chosen.state==='resolved_private'&&chosen.sourceHmac){
+     const modelEnv=Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_MODEL');
+     const model=modelEnv==='gpt-6.1-sol'?'gpt-6.1-sol':'gpt-6-luna';
+     if(chosen.sourceKind==='text'&&trial.quote_analysis===true){
+      const processed=await procesarPresupuestoCentralMvp227({
+       habilitado:true,webhookAutenticado:true,
+       messageHmac:chosen.sourceHmac,chatHmac:chatHash,
+       apiKey:Deno.env.get('COTIRONDA_PILOT_OPENAI_API_KEY')??'',model,
+       rpc:async(name,params)=>{
+        const r=await db.rpc(name,params);return {data:r.data,error:r.error};
+       },
+       decrypt:async(nonce,ciphertext)=>decryptArchivedText(
+        sec.aes,nonce,ciphertext,chatHash+'|'+chosen.sourceHmac+'|text'),
+       shaText:sha
+      });
+      if(processed.estado==='conciliacion_requerida')
+       return json(503,'supplier_choice_text_processing_reconciliation_required');
+     }
+     if(['document','image'].includes(chosen.sourceKind??'')){
+      const recovered=await procesarFuenteArchivadaMvp290({
+       enabled:Deno.env.get('COTIRONDA_PILOT_DOCUMENT_AI_ENABLED')==='true',
+       authenticatedSupplier:true,sourceHmac:chosen.sourceHmac,
+       chatHmac:chatHash,model,
+       apiKey:Deno.env.get('COTIRONDA_PILOT_OPENAI_API_KEY')??'',
+       allowOneCorroboration:Deno.env.get('COTIRONDA_PILOT_DOCUMENT_AI_ENABLED')==='true',
+       documentQuoteEnabled:trial.quote_analysis===true&&
+        Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_DOCUMENT_QUOTE_ENABLED')==='true',
+       rpc:async(name,params)=>{
+        const r=await db.rpc(name,params);return {data:r.data,error:r.error};
+       },
+       download:async(path)=>{
+        const r=await db.storage.from('cotironda-piloto-originals').download(path);
+        return {data:r.data,error:r.error};
+       }
+      });
+      if(recovered.state==='reconciliation_required')
+       return json(503,'supplier_choice_media_processing_reconciliation_required');
+     }
+    }
+   }
+   continue; // The choice is never a new supplier quote, buyer request or invitation.
+  }
   // Aclaración breve que cita el PDF ORIGINAL de Cotironda.
   // Un mensaje «Es de este pedido» no debe entrar como cotización.
   const isClarificationAnswer=row.type==='text'&&centralSupplier&&
