@@ -45,6 +45,9 @@ BEGIN
   request_id,line_no,rubro,evidencia)
  VALUES(rid_new,1,'obra_gruesa','Cemento CPC de 50 kg'),
        (rid_new,2,'obra_gruesa','Bolsones de arena');
+ INSERT INTO cotironda_piloto_privado.catalogue_lines(
+  participant_key,line_no,literal_description,family_code,recognition_state)
+ VALUES('corralon_ailin',2,'Arena a granel','arena_gruesa','curated_family');
  INSERT INTO cotironda_piloto_privado.ai_shadow_destinos_mvp221(
   request_id,supplier_key,line_no,catalogue_line_no,catalogue_description,tipo,explicacion)
  VALUES(rid_new,'corralon_ailin',1,1,'Cemento', 'producto_declarado','Prueba'),
