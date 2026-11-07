@@ -32,7 +32,7 @@ export type ReplayResultMvp292=Readonly<{
 const done=(state:ReplayResultMvp292['state'],reason:string):
  ReplayResultMvp292=>Object.freeze({state,reason,outboundMessages:0});
 async function verifyBytes(bytes:Uint8Array,sha:string):Promise<boolean>{
- const actual=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),
+ const actual=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',Uint8Array.from(bytes).buffer)),
   b=>b.toString(16).padStart(2,'0')).join('');
  return actual===sha;
 }
