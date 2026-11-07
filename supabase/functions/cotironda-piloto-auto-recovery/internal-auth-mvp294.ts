@@ -33,7 +33,7 @@ export function authorizeRecoveryMvp294(args:{
   if(secrets!==null&&typeof secrets==='object'&&!Array.isArray(secrets)&&
      typeof secrets.default==='string')
    newSecret=secrets.default;
- }catch{return false}
+ }catch{newSecret=''}
  const allowedModern=SB_SECRET.test(newSecret)&&
    safeSameMvp294(args.apikeyHeader,newSecret)&&
    !args.authorizationHeader;
