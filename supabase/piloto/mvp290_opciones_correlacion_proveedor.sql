@@ -120,7 +120,7 @@ BEGIN
        AND o.sent_at IS NOT NULL AND o.sent_at<=v_source.received_at))
   ORDER BY r.created_at DESC,r.id LIMIT 24
  LOOP
-  v_code:=encode(gen_random_bytes(5),'hex');
+  v_code:=substring(replace(gen_random_uuid()::text,'-','') from 1 for 10);
   INSERT INTO cotironda_piloto_privado.ai_supplier_choice_options_mvp290(
    source_hmac,supplier_key,request_id,choice_code)
   VALUES(p_source_hmac,v_source.supplier_key,v_candidate.id,v_code);
