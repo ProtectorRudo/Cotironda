@@ -30,6 +30,8 @@ BEGIN
   buyer_key,delivery_city,original_request,source_hmac,state,created_at)
  VALUES('arquitecto','La Plata',src1,repeat('6',64),'draft',clock_timestamp())
  RETURNING id INTO rid1;
+ UPDATE cotironda_piloto_privado.whapi_inbox SET request_id=rid1
+ WHERE message_hmac=repeat('6',64);
  INSERT INTO cotironda_piloto_privado.request_lines(
   request_id,line_no,original_description,quantity,unit)
  VALUES(rid1,1,'bolsas de cemento CPC de 50 kg',20,'bag'),
@@ -69,6 +71,8 @@ BEGIN
  VALUES('arquitecto','La Plata',src2,repeat('7',64),'draft',
   clock_timestamp()+interval '1 milliseconds')
  RETURNING id INTO rid2;
+ UPDATE cotironda_piloto_privado.whapi_inbox SET request_id=rid2
+ WHERE message_hmac=repeat('7',64);
  INSERT INTO cotironda_piloto_privado.request_lines(
   request_id,line_no,original_description,quantity,unit)
  VALUES(rid2,1,'bolsas de cemento CPC de 50 kg',25,'bag'),
@@ -128,6 +132,8 @@ BEGIN
  VALUES('arquitecto','La Plata',src3,repeat('0',64),'draft',
   clock_timestamp()+interval '2 milliseconds')
  RETURNING id INTO rid3;
+ UPDATE cotironda_piloto_privado.whapi_inbox SET request_id=rid3
+ WHERE message_hmac=repeat('0',64);
  INSERT INTO cotironda_piloto_privado.request_lines(
   request_id,line_no,original_description,quantity,unit)
  VALUES(rid3,1,'bolsas de cemento',5,'bag');
