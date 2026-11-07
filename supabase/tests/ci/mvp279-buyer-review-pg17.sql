@@ -810,7 +810,101 @@ BEGIN
  OR review->'items'->0->>'quantity'<>'20'
  THEN RAISE EXCEPTION 'mvp279_review_preview_incomplete: %',review;END IF;
  issued_code:=review->>'code';
- IF issued_code !~ '^[A-F0-9]{16}
+ IF issued_code !~ '^[A-F0-9]{16} THEN RAISE EXCEPTION 'mvp279_review_code_invalid';END IF;
+ IF public.cotironda_piloto_ia_review_issue_mvp279(
+  repeat('a',64),repeat('0',64))->>'state'<>'already_issued'
+ THEN RAISE EXCEPTION 'mvp279_review_resent';END IF;
+ IF has_function_privilege('anon',
+  'public.cotironda_piloto_ia_review_issue_mvp279(text,text)','EXECUTE')
+ OR has_function_privilege('authenticated',
+  'public.cotironda_piloto_ia_review_confirm_mvp279(text,text,text)','EXECUTE')
+ OR has_table_privilege('service_role',
+  'cotironda_piloto_privado.ai_buyer_review_mvp279','SELECT')
+ THEN RAISE EXCEPTION 'mvp279_privileges_expanded';END IF;
+ text_confirm:='CONFIRMAR COTI '||issued_code;
+ INSERT INTO cotironda_piloto_privado.whapi_inbox(
+  message_hmac,participant_key,chat_hmac,kind,processing_state,
+  plaintext_sha256,received_at
+ ) VALUES(repeat('e',64),'arquitecto',repeat('a',64),'text',
+  'needs_review',encode(sha256(convert_to(text_confirm,'UTF8')),'hex'),
+  clock_timestamp());
+
+ -- The buyer must really have been sent an exact review; code alone
+ -- cannot approve while the Whapi review attempt is missing/uncertain.
+ v_result:=public.cotironda_piloto_ia_review_confirm_mvp279(
+  repeat('a',64),repeat('e',64),text_confirm);
+ IF v_result->>'state'<>'not_authorized_or_expired'
+ THEN RAISE EXCEPTION 'mvp279_unsent_review_approved';END IF;
+ v_result:=public.cotironda_piloto_ia_review_delivery_mvp279(
+  round_id,'api_accepted','outbound-review-id-00001');
+ IF v_result->>'state'<>'recorded'
+ THEN RAISE EXCEPTION 'mvp279_sent_state_not_recorded';END IF;
+ IF public.cotironda_piloto_ia_review_delivery_mvp279(
+  round_id,'api_accepted','outbound-review-id-00001')->>'state'<>'not_pending'
+ THEN RAISE EXCEPTION 'mvp279_delivery_reused';END IF;
+ -- An altered buyer draft, same code: must not authorize that version.
+ SELECT original_description INTO prev_des
+ FROM cotironda_piloto_privado.request_lines
+ WHERE request_id=round_id AND line_no=1;
+ UPDATE cotironda_piloto_privado.request_lines
+ SET original_description='Cemento cambiado por el proveedor'
+ WHERE request_id=round_id AND line_no=1;
+ v_result:=public.cotironda_piloto_ia_review_confirm_mvp279(
+  repeat('a',64),repeat('e',64),text_confirm);
+ IF v_result->>'state'<>'stale_review'
+ THEN RAISE EXCEPTION 'mvp279_changed_order_approved: %',v_result;END IF;
+ UPDATE cotironda_piloto_privado.request_lines
+ SET original_description=prev_des
+ WHERE request_id=round_id AND line_no=1;
+ -- A wrong-code or forged text SHA must not work.
+ IF public.cotironda_piloto_ia_review_confirm_mvp279(
+   repeat('a',64),repeat('e',64),'CONFIRMAR COTI 0000000000000000'
+  )->>'state'<>'not_authorized_or_expired'
+ THEN RAISE EXCEPTION 'mvp279_wrong_code_accepted';END IF;
+ IF public.cotironda_piloto_ia_review_confirm_mvp279(
+   repeat('3',64),repeat('e',64),text_confirm
+  )->>'state'<>'not_authorized_or_expired'
+ THEN RAISE EXCEPTION 'mvp279_wrong_buyer_accepted';END IF;
+ UPDATE cotironda_piloto_privado.participants
+ SET opted_out_at=clock_timestamp() WHERE key='arquitecto';
+ IF public.cotironda_piloto_ia_review_confirm_mvp279(
+   repeat('a',64),repeat('e',64),text_confirm
+  )->>'state'<>'not_authorized_or_expired'
+ THEN RAISE EXCEPTION 'mvp279_revoked_buyer_approved';END IF;
+ UPDATE cotironda_piloto_privado.participants
+ SET opted_out_at=NULL WHERE key='arquitecto';
+
+ v_result:=public.cotironda_piloto_ia_review_confirm_mvp279(
+  repeat('a',64),repeat('e',64),text_confirm);
+ IF v_result->>'state'<>'confirmed'
+ OR v_result->>'request_id'<>round_id::text
+ THEN RAISE EXCEPTION 'mvp279_authentic_reply_denied: %',v_result;END IF;
+ IF public.cotironda_piloto_ia_review_confirm_mvp279(
+  repeat('a',64),repeat('e',64),text_confirm
+ )->>'state'<>'not_authorized_or_expired'
+ THEN RAISE EXCEPTION 'mvp279_confirm_replayed';END IF;
+ IF cotironda_piloto_privado.confirmada_binaria_mvp279(round_id) IS NOT TRUE
+ THEN RAISE EXCEPTION 'mvp279_snapshot_confirm_not_seen';END IF;
+ v_result:=public.cotironda_piloto_ia_publish_mvp222(round_id);
+ IF v_result->>'state'<>'ready_for_delivery'
+ THEN RAISE EXCEPTION 'mvp279_confirmed_binary_not_publishable: %',v_result;END IF;
+ IF (SELECT count(*) FROM cotironda_piloto_privado.ai_dispatch_jobs_mvp222
+     WHERE request_id=round_id)<>1
+ THEN RAISE EXCEPTION 'mvp279_no_synthetic_job';END IF;
+ -- A changed destination after approval invalidates both claim and PDF,
+ -- even if the SQL job itself has already been created.
+ UPDATE cotironda_piloto_privado.ai_shadow_destinos_mvp221
+ SET explicacion='otra marca sin revisar'
+ WHERE request_id=round_id;
+ IF cotironda_piloto_privado.confirmada_binaria_mvp279(round_id) IS NOT FALSE
+ THEN RAISE EXCEPTION 'mvp279_changed_supplier_route_still_approved';END IF;
+ v_result:=public.cotironda_piloto_ia_claim_mvp222(round_id);
+ IF v_result->>'state'<>'empty'
+ THEN RAISE EXCEPTION 'mvp279_claim_after_change_allowed';END IF;
+END $mvp279$;
+
+ROLLBACK;
+
  THEN RAISE EXCEPTION 'mvp279_review_code_invalid';END IF;
  IF public.cotironda_piloto_ia_review_issue_mvp279(
   repeat('a',64),repeat('0',64))->>'state'<>'already_issued'
