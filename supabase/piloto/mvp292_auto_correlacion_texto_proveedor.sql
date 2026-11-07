@@ -267,7 +267,7 @@ BEGIN
     WHERE o.request_id=p_request AND o.supplier_key=m.participant_key
      AND o.state='api_accepted' AND o.whapi_message_id IS NOT NULL
      AND o.sent_at IS NOT NULL AND o.sent_at<=m.received_at))
- FOR UPDATE OF m,a,u,decision;
+ FOR UPDATE OF m,u,decision;
  IF NOT FOUND THEN RETURN jsonb_build_object('state','not_eligible');END IF;
  -- Commit source and audit records atomically. Never use guessed prices.
  UPDATE cotironda_piloto_privado.whapi_inbox SET request_id=p_request,
