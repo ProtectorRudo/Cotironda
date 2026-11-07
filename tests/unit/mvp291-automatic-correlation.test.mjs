@@ -56,7 +56,8 @@ test('partial distinctive offers may link, partial shared or unsupported remain 
  const one={matches:[{candidate:'r1',source_line:1,request_line:1,
   relation:'equivalent'}]};
  assert.equal(elegirRondaUnicaMvp291(short,one,one).requestId,newId);
- const shared={quote:[src[0]],options:[latest,earlier]};
+ const shared={quote:[src[0]],options:[latest,
+  {...earlier,lines:[{...earlier.lines[0],quantity:'20'},...earlier.lines.slice(1)]}]};
  const both={matches:[...one.matches,{
   candidate:'r2',source_line:1,request_line:1,relation:'equivalent'}]};
  assert.equal(elegirRondaUnicaMvp291(shared,both,both).requestId,null);
