@@ -119,7 +119,8 @@ test('MVP264: unknown URL/model and non-POST have zero calls',async()=>{
 test('MVP264: Edge opt-in flag OFF by default in buyer and 2 supplier paths',()=>{
  const s=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/index.ts',import.meta.url),'utf8');
  const hits=s.match(/usageTraceEnabled:Deno.env.get\('COTIRONDA_PILOT_AI_USAGE_TRACE_ENABLED'\)==='true'/gu)??[];
- assert.equal(hits.length,3);
+ assert.equal(hits.length,4);
+ assert.match(s,/supplier_text_auto_correlation_reconciliation_required/u);
  const buyer=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/ai-central-buyer-mvp226.ts',import.meta.url),'utf8');
  const supplier=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/ai-central-supplier-mvp227.ts',import.meta.url),'utf8');
  assert.match(buyer,/role:'buyer',model:args.model,rpc:args.rpc/u);
