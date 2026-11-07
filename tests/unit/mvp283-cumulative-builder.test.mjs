@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 import {buildCumulativeSql,summary,pilotaudit} from '../../scripts/piloto/mvp283-cumulative-builder.mjs';
 import {migrationFiles} from '../../scripts/piloto/mvp281-manifiesto-integracion.mjs';
@@ -30,4 +31,14 @@ test('no se anuncia copia fiel ni autorización de publicación',()=>{
  assert.equal(s.deploy_authorized,false);
  assert.ok(s.bytes>4000);
  assert.equal(pilotaudit.private_rls_tables,pilotaudit.tables);
+});
+
+
+test('huella de esquema de solo lectura sin filas ni cuerpos de funciones',()=>{
+ const sql=readFileSync(new URL('../../scripts/piloto/mvp283-catalog-fingerprint-readonly.sql',import.meta.url),'utf8');
+ assert.match(sql,/pg_get_constraintdef/);
+ assert.match(sql,/sha256/);
+ assert.doesNotMatch(sql,/pg_get_functiondef/);
+ assert.doesNotMatch(sql,/^\s*(INSERT|UPDATE|DELETE|ALTER|CREATE|DROP|CALL|GRANT|REVOKE)\b/im);
+ assert.doesNotMatch(sql,/\b(?:COPY|pg_read_file|pg_ls_dir)\b/i);
 });
