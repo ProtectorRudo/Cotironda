@@ -7,7 +7,7 @@ import {parseBuyerPilot,canPrepareBuyerPilot,validMessage,standaloneDeliveryCity
 import {generarSolicitudPdfMvp091} from './request-pdf.ts';
 import {despacharSolicitudCentralMvp223} from './ai-central-dispatch-mvp223.ts';
 import {procesarCompradorCentralMvp226} from './ai-central-buyer-mvp226.ts';
-import {avisarRevisionSemanticaMvp286} from './ai-central-review-notice-mvp286.ts';
+import {avisarRevisionSemanticaMvp286,aceptarRespuestaWhapiMvp287} from './ai-central-review-notice-mvp286.ts';
 import {continuarZonaCentralMvp233} from './ai-central-zone-mvp233.ts';
 import {ciudadDeRespuestaCentralMvp234,estadoClaimZonaMvp234} from './ai-central-city-mvp234.ts';
 import {procesarPresupuestoCentralMvp227} from './ai-central-supplier-mvp227.ts';
@@ -741,13 +741,7 @@ async function respond(req:Request):Promise<Response>{
             signal:AbortSignal.timeout(12000)
           });
           const reply=response.ok?await response.json().catch(()=>null):null;
-          const msg=reply&&typeof reply==='object'?
-            reply as Record<string,unknown>:null;
-          const nested=msg?.message&&typeof msg.message==='object'?
-            msg.message as Record<string,unknown>:null;
-          const id=msg?.message_id??nested?.id??null;
-          return {accepted:response.ok,
-            messageId:typeof id==='string'?id:null};
+          return aceptarRespuestaWhapiMvp287(response.ok,reply);
         }
       });
       if(notice.estado==='conciliacion_requerida')

@@ -9,6 +9,23 @@ type Send=(recipient:string,body:string)=>
 
 const HASH=/^[a-f0-9]{64}$/u;
 const ID=/^[A-Za-z0-9._:-]{8,160}$/u;
+/** Only the provider's response status is examined. No messages or
+ * addresses are returned, and HTTP 200 alone is NEVER a delivery receipt.
+ * A provider's explicit sent:false/failed cannot be called accepted.
+ */
+export function aceptarRespuestaWhapiMvp287(httpOk:boolean,
+ payload:unknown):Readonly<{accepted:boolean;messageId:string|null}>{
+ const d=payload!==null&&typeof payload==='object'&&!Array.isArray(payload)
+  ?payload as Record<string,unknown>:null;
+ const m=d?.message!==null&&typeof d?.message==='object'&&!Array.isArray(d?.message)
+  ?d.message as Record<string,unknown>:null;
+ const id=d?.message_id??m?.id??d?.id;
+ const good=typeof id==='string'&&ID.test(id);
+ const failed=d?.sent===false||m?.sent===false||
+   d?.status==='failed'||m?.status==='failed';
+ return {accepted:httpOk&&good&&!failed,
+  messageId:good?(id as string):null};
+}
 export const AVISO_LECTURA_NO_VALIDADA_MVP286=
  'Recibí tu mensaje, pero no pude validar el pedido en este intento. '+
  'No envié nada a los proveedores. Revisá que figuren materiales, '+
