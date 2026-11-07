@@ -85,7 +85,8 @@ export function diagnosticarLecturaInvalidaMvp297(
      !['cantidad','unidad','precioUnitarioLiteral','totalLineaLiteral'].every(k=>
        v[k]===null||(typeof v[k]==='string'&&v[k].length<=100))||
      !['precioUnitarioLiteral','totalLineaLiteral'].every(k=>
-       v[k]===null||v.textoOriginal.includes(String(v[k]))))
+       v[k]===null||(typeof v.textoOriginal==='string'&&
+        v.textoOriginal.includes(String(v[k])))))
    return error('line_quote_unproven');
   used.add(v.numero);
  }
