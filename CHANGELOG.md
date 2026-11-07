@@ -1,3 +1,10 @@
+## 2026-11-06 — MVP281: preflight de integración segura de IA Central (solo desarrollo)
+
+- Issue #663: manifiesto de 21 SQL candidatos MVP245–280, verificado en orden sin migraciones manuales, rollback ni cron supervisor.
+- Nuevo preflight SQL de solo lectura ejecutado sobre `cotironda-piloto`: 9 componentes inspeccionados, 0 instalados; los 4 gates apagados, 0 despachos inciertos y 3 cron históricos activos.
+- Test Node y workflow de integridad del manifiesto, decisión 406 y plan escalonado de publicación futura. **No se instalaron migraciones ni se desplegó Edge/Vercel; no se enviaron WhatsApps y no se generaron cargos nuevos.**
+- CI de MVP280 aprobado en GitHub; Vercel devuelve chequeos fallidos por límite de builds, sin ampliar plan. Falta una autorización `Publicalo` y E2E real antes de considerar el piloto operativo.
+
 ## 2026-11-06 — MVP280: confirmación única del comprador en texto, TXT/CSV y PDF/Office (solo desarrollo)
 
 - La IA Central prepara rondas `en sombra` para texto, continuación de localidad, TXT/CSV y PDF/DOCX/XLSX; todas las rutas de publicación directa del webhook están deshabilitadas. El comprador revisa antes de generar invitaciones, mediante un único código firmado, no «sí» genérico.
