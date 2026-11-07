@@ -1,3 +1,10 @@
+## 2026-11-07 — MVP288: evidencia original para descripciones comerciales, cantidades legibles y corrección ligada (desarrollo)
+
+- Preservación de presentaciones literales de la fuente verificada: «20 bolsas de cemento CPC de 50 kg», «3 bolsones de arena», sin truncar ni inventar medidas.
+- Vista de revisión y PDF proveedor comparten unidad contextualizada y formato exacto de cantidad (20, 3, 1.25) sin ceros decimales innecesarios.
+- Corrección por WhatsApp con referencia `CORREGIR COTI <código>: <pedido completo>`: nueva revisión vinculada al pedido anterior; el código de la revisión anterior caduca en la misma transacción y no autoriza despachos. Sin mutación de ofertas originales.
+- Tests Node y PostgreSQL 17 acumulativo con rollback; PR de desarrollo, no publicado en piloto. Ver decisión 413 e Issue #677.
+
 ## 2026-11-07 — MVP287: segundo mensaje recibido, validación semántica y comprobantes de Whapi
 
 - Fuente del comprador coincidente por SHA256 con ejemplo recomendado; su lectura IA fue bloqueada por `lecturas_discrepan_en_articulo`, sin ronda. Se aceptarán subcitas literales solapadas del mismo artículo y unidades de conteo equivalentes sin convertir cantidades, presentaciones ni rubros.
