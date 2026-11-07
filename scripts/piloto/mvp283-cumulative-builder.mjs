@@ -28,6 +28,10 @@ const setup=[
  'ALTER TABLE cotironda_piloto_privado.buyer_tracking_mvp091 ADD COLUMN IF NOT EXISTS send_state text,ADD COLUMN IF NOT EXISTS whapi_message_id text,ADD COLUMN IF NOT EXISTS send_attempted_at timestamptz,ADD COLUMN IF NOT EXISTS created_at timestamptz;',
  'ALTER TABLE cotironda_piloto_privado.whapi_outbox ADD COLUMN IF NOT EXISTS whapi_message_id text,ADD COLUMN IF NOT EXISTS leased_at timestamptz,ADD COLUMN IF NOT EXISTS lease_token uuid,ADD COLUMN IF NOT EXISTS sent_at timestamptz,ADD COLUMN IF NOT EXISTS created_at timestamptz,ADD COLUMN IF NOT EXISTS state text;',
  'ALTER TABLE cotironda_piloto_privado.ai_dispatch_jobs_mvp222 ADD COLUMN IF NOT EXISTS whapi_message_id text,ADD COLUMN IF NOT EXISTS leased_at timestamptz;',
+ 'ALTER TABLE cotironda_piloto_privado.media_archive_mvp095 ADD COLUMN IF NOT EXISTS kind text,ADD COLUMN IF NOT EXISTS size_bytes integer,ADD COLUMN IF NOT EXISTS finished_at timestamptz,ADD COLUMN IF NOT EXISTS reserved_at timestamptz,ADD COLUMN IF NOT EXISTS ai_reserved_at timestamptz,ADD COLUMN IF NOT EXISTS storage_path text,ADD COLUMN IF NOT EXISTS media_id_sha256 text,ADD COLUMN IF NOT EXISTS review_state text,ADD COLUMN IF NOT EXISTS delivery_city_confirmed text,ADD COLUMN IF NOT EXISTS delivery_zone_source_hmac text;',
+ 'ALTER TABLE cotironda_piloto_privado.whapi_inbox ADD COLUMN IF NOT EXISTS source_unix bigint;',
+ 'ALTER TABLE cotironda_piloto_privado.requests ADD COLUMN IF NOT EXISTS round_days smallint,ADD COLUMN IF NOT EXISTS closed_at timestamptz;',
+
 
  '\\ir ../../piloto/mvp229_piloto_ia_central_control_temporal.sql',
  '\\ir ../../piloto/mvp230_continuidad_presupuestos_sin_nuevos_envios.sql'
