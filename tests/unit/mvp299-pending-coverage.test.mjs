@@ -5,7 +5,11 @@ import {resumenPrivadoMvp245} from
  '../../supabase/functions/cotironda-piloto-whapi/ai-central-supplier-mvp227.ts';
 import {vistaPendientesRubrosMvp299} from
  '../../src/domain/ia-central/vista-pendientes-rubros-mvp299.ts';
-import {buyerView} from '../../piloto/seguimiento-web/api/estado.js';
+import vm from 'node:vm';
+const proxy=readFileSync(new URL('../../piloto/seguimiento-web/api/estado.js',
+ import.meta.url),'utf8');
+const buyerView=vm.runInNewContext(proxy.slice(0,proxy.indexOf('export default'))+
+ '\n buyerView;',{}, {timeout:1500});
 
 const rubric={rubro:'obra_gruesa',solicitados:2,respondidos:1,
  cobertura:'parcial',precioComprobado:0,faltantes:['item_2']};
@@ -96,9 +100,9 @@ test('proxy preserves pending when can_open false, never turns into verified off
  assert.equal(out.pendientes_rubros_ia.respuestas.length,1);
  assert.equal(out.finalists,undefined);
  assert.equal(out.material_baskets,undefined);
- assert.deepEqual(buyerView({state:'not_found',pendientes_rubros_ia:pending}),
+ assert.deepEqual(JSON.parse(JSON.stringify(buyerView({state:'not_found',pendientes_rubros_ia:pending}))),
   {state:'not_found'});
- assert.deepEqual(buyerView({state:'cancelled',pendientes_rubros_ia:pending}),
+ assert.deepEqual(JSON.parse(JSON.stringify(buyerView({state:'cancelled',pendientes_rubros_ia:pending}))),
   {state:'cancelled',can_open:false});
 });
 test('proxy strips injected identity, prices and invalid counts',()=>{
