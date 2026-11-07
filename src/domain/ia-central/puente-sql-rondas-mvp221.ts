@@ -57,8 +57,9 @@ export function armarPreparacionSombraMvp221(args:{
   args.plan.catalogos.map(s=>[s.clave,s] as const)
  );
  if(bySupplier.size!==args.plan.catalogos.length)return no('proveedores_duplicados');
- const items=pedido.articulos.map(item=>({
-  descripcion:descripcionOriginalVerificableMvp288(args.textoOriginal,item),
+ const items=pedido.articulos.map((item,i)=>({
+  descripcion:descripcionOriginalVerificableMvp288(args.textoOriginal,item,
+   pedido.articulos[i+1]?.inicio),
   cantidad:item.cantidad,unidad:item.unidad,
   evidencia:item.evidencia,rubro:item.rubro
  }));
