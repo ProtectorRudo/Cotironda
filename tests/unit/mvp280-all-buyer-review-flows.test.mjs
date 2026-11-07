@@ -68,8 +68,11 @@ test('MVP280: legacy document auto-invite blocked when review REQUIRED flag is O
  const at=whapi.indexOf('const plan=await db.rpc('+
   "'cotironda_piloto_plan_document_mvp098'");
  assert.ok(at>0);
- const preceding=whapi.slice(at-340,at);
+ // MVP285 also blocks legacy fallback when IA Central is active, even
+ // if the explicit REQUIRE_REVIEW env switch is absent.
+ const preceding=whapi.slice(at-750,at);
  match(preceding,/COTIRONDA_PILOT_BUYER_REVIEW_REQUIRED_ENABLED/u);
+ match(preceding,/else if\(centralConfigured\|\|/u);
  match(whapi,/COTIRONDA_PILOT_BUYER_REVIEW_SEND_ENABLED/u);
  assert.doesNotMatch(whapi,/COTIRONDA_PILOT_BUYER_DOCUMENT_CENTRAL_PUBLISH_ENABLED/u);
 });
