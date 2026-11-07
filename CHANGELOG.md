@@ -1,3 +1,9 @@
+## 07/11/2026 — MVP299 (solo desarrollo)
+
+- Nuevo resumen privado de fuente interpretada **sin precio comparable** (lista cerrada de motivos seguros). Una fuente no conciliada o atribuida de forma insegura permanece en revisión invisible.
+- RPC opcional service_role + DTO estricto + Edge + proxy Vercel + pantalla por rubro, sin revelar identidad, fuente, precios, contactos o adjudicación.
+- Pruebas sintéticas Node/Deno/PG17/JavaScript; sin desplegar ni reenviar IA/WhatsApp. Ver [decisión 425](docs/425-mvp299-separacion-respuestas-sin-precio-comparable.md).
+
 ## 07/11/2026 — MVP298 (desarrollo, no desplegado)
 
 - MVP225: cotejo de doble lectura por hechos económicos verificables, no glosas ni spans alternativos de citas igualmente fundadas.
