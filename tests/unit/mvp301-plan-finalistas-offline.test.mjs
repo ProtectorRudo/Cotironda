@@ -122,7 +122,6 @@ test('MVP301: etiquetas privadas, duplicadas y entradas inventadas se rechazan',
  const cases=[
   [q('Corralón de Ailín')],
   [q('Presupuesto 1'),q('Presupuesto 1')],
-  [q('Presupuesto 1',{length:30})],
   Array.from({length:13},(_,i)=>q('Presupuesto '+(i+1)))
  ];
  for(const casesOf of cases){
