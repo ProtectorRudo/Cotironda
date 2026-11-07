@@ -6,6 +6,9 @@
 - Seguridad publicada comprobada: RLS y ACL restrictivas en SQL, Edge con doble autorización y prueba HTTP sin credenciales `401`, archivos comparados con GitHub. **El resultado final del cron y la aparición de una oferta económica verificada siguen pendientes de auditoría E2E**. No declarar precio, ranking ni publicación comercial antes de ver las filas reales.
 - Registro de alcance: [decisión 421](docs/421-mvp295-continuidad-cotizacion-comercial-vinculada.md) y [decisión 422](docs/422-mvp296-activacion-controlada-recuperacion-comercial.md).
 
+
+- **Prueba real 16:45 UTC:** el cron procesó la fuente histórica de Nahuel una vez; quedó `ai_supplier_linked_replay_mvp295=review` y `ai_supplier_review_mvp227=review/semantic_review_required`, 2 llamadas de modelo con 3.503 tokens observados. No se publicó precio ni ranking; cero reintentos. El documento de Ailín sigue en revisión ambigua. La causa específica de la revisión semántica no se registra aún; no inventar una.
+
 ## 2026-11-07 — MVP295: de vínculo histórico a oferta comercial segura (desarrollo)
 
 - Auditoría piloto **solo lectura**: proveedor Nahuel respondió texto y la fuente fue vinculada automáticamente, pero no llegó a la revisión comercial; proveedor Ailín envió documento ambiguo que permanece privado. Cero publicaciones desde esas fuentes; existe una versión previa independiente de Ailín.
