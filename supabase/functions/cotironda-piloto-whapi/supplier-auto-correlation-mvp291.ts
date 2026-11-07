@@ -39,12 +39,13 @@ export function corroborarCantidadMvp291(source:Line,requested:Line):'strong'|'u
  const a=numeric(source.quantity),b=numeric(requested.quantity),
   au=cleanUnit(source.unit),bu=cleanUnit(requested.unit);
  if(a===null||b===null||au===null||bu===null)return 'unknown';
- if(au===bu&&Math.abs(a-b)<0.0001)return 'strong';
  if(au==='bag'&&bu==='bag'){
   const aa=massOrVolume(source.description),bb=massOrVolume(requested.description);
   if(aa&&bb&&aa.unit===bb.unit)
    return Math.abs(a*aa.per-b*bb.per)<0.0001?'strong':'different';
+  if(Boolean(aa)!==Boolean(bb))return 'unknown';
  }
+ if(au===bu&&Math.abs(a-b)<0.0001)return 'strong';
  return 'different';
 }
 const goodLine=(x:unknown):x is Line=>object(x)&&
@@ -130,7 +131,7 @@ async function modelRead(input:{quote:Line[];options:Candidate[]},apiKey:string,
  if(!object(proposal)||Object.keys(proposal).length!==1||
   !Array.isArray(proposal.matches)||proposal.matches.length>200)
   throw Error('model_schema_invalid');
- return proposal as Proposal;
+ return proposal as unknown as Proposal;
 }
 function canonical(read:Proposal,input:{quote:Line[];options:Candidate[]}):string|null{
  const seen=new Set<string>();const valid:Pair[]=[];
