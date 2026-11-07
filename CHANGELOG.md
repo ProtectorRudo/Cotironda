@@ -1,3 +1,10 @@
+## 2026-11-06 — MVP283: instalación acumulativa PG17 sintética (solo desarrollo)
+
+- Implementado un único ensayo SQL que instala sucesivamente las **21 migraciones MVP245–280** en un mismo esquema PostgreSQL17 sintético, con rollback integral. CI acumulativo PASS.
+- Se corrigieron dos diferencias en el bootstrap de prueba (faltaban comprobantes históricos MVP119 y columnas de `media_archive_mvp095`); contrastadas contra catálogo real, **sin modificar** `cotironda-piloto`.
+- Inventario estructural real auditado solo lectura: 63 tablas privadas, 428 columnas, RLS habilitado en las 63, 20 funciones privadas y 112 funciones públicas Cotironda. El esquema sintético NO reproduce la totalidad de esas estructuras.
+- Se añadió bloqueo de CI para conexión local PG17 y [decisión 408](docs/408-mvp283-coinstalacion-pg17-y-fidelidad-esquema.md). **Sigue pendiente el ensayo sobre un dump completo de solo esquema antes de `Publicalo`.** Nada publicado ni gastos.
+
 ## 2026-11-06 — MVP282 corrección de vencimiento de aprobación comprador y prueba de 21 SQL
 
 - Detectada una carrera real en PostgreSQL17: dos lecturas de reloj podían dejar `expires_at` unos microsegundos más tarde que `created_at + 24h`; constraint impedía emitir revisión. MVP279 y MVP280 ahora usan un único `issued_at` para ambas marcas temporales.
