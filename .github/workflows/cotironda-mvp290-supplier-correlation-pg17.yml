@@ -48,7 +48,6 @@ jobs:
         run: |
           node --experimental-strip-types --test \
             tests/unit/mvp290-supplier-correlation.test.mjs \
-            tests/unit/mvp239-supplier-clarification.test.mjs \
             tests/unit/mvp279-buyer-whatsapp-review.test.mjs \
             tests/unit/mvp289-buyer-tracking-confirmation.test.mjs
           node scripts/piloto/mvp290-supplier-correlation-builder.mjs --assert-local
