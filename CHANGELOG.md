@@ -1,3 +1,10 @@
+## 2026-11-06 — MVP275: puente comprador documental IA Central (solo lectura)
+
+- Diagnóstico seguro de compradores con TXT/CSV: comprueba bytes originales SHA-256, UTF-8 estricto, dos lecturas idénticas y cantidades/unidades/descripciones literales por fila antes del planificador semántico.
+- El planificador solo puede invocar lectura privada de catálogo; la previsualización no escribe rondas, no envía WhatsApps ni suplanta el texto de un archivo en SQL.
+- Bandera Edge opt-in `COTIRONDA_PILOT_BUYER_DOCUMENT_CENTRAL_PREVIEW_ENABLED` inicialmente OFF; al usarla no corre simultáneamente el preparador documental legado. PDF/Excel/fotos sin evidencia independiente quedan en revisión.
+- Tests sintéticos y CI específica, documentación en decisión 400. **No se instaló ni activó en PILOTO, no se creó respaldo real y no se realizó E2E**.
+
 ## 2026-11-06 — MVP274: modo de piloto continuo, sin costos nuevos (solo desarrollo)
 
 - Decisión 399: respaldos ZIP e infraestructura de ejecución privada a plan B; sin gastos nuevos. El objetivo inmediato es probar Cotironda de punta a punta con sus 3 participantes consentidos.
