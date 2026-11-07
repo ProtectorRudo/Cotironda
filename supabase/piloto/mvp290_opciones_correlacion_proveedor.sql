@@ -50,7 +50,7 @@ BEGIN
   AND u.state='ambiguous_round' AND u.resolved_request_id IS NULL
   AND m.request_id IS NULL AND m.kind=u.kind
   AND m.processing_state IN('unmatched_quote','needs_review')
-  AND m.received_at>=clock_timestamp()-interval '24 hours'
+  AND m.received_at>=clock_timestamp()-interval '7 days'
   AND s.participant_role='supplier' AND s.consent_at IS NOT NULL
   AND s.opted_out_at IS NULL
   AND ((m.kind='text' AND m.plaintext_sha256=u.source_sha256)
@@ -272,3 +272,62 @@ REVOKE ALL ON FUNCTION public.cotironda_piloto_resolve_supplier_choice_mvp290(te
 GRANT EXECUTE ON FUNCTION public.cotironda_piloto_reserve_supplier_choice_mvp290(text,text) TO service_role;
 GRANT EXECUTE ON FUNCTION public.cotironda_piloto_finish_supplier_choice_mvp290(text,text,text) TO service_role;
 GRANT EXECUTE ON FUNCTION public.cotironda_piloto_resolve_supplier_choice_mvp290(text,text,text) TO service_role;
+
+-- General self-service retrieval for a previously archived, ambiguous
+-- supplier original. The event text must be exactly REVISAR COTI, and there
+-- must be EXACTLY ONE pending source for this consenting supplier.
+-- No content inference, no outgoing message and no write in this function.
+CREATE OR REPLACE FUNCTION public.cotironda_piloto_lookup_unlinked_supplier_mvp290(
+ p_event_hmac text,p_chat_hmac text)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
+AS $body$
+DECLARE v_supplier text;v_source text;v_count integer;
+BEGIN
+ IF p_event_hmac IS NULL OR p_event_hmac !~ '^[a-f0-9]{64}$'
+ OR p_chat_hmac IS NULL OR p_chat_hmac !~ '^[a-f0-9]{64}$'
+ THEN RETURN jsonb_build_object('state','invalid');END IF;
+ IF NOT EXISTS(SELECT 1 FROM cotironda_piloto_privado.integration_flags f
+   WHERE f.only_row AND f.whatsapp_inbound_enabled AND f.whatsapp_outbound_enabled)
+ THEN RETURN jsonb_build_object('state','disabled');END IF;
+ SELECT supplier.key INTO v_supplier
+ FROM cotironda_piloto_privado.whapi_inbox event
+ JOIN cotironda_piloto_privado.participants supplier
+  ON supplier.key=event.participant_key AND supplier.chat_hmac=event.chat_hmac
+ WHERE event.message_hmac=p_event_hmac AND event.chat_hmac=p_chat_hmac
+  AND event.kind='text' AND event.request_id IS NULL
+  AND event.processing_state='needs_review'
+  AND event.plaintext_sha256=encode(
+   sha256(convert_to('REVISAR COTI','UTF8')),'hex')
+  AND event.received_at>clock_timestamp()-interval '10 minutes'
+  AND supplier.participant_role='supplier'
+  AND supplier.consent_at IS NOT NULL AND supplier.opted_out_at IS NULL;
+ IF NOT FOUND THEN RETURN jsonb_build_object('state','not_authorized');END IF;
+ SELECT count(*),min(u.message_hmac) INTO v_count,v_source
+ FROM cotironda_piloto_privado.ai_supplier_unresolved_mvp237 u
+ JOIN cotironda_piloto_privado.whapi_inbox inbox
+  ON inbox.message_hmac=u.message_hmac
+  AND inbox.participant_key=u.supplier_key AND inbox.chat_hmac=p_chat_hmac
+ JOIN cotironda_piloto_privado.media_archive_mvp095 a
+  ON a.message_hmac=u.message_hmac AND a.participant_key=u.supplier_key
+  AND a.chat_hmac=inbox.chat_hmac
+ WHERE u.supplier_key=v_supplier AND u.state='ambiguous_round'
+  AND u.resolved_request_id IS NULL AND inbox.request_id IS NULL
+  AND inbox.processing_state='needs_review'
+  AND inbox.kind IN('document','image') AND inbox.kind=u.kind
+  AND inbox.received_at<=(SELECT received_at FROM cotironda_piloto_privado.whapi_inbox
+      WHERE message_hmac=p_event_hmac)
+  AND inbox.received_at>=clock_timestamp()-interval '7 days'
+  AND a.request_id IS NULL AND a.state='stored'
+  AND a.review_state='suggested_only'
+  AND a.storage_path='media/'||a.message_hmac
+  AND a.content_sha256=u.source_sha256
+  AND NOT EXISTS(SELECT 1 FROM cotironda_piloto_privado.ai_supplier_choice_prompts_mvp290 prompt
+   WHERE prompt.source_hmac=u.message_hmac);
+ IF v_count<>1 THEN
+  RETURN jsonb_build_object('state',
+   CASE WHEN v_count>1 THEN 'multiple_unlinked_sources' ELSE 'none' END);
+ END IF;
+ RETURN jsonb_build_object('state','candidate','source_hmac',v_source);
+END $body$;
+REVOKE ALL ON FUNCTION public.cotironda_piloto_lookup_unlinked_supplier_mvp290(text,text) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.cotironda_piloto_lookup_unlinked_supplier_mvp290(text,text) TO service_role;
