@@ -216,7 +216,7 @@ CREATE TABLE storage.objects(
  PRIMARY KEY(bucket_id,name)
 );
 \ir ../../piloto/mvp278_autorizacion_binarios_lectura_independiente.sql
-\ir ../../piloto/mvp279_revision_confirmacion_whatsapp_binarios.sql
+
 CREATE TRIGGER enqueue_on_invitation
  AFTER INSERT ON cotironda_piloto_privado.invitations
  FOR EACH ROW EXECUTE FUNCTION cotironda_piloto_privado.queue_invitation_whapi_v1();
@@ -744,6 +744,7 @@ BEGIN
 END $mvp278$;
 
 
+\ir ../../piloto/mvp279_revision_confirmacion_whatsapp_binarios.sql
 -- MVP279 synthetic: review EXACT source, all items, rubros, city and routing;
 -- send is simulated by a state transition only, no WhatsApp API/network.
 DO $mvp279$
