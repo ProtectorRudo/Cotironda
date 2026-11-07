@@ -59,13 +59,13 @@ INSERT INTO cotironda_piloto_privado.ai_dispatch_jobs_mvp222 VALUES
  ('00000000-0000-4000-8000-000000000001','corralon_ailin',
  'api_accepted','whapi-fake-message',now()-interval '30 minutes');
 -- Historical production-compatible RPC (allows already-delivered responses).
-\\ir ../../piloto/mvp230_continuidad_presupuestos_sin_nuevos_envios.sql
+\ir ../../piloto/mvp230_continuidad_presupuestos_sin_nuevos_envios.sql
 DO $check$ BEGIN
  IF public.cotironda_piloto_ia_trial_flags_mvp229(repeat('a',64))->>'buyer' <> 'false'
  THEN RAISE EXCEPTION 'mvp274_originally_off'; END IF;
 END $check$;
 -- Proposed schema migration must NOT activate the feature.
-\\ir ../../piloto/mvp274_continuous_pilot_optional_off.sql
+\ir ../../piloto/mvp274_continuous_pilot_optional_off.sql
 DO $check$ BEGIN
  IF public.cotironda_piloto_ia_trial_flags_mvp229(repeat('a',64))->>'buyer' <> 'false'
  OR (SELECT enabled FROM cotironda_piloto_privado.ai_trial_control_mvp229 WHERE only_row)
@@ -130,7 +130,7 @@ DO $check$ BEGIN
  THEN RAISE EXCEPTION 'mvp274_stop_or_continuation_broken';END IF;
 END $check$;
 -- Reversible only after explicitly disabling mode; preserve old constraints.
-\\ir ../../piloto/mvp274_rollback_continuous_pilot_off_manual.sql
+\ir ../../piloto/mvp274_rollback_continuous_pilot_off_manual.sql
 DO $check$ BEGIN
  IF (SELECT count(*) FROM pg_constraint
    WHERE conrelid='cotironda_piloto_privado.ai_trial_control_mvp229'::regclass
