@@ -32,7 +32,7 @@ const supplierKeys=['nombre','oferta','estado'];
 const permitted=new Set(['presupuesto_verificado','respuesta_en_revision',
  'sin_respuesta','envio_no_confirmado']);
 const alias=/^Presupuesto (?:[1-9]|[1-9][0-9]|100)$/u;
-const name=/^[^\u0000-\u001f\u007f]{2,100}$/u;
+const name=/^[^\u0000-\u001f\u007f<>]{2,100}$/u;
 export function vistaProveedoresCierreMvp303(v:unknown):VistaProveedoresMvp303|null{
  if(!isRecord(v)||!exact(v,schema)||
     v.state!=='proveedores_revelados_al_cierre'||
