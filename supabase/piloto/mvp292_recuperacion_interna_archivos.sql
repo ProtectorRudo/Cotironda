@@ -41,7 +41,8 @@ BEGIN
  THEN RETURN jsonb_build_object('state','quota');END IF;
 
  SELECT m.message_hmac,m.chat_hmac,m.participant_key,m.kind,
-  u.source_sha256,m.nonce_b64,m.ciphertext_b64
+  u.source_sha256,m.nonce_b64,m.ciphertext_b64,
+  a.mime,a.size_bytes,a.proposal
  INTO v_source
  FROM cotironda_piloto_privado.ai_supplier_unresolved_mvp237 u
  JOIN cotironda_piloto_privado.whapi_inbox m
@@ -109,7 +110,10 @@ BEGIN
   'chat_hmac',v_source.chat_hmac,'source_sha256',v_source.source_sha256,
   'kind',v_source.kind,
   'nonce',CASE WHEN v_source.kind='text' THEN v_source.nonce_b64 ELSE NULL END,
-  'ciphertext',CASE WHEN v_source.kind='text' THEN v_source.ciphertext_b64 ELSE NULL END);
+  'ciphertext',CASE WHEN v_source.kind='text' THEN v_source.ciphertext_b64 ELSE NULL END,
+  'mime',CASE WHEN v_source.kind='text' THEN NULL ELSE v_source.mime END,
+  'size_bytes',CASE WHEN v_source.kind='text' THEN NULL ELSE v_source.size_bytes END,
+  'draft',CASE WHEN v_source.kind='text' THEN NULL ELSE v_source.proposal END);
 END $recover$;
 
 CREATE OR REPLACE FUNCTION public.cotironda_piloto_finish_auto_recovery_mvp292(
