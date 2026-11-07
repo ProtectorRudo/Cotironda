@@ -21,13 +21,14 @@ const clients=['5492215000001','5492215000002'];
 const hashes=['1'.repeat(64),'2'.repeat(64)];
 test('Edge TypeScript: pedir, confirmar, dos PDFs, dos cotizaciones; replay y privacidad',async()=>{
  const st={reviewIssued:false,reviewSent:false,confirmed:false,published:false,
-  sends:[],claims:0,finished:[],quotes:[],aiCalls:0,unexpected:[]};
+  sends:[],claims:0,finished:[],quotes:[],aiCalls:0,unexpected:[],calls:[]};
  const encrypted='encrypted_cipher',nonce='encrypted_nonce',quoteHash='c'.repeat(64);
  const sourceQuotes=[
   '20 bolsas de Cemento CPC AR$ 9.000 por unidad total AR$ 180.000',
   '5 litros pintura látex interior AR$ 15.000 en total'
  ];
  const rpc=async(name,p)=>{
+  st.calls.push(name);
   switch(name){
    case 'cotironda_piloto_ia_review_issue_mvp279':
     if(st.reviewIssued)return {data:{state:'already_issued'},error:null};
@@ -137,7 +138,7 @@ test('Edge TypeScript: pedir, confirmar, dos PDFs, dos cotizaciones; replay y pr
     oferta:offer,cobertura};
    }
   });
-  assert.equal(result.estado,'verificado_privado',key+':'+result.codigo+':'+JSON.stringify(st.unexpected));
+  assert.equal(result.estado,'verificado_privado',key+':'+result.codigo+':'+JSON.stringify({unexpected:st.unexpected,calls:st.calls.slice(-5),quotes:st.quotes.length,aiCalls:st.aiCalls}));
  }
  assert.equal(st.aiCalls,2);
  assert.equal(st.quotes.length,2);
