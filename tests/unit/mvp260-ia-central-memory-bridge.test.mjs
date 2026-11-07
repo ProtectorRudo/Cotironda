@@ -155,7 +155,8 @@ test('MVP260: no guardar recuerdo para presupuesto que quedó en revisión',asyn
 test('MVP260: middleware webhook aplica flag OFF por defecto en dos rutas',()=>{
  const edge=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/index.ts',import.meta.url),'utf8');
  const matches=edge.match(/commercialMemoryEnabled:Deno.env.get\('COTIRONDA_PILOT_COMMERCIAL_MEMORY_ENABLED'\)==='true'/gu)??[];
- assert.equal(matches.length,2);
+ assert.equal(matches.length,3);
+ assert.match(edge,/COTIRONDA_PILOT_AUTO_TEXT_MVP292_ENABLED/u);
  const sql=readFileSync(new URL('../../supabase/piloto/mvp260_memory_broker_bridge.sql',import.meta.url),'utf8');
  assert.match(sql,/q\.state='reserved'/u);assert.match(sql,/q\.state='verified'/u);
  assert.match(sql,/p\.opted_out_at IS NULL/u);
