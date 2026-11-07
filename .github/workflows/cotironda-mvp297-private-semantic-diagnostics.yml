@@ -1,0 +1,41 @@
+name: Cotironda MVP297 - private semantic rejection diagnostics
+on:
+  pull_request:
+    branches: [feat/mvp174-supplier-packaging-equivalence]
+    paths:
+      - 'src/domain/ia-central/diagnostico-fuente-mvp297.ts'
+      - 'src/domain/ia-central/lector-presupuesto-proveedor-mvp225.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/ai-central-supplier-mvp227.ts'
+      - 'tests/unit/mvp297-*.test.mjs'
+      - '.github/workflows/cotironda-mvp297-private-semantic-diagnostics.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  semantic-diagnostics-offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Node synthetic tests only - original quote/reader/source mapping
+        run: |
+          node --experimental-strip-types --test \
+            tests/unit/mvp225-lector-ia-presupuestos.test.mjs \
+            tests/unit/mvp227-recepcion-presupuesto-evaluado.test.mjs \
+            tests/unit/mvp295-linked-commercial-recovery.test.mjs \
+            tests/unit/mvp297-diagnostico-fuente.test.mjs
+      - uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb
+        with:
+          deno-version: v2.x
+      - name: Typecheck reader, current worker & Whapi without secrets
+        run: |
+          deno check --node-modules-dir=auto src/domain/ia-central/lector-presupuesto-proveedor-mvp225.ts
+          deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/ai-central-supplier-mvp227.ts
+          deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-auto-recovery/index.ts
+          deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/index.ts
+# NO live project, NO API tokens, NO model calls, NO network WhatsApp, NO deployment.
