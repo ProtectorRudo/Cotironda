@@ -44,7 +44,14 @@ BEGIN
   AND b.opted_out_at IS NULL
   AND ((p_mode='confirmed' AND req.id=p_request
     AND review.confirmed_reply_hmac=p_event_hmac)
-   OR (p_mode='recovery' AND req.id=(
+   OR (p_mode='recovery'
+    AND (SELECT count(*) FROM cotironda_piloto_privado.requests q
+     JOIN cotironda_piloto_privado.ai_buyer_review_mvp279 a ON a.request_id=q.id
+     WHERE q.buyer_key=b.key AND q.state='prepared' AND a.state='confirmed'
+      AND q.closes_at+interval '30 days'>clock_timestamp()
+      AND NOT EXISTS(SELECT 1 FROM cotironda_piloto_privado.buyer_tracking_mvp091 t
+       WHERE t.request_id=q.id))=1
+    AND req.id=(
       SELECT q.id FROM cotironda_piloto_privado.requests q
       JOIN cotironda_piloto_privado.ai_buyer_review_mvp279 a
        ON a.request_id=q.id
