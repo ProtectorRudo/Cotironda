@@ -13,6 +13,8 @@ if(!old.trimEnd().endsWith('ROLLBACK;')||
 const pos=old.lastIndexOf('ROLLBACK;');
 writeFileSync(destination,old.slice(0,pos)+
  '\\ir ../../piloto/mvp312_alta_canal_administrada_cifrada.sql\n'+
+ '\\ir ../../piloto/mvp312b_proveedor_contacto_admin.sql\n'+
+ '\\ir ../../piloto/mvp312c_contactos_postcierre_admin.sql\n'+
  '\\ir ./mvp312-admin-encrypted-channels-pg17.sql\n'+
  'ROLLBACK;\n','utf8');
 console.log('MVP312 synthetic encrypted-admin-channel fixture built with rollback.');
