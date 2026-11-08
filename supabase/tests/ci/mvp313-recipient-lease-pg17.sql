@@ -40,6 +40,31 @@ BEGIN
  WHERE j.request_id=rid AND j.supplier_key='corralon_ailin';
  IF NOT FOUND THEN RAISE EXCEPTION 'mvp313_synthetic_lease_missing';END IF;
 
+ -- Earlier fixture deliberately returned approval to FALSE. For THIS
+ -- synthetic send test, create a valid confirmed review for the exact
+ -- same source, buyer and immutable snapshot. No customer message is sent.
+ INSERT INTO cotironda_piloto_privado.ai_buyer_review_mvp279(
+  request_id,buyer_key,chat_hmac,source_hmac,snapshot_sha256,
+  code_sha256,state,whapi_message_id,confirmed_reply_hmac,
+  expires_at,sent_at,confirmed_at
+ ) SELECT req.id,req.buyer_key,buyer.chat_hmac,req.source_hmac,
+  encode(sha256(convert_to(
+   cotironda_piloto_privado.ai_buyer_snapshot_mvp279(req.id)::text,
+   'UTF8')),'hex'),
+  encode(sha256(convert_to('mvp313-review-code-'||req.id,'UTF8')),'hex'),
+  'confirmed','mvp313_test_msg_01234',
+  encode(sha256(convert_to('mvp313-confirm-reply-'||req.id,'UTF8')),'hex'),
+  clock_timestamp()+interval '1 hour',clock_timestamp(),clock_timestamp()
+ FROM cotironda_piloto_privado.requests req
+ JOIN cotironda_piloto_privado.participants buyer ON buyer.key=req.buyer_key
+ WHERE req.id=rid
+ ON CONFLICT(request_id) DO UPDATE SET
+  state='confirmed',whapi_message_id='mvp313_test_msg_01234',
+  sent_at=clock_timestamp(),confirmed_at=clock_timestamp(),
+  confirmed_reply_hmac=EXCLUDED.confirmed_reply_hmac,
+  snapshot_sha256=EXCLUDED.snapshot_sha256;
+ IF NOT cotironda_piloto_privado.confirmada_comprador_mvp280(rid)
+ THEN RAISE EXCEPTION 'mvp313_fixture_buyer_not_confirmed';END IF;
  -- Simulate an *admin-vouched* channel strictly in the synthetic fixture.
  -- Never claim this test insert is evidence of real Whapi authentication.
  approved:=cotironda_piloto_privado.admin_record_permission_mvp309(
