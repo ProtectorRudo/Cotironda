@@ -24,7 +24,7 @@ BEGIN
  INSERT INTO cotironda_piloto_privado.participants(
   key,participant_role,delivery_city,chat_hmac,consent_at,
   opted_out_at,catalogue_confirmed_at,display_label
- ) VALUES('comprador_nuevo_308','buyer','La Plata',NULL,NULL,NULL,NULL,
+ ) VALUES('comprador_nuevo_308','buyer',NULL,NULL,NULL,NULL,NULL,
   'Comprador de pruebas');
  INSERT INTO cotironda_piloto_privado.enrollment_codes(
   participant_key,code_hash,created_at,expires_at)
