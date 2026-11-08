@@ -1,3 +1,10 @@
+## 08/11/2026 — MVP315: aviso autónomo al comprador después del despacho (solo desarrollo)
+
+- Trabajador privado MVP314 complementado con un aviso único y seguro de enlace al arquitecto, sin requerir otro mensaje de WhatsApp. Exige todos los trabajos con aceptación Whapi e ID para la ronda.
+- Nuevo paquete de comprador cifrado, HMAC y SHA, autorización y revalidación antes del HTTP, reutilizando tokens únicos MVP289/306, con límite SQL de 10 avisos diarios y sin reenvíos inciertos.
+- Auditoría read-only del piloto y script de preflight: varios componentes MVP309–315 no instalados; Whapi Edge v70, MVP306 OFF. Test Node WebCrypto y PostgreSQL17 sintético con ROLLBACK; sin publicar ni activar.
+- [Decisión 445](docs/445-mvp315-aviso-autonomo-comprador-preflight.md) · [PR #710](https://github.com/ProtectorRudo/Cotironda/pull/710).
+
 ## 08/11/2026 — MVP314: continuación de solicitudes por lotes (solo desarrollo)
 
 - Nuevo trabajador Edge privado, apagado por defecto, que puede continuar hasta dos trabajos por invocación sin esperar nuevos mensajes del comprador.

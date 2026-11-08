@@ -21,6 +21,10 @@ export async function notificarSeguimientoMvp289(args:{
  mode:'confirmed'|'recovery'|'auto';requestId:string|null;
  chatHmac:string;eventHmac:string;recipient:string;
  rpc:Rpc;send:Send;
+ // MVP315 uses independent budgeted issuance when the batch notice gate is ON.
+ issueRpc?:'cotironda_piloto_ia_issue_buyer_notice_mvp315';
+ noticeChannel?:string;
+ authorizeBeforeSend?:(tokenHash:string)=>Promise<boolean>;
 }):Promise<ResultadoSeguimientoMvp289>{
  if(!args?.enabled)return done('apagado');
  if(!args.buyerVerified||!H.test(args.chatHmac)||!H.test(args.eventHmac)||
@@ -28,7 +32,10 @@ export async function notificarSeguimientoMvp289(args:{
     typeof args.send!=='function'||
     !['confirmed','recovery','auto'].includes(args.mode)||
     ((args.mode==='confirmed'||args.mode==='auto')&&!U.test(args.requestId??''))||
-    (args.mode==='recovery'&&args.requestId!==null))
+    (args.mode==='recovery'&&args.requestId!==null)||
+    (args.issueRpc!==undefined&&
+      (args.mode!=='auto'||typeof args.noticeChannel!=='string'||
+       !/^[A-Za-z0-9_-]{4,64}$/u.test(args.noticeChannel))))
   return done('no_autorizado');
  const raw=crypto.getRandomValues(new Uint8Array(32));
  const token=Array.from(raw,x=>x.toString(16).padStart(2,'0')).join('');
@@ -41,11 +48,12 @@ export async function notificarSeguimientoMvp289(args:{
  try{
   const r=await args.rpc(
    args.mode==='auto'
-    ?'cotironda_piloto_issue_auto_tracking_mvp306'
+    ?(args.issueRpc??'cotironda_piloto_issue_auto_tracking_mvp306')
     :'cotironda_piloto_issue_confirmed_tracking_mvp289',
    args.mode==='auto'?{
     p_chat_hmac:args.chatHmac,p_event_hmac:args.eventHmac,
-    p_request:args.requestId,p_token_hash:digest
+    p_request:args.requestId,p_token_hash:digest,
+    ...(args.issueRpc?{p_channel:args.noticeChannel}: {})
    }:{
     p_chat_hmac:args.chatHmac,p_event_hmac:args.eventHmac,
     p_request:args.requestId,p_token_hash:digest,p_mode:args.mode
@@ -69,7 +77,12 @@ export async function notificarSeguimientoMvp289(args:{
   '\n\nAl cierre vas a poder identificar a todos los proveedores invitados. '+
   'La adjudicación la decidís vos. No compartas este enlace.';
  let accepted=false;let messageId:string|null=null;
+ let authorized=true;
+ if(args.authorizeBeforeSend)try{
+  authorized=await args.authorizeBeforeSend(digest)===true;
+ }catch{authorized=false}
  try{
+  if(!authorized)throw Error('buyer_notice_authorization_revoked');
   const sent=await args.send(args.recipient,body);
   accepted=sent.accepted===true&&typeof sent.messageId==='string'&&
     ID.test(sent.messageId);
