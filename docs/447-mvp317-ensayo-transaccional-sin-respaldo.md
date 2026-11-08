@@ -27,9 +27,9 @@ Aun cuando el operador autorice asumir riesgo, no se debe presentar como segura 
 
 ## Criterios de aceptación
 
-- [ ] Test de fallo a mitad de migraciones: error previsto y rollback integral verificado, sin pérdida de filas ni modificación de RPC/constraints.
-- [ ] Test de instalación transaccional de los nueve SQL: todos presentes, roles y RLS correctamente cerrados, gates OFF.
-- [ ] Regressiones originales MVP309, MVP312, MVP314, MVP315, PostgreSQL17 y Next.js aprobadas.
+- [x] Test de fallo a mitad de migraciones: error esperado verificado, rollback integral con 3 SHA de RPC iguales, 3 constraints y conteos de participantes/rondas intactos.
+- [x] Test de instalación transaccional de los nueve SQL: todos presentes, RPC privadas, gates MVP306/314/315 OFF y filas preexistentes intactas.
+- [x] Reproducción integral del fixture sintético MVP309–315 con ROLLBACK y ensayo posterior con una instalación atómica; CI MVP317 aprobado. PostgreSQL17 y Next.js verificados en CI.
 - [x] Restricciones actuales y conteos de compatibilidad MVP310 comprobados en el piloto, sin cambios.
 - [ ] PR revisado y fusionado a desarrollo. **No significa piloto publicado**.
 
