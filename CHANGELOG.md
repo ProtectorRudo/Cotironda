@@ -1,3 +1,10 @@
+## 08/11/2026 — MVP316: preflight, guardias y prueba de concurrencia (solo desarrollo)
+
+- Preflight read-only coteja 14/14 huellas SHA de RPC MVP311 y versión del claim heredado MVP222; reporte solo estados y contadores, sin PII.
+- Guard SHA previo al primer DDL de MVP309, MVP312C y MVP314: abortar ante drift para no pisar contactos comerciales ni webhook existentes.
+- Ensayo de dos sesiones PostgreSQL17 **aprobado en CI** con datos ficticios y cupos diarios compartidos para invitaciones y aviso al comprador, sin contacto Supabase real.
+- Plan de migración MVP309–315, verificación de respaldos y restauración aislada documentado. **No se ha verificado respaldo de datos reales ni contratado Whapi. No publicar con Luz verde.** [Decisión 446](docs/446-mvp316-preflight-respaldo-concurrencia-publicacion.md).
+
 ## 08/11/2026 — MVP315: aviso autónomo al comprador después del despacho (solo desarrollo)
 
 - Trabajador privado MVP314 complementado con un aviso único y seguro de enlace al arquitecto, sin requerir otro mensaje de WhatsApp. Exige todos los trabajos con aceptación Whapi e ID para la ronda.

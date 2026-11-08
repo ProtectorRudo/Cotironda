@@ -1,3 +1,14 @@
+-- MVP316: avoid overwriting changed live pilot routines before any DDL.
+DO $mvp312c_supplier_contacts_baseline$ BEGIN
+ IF (SELECT encode(sha256(convert_to(pg_get_functiondef(p.oid),'UTF8')),'hex')
+  FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+  WHERE n.nspname='public' AND p.proname='cotironda_piloto_all_supplier_contacts_mvp304'
+   AND pg_get_function_identity_arguments(p.oid)='p_token_hash text')
+ IS DISTINCT FROM '8e6cd438415a2f4942e541fabeb63a574932bc444d59e8e65ba6e3bdfbec2105'
+ THEN RAISE EXCEPTION 'mvp312c_supplier_contacts_baseline_drift' USING ERRCODE='42501';
+ END IF;
+END $mvp312c_supplier_contacts_baseline$;
+
 -- MVP312C: post-close contacts only to the authenticated buyer;
 -- no buyer numbers, no open-round leaks, no plain WhatsApp addresses.
 

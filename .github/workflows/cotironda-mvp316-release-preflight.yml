@@ -1,0 +1,69 @@
+name: MVP316 - preflight y concurrencia de publicación
+on:
+  pull_request:
+    branches: [feat/mvp174-supplier-packaging-equivalence]
+    paths:
+      - 'supabase/piloto/mvp314_ia_despacho_lotes_cupo_seguro.sql'
+      - 'scripts/piloto/mvp316-*'
+      - 'supabase/tests/ci/mvp316-*'
+      - 'docs/446-*'
+      - '.github/workflows/cotironda-mvp316-release-preflight.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  isolated-postgres-concurrency:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: test_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Build isolated synthetic stack MVP309-315 for two-session test
+        run: node scripts/piloto/mvp316-generar-concurrency-pg17.mjs
+      - name: Two concurrent real PG17 sessions for dispatch and buyer notice
+        run: bash scripts/piloto/mvp316-concurrency-pg17.sh
+      - name: Never expose claims to anon/authenticated
+        run: |
+          psql -X -qAt -v ON_ERROR_STOP=1 <<'SQL'
+          DO $security316$
+          BEGIN
+            IF has_function_privilege('anon',
+                'public.cotironda_piloto_ia_claim_mvp314(uuid)','EXECUTE')
+              OR has_function_privilege('authenticated',
+                'public.cotironda_piloto_ia_issue_buyer_notice_mvp315(uuid,text,text,text,text)','EXECUTE')
+            THEN RAISE EXCEPTION 'mvp316_private_rpc_exposed';
+            END IF;
+          END $security316$;
+          SQL
+      - name: Check release preflight is read-only
+        run: |
+          node --input-type=module -e "
+            import {readFileSync} from 'node:fs';
+            const sql=readFileSync('scripts/piloto/mvp316-preflight-esquema-baselines-solo-lectura.sql','utf8');
+            if(/\\b(?:INSERT|UPDATE|DELETE|DROP|ALTER|TRUNCATE|CREATE|GRANT|REVOKE|EXECUTE)\\s+(?:TABLE|FUNCTION|INTO|FROM|ON|VIEW|ROLE)\\b/iu.test(sql))throw Error('preflight_must_remain_readonly');
+            if(!sql.includes('mvp311_baselines_matched')||!sql.includes('mvp314_claim_baseline_match'))throw Error('release_preflight_drift');
+          "
+# This CI never receives Supabase secrets or Whapi tokens.
