@@ -18,7 +18,7 @@ const done=(estado:ResultadoSeguimientoMvp289['estado'],intentos:0|1=0)=>
  Object.freeze({estado,intentos});
 export async function notificarSeguimientoMvp289(args:{
  enabled:boolean;buyerVerified:boolean;
- mode:'confirmed'|'recovery';requestId:string|null;
+ mode:'confirmed'|'recovery'|'auto';requestId:string|null;
  chatHmac:string;eventHmac:string;recipient:string;
  rpc:Rpc;send:Send;
 }):Promise<ResultadoSeguimientoMvp289>{
@@ -26,8 +26,8 @@ export async function notificarSeguimientoMvp289(args:{
  if(!args.buyerVerified||!H.test(args.chatHmac)||!H.test(args.eventHmac)||
     !W.test(args.recipient)||typeof args.rpc!=='function'||
     typeof args.send!=='function'||
-    !['confirmed','recovery'].includes(args.mode)||
-    (args.mode==='confirmed'&&!U.test(args.requestId??''))||
+    !['confirmed','recovery','auto'].includes(args.mode)||
+    ((args.mode==='confirmed'||args.mode==='auto')&&!U.test(args.requestId??''))||
     (args.mode==='recovery'&&args.requestId!==null))
   return done('no_autorizado');
  const raw=crypto.getRandomValues(new Uint8Array(32));
@@ -39,10 +39,18 @@ export async function notificarSeguimientoMvp289(args:{
   x=>x.toString(16).padStart(2,'0')).join('');
  let issued:unknown;
  try{
-  const r=await args.rpc('cotironda_piloto_issue_confirmed_tracking_mvp289',{
-   p_chat_hmac:args.chatHmac,p_event_hmac:args.eventHmac,
-   p_request:args.requestId,p_token_hash:digest,p_mode:args.mode
-  });
+  const r=await args.rpc(
+   args.mode==='auto'
+    ?'cotironda_piloto_issue_auto_tracking_mvp306'
+    :'cotironda_piloto_issue_confirmed_tracking_mvp289',
+   args.mode==='auto'?{
+    p_chat_hmac:args.chatHmac,p_event_hmac:args.eventHmac,
+    p_request:args.requestId,p_token_hash:digest
+   }:{
+    p_chat_hmac:args.chatHmac,p_event_hmac:args.eventHmac,
+    p_request:args.requestId,p_token_hash:digest,p_mode:args.mode
+   }
+  );
   if(r.error!==null&&r.error!==undefined)
    return done('conciliacion_requerida');
   issued=r.data;
@@ -54,9 +62,11 @@ export async function notificarSeguimientoMvp289(args:{
  if(!U.test(String(actual))||
     (args.requestId!==null&&actual!==args.requestId))
   return done('conciliacion_requerida');
- const body='Cotironda ✅ Tu pedido fue confirmado y enviamos las solicitudes a los negocios.\n\n'+
+ const body=(args.mode==='auto'
+  ?'Cotironda ✅ Recibimos tu pedido y las solicitudes fueron aceptadas por el canal de los negocios.'
+  :'Cotironda ✅ Tu pedido fue confirmado y enviamos las solicitudes a los negocios.')+'\n\n'+
   'Seguí las cotizaciones por rubro y los resultados de la ronda en este enlace privado:\n'+link+
-  '\n\nAl cierre vas a poder consultar las alternativas finalistas habilitadas. '+
+  '\n\nAl cierre vas a poder identificar a todos los proveedores invitados. '+
   'La adjudicación la decidís vos. No compartas este enlace.';
  let accepted=false;let messageId:string|null=null;
  try{
