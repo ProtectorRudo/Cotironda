@@ -97,8 +97,8 @@ BEGIN
 END $next314$;
 
 -- Serializes all MVP314 claims on policy row. No HTTP in this transaction.
--- Old MVP222 claim remains untouched for historical webhook behavior;
--- MVP314 worker MUST call this guarded claim, never the old one.
+-- The old MVP222 claim is preserved while this gate is OFF. When ON,
+-- its trusted webhook calls delegate to this same budgeted claim.
 CREATE OR REPLACE FUNCTION public.cotironda_piloto_ia_claim_mvp314(
  p_request uuid
 ) RETURNS jsonb LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path=''
@@ -178,6 +178,48 @@ BEGIN
    'request_id',j.request_id,'supplier_key',j.supplier_key,
    'chat_hmac',j.chat_hmac,'lease_token',v_lease);
 END $claim314$;
+
+-- Prevent the original signed webhook from bypassing the new budget.
+-- Gate OFF keeps exactly its prior implementation and behavior.
+CREATE OR REPLACE FUNCTION public.cotironda_piloto_ia_claim_mvp222(
+ p_request uuid
+) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
+AS $claim$
+DECLARE j record; lease uuid;
+BEGIN
+ -- When MVP314 is enabled the signed buyer webhook and the autonomous
+ -- worker share ONE atomic daily budget. Never bypass via the old RPC.
+ IF EXISTS(SELECT 1 FROM cotironda_piloto_privado.ai_batch_gate_mvp314
+  WHERE only_row AND enabled AND activated_at IS NOT NULL)
+ THEN RETURN public.cotironda_piloto_ia_claim_mvp314(p_request);END IF;
+ IF NOT EXISTS(SELECT 1 FROM cotironda_piloto_privado.ai_dispatch_gate_mvp222
+  WHERE only_row AND enabled AND activated_at IS NOT NULL)
+ OR NOT EXISTS(SELECT 1 FROM cotironda_piloto_privado.integration_flags
+  WHERE only_row AND whatsapp_outbound_enabled)
+ THEN RETURN jsonb_build_object('state','disabled');END IF;
+ SELECT d.request_id,d.supplier_key,p.chat_hmac INTO j
+ FROM cotironda_piloto_privado.ai_dispatch_jobs_mvp222 d
+ JOIN cotironda_piloto_privado.requests r ON r.id=d.request_id
+ JOIN cotironda_piloto_privado.participants p ON p.key=d.supplier_key
+ JOIN cotironda_piloto_privado.invitations i
+   ON i.request_id=d.request_id AND i.supplier_key=d.supplier_key
+ WHERE d.request_id=p_request AND d.state='pending'
+  AND r.state='prepared' AND r.closes_at>clock_timestamp()
+  AND i.state='prepared' AND p.participant_role='supplier'
+  AND p.chat_hmac IS NOT NULL AND p.consent_at IS NOT NULL
+  AND p.opted_out_at IS NULL
+  AND lower(btrim(r.delivery_city))=lower(btrim(p.delivery_city))
+ ORDER BY d.supplier_key FOR UPDATE OF d SKIP LOCKED LIMIT 1;
+ IF NOT FOUND THEN RETURN jsonb_build_object('state','empty');END IF;
+ lease:=gen_random_uuid();
+ UPDATE cotironda_piloto_privado.ai_dispatch_jobs_mvp222
+ SET state='leased',lease_token=lease,leased_at=clock_timestamp()
+ WHERE request_id=j.request_id AND supplier_key=j.supplier_key;
+ RETURN jsonb_build_object('state','leased','request_id',j.request_id,
+   'supplier_key',j.supplier_key,'chat_hmac',j.chat_hmac,'lease_token',lease);
+END;
+$claim$;
+
 
 -- Counts only: safe for service-only monitoring, without phone/PII.
 CREATE OR REPLACE FUNCTION public.cotironda_piloto_ia_batch_health_mvp314()
