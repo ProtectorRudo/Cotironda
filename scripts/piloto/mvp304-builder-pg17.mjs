@@ -17,9 +17,22 @@ export function buildMvp304Sql(read=readFileSync){
     /(^|\n)\s*(?:COMMIT|ROLLBACK|\\!|\\copy|\\connect)\b/iu.test(migration+testcase)||
     /\b(?:net\.http_post|cron\.schedule|vault\.decrypted_secrets|gate\.whapi\.cloud)\b/iu.test(migration+testcase))
     throw Error('MVP304_UNSAFE_SQL');
+ // MVP283's narrow fixture omits the immutability trigger function
+ // required by ORIGINAL MVP109. Extract its exact production definition
+ // from MVP101 rather than inventing a permissive stub.
+ const mvp101=read(new URL('../../supabase/piloto/mvp101_supplier_quote_full_line_mirror.sql',import.meta.url),'utf8');
+ const fnStart=mvp101.indexOf('create function cotironda_piloto_privado.reject_supplier_line_mutation_mvp101()');
+ const fnEnd=mvp101.indexOf('create trigger supplier_quote_lines_immutable_mvp101',fnStart);
+ if(fnStart<0||fnEnd<=fnStart)
+  throw Error('MVP304_ORIGINAL_TRIGGER_MISSING');
+ const immutableTrigger=mvp101.slice(fnStart,fnEnd);
+ if(!immutableTrigger.includes('supplier_quote_transcription_immutable_mvp101')||
+    !immutableTrigger.includes('revoke all on function'))
+  throw Error('MVP304_TRIGGER_NOT_IMMUTABLE');
  const baseline=buildMvp303Sql();
  if(baseline.split(marker).length!==2)throw Error('MVP304_ROLLBACK_ANCHOR');
  const joined=baseline.replace(marker,
+   '\n'+immutableTrigger+
    '\n\\ir ../../piloto/mvp109_encrypted_contacts_consents.sql'+
    '\n\\ir ../../piloto/mvp304_contactos_consensuados_todos_cierre.sql'+
    '\n\\ir ./mvp304-contactos-consentidos-postcierre-pg17.sql'+marker);
