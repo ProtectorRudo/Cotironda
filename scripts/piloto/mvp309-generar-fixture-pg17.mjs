@@ -7,7 +7,7 @@ const root=fileURLToPath(new URL('../../',import.meta.url));
 const previous=root+'supabase/tests/ci/.mvp308-generated-pg17.sql';
 const target=root+'supabase/tests/ci/.mvp309-generated-pg17.sql';
 const source=readFileSync(previous,'utf8');
-if(!source.trimEnd().endsWith('ROLLBACK;')||!source.includes('END $mvp308$;'))
+if(!source.trimEnd().endsWith('ROLLBACK;')||!source.includes('\\ir ./mvp308-consent-all-roles-pg17.sql'))
  throw Error('MVP308 base changed: manual audit required');
 const anchor=source.lastIndexOf('ROLLBACK;');
 const slash=String.fromCharCode(92);
