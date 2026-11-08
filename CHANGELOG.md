@@ -1,3 +1,10 @@
+## 08/11/2026 — MVP318: camino gratuito de respaldo y restauración comprobable (solo desarrollo)
+
+- Supabase piloto: 94 tablas propias, 0 usuarios Auth actuales y 7 archivos privados Storage; solo lectura, sin exponer registros ni contactos.
+- Script local Bash/WSL para exportación cifrada con age (roles, esquema, datos y originales), hash y validación de proyecto estricto; no ejecutado con datos reales.
+- CI PostgreSQL17 sintético de backup personalizado y restauración en otra base, conservación de datos/funciones/permisos y rechazo de archivo truncado. No credenciales Supabase, no WhatsApp.
+- [Decisión 448](docs/448-mvp318-resguardo-local-gratuito-y-restore-ci.md). **Ningún respaldo real restaurable verificado aún; sin publicar.**
+
 ## 08/11/2026 — MVP317: ensayo de migración atómica y rollback sin respaldo (solo desarrollo)
 
 - La base piloto real pasa el preflight de roles MVP310: 3 participantes, 1 comprador, 2 proveedores, 0 incompatibilidades, 3 restricciones históricas existentes. Lectura exclusiva.
