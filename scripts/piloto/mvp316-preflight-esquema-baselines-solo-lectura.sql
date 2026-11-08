@@ -40,6 +40,16 @@ SELECT jsonb_build_object(
  'mvp311_baselines_total',audit.total,
  'mvp311_baselines_matched',audit.matched,
  'mvp311_drifted_functions',audit.drifted,
+ 'mvp309_contactability_baseline_match',coalesce((
+    SELECT encode(sha256(convert_to(pg_get_functiondef(p.oid),'UTF8')),'hex')
+      ='023ffb3a0c2648f73f1b257dd3555a4d633b6311e866bf7b0861768b5491e03b'
+    FROM pg_proc p WHERE p.oid=to_regprocedure(
+      'cotironda_piloto_privado.proveedor_contactable_mvp307(text)')),false),
+ 'mvp312c_supplier_contacts_baseline_match',coalesce((
+    SELECT encode(sha256(convert_to(pg_get_functiondef(p.oid),'UTF8')),'hex')
+      ='8e6cd438415a2f4942e541fabeb63a574932bc444d59e8e65ba6e3bdfbec2105'
+    FROM pg_proc p WHERE p.oid=to_regprocedure(
+      'public.cotironda_piloto_all_supplier_contacts_mvp304(text)')),false),
  'mvp314_claim_baseline_match',coalesce((
     SELECT encode(sha256(convert_to(pg_get_functiondef(p.oid),'UTF8')),'hex')
       ='cffd3c56487ca0c7388b62f3dc5ca429ff267bfa3191366a40c7b88ba5caa54f'
