@@ -21,6 +21,7 @@ import {contrastarDocumentoCompradorMvp277} from './ai-central-buyer-binary-mvp2
 import {prepararDocumentoBinarioCompradorMvp278} from './ai-central-buyer-binary-broker-mvp278.ts';
 import {esRespuestaConfirmacionMvp279,emitirRevisionCompradorMvp279,confirmarPedidoCompradorMvp279} from './ai-central-buyer-review-mvp279.ts';
 import {notificarSeguimientoMvp289} from './buyer-tracking-confirmation-mvp289.ts';
+import {liberarPedidoAutomaticoMvp306} from './ai-central-buyer-auto-release-mvp306.ts';
 import {proveedorConRondaCentralMvp232} from './ai-central-supplier-route-mvp232.ts';
 import {esAvisoAdjuntoProveedorMvp238} from './ai-supplier-attachment-notice-mvp238.ts';
 import {respuestaCitaPedidoMvp239,CONSULTA_RONDA_MVP239} from './ai-supplier-clarification-mvp239.ts';
@@ -326,7 +327,7 @@ async function respond(req:Request):Promise<Response>{
  const now=Math.floor(Date.now()/1000);
  const db=client(sec);
  const trialDispatchChats=new Set<string>();
- const buyerLinkRequests:{mode:'confirmed'|'recovery';requestId:string|null;
+ const buyerLinkRequests:{mode:'confirmed'|'recovery'|'auto';requestId:string|null;
   chatHmac:string;eventHmac:string;recipient:string}[]=[];
  let recoveryTriggerHmac:string|null=null;
  let recoveryTriggerChatId:string|null=null;
@@ -363,13 +364,42 @@ async function respond(req:Request):Promise<Response>{
    if(out.error)return json(503,'storage_unavailable');
    continue;
   }
-  const enroll=row.type==='text'?body.trim().match(/^COTI ALTA ([a-f0-9]{32})$/iu):null;
-  if(enroll){
-   const out=await db.rpc('cotironda_piloto_enroll_whapi_v1',
-    {p_code:enroll[1].toLowerCase(),p_chat_hmac:chatHash});
-   if(out.error)return json(503,'storage_unavailable');
-   continue;
+  // MVP308: UNA sola aceptación al ingresar, con texto visible de
+  // condiciones según rol (buyer/supplier) antes de enviar el código.
+  // El número del arquitecto nunca es autorizado para divulgación.
+  const altaConContacto=row.type==='text'
+    ?/^COTI ALTA ([a-f0-9]{32}) CONTACTOS SI$/u.exec(body):null;
+  const altaCompradorConTerminos=row.type==='text'
+    ?/^COTI ALTA ([a-f0-9]{32}) ACEPTO$/u.exec(body):null;
+  if(altaConContacto||altaCompradorConTerminos){
+    if(!/^[1-9][0-9]{7,16}@s[.]whatsapp[.]net$/u.test(row.chat_id))
+      return json(422,'invalid_contact_channel');
+    const evidence=await encrypt(sec.aes,body,
+      chatHash+'|'+messageHash+'|text');
+    const vault=await encrypt(sec.aes,row.chat_id,
+      chatHash+'|cotironda-contact-v1');
+    const registration=await db.rpc('cotironda_piloto_enroll_terms_mvp308',{
+      p_role:altaConContacto?'supplier':'buyer',
+      p_code:(altaConContacto??altaCompradorConTerminos)![1],
+      p_chat_hmac:chatHash,p_message_hmac:messageHash,
+      p_nonce_b64:evidence.nonce,p_ciphertext_b64:evidence.ciphertext,
+      p_plaintext_sha256:await sha(body),p_source_unix:row.timestamp,
+      p_contact_sha256:await sha(row.chat_id),
+      p_contact_nonce_b64:vault.nonce,
+      p_contact_ciphertext_b64:vault.ciphertext
+    });
+    if(registration.error)
+      return json(503,'enrollment_terms_reconciliation_required');
+    if(!['enrolled_with_terms','already_enrolled'].includes(registration.data?.state))
+      return json(422,'enrollment_terms_not_accepted');
+    // El alta ES el único consentimiento: no enviar un WhatsApp de respuesta.
+    continue;
   }
+  // No aceptar altas nuevas sin la versión de términos mostrada al
+  // participante. El camino heredado registraba la identidad sin alcance
+  // verificable y ya no es válido a partir del nuevo flujo MVP308.
+  const enroll=row.type==='text'?body.trim().match(/^COTI ALTA ([a-f0-9]{32})$/iu):null;
+  if(enroll)return json(422,'enrollment_terms_required');
   const textHash=await sha(body);
   const c=await encrypt(sec.aes,body,chatHash+'|'+messageHash+'|'+row.type);
   // One-time consent or revocation for the bilateral exchange of contacts.
@@ -462,10 +492,29 @@ async function respond(req:Request):Promise<Response>{
     centralSupplier=proveedorConRondaCentralMvp232(
       trial.quote_link,route.data?.state);
   }
-  // MVP280: one signed, exactly-once review path for text and document.
+  // MVP306: future rounds may be dispatched after internal source proof.
+  // No CONFIRMAR COTI nor extra buyer WhatsApp when the new gate is ON.
   const emitirRevisionUnificada=async(sourceHmac:string):Promise<boolean>=>{
+    if(Deno.env.get('COTIRONDA_PILOT_BUYER_AUTO_RELEASE_MVP306_ENABLED')==='true'){
+      if(!centralConfigured||supplierKnown||centralSupplier||!allowBuyerRelease)
+        return true; // No legacy review fallback: only validated auto release.
+      const auto=await liberarPedidoAutomaticoMvp306({
+        enabled:true,webhookAutenticado:true,compradorVerificado:true,
+        chatHmac:chatHash,sourceHmac,
+        rpc:async(name,params)=>{
+          const r=await db.rpc(name,params);
+          return {data:r.data,error:r.error};
+        }
+      });
+      if(auto.estado==='publicado'&&auto.requestId){
+        trialDispatchChats.add(chatHash);
+        buyerLinkRequests.push({mode:'auto',requestId:auto.requestId,
+          chatHmac:chatHash,eventHmac:sourceHmac,recipient:row.chat_id});
+      }
+      return auto.estado!=='conciliacion_requerida';
+    }
     if(!centralConfigured||supplierKnown||centralSupplier||!allowBuyerReview)
-      return true; // operator and env kill switches OFF => shadow only.
+      return true; // historical flow retained until prospective activation.
     const delivery=await emitirRevisionCompradorMvp279({
       habilitado:true,compradorAutenticado:true,
       chatHmac:chatHash,sourceHmac,destinatario:row.chat_id,
