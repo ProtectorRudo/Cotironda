@@ -1,3 +1,10 @@
+## 08/11/2026 — MVP319 (desarrollo, sin publicar)
+
+- Test integrado offline de coordinación real MVP223/314/315 con 2 y 5 proveedores ficticios, envío incierto, revocación y no duplicación; sin conexiones ni costos.
+- Whapi Developer Sandbox gratuito investigado como alternativa acotada; **no confirmado para la cuenta piloto**.
+- El propietario solicitó avanzar sin respaldo: solo desarrollo; **no hay copia restaurable**, ni E2E real ni despliegue.
+- [Decisión 449](docs/449-mvp319-despacho-aviso-offline-sandbox.md). [Issue #714](https://github.com/ProtectorRudo/Cotironda/issues/714).
+
 ## 08/11/2026 — MVP318: camino gratuito de respaldo y restauración comprobable (solo desarrollo)
 
 - Supabase piloto: 94 tablas propias, 0 usuarios Auth actuales y 7 archivos privados Storage; solo lectura, sin exponer registros ni contactos.
