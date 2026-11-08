@@ -1,0 +1,65 @@
+name: Cotironda MVP304 - contactos consentidos de todos proveedores
+on:
+  pull_request:
+    branches: [feat/mvp174-supplier-packaging-equivalence]
+    paths:
+      - 'supabase/piloto/mvp304_*'
+      - 'supabase/tests/ci/mvp304-*'
+      - 'scripts/piloto/mvp304-*'
+      - 'src/domain/ia-central/contactos-consentidos-cierre-mvp304.ts'
+      - 'supabase/functions/cotironda-piloto-seguimiento/index.ts'
+      - 'piloto/seguimiento-web/**'
+      - 'tests/unit/mvp304-*'
+      - '.github/workflows/cotironda-mvp304-contactos-postcierre.yml'
+      - 'docs/430-*'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  seller-optin-no-whapi:
+    runs-on: ubuntu-latest
+    timeout-minutes: 19
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: test_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Opt-in, AES-GCM/HMAC, proxy, UI and E2E security
+        run: |
+          node --experimental-strip-types --test \
+            tests/unit/mvp304-contactos-consentidos-cierre.test.mjs \
+            tests/unit/mvp303-all-suppliers-after-close.test.mjs \
+            tests/unit/mvp303-all-suppliers-web-contract.test.mjs \
+            tests/unit/mvp284-e2e-contract.test.mjs
+          node --check piloto/seguimiento-web/api/estado.js
+          node --check piloto/seguimiento-web/site.js
+          node scripts/piloto/mvp304-builder-pg17.mjs --check
+      - name: PostgreSQL17 synthetic round + consent + rollback
+        run: |
+          set -euo pipefail
+          node scripts/piloto/mvp304-builder-pg17.mjs --sql > supabase/tests/ci/.mvp304-circuit.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/.mvp304-circuit.sql >/dev/null
+          psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT (to_regnamespace('cotironda_piloto_privado') IS NULL AND to_regnamespace('auth') IS NULL AND to_regnamespace('storage') IS NULL)" | grep -Fx 't'
+          rm supabase/tests/ci/.mvp304-circuit.sql
+# No paid AI, Whapi, sending, database connection, real numbers or deploy.
