@@ -50,6 +50,7 @@ export async function contactosConsentidosMvp304(
   if(!record(item)||!exact(item,[
     'supplier_key','nombre','chat_hmac','nonce_b64','ciphertext_b64'
   ])||typeof item.supplier_key!=='string'||!key.test(item.supplier_key)||
+   ['buyer','arquitecto'].includes(item.supplier_key)||
    typeof item.nombre!=='string'||!name.test(item.nombre)||
    item.nombre.trim()!==item.nombre||!known.has(item.nombre)||
    usedKeys.has(item.supplier_key)||usedNames.has(item.nombre)||
