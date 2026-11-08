@@ -84,7 +84,7 @@ BEGIN
    p_source_reference !~ '^[a-z0-9][a-z0-9:_-]{11,119}$'
  THEN RETURN jsonb_build_object('state','invalid');END IF;
  v_label:=pg_catalog.btrim(p_display_label);
- v_city:=pg_catalog.nullif(pg_catalog.btrim(p_supplier_city),'');
+ v_city:=NULLIF(pg_catalog.btrim(p_supplier_city),'');
  IF p_role='buyer' THEN
   IF v_city IS NOT NULL THEN RETURN jsonb_build_object('state','buyer_city_not_allowed');END IF;
  ELSE
