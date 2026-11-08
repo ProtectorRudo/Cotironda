@@ -90,8 +90,8 @@ BEGIN
   'whapi_pilot_01',supplier_hmac,supplier_sha,repeat('C',16),repeat('D',64));
  IF check_->>'state' NOT IN ('not_authorized','already_linked_other_path')
  THEN RAISE EXCEPTION 'mvp312_legacy_supplier_overwritten: %',check_;END IF;
- IF public.cotironda_piloto_all_supplier_contacts_mvp304(repeat('0',64))->>'state'
-  NOT IN ('not_ready','not_found')
+ IF public.cotironda_piloto_all_supplier_contacts_mvp304('invalid_token')->>'state'
+  <>'not_found'
  THEN RAISE EXCEPTION 'mvp312_contact_reveal_before_close';END IF;
  IF public.cotironda_piloto_finalist_contacts_mvp109(NULL)->>'state'
   <>'buyer_contact_private'
