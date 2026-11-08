@@ -1,3 +1,10 @@
+## 08/11/2026 — MVP309: declaración de permiso previo por administrador (solo desarrollo)
+
+- Diseñada constancia privada e inmutable por participante/rol, con base declarada por responsable y fuente, sin pedir mensajes de autorización repetidos.
+- Conserva el circuito WhatsApp ya autenticado; previene publicación del teléfono del arquitecto, duplicados y reactivaciones tras revocación.
+- Pruebas PostgreSQL17 sintéticas y Node. **No migrado ni publicado en cotironda-piloto**, no activa nuevas rondas.
+- [Decisión 439](docs/439-mvp309-autorizacion-declarada-administrador.md).
+
 ## 07/11/2026 23:33 ART — Publicación en cotironda-piloto (MVP306–308)
 
 - Instaladas las migraciones MVP306, MVP307 y MVP308 (identificadores Supabase 20261108023237, 20261108023255, 20261108023314). Webhook `cotironda-piloto-whapi` actualizado de v69 a **v70 ACTIVE**; 60 fuentes, tres archivos nuevos/cambiados comparados con GitHub.
