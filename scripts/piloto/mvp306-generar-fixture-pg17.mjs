@@ -7,7 +7,7 @@ const source=root+'supabase/tests/ci/mvp280-all-buyer-sources-pg17.sql';
 const target=root+'supabase/tests/ci/.mvp306-generated-pg17.sql';
 let sql=readFileSync(source,'utf8');
 const anchor='\\ir ../../piloto/mvp280_confirmacion_unificada_comprador.sql';
-if(sql.split(anchor).length!==2||!sql.endsWith('ROLLBACK;\\n'))
+if(sql.split(anchor).length!==2||!sql.trimEnd().endsWith('ROLLBACK;'))
  throw Error('MVP280 fixture changed: explicit audit required');
 const extras=`
 -- Only a synthetic supplier onboarding fixture; actual MVP109 consent is
@@ -141,8 +141,8 @@ BEGIN
  THEN RAISE EXCEPTION 'mvp306_tampered_pdf';END IF;
 END $mvp306$;
 `;
-sql=sql.replace(/\\nROLLBACK;\\n$/u,'\\n'+tests+'\\nROLLBACK;\\n');
-if(!sql.includes('END $mvp306$;')||!sql.endsWith('ROLLBACK;\\n'))
+sql=sql.slice(0,sql.lastIndexOf('ROLLBACK;'))+tests+String.fromCharCode(10)+'ROLLBACK;'+String.fromCharCode(10);
+if(!sql.includes('END $mvp306$;')||!sql.trimEnd().endsWith('ROLLBACK;'))
  throw Error('fixture generation failed');
 writeFileSync(target,sql,'utf8');
 console.log('MVP306 synthetic PostgreSQL17 fixture generated (rollback only).');
