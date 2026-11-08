@@ -21,6 +21,7 @@ import {contrastarDocumentoCompradorMvp277} from './ai-central-buyer-binary-mvp2
 import {prepararDocumentoBinarioCompradorMvp278} from './ai-central-buyer-binary-broker-mvp278.ts';
 import {esRespuestaConfirmacionMvp279,emitirRevisionCompradorMvp279,confirmarPedidoCompradorMvp279} from './ai-central-buyer-review-mvp279.ts';
 import {notificarSeguimientoMvp289} from './buyer-tracking-confirmation-mvp289.ts';
+import {liberarPedidoAutomaticoMvp306} from './ai-central-buyer-auto-release-mvp306.ts';
 import {proveedorConRondaCentralMvp232} from './ai-central-supplier-route-mvp232.ts';
 import {esAvisoAdjuntoProveedorMvp238} from './ai-supplier-attachment-notice-mvp238.ts';
 import {respuestaCitaPedidoMvp239,CONSULTA_RONDA_MVP239} from './ai-supplier-clarification-mvp239.ts';
@@ -326,7 +327,7 @@ async function respond(req:Request):Promise<Response>{
  const now=Math.floor(Date.now()/1000);
  const db=client(sec);
  const trialDispatchChats=new Set<string>();
- const buyerLinkRequests:{mode:'confirmed'|'recovery';requestId:string|null;
+ const buyerLinkRequests:{mode:'confirmed'|'recovery'|'auto';requestId:string|null;
   chatHmac:string;eventHmac:string;recipient:string}[]=[];
  let recoveryTriggerHmac:string|null=null;
  let recoveryTriggerChatId:string|null=null;
@@ -462,10 +463,29 @@ async function respond(req:Request):Promise<Response>{
     centralSupplier=proveedorConRondaCentralMvp232(
       trial.quote_link,route.data?.state);
   }
-  // MVP280: one signed, exactly-once review path for text and document.
+  // MVP306: future rounds may be dispatched after internal source proof.
+  // No CONFIRMAR COTI nor extra buyer WhatsApp when the new gate is ON.
   const emitirRevisionUnificada=async(sourceHmac:string):Promise<boolean>=>{
+    if(Deno.env.get('COTIRONDA_PILOT_BUYER_AUTO_RELEASE_MVP306_ENABLED')==='true'){
+      if(!centralConfigured||supplierKnown||centralSupplier||!allowBuyerRelease)
+        return true; // No legacy review fallback: only validated auto release.
+      const auto=await liberarPedidoAutomaticoMvp306({
+        enabled:true,webhookAutenticado:true,compradorVerificado:true,
+        chatHmac:chatHash,sourceHmac,
+        rpc:async(name,params)=>{
+          const r=await db.rpc(name,params);
+          return {data:r.data,error:r.error};
+        }
+      });
+      if(auto.estado==='publicado'&&auto.requestId){
+        trialDispatchChats.add(chatHash);
+        buyerLinkRequests.push({mode:'auto',requestId:auto.requestId,
+          chatHmac:chatHash,eventHmac:sourceHmac,recipient:row.chat_id});
+      }
+      return auto.estado!=='conciliacion_requerida';
+    }
     if(!centralConfigured||supplierKnown||centralSupplier||!allowBuyerReview)
-      return true; // operator and env kill switches OFF => shadow only.
+      return true; // historical flow retained until prospective activation.
     const delivery=await emitirRevisionCompradorMvp279({
       habilitado:true,compradorAutenticado:true,
       chatHmac:chatHash,sourceHmac,destinatario:row.chat_id,
