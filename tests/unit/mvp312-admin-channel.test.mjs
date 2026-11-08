@@ -82,11 +82,11 @@ test('MVP312: owner-only SQL, RLS, revocation, buyer privacy and post-close gate
  assert.match(sql,/admin_authorization_revocations_mvp309/u);
  assert.match(sql,/p\.opted_out_at IS NULL/u);
  assert.match(sql,/source_reference=a.source_reference/u);
- assert.match(sql,/proveedor_contactable_mvp307/u);
- assert.match(sql,/cotironda_piloto_all_supplier_contacts_mvp304/u);
- assert.match(sql,/cotironda_piloto_all_suppliers_closed_mvp303/u);
- assert.match(sql,/owner_ch.ciphertext_b64/u);
- assert.match(sql,/buyer_phone_included',false/u);
+ assert.match(guard,/proveedor_contactable_mvp307/u);
+ assert.match(projection,/cotironda_piloto_all_supplier_contacts_mvp304/u);
+ assert.match(projection,/cotironda_piloto_all_suppliers_closed_mvp303/u);
+ assert.match(projection,/operator_ch.ciphertext_b64/u);
+ assert.match(projection,/buyer_phone_included',false/u);
  assert.match(sql,/REVOKE ALL ON FUNCTION\s+cotironda_piloto_privado.admin_bind_channel_mvp312/u);
  assert.doesNotMatch(sql,/GRANT EXECUTE ON FUNCTION\s+cotironda_piloto_privado.admin_bind_channel_mvp312/u);
 });
