@@ -20,6 +20,7 @@ export function buildMvp304Sql(read=readFileSync){
  const baseline=buildMvp303Sql();
  if(baseline.split(marker).length!==2)throw Error('MVP304_ROLLBACK_ANCHOR');
  const joined=baseline.replace(marker,
+   '\n\\ir ../../piloto/mvp109_encrypted_contacts_consents.sql'+
    '\n\\ir ../../piloto/mvp304_contactos_consensuados_todos_cierre.sql'+
    '\n\\ir ./mvp304-contactos-consentidos-postcierre-pg17.sql'+marker);
  if(joined.split(/^ROLLBACK;\s*$/gm).length!==2)
