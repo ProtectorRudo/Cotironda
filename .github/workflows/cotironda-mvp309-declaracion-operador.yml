@@ -1,0 +1,52 @@
+name: MVP309 - declaracion administrativa previa y revocacion segura
+on:
+  pull_request:
+    branches: [feat/mvp174-supplier-packaging-equivalence]
+    paths:
+      - 'supabase/piloto/mvp309_declaracion_admin_autorizacion_previa.sql'
+      - 'supabase/tests/ci/mvp309-owner-attestation-pg17.sql'
+      - 'scripts/piloto/mvp309-generar-fixture-pg17.mjs'
+      - 'tests/unit/mvp309-*'
+      - '.github/workflows/cotironda-mvp309-declaracion-operador.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  consentimiento-administrador:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: test_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Operador, privacidad, bloqueo de revocaciones
+        run: |
+          node --test tests/unit/mvp309-admin-attestation.test.mjs
+      - name: PostgreSQL17 sintético - dos roles, firma inexistente, revocación
+        run: |
+          set -euo pipefail
+          node scripts/piloto/mvp309-generar-fixture-pg17.mjs
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/.mvp309-generated-pg17.sql >/dev/null
+# Solo tests: no SQL remoto, Whapi, deploy ni cambios al piloto.
