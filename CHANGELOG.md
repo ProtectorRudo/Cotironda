@@ -1,3 +1,10 @@
+## 07/11/2026 23:33 ART — Publicación en cotironda-piloto (MVP306–308)
+
+- Instaladas las migraciones MVP306, MVP307 y MVP308 (identificadores Supabase 20261108023237, 20261108023255, 20261108023314). Webhook `cotironda-piloto-whapi` actualizado de v69 a **v70 ACTIVE**; 60 fuentes, tres archivos nuevos/cambiados comparados con GitHub.
+- Aceptación inicial única por comprador/proveedor, RLS y roles de servicio validados; bloqueo de intercambio de teléfono del arquitecto vía finalistas antiguos, revelado comercial solo consentido al cierre.
+- **Gate automático MVP306 OFF**; 2 rondas históricas abiertas preservadas; 0 consentimientos comerciales vigentes y 0 rondas creadas automáticamente. E2E WhatsApp real aún pendiente. Ni producción, ni `main`, ni Vercel, ni cron modificados.
+- Ver [Acta 438](docs/438-mvp306-308-publicacion-verificada-piloto-v70.md) con auditoría y pasos pendientes.
+
 ## 07/11/2026 — MVP308: consentimiento único completo al alta (desarrollo)
 
 - Registro versionado y verificable de condiciones en el mismo WhatsApp de incorporación, con alcance diferenciado por rol comprador/proveedor y sin confirmaciones por ronda. Datos personales del arquitecto nunca compartidos.
