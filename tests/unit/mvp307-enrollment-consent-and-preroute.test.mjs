@@ -7,7 +7,7 @@ const edge=read('../../supabase/functions/cotironda-piloto-whapi/index.ts');
 const operator=read('../../supabase/piloto/mvp073_onboarding_codes_operator.sql');
 test('MVP307: alta de proveedor tiene consentimiento explícito en UN mensaje',()=>{
  assert.match(edge,/\^COTI ALTA \(\[a-f0-9\]\{32\}\) CONTACTOS SI\$/u);
- assert.match(edge,/cotironda_piloto_supplier_enroll_contacts_mvp307/u);
+ assert.match(edge,/cotironda_piloto_enroll_terms_mvp308/u);
  assert.match(edge,/contacto comercial tras el cierre|contacto comercial tras el cierre|contacto comercial tras el cierre|contacto comercial|contacto/u);
  assert.match(edge,/p_plaintext_sha256:await sha\(body\)/u);
  assert.match(edge,/p_message_hmac:messageHash/u);
