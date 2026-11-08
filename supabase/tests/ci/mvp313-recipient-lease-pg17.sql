@@ -1,7 +1,8 @@
--- MVP313: only synthetic PG17 rows, everything rolled back by fixture.
+-- MVP313: only synthetic PG17 rows, all reverted by enclosing ROLLBACK.
 DO $test313$
 DECLARE
- rid uuid;lid uuid:=gen_random_uuid();r jsonb;approved jsonb;
+ rid uuid;lid uuid:=gen_random_uuid();r jsonb;added jsonb;approved jsonb;
+ new_supplier text; new_chat text:=repeat('7',64);
 BEGIN
  IF has_function_privilege('anon',
   'public.cotironda_piloto_ia_recipient_packet_mvp313(uuid,text,uuid,text,text)','EXECUTE')
@@ -30,19 +31,47 @@ BEGIN
  IF r->>'state'<>'not_authorized'
  THEN RAISE EXCEPTION 'mvp313_unleased_request_granted';END IF;
 
+ -- Create a NEW supplier using the REAL MVP312 admin enrollment function,
+ -- then add one matching product to a verified synthetic central request.
+ -- This is not a real supplier or real channel; no Whapi message is created.
+ added:=cotironda_piloto_privado.admin_create_and_bind_mvp312(
+  'supplier','Proveedor Nuevo MVP313','La Plata',
+  'owner_mvp313_new_supplier_auth_001',
+  'pilotchan_313',new_chat,repeat('8',64),repeat('C',16),repeat('D',64));
+ IF added->>'state'<>'created_and_bound'
+ THEN RAISE EXCEPTION 'mvp313_operator_supplier_creation: %',added;END IF;
+ new_supplier:=added->>'participant_key';
+ INSERT INTO cotironda_piloto_privado.catalogue_lines(
+  participant_key,line_no,literal_description,family_code,recognition_state)
+ SELECT new_supplier,line_no,literal_description,family_code,recognition_state
+ FROM cotironda_piloto_privado.catalogue_lines
+ WHERE participant_key='corralon_ailin' AND line_no=1;
+
+ INSERT INTO cotironda_piloto_privado.ai_shadow_destinos_mvp221(
+  request_id,supplier_key,line_no,catalogue_line_no,catalogue_description,tipo,explicacion)
+ SELECT request_id,new_supplier,line_no,catalogue_line_no,
+  catalogue_description,tipo,explicacion
+ FROM cotironda_piloto_privado.ai_shadow_destinos_mvp221
+ WHERE request_id=rid AND supplier_key='corralon_ailin';
+ IF NOT FOUND THEN RAISE EXCEPTION 'mvp313_no_matched_supplier_items';END IF;
+ INSERT INTO cotironda_piloto_privado.invitations(request_id,supplier_key)
+ VALUES(rid,new_supplier);
+ INSERT INTO cotironda_piloto_privado.invitation_lines_mvp099(
+  request_id,supplier_key,line_no)
+ SELECT request_id,new_supplier,line_no
+ FROM cotironda_piloto_privado.ai_shadow_destinos_mvp221
+ WHERE request_id=rid AND supplier_key=new_supplier;
+ INSERT INTO cotironda_piloto_privado.ai_dispatch_jobs_mvp222(
+  request_id,supplier_key,state,lease_token,leased_at)
+ VALUES(rid,new_supplier,'leased',lid,clock_timestamp());
+
  UPDATE cotironda_piloto_privado.ai_dispatch_gate_mvp222
  SET enabled=true,activated_at=clock_timestamp() WHERE only_row;
  UPDATE cotironda_piloto_privado.integration_flags
  SET whatsapp_outbound_enabled=true WHERE only_row;
- UPDATE cotironda_piloto_privado.ai_dispatch_jobs_mvp222 j
- SET state='leased',lease_token=lid,leased_at=clock_timestamp(),
-   finished_at=NULL,whapi_message_id=NULL
- WHERE j.request_id=rid AND j.supplier_key='corralon_ailin';
- IF NOT FOUND THEN RAISE EXCEPTION 'mvp313_synthetic_lease_missing';END IF;
 
- -- Earlier fixture deliberately returned approval to FALSE. For THIS
- -- synthetic send test, create a valid confirmed review for the exact
- -- same source, buyer and immutable snapshot. No customer message is sent.
+ -- A valid synthetic buyer approval must cover the newly added supplier
+ -- route and its exact snapshot. No customer message is sent.
  INSERT INTO cotironda_piloto_privado.ai_buyer_review_mvp279(
   request_id,buyer_key,chat_hmac,source_hmac,snapshot_sha256,
   code_sha256,state,whapi_message_id,confirmed_reply_hmac,
@@ -65,39 +94,24 @@ BEGIN
   snapshot_sha256=EXCLUDED.snapshot_sha256;
  IF NOT cotironda_piloto_privado.confirmada_comprador_mvp280(rid)
  THEN RAISE EXCEPTION 'mvp313_fixture_buyer_not_confirmed';END IF;
- -- Simulate an *admin-vouched* channel strictly in the synthetic fixture.
- -- Never claim this test insert is evidence of real Whapi authentication.
- approved:=cotironda_piloto_privado.admin_record_permission_mvp309(
-  'corralon_ailin','supplier','owner_mvp313_synthetic_source_01');
- IF approved->>'state' NOT IN ('recorded','already_recorded')
- THEN RAISE EXCEPTION 'mvp313_synthetic_attestation_missing';END IF;
- INSERT INTO cotironda_piloto_privado.admin_channels_mvp312(
-  participant_key,participant_role,source_reference,channel_id,
-  chat_hmac,contact_sha256,nonce_b64,ciphertext_b64,recorded_by_db_role
- ) VALUES(
-  'corralon_ailin','supplier','owner_mvp313_synthetic_source_01',
-  'pilotchan_313',repeat('1',64),repeat('6',64),repeat('A',16),repeat('B',64),'postgres');
+
+ IF NOT cotironda_piloto_privado.proveedor_contactable_mvp307(new_supplier)
+ THEN RAISE EXCEPTION 'mvp313_new_supplier_owner_consent_missing';END IF;
+ r:=public.cotironda_piloto_ia_recipient_packet_mvp313(
+  rid,new_supplier,lid,new_chat,'pilotchan_313');
+ IF r->>'state'<>'ready' OR r->>'supplier_key'<>new_supplier
+  OR r->>'source'<>'owner_statement'
+  OR r->>'nonce_b64'<>repeat('C',16)
+  OR r ? 'phone' OR r ? 'recipient'
+ THEN RAISE EXCEPTION 'mvp313_ready_new_supplier_invalid: %, snapshot=%',
+  r,public.cotironda_piloto_ia_pdf_snapshot_mvp222(rid,new_supplier,lid);END IF;
 
  r:=public.cotironda_piloto_ia_recipient_packet_mvp313(
-  rid,'corralon_ailin',lid,repeat('1',64),'pilotchan_313');
- IF r->>'state'<>'ready'
-  OR r->>'supplier_key'<>'corralon_ailin'
-  OR r->>'source'<>'owner_statement'
-  OR r->>'nonce_b64'<>repeat('A',16)
-  OR r ? 'phone' OR r ? 'recipient'
- THEN RAISE EXCEPTION 'mvp313_ready_packet_invalid: %, snapshot=%, eligible=%, buyerconfirmed=%, gate=%, integration=%',
-  r, public.cotironda_piloto_ia_pdf_snapshot_mvp222(rid,'corralon_ailin',lid),
-  cotironda_piloto_privado.proveedor_contactable_mvp307('corralon_ailin'),
-  cotironda_piloto_privado.confirmada_comprador_mvp280(rid),
-  (SELECT enabled FROM cotironda_piloto_privado.ai_dispatch_gate_mvp222 WHERE only_row),
-  (SELECT whatsapp_outbound_enabled FROM cotironda_piloto_privado.integration_flags WHERE only_row);
- END IF;
- r:=public.cotironda_piloto_ia_recipient_packet_mvp313(
-  rid,'corralon_ailin',lid,repeat('1',64),'wrongchannel_1');
+  rid,new_supplier,lid,new_chat,'wrongchannel_1');
  IF r->>'state' NOT IN ('contact_unavailable','not_authorized')
  THEN RAISE EXCEPTION 'mvp313_wrong_channel_accepted';END IF;
  r:=public.cotironda_piloto_ia_recipient_packet_mvp313(
-  rid,'corralon_ailin',gen_random_uuid(),repeat('1',64),'pilotchan_313');
+  rid,new_supplier,gen_random_uuid(),new_chat,'pilotchan_313');
  IF r->>'state'<>'not_authorized'
  THEN RAISE EXCEPTION 'mvp313_stolen_lease_accepted';END IF;
  r:=public.cotironda_piloto_ia_recipient_packet_mvp313(
@@ -105,16 +119,16 @@ BEGIN
  IF r->>'state'<>'not_authorized'
  THEN RAISE EXCEPTION 'mvp313_wrong_supplier_accepted';END IF;
  r:=public.cotironda_piloto_ia_recipient_packet_mvp313(
-  rid,'corralon_ailin',lid,repeat('3',64),'pilotchan_313');
+  rid,new_supplier,lid,repeat('3',64),'pilotchan_313');
  IF r->>'state'<>'not_authorized'
  THEN RAISE EXCEPTION 'mvp313_cross_chat_accepted';END IF;
 
  approved:=cotironda_piloto_privado.admin_revoke_permission_mvp309(
-  'corralon_ailin','source_disputed');
+  new_supplier,'source_disputed');
  IF approved->>'state'<>'revoked'
  THEN RAISE EXCEPTION 'mvp313_revoke_failed';END IF;
  r:=public.cotironda_piloto_ia_recipient_packet_mvp313(
-  rid,'corralon_ailin',lid,repeat('1',64),'pilotchan_313');
+  rid,new_supplier,lid,new_chat,'pilotchan_313');
  IF r->>'state'<>'not_authorized'
  THEN RAISE EXCEPTION 'mvp313_revoked_phone_retrieved';END IF;
 END $test313$;
