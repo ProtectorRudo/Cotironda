@@ -33,6 +33,8 @@ Se mantienen exactamente las firmas SQL existentes y la ejecución solo por `ser
 
 `cotironda_piloto_plan_coverage_finalists_mvp108`, `cotironda_piloto_prepare_finalists_due_mvp110` y `cotironda_piloto_tracking_finalists_mvp110` contienen comportamientos anteriores (dos ganadores, avisos/contactos bilaterales) que no deben ampliarse a nuevos usuarios. La política vigente revela al comprador al cierre **todos los comercios invitados**, con contacto comercial cuando existe autorización; **jamás** comparte el teléfono del arquitecto con proveedores. Los antiguos canales bilaterales están deshabilitados desde MVP308. Revisar usuarios de otros Edge/cron antes de decidir retirar las tres RPC, sin reactivarlas por este cambio.
 
+**Auditoría de los otros Edge activos:** las RPC `prepare_finalists_due_mvp110` y `plan_coverage_finalists_mvp108` no son invocadas por Whapi v70. Sin embargo, `cotironda-piloto-finalistas` v6 **sí referencia** `queue_finalists_mvp110` y `authorize_finalist_whapi_mvp110`, neutralizadas por MVP308; `cotironda-piloto-seguimiento` v25 **sí referencia** la RPC heredada `tracking_finalists_mvp110`. Por eso no se amplía ni se publica el circuito heredado sin auditoría expresa de ambos endpoints. Las rutas modernas MVP303/MVP304 siguen siendo la única política de revelación comercial permitida.
+
 ## Pruebas exigidas
 
 1. **14/14** funciones corregidas con SHA de baseline y cambios de patrón exactos (sin huellas literales restantes). Si una función cambió previamente, la migración debe fallar antes del primer `CREATE OR REPLACE`.
