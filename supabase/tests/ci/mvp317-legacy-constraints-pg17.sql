@@ -16,3 +16,6 @@ ALTER TABLE cotironda_piloto_privado.participants
 ALTER TABLE cotironda_piloto_privado.requests
  ADD CONSTRAINT requests_buyer_key_check
  CHECK(buyer_key='arquitecto') NOT VALID;
+-- Mirror VERIFIED live pilot: automatic buyer release gate MVP306 OFF.
+UPDATE cotironda_piloto_privado.ai_auto_release_gate_mvp306
+SET enabled=false,activated_at=NULL WHERE only_row;
