@@ -187,15 +187,7 @@ AS $eligible$
     AND length(trim(p.display_label)) BETWEEN 2 AND 100
     AND p.display_label !~ '[[:cntrl:]<>]'
     AND p.display_label !~ '[0-9]{8,}'
-    AND ch.contact_sha256 ~ '^[a-f0-9]{64}
-$eligible$;
-REVOKE ALL ON FUNCTION
- cotironda_piloto_privado.proveedor_contactable_mvp307(text)
- FROM PUBLIC,anon,authenticated,service_role;
-GRANT EXECUTE ON FUNCTION
- cotironda_piloto_privado.proveedor_contactable_mvp307(text) TO service_role;
-
-
+    AND ch.contact_sha256 ~ '^[a-f0-9]{64}$'
     AND length(ch.nonce_b64) BETWEEN 16 AND 40
     AND length(ch.ciphertext_b64) BETWEEN 32 AND 300
     AND NOT EXISTS(
