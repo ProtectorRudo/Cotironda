@@ -15,7 +15,26 @@ permissions:
 jobs:
   comprador-sin-friccion:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 16
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: test_only
+      PGDATABASE: cotironda_ci
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -31,4 +50,9 @@ jobs:
             tests/unit/mvp289-buyer-tracking-confirmation.test.mjs \
             tests/unit/mvp304-contactos-consentidos-cierre.test.mjs \
             tests/unit/mvp305-aviso-proveedores-al-cierre.test.mjs
+      - name: PostgreSQL 17 - evidencia, comprador sin confirmacion, contacto y token
+        run: |
+          set -euo pipefail
+          node scripts/piloto/mvp306-generar-fixture-pg17.mjs
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/.mvp306-generated-pg17.sql >/dev/null
 # Offline only: no Whapi, no modelos, no cambios en base ni produccion.
