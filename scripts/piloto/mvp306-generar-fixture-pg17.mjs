@@ -79,9 +79,9 @@ BEGIN
  IF public.cotironda_piloto_ia_auto_release_mvp306(repeat('b',64),h)->>'state'
   <>'source_or_buyer_not_authorized'
  THEN RAISE EXCEPTION 'mvp306_foreign_buyer_allowed';END IF;
- IF public.cotironda_piloto_ia_auto_release_mvp306(repeat('a',64),h)->>'state'
-  <>'supplier_contact_consent_missing'
- THEN RAISE EXCEPTION 'mvp306_implicit_contact_consent';END IF;
+ result:=public.cotironda_piloto_ia_auto_release_mvp306(repeat('a',64),h);
+ IF result->>'state'<>'supplier_contact_consent_missing'
+ THEN RAISE EXCEPTION 'mvp306_implicit_contact_consent: %',result;END IF;
  -- Synthetic one-time authenticated opt-in from enrolled SUPPLIER, not buyer.
  INSERT INTO cotironda_piloto_privado.whapi_inbox(
   message_hmac,participant_key,chat_hmac,kind,processing_state,
