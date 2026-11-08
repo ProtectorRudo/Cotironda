@@ -14,6 +14,14 @@ Proyecto Supabase: `cotironda-piloto`, referencia `ilggkalaafhtiysyzlmg`, Postgr
 
 Script reproducible y de cero escritura: `scripts/piloto/mvp316-preflight-esquema-baselines-solo-lectura.sql`. Única salida: estado de banderas, conteos agregados, nombres de RPC desviadas y presencia de objetos. No devuelve contactos, presupuestos, tokens ni números de WhatsApp.
 
+## Protecciones adicionales por huella SHA-256
+
+La revisión de las nueve migraciones identificó dos reemplazos más de funciones existentes:
+- **MVP309**, `cotironda_piloto_privado.proveedor_contactable_mvp307(text)`: SHA actual `023ffb3a0c2648f73f1b257dd3555a4d633b6311e866bf7b0861768b5491e03b`.
+- **MVP312C**, `public.cotironda_piloto_all_supplier_contacts_mvp304(text)`: SHA actual `8e6cd438415a2f4942e541fabeb63a574932bc444d59e8e65ba6e3bdfbec2105`.
+
+Cada migración ahora comprueba su huella antes de cualquier DDL; los tres valores críticos (MVP309, MVP312C, MVP314) se vuelven a consultar mediante el preflight de solo lectura. **Las tres huellas coinciden con el piloto**, verificadas el 08/11/2026 a las 17:22 UTC. Si alguna cambia, abortar la instalación y auditar. No restaurar automáticamente cuerpos antiguos ni ignorar la diferencia.
+
 ## Protección de migración MVP314
 
 MVP314 reemplaza `ia_claim_mvp222` para compartir el presupuesto con el worker cuando el gate esté activo. Esta es una operación delicada: el webhook existente sigue utilizando la misma función.
@@ -62,7 +70,7 @@ Documentación oficial: [Supabase Database Backups](https://supabase.com/docs/gu
 - [x] Consulta de esquema y 14 firmas congeladas del piloto, sin escribir.
 - [x] Guard SHA-256 para proteger RPC de despacho heredado contra sobrescritura.
 - [x] Preflight reproducible sin PII ni secretos.
-- [ ] Test de concurrencia PG17 de 2 sesiones: verificar resultado del workflow del PR.
+- [x] Test de concurrencia PostgreSQL17 con dos sesiones: despacho webhook+worker y emisión de token único; bloqueos comprobados durante más de 1 segundo. Workflow MVP316 aprobado con base efímera, sin datos reales.
 - [ ] Determinar plan de Supabase, respaldo restaurable, recuperación de Storage.
 - [ ] Auditoría pre-publicación de funciones/Edge, cambios de SQL y compatibilidad cron.
 - [ ] Activación de WhatsApp real y proveedor sin costo no está acreditada.
