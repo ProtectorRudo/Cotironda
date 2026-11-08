@@ -16,6 +16,8 @@ import {generarSolicitudPdfMvp091} from
  '../cotironda-piloto-whapi/request-pdf.ts';
 import {CAPTION_PEDIDO_COTIRONDA_MVP305} from
  '../_shared/aviso-proveedores-cierre-mvp305.ts';
+import {avisarCompradorTrasLoteMvp315} from
+ '../cotironda-piloto-whapi/buyer-tracking-after-batch-mvp315.ts';
 
 const REF='ilggkalaafhtiysyzlmg';
 const URL='https://'+REF+'.supabase.co';
@@ -115,10 +117,36 @@ async function tick(req:Request):Promise<Response>{
    }
   })
  });
+ // A separate one-time buyer notice runs even when no more supplier
+ // jobs remain. SQL requires *all* accepted IDs and an untouched buyer.
+ // Never notify when the dispatch itself needs reconciliation.
+ const notice=result.estado==='requiere_conciliacion'
+  ?{estado:'apagado',intentos:0}
+  :await avisarCompradorTrasLoteMvp315({
+   enabled:Deno.env.get('COTIRONDA_PILOT_BUYER_NOTICE_MVP315_ENABLED')==='true',
+   keys:{hmacKey,aesKey,channel},rpc,
+   send:async(recipient,body)=>{
+    const remote=await fetch('https://gate.whapi.cloud/messages/text',{
+     method:'POST',headers:{Authorization:'Bearer '+token,
+       'Content-Type':'application/json'},
+     body:JSON.stringify({to:recipient,body}),signal:AbortSignal.timeout(12000)
+    });
+    const payload=remote.ok?await remote.json().catch(()=>null):null;
+    const value=payload&&typeof payload==='object'?
+     payload as Record<string,unknown>:null;
+    const message=value?.message&&typeof value.message==='object'?
+     value.message as Record<string,unknown>:null;
+    const id=value?.message_id??message?.id??value?.id;
+    return {accepted:remote.ok&&value?.sent===true,
+     messageId:typeof id==='string'?id:null};
+   }
+  });
  // No request IDs, buyer phones, supplier numbers, per-company counts or secrets.
- return response(result.estado==='requiere_conciliacion'?503:200,{
+ return response(result.estado==='requiere_conciliacion'||
+  notice.estado==='conciliacion_requerida'?503:200,{
    state:result.estado,reclamados:result.reclamados,
-   apiAceptados:result.apiAceptados,inciertos:result.inciertos
+   apiAceptados:result.apiAceptados,inciertos:result.inciertos,
+   buyerNotice:notice.estado,buyerNoticeAttempts:notice.intentos
  });
 }
 Deno.serve(req=>tick(req).catch((err)=>{
