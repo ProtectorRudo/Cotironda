@@ -47,6 +47,8 @@ jobs:
             exit 1
           fi
           grep -q 'No export was attempted' /tmp/mvp318-guard.txt
+      - name: Simulated encrypted-export orchestration with 7 originals and failure cases
+        run: bash scripts/piloto/mvp318-probar-exportacion-mock.sh
       - name: Backup + restore into SECOND disposable PostgreSQL 17 DB
         run: bash scripts/piloto/mvp318-probar-resguardo-pg17.sh
 # Never upload backup artifacts. Never pass real connection credentials.
