@@ -1120,3 +1120,23 @@ begin
 end;$function$;
 REVOKE ALL ON FUNCTION public.cotironda_piloto_reserve_reply_mvp094(p_message_hmac text, p_chat_hmac text, p_reply_code text) FROM PUBLIC,anon,authenticated,service_role;
 GRANT EXECUTE ON FUNCTION public.cotironda_piloto_reserve_reply_mvp094(p_message_hmac text, p_chat_hmac text, p_reply_code text) TO service_role;
+
+-- MVP311: el comprador de una ronda nunca puede cambiarse por otro
+-- comprador igualmente verificado. Preserva auditoría y acceso por empresa.
+-- Este trigger ya fue creado en MVP310; solo se endurece su cuerpo.
+CREATE OR REPLACE FUNCTION cotironda_piloto_privado.verify_request_buyer_mvp310()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=''
+AS $buyer$
+BEGIN
+ IF TG_OP='UPDATE' AND OLD.buyer_key IS DISTINCT FROM NEW.buyer_key
+ THEN RAISE EXCEPTION 'mvp311_buyer_owner_immutable' USING ERRCODE='23514';END IF;
+ IF NOT EXISTS(
+  SELECT 1 FROM cotironda_piloto_privado.participants p
+  WHERE p.key=NEW.buyer_key AND p.participant_role='buyer'
+   AND p.chat_hmac IS NOT NULL AND p.consent_at IS NOT NULL
+   AND p.opted_out_at IS NULL
+ ) THEN RAISE EXCEPTION 'mvp310_buyer_not_verified' USING ERRCODE='23514';END IF;
+ RETURN NEW;
+END $buyer$;
+REVOKE ALL ON FUNCTION cotironda_piloto_privado.verify_request_buyer_mvp310()
+ FROM PUBLIC,anon,authenticated,service_role;
