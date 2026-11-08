@@ -73,7 +73,7 @@ SELECT
 SQL
 )"
 expected_prefix="$(printf '%s' "$before" | cut -d '|' -f 1-2)"
-if [[ "$verified" != "$expected_prefix|f|f|f" ]]; then
+if [[ "$verified" != "$expected_prefix|false|false|false" ]]; then
  echo "MVP317 FAILED: full install changed data or enabled gates: $verified" >&2; exit 25
 fi
 echo "MVP317: 9 migrations committed atomically; original row counts unchanged; all automatic gates OFF."
