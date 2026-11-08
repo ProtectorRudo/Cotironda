@@ -158,3 +158,22 @@ test('MVP306: datos del comprador nunca en el roster o telefonos del proveedor',
  assert.match(sql,/msg.participant_key=buyer.key/u);
  assert.match(sql,/buyer.participant_role='buyer'/u);
 });
+
+test('MVP306: todos los proveedores se revelan al cierre también para rondas sin CONFIRMAR',()=>{
+ const baseline=read('../../supabase/piloto/mvp303_revelar_todos_los_proveedores_al_cierre.sql');
+ const at=sql.indexOf('CREATE OR REPLACE FUNCTION public.cotironda_piloto_all_suppliers_closed_mvp303(');
+ assert.ok(at>0);
+ const upgraded=sql.slice(at);
+ assert.match(baseline,/JOIN cotironda_piloto_privado.ai_buyer_review_mvp279 br/u);
+ assert.match(upgraded,/EXISTS\(SELECT 1 FROM cotironda_piloto_privado.ai_buyer_review_mvp279 br/u);
+ assert.match(upgraded,/EXISTS\(\s+SELECT 1 FROM cotironda_piloto_privado.ai_buyer_auto_release_mvp306 auto/u);
+ assert.match(upgraded,/auto\.source_hmac=r\.source_hmac/u);
+ assert.match(upgraded,/r\.created_at>=g\.activated_at/u);
+ assert.match(upgraded,/auto\.approved_at<r\.closes_at/u);
+ assert.match(upgraded,/r\.state/u);
+ assert.match(upgraded,/v_request\.state<>'closed' OR v_request\.closes_at>now\(\)/u);
+ assert.match(upgraded,/t\.revoked_at IS NULL/u);
+ assert.match(upgraded,/t\.expires_at>now\(\)/u);
+ assert.match(upgraded,/comprador|buyer/u);
+ assert.doesNotMatch(upgraded,/select.*buyer\.chat_hmac.*into v_result/iu);
+});
