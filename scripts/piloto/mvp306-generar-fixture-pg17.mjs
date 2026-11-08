@@ -30,7 +30,7 @@ CREATE TABLE cotironda_piloto_privado.buyer_tracking_mvp091(
  expires_at timestamptz NOT NULL,revoked_at timestamptz);
 \\ir ../../piloto/mvp306_auto_release_y_contactos_proveedor.sql
 `;
-sql=sql.replace(anchor,anchor+'\\n'+extras);
+sql=sql.replace(anchor,anchor+String.fromCharCode(10)+extras);
 const tests=`
 DO $mvp306$
 DECLARE
