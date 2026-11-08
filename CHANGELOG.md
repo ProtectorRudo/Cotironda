@@ -1,3 +1,9 @@
+## 07/11/2026 — Decisión 436: una sola aceptación inicial, ninguna autorización por ronda
+
+- Política para todos los roles: aceptación única, informada, versionada y verificable al incorporarse, suficiente para todas las operaciones habituales que fueron expresamente informadas. El sistema no pide autorizaciones ni confirmaciones al comprador/proveedor por cada solicitud; sólo aclara datos esenciales.
+- Revelación comercial de proveedores al cierre con base habilitante acreditada; la permanencia de usuarios históricos NO acredita consentimiento retroactivo a nuevos usos de sus teléfonos. Nunca se comparte automáticamente identidad personal ni contacto del arquitecto.
+- Decisión de producto registrada sin código, sin cambios en gates, sin SQL ni publicación. [Acta 436](docs/436-politica-autorizacion-unica-al-incorporarse.md).
+
 ## 07/11/2026 — MVP307, desarrollo: autorización comercial en el mismo alta del proveedor
 
 - Una sola frase autenticada `COTI ALTA <código> CONTACTOS SI`, con advertencia de divulgación comercial visible antes de aceptar y revocación `COTI CONTACTOS NO`. Transacción SQL vincula alta, original cifrado, contacto, consentimiento y fuente SHA/HMAC. La autorización antigua sigue siendo válida si se acredita individualmente.
