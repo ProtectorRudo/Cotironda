@@ -1,0 +1,54 @@
+name: MVP318 - restaurar respaldo sintetico y comprobar seguridad
+on:
+  pull_request:
+    branches: [feat/mvp174-supplier-packaging-equivalence]
+    paths:
+      - 'scripts/piloto/mvp318-*'
+      - 'docs/448-*'
+      - '.github/workflows/cotironda-mvp318-restore-drill.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  backup-restore-drill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: synthetic_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: synthetic_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Check user-local backup script syntax and wrong-project fail-closed
+        run: |
+          bash -n scripts/piloto/mvp318-exportar-resguardo-local.sh
+          if bash scripts/piloto/mvp318-exportar-resguardo-local.sh > /tmp/mvp318-guard.txt 2>&1; then
+            echo "FAIL: export started without a linked project" >&2
+            exit 1
+          fi
+          grep -q 'No export was attempted' /tmp/mvp318-guard.txt
+      - name: Simulated encrypted-export orchestration with 7 originals and failure cases
+        run: bash scripts/piloto/mvp318-probar-exportacion-mock.sh
+      - name: Backup + restore into SECOND disposable PostgreSQL 17 DB
+        run: bash scripts/piloto/mvp318-probar-resguardo-pg17.sh
+# Never upload backup artifacts. Never pass real connection credentials.
