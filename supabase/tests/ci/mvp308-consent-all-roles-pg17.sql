@@ -6,7 +6,8 @@ DO $mvp308$
 DECLARE
  buyer_code text:=repeat('c',32);supplier_code text:=repeat('d',32);
  buyer_chat text:=repeat('6',64);supplier_chat text:=repeat('7',64);
- buyer_msg text:=repeat('ab',32);supplier_msg text:=repeat('cd',32);
+ buyer_msg text:=encode(sha256(convert_to('mvp308:unico:buyer','UTF8')),'hex');
+ supplier_msg text:=encode(sha256(convert_to('mvp308:unico:supplier','UTF8')),'hex');
  phrase text;digest text;result jsonb;pid text;
 BEGIN
  IF (SELECT count(*) FROM cotironda_piloto_privado.enrollment_policies_mvp308)<>2
