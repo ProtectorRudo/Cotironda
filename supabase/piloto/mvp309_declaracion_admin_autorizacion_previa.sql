@@ -1,3 +1,14 @@
+-- MVP316: avoid overwriting changed live pilot routines before any DDL.
+DO $mvp309_contactability_baseline$ BEGIN
+ IF (SELECT encode(sha256(convert_to(pg_get_functiondef(p.oid),'UTF8')),'hex')
+  FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+  WHERE n.nspname='cotironda_piloto_privado' AND p.proname='proveedor_contactable_mvp307'
+   AND pg_get_function_identity_arguments(p.oid)='p_supplier text')
+ IS DISTINCT FROM '023ffb3a0c2648f73f1b257dd3555a4d633b6311e866bf7b0861768b5491e03b'
+ THEN RAISE EXCEPTION 'mvp309_contactability_baseline_drift' USING ERRCODE='42501';
+ END IF;
+END $mvp309_contactability_baseline$;
+
 -- MVP309 · DESARROLLO EXCLUSIVO: registro de autorización previa declarada
 -- por responsable de Cotironda. NO publica ni modifica la DB piloto.
 -- Supuestos: MVP073,109,307,308 y acceso al SQL Editor autenticado como postgres.
