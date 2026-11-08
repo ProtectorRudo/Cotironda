@@ -11,7 +11,7 @@ export type DocumentoMvp223=Readonly<{
  items:readonly Readonly<{description:string;quantity:string;unit:string}>[]
 }>;
 export type DespachoResultadoMvp223=Readonly<{
- estado:'inactivo'|'sin_trabajos'|'terminado'|'requiere_conciliacion';
+ estado:'inactivo'|'sin_trabajos'|'terminado'|'limite_diario'|'requiere_conciliacion';
  reclamados:number;apiAceptados:number;inciertos:number;
 }>;
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
@@ -57,6 +57,8 @@ export async function despacharSolicitudCentralMvp223(args:{
   accepted:boolean;messageId:string|null
  }>>;
  maxJobs?:1|2;
+ // MVP314: only the private batch worker may use the budget-guarded SQL claim.
+ claimRpcName?:'cotironda_piloto_ia_claim_mvp314';
 }):Promise<DespachoResultadoMvp223>{
  const result=(estado:DespachoResultadoMvp223['estado'],
   reclamados:number,apiAceptados:number,inciertos:number)=>
@@ -70,13 +72,15 @@ export async function despacharSolicitudCentralMvp223(args:{
  const count=args.maxJobs??2;
  for(let index=0;index<count;index++){
   let leased:RpcResult;
-  try{leased=await args.rpc('cotironda_piloto_ia_claim_mvp222',{
+  try{leased=await args.rpc(args.claimRpcName??'cotironda_piloto_ia_claim_mvp222',{
    p_request:args.requestId
   })}
   catch{return result('requiere_conciliacion',claimed,accepted,uncertain)}
   if(leased.error!==null&&leased.error!==undefined||!obj(leased.data))
    return result('requiere_conciliacion',claimed,accepted,uncertain);
   const claim=leased.data;
+  if(claim.state==='budget_exhausted')
+   return result('limite_diario',claimed,accepted,uncertain);
   if(claim.state==='disabled'||claim.state==='empty')
    return result(claimed?'terminado':'sin_trabajos',
     claimed,accepted,uncertain);
