@@ -35,9 +35,9 @@ Fuentes oficiales:
 
 1. Verifica que `supabase/.temp/project-ref` coincide exactamente con el ID de Cotironda piloto. Si no coincide, **aborta sin conectarse**.
 2. Requiere CLI Supabase autenticada y enlazada localmente, Docker para `db dump`, `age` para cifrado por contraseña, y Bash/tar/sha256sum. Detecta las variantes `--linked` o `--remote` mediante `--help`; no supone que todas las versiones sean iguales.
-3. Exporta tres archivos separados (`roles.sql`, `schema.sql`, `data.sql`) del esquema privado y `public`. Una exportación sin datos falla.
-4. Descarga **recursivamente** los originales de `ss:///cotironda-piloto-originals` y exige encontrar **los 7 archivos** registrados al auditar. Si cambió el número, la copia queda invalidada hasta reauditar.
-5. Calcula los SHA-256 de los componentes, arma el paquete por streaming `tar | age -p` (no crea un TAR sin cifrar permanente) y verifica que el archivo cifrado se descifra y se lee sin errores.
+3. Exporta tres archivos separados (`roles.sql`, `schema.sql`, `data.sql`) del esquema privado y `public`. Rechaza un archivo de datos que contenga solamente comentarios o que carezca de instrucciones `COPY`/`INSERT`, así como un esquema que no mencione `cotironda_piloto_privado`.
+4. Descarga **recursivamente** los originales de `ss:///cotironda-piloto-originals` y exige encontrar **los 7 archivos no vacíos** registrados al auditar. Si cambió el número, la copia queda invalidada hasta reauditar.
+5. Calcula los SHA-256 de los componentes, arma el paquete por streaming `tar | age -p` (no crea un TAR sin cifrar permanente), **descifra temporalmente el paquete y verifica cada archivo contra el manifiesto SHA-256**, además de comprobar nuevamente los siete originales. Si falla una verificación, elimina el paquete incompleto.
 6. Guarda únicamente `*.age` cifrado y su `*.sha256` en `~/Cotironda-Resguardos-Privados/`, fuera del repositorio; nunca sube contactos, presupuestos ni secretos a GitHub. Los tres SQL y originales pasan temporalmente por un directorio con permisos restringidos del equipo local y se borran al salir. Recomendamos equipo con disco cifrado, sin sincronización automática a nubes públicas.
 
 **No publicar este paquete ni la contraseña, no enviarlos por chat, no guardarlos en GitHub.** La contraseña debe conservarse separadamente; sin ella el paquete será irrecuperable.
@@ -63,6 +63,7 @@ La salida indica **exportación local cifrada verificada, NO restauración real 
 - Generan un archivo `pg_dump --format=custom`, SHA-256, restauran en **otra base separada** `cotironda_restore`.
 - Comparan cantidades de participantes/rondas y tablas privadas, huellas SHA-256 de las RPC críticas, acceso denegado para `anon`/`authenticated`, y gates automáticos OFF.
 - Verifican que un archivo cortado a la mitad no pase como copia restaurable.
+- Añaden una **prueba local simulada** del exportador que comprueba casos positivos y negativos: proyecto incorrecto, 6 de 7 archivos, originales vacíos, SQL sin filas y archivo cifrado dañado. El comando `age` simulado **no cifra realmente**: solo comprueba el flujo y los rechazos sin credenciales.
 - **No tienen secretos Supabase**, no hacen conexiones externas, no suben artefactos de backup y no envían WhatsApps.
 
 Este ensayo comprueba que el proceso general de `pg_dump/pg_restore` funciona para la base sintética. **No demuestra que la exportación SQL de la CLI de la base real sea restaurable; son formatos distintos y todavía hay que probar el paquete real.** Este límite debe permanecer explícito.
@@ -75,7 +76,8 @@ No se accedió a la cuenta Whapi ni a credenciales de facturación. La expiraci�
 
 - [x] Inventario real solo lectura: **94 tablas**, **0 usuarios Auth**, **7 archivos Storage**.
 - [x] Procedimiento local fail-closed diseñado para exportar cifrado con costo de software cero.
-- [ ] CI PostgreSQL17 verde con restauración real aislada y truncamiento rechazado.
+- [x] CI PostgreSQL17 verde con restauración **sintética** aislada y truncamiento rechazado (commit previo de MVP318).
+- [ ] Pruebas adicionales del exportador simulado en el último commit del PR: pendientes de verificar.
 - [ ] Backup de **datos reales** completado en equipo autorizado: NO realizado.
 - [ ] Restauración de **datos reales** a entorno aislado verificada: NO realizada.
 - [ ] Cobertura de configuraciones Edge, Auth y metadatos Storage validada.
