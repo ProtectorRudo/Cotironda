@@ -6,6 +6,8 @@ import {
  sellarCanalAdminMvp312,verificarYRecuperarCanalAdminMvp312
 } from '../../src/server/pilot-admin-channel-mvp312.ts';
 const sql=readFileSync(new URL('../../supabase/piloto/mvp312_alta_canal_administrada_cifrada.sql',import.meta.url),'utf8');
+const guard=readFileSync(new URL('../../supabase/piloto/mvp312b_proveedor_contacto_admin.sql',import.meta.url),'utf8');
+const projection=readFileSync(new URL('../../supabase/piloto/mvp312c_contactos_postcierre_admin.sql',import.meta.url),'utf8');
 const fixture=readFileSync(new URL('../../supabase/tests/ci/mvp312-admin-encrypted-channels-pg17.sql',import.meta.url),'utf8');
 const generator=readFileSync(new URL('../../scripts/piloto/mvp312-generar-fixture-pg17.mjs',import.meta.url),'utf8');
 const keys=()=>({identityHmac:randomBytes(32),contactAes:randomBytes(32)});
