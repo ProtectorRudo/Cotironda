@@ -33,7 +33,9 @@ CREATE TABLE cotironda_piloto_privado.enrollment_codes(
  code_hash text NOT NULL,created_at timestamptz NOT NULL,
  expires_at timestamptz NOT NULL,consumed_at timestamptz
 );
-`+'\\n'+oldEnroll+'\\n'+oldBind+'`\n\\ir ../../piloto/mvp307_alta_proveedor_contacto_y_ruteo.sql\n`';
+`;
+const extraSql=bootstrap+String.fromCharCode(10)+oldEnroll+String.fromCharCode(10)+oldBind+
+ String.fromCharCode(10)+String.fromCharCode(92)+'ir ../../piloto/mvp307_alta_proveedor_contacto_y_ruteo.sql'+String.fromCharCode(10);
 const tests=`
 DO $mvp307$
 DECLARE
@@ -135,5 +137,5 @@ END $mvp307$;
 `;
 if(!old.trimEnd().endsWith('ROLLBACK;'))throw Error('MVP306 fixture final changed');
 const cut=old.lastIndexOf('ROLLBACK;');
-writeFileSync(target,old.slice(0,cut)+bootstrap+'\\n'+tests+'\\nROLLBACK;\\n','utf8');
+writeFileSync(target,old.slice(0,cut)+extraSql+String.fromCharCode(10)+tests+String.fromCharCode(10)+'ROLLBACK;'+String.fromCharCode(10),'utf8');
 console.log('MVP307 fixture generated for PostgreSQL17 with rollback.');
