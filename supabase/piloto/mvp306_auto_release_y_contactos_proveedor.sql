@@ -170,6 +170,7 @@ AS $approved$
    AND b.participant_role='buyer' AND b.consent_at IS NOT NULL
    AND b.opted_out_at IS NULL AND r.closes_at>clock_timestamp()
    AND cotironda_piloto_privado.fuente_revisable_mvp280(r.id)
+   AND cotironda_piloto_privado.proveedores_contactables_mvp306(r.id)
    AND auto.snapshot_sha256=encode(sha256(convert_to(
     cotironda_piloto_privado.ai_buyer_snapshot_mvp279(r.id)::text,
     'UTF8')),'hex')
