@@ -7,6 +7,7 @@ import {parseBuyerPilot,canPrepareBuyerPilot,validMessage,standaloneDeliveryCity
 import {generarSolicitudPdfMvp091} from './request-pdf.ts';
 import {CAPTION_PEDIDO_COTIRONDA_MVP305} from '../_shared/aviso-proveedores-cierre-mvp305.ts';
 import {despacharSolicitudCentralMvp223} from './ai-central-dispatch-mvp223.ts';
+import {resolverDestinatarioMvp313} from './dynamic-recipient-mvp313.ts';
 import {procesarCompradorCentralMvp226} from './ai-central-buyer-mvp226.ts';
 import {avisarRevisionSemanticaMvp286,aceptarRespuestaWhapiMvp287} from './ai-central-review-notice-mvp286.ts';
 import {continuarZonaCentralMvp233} from './ai-central-zone-mvp233.ts';
@@ -96,6 +97,7 @@ async function encrypt(key:CryptoKey,value:string,aad:string){
 type Secrets=Readonly<{
  key:CryptoKey;aes:CryptoKey;channel:string;webhookSecret:string;url:string;roleKey:string;
  outbound:boolean;token:string;recipients:Readonly<Record<string,string>>;
+ dynamicRecipients:boolean;
 }>;
 async function secrets():Promise<Secrets|null>{
  if(Deno.env.get('COTIRONDA_PILOT_WHAPI_INBOUND_ENABLED')!=='true'){
@@ -134,6 +136,8 @@ async function secrets():Promise<Secrets|null>{
   return null;
  }
  const outbound=Deno.env.get('COTIRONDA_PILOT_WHAPI_OUTBOUND_ENABLED')==='true';
+ // MVP313 opt-in gate is independent of SQL dispatch, trial and Whapi gates.
+ const dynamicRecipients=Deno.env.get('COTIRONDA_PILOT_DYNAMIC_RECIPIENT_MVP313_ENABLED')==='true';
  const token=Deno.env.get('COTIRONDA_PILOT_WHAPI_TOKEN')??'';
  let recipients:Record<string,string>={};
  if(outbound){
@@ -141,7 +145,9 @@ async function secrets():Promise<Secrets|null>{
    console.warn('cotironda_pilot_config: outbound_token_missing');
    return null;
   }
-  try{
+  // The legacy fixed allowlist is only needed for its own isolated flow.
+  // Dynamic mode does NOT treat missing legacy numbers as authorization.
+  if(!dynamicRecipients)try{
    const parsed=JSON.parse(Deno.env.get('COTIRONDA_PILOT_RECIPIENTS_JSON')??'null');
    if(!parsed||typeof parsed!=='object'||Array.isArray(parsed)||
       Object.keys(parsed).sort().join(',')!=='corralon_ailin,corralon_nahuel'||
@@ -158,7 +164,7 @@ async function secrets():Promise<Secrets|null>{
  }
  const key=await crypto.subtle.importKey('raw',new Uint8Array(raw).buffer,{name:'HMAC',hash:'SHA-256'},false,['sign']);
  const aes=await crypto.subtle.importKey('raw',new Uint8Array(rawAes).buffer,'AES-GCM',false,['encrypt','decrypt']);
- return {key,aes,channel,webhookSecret,url,roleKey,outbound,token,recipients};
+ return {key,aes,channel,webhookSecret,url,roleKey,outbound,token,recipients,dynamicRecipients};
 }
 function client(s:Secrets){
  return createClient(s.url,s.roleKey,{auth:{autoRefreshToken:false,persistSession:false},
@@ -172,7 +178,9 @@ function outcome(raw:unknown):string{
 }
 
 async function dispatchTwo(sec:Secrets,db:ReturnType<typeof client>):Promise<void>{
- if(!sec.outbound)return;
+ // Legacy job gates still name the 1+2 test people. Never lease them when
+ // dynamic mode has no static allowlist: that would mark them uncertain.
+ if(!sec.outbound||sec.dynamicRecipients)return;
  // At most two messages per webhook, no automatic retries of unknown outcomes.
  for(let i=0;i<2;i++){
   const claim=await db.rpc('cotironda_piloto_claim_whapi_v1');
@@ -345,10 +353,19 @@ async function respond(req:Request):Promise<Response>{
   const quotedId=quotedWhapiMessageId(row);
   let supplierQuotedId:string|null=null;
   if(quotedId&&sec.outbound){
-   for(const number of Object.values(sec.recipients)){
-    const expected=await hmac(sec.key,'cotironda|pilot|chat|'+sec.channel+
+   if(sec.dynamicRecipients){
+    // A signed Whapi sender can be matched to ANY registered supplier.
+    // Supplier quote-to-round linking still verifies the quoted ID in SQL.
+    const known=await db.rpc('cotironda_piloto_is_supplier_mvp313',{
+      p_chat_hmac:chatHash});
+    if(known.error)return json(503,'supplier_identity_unavailable');
+    if(known.data===true)supplierQuotedId=quotedId;
+   }else{
+    for(const number of Object.values(sec.recipients)){
+     const expected=await hmac(sec.key,'cotironda|pilot|chat|'+sec.channel+
       '|'+number+'@s.whatsapp.net');
-    if(equalSecret(expected,chatHash)){supplierQuotedId=quotedId;break}
+     if(equalSecret(expected,chatHash)){supplierQuotedId=quotedId;break}
+    }
    }
   }
   recoveryTriggerHmac=chatHash;
@@ -473,11 +490,18 @@ async function respond(req:Request):Promise<Response>{
   const allowBuyerRelease=reviewGate?.state==='active'&&
     reviewGate.release===true&&
     pilotEnvNotDenied('COTIRONDA_PILOT_BUYER_REVIEW_RELEASE_ENABLED');
-  const supplierKnown=sec.outbound&&
-    (await Promise.all(Object.values(sec.recipients).map(async recipient=>
+  const supplierKnown=sec.outbound&&(sec.dynamicRecipients
+    ?await (async()=>{
+       const found=await db.rpc('cotironda_piloto_is_supplier_mvp313',{
+        p_chat_hmac:chatHash});
+       if(found.error||typeof found.data!=='boolean')
+        throw Error('supplier_role_lookup_failed');
+       return found.data;
+     })()
+    :(await Promise.all(Object.values(sec.recipients).map(async recipient=>
       hmac(sec.key,'cotironda|pilot|chat|'+sec.channel+
         '|'+recipient+'@s.whatsapp.net'))))
-      .some(expected=>equalSecret(expected,chatHash));
+      .some(expected=>equalSecret(expected,chatHash)));
   // La protección de una ronda YA DESPACHADA no depende de que el
   // administrador deje activada la IA de compras. Incluye archivos y
   // respuestas sin precio escrito en un formato determinado.
@@ -1694,6 +1718,13 @@ async function respond(req:Request):Promise<Response>{
    const result=await despacharSolicitudCentralMvp223({
     enabled:true,requestId:ready.data.request_id,
     recipients:sec.recipients,maxJobs:2,
+    resolveRecipient:sec.dynamicRecipients
+      ?async lease=>resolverDestinatarioMvp313(lease,{
+        hmacKey:sec.key,aesKey:sec.aes,channel:sec.channel
+       },async(name,params)=>{
+        const response=await db.rpc(name,params);
+        return {data:response.data,error:response.error};
+       }):undefined,
     rpc:async(name,params)=>{
      const response=await db.rpc(name,params);
      return {data:response.data,error:response.error};
