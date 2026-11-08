@@ -88,7 +88,7 @@ BEGIN
  THEN RAISE EXCEPTION 'mvp314_budget_bypassed';END IF;
  SELECT attempts_reserved INTO day_reserved
  FROM cotironda_piloto_privado.ai_batch_budget_mvp314
- WHERE day_utc=day_utc;
+ WHERE day_utc=(clock_timestamp() AT TIME ZONE 'UTC')::date;
  IF day_reserved<>2 THEN RAISE EXCEPTION 'mvp314_not_two_attempts';END IF;
  SELECT count(*) INTO count_leased
  FROM cotironda_piloto_privado.ai_dispatch_jobs_mvp222
