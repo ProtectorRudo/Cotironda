@@ -364,34 +364,35 @@ async function respond(req:Request):Promise<Response>{
    if(out.error)return json(503,'storage_unavailable');
    continue;
   }
-  // Alta voluntaria en un único WhatsApp: la persona acepta compartir
-  // exclusivamente SU contacto comercial tras el cierre de las rondas.
-  // Un operador debe mostrar el aviso completo antes de generar el enlace.
-  // Nunca inferir este consentimiento del alta antigua ni de una cotización.
+  // MVP308: UNA sola aceptación al ingresar, con texto visible de
+  // condiciones según rol (buyer/supplier) antes de enviar el código.
+  // El número del arquitecto nunca es autorizado para divulgación.
   const altaConContacto=row.type==='text'
     ?/^COTI ALTA ([a-f0-9]{32}) CONTACTOS SI$/u.exec(body):null;
-  if(altaConContacto){
+  const altaCompradorConTerminos=row.type==='text'
+    ?/^COTI ALTA ([a-f0-9]{32}) ACEPTO$/u.exec(body):null;
+  if(altaConContacto||altaCompradorConTerminos){
     if(!/^[1-9][0-9]{7,16}@s[.]whatsapp[.]net$/u.test(row.chat_id))
       return json(422,'invalid_contact_channel');
     const evidence=await encrypt(sec.aes,body,
       chatHash+'|'+messageHash+'|text');
     const vault=await encrypt(sec.aes,row.chat_id,
       chatHash+'|cotironda-contact-v1');
-    const registration=await db.rpc(
-      'cotironda_piloto_supplier_enroll_contacts_mvp307',{
-        p_code:altaConContacto[1],
-        p_chat_hmac:chatHash,p_message_hmac:messageHash,
-        p_nonce_b64:evidence.nonce,p_ciphertext_b64:evidence.ciphertext,
-        p_plaintext_sha256:await sha(body),p_source_unix:row.timestamp,
-        p_contact_sha256:await sha(row.chat_id),
-        p_contact_nonce_b64:vault.nonce,
-        p_contact_ciphertext_b64:vault.ciphertext
-      });
+    const registration=await db.rpc('cotironda_piloto_enroll_terms_mvp308',{
+      p_role:altaConContacto?'supplier':'buyer',
+      p_code:(altaConContacto??altaCompradorConTerminos)![1],
+      p_chat_hmac:chatHash,p_message_hmac:messageHash,
+      p_nonce_b64:evidence.nonce,p_ciphertext_b64:evidence.ciphertext,
+      p_plaintext_sha256:await sha(body),p_source_unix:row.timestamp,
+      p_contact_sha256:await sha(row.chat_id),
+      p_contact_nonce_b64:vault.nonce,
+      p_contact_ciphertext_b64:vault.ciphertext
+    });
     if(registration.error)
-      return json(503,'supplier_enrollment_reconciliation_required');
-    if(registration.data?.state!=='enrolled_with_contact')
-      return json(422,'supplier_enrollment_not_accepted');
-    // No confirmación ni WhatsApp adicional: el enrolamiento es el recibo.
+      return json(503,'enrollment_terms_reconciliation_required');
+    if(!['enrolled_with_terms','already_enrolled'].includes(registration.data?.state))
+      return json(422,'enrollment_terms_not_accepted');
+    // El alta ES el único consentimiento: no enviar un WhatsApp de respuesta.
     continue;
   }
   const enroll=row.type==='text'?body.trim().match(/^COTI ALTA ([a-f0-9]{32})$/iu):null;
