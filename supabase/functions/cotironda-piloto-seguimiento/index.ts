@@ -24,6 +24,7 @@ import {resumirRubrosCompradorMvp216} from '../../../src/domain/rubros-comprador
 import {vistaCotizacionesRubrosMvp227} from '../../../src/domain/ia-central/vista-comprador-rubros-mvp227.ts';
 import {vistaPendientesRubrosMvp299} from '../../../src/domain/ia-central/vista-pendientes-rubros-mvp299.ts';
 import {vistaProveedoresCierreMvp303} from '../../../src/domain/ia-central/vista-proveedores-cierre-mvp303.ts';
+import {contactosConsentidosMvp304} from '../../../src/domain/ia-central/contactos-consentidos-cierre-mvp304.ts';
 import {resumirAlternativasRubrosMvp255} from '../../../src/domain/ia-central/resumen-comparador-rubros-mvp255.ts';
 const ref='ilggkalaafhtiysyzlmg';
 const html=`<!doctype html><html lang="es"><head><meta charset="utf-8">
@@ -366,6 +367,37 @@ Deno.serve(async req=>{
          publicResult={...publicResult,
            todos_proveedores_cierre:reduced,
            finalists:undefined,joint_supplier_coverage:undefined};
+         // MVP304: opt-in per supplier, never include buyer phone.
+         // Independent buyer-token-scoped second RPC + AES/HMAC.
+         try{
+           const authorized=await db.rpc(
+             'cotironda_piloto_all_supplier_contacts_mvp304',
+             {p_token_hash:digest}
+           );
+           if(!authorized.error&&
+              authorized.data?.state==='private_consented_contacts'){
+             const aesRaw=hex(Deno.env.get('COTIRONDA_PILOT_AES_HEX')??'');
+             const idRaw=hex(Deno.env.get('COTIRONDA_PILOT_ID_HMAC_HEX')??'');
+             const channel=Deno.env.get('COTIRONDA_PILOT_WHAPI_CHANNEL')??'';
+             if(!aesRaw||!idRaw||!channel)throw Error('contact_keys_unavailable');
+             const aes=await crypto.subtle.importKey('raw',
+               Uint8Array.from(aesRaw).buffer,'AES-GCM',false,['decrypt']);
+             const hmac=await crypto.subtle.importKey('raw',
+               Uint8Array.from(idRaw).buffer,
+               {name:'HMAC',hash:'SHA-256'},false,['sign']);
+             const phones=await contactosConsentidosMvp304(
+               authorized.data,reduced.proveedores.map(p=>p.nombre),
+               aes,hmac,channel
+             );
+             if(phones.length>0){
+               publicResult={...publicResult,
+                 contactos_proveedores_cierre:{
+                   state:'contactos_consentidos_al_cierre',
+                   contactos:phones
+                 }};
+             }
+           }
+         }catch{/* Crypto/consent/source mismatch: no contacts. */}
        }
      }
    }catch{/* Missing migration or invalid source => no identity release. */}

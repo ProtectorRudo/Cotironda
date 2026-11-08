@@ -1128,6 +1128,19 @@ function render(data){
    sin_respuesta:"No presentó una respuesta",
    envio_no_confirmado:"No se pudo confirmar el envío"
   };
+  // MVP304: only per-supplier, explicitly consented phone numbers appear.
+  // Names remain visible for EVERY invited seller, even without consent.
+  const list=d.contactos_proveedores_cierre;
+  const phones=new Map();
+  if(list?.state==="contactos_consentidos_al_cierre"&&
+     Array.isArray(list.contactos)){
+   for(const entry of list.contactos){
+    if(entry&&typeof entry.nombre==="string"&&
+      typeof entry.whatsapp==="string"&&
+      /^[1-9][0-9]{7,16}$/u.test(entry.whatsapp)&&
+      !phones.has(entry.nombre))phones.set(entry.nombre,entry.whatsapp);
+   }
+  }
   for(const p of roster.proveedores){
    if(!p||typeof p.nombre!=="string"||
       !Object.hasOwn(statuses,p.estado))continue;
@@ -1135,6 +1148,17 @@ function render(data){
    const subtitle=p.oferta?(" · "+p.oferta):"";
    card.append(element("h3","offer-heading",p.nombre),
     element("p","offer-subtitle",statuses[p.estado]+subtitle));
+   const phone=phones.get(p.nombre);
+   if(phone){
+    const link=element("a","supplier-whatsapp","Contactar por WhatsApp");
+    link.href="https://wa.me/"+phone;
+    link.target="_blank";link.rel="noopener noreferrer";
+    link.setAttribute("aria-label","Contactar por WhatsApp a "+p.nombre);
+    card.append(link);
+   }else{
+    card.append(element("p","offer-subtitle",
+      "Contacto no habilitado para compartir"));
+   }
    el("finalists").appendChild(card);
   }
  }else if(d.state==="closed"&&d.can_open===true&&Array.isArray(d.finalists)&&d.finalists.length){
