@@ -1,0 +1,54 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const read=p=>readFileSync(new URL(p,import.meta.url),'utf8');
+const sql=read('../../supabase/piloto/mvp309_declaracion_admin_autorizacion_previa.sql');
+const fixture=read('../../supabase/tests/ci/mvp309-owner-attestation-pg17.sql');
+const generator=read('../../scripts/piloto/mvp309-generar-fixture-pg17.mjs');
+test('MVP309: declaración individual, rol real y alcance específico',()=>{
+ assert.match(sql,/CREATE TABLE cotironda_piloto_privado.admin_authorizations_mvp309/u);
+ assert.match(sql,/p.participant_role INTO v_role/u);
+ assert.match(sql,/v_role<>p_declared_role/u);
+ assert.match(sql,/buyer_standard_operations/u);
+ assert.match(sql,/supplier_business_contact_after_close/u);
+ assert.match(sql,/owner_reported_prior_permission/u);
+ assert.match(sql,/source_reference/u);
+ assert.match(sql,/policy_text_sha256/u);
+ assert.match(sql,/sha256\(convert_to\(v_policy,'UTF8'\)\)/u);
+});
+test('MVP309: operador con privilegio administrativo y sin RPC pública',()=>{
+ assert.match(sql,/current_user<>'postgres' OR session_user<>'postgres'/gu);
+ assert.match(sql,/SECURITY INVOKER SET search_path=''/gu);
+ assert.match(sql,/REVOKE ALL ON FUNCTION cotironda_piloto_privado.admin_record_permission_mvp309/u);
+ assert.match(sql,/FROM PUBLIC,anon,authenticated,service_role;/u);
+ assert.doesNotMatch(sql,/GRANT EXECUTE ON FUNCTION cotironda_piloto_privado.admin_record_permission_mvp309/u);
+ assert.match(sql,/BEFORE UPDATE OR DELETE/u);
+ assert.doesNotMatch(sql,/INSERT INTO cotironda_piloto_privado\.whapi_inbox/u);
+ assert.doesNotMatch(sql,/INSERT INTO cotironda_piloto_privado\.contact_reveal_consents_mvp109/u);
+ assert.doesNotMatch(sql,/INSERT INTO cotironda_piloto_privado\.enrollment_terms_proof_mvp308/u);
+});
+test('MVP309: una sola vez, sin reactivar revocados, sin divulgar arquitecto',()=>{
+ assert.match(sql,/already_recorded/u);
+ assert.match(sql,/admin_authorization_revocations_mvp309/u);
+ assert.match(sql,/contact_reveal_consents_mvp109 c/u);
+ assert.match(sql,/c.revoked_at IS NOT NULL/u);
+ assert.match(sql,/p.consent_at IS NOT NULL AND p.opted_out_at IS NULL/u);
+ assert.match(sql,/JOIN cotironda_piloto_privado.participant_channels_mvp109 ch/u);
+ assert.match(sql,/JOIN cotironda_piloto_privado.whapi_inbox source/u);
+ assert.match(sql,/p.participant_role='supplier'/u);
+ assert.match(sql,/p.display_label !~ '\[0-9\]\{8,\}'/u);
+ assert.match(sql,/CREATE OR REPLACE FUNCTION cotironda_piloto_privado.proveedor_contactable_mvp307/u);
+ assert.match(fixture,/mvp309_buyer_contact_reveal/u);
+ assert.match(fixture,/mvp309_ignored_user_revocation/u);
+ assert.match(fixture,/mvp309_operator_revoke_ignored/u);
+ assert.match(fixture,/mvp309_fabricated_whatsapp_evidence/u);
+});
+test('MVP309: ensayo real aislado en PostgreSQL17 y rollback total',()=>{
+ assert.match(generator,/mvp308-generar-fixture-pg17/u);
+ assert.match(generator,/mvp309-owner-attestation-pg17.sql/u);
+ assert.match(generator,/ROLLBACK;/u);
+ assert.match(fixture,/mvp309_operator_exposed/u);
+ assert.match(fixture,/mvp309_no_prior_authorization/u);
+ assert.match(fixture,/mvp309_future_registration_failed/u);
+ assert.match(fixture,/mvp309_architect_contact_leaked/u);
+});
