@@ -22,6 +22,18 @@ No alcanza con que el usuario administrador diga «agregá a este arquitecto»: 
 5. No acepta números telefónicos visibles como nombre, roles privilegiados arbitrarios, campos inválidos ni duplicados de nombre comercial y localidad para proveedores.
 6. No concede `EXECUTE` a `PUBLIC`, `anon`, `authenticated`, `service_role`, ni crea endpoints públicos. No cambia el registro de contacto cifrado, los mensajes existentes o el historial económico.
 
+## Hallazgo de auditoría adicional: 17 funciones SQL heredadas con identidades fijas
+
+La revisión **de solo lectura** del proyecto Supabase piloto detectó 17 RPC de `public` que aún contienen en su cuerpo las claves literales `arquitecto`, `corralon_ailin` o `corralon_nahuel`:
+
+- Comprensión, entrada y revisión del comprador: `cotironda_piloto_ia_claim_zone_mvp233`, `cotironda_piloto_ia_reserve_review_notice_mvp286`, `cotironda_piloto_ia_review_launch_mvp285`, `cotironda_piloto_reserve_ai_mvp094`, `cotironda_piloto_reserve_reply_mvp094`, `cotironda_piloto_prepare_document_mvp099`, `cotironda_piloto_publish_source_text_mvp107`.
+- Proveedores, recepción y archivos: `cotironda_piloto_ia_link_supplier_mvp225`, `cotironda_piloto_link_quoted_media_mvp151`, `cotironda_piloto_link_quoted_text_mvp151`, `cotironda_piloto_autolink_unquoted_media_mvp155`, `cotironda_piloto_curated_families_mvp152`, `cotironda_piloto_record_delivery_mvp119`.
+- Seguimiento, finalistas, trial y cómputos: `cotironda_piloto_ia_trial_flags_mvp229`, `cotironda_piloto_plan_coverage_finalists_mvp108`, `cotironda_piloto_prepare_finalists_due_mvp110`, `cotironda_piloto_tracking_finalists_mvp110`.
+
+No todas estas RPC son parte del recorrido moderno, pero las activas `ia_claim_zone_mvp233`, `ia_link_supplier_mvp225`, `ia_review_launch_mvp285` y `ia_trial_flags_mvp229` sí requieren especial revisión. **MVP310 es una base estructural probada, no garantiza por sí solo el recorrido completo de nuevos compradores/proveedores. No publicar como multicliente funcional hasta eliminar o desactivar correctamente esas referencias y probar los caminos activos E2E de múltiples identidades.**
+
+**Tarea separada propuesta MVP311:** revisar dependencias y usos de cada RPC, eliminar claves fijas solo en rutas activas, comprobar correlación por WhatsApp HMAC/empresa y ejecutar pruebas adversariales de dos compradores y más de dos proveedores, sin alterar la operación anterior.
+
 ## Lo que este cambio no pretende simular
 
 **Una autorización obtenida por el responsable no implica que la identidad del número telefónico ya haya sido verificada.** Una cuenta incorporada administrativamente queda con `chat_hmac=NULL` y `consent_at=NULL` hasta que el canal sea asociado de forma segura. No puede originar ni recibir invitaciones por WhatsApp hasta esa vinculación. Esa vinculación no debe utilizarse para solicitar autorización nuevamente.
