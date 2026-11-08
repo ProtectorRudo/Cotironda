@@ -7,7 +7,6 @@ import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
 import {buildMvp304Sql} from '../../scripts/piloto/mvp304-builder-pg17.mjs';
 
-globalThis.crypto=webcrypto;
 const crypto=webcrypto;
 const encoder=new TextEncoder();
 const keyA=Uint8Array.from({length:32},(_,i)=>i+2);
