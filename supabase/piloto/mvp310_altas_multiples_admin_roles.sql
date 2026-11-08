@@ -91,14 +91,6 @@ BEGIN
   IF v_city IS NULL OR length(v_city) NOT BETWEEN 3 AND 80
    OR v_city ~ '[[:cntrl:]<>]'
   THEN RETURN jsonb_build_object('state','invalid_supplier_city');END IF;
-  IF EXISTS(
-   SELECT 1 FROM cotironda_piloto_privado.participants p
-   WHERE p.participant_role='supplier' AND p.opted_out_at IS NULL
-    AND pg_catalog.lower(pg_catalog.btrim(p.display_label))
-     =pg_catalog.lower(v_label)
-    AND pg_catalog.lower(pg_catalog.btrim(p.delivery_city))
-     =pg_catalog.lower(v_city)
-  ) THEN RETURN jsonb_build_object('state','duplicate_supplier_label_city');END IF;
  END IF;
 
  -- Serialize retries by source reference, even with concurrent operators.
@@ -119,6 +111,14 @@ BEGIN
   RETURN jsonb_build_object('state','already_created','participant_key',v_old.key);
  END IF;
 
+ IF p_role='supplier' AND EXISTS(
+  SELECT 1 FROM cotironda_piloto_privado.participants p
+  WHERE p.participant_role='supplier' AND p.opted_out_at IS NULL
+   AND pg_catalog.lower(pg_catalog.btrim(p.display_label))
+    =pg_catalog.lower(v_label)
+   AND pg_catalog.lower(pg_catalog.btrim(p.delivery_city))
+    =pg_catalog.lower(v_city)
+ ) THEN RETURN jsonb_build_object('state','duplicate_supplier_label_city');END IF;
  v_key:=p_role||'_'||pg_catalog.replace(pg_catalog.gen_random_uuid()::text,'-','');
  INSERT INTO cotironda_piloto_privado.participants(
   key,display_label,participant_role,delivery_city
