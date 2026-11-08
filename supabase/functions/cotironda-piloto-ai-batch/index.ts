@@ -58,7 +58,7 @@ async function tick(req:Request):Promise<Response>{
   if(typeof keys?.default==='string')role=keys.default;
  }catch{return deny(503,'config_unavailable')}
  const url=Deno.env.get('SUPABASE_URL')??'';
- const hmacHex=Deno.env.get('COTIRONDA_PILOT_HMAC_HEX')??'';
+ const hmacHex=Deno.env.get('COTIRONDA_PILOT_ID_HMAC_HEX')??'';
  const aesHex=Deno.env.get('COTIRONDA_PILOT_AES_HEX')??'';
  const channel=Deno.env.get('COTIRONDA_PILOT_WHAPI_CHANNEL')??'';
  const token=Deno.env.get('COTIRONDA_PILOT_WHAPI_TOKEN')??'';
@@ -66,9 +66,9 @@ async function tick(req:Request):Promise<Response>{
     !HEX.test(hmacHex)||!HEX.test(aesHex)||hmacHex===aesHex||
     !CHANNEL.test(channel)||token.length<16||token.length>300)
   return deny(503,'config_unavailable');
- const hmacKey=await crypto.subtle.importKey('raw',parseHex(hmacHex).buffer,
+ const hmacKey=await crypto.subtle.importKey('raw',new Uint8Array(parseHex(hmacHex)).buffer,
   {name:'HMAC',hash:'SHA-256'},false,['sign']);
- const aesKey=await crypto.subtle.importKey('raw',parseHex(aesHex).buffer,
+ const aesKey=await crypto.subtle.importKey('raw',new Uint8Array(parseHex(aesHex)).buffer,
   'AES-GCM',false,['decrypt']);
  const db=createClient(url,role,{auth:{autoRefreshToken:false,
   persistSession:false},global:{headers:{
