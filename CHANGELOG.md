@@ -1,3 +1,9 @@
+## 08/11/2026 — MVP312: vínculo WhatsApp administrado cifrado (solo desarrollo)
+
+- Un alta de comprador/proveedor puede integrar en una operación administrativa el permiso previamente declarado y un número protegido por HMAC/AES-GCM. No se envían códigos de consentimiento ni se crean mensajes simulados.
+- Nuevo registro SQL privado, inmutable, revocable por baja administrativa; bloquea duplicados de números y cruces de identidad. El contacto comercial del proveedor se incorpora al paquete cifrado tras cierre y comprador legítimo; teléfono del arquitecto permanece oculto.
+- Pruebas Node de criptografía y PostgreSQL17 sintético con ROLLBACK. Sin modificar Supabase real, Whapi ni la lista fija de 2 receptores. El despacho dinámico queda pendiente. [Decisión 442](docs/442-mvp312-canal-whatsapp-admin-cifrado.md).
+
 ## 08/11/2026 — MVP311: multiidentidad real en 14 RPC del webhook (solo desarrollo)
 
 - Auditadas 17 RPC antiguas con participantes fijos. Corregidas explícitamente las 14 referenciadas por la versión actual de WhatsApp y preservadas las 3 antiguas de finalistas, sin reabrir contactos recíprocos.
