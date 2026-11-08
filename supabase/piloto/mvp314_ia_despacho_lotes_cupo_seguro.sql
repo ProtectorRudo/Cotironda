@@ -88,8 +88,7 @@ BEGIN
   AND b.consent_at IS NOT NULL AND b.opted_out_at IS NULL
   AND s.delivery_city IS NOT NULL
   AND lower(btrim(r.delivery_city))=lower(btrim(s.delivery_city))
-  AND src.kind='text' AND src.plaintext_sha256=
-    encode(sha256(convert_to(r.original_request,'UTF8')),'hex')
+  AND cotironda_piloto_privado.confirmada_comprador_mvp280(r.id)
   AND cotironda_piloto_privado.proveedor_contactable_mvp307(s.key)
  ORDER BY j.created_at,j.request_id,j.supplier_key LIMIT 1;
  IF NOT FOUND THEN RETURN jsonb_build_object('state','empty');END IF;
@@ -145,8 +144,7 @@ BEGIN
   AND b.consent_at IS NOT NULL AND b.opted_out_at IS NULL
   AND s.delivery_city IS NOT NULL
   AND lower(btrim(r.delivery_city))=lower(btrim(s.delivery_city))
-  AND src.kind='text' AND src.plaintext_sha256=
-    encode(sha256(convert_to(r.original_request,'UTF8')),'hex')
+  AND cotironda_piloto_privado.confirmada_comprador_mvp280(r.id)
   AND cotironda_piloto_privado.proveedor_contactable_mvp307(s.key)
   AND coalesce((SELECT bb.attempts_reserved
     FROM cotironda_piloto_privado.ai_batch_buyer_budget_mvp314 bb
@@ -187,8 +185,7 @@ CREATE OR REPLACE FUNCTION public.cotironda_piloto_ia_claim_mvp222(
 AS $claim$
 DECLARE j record; lease uuid;
 BEGIN
- -- When MVP314 is enabled the signed buyer webhook and the autonomous
- -- worker share ONE atomic daily budget. Never bypass via the old RPC.
+ -- New gate ON means both webhook and batch MUST share the same budget.
  IF EXISTS(SELECT 1 FROM cotironda_piloto_privado.ai_batch_gate_mvp314
   WHERE only_row AND enabled AND activated_at IS NOT NULL)
  THEN RETURN public.cotironda_piloto_ia_claim_mvp314(p_request);END IF;
@@ -205,6 +202,7 @@ BEGIN
    ON i.request_id=d.request_id AND i.supplier_key=d.supplier_key
  WHERE d.request_id=p_request AND d.state='pending'
   AND r.state='prepared' AND r.closes_at>clock_timestamp()
+  AND cotironda_piloto_privado.confirmada_comprador_mvp280(r.id)
   AND i.state='prepared' AND p.participant_role='supplier'
   AND p.chat_hmac IS NOT NULL AND p.consent_at IS NOT NULL
   AND p.opted_out_at IS NULL
@@ -219,7 +217,6 @@ BEGIN
    'supplier_key',j.supplier_key,'chat_hmac',j.chat_hmac,'lease_token',lease);
 END;
 $claim$;
-
 
 -- Counts only: safe for service-only monitoring, without phone/PII.
 CREATE OR REPLACE FUNCTION public.cotironda_piloto_ia_batch_health_mvp314()
