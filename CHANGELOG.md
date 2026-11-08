@@ -1,3 +1,10 @@
+## 07/11/2026 — MVP304: contactos consentidos de todos los proveedores al cierre (SIN PUBLICAR)
+
+- Implementado puente privado read-only de todos los contactos post-cierre con consentimiento autenticado individual y criptografía AES-GCM+HMAC.
+- Edge/Proxy/Web muestran opción de WhatsApp solo para proveedores con consentimiento vigente; el resto mantiene nombre y estado. No hay top dos, adjudicación ni WhatsApps salientes.
+- Pruebas sintéticas PG17 y WebCrypto en CI; no se cambiaron datos ni secrets de piloto; Whapi sigue sin servicio activo.
+- [Decisión 430](docs/430-mvp304-contactos-todos-consentidos-al-cierre.md).
+
 ## 07/11/2026 — MVP303, política comercial corregida: revelar TODOS los proveedores al cierre (SIN PUBLICAR)
 
 - Se reemplazó la política de hasta dos finalistas por la revelación de identidad de todos los proveedores invitados, una vez vencido el plazo y cerrada la ronda. Nunca antes. No es adjudicación ni comparación económica.
