@@ -42,6 +42,10 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '22.16.0'
+      - name: Replay existing MVP309-315 synthetic regression suite with ROLLBACK
+        run: |
+          node scripts/piloto/mvp315-generar-fixture-pg17.mjs
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/.mvp315-generated-pg17.sql >/dev/null
       - name: Verify failure injection rolls back all schema changes
         run: bash scripts/piloto/mvp317-ensayo-atomico-pg17.sh
 # NO Supabase secrets, remote connection or Whapi in this workflow.
