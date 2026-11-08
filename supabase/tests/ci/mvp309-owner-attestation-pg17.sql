@@ -25,7 +25,7 @@ BEGIN
  ) VALUES
  ('proveedor_operador_309','supplier','La Plata',chat,clock_timestamp(),
   NULL,clock_timestamp(),'Corralón Operador'),
- ('comprador_operador_309','buyer','La Plata',repeat('9',64),
+ ('comprador_operador_309','buyer',NULL,repeat('9',64),
   clock_timestamp(),NULL,NULL,'Comprador Operador'),
  ('proveedor_pendiente_309','supplier','La Plata',NULL,NULL,NULL,NULL,
   'Proveedor Pendiente');
