@@ -40,15 +40,17 @@ race() {
 race "dispatch" \
  supabase/tests/ci/mvp316-dispatch-first-pg17.sql \
  supabase/tests/ci/mvp316-dispatch-second-pg17.sql leased budget_exhausted
-dispatch_state="$(psql -X -qAt -v ON_ERROR_STOP=1 -v rid="$rid" -c \
- "SELECT (SELECT count(*) FROM cotironda_piloto_privado.ai_dispatch_jobs_mvp222
+dispatch_state="$(psql -X -qAt -v ON_ERROR_STOP=1 -v rid="$rid" <<'SQL'
+SELECT (SELECT count(*) FROM cotironda_piloto_privado.ai_dispatch_jobs_mvp222
    WHERE request_id=:'rid'::uuid AND state='leased'),
  (SELECT attempts_reserved FROM cotironda_piloto_privado.ai_batch_budget_mvp314
    WHERE day_utc=(clock_timestamp() AT TIME ZONE 'UTC')::date),
  (SELECT attempts_reserved FROM cotironda_piloto_privado.ai_batch_buyer_budget_mvp314
    WHERE day_utc=(clock_timestamp() AT TIME ZONE 'UTC')::date
     AND buyer_key=(SELECT buyer_key FROM cotironda_piloto_privado.requests
-     WHERE id=:'rid'::uuid))")"
+     WHERE id=:'rid'::uuid));
+SQL
+)"
 if [[ "$dispatch_state" != "1|1|1" ]]; then
  echo "dispatch caps drift: $dispatch_state" >&2; exit 24
 fi
@@ -57,11 +59,13 @@ psql -X -v ON_ERROR_STOP=1 -f \
 race "buyer_notice" \
  supabase/tests/ci/mvp316-notice-first-pg17.sql \
  supabase/tests/ci/mvp316-notice-second-pg17.sql issued budget_exhausted
-notice_state="$(psql -X -qAt -v ON_ERROR_STOP=1 -v rid="$rid" -c \
- "SELECT (SELECT count(*) FROM cotironda_piloto_privado.buyer_tracking_mvp091
+notice_state="$(psql -X -qAt -v ON_ERROR_STOP=1 -v rid="$rid" <<'SQL'
+SELECT (SELECT count(*) FROM cotironda_piloto_privado.buyer_tracking_mvp091
   WHERE request_id=:'rid'::uuid),
  (SELECT attempts_reserved FROM cotironda_piloto_privado.ai_buyer_notice_budget_mvp315
-  WHERE day_utc=(clock_timestamp() AT TIME ZONE 'UTC')::date)")"
+  WHERE day_utc=(clock_timestamp() AT TIME ZONE 'UTC')::date);
+SQL
+)"
 if [[ "$notice_state" != "1|1" ]]; then
  echo "buyer notice quota drift: $notice_state" >&2; exit 25
 fi
