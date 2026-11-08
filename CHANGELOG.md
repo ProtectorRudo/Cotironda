@@ -1,3 +1,10 @@
+## 08/11/2026 — MVP310: altas múltiples administradas (solo desarrollo)
+
+- Eliminación controlada de tres restricciones históricas (único arquitecto y dos proveedores) y comprobación por rol real antes de crear una ronda.
+- Alta privada del responsable con referencia única, registro automático de la declaración MVP309 y revocación efectiva; sin fabricar respuestas WhatsApp ni permisos por cada cotización.
+- Nuevas pruebas sintéticas PostgreSQL17 con ROLLBACK y suite Node. Ningún cambio al piloto ni a producción.
+- Limitación pendiente: vinculación cifrada segura del teléfono de nuevas personas, sin confirmaciones de autorización repetidas. [Decisión 440](docs/440-mvp310-altas-multiples-administradas.md).
+
 ## 08/11/2026 — MVP309: declaración de permiso previo por administrador (solo desarrollo)
 
 - Diseñada constancia privada e inmutable por participante/rol, con base declarada por responsable y fuente, sin pedir mensajes de autorización repetidos.
