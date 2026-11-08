@@ -45,9 +45,13 @@ async function inspectMvp313(raw:unknown,lease:LeaseMvp313,keys:CredsMvp313):Pro
   denyMvp313();
  let recipient:string;
  try{
-  const iv=b64Mvp313(raw.nonce_b64);
-  const cipher=b64Mvp313(raw.ciphertext_b64);
-  if(iv.length!==12||cipher.length<24||cipher.length>225)denyMvp313();
+  const rawIv=b64Mvp313(raw.nonce_b64);
+  const rawCipher=b64Mvp313(raw.ciphertext_b64);
+  if(rawIv.length!==12||rawCipher.length<24||rawCipher.length>225)denyMvp313();
+  // Fresh ArrayBuffers satisfy Deno's WebCrypto BufferSource type while
+  // preventing SharedArrayBuffer-backed input from reaching crypto.subtle.
+  const iv=new Uint8Array(12);iv.set(rawIv);
+  const cipher=new Uint8Array(rawCipher.length);cipher.set(rawCipher);
   const plain=await crypto.subtle.decrypt(
    {name:'AES-GCM',iv,additionalData:new TextEncoder().encode(
     lease.chatHmac+'|cotironda-contact-v1'),tagLength:128},
