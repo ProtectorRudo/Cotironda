@@ -2,7 +2,7 @@
 DO $test313$
 DECLARE
  rid uuid;lid uuid:=gen_random_uuid();r jsonb;added jsonb;approved jsonb;
- new_supplier text; new_chat text:=repeat('7',64);
+ new_supplier text; new_chat text:=encode(sha256(convert_to('mvp313_unique_owner_supplier_chat','UTF8')),'hex');
 BEGIN
  IF has_function_privilege('anon',
   'public.cotironda_piloto_ia_recipient_packet_mvp313(uuid,text,uuid,text,text)','EXECUTE')
@@ -37,7 +37,9 @@ BEGIN
  added:=cotironda_piloto_privado.admin_create_and_bind_mvp312(
   'supplier','Proveedor Nuevo MVP313','La Plata',
   'owner_mvp313_new_supplier_auth_001',
-  'pilotchan_313',new_chat,repeat('8',64),repeat('C',16),repeat('D',64));
+  'pilotchan_313',new_chat,
+  encode(sha256(convert_to('mvp313_unique_owner_contact','UTF8')),'hex'),
+  repeat('C',16),repeat('D',64));
  IF added->>'state'<>'created_and_bound'
  THEN RAISE EXCEPTION 'mvp313_operator_supplier_creation: %',added;END IF;
  new_supplier:=added->>'participant_key';
