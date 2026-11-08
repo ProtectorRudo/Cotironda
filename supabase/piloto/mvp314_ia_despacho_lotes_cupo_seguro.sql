@@ -8,6 +8,8 @@ CREATE TABLE IF NOT EXISTS cotironda_piloto_privado.ai_batch_gate_mvp314(
  activated_at timestamptz,
  daily_attempt_limit integer NOT NULL DEFAULT 20
   CHECK(daily_attempt_limit BETWEEN 1 AND 100),
+ buyer_daily_attempt_limit integer NOT NULL DEFAULT 8
+  CHECK(buyer_daily_attempt_limit BETWEEN 1 AND 100),
  CHECK((NOT enabled AND activated_at IS NULL) OR
        (enabled AND activated_at IS NOT NULL))
 );
@@ -25,9 +27,18 @@ CREATE TABLE IF NOT EXISTS cotironda_piloto_privado.ai_batch_budget_mvp314(
 );
 ALTER TABLE cotironda_piloto_privado.ai_batch_budget_mvp314
  ENABLE ROW LEVEL SECURITY;
+CREATE TABLE IF NOT EXISTS cotironda_piloto_privado.ai_batch_buyer_budget_mvp314(
+ day_utc date NOT NULL,
+ buyer_key text NOT NULL REFERENCES cotironda_piloto_privado.participants(key),
+ attempts_reserved integer NOT NULL DEFAULT 0 CHECK(attempts_reserved BETWEEN 0 AND 1000000),
+ PRIMARY KEY(day_utc,buyer_key)
+);
+ALTER TABLE cotironda_piloto_privado.ai_batch_buyer_budget_mvp314
+ ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON TABLE
  cotironda_piloto_privado.ai_batch_gate_mvp314,
- cotironda_piloto_privado.ai_batch_budget_mvp314
+ cotironda_piloto_privado.ai_batch_budget_mvp314,
+ cotironda_piloto_privado.ai_batch_buyer_budget_mvp314
  FROM PUBLIC,anon,authenticated,service_role;
 
 -- Only new jobs CREATED after activation can be drained; existing pilot
@@ -37,7 +48,8 @@ RETURNS jsonb LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path=''
 AS $next314$
 DECLARE gate record;v_day date;v_used int;v_request uuid;
 BEGIN
- SELECT g.enabled,g.activated_at,g.daily_attempt_limit INTO gate
+ SELECT g.enabled,g.activated_at,g.daily_attempt_limit,
+  g.buyer_daily_attempt_limit INTO gate
  FROM cotironda_piloto_privado.ai_batch_gate_mvp314 g
  WHERE g.only_row;
  IF NOT FOUND OR NOT gate.enabled OR gate.activated_at IS NULL
@@ -61,10 +73,13 @@ BEGIN
  JOIN cotironda_piloto_privado.participants b ON b.key=r.buyer_key
  JOIN cotironda_piloto_privado.invitations i
    ON i.request_id=j.request_id AND i.supplier_key=j.supplier_key
+ LEFT JOIN cotironda_piloto_privado.ai_batch_buyer_budget_mvp314 quota
+   ON quota.buyer_key=r.buyer_key AND quota.day_utc=v_day
  JOIN cotironda_piloto_privado.whapi_inbox src
    ON src.message_hmac=r.source_hmac AND src.request_id=r.id
    AND src.participant_key=b.key AND src.chat_hmac=b.chat_hmac
  WHERE j.state='pending' AND j.created_at>=gate.activated_at
+  AND coalesce(quota.attempts_reserved,0)<gate.buyer_daily_attempt_limit
   AND r.state='prepared' AND r.closes_at>clock_timestamp()
   AND i.state='prepared' AND s.participant_role='supplier'
   AND s.chat_hmac IS NOT NULL AND s.consent_at IS NOT NULL
@@ -89,9 +104,11 @@ CREATE OR REPLACE FUNCTION public.cotironda_piloto_ia_claim_mvp314(
 ) RETURNS jsonb LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path=''
 AS $claim314$
 DECLARE gate record;j record;v_day date;v_used integer;v_lease uuid;
+ v_buyer text;v_buyer_used integer;
 BEGIN
  IF p_request IS NULL THEN RETURN jsonb_build_object('state','invalid');END IF;
- SELECT g.enabled,g.activated_at,g.daily_attempt_limit INTO gate
+ SELECT g.enabled,g.activated_at,g.daily_attempt_limit,
+  g.buyer_daily_attempt_limit INTO gate
  FROM cotironda_piloto_privado.ai_batch_gate_mvp314 g
  WHERE g.only_row FOR UPDATE;
  IF NOT FOUND OR NOT gate.enabled OR gate.activated_at IS NULL
@@ -106,7 +123,7 @@ BEGIN
  WHERE day_utc=v_day FOR UPDATE;
  IF coalesce(v_used,0)>=gate.daily_attempt_limit
  THEN RETURN jsonb_build_object('state','budget_exhausted');END IF;
- SELECT j0.request_id,j0.supplier_key,s.chat_hmac INTO j
+ SELECT j0.request_id,j0.supplier_key,s.chat_hmac,r.buyer_key INTO j
  FROM cotironda_piloto_privado.ai_dispatch_jobs_mvp222 j0
  JOIN cotironda_piloto_privado.requests r ON r.id=j0.request_id
  JOIN cotironda_piloto_privado.ai_shadow_requests_mvp221 sh
@@ -131,6 +148,10 @@ BEGIN
   AND src.kind='text' AND src.plaintext_sha256=
     encode(sha256(convert_to(r.original_request,'UTF8')),'hex')
   AND cotironda_piloto_privado.proveedor_contactable_mvp307(s.key)
+  AND coalesce((SELECT bb.attempts_reserved
+    FROM cotironda_piloto_privado.ai_batch_buyer_budget_mvp314 bb
+    WHERE bb.day_utc=v_day AND bb.buyer_key=r.buyer_key),0)
+    <gate.buyer_daily_attempt_limit
  ORDER BY j0.created_at,j0.supplier_key
  FOR UPDATE OF j0 SKIP LOCKED LIMIT 1;
  IF NOT FOUND THEN RETURN jsonb_build_object('state','empty');END IF;
@@ -140,6 +161,12 @@ BEGIN
  WHERE request_id=j.request_id AND supplier_key=j.supplier_key
   AND state='pending';
  IF NOT FOUND THEN RAISE EXCEPTION 'mvp314_lost_job_lock';END IF;
+ INSERT INTO cotironda_piloto_privado.ai_batch_buyer_budget_mvp314(
+   day_utc,buyer_key,attempts_reserved)
+ VALUES(v_day,j.buyer_key,1)
+ ON CONFLICT(day_utc,buyer_key) DO UPDATE
+ SET attempts_reserved=
+   cotironda_piloto_privado.ai_batch_buyer_budget_mvp314.attempts_reserved+1;
  INSERT INTO cotironda_piloto_privado.ai_batch_budget_mvp314(
   day_utc,attempts_reserved,updated_at)
  VALUES(v_day,1,clock_timestamp())
@@ -158,6 +185,7 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path=''
 AS $health314$
  SELECT jsonb_build_object('enabled',g.enabled,
   'daily_limit',g.daily_attempt_limit,
+  'buyer_daily_limit',g.buyer_daily_attempt_limit,
   'reserved_today',coalesce((SELECT b.attempts_reserved
      FROM cotironda_piloto_privado.ai_batch_budget_mvp314 b
      WHERE b.day_utc=(clock_timestamp() AT TIME ZONE 'UTC')::date),0),
