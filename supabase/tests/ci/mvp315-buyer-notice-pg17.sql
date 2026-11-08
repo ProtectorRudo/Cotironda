@@ -1,4 +1,11 @@
 -- MVP315: synthetic evidence only; parent fixture wraps in BEGIN/ROLLBACK.
+-- Earlier synthetic fixtures stop at the pre-MVP091 transport table;
+-- mirror the two real pilot columns (verified read-only), without touching pilot.
+ALTER TABLE cotironda_piloto_privado.buyer_tracking_mvp091
+ ADD COLUMN IF NOT EXISTS send_state text NOT NULL DEFAULT 'pending';
+ALTER TABLE cotironda_piloto_privado.buyer_tracking_mvp091
+ ADD COLUMN IF NOT EXISTS send_attempted_at timestamptz;
+
 DO $test315$
 DECLARE rid uuid;buyer record;v jsonb;source text;new_token text:=repeat('d',64);
 BEGIN
