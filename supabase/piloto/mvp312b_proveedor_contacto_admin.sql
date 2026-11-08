@@ -1,5 +1,5 @@
--- MVP312B. Owner-vouched encrypted channel path is distinct from
--- authenticated Whapi messages and remains subject to opt-out/revocation.
+-- MVP312B: owner-vouched encrypted channels, no fake WhatsApp proof.
+-- Old authenticated consent and all revocation guards are preserved.
 
 CREATE OR REPLACE FUNCTION cotironda_piloto_privado.proveedor_contactable_mvp307(
  p_supplier text
@@ -73,6 +73,7 @@ AS $eligible$
      WHERE c.participant_key=p.key AND c.revoked_at IS NOT NULL
     )
   )
+
  OR EXISTS(
   SELECT 1 FROM cotironda_piloto_privado.participants p
   JOIN cotironda_piloto_privado.admin_authorizations_mvp309 a
@@ -92,25 +93,14 @@ AS $eligible$
    AND p.display_label !~ '[[:cntrl:]<>]'
    AND p.display_label !~ '[0-9]{8,}'
    AND a.policy_text_sha256=encode(sha256(convert_to(pol.policy_text,'UTF8')),'hex')
-   AND c.contact_sha256 ~ '^[a-f0-9]{64}
-   WHERE rev.participant_key=p_supplier
- );
-$eligible$;
-REVOKE ALL ON FUNCTION
- cotironda_piloto_privado.proveedor_contactable_mvp307(text)
- FROM PUBLIC,anon,authenticated,service_role;
-GRANT EXECUTE ON FUNCTION
- cotironda_piloto_privado.proveedor_contactable_mvp307(text) TO service_role;
-
-
+   AND c.contact_sha256 ~ '^[a-f0-9]{64}$'
    AND length(c.nonce_b64) BETWEEN 16 AND 40
    AND length(c.ciphertext_b64) BETWEEN 32 AND 300
    AND NOT EXISTS(
     SELECT 1 FROM cotironda_piloto_privado.contact_reveal_consents_mvp109 revoked
     WHERE revoked.participant_key=p.key AND revoked.revoked_at IS NOT NULL
    )
- )
- ) AND NOT EXISTS(
+ ) ) AND NOT EXISTS(
    SELECT 1 FROM cotironda_piloto_privado.admin_authorization_revocations_mvp309 rev
    WHERE rev.participant_key=p_supplier
  );
