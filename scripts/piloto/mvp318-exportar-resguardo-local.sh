@@ -41,8 +41,18 @@ mkdir -p "$target"
 chmod 700 "$target" || true
 stage="$(mktemp -d)"
 chmod 700 "$stage"
-cleanup() { rm -rf -- "$stage"; }
-trap cleanup EXIT HUP INT TERM
+archive=""
+verified=0
+cleanup() {
+  # Keep only completed, verified backups. Remove partial archives on errors/signals.
+  if [[ "$verified" != "1" && -n "$archive" ]]; then
+    rm -f -- "$archive" "$archive.sha256"
+  fi
+  rm -rf -- "$stage"
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 mkdir -p "$stage/storage/cotironda-piloto-originals"
 cd "$repo"
 echo "Exporting app schema/data/roles from the EXACT linked pilot (read only)..."
@@ -57,6 +67,12 @@ for name in schema.sql data.sql; do
     echo "STOP: missing or empty $name; no valid backup." >&2; exit 25
   fi
 done
+# A SQL file containing only comments is NOT a backup of 94 app tables or their records.
+if ! grep -Fq "cotironda_piloto_privado" "$stage/schema.sql" ||
+   ! grep -Eq '^[[:space:]]*(COPY|INSERT INTO)[[:space:]]' "$stage/data.sql"; then
+  echo "STOP: app schema or actual row data missing from the dump." >&2
+  exit 25
+fi
 # roles.sql can be empty when no custom roles exist; the file must still exist.
 if [[ ! -f "$stage/roles.sql" ]]; then
   echo "STOP: missing role inventory." >&2; exit 25
@@ -71,6 +87,11 @@ if [[ "$copied" != "$expected_originals" ]]; then
  echo "If the live bucket changed, inspect it read-only and update this script." >&2
  exit 26
 fi
+# All seven originals were nonempty in the read-only audit. Reject zero-byte downloads.
+if find "$stage/storage/cotironda-piloto-originals" -type f -size 0c | grep -q .; then
+ echo "STOP: at least one downloaded original is empty." >&2
+ exit 26
+fi
 (
  cd "$stage"
  {
@@ -83,17 +104,26 @@ fi
  find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS
 )
 stamp="$(date -u '+%Y%m%dT%H%M%SZ')"
-archive="$target/cotironda-piloto-$stamp.age"
-if [[ -e "$archive" || -e "$archive.sha256" ]]; then
+candidate="$target/cotironda-piloto-$stamp.age"
+if [[ -e "$candidate" || -e "$candidate.sha256" ]]; then
   echo "STOP: backup filename already exists" >&2; exit 27
 fi
+archive="$candidate"
 echo "Encrypting with age passphrase (you will enter it, NEVER share it)."
 tar -C "$stage" -cf - . | age -p -o "$archive"
 test -s "$archive" || { rm -f -- "$archive"; exit 28; }
-# Authenticated decryption and tar read, no unencrypted archive created on disk.
-echo "Verifying encrypted archive: enter the same passphrase again..."
-age -d "$archive" | tar -tf - >/dev/null
+# Decrypt and actually verify the contents against the SHA-256 manifest.
+# The temporary verified copy is removed by the cleanup trap (never committed/uploaded).
+echo "Verifying encrypted archive and SHA-256 manifest: enter the same passphrase again..."
+mkdir -p "$stage/verified"
+age -d "$archive" | tar -C "$stage/verified" -xf -
+(
+ cd "$stage/verified"
+ sha256sum --check --status SHA256SUMS
+ test "$(find storage/cotironda-piloto-originals -type f | wc -l | tr -d '[:space:]')" = "$expected_originals"
+)
 sha256sum "$archive" > "$archive.sha256"
-echo "Encrypted backup verified LOCALLY; file count matches pilot snapshot."
+verified=1
+echo "Encrypted archive and all file hashes verified LOCALLY; file count matches pilot snapshot."
 echo "Saved OUTSIDE GitHub: $archive"
 echo "RESTORATION OF REAL PILOT NOT VERIFIED; do not publish on this evidence alone."
