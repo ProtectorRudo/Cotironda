@@ -26,6 +26,9 @@ BEGIN
    AND j.lease_token=p_lease AND j.state='leased'
  ) OR public.cotironda_piloto_ia_pdf_snapshot_mvp222(
   p_request,p_supplier,p_lease) IS NULL
+ OR coalesce(jsonb_array_length(
+    public.cotironda_piloto_ia_pdf_snapshot_mvp222(
+      p_request,p_supplier,p_lease)->'items'),0) NOT BETWEEN 1 AND 25
  OR NOT cotironda_piloto_privado.proveedor_contactable_mvp307(p_supplier)
  THEN RETURN jsonb_build_object('state','not_authorized');END IF;
 
