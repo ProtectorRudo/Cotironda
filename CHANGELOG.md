@@ -1,3 +1,10 @@
+## 08/11/2026 — MVP313: destinatarios cifrados por lease (solo desarrollo)
+
+- IA Central deja de necesitar los dos números de la allowlist cuando se active expresamente el modo dinámico, que por defecto permanece apagado.
+- SQL privado entrega exclusivamente sobre cifrado al trabajador con lease vigente, rol real, consentimientos y gates; Edge descifra con AES-GCM, valida HMAC/SHA y revalida antes del HTTP.
+- Cola histórica preservada y no drenada en modo dinámico; se mantienen envíos limitados a 2 por evento y no se simulan nuevos permisos.
+- Pruebas Node/PG17 con rollback, sin modificar el piloto. [Decisión 443](docs/443-mvp313-destinatarios-dinamicos-cifrados.md).
+
 ## 08/11/2026 — MVP312: vínculo WhatsApp administrado cifrado (solo desarrollo)
 
 - Un alta de comprador/proveedor puede integrar en una operación administrativa el permiso previamente declarado y un número protegido por HMAC/AES-GCM. No se envían códigos de consentimiento ni se crean mensajes simulados.
