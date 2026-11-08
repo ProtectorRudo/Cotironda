@@ -1,3 +1,9 @@
+## 08/11/2026 — MVP311: multiidentidad real en 14 RPC del webhook (solo desarrollo)
+
+- Auditadas 17 RPC antiguas con participantes fijos. Corregidas explícitamente las 14 referenciadas por la versión actual de WhatsApp y preservadas las 3 antiguas de finalistas, sin reabrir contactos recíprocos.
+- Migración con huellas SHA-256 de baseline, fallando cerrada ante cambios imprevistos; roles, HMAC y permisos `service_role` conservados. Prohibida también la transferencia de una ronda entre compradores verificados.
+- Pruebas PostgreSQL17 sintéticas con reversión completa y Node; sin cambios en piloto, producción, cron ni Whapi. [Decisión 441](docs/441-mvp311-rpcs-multiidentidad-sin-reabrir-finalistas.md).
+
 ## 08/11/2026 — MVP310: altas múltiples administradas (solo desarrollo)
 
 - Eliminación controlada de tres restricciones históricas (único arquitecto y dos proveedores) y comprobación por rol real antes de crear una ronda.
