@@ -39,6 +39,14 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '22.16.0'
+      - name: Check user-local backup script syntax and wrong-project fail-closed
+        run: |
+          bash -n scripts/piloto/mvp318-exportar-resguardo-local.sh
+          if bash scripts/piloto/mvp318-exportar-resguardo-local.sh > /tmp/mvp318-guard.txt 2>&1; then
+            echo "FAIL: export started without a linked project" >&2
+            exit 1
+          fi
+          grep -q 'No export was attempted' /tmp/mvp318-guard.txt
       - name: Backup + restore into SECOND disposable PostgreSQL 17 DB
         run: bash scripts/piloto/mvp318-probar-resguardo-pg17.sh
 # Never upload backup artifacts. Never pass real connection credentials.
