@@ -1,0 +1,34 @@
+name: MVP306 - pedido sin confirmacion, contactos del proveedor al cierre
+on:
+  pull_request:
+    branches: [feat/mvp174-supplier-packaging-equivalence]
+    paths:
+      - 'supabase/functions/cotironda-piloto-whapi/index.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/ai-central-buyer-auto-release-mvp306.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/buyer-tracking-confirmation-mvp289.ts'
+      - 'supabase/piloto/mvp306_auto_release_y_contactos_proveedor.sql'
+      - 'tests/unit/mvp306-*'
+      - '.github/workflows/cotironda-mvp306-auto-release.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  comprador-sin-friccion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Auto despacho, origen, seguimiento, privacidad y regresiones
+        run: |
+          node --experimental-strip-types --test \
+            tests/unit/mvp306-auto-release-and-supplier-contacts.test.mjs \
+            tests/unit/mvp280-all-buyer-review-flows.test.mjs \
+            tests/unit/mvp289-buyer-tracking-confirmation.test.mjs \
+            tests/unit/mvp304-contactos-consentidos-cierre.test.mjs \
+            tests/unit/mvp305-aviso-proveedores-al-cierre.test.mjs
+# Offline only: no Whapi, no modelos, no cambios en base ni produccion.
