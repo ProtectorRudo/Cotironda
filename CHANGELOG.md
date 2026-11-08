@@ -1,3 +1,9 @@
+## 07/11/2026 — MVP307, desarrollo: autorización comercial en el mismo alta del proveedor
+
+- Una sola frase autenticada `COTI ALTA <código> CONTACTOS SI`, con advertencia de divulgación comercial visible antes de aceptar y revocación `COTI CONTACTOS NO`. Transacción SQL vincula alta, original cifrado, contacto, consentimiento y fuente SHA/HMAC. La autorización antigua sigue siendo válida si se acredita individualmente.
+- IA Central recibe catálogos sólo de proveedores consentidos cuando se habilite la liberación prospectiva MVP306, con revalidación al despacho, prevención de colisión de etiquetas y comprobación al cierre sin divulgar al arquitecto.
+- Código, migración y ensayos Node/PG17 en [PR #702](https://github.com/ProtectorRudo/Cotironda/pull/702); pendiente verificar CI/E2E antes de cualquier publicación. **Sin despliegue ni mensajes reales.** [Decisión 435](docs/435-mvp307-alta-unica-consentimiento-y-ruteo.md).
+
 ## 07/11/2026 — MVP306 en desarrollo: cotización automática sin confirmación del comprador
 
 - Se definió que el arquitecto no aprueba cada lista por mensaje: el broker de IA Central prepara la ronda y SQL valida fuente, cantidades, rubros, catálogo, zona y consentimiento antes de liberar despacho. Se conservan auditoría, protección del original y deduplicación.
