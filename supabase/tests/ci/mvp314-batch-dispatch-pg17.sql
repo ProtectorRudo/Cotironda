@@ -69,8 +69,13 @@ BEGIN
  r:=public.cotironda_piloto_ia_next_batch_mvp314();
  IF r->>'state'<>'ready' OR (r->>'request_id')::uuid<>rid
  THEN RAISE EXCEPTION 'mvp314_not_ready: %',r;END IF;
+ UPDATE cotironda_piloto_privado.ai_batch_gate_mvp314
+   SET buyer_daily_attempt_limit=1 WHERE only_row;
  FOR i IN 1..2 LOOP
-   job:=public.cotironda_piloto_ia_claim_mvp314(rid);
+   -- Even webhook's original MVP222 RPC must share the MVP314 quota.
+   job:=CASE WHEN i=1
+    THEN public.cotironda_piloto_ia_claim_mvp314(rid)
+    ELSE public.cotironda_piloto_ia_claim_mvp222(rid) END;
    IF job->>'state'<>'leased' OR NOT(job->>'supplier_key'=ANY(names))
    THEN RAISE EXCEPTION 'mvp314_no_lease: %',job;END IF;
    IF public.cotironda_piloto_ia_pdf_snapshot_mvp222(
@@ -80,6 +85,13 @@ BEGIN
     rid,job->>'supplier_key',(job->>'lease_token')::uuid,
     job->>'chat_hmac','pilotchan_313')->>'state'<>'ready'
    THEN RAISE EXCEPTION 'mvp314_contact_packet_failed';END IF;
+   IF i=1 THEN
+    IF public.cotironda_piloto_ia_next_batch_mvp314()->>'state'<>'empty'
+    OR public.cotironda_piloto_ia_claim_mvp222(rid)->>'state'<>'empty'
+    THEN RAISE EXCEPTION 'mvp314_per_buyer_cap_ignored';END IF;
+    UPDATE cotironda_piloto_privado.ai_batch_gate_mvp314
+     SET buyer_daily_attempt_limit=8 WHERE only_row;
+   END IF;
  END LOOP;
  IF public.cotironda_piloto_ia_next_batch_mvp314()->>'state'
   <>'budget_exhausted'
