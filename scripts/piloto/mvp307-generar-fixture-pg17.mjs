@@ -23,8 +23,7 @@ const bootstrap=`
 ALTER TABLE cotironda_piloto_privado.whapi_inbox
  ADD COLUMN nonce_b64 text,ADD COLUMN ciphertext_b64 text,
  ADD COLUMN source_unix bigint;
-ALTER TABLE cotironda_piloto_privado.integration_flags
- ADD COLUMN whatsapp_inbound_enabled boolean NOT NULL DEFAULT true;
+-- MVP280 fixture ya incluye integration_flags.whatsapp_inbound_enabled.
 ALTER TABLE cotironda_piloto_privado.participant_channels_mvp109
  ADD COLUMN contact_sha256 text,
  ADD COLUMN nonce_b64 text,ADD COLUMN ciphertext_b64 text;
