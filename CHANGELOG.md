@@ -1,3 +1,10 @@
+## 07/11/2026 — MVP303/MVP304 publicados solo en piloto (compuerta de revelado OFF)
+
+- Instaladas migraciones SQL en `cotironda-piloto`; funciones privadas de nombres/comunicación postcierre, solamente `service_role`, probadas sin acceso anon/auth.
+- Edge `cotironda-piloto-seguimiento` v25 ACTIVE y web Vercel del piloto desplegada en el commit `6ab1632581ca054b985a309cf71a9b85ac2831d0`, READY, HTML/JS HTTP 200, GET de API 405.
+- `all_supplier_reveal_activation_mvp303` OFF y sin activación retroactiva. 0 opt-ins de contactos, 0 mensajes de finalistas, planificador viejo OFF. Whapi sigue sin reactivación.
+- No certificado E2E genuino. [Reporte 431](docs/431-publicacion-mvp303-304-piloto.md).
+
 ## 07/11/2026 — MVP304: contactos consentidos de todos los proveedores al cierre (SIN PUBLICAR)
 
 - Implementado puente privado read-only de todos los contactos post-cierre con consentimiento autenticado individual y criptografía AES-GCM+HMAC.
