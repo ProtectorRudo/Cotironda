@@ -52,7 +52,7 @@ BEGIN
   OR p_chat_hmac=p_contact_sha256
   OR p_nonce_b64 IS NULL OR p_nonce_b64 !~ '^[A-Za-z0-9+/]{16,40}$'
   OR p_ciphertext_b64 IS NULL OR
-    p_ciphertext_b64 !~ '^[A-Za-z0-9+/]{20,296}={0,2}$'
+    p_ciphertext_b64 !~ '^[A-Za-z0-9+/]+={0,2}$'
   OR length(p_ciphertext_b64) NOT BETWEEN 32 AND 300
  THEN RETURN jsonb_build_object('state','invalid');END IF;
  SELECT p.key,p.participant_role,p.chat_hmac,p.consent_at INTO v_part
