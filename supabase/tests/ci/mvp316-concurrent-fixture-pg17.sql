@@ -24,10 +24,10 @@ BEGIN
  SET enabled=true,activated_at=clock_timestamp()-interval '1 hour',
   daily_attempt_limit=1,buyer_daily_attempt_limit=1 WHERE only_row;
  UPDATE cotironda_piloto_privado.ai_buyer_notice_gate_mvp315
- SET enabled=true,activated_at=clock_timestamp()-interval '1 hour',
+ SET enabled=true,activated_at=clock_timestamp()-interval '10 days',
   daily_notice_limit=1 WHERE only_row;
  UPDATE cotironda_piloto_privado.ai_auto_release_gate_mvp306
- SET enabled=true,activated_at=clock_timestamp()-interval '1 hour'
+ SET enabled=true,activated_at=clock_timestamp()-interval '10 days'
  WHERE only_row;
  DELETE FROM cotironda_piloto_privado.ai_batch_budget_mvp314;
  DELETE FROM cotironda_piloto_privado.ai_batch_buyer_budget_mvp314;
