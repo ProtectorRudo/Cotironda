@@ -28,6 +28,12 @@ ALTER TABLE cotironda_piloto_privado.integration_flags
 ALTER TABLE cotironda_piloto_privado.participant_channels_mvp109
  ADD COLUMN contact_sha256 text,
  ADD COLUMN nonce_b64 text,ADD COLUMN ciphertext_b64 text;
+-- El contacto legado de este fixture era una tabla reducida. Simular su
+-- sobre AES-GCM verificado: no guardar datos reales ni registrar celulares.
+UPDATE cotironda_piloto_privado.participant_channels_mvp109
+ SET contact_sha256=repeat('f',64),nonce_b64=repeat('A',16),
+  ciphertext_b64=repeat('B',64)
+ WHERE participant_key='corralon_ailin';
 CREATE TABLE cotironda_piloto_privado.enrollment_codes(
  participant_key text PRIMARY KEY REFERENCES cotironda_piloto_privado.participants(key),
  code_hash text NOT NULL,created_at timestamptz NOT NULL,
