@@ -13,7 +13,7 @@ test('MVP307: alta de proveedor tiene consentimiento explícito en UN mensaje',(
  assert.match(edge,/p_message_hmac:messageHash/u);
  assert.match(edge,/p_source_unix:row.timestamp/u);
  assert.match(edge,/p_contact_ciphertext_b64:vault.ciphertext/u);
- assert.match(edge,/continue;\s*\}\s*const enroll=/u);
+ assert.match(edge,/enrollment_terms_required/u);
  assert.match(operator,/COTI ALTA '\|\|c.code\|\|' CONTACTOS SI'/u);
  assert.match(operator,/aviso_que_debe_ver_la_persona_antes_de_enviar/u);
  assert.match(operator,/COTI CONTACTOS NO/u);

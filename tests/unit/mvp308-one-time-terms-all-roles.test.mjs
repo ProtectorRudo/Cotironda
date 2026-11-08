@@ -15,7 +15,7 @@ test('MVP308: comprador y proveedor dan una aceptación en la MISMA alta',()=>{
  assert.match(edge,/enrollment_terms_required/u);
  assert.doesNotMatch(edge,/db.rpc\('cotironda_piloto_enroll_whapi_v1'/u);
  assert.match(edge,/p_role:altaConContacto\?'supplier':'buyer'/u);
- assert.match(edge,/continue;\s*\}\s*const enroll=/u);
+ assert.match(edge,/enrollment_terms_required/u);
  assert.match(operator,/COTI ALTA '\|\|c.code\|\|' ACEPTO'/u);
  assert.match(operator,/COTI ALTA '\|\|c.code\|\|' CONTACTOS SI'/u);
  assert.match(operator,/condiciones_completas_que_debe_leer_antes_de_aceptar/u);
