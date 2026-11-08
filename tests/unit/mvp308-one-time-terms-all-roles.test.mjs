@@ -21,8 +21,8 @@ test('MVP308: comprador y proveedor dan una aceptación en la MISMA alta',()=>{
 });
 test('MVP308: política por rol cubre uso normal, nunca el contacto del arquitecto',()=>{
  assert.match(sql,/CREATE TABLE cotironda_piloto_privado.enrollment_policies_mvp308/u);
- assert.match(sql,/('buyer',1,|'buyer',1,/u);
- assert.match(sql,/('supplier',1,|'supplier',1,/u);
+ assert.ok(sql.includes("('buyer',1,"));
+ assert.ok(sql.includes("('supplier',1,"));
  assert.match(sql,/Mis datos personales y de contacto no se revelarán automáticamente/u);
  assert.match(sql,/mi nombre comercial y número de WhatsApp/u);
  assert.match(sql,/COTI CONTACTOS NO/u);
