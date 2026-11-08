@@ -1,6 +1,6 @@
 # Decisión 430 — MVP304: WhatsApps consentidos de TODOS los proveedores al cierre
 
-**Fecha:** 07/11/2026. **Estado:** desarrollo y pruebas, NO PUBLICADO. Instrucción del producto: al vencimiento se identifican todos los negocios invitados, no dos finalistas. Esta decisión **complementa** la [429](429-mvp303-revelar-todos-proveedores-al-cierre.md).
+**Fecha:** 07/11/2026. **Estado:** integrado en rama de desarrollo, NO PUBLICADO. Instrucción del producto: al vencimiento se identifican todos los negocios invitados, no dos finalistas. Esta decisión **complementa** la [429](429-mvp303-revelar-todos-proveedores-al-cierre.md).
 
 ## Problema y política operativa
 La ronda cerrada muestra identidad comercial de todos los proveedores (incluso quien no cotizó). El comprador necesita poder CONTACTAR a los que lo hayan autorizado, sin adelantar la liberación ni inventar teléfonos.
@@ -36,3 +36,13 @@ La base real `cotironda-piloto`, comprobada solo lectura el 07/11, tiene **3 con
 La lógica antigua MVP109/MVP110 de finalistas sigue instalada pero su activación está OFF: **no reactivarla**. Se reutiliza únicamente el **cifrado y registro de consentimiento MVP109**, no su planificador, top 2, cola de mensajes ni condiciones de adjudicación.
 
 Esta decisión actualiza README, AGENTS.md y CHANGELOG y mantiene el historial por trazabilidad.
+
+## Resultado comprobado — 07/11/2026
+
+- [PR #698](https://github.com/ProtectorRudo/Cotironda/pull/698) **integrado** (squash) solo a `feat/mvp174-supplier-packaging-equivalence`; commit `27cdc3cd6a45fe8bf4039717b2604e801b9468bd`.
+- Último SHA del PR `e7bd756a4d65b00f3fe3b569e3516d33cde7ef5c`: **19/19 controles GitHub CI verdes** incl. Edge/Deno, seguridad, PostgreSQL17, Next.js y proxy.
+- Suite de regresión focal **21/21 PASS**; PostgreSQL17 de la integración MVP284 + MVP303 + MVP304: **PASS** de 0, 1 y 2 teléfonos consentidos; revocación de consentimiento, revocación de enlace y gate de publicación OFF correctamente bloqueados. La migración REAL MVP109 (con el trigger inmutable original MVP101) se montó dentro del laboratorio efímero; ROLLBACK completo validado.
+- Pruebas WebCrypto confirman cifrado AES-GCM/HMAC con cuatro proveedores consentidos, aunque la prueba SQL esté centrada en las dos cuentas de proveedores existentes en la ronda sintética.
+- No cambios en Supabase/Vercel/Whapi reales; WhatsApp sigue con período de gracia vencido. El MVP304 no está desplegado ni activado; no se pagaron servicios, no se enviaron mensajes ni se alteraron contactos.
+- Estado real de consentimientos específicos: **0**, por lo que una instalación futura no habilitará números hasta que cada proveedor autorice. El nombre comercial puede revelarse tras cierre con el gate prospectivo MVP303 aprobado, pero nunca por condición económica, solo por pertenencia a ronda.
+- **Siguiente paso para una publicación futura** (`Publicalo`): instalar MVP303 y MVP304 en piloto con gate OFF, auditar ACL y RLS, publicar Edge de seguimiento y Vercel, habilitar gate prospectivo explícito SOLO para nuevas rondas y registrar consentimientos genuinos del proveedor vía WhatsApp. Luego E2E genuino con Whapi operativo. No reactivar MVP110 de dos finalistas.
