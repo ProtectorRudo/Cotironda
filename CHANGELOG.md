@@ -1,3 +1,9 @@
+## 08/11/2026 — MVP314: continuación de solicitudes por lotes (solo desarrollo)
+
+- Nuevo trabajador Edge privado, apagado por defecto, que puede continuar hasta dos trabajos por invocación sin esperar nuevos mensajes del comprador.
+- Cupos atómicos PostgreSQL para intentos diarios globales y por comprador; al habilitar MVP314, el webhook existente comparte el mismo presupuesto. Trabajos anteriores a la activación y resultados inciertos no se reenvían automáticamente.
+- Pruebas de 1/2/5/20 destinatarios y fixture PG17 con rollback incorporados al [PR #709](https://github.com/ProtectorRudo/Cotironda/pull/709). Sin despliegue, programación automática ni prueba Whapi real. [Decisión 444](docs/444-mvp314-despacho-automatico-lotes-presupuestos.md).
+
 ## 08/11/2026 — MVP313: destinatarios cifrados por lease (solo desarrollo)
 
 - IA Central deja de necesitar los dos números de la allowlist cuando se active expresamente el modo dinámico, que por defecto permanece apagado.
