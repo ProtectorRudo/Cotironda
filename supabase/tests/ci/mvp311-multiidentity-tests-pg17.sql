@@ -52,7 +52,7 @@ BEGIN
  AND (
   pg_get_functiondef(p.oid) ~ '''(arquitecto|corralon_ailin|corralon_nahuel)'''
   OR p.prosecdef IS DISTINCT FROM true
-  OR NOT 'search_path=' = ANY(p.proconfig)
+  OR NOT 'search_path=""' = ANY(p.proconfig)
   OR has_function_privilege('anon',p.oid,'EXECUTE')
   OR has_function_privilege('authenticated',p.oid,'EXECUTE')
   OR NOT has_function_privilege('service_role',p.oid,'EXECUTE')
