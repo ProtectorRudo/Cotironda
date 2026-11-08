@@ -1,3 +1,10 @@
+## 07/11/2026 — MVP305 activado prospectivamente en cotironda-piloto (publicación real)
+
+- PR #700 fusionado y **42/42 CI verdes**. Whapi Edge v69 y recuperación v32 ACTIVE, con caption uniforme en 3 sender y aviso en PDF; seguimiento v25 vigente.
+- `all_supplier_reveal_activation_mvp303.enabled=true` desde 07/11/2026 21:42 ART. Cinco rondas previas excluidas; tres enlaces históricos probados sin revelar empresas. No hubo mensajes nuevos, costos Whapi ni cambios de producción comercial.
+- Teléfonos solo con opt-in específico: hoy 0. Finalistas viejos desactivados, cierre por cron existente activo. Falta E2E auténtico con canal WhatsApp operativo.
+- [Auditoría 433](docs/433-mvp305-activacion-real-piloto-prospectiva.md).
+
 ## 07/11/2026 — MVP305: aviso a proveedores y activación de regla para rondas nuevas
 
 - El usuario autorizó el modo: al cierre se identifican todos los proveedores invitados, y los contactos siguen con opt-in propio.
