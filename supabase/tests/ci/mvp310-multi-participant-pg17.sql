@@ -124,7 +124,7 @@ BEGIN
   SET buyer_key=supplier_key WHERE id=rid;
   RAISE EXCEPTION 'mvp310_supplier_impersonated_buyer';
  EXCEPTION WHEN check_violation THEN NULL; END;
- IF (SELECT buyer_key FROM cotironda_piloto_privado.requests WHERE id=rid)<>buyer_key
+ IF (SELECT req.buyer_key FROM cotironda_piloto_privado.requests req WHERE req.id=rid)<>buyer_key
  THEN RAISE EXCEPTION 'mvp310_buyer_request_was_transferred';END IF;
 
  -- Role is immutable even for a SQL UPDATE.
