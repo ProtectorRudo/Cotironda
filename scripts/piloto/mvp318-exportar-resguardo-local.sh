@@ -52,11 +52,15 @@ supabase db dump "$remote_flag" --schema cotironda_piloto_privado,public \
   --file "$stage/schema.sql"
 supabase db dump "$remote_flag" --schema cotironda_piloto_privado,public \
   --data-only --file "$stage/data.sql"
-for name in roles.sql schema.sql data.sql; do
+for name in schema.sql data.sql; do
   if [[ ! -s "$stage/$name" ]]; then
     echo "STOP: missing or empty $name; no valid backup." >&2; exit 25
   fi
 done
+# roles.sql can be empty when no custom roles exist; the file must still exist.
+if [[ ! -f "$stage/roles.sql" ]]; then
+  echo "STOP: missing role inventory." >&2; exit 25
+fi
 echo "Downloading private original documents (READ-only Storage copy)..."
 supabase storage cp "$storage_flag" --experimental --recursive \
   ss:///cotironda-piloto-originals \
