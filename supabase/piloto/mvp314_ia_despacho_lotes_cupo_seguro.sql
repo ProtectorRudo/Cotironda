@@ -2,6 +2,22 @@
 -- Install only AFTER MVP309-313; initially OFF. NO cron, Whapi or flag activation.
 -- Budget counts irrevocable attempts/leases, including unknown remote outcomes.
 -- Each claim reserves ONE daily slot in the SAME transaction as its lease.
+-- MVP316 preflight: the MVP314 migration replaces the legacy
+-- ia_claim_mvp222 code. Refuse all DDL if the LIVE baseline drifted.
+-- SHA captured read-only 08/11/2026 from cotironda-piloto v70.
+-- Do not silently apply this on an unknown/future version.
+DO $mvp316_claim_baseline$ BEGIN
+ IF (SELECT encode(sha256(convert_to(pg_get_functiondef(p.oid),'UTF8')),'hex')
+  FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+  WHERE n.nspname='public'
+    AND p.proname='cotironda_piloto_ia_claim_mvp222'
+    AND pg_get_function_identity_arguments(p.oid)='p_request uuid')
+ IS DISTINCT FROM 'cffd3c56487ca0c7388b62f3dc5ca429ff267bfa3191366a40c7b88ba5caa54f'
+ THEN RAISE EXCEPTION 'mvp316_live_claim_baseline_changed'
+   USING ERRCODE='42501';
+ END IF;
+END $mvp316_claim_baseline$;
+
 CREATE TABLE IF NOT EXISTS cotironda_piloto_privado.ai_batch_gate_mvp314(
  only_row boolean PRIMARY KEY DEFAULT true CHECK(only_row),
  enabled boolean NOT NULL DEFAULT false,
