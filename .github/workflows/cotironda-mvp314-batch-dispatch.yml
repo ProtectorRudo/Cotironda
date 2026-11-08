@@ -1,0 +1,62 @@
+name: MVP314 - lotes IA Central con presupuesto y leases
+on:
+  pull_request:
+    branches: [feat/mvp174-supplier-packaging-equivalence]
+    paths:
+      - 'supabase/piloto/mvp314_ia_despacho_lotes_cupo_seguro.sql'
+      - 'supabase/functions/cotironda-piloto-ai-batch/**'
+      - 'supabase/functions/cotironda-piloto-whapi/ai-central-batch-mvp314.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/ai-central-dispatch-mvp223.ts'
+      - 'supabase/tests/ci/mvp314-*'
+      - 'scripts/piloto/mvp314-*'
+      - 'tests/unit/mvp314-*'
+      - '.github/workflows/cotironda-mvp314-batch-dispatch.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  batch-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: test_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Offline batch coordinator and inherited dispatch tests
+        run: |
+          node --experimental-strip-types --test tests/unit/mvp314-batch-dispatch.test.mjs
+          node --experimental-strip-types --test tests/unit/mvp223-whapi-ia-central-despacho.test.mjs
+      - name: PostgreSQL 17 - isolated quota, leasing, contacts, permissions
+        run: |
+          set -euo pipefail
+          node scripts/piloto/mvp314-generar-fixture-pg17.mjs
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/.mvp314-generated-pg17.sql >/dev/null
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type check private Edge without external sends
+        run: |
+          deno check supabase/functions/cotironda-piloto-ai-batch/index.ts
+# CI uses ONLY synthetic data, never production, Whapi or paid models.
