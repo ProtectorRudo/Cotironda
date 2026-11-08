@@ -59,8 +59,10 @@ BEGIN
  UPDATE cotironda_piloto_privado.ai_central_attempts_mvp226
   SET created_at=clock_timestamp()-interval '3 days'
   WHERE buyer_key='arquitecto';
+ -- El fixture ejecuta TODO dentro de un único BEGIN: now() es la hora
+ -- inicial de la transacción. Simular gate activado ANTES del pedido.
  UPDATE cotironda_piloto_privado.ai_auto_release_gate_mvp306
-  SET enabled=true,activated_at=clock_timestamp() WHERE only_row;
+  SET enabled=true,activated_at=transaction_timestamp() WHERE only_row;
  UPDATE cotironda_piloto_privado.ai_dispatch_gate_mvp222
   SET enabled=true,activated_at=coalesce(activated_at,clock_timestamp())
   WHERE only_row;
