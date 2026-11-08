@@ -128,6 +128,36 @@ function buyerView(parsed){
       adjudicacion_automatica:false,mensajes_enviados:false
     };
   }
+  // MVP304 - a separate, per-supplier consented phone list, ONLY after
+  // the MVP303 buyer-bound roster has passed its independent whitelist.
+  // A verified company with no explicit contact opt-in remains name-only.
+  const consented=parsed.contactos_proveedores_cierre;
+  if(consented!==undefined){
+    const has=(o,k)=>Object.prototype.hasOwnProperty.call(o,k);
+    const exact=(o,keys)=>o&&typeof o==="object"&&!Array.isArray(o)&&
+      Object.keys(o).length===keys.length&&keys.every(k=>has(o,k));
+    const names=safe.todos_proveedores_cierre?.proveedores;
+    if(parsed.state!=="closed"||!Array.isArray(names)||
+       !exact(consented,["state","contactos"])||
+       consented.state!=="contactos_consentidos_al_cierre"||
+       !Array.isArray(consented.contactos)||
+       consented.contactos.length<1||
+       consented.contactos.length>names.length||
+       new Set(names.map(n=>n.nombre)).size!==names.length)return null;
+    const validNames=new Set(names.map(n=>n.nombre)),seen=new Set(),rows=[];
+    for(const person of consented.contactos){
+      if(!exact(person,["nombre","whatsapp"])||
+        typeof person.nombre!=="string"||
+        !validNames.has(person.nombre)||seen.has(person.nombre)||
+        typeof person.whatsapp!=="string"||
+        !/^[1-9][0-9]{7,16}$/u.test(person.whatsapp))return null;
+      seen.add(person.nombre);
+      rows.push({nombre:person.nombre,whatsapp:person.whatsapp});
+    }
+    safe.contactos_proveedores_cierre={
+      state:"contactos_consentidos_al_cierre",contactos:rows
+    };
+  }
   if(!opened)return safe;
 
   // Preserve all reviewed offer text faithfully, without allowing extra
