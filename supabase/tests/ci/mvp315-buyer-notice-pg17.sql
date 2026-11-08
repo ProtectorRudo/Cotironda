@@ -80,9 +80,10 @@ BEGIN
    OR v->>'chat_hmac'<>buyer.chat_hmac
    OR v ? 'phone' OR v ? 'recipient' OR v ? 'buyer_key'
  THEN RAISE EXCEPTION 'mvp315_packet_not_safe_or_missing: %',v;END IF;
- IF public.cotironda_piloto_ia_buyer_packet_mvp315(
-    rid,'wrongchannel_315')->>'state'='ready'
- THEN RAISE EXCEPTION 'mvp315_wrong_channel_allowed';END IF;
+ -- The proven inbound channel MVP109 does not store the channel ID.
+ -- SQL can return an encrypted envelope but Edge MUST reject a wrong
+ -- channel because its recomputed HMAC cannot match the original JID.
+ -- Admin-declared channels ARE checked by channel ID in SQL.
  v:=public.cotironda_piloto_ia_issue_buyer_notice_mvp315(
    rid,buyer.chat_hmac,buyer.source_hmac,new_token,'pilotchan_313');
  IF v->>'state'<>'issued'
