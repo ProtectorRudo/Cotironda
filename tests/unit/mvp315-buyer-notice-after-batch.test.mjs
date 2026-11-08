@@ -112,3 +112,13 @@ test('MVP315 revocación de autorización de contacto durante envío: no envía'
  assert.equal(res.estado,'entrega_incierta');
  assert.equal(f.state.sends.length,0);
 });
+
+test('MVP315 canal Whapi falso aun con sobre AES válido: HMAC rechaza',async()=>{
+ const f=await fixture();
+ f.state.nextState={...f.envelope,channel_id:'wrongchan_315'};
+ const out=await avisarCompradorTrasLoteMvp315({...f.args,
+  keys:{...f.args.keys,channel:'wrongchan_315'}});
+ assert.equal(out.estado,'conciliacion_requerida');
+ assert.equal(f.state.sends.length,0);
+ assert.equal(f.state.calls.length,1);
+});
