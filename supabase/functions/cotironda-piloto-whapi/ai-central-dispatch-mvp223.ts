@@ -47,6 +47,9 @@ export function validarSnapshotPdfMvp223(raw:unknown,requestId:string):
 export async function despacharSolicitudCentralMvp223(args:{
  enabled:boolean;requestId:string;
  recipients:Readonly<Record<string,string>>;
+ // MVP313: when enabled, only a lease-scoped DB packet can resolve the phone.
+ resolveRecipient?:(lease:Readonly<{requestId:string;supplierKey:string;
+  leaseToken:string;chatHmac:string}>)=>Promise<string>;
  rpc:Rpc;
  authorizeChatHmac:(recipient:string,expectedHash:string)=>Promise<boolean>;
  createPdf:(snapshot:DocumentoMvp223)=>Uint8Array;
@@ -95,7 +98,10 @@ export async function despacharSolicitudCentralMvp223(args:{
   };
   let valid=false,messageId:string|null=null;
   try{
-   const recipient=args.recipients[supplier];
+   const lookup={requestId:args.requestId,supplierKey:supplier,
+    leaseToken:lease,chatHmac:claim.chat_hmac as string};
+   const recipient=args.resolveRecipient
+    ?await args.resolveRecipient(lookup):args.recipients[supplier];
    if(!recipient||!/^\d{8,17}$/u.test(recipient)||
       !await args.authorizeChatHmac(recipient,claim.chat_hmac))
     throw Error('recipient_not_authorized');
@@ -109,6 +115,10 @@ export async function despacharSolicitudCentralMvp223(args:{
    const pdf=args.createPdf(snapshot);
    if(!(pdf instanceof Uint8Array)||pdf.length<40||pdf.length>100000)
     throw Error('pdf_invalid');
+   // The lease/consent/cutoff may change during PDF creation. A fresh
+   // SQL lookup immediately before HTTP prevents stale authorization.
+   if(args.resolveRecipient&&await args.resolveRecipient(lookup)!==recipient)
+    throw Error('recipient_changed_before_send');
    const sent=await args.sendWhapi(recipient,pdf);
    // An HTTP 2xx or sent=true WITHOUT a verifiable Whapi ID cannot
    // support quoted supplier replies. Treat it as UNCERTAIN, never retry.
