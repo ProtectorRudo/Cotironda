@@ -4,6 +4,8 @@ on:
     branches: [feat/mvp174-supplier-packaging-equivalence]
     paths:
       - 'supabase/piloto/mvp312_alta_canal_administrada_cifrada.sql'
+      - 'supabase/piloto/mvp312b_proveedor_contacto_admin.sql'
+      - 'supabase/piloto/mvp312c_contactos_postcierre_admin.sql'
       - 'src/server/pilot-admin-channel-mvp312.ts'
       - 'supabase/tests/ci/mvp312-admin-encrypted-channels-pg17.sql'
       - 'scripts/piloto/mvp312-generar-fixture-pg17.mjs'
