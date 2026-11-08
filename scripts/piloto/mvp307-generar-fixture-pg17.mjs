@@ -45,7 +45,7 @@ const tests=`
 DO $mvp307$
 DECLARE
  code text:='0123456789abcdef0123456789abcdef';
- h text:=repeat('c',64);mh text:=repeat('e',64);
+ h text:=repeat('c',64);mh text:=repeat('beef',16);
  phrase text; digest text;result jsonb;catalog jsonb;n int;
 BEGIN
  -- Usuario ya inscripto como comprador nunca puede aceptar como proveedor.
