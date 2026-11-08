@@ -22,7 +22,14 @@ with codes as materialized (
  returning participant_key
 )
 select c.key as destinatario,
-       'COTI ALTA '||c.code as mensaje_privado_whatsapp,
+       case when p.participant_role='supplier'
+        then 'COTI ALTA '||c.code||' CONTACTOS SI'
+        else 'COTI ALTA '||c.code end as mensaje_privado_whatsapp,
+       case when p.participant_role='supplier' then
+        'Al enviar el mensaje autorizás a Cotironda a mostrar tu NOMBRE COMERCIAL y el NÚMERO de este WhatsApp de negocio al comprador de cada ronda en la que participes, únicamente después del cierre. Podés revocar la autorización cuando quieras enviando COTI CONTACTOS NO.'
+        else 'Vinculás tu WhatsApp como comprador; no autorizás compartir tu número con proveedores.' end
+        as aviso_que_debe_ver_la_persona_antes_de_enviar,
        '60 minutos, un solo uso' as validez
 from codes c join inserted i on i.participant_key=c.key
+join cotironda_piloto_privado.participants p on p.key=c.key
 order by c.key;
