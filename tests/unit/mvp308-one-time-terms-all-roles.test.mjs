@@ -12,6 +12,8 @@ test('MVP308: comprador y proveedor dan una aceptación en la MISMA alta',()=>{
  assert.match(edge,/COTI ALTA \(\[a-f0-9\]\{32\}\) ACEPTO/u);
  assert.match(edge,/COTI ALTA \(\[a-f0-9\]\{32\}\) CONTACTOS SI/u);
  assert.match(edge,/cotironda_piloto_enroll_terms_mvp308/u);
+ assert.match(edge,/enrollment_terms_required/u);
+ assert.doesNotMatch(edge,/db.rpc\('cotironda_piloto_enroll_whapi_v1'/u);
  assert.match(edge,/p_role:altaConContacto\?'supplier':'buyer'/u);
  assert.match(edge,/continue;\s*\}\s*const enroll=/u);
  assert.match(operator,/COTI ALTA '\|\|c.code\|\|' ACEPTO'/u);
@@ -39,7 +41,7 @@ test('MVP308: alta vinculada al rol real, código de un solo uso y evento firmad
  assert.match(sql,/p_role='supplier' THEN/u);
  assert.match(sql,/cotironda_piloto_supplier_enroll_contacts_mvp307/u);
  assert.match(sql,/cotironda_piloto_enroll_whapi_v1/u);
- assert.match(sql,/p_message_hmac=p_message_hmac/u);
+ assert.match(sql,/proof.message_hmac=p_message_hmac/u);
  assert.match(sql,/already_enrolled/u);
  assert.match(sql,/cotironda_piloto_bind_contact_mvp109/u);
  assert.match(sql,/v_status->>'participant' IS DISTINCT FROM v_participant/u);

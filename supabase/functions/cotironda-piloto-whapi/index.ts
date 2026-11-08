@@ -395,13 +395,11 @@ async function respond(req:Request):Promise<Response>{
     // El alta ES el único consentimiento: no enviar un WhatsApp de respuesta.
     continue;
   }
+  // No aceptar altas nuevas sin la versión de términos mostrada al
+  // participante. El camino heredado registraba la identidad sin alcance
+  // verificable y ya no es válido a partir del nuevo flujo MVP308.
   const enroll=row.type==='text'?body.trim().match(/^COTI ALTA ([a-f0-9]{32})$/iu):null;
-  if(enroll){
-   const out=await db.rpc('cotironda_piloto_enroll_whapi_v1',
-    {p_code:enroll[1].toLowerCase(),p_chat_hmac:chatHash});
-   if(out.error)return json(503,'storage_unavailable');
-   continue;
-  }
+  if(enroll)return json(422,'enrollment_terms_required');
   const textHash=await sha(body);
   const c=await encrypt(sec.aes,body,chatHash+'|'+messageHash+'|'+row.type);
   // One-time consent or revocation for the bilateral exchange of contacts.

@@ -22,7 +22,7 @@ test('MVP307: no transforma alta anterior o cotización en consentimiento nuevo'
  const i=edge.indexOf('const altaConContacto='),j=edge.indexOf('const enroll=',i);
  assert.ok(i>0&&j>i);
  assert.doesNotMatch(edge.slice(i,j),/emitirRevisionComprador|sendWhapi|\/messages\/text/u);
- assert.match(edge.slice(j,j+410),/cotironda_piloto_enroll_whapi_v1/u);
+ assert.match(edge.slice(j,j+410),/enrollment_terms_required/u);
  assert.match(sql,/p.participant_role='supplier'/u);
  assert.match(sql,/p.chat_hmac IS NULL/u);
  assert.match(sql,/p.opted_out_at IS NULL/u);

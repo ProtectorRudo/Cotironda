@@ -1,3 +1,9 @@
+## 07/11/2026 — MVP308: consentimiento único completo al alta (desarrollo)
+
+- Registro versionado y verificable de condiciones en el mismo WhatsApp de incorporación, con alcance diferenciado por rol comprador/proveedor y sin confirmaciones por ronda. Datos personales del arquitecto nunca compartidos.
+- Bloqueadas las 3 RPC antiguas de divulgación de datos de finalistas y el comando de alta antigua sin términos. Mantiene bases históricas sin crear permisos retroactivos.
+- Incluye ensayo PostgreSQL17 con rollback, Node, Deno y CI. **Todavía sin desplegar**, sin WhatsApps reales, sin activar gates. [Decisión 437](docs/437-mvp308-autorizacion-unica-por-rol-y-privacidad.md), [PR #702](https://github.com/ProtectorRudo/Cotironda/pull/702).
+
 ## 07/11/2026 — Decisión 436: una sola aceptación inicial, ninguna autorización por ronda
 
 - Política para todos los roles: aceptación única, informada, versionada y verificable al incorporarse, suficiente para todas las operaciones habituales que fueron expresamente informadas. El sistema no pide autorizaciones ni confirmaciones al comprador/proveedor por cada solicitud; sólo aclara datos esenciales.
