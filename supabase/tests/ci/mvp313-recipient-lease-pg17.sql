@@ -60,7 +60,13 @@ BEGIN
   OR r->>'source'<>'owner_statement'
   OR r->>'nonce_b64'<>repeat('A',16)
   OR r ? 'phone' OR r ? 'recipient'
- THEN RAISE EXCEPTION 'mvp313_ready_packet_invalid: %',r;END IF;
+ THEN RAISE EXCEPTION 'mvp313_ready_packet_invalid: %, snapshot=%, eligible=%, buyerconfirmed=%, gate=%, integration=%',
+  r, public.cotironda_piloto_ia_pdf_snapshot_mvp222(rid,'corralon_ailin',lid),
+  cotironda_piloto_privado.proveedor_contactable_mvp307('corralon_ailin'),
+  cotironda_piloto_privado.confirmada_comprador_mvp280(rid),
+  (SELECT enabled FROM cotironda_piloto_privado.ai_dispatch_gate_mvp222 WHERE only_row),
+  (SELECT whatsapp_outbound_enabled FROM cotironda_piloto_privado.integration_flags WHERE only_row);
+ END IF;
  r:=public.cotironda_piloto_ia_recipient_packet_mvp313(
   rid,'corralon_ailin',lid,repeat('1',64),'wrongchannel_1');
  IF r->>'state' NOT IN ('contact_unavailable','not_authorized')
