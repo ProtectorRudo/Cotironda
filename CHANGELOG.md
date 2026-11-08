@@ -1,3 +1,9 @@
+## 08/11/2026 — MVP317: ensayo de migración atómica y rollback sin respaldo (solo desarrollo)
+
+- La base piloto real pasa el preflight de roles MVP310: 3 participantes, 1 comprador, 2 proveedores, 0 incompatibilidades, 3 restricciones históricas existentes. Lectura exclusiva.
+- En PG17 sintético, 9 migraciones MVP309–315 en una transacción; fallo inyectado en medio y chequeo de rollback integral, privilegios, huellas SHA y gates OFF. No conecta al piloto ni a WhatsApp.
+- [Decisión 447](docs/447-mvp317-ensayo-transaccional-sin-respaldo.md). La ausencia de respaldo restaurable sigue siendo un riesgo real: un ROLLBACK no deshace una instalación ya confirmada. **Sin publicar.**
+
 ## 08/11/2026 — MVP316: preflight, guardias y prueba de concurrencia (solo desarrollo)
 
 - Preflight read-only coteja 14/14 huellas SHA de RPC MVP311 y versión del claim heredado MVP222; reporte solo estados y contadores, sin PII.
