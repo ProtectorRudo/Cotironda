@@ -5,6 +5,7 @@
 import {createClient} from 'npm:@supabase/supabase-js@2.118.0';
 import {parseBuyerPilot,canPrepareBuyerPilot,validMessage,standaloneDeliveryCity,quotedWhapiMessageId} from './core.ts';
 import {generarSolicitudPdfMvp091} from './request-pdf.ts';
+import {CAPTION_PEDIDO_COTIRONDA_MVP305} from '../_shared/aviso-proveedores-cierre-mvp305.ts';
 import {despacharSolicitudCentralMvp223} from './ai-central-dispatch-mvp223.ts';
 import {procesarCompradorCentralMvp226} from './ai-central-buyer-mvp226.ts';
 import {avisarRevisionSemanticaMvp286,aceptarRespuestaWhapiMvp287} from './ai-central-review-notice-mvp286.ts';
@@ -214,7 +215,7 @@ async function dispatchTwo(sec:Secrets,db:ReturnType<typeof client>):Promise<voi
     headers:{'Authorization':'Bearer '+sec.token,'Content-Type':'application/json'},
     body:JSON.stringify({to,media,mime_type:'application/pdf',
        filename:'Solicitud-Cotironda.pdf',
-       caption:'Cotironda · Nueva solicitud de cotización'}),
+       caption:CAPTION_PEDIDO_COTIRONDA_MVP305}),
     signal:AbortSignal.timeout(12000)
    });
    const data=response.ok?await response.json().catch(()=>null):null;
@@ -1662,7 +1663,7 @@ async function respond(req:Request):Promise<Response>{
       body:JSON.stringify({
        to:recipient,media:'data:application/pdf;name=Solicitud-Cotironda.pdf;base64,'+b64(pdf),
        mime_type:'application/pdf',filename:'Solicitud-Cotironda.pdf',
-       caption:'Cotironda · Nueva solicitud de cotización'
+       caption:CAPTION_PEDIDO_COTIRONDA_MVP305
       }),
       signal:AbortSignal.timeout(12000)
      });
