@@ -66,6 +66,15 @@ BEGIN
      request_id,supplier_key)
    VALUES(rid,supplier);
  END LOOP;
+ -- Synthetic fixture extends the original request with three new suppliers.
+ -- Rebuild the synthetic buyer's snapshot proof AFTER those assignments,
+ -- exactly as if the round had been prepared with all suppliers originally.
+ UPDATE cotironda_piloto_privado.ai_buyer_review_mvp279 rev
+ SET snapshot_sha256=encode(sha256(convert_to(
+   cotironda_piloto_privado.ai_buyer_snapshot_mvp279(rid)::text,'UTF8')),'hex')
+ WHERE rev.request_id=rid AND rev.state='confirmed';
+ IF NOT cotironda_piloto_privado.confirmada_comprador_mvp280(rid)
+ THEN RAISE EXCEPTION 'mvp314_synthetic_snapshot_not_confirmed';END IF;
  r:=public.cotironda_piloto_ia_next_batch_mvp314();
  IF r->>'state'<>'ready' OR (r->>'request_id')::uuid<>rid
  THEN RAISE EXCEPTION 'mvp314_not_ready: %',r;END IF;
