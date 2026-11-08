@@ -58,5 +58,5 @@ jobs:
           deno-version: v2.x
       - name: Type check private Edge without external sends
         run: |
-          deno check supabase/functions/cotironda-piloto-ai-batch/index.ts
+          deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-ai-batch/index.ts
 # CI uses ONLY synthetic data, never production, Whapi or paid models.
