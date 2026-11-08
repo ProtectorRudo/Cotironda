@@ -61,7 +61,7 @@ BEGIN
    AND consent_source.chat_hmac=p.chat_hmac
    AND consent_source.kind='text'
    AND consent_source.plaintext_sha256=encode(
-      extensions.digest('COTI CONTACTOS SI','sha256'),'hex')
+      sha256(convert_to('COTI CONTACTOS SI','UTF8')),'hex')
   JOIN cotironda_piloto_privado.whapi_inbox bound_source
     ON bound_source.message_hmac=ch.authenticated_message_hmac
    AND bound_source.participant_key=p.key
