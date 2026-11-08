@@ -1,6 +1,6 @@
 # Decisión 429 — MVP303: todos los proveedores se identifican automáticamente al cierre
 
-**Fecha:** 07/11/2026. **Estado:** PR #697 integrado en la rama de DESARROLLO, **NO PUBLICADO**. Autorización «Luz verde», sin desplegar ni reactivar Whapi.
+**Fecha:** 07/11/2026. **Estado:** desarrollado en PR #697 y **PUBLICADO SOLO EN EL PILOTO** el 07/11/2026, con activación prospectiva de nombres **OFF**. Ver [reporte 431](431-publicacion-mvp303-304-piloto.md). Autorización «Luz verde», sin desplegar ni reactivar Whapi.
 
 ## Regla de negocio corregida por el responsable de Cotironda
 Se **elimina** la regla de «dos ganadores/finalistas revelados automáticamente». Tras vencer el plazo de la ronda y efectuarse su cierre automático, **el comprador puede ver la identidad de TODOS los proveedores invitados a ESA ronda**, no solamente dos elegidos por un algoritmo, sin exigir que el proveedor haya cotizado ni que su presupuesto sea económicamente comparable.

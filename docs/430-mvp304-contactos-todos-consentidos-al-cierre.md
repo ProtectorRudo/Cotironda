@@ -1,6 +1,6 @@
 # Decisión 430 — MVP304: WhatsApps consentidos de TODOS los proveedores al cierre
 
-**Fecha:** 07/11/2026. **Estado:** integrado en rama de desarrollo, NO PUBLICADO. Instrucción del producto: al vencimiento se identifican todos los negocios invitados, no dos finalistas. Esta decisión **complementa** la [429](429-mvp303-revelar-todos-proveedores-al-cierre.md).
+**Fecha:** 07/11/2026. **Estado:** **PUBLICADO SOLO EN EL PILOTO**, sin activar nombres ni teléfonos (gate OFF, 0 consentimientos). Ver [reporte 431](431-publicacion-mvp303-304-piloto.md). Instrucción del producto: al vencimiento se identifican todos los negocios invitados, no dos finalistas. Esta decisión **complementa** la [429](429-mvp303-revelar-todos-proveedores-al-cierre.md).
 
 ## Problema y política operativa
 La ronda cerrada muestra identidad comercial de todos los proveedores (incluso quien no cotizó). El comprador necesita poder CONTACTAR a los que lo hayan autorizado, sin adelantar la liberación ni inventar teléfonos.
