@@ -1,0 +1,37 @@
+name: MVP305 - aviso de nombre comercial antes de cotizar
+on:
+  pull_request:
+    branches: [feat/mvp174-supplier-packaging-equivalence]
+    paths:
+      - 'supabase/functions/_shared/aviso-proveedores-cierre-mvp305.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/index.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/request-pdf.ts'
+      - 'supabase/functions/cotironda-piloto-document-recovery/whapi-dispatch.ts'
+      - 'tests/unit/mvp305-*'
+      - '.github/workflows/cotironda-mvp305-aviso-cierre.yml'
+      - 'docs/432-*'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  aviso-sin-red:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Todos los sender, PDF, IA Central, cron, privacidad
+        run: |
+          node --experimental-strip-types --test \
+            tests/unit/mvp305-aviso-proveedores-al-cierre.test.mjs \
+            tests/unit/mvp091-solicitud-pdf.test.mjs \
+            tests/unit/mvp149-cron-supplier-pdf.test.mjs \
+            tests/unit/mvp223-whapi-ia-central-despacho.test.mjs \
+            tests/unit/mvp303-all-suppliers-after-close.test.mjs \
+            tests/unit/mvp304-contactos-consentidos-cierre.test.mjs
+# This gate never sends WhatsApp, never connects to production DB,
+# does not reveal contact and requires no Whapi subscription.
