@@ -3,7 +3,7 @@ DO $test314$
 DECLARE rid uuid; r jsonb; job jsonb; grant_ jsonb;
  supplier text; i integer; count_leased integer; day_reserved integer;
  source text; names text[]:=ARRAY[]::text[];
- day_utc date:=(clock_timestamp() AT TIME ZONE 'UTC')::date;
+
 BEGIN
  IF has_function_privilege('anon',
   'public.cotironda_piloto_ia_claim_mvp314(uuid)','EXECUTE')
