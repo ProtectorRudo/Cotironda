@@ -5,6 +5,7 @@
  * Important: source lines MUST come from the trusted request_lines SQL snapshot.
  */
 import {lineaComercialLegibleMvp288} from '../../../src/domain/ia-central/fidelidad-pedido-mvp288.ts';
+import {PIE_PDF_PROVEEDORES_MVP305} from '../_shared/aviso-proveedores-cierre-mvp305.ts';
 export type ItemSolicitudMvp091=Readonly<{
  description:string;quantity:string;unit:string;
 }>;
@@ -127,7 +128,7 @@ export function generarSolicitudPdfMvp091(input:SolicitudPdfMvp091):Uint8Array{
   }
   drawText(cmds,48,62,'Respondé por WhatsApp con tu presupuesto.',
    9,false,'0.40 0.46 0.55');
-  drawText(cmds,48,43,'Cotironda · Solicitud privada para proveedor invitado',
+  drawText(cmds,48,43,PIE_PDF_PROVEEDORES_MVP305,
    8,false,'0.40 0.46 0.55');
   drawText(cmds,492,43,'Pág. '+(page+1)+'/'+pageCount,8,false,
    '0.40 0.46 0.55');

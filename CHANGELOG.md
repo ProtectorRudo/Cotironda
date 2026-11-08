@@ -1,3 +1,10 @@
+## 07/11/2026 — MVP305: aviso a proveedores y activación de regla para rondas nuevas
+
+- El usuario autorizó el modo: al cierre se identifican todos los proveedores invitados, y los contactos siguen con opt-in propio.
+- Caption unificada en los 3 caminos de envíos PDF Whapi (normal, IA Central y recuperación), más pie del PDF para que el proveedor sea informado antes de cotizar.
+- Preparación de activación prospectiva de MVP303: jamás tocar solicitudes anteriores; no reactivar Whapi ni notificaciones de dos finalistas.
+- [Decisión 432](docs/432-mvp305-activacion-prospectiva-revelado-comercios.md).
+
 ## 07/11/2026 — MVP303/MVP304 publicados solo en piloto (compuerta de revelado OFF)
 
 - Instaladas migraciones SQL en `cotironda-piloto`; funciones privadas de nombres/comunicación postcierre, solamente `service_role`, probadas sin acceso anon/auth.
