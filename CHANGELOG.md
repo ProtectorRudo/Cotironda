@@ -1,3 +1,10 @@
+## 07/11/2026 — MVP306 en desarrollo: cotización automática sin confirmación del comprador
+
+- Se definió que el arquitecto no aprueba cada lista por mensaje: el broker de IA Central prepara la ronda y SQL valida fuente, cantidades, rubros, catálogo, zona y consentimiento antes de liberar despacho. Se conservan auditoría, protección del original y deduplicación.
+- En nuevas rondas, al cierre el comprador podrá identificar a todos los proveedores invitados y disponer de sus contactos comerciales verificables, autorizados una sola vez al alta. **Nunca** se expone contacto o identidad personal del arquitecto al proveedor.
+- Nueva propuesta con gate prospectivo OFF y autorización automática SHA/HMAC/SQL inmutable; rutas texto, ciudad y documento; seguimiento privado automático. CI unitario y PostgreSQL17 sintético pendiente de confirmación; aún faltan onboarding de consentimiento y filtro de proveedores antes del enrutamiento.
+- **Solo rama de desarrollo:** PR [#702](https://github.com/ProtectorRudo/Cotironda/pull/702). No hubo despliegue, WhatsApp ni consumo de IA. [Decisión 434](docs/434-mvp306-sin-confirmacion-y-contactos-proveedor.md).
+
 ## 07/11/2026 — MVP305 activado prospectivamente en cotironda-piloto (publicación real)
 
 - PR #700 fusionado y **42/42 CI verdes**. Whapi Edge v69 y recuperación v32 ACTIVE, con caption uniforme en 3 sender y aviso en PDF; seguimiento v25 vigente.
