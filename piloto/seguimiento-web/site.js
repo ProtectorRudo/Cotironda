@@ -1216,7 +1216,7 @@ function render(data){
   el("receipts").appendChild(offerCard(
    "Respuesta procesada · revisión comercial necesaria",
    "Cotironda ya analizó esta respuesta, pero no pudo acreditar sus importes. "+
-   "El documento original se conserva. No es necesario reenviarlo. "+
+   "La respuesta original queda resguardada. No hace falta reenviarla por ahora. "+
    "Esta respuesta no participa del ranking mientras siga en revisión."));
  for(let i=0;i<processing;i++)
   el("receipts").appendChild(offerCard(
