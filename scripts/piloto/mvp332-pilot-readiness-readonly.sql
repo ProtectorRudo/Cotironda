@@ -32,5 +32,5 @@ SELECT jsonb_build_object(
  'batch_enabled',(SELECT enabled FROM cotironda_piloto_privado.ai_batch_gate_mvp314),
  'buyer_notice_enabled',(SELECT enabled FROM cotironda_piloto_privado.ai_buyer_notice_gate_mvp315),
  'legacy_dispatch_enabled',(SELECT enabled FROM cotironda_piloto_privado.ai_dispatch_gate_mvp222),
- 'mvp313_table_present',(to_regclass('cotironda_piloto_privado.admin_channels_mvp312') IS NOT NULL)
+ 'mvp312_channel_table_present',(to_regclass('cotironda_piloto_privado.admin_channels_mvp312') IS NOT NULL)
 ) AS evidence_snapshot;
