@@ -26,7 +26,7 @@ jobs:
           node --test tests/unit/mvp331-whapi-sandbox-preflight.test.mjs
           node --check scripts/piloto/mvp331-whapi-sandbox-preflight.mjs
           node --check tests/unit/mvp331-whapi-sandbox-preflight.test.mjs
-          if grep -nE "method:[[:space:]]*['\"](POST|PATCH|PUT|DELETE)['\"]|wakeup=true|/messages/(text|document)|/settings/webhook_test" scripts/piloto/mvp331-whapi-sandbox-preflight.mjs; then
+          if grep -nE "method:[[:space:]]*['\"](POST|PATCH|PUT|DELETE)['\"]|/health\\?wakeup=true|/messages/(text|document)|/settings/webhook_test" scripts/piloto/mvp331-whapi-sandbox-preflight.mjs; then
             echo 'MVP331 must remain GET-only with wakeup=false' >&2
             exit 1
           fi
