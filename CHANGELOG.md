@@ -1,3 +1,10 @@
+## 09/11/2026 — MVP326: estado real de revisión comercial publicado en piloto
+
+- SQL `20261109164501`: nueva RPC token-gated `cotironda_piloto_ia_review_status_mvp326`, permisos denegados para `anon/authenticated`, verificado con token inválido y la ronda existente (1 terminal review, 0 processing, 0 verified).
+- Supabase Edge seguimiento `cotironda-piloto-seguimiento` **v27 ACTIVE** (bundle de 34 fuentes enviado); Whapi v70 y batch v1 intactos, no cron ni envíos automáticos.
+- Proyecto Vercel aislado de seguimiento: preview READY `dpl_Fawg4YtKtEE4oXnypRH6mYdPowCq` commit `2a5ecdd357e0` asignado a los dos aliases del piloto, incluido host de enlaces privados del arquitecto.
+- Datos y protecciones intactos: 3 participantes, 5 rondas, 7 originales, 0 trabajos inciertos, MVP306/314/315 OFF. [Acta 457](docs/457-mvp326-publicacion-piloto-estado-comercial.md). HTTP/E2E desde navegador todavía no verificado y cotización histórica sigue en revisión.
+
 ## 09/11/2026 — MVP326: etapa real de revisión comercial en seguimiento (desarrollo)
 
 - Nueva proyección privada token-gated por fuente actual: `requieren_revision`, `en_proceso`, `verificados`, sin importes ni identificadores; RPC exclusiva de service role y validación doble en Edge/proxy.
