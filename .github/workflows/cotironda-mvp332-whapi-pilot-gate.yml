@@ -6,6 +6,7 @@ on:
     paths:
       - 'scripts/piloto/mvp332-whapi-v70-bundle-manifest.json'
       - 'scripts/piloto/mvp332-whapi-bundle-readonly.mjs'
+      - 'scripts/piloto/mvp332-pilot-readiness-readonly.sql'
       - 'tests/unit/mvp332-whapi-rollout-bundle.test.mjs'
       - '.github/workflows/cotironda-mvp332-whapi-pilot-gate.yml'
   workflow_dispatch:
@@ -28,6 +29,12 @@ jobs:
           node --check tests/unit/mvp332-whapi-rollout-bundle.test.mjs
           node scripts/piloto/mvp332-whapi-bundle-readonly.mjs
           node --test tests/unit/mvp332-whapi-rollout-bundle.test.mjs
+      - name: Preflight SQL must stay query-only
+        run: |
+          if grep -Ein '^[[:space:]]*(INSERT|UPDATE|DELETE|CREATE|DROP|ALTER|TRUNCATE|GRANT|REVOKE)[[:space:]]' scripts/piloto/mvp332-pilot-readiness-readonly.sql; then
+            echo 'Pilot readiness SQL must be SELECT only' >&2
+            exit 1
+          fi
       - name: Prevent accidental send/deployment code in gate
         run: |
           if grep -nE "gate.whapi.cloud|service_role|supabase.functions.deploy|fetch\\(|process.env.COTIRONDA" scripts/piloto/mvp332-whapi-bundle-readonly.mjs; then
