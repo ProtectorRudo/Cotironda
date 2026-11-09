@@ -136,7 +136,9 @@ test('MVP326: processing vs terminal review, mixed old/new coverage, and clean r
  assert.equal(b.nodes.get('files').textContent,'');
 });
 test('MVP326: legacy payload without new SQL remains supported',()=>{
- const b=browser();b.run.render(reduce(response(undefined)));
+ const b=browser();const old=reduce(response());
+ delete old.estado_revision_ia;
+ b.run.render(old);
  assert.match(b.nodes.get('state').textContent,/esperando presupuestos verificados/u);
  assert.match(b.visible(b.nodes.get('receipts')),/Respuesta registrada sin precios verificados/u);
 });
