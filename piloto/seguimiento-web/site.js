@@ -1127,7 +1127,7 @@ function showPreliminarMvp322(d){
  for(const card of cards)grid.appendChild(card);
  displayText("previewCaption",p.ofertas.length+
   (p.ofertas.length===1?" presupuesto verificado":" presupuestos verificados")+
-  " en orden de recepción anónimo, sin clasificar por precio.");
+  " visibles sin identificar al proveedor ni ordenar por precio.");
  el("previewSection").hidden=false;
 }
 function render(data){
