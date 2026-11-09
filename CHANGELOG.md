@@ -1,3 +1,9 @@
+## 09/11/2026 — MVP331: Sandbox Whapi gratuito y diagnóstico sin envíos (desarrollo)
+
+- Confirmada documentación oficial de plan gratuito Developer Sandbox, 5 chats mensuales y control separado del estado del canal.
+- Nuevo script sin envíos, sin wakeup, sin cambios en la cuenta: verifica canal AUTH, ID esperado, URL/modo/evento del webhook y cupos, no divulga tokens ni chat IDs. Suite de pruebas sintéticas Node22 y CI.
+- Supabase piloto auditado solo lectura: Webhook Edge v70 ACTIVE, ruta autónoma MVP306/314/315 apagada, 30 entradas históricas y una reciente; canal Whapi no comprobado en vivo, sin publicación ni E2E. [Decisión 462](docs/462-mvp331-whapi-sandbox-gratis-preflight.md).
+
 ## 09/11/2026 — MVP329: operador con sesión MFA y autorización empresarial (desarrollo)
 
 - Se reutiliza el control real de Supabase `operator_session_mvp267` (Auth AAL2 + sesión no revocada) y se prepara la tabla privada de autorizaciones específicas por empresa, ronda y operador, sin alta automática.
