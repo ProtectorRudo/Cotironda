@@ -3,9 +3,9 @@
  * No Supabase credentials, HTTP requests, secrets, DB writes or deployment.
  *
  * The active pilot Edge v25 has 29 files; 28 match this source tree exactly.
- * The only authorized change in index.ts is MVP322's import + return field;
- * one pure adapter plus 3 already-imported but omitted transitive sources
- * must complete the dependency closure (33).
+ * The authorized extensions since v25 are MVP322's source-reviewed prices
+ * and MVP326's status-only projection, plus the pre-existing transitive
+ * source dependencies. Exact baseline removal is enforced (34 files).
  *
  * Usage: node scripts/piloto/mvp324-bundle-seguimiento-readonly.mjs [--paths]
  */
@@ -20,6 +20,8 @@ export const EDGE_ENTRY_MVP324=
  'supabase/functions/cotironda-piloto-seguimiento/index.ts';
 const ADDITIONAL_MODULE=
  'src/domain/ia-central/preliminar-anonimo-presupuestos-mvp322.ts';
+const STATUS_MODULE=
+ 'src/domain/ia-central/estado-revision-comercial-mvp326.ts';
 export const MISSING_TRANSITIVE_MVP324=Object.freeze([
  'src/domain/auditoria-condiciones-mvp167.ts',
  'src/domain/auditoria-descuentos-mvp166.ts',
@@ -61,6 +63,10 @@ const IMPORT_MARKER=
  "import {preliminarAnonimoPresupuestosMvp322} from\n"+
  " '../../../src/domain/ia-central/preliminar-anonimo-presupuestos-mvp322.ts';\n";
 const ADDITION_RE=/\s*\/\/ MVP322: same buyer token and independent source-verified rubric RPC\.[\s\S]*?\s*if\(preliminar\)publicResult=\{\.\.\.publicResult,\s*preliminar_cotizaciones_ia:preliminar\};/g;
+const STATUS_IMPORT_MARKER=
+ "import {estadoRevisionComercialMvp326} from\n"+
+ " '../../../src/domain/ia-central/estado-revision-comercial-mvp326.ts';\n";
+const STATUS_ADDITION_RE=/\s*\/\/ MVP326: independently token-bound status, not a new AI review\.[\s\S]*?\s*\}catch\{\/\* Optional count projection fails closed\. \*\/\}/g;
 const blobSha=s=>createHash('sha1').update('blob '+Buffer.byteLength(s)+'\0'+s).digest('hex');
 const fail=m=>{throw new Error('mvp324_bundle_gate:'+m)};
 const inside=(root,path)=>path===root||path.startsWith(root+sep);
@@ -85,14 +91,23 @@ export function inspectSeguimientoBundleMvp324(root=REPO){
  const index=readFileSync(entry,'utf8');
  if(index.split(IMPORT_MARKER).length!==2)fail('new_import_not_exactly_once');
  if([...index.matchAll(ADDITION_RE)].length!==1)fail('new_projection_not_exactly_once');
- const original=index.replace(IMPORT_MARKER,'').replace(ADDITION_RE,'');
+ if(index.split(STATUS_IMPORT_MARKER).length!==2)
+   fail('review_import_not_exactly_once');
+ if([...index.matchAll(STATUS_ADDITION_RE)].length!==1)
+   fail('review_projection_not_exactly_once');
+ const original=index.replace(IMPORT_MARKER,'').replace(ADDITION_RE,'')
+   .replace(STATUS_IMPORT_MARKER,'').replace(STATUS_ADDITION_RE,'');
  if(blobSha(original)!==ACTIVE_INDEX_BLOB_SHA)
    fail('live_index_baseline_drift_unreviewed_change');
  if(!index.includes("const preliminar=preliminarAnonimoPresupuestosMvp322(ai.data,safe);"))
    fail('source_verified_projection_absent');
- const moduleSource=readFileSync(resolve(absRoot,ADDITIONAL_MODULE),'utf8');
- if(/(?:\bfetch\s*\(|\bcreateClient\s*\(|\bDeno\.serve\b)/u.test(moduleSource))
-   fail('preview_must_be_pure');
+ if(!index.includes("const reduced=estadoRevisionComercialMvp326(status.data,safe);"))
+   fail('terminal_review_stage_projection_absent');
+ for(const p of [ADDITIONAL_MODULE,STATUS_MODULE]){
+  const source=readFileSync(resolve(absRoot,p),'utf8');
+  if(/(?:\bfetch\s*\(|\bcreateClient\s*\(|\bDeno\.serve\b)/u.test(source))
+    fail('projection_must_be_pure:'+p);
+ }
  const seen=new Set(),stack=[EDGE_ENTRY_MVP324],filePaths=[];
  while(stack.length){
    const name=stack.pop();
@@ -118,8 +133,8 @@ export function inspectSeguimientoBundleMvp324(root=REPO){
    if(filePaths.length>40)fail('unexpected_dependency_growth');
  }
  const expected=new Set([...ACTIVE_FILES_MVP324,ADDITIONAL_MODULE,
-  ...MISSING_TRANSITIVE_MVP324]);
- if(expected.size!==33||seen.size!==33||[...expected].some(f=>!seen.has(f))||
+  STATUS_MODULE,...MISSING_TRANSITIVE_MVP324]);
+ if(expected.size!==34||seen.size!==34||[...expected].some(f=>!seen.has(f))||
     [...seen].some(f=>!expected.has(f)))
    fail('dependency_closure_diff:'+[
       ...[...seen].filter(x=>!expected.has(x)),
@@ -129,7 +144,7 @@ export function inspectSeguimientoBundleMvp324(root=REPO){
    state:'mvp324_bundle_offline_verified',
    entrypoint_path:EDGE_ENTRY_MVP324,
    file_count:seen.size,unchanged_active_files:28,
-   new_or_changed_files:[EDGE_ENTRY_MVP324,ADDITIONAL_MODULE],
+   new_or_changed_files:[EDGE_ENTRY_MVP324,ADDITIONAL_MODULE,STATUS_MODULE],
    missing_transitive_dependencies:MISSING_TRANSITIVE_MVP324,
    baseline_blob_sha:ACTIVE_INDEX_BLOB_SHA,
    verify_jwt_must_remain_false:true,

@@ -24,6 +24,8 @@ import {resumirRubrosCompradorMvp216} from '../../../src/domain/rubros-comprador
 import {vistaCotizacionesRubrosMvp227} from '../../../src/domain/ia-central/vista-comprador-rubros-mvp227.ts';
 import {preliminarAnonimoPresupuestosMvp322} from
  '../../../src/domain/ia-central/preliminar-anonimo-presupuestos-mvp322.ts';
+import {estadoRevisionComercialMvp326} from
+ '../../../src/domain/ia-central/estado-revision-comercial-mvp326.ts';
 import {vistaPendientesRubrosMvp299} from '../../../src/domain/ia-central/vista-pendientes-rubros-mvp299.ts';
 import {vistaProveedoresCierreMvp303} from '../../../src/domain/ia-central/vista-proveedores-cierre-mvp303.ts';
 import {contactosConsentidosMvp304} from '../../../src/domain/ia-central/contactos-consentidos-cierre-mvp304.ts';
@@ -449,6 +451,19 @@ Deno.serve(async req=>{
          const preliminar=preliminarAnonimoPresupuestosMvp322(ai.data,safe);
          if(preliminar)publicResult={...publicResult,
            preliminar_cotizaciones_ia:preliminar};
+         // MVP326: independently token-bound status, not a new AI review.
+         // A completed economic review must not be presented as "processing".
+         // No prices, reason codes, supplier IDs, contacts or new retries.
+         try{
+           const status=await db.rpc('cotironda_piloto_ia_review_status_mvp326',{
+             p_token_hash:digest
+           });
+           if(!status.error){
+             const reduced=estadoRevisionComercialMvp326(status.data,safe);
+             if(reduced)publicResult={...publicResult,
+               estado_revision_ia:reduced};
+           }
+         }catch{/* Optional count projection fails closed. */}
          // MVP299: independent, token-authorized, count-only projection.
          // This NEVER becomes a verified offer and MUST NOT change
          // can_open, any economic comparison, winner or contact release.
