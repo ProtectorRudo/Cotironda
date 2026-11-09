@@ -126,6 +126,22 @@ BEGIN
     (s->>'verificados')::int<>1
  THEN RAISE EXCEPTION 'mvp326_old_terminal_review_reappeared_%',s;END IF;
 END $new$;
+-- A malicious newest source SHA mismatch must shadow old A,
+-- not make the old terminal review visible again.
+UPDATE cotironda_piloto_privado.whapi_inbox
+ SET plaintext_sha256=repeat('0',64) WHERE message_hmac=repeat('e',64);
+DO $shadow$
+DECLARE s jsonb;
+BEGIN
+ s:=public.cotironda_piloto_ia_review_status_mvp326(repeat('1',64));
+ IF (s->>'vinculados')::int<>2 OR
+    (s->>'requieren_revision')::int<>0 OR
+    (s->>'en_proceso')::int<>1 OR
+    (s->>'verificados')::int<>1
+ THEN RAISE EXCEPTION 'mvp326_invalid_new_source_resurrected_old_review_%',s;END IF;
+END $shadow$;
+UPDATE cotironda_piloto_privado.whapi_inbox
+ SET plaintext_sha256=repeat('e',64) WHERE message_hmac=repeat('e',64);
 -- This review finishes: back to terminal review; do not run any AI.
 INSERT INTO cotironda_piloto_privado.ai_supplier_review_mvp227
  VALUES(repeat('e',64),'11111111-1111-4111-8111-111111111111','supplier_a',
