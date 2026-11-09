@@ -15,7 +15,26 @@ permissions:
 jobs:
   immutable-bundle:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 24
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: test_only
+      PGDATABASE: cotironda_ci
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -29,6 +48,22 @@ jobs:
           node --check tests/unit/mvp332-whapi-rollout-bundle.test.mjs
           node scripts/piloto/mvp332-whapi-bundle-readonly.mjs
           node --test tests/unit/mvp332-whapi-rollout-bundle.test.mjs
+      - name: Regresiones del circuito autonomo y destinatarios
+        run: |
+          node --experimental-strip-types --test tests/unit/mvp306-auto-release-and-supplier-contacts.test.mjs
+          node --experimental-strip-types --test tests/unit/mvp313-dynamic-recipients.test.mjs
+          node --experimental-strip-types --test tests/unit/mvp314-batch-dispatch.test.mjs
+          node --experimental-strip-types --test tests/unit/mvp315-buyer-notice-after-batch.test.mjs
+      - name: PG17 - circuito sintetico 309-315 sin contactos ajenos
+        run: |
+          set -euo pipefail
+          node scripts/piloto/mvp315-generar-fixture-pg17.mjs
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/.mvp315-generated-pg17.sql > /dev/null
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Deno typecheck del candidato Whapi; no ejecuta mensajes
+        run: deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/index.ts
       - name: Preflight SQL must stay query-only
         run: |
           if grep -Ein '^[[:space:]]*(INSERT|UPDATE|DELETE|CREATE|DROP|ALTER|TRUNCATE|GRANT|REVOKE)[[:space:]]' scripts/piloto/mvp332-pilot-readiness-readonly.sql; then
