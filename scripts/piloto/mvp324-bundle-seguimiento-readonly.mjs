@@ -85,7 +85,7 @@ export function inspectSeguimientoBundleMvp324(root=REPO){
  if(!index.includes("const preliminar=preliminarAnonimoPresupuestosMvp322(ai.data,safe);"))
    fail('source_verified_projection_absent');
  const moduleSource=readFileSync(resolve(absRoot,ADDITIONAL_MODULE),'utf8');
- if(/\b(?:fetch\s*\(|createClient\s*\(|Deno\.serve\b)\b/u.test(moduleSource))
+ if(/(?:\bfetch\s*\(|\bcreateClient\s*\(|\bDeno\.serve\b)/u.test(moduleSource))
    fail('preview_must_be_pure');
  const seen=new Set(),stack=[EDGE_ENTRY_MVP324],filePaths=[];
  while(stack.length){
