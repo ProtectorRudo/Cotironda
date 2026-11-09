@@ -141,7 +141,7 @@ export async function cotejarOriginalTextualMvp327(
  const quoted=Array.isArray(proposal.oferta.lineas)?
   proposal.oferta.lineas.flatMap(line=>
    typeof line?.textoOriginal==='string'?
-    line.textoOriginal.split(/\r?\n/u).map(s=>s.trim()):[]):[];
+    line.textoOriginal.split(/\r?\n/u).map((s:string)=>s.trim()):[]):[];
  const inventory=new Map<string,number>();
  for(const line of quoted)inventory.set(line,(inventory.get(line)??0)+1);
  let omitted=false;
