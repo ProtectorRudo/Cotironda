@@ -122,3 +122,25 @@ footer{font-size:12px;color:#777;margin-top:18px;text-align:center}
 .rubro-count{font-size:12px;font-weight:600;color:#546a82}
 .rubro-items{display:grid;gap:10px}
 .rubro-items .itemprices-card{border:1px solid #e1e8f1;background:#f8fbff}
+
+/* MVP322: buyer-safe live per-offer previews, never a price ranking. */
+.preliminar-panel{border:1px solid #d8e5ec;background:#f5f9fc;border-radius:13px;padding:20px;margin:18px 0}
+.preliminar-panel h2{font-size:19px;margin:0 0 8px;letter-spacing:-.02em;color:#203650}
+.preliminar-caption{font-size:13px;color:#52677b;margin:0 0 13px;line-height:1.5}
+.preliminar-grid{display:grid;gap:12px}
+.preliminar-card{background:#fff;border:1px solid #dbe4ed;border-radius:11px;padding:15px;min-width:0}
+.preliminar-header{display:flex;align-items:start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.preliminar-heading{font-size:16px;font-weight:750;margin:0;color:#173452}
+.preliminar-badge{font-size:12px;font-weight:650;color:#53687b;margin:5px 0 0}
+.preliminar-total{text-align:right;font-variant-numeric:tabular-nums}
+.preliminar-total span{display:block;color:#64768a;font-size:12px}
+.preliminar-total strong{display:block;font-size:22px;color:#183c63}
+.preliminar-items{list-style:none;padding:0;margin:13px 0 0}
+.preliminar-items li{padding:10px 0;border-top:1px solid #e6ebf0;display:flex;align-items:baseline;justify-content:space-between;gap:14px}
+.preliminar-items .detail{min-width:0;overflow-wrap:anywhere;font-size:13px}
+.preliminar-items .detail strong{display:block;font-size:13px}
+.preliminar-items .detail span{display:block;color:#607287;font-size:12px;margin-top:3px}
+.preliminar-items .money{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.preliminar-conditions{font-size:12px;color:#5b6c7c;line-height:1.55;margin:10px 0 0}
+.preliminar-note{font-size:12px;color:#5e7181;line-height:1.65;margin:14px 0 0}
+@media(max-width:500px){.preliminar-panel{padding:15px}.preliminar-header{display:block}.preliminar-total{text-align:left;margin-top:10px}.preliminar-items li{align-items:flex-start}}

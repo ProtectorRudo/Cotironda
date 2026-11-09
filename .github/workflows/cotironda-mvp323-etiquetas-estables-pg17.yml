@@ -1,0 +1,43 @@
+name: MVP323 - etiquetas anonimas estables PostgreSQL17
+on:
+  pull_request:
+    branches:
+      - feat/mvp174-supplier-packaging-equivalence
+    paths:
+      - 'supabase/piloto/mvp323_numeracion_anonima_estable.sql'
+      - 'supabase/tests/ci/mvp323-anonymous-labels-stable-pg17.sql'
+      - 'docs/453-mvp323-numeracion-anonima-estable.md'
+      - '.github/workflows/cotironda-mvp323-etiquetas-estables-pg17.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-locked-labels:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: cotironda_ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: test_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Two real SQL RPCs: labels stable across arrivals/corrections/close and rollback
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/mvp323-anonymous-labels-stable-pg17.sql > /dev/null
+# Synthetic DB. No production, live Supabase credentials, WhatsApp or outgoing requests.
