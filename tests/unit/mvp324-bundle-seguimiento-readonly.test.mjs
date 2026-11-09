@@ -6,12 +6,12 @@ import {dirname,join,resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {execFileSync} from 'node:child_process';
 import {
- ACTIVE_FILES_MVP324,EDGE_ENTRY_MVP324,inspectSeguimientoBundleMvp324
+ ACTIVE_FILES_MVP324,EDGE_ENTRY_MVP324,MISSING_TRANSITIVE_MVP324,inspectSeguimientoBundleMvp324
 } from '../../scripts/piloto/mvp324-bundle-seguimiento-readonly.mjs';
 
 const ROOT=resolve(dirname(fileURLToPath(import.meta.url)),'../..');
 const EXTRA='src/domain/ia-central/preliminar-anonimo-presupuestos-mvp322.ts';
-const filePaths=[...ACTIVE_FILES_MVP324,EXTRA];
+const filePaths=[...ACTIVE_FILES_MVP324,EXTRA,...MISSING_TRANSITIVE_MVP324];
 function fixture(t){
  const root=mkdtempSync(join(tmpdir(),'cotironda-mvp324-'));
  t.after(()=>rmSync(root,{recursive:true,force:true}));
@@ -26,13 +26,14 @@ function corrupt(root,name,update){
  const path=join(root,name);
  writeFileSync(path,update(readFileSync(path,'utf8')));
 }
-test('MVP324: active Edge v25 29-file snapshot plus only MVP322 adapter => 30 files',()=>{
+test('MVP324: active 29-file Edge plus MVP322 and 3 missing transitives => 33 files',()=>{
  const report=inspectSeguimientoBundleMvp324(ROOT);
  assert.equal(report.state,'mvp324_bundle_offline_verified');
- assert.equal(report.file_count,30);
+ assert.equal(report.file_count,33);
  assert.equal(report.unchanged_active_files,28);
  assert.equal(report.baseline_blob_sha,'9c38a10ba6b4ffd726ad2348a748b1598954bffc');
  assert.deepEqual(report.new_or_changed_files,[EDGE_ENTRY_MVP324,EXTRA]);
+ assert.deepEqual(report.missing_transitive_dependencies,MISSING_TRANSITIVE_MVP324);
  assert.deepEqual(new Set(report.filePaths),new Set(filePaths));
  for(const field of ['scheduled_jobs_created','whapi_touched','deployment_authorized'])
    assert.equal(report[field],false);
@@ -42,7 +43,7 @@ test('MVP324: CLI outputs names only, no source or tokens',()=>{
  const out=execFileSync(process.execPath,[
   'scripts/piloto/mvp324-bundle-seguimiento-readonly.mjs','--paths'
  ],{cwd:ROOT,encoding:'utf8'});
- assert.equal(out.trim().split('\n').length,30);
+ assert.equal(out.trim().split('\n').length,33);
  assert.match(out,/preliminar-anonimo-presupuestos-mvp322\.ts/u);
  assert.doesNotMatch(out,/SUPABASE|Bearer|secret|whapi\.cloud|npm:@supabase/u);
 });
