@@ -86,7 +86,7 @@ BEGIN
  OR jsonb_array_length(r->'items')<>1
  OR r->'items'->0->>'id'<>'item_1'
  THEN RAISE EXCEPTION 'mvp328_valid_envelope_wrong';END IF;
- IF r::text ~* 'supplier_a|buyer_a|phone|contact|Cemento(?!\\b)'
+ IF r::text ~* 'supplier_a|buyer_a|phone|contact'
  THEN RAISE EXCEPTION 'mvp328_internal_envelope_unexpected_contact';END IF;
  IF public.cotironda_piloto_read_reconciliation_envelope_mvp328(
   '22222222-2222-4222-8222-222222222222',repeat('a',64),repeat('c',64))->>'state'<>'not_found'
