@@ -6,7 +6,7 @@
  * or approximation of taxes/freight/missing prices. Not a final quote total.
  */
 import {RUBROS_MVP216,type RubroMvp216} from '../rubros-comprador-mvp216.ts';
-import type {SalidaVistaMvp227} from './vista-comprador-rubros-mvp227.ts';
+import {vistaCotizacionesRubrosMvp227,type SalidaVistaMvp227} from './vista-comprador-rubros-mvp227.ts';
 
 type Money='ARS'|'USD';
 type Tax='incluido_explicito'|'sin_iva_explicito'|'no_informado';
@@ -62,6 +62,10 @@ export function preliminarAnonimoPresupuestosMvp322(
     vista.received_count!==raw.recibidos||
     vista.files_pending_review!==raw.pendientes_revision||
     !Array.isArray(vista.offers)||!Array.isArray(vista.rubros_ia))return null;
+ // The caller cannot swap prices after validation: recompute the EXACT
+ // public allowlist before deriving any new economic amount.
+ const reread=vistaCotizacionesRubrosMvp227(raw);
+ if(!reread||JSON.stringify(reread)!==JSON.stringify(vista))return null;
  const items=new Map<string,{
   descripcion:string;rubro:RubroMvp216;cantidad:string;unidad:string
  }>();
