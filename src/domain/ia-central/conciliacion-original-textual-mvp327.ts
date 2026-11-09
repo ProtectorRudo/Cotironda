@@ -82,7 +82,7 @@ async function sha256Utf8(s:string):Promise<string|null>{
  }catch{return null}
 }
 const TOTAL=/^(?:(?:total(?:\s+(?:general|final|a\s+pagar|presupuesto|cotizaci[oó]n))?)|(?:importe|monto)\s+total)\s*[:=]?\s*((?:(?:AR\$|US\$|U\$S|\$)\s*|(?:ARS|USD)\s+)[0-9][0-9.,]*)\s*$/iu;
-const SUMMARY_LABEL=/^(?:total(?:\s+(?:general|final|a\s+pagar|presupuesto|cotizaci[oó]n))?)?|subtotal|importe\s+total|monto\s+total)\b/iu;
+const SUMMARY_LABEL=/^(?:total(?:\s+(?:general|final|a\s+pagar|presupuesto|cotizaci[oó]n))?|subtotal|importe\s+total|monto\s+total)\b/iu;
 function totalDeclarado(fuente:string):{found:false}|{found:true;centavos:bigint|null}{
  const lines=fuente.split(/\r?\n/u).map(x=>x.trim())
   .filter(x=>SUMMARY_LABEL.test(x));
