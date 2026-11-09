@@ -111,6 +111,21 @@ BEGIN
  OR NOT has_function_privilege('service_role','public.cotironda_piloto_ia_review_status_mvp326(text)','EXECUTE')
  THEN RAISE EXCEPTION 'mvp326_bad_rpc_acl';END IF;
 END $test$;
+-- A wrongly marked 'verified' source with no economic summary is a
+-- FINISHED record needing review, never an active AI run or valid price.
+UPDATE cotironda_piloto_privado.ai_supplier_review_mvp227
+ SET summary=NULL WHERE message_hmac=repeat('c',64);
+DO $unfinished_summary$
+DECLARE s jsonb;
+BEGIN
+ s:=public.cotironda_piloto_ia_review_status_mvp326(repeat('1',64));
+ IF (s->>'requieren_revision')::int<>2
+ OR (s->>'en_proceso')::int<>1
+ OR (s->>'verificados')::int<>0
+ THEN RAISE EXCEPTION 'mvp326_terminal_verified_without_summary_mislabeled_%',s;END IF;
+END $unfinished_summary$;
+UPDATE cotironda_piloto_privado.ai_supplier_review_mvp227
+ SET summary='{"moneda":"ARS"}'::jsonb WHERE message_hmac=repeat('c',64);
 -- A new message supersedes the old terminated review: it is PROCESSING.
 INSERT INTO cotironda_piloto_privado.whapi_inbox
  VALUES(repeat('e',64),'11111111-1111-4111-8111-111111111111','supplier_a',
