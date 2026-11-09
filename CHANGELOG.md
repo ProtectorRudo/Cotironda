@@ -1,3 +1,10 @@
+## 09/11/2026 — MVP321: publicación controlada en cotironda-piloto (sin envíos)
+
+- Aprobación expresa del operador «Publicalo» para instalar en piloto con switches de salida OFF, aceptando riesgo de no haber respaldo real.
+- Migración `20261109042724` (`cotironda_piloto_mvp309_315_preparacion_sin_envios`): nueve scripts MVP309–315 tras comprobar 14+3 huellas y ausencia de jobs inseguros. Comprobado: funciones/gates presentes pero MVP306, MVP314 y MVP315 OFF; 3 participantes, 5 rondas y 7 originales conservados.
+- Supabase Edge `cotironda-piloto-ai-batch` v1 ACTIVE, 11/11 archivos iguales a GitHub. Whapi Edge v70 y seguimiento v25 no cambiados, sin cron ni llamada WhatsApp.
+- Sin respaldo real, sin activación de mensajes, token Whapi mostrado en una captura previa sin rotar y sin prueba E2E. [Acta 451](docs/451-mvp321-publicacion-piloto-sql-y-worker-inactivos.md).
+
 ## 08/11/2026 — MVP318: camino gratuito de respaldo y restauración comprobable (solo desarrollo)
 
 - Supabase piloto: 94 tablas propias, 0 usuarios Auth actuales y 7 archivos privados Storage; solo lectura, sin exponer registros ni contactos.
