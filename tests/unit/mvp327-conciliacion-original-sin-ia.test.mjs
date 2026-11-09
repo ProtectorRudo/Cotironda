@@ -174,3 +174,18 @@ test('MVP327: even an unpriced extra product must never vanish from original',as
  assert.ok(r.motivos.includes('lineas_de_fuente_sin_representacion'));
  assert.equal(r.sumatoriaMaterialesCentavos,null);
 });
+
+test('MVP327: duplicated unpriced lines require duplicated citations',async()=>{
+ const x=fixture(),note='10 bolsas cal extra sin precio';
+ x.snapshot.textoOriginal+='\n'+note+'\n'+note;
+ reconcileSource(x);
+ x.proposal.oferta.lineas.push({
+  numero:2,textoOriginal:note,descripcion:note,
+  cantidad:null,unidad:null,precioUnitarioLiteral:null,
+  totalLineaLiteral:null,tipo:'aclaracion'
+ });
+ const r=await cotejarOriginalTextualMvp327(x.snapshot,x.proposal);
+ assert.equal(r.state,'requiere_evidencia');
+ assert.ok(r.motivos.includes('lineas_de_fuente_sin_representacion'));
+ assert.equal(r.sumatoriaMaterialesCentavos,null);
+});
