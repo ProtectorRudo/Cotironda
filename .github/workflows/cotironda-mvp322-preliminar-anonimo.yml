@@ -13,6 +13,7 @@ on:
       - 'tests/unit/mvp322-preliminar-cotizaciones-anonimas.test.mjs'
       - 'supabase/piloto/mvp323_numeracion_anonima_estable.sql'
       - 'supabase/tests/ci/mvp323-anonymous-labels-stable-pg17.sql'
+      - 'supabase/tests/ci/mvp323-current-pilot-rpc-baseline-pg17.sql'
       - '.github/workflows/cotironda-mvp322-preliminar-anonimo.yml'
   workflow_dispatch:
 permissions:
