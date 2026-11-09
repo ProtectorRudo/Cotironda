@@ -1,0 +1,30 @@
+name: MVP324 - preflight offline bundle Edge seguimiento
+on:
+  pull_request:
+    branches:
+      - feat/mvp174-supplier-packaging-equivalence
+    paths:
+      - 'scripts/piloto/mvp324-bundle-seguimiento-readonly.mjs'
+      - 'tests/unit/mvp324-bundle-seguimiento-readonly.test.mjs'
+      - 'supabase/functions/cotironda-piloto-seguimiento/**'
+      - 'src/domain/ia-central/preliminar-anonimo-presupuestos-mvp322.ts'
+      - '.github/workflows/cotironda-mvp324-bundle-seguimiento-readonly.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  bundle-source-guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Validar bundle completo de Edge sin publicar
+        run: |
+          node --test tests/unit/mvp324-bundle-seguimiento-readonly.test.mjs
+          node scripts/piloto/mvp324-bundle-seguimiento-readonly.mjs
+# Sin secretos, token de comprador, uso externo, WhatsApps, SQL real ni despliegue.

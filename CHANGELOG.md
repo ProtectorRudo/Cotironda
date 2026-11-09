@@ -1,3 +1,9 @@
+## 09/11/2026 — MVP324: auditoría de dependencias Edge seguimiento, sin despliegue
+
+- Comprobados 29 archivos reales de Edge seguimiento v25 frente a GitHub: 28 idénticos; el único `index.ts` diferente es estrictamente la adición MVP322 y coincide byte a byte con la fuente previa al retirar esa adición.
+- Nuevo gate Node22 solo lectura con manifest obligatorio de 33 archivos (incluye 3 dependencias transitivas antes omitidas), blob SHA1 fijo del `index.ts` previo, import graph recursivo y pruebas negativas para evitar un despliegue incompleto o cambiante.
+- Sin cambios en Supabase piloto, Vercel web público, Whapi, envíos, cron ni producción. [Acta 454](docs/454-mvp324-preflight-bundle-seguimiento-sin-despliegue.md).
+
 ## 09/11/2026 — MVP323: corregir etiquetas anónimas cambiantes (solo desarrollo)
 
 - Las RPC de presupuesto al comprador MVP227 y proveedores al cierre MVP303 calculan ordinales estables según la primera verificación privada de cada proveedor, conservando el número ante nuevas respuestas o correcciones en revisión.
