@@ -10,7 +10,7 @@ function mock({
  health={health:{status:{text:'AUTH'}},channel_id:channelId},
  settings={webhooks:[{url,mode:'body',
   events:[{type:'messages',method:'post'}],
-  headers:{'x-secret':'never-print-this'}}]},
+  headers:{'x-cotironda-webhook-key':'never-print-this'}}]},
  limits={chats:['private-chat-id-12345','private-chat-id-98765'],
   messages:25,requests:33,checks:2},
  statuses={}
@@ -42,6 +42,7 @@ test('MVP331: AUTH + exact channel and message POST webhook, no messages',async(
  assert.equal(r.canalEsperadoCoincide,true);
  assert.equal(r.webhook,'coincide');
  assert.equal(r.webhookDeMensajes,true);
+ assert.equal(r.encabezadoAutenticacionConfigurado,true);
  assert.equal(r.chatsConsumidos,2);
  assert.equal(r.httpConsultas,3);
  assert.equal(r.habilitarCotironda,false);
@@ -96,6 +97,8 @@ test('MVP331: wrong channel ID blocks even with AUTH',async()=>{
 });
 test('MVP331: webhooks must point to exact pilot with body messages POST',async()=>{
  for(const webhook of [
+  {url,mode:'body',events:[{type:'messages',method:'post'}],
+   headers:{'other-header':'invalid'}},
   {url:'https://other.example/hook',mode:'body',
    events:[{type:'messages',method:'post'}]},
   {url,mode:'method',events:[{type:'messages',method:'post'}]},
