@@ -22,6 +22,8 @@ import {resumirMaterialesCotizadosCompradorMvp210} from
 import {DESTINO_SEGUIMIENTO_PILOTO_MVP212} from '../../../src/domain/enlace-seguimiento-piloto-mvp212.ts';
 import {resumirRubrosCompradorMvp216} from '../../../src/domain/rubros-comprador-mvp216.ts';
 import {vistaCotizacionesRubrosMvp227} from '../../../src/domain/ia-central/vista-comprador-rubros-mvp227.ts';
+import {preliminarAnonimoPresupuestosMvp322} from
+ '../../../src/domain/ia-central/preliminar-anonimo-presupuestos-mvp322.ts';
 import {vistaPendientesRubrosMvp299} from '../../../src/domain/ia-central/vista-pendientes-rubros-mvp299.ts';
 import {vistaProveedoresCierreMvp303} from '../../../src/domain/ia-central/vista-proveedores-cierre-mvp303.ts';
 import {contactosConsentidosMvp304} from '../../../src/domain/ia-central/contactos-consentidos-cierre-mvp304.ts';
@@ -442,6 +444,11 @@ Deno.serve(async req=>{
          const comparison=resumirAlternativasRubrosMvp255(ai.data,safe);
          if(comparison)publicResult={...publicResult,
            comparador_rubros_ia:comparison};
+         // MVP322: same buyer token and independent source-verified rubric RPC.
+         // Line subtotals are NOT original final quote totals or a ranking.
+         const preliminar=preliminarAnonimoPresupuestosMvp322(ai.data,safe);
+         if(preliminar)publicResult={...publicResult,
+           preliminar_cotizaciones_ia:preliminar};
          // MVP299: independent, token-authorized, count-only projection.
          // This NEVER becomes a verified offer and MUST NOT change
          // can_open, any economic comparison, winner or contact release.
