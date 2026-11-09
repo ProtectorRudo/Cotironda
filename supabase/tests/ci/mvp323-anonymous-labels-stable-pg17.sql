@@ -47,7 +47,10 @@ CREATE TABLE cotironda_piloto_privado.ai_dispatch_jobs_mvp222(
 CREATE TABLE cotironda_piloto_privado.ai_buyer_review_mvp279(request_id uuid,state text);
 \ir ../../piloto/mvp227_presupuestos_rubros_ia_privados.sql
 \ir ../../piloto/mvp303_revelar_todos_los_proveedores_al_cierre.sql
--- The genuine baseline SQL must satisfy exact live SHA guards.
+-- Preserve additional security fixes applied to these RPCs in the real
+-- pilot after their original creation; use exact canonical PG17 source.
+\ir mvp323-current-pilot-rpc-baseline-pg17.sql
+-- The genuine current pilot baseline must satisfy exact SHA guards.
 \ir ../../piloto/mvp323_numeracion_anonima_estable.sql
 
 INSERT INTO cotironda_piloto_privado.participants
