@@ -1,3 +1,9 @@
+## 09/11/2026 — MVP322: vista preliminar anónima de importes por artículo (desarrollo)
+
+- Añadida proyección de precio de renglón verificado y suma por presupuesto anónimo, con cantidades de cobertura asignada y condiciones originales. No confundir subtotal parcial con total final ni ordenar por sumas de coberturas distintas.
+- Triple barrera de revalidación (dominio, Edge token privado, proxy Vercel con suma BigInt), tarjetas web móviles que se limpian al revocar y mantienen texto completo original disponible más abajo.
+- Nuevos test MVP322, regresiones 227/255/299 y CI offline. No Whapi real, IA, SQL, deploy, cron ni producción. [Decisión 452](docs/452-mvp322-preliminar-anonimo-en-vivo.md).
+
 ## 09/11/2026 — MVP321: publicación controlada en cotironda-piloto (sin envíos)
 
 - Aprobación expresa del operador «Publicalo» para instalar en piloto con switches de salida OFF, aceptando riesgo de no haber respaldo real.
