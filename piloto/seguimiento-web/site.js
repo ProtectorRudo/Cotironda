@@ -90,7 +90,9 @@ function offerCard(title,body){
 }
 // MVP176: revoke all visible private details on an invalid token or outage.
 function clearPrivateView(){
- for(const id of ["pendingRubrosGrid","offers","receipts","finalists","coverageGrid","economyGrid","itemPricesGrid","pricedCoverageGrid","coverageOptionsCounts","coverageOptionsGrid","orientacionGrid","economicReadinessGrid","materialBasketsGrid","rubroCompareGrid"])el(id).replaceChildren();
+ for(const id of ["previewGrid","pendingRubrosGrid","offers","receipts","finalists","coverageGrid","economyGrid","itemPricesGrid","pricedCoverageGrid","coverageOptionsCounts","coverageOptionsGrid","orientacionGrid","economicReadinessGrid","materialBasketsGrid","rubroCompareGrid"])el(id).replaceChildren();
+ el("previewSection").hidden=true;
+ displayText("previewCaption","");
  el("pendingRubrosSection").hidden=true;
  displayText("pendingRubrosCaption","");
  el("economySection").hidden=true;
@@ -1044,6 +1046,90 @@ function showEconomy(d){
    " El flete, la disponibilidad y las condiciones no informadas siguen pendientes; no se presentan ganadores por este resumen.");
  el("economySection").hidden=false;
 }
+// MVP322: only source-checked source line totals, no provider identity or ranking.
+function showPreliminarMvp322(d){
+ const grid=el("previewGrid");grid.replaceChildren();
+ el("previewSection").hidden=true;
+ displayText("previewCaption","");
+ const p=d?.preliminar_cotizaciones_ia;
+ if(d?.can_open!==true||!["waiting","closed"].includes(d.state)||
+    p?.state!=="preliminar_anonimo_verificado"||
+    !Array.isArray(p.ofertas)||p.ofertas.length<1||p.ofertas.length>25||
+    ["ranking_permitido","total_final","iva_calculado","flete_calculado",
+     "contactos_revelados","adjudicacion_automatica"].some(k=>p[k]!==false))return;
+ const money=(value,currency)=>{
+  if(typeof value!=="string"||!/^(?:0|[1-9][0-9]{0,19})$/u.test(value)||
+     !["ARS","USD"].includes(currency))return null;
+  const cents=BigInt(value);
+  return (currency==="ARS"?"$ ":"USD ")+
+   (cents/100n).toString().replace(/\B(?=(\d{3})+(?!\d))/gu,".")+
+   ","+(cents%100n).toString().padStart(2,"0");
+ };
+ const iva={incluido_explicito:"IVA incluido explícito",
+   sin_iva_explicito:"Sin IVA explícito",
+   no_informado:"IVA no informado (referencia sin IVA)"};
+ const freight={incluido_explicito:"Flete incluido",
+   excluido_explicito:"Flete no incluido",a_convenir:"Flete a convenir",
+   no_informado:"Flete no informado"};
+ const pay={contado:"Contado",transferencia:"Transferencia",
+   credito:"Crédito",no_informado:"Pago no informado"};
+ const units=new Set(["unit","bag","box","kg","g","l","ml","m","m2","m3","roll","pack"]);
+ const cards=[],seen=new Set();
+ for(const q of p.ofertas){
+  if(!q||typeof q.label!=="string"||
+     !/^Presupuesto [1-9][0-9]{0,2}$/u.test(q.label)||
+     seen.has(q.label)||!Object.hasOwn(iva,q.iva)||
+     !Object.hasOwn(freight,q.flete)||!Object.hasOwn(pay,q.pago)||
+     !Array.isArray(q.articulos)||q.articulos.length<1||q.articulos.length>25||
+     q.articulosConImporte!==q.articulos.length||
+     !Number.isSafeInteger(q.solicitadosAsignados)||
+     !Number.isSafeInteger(q.respondidosAsignados)||
+     q.respondidosAsignados>q.solicitadosAsignados||
+     q.respondidosAsignados<q.articulos.length||
+     !["parcial","completa_asignada"].includes(q.cobertura))return;
+  const total=money(q.precioDeMaterialesCentavos,q.moneda);
+  if(total===null)return;
+  seen.add(q.label);
+  const card=element("article","preliminar-card");
+  const head=element("div","preliminar-header"),left=element("div");
+  left.append(
+   element("h3","preliminar-heading",q.label),
+   element("p","preliminar-badge",q.cobertura==="parcial"?
+    "Oferta parcial o con importes pendientes":
+    "Artículos asignados con importes acreditados")
+  );
+  const right=element("div","preliminar-total");
+  right.append(element("span","","Suma de artículos con precio verificado"),
+   element("strong","",total));
+  head.append(left,right);card.appendChild(head);
+  const lines=element("ul","preliminar-items"),ids=new Set();
+  for(const line of q.articulos){
+   if(!line||typeof line.itemId!=="string"||ids.has(line.itemId)||
+      typeof line.descripcion!=="string"||line.descripcion.length>500||
+      typeof line.cantidadSolicitada!=="string"||
+      !units.has(line.unidadSolicitada))return;
+   const amount=money(line.importeRenglonCentavos,q.moneda);
+   if(amount===null)return;
+   ids.add(line.itemId);
+   const li=element("li"),description=element("div","detail");
+   description.append(element("strong","",line.descripcion),
+    element("span","","Solicitado: "+line.cantidadSolicitada+" "+
+     line.unidadSolicitada+" · Importe del renglón cotizado"));
+   li.append(description,element("span","money",amount));lines.appendChild(li);
+  }
+  card.appendChild(lines);
+  card.appendChild(element("p","preliminar-conditions",
+   "Artículos asignados con respuesta: "+q.respondidosAsignados+" de "+
+   q.solicitadosAsignados+" · Con importe acreditado: "+q.articulosConImporte+
+   " · "+iva[q.iva]+" · "+freight[q.flete]+" · "+pay[q.pago]+"."));
+  cards.push(card);
+ }
+ for(const card of cards)grid.appendChild(card);
+ displayText("previewCaption",p.ofertas.length+
+  (p.ofertas.length===1?" presupuesto verificado":" presupuestos verificados")+
+  " en orden de recepción anónimo, sin clasificar por precio.");
+ el("previewSection").hidden=false;
+}
 function render(data){
  const d=data&&typeof data==="object"?data:{};
  if(d.state==="not_found"){
@@ -1070,6 +1156,7 @@ function render(data){
  el("offers").replaceChildren();el("receipts").replaceChildren();
  el("finalists").replaceChildren();displayText("equivalence","");
  showPendingRubros(d);
+ showPreliminarMvp322(d);
  showCoverage(d);
  showEconomy(d);
  showItemPrices(d);
