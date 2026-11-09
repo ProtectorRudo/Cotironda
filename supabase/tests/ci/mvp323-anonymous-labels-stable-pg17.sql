@@ -14,8 +14,8 @@ CREATE TABLE cotironda_piloto_privado.participants(
  opted_out_at timestamptz,chat_hmac text,display_label text
 );
 CREATE TABLE cotironda_piloto_privado.requests(
- id uuid PRIMARY KEY,buyer_key text,state text,closes_at timestamptz,
- created_at timestamptz
+ id uuid PRIMARY KEY,buyer_key text,state text,source_hmac text,
+ closes_at timestamptz,created_at timestamptz
 );
 CREATE TABLE cotironda_piloto_privado.invitations(
  request_id uuid,supplier_key text,state text,
@@ -45,6 +45,16 @@ CREATE TABLE cotironda_piloto_privado.ai_dispatch_jobs_mvp222(
  request_id uuid,supplier_key text,state text,finished_at timestamptz
 );
 CREATE TABLE cotironda_piloto_privado.ai_buyer_review_mvp279(request_id uuid,state text);
+-- MVP306 exists in the live closing RPC's alternative authorization branch.
+-- These tables remain empty/OFF; do not invent automatic authorization.
+CREATE TABLE cotironda_piloto_privado.ai_buyer_auto_release_mvp306(
+ request_id uuid,buyer_key text,source_hmac text,approved_at timestamptz
+);
+CREATE TABLE cotironda_piloto_privado.ai_auto_release_gate_mvp306(
+ only_row boolean,enabled boolean,activated_at timestamptz
+);
+INSERT INTO cotironda_piloto_privado.ai_auto_release_gate_mvp306
+ VALUES(true,false,null);
 \ir ../../piloto/mvp227_presupuestos_rubros_ia_privados.sql
 \ir ../../piloto/mvp303_revelar_todos_los_proveedores_al_cierre.sql
 -- Preserve additional security fixes applied to these RPCs in the real
