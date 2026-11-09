@@ -192,17 +192,17 @@ BEGIN
  -- Evidence must belong to the current completed-review source. The read
  -- RPC performs even stricter custody checks before creating a candidate;
  -- this append-only record NEVER promotes or publishes that candidate.
- IF NOT EXISTS(
-  SELECT 1 FROM cotironda_piloto_privado.ai_supplier_review_mvp227 rev
-  JOIN cotironda_piloto_privado.ai_supplier_links_mvp225 link
-   ON link.message_hmac=rev.message_hmac
-     AND link.request_id=rev.request_id
-     AND link.supplier_key=rev.supplier_key
-     AND link.source_sha256=rev.source_sha256
-  WHERE rev.request_id=p_request_id
-    AND rev.message_hmac=p_message_hmac
-    AND rev.source_sha256=p_source_sha256
-    AND rev.state='review' AND rev.finished_at IS NOT NULL
+ -- Revalidate the exact latest, consented, dispatched, source-checked
+ -- encrypted envelope at the moment of append. An old quote cannot
+ -- acquire a new candidate when a newer supplier reply has superseded it.
+ IF NOT EXISTS (
+  SELECT 1 FROM cotironda_piloto_privado.whapi_inbox inbox
+  WHERE inbox.message_hmac=p_message_hmac AND
+   inbox.request_id=p_request_id AND
+   inbox.plaintext_sha256=p_source_sha256 AND
+   public.cotironda_piloto_read_reconciliation_envelope_mvp328(
+    p_request_id,p_message_hmac,inbox.chat_hmac
+   )->>'state'='eligible_encrypted'
  ) THEN RETURN jsonb_build_object('state','not_eligible');END IF;
 
  INSERT INTO cotironda_piloto_privado.ai_reconciliation_attempts_mvp328
