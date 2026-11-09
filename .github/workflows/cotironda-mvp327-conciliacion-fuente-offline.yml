@@ -1,0 +1,37 @@
+name: MVP327 - conciliacion determinista original textual sin IA
+on:
+  pull_request:
+    branches:
+      - feat/mvp174-supplier-packaging-equivalence
+    paths:
+      - 'src/domain/ia-central/conciliacion-original-textual-mvp327.ts'
+      - 'src/domain/ia-central/calificador-cotizaciones-mvp225.ts'
+      - 'src/domain/ia-central/fidelidad-importes-fuente-mvp244.ts'
+      - 'src/domain/ia-central/evidencia-moneda-mvp241.ts'
+      - 'src/domain/ia-central/evidencia-condiciones-mvp242.ts'
+      - 'tests/unit/mvp327-conciliacion-original-sin-ia.test.mjs'
+      - '.github/workflows/cotironda-mvp327-conciliacion-fuente-offline.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  conciliacion-con-evidencia:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Integridad original, importes por linea y no publicacion
+        run: |
+          node --experimental-strip-types --test tests/unit/mvp327-conciliacion-original-sin-ia.test.mjs
+      - name: Verificacion de que el modulo no modifica el ledger ni llama servicios
+        run: |
+          node --check tests/unit/mvp327-conciliacion-original-sin-ia.test.mjs
+          if grep -En 'fetch\(|Deno\.serve|createClient\(|https://|openai|whapi|supabase\.rpc' src/domain/ia-central/conciliacion-original-textual-mvp327.ts | grep -Ev '^.*\* |//|/\*'; then
+            echo 'MVP327 cannot call services'; exit 1
+          fi
+# No secrets, SQL, persisted quotes, paid AI, WhatsApp, deployments or webhooks.

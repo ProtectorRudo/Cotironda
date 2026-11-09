@@ -1,3 +1,9 @@
+## 09/11/2026 — MVP327: auditoría determinista de fuente textual, desarrollo
+
+- Nuevo módulo puro que exige fuente textual íntegra y SHA-256, ronda y último mensaje consistentes, estado histórico `review`, evidencia literal de cantidades, unidad, moneda y precio, y reconciliación del total declarado. Reutiliza guardias económicas MVP225/241/242/244 sin introducir interpretaciones nuevas.
+- Un cotejo positivo solo genera candidato para **auditoría independiente**; jamás modifica el original ni habilita publicación, adjudicación, ranking o envío automático.
+- Pruebas con fuentes ficticias (precios alterados, cargos adicionales, IVA, parcialidad, múltiples totales, versión antigua). 0 uso de IA, WhatsApp, SQL real o deploy. [Decisión 458](docs/458-mvp327-cotejo-original-textual-sin-reproceso.md).
+
 ## 09/11/2026 — MVP326: estado real de revisión comercial publicado en piloto
 
 - SQL `20261109164501`: nueva RPC token-gated `cotironda_piloto_ia_review_status_mvp326`, permisos denegados para `anon/authenticated`, verificado con token inválido y la ronda existente (1 terminal review, 0 processing, 0 verified).
