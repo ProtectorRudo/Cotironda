@@ -22,7 +22,7 @@ function mock({
   assert.equal(opts.redirect,'error');
   assert.equal(opts.cache,'no-store');
   assert.equal(opts.headers.Authorization,'Bearer '+token);
-  assert.match(target,/^https:\/\/gate\.whapi\.cloud\/u);
+  assert.match(target,/^https:\/\/gate\.whapi\.cloud\//u);
   const path=new URL(target).pathname;
   const code=statuses[path]??200;
   const value=path==='/health'?health:
