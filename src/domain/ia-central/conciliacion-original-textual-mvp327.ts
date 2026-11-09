@@ -136,10 +136,21 @@ export async function cotejarOriginalTextualMvp327(
  const sourceLines=snapshot.textoOriginal.split(/\r?\n/u).map(x=>x.trim())
   .filter(x=>x.length>0&&!SUMMARY_LABEL.test(x)&&
    !/^(?:ARS|USD)$/iu.test(x));
- if(!Array.isArray(proposal.oferta.lineas)||
-    sourceLines.some(x=>!proposal.oferta.lineas.some(y=>
-      typeof y?.textoOriginal==='string'&&y.textoOriginal.includes(x))))
-  reasons.push('lineas_de_fuente_sin_representacion');
+ // Inventory is a MULTISET, not a Set. Two identical unpriced source
+ // lines must be cited twice; a single quotation cannot hide duplicates.
+ const quoted=Array.isArray(proposal.oferta.lineas)?
+  proposal.oferta.lineas.flatMap(line=>
+   typeof line?.textoOriginal==='string'?
+    line.textoOriginal.split(/\r?\n/u).map(s=>s.trim()):[]):[];
+ const inventory=new Map<string,number>();
+ for(const line of quoted)inventory.set(line,(inventory.get(line)??0)+1);
+ let omitted=false;
+ for(const line of sourceLines){
+  const count=inventory.get(line)??0;
+  if(count<=0){omitted=true;break}
+  inventory.set(line,count-1);
+ }
+ if(omitted)reasons.push('lineas_de_fuente_sin_representacion');
  if(review.extras.length>0)reasons.push('renglones_adicionales_o_no_asignados');
  if(review.precios.length===0)reasons.push('sin_importes_cotejados');
  if(proposal.oferta.moneda!=='ARS'&&proposal.oferta.moneda!=='USD')
