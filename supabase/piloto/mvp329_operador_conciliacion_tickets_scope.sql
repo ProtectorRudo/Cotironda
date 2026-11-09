@@ -65,7 +65,7 @@ AS $mvp329_issue$
 DECLARE
  op uuid;user_id uuid;sess_id uuid;buyer text;
  secret text;fingerprint text;active_count integer;day_count integer;
- src jsonb;
+ src jsonb;v_now timestamptz;
 BEGIN
  IF p_request_id IS NULL OR
     p_message_hmac IS NULL OR p_message_hmac !~ '^[a-f0-9]{64}$' OR
@@ -100,13 +100,14 @@ BEGIN
  IF active_count>=3 OR day_count>=40
  THEN RETURN jsonb_build_object('state','not_authorized');END IF;
 
+ v_now:=clock_timestamp();
  secret:=encode(extensions.gen_random_bytes(32),'hex');
  fingerprint:=encode(extensions.digest(secret,'sha256'),'hex');
  INSERT INTO cotironda_piloto_privado.operator_reconciliation_tickets_mvp329(
  token_sha256,operator_ref,auth_user_id,auth_session_id,
- request_id,buyer_key,message_hmac,chat_hmac,expires_at)
+ request_id,buyer_key,message_hmac,chat_hmac,issued_at,expires_at)
  VALUES(fingerprint,op,user_id,sess_id,p_request_id,buyer,
-  p_message_hmac,p_chat_hmac,clock_timestamp()+interval '90 seconds');
+  p_message_hmac,p_chat_hmac,v_now,v_now+interval '90 seconds');
  RETURN jsonb_build_object('state','issued','ticket',secret,'expires_in_seconds',90);
 END
 $mvp329_issue$;
