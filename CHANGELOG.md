@@ -1,3 +1,9 @@
+## 09/11/2026 — MVP330: puente de sesión Auth y conciliación interna (desarrollo)
+
+- Módulo privado: verificación remota Supabase getUser JWT, emisión ticket MFA por cliente autenticado, recuperación de propuesta exclusivamente del servidor y consumo de ticket con cliente service_role aislado para cotejo AES MVP328/MVP327.
+- Tests sintéticos de inyección de identidad/propuesta, scope, expiración y denegación, y privacidad de resultados; 0 WhatsApps, 0 OpenAI, sin aprobar ofertas.
+- Sin endpoint HTTP ni conexión productiva de Supabase, sin operador enrolado ni propuestas cargadas; migraciones MVP328/329 no publicadas. [Decisión 461](docs/461-mvp330-puente-privado-auth-operador.md).
+
 ## 09/11/2026 — MVP329: operador con sesión MFA y autorización empresarial (desarrollo)
 
 - Se reutiliza el control real de Supabase `operator_session_mvp267` (Auth AAL2 + sesión no revocada) y se prepara la tabla privada de autorizaciones específicas por empresa, ronda y operador, sin alta automática.
