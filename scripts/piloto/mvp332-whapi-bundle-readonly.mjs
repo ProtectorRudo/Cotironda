@@ -32,8 +32,8 @@ const inside=(root,path)=>path===root||path.startsWith(root+sep);
 function imports(source,moduleName){
  // One pre-existing pinned runtime dependency from the LIVE v70 bundle.
  // This precise npm module is version-pinned and source hashes are frozen.
- const dynamics=[...source.matchAll(/(?:^|[^\\w])import\\s*\\(\\s*['"]([^'"]+)['"]\\s*\\)/gu)];
- const hasDynamic=/(?:^|[^\\w])import\\s*\\(/u.test(source);
+ const dynamics=[...source.matchAll(/(?:^|[^\w])import\s*\(\s*['"]([^'"]+)['"]\s*\)/gu)];
+ const hasDynamic=/(?:^|[^\w])import\s*\(/u.test(source);
  const historicPdf=moduleName===
   'supabase/functions/cotironda-piloto-whapi/supplier-source-pdf-general.ts';
  if(hasDynamic&&!(historicPdf&&dynamics.length===1&&
