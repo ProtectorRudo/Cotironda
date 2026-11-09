@@ -80,7 +80,7 @@ test('MVP326: Edge queries only independently token-gated, service_role-only RPC
  assert.match(sql,/buyer\.opted_out_at IS NULL/u);
  assert.match(sql,/l\.plaintext_sha256=l\.source_sha256/u);
  assert.match(sql,/d\.state='api_accepted'/u);
- assert.match(sql,/r\.finished_at IS NOT NULL/u);
+ assert.match(sql,/rev\.finished_at IS NOT NULL/u);
  assert.match(sql,/REVOKE ALL ON FUNCTION/u);
  assert.match(sql,/TO service_role/u);
  assert.doesNotMatch(sql,/\bUPDATE\b|\bDELETE FROM\b|\bINSERT INTO\b|\bTRUNCATE\b/u);
