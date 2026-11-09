@@ -26,7 +26,8 @@ export async function inspeccionarSandboxWhapiMvp331({
  const report={
   estado:'no_configurado',canal:'no_comprobado',
   canalEsperadoCoincide:false,webhook:'no_comprobado',
-  webhookDeMensajes:false,limites:'no_comprobados',
+  webhookDeMensajes:false,encabezadoAutenticacionConfigurado:false,
+  limites:'no_comprobados',
   chatsConsumidos:null,mensajesIndicador:null,
   solicitudesIndicador:null,verificacionesIndicador:null,
   httpConsultas:0,mensajesEnviados:0,cambiosRealizados:0,
@@ -89,8 +90,15 @@ export async function inspeccionarSandboxWhapiMvp331({
  report.webhookDeMensajes=hooks.some(h=>obj(h)&&
   h.url===expectedWebhook&&h.mode==='body'&&
   Array.isArray(h.events)&&h.events.some(e=>obj(e)&&
-   ['message','messages'].includes(e.type)&&e.method==='post'));
- if(!report.webhookDeMensajes){
+   e.type==='messages'&&e.method==='post'));
+ // Edge v70 requires a custom header on every actionable webhook. Never
+ // inspect or print its value; checking presence does not prove secret match.
+ report.encabezadoAutenticacionConfigurado=hooks.some(h=>obj(h)&&
+  h.url===expectedWebhook&&h.mode==='body'&&obj(h.headers)&&
+  Object.keys(h.headers).some(k=>
+   k.toLowerCase()==='x-cotironda-webhook-key'&&
+   typeof h.headers[k]==='string'&&h.headers[k].length>0));
+ if(!report.webhookDeMensajes||!report.encabezadoAutenticacionConfigurado){
   report.estado='webhook_incompatible';
   return Object.freeze(report);
  }
