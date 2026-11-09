@@ -11,6 +11,8 @@ on:
       - 'piloto/seguimiento-web/site.js'
       - 'piloto/seguimiento-web/site.css'
       - 'tests/unit/mvp322-preliminar-cotizaciones-anonimas.test.mjs'
+      - 'supabase/piloto/mvp323_numeracion_anonima_estable.sql'
+      - 'supabase/tests/ci/mvp323-anonymous-labels-stable-pg17.sql'
       - '.github/workflows/cotironda-mvp322-preliminar-anonimo.yml'
   workflow_dispatch:
 permissions:
@@ -19,6 +21,25 @@ jobs:
   presupuesto-preliminar:
     runs-on: ubuntu-latest
     timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: cotironda_ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: test_only
+      PGDATABASE: cotironda_ci
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -33,8 +54,10 @@ jobs:
           tests/unit/mvp255-seguimiento-comparador-rubros.test.mjs
           tests/unit/mvp227-vista-rubros-comprador.test.mjs
           tests/unit/mvp299-pending-coverage.test.mjs
+      - name: MVP323 - numeracion estable con RPC reales y ROLLBACK de PG17
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/mvp323-anonymous-labels-stable-pg17.sql > /dev/null
       - name: Verificacion estatica de JavaScript del navegador y proxy
         run: |
           node --check piloto/seguimiento-web/api/estado.js
           node --check piloto/seguimiento-web/site.js
-# No secrets, SQL migrations, WhatsApp, external AI calls or deployments.
+# PostgreSQL17 efimero con rollback; sin SQL real, WhatsApp, IA paga ni despliegues.
