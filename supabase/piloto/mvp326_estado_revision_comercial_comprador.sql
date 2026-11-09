@@ -37,13 +37,13 @@ BEGIN
  WITH latest AS (
   SELECT DISTINCT ON (l.supplier_key)
    l.request_id,l.supplier_key,l.message_hmac,l.source_sha256,
-   m.received_at
+   l.kind,m.kind AS received_kind,m.chat_hmac,
+   m.plaintext_sha256,m.received_at
   FROM cotironda_piloto_privado.ai_supplier_links_mvp225 l
   JOIN cotironda_piloto_privado.whapi_inbox m
    ON m.message_hmac=l.message_hmac
     AND m.request_id=l.request_id
     AND m.participant_key=l.supplier_key
-    AND m.kind=l.kind
   JOIN cotironda_piloto_privado.participants supplier
    ON supplier.key=l.supplier_key
     AND supplier.chat_hmac=m.chat_hmac
@@ -53,27 +53,67 @@ BEGIN
    AND supplier.participant_role='supplier'
    AND supplier.consent_at IS NOT NULL AND supplier.opted_out_at IS NULL
    AND d.state='api_accepted' AND d.finished_at<=m.received_at
-   AND l.source_sha256~'^[a-f0-9]{64}$'
-   AND (
-     -- For text, original source SHA is also in inbox.
-     (l.kind='text' AND m.plaintext_sha256=l.source_sha256)
-     OR (
-       -- For documents, avoid exposing amounts and rely on existing
-       -- independently confirmed stored source, not on the message body.
-       l.kind='document' AND EXISTS (
-        SELECT 1 FROM cotironda_piloto_privado.media_archive_mvp095 media
-        WHERE media.message_hmac=l.message_hmac
-         AND media.request_id=l.request_id
-         AND media.participant_key=l.supplier_key
-         AND media.chat_hmac=m.chat_hmac
-         AND media.state='stored'
-         AND media.content_sha256=l.source_sha256
-       )
-     )
-   )
   ORDER BY l.supplier_key,m.received_at DESC,l.message_hmac DESC
  ), classified AS (
   SELECT CASE
+   -- Evaluate integrity AFTER choosing the latest link. A malformed later
+   -- source must shadow the older result, not resurrect it.
+   WHEN l.kind<>l.received_kind OR
+    l.source_sha256 !~ '^[a-f0-9]{64}
+    AND jsonb_typeof(r.summary)='object'
+    THEN 'verified'
+   WHEN r.state='review' AND r.finished_at IS NOT NULL
+    THEN 'review'
+   ELSE 'processing'
+  END AS stage
+  FROM latest l
+  LEFT JOIN cotironda_piloto_privado.ai_supplier_review_mvp227 r
+   ON r.message_hmac=l.message_hmac
+    AND r.request_id=l.request_id
+    AND r.supplier_key=l.supplier_key
+    AND r.source_sha256=l.source_sha256
+ )
+ SELECT count(*) FILTER(WHERE stage<>'invalid')::integer,
+        count(*) FILTER(WHERE stage='review')::integer,
+        count(*) FILTER(WHERE stage='processing')::integer,
+        count(*) FILTER(WHERE stage='verified')::integer
+ INTO v_linked,v_review,v_processing,v_verified
+ FROM classified;
+
+ IF v_linked>25 OR v_review+v_processing+v_verified<>v_linked
+ THEN RETURN jsonb_build_object('state','unavailable');END IF;
+ RETURN jsonb_build_object(
+  'state','estado_comercial_sin_precios',
+  'vinculados',v_linked,
+  'requieren_revision',v_review,
+  'en_proceso',v_processing,
+  'verificados',v_verified,
+  'precios_incluidos',false,
+  'identidades_reveladas',false,
+  'reproceso_automatico',false
+ );
+END
+$mvp326$;
+REVOKE ALL ON FUNCTION
+ public.cotironda_piloto_ia_review_status_mvp326(text)
+ FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION
+ public.cotironda_piloto_ia_review_status_mvp326(text)
+ TO service_role;
+COMMENT ON FUNCTION public.cotironda_piloto_ia_review_status_mvp326(text)
+ IS 'MVP326: protected status-only count of most recent linked supplier replies; no prices, identities or AI retry.';
+ OR NOT (
+     (l.kind='text' AND l.plaintext_sha256=l.source_sha256)
+     OR (l.kind='document' AND EXISTS (
+       SELECT 1 FROM cotironda_piloto_privado.media_archive_mvp095 media
+       WHERE media.message_hmac=l.message_hmac
+        AND media.request_id=l.request_id
+        AND media.participant_key=l.supplier_key
+        AND media.chat_hmac=l.chat_hmac
+        AND media.state='stored'
+        AND media.content_sha256=l.source_sha256
+     ))
+    ) THEN 'invalid'
    WHEN r.state='verified' AND r.finished_at IS NOT NULL
     AND jsonb_typeof(r.summary)='object'
     THEN 'verified'
