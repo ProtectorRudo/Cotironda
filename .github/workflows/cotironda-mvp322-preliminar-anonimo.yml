@@ -1,0 +1,40 @@
+name: MVP322 - presupuestos anonimos y subtotales preliminares
+on:
+  pull_request:
+    branches:
+      - feat/mvp174-supplier-packaging-equivalence
+    paths:
+      - 'src/domain/ia-central/preliminar-anonimo-presupuestos-mvp322.ts'
+      - 'supabase/functions/cotironda-piloto-seguimiento/index.ts'
+      - 'piloto/seguimiento-web/api/estado.js'
+      - 'piloto/seguimiento-web/index.html'
+      - 'piloto/seguimiento-web/site.js'
+      - 'piloto/seguimiento-web/site.css'
+      - 'tests/unit/mvp322-preliminar-cotizaciones-anonimas.test.mjs'
+      - '.github/workflows/cotironda-mvp322-preliminar-anonimo.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  presupuesto-preliminar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Contratos anonimos, parcialidad, calculo BigInt, proxy y DOM
+        run: >-
+          node --experimental-strip-types --test
+          tests/unit/mvp322-preliminar-cotizaciones-anonimas.test.mjs
+          tests/unit/mvp255-seguimiento-comparador-rubros.test.mjs
+          tests/unit/mvp227-vista-rubros-comprador.test.mjs
+          tests/unit/mvp299-pending-coverage.test.mjs
+      - name: Verificacion estatica de JavaScript del navegador y proxy
+        run: |
+          node --check piloto/seguimiento-web/api/estado.js
+          node --check piloto/seguimiento-web/site.js
+# No secrets, SQL migrations, WhatsApp, external AI calls or deployments.
