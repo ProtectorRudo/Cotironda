@@ -4,7 +4,8 @@
  *
  * The active pilot Edge v25 has 29 files; 28 match this source tree exactly.
  * The only authorized change in index.ts is MVP322's import + return field;
- * one additional pure adapter must complete the dependency closure (30).
+ * one pure adapter plus 3 already-imported but omitted transitive sources
+ * must complete the dependency closure (33).
  *
  * Usage: node scripts/piloto/mvp324-bundle-seguimiento-readonly.mjs [--paths]
  */
@@ -19,6 +20,11 @@ export const EDGE_ENTRY_MVP324=
  'supabase/functions/cotironda-piloto-seguimiento/index.ts';
 const ADDITIONAL_MODULE=
  'src/domain/ia-central/preliminar-anonimo-presupuestos-mvp322.ts';
+export const MISSING_TRANSITIVE_MVP324=Object.freeze([
+ 'src/domain/auditoria-condiciones-mvp167.ts',
+ 'src/domain/auditoria-descuentos-mvp166.ts',
+ 'src/domain/comparacion-ofertas.ts'
+]);
 const ACTIVE_INDEX_BLOB_SHA='9c38a10ba6b4ffd726ad2348a748b1598954bffc';
 export const ACTIVE_FILES_MVP324=Object.freeze([
  EDGE_ENTRY_MVP324,
@@ -30,7 +36,7 @@ export const ACTIVE_FILES_MVP324=Object.freeze([
  'src/domain/cotejo-presentaciones-mvp174.ts',
  'src/domain/equivalencia-catalogo-mvp171.ts',
  'src/domain/resumen-economia-comprador-mvp180.ts',
- 'src/domain/resumen-importes-cotizados-comprador-mvp186.ts',
+ 'src/domain/resumen-importes-cotizados-mvp186.ts',
  'src/domain/alternativas-cobertura-mvp189.ts',
  'src/domain/cobertura-importes-cierre-mvp194.ts',
  'src/domain/condiciones-economicas-por-oferta-mvp204.ts',
@@ -111,8 +117,9 @@ export function inspectSeguimientoBundleMvp324(root=REPO){
    }
    if(filePaths.length>40)fail('unexpected_dependency_growth');
  }
- const expected=new Set([...ACTIVE_FILES_MVP324,ADDITIONAL_MODULE]);
- if(expected.size!==30||seen.size!==30||[...expected].some(f=>!seen.has(f))||
+ const expected=new Set([...ACTIVE_FILES_MVP324,ADDITIONAL_MODULE,
+  ...MISSING_TRANSITIVE_MVP324]);
+ if(expected.size!==33||seen.size!==33||[...expected].some(f=>!seen.has(f))||
     [...seen].some(f=>!expected.has(f)))
    fail('dependency_closure_diff:'+[
       ...[...seen].filter(x=>!expected.has(x)),
@@ -123,6 +130,7 @@ export function inspectSeguimientoBundleMvp324(root=REPO){
    entrypoint_path:EDGE_ENTRY_MVP324,
    file_count:seen.size,unchanged_active_files:28,
    new_or_changed_files:[EDGE_ENTRY_MVP324,ADDITIONAL_MODULE],
+   missing_transitive_dependencies:MISSING_TRANSITIVE_MVP324,
    baseline_blob_sha:ACTIVE_INDEX_BLOB_SHA,
    verify_jwt_must_remain_false:true,
    scheduled_jobs_created:false,whapi_touched:false,
