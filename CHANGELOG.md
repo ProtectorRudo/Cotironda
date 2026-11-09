@@ -1,3 +1,9 @@
+## 09/11/2026 — Publicación acotada a piloto del webhook MVP332
+
+- Reemplazada la función de WhatsApp en Supabase `cotironda-piloto` de v70 a v71, ACTIVE: 61/61 fuentes cotejadas con SHA-256. Sin cambios a producción, Whapi, Vercel ni otras Edge.
+- Registradas 3 autorizaciones previas informadas por el dueño (1 comprador y 2 proveedores) con referencia administrativa, respetando bajas y sin falsas firmas WhatsApp; Ailín y Nahuel pasan el check de contacto comercial.
+- Postguard: 0 jobs inciertos, 5 rondas y 30 mensajes inbox preservados; auto-release, lotes y avisos al comprador siguen OFF hasta verificar token/estado Sandbox y recepción entrante nueva. No se ha ensayado un circuito E2E real. [Acta 464](docs/464-mvp332-publicacion-piloto-whapi-v71.md).
+
 ## 09/11/2026 — MVP332: preparación de ruta Whapi de punta a punta (desarrollo)
 
 - Leído en Supabase el código LIVE del webhook v70, con 60 archivos. Comparado 60/60 con GitHub: 57 idénticos y 3 actualizados; se agrega 1 módulo nuevo de destinatarios dinámicos. Paquete candidato total 61.
