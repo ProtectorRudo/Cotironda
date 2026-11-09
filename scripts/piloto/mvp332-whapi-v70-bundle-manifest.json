@@ -319,5 +319,7 @@
       "active_sha256": "5b0f462755045ba59f41148d00a96625595fb845bf9b9be9e2f718ea37c0b94b",
       "candidate_sha256": "5b0f462755045ba59f41148d00a96625595fb845bf9b9be9e2f718ea37c0b94b"
     }
-  ]
+  ],
+  "active_bundle_ezbr_sha256": "f1ffef899e8ce50cac37d667d3df51511a0de8293108501109a14b0c7e891876",
+  "active_verify_jwt": false
 }
