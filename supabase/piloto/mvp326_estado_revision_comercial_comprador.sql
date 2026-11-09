@@ -72,8 +72,8 @@ BEGIN
    WHEN rev.state='verified' AND rev.finished_at IS NOT NULL
       AND jsonb_typeof(rev.summary)='object'
     THEN 'verified'
-   WHEN rev.state='review' AND rev.finished_at IS NOT NULL
-    THEN 'review'
+   WHEN rev.finished_at IS NOT NULL
+    THEN 'review' -- even a terminal verified record with unusable summary
    ELSE 'processing'
   END AS stage
   FROM latest l
