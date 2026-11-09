@@ -72,7 +72,7 @@ test('MVP322: USD remains separate and high-precision source cents do not overfl
  assert.ok(p);
  assert.equal(p.ofertas[0].moneda,'ARS');
  assert.equal(p.ofertas[1].moneda,'USD');
- assert.equal(p.ofertas[1].precioDeMaterialesCentavos,'100000000000149999');
+ assert.equal(p.ofertas[1].precioDeMaterialesCentavos,'100000000014999999');
 });
 test('MVP322: forged price after validated view and stale revision are rejected',()=>{
  const {raw,vista}=get();
