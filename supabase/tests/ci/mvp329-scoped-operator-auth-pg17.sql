@@ -159,7 +159,7 @@ INSERT INTO cotironda_piloto_privado.operator_reconciliation_grants_mvp329
   '22222222-2222-4222-8222-222222222222','buyer_a',true,now()+interval '2 days');
 
 CREATE TEMP TABLE issued_tokens(ticket text NOT NULL);
-GRANT INSERT,SELECT ON issued_tokens TO authenticated,service_role;
+GRANT INSERT,SELECT,TRUNCATE ON issued_tokens TO authenticated,service_role;
 
 -- Real Auth session/MFA conditions are checked by production MVP267 code.
 SELECT set_config('request.jwt.claims',jsonb_build_object(
@@ -206,7 +206,7 @@ BEGIN
  token,'11111111-1111-4111-8111-111111111111',repeat('a',64),repeat('c',64));
  IF a->>'state'<>'claimed_internal' OR
  a->>'actor_subject_sha256' !~ '^[a-f0-9]{64}$' OR
- jsonb_object_length(a)<>5
+ (SELECT count(*) FROM jsonb_object_keys(a))<>5
  THEN RAISE EXCEPTION 'mvp329_claim_invalid_%',a;END IF;
  b:=public.cotironda_piloto_claim_reconciliation_mvp329(
  token,'11111111-1111-4111-8111-111111111111',repeat('a',64),repeat('c',64));
