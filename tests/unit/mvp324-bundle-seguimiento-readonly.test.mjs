@@ -60,7 +60,7 @@ test('MVP324: fails closed if new projection is missing',t=>{
   'const preliminar=preliminarAnonimoPresupuestosMvp322(ai.data,safe);',''
  ));
  assert.throws(()=>inspectSeguimientoBundleMvp324(root),
-  /new_projection_not_exactly_once/u);
+  /source_verified_projection_absent/u);
 });
 test('MVP324: fails closed if import was duplicated or new file removed',t=>{
  const root=fixture(t);
