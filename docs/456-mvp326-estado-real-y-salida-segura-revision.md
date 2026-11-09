@@ -26,6 +26,7 @@ El motivo exacto de la lectura histórica se **perdió** porque el procesador an
 - `supabase/tests/ci/mvp326-review-stage-buyer-pg17.sql`: PostgreSQL17 real aislado con fixtures y **ROLLBACK**: terminal review, procesamiento, oferta verificada, fuente alterada, suplente nuevo, token falso/revocado, ronda cancelada, acceso cruzado y ACL.
 - `tests/unit/mvp326-revision-comercial.test.mjs`: proxy, adaptador, DOM, mensajes, rechazo de campos privados y regresiones.
 - CI `cotironda-mvp326-review-status.yml`: Node22 + PostgreSQL17 sin credenciales ni consumo.
+- Gate heredado MVP324 actualizado con allowlist exacta para dos proyecciones (MVP322 y MVP326), hash del código original inalterado y **34 archivos** en su grafo de importaciones. No abre acceso a módulos arbitrarios ni habilita despliegues. Este número es del bundle fuente de desarrollo, **no** una verificación de archivos instalados en Supabase.
 
 ## Mecanismo seguro de resolución operativa (NO aprobación automática)
 
