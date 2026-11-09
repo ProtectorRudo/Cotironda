@@ -1,3 +1,10 @@
+## 09/11/2026 — MVP325: publicación técnica de vista anónima en Cotironda piloto
+
+- Migración SQL `20261109130018`: RPC MVP227 y MVP303 de etiquetas anónimas estables reemplazadas de forma transaccional y verificadas por hashes, ACL y flags. Sin modificaciones en datos de prueba ni ampliación de acceso.
+- Edge privada de seguimiento v25→**v26 ACTIVE** con código MVP322 y paquete de 33 archivos enviado. API de lectura lista 30: verificación completa de archivos empaquetados pendiente; HTTP real no verificado.
+- Vercel piloto exclusivamente: alias `cotironda-seguimiento-vista-piloto.vercel.app` movido a preview READY `dpl_APjHh976TX7GD2KB3Esrz3YUxgGD`, SHA `9ab239ebc76d`, sin nuevo build ni cambio del proyecto principal.
+- Verificación postpublicación: gates OFF, 0 jobs inseguros, Whapi v70, 3 participantes, 5 rondas y 7 originales; 0 registros de IA Central `verified`, por lo que la prueba E2E de nuevas tarjetas requiere cotización real futura. [Acta 455](docs/455-mvp325-publicacion-piloto-preliminar-sin-envios.md).
+
 ## 09/11/2026 — MVP324: auditoría de dependencias Edge seguimiento, sin despliegue
 
 - Comprobados 29 archivos reales de Edge seguimiento v25 frente a GitHub: 28 idénticos; el único `index.ts` diferente es estrictamente la adición MVP322 y coincide byte a byte con la fuente previa al retirar esa adición.
