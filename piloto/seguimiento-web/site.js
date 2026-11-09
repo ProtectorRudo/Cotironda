@@ -1145,7 +1145,24 @@ function render(data){
  const count=typeof d.received_count==="number"?d.received_count:NaN;
  displayText("count",Number.isSafeInteger(count)&&count>=0?String(count):"—");
  const files=Number(d.files_pending_review);
- displayText("files",Number.isSafeInteger(files)&&files>0?files+" archivo(s) pendiente(s) de verificación.":"");
+ const status=d.estado_revision_ia;
+ const statusOk=status?.state==="estado_comercial_sin_precios"&&
+  status.precios_incluidos===false&&
+  status.identidades_reveladas===false&&
+  status.reproceso_automatico===false&&
+  ["vinculados","requieren_revision","en_proceso","verificados"]
+   .every(k=>Number.isSafeInteger(status[k])&&status[k]>=0&&status[k]<=25)&&
+  status.requieren_revision+status.en_proceso+status.verificados===
+   status.vinculados&&Number.isSafeInteger(count)&&
+  status.vinculados<=count;
+ const inReview=statusOk?status.requieren_revision:0;
+ const processing=statusOk?status.en_proceso:0;
+ displayText("files",inReview>0?
+  inReview+(inReview===1?" respuesta fue analizada y requiere":
+   " respuestas fueron analizadas y requieren")+
+   " revisión comercial. No hay precios acreditados de esas respuestas.":
+  Number.isSafeInteger(files)&&files>0?
+   files+" respuesta(s) sin precios verificados.":"");
  const date=new Date(d.deadline);
  displayText("deadline",Number.isFinite(date.getTime())?
   "Fecha límite: "+date.toLocaleString("es-AR",{
@@ -1177,12 +1194,13 @@ function render(data){
   d.offers.filter(o=>o&&typeof o.label==="string"&&typeof o.text==="string"):[];
  displayText("state",d.state==="waiting"?
   (approved.length?"Ronda abierta · presupuestos anónimos disponibles":
-   d.pendientes_rubros_ia?.respuestas?.length?
-    "Ronda abierta · respuestas recibidas en revisión":
+   inReview>0||d.pendientes_rubros_ia?.respuestas?.length?
+    "Ronda abierta · respuestas recibidas, revisión comercial necesaria":
+   processing>0?"Ronda abierta · cotizaciones en procesamiento":
     "Ronda abierta · esperando presupuestos verificados"):
   (approved.length?"Ronda cerrada · presupuestos disponibles":
-   d.pendientes_rubros_ia?.respuestas?.length?
-    "Ronda cerrada · respuestas recibidas en revisión":
+   inReview>0||d.pendientes_rubros_ia?.respuestas?.length?
+    "Ronda cerrada · respuestas que requieren revisión comercial":
     "Ronda cerrada · sin presupuestos habilitados"));
  if(approved.some(o=>/\b(?:big[\s-]*bag|bols[oó]n(?:es)?)\b/iu.test(o.text))){
   displayText("equivalence","En áridos, BIG BAG o bolsón suele referirse a 1 m³ nominal embolsado. Se respeta cualquier capacidad distinta indicada y no se presume la variedad del material ni su disponibilidad.");
@@ -1191,10 +1209,27 @@ function render(data){
  approved.forEach(o=>el("offers").appendChild(offerCard(o.label,o.text)));
  const pendingCount=Array.isArray(d.pendientes_rubros_ia?.respuestas)?
   d.pendientes_rubros_ia.respuestas.length:0;
- const missing=Math.max(0,Math.min(25,count)-approved.length-pendingCount);
- if(d.state==="waiting"&&Number.isSafeInteger(count)&&count>0)
+ // A pending-rubro card may already represent a terminal review; do not
+ // display or count the same reply as two different supplier responses.
+ const unlistedReview=Math.max(0,inReview-pendingCount);
+ for(let i=0;i<unlistedReview;i++)
+  el("receipts").appendChild(offerCard(
+   "Respuesta procesada · revisión comercial necesaria",
+   "Cotironda ya analizó esta respuesta, pero no pudo acreditar sus importes. "+
+   "El documento original se conserva. No es necesario reenviarlo. "+
+   "Esta respuesta no participa del ranking mientras siga en revisión."));
+ for(let i=0;i<processing;i++)
+  el("receipts").appendChild(offerCard(
+   "Respuesta recibida · procesamiento en curso",
+   "Cotironda recibió la respuesta y todavía no finalizó su verificación. "+
+   "Los precios no se muestran hasta que queden acreditados."));
+ const accounted=approved.length+Math.max(pendingCount,inReview)+processing;
+ const missing=Number.isSafeInteger(count)&&count>0?
+  Math.max(0,Math.min(25,count)-accounted):0;
+ if(d.state==="waiting")
   for(let i=0;i<missing;i++)
-   el("receipts").appendChild(offerCard("Presupuesto recibido","Esperando verificación de su contenido."));
+   el("receipts").appendChild(offerCard("Presupuesto recibido",
+    "Respuesta registrada sin precios verificados. Su estado comercial está pendiente de confirmar."));
  // MVP303: reveal ALL invited business identities once the confirmed
  // round closes, even if nobody produced a price-comparable quote.
  // The bearer-protected RPC independently checked buyer consent, deadline,
