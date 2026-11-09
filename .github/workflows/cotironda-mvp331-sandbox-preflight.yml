@@ -1,0 +1,33 @@
+name: MVP331 - Whapi sandbox free preflight (read-only)
+on:
+  pull_request:
+    branches:
+      - feat/mvp174-supplier-packaging-equivalence
+    paths:
+      - 'scripts/piloto/mvp331-whapi-sandbox-preflight.mjs'
+      - 'tests/unit/mvp331-whapi-sandbox-preflight.test.mjs'
+      - '.github/workflows/cotironda-mvp331-sandbox-preflight.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  sandbox-no-send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Verify health checks don't wake or send
+        run: |
+          node --test tests/unit/mvp331-whapi-sandbox-preflight.test.mjs
+          node --check scripts/piloto/mvp331-whapi-sandbox-preflight.mjs
+          node --check tests/unit/mvp331-whapi-sandbox-preflight.test.mjs
+          if grep -nE "method:[[:space:]]*['\"](POST|PATCH|PUT|DELETE)['\"]|wakeup=true|/messages/(text|document)|/settings/webhook_test" scripts/piloto/mvp331-whapi-sandbox-preflight.mjs; then
+            echo 'MVP331 must remain GET-only with wakeup=false' >&2
+            exit 1
+          fi
+# Never inject WHAPI_TOKEN into CI. No real messages, plan changes, payment or Supabase writes.
