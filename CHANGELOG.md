@@ -1,3 +1,10 @@
+## 09/11/2026 — MVP326: etapa real de revisión comercial en seguimiento (desarrollo)
+
+- Nueva proyección privada token-gated por fuente actual: `requieren_revision`, `en_proceso`, `verificados`, sin importes ni identificadores; RPC exclusiva de service role y validación doble en Edge/proxy.
+- La página deja de presentar una lectura económica terminada en `review` como trabajo «esperando verificación», con mensaje claro y sin exigir reenvío automático al proveedor.
+- Regresión PostgreSQL17 sintética y tests DOM/proxy/privacidad; procedimiento de conciliación manual con evidencia, sin reintentos AI ni alteración de revisión histórica. [Decisión 456](docs/456-mvp326-estado-real-y-salida-segura-revision.md).
+- **No aplicado a Supabase piloto ni publicado en Vercel con esta «Luz verde».**
+
 ## 09/11/2026 — MVP325: publicación técnica de vista anónima en Cotironda piloto
 
 - Migración SQL `20261109130018`: RPC MVP227 y MVP303 de etiquetas anónimas estables reemplazadas de forma transaccional y verificadas por hashes, ACL y flags. Sin modificaciones en datos de prueba ni ampliación de acceso.
