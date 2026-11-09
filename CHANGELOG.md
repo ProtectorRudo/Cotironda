@@ -1,3 +1,9 @@
+## 09/11/2026 — MVP323: corregir etiquetas anónimas cambiantes (solo desarrollo)
+
+- Las RPC de presupuesto al comprador MVP227 y proveedores al cierre MVP303 calculan ordinales estables según la primera verificación privada de cada proveedor, conservando el número ante nuevas respuestas o correcciones en revisión.
+- Se parte de las definiciones exactas del piloto y se protege el reemplazo por hash SHA256; no se modifican contratos de privacidad o flete/IVA.
+- Nueva prueba de ambas RPC reales en PostgreSQL17 sintético comprueba 2→3 proveedores, retención de número, revisión no acreditada, cierre, permisos y ROLLBACK. Sin SQL en piloto ni WhatsApp. [Decisión 453](docs/453-mvp323-numeracion-anonima-estable.md), [Issue #720](https://github.com/ProtectorRudo/Cotironda/issues/720).
+
 ## 09/11/2026 — MVP322: vista preliminar anónima de importes por artículo (desarrollo)
 
 - Añadida proyección de precio de renglón verificado y suma por presupuesto anónimo, con cantidades de cobertura asignada y condiciones originales. No confundir subtotal parcial con total final ni ordenar por sumas de coberturas distintas.
