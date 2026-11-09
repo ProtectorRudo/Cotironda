@@ -1,0 +1,37 @@
+name: MVP332 - Whapi pilot v70 rollout candidate immutable gate
+on:
+  pull_request:
+    branches:
+      - feat/mvp174-supplier-packaging-equivalence
+    paths:
+      - 'scripts/piloto/mvp332-whapi-v70-bundle-manifest.json'
+      - 'scripts/piloto/mvp332-whapi-bundle-readonly.mjs'
+      - 'tests/unit/mvp332-whapi-rollout-bundle.test.mjs'
+      - '.github/workflows/cotironda-mvp332-whapi-pilot-gate.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  immutable-bundle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288ca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Verify exact release candidate pinned to 60-file active v70
+        run: |
+          node --check scripts/piloto/mvp332-whapi-bundle-readonly.mjs
+          node --check tests/unit/mvp332-whapi-rollout-bundle.test.mjs
+          node scripts/piloto/mvp332-whapi-bundle-readonly.mjs
+          node --test tests/unit/mvp332-whapi-rollout-bundle.test.mjs
+      - name: Prevent accidental send/deployment code in gate
+        run: |
+          if grep -nE "gate.whapi.cloud|service_role|supabase.functions.deploy|fetch\\(|process.env.COTIRONDA" scripts/piloto/mvp332-whapi-bundle-readonly.mjs; then
+            echo 'Bundle gate must not call network, send WhatsApp, or access credentials' >&2
+            exit 1
+          fi
+# No real secrets, no Supabase writes, no WhatsApp, no OpenAI, no deployment.
