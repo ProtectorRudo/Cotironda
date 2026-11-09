@@ -1,3 +1,9 @@
+## 09/11/2026 — MVP332: preparación de ruta Whapi de punta a punta (desarrollo)
+
+- Leído en Supabase el código LIVE del webhook v70, con 60 archivos. Comparado 60/60 con GitHub: 57 idénticos y 3 actualizados; se agrega 1 módulo nuevo de destinatarios dinámicos. Paquete candidato total 61.
+- Manifiesto SHA-256 de 60 fuentes en servicio y 61 candidatas; auditor offline con control estricto del grafo, tests sintéticos y CI. SQL de preflight agregado y probado solo lectura contra cotironda-piloto.
+- Detectados bloqueos reales: 0 entradas recientes en inbox, 0 consentimiento vigente de teléfonos de proveedores, gates MVP306/314/315 OFF, 0 cotizaciones IA verified; falta Whapi AUTH/cupo/token renovado verificados y E2E. Sin despliegue, mensajes, pagos ni cambios de Supabase. [Acta 463](docs/463-mvp332-piloto-e2e-bundle-whapi-preparacion.md).
+
 ## 09/11/2026 — MVP331: Sandbox Whapi gratuito y diagnóstico sin envíos (desarrollo)
 
 - Confirmada documentación oficial de plan gratuito Developer Sandbox, 5 chats mensuales y control separado del estado del canal.
