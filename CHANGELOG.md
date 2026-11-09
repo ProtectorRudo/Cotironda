@@ -1,3 +1,10 @@
+## 09/11/2026 — MVP329: operador con sesión MFA y autorización empresarial (desarrollo)
+
+- Se reutiliza el control real de Supabase `operator_session_mvp267` (Auth AAL2 + sesión no revocada) y se prepara la tabla privada de autorizaciones específicas por empresa, ronda y operador, sin alta automática.
+- RPC autenticada que entrega un ticket temporal aleatorio de un solo uso y RPC service_role que lo consume y valida nuevamente la autorización; el actor de la auditoría privada se deriva del Auth user real persistido.
+- Biblioteca interna MVP329 conectada a la custodia AES del MVP328, sin ruta HTTP, original en navegador, publicación, llamadas IA, envíos Whapi ni promoción económica; pruebas PG17 y Node con datos ficticios. [Decisión 460](docs/460-mvp329-operador-mfa-permisos-empresa-ticket.md).
+- **No publicado en piloto** y ningún operador real enrolado.
+
 ## 09/11/2026 — MVP328: recuperación cifrada y registro de evidencia (desarrollo)
 
 - Preparados SQL de lectura exacta de última fuente y registro privado append-only con ACL cerrada, RLS, idempotencia y bloqueo de UPDATE/DELETE/TRUNCATE; no incluye aprobación económica.
