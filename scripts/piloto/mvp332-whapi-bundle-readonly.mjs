@@ -29,9 +29,9 @@ const fail=code=>{throw Error('mvp332_whapi_bundle:'+code)};
 const hash=s=>createHash('sha256').update(s,'utf8').digest('hex');
 const inside=(root,path)=>path===root||path.startsWith(root+sep);
 
-function imports(source){
+function imports(source,moduleName){
  if(/(?:^|[^\w])import\s*\(/u.test(source))
-  fail('dynamic_import_not_reviewed');
+  fail('dynamic_import_not_reviewed:'+moduleName);
  const out=[];
  const statements=/(?:^|\n)\s*(?:import|export)\s+[\s\S]*?;/gu;
  for(const m of source.matchAll(statements)){
@@ -92,7 +92,7 @@ export function inspeccionarWebhookMvp332(root=ROOT){
   if(hash(content)!==expected.get(name))
    fail('candidate_hash_drift:'+name);
   seen.add(name);
-  for(const spec of imports(content)){
+  for(const spec of imports(content,name)){
    if(/[?#]/u.test(spec))fail('import_query_not_reviewed');
    const target=resolve(dirname(full),spec);
    if(!inside(abs,target))fail('import_path_traversal');
