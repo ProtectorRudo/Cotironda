@@ -1,3 +1,9 @@
+## 09/11/2026 — MVP328: recuperación cifrada y registro de evidencia (desarrollo)
+
+- Preparados SQL de lectura exacta de última fuente y registro privado append-only con ACL cerrada, RLS, idempotencia y bloqueo de UPDATE/DELETE/TRUNCATE; no incluye aprobación económica.
+- Biblioteca interna que comprueba AAD AES-GCM, SHA-256 del original, vigencia de la fuente, pedido asignado y cotejador MVP327; solo devuelve estado y registra hashes de evidencia, sin exponer el original.
+- Pruebas PG17+Node22 con datos sintéticos; faltan adaptador real de autenticación del operador y su autorización por empresa, archivos no textuales y validación E2E. **Sin publicar ni alterar la ronda histórica.** [Decisión 459](docs/459-mvp328-custodia-cifrada-y-registro-auditable.md).
+
 ## 09/11/2026 — MVP327: auditoría determinista de fuente textual, desarrollo
 
 - Nuevo módulo puro que exige fuente textual íntegra y SHA-256, ronda y último mensaje consistentes, estado histórico `review`, evidencia literal de cantidades, unidad, moneda y precio, y reconciliación del total declarado. Reutiliza guardias económicas MVP225/241/242/244 sin introducir interpretaciones nuevas.
