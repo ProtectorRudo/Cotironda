@@ -158,6 +158,56 @@ BEGIN
  IF NOT v THEN RAISE EXCEPTION 'mvp328_truncate_should_be_immutable';END IF;
 END $test$;
 
+-- Consent, buyer cancellation, source integrity and dispatch are
+-- independent authorization barriers (not merely JS flags).
+UPDATE cotironda_piloto_privado.participants SET opted_out_at=now()
+ WHERE key='buyer_a';
+DO $buyer_denial$
+BEGIN
+ IF public.cotironda_piloto_read_reconciliation_envelope_mvp328(
+ '11111111-1111-4111-8111-111111111111',repeat('a',64),repeat('c',64))->>'state'<>'not_found'
+ THEN RAISE EXCEPTION 'mvp328_buyer_optout_leak';END IF;
+END $buyer_denial$;
+UPDATE cotironda_piloto_privado.participants SET opted_out_at=NULL WHERE key='buyer_a';
+UPDATE cotironda_piloto_privado.participants SET opted_out_at=now()
+ WHERE key='supplier_a';
+DO $supplier_denial$
+BEGIN
+ IF public.cotironda_piloto_read_reconciliation_envelope_mvp328(
+ '11111111-1111-4111-8111-111111111111',repeat('a',64),repeat('c',64))->>'state'<>'not_found'
+ THEN RAISE EXCEPTION 'mvp328_supplier_optout_leak';END IF;
+END $supplier_denial$;
+UPDATE cotironda_piloto_privado.participants SET opted_out_at=NULL WHERE key='supplier_a';
+UPDATE cotironda_piloto_privado.requests SET state='cancelled'
+ WHERE id='11111111-1111-4111-8111-111111111111';
+DO $round_denial$
+BEGIN
+ IF public.cotironda_piloto_read_reconciliation_envelope_mvp328(
+ '11111111-1111-4111-8111-111111111111',repeat('a',64),repeat('c',64))->>'state'<>'not_found'
+ THEN RAISE EXCEPTION 'mvp328_cancelled_round_read';END IF;
+END $round_denial$;
+UPDATE cotironda_piloto_privado.requests SET state='prepared'
+ WHERE id='11111111-1111-4111-8111-111111111111';
+UPDATE cotironda_piloto_privado.whapi_inbox SET plaintext_sha256=repeat('f',64)
+ WHERE message_hmac=repeat('a',64);
+DO $hash_denial$
+BEGIN
+ IF public.cotironda_piloto_read_reconciliation_envelope_mvp328(
+ '11111111-1111-4111-8111-111111111111',repeat('a',64),repeat('c',64))->>'state'<>'not_found'
+ THEN RAISE EXCEPTION 'mvp328_source_hash_tamper';END IF;
+END $hash_denial$;
+UPDATE cotironda_piloto_privado.whapi_inbox SET plaintext_sha256=repeat('d',64)
+ WHERE message_hmac=repeat('a',64);
+UPDATE cotironda_piloto_privado.ai_dispatch_jobs_mvp222 SET state='uncertain'
+ WHERE supplier_key='supplier_a';
+DO $dispatch_denial$
+BEGIN
+ IF public.cotironda_piloto_read_reconciliation_envelope_mvp328(
+ '11111111-1111-4111-8111-111111111111',repeat('a',64),repeat('c',64))->>'state'<>'not_found'
+ THEN RAISE EXCEPTION 'mvp328_no_accepted_dispatch_leak';END IF;
+END $dispatch_denial$;
+UPDATE cotironda_piloto_privado.ai_dispatch_jobs_mvp222 SET state='api_accepted'
+ WHERE supplier_key='supplier_a';
 -- Later linked document shadows old text, even when it has no review.
 INSERT INTO cotironda_piloto_privado.whapi_inbox VALUES
 (repeat('b',64),'11111111-1111-4111-8111-111111111111','supplier_a',repeat('c',64),
