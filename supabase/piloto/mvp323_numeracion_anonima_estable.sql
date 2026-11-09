@@ -21,10 +21,12 @@ BEGIN
  THEN RAISE EXCEPTION 'mvp323_ledger_missing';END IF;
 END $mvp323_guard$;
 
-CREATE OR REPLACE FUNCTION public.cotironda_piloto_ia_buyer_rubros_mvp227(
- p_token_hash text
-) RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO ''
-AS $fn$
+CREATE OR REPLACE FUNCTION public.cotironda_piloto_ia_buyer_rubros_mvp227(p_token_hash text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
 DECLARE v_request uuid;v_state text;v_items jsonb;v_quotes jsonb;
  v_received int;v_pending int;
 BEGIN
@@ -74,9 +76,6 @@ BEGIN
   JOIN cotironda_piloto_privado.ai_supplier_review_mvp227 rev
    ON rev.message_hmac=latest.message_hmac AND rev.state='verified'
  ), first_verified AS (
-  -- A sender's very first VERIFIED source is immutable once committed.
-  -- Later offers cannot renumber earlier verified suppliers, even if the
-  -- newest source is pending and therefore hidden from public offers.
   SELECT r.supplier_key,min(r.finished_at) AS first_at
   FROM cotironda_piloto_privado.ai_supplier_review_mvp227 r
   WHERE r.request_id=v_request AND r.state='verified'
@@ -103,12 +102,14 @@ BEGIN
   'pendientes_revision',v_pending,'ranking_global_permitido',false,
   'adjudicacion_automatica',false,'contactos_revelados',false);
 END
-$fn$;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.cotironda_piloto_all_suppliers_closed_mvp303(
- p_token_hash text
-) RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER
-SET search_path='' AS $mvp303$
+CREATE OR REPLACE FUNCTION public.cotironda_piloto_all_suppliers_closed_mvp303(p_token_hash text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
 DECLARE
  v_request record;v_result jsonb;v_invited int;v_visible int;
 BEGIN
@@ -119,8 +120,10 @@ BEGIN
  FROM cotironda_piloto_privado.buyer_tracking_mvp091 t
  JOIN cotironda_piloto_privado.requests r ON r.id=t.request_id
  JOIN cotironda_piloto_privado.ai_shadow_requests_mvp221 sh ON sh.request_id=r.id
- JOIN cotironda_piloto_privado.ai_buyer_review_mvp279 br
-  ON br.request_id=r.id AND br.state='confirmed'
+ -- Mantener versiones históricas confirmadas y agregar SOLO rondas
+ -- prospectivas MVP306 con autorización original inmutable y habilitada.
+ -- El comprador sigue anónimo para el proveedor en ambas rutas.
+
  JOIN cotironda_piloto_privado.participants buyer
   ON buyer.key=r.buyer_key AND buyer.participant_role='buyer'
   AND buyer.consent_at IS NOT NULL AND buyer.opted_out_at IS NULL
@@ -128,7 +131,21 @@ BEGIN
   ON gate.only_row AND gate.enabled AND gate.activated_at<=now()
   AND r.created_at>=gate.activated_at
  WHERE t.token_hash=p_token_hash AND t.revoked_at IS NULL
-   AND t.expires_at>now();
+   AND t.expires_at>now()
+   AND (
+     EXISTS(SELECT 1 FROM cotironda_piloto_privado.ai_buyer_review_mvp279 br
+       WHERE br.request_id=r.id AND br.state='confirmed')
+     OR EXISTS(
+       SELECT 1 FROM cotironda_piloto_privado.ai_buyer_auto_release_mvp306 auto
+       JOIN cotironda_piloto_privado.ai_auto_release_gate_mvp306 g
+         ON g.only_row AND g.enabled AND g.activated_at IS NOT NULL
+       WHERE auto.request_id=r.id AND auto.buyer_key=r.buyer_key
+         AND auto.source_hmac=r.source_hmac
+         AND r.created_at>=g.activated_at
+         AND auto.approved_at>=g.activated_at
+         AND auto.approved_at<r.closes_at
+     )
+   );
  IF NOT FOUND THEN RETURN jsonb_build_object('state','not_found');END IF;
  IF v_request.state<>'closed' OR v_request.closes_at>now()
  THEN RETURN jsonb_build_object('state','not_ready');END IF;
@@ -137,9 +154,8 @@ BEGIN
  WHERE i.request_id=v_request.id AND i.state='prepared';
  IF v_invited>100 THEN RETURN jsonb_build_object('state','capacity_exceeded');END IF;
 
- -- Same FIRST VERIFIED source ordinal as buyer_rubros MVP323.
- -- Keep stable slots across new verified offers and subsequent corrections.
- -- Unverified suppliers NEVER receive a numeric offer label.
+ -- Same stable first-verified label for buyer and post-close view.
+ -- Unverified answers have no label; old verification reserves its slot.
  WITH latest AS (
   SELECT DISTINCT ON (ln.supplier_key)
    ln.supplier_key,ln.message_hmac,m.received_at
@@ -222,7 +238,7 @@ BEGIN
   'ranking_global_permitido',false,
   'adjudicacion_automatica',false,
   'mensajes_enviados',false);
-END $mvp303$;
+END $function$;
 
 -- Reassert the existing service-role-only ACL without broadening access.
 REVOKE ALL ON FUNCTION
