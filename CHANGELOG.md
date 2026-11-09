@@ -1,3 +1,10 @@
+## 08/11/2026 — MVP320: preflight del piloto sin confirmación (solo desarrollo)
+
+- SQL SELECT ejecutado en Supabase piloto: PostgreSQL 17, 7 originales, MVP309/310/312/313/314/315 sin instalar, auto-release MVP306 OFF; IA/despacho heredado y flags WhatsApp ON, sin ronda prospectiva auto liberada.
+- Comprobación de contrato exacto y no certificación E2E, con Node22 + CI sin claves. No ejecuta Whapi ni altera DB.
+- Sandbox gratis confirmado por operador (1/150 mensajes, 3/5 chats, 53/1000 llamadas); los tres chats no se han conciliado. El token expuesto en captura no se usó ni rotó, a petición del usuario.
+- [Decisión 450](docs/450-mvp320-preflight-sin-confirmacion-sandbox.md) · [Issue #716](https://github.com/ProtectorRudo/Cotironda/issues/716). No publicar ni considerar listo el circuito real.
+
 ## 08/11/2026 — MVP318: camino gratuito de respaldo y restauración comprobable (solo desarrollo)
 
 - Supabase piloto: 94 tablas propias, 0 usuarios Auth actuales y 7 archivos privados Storage; solo lectura, sin exponer registros ni contactos.
