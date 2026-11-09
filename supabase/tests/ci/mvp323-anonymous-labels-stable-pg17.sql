@@ -170,7 +170,7 @@ END $test$;
 INSERT INTO cotironda_piloto_privado.whapi_inbox
  (message_hmac,request_id,participant_key,chat_hmac,received_at,plaintext_sha256)
  VALUES(repeat('1',64),'11111111-1111-4111-8111-111111111111','proveedor_a',
- repeat('1',64),now(),repeat('1',64));
+ repeat('1',64),now()-interval '2 minutes',repeat('1',64));
 INSERT INTO cotironda_piloto_privado.ai_supplier_links_mvp225
  VALUES(repeat('1',64),'11111111-1111-4111-8111-111111111111',
  'proveedor_a',repeat('1',64),'text','awaiting_semantic_review');
@@ -188,6 +188,58 @@ BEGIN
     <>'Presupuesto 2,Presupuesto 3'
  THEN RAISE EXCEPTION 'mvp323_pending_revision_renumbered_%',d->'ofertas';END IF;
 END $test$;
+-- A's corrected source is now source-verified with a different price:
+-- the label MUST return as #1, while B/C never move or inherit A's price.
+INSERT INTO cotironda_piloto_privado.whapi_inbox
+ (message_hmac,request_id,participant_key,chat_hmac,received_at,plaintext_sha256)
+ VALUES(repeat('9',64),'11111111-1111-4111-8111-111111111111','proveedor_a',
+ repeat('1',64),now()-interval '1 minute',repeat('9',64));
+INSERT INTO cotironda_piloto_privado.ai_supplier_links_mvp225
+ VALUES(repeat('9',64),'11111111-1111-4111-8111-111111111111',
+ 'proveedor_a',repeat('9',64),'text','awaiting_semantic_review');
+INSERT INTO cotironda_piloto_privado.ai_supplier_review_mvp227
+ (message_hmac,request_id,supplier_key,source_sha256,state,reason_code,summary,finished_at)
+ SELECT repeat('9',64),'11111111-1111-4111-8111-111111111111',
+ 'proveedor_a',repeat('9',64),'verified','source_and_math_checked',
+ jsonb_set(summary,'{precios,0,centavos}','"77777"'::jsonb),now()
+ FROM cotironda_piloto_privado.ai_supplier_review_mvp227
+ WHERE message_hmac=repeat('a',64);
+DO $reverified$
+DECLARE d jsonb;
+BEGIN
+ d:=public.cotironda_piloto_ia_buyer_rubros_mvp227(repeat('e',64));
+ IF jsonb_array_length(d->'ofertas')<>3 OR
+    (d->'ofertas'->0->>'label')<>'Presupuesto 1' OR
+    (d->'ofertas'->1->>'label')<>'Presupuesto 2' OR
+    (d->'ofertas'->2->>'label')<>'Presupuesto 3' OR
+    (d->'ofertas'->0->'precios'->0->>'centavos')<>'77777' OR
+    (d->'ofertas'->1->'precios'->0->>'centavos')<>'20000' OR
+    (d->'ofertas'->2->'precios'->0->>'centavos')<>'10000'
+ THEN RAISE EXCEPTION 'mvp323_reverified_correction_lost_label_or_mixed_price_%',d->'ofertas';END IF;
+END $reverified$;
+-- The next uncertain quote must hide A again WITHOUT exposing stale
+-- amount 77777 and without renumbering B/C. At close A remains review.
+INSERT INTO cotironda_piloto_privado.whapi_inbox
+ (message_hmac,request_id,participant_key,chat_hmac,received_at,plaintext_sha256)
+ VALUES(repeat('8',64),'11111111-1111-4111-8111-111111111111','proveedor_a',
+ repeat('1',64),now(),repeat('8',64));
+INSERT INTO cotironda_piloto_privado.ai_supplier_links_mvp225
+ VALUES(repeat('8',64),'11111111-1111-4111-8111-111111111111',
+ 'proveedor_a',repeat('8',64),'text','awaiting_semantic_review');
+INSERT INTO cotironda_piloto_privado.ai_supplier_review_mvp227
+ (message_hmac,request_id,supplier_key,source_sha256,state,reason_code,summary,finished_at)
+ VALUES(repeat('8',64),'11111111-1111-4111-8111-111111111111',
+ 'proveedor_a',repeat('8',64),'review','conditions_need_review',NULL,now());
+DO $hidden_again$
+DECLARE d jsonb;
+BEGIN
+ d:=public.cotironda_piloto_ia_buyer_rubros_mvp227(repeat('e',64));
+ IF jsonb_array_length(d->'ofertas')<>2 OR
+    (d->'ofertas'->0->>'label')<>'Presupuesto 2' OR
+    (d->'ofertas'->1->>'label')<>'Presupuesto 3' OR
+    d::text LIKE '%77777%'
+ THEN RAISE EXCEPTION 'mvp323_second_pending_leaked_or_renumbered_%',d->'ofertas';END IF;
+END $hidden_again$;
 -- At confirmed closing, seller names and their corresponding verified
 -- anonymous labels must still be coherent. Buyer contact never revealed.
 UPDATE cotironda_piloto_privado.all_supplier_reveal_activation_mvp303
