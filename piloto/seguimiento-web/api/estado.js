@@ -158,6 +158,34 @@ function buyerView(parsed){
       state:"contactos_consentidos_al_cierre",contactos:rows
     };
   }
+  // MVP326: buyer-safe stage of the LATEST source; an economic review
+  // completed with failure is NOT an in-flight job. No source or diagnosis.
+  const status=parsed.estado_revision_ia;
+  if(["waiting","closed"].includes(parsed.state)&&
+     same(status,["state","vinculados","requieren_revision",
+      "en_proceso","verificados","precios_incluidos",
+      "identidades_reveladas","reproceso_automatico"])&&
+     status.state==="estado_comercial_sin_precios"&&
+     status.precios_incluidos===false&&
+     status.identidades_reveladas===false&&
+     status.reproceso_automatico===false&&
+     ["vinculados","requieren_revision","en_proceso","verificados"]
+      .every(k=>Number.isSafeInteger(status[k])&&status[k]>=0&&status[k]<=25)&&
+     status.requieren_revision+status.en_proceso+status.verificados===
+       status.vinculados&&
+     Number.isSafeInteger(safe.received_count)&&
+     status.vinculados<=safe.received_count){
+    safe.estado_revision_ia={
+      state:"estado_comercial_sin_precios",
+      vinculados:status.vinculados,
+      requieren_revision:status.requieren_revision,
+      en_proceso:status.en_proceso,
+      verificados:status.verificados,
+      precios_incluidos:false,
+      identidades_reveladas:false,
+      reproceso_automatico:false
+    };
+  }
   if(!opened)return safe;
 
   // Preserve all reviewed offer text faithfully, without allowing extra
