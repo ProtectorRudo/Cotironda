@@ -57,6 +57,8 @@ export function inspeccionarWebhookMvp332(root=ROOT){
  if(manifest.kind!=='cotironda_mvp332_webhook_rollout_manifest'||
     manifest.project_ref!=='ilggkalaafhtiysyzlmg'||
     manifest.live_edge_version!==70||
+    manifest.active_bundle_ezbr_sha256!=='f1ffef899e8ce50cac37d667d3df51511a0de8293108501109a14b0c7e891876'||
+    manifest.active_verify_jwt!==false||
     manifest.live_file_count!==60||
     manifest.candidate_file_count!==61||
     manifest.entrypoint!==ENTRY||
