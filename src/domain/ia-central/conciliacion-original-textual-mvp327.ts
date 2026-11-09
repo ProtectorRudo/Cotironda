@@ -128,6 +128,18 @@ export async function cotejarOriginalTextualMvp327(
   review=evaluarCotizacionMvp225(proposal.pedido,proposal.oferta);
  }catch{return denied('datos_de_propuesta_invalidos')}
  const reasons=[...review.motivos];
+ // A source may contain unpriced but commercially relevant products.
+ // Matching only monetary literals is insufficient: every substantive
+ // original line must appear verbatim in the proposed quoted lines.
+ // Totals are checked independently below; a currency-only header isn't
+ // an article. Unknown explanatory lines must not silently disappear.
+ const sourceLines=snapshot.textoOriginal.split(/\r?\n/u).map(x=>x.trim())
+  .filter(x=>x.length>0&&!SUMMARY_LABEL.test(x)&&
+   !/^(?:ARS|USD)$/iu.test(x));
+ if(!Array.isArray(proposal.oferta.lineas)||
+    sourceLines.some(x=>!proposal.oferta.lineas.some(y=>
+      typeof y?.textoOriginal==='string'&&y.textoOriginal.includes(x))))
+  reasons.push('lineas_de_fuente_sin_representacion');
  if(review.extras.length>0)reasons.push('renglones_adicionales_o_no_asignados');
  if(review.precios.length===0)reasons.push('sin_importes_cotejados');
  if(proposal.oferta.moneda!=='ARS'&&proposal.oferta.moneda!=='USD')
