@@ -1,0 +1,28 @@
+name: MVP320 - diagnostico de piloto read-only sin confirmacion
+on:
+  pull_request:
+    branches: [feat/mvp174-supplier-packaging-equivalence]
+    paths:
+      - 'scripts/piloto/mvp320-*'
+      - 'tests/unit/mvp320-*'
+      - 'docs/450-*'
+      - '.github/workflows/cotironda-mvp320-preflight-piloto.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  read-only-preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Verify sanitized preflight and zero-side-effect SQL
+        run: |
+          node --test tests/unit/mvp320-preflight-sin-confirmacion.test.mjs
+          node --experimental-strip-types --test tests/unit/mvp300-pilot-e2e-readonly-gate.test.mjs
+# No connected DB, real personal data, WhatsApp, provider calls or payment.
