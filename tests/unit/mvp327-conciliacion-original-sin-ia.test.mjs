@@ -164,3 +164,13 @@ test('MVP327: claiming IVA included without proof is rejected',async()=>{
  assert.ok(r.motivos.includes('condicion_iva_sin_evidencia'));
  assert.equal(r.sumatoriaMaterialesCentavos,null);
 });
+
+test('MVP327: even an unpriced extra product must never vanish from original',async()=>{
+ const x=fixture();
+ x.snapshot.textoOriginal+='\n10 bolsas de cal extra, sin precio';
+ reconcileSource(x);
+ const r=await cotejarOriginalTextualMvp327(x.snapshot,x.proposal);
+ assert.equal(r.state,'requiere_evidencia');
+ assert.ok(r.motivos.includes('lineas_de_fuente_sin_representacion'));
+ assert.equal(r.sumatoriaMaterialesCentavos,null);
+});
