@@ -187,6 +187,13 @@ BEGIN
  '11111111-1111-4111-8111-111111111111',repeat('a',64),repeat('0',64))->>'state'
  <>'not_authorized'
  THEN RAISE EXCEPTION 'mvp329_wrong_supplier_chat';END IF;
+
+END $valid_issue$;
+RESET ROLE;
+-- ACL metadata is inspected by the test owner, not by a role that lacks
+-- USAGE on the intentionally private schema (which is itself a guard).
+DO $acl$
+BEGIN
  IF has_table_privilege('authenticated',
   'cotironda_piloto_privado.operator_reconciliation_grants_mvp329','INSERT') OR
  has_table_privilege('authenticated',
@@ -194,8 +201,7 @@ BEGIN
  has_function_privilege('authenticated',
   'public.cotironda_piloto_claim_reconciliation_mvp329(text,uuid,text,text)','EXECUTE')
  THEN RAISE EXCEPTION 'mvp329_bad_client_acl';END IF;
-END $valid_issue$;
-RESET ROLE;
+END $acl$;
 
 SET ROLE service_role;
 DO $consume$
