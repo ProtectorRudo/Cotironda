@@ -1,0 +1,37 @@
+name: MVP330 - Auth operator private bridge
+on:
+  pull_request:
+    branches:
+      - feat/mvp174-supplier-packaging-equivalence
+    paths:
+      - 'src/domain/ia-central/servicio-operador-conciliacion-mvp330.ts'
+      - 'tests/unit/mvp330-private-operator-bridge.test.mjs'
+      - '.github/workflows/cotironda-mvp330-private-bridge.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  worker-no-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Synthetic Auth, ticket, AES and no-release tests
+        run: |
+          node --experimental-strip-types --test tests/unit/mvp330-private-operator-bridge.test.mjs
+          node --experimental-strip-types --test tests/unit/mvp329-operator-reconciliation-ticket.test.mjs
+          node --experimental-strip-types --test tests/unit/mvp328-internal-custody-audit.test.mjs
+          node --experimental-strip-types --test tests/unit/mvp327-conciliacion-original-sin-ia.test.mjs
+      - name: Syntax and no accidental production integrations
+        run: |
+          node --check tests/unit/mvp330-private-operator-bridge.test.mjs
+          if grep -nE 'https?://|sendMessage|fetch\(|process\.env|NEXT_PUBLIC_|setTimeout' src/domain/ia-central/servicio-operador-conciliacion-mvp330.ts; then
+            echo 'MVP330 must remain isolated from HTTP, secrets and dispatch' >&2
+            exit 1
+          fi
+# No Supabase pilot writes, no users, no Vercel, OpenAI, Whapi or cron.
