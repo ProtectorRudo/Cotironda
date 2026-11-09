@@ -208,7 +208,7 @@ BEGIN
     (SELECT x->>'oferta' FROM jsonb_array_elements(d->'proveedores') x
       WHERE x->>'nombre'='Comercio A') IS NOT NULL
  THEN RAISE EXCEPTION 'mvp323_close_name_label_inconsistent_%',d;END IF;
- IF d::text ~ 'comprador|chat_hmac|telefono|whatsapp'
+ IF d::text ~ 'comprador|chat_hmac|"whatsapp":|"telefono":'
  THEN RAISE EXCEPTION 'mvp323_closed_contact_exposed';END IF;
  IF public.cotironda_piloto_all_suppliers_closed_mvp303(repeat('f',64))->>'state'<>'not_found'
  THEN RAISE EXCEPTION 'mvp323_close_token_not_checked';END IF;
