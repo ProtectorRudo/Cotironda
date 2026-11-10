@@ -87,6 +87,45 @@ test('historical DOCUMENT checks binary SHA and second reading before correlatio
  assert.equal(r.state,'linked_private');assert.equal(reads,1);
  assert.equal(binds,1);assert.equal(replays,1);
 });
+test('MVP336: reviewed document is retried once through private lease, no WhatsApp',async()=>{
+ const sha=await digest(bytes),calls=[];let correlated=0,replays=0;
+ const result=await procesarPendienteAutomaticoMvp292({
+  enabled:true,trustedWorker:true,apiKey:'synthetic-credential-12345678',
+  model:'gpt-6-luna',documentSemanticEnabled:false,textCommercialEnabled:false,
+  shaText:digest,decrypt:async()=>{throw Error('no text')},
+  download:async(path)=>{
+   assert.equal(path,'media/'+H);
+   return {data:new Blob([bytes]),error:null};
+  },
+  rpc:async(name,args)=>{
+   calls.push(name);
+   if(name==='cotironda_piloto_claim_auto_recovery_mvp292')
+    return {data:{state:'empty'},error:null};
+   if(name==='cotironda_piloto_claim_reviewed_auto_recovery_mvp336')
+    return {data:{state:'claimed',retry_reviewed:true,
+     source_hmac:H,chat_hmac:C,source_sha256:sha,kind:'document',
+     mime:'application/pdf',size_bytes:bytes.length,draft},error:null};
+   if(name==='cotironda_piloto_finish_auto_recovery_mvp292'){
+    assert.equal(args.p_state,'linked');
+    return {data:{state:'recorded'},error:null};
+   }
+   throw Error('unexpected private RPC '+name);
+  },
+  readDocument:async()=>({...draft}),
+  correlate:async(input)=>{
+   assert.equal(input.retryReviewedOnce,true);
+   correlated++;return {state:'linked_private',reason:'unique',outboundMessages:0};
+  },
+  replay:async()=>{replays++;return {state:'published_private',outboundMessages:0}}
+ });
+ assert.equal(result.state,'linked_private');
+ assert.equal(result.outboundMessages,0);
+ assert.equal(correlated,1);assert.equal(replays,1);
+ assert.deepEqual(calls,[
+  'cotironda_piloto_claim_auto_recovery_mvp292',
+  'cotironda_piloto_claim_reviewed_auto_recovery_mvp336',
+  'cotironda_piloto_finish_auto_recovery_mvp292']);
+});
 test('bad historical SHA and divergent independent interpretation never bind',async()=>{
  const sha=await digest(bytes);
  for(const variant of ['bad-sha','different-material']){

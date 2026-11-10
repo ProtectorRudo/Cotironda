@@ -5,6 +5,10 @@ import {
  corroborarCantidadMvp291,elegirRondaUnicaMvp291,
  correlacionAutomaticaMvp291
 } from '../../supabase/functions/cotironda-piloto-whapi/supplier-auto-correlation-mvp291.ts';
+import {
+ elegirRondaUnicaMvp291 as elegirRondaMvp336,
+ correlacionAutomaticaMvp291 as correlacionMvp336
+} from '../../supabase/functions/cotironda-piloto-whapi/supplier-auto-correlation-mvp336.ts';
 const H='a'.repeat(64),E='b'.repeat(64),SHA='c'.repeat(64);
 const newId='11111111-1111-4111-8111-111111111111',
  oldId='22222222-2222-4222-8222-222222222222';
@@ -64,6 +68,69 @@ test('partial distinctive offers may link, partial shared or unsupported remain 
  const weak={matches:[{candidate:'r1',source_line:1,request_line:1,relation:'uncertain'}]};
  assert.equal(elegirRondaUnicaMvp291(short,weak,weak).requestId,null);
 });
+test('MVP336: Ailín PDF with 15/2/1 and no separate units matches current, not older 20/3',()=>{
+ const original=[
+  {line_no:1,description:'Cemento Avellaneda; Dscto. 22.4%',quantity:'15,00',unit:null},
+  {line_no:2,description:'BIG BAG de Arena; Dscto. 22.4%',quantity:'2,00',unit:null},
+  {line_no:3,description:'BIG BAG de Piedra; Dscto. 22.4%',quantity:'1,00',unit:null}
+ ];
+ const present={request_id:newId,lines:[
+  {line_no:1,description:'bolsas de cemento CPC de 50 kg',quantity:'15',unit:'bag'},
+  {line_no:2,description:'bolsones de arena',quantity:'2',unit:'bag'},
+  {line_no:3,description:'bolsón de piedra',quantity:'1',unit:'bag'}
+ ]};
+ const previous={request_id:oldId,lines:[
+  {line_no:1,description:'bolsas de cemento CPC de 50 kg',quantity:'20',unit:'bag'},
+  {line_no:2,description:'bolsones de arena',quantity:'3',unit:'bag'}
+ ]};
+ const draft={matches:[
+  {candidate:'r1',source_line:1,request_line:1,relation:'equivalent'},
+  {candidate:'r1',source_line:2,request_line:2,relation:'equivalent'},
+  {candidate:'r1',source_line:3,request_line:3,relation:'equivalent'},
+  {candidate:'r2',source_line:1,request_line:1,relation:'equivalent'},
+  {candidate:'r2',source_line:2,request_line:2,relation:'equivalent'}
+ ]};
+ const res=elegirRondaMvp336({quote:original,options:[present,previous]},
+  draft,{matches:[...draft.matches].reverse()});
+ assert.equal(res.requestId,newId);
+ assert.deepEqual(res.scores,[6,2]);
+ assert.equal(res.reason,'unique_material_evidence');
+ // No units were invented: the per-line quantity corroborator stays unknown.
+ assert.equal(corroborarCantidadMvp291(original[0],present.lines[0]),'unknown');
+});
+test('MVP336: unitless count is NOT enough with two items, duplicate rounds or packaging conflicts',()=>{
+ const source=[
+  {line_no:1,description:'Cemento 25 kg',quantity:'15',unit:null},
+  {line_no:2,description:'Arena',quantity:'2',unit:null},
+  {line_no:3,description:'Piedra',quantity:'1',unit:null}
+ ];
+ const target={request_id:newId,lines:[
+  {line_no:1,description:'Cemento 50 kg',quantity:'15',unit:'bag'},
+  {line_no:2,description:'Arena',quantity:'2',unit:'bag'},
+  {line_no:3,description:'Piedra',quantity:'1',unit:'bag'}
+ ]};
+ const other={request_id:oldId,lines:[
+  {line_no:1,description:'Cemento 50 kg',quantity:'20',unit:'bag'},
+  {line_no:2,description:'Arena',quantity:'3',unit:'bag'}
+ ]};
+ const links={matches:[1,2,3].map(i=>({candidate:'r1',source_line:i,
+  request_line:i,relation:'equivalent'}))};
+ // Conflicting 25kg vs 50kg may not be counted as an exact package-size clue.
+ assert.equal(elegirRondaMvp336({quote:source,options:[target,other]},
+  links,links).requestId,null);
+ // Without that conflict, 2 identical numeric counts are still inadequate.
+ const onlyTwo={quote:source.slice(1),options:[
+  {...target,lines:target.lines.slice(1)},{...other,lines:other.lines.slice(1)}]};
+ const two={matches:[{candidate:'r1',source_line:2,request_line:2,relation:'same'},
+  {candidate:'r1',source_line:3,request_line:3,relation:'same'}]};
+ assert.equal(elegirRondaMvp336(onlyTwo,two,two).requestId,null);
+ // 3 matches to two near-identical candidate lists must remain unresolved.
+ const identical={...target,request_id:oldId,lines:[...target.lines]};
+ const both={matches:links.matches.flatMap(v=>[v,{...v,candidate:'r2'}])};
+ const noConflict={...source[0],description:'Cemento'};
+ assert.equal(elegirRondaMvp336({quote:[noConflict,...source.slice(1)],
+  options:[target,identical]},both,both).requestId,null);
+});
 test('SQL is the only binding authority, source and chat HMAC required',async()=>{
  const calls=[];let reads=0;
  const snapshot={state:'reserved',source_sha256:SHA,quote:src,
@@ -94,6 +161,48 @@ test('SQL is the only binding authority, source and chat HMAC required',async()=
  assert.equal(reads,2);
  assert.deepEqual(calls.map(x=>x.name),[
   'cotironda_piloto_auto_correlation_prepare_mvp291',
+  'cotironda_piloto_auto_correlation_bind_mvp291']);
+});
+test('MVP336: internal retry uses the separate SQL reservation and audits the same source',async()=>{
+ const calls=[];const unitless=[
+  {line_no:1,description:'Cemento',quantity:'15,00',unit:null},
+  {line_no:2,description:'Arena',quantity:'2,00',unit:null},
+  {line_no:3,description:'Piedra',quantity:'1,00',unit:null}
+ ];
+ const newRound={request_id:newId,lines:[
+  {line_no:1,description:'Cemento 50kg',quantity:'15',unit:'bag'},
+  {line_no:2,description:'Arena',quantity:'2',unit:'bag'},
+  {line_no:3,description:'Piedra',quantity:'1',unit:'bag'}
+ ]};
+ const oldRound={request_id:oldId,lines:[
+  {line_no:1,description:'Cemento 50kg',quantity:'20',unit:'bag'},
+  {line_no:2,description:'Arena',quantity:'3',unit:'bag'}
+ ]};
+ const p={matches:[
+  ...[1,2,3].map(i=>({candidate:'r1',source_line:i,request_line:i,relation:'same'})),
+  ...[1,2].map(i=>({candidate:'r2',source_line:i,request_line:i,relation:'equivalent'}))
+ ]};
+ const result=await correlacionMvp336({
+  enabled:true,webhookAuthenticated:true,sourceHmac:H,chatHmac:E,
+  retryReviewedOnce:true,
+  apiKey:'synthetic-credential-12345678',model:'gpt-6-luna',
+  rpc:async(name,args)=>{
+   calls.push(name);
+   if(name==='cotironda_piloto_auto_correlation_retry_prepare_mvp336')
+    return {data:{state:'reserved',source_sha256:SHA,
+     quote:unitless,candidates:[newRound,oldRound]},error:null};
+   if(name==='cotironda_piloto_auto_correlation_bind_mvp291'){
+    assert.equal(args.p_request,newId);assert.equal(args.p_source_sha256,SHA);
+    return {data:{state:'linked_private'},error:null};
+   }
+   throw Error('unexpected SQL '+name);
+  },
+  compare:async()=>p
+ });
+ assert.equal(result.state,'linked_private');
+ assert.equal(result.outboundMessages,0);
+ assert.deepEqual(calls,[
+  'cotironda_piloto_auto_correlation_retry_prepare_mvp336',
   'cotironda_piloto_auto_correlation_bind_mvp291']);
 });
 test('no candidate, disabled flag and wrong HMAC fail closed without OpenAI',async()=>{

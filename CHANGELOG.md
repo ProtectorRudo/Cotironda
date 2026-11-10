@@ -1,3 +1,11 @@
+## 10/11/2026 — MVP336: corrección en desarrollo de asociación de PDFs sin unidades
+
+- Primer documento de Ailín guardado en Supabase (08:19 ART), 3 líneas con cantidades literales 15/2/1; ronda nueva 15/2/1 vs anterior 20/3. Estado real `insufficient_material_evidence`, sin oferta publicada.
+- Nuevo correlador versionado: tres coincidencias numéricas sin unidad con margen de seguridad; unidades ausentes continúan ausentes. Pruebas de casos ambiguos y envases incompatibles.
+- Recovery privado de **una sola reevaluación** con SHA, identidad, despacho, lease, ledger del primer motivo y RLS; no WhatsApps ni publicación automática sin verificadores de fuente.
+- Conservado sin modificaciones el módulo `MVP291` histórico y su manifiesto `MVP332`; candidato de overlay para v75 +1 fuente. Tests Node/Deno/PG17 sintéticos en PR #742.
+- **Sin publicación en piloto ni producción**; CI y eventual despliegue bajo «Publicalo» pendientes. [Acta 471](docs/471-mvp336-correlacion-sin-unidad-reintento-privado.md).
+
 ## 10/11/2026 — Hito validado de piloto: pedido automático hasta 2 proveedores
 
 - Auditada en Supabase la ronda real `aefe169e-7801-4efc-aabf-25cd134744eb`: ingreso desde arquitecto, 15 bolsas CPC 50 kg + 2 bolsones arena + 1 bolsón piedra, entrega La Plata; líneas, rubro y destinos correctos.
