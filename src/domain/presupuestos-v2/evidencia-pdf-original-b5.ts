@@ -23,7 +23,8 @@ export type OriginalPdfCheckB5=Readonly<{
  state:'source_rows_correspond_private'|'needs_source_review';
  reason:'rows_correspond_but_full_coverage_unchecked'|
   'invalid_file'|'sha_mismatch'|'bad_candidate'|'pdf_unreadable'|
-  'line_discrepancy'|'reader_unavailable';
+  'line_discrepancy'|'reader_unavailable'|'source_total_unverified'|
+  'unmapped_source_content';
  source_sha256:string|null;
  sha_verified:boolean;source_rows_extracted:number;
  lines:readonly SourceRowCheckB5[];
@@ -143,6 +144,24 @@ export async function comprobarRenglonesPdfOriginalB5(args:{
  }
  if(checks.some(x=>x.state!=='source_line_corresponds'))
   return fail('line_discrepancy',real,true,checks,extracted.rows.length);
+ // A matched candidate line does not excuse an omitted priced item or an
+ // unclaimed fiscal/logistics condition elsewhere in the original PDF.
+ // This is NEGATIVE evidence only; the absence of suspicious rows is NOT
+ // a complete source audit (unmarked numbers/columns may still be missed).
+ const total=structural.document.total_declared_raw;
+ if(total!==null){
+  const totalRows=extracted.rows.map((sr,i)=>({sr,i})).filter(x=>
+   !used.has(x.i)&&
+   /\\b(?:total(?:\\s+general)?|importe\\s+total|a\\s+pagar)\\b/iu.test(x.sr.text)&&
+   hasToken(norm(x.sr.text),total));
+  if(totalRows.length!==1)
+   return fail('source_total_unverified',real,true,checks,extracted.rows.length);
+  used.add(totalRows[0].i);
+ }
+ const unclaimedTerm=/\\b(?:iva|flete|env[ií]o|transporte|descuento|dscto|dcto|bonificaci[oó]n|pallets?|contado|efectivo|transferencia)\\b/iu;
+ if(extracted.rows.some((sr,i)=>!used.has(i)&&
+   (/\\$\\s*\\d/u.test(sr.text)||unclaimedTerm.test(sr.text))))
+  return fail('unmapped_source_content',real,true,checks,extracted.rows.length);
  return {state:'source_rows_correspond_private',
   reason:'rows_correspond_but_full_coverage_unchecked',
   source_sha256:real,sha_verified:true,
