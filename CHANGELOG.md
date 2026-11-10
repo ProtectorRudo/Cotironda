@@ -1,3 +1,9 @@
+## 10/11/2026 — MVP344: precios unitarios contradictorios del PDF, bloqueo explícito seguro
+
+- Auditoría real solo lectura: el publicador SQL vigente MVP248 permite los 3 artículos (2 BIG BAG); cerramos sin merge #753, basado en una definición antigua. Total declarado del PDF = suma de 3 renglones, pero las 3 multiplicaciones precio unitario × cantidad no cuadran; no consta causa comercial explícita para asumir descuento/lista.
+- El replay privado MVP292 ahora deja código `unit_price_source_recheck_required` cuando MVP103 devuelve `line_multiplication_mismatch`; **no publica**, no cambia precios y no manda WhatsApps. Se preservan controles de fuente y contabilidad determinista.
+- 3 pruebas nuevas + 7 regresiones del worker histórico y typecheck Deno exitosos; sin SQL aplicado ni IA real. PR #754 apilado solo sobre MVP343 mínimo #752, no sobre etapa universal. [Acta 480](docs/480-mvp344-precios-contradictorios-pdf-fuente.md) / [Issue #750](https://github.com/ProtectorRudo/Cotironda/issues/750).
+
 ## 10/11/2026 — MVP343 mínimo: prioridad de circuito funcional (no publicado)
 
 - Nuevo PR independiente #752 sobre MVP336 #742: preflight offline de recuperación única del archivo ya recibido, sin publicar MVP337–342.
