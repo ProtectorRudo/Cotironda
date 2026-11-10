@@ -40,7 +40,7 @@ declare
 begin
  if p_message_hmac is null or p_message_hmac !~ '^[a-f0-9]{64}$'
   or p_source_sha256 is null or p_source_sha256 !~ '^[a-f0-9]{64}$'
-  or p_candidate is null or jsonb_typeof(p_candidate)<>'object'
+  or p_candidate is null or jsonb_typeof(p_candidate) is distinct from 'object'
   or length(p_candidate::text)>20000
  then return jsonb_build_object('state','invalid');end if;
  select q.message_hmac,q.request_id,q.supplier_key,q.source_sha256,
@@ -81,12 +81,12 @@ begin
   then return jsonb_build_object('state','candidate_already_stored');end if;
   return jsonb_build_object('state','candidate_conflict');
  end if;
- if p_candidate->>'kind'<>'supplier_quote'
-  or p_candidate->>'status'<>'review_required'
-  or jsonb_typeof(p_candidate->'lines')<>'array'
-  or jsonb_typeof(p_candidate->'unanswered')<>'array'
-  or p_candidate->'unanswered'<>'[]'::jsonb
-  or jsonb_typeof(p_candidate->'total_declared')<>'string'
+ if p_candidate->>'kind' is distinct from 'supplier_quote'
+  or p_candidate->>'status' is distinct from 'review_required'
+  or jsonb_typeof(p_candidate->'lines') is distinct from 'array'
+  or jsonb_typeof(p_candidate->'unanswered') is distinct from 'array'
+  or p_candidate->'unanswered' is distinct from '[]'::jsonb
+  or jsonb_typeof(p_candidate->'total_declared') is distinct from 'string'
   or coalesce(jsonb_typeof(p_candidate->'requested_delivery_note'),'missing')
     not in ('string','null')
   or coalesce(jsonb_typeof(p_candidate->'delivery_city'),'missing')
@@ -103,10 +103,10 @@ begin
  for i in 0..line_count-1 loop
   original_line:=a.proposal->'lines'->i;
   candidate_line:=p_candidate->'lines'->i;
-  if jsonb_typeof(original_line)<>'object' or
-    jsonb_typeof(candidate_line)<>'object' or
-    jsonb_typeof(candidate_line->'original_description')<>'string' or
-    jsonb_typeof(candidate_line->'evidence_location')<>'string' or
+  if jsonb_typeof(original_line) is distinct from 'object' or
+    jsonb_typeof(candidate_line) is distinct from 'object' or
+    jsonb_typeof(candidate_line->'original_description') is distinct from 'string' or
+    jsonb_typeof(candidate_line->'evidence_location') is distinct from 'string' or
     length(btrim(candidate_line->>'evidence_location'))=0 or
     length(candidate_line->>'evidence_location')>200 or
     length(candidate_line->>'original_description') not between 2 and 250 or
