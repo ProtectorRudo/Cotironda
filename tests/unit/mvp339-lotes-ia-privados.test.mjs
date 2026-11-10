@@ -8,7 +8,7 @@ import {procesarLotesIAInternosMvp339} from
 
 const scope=Object.freeze({
  roundId:'aefe169e-7801-4efc-aabf-25cd134744eb',
- supplierId:'aaec169e-7801-4efc-aabf-25cd134744eb',
+ supplierKey:'corralon_ailin',
  messageHmac:'a'.repeat(64),chatHmac:'b'.repeat(64)
 });
 const sample=presupuestosMvp337.find(x=>x.format==='xlsx'&&x.variant===15);
@@ -42,7 +42,7 @@ function setup(fixture=sample,overrides={}){
     if(completed.has(key))return {state:'already_processed'};
     completed.add(key);
     return {state:'reserved',sourceSha256,
-     roundId:scope.roundId,supplierId:scope.supplierId,
+     roundId:scope.roundId,supplierKey:scope.supplierKey,
      messageHmac:scope.messageHmac,chatHmac:scope.chatHmac,
      receipt:'r'.repeat(32)};
    },
@@ -116,7 +116,7 @@ test('MVP339: sin presupuesto completo rechaza ANTES de reservar ni cobrar',asyn
 test('MVP339: reserva de otra ronda, proveedor, mensaje o hash no habilita IA',async()=>{
  for(const mismatch of [
   {roundId:'ddec169e-7801-4efc-aabf-25cd134744eb'},
-  {supplierId:'bbec169e-7801-4efc-aabf-25cd134744eb'},
+  {supplierKey:'corralon_nahuel'},
   {messageHmac:'f'.repeat(64)},
   {chatHmac:'f'.repeat(64)},
   {sourceSha256:'f'.repeat(64)}
@@ -191,7 +191,7 @@ test('MVP339: sin reserva real, reserva caída o proveedor inválido no hay llam
  for(const override of [
   {reserve:async()=>{throw Error('db unavailable')}},
   {reserve:async()=>({state:'not_eligible'})},
-  {scope:{...scope,supplierId:'invalid'}},
+  {scope:{...scope,supplierKey:'invalid'}},
   {reserve:async()=>({state:'reserved',receipt:'invalid'})}
  ]){
   const {args,events}=setup();
