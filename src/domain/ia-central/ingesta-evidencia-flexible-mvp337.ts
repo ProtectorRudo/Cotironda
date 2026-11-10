@@ -110,8 +110,8 @@ function literalMatch(source:string,value:string):boolean{
  let at=source.indexOf(value);
  while(at>=0){
   const before=at===0?'':source[at-1],after=source[at+value.length]??'';
-  if(!(before&&/\d/u.test(before)&&/^[\d.,]/u.test(value))&&
-     !(after&&/\d/u.test(after)&&/[\d.,]$/u.test(value)))
+  if(!(before&&/[\d.,]/u.test(before)&&/^[\d.,]/u.test(value))&&
+     !(after&&/[\d.,]/u.test(after)&&/[\d.,]$/u.test(value)))
    return true;
   at=source.indexOf(value,at+1);
  }
