@@ -3,9 +3,13 @@
  * Source-row correspondence does NOT prove full-page coverage or discount
  * semantics. NEVER authorizes publication, buyer visibility or ranking.
  */
-import {
- readPdfPositioned,type EvidenceReader
-} from '../../../supabase/functions/cotironda-piloto-whapi/supplier-source-pdf-general.ts';
+// Inject the already-existing Deno PDF.js reader at the Edge boundary.
+ // Keep this pure module independent from Deno's npm: imports so Next.js
+ // and the complete repository's TypeScript build remain compatible.
+export type EvidenceReaderB5=(bytes:Uint8Array)=>Promise<{
+ rows:readonly {page:number;text:string}[];
+ pages:number;scanned:boolean;
+}>;
 import {revisarContratoProveedorV2} from './contrato-lectura.ts';
 import type {RawLineV2} from './contrato-lectura.ts';
 
@@ -83,7 +87,7 @@ async function digest(bytes:Uint8Array):Promise<string>{
  */
 export async function comprobarRenglonesPdfOriginalB5(args:{
  originalBytes:Uint8Array;sourceSha256:string;candidate:unknown;
- readPdf?:EvidenceReader;
+ readPdf:EvidenceReaderB5;
 }):Promise<OriginalPdfCheckB5>{
  const {originalBytes:bytes,sourceSha256}=args;
  if(!hashRx.test(sourceSha256)||!(bytes instanceof Uint8Array)||
@@ -95,11 +99,12 @@ export async function comprobarRenglonesPdfOriginalB5(args:{
  if(structural.state!=='private_extract'||!structural.document||
    structural.document.lines.length<1)
   return fail('bad_candidate',real,true);
- let extracted:Awaited<ReturnType<EvidenceReader>>;
+ let extracted:Awaited<ReturnType<EvidenceReaderB5>>;
  try{
   const timeout=AbortSignal.timeout(10000);
+  if(typeof args.readPdf!=='function')return fail('reader_unavailable',real,true);
   extracted=await Promise.race([
-   (args.readPdf??readPdfPositioned)(bytes),
+   args.readPdf(bytes),
    new Promise<never>((_r,reject)=>{
     timeout.addEventListener('abort',()=>reject(Error('pdf_timeout')),
      {once:true});
