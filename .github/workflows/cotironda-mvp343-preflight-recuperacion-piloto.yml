@@ -1,0 +1,68 @@
+name: Cotironda MVP343 - preflight de recuperación piloto sin deploy
+on:
+  pull_request:
+    paths:
+      - 'scripts/piloto/mvp343-*'
+      - 'tests/unit/mvp343-*'
+      - 'docs/478-*'
+      - '.github/workflows/cotironda-mvp343-preflight-recuperacion-piloto.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  webhooks-and-unitless-correlation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: 'MVP343: staging del overlay 62, regresión 15/2/1, cero envíos'
+        run: |
+          node --experimental-strip-types --test \
+            tests/unit/mvp343-recuperacion-e2e-preflight.test.mjs \
+            tests/unit/mvp343-flujo-documento-recuperado.test.mjs \
+            tests/unit/mvp291-automatic-correlation.test.mjs \
+            tests/unit/mvp336-whapi-overlay.test.mjs
+          node scripts/piloto/mvp343-recovery-only-preflight.mjs --json
+  rollback-pg17:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: test_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: 'MVP336 mínimo: solo SQL de recuperación, fixture realista y ROLLBACK'
+        run: |
+          set -euo pipefail
+          node scripts/piloto/mvp336-retry-source-builder.mjs --assert-local
+          node scripts/piloto/mvp336-retry-source-builder.mjs --sql > supabase/tests/ci/.mvp343.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/.mvp343.sql >/dev/null
+          psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regnamespace('cotironda_piloto_privado') IS NULL" | grep -Fx 't'
+          rm supabase/tests/ci/.mvp343.sql
+# No Supabase real, no Whapi, no OpenAI, no deploy.
