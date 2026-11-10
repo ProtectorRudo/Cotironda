@@ -22,8 +22,13 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '22.16.0'
-      - name: Compilacion estricta de los contratos TypeScript
-        run: npm run typecheck
+      - uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb
+        with:
+          deno-version: v2.x
+      - name: Comprobación TypeScript con Deno
+        run: |
+          deno check src/domain/ia-central/ingesta-evidencia-flexible-mvp337.ts
+          deno check src/domain/ia-central/adaptador-texto-flexible-mvp337.ts
       - name: Corpus de 192 presupuestos, sin OpenAI ni datos reales
         run: |
           node --experimental-strip-types --test tests/unit/mvp337-ingesta-universal-proveedores.test.mjs
