@@ -59,6 +59,7 @@ export function generarPaqueteRecuperacionMvp343(){
   newer_mvp337_342_not_required_for_legacy_recovery:true,
   backup_rehearsed:false,
   legacy_recovery_ai_spend_metered:false,
+  metering_is_post_pilot_improvement:true,
   deployed:false,db_mutated:false,whatsapp_messages:0,
   openai_paid_calls:0,can_publish_quote:false
  });
@@ -98,14 +99,12 @@ export function evaluarFuenteArchivadaMvp343(v){
  if(!bool(v.workerAndWebhookSynced))
   return Object.freeze({state:'blocked',reason:'worker_webhook_versions_not_synced',
    needsSupplierAction:false,canBindAutomatically:false,canPublish:false});
- if(!bool(v.recoveryAiSpendControlled))
-  return Object.freeze({state:'blocked',reason:'recovery_ai_spend_uncontrolled',
-   needsSupplierAction:false,canBindAutomatically:false,canPublish:false});
  if(!bool(v.explicitPilotPublicationAuthorized))
   return Object.freeze({state:'blocked',reason:'pilot_publication_not_authorized',
    needsSupplierAction:false,canBindAutomatically:false,canPublish:false});
  return Object.freeze({state:'ready_for_one_internal_retry',
   reason:'source_prerequisites_present_private_only',
+  aiCostMeteringDeferred:v.recoveryAiSpendControlled!==true,
   needsSupplierAction:false,canBindAutomatically:false,canPublish:false});
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
