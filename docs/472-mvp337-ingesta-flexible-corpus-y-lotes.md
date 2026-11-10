@@ -55,6 +55,16 @@ La coincidencia de dos lecturas por IA no es auditoría visual u OCR independien
 5. Sin modificaciones del webhook histórico ni del módulo MVP291 congelado. Sin migraciones, gastos de IA, Whapi, cron, Vercel, Supabase piloto o producción bajo «Luz verde».
 6. El PR se acepta únicamente tras Node/TypeScript, pruebas del corpus y regresiones MVP332/MVP336 en GitHub.
 
+## Resultado CI verificado del primer candidato
+
+- Head auditado: `a853d946438f94591454105f6e672b7b4367f200` (antes del agregado de esta constancia).
+- Workflow MVP337: **PASS**, comprobación de tipos Deno, **200/200** pruebas del corpus y adversarias, más **29/29** regresiones de módulos históricos MVP291/MVP292/MVP332/MVP336.
+- Informe offline: **192** fuentes sintéticas, **12** etiquetas de formato, **3.120** renglones, **24** ejemplos de más de 25 renglones y **60** sin total declarado; cero fallas del contrato sintético.
+- Suite general: **3.686 PASS**, **0 FAIL**, **10 SKIP** sobre 3.696 pruebas.
+- CI de etapa documental MVP245, PostgreSQL17 de aislamiento por empresa, PostgREST y chequeo de sitio: exitosos.
+- El check de Next.js seguía ejecutándose al momento de la primera verificación; no confundir esa espera con una aprobación. Checks de Vercel pueden estar limitados por cuota.
+- **0** modelos IA reales evaluados, **0** presupuestos binarios reales leídos, **0** cambios de tablas, **0** mensajes, **0** ofertas publicadas.
+
 ## Lo que NO está terminado y es requisito de publicación
 
 - Integrar la extracción segura por formato para PDF mult página, OCR real de escaneos/fotos, DOCX/XLSX reales y archivos extensos; especialmente 26+ renglones **desde bytes hasta cotejo comercial**.
