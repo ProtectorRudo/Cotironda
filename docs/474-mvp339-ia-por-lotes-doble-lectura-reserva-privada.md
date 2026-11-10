@@ -19,6 +19,7 @@ ranking económico es determinista, separado de la interpretación semántica.
 - MVP337 ofrece planificaciones 1–1 por fila, lotes de 20 y contraste literal
   de dos lecturas. MVP338 aporta extracción de bytes privados reales
   PDF/DOCX/XLSX/TXT/CSV, preservando SHA y firma.
+- La identidad de proveedor en la base del piloto es una clave textual (`participants.key`), **no un UUID**. Se detectó y corrigió una incompatibilidad de la primera implementación MVP339 durante la auditoría.
 - La IA Central MVP225 y el RPC MVP245 siguen vigentes y **no se sustituyen**.
   El nuevo MVP339 no se importa por el webhook ni se conecta al ranking.
 
@@ -28,7 +29,7 @@ ranking económico es determinista, separado de la interpretación semántica.
 
 `src/domain/ia-central/procesador-ia-lotes-mvp339.ts` orquesta:
 
-1. **Identidad de alcance**: UUID de ronda y proveedor + HMAC de mensaje y chat.
+1. **Identidad de alcance**: UUID de ronda y **clave interna real de proveedor** (ej. `corralon_ailin`) + HMAC de mensaje y chat.
    Requiere plan válido con SHA-256 de fuente y posiciones consecutivas;
    rechaza lotes alterados y filas omitidas.
 2. **Presupuesto previo**: exige `maxModelCalls >= 2 × totalDeLotes` y
