@@ -11,6 +11,7 @@ import {checkSupplierImageSourceMvp251} from './supplier-source-image-mvp251.ts'
 import {checkSupplierOfficeSource} from './supplier-source-office.ts';
 import {checkSupplierTextSource,type SourceCheckResult} from './supplier-source-text.ts';
 import {procesarDocumentoCentralMvp245} from './ai-central-document-mvp245.ts';
+import {registrarRevisionEconomicaPrivadaMvp346} from './supplier-economic-revision-mvp346.ts';
 type Modelo='gpt-6-luna'|'gpt-6.1-sol';
 type Rpc=(name:string,args:Record<string,unknown>)=>Promise<{data:unknown;error:unknown}>;
 type Download=(path:string)=>Promise<{data:Blob|null;error:unknown}>;
@@ -46,6 +47,7 @@ export async function reprocesarOriginalHistoricoMvp292(args:{
  // Test-only overridable reading/check, no HTTP calls in synthetic tests.
  read?:typeof proposeDocumentAI;
  sourceCheck?:(f:DownloadedMedia,first:DocumentDraft,second:DocumentDraft)=>Promise<SourceCheckResult>;
+ revisionSourceCheck?:(f:DownloadedMedia,revision:DocumentDraft)=>Promise<SourceCheckResult>;
 }):Promise<ReplayResultMvp292>{
  if(!args?.enabled)return done('disabled','flag_off');
  if(!args.trustedInternalWorker||!HASH.test(args.sourceHmac)||
@@ -100,11 +102,26 @@ export async function reprocesarOriginalHistoricoMvp292(args:{
   if(captured.state!=='stored_unverified'){
    reason='source_already_consumed';
   }else{
+   // A changed second reading does NOT replace the immutable first reading.
+   // It may become a PRIVATE, nonpublishable candidate only after exact
+   // arithmetic, SHA and independent full-PDF source coverage all succeed.
+   let privateRevisionRecorded=false;
+   if(mime==='application/pdf'){
+    const revision=await registrarRevisionEconomicaPrivadaMvp346({
+     sourceHmac:args.sourceHmac,sourceSha256:sha,file,
+     original:first,second,rpc:args.rpc,
+     sourceCheck:args.revisionSourceCheck
+    });
+    if(revision.state==='reconciliation_required')
+     throw Error('economic_revision_persistence_uncertain');
+    privateRevisionRecorded=revision.state==='candidate_stored';
+   }
    const compared=await db('cotironda_piloto_compare_supplier_readings_mvp102',{
     p_message_hmac:args.sourceHmac,p_second_proposal:second
    });
    if(compared.state!=='model_readings_match'){
-    reason='independent_readings_differ';
+    reason=privateRevisionRecorded?'economic_revision_candidate_private':
+     'independent_readings_differ';
    }else{
     const sums=await db('cotironda_piloto_audit_supplier_amounts_mvp103',{
      p_message_hmac:args.sourceHmac
