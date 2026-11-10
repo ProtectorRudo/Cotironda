@@ -1,3 +1,11 @@
+## 10/11/2026 — V2 PILOTO: recuperación real de 2 PDF privados y puente cron existente (NO E2E)
+
+- Migración SQL B2 `20261110221810` + RPC de solo lectura B4, privadas con RLS; Edge `cotironda-piloto-v2-shadow` v2 y Edge `cotironda-piloto-auto-recovery` v12 que reutiliza cron Vault antiguo sin secretos/cron nuevos.
+- Primera prueba POST rechazada con HTTP 413 por stream vacío de pasarela; guard corregido para permitir solamente cuerpo vacío, con CI Node/Deno/PG17 antes de publicar hotfix v2.
+- **2 originales PDF de Corralón Ailín** releídos y guardados como `candidate_private` sin fuente verificada: 2 materiales/$469.042,52; 3 materiales + 2 notas/$392.850,58. Contenidos y totales coinciden con lecturas anteriores, pero la IA aún no acredita importes.
+- Descuento de **22,4 %** presente en lectura archivada y texto literal de ambas cotizaciones, pero no como campo económico estructurado V2. No comparar totales de distinta cobertura ni confundir con Nahuel (Excel/PDF de Nahuel ya vinculados). Issue [#766](https://github.com/ProtectorRudo/Cotironda/issues/766) para fuente, descuentos, IVA/flete y planilla completa.
+- **Cierre seguro:** flag SQL V2 OFF, 2 candidatos privados, 0 leases abiertos, 0 WhatsApps nuevos, 0 publicaciones económicas, 3 cron originales activos, historial MVP292 y documentos inalterados. [Acta 490](docs/490-v2-publicacion-controlada-piloto.md), [PR #765](https://github.com/ProtectorRudo/Cotironda/pull/765).
+
 ## 10/11/2026 — V2 B3: función Edge privada de invocación (SOLO DESARROLLO)
 
 - Nuevo handler + adapter Supabase `cotironda-piloto-v2-shadow` para el worker de relectura V2 B2. Usa autenticación de doble factor ya existente (key de servicio + secreto de recuperación) y habilitación Edge de recuperación ya existente; solo el nuevo flag SQL V2 queda apagado por defecto.
