@@ -1,3 +1,9 @@
+## 10/11/2026 — B5 desarrollo: reglas IVA/flete explícitos y descuentos deterministas
+
+- Nuevo auditor puro y privado V2 B5: **IVA y flete se omiten por completo si no se mencionan en la fuente**; IVA incluido/excluido/solo tasa son casos distintos, flete a convenir se guarda sin monto.
+- Concilia descuento etiquetado de 22,4% en dos presupuestos Ailín en cálculo exacto con BigInt: redondea unitario efectivo antes de multiplicar cantidad; no infiere descuento del resultado, no convierte moneda ni publica.
+- Se actualiza el prompt futuro para prohibir inventar «IVA no informado» o transporte por defecto. **Sin publicación**, sin cambios en Supabase ni Whapi. Pendientes: verificación independiente PDF original, Excel de Nahuel vinculado, ranking y seguimiento. [Acta 491](docs/491-v2-b5-reglas-iva-flete-y-descuentos.md), [Issue #766](https://github.com/ProtectorRudo/Cotironda/issues/766).
+
 ## 10/11/2026 — V2 PILOTO: recuperación real de 2 PDF privados y puente cron existente (NO E2E)
 
 - Migración SQL B2 `20261110221810` + RPC de solo lectura B4, privadas con RLS; Edge `cotironda-piloto-v2-shadow` v2 y Edge `cotironda-piloto-auto-recovery` v12 que reutiliza cron Vault antiguo sin secretos/cron nuevos.
