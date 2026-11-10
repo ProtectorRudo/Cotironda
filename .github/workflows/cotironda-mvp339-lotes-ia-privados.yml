@@ -1,0 +1,43 @@
+name: Cotironda MVP339 - lotes IA seguros, sin WhatsApp ni gastos
+on:
+  pull_request:
+    paths:
+      - 'src/domain/ia-central/procesador-ia-lotes-mvp339.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/lector-ia-lote-mvp339.ts'
+      - 'tests/unit/mvp339-*'
+      - 'docs/474-*'
+      - '.github/workflows/cotironda-mvp339-lotes-ia-privados.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  lotes-privados-offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Lotes, 192 fuentes sintéticas, reintentos, scope, PDF/Office
+        run: |
+          node --experimental-strip-types --test \
+            tests/unit/mvp339-lotes-ia-privados.test.mjs \
+            tests/unit/mvp339-binario-hasta-cotejo-privado.test.mjs \
+            tests/unit/mvp339-responses-model-mock.test.mjs
+      - uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb
+        with:
+          deno-version: v2.x
+      - name: Contratos compartidos y adaptador Responses API
+        run: |
+          deno check --node-modules-dir=auto src/domain/ia-central/procesador-ia-lotes-mvp339.ts
+          deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/lector-ia-lote-mvp339.ts
+      - name: No regresión de 200 casos MVP337 y binario MVP338
+        run: |
+          node --experimental-strip-types --test \
+            tests/unit/mvp337-ingesta-universal-proveedores.test.mjs \
+            tests/unit/mvp338-binary-evidence-private.test.mjs
+# Todo se ejecuta con propuestas/modelos simulados, SIN OpenAI de pago,
+# SIN Supabase piloto, SQL, Whapi ni producción.

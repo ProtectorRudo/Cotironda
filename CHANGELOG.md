@@ -1,3 +1,10 @@
+## 10/11/2026 — MVP339: doble lectura IA por lotes bajo reserva privada (solo desarrollo)
+
+- Orquestador compartido con presupuesto previo de llamadas y caracteres, digest de cada lote, dos perspectivas aisladas, cotejo literal total y falla segura ante precio no citado, fila omitida, reserva de ronda ajena, duplicación o commit no registrado.
+- Adaptador privado OpenAI Responses API con esquema estricto, `store:false`, sin tools ni envíos, **no importado por el worker**. Tests HTTP con `fetch` simulado (0 gastos).
+- 192 escenarios sintéticos heredados de MVP337 y dos originales binarios de prueba DOCX/XLSX pasan por la ruta de evidencia hasta la doble lectura privada. Se corrigió el `supplierId` UUID ficticio a **`supplierKey` textual**, tal como está registrado en `participants.key` real.
+- Aún NO existe ledger SQL/worker durable para este componente, y las cotizaciones reales no se publicaron. PR #746 apilado sobre #745, sin merge, deploy ni cambios de Supabase/Whapi/Vercel. [Acta 474](docs/474-mvp339-ia-por-lotes-doble-lectura-reserva-privada.md).
+
 ## 10/11/2026 — MVP338: guardia adicional para fórmulas XLSX (solo desarrollo)
 
 - Detecta expresiones `<f>` dentro de hojas reales de un ZIP XLSX sin ejecutarlas ni confiar en el valor `<v>` guardado; envía el presupuesto a revisión privada. Regresión con fórmula `100*2` y valor cacheado `200`, hash correcto y ZIP válido.
