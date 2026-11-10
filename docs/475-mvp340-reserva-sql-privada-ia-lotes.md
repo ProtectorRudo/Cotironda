@@ -45,6 +45,18 @@ No se agregan rutas HTTP ni se modifican los RPC/productores existentes; los nue
 - Prueba Node del adaptador SQL con RPC mock + orquestador real, sin OpenAI, y Deno typecheck del TS compartido.
 - Auditoría de todos los cambios en rama y validación GitHub. No modificar datos reales ni levantar cron con «Luz verde».
 
+## Auditoría y resultados de CI del candidato
+
+GitHub Actions de la rama MVP340, commit funcional verificado `1d32b1864f940735aabe696c204f54f4d839fcc2`:
+
+- Workflow específico MVP340: **2/2 jobs SUCCESS**. Node 4/4 pruebas del adaptador SQL y 11/11 regresiones de lotes; Deno typecheck de contratos compartidos **SUCCESS**; PostgreSQL 17 integrado en `BEGIN/ROLLBACK` con `NOTICE MVP340 PASS`, sin alterar un piloto real.
+- Controles adversarios PG17: permisos `anon/authenticated` denegados, `service_role` función permitida sin acceso directo a tabla, SHA/chat/ronda/proveedor/recibo incorrecto, doble reserva y doble finalización, presupuesto insuficiente, lotes vacíos, comprador o proveedor con `opted_out_at` y solicitud con aceptación **posterior** al mensaje. Todos retenidos sin oferta ni WhatsApp.
+- Suite general del repositorio: **3.717 PASS**, **0 FAIL**, **10 SKIP** de 3.727 tests. Next.js build, PostgreSQL 17 aislamiento por empresa, PostgREST, fase documental MVP245 y comprobación web: **SUCCESS**.
+- Durante desarrollo se corrigieron fallas propias de CI, no de piloto: un `name` YAML con dos puntos sin entrecomillar impedía crear jobs; el adaptador TypeScript requirió tipos explícitos de renglón/lote; y un ensayo que cambiaba despacho a `pending` violaba una restricción legítima por mantener recibo y fecha. Se sustituyó por una simulación de aceptación posterior que conserva la integridad de la fila. Todo fue reejecutado.
+- El cálculo de costo **NO** es monetario: la barrera SQL limita llamadas y caracteres presupuestados; falta medir tokens realmente facturados y pesos antes de conectar un worker.
+
+**No se ejecutó SQL sobre `cotironda-piloto`; los resultados provienen del runner PostgreSQL 17 de GitHub.** `Publicalo` sería una instrucción futura independiente y requeriría respaldo y preflight.
+
 ## Qué sigue bloqueando el piloto y por qué no se puede publicar aún
 
 1. Integrar el worker privado con Vault/service_role y el depósito cifrado: comprobar que **el binario realmente guardado** corresponde a SHA + plan, sin imprimir contenido y sin repetir llamadas de OpenAI.
