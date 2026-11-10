@@ -68,7 +68,7 @@ const PROMPT=[
 ].join('\n');
 const record=(v:unknown):v is Record<string,unknown>=>v!==null&&
  typeof v==='object'&&!Array.isArray(v);
-const keys=(v:unknown,fields:readonly string[])=>record(v)&&
+const keys=(v:unknown,fields:readonly string[]):v is Record<string,unknown>=>record(v)&&
  Object.keys(v).length===fields.length&&
  fields.every(f=>Object.hasOwn(v,f));
 const safe=(s:unknown,max:number)=>s===null||
