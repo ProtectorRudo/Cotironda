@@ -163,19 +163,27 @@ BEGIN
  OR (p_state<>'candidate_private' AND (p_candidate IS NOT NULL
      OR p_line_diagnostics IS NOT NULL OR p_completeness IS NOT NULL))
  THEN RETURN jsonb_build_object('state','invalid');END IF;
- IF p_state='candidate_private' AND
-  (p_candidate IS NULL OR jsonb_typeof(p_candidate)<>'object'
+ IF p_state='candidate_private' THEN
+  -- Do not use OR chains with nullable JSON selectors. SQL's UNKNOWN may
+  -- silently bypass a guard when an attribute is missing ({} is not valid).
+  IF p_candidate IS NULL OR jsonb_typeof(p_candidate) IS DISTINCT FROM 'object'
    OR octet_length(p_candidate::text)>250000
-   OR p_candidate->>'document_kind'<>'supplier_quote'
-   OR jsonb_typeof(p_candidate->'lines')<>'array'
-   OR jsonb_array_length(p_candidate->'lines') NOT BETWEEN 1 AND 500
-   OR p_line_diagnostics IS NULL
-   OR jsonb_typeof(p_line_diagnostics)<>'array'
-   OR jsonb_array_length(p_line_diagnostics) <> jsonb_array_length(p_candidate->'lines')
+  THEN RETURN jsonb_build_object('state','invalid');END IF;
+  IF p_candidate->>'document_kind' IS DISTINCT FROM 'supplier_quote'
+   OR jsonb_typeof(p_candidate->'lines') IS DISTINCT FROM 'array'
+  THEN RETURN jsonb_build_object('state','invalid');END IF;
+  IF jsonb_array_length(p_candidate->'lines') NOT BETWEEN 1 AND 500
+  THEN RETURN jsonb_build_object('state','invalid');END IF;
+  IF p_line_diagnostics IS NULL
+   OR jsonb_typeof(p_line_diagnostics) IS DISTINCT FROM 'array'
    OR octet_length(p_line_diagnostics::text)>50000
+  THEN RETURN jsonb_build_object('state','invalid');END IF;
+  IF jsonb_array_length(p_line_diagnostics)
+    <> jsonb_array_length(p_candidate->'lines')
    OR p_completeness IS NULL OR p_completeness NOT IN(
-    'not_checked','model_reported_complete','model_reported_incomplete'))
- THEN RETURN jsonb_build_object('state','invalid');END IF;
+    'not_checked','model_reported_complete','model_reported_incomplete')
+  THEN RETURN jsonb_build_object('state','invalid');END IF;
+ END IF;
 
  UPDATE cotironda_piloto_privado.v2_supplier_shadow_runs run
  SET state=p_state,reason_code=p_reason_code,
