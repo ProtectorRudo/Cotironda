@@ -2,7 +2,7 @@
 
 - Corroborado el recorrido de la prueba «Hola Cotironda, prueba de conexión del piloto.»: inbox del arquitecto y POST Whapi OK; IA Central entró en revisión genérica y emitió un aviso de revisión api_accepted, sin crear ronda.
 - Preparado candidato offline de corrección: solo la frase completa de diagnóstico del comprador, no pedidos de materiales ni texto libre, queda archivada sin activar modelo, aviso falso o ronda; historial immutable de MVP332 intacto.
-- **57/57 pruebas específicas aprobadas** (11 nuevas, 9 MVP332, 37 regresiones 306/313/314/315), Deno check aprobado. No se tocó Supabase/Whapi/Vercel, ni se habilitaron MVP306/MVP314/MVP315. [Decisión 465](docs/465-mvp333-prueba-conexion-sin-falsa-revision.md).
+- **59/59 pruebas específicas aprobadas** (13 nuevas, 9 MVP332, 37 regresiones 306/313/314/315), Deno check aprobado. No se tocó Supabase/Whapi/Vercel, ni se habilitaron MVP306/MVP314/MVP315. [Decisión 465](docs/465-mvp333-prueba-conexion-sin-falsa-revision.md).
 
 ## 09/11/2026 — Publicación acotada a piloto del webhook MVP332
 
