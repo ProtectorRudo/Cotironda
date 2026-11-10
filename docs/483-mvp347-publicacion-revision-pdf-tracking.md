@@ -37,3 +37,15 @@ No altera reglas de IVA, flete, selección, ranking ni contactos. No revela al c
 1. Pruebas de pipeline y tracking PG17 verde.
 2. Contrastar bundles de Edge activos antes de publicarlos.
 3. Ejecutar recuperación real de una sola vez y verificar precios originales, publicación anónima y luego Nahuel/cierre, con autorización expresa.
+
+
+## Evidencia de pruebas y preflight (10/11/2026)
+
+- **Node general:** 3.527 casos, **3.517 aprobados, cero fallidos y 10 omitidos** en GitHub Actions.
+- **CI específico MVP347:** Node sintético, Deno y PostgreSQL 17 con ROLLBACK **aprobados**. Los dos ensayos PG17 verifican publicación desde candidata, precio corregido, original inmutable, idempotencia, bloqueo de teléfono/caracteres de control, autorización por token, anonimato estable, última fuente, revocación y cancelación.
+- **CI complementario:** Deno webhook, PostgreSQL aislamiento, PostgREST, cobertura de sitio y MVP344 aprobados; compilación Next.js todavía en progreso a la hora del corte.
+- **Piloto Supabase, solo lectura:** webhook Whapi v75 ACTIVE, auto-recovery v10 ACTIVE, seguimiento v29 ACTIVE. La tabla candidata MVP346 y la tabla publicada MVP347 no existen en el piloto; tampoco se encontró la tabla de retry MVP336 con el nombre probado. No se han escrito datos, desplegado funciones, usado OpenAI real ni enviado WhatsApps.
+- **Vercel:** los estados externos devuelven error de límite de builds del plan. No es evidencia de falla del código Next.js.
+- **Realidad comercial:** el archivo de Ailín no fue recuperado en vivo por esta PR; siguen pendientes comprobar precios reales, publicación en el enlace del arquitecto, la respuesta de Nahuel y el cierre.
+
+El orden de despliegue debe verificarse contra los bundles reales: migración y correlador MVP336, módulo MVP346 y su tabla, módulo/publicación/seguimiento MVP347, worker authenticated, luego un solo tick de reintento con registro de SHA y cotización verificable. Si la huella de seguimiento no coincide, detener antes de actualizar SQL. Requiere autorización aparte **Publicalo** y plan de rollback sin romper respuestas de proveedores ya invitados.
