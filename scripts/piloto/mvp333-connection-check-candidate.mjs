@@ -73,6 +73,27 @@ export function prepararCandidatoMvp333({
   "  // MVP333: conexión archivada; sin IA, ni aviso de error, ni ronda.\n"+
   "  if(connectivityOnlyMvp333)continue;\n"+
   "  // Buyer confirmation is NOT a new material request, zone clarification,\n");
+ // Un check aislado tampoco debe activar el despachador heredado
+ // oportunista ni la recuperación de documentos al cerrar el batch.
+ // En lotes mixtos, el resto de los mensajes preserva el flujo anterior.
+ result=replaceExactlyOnce(result,
+  " let recoveryTriggerChatId:string|null=null;\n"+
+  " for(const row of event.messages){\n",
+  " let recoveryTriggerChatId:string|null=null;\n"+
+  " let processedInboundMvp333=0,connectivityCountMvp333=0;\n"+
+  " for(const row of event.messages){\n");
+ result=replaceExactlyOnce(result,
+  "  ids.add(row.id);\n",
+  "  ids.add(row.id);\n"+
+  "  processedInboundMvp333++;\n");
+ result=replaceExactlyOnce(result,
+  "  if(connectivityOnlyMvp333)continue;\n",
+  "  if(connectivityOnlyMvp333){connectivityCountMvp333++;continue;}\n");
+ result=replaceExactlyOnce(result,
+  " try{await dispatchTwo(sec,db)}catch{return json(503,'dispatch_reconciliation_required')}\n",
+  " if(processedInboundMvp333>0&&connectivityCountMvp333===processedInboundMvp333)\n"+
+  "  return json(200,'connectivity_check_recorded');\n"+
+  " try{await dispatchTwo(sec,db)}catch{return json(503,'dispatch_reconciliation_required')}\n");
  const markers=result.match(/connectivityOnlyMvp333/gu)??[];
  if(markers.length!==4)throw Error('mvp333_guard_presence_invalid');
  return Object.freeze({
