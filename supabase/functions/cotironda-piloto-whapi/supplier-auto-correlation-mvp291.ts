@@ -217,6 +217,9 @@ export async function correlacionAutomaticaMvp291(args:{
  apiKey:string;model:Modelo;rpc:Rpc;fetchImpl?:typeof fetch;
  // Text observations: independently source-backed before any candidate SQL.
  textQuote?:readonly Line[];textSha256?:string;
+ // A single internal retry of a prior insufficient-evidence decision. SQL
+ // requires a leased private recovery source and records the prior verdict.
+ retryReviewedOnce?:boolean;
  compare?:typeof modelRead;
 }):Promise<ResultMvp291>{
  if(!args?.enabled)return result('disabled','flag_off');
@@ -245,7 +248,11 @@ export async function correlacionAutomaticaMvp291(args:{
    if(!['staged','already_staged'].includes(String(staged.state)))
     return result('not_eligible',String(staged.state));
   }
-  const prepared=await db('cotironda_piloto_auto_correlation_prepare_mvp291',{
+  if(isText&&args.retryReviewedOnce)
+   return result('not_eligible','retry_text_not_supported');
+  const prepared=await db(args.retryReviewedOnce?
+    'cotironda_piloto_auto_correlation_retry_prepare_mvp336':
+    'cotironda_piloto_auto_correlation_prepare_mvp291',{
    p_source_hmac:args.sourceHmac,p_chat_hmac:args.chatHmac
   });
   if(prepared.state!=='reserved')return result('not_eligible',String(prepared.state));
