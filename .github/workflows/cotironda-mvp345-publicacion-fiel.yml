@@ -1,0 +1,46 @@
+name: Cotironda MVP345 - publicacion fiel del replay
+on:
+  pull_request:
+    branches:
+      - fix/mvp344-diagnostico-precios-pdf-piloto
+    paths:
+      - 'supabase/functions/cotironda-piloto-whapi/supplier-auto-recovery-worker-mvp292.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/supplier-archive-replay-mvp292.ts'
+      - 'tests/unit/mvp345-*'
+      - 'tests/unit/mvp344-*'
+      - '.github/workflows/cotironda-mvp345-publicacion-fiel.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  regression-status:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Casos sintéticos de éxito, revisión, origen e incertidumbre
+        run: |
+          node --experimental-strip-types --test \
+            tests/unit/mvp345-worker-publication-status.test.mjs \
+            tests/unit/mvp344-diagnostico-precios-original-pdf.test.mjs \
+            tests/unit/mvp292-archive-auto-recovery.test.mjs
+      - name: Typecheck worker de recuperación privada
+        run: |
+          echo 'El chequeo Deno corre en el job siguiente'
+  edge-typecheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb
+        with:
+          deno-version: v2.x
+      - run: deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-auto-recovery/index.ts
+# Sin credenciales, llamadas pagas, SQL real ni mensajes de WhatsApp.

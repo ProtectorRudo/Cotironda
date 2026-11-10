@@ -151,8 +151,26 @@ export async function procesarPendienteAutomaticoMvp292(args:{
       documentSemanticEnabled:args.documentSemanticEnabled,
       corroboration:verifiedSecond,corroborationSha256:hash as string
      });
-     if(replayed.state==='reconciliation_required')
+     // A correct PRIVATE round link is not proof that the supplier quote
+     // passed arithmetic, source fidelity and anonymous publication.
+     // Keep the association ledger as 'linked', but return the commercial
+     // outcome truthfully so no caller treats a reviewed quote as visible.
+     if(replayed.state==='published_private'){
+      code='archive_quote_published_anonymous';
+     }else if(replayed.state==='review_required'){
+      state='review_required';
+      code=replayed.reason==='unit_price_source_recheck_required'
+       ?'archive_quote_unit_price_source_recheck_required'
+       :'archive_quote_economic_or_source_review_required';
+     }else if(replayed.state==='reconciliation_required'){
+      state='reconciliation_required';
       code='archive_quote_replay_needs_reconciliation';
+     }else if(replayed.state==='not_eligible'||replayed.state==='disabled'){
+      state='review_required';
+      code='archive_quote_not_published';
+     }else{
+      throw Error('unexpected_archive_replay_state');
+     }
     }
    }else if(correlated.state==='unresolved_private'||
       correlated.state==='not_eligible'){
