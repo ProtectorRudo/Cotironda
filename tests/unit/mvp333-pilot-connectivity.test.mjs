@@ -55,7 +55,7 @@ test('MVP333: does not alter existing modules or imports',()=>{
  const {source}=prepararCandidatoMvp333();
  const imports=s=>s.split('\n').filter(l=>l.startsWith('import '));
  assert.deepEqual(imports(source),imports(baseline));
- assert.equal(source.split('\n').length,baseline.split('\n').length+11);
+ assert.equal(source.split('\n').length,baseline.split('\n').length+8);
 });
 test('MVP333: test is strictly buyer, known channel, no supplier and exact message',()=>{
  const {source}=prepararCandidatoMvp333();
