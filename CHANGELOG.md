@@ -1,3 +1,15 @@
+## 10/11/2026 — MVP343: foco en circuito funcional, metering avanzado diferido
+
+- Por decisión comercial, se eliminó del preflight de **prueba controlada** el bloqueo obligatorio de `recoveryAiSpendControlled`; el estado puede informar `aiCostMeteringDeferred=true`. No se interpreta como gasto cero: conservan reserva única, cuotas previas del worker, límites de lectura, verificación de fuentes, autorización y protección de publicación.
+- Ensayo nuevo integrado (sintético) del worker privado MVP292: reclamar único reintento, recuperar PDF con SHA, comprobar segunda lectura, comparar dos rondas vía MVP336 y pasar a verificación comercial sin atribuir por fecha ni publicar importes por defecto. Pruebas negativas ante lectura contradictoria y duplicados.
+- Prioridad siguiente: resolver asociación del original de Ailín, reconstruir presupuesto anónimo y verlo en seguimiento del arquitecto, cerrar ronda, sin reenvío. PR #751 sigue SOLO DESARROLLO; no se aplicó SQL, no se desplegó Whapi/Vercel/Supabase ni se ejecutó OpenAI pagado. [Acta 478](docs/478-mvp343-preflight-recuperacion-circuito-piloto.md).
+
+## 10/11/2026 — MVP343: preflight mínimo para recuperar PDF de proveedor (solo desarrollo)
+
+- Diagnóstico de Supabase en solo lectura: PDF privado de Ailín conservado, 3 líneas/3 unidades omitidas, 2 rondas candidatas, correlación en revisión por insuficiente evidencia, no claim previo; SQL de reintento MVP336 aún sin aplicar.
+- Script de auditoría offline: construye overlay pinned de MVP336 sin editar webhook, comprueba trabajador interno/autenticación/única recuperación, SQL PostgreSQL17 con ROLLBACK y separa MVP336 de herramientas universales MVP337–342. Evalúa resumen sanitizado y falla cerrado si cambia estado o no están confirmados backup, sincronía y autorización `Publicalo`.
+- Pruebas del caso 15/2/1 frente a 20/3 con doble lectura concordante y rechazos; no altera datos reales ni promueve precios sin fuente. PR #751 apilado sobre #749; [Acta 478](docs/478-mvp343-preflight-recuperacion-circuito-piloto.md) / [Issue #750](https://github.com/ProtectorRudo/Cotironda/issues/750).
+
 ## 10/11/2026 — MVP342: lecturas IA privadas cifradas y tokens observados (NO PUBLICADO)
 
 - Se suma AES-256-GCM dedicado por lectura y AAD de ronda/proveedor/fuente/plan/recibo/lote/perspectiva; bytes y precios nunca salen en claro hacia el ledger.
