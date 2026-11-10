@@ -31,7 +31,8 @@ jobs:
             tests/unit/presupuestos-v2-contrato.test.mjs \
             tests/unit/presupuestos-v2-lector-sombra.test.mjs \
             tests/unit/presupuestos-v2-worker-archivo-sombra.test.mjs \
-            tests/unit/presupuestos-v2-b3-edge-handler.test.mjs
+            tests/unit/presupuestos-v2-b3-edge-handler.test.mjs \
+            tests/unit/presupuestos-v2-b3-integracion-privada.test.mjs
   deno-edge:
     runs-on: ubuntu-latest
     timeout-minutes: 15
