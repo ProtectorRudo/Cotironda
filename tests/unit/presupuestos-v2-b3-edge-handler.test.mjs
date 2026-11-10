@@ -147,8 +147,10 @@ test('B3: wrong project, missing OpenAI key or backend admin credentials -> 503'
  for(const patch of mutations){
   const {calls,deps}=setup();
   const env={...baseEnv(),...patch};
-  await check(await ejecutarSolicitudSombraV2B3(req(),
-   env,deps),503,'backend_configuration_invalid');
+  const missingAdminCreds=Object.hasOwn(patch,'SUPABASE_SECRET_KEYS');
+  await check(await ejecutarSolicitudSombraV2B3(req(),env,deps),
+   missingAdminCreds?401:503,
+   missingAdminCreds?'unauthorized':'backend_configuration_invalid');
   assert.equal(calls.db,0);assert.equal(calls.run,0);
  }
 });
