@@ -1,3 +1,9 @@
+## 10/11/2026 — Presupuestos V2 B1: lector multiformato privado (SIN PUBLICAR)
+
+- Nuevo lector en sombra de PDF visual, imágenes, Word, Excel y texto, basado en SHA de bytes archivados y JSON Schema estricto: preserva literales sin completar unidades/precios/moneda/IVA/flete. Resultado **siempre privado/no verificable para ranking**.
+- Excel/XLSX usa modo de la API con límite de 1000 filas/hoja; queda marcado `spreadsheet_requires_cell_audit` hasta implementar lector determinista de celdas. Respuesta truncada/modelo incompleto nunca representa publicación.
+- Tests Node y Deno sintéticos con fetch simulado, sin consumo de API, Storage real, contactos o WhatsApp. No conecta todavía al trabajador vivo ni reprocesa los PDF históricos con lease consumido (Issue #759). [Acta 487](docs/487-v2-lector-multiformato-sombra.md) · [PR #762](https://github.com/ProtectorRudo/Cotironda/pull/762).
+
 ## 10/11/2026 — ADR 486: decisión propuesta para motor documental V2 (SIN PUBLICAR)
 
 - Se documenta un rediseño **acotado** del tramo recepción de presupuesto → lectura fiel → validación por renglón → asociación de ronda → comparación. Se reutilizan WhatsApp, almacenamiento privado, autenticación, ranking por rubro y seguimiento; una línea dudosa no descarta las verificadas ni se suma al ranking.
