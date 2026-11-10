@@ -32,7 +32,7 @@ jobs:
       - name: Corpus de 192 presupuestos, sin OpenAI ni datos reales
         run: |
           node --experimental-strip-types --test tests/unit/mvp337-ingesta-universal-proveedores.test.mjs
-          node scripts/eval/mvp337-corpus-offline.mjs
+          node --experimental-strip-types scripts/eval/mvp337-corpus-offline.mjs
       - name: Regresion del baseline congelado y recuperacion MVP336
         run: |
           node --experimental-strip-types --test \
