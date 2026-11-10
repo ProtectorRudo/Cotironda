@@ -1,4 +1,4 @@
--- MVP347 — offline PG17, synthetic. NEVER production. ROLLBACK.
+-- MVP346 — offline PG17, all fixtures synthetic, NEVER production. All rolled back.
 \set ON_ERROR_STOP on
 begin;
 do $roles$
@@ -43,7 +43,6 @@ returns bigint language sql immutable as $fn$
   + split_part(p_literal,',',2)::bigint) else null end
 $fn$;
 \i supabase/piloto/mvp346_supplier_economic_revision_private.sql
--- Existing legacy projection dependencies are intentionally separate.
 create table cotironda_piloto_privado.anonymous_supplier_docs_mvp107(
  message_hmac text primary key
 );
@@ -53,37 +52,7 @@ create table cotironda_piloto_privado.supplier_evidence_mvp138(
 create function
  cotironda_piloto_privado.descripcion_comercial_publicable_mvp248(p text)
 returns boolean language sql immutable as $fn$
- select p ~ '^Cemento CPC
-
-insert into cotironda_piloto_privado.participants(
- key,chat_hmac,participant_role,consent_at)
-values('proveedor_sintetico',repeat('c',64),'supplier',now());
-insert into cotironda_piloto_privado.requests(id,state,closes_at)
-values('11111111-1111-4111-8111-111111111111','prepared',now()+interval '1 day');
-insert into cotironda_piloto_privado.invitations(request_id,supplier_key,state)
-values('11111111-1111-4111-8111-111111111111','proveedor_sintetico','prepared');
-insert into cotironda_piloto_privado.media_archive_mvp095(
- message_hmac,chat_hmac,participant_key,request_id,content_sha256,
- mime,state,review_state,proposal)
-select repeat(x,64),repeat('c',64),'proveedor_sintetico',
- '11111111-1111-4111-8111-111111111111',repeat('f',64),
- 'application/pdf','stored','suggested_only',
- '{
-   "kind":"supplier_quote","status":"review_required",
-   "delivery_city":null,"requested_delivery_note":"Contado",
-   "total_declared":"$150,00","unanswered":[],
-   "lines":[{"original_description":"Cemento CPC",
-    "quantity":"2","unit":null,"unit_price":"$100,00",
-    "line_total":"$150,00","evidence_location":"p1","ambiguity":null}]
-  }'::jsonb
-from (values('a'),('b'),('c')) as v(x);
-insert into cotironda_piloto_privado.supplier_media_quotes_mvp098(
- message_hmac,request_id,supplier_key,source_sha256,line_count,state)
-select message_hmac,request_id,participant_key,content_sha256,1,
- 'awaiting_fidelity_check'
-from cotironda_piloto_privado.media_archive_mvp095;
-
-
+ select p ~ '^Cemento CPC$'
 $fn$;
 \i supabase/piloto/mvp347_verified_economic_revision_publication.sql
 
