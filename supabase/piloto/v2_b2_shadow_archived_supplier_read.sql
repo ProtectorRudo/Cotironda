@@ -98,6 +98,7 @@ BEGIN
   AND m.request_id IS NULL
   AND m.processing_state IN('needs_review','unmatched_quote')
   AND m.kind IN('document','image')
+  AND a.kind=m.kind AND u.kind=m.kind
   AND m.received_at>=clock_timestamp()-interval '14 days'
   AND s.participant_role='supplier' AND s.consent_at IS NOT NULL
   AND s.opted_out_at IS NULL
