@@ -1,3 +1,10 @@
+## 10/11/2026 — MVP340: ledger privado de IA por lotes (solo desarrollo)
+
+- Migración NUEVA y SIN PUBLICAR: tabla privada RLS `ai_supplier_lot_ledger_mvp340` y dos RPC internos service_role exclusivos para reservar y finalizar el análisis de presupuesto archivado y asociado a ronda/proveedor autorizado.
+- El origen no se procesa dos veces aunque la primera invocación a modelo haya terminado incierta. Cuota previa de invocaciones de modelos por proveedor; control de SHA del archivo y plan, recibo único, sin texto ni precios en la tabla.
+- Adaptador tipado MVP340 entrega callback `reserve/finish` al orquestador MVP339 sin incluir secretos ni cliente de Supabase en el navegador. Test PG17 de fuente sintética vinculada al circuito histórico y contrato Node sin gastos ni WhatsApps.
+- Limitaciones: no integración al webhook publicado, no OCR independiente ni persistencia de cada lectura IA, y la cuota no representa costo en pesos. PR #747 depende de #746/#745/#743/#742; ninguna migración aplicada al piloto. [Acta 475](docs/475-mvp340-reserva-sql-privada-ia-lotes.md).
+
 ## 10/11/2026 — MVP339: doble lectura IA por lotes bajo reserva privada (solo desarrollo)
 
 - Orquestador compartido con presupuesto previo de llamadas y caracteres, digest de cada lote, dos perspectivas aisladas, cotejo literal total y falla segura ante precio no citado, fila omitida, reserva de ronda ajena, duplicación o commit no registrado.
