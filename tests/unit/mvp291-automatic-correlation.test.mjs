@@ -159,6 +159,48 @@ test('SQL is the only binding authority, source and chat HMAC required',async()=
   'cotironda_piloto_auto_correlation_prepare_mvp291',
   'cotironda_piloto_auto_correlation_bind_mvp291']);
 });
+test('MVP336: internal retry uses the separate SQL reservation and audits the same source',async()=>{
+ const calls=[];const unitless=[
+  {line_no:1,description:'Cemento',quantity:'15,00',unit:null},
+  {line_no:2,description:'Arena',quantity:'2,00',unit:null},
+  {line_no:3,description:'Piedra',quantity:'1,00',unit:null}
+ ];
+ const newRound={request_id:newId,lines:[
+  {line_no:1,description:'Cemento 50kg',quantity:'15',unit:'bag'},
+  {line_no:2,description:'Arena',quantity:'2',unit:'bag'},
+  {line_no:3,description:'Piedra',quantity:'1',unit:'bag'}
+ ]};
+ const oldRound={request_id:oldId,lines:[
+  {line_no:1,description:'Cemento 50kg',quantity:'20',unit:'bag'},
+  {line_no:2,description:'Arena',quantity:'3',unit:'bag'}
+ ]};
+ const p={matches:[
+  ...[1,2,3].map(i=>({candidate:'r1',source_line:i,request_line:i,relation:'same'})),
+  ...[1,2].map(i=>({candidate:'r2',source_line:i,request_line:i,relation:'equivalent'}))
+ ]};
+ const result=await correlacionAutomaticaMvp291({
+  enabled:true,webhookAuthenticated:true,sourceHmac:H,chatHmac:E,
+  retryReviewedOnce:true,
+  apiKey:'synthetic-credential-12345678',model:'gpt-6-luna',
+  rpc:async(name,args)=>{
+   calls.push(name);
+   if(name==='cotironda_piloto_auto_correlation_retry_prepare_mvp336')
+    return {data:{state:'reserved',source_sha256:SHA,
+     quote:unitless,candidates:[newRound,oldRound]},error:null};
+   if(name==='cotironda_piloto_auto_correlation_bind_mvp291'){
+    assert.equal(args.p_request,newId);assert.equal(args.p_source_sha256,SHA);
+    return {data:{state:'linked_private'},error:null};
+   }
+   throw Error('unexpected SQL '+name);
+  },
+  compare:async()=>p
+ });
+ assert.equal(result.state,'linked_private');
+ assert.equal(result.outboundMessages,0);
+ assert.deepEqual(calls,[
+  'cotironda_piloto_auto_correlation_retry_prepare_mvp336',
+  'cotironda_piloto_auto_correlation_bind_mvp291']);
+});
 test('no candidate, disabled flag and wrong HMAC fail closed without OpenAI',async()=>{
  let called=0;
  const no=()=>{called++;throw Error('unexpected call')};
