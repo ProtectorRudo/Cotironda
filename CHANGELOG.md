@@ -1,3 +1,9 @@
+## 10/11/2026 — ADR 486: decisión propuesta para motor documental V2 (SIN PUBLICAR)
+
+- Se documenta un rediseño **acotado** del tramo recepción de presupuesto → lectura fiel → validación por renglón → asociación de ronda → comparación. Se reutilizan WhatsApp, almacenamiento privado, autenticación, ranking por rubro y seguimiento; una línea dudosa no descarta las verificadas ni se suma al ranking.
+- Se conservará el anonimato solo mientras dure la ronda y se revelarán todos los invitados al cierre, según las reglas ya aprobadas.
+- La ruta histórica MVP292 de doble lectura y lease consumido permanece sin cambios en piloto; reintento seguro queda en Issue #759. Nueva línea de trabajo prioritaria Issue #760; contrato y evaluación sobre corpus antes del código de producción. [ADR 486](docs/486-adr-motor-presupuestos-v2.md).
+
 ## 10/11/2026 — MVP348: fidelidad de lecturas, telemetría y prevención de falsos bloqueos (SOLO DESARROLLO)
 
 - Código: comparador conservador de alcance para correlación privada (solo diferencias inequívocas de formato, sin cambiar material, cantidad, unidad, orden ni precio) y motivos granulares de revisión compatibles con ledger existente.
