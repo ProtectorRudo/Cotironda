@@ -6,8 +6,8 @@
 import {createClient} from 'npm:@supabase/supabase-js@2.118.0';
 import {ejecutarSolicitudSombraV2B3} from './handler.ts';
 Deno.serve(request=>ejecutarSolicitudSombraV2B3(request,{
- COTIRONDA_PILOT_V2_SHADOW_ENABLED:
-  Deno.env.get('COTIRONDA_PILOT_V2_SHADOW_ENABLED')??'',
+ COTIRONDA_PILOT_AUTO_RECOVERY_MVP292_ENABLED:
+  Deno.env.get('COTIRONDA_PILOT_AUTO_RECOVERY_MVP292_ENABLED')??'',
  COTIRONDA_PILOT_AUTO_RECOVERY_SECRET:
   Deno.env.get('COTIRONDA_PILOT_AUTO_RECOVERY_SECRET')??'',
  COTIRONDA_PILOT_OPENAI_API_KEY:
