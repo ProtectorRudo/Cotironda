@@ -122,6 +122,9 @@ test('MVP346: worker mantiene cotización en revisión aun con candidata guardad
    },
    cotironda_piloto_record_supplier_media_mvp098:{state:'stored_unverified'},
    cotironda_piloto_store_revision_candidate_mvp346:{state:'candidate_stored'},
+   // MVP347 route is now checked before the original immutable reading.
+   // A privacy gate denial leaves the original quote in review.
+   cotironda_piloto_publish_revision_mvp347:{state:'privacy_or_quality_review'},
    cotironda_piloto_compare_supplier_readings_mvp102:{
     state:'needs_source_review',reason:'line_disagreement'
    },
