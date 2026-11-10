@@ -36,7 +36,8 @@ type ReadCode='disabled'|'invalid_worker'|'invalid_file'|
  'invalid_utf8'|'upstream_unavailable'|'upstream_timeout'|
  'upstream_rejected'|'upstream_incomplete'|'upstream_response_invalid'|
  'upstream_response_too_large'|'model_output_invalid'|
- 'no_material_lines'|'incomplete_source'|'candidate_only';
+ 'no_material_lines'|'incomplete_source'|'spreadsheet_requires_cell_audit'|
+ 'candidate_only';
 export type ShadowReadResultV2=Readonly<{
  state:'disabled'|'review_required'|'private_extraction_unverified';
  code:ReadCode;
@@ -284,6 +285,12 @@ export async function leerPresupuestoSombraV2(
  if(contract.document!.lines.length===0)
   return result('review_required','no_material_lines',
    mode,contract.document,contract.line_diagnostics,computed,completeness);
+ // Responses spreadsheet augmentation can omit rows above 1000 per sheet;
+ // not even the model's own claim of completeness is safe to report.
+ if(mode==='spreadsheet_augmented')
+  return result('private_extraction_unverified',
+   'spreadsheet_requires_cell_audit',mode,contract.document,
+   contract.line_diagnostics,computed,'not_checked');
  if(extracted.more_content_unread)
   return result('private_extraction_unverified','incomplete_source',
    mode,contract.document,contract.line_diagnostics,computed,completeness);
