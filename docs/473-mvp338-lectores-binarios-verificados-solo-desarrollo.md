@@ -22,9 +22,10 @@ Cotironda acepta el modo en que cada proveedor cotiza sin imponer formato ni sol
 1. Recibe `{mime, bytes, sha256}` de un original **ya adquirido por la ruta segura**, con máximo físico de 8 MB. Compara SHA-256 computado del binario contra el declarado y valida firma de archivo, antes de invocar lectores.
 2. Para PDF válido, usa `readPdfPositioned`; respeta página real de cada fila. Rechaza capas/escaneo sospechosos, páginas o filas fuera de las cotas preexistentes, sin registrar datos comerciales en logs.
 3. Para XLSX/DOCX, reutiliza `readOfficeVisibleRows` y mantiene todas las filas visibles extraídas. Marca sección explícita `xlsx:visible_row_order` o `docx:visible_row_order` para **no inventar** una hoja/página/celda desconocida.
-4. Para TXT/CSV, decodifica UTF-8 en modo estricto y pasa las líneas literales por el adaptador MVP337, sin interpretar ni transformar cifras.
-5. Para imagen PNG/JPEG/WebP, PDF escaneado y formatos OLE2 DOC/XLS, retorna `review_required` con motivo privado y preserva evidencia original; OCR/decodificador independiente **pendiente**.
-6. Envía filas verificadas contra bytes al planificador MVP337, que divide en lotes y registra ubicación, fuente original y orden. Devuelve siempre `economicPublicationAllowed=false` y `whatsappMessages=0`. No modifica tablas ni llama RPC/IA.
+4. Para XLSX ejecuta **antes del lector** `guardia-formulas-excel-mvp338.ts`: recorre todas las hojas XML del ZIP, con límites de inflación, y detecta fórmulas `<f>` o con namespace. Si encuentra una, mantiene el original en `xlsx_formula_requires_review`. Nunca utiliza resultados cacheados como precios verificados ni ejecuta fórmulas. No altera el parser Office histórico.
+5. Para TXT/CSV, decodifica UTF-8 en modo estricto y pasa las líneas literales por el adaptador MVP337, sin interpretar ni transformar cifras.
+6. Para imagen PNG/JPEG/WebP, PDF escaneado y formatos OLE2 DOC/XLS, retorna `review_required` con motivo privado y preserva evidencia original; OCR/decodificador independiente **pendiente**.
+7. Envía filas verificadas contra bytes al planificador MVP337, que divide en lotes y registra ubicación, fuente original y orden. Devuelve siempre `economicPublicationAllowed=false` y `whatsappMessages=0`. No modifica tablas ni llama RPC/IA.
 
 ## Separación arquitectónica verificada
 
@@ -37,9 +38,11 @@ Se corrigió dividiendo el código:
 
 ## Pruebas
 
-- `tests/unit/mvp338-binary-evidence-private.test.mjs`: archivos DOCX/XLSX **ZIP binarios generados para CI**, incluida planilla de dos hojas con 35 filas, texto TXT/CSV real, imágenes con firmas válidas que quedan en revisión, formatos DOC/XLS heredados retenidos, macros, fórmula, hoja oculta, XML externo, SHA incorrecto, MIME falso, tamaño excesivo y PDF lector inyectado con páginas.
+- `tests/unit/mvp338-binary-evidence-private.test.mjs`: archivos DOCX/XLSX **ZIP binarios generados para CI**, incluida planilla de dos hojas con 35 filas, texto TXT/CSV real, imágenes con firmas válidas que quedan en revisión, formatos DOC/XLS heredados retenidos, macros, XLSX con fórmula y valor cacheado, hoja oculta, XML externo, SHA incorrecto, MIME falso, tamaño excesivo y PDF lector inyectado con páginas.
 - `tests/unit/mvp338-real-pdf-deno.smoke.ts`: documento PDF auténtico a nivel binario de dos páginas, **generado sintéticamente**, leído a través de `unpdf` en Deno; corroboración de filas comerciales y de la página correcta. Un SHA incorrecto debe impedir procesamiento.
 - Workflow `cotironda-mvp338-originales-binarios-privados.yml`: Node, Deno typecheck, PDF binario real y regresión del corpus MVP337. Sin credenciales ni envíos.
+
+- **Seguridad ampliada:** se descubrió que el parser Office histórico podía entregar un valor de celda cacheado sin corroborar que hubiese fórmula. El nuevo adaptador bloquea ese caso; no se modifica el baseline congelado. Verificación CI específica requiere un XLSX que contenga `<f>100*2</f><v>200</v>` con CRC correcto, y exige `review_required`.
 
 ## Criterios de aceptación
 
