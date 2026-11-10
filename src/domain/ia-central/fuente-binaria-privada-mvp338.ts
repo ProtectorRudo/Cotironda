@@ -142,8 +142,11 @@ export async function extraerEvidenciaPrivadaMvp338(
    return fromRows(format,actualHash,rows);
   }
   return failure('format_needs_independent_parser',format,actualHash);
- }catch{
+ }catch(error){
+  // Only a bounded internal code may pass this private diagnostic gate.
   // Never expose exception messages or confidential supplier source in logs.
+  if(error instanceof Error&&error.message==='mvp338_formula_requires_review')
+   return failure('xlsx_formula_requires_review',format,actualHash);
   return failure('source_reader_requires_private_review',format,actualHash);
  }
 }
