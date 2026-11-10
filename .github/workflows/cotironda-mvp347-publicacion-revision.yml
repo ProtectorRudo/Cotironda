@@ -64,6 +64,10 @@ jobs:
             -f supabase/tests/ci/mvp347-verified-revision-publication-rollback.sql \
             | grep -Fx 't'
           psql -X -tA -c "select to_regnamespace('cotironda_piloto_privado') is null" | grep -Fx 't'
+          psql -X -v ON_ERROR_STOP=1 -tA \
+            -f supabase/tests/ci/mvp347-tracking-revision-rollback.sql \
+            | grep -Fx 't'
+          psql -X -tA -c "select to_regnamespace('cotironda_piloto_privado') is null" | grep -Fx 't'
   edge-deno:
     runs-on: ubuntu-latest
     timeout-minutes: 12
