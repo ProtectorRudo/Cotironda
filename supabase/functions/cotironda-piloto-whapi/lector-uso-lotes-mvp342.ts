@@ -22,7 +22,8 @@ export function crearLectorUsoMvp342(args:{
   const read=crearLectorIALotesMvp339({...args,
    fetchImpl:(async(input:RequestInfo|URL,init?:RequestInit)=>{
     const res=await (args.fetchImpl??fetch)(input,init);
-    evidence=res;return res;
+    // Clone BEFORE MVP339 consumes the response body.
+    evidence=res.clone();return res;
    }) as typeof fetch
   });
   const reading=await read(req);
