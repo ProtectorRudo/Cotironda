@@ -5,10 +5,12 @@ on:
       - feat/mvp174-supplier-packaging-equivalence
     paths:
       - 'supabase/functions/cotironda-piloto-whapi/supplier-auto-correlation-mvp291.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/supplier-auto-correlation-mvp336.ts'
       - 'supabase/functions/cotironda-piloto-whapi/supplier-auto-recovery-worker-mvp292.ts'
       - 'supabase/piloto/mvp336_*'
       - 'supabase/tests/ci/mvp336-*'
       - 'scripts/piloto/mvp336-*'
+      - 'tests/unit/mvp336-*'
       - 'tests/unit/mvp291-*'
       - 'tests/unit/mvp292-*'
       - '.github/workflows/cotironda-mvp336-correlacion-una-vez.yml'
@@ -52,6 +54,7 @@ jobs:
             tests/unit/mvp292-archive-auto-recovery.test.mjs \
             tests/unit/mvp292-auto-text-correlation.test.mjs
           node scripts/piloto/mvp336-retry-source-builder.mjs --assert-local
+          node scripts/piloto/mvp336-whapi-overlay-candidate.mjs
       - name: PostgreSQL17 - validaciones privadas, fuente inmutable y ROLLBACK
         run: |
           set -euo pipefail
@@ -73,4 +76,6 @@ jobs:
         run: |
           deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-auto-recovery/index.ts
           deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/index.ts
+          deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/supplier-auto-correlation-mvp336.ts
+          deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/supplier-auto-recovery-worker-mvp292.ts
 # No secretos, OpenAI, Whapi, producción, preview ni despliegues reales.
