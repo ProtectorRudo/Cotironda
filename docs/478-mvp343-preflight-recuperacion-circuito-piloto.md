@@ -36,7 +36,13 @@ Consulté el inventario y los archivos de las Edge Functions desplegadas en el p
 
 El paquete candidato local MVP336 agrega un archivo (61 → 62) y cambia únicamente el import previsto en el index, pero **no se ha comparado aún byte a byte** contra el despliegue real; se necesita ese preflight previo a publicación. La evidencia confirma por qué el PDF sigue sin recuperar: el circuito activo no ejecuta MVP336 y la base no tiene su tabla de reintento.
 
-No basta aplicar SQL: hay que mantener sincronizados webhook y trabajador, y comprobar el presupuesto de llamadas de IA, credenciales de host y consentimiento vigente antes de activar el reintento.
+No basta aplicar SQL: hay que mantener sincronizados webhook y trabajador, y comprobar el presupuesto verificable de llamadas de IA, conciliación de uso incierto, credenciales de host y consentimiento vigente antes de activar el reintento.
+
+## Hallazgo de auditoría de costos — bloqueo adicional
+
+El trabajador histórico de recuperación (supplier-auto-recovery-worker-mvp292.ts) **vuelve a leer el documento** mediante IA documental y, para correlacionar, invoca dos interpretaciones semánticas separadas; también puede entrar a la ruta de reprocesamiento comercial. Esa ruta pasa una API key al lector anterior, pero **no contiene un wrapper de tokenización y cuota por llamada equivalente al nuevo MVP342**. Por lo tanto, un reintento podría consumir tokens de OpenAI cuyo costo no queda medido allí.
+
+La migración MVP336, por sí sola, no corrige ese riesgo. El nuevo preflight rechaza habilitar un reintento real hasta verificar un límite de gasto efectivo, contabilidad de consumos inciertos y autorización operativa, **aunque esté publicada la versión y exista un backup**. La condición recoveryAiSpendControlled se inicia falsa. No se la declara verdadera por tener controles de uso en otra ruta de IA.
 
 ## Dos tracks separados
 
@@ -50,7 +56,7 @@ El nuevo scripts/piloto/mvp343-recovery-only-preflight.mjs:
 - Verifica integración al trabajador privado y autenticación interna, sin cambiar index, cron, SQL ni enviar mensajes.
 - Comprueba que la migración SQL MVP336 se ejecuta solo en ensayo PG17 con BEGIN y ROLLBACK, y que el paquete mínimo no incluye migraciones MVP340–342.
 - Evalúa únicamente métricas sanitizadas de la fuente. Si el archivo dejó de estar guardado, cambió su asociación, hay un claim previo, desapareció una ronda o cambió el número de líneas, devuelve BLOCKED sin adivinar.
-- Con SQL aún no publicado devuelve staging_required. Sin backup/restauración verificado, sincronización webhook/worker y orden separada Publicalo tampoco habilita la prueba.
+- Con SQL aún no publicado devuelve staging_required. Sin backup/restauración verificado, sincronización webhook/worker, control de gasto del reintento y orden separada Publicalo tampoco habilita la prueba.
 - El preflight **nunca** asigna rondas, autoriza ofertas ni registra costos como reales. Solo SQL y las dos lecturas del worker pueden aprobar una correlación privada.
 
 ### B. Integración universal posterior
