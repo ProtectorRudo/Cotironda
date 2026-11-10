@@ -175,6 +175,25 @@ test('V2 B2: model attempts can_publish=true -> uncertain, no candidate persiste
  assert.equal(calls.at(-1).args.p_candidate,null);
  assert.equal(calls.at(-1).args.p_state,'uncertain');
 });
+test('V2 B2: forged reader candidate is rejected despite claiming privacy',async()=>{
+ const {result,calls}=await testWorker({
+  modelOutput:{...modelResponse,
+   document:{...candidate,lines:[{...candidate.lines[0],price_invented:'$999'}]}}
+ });
+ assert.equal(result.state,'reconciliation_required');
+ assert.equal(result.reason,'shadow_read_uncertain');
+ assert.equal(calls.at(-1).args.p_candidate,null);
+});
+test('V2 B2: worker rebuilds safe line diagnostics instead of trusting injection',async()=>{
+ const {result,calls}=await testWorker({
+  modelOutput:{...modelResponse,line_diagnostics:[{
+   ordinal:1,state:'extracted_pending_source_check',
+   reason:'untrusted_payload'
+  }]}
+ });
+ assert.equal(result.state,'candidate_private');
+ assert.deepEqual(calls.at(-1).args.p_line_diagnostics,diag);
+});
 test('V2 B2: reader review -> persistent private review, no buyer data',async()=>{
  const {result,calls}=await testWorker({
   modelOutput:{...modelResponse,state:'review_required',code:'model_output_invalid',
