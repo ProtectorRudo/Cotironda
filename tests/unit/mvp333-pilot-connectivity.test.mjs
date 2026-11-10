@@ -67,7 +67,7 @@ test('MVP333: test is strictly buyer, known channel, no supplier and exact messa
 });
 test('MVP333: no legacy classifier or IA Central call for the test',()=>{
  const {source}=prepararCandidatoMvp333();
- assert.match(source,/!webLinkCode&&!centralBuyerText&&!connectivityOnlyMvp333&&/u);
+ assert.match(source,/!webLinkCode&&!centralBuyerText&&\s*!buyerReviewCommand&&!buyerLinkCommand&&!connectivityOnlyMvp333&&/u);
  assert.match(source,/!buyerReviewCommand&&!buyerLinkCommand&&!connectivityOnlyMvp333;/u);
  assert.match(source,/if\(connectivityOnlyMvp333\)continue;/u);
 });
