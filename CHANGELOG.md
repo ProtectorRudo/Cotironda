@@ -1,3 +1,10 @@
+## 10/11/2026 — MVP337: base flexible y corpus heterogéneo (solo desarrollo)
+
+- Nuevo contrato de filas de evidencia literal por sección y posición, con lotes para más de 25 filas sin recortar ni descartar extras, notas y totales, sin convertirlo en oferta verificada.
+- Adaptador conservador de texto libre, TXT/CSV y varios mensajes. Doble propuesta con cotejo de citas originales; anomalías se retienen como revisión. Identidades y originales permanecen privados.
+- Corpus de **192 casos sintéticos de filas ya extraídas** (12 etiquetas × 16 diseños), con casos de descuentos, IVA, flete, pagos, extras, ofertas parciales, totales ausentes y documentos de 42/87 líneas. La IA real y el OCR no fueron ejecutados; no presentar estas pruebas como tasa de acierto semántico.
+- Módulos no conectados al piloto. Todos los resultados nuevos niegan publicación económica y envíos; no se alteraron SQL/Whapi/Vercel ni producción. PR #743 depende de PR #742. [Acta 472](docs/472-mvp337-ingesta-flexible-corpus-y-lotes.md).
+
 ## 10/11/2026 — MVP336: corrección en desarrollo de asociación de PDFs sin unidades
 
 - Primer documento de Ailín guardado en Supabase (08:19 ART), 3 líneas con cantidades literales 15/2/1; ronda nueva 15/2/1 vs anterior 20/3. Estado real `insufficient_material_evidence`, sin oferta publicada.
