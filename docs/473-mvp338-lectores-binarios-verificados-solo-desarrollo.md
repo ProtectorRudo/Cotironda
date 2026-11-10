@@ -17,7 +17,7 @@ Cotironda acepta el modo en que cada proveedor cotiza sin imponer formato ni sol
 
 ## Implementado
 
-`src/domain/ia-central/fuente-binaria-privada-mvp338.ts`:
+`src/domain/ia-central/fuente-binaria-privada-mvp338.ts` con inyección estricta de lectores autorizados desde `supabase/functions/cotironda-piloto-whapi/lector-evidencia-binaria-mvp338.ts`:
 
 1. Recibe `{mime, bytes, sha256}` de un original **ya adquirido por la ruta segura**, con máximo físico de 8 MB. Compara SHA-256 computado del binario contra el declarado y valida firma de archivo, antes de invocar lectores.
 2. Para PDF válido, usa `readPdfPositioned`; respeta página real de cada fila. Rechaza capas/escaneo sospechosos, páginas o filas fuera de las cotas preexistentes, sin registrar datos comerciales en logs.
@@ -25,6 +25,15 @@ Cotironda acepta el modo en que cada proveedor cotiza sin imponer formato ni sol
 4. Para TXT/CSV, decodifica UTF-8 en modo estricto y pasa las líneas literales por el adaptador MVP337, sin interpretar ni transformar cifras.
 5. Para imagen PNG/JPEG/WebP, PDF escaneado y formatos OLE2 DOC/XLS, retorna `review_required` con motivo privado y preserva evidencia original; OCR/decodificador independiente **pendiente**.
 6. Envía filas verificadas contra bytes al planificador MVP337, que divide en lotes y registra ubicación, fuente original y orden. Devuelve siempre `economicPublicationAllowed=false` y `whatsappMessages=0`. No modifica tablas ni llama RPC/IA.
+
+## Separación arquitectónica verificada
+
+La primera versión del PR hizo fallar el build TypeScript Next.js: el dominio compartido importaba directamente `supplier-source-pdf-general.ts`, que depende de `npm:unpdf@2.1.0` (válido para Deno, **no** para el compilador Next.js). No era un fallo de lectura del PDF sino una **fuga de dependencia de entorno**.
+
+Se corrigió dividiendo el código:
+- Dominio compartido: nunca importa módulos Edge y recibe `readPdfPositioned` y `readOfficeVisibleRows` exclusivamente como capacidades inyectadas. Sin lectores internos => `review_required` (fail-closed).
+- Adaptador privado Edge: enlaza implementaciones reales y mantiene las verificaciones de SHA, tipo, páginas, ZIP y seguridad; **todavía no importado por el webhook publicado**.
+- Pruebas Node: inyectan el lector Office real y un PDF simulado de posicionamiento. Prueba Deno: usa el adaptador real y un PDF binario con dos páginas. El ensamble del portal no necesita resolver `npm:unpdf`.
 
 ## Pruebas
 
