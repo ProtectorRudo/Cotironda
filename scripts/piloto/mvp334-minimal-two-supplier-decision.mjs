@@ -16,7 +16,7 @@ export function inspeccionarSqlMvp334(source){
   throw Error('mvp334_sql_missing_or_oversized');
  const plain=source.replace(/--[^\n]*/gu,'').trim();
  if(!/^WITH\s+personas\s+AS\s*\(/iu.test(plain)||
-  !/AS\s+evidence_snapshot\s*;\s*$/iu.test(plain)||
+  !/AS\s+evidence_snapshot\s+FROM\s+personas\s+p\s+CROSS\s+JOIN\s+catalogos\s+c\s+CROSS\s+JOIN\s+controles\s+g\s+CROSS\s+JOIN\s+operaciones\s+o\s*;\s*$/iu.test(plain)||
   /\b(INSERT|UPDATE|DELETE|UPSERT|MERGE|CREATE|DROP|ALTER|TRUNCATE|COPY|EXECUTE|CALL|GRANT|REVOKE|DO)\b/iu.test(plain)||
   (plain.match(/;/gu)??[]).length!==1||
   !plain.includes('proveedor_contactable_mvp307')||
