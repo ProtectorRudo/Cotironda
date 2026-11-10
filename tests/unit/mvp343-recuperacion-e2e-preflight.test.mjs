@@ -32,6 +32,7 @@ test('MVP343: paquete de recuperación acotado genera overlay de webhook y PG17 
  assert.equal(r.whatsapp_messages,0);
  assert.equal(r.openai_paid_calls,0);
  assert.equal(r.legacy_recovery_ai_spend_metered,false);
+ assert.equal(r.metering_is_post_pilot_improvement,true);
  assert.equal(r.can_publish_quote,false);
 });
 test('MVP343: diagnóstico real sanitizado bloquea publicar y no exige reenviar',()=>{
@@ -56,7 +57,7 @@ test('MVP343: migración sola no autoriza IA, presupuesto ni edición del piloto
   ...snapshot,mvp336SqlPresent:true,liveBackupVerified:true,
   workerAndWebhookSynced:true
  });
- assert.equal(synced.reason,'recovery_ai_spend_uncontrolled');
+ assert.equal(synced.reason,'pilot_publication_not_authorized');
  const budgeted=evaluarFuenteArchivadaMvp343({
   ...snapshot,mvp336SqlPresent:true,liveBackupVerified:true,
   workerAndWebhookSynced:true,recoveryAiSpendControlled:true
@@ -64,10 +65,11 @@ test('MVP343: migración sola no autoriza IA, presupuesto ni edición del piloto
  assert.equal(budgeted.reason,'pilot_publication_not_authorized');
  const authorized=evaluarFuenteArchivadaMvp343({
   ...snapshot,mvp336SqlPresent:true,liveBackupVerified:true,
-  workerAndWebhookSynced:true,recoveryAiSpendControlled:true,
+  workerAndWebhookSynced:true,
   explicitPilotPublicationAuthorized:true
  });
  assert.equal(authorized.state,'ready_for_one_internal_retry');
+ assert.equal(authorized.aiCostMeteringDeferred,true);
  assert.equal(authorized.canBindAutomatically,false);
  assert.equal(authorized.canPublish,false);
 });
@@ -131,14 +133,22 @@ test('MVP343: el PDF 15/2/1 de ensayo es UNICO ante 20/3 solo con doble lectura 
  ])}).requestId,null);
 });
 
-test('MVP343: autorización de publicación sin medidor del recovery NO dispara IA',()=>{
- const v=evaluarFuenteArchivadaMvp343({
+test('MVP343: medidor avanzado diferido, sin saltear autorización ni reserva',()=>{
+ const noAuth=evaluarFuenteArchivadaMvp343({
+  ...snapshot,mvp336SqlPresent:true,liveBackupVerified:true,
+  workerAndWebhookSynced:true,explicitPilotPublicationAuthorized:false,
+  recoveryAiSpendControlled:false
+ });
+ assert.equal(noAuth.state,'blocked');
+ assert.equal(noAuth.reason,'pilot_publication_not_authorized');
+ const authorized=evaluarFuenteArchivadaMvp343({
   ...snapshot,mvp336SqlPresent:true,liveBackupVerified:true,
   workerAndWebhookSynced:true,explicitPilotPublicationAuthorized:true,
   recoveryAiSpendControlled:false
  });
- assert.equal(v.state,'blocked');
- assert.equal(v.reason,'recovery_ai_spend_uncontrolled');
- assert.equal(v.canBindAutomatically,false);
- assert.equal(v.needsSupplierAction,false);
+ assert.equal(authorized.state,'ready_for_one_internal_retry');
+ assert.equal(authorized.aiCostMeteringDeferred,true);
+ assert.equal(authorized.canBindAutomatically,false);
+ assert.equal(authorized.canPublish,false);
+ assert.equal(authorized.needsSupplierAction,false);
 });
