@@ -1,3 +1,10 @@
+## 10/11/2026 — MVP342: lecturas IA privadas cifradas y tokens observados (NO PUBLICADO)
+
+- Se suma AES-256-GCM dedicado por lectura y AAD de ronda/proveedor/fuente/plan/recibo/lote/perspectiva; bytes y precios nunca salen en claro hacia el ledger.
+- Nuevo registro PostgreSQL privado por llamada: reservado, observado o consumo incierto; guarda sólo IV/ciphertext/sha y usage numérico real informado por Responses API (en tests **simulado**). RPC con permisos service_role, RLS y límite por comprador; costo monetario y tipo de cambio aún DESCONOCIDOS.
+- Nuevo adaptador interno privado sin Deno.serve ni webhook; reserva antes de llamar al modelo, cifra y persiste antes del siguiente lote. Error de red o consumo faltante bloquea siguientes modelos sin reintentos ciegos.
+- Test Node de cifrado AAD/nonce, DOCX binario, respuestas API simuladas y flujo completo privado; PG17 acumulado BEGIN/ROLLBACK y bloqueo de uso desconocido. MVP342 PR #749 sobre MVP341 #748. No hay cambios reales en Supabase, Vercel ni Whapi. [Acta 477](docs/477-mvp342-lotes-cifrados-y-consumo-observado.md).
+
 ## 10/11/2026 — MVP341: primer worker interno de originales y lotes (sin publicar)
 
 - RPC SQL de preflight de documento de proveedor, solo service_role, devuelve identidad técnica/ubicación privada sin precios ni contactos; exige asociación, invitación, recepción posterior al despacho, consentimiento y ronda abierta; si el origen ya fue procesado no genera otra descarga ni costo. Incluye filtro explícito de propuesta supplier_quote.
