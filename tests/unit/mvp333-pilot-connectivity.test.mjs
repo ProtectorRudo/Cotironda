@@ -55,7 +55,7 @@ test('MVP333: does not alter existing modules or imports',()=>{
  const {source}=prepararCandidatoMvp333();
  const imports=s=>s.split('\n').filter(l=>l.startsWith('import '));
  assert.deepEqual(imports(source),imports(baseline));
- assert.equal(source.split('\n').length,baseline.split('\n').length+8);
+ assert.equal(source.split('\n').length,baseline.split('\n').length+12);
 });
 test('MVP333: test is strictly buyer, known channel, no supplier and exact message',()=>{
  const {source}=prepararCandidatoMvp333();
@@ -79,6 +79,26 @@ test('MVP333: the inbox is archived BEFORE skipping false review',()=>{
  assert(stored>0);
  assert(check>stored);
  assert(central>check);
+});
+test('MVP333: a pure check does not wake background supplier dispatch',()=>{
+ const {source}=prepararCandidatoMvp333();
+ const seen=source.indexOf('processedInboundMvp333++');
+ const check=source.indexOf('connectivityCountMvp333++;continue;');
+ const stop=source.indexOf("return json(200,'connectivity_check_recorded')");
+ const dispatch=source.indexOf('try{await dispatchTwo(sec,db)}');
+ assert(seen>0);
+ assert(check>seen);
+ assert(stop>check);
+ assert(dispatch>stop);
+ assert.match(source,/processedInboundMvp333>0&&connectivityCountMvp333===processedInboundMvp333/u);
+});
+test('MVP333: a mixed batch retains business dispatch and supplier replies',()=>{
+ const {source}=prepararCandidatoMvp333();
+ const count=(source.match(/processedInboundMvp333\+\+/gu)??[]).length;
+ assert.equal(count,1);
+ assert.match(source,/if\(connectivityOnlyMvp333\)\{connectivityCountMvp333\+\+;continue;\}/u);
+ assert.match(source,/if\(processedInboundMvp333>0&&connectivityCountMvp333===processedInboundMvp333\)/u);
+ assert.match(source,/try\{await dispatchTwo\(sec,db\)\}/u);
 });
 test('MVP333: no generic filtering of material descriptions',()=>{
  const {source}=prepararCandidatoMvp333();
