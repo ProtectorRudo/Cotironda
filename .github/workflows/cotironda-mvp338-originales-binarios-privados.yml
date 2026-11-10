@@ -4,6 +4,7 @@ on:
     paths:
       - 'src/domain/ia-central/fuente-binaria-privada-mvp338.ts'
       - 'supabase/functions/cotironda-piloto-whapi/lector-evidencia-binaria-mvp338.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/guardia-formulas-excel-mvp338.ts'
       - 'tests/unit/mvp338-*'
       - 'docs/473-*'
       - '.github/workflows/cotironda-mvp338-originales-binarios-privados.yml'
@@ -30,6 +31,7 @@ jobs:
         run: |
           deno check --node-modules-dir=auto src/domain/ia-central/fuente-binaria-privada-mvp338.ts
           deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/lector-evidencia-binaria-mvp338.ts
+          deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/guardia-formulas-excel-mvp338.ts
       - name: Actual two-page PDF parsed by unpdf@2.1.0 (synthetic original)
         run: deno run --node-modules-dir=auto tests/unit/mvp338-real-pdf-deno.smoke.ts
       - name: Baseline flexible evidence corpus - no model inference
