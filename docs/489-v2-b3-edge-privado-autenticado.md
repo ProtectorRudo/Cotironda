@@ -10,7 +10,7 @@ El B2 anterior ya permite, desde un trabajador privado, reclamar una fuente revi
 
 ## Defensa en profundidad
 
-- **Dos interruptores:** variable privada del Edge `COTIRONDA_PILOT_V2_SHADOW_ENABLED` EXACTAMENTE `true` Y tabla `cotironda_piloto_privado.v2_shadow_settings.enabled=true`. Ambos quedan apagados por defecto. B3 no puede activarlos.
+- **Dos interruptores sin configuración nueva:** variable de recuperación del Edge **ya existente** `COTIRONDA_PILOT_AUTO_RECOVERY_MVP292_ENABLED` EXACTAMENTE `true` Y tabla `cotironda_piloto_privado.v2_shadow_settings.enabled=true`. El interruptor **nuevo** de SQL queda apagado por defecto; la variable existente ya funciona en el piloto. B3 no puede activar ninguno. No se pide crear una variable adicional.
 - **Autenticación:** reutiliza `authorizeRecoveryMvp294`, ya probado: se requieren el encabezado `x-cotironda-recovery-secret` con el secreto de recuperación existente Y una credencial de servicio del proyecto. Vía moderna: `apikey: sb_secret_...` **sin** `Authorization`; vía heredada: `Authorization: Bearer <JWT service_role>` **sin** `apikey`. Rechaza usuarios comunes, `anon`, keys publishable, y combinaciones de dos tipos. **No se crea ni se reemplaza ningún secreto.**
 - **Seguridad HTTP:** solo POST, sin cuerpo ni parámetros; no se acepta HMAC, identificador de ronda, nombre de proveedor, instrucciones ni límite de lote de clientes. El SQL privado elige una sola fuente autorizada por ejecución. Las respuestas contienen solo un estado genérico; jamás texto, precio, HMAC, teléfono, token o error de API.
 - **Proyecto exacto:** se verifica `SUPABASE_URL` del piloto y clave de servicio en entorno servidor; API key OpenAI solo se usa desde backend y `store:false` en lector. Credenciales nunca se exponen al navegador, GitHub ni logs.
@@ -32,7 +32,7 @@ No dispara un cron nuevo, no envía WhatsApps, no asocia rondas, no publica prec
 ## Plan de salida al PILOTO (requiere «Publicalo», NO ejecutar con «Luz verde»)
 
 1. Preflight de la pila de PR #761 → #762 → #763 → B3, auditoría de módulos/versiones, permisos y validación del entorno exacto `cotironda-piloto`.
-2. Aplicar migración B2 **con flag SQL apagado**, desplegar función B3 **con flag de entorno apagado**, sin tocar cron ni worker MVP292.
+2. Aplicar migración B2 **con flag SQL apagado**, desplegar función B3 **aprovechando el flag de recuperación existente, sin nueva variable**, sin tocar cron ni worker MVP292.
 3. Verificar que una llamada sin credenciales da 401 solamente si el flag está encendido; con flag OFF debe responder `shadow_disabled` (503). Nunca mostrar la clave ni pegarla en un chat.
 4. Probar autorización de doble factor y un tick controlado **solo cuando los dos flags estén habilitados expresamente**, con evidencia de lectura del SHA y registro privado de la candidata. No repetir al segundo archivo hasta comprobar exactamente cuál fue el resultado del primero.
 5. Auditar el resultado contra el original PDF por artículo, cantidad y precio antes de cualquier proyección de seguimiento. Sin auditor de fuente V2 no declarar una oferta publicada ni un ranking completo.
