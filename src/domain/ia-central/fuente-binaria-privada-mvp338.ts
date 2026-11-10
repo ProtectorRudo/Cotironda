@@ -11,11 +11,17 @@ import {
  type FormatoMvp337,type FilaFuenteMvp337,type PlanMvp337
 } from './ingesta-evidencia-flexible-mvp337.ts';
 import {filasTextoMvp337} from './adaptador-texto-flexible-mvp337.ts';
-import {readOfficeVisibleRows} from '../../../supabase/functions/cotironda-piloto-whapi/supplier-source-office.ts';
-import {
- readPdfPositioned,
- type PdfSourceEvidence
-} from '../../../supabase/functions/cotironda-piloto-whapi/supplier-source-pdf-general.ts';
+// Los lectores que dependen de Deno y npm:unpdf nunca deben importarse
+// desde el dominio compartido compilado por Next.js. Un adaptador Edge
+// interno inyecta implementaciones autorizadas; sin ellas se retiene el
+// original y se responde review_required, jamás un falso éxito.
+export type PdfSourceEvidenceMvp338=Readonly<{
+ pages:number;scanned:boolean;rows:readonly Readonly<{page:number;text:string}>[];
+}>;
+export type LectoresPrivadosMvp338=Readonly<{
+ readPdfPositioned?:(bytes:Uint8Array)=>Promise<PdfSourceEvidenceMvp338>;
+ readOfficeVisibleRows?:(source:OriginalPrivadoMvp338)=>Promise<readonly string[]>;
+}>;
 
 type Mime='application/pdf'|'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'|
  'application/vnd.openxmlformats-officedocument.wordprocessingml.document'|
@@ -70,13 +76,13 @@ const fromRows=(format:FormatoMvp337,hash:string,
  });
 };
 /**
- * El parámetro lectorPdf se usa SOLO para ensayos con extractor simulado.
- * En ejecución normal se usa el parser real unpdf@2.1.0 con controles
- * de páginas, capas invisibles, geometría y cantidad de filas.
+ * Los lectores son dependencias internas provistas únicamente por el
+ * adaptador Edge seguro. Su ausencia nunca activa un fallback permisivo.
+ * El PDF real usa unpdf@2.1.0 bajo Deno, con controles de páginas y capas.
  */
 export async function extraerEvidenciaPrivadaMvp338(
  source:OriginalPrivadoMvp338,
- lectorPdf:typeof readPdfPositioned=readPdfPositioned
+ lectores:LectoresPrivadosMvp338={}
 ):Promise<ResultadoBinarioMvp338>{
  const format=formats[source?.mime]??null;
  if(!format||!(source?.bytes instanceof Uint8Array)||
@@ -99,7 +105,9 @@ export async function extraerEvidenciaPrivadaMvp338(
   return failure('legacy_office_reader_required',format,actualHash);
  try{
   if(format==='pdf_text'){
-   const evidence:PdfSourceEvidence=await lectorPdf(source.bytes);
+   if(typeof lectores.readPdfPositioned!=='function')
+    return failure('pdf_reader_not_configured',format,actualHash);
+   const evidence:PdfSourceEvidenceMvp338=await lectores.readPdfPositioned(source.bytes);
    if(evidence.scanned)return failure('scanned_pdf_requires_independent_ocr',
     format,actualHash);
    if(!Number.isSafeInteger(evidence.pages)||evidence.pages<1||
@@ -115,7 +123,9 @@ export async function extraerEvidenciaPrivadaMvp338(
    return fromRows(format,actualHash,rows);
   }
   if(format==='xlsx'||format==='docx'){
-   const rows=await readOfficeVisibleRows(source);
+   if(typeof lectores.readOfficeVisibleRows!=='function')
+    return failure('office_reader_not_configured',format,actualHash);
+   const rows=await lectores.readOfficeVisibleRows(source);
    // Existing Office parser verifies ZIP/CRC and ignores NO unexplained
    // hidden worksheets, formulas, macros or external XML relationships.
    // It returns flattened visible rows, NOT sheet/cell coordinates.
