@@ -110,8 +110,8 @@ BEGIN
  THEN RAISE EXCEPTION 'mvp336_duplicate_claim';END IF;
  IF (SELECT count(*) FROM cotironda_piloto_privado.ai_dispatch_jobs_mvp222)<>before_jobs
  OR (SELECT count(*) FROM cotironda_piloto_privado.whapi_outbox)<>before_outbox
- OR EXISTS(SELECT 1 FROM cotironda_piloto_privado.anonymous_offers_mvp091
-  WHERE request_id=rid AND supplier_key='corralon_ailin')
+ OR EXISTS(SELECT 1 FROM cotironda_piloto_privado.anonymous_supplier_docs_mvp107
+  WHERE message_hmac=src)
  THEN RAISE EXCEPTION 'mvp336_sent_messages_or_published_unverified_quote';END IF;
  RAISE NOTICE 'MVP336 PASS: one review retry, no guessed units, no outbox, retained source';
 END $test$;
