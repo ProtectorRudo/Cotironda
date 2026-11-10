@@ -128,7 +128,9 @@ function setup({inconsistent=false,duplicate=false}={}){
 test('MVP343 E2E privado: PDF archivado -> segunda lectura -> empate resuelto 15/2/1 -> revisión comercial',async()=>{
  const s=setup();
  const result=await procesarPendienteAutomaticoMvp292(s.args);
- assert.equal(result.state,'linked_private');
+ // A unique round match is PRIVATE, not evidence that economic gates passed.
+ assert.equal(result.state,'review_required');
+ assert.equal(result.reason,'archive_quote_economic_or_source_review_required');
  assert.equal(result.outboundMessages,0);
  assert.equal(result.processed,1);
  assert.equal(s.readings,1);
