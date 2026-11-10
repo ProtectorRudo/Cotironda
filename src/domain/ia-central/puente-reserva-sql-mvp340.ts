@@ -7,7 +7,7 @@ import type {
  AmbitoMvp339,PresupuestoMvp339,ReservaMvp339,
  FinalizacionMvp339
 } from './procesador-ia-lotes-mvp339.ts';
-import type {PlanMvp337} from './ingesta-evidencia-flexible-mvp337.ts';
+import type {PlanMvp337,LoteMvp337,FilaFuenteMvp337} from './ingesta-evidencia-flexible-mvp337.ts';
 type Rpc=(name:string,args:Record<string,unknown>)=>
  Promise<{data:unknown;error:unknown}>;
 const SHA=/^[a-f0-9]{64}$/u;
@@ -22,7 +22,7 @@ export async function huellaPlanMvp340(plan:PlanMvp337):Promise<string>{
   throw Error('mvp340_invalid_plan');
  const encoded=JSON.stringify([
   'mvp340_plan_v1',plan.sourceSha256,plan.format,plan.totalRows,
-  plan.lots.map(l=>[l.number,l.rows.map(r=>[r.position,r.section,r.literal])])
+  plan.lots.map((l:LoteMvp337)=>[l.number,l.rows.map((r:FilaFuenteMvp337)=>[r.position,r.section,r.literal])])
  ]);
  if(encoded.length>900000)throw Error('mvp340_plan_too_large');
  return asHex(new Uint8Array(await crypto.subtle.digest(
