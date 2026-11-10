@@ -58,6 +58,7 @@ export function generarPaqueteRecuperacionMvp343(){
   worker_requires_two_independent_internal_credentials:true,
   newer_mvp337_342_not_required_for_legacy_recovery:true,
   backup_rehearsed:false,
+  legacy_recovery_ai_spend_metered:false,
   deployed:false,db_mutated:false,whatsapp_messages:0,
   openai_paid_calls:0,can_publish_quote:false
  });
