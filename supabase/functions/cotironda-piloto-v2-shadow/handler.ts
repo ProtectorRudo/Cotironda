@@ -89,8 +89,10 @@ export async function ejecutarSolicitudSombraV2B3(
   const len=request.headers.get('content-length');
   if(len!==null&&(!/^\d{1,6}$/u.test(len)||Number(len)!==0))
    return json(413,'body_not_allowed');
-  if(request.headers.has('transfer-encoding'))
+  if(request.headers.has('transfer-encoding')||request.body!==null)
    return json(413,'body_not_allowed');
+  if(new URL(request.url).search!=='')
+   return json(400,'parameters_not_allowed');
 
   const role=internalRoleKey(env);
   const api=env.COTIRONDA_PILOT_OPENAI_API_KEY??'';
