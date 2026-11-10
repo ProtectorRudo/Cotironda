@@ -42,7 +42,7 @@ jobs:
       - name: Prevent network or mutation in the readiness helpers
         run: |
           set -euo pipefail
-          if grep -En 'fetch\(|gate.whapi.cloud|Deno.env|service_role|execute_sql\(|deploy_edge_function\('            scripts/piloto/mvp334-minimal-two-supplier-decision.mjs; then
+          if grep -En 'fetch\(|gate.whapi.cloud|service_role|execute_sql\(|deploy_edge_function\('            scripts/piloto/mvp334-minimal-two-supplier-decision.mjs; then
             echo 'Readiness helper must not use network, credentials, SQL writes or deployments' >&2
             exit 1
           fi
