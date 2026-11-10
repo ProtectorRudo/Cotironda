@@ -1,3 +1,9 @@
+## 10/11/2026 — MVP343: preflight mínimo para recuperar PDF de proveedor (solo desarrollo)
+
+- Diagnóstico de Supabase en solo lectura: PDF privado de Ailín conservado, 3 líneas/3 unidades omitidas, 2 rondas candidatas, correlación en revisión por insuficiente evidencia, no claim previo; SQL de reintento MVP336 aún sin aplicar.
+- Script de auditoría offline: construye overlay pinned de MVP336 sin editar webhook, comprueba trabajador interno/autenticación/única recuperación, SQL PostgreSQL17 con ROLLBACK y separa MVP336 de herramientas universales MVP337–342. Evalúa resumen sanitizado y falla cerrado si cambia estado o no están confirmados backup, sincronía y autorización `Publicalo`.
+- Pruebas del caso 15/2/1 frente a 20/3 con doble lectura concordante y rechazos; no altera datos reales ni promueve precios sin fuente. PR #751 apilado sobre #749; [Acta 478](docs/478-mvp343-preflight-recuperacion-circuito-piloto.md) / [Issue #750](https://github.com/ProtectorRudo/Cotironda/issues/750).
+
 ## 10/11/2026 — MVP342: lecturas IA privadas cifradas y tokens observados (NO PUBLICADO)
 
 - Se suma AES-256-GCM dedicado por lectura y AAD de ronda/proveedor/fuente/plan/recibo/lote/perspectiva; bytes y precios nunca salen en claro hacia el ledger.
