@@ -13,12 +13,18 @@ import {
 import {
  readOfficeVisibleRows
 } from './supplier-source-office.ts';
+import {contieneFormulaXlsxMvp338} from './guardia-formulas-excel-mvp338.ts';
 
 export function leerOriginalBinarioSeguroMvp338(
  source:OriginalPrivadoMvp338
 ){
  return extraerEvidenciaPrivadaMvp338(source,{
   readPdfPositioned,
-  readOfficeVisibleRows
+  readOfficeVisibleRows:async(original)=>{
+   if(original.mime==='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'&&
+      await contieneFormulaXlsxMvp338(original.bytes))
+    throw Error('mvp338_formula_requires_review');
+   return readOfficeVisibleRows(original);
+  }
  });
 }
