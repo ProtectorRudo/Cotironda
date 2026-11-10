@@ -120,6 +120,30 @@ test('B3: both apikey AND Authorization forbidden, no ambiguity',async()=>{
   assert.equal(calls.db,0);
  }
 });
+test('B3: Supabase gateway may forward an EMPTY POST as a non-null body stream',async()=>{
+ const cases=[
+  new Request(url,{method:'POST',headers:headers(),body:''}),
+  new Request(url,{method:'POST',headers:headers(),
+   body:new ReadableStream({start(controller){controller.close()}}),
+   duplex:'half'})
+ ];
+ for(const r of cases){
+  const {calls,deps}=setup();
+  await check(await ejecutarSolicitudSombraV2B3(r,baseEnv(),deps),
+   200,'candidate_private');
+  assert.equal(calls.run,1);
+ }
+});
+test('B3: an actual byte in a streamed POST remains strictly forbidden',async()=>{
+ const reqStream=new Request(url,{method:'POST',headers:headers(),
+  body:new ReadableStream({start(c){
+   c.enqueue(new TextEncoder().encode('x'));c.close()
+  }}),duplex:'half'});
+ const {calls,deps}=setup();
+ await check(await ejecutarSolicitudSombraV2B3(
+  reqStream,baseEnv(),deps),413,'body_not_allowed');
+ assert.equal(calls.run,0);
+});
 test('B3: request body and query parameters cannot select source or trigger batches',async()=>{
  for(const r of [
   new Request(url,{method:'POST',headers:headers(),
