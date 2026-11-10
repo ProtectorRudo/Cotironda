@@ -15,6 +15,8 @@ import {
  procesarSombraArchivadaV2,
  type ShadowWorkerOutcomeV2
 } from '../../../src/domain/presupuestos-v2/worker-archivo-sombra.ts';
+import type {EvidenceReaderB5} from
+ '../../../src/domain/presupuestos-v2/evidencia-pdf-original-b5.ts';
 
 const PROJECT='ilggkalaafhtiysyzlmg';
 const PROJECT_URL='https://'+PROJECT+'.supabase.co';
@@ -35,6 +37,7 @@ export type EnvV2B3=Readonly<{
 }>;
 export type EdgeDepsV2B3=Readonly<{
  createDb:(url:string,roleKey:string)=>Db;
+ readPdfEvidence?:EvidenceReaderB5;
  run?:(args:Parameters<typeof procesarSombraArchivadaV2>[0])=>
  Promise<ShadowWorkerOutcomeV2>;
 }>;
@@ -124,7 +127,8 @@ export async function ejecutarSolicitudSombraV2B3(
   const outcome=await (deps.run??procesarSombraArchivadaV2)({
    enabled:true,trustedInternalWorker:true,
    rpc:async(name,params)=>db.rpc(name,params),
-   storage:db.storage,apiKey:api,model
+   storage:db.storage,apiKey:api,model,
+   readPdfEvidence:deps.readPdfEvidence
   });
   // Defense-in-depth if a worker accidentally gains publish/sending code:
   // keep external response private and flag a violation.
