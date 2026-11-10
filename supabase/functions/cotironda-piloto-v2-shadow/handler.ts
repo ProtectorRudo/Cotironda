@@ -1,0 +1,124 @@
+/**
+ * Cotironda V2 B3: PRIVATE, manually invoked shadow recovery endpoint.
+ *
+ * This is NOT a public quote API. No cron, WhatsApp, buyer-facing tracking,
+ * identity reveal, publication or ranking is accessible from this module.
+ * The existing MVP294 two-factor guard is reused. No new secrets needed.
+ *
+ * The Edge env flag AND the SQL v2_shadow_settings flag are independent,
+ * OFF-by-default prerequisites. This handler cannot enable either flag.
+ */
+import {
+ authorizeRecoveryMvp294,validInternalServiceKeyMvp294
+} from '../cotironda-piloto-auto-recovery/internal-auth-mvp294.ts';
+import {
+ procesarSombraArchivadaV2,
+ type ShadowWorkerOutcomeV2
+} from '../../../src/domain/presupuestos-v2/worker-archivo-sombra.ts';
+
+const PROJECT='ilggkalaafhtiysyzlmg';
+const URL='https://'+PROJECT+'.supabase.co';
+const API_KEY=/^sk-[A-Za-z0-9_-]{16,}$/u;
+type Model='gpt-6-luna'|'gpt-6.1-sol';
+type Db={rpc:(name:string,params:Record<string,unknown>)=>
+ Promise<{data:unknown;error:unknown}>;
+ storage:{from:(bucket:string)=>{download:(path:string)=>
+ Promise<{data:Blob|null;error:unknown}>}}};
+export type EnvV2B3=Readonly<{
+ COTIRONDA_PILOT_V2_SHADOW_ENABLED?:string;
+ COTIRONDA_PILOT_AUTO_RECOVERY_SECRET?:string;
+ COTIRONDA_PILOT_OPENAI_API_KEY?:string;
+ COTIRONDA_PILOT_AI_CENTRAL_MODEL?:string;
+ SUPABASE_URL?:string;
+ SUPABASE_SERVICE_ROLE_KEY?:string;
+ SUPABASE_SECRET_KEYS?:string;
+}>;
+export type EdgeDepsV2B3=Readonly<{
+ createDb:(url:string,roleKey:string)=>Db;
+ run?:(args:Parameters<typeof procesarSombraArchivadaV2>[0])=>
+ Promise<ShadowWorkerOutcomeV2>;
+}>;
+const json=(status:number,state:string):Response=>
+ new Response(JSON.stringify({state}),{
+  status,
+  headers:{
+   'content-type':'application/json; charset=utf-8',
+   'cache-control':'no-store, private',
+   'x-content-type-options':'nosniff'
+  }
+ });
+function internalRoleKey(env:EnvV2B3):string|null{
+ const legacy=env.SUPABASE_SERVICE_ROLE_KEY??'';
+ // Prefer legacy service role only when it is a structurally valid JWT.
+ if(validInternalServiceKeyMvp294(legacy))return legacy;
+ try{
+  const value:unknown=JSON.parse(env.SUPABASE_SECRET_KEYS??'{}');
+  if(value!==null&&typeof value==='object'&&!Array.isArray(value)){
+   const key=(value as Record<string,unknown>).default;
+   if(typeof key==='string'&&validInternalServiceKeyMvp294(key))
+    return key;
+  }
+ }catch{ /* no fallback */ }
+ return null;
+}
+/** Generic handler: dependency-injected backend, so all tests are offline.
+ * Never return raw errors, headers, claim identifiers, file bytes or quotes.
+ */
+export async function ejecutarSolicitudSombraV2B3(
+ request:Request,env:EnvV2B3,deps:EdgeDepsV2B3
+):Promise<Response>{
+ try{
+  if(request.method!=='POST')return json(405,'method_not_allowed');
+  if(env.COTIRONDA_PILOT_V2_SHADOW_ENABLED!=='true')
+   return json(503,'shadow_disabled');
+
+  // Old MVP294 security: exact secret + project service key; modern
+  // sb_secret_ uses apikey alone (no Authorization), legacy JWT uses
+  // Authorization alone (no apikey). No browser, JWT user or anon path.
+  if(!authorizeRecoveryMvp294({
+   privateHeader:request.headers.get('x-cotironda-recovery-secret')??'',
+   privateExpected:env.COTIRONDA_PILOT_AUTO_RECOVERY_SECRET??'',
+   apikeyHeader:request.headers.get('apikey')??'',
+   authorizationHeader:request.headers.get('authorization')??'',
+   legacyServiceRole:env.SUPABASE_SERVICE_ROLE_KEY??'',
+   secretKeysJson:env.SUPABASE_SECRET_KEYS??''
+  }))return json(401,'unauthorized');
+
+  // No user payload, identifiers or arguments are accepted. One source per
+  // DB claim, source chosen ONLY by private SQL eligibility checks.
+  const len=request.headers.get('content-length');
+  if(len!==null&&(!/^\d{1,6}$/u.test(len)||Number(len)!==0))
+   return json(413,'body_not_allowed');
+  if(request.headers.has('transfer-encoding'))
+   return json(413,'body_not_allowed');
+
+  const role=internalRoleKey(env);
+  const api=env.COTIRONDA_PILOT_OPENAI_API_KEY??'';
+  const model:Model=env.COTIRONDA_PILOT_AI_CENTRAL_MODEL==='gpt-6.1-sol'
+   ?'gpt-6.1-sol':'gpt-6-luna';
+  if(env.SUPABASE_URL!==URL||!role||
+     !API_KEY.test(api)||typeof deps?.createDb!=='function')
+   return json(503,'backend_configuration_invalid');
+
+  const db=deps.createDb(URL,role);
+  const outcome=await (deps.run??procesarSombraArchivadaV2)({
+   enabled:true,trustedInternalWorker:true,
+   rpc:async(name,params)=>db.rpc(name,params),
+   storage:db.storage,apiKey:api,model
+  });
+  // Defense-in-depth if a worker accidentally gains publish/sending code:
+  // keep external response private and flag a violation.
+  if(outcome.outboundMessages!==0||outcome.publishedOffers!==0)
+   return json(503,'shadow_contract_violation');
+  switch(outcome.state){
+   case 'candidate_private':return json(200,'candidate_private');
+   case 'review_required':return json(200,'review_required');
+   case 'empty':return json(200,'queue_empty');
+   case 'disabled':return json(503,'shadow_disabled');
+   case 'reconciliation_required':return json(503,'reconciliation_required');
+   default:return json(503,'shadow_contract_violation');
+  }
+ }catch{
+  return json(503,'shadow_internal_review');
+ }
+}
