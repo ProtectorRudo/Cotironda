@@ -1,3 +1,10 @@
+## 09/11/2026 — MVP335: candidato de corrección, SOLO desarrollo
+
+- Evidencia real: sexta ronda correctamente interpretada y roteada a dos proveedores, pero `draft` con revisión WhatsApp de comprador; solicitud posterior no capturada debido a 503 `webhook_secret` del Edge v73. No atribuir la falla al cliente ni a la caducidad del token Whapi sin evidencia.
+- Overlay MVP335 verificable sobre código Edge v73 de SHA-256 fijado: el único habilitador positivo de liberación pasa a ser PostgreSQL MVP306, sin variable adicional de auto-release y sin emitir nuevas solicitudes `CONFIRMAR COTI`. SQL sigue validando consentimientos, calidad, destinatarios, activación prospectiva; históricos conservados.
+- Diagnóstico del secreto distingue `missing` vs `invalid_length` únicamente en logs protegidos; jamás registra valor, longitud o números, y conserva autenticación del header y 503 fail-closed. No recupera por sí solo un secreto realmente incorrecto.
+- Tests MVP335, regresiones MVP332/MVP333/MVP306/MVP313/MVP314/MVP315 y Deno check CI en nueva rama; **ningún deploy ni cambios de datos**, requiere «Publicalo» para piloto y nueva prueba E2E. [Acta 468](docs/468-mvp335-sql-only-sin-confirmacion-y-secretos.md).
+
 ## 09/11/2026 — Publicación efectiva de MVP333 y activación prospectiva MVP306 (piloto)
 
 - Publicado en Supabase `cotironda-piloto` el webhook Whapi de **v71 a v72**, con el candidato final de MVP333 (SHA-256 de `index.ts`: `91481dfd1ec51843346d233dfe654e8f3ce0ef699364424b625fe68d05f24f95`). **61/61 fuentes cotejadas postdeploy**, sin cambiar el canal Whapi, producción, seguimiento ni worker diferido.
