@@ -1,0 +1,43 @@
+name: Cotironda Presupuestos V2 — lector multiformato en sombra
+on:
+  pull_request:
+    branches:
+      - design/presupuestos-v2-lectura-comparacion-simple
+    paths:
+      - 'src/domain/presupuestos-v2/**'
+      - 'tests/unit/presupuestos-v2-*'
+      - '.github/workflows/cotironda-presupuestos-v2-lector-sombra.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  node-synthetic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Mocked OpenAI reader, SHA, all formats, strict JSON and privacy
+        run: |
+          node --experimental-strip-types --test \
+            tests/unit/presupuestos-v2-contrato.test.mjs \
+            tests/unit/presupuestos-v2-lector-sombra.test.mjs
+  deno:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb
+        with:
+          deno-version: v2.x
+      - run: |
+          deno check \
+            src/domain/presupuestos-v2/contrato-lectura.ts \
+            src/domain/presupuestos-v2/lector-sombra.ts
+# No files downloaded, live API, credentials, WhatsApp, DB writes or deploy.
