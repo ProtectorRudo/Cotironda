@@ -1,5 +1,8 @@
 name: Cotironda MVP344 - BIG BAG anonimo sin datos personales
 on:
+  push:
+    branches:
+      - fix/mvp344-bigbag-oferta-anonima-piloto
   pull_request:
     paths:
       - 'supabase/piloto/mvp344_*'
