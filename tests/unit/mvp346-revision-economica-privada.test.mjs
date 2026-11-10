@@ -4,6 +4,7 @@ import {createHash} from 'node:crypto';
 import {
  auditCandidateAmountsMvp346,registrarRevisionEconomicaPrivadaMvp346
 } from '../../supabase/functions/cotironda-piloto-whapi/supplier-economic-revision-mvp346.ts';
+import {checkGeneralPdfSource} from '../../supabase/functions/cotironda-piloto-whapi/supplier-source-pdf-general.ts';
 import {reprocesarOriginalHistoricoMvp292} from
  '../../supabase/functions/cotironda-piloto-whapi/supplier-archive-replay-mvp292.ts';
 const H='a'.repeat(64),C='b'.repeat(64);
@@ -146,4 +147,31 @@ test('MVP346: worker mantiene cotización en revisión aun con candidata guardad
  assert.equal(r.outboundMessages,0);
  assert.equal(dbCalls.includes('cotironda_piloto_store_revision_candidate_mvp346'),true);
  assert.equal(dbCalls.includes('cotironda_piloto_publish_source_text_mvp107'),false);
+});
+
+test('MVP346: lector independiente de filas PDF controla todos los importes y notas',async()=>{
+ const rows=[
+  {page:1,text:'Cemento CPC 15,00 $ 100,00 $ 1.500,00'},
+  {page:1,text:'BIG BAG de Arena 2,00 $ 200,00 $ 400,00'},
+  {page:1,text:'BIG BAG de Piedra 1,00 $ 300,00 $ 300,00'},
+  {page:1,text:'TOTAL $ 2.200,00'},
+  {page:1,text:'Contado. Flete a convenir.'}
+ ];
+ const positioned=async()=>({pages:1,rows,scanned:false});
+ const check=await checkGeneralPdfSource(file,corrected(),positioned);
+ assert.equal(check.state,'source_text_covered');
+ assert.equal(check.reason,'covered');
+ const s=setup(undefined,{sourceCheck:(f,d)=>checkGeneralPdfSource(f,d,positioned)});
+ const stored=await registrarRevisionEconomicaPrivadaMvp346(s.args);
+ assert.equal(stored.state,'candidate_stored');
+ assert.equal(s.calls.length,1);
+ const extra=async()=>({pages:1,rows:[...rows,
+  {page:1,text:'Cargo administrativo $ 25,00'}],scanned:false});
+ const rejected=await checkGeneralPdfSource(file,corrected(),extra);
+ assert.equal(rejected.state,'needs_source_review');
+ assert.equal(rejected.reason,'uncovered_money');
+ const bad=setup(undefined,{sourceCheck:(f,d)=>checkGeneralPdfSource(f,d,extra)});
+ const result=await registrarRevisionEconomicaPrivadaMvp346(bad.args);
+ assert.equal(result.state,'source_review_required');
+ assert.equal(bad.calls.length,0);
 });
