@@ -40,7 +40,7 @@ jobs:
         with:
           deno-version: v2.x
       - run: |
-          deno check \
+          deno check --node-modules-dir=auto \
             src/domain/presupuestos-v2/contrato-lectura.ts \
             src/domain/presupuestos-v2/auditoria-comercial-b5.ts \
             src/domain/presupuestos-v2/evidencia-pdf-original-b5.ts \
