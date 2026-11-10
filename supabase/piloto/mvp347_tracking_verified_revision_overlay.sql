@@ -152,7 +152,7 @@ begin
    'received_count',n,'files_pending_review',pending_files,
    'deadline',cutoff,'can_open',jsonb_array_length(approved)>0,
    'offers',approved);
-end;$function$
+end;$function$;
 
 REVOKE ALL ON FUNCTION
  public.cotironda_piloto_tracking_status_mvp091(text)
