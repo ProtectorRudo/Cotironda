@@ -3,7 +3,7 @@
  * A stored PDF or encrypted text is checked against its original SHA before
  * any extra OpenAI work; a unique SQL lease prevents duplicate charges.
  */
-import {correlacionAutomaticaMvp291} from './supplier-auto-correlation-mvp291.ts';
+import {correlacionAutomaticaMvp291} from './supplier-auto-correlation-mvp336.ts';
 import {extraerMaterialesTextoMvp292} from './supplier-text-materials-mvp292.ts';
 import {reprocesarOriginalHistoricoMvp292} from './supplier-archive-replay-mvp292.ts';
 import {proposeDocumentAI,type DocumentDraft} from './document-ai-draft.ts';
