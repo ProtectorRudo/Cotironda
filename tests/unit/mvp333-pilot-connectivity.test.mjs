@@ -74,7 +74,7 @@ test('MVP333: no legacy classifier or IA Central call for the test',()=>{
 test('MVP333: the inbox is archived BEFORE skipping false review',()=>{
  const {source}=prepararCandidatoMvp333();
  const stored=source.indexOf("const out=await db.rpc('cotironda_piloto_receive_whapi_v1'");
- const check=source.indexOf('if(connectivityOnlyMvp333)continue;');
+ const check=source.indexOf('if(connectivityOnlyMvp333){connectivityCountMvp333++;continue;}');
  const central=source.indexOf('if(centralBuyerText&&!handledCentralZoneReply');
  assert(stored>0);
  assert(check>stored);
