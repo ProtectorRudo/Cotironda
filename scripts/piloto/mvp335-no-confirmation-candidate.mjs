@@ -6,6 +6,8 @@
  * La autenticación firmada Whapi y el fail-closed permanecen intactos.
  */
 import {createHash} from 'node:crypto';
+import {resolve} from 'node:path';
+import {fileURLToPath} from 'node:url';
 import {prepararCandidatoMvp333} from './mvp333-connection-check-candidate.mjs';
 
 const SOURCE_PATH='supabase/functions/cotironda-piloto-whapi/index.ts';
@@ -103,7 +105,7 @@ export function prepararCandidatoMvp335({source}={}){
   source:result
  });
 }
-if(process.argv[1]&&new URL('file://'+process.argv[1]).href===import.meta.url){
+if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  const {source,...summary}=prepararCandidatoMvp335();
  process.stdout.write(JSON.stringify(summary)+'\n');
 }
