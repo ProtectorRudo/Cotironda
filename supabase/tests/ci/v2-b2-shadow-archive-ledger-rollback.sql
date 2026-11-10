@@ -137,6 +137,30 @@ BEGIN
   'shadow_candidate_unverified','{}'::jsonb,d,'model_reported_complete');
  IF v->>'state'<>'invalid' THEN
   RAISE EXCEPTION 'empty candidate accepted';END IF;
+ -- Missing/null/wrong type JSON is never accepted (SQL UNKNOWN trap).
+ FOR b IN SELECT payload FROM (VALUES
+  ('{"document_kind":"supplier_quote"}'::jsonb),
+  ('{"document_kind":"supplier_quote","lines":null}'::jsonb),
+  ('{"document_kind":"supplier_quote","lines":[]}'::jsonb),
+  ('{"document_kind":"supplier_quote","lines":{}}'::jsonb)
+ ) as bad(payload)
+ LOOP
+  v:=public.cotironda_piloto_finish_v2_shadow_b2(
+   repeat('a',64),repeat('a',64),'candidate_private',
+   'shadow_candidate_unverified',b.payload,d,'model_reported_complete');
+  IF v->>'state'<>'invalid' THEN
+   RAISE EXCEPTION 'missing JSON attributes bypass guard: %',v;END IF;
+ END LOOP;
+ v:=public.cotironda_piloto_finish_v2_shadow_b2(
+  repeat('a',64),repeat('a',64),'candidate_private',
+  'shadow_candidate_unverified',q,null,'model_reported_complete');
+ IF v->>'state'<>'invalid' THEN
+  RAISE EXCEPTION 'missing line diagnostics accepted';END IF;
+ v:=public.cotironda_piloto_finish_v2_shadow_b2(
+  repeat('a',64),repeat('a',64),'candidate_private',
+  'shadow_candidate_unverified',q,d,null);
+ IF v->>'state'<>'invalid' THEN
+  RAISE EXCEPTION 'missing completeness accepted';END IF;
  v:=public.cotironda_piloto_finish_v2_shadow_b2(
   repeat('a',64),repeat('a',64),'candidate_private',
   'shadow_candidate_unverified',q,d,'model_reported_complete');
