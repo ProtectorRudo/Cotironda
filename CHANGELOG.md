@@ -1,3 +1,8 @@
+## 10/11/2026 — MVP338: guardia adicional para fórmulas XLSX (solo desarrollo)
+
+- Detecta expresiones `<f>` dentro de hojas reales de un ZIP XLSX sin ejecutarlas ni confiar en el valor `<v>` guardado; envía el presupuesto a revisión privada. Regresión con fórmula `100*2` y valor cacheado `200`, hash correcto y ZIP válido.
+- Cambio exclusivo en el adaptador Edge nuevo; los módulos históricos no se alteraron. CI específica: 9/9 casos binarios, PDF de dos páginas y 200 casos de contrato sintético pasan; unitarias generales 3.695 PASS/0 FAIL/10 omitidas al corte. Next.js seguía en ejecución y se verificará por separado. [Acta 473](docs/473-mvp338-lectores-binarios-verificados-solo-desarrollo.md).
+
 ## 10/11/2026 — MVP338: evidencia binaria privada desde PDF, Office y texto (sin publicar)
 
 - Nuevo puente core `fuente-binaria-privada-mvp338.ts`: verifica SHA-256/magic, lee PDF por páginas, XLSX/DOCX ZIP/XML por orden visible y TXT/CSV UTF-8 literal, para producir loteador MVP337 sin crear ofertas.
