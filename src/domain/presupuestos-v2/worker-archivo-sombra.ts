@@ -9,6 +9,7 @@
 import {
  leerPresupuestoSombraV2,type ShadowReadResultV2
 } from './lector-sombra.ts';
+import {revisarContratoProveedorV2} from './contrato-lectura.ts';
 
 type Rpc=(name:string,args:Record<string,unknown>)=>
  Promise<{data:unknown;error:unknown}>;
@@ -110,12 +111,19 @@ export async function procesarSombraArchivadaV2(args:{
        response.document&&Array.isArray(response.line_diagnostics)&&
        ['candidate_only','incomplete_source',
         'spreadsheet_requires_cell_audit'].includes(response.code)){
+    // Defense in depth: even if the reader or an injected adapter drifts,
+    // never persist a malformed model object or forged diagnostic list.
+    const revalidated=revisarContratoProveedorV2(response.document);
+    if(revalidated.state!=='private_extract'||
+       !revalidated.document||
+       revalidated.line_diagnostics.length!==response.line_diagnostics.length)
+     throw Error('shadow_candidate_not_structurally_valid');
     state='candidate_private';reason=
      response.code==='candidate_only'?'shadow_candidate_unverified':
      response.code==='incomplete_source'?'shadow_source_incomplete':
       'shadow_spreadsheet_requires_audit';
-    candidate=response.document as unknown as Record<string,unknown>;
-    diagnostics=response.line_diagnostics;
+    candidate=revalidated.document as unknown as Record<string,unknown>;
+    diagnostics=revalidated.line_diagnostics;
     completeness=response.completeness;
     userState='candidate_private';
    }else{
