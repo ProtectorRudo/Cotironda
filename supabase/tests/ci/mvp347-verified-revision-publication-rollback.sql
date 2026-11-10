@@ -78,7 +78,7 @@ select repeat(x,64),repeat('c',64),'proveedor_sintetico',
     "quantity":"2","unit":null,"unit_price":"$100,00",
     "line_total":"$150,00","evidence_location":"p1","ambiguity":null}]
   }'::jsonb
-from (values('a'),('b'),('c')) as v(x);
+from (values('a'),('b'),('c'),('d')) as v(x);
 insert into cotironda_piloto_privado.supplier_media_quotes_mvp098(
  message_hmac,request_id,supplier_key,source_sha256,line_count,state)
 select message_hmac,request_id,participant_key,content_sha256,1,
@@ -154,6 +154,22 @@ begin
   repeat('c',64),repeat('f',64));
  if outcome->>'state'<>'invalid'
  then raise exception 'corrupt candidate price published: %',outcome;end if;
+
+ -- A hidden control character in an otherwise arithmetic-balanced
+ -- candidate cannot leak into the anonymous quote.
+ insert into cotironda_piloto_privado.supplier_revision_candidates_mvp346(
+  message_hmac,request_id,supplier_key,source_sha256,
+  original_proposal,candidate_proposal)
+ select message_hmac,request_id,participant_key,content_sha256,
+  proposal,
+  jsonb_set(candidate,'{requested_delivery_note}',
+   to_jsonb('Contado'||chr(1)))
+ from cotironda_piloto_privado.media_archive_mvp095
+ where message_hmac=repeat('d',64);
+ outcome:=public.cotironda_piloto_publish_revision_mvp347(
+  repeat('d',64),repeat('f',64));
+ if outcome->>'state'<>'privacy_or_quality_review'
+ then raise exception 'invisible control leaked: %',outcome;end if;
 
  if has_function_privilege('anon',
    'public.cotironda_piloto_publish_revision_mvp347(text,text)','EXECUTE')
