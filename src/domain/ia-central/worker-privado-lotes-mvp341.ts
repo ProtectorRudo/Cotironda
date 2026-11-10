@@ -108,7 +108,7 @@ export async function procesarOriginalPrivadoMvp341(args:{
   bytes=new Uint8Array(await response.data.arrayBuffer());
   if(bytes.length!==source.sizeBytes||bytes.length>MAX)
    return done('review_required','original_missing_or_size_mismatch');
-  const digest=new Uint8Array(await crypto.subtle.digest('SHA-256',bytes));
+  const digest=new Uint8Array(await crypto.subtle.digest('SHA-256',Uint8Array.from(bytes)));
   const actual=Array.from(digest,n=>n.toString(16).padStart(2,'0')).join('');
   if(actual!==source.sourceSha256)
    return done('review_required','original_sha256_mismatch');
