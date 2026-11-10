@@ -4,6 +4,7 @@ DO $test$
 DECLARE
  v_source text;source_hash text;plan_hash text;chat text;
  rid uuid; reply jsonb;receipt text;before_jobs int;before_outbox int;
+ original_dispatch_finished timestamptz;
 BEGIN
  IF has_function_privilege('anon',
   'public.cotironda_piloto_reserve_supplier_lots_mvp340(uuid,text,text,text,text,text,integer,integer,integer,integer)','EXECUTE')
@@ -88,15 +89,22 @@ BEGIN
  THEN RAISE EXCEPTION 'mvp340_opted_out_buyer_accepted';END IF;
  UPDATE cotironda_piloto_privado.participants
  SET opted_out_at=NULL WHERE key='arquitecto';
+ -- Preserve valid job state/receipt; change only the acceptance time.
+ -- A job accepted after the inbound quote cannot prove its invitation.
+ SELECT finished_at INTO original_dispatch_finished
+ FROM cotironda_piloto_privado.ai_dispatch_jobs_mvp222
+ WHERE request_id=rid AND supplier_key='corralon_ailin';
  UPDATE cotironda_piloto_privado.ai_dispatch_jobs_mvp222
- SET state='pending' WHERE request_id=rid AND supplier_key='corralon_ailin';
+ SET finished_at=clock_timestamp()+interval '1 hour'
+ WHERE request_id=rid AND supplier_key='corralon_ailin';
  reply:=public.cotironda_piloto_reserve_supplier_lots_mvp340(
   rid,'corralon_ailin',v_source,chat,source_hash,
   plan_hash,3,1,2,1024);
  IF reply->>'state'='reserved'
  THEN RAISE EXCEPTION 'mvp340_undelivered_request_accepted';END IF;
  UPDATE cotironda_piloto_privado.ai_dispatch_jobs_mvp222
- SET state='api_accepted' WHERE request_id=rid AND supplier_key='corralon_ailin';
+ SET finished_at=original_dispatch_finished
+ WHERE request_id=rid AND supplier_key='corralon_ailin';
 
  -- Valid source with real linkage, consent and outbound acceptance.
  reply:=public.cotironda_piloto_reserve_supplier_lots_mvp340(
