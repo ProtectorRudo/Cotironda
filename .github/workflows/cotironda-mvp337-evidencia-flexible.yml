@@ -1,0 +1,38 @@
+name: Cotironda MVP337 - presupuestos heterogeneos sin perdida de evidencia
+on:
+  pull_request:
+    paths:
+      - 'src/domain/ia-central/*mvp337.ts'
+      - 'tests/fixtures/mvp337-*'
+      - 'tests/unit/mvp337-*'
+      - 'scripts/eval/mvp337-*'
+      - 'docs/472-*'
+      - '.github/workflows/cotironda-mvp337-evidencia-flexible.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  evidencia-flexible-offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Compilacion estricta de los contratos TypeScript
+        run: npm run typecheck
+      - name: Corpus de 192 presupuestos, sin OpenAI ni datos reales
+        run: |
+          node --experimental-strip-types --test tests/unit/mvp337-ingesta-universal-proveedores.test.mjs
+          node scripts/eval/mvp337-corpus-offline.mjs
+      - name: Regresion del baseline congelado y recuperacion MVP336
+        run: |
+          node --experimental-strip-types --test \
+            tests/unit/mvp332-whapi-bundle.test.mjs \
+            tests/unit/mvp291-automatic-correlation.test.mjs \
+            tests/unit/mvp292-archive-auto-recovery.test.mjs \
+            tests/unit/mvp336-whapi-overlay.test.mjs
+# No despliegue, archivos privados, mensajes Whapi, gastos IA ni scripts SQL reales.
