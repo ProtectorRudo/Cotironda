@@ -37,6 +37,7 @@ BEGIN
  WHERE m.message_hmac=p_message_hmac
   AND m.kind='document' AND m.processing_state='needs_review'
   AND a.state='stored' AND a.review_state='suggested_only'
+  AND a.proposal->>'kind'='supplier_quote'
   AND a.request_id=req.id
   AND a.content_sha256 ~ '^[a-f0-9]{64}$'
   AND a.storage_path='media/'||m.message_hmac
