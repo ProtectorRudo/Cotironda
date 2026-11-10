@@ -117,12 +117,18 @@ BEGIN
   AND i.state='prepared'
   AND buyer.participant_role='buyer' AND buyer.consent_at IS NOT NULL
   AND buyer.opted_out_at IS NULL
-  AND EXISTS(SELECT 1 FROM cotironda_piloto_privado.ai_supplier_auto_correlation_mvp291 decision
-   WHERE decision.source_hmac=m.message_hmac
-    AND decision.source_sha256=a.content_sha256
-    AND decision.supplier_key=m.participant_key
-    AND decision.selected_request_id=r.id
-    AND decision.state='linked')
+  AND (
+   link.association IN('quoted_whapi_id','single_active_round',
+    'prior_supplier_preamble','clarified_supplier_reply')
+   OR (link.association='semantic_unique_mvp291'
+    AND EXISTS(SELECT 1
+     FROM cotironda_piloto_privado.ai_supplier_auto_correlation_mvp291 decision
+     WHERE decision.source_hmac=m.message_hmac
+      AND decision.source_sha256=a.content_sha256
+      AND decision.supplier_key=m.participant_key
+      AND decision.selected_request_id=r.id
+      AND decision.state='linked'))
+  )
   AND (
    EXISTS(SELECT 1 FROM cotironda_piloto_privado.ai_dispatch_jobs_mvp222 d
     WHERE d.request_id=r.id AND d.supplier_key=m.participant_key
