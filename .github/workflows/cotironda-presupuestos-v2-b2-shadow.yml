@@ -1,0 +1,78 @@
+name: Cotironda Presupuestos V2 B2 - shadow archive con RLS y SHA
+on:
+  pull_request:
+    branches:
+      - feat/presupuestos-v2-lector-multiformato-sombra
+    paths:
+      - 'src/domain/presupuestos-v2/**'
+      - 'supabase/piloto/v2_b2*'
+      - 'supabase/tests/ci/v2-b2*'
+      - 'tests/unit/presupuestos-v2-*'
+      - '.github/workflows/cotironda-presupuestos-v2-b2-shadow.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  node:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - run: |
+          node --experimental-strip-types --test \
+            tests/unit/presupuestos-v2-contrato.test.mjs \
+            tests/unit/presupuestos-v2-lector-sombra.test.mjs \
+            tests/unit/presupuestos-v2-worker-archivo-sombra.test.mjs
+  deno:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb
+        with:
+          deno-version: v2.x
+      - run: |
+          deno check \
+            src/domain/presupuestos-v2/contrato-lectura.ts \
+            src/domain/presupuestos-v2/lector-sombra.ts \
+            src/domain/presupuestos-v2/worker-archivo-sombra.ts
+  postgres17-rollback:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: test_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -tA \
+            -f supabase/tests/ci/v2-b2-shadow-archive-ledger-rollback.sql \
+            | grep -Fx 't'
+          psql -X -tA -c "select to_regnamespace('cotironda_piloto_privado') is null" | grep -Fx 't'
+# Synthetic only. No secrets, live files, IA, Whapi, real DB writes or deploy.
