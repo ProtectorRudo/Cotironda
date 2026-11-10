@@ -20,7 +20,7 @@ const auth={
  'x-cotironda-recovery-secret':secret
 };
 const env={
- COTIRONDA_PILOT_V2_SHADOW_ENABLED:'true',
+ COTIRONDA_PILOT_AUTO_RECOVERY_MVP292_ENABLED:'true',
  COTIRONDA_PILOT_AUTO_RECOVERY_SECRET:secret,
  COTIRONDA_PILOT_OPENAI_API_KEY:openaiKey,
  COTIRONDA_PILOT_AI_CENTRAL_MODEL:'gpt-6.1-sol',
