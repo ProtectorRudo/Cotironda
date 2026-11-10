@@ -5,6 +5,10 @@ import {
  corroborarCantidadMvp291,elegirRondaUnicaMvp291,
  correlacionAutomaticaMvp291
 } from '../../supabase/functions/cotironda-piloto-whapi/supplier-auto-correlation-mvp291.ts';
+import {
+ elegirRondaUnicaMvp291 as elegirRondaMvp336,
+ correlacionAutomaticaMvp291 as correlacionMvp336
+} from '../../supabase/functions/cotironda-piloto-whapi/supplier-auto-correlation-mvp336.ts';
 const H='a'.repeat(64),E='b'.repeat(64),SHA='c'.repeat(64);
 const newId='11111111-1111-4111-8111-111111111111',
  oldId='22222222-2222-4222-8222-222222222222';
@@ -86,7 +90,7 @@ test('MVP336: Ailín PDF with 15/2/1 and no separate units matches current, not 
   {candidate:'r2',source_line:1,request_line:1,relation:'equivalent'},
   {candidate:'r2',source_line:2,request_line:2,relation:'equivalent'}
  ]};
- const res=elegirRondaUnicaMvp291({quote:original,options:[present,previous]},
+ const res=elegirRondaMvp336({quote:original,options:[present,previous]},
   draft,{matches:[...draft.matches].reverse()});
  assert.equal(res.requestId,newId);
  assert.deepEqual(res.scores,[6,2]);
@@ -112,19 +116,19 @@ test('MVP336: unitless count is NOT enough with two items, duplicate rounds or p
  const links={matches:[1,2,3].map(i=>({candidate:'r1',source_line:i,
   request_line:i,relation:'equivalent'}))};
  // Conflicting 25kg vs 50kg may not be counted as an exact package-size clue.
- assert.equal(elegirRondaUnicaMvp291({quote:source,options:[target,other]},
+ assert.equal(elegirRondaMvp336({quote:source,options:[target,other]},
   links,links).requestId,null);
  // Without that conflict, 2 identical numeric counts are still inadequate.
  const onlyTwo={quote:source.slice(1),options:[
   {...target,lines:target.lines.slice(1)},{...other,lines:other.lines.slice(1)}]};
  const two={matches:[{candidate:'r1',source_line:2,request_line:2,relation:'same'},
   {candidate:'r1',source_line:3,request_line:3,relation:'same'}]};
- assert.equal(elegirRondaUnicaMvp291(onlyTwo,two,two).requestId,null);
+ assert.equal(elegirRondaMvp336(onlyTwo,two,two).requestId,null);
  // 3 matches to two near-identical candidate lists must remain unresolved.
  const identical={...target,request_id:oldId,lines:[...target.lines]};
  const both={matches:links.matches.flatMap(v=>[v,{...v,candidate:'r2'}])};
  const noConflict={...source[0],description:'Cemento'};
- assert.equal(elegirRondaUnicaMvp291({quote:[noConflict,...source.slice(1)],
+ assert.equal(elegirRondaMvp336({quote:[noConflict,...source.slice(1)],
   options:[target,identical]},both,both).requestId,null);
 });
 test('SQL is the only binding authority, source and chat HMAC required',async()=>{
@@ -178,7 +182,7 @@ test('MVP336: internal retry uses the separate SQL reservation and audits the sa
   ...[1,2,3].map(i=>({candidate:'r1',source_line:i,request_line:i,relation:'same'})),
   ...[1,2].map(i=>({candidate:'r2',source_line:i,request_line:i,relation:'equivalent'}))
  ]};
- const result=await correlacionAutomaticaMvp291({
+ const result=await correlacionMvp336({
   enabled:true,webhookAuthenticated:true,sourceHmac:H,chatHmac:E,
   retryReviewedOnce:true,
   apiKey:'synthetic-credential-12345678',model:'gpt-6-luna',
