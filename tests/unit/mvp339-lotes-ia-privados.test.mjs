@@ -191,7 +191,7 @@ test('MVP339: sin reserva real, reserva caída o proveedor inválido no hay llam
  for(const override of [
   {reserve:async()=>{throw Error('db unavailable')}},
   {reserve:async()=>({state:'not_eligible'})},
-  {scope:{...scope,supplierKey:'invalid'}},
+  {scope:{...scope,supplierKey:'INVALID!'}},
   {reserve:async()=>({state:'reserved',receipt:'invalid'})}
  ]){
   const {args,events}=setup();
