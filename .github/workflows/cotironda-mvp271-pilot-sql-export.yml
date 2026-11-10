@@ -1,0 +1,39 @@
+name: Cotironda PILOTO - exportacion SQL cifrada MVP271
+on:
+  pull_request:
+    branches:
+      - feat/mvp174-supplier-packaging-equivalence
+    paths:
+      - 'scripts/ops/export-encrypted-pilot-sql-mvp271.mjs'
+      - 'scripts/ops/validate-pilot-dsn-mvp271.mjs'
+      - 'tests/unit/mvp271-pilot-sql-encrypted-export.test.mjs'
+      - 'scripts/ops/create-private-pilot-mobile-backup-mvp271.mjs'
+      - 'scripts/ops/package-pilot-mobile-mvp269.mjs'
+      - 'tests/unit/mvp271-pilot-mobile-bundle.test.mjs'
+      - '.github/workflows/cotironda-mvp271-pilot-sql-export.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  synthetic-consistent-dump:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Verificar sintaxis
+        run: |
+          node --check scripts/ops/export-encrypted-pilot-sql-mvp271.mjs
+          node --check scripts/ops/validate-pilot-dsn-mvp271.mjs
+          node --check scripts/ops/create-private-pilot-mobile-backup-mvp271.mjs
+          node --check scripts/ops/package-pilot-mobile-mvp269.mjs
+      - name: Ensayo contra falso Postgres 17 sin secretos ni red
+        run: |
+          node --test tests/unit/mvp271-pilot-sql-encrypted-export.test.mjs
+          node --test tests/unit/mvp271-pilot-mobile-bundle.test.mjs
+          node --test tests/unit/mvp269-mobile-backup-zip.test.mjs
+# These test processes use synthetic pg_dump/age. No live project, no artifacts.

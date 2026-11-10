@@ -1,0 +1,27 @@
+name: Cotironda PILOTO - puente IA Central documental comprador MVP275
+on:
+  pull_request:
+    branches:
+      - feat/mvp174-supplier-packaging-equivalence
+    paths:
+      - 'supabase/functions/cotironda-piloto-whapi/ai-central-buyer-document-mvp275.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/index.ts'
+      - 'tests/unit/mvp275-buyer-document-central-preview.test.mjs'
+      - '.github/workflows/cotironda-mvp275-document-buyer-preview.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  buyer-document-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Real unit cases, mock-only catalogue and LLM, no Whapi/network
+        run: node --experimental-strip-types --test tests/unit/mvp275-buyer-document-central-preview.test.mjs
+# No SUPABASE_SERVICE_ROLE_KEY, API keys, real documents, network exports or artifacts.

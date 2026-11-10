@@ -1,0 +1,58 @@
+name: MVP306 - pedido sin confirmacion, contactos del proveedor al cierre
+on:
+  pull_request:
+    branches: [feat/mvp174-supplier-packaging-equivalence]
+    paths:
+      - 'supabase/functions/cotironda-piloto-whapi/index.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/ai-central-buyer-auto-release-mvp306.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/buyer-tracking-confirmation-mvp289.ts'
+      - 'supabase/piloto/mvp306_auto_release_y_contactos_proveedor.sql'
+      - 'tests/unit/mvp306-*'
+      - '.github/workflows/cotironda-mvp306-auto-release.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  comprador-sin-friccion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: test_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Auto despacho, origen, seguimiento, privacidad y regresiones
+        run: |
+          node --experimental-strip-types --test \
+            tests/unit/mvp306-auto-release-and-supplier-contacts.test.mjs \
+            tests/unit/mvp280-all-buyer-review-flows.test.mjs \
+            tests/unit/mvp289-buyer-tracking-confirmation.test.mjs \
+            tests/unit/mvp304-contactos-consentidos-cierre.test.mjs \
+            tests/unit/mvp305-aviso-proveedores-al-cierre.test.mjs
+      - name: PostgreSQL 17 - evidencia, comprador sin confirmacion, contacto y token
+        run: |
+          set -euo pipefail
+          node scripts/piloto/mvp306-generar-fixture-pg17.mjs
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/.mvp306-generated-pg17.sql >/dev/null
+# Offline only: no Whapi, no modelos, no cambios en base ni produccion.

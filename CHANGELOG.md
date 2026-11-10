@@ -1,3 +1,867 @@
+## 10/11/2026 — Hito validado de piloto: pedido automático hasta 2 proveedores
+
+- Auditada en Supabase la ronda real `aefe169e-7801-4efc-aabf-25cd134744eb`: ingreso desde arquitecto, 15 bolsas CPC 50 kg + 2 bolsones arena + 1 bolsón piedra, entrega La Plata; líneas, rubro y destinos correctos.
+- **1** auto-release SQL, **0** confirmaciones del comprador, **2/2** envíos de solicitud aceptados por Whapi y enlace al arquitecto con recibo `read`. Ailín y Nahuel informados como receptores **por el usuario**, sin recibos de entrega instrumentados en la base.
+- Webhook v75 activo; corte 07:18 ART: ronda preparada, **0 ofertas**, proveedores aún sin respuesta, **0 trabajos inciertos**. Son pendientes: recibir presupuestos, interpretarlos fielmente, publicación anónima, ranking comparable, cierre/revelaciones y rotación segura de credenciales expuestas.
+- **Solo documentación GitHub; sin cambios a aplicaciones, tablas, WhatsApp, cron ni secretos.** [Acta 470](docs/470-hito-piloto-arquitecto-a-proveedores-20261110.md).
+
+## 10/11/2026 — MVP335 publicado en piloto, Whapi Edge v74
+
+- Publicado `cotironda-piloto-whapi` v74 `ACTIVE` en Supabase `cotironda-piloto`. Comparación criptográfica de 61 archivos del paquete, 1 índice modificado y digest exacto `3df77172138e27689123080335e65f2da111a14caac0b2a8034978435371f063` tras despliegue.
+- Eliminada la dependencia redundante del secreto booleano `COTIRONDA_PILOT_BUYER_AUTO_RELEASE_MVP306_ENABLED` para no generar más `CONFIRMAR COTI`. Gate SQL MVP306 sigue siendo autoridad positiva de publicación, con comprobaciones de origen, comprador y proveedores.
+- Conservado el secreto del webhook obligatorio y agregado diagnóstico interno `missing`/`invalid_length`. **El error 503 registrado en v73 no se considera recuperado** hasta probar nueva recepción firmada; sin reintentos, sin mensajes enviados, sin migraciones. Snapshot postdeploy: 32 inbox, 6 rondas, 0 publicaciones automáticas, 0 envíos inciertos. [Acta 469](docs/469-mvp335-v74-publicacion-verificada-piloto.md).
+
+## 09/11/2026 — MVP335: candidato de corrección, SOLO desarrollo
+
+- Evidencia real: sexta ronda correctamente interpretada y roteada a dos proveedores, pero `draft` con revisión WhatsApp de comprador; solicitud posterior no capturada debido a 503 `webhook_secret` del Edge v73. No atribuir la falla al cliente ni a la caducidad del token Whapi sin evidencia.
+- Overlay MVP335 verificable sobre código Edge v73 de SHA-256 fijado: el único habilitador positivo de liberación pasa a ser PostgreSQL MVP306, sin variable adicional de auto-release y sin emitir nuevas solicitudes `CONFIRMAR COTI`. SQL sigue validando consentimientos, calidad, destinatarios, activación prospectiva; históricos conservados.
+- Diagnóstico del secreto distingue `missing` vs `invalid_length` únicamente en logs protegidos; jamás registra valor, longitud o números, y conserva autenticación del header y 503 fail-closed. No recupera por sí solo un secreto realmente incorrecto.
+- Tests MVP335, regresiones MVP332/MVP333/MVP306/MVP313/MVP314/MVP315 y Deno check CI en nueva rama; **ningún deploy ni cambios de datos**, requiere «Publicalo» para piloto y nueva prueba E2E. [Acta 468](docs/468-mvp335-sql-only-sin-confirmacion-y-secretos.md).
+
+## 09/11/2026 — Publicación efectiva de MVP333 y activación prospectiva MVP306 (piloto)
+
+- Publicado en Supabase `cotironda-piloto` el webhook Whapi de **v71 a v72**, con el candidato final de MVP333 (SHA-256 de `index.ts`: `91481dfd1ec51843346d233dfe654e8f3ce0ef699364424b625fe68d05f24f95`). **61/61 fuentes cotejadas postdeploy**, sin cambiar el canal Whapi, producción, seguimiento ni worker diferido.
+- Activado únicamente SQL `ai_auto_release_gate_mvp306` con barrera prospectiva 09/11 21:55:45 ART, tras verificación atómica de 1 comprador + 2 proveedores con canales y permisos, catálogo, estado de IA y cero despachos inciertos. Sin rondas nuevas ni envíos causados por la activación.
+- Batch MVP314 y buyer notice diferido MVP315 permanecen OFF. Postcheck: 31 inbox históricos, 5 rondas previas, 0 autoaprobaciones y 0 trabajos inciertos.
+- Sigue **sin verificarse** valor del secreto Edge de auto-release ni un circuito real nuevo completo. Token Whapi de captura anterior sin rotar por decisión del propietario, riesgo del piloto. [Acta 467](docs/467-mvp333-v72-mvp306-gate-publicacion-piloto.md).
+
+## 09/11/2026 — MVP334 (desarrollo, no publicado)
+
+- Confirmado sobre Supabase real con SQL exclusivamente SELECT el preflight del circuito mínimo de 1 comprador + 2 proveedores: canales y permisos 1+2, 106 renglones de catálogo (86 curados, 20 pendientes), cero despachos inciertos, recepción comprobada, nueva liberación MVP306 y lotes/avisos MVP314/MVP315 OFF.
+- Auditoría de código: webhook v71 ya permite despacho inmediato de hasta 2 invitaciones y seguimiento postenvío; **la primera ronda no necesita el worker de lotes ni el aviso diferido**. La activación posterior deberá centrarse en MVP306, tras publicar MVP333 y verificar secret/cupo del Sandbox.
+- Nuevo SELECT read-only y evaluador puro sin envíos, 22 pruebas nuevas, 13 MVP333, 9 MVP332 y 37 regresiones: **81/81 aprobadas** en CI específico; sin mutar piloto ni pagar servicios. Riesgo de corte del gate MVP306 durante ronda activa documentado. [Decisión 466](docs/466-mvp334-preflight-dos-proveedores.md).
+
+## 2026-11-09 — MVP333 (solo desarrollo)
+
+- Corroborado el recorrido de la prueba «Hola Cotironda, prueba de conexión del piloto.»: inbox del arquitecto y POST Whapi OK; IA Central entró en revisión genérica y emitió un aviso de revisión api_accepted, sin crear ronda.
+- Preparado candidato offline de corrección: solo la frase completa de diagnóstico del comprador, no pedidos de materiales ni texto libre, queda archivada sin activar modelo, aviso falso o ronda; historial immutable de MVP332 intacto.
+- **59/59 pruebas específicas aprobadas** (13 nuevas, 9 MVP332, 37 regresiones 306/313/314/315), Deno check aprobado. No se tocó Supabase/Whapi/Vercel, ni se habilitaron MVP306/MVP314/MVP315. [Decisión 465](docs/465-mvp333-prueba-conexion-sin-falsa-revision.md).
+
+## 09/11/2026 — Publicación acotada a piloto del webhook MVP332
+
+- Reemplazada la función de WhatsApp en Supabase `cotironda-piloto` de v70 a v71, ACTIVE: 61/61 fuentes cotejadas con SHA-256. Sin cambios a producción, Whapi, Vercel ni otras Edge.
+- Registradas 3 autorizaciones previas informadas por el dueño (1 comprador y 2 proveedores) con referencia administrativa, respetando bajas y sin falsas firmas WhatsApp; Ailín y Nahuel pasan el check de contacto comercial.
+- Postguard: 0 jobs inciertos, 5 rondas y 30 mensajes inbox preservados; auto-release, lotes y avisos al comprador siguen OFF hasta verificar token/estado Sandbox y recepción entrante nueva. No se ha ensayado un circuito E2E real. [Acta 464](docs/464-mvp332-publicacion-piloto-whapi-v71.md).
+
+## 09/11/2026 — MVP332: preparación de ruta Whapi de punta a punta (desarrollo)
+
+- Leído en Supabase el código LIVE del webhook v70, con 60 archivos. Comparado 60/60 con GitHub: 57 idénticos y 3 actualizados; se agrega 1 módulo nuevo de destinatarios dinámicos. Paquete candidato total 61.
+- Manifiesto SHA-256 de 60 fuentes en servicio y 61 candidatas; auditor offline con control estricto del grafo, tests sintéticos y CI. SQL de preflight agregado y probado solo lectura contra cotironda-piloto.
+- Detectados bloqueos reales: 0 entradas recientes en inbox, 0 consentimiento vigente de teléfonos de proveedores, gates MVP306/314/315 OFF, 0 cotizaciones IA verified; falta Whapi AUTH/cupo/token renovado verificados y E2E. Sin despliegue, mensajes, pagos ni cambios de Supabase. [Acta 463](docs/463-mvp332-piloto-e2e-bundle-whapi-preparacion.md).
+
+## 09/11/2026 — MVP331: Sandbox Whapi gratuito y diagnóstico sin envíos (desarrollo)
+
+- Confirmada documentación oficial de plan gratuito Developer Sandbox, 5 chats mensuales y control separado del estado del canal.
+- Nuevo script sin envíos, sin wakeup, sin cambios en la cuenta: verifica canal AUTH, ID esperado, URL/modo/evento del webhook y cupos, no divulga tokens ni chat IDs. Suite de pruebas sintéticas Node22 y CI.
+- Supabase piloto auditado solo lectura: Webhook Edge v70 ACTIVE, ruta autónoma MVP306/314/315 apagada, 30 entradas históricas y una reciente; canal Whapi no comprobado en vivo, sin publicación ni E2E. [Decisión 462](docs/462-mvp331-whapi-sandbox-gratis-preflight.md).
+
+## 09/11/2026 — MVP329: operador con sesión MFA y autorización empresarial (desarrollo)
+
+- Se reutiliza el control real de Supabase `operator_session_mvp267` (Auth AAL2 + sesión no revocada) y se prepara la tabla privada de autorizaciones específicas por empresa, ronda y operador, sin alta automática.
+- RPC autenticada que entrega un ticket temporal aleatorio de un solo uso y RPC service_role que lo consume y valida nuevamente la autorización; el actor de la auditoría privada se deriva del Auth user real persistido.
+- Biblioteca interna MVP329 conectada a la custodia AES del MVP328, sin ruta HTTP, original en navegador, publicación, llamadas IA, envíos Whapi ni promoción económica; pruebas PG17 y Node con datos ficticios. [Decisión 460](docs/460-mvp329-operador-mfa-permisos-empresa-ticket.md).
+- **No publicado en piloto** y ningún operador real enrolado.
+
+## 09/11/2026 — MVP328: recuperación cifrada y registro de evidencia (desarrollo)
+
+- Preparados SQL de lectura exacta de última fuente y registro privado append-only con ACL cerrada, RLS, idempotencia y bloqueo de UPDATE/DELETE/TRUNCATE; no incluye aprobación económica.
+- Biblioteca interna que comprueba AAD AES-GCM, SHA-256 del original, vigencia de la fuente, pedido asignado y cotejador MVP327; solo devuelve estado y registra hashes de evidencia, sin exponer el original.
+- Pruebas PG17+Node22 con datos sintéticos; faltan adaptador real de autenticación del operador y su autorización por empresa, archivos no textuales y validación E2E. **Sin publicar ni alterar la ronda histórica.** [Decisión 459](docs/459-mvp328-custodia-cifrada-y-registro-auditable.md).
+
+## 09/11/2026 — MVP327: auditoría determinista de fuente textual, desarrollo
+
+- Nuevo módulo puro que exige fuente textual íntegra y SHA-256, ronda y último mensaje consistentes, estado histórico `review`, evidencia literal de cantidades, unidad, moneda y precio, y reconciliación del total declarado. Reutiliza guardias económicas MVP225/241/242/244 sin introducir interpretaciones nuevas.
+- Un cotejo positivo solo genera candidato para **auditoría independiente**; jamás modifica el original ni habilita publicación, adjudicación, ranking o envío automático.
+- Pruebas con fuentes ficticias (precios alterados, cargos adicionales, IVA, parcialidad, múltiples totales, versión antigua). 0 uso de IA, WhatsApp, SQL real o deploy. [Decisión 458](docs/458-mvp327-cotejo-original-textual-sin-reproceso.md).
+
+## 09/11/2026 — MVP326: estado real de revisión comercial publicado en piloto
+
+- SQL `20261109164501`: nueva RPC token-gated `cotironda_piloto_ia_review_status_mvp326`, permisos denegados para `anon/authenticated`, verificado con token inválido y la ronda existente (1 terminal review, 0 processing, 0 verified).
+- Supabase Edge seguimiento `cotironda-piloto-seguimiento` **v27 ACTIVE** (bundle de 34 fuentes enviado); Whapi v70 y batch v1 intactos, no cron ni envíos automáticos.
+- Proyecto Vercel aislado de seguimiento: preview READY `dpl_Fawg4YtKtEE4oXnypRH6mYdPowCq` commit `2a5ecdd357e0` asignado a los dos aliases del piloto, incluido host de enlaces privados del arquitecto.
+- Datos y protecciones intactos: 3 participantes, 5 rondas, 7 originales, 0 trabajos inciertos, MVP306/314/315 OFF. [Acta 457](docs/457-mvp326-publicacion-piloto-estado-comercial.md). HTTP/E2E desde navegador todavía no verificado y cotización histórica sigue en revisión.
+
+## 09/11/2026 — MVP326: etapa real de revisión comercial en seguimiento (desarrollo)
+
+- Nueva proyección privada token-gated por fuente actual: `requieren_revision`, `en_proceso`, `verificados`, sin importes ni identificadores; RPC exclusiva de service role y validación doble en Edge/proxy.
+- La página deja de presentar una lectura económica terminada en `review` como trabajo «esperando verificación», con mensaje claro y sin exigir reenvío automático al proveedor.
+- Regresión PostgreSQL17 sintética y tests DOM/proxy/privacidad; procedimiento de conciliación manual con evidencia, sin reintentos AI ni alteración de revisión histórica. [Decisión 456](docs/456-mvp326-estado-real-y-salida-segura-revision.md).
+- **No aplicado a Supabase piloto ni publicado en Vercel con esta «Luz verde».**
+
+## 09/11/2026 — MVP325: publicación técnica de vista anónima en Cotironda piloto
+
+- Migración SQL `20261109130018`: RPC MVP227 y MVP303 de etiquetas anónimas estables reemplazadas de forma transaccional y verificadas por hashes, ACL y flags. Sin modificaciones en datos de prueba ni ampliación de acceso.
+- Edge privada de seguimiento v25→**v26 ACTIVE** con código MVP322 y paquete de 33 archivos enviado. API de lectura lista 30: verificación completa de archivos empaquetados pendiente; HTTP real no verificado.
+- Vercel piloto exclusivamente: alias `cotironda-seguimiento-vista-piloto.vercel.app` movido a preview READY `dpl_APjHh976TX7GD2KB3Esrz3YUxgGD`, SHA `9ab239ebc76d`, sin nuevo build ni cambio del proyecto principal.
+- Verificación postpublicación: gates OFF, 0 jobs inseguros, Whapi v70, 3 participantes, 5 rondas y 7 originales; 0 registros de IA Central `verified`, por lo que la prueba E2E de nuevas tarjetas requiere cotización real futura. [Acta 455](docs/455-mvp325-publicacion-piloto-preliminar-sin-envios.md).
+
+## 09/11/2026 — MVP324: auditoría de dependencias Edge seguimiento, sin despliegue
+
+- Comprobados 29 archivos reales de Edge seguimiento v25 frente a GitHub: 28 idénticos; el único `index.ts` diferente es estrictamente la adición MVP322 y coincide byte a byte con la fuente previa al retirar esa adición.
+- Nuevo gate Node22 solo lectura con manifest obligatorio de 33 archivos (incluye 3 dependencias transitivas antes omitidas), blob SHA1 fijo del `index.ts` previo, import graph recursivo y pruebas negativas para evitar un despliegue incompleto o cambiante.
+- Sin cambios en Supabase piloto, Vercel web público, Whapi, envíos, cron ni producción. [Acta 454](docs/454-mvp324-preflight-bundle-seguimiento-sin-despliegue.md).
+
+## 09/11/2026 — MVP323: corregir etiquetas anónimas cambiantes (solo desarrollo)
+
+- Las RPC de presupuesto al comprador MVP227 y proveedores al cierre MVP303 calculan ordinales estables según la primera verificación privada de cada proveedor, conservando el número ante nuevas respuestas o correcciones en revisión.
+- Se parte de las definiciones exactas del piloto y se protege el reemplazo por hash SHA256; no se modifican contratos de privacidad o flete/IVA.
+- Nueva prueba de ambas RPC reales en PostgreSQL17 sintético comprueba 2→3 proveedores, retención de número, revisión no acreditada, cierre, permisos y ROLLBACK. Sin SQL en piloto ni WhatsApp. [Decisión 453](docs/453-mvp323-numeracion-anonima-estable.md), [Issue #720](https://github.com/ProtectorRudo/Cotironda/issues/720).
+
+## 09/11/2026 — MVP322: vista preliminar anónima de importes por artículo (desarrollo)
+
+- Añadida proyección de precio de renglón verificado y suma por presupuesto anónimo, con cantidades de cobertura asignada y condiciones originales. No confundir subtotal parcial con total final ni ordenar por sumas de coberturas distintas.
+- Triple barrera de revalidación (dominio, Edge token privado, proxy Vercel con suma BigInt), tarjetas web móviles que se limpian al revocar y mantienen texto completo original disponible más abajo.
+- Nuevos test MVP322, regresiones 227/255/299 y CI offline. No Whapi real, IA, SQL, deploy, cron ni producción. [Decisión 452](docs/452-mvp322-preliminar-anonimo-en-vivo.md).
+
+## 09/11/2026 — MVP321: publicación controlada en cotironda-piloto (sin envíos)
+
+- Aprobación expresa del operador «Publicalo» para instalar en piloto con switches de salida OFF, aceptando riesgo de no haber respaldo real.
+- Migración `20261109042724` (`cotironda_piloto_mvp309_315_preparacion_sin_envios`): nueve scripts MVP309–315 tras comprobar 14+3 huellas y ausencia de jobs inseguros. Comprobado: funciones/gates presentes pero MVP306, MVP314 y MVP315 OFF; 3 participantes, 5 rondas y 7 originales conservados.
+- Supabase Edge `cotironda-piloto-ai-batch` v1 ACTIVE, 11/11 archivos iguales a GitHub. Whapi Edge v70 y seguimiento v25 no cambiados, sin cron ni llamada WhatsApp.
+- Sin respaldo real, sin activación de mensajes, token Whapi mostrado en una captura previa sin rotar y sin prueba E2E. [Acta 451](docs/451-mvp321-publicacion-piloto-sql-y-worker-inactivos.md).
+
+## 08/11/2026 — MVP318: camino gratuito de respaldo y restauración comprobable (solo desarrollo)
+
+- Supabase piloto: 94 tablas propias, 0 usuarios Auth actuales y 7 archivos privados Storage; solo lectura, sin exponer registros ni contactos.
+- Script local Bash/WSL para exportación cifrada con age (roles, esquema, datos y originales), hash y validación de proyecto estricto; no ejecutado con datos reales.
+- CI PostgreSQL17 sintético de backup personalizado y restauración en otra base, conservación de datos/funciones/permisos y rechazo de archivo truncado. No credenciales Supabase, no WhatsApp.
+- [Decisión 448](docs/448-mvp318-resguardo-local-gratuito-y-restore-ci.md). **Ningún respaldo real restaurable verificado aún; sin publicar.**
+
+## 08/11/2026 — MVP317: ensayo de migración atómica y rollback sin respaldo (solo desarrollo)
+
+- La base piloto real pasa el preflight de roles MVP310: 3 participantes, 1 comprador, 2 proveedores, 0 incompatibilidades, 3 restricciones históricas existentes. Lectura exclusiva.
+- En PG17 sintético, 9 migraciones MVP309–315 en una transacción; fallo inyectado en medio y chequeo de rollback integral, privilegios, huellas SHA y gates OFF. No conecta al piloto ni a WhatsApp.
+- [Decisión 447](docs/447-mvp317-ensayo-transaccional-sin-respaldo.md). La ausencia de respaldo restaurable sigue siendo un riesgo real: un ROLLBACK no deshace una instalación ya confirmada. **Sin publicar.**
+
+## 08/11/2026 — MVP316: preflight, guardias y prueba de concurrencia (solo desarrollo)
+
+- Preflight read-only coteja 14/14 huellas SHA de RPC MVP311 y versión del claim heredado MVP222; reporte solo estados y contadores, sin PII.
+- Guard SHA previo al primer DDL de MVP309, MVP312C y MVP314: abortar ante drift para no pisar contactos comerciales ni webhook existentes.
+- Ensayo de dos sesiones PostgreSQL17 **aprobado en CI** con datos ficticios y cupos diarios compartidos para invitaciones y aviso al comprador, sin contacto Supabase real.
+- Plan de migración MVP309–315, verificación de respaldos y restauración aislada documentado. **No se ha verificado respaldo de datos reales ni contratado Whapi. No publicar con Luz verde.** [Decisión 446](docs/446-mvp316-preflight-respaldo-concurrencia-publicacion.md).
+
+## 08/11/2026 — MVP315: aviso autónomo al comprador después del despacho (solo desarrollo)
+
+- Trabajador privado MVP314 complementado con un aviso único y seguro de enlace al arquitecto, sin requerir otro mensaje de WhatsApp. Exige todos los trabajos con aceptación Whapi e ID para la ronda.
+- Nuevo paquete de comprador cifrado, HMAC y SHA, autorización y revalidación antes del HTTP, reutilizando tokens únicos MVP289/306, con límite SQL de 10 avisos diarios y sin reenvíos inciertos.
+- Auditoría read-only del piloto y script de preflight: varios componentes MVP309–315 no instalados; Whapi Edge v70, MVP306 OFF. Test Node WebCrypto y PostgreSQL17 sintético con ROLLBACK; sin publicar ni activar.
+- [Decisión 445](docs/445-mvp315-aviso-autonomo-comprador-preflight.md) · [PR #710](https://github.com/ProtectorRudo/Cotironda/pull/710).
+
+## 08/11/2026 — MVP314: continuación de solicitudes por lotes (solo desarrollo)
+
+- Nuevo trabajador Edge privado, apagado por defecto, que puede continuar hasta dos trabajos por invocación sin esperar nuevos mensajes del comprador.
+- Cupos atómicos PostgreSQL para intentos diarios globales y por comprador; al habilitar MVP314, el webhook existente comparte el mismo presupuesto. Trabajos anteriores a la activación y resultados inciertos no se reenvían automáticamente.
+- Pruebas de 1/2/5/20 destinatarios y fixture PG17 con rollback incorporados al [PR #709](https://github.com/ProtectorRudo/Cotironda/pull/709). Sin despliegue, programación automática ni prueba Whapi real. [Decisión 444](docs/444-mvp314-despacho-automatico-lotes-presupuestos.md).
+
+## 08/11/2026 — MVP313: destinatarios cifrados por lease (solo desarrollo)
+
+- IA Central deja de necesitar los dos números de la allowlist cuando se active expresamente el modo dinámico, que por defecto permanece apagado.
+- SQL privado entrega exclusivamente sobre cifrado al trabajador con lease vigente, rol real, consentimientos y gates; Edge descifra con AES-GCM, valida HMAC/SHA y revalida antes del HTTP.
+- Cola histórica preservada y no drenada en modo dinámico; se mantienen envíos limitados a 2 por evento y no se simulan nuevos permisos.
+- Pruebas Node/PG17 con rollback, sin modificar el piloto. [Decisión 443](docs/443-mvp313-destinatarios-dinamicos-cifrados.md).
+
+## 08/11/2026 — MVP312: vínculo WhatsApp administrado cifrado (solo desarrollo)
+
+- Un alta de comprador/proveedor puede integrar en una operación administrativa el permiso previamente declarado y un número protegido por HMAC/AES-GCM. No se envían códigos de consentimiento ni se crean mensajes simulados.
+- Nuevo registro SQL privado, inmutable, revocable por baja administrativa; bloquea duplicados de números y cruces de identidad. El contacto comercial del proveedor se incorpora al paquete cifrado tras cierre y comprador legítimo; teléfono del arquitecto permanece oculto.
+- Pruebas Node de criptografía y PostgreSQL17 sintético con ROLLBACK. Sin modificar Supabase real, Whapi ni la lista fija de 2 receptores. El despacho dinámico queda pendiente. [Decisión 442](docs/442-mvp312-canal-whatsapp-admin-cifrado.md).
+
+## 08/11/2026 — MVP311: multiidentidad real en 14 RPC del webhook (solo desarrollo)
+
+- Auditadas 17 RPC antiguas con participantes fijos. Corregidas explícitamente las 14 referenciadas por la versión actual de WhatsApp y preservadas las 3 antiguas de finalistas, sin reabrir contactos recíprocos.
+- Migración con huellas SHA-256 de baseline, fallando cerrada ante cambios imprevistos; roles, HMAC y permisos `service_role` conservados. Prohibida también la transferencia de una ronda entre compradores verificados.
+- Pruebas PostgreSQL17 sintéticas con reversión completa y Node; sin cambios en piloto, producción, cron ni Whapi. [Decisión 441](docs/441-mvp311-rpcs-multiidentidad-sin-reabrir-finalistas.md).
+
+## 08/11/2026 — MVP310: altas múltiples administradas (solo desarrollo)
+
+- Eliminación controlada de tres restricciones históricas (único arquitecto y dos proveedores) y comprobación por rol real antes de crear una ronda.
+- Alta privada del responsable con referencia única, registro automático de la declaración MVP309 y revocación efectiva; sin fabricar respuestas WhatsApp ni permisos por cada cotización.
+- Nuevas pruebas sintéticas PostgreSQL17 con ROLLBACK y suite Node. Ningún cambio al piloto ni a producción.
+- Limitación pendiente: vinculación cifrada segura del teléfono de nuevas personas, sin confirmaciones de autorización repetidas. [Decisión 440](docs/440-mvp310-altas-multiples-administradas.md).
+
+## 08/11/2026 — MVP309: declaración de permiso previo por administrador (solo desarrollo)
+
+- Diseñada constancia privada e inmutable por participante/rol, con base declarada por responsable y fuente, sin pedir mensajes de autorización repetidos.
+- Conserva el circuito WhatsApp ya autenticado; previene publicación del teléfono del arquitecto, duplicados y reactivaciones tras revocación.
+- Pruebas PostgreSQL17 sintéticas y Node. **No migrado ni publicado en cotironda-piloto**, no activa nuevas rondas.
+- [Decisión 439](docs/439-mvp309-autorizacion-declarada-administrador.md).
+
+## 07/11/2026 23:33 ART — Publicación en cotironda-piloto (MVP306–308)
+
+- Instaladas las migraciones MVP306, MVP307 y MVP308 (identificadores Supabase 20261108023237, 20261108023255, 20261108023314). Webhook `cotironda-piloto-whapi` actualizado de v69 a **v70 ACTIVE**; 60 fuentes, tres archivos nuevos/cambiados comparados con GitHub.
+- Aceptación inicial única por comprador/proveedor, RLS y roles de servicio validados; bloqueo de intercambio de teléfono del arquitecto vía finalistas antiguos, revelado comercial solo consentido al cierre.
+- **Gate automático MVP306 OFF**; 2 rondas históricas abiertas preservadas; 0 consentimientos comerciales vigentes y 0 rondas creadas automáticamente. E2E WhatsApp real aún pendiente. Ni producción, ni `main`, ni Vercel, ni cron modificados.
+- Ver [Acta 438](docs/438-mvp306-308-publicacion-verificada-piloto-v70.md) con auditoría y pasos pendientes.
+
+## 07/11/2026 — MVP308: consentimiento único completo al alta (desarrollo)
+
+- Registro versionado y verificable de condiciones en el mismo WhatsApp de incorporación, con alcance diferenciado por rol comprador/proveedor y sin confirmaciones por ronda. Datos personales del arquitecto nunca compartidos.
+- Bloqueadas las 3 RPC antiguas de divulgación de datos de finalistas y el comando de alta antigua sin términos. Mantiene bases históricas sin crear permisos retroactivos.
+- Incluye ensayo PostgreSQL17 con rollback, Node, Deno y CI. **Todavía sin desplegar**, sin WhatsApps reales, sin activar gates. [Decisión 437](docs/437-mvp308-autorizacion-unica-por-rol-y-privacidad.md), [PR #702](https://github.com/ProtectorRudo/Cotironda/pull/702).
+
+## 07/11/2026 — Decisión 436: una sola aceptación inicial, ninguna autorización por ronda
+
+- Política para todos los roles: aceptación única, informada, versionada y verificable al incorporarse, suficiente para todas las operaciones habituales que fueron expresamente informadas. El sistema no pide autorizaciones ni confirmaciones al comprador/proveedor por cada solicitud; sólo aclara datos esenciales.
+- Revelación comercial de proveedores al cierre con base habilitante acreditada; la permanencia de usuarios históricos NO acredita consentimiento retroactivo a nuevos usos de sus teléfonos. Nunca se comparte automáticamente identidad personal ni contacto del arquitecto.
+- Decisión de producto registrada sin código, sin cambios en gates, sin SQL ni publicación. [Acta 436](docs/436-politica-autorizacion-unica-al-incorporarse.md).
+
+## 07/11/2026 — MVP307, desarrollo: autorización comercial en el mismo alta del proveedor
+
+- Una sola frase autenticada `COTI ALTA <código> CONTACTOS SI`, con advertencia de divulgación comercial visible antes de aceptar y revocación `COTI CONTACTOS NO`. Transacción SQL vincula alta, original cifrado, contacto, consentimiento y fuente SHA/HMAC. La autorización antigua sigue siendo válida si se acredita individualmente.
+- IA Central recibe catálogos sólo de proveedores consentidos cuando se habilite la liberación prospectiva MVP306, con revalidación al despacho, prevención de colisión de etiquetas y comprobación al cierre sin divulgar al arquitecto.
+- Código, migración y ensayos Node/PG17 en [PR #702](https://github.com/ProtectorRudo/Cotironda/pull/702); pendiente verificar CI/E2E antes de cualquier publicación. **Sin despliegue ni mensajes reales.** [Decisión 435](docs/435-mvp307-alta-unica-consentimiento-y-ruteo.md).
+
+## 07/11/2026 — MVP306 en desarrollo: cotización automática sin confirmación del comprador
+
+- Se definió que el arquitecto no aprueba cada lista por mensaje: el broker de IA Central prepara la ronda y SQL valida fuente, cantidades, rubros, catálogo, zona y consentimiento antes de liberar despacho. Se conservan auditoría, protección del original y deduplicación.
+- En nuevas rondas, al cierre el comprador podrá identificar a todos los proveedores invitados y disponer de sus contactos comerciales verificables, autorizados una sola vez al alta. **Nunca** se expone contacto o identidad personal del arquitecto al proveedor.
+- Nueva propuesta con gate prospectivo OFF y autorización automática SHA/HMAC/SQL inmutable; rutas texto, ciudad y documento; seguimiento privado automático. CI unitario y PostgreSQL17 sintético pendiente de confirmación; aún faltan onboarding de consentimiento y filtro de proveedores antes del enrutamiento.
+- **Solo rama de desarrollo:** PR [#702](https://github.com/ProtectorRudo/Cotironda/pull/702). No hubo despliegue, WhatsApp ni consumo de IA. [Decisión 434](docs/434-mvp306-sin-confirmacion-y-contactos-proveedor.md).
+
+## 07/11/2026 — MVP305 activado prospectivamente en cotironda-piloto (publicación real)
+
+- PR #700 fusionado y **42/42 CI verdes**. Whapi Edge v69 y recuperación v32 ACTIVE, con caption uniforme en 3 sender y aviso en PDF; seguimiento v25 vigente.
+- `all_supplier_reveal_activation_mvp303.enabled=true` desde 07/11/2026 21:42 ART. Cinco rondas previas excluidas; tres enlaces históricos probados sin revelar empresas. No hubo mensajes nuevos, costos Whapi ni cambios de producción comercial.
+- Teléfonos solo con opt-in específico: hoy 0. Finalistas viejos desactivados, cierre por cron existente activo. Falta E2E auténtico con canal WhatsApp operativo.
+- [Auditoría 433](docs/433-mvp305-activacion-real-piloto-prospectiva.md).
+
+## 07/11/2026 — MVP305: aviso a proveedores y activación de regla para rondas nuevas
+
+- El usuario autorizó el modo: al cierre se identifican todos los proveedores invitados, y los contactos siguen con opt-in propio.
+- Caption unificada en los 3 caminos de envíos PDF Whapi (normal, IA Central y recuperación), más pie del PDF para que el proveedor sea informado antes de cotizar.
+- Preparación de activación prospectiva de MVP303: jamás tocar solicitudes anteriores; no reactivar Whapi ni notificaciones de dos finalistas.
+- [Decisión 432](docs/432-mvp305-activacion-prospectiva-revelado-comercios.md).
+
+## 07/11/2026 — MVP303/MVP304 publicados solo en piloto (compuerta de revelado OFF)
+
+- Instaladas migraciones SQL en `cotironda-piloto`; funciones privadas de nombres/comunicación postcierre, solamente `service_role`, probadas sin acceso anon/auth.
+- Edge `cotironda-piloto-seguimiento` v25 ACTIVE y web Vercel del piloto desplegada en el commit `6ab1632581ca054b985a309cf71a9b85ac2831d0`, READY, HTML/JS HTTP 200, GET de API 405.
+- `all_supplier_reveal_activation_mvp303` OFF y sin activación retroactiva. 0 opt-ins de contactos, 0 mensajes de finalistas, planificador viejo OFF. Whapi sigue sin reactivación.
+- No certificado E2E genuino. [Reporte 431](docs/431-publicacion-mvp303-304-piloto.md).
+
+## 07/11/2026 — MVP304: contactos consentidos de todos los proveedores al cierre (SIN PUBLICAR)
+
+- Implementado puente privado read-only de todos los contactos post-cierre con consentimiento autenticado individual y criptografía AES-GCM+HMAC.
+- Edge/Proxy/Web muestran opción de WhatsApp solo para proveedores con consentimiento vigente; el resto mantiene nombre y estado. No hay top dos, adjudicación ni WhatsApps salientes.
+- Pruebas sintéticas PG17 y WebCrypto en CI; no se cambiaron datos ni secrets de piloto; Whapi sigue sin servicio activo.
+- [Decisión 430](docs/430-mvp304-contactos-todos-consentidos-al-cierre.md).
+
+## 07/11/2026 — MVP303, política comercial corregida: revelar TODOS los proveedores al cierre (SIN PUBLICAR)
+
+- Se reemplazó la política de hasta dos finalistas por la revelación de identidad de todos los proveedores invitados, una vez vencido el plazo y cerrada la ronda. Nunca antes. No es adjudicación ni comparación económica.
+- Nueva RPC propuesta con token privado, consentimiento, cierre, activación prospectiva OFF; incluye estados de respuesta, revisión y envío no confirmado, más alias de oferta verificada cuando existe. NO revela teléfonos ni contactos sin consentimiento propio.
+- Reducidor Edge y whitelisting independiente del proxy Vercel, vista móvil para lista sin máximo de dos, pruebas sintéticas de privacidad y PostgreSQL17 con rollback.
+- La optimización económica con hasta dos proveedores no selecciona quién se identifica. [Decisión 429](docs/429-mvp303-revelar-todos-proveedores-al-cierre.md).
+
+## 07/11/2026 — MVP302, puente privado IA Central a finalistas (SOLO DESARROLLO)
+
+- Nueva RPC propuesta `cotironda_piloto_ia_finalist_sources_mvp302(uuid)`, service_role-only, sin escrituras ni envío, para última fuente verificada, cierre y consentimientos.
+- Selector TS privado de alternativas anónimas por cobertura de 1-2 proveedores, sin selección automática, precios ni datos de contacto en el resultado.
+- PG17 efímero simula ronda cerrada con dos proveedores, corrupción de SHA y opt-out; transacción se revierte. No se publica SQL ni se activan finalistas. Falta adjudicación manual autorizada e E2E real con Whapi activo.
+- [Decisión 428](docs/428-mvp302-puente-ia-finalistas-privado.md).
+
+## 07/11/2026 — MVP301, finalistas offline (NO PUBLICADO)
+
+- Planificador determinista privado de cobertura de 1-2 proveedores, con validación real de importes MVP225; sin sumas engañosas, envío de WhatsApp, contactos, ganadores ni gastos.
+- Tests sintéticos de plan, cobertura, cierre y rechazo de precios sin respaldo; CI conjunta con la ronda simulada MVP284.
+- Auditoría SQL read-only del piloto: 0 ofertas IA Central verificadas, 1 revisión, 0 planes de finalistas; funciones v196 instaladas pero sin dependencia del ledger v227. Queda pendiente puente seguro y aprobación humana, por lo que E2E NO está certificado.
+- [Decisión 427](docs/427-mvp301-finalistas-offline-ia-central.md).
+
+## 07/11/2026 — MVP300 (solo desarrollo y auditoría real de lectura)
+
+- Testigo SQL read-only en piloto: IA/Whapi/dispatch ON; una ronda confirmada, 2 despachos `api_accepted` con ID, 1 proveedor que respondió, 1 revisión privada, 0 ofertas verificadas/visibles. No acredita dos respuestas ni el cierre/contactos E2E.
+- Clasificador determinista de etapas que rechaza certificación E2E por contadores de base o CI; tests sintéticos anti-PII y no WhatsApp, con regresión del circuito MVP284 y de MVP299.
+- No hay despliegue de MVP300, consumo de IA, mensajes o cambios de base. [Acta 426](docs/426-mvp300-testigo-e2e-piloto-solo-lectura.md).
+
+## 07/11/2026 — Publicación verificada MVP298 + MVP299 solo en Cotironda piloto
+
+- Autorización «Publicalo» aplicada solo a Supabase `cotironda-piloto` (Whapi **v68**, seguimiento **v24**, **84 migraciones**) y Vercel **cotironda-seguimiento-vista-piloto**; el alias estable del seguimiento del comprador se reasignó y verificó a `dpl_FoY1XhAXg5hWVjxmfYQnh6NEYjWc` (commit `55bba473`, estado READY).
+- RPC nueva `public.cotironda_piloto_ia_pending_coverage_mvp299(text)`: sólo `service_role` puede ejecutarla; prueba de token inválido y ronda válida sin respuestas nuevas aprobada. No exhibe fuente, importe, identidad ni ranking.
+- Módulos Edge cotejados byte a byte con Github y CI de desarrollo: MVP298 14/14; MVP299 27/27 y 34/34 focalizados. Históricos: una revisión privada, cero ofertas IA verificadas; sin relectura, mensajes, cambios de cron ni secretos.
+- Vercel informó build completo y READY; **sin smoke HTTP externo desde esta sesión**, ni ronda E2E real. No afecta el portal principal ni el branch `main`. [Acta 425](docs/425-mvp299-separacion-respuestas-sin-precio-comparable.md).
+
+## 07/11/2026 — MVP299 (PR #692 fusionado solo a desarrollo; 27/27 CI y 34/34 pruebas específicas, sin publicar)
+
+- Nuevo resumen privado de fuente interpretada **sin precio comparable** (lista cerrada de motivos seguros). Una fuente no conciliada o atribuida de forma insegura permanece en revisión invisible.
+- RPC opcional service_role + DTO estricto + Edge + proxy Vercel + pantalla por rubro, sin revelar identidad, fuente, precios, contactos o adjudicación.
+- Pruebas sintéticas Node/Deno/PG17/JavaScript; sin desplegar ni reenviar IA/WhatsApp. Ver [decisión 425](docs/425-mvp299-separacion-respuestas-sin-precio-comparable.md).
+
+## 07/11/2026 — MVP298 (desarrollo, no desplegado)
+
+- MVP225: cotejo de doble lectura por hechos económicos verificables, no glosas ni spans alternativos de citas igualmente fundadas.
+- Tres pruebas sintéticas nuevas: glosa/cita de moneda equivalente; IVA sustentado por distintas citas; cambio literal del importe unitario rechazado.
+- Sin SQL, WhatsApp, despliegue, llamadas OpenAI, producción o reanálisis histórico. Detalles y límites: [decisión 424](docs/424-mvp298-acuerdo-economico-doble-lectura.md).
+
+## 2026-11-07 — MVP297: diagnóstico privado de revisión semántica (solo desarrollo)
+
+- Se conserva el primer motivo verificable de una futura revisión comercial: estructura, cita textual, moneda, IVA/flete/pago, cargos monetarios omitidos, mapeo de artículo, segunda lectura inválida, discrepancia entre dos lecturas o indisponibilidad del modelo. Sólo códigos de una allowlist, sin fuente ni importes, dentro de la tabla privada ya existente.
+- Se preservan los resultados económicos, privacidad, cuotas, estado de publicación y decisión de cero reintentos de IA; no se modifica piloto ni producción. El motivo exacto del evento histórico de Nahuel no fue persistido y **no se inventa retrospectivamente**. Ver [Decisión 423](docs/423-mvp297-diagnostico-privado-revision-semantica.md).
+
+## 2026-11-07 — Publicación piloto MVP295 y corrección MVP296
+
+- **Solo `cotironda-piloto`**: PR [#686](https://github.com/ProtectorRudo/Cotironda/pull/686) integrado (13/13 CI), migración 82 y seguimiento v23; PR [#687](https://github.com/ProtectorRudo/Cotironda/pull/687) integrado (12/12 CI), migración 83 y worker privado v8. `main`, producción, Whapi v66 y cron documental v31 intactos.
+- El texto histórico de Nahuel está ligado por correlación semántica única; una cola adicional permite interpretarlo económicamente con IA Central solo si están activos los 3 controles consentidos, la autorización en BD, consentimiento del comprador/proveedor, HMAC/SHA, invitación realmente enviada, vigencia y cuota/registro de llamadas. Antiguo análisis sin medidor desactivado; MVP295 instrumenta MVP264 y registra versión comercial.
+- Primera oferta verificada de IA Central podrá aparecer por rubro aunque `can_open` legacy sea falso. Datos de Ailín todavía indistinguibles quedan en revisión privada, sin adjudicación automática.
+- Seguridad publicada comprobada: RLS y ACL restrictivas en SQL, Edge con doble autorización y prueba HTTP sin credenciales `401`, archivos comparados con GitHub. **El resultado final del cron y la aparición de una oferta económica verificada siguen pendientes de auditoría E2E**. No declarar precio, ranking ni publicación comercial antes de ver las filas reales.
+- Registro de alcance: [decisión 421](docs/421-mvp295-continuidad-cotizacion-comercial-vinculada.md) y [decisión 422](docs/422-mvp296-activacion-controlada-recuperacion-comercial.md).
+
+
+- **Prueba real 16:45 UTC:** el cron procesó la fuente histórica de Nahuel una vez; quedó `ai_supplier_linked_replay_mvp295=review` y `ai_supplier_review_mvp227=review/semantic_review_required`, 2 llamadas de modelo con 3.503 tokens observados. No se publicó precio ni ranking; cero reintentos. El documento de Ailín sigue en revisión ambigua. La causa específica de la revisión semántica no se registra aún; no inventar una.
+
+## 2026-11-07 — MVP295: de vínculo histórico a oferta comercial segura (desarrollo)
+
+- Auditoría piloto **solo lectura**: proveedor Nahuel respondió texto y la fuente fue vinculada automáticamente, pero no llegó a la revisión comercial; proveedor Ailín envió documento ambiguo que permanece privado. Cero publicaciones desde esas fuentes; existe una versión previa independiente de Ailín.
+- Corrección propuesta en rama: excepción de antigüedad de 7 días SOLO para textos ya auto-vinculados de forma única y consentidos, cola de interpretación idempotente, cupo 6/día, uso medido de IA Central MVP264, fuente/versiones inmutables, cero WhatsApps.
+- Se elimina la dependencia circular de `tracking.can_open` para que una primera oferta IA segura pueda abrir el seguimiento por rubro. Precios no verificados no se publican.
+- **NO publicado en Supabase**. [Decisión 421](docs/421-mvp295-continuidad-cotizacion-comercial-vinculada.md).
+
+## 2026-11-07 — Publicación controlada MVP291/MVP292 en cotironda-piloto
+
+- Integrado [PR #683](https://github.com/ProtectorRudo/Cotironda/pull/683) mediante commit `b2dac7378c323f5f368f1da808664d00fab7f480`, **31/31 CI**.
+- Aplicadas tres migraciones privadas (total 81), webhook Whapi `v62 ACTIVE` y recuperador interno `v1 ACTIVE` con JWT obligatorio. RLS y RPC de nuevo módulo verificados: 0 permisos de ejecución para anon/auth.
+- Las nuevas rutas de atribución y recuperación necesitan activación explícita de secretos de Edge que este conector no administra; no se instaló scheduler ni se ejecutó backfill real. Sin E2E real no afirmar automatización comercial cerrada.
+- Evidencia, límites y pasos de habilitación: [entrega 418](docs/418-mvp291-mvp292-publicacion-piloto.md). Producción intacta.
+
+## 2026-11-07 — MVP292 texto de proveedores e históricos (SOLO desarrollo)
+- Incorporada interpretación de mensajes libres de proveedor por doble lectura con citas literales de materiales, cantidades y unidades, excluyendo precios para asignar identidad de ronda.
+- Implementado broker de SQL privado para texto con el motor de atribución MVP291, consentimientos, HMAC, SHA, despacho anterior y una asociación atómica; revisión económica comercial independiente.
+- Agregados registro de recuperación histórico de fuentes cifradas y documentos originales, cuotas y worker interno segregado de WhatsApp, con secreto independiente, gates OFF y cero envíos. Pruebas Node/Deno/PG17 sintético con ROLLBACK en PR #683; sin publicación ni E2E real. Decisión docs/417.
+
+## 2026-11-07 — MVP291, correlación autónoma (desarrollo)
+- Sustituido el enfoque descartado de elección manual del proveedor (PR #682) por la correlación de ofertas documentales mediante dos lecturas IA Central + cuantificación determinista y despacho previo acreditado.
+- En caso inequívoco, SQL service_role vincula un único pedido, fuente/archivo SHA y auditoría atómicamente. Si existen dos candidatos indistinguibles, retiene sin enviar aclaraciones ni publicar precios.
+- Incluye PG17 sintético con rollback, contratos Node, RLS y flags OFF. Sin cambios en piloto real/producción. [Decisión 416](docs/416-mvp291-correlacion-automatica-sin-friccion.md), PR #683.
+
+## 2026-11-07 — MVP289 (solo desarrollo)
+- Corrige la ausencia de confirmación y enlace privado tras `CONFIRMAR COTI`: el bloque nuevo se ejecuta después de despachos aceptados y se reutiliza el seguimiento existente sin nuevas invitaciones.
+- Nueva RPC privada, idempotente, token único por ronda, registro de entrega Whapi y comando seguro `SEGUIMIENTO COTI` para rondas históricas confirmadas sin enlace. Pruebas Node y PG17 con rollback; no publicar sin autorización y verificación.
+- Decisión: [414](docs/414-mvp289-confirmacion-y-enlace-seguimiento.md); Issue #679.
+
+## 2026-11-07 — MVP288: evidencia original para descripciones comerciales, cantidades legibles y corrección ligada (desarrollo)
+
+- Preservación de presentaciones literales de la fuente verificada: «20 bolsas de cemento CPC de 50 kg», «3 bolsones de arena», sin truncar ni inventar medidas.
+- Vista de revisión y PDF proveedor comparten unidad contextualizada y formato exacto de cantidad (20, 3, 1.25) sin ceros decimales innecesarios.
+- Corrección por WhatsApp con referencia `CORREGIR COTI <código>: <pedido completo>`: nueva revisión vinculada al pedido anterior; el código de la revisión anterior caduca en la misma transacción y no autoriza despachos. Sin mutación de ofertas originales.
+- Tests Node y PostgreSQL 17 acumulativo con rollback; PR de desarrollo, no publicado en piloto. Ver decisión 413 e Issue #677.
+
+## 2026-11-07 — MVP287: segundo mensaje recibido, validación semántica y comprobantes de Whapi
+
+- Fuente del comprador coincidente por SHA256 con ejemplo recomendado; su lectura IA fue bloqueada por `lecturas_discrepan_en_articulo`, sin ronda. Se aceptarán subcitas literales solapadas del mismo artículo y unidades de conteo equivalentes sin convertir cantidades, presentaciones ni rubros.
+- Whapi había registrado un aviso como `api_accepted` con ID pero **sin evidencia delivered/read**. Se extiende el RPC de estados privados para avisos al comprador con validación de ID, HMAC, destinatario y precedencia; no retransmite.
+- Revisión de transporte: `sent:false` o fallo declarado por API nunca se considera aceptado aunque haya HTTP 200. Nuevas pruebas Node y PG17. Ver decisión 412 / Issue #675.
+
+## 2026-11-07 — MVP286: comprador sin respuesta por fallo semántico IA Central (desarrollo)
+
+- Incidente real: Whapi recibió el mensaje del arquitecto a las 03:11 AR; IA Central finalizó en `review/semantic_review_required` antes de consultar catálogos; 0 rondas y 0 revisiones de comprador. No se puede recuperar la causa HTTP exacta anterior porque el código la ocultó y la traza de uso no fue persistida.
+- OpenAI: clasificación segura de fallas de autenticación, cuota, 400, 5xx, timeout y estructura, sin almacenar texto, tokens, respuestas ni credenciales. El broker registra un motivo allowlisted en SQL.
+- Aviso de fallo al comprador: reserva SQL privada con permiso y cuota de 2/24h, idempotencia por mensaje, 10 min, reconocimiento de Whapi ID verificable y estado `uncertain` sin reenvío si falta. No crea invitaciones ni cotizaciones.
+- Pruebas Node y PostgreSQL17 transaccionales en CI; ningún intento de retransmisión del mensaje del 03:11. Pendiente de publicación solo en PILOTO y prueba real de un nuevo pedido. Ver decisión 411 / Issue #673.
+
+## 2026-11-07 — MVP285: activación controlada de cotironda-piloto (sin gastos)
+
+- Ensayo en base real PostgreSQL 17 de 21 migraciones MVP245–280, rollback verificado, luego instalación atómica (73 migraciones incluyendo resguardo interno). Gate operador SQL adicional instalado (74 migraciones), probado en laboratorio PG17 y solo service_role.
+- Resguardo interno dentro de Supabase: 63 tablas/244 filas, 132 rutinas y 431 constraints/triggers, RLS y ACL privadas. No equivale a backup externo ni restaura archivos Storage.
+- WhatsApp Edge v55/v56/v57 ACTIVE. Nuevo gate operator SQL controla revisión, confirmación y publicación de comprador; variables explícitas false siguen vetando envío. Integración activa sólo para el comprador y los dos proveedores consentidos, prueba sin expiración corta.
+- Cero mensajes reales enviados por la instalación. Seguimiento, cotización de proveedores, ranking y notificaciones finales **pendientes de E2E con nuevo mensaje real**. Cuotas de costos intactas; tres crons preexistentes sin cambios. Ver decisión 410.
+
+## 2026-11-06 — MVP284: E2E integrado sintético + despacho Whapi sin ID (solo desarrollo)
+
+- E2E PostgreSQL17 en una transacción: comprador con 3 rubros, revisión íntegra, confirmación de un solo uso, 3 PDFs de proveedores, 2 respuestas correlacionadas, proyección anónima y sin ranking engañoso; prueba modo continuo de recepción de respuestas tras apagado de nuevos pedidos y rollback integral.
+- Adaptadores TypeScript de Edge probados juntos con RPC y Whapi simulados; regresiones existentes de cierre/finalistas y capacidad 12x30 ejecutadas separadamente sin redes.
+- Corrección: respuesta Whapi aceptada pero sin identificador válido pasa a `uncertain`, sin reenvío; MVP280 endurece el RPC de finalización de despacho. IDs ausentes ya no marcan entrega API aceptada que no pueda correlacionarse.
+- Sin alteración de la base piloto, Edge, Vercel, cron, secretos, WhatsApps ni costos. **Aún falta dump fiel PG17 y prueba real antes de publicar.** Ver decisión 409 / Issue #669.
+
+## 2026-11-06 — MVP283: instalación acumulativa PG17 sintética (solo desarrollo)
+
+- Implementado un único ensayo SQL que instala sucesivamente las **21 migraciones MVP245–280** en un mismo esquema PostgreSQL17 sintético, con rollback integral. CI acumulativo PASS.
+- Se corrigieron dos diferencias en el bootstrap de prueba (faltaban comprobantes históricos MVP119 y columnas de `media_archive_mvp095`); contrastadas contra catálogo real, **sin modificar** `cotironda-piloto`.
+- Inventario estructural real auditado solo lectura: 63 tablas privadas, 428 columnas, RLS habilitado en las 63, 20 funciones privadas y 112 funciones públicas Cotironda. El esquema sintético NO reproduce la totalidad de esas estructuras.
+- Se añadió bloqueo de CI para conexión local PG17 y [decisión 408](docs/408-mvp283-coinstalacion-pg17-y-fidelidad-esquema.md). **Sigue pendiente el ensayo sobre un dump completo de solo esquema antes de `Publicalo`.** Nada publicado ni gastos.
+
+## 2026-11-06 — MVP282 corrección de vencimiento de aprobación comprador y prueba de 21 SQL
+
+- Detectada una carrera real en PostgreSQL17: dos lecturas de reloj podían dejar `expires_at` unos microsegundos más tarde que `created_at + 24h`; constraint impedía emitir revisión. MVP279 y MVP280 ahora usan un único `issued_at` para ambas marcas temporales.
+- Agregada aserción exacta de 24 horas en fixtures PostgreSQL 17 de MVP279 y MVP280; sus dos workflows específicos y el ensayo de 11 fixtures MVP282 aprobaron tras corregir.
+- Preflight read-only ejecutado en `cotironda-piloto`: 19/19 dependencias examinadas presentes; sin migraciones instaladas ni cambios de estado.
+- **Riesgo residual explícito:** estas pruebas verifican cobertura modular de 21 SQL, no su instalación acumulativa sobre schema-only de MVP239; pendiente antes de publicar.
+
+## 2026-11-06 — MVP282: ensayo integrado por cobertura (solo desarrollo)
+
+- Se vinculan los 21 SQL de MVP281 con 11 pruebas PostgreSQL17 ya existentes, verificando imports, BEGIN/ROLLBACK, aislamiento y ausencia de salida externa. Nuevo workflow de ejecución secuencial de los once fixtures y pruebas adversariales de conexión.
+- Precisión de auditoría: 11 fixtures rollback independientes **no demuestran** instalación simultánea de 21 SQL sobre esquema completo de piloto; queda bloqueada toda afirmación de publicación. Decisión 407 e Issue #665.
+- No se modificó Supabase PILOTO, Edge, Whapi, cron, Vercel ni costos.
+
+## 2026-11-06 — MVP281: preflight de integración segura de IA Central (solo desarrollo)
+
+- Issue #663: manifiesto de 21 SQL candidatos MVP245–280, verificado en orden sin migraciones manuales, rollback ni cron supervisor.
+- Nuevo preflight SQL de solo lectura ejecutado sobre `cotironda-piloto`: 9 componentes inspeccionados, 0 instalados; los 4 gates apagados, 0 despachos inciertos y 3 cron históricos activos.
+- Test Node y workflow de integridad del manifiesto, decisión 406 y plan escalonado de publicación futura. **No se instalaron migraciones ni se desplegó Edge/Vercel; no se enviaron WhatsApps y no se generaron cargos nuevos.**
+- CI de MVP280 aprobado en GitHub; Vercel devuelve chequeos fallidos por límite de builds, sin ampliar plan. Falta una autorización `Publicalo` y E2E real antes de considerar el piloto operativo.
+
+## 2026-11-06 — MVP280: confirmación única del comprador en texto, TXT/CSV y PDF/Office (solo desarrollo)
+
+- La IA Central prepara rondas `en sombra` para texto, continuación de localidad, TXT/CSV y PDF/DOCX/XLSX; todas las rutas de publicación directa del webhook están deshabilitadas. El comprador revisa antes de generar invitaciones, mediante un único código firmado, no «sí» genérico.
+- Nueva fuente SQL `fuente_revisable_mvp280` corrobora el texto original de WhatsApp, SHA del TXT/CSV almacenado o doble SHA de PDF/Office, identidad, consentimientos y existencia del objeto privado. Los cuatro gates SQL de publicación, búsqueda, reclamación y PDF exigen la misma confirmación y revalidan la versión completa.
+- Switches `COTIRONDA_PILOT_BUYER_REVIEW_SEND_ENABLED`, `..._CONFIRM_ENABLED`, `..._RELEASE_ENABLED` y `..._REQUIRED_ENABLED`, todos OFF por defecto. Confirmaciones fuera de la IA, sin pérdida de materiales, sin enviar WhatsApps por un cambio de código.
+- PG17 sintético con tres fuentes, tests Node, Deno y regresiones, rollback manual conservando auditoría y decisión 405. **No hubo despliegue, nuevos gastos ni envío real; backup contratado continúa en Plan B.**
+
+## 2026-11-06 — MVP279: revisión explícita comprador por WhatsApp (solo desarrollo)
+
+- Un pedido binario comprobado por IA Central queda en sombra hasta que el comprador apruebe una versión exacta de **todos** los materiales, cantidades, rubros y zona; el SHA incluye además destinos y fuentes originales. Código aleatorio de un solo uso y respuesta WhatsApp firmada vinculados a la versión, sin aceptar «sí» genérico.
+- Previsualización de la lista completa para comprador (no precios/identidad de proveedores), sender Whapi con una única reserva y sin reenvío tras resultado incierto. Confirmación y liberación a proveedores tienen banderas independientes, todas OFF por defecto.
+- Las RPCs de publicación, selección, reclamación y PDF rechazan binarios sin aprobación válida, incluso si un servidor intenta saltarse el webhook. PG17 adversarial, Node+Deno, rollback manual que conserva evidencias y documentación decisión 404.
+- **Sin despliegue ni envío de WhatsApps reales; respaldo pago en plan B, prueba E2E y costos reales pendientes.**
+
+## 2026-11-06 — MVP278: origen PDF/DOCX/XLSX autorizado por doble SHA (solo desarrollo)
+
+- PostgreSQL: atestación privada de original binario y texto derivado con dos SHA-256, versión de lector y cantidad completa de artículos acreditados; revalidación de Storage, HMAC, comprador y consentimiento en las cuatro puertas SQL de IA Central.
+- El bridge Edge usa la lectura independiente MVP277 y pasa el texto derivado al broker, sin convertir un archivo en mensaje `kind=text`; documento solo puede quedar en **ronda en sombra, no envío ni publicación** hasta confirmación del comprador.
+- Pruebas adversariales PostgreSQL17/Node/Deno, rollback manual conservando tabla de evidencia y documentación decisión 403. Despliegue, crons, WhatsApp y consumo real sin cambios; infraestructura de backup pago sigue Plan B.
+
+## 2026-11-06 — MVP277: verificación independiente de originales PDF/DOCX/XLSX comprador (solo desarrollo)
+
+- Lectura de PDF con posiciones reales de texto, y Office OpenXML con controles ZIP/CRC/hojas ocultas/fórmulas, reutilizando lectores existentes.
+- SHA-256 de bytes originales + doble lectura documental: prueba cantidades y unidades en su misma línea física; rechaza 26+ líneas, hojas escaneadas, cifras extra, materiales omitidos y fuentes alteradas.
+- Bandera Edge opt-in `COTIRONDA_PILOT_BUYER_BINARY_CENTRAL_PREVIEW_ENABLED`, inicialmente OFF, que produce **solo previsualización privada**; no crea rondas ni mensajes.
+- Pruebas sintéticas Node y PDF real generado con Deno/unpdf, documentación decisión 402. La RPC MVP276 sigue limitada a TXT/CSV; no hay autorización PDF/XLSX/DOCX para enviar, ni E2E real.
+- Sin migraciones, despliegue, cron, WhatsApp o gastos nuevos. Respaldo pagado en Plan B.
+
+## 2026-11-06 — MVP276: autoridad de fuente documental TXT/CSV para IA Central (desarrollo)
+
+- Extiende cuatro funciones SQL de reserva, staging, publicación y despacho, preservando la ruta de texto, con un helper privado que verifica origen Whapi + participante consentido + original Storage cifrado + MIME + SHA binario exacto.
+- Prueba transaccional `BEGIN/ROLLBACK` de la migración sobre PostgreSQL 17 de `cotironda-piloto`: compatibilidad y ACL comprobadas, helper no persistido, flags IA/despacho OFF.
+- Rollback manual a las cuatro funciones originales con precondiciones de ningún pedido documental abierto y puertas IA desactivadas.
+- Conexión de TXT/CSV al broker `procesarCompradorCentralMvp226` con plan semántico reusado una sola vez (sin repetir IA), preservación SHA del original, idempotencia y flags independientes para staging/publicación OFF por defecto.
+- Suite PostgreSQL 17 con compradores ficticios y pruebas adversariales Node/Deno; documentación decisión 401. **No se instaló en PILOTO, no se desplegó Edge ni se enviaron WhatsApps.**
+
+## 2026-11-06 — MVP275: puente comprador documental IA Central (solo lectura)
+
+- Diagnóstico seguro de compradores con TXT/CSV: comprueba bytes originales SHA-256, UTF-8 estricto, dos lecturas idénticas y cantidades/unidades/descripciones literales por fila antes del planificador semántico.
+- El planificador solo puede invocar lectura privada de catálogo; la previsualización no escribe rondas, no envía WhatsApps ni suplanta el texto de un archivo en SQL.
+- Bandera Edge opt-in `COTIRONDA_PILOT_BUYER_DOCUMENT_CENTRAL_PREVIEW_ENABLED` inicialmente OFF; al usarla no corre simultáneamente el preparador documental legado. PDF/Excel/fotos sin evidencia independiente quedan en revisión.
+- Tests sintéticos y CI específica, documentación en decisión 400. **No se instaló ni activó en PILOTO, no se creó respaldo real y no se realizó E2E**.
+
+## 2026-11-06 — MVP274: modo de piloto continuo, sin costos nuevos (solo desarrollo)
+
+- Decisión 399: respaldos ZIP e infraestructura de ejecución privada a plan B; sin gastos nuevos. El objetivo inmediato es probar Cotironda de punta a punta con sus 3 participantes consentidos.
+- Ampliación segura del gate temporal MVP229: además de ventanas de hasta 4 horas, puede mantenerse indefinidamente en modo piloto SOLO mediante futura activación explícita `expires_at=NULL`; la instalación deja `enabled=false`.
+- La RPC conserva las protecciones MVP230 de respuestas de proveedores previamente invitados, allowlist, consentimiento, ACL exclusiva `service_role` y las puertas separadas de IA Central y despacho.
+- Se conservan cuotas y límites reales de capacidad: **sin vencimiento temporal no implica uso ilimitado de IA/WhatsApp**. PG17 sintético con rollback y restauración manual del modo previo.
+- SQL, Edge, WhatsApp y producción **sin cambios reales**; prueba E2E y estrategia de copia recuperable siguen pendientes.
+
+## 2026-11-06 — MVP273: ensayo aislado de recuperación de ZIP móvil (solo desarrollo)
+
+- Nuevo replay estricto de TAR Storage descifrado: SHA-256 y tamaño físico de cada objeto versus índice, encabezados USTAR, rutas, padding, orden y cola, sin escribir documentos en claro.
+- Comando de comprobación del ZIP age que valida Storage por streaming y SQL cifrado en PostgreSQL17 efímero Docker, con `--network=none`, sin puertos, rootfs readonly, tmpfs, swap/logs deshabilitados, limpieza obligatoria.
+- Pruebas adversariales con TAR y ZIP age reales **de archivos ficticios**; CI para PostgreSQL 17 Docker real solo sobre tablas sintéticas, y regresiones generales.
+- El replay nunca afirma restaurar Supabase gestionado: `restore_verified:false` y descarga Android pendiente. **Sin acceso a datos reales, sin despliegue ni costos nuevos**. Decisión 398.
+
+## 2026-11-06 — MVP272: verificación age real de ZIP móvil (desarrollo)
+
+- Nuevo auditor local y desconectado `audit-pilot-mobile-ciphertext-mvp272.mjs` para los seis archivos age de ZIP MVP269; verifica SHA externo, nombres exactos, manifiesto, permisos, identidad age y autenticidad de descifrado sin escribir texto claro.
+- CI dedicada con cifrado real age sobre datos sintéticos, claves incorrectas, ciphertext alterado, ZIP adulterado y ausencia de afirmaciones falsas de restauración.
+- Se impide la ejecución con credenciales Postgres/Storage, en CI productiva, Vercel y carpetas inseguras. **No hubo copia auténtica ni restore del piloto, y no se habilitó una descarga móvil.** Decisión 397.
+
+## 2026-11-06 — MVP271: comando privado para ZIP cifrado de todo el piloto (desarrollo)
+
+- Exportador SQL PostgreSQL 17 **solo cotironda-piloto** con URL fijada a la referencia de Supabase, snapshot compartido para datos y esquema, cifrado age en streaming y limpieza segura ante fallas.
+- Proceso único que reúne cinco piezas SQL y el TAR cifrado de Storage MVP270, sella el manifiesto MVP269 y entrega un único ZIP de ciphertext con SHA-256 sin generar enlaces públicos.
+- Se impide sobrescribir salidas y borrar ZIP de otra operación; fuente reservada con mkdir exclusivo; no CI, Vercel, otras instancias, ni exportaciones en texto claro.
+- Pruebas sintéticas de snapshot, conexión a proyecto equivocado, recuperabilidad del destinatario, composición ZIP y situaciones adversas. **No se hizo extracción real, validación de restore ni publicación.** Decisión 396.
+
+## 2026-11-06 — MVP270: exportador cifrado de Storage para respaldos móviles (desarrollo)
+
+- Exportación pasiva **solo PILOTO** de objetos de buckets privados a `storage_objects.tar.age`, mediante descarga autenticada, TAR de rutas opacas y cifrado streaming age. Nunca guarda PDFs/Excel/imágenes descifrados en disco.
+- Inventario antes/después, hash individual y cantidad exacta de bytes, límites explícitos, prevención de SSRF/redirecciones, errores de permisos, truncamientos y limpieza al fallar.
+- Seguridad: host Supabase hardcodeado, identidad age comprobada, credenciales solo del host privado y bloqueo expreso de CI/Vercel/Windows; Node tests sintéticos y workflow propio.
+- No es backup completo ni restore verificado; **aún faltan extracción PostgreSQL para PILOTO, ejecución real privada, restore y enlace móvil**. No se tocó el PILOTO ni producción.
+
+## 2026-11-06 — MVP269: paquete ZIP móvil de respaldo cifrado (solo desarrollo)
+
+- Creador de un único ZIP que incluye exclusivamente cinco exportaciones SQL previamente cifradas con age y una exportación también cifrada de bytes de Storage; no descifra ni expone contenido.
+- Manifest SHA-256, comparación real ZIP ↔ fuente, permisos 0700/0600, rechazo de enlaces, rutas inseguras, CI/entorno público, archivos inesperados, componentes ausentes, cambios concurrentes y sobrescrituras.
+- Reconocimiento explícito: fuente real, cobertura Storage y restauración **NO acreditadas**. La copia real y el enlace privado aún no existen; plan de extracción/restore/entrega en decisión 394.
+- Supabase `cotironda-piloto` verificado en solo lectura: 3 rondas, 1 bucket privado, 6 objetos (302.406 bytes reportados por metadatos). Sin modificación de SQL, Vercel, WhatsApp o producción.
+
+## 2026-11-06 — MVP268: preflight real y reproducible de activación del piloto (solo lectura)
+
+- Consulta nueva de diagnóstico SIN efectos secundarios en `cotironda-piloto`: PostgreSQL 17.11; cuatro gates OFF, 0/12 objetos MVP256–267 instalados, tres cron preexistentes activos, 0 usuarios Auth y sin salida `uncertain` en los dos ledgers observados.
+- Informe separado de **precondiciones técnicas para preparar instalación** frente a evidencia operativa faltante; nunca declara WhatsApp E2E, MFA real ni permiso de publicación. No confundir cinco `api_accepted` con entrega.
+- Contratos Node y ensayo PostgreSQL17 reversible de configuración conservadora/insegura, sin escribir en el proyecto conectado. Decisión 393.
+- **Solo desarrollo:** sin instalar migraciones, modificar flags, activar cron, publicar Vercel ni enviar WhatsApps.
+
+## 2026-11-06 — Etapa 7 / MVP267: operador de IA Central con sesión Auth vigente y MFA
+
+- Vinculación única y privada de operador interno con usuario Supabase Auth exclusivo del PILOTO; ninguna alta automática. Un token con sesión ausente/revocada, JWT ajeno, cuenta anónima, operador inactivo o sin AAL2 no obtiene permisos.
+- Cuatro RPC de `authenticated` que resuelven al operador desde `auth.uid()` y `auth.sessions` — no aceptan UUID de operador entregado por el cliente — y reutilizan bitácora MVP265 y conciliación de consumo desconocido MVP266.
+- Backend Next.js privado con clave publicable y JWT del propio operador (sin `service_role`), endpoints para alertas, tokens, revisión de casos y gasto incierto. Gate Preview por SHA, origen y entorno, apagado por defecto, respuestas privadas y no-store.
+- Pruebas PG17 reversibles, contratos Node/HTTP y documento de decisión 391. **Solo desarrollo; no se creó operador Auth real, ni se migró PILOTO, ni se publicó Vercel, ni se activó cron/WhatsApp.**
+
+## 2026-11-06 — Etapa 7 / MVP266: gasto OpenAI desconocido no expira a las 24 horas
+
+- Auditoría integral de las siete etapas IA Central con separación entre código en desarrollo y criterios operativos sin acreditar; decisión 390. **No declarar 7/7 ni piloto E2E** por pruebas sintéticas.
+- Corregida la reserva de IA: un consumo `unmetered` o `reserved` sin revisión bloquea nuevas llamadas del participante incluso después de 24 horas. La cuota de llamadas/tokens observados sigue siendo móvil y verificable.
+- Revisión humana futura mediante RPC interna y operador previamente habilitado, con evidencia SHA, idempotencia, límite diario y prohibición de liberar una reserva reciente. Conservar estados desconocidos, sin fabricar costos ni tokens. Tabla privada RLS, `service_role` exclusivo y sin operadores activos por defecto.
+- Pruebas PG17 reversibles y contrato Node. **Solo desarrollo; no hay migración aplicada a PILOTO, backend de operador autenticado, cron, mensajes nuevos o publicación.**
+
+## 2026-11-06 — Etapa 7 / MVP265: protocolo privado de incidentes con operador
+
+- Bitácora de `acknowledge`, `investigate`, `escalate`, conciliación manual y revisión posterior a resolución, por señal y episodio. Un operador deshabilitado o sin inscripción no puede registrar acciones; una nota nunca modifica la fuente ni da por entregado un WhatsApp.
+- Cola privada de operatoria con umbrales orientativos de 30/120 minutos, identificación de falta de acuse, historial idempotente de evidencia SHA256 y separación de reaperturas. Proyección sin teléfonos, importes, fuente ni nombres.
+- Controles RLS/ACL y RPC `service_role`, sin consola ni autenticación humana aún. Pruebas PostgreSQL 17 reversibles, contrato Node y decisión 389. **Solo desarrollo; sin alertas externas, cron ni mensajes activados.**
+
+## 2026-11-06 — Etapa 7 / MVP264: contabilidad de tokens OpenAI y freno de incertidumbre
+
+- Registramos conteos `usage` realmente reportados por Responses API sobre una reserva IA Central acreditada, separando mensajes de comprador/proveedor. Incertidumbre HTTP, timeout o respuesta sin `usage` jamás equivale a consumo cero.
+- Tope privado por participante: 24 llamadas/24h y 200.000 tokens observados/24h, bloqueo de llamadas futuras si el consumo previo es desconocido, HMAC/fuente/consentimiento/rol validados y medición única por llamada. Tabla RLS y RPC `service_role`; sin texto, respuesta ni ID opaco sin hash.
+- Bandera `COTIRONDA_PILOT_AI_USAGE_TRACE_ENABLED` **OFF por defecto** en las rutas del comprador y proveedor. No se conoce aún costo monetario verificado ni hay conciliación contra factura: `monetary_cost=null`.
+- Pruebas PG17 reversibles y Node; decisión 388. **Solo desarrollo; sin instalar PILOTO, cron o envíos.**
+
+## 2026-11-06 — Etapa 7 / MVP263: vigilancia interna programable y alertas sin duplicados
+
+- Supervisor SQL preparado para ejecutarse en intervalos de 15 minutos, **desactivado y sin cron instalado por defecto**. Política privada de máximo 1–96 ejecuciones por día UTC, bloqueo para concurrencia y resumen sin identidades por bloque de 15 minutos.
+- Siete tipos de incidencia deduplicados por clave, con seguimiento de observaciones, resolución y reapertura. Historial agregado de ejecuciones con retención de 30 días; proyección privada `service_role`.
+- Ningún envío, adjudicación, modificación de presupuestos ni llamadas externas/LLM; sin costos monetarios supuestos. Script de activación cron separado y **MANUAL, no ejecutado**.
+- Pruebas PG17 reversibles y Node, decisión técnica 387. Solo desarrollo; no activado PILOTO ni producción.
+
+## 2026-11-06 — Etapa 7 / MVP262: supervisor privado, solo lectura
+
+- Incorporado un diagnóstico privado de IA Central con señales deterministas sobre mensajes inciertos, leases vencidos, presupuestos en revisión, documentos recuperables, expedientes sin ID y memoria próxima a vencer. Severidad `ok`/`attention`/`blocked`, sin identificadores personales ni importes.
+- **Sin cron, avisos salientes, adjudicación, reintentos automáticos ni modificaciones del negocio.** Las sugerencias del supervisor son códigos para revisión humana; los costos se dejan explícitamente sin acreditar.
+- Tests SQL PostgreSQL 17 reversibles y contratos Node, decisión 386. Solo rama de desarrollo, no publicado PILOTO o producción.
+
+## 2026-11-06 — Etapa 6 / MVP261: versiones de fuentes comerciales sin mezclar precios
+
+- Versionado privado e idempotente de cada nueva respuesta asociada a la ronda y proveedor, con secuencia de HMAC/SHA y estado económico `verified` o `review`. No mezcla correcciones incompletas con importes anteriores ni modifica el presupuesto histórico.
+- Broker del proveedor integrado tras guardar la evaluación económica, con bandera `COTIRONDA_PILOT_QUOTE_VERSIONS_ENABLED` **OFF por defecto**. Mensajes viejos o fuera de orden pasan a conciliación, sin reenviar WhatsApp ni repetir lectura de IA.
+- Pruebas PG17 reversibles y contratos Node, decisión 385. **Solo desarrollo; no se publicó PILOTO.**
+
+## 2026-11-06 — Etapa 6 / MVP260: memoria como guardia de contexto de proveedor
+
+- IA Central puede consultar un snapshot privado por fuente/ronda/proveedor, cruzar sus rubros y cantidades de artículos con el pedido original y bloquear una lectura de IA si la memoria contradice el alcance SQL. No introduce precios, marcas ni condiciones de la memoria en la cotización.
+- La memoria solo se actualiza luego de guardar una cotización en estado `verified`; el guardado idempotente de evidencia y la conciliación de respuestas inciertas no reanalizan presupuestos ni reenvían WhatsApps. Dos rutas del webhook llevan bandera `COTIRONDA_PILOT_COMMERCIAL_MEMORY_ENABLED` **OFF por defecto**.
+- RPC service_role-only, PG17 transaccional y pruebas Node, ADR384. **Solo desarrollo; sin cambios en PILOTO o producción.**
+
+## 2026-11-06 — Etapa 6 / MVP259: memoria comercial verificada y aislada
+
+- Contexto privado por ronda y participante, respaldado por la fuente original del pedido o una revisión verificada del presupuesto del proveedor. Guarda referencias de procedencia con SHA, no texto de conversación, teléfonos ni importes.
+- Snapshots frescos de localidad y cobertura por rubro limitada al catálogo del proveedor; la cotización anterior deja de figurar como actual cuando existe una revisión más reciente. Vencimiento máximo de 14 días tras cerrar la ronda, sin superar 30 días desde registro; bajas revocan lectura/escritura.
+- Pruebas de aislamiento y revocación PG17 reversible, CI Node, ADR383. Solo desarrollo, no publica la memoria ni la conecta aún a respuestas automáticas.
+
+## 2026-11-06 — IA Central etapa 5: expedientes de Whapi sin ID MVP258
+
+- Scanner privado de salidas inciertas sin ID Whapi y leases antiguos de cinco colas, con expedientes únicos, fechas y diagnóstico limitado. Sin reenvíos ni cambios de estado de mensajes.
+- RPC internos de consulta y evidencia de revisión manual con SHA256, códigos cerrados y controles RLS/ACL; nunca certifica entrega sin prueba externa. Test PostgreSQL 17 reversible, contrato Node y decisión 382. **Solo desarrollo.**
+
+## 2026-11-06 — Etapa 5 / MVP257: conciliación pasiva de Whapi incierto
+
+- Se implementó evidencia privada de comprobantes `statuses.post` autenticados para envíos que siguen `uncertain`, con ID de Whapi y destinatario HMAC exactamente vinculados a un único outbox; el orden de estados no puede retroceder ni se permite reenviar automáticamente.
+- Diagnóstico agregado de envíos inciertos con/sin ID y leases antiguos. Estados `uncertain` y `leased` permanecen inalterados y no se autoriza reenvío de WhatsApp.
+- Pruebas PG17 reversibles con colisiones de ID, destinatario equivocado, estados repetidos y revocación de evidencia; regresión de webhook MVP119. Solo desarrollo; decisión 381.
+
+## 2026-11-06 — Prioridad: completar siete etapas IA Central; MVP256 recuperación documental
+
+- Se estableció priorizar el cierre verificable de las siete capacidades de IA Central antes de más publicaciones parciales del piloto. Estados y pendientes en decisión 380.
+- MVP256 reemplaza cuatro funciones SQL del recuperador existente para **bloquear reintentos automáticos de errores permanentes**, permitir solo causas transitorias, aplicar intervalos de 3/9 minutos y detener la tercera falla. Mantiene SHA, cuota, invitaciones, consentimiento y acceso restringido.
+- Prueba PostgreSQL 17 reversible y regresiones Node contra worker previo. Solo desarrollo; **no** se instala en PILOTO ni toca WhatsApp, Vercel, producción ni los mensajes de clientes.
+
+## 2026-11-06 — MVP255: comparador por rubro en seguimiento privado (solo desarrollo)
+
+- Integrado el comparador de cobertura MVP254 en la misma consulta verificada por token de IA Central MVP227, sin abrir otra vista ni convertir resúmenes en fuentes económicas falsas. Solo cobertura mínima por **artículos con importe cotejado**; hasta dos presupuestos anónimos y sin ranking por totales parciales.
+- Proxy Vercel con lista blanca y verificación de rubros, ofertas y artículos; UI de comprador en la página actual, usando `textContent`. Revocación, cambio de token o falla de red borran la nueva sección junto con las ofertas privadas.
+- Contrato CI Edge→proxy→DOM con escenarios parciales, condiciones incompatibles, permisos, PII y revocación. Decisión 379. **No desplegado en PILOTO ni producción.**
+
+## 2026-11-06 — MVP254: corpus de contratos 1–3 e inicio de etapa 4
+
+- Nueva suite de 336 escenarios sintéticos de contrato (224 formulaciones de siete rubros y 112 mutaciones adversariales), más pruebas de rondas simultáneas, ruteo y seis proveedores; **no equivale** a 150 respuestas reales de IA ni a E2E WhatsApp.
+- Comparador privado por rubro sobre evidencia económica MVP225: cobertura separada de precio comprobado, opciones complementarias de hasta dos presupuestos anónimos, condiciones homogéneas indicadas y cero ranking global o adjudicación.
+- Sin conexión nueva al navegador ni publicación; solo desarrollo. Control CI y decisión 378.
+
+## 2026-11-06 — MVP253: autorizaciones y presupuesto OCR por original
+
+- Nueva política privada por defecto OFF, sin consentimientos precargados y con límite cero, que exige consentimiento externo específico del comprador y proveedor, ronda e identidad correctas, doble lectura y cuotas mensuales antes de enviar originales a Cloud Vision.
+- Reserva única por archivo/HMAC con token, unidades y presupuesto estimado; resultado guardado como estado privado, confianza y hash del texto OCR, sin importes ni PII. Revocación posterior bloquea el resultado positivo.
+- Tests PostgreSQL 17 reversibles y regresión Node de lectura OCR simulada. No se habilitan nuevos precios públicos, WhatsApps, Google real ni producción. Decisión 377.
+
+## 2026-11-06 — MVP252: OCR independiente para imágenes y PDF escaneados, en recuperación privada
+
+- Se implementó un lector independiente opcional de Google Cloud Vision con JWT de cuenta de servicio en secretos, SHA de original, confianza mínima, límites de tamaño/páginas y llamadas HTTPS fijas.
+- Cotejador visual contrasta las dos lecturas de IA Central con texto OCR completo mediante las reglas de líneas, cantidades, precios, extras y condiciones. El diagnóstico permanece **privado, no publica ni rankea**.
+- Integración solo en recuperador con dos flags apagados por defecto y sin demorar el webhook principal. Faltan consentimiento externo, control de costo, procedencia SQL y E2E autorizado antes de habilitarlo.
+- Tests sintéticos sin Google real; decisión 376. Ninguna modificación de PILOTO o producción.
+
+## 2026-11-06 — MVP251: revisión segura de presupuestos fotografiados
+
+- Las imágenes JPEG/PNG/WebP recibidas por Whapi ahora tienen diagnóstico explícito en ingreso y recuperación: MIME/firma/hash, coherencia entre dos lecturas, PII y diferencias económicas. Conserva todo en el ámbito privado.
+- Una fotografía visualmente coherente NO pasa a fuente independiente verificada: nunca autoriza publicar, rankear ni revelar contacto. Los PDF escaneados siguen pendientes de corroboración visual independiente.
+- Pruebas Node 22 y decisión 375; solo desarrollo, sin despliegues ni envíos.
+
+## 2026-11-06 — Integración de desarrollo IA Central etapas 1–3 (contrato unificado)
+
+- MVP250 (#630) integrado en la rama de desarrollo; marcas comerciales de material delante del rubro conservan filtros de PII, SHA, permisos y doble lectura.
+- Prueba offline inter-etapas: dos lecturas de pedido multirrubro → ruteo autorizado → asociación de dos rondas → ofertas parciales con importes comparables por artículo; impide inventar precio o ignorar un flete.
+- Nuevo gate CI que agrupa contratos Node y 12 pruebas PostgreSQL 17 reversibles; decisión 374.
+- Sin cambios en Supabase/Whapi/Vercel, sin producción. Aún falta confirmar CI de la integración y E2E real de fotos/escaneos y dos rondas.
+
+## 2026-11-06 — MVP250: marcas comerciales reconocidas en documentos multirrubro
+
+- El publicador privado de presupuestos acepta algunas marcas comerciales conocidas delante de la categoría del material: «Sinteplast Hidrofugo», «Alba Pintura», «FV Grifería», etc. No acepta encabezados con nombres arbitrarios ni elimina controles de CUIT, WhatsApp, correo, razón social o URL.
+- Preserva la validación por SHA, la doble lectura, los totales, el consentimiento y el anonimato. Descripciones con marcas desconocidas quedan para revisión. Pruebas PostgreSQL 17 y decisión 373. Solo desarrollo.
+
+## 2026-11-06 — MVP249: PDF con flete, descuentos y pallets sin unitario
+
+- El cotejador PDF independiente reconoce renglones de cargos sin cantidad ni unidad cuando realmente figuran así en el original, sin inventar precios unitarios. Rechaza importes que faltan, cifras de flete no justificadas, documentos escaneados y datos personales.
+- Sigue respetando el verificador de original, dos lecturas, autorización SQL por proveedor/ronda y la publicación anónima. Corpus de regresiones y decisión 372. Solo desarrollo, sin enviar WhatsApps ni publicar piloto/producción.
+
+## 2026-11-06 — MVP248: publicador comercial multirrubro con privacidad intacta
+
+- Amplía la admisión de descripciones documentales de un pequeño diccionario de corralón a familias de pintura, electricidad, sanitarios, construcción en seco, ferretería y extras comerciales, sin habilitar texto arbitrario ni borrar controles de PII.
+- El publicador MVP107/MVP135 conserva asociación por ronda, SHA binario, doble lectura, cálculos, privacidad y consentimiento. PostgreSQL 17 en transacción reversible y ACL del esquema privado. Solo desarrollo; no aplicado al piloto.
+
+## 2026-11-06 — MVP247: cargos y descuentos sin datos unitarios ficticios
+
+- El puente de documentos corroborados reconoce cargos de flete con solo total, descuentos sin cantidad y pallets sin cargo. Ningún renglón extra se descarta porque no tenga columnas propias de materiales; se preserva literal en la lectura comercial sin inventar precio unitario o cantidad.
+- Se mantiene la exigencia de fuente SHA y autorización del publicador privado. Pruebas de integridad y decisión 370. Solo desarrollo, sin despliegue ni mensajes.
+
+## 2026-11-06 — MVP246: sin publicación documental acreditada no hay lectura económica IA Central
+
+- El puente de archivos MVP245 queda condicionado a la publicación anónima **ya aprobada y persistida** por el verificador legado MVP107; cobertura textual sola es insuficiente. SQL vuelve a exigir la misma fuente/empresa/ronda/SHA, dos lecturas concordantes, importes balanceados y consentimiento vigente. El finalizador repite la guarda antes de guardar cualquier precio.
+- Mejora de lenguaje libre: las notas comerciales pueden incluir varios renglones de IVA/flete/pago, conservándose íntegras.
+- Test PG17 adversarial sobre documentos no publicados, lecturas divergentes, importes discordantes, comprador revocado y eliminación de evidencia entre reserva/cierre. Doc 369. **Solo desarrollo; sin alterar piloto, producción, WhatsApps ni permisos activos**.
+
+## 2026-11-06 — MVP245: integrar archivos corroborados al mismo motor IA Central (solo desarrollo)
+
+- El documento del proveedor ya archivado y con SHA binario verificado pasa del lector privado existente al análisis comercial IA Central **solo** cuando su fuente PDF/Excel/Word/TXT obtuvo cobertura independiente de cada renglón e importe. No se promocionan fotografías ni formatos que carecen de prueba original.
+- Un nuevo RPC privado enlaza media+SHA+proveedor consentido+invitación Whapi+misma ronda, reserva con cuota y guarda el resumen anónimo en la tabla que ya consulta el comprador por rubro. Se reutiliza el finalizador MVP227 preservando texto y se comparten los mismos cálculos y proyección sin contacto.
+- Entrada documental fail-closed ante dos lecturas divergentes, números no sustentados, fuente no verificada, imagen escaneada, duplicación o timeout. Flags adicionales OFF, sin desplegar piloto/producción ni enviar WhatsApps. Pruebas PG17/Node y decisión 368. La etapa 3 queda ABIERTA hasta E2E real y cobertura de imágenes.
+
+## 2026-11-06 — MVP244: detectar líneas monetarias omitidas del presupuesto (etapa 3)
+
+- Una cotización interpretada ya no puede acreditarse económicamente si el original muestra un importe explícito en materiales, pallets, flete o descuento que no aparece en las líneas citadas. Se comparan frecuencias de importes literales y se detectan duplicados inventados.
+- El total global recapitulativo permanece en la fuente original sin duplicarse como artículo. Un importe no representado bloquea la verificación y requiere revisión, conservando líneas, cobertura y precios previamente cotejados.
+- Nueva verificación en doble lectura MVP225 y calificador directo, suite MVP244 y decisión 367. **Solo desarrollo**, sin SQL, mensajes WhatsApp ni publicación.
+
+## 2026-11-06 — MVP243: diagnóstico de presentaciones nominales (etapa 3)
+
+- IA Central preserva alternativas de proveedores aunque cambien envase y marca: 20 bolsas × 50 kg vs 40 × 25 kg, envases de 5 L, y bolsones con m³ explícitos. Su peso/volumen nominal se coteja en BigInt con datos LITERALES del proveedor, sin deducir bultos del precio, ni sustituir la acreditación técnica ni activar ranking.
+- Si una oferta contiene exclusivamente alternativas sin importes homogéneos no se marca verificada económicamente. Las demás líneas exactas conservan su comparabilidad por artículo y rubro.
+- El diagnóstico se almacena solo en resumen privado MVP227, con banderas `comparableTecnico=false` y `comparableEconomico=false`; no expone compradores, originales, ganadores, WhatsApps ni contactos. Nuevas pruebas/CI y decisión 366. **Solo desarrollo: no desplegar piloto/producción ni enviar mensajes.**
+
+## 2026-11-06 — MVP242: IVA, flete y pago con evidencia semántica (etapa 3, desarrollo)
+
+- Las dos lecturas de IA ya no pueden acreditar IVA, flete o pago con cualquier cita que aparezca en el texto: una verificación determinista exige que la cita y la fuente respalden exactamente el mismo estado comercial.
+- Reconoce frases libres habituales: con IVA, sin IVA, más IVA, flete incluido/aparte/a convenir, pago contado/transferencia/crédito. Datos omitidos se conservan como `no_informado`, sin añadir impuestos ni inventar entrega.
+- Condiciones contradictorias o múltiples opciones quedan en revisión, conservando todas las líneas y extras. Se refuerza también el comparador invocado directamente. Pruebas y ADR 365; sin SQL ni Whapi ni despliegue al piloto.
+
+## 2026-11-06 — MVP241: evidencia determinista de moneda y cantidad (etapa 3, desarrollo)
+
+- La lectura comercial IA Central deja de convertir el signo ambiguo `$` en ARS; exige indicación explícita de ARS/USD y cita literal válida. Una fuente con ambas monedas pasa a revisión, no a un comparador global.
+- El cálculo exacto por línea exige que la cantidad conste en el original incluso cuando el total y el unitario parezcan reconciliarse aritméticamente. Ningún número deducido del precio se atribuye al proveedor.
+- La cotización conserva cobertura, artículos, importes y extras en revisión cuando falta evidencia. Tests MVP241 y regresiones MVP225/227, decisión 364. **Sin activar WhatsApp ni publicar piloto/producción; etapa 3 abierta.**
+
+## 2026-11-06 — MVP240: smoke real de etapa 2 sin envíos ni datos de prueba persistentes
+
+- Ejecutado directamente en `cotironda-piloto` un control transaccional `BEGIN/ROLLBACK` con HMAC ficticios. Verifica las seis RPC de asociación/aclaración: todas rechazan fuentes no autorizadas; permisos públicos denegados, RLS y tres gates OFF.
+- La inspección real de triggers de `invitations` demostró que insertar dos rondas ficticias podría activar automatismos de despacho. Queda expresamente prohibido usar esa vía como prueba inocua; los casos sintéticos complejos continúan en PG17 aislado.
+- El piloto conserva tres rondas históricas y no recibió nuevos mensajes desde el 05/11/2026. Etapa 2 integrada técnicamente pero no cerrada sin E2E con WhatsApps reales y autorizados. Docs/363; sin cambios de producción.
+
+## 2026-11-06 — Etapa 2 IA Central: integración MVP236-239 en piloto (sin WhatsApps)
+
+- Cuatro migraciones SQL instaladas en `cotironda-piloto` y Edge Whapi **v54 ACTIVE** con 37 archivos, código coincidente con la rama de desarrollo. Los PR #614 y #617 están integrados; los PR #615/#616 quedaron incluidos y cerrados sin duplicar cambios.
+- Atribución por envíos Whapi acreditados, registro privado de ambigüedades, continuidad segura de aviso y archivo, y aclaración mediante cita exacta del pedido original. Comprobados RLS, ACL, no-reintentos y controles de salida.
+- **25/25 controles de GitHub Actions SUCCESS** en el commit integrado de etapa 2. Comprobación SQL: tres gates privados OFF; rondas históricas conservadas, cero mensajes, cero despachos, cero nuevas asociaciones IA.
+- **La implementación técnica en piloto está completa.** No declaramos terminada la validación operativa hasta un E2E real con dos rondas y proveedores, según decisión 362. Producción sin cambios.
+
+## 2026-11-06 — MVP239: aclaración segura de presupuestos ambiguos (etapa 2)
+
+- El proveedor puede contestar citando el mensaje ORIGINAL del pedido Whapi, sin volver a enviar el presupuesto. Una RPC vincula un único documento o texto pendiente al pedido exacto del mismo proveedor, sin seleccionar por similitud ni confundir el mensaje de aclaración con una oferta nueva.
+- La pregunta automatizada se reserva una sola vez y está sujeta a cuota, consentimiento y bandera independiente **apagada por defecto**; los resultados inciertos no se reintentan. Tabla privada, idempotencia, pruebas PostgreSQL 17 y ADR 361.
+- Cambio inicialmente en desarrollo; sin WhatsApps reales ni publicación en producción. Validación integral pendiente.
+
+## 2026-11-06 — MVP238: aviso de proveedor + archivo posterior (etapa 2, desarrollo)
+
+- Un mensaje breve como «Te paso el presupuesto» se registra como **aviso de adjunto**, no como cotización ni como motivo de respuesta automática. Solo si el aviso está inequívocamente asociado a una invitación Whapi aceptada, el siguiente archivo almacenado y verificado puede consumir esa referencia.
+- Vínculo por HMAC/SHA, mismo proveedor y chat, máximo diez minutos, sin mensajes ni invitaciones intermedias, una sola fuente por aviso. Un aviso conflictivo bloquea el fallback a otra ronda durante 24 horas para evitar mezclar presupuestos.
+- Migración SQL privada, integración del webhook, pruebas Node y PostgreSQL 17, ADR 360. **Sin publicar en piloto o producción; no se activan controles ni se envían WhatsApps. Etapa 2 abierta.**
+
+## 2026-11-05 — MVP236: asociación de presupuestos por despacho acreditado (etapa 2, desarrollo)
+
+- El enlace de respuestas IA Central ya no considera candidatas las rondas LEGACY preparadas que nunca tuvieron un envío `api_accepted` con ID de Whapi y fecha anterior a la respuesta. El criterio evita ambigüedades artificiales y mantiene el bloqueo cuando existen varias solicitudes realmente enviadas. Cotizaciones citadas conservan vínculo exacto y cotejo de remitente; mensajes duplicados no se reinsertan. CI PostgreSQL 17 con casos adversarios y decisión 358. Complemento MVP237: ledger privado de mensajes no vinculados/ambiguos, una entrada por HMAC, sin precios ni contactos; decisión 359. **Sin despliegue ni WhatsApps; etapa 2 abierta.**
+
+## 2026-11-05 — MVP235: recuperador compatible con localidad reanudada (piloto)
+
+- Detectada condición de carrera: un pedido antiguo reanudado por MVP233 conserva su fecha original; el cron MVP230 podía confundir una reserva nueva con una operación abandonada.
+- Corregida conciliación para usar la fecha más reciente entre creación y enlace de reanudación, sin borrar historial ni alterar otros estados de proveedor o despacho.
+- Migración SQL versionada, regresión PostgreSQL 17 con rollback y decisión 357. **Aplicado únicamente en Supabase piloto:** migración `piloto_mvp235_recuperacion_segura_zona`; PG17 y preflight remoto aprobados, cron activo. WhatsApp y tres gates siguen OFF; E2E real pendiente.
+
+## 2026-11-05 — MVP234: interpretar respuestas naturales de localidad (solo desarrollo)
+
+- IA Central reconoce frases como «La entrega es en City Bell», «Es en Berisso» o «La obra queda en Tolosa» sin guardar esas expresiones como localidad ni crear un segundo pedido. El RPC MVP233 mantiene el vínculo único al mensaje firmado, el contexto original y los controles de autorización; documentos y respuestas de proveedores quedan intactos. Pruebas adversarias y regresión en workflow propio, ADR 356. **Publicada exclusivamente en piloto:** migración MVP233 + Edge Whapi v53. Tres controles privados OFF, sin WhatsApps, con continuidad E2E pendiente. Producción sin cambios.
+
+## 2026-11-05 — MVP233: localidad posterior sin repetir el pedido (desarrollo)
+
+- IA Central retoma el único pedido previo `needs_zone` después de un mensaje de localidad del mismo comprador. SQL privado enlaza fuente HMAC y respuesta atómicamente dentro de ventana y gates, vuelve a corroborar originales cifrados SHA y realiza doble lectura semántica. La ronda resultante conserva el original inmutable; no duplica invitaciones ni envía mensajes fuera de los permisos de despacho. Agregados tests Node y PostgreSQL 17 (rollback), docs/355. **No publicado en piloto ni producción; E2E real pendiente.**
+
+## 2026-11-05 — MVP232: respuestas de rondas IA tras cierre de gates (desarrollo)
+
+- Corrige clasificación del proveedor en webhook: el permiso SQL `quote_link` para un PDF `api_accepted` sigue en IA Central aunque se apague el control de nuevas rondas. Mantiene la asociación segura y la revisión de presupuestos dentro de la ronda, sin reactivar nuevos pedidos o envíos. Regresión `mvp232-proveedor-tras-gates`, ADR 354; solo rama/PR, sin despliegue ni WhatsApps.
+
+## 2026-11-05 — IA Central (decisión 340; desarrollo, sin publicación)
+
+- Aprobado rediseño semántico: dos lecturas OpenAI Responses con evidencias literales verificables, ruteo de rubros sobre proveedores autorizados y asociación inequívoca de cotizaciones a ronda; sin diccionarios cerrados para material. Nuevo contrato de herramientas/seguridad, pruebas de jerga y omisiones.
+- Seguidor comprador: proyección por rubro validada en Edge→proxy→DOM, agrupando materiales de obra gruesa, pintura, electricidad, construcción en seco, sanitarios, ferretería y otros; preserva todos los originales/partiales y nunca suma totales incompatibles.
+- Elaborado nuevo plan de seis fases y criterios de salida en docs/340. **Sin reemplazar webhook publicado, sin enviar mensajes, sin publicar producción o piloto**. Checklist #529 permanece abierto.
+
+## 2026-11-05 — MVP212 (solo desarrollo): URL real de seguimiento del comprador
+
+- Corregido origen del enlace privado emitido por Whapi: ahora apunta al alias estable de Vercel del proyecto de seguimiento, no al endpoint JSON Supabase con redirect a preview antiguo. La Edge previa conserva redirect de enlaces históricos al alias estable; token permanece en fragmento y el navegador usa POST mismo origen.
+- Validada propiedad/alias Vercel READY vía conector, añadidas pruebas seguridad/token y no reenvíos. Sin despliegue, sin WhatsApps nuevos, sin cambios de estado en ronda, producción ni `main`. docs/337.
+
+## 2026-11-05 — MVP211 (desarrollo): primera capacidad integrada del seguimiento 12×30
+
+- Auditoría solo lectura en Supabase PILOTO: pedidos 200 renglones posibles, originales de proveedor hasta 25 cada uno, rondas reales actuales 3 ítems/2 ofertas como máximo. Detectado límite artificial 10/25 en SQL privado, TS y Vercel. Nueva migración propuesta, sin instalar: seleccionar 12 documentos v9 por ronda con 30 artículos solicitados, conservando cada original de hasta 25 líneas.
+- Capacidad alineada en diagnóstico, cobertura, referencias por artículo, alternativas completas, pares, proxy y página; límite de respuesta 512KiB con fallo total y no truncamiento. Prueba PG17 aislado y pruebas unitarias 12×30, fuentes faltantes, autorización, revocación y casos 13/31, sin WhatsApps ni cambios en PILOTO. MVP185/210 mantiene límite monetario anterior y se oculta sin ranking falso en casos grandes. docs/336; P0-H sin cerrar.
+
+## 2026-11-05 — MVP210: comparador de materiales conectado al comprador (solo desarrollo)
+
+- Nuevo adaptador de fuente v9 a comparador MVP185 desde el seguimiento privado al cierre: verificaciones de texto público/etiqueta, SHA, descuentos, unidades y canasta de uno o dos, sin contactos ni adjudicación. Vercel y DOM recalculan subtotales de materiales con BigInt en vez de confiar en el importe enviado por Edge.
+- Los valores explícitos `AR$`/`US$`/`U$S` ahora atraviesan las proyecciones MVP186/204, proxy y pantalla; `$` ambiguo continúa bloqueando el cálculo. Pruebas del circuito real anonimizado, manipulaciones y revocación. No se modificó SQL, Whapi, producción ni PILOTO. docs/335.
+
+## 2026-11-05 — MVP209, planificación autónoma de cierre (solo desarrollo)
+
+- Auditoría de Supabase PILOTO solo lectura: cron de cierre activo con 890 corridas exitosas y ninguna ronda vencida, 0 planes, 0 cron de finalistas, activación OFF. pg_cron, pg_net y Vault compatibles; falta secreto exclusivo plan-only.
+- Separada en la Edge la autenticación de planificación de la credencial completa de avisos: plan_only termina ANTES de Whapi/contactos incluso si flags de envío están habilitadas. Propuesto cron seguro de solo planificación cada 5 minutos con Vault, preflight SQL y smoke PG17 sin HTTP real con rollback. Sin cambios al PILOTO desplegado ni mensajes. Documentada decisión de consentimiento de alta sin fricción para nuevas cuentas. Docs/333/334.
+
+## 2026-11-05 — MVP208 (preflight reales solo lectura + CI rollback)
+
+- Auditada directamente la base PILOTO sin modificación: PG17, Auth, roles, digest y columnas de las cuatro migraciones de originales compatibles (0 errores), 0/7 objetos privados instalados, 0 usuarios Auth y tres rondas preparadas, ninguna vencida a la fecha.
+- Nuevos reportes SQL pre/post instalación de solo lectura, sin HMAC ni teléfonos, que detectan dependencias/instalación parcial y después aseguran política OFF, RLS y ACL estricto. CI PG17 sintético extendido para ejecutar ambas comprobaciones dentro de su rollback; tests de seguridad y documentación docs/332. No hubo despliegues, mensajes ni descargas.
+
+## 2026-11-05 — MVP207 (solo desarrollo)
+
+- Nuevo acceso autenticado a originales PILOTO en Next.js mediante OTP SMS para comprador preaprovisionado, sin autorregistro y sin secretos en navegador. Se reutilizan catalogo, descarga, consentimiento y auditoría de las rutas privadas existentes. Contrato público y pruebas adversariales de UUID, JWT, fuentes manipuladas, bloqueo Preview y aislamiento Auth DEV.
+- **Sin despliegue ni SMS enviados.** En PILOTO aún no hay Auth users ni migraciones de originales activas: #525/#528/#529 abiertos. docs/331.
+
+## 2026-11-05 — MVP206 (desarrollo, sin desplegar)
+
+- Prueba end-to-end de contratos buyer v9 (dos rondas anonimizadas MVP199, cuatro fuentes, diez líneas) conectando MVP175/180/186/189/194/204 con `buyerView` Vercel y DOM del seguimiento, con revocación y casos hostiles. Corrige orden de referencias por etiqueta visible en MVP186, no por orden HMAC de SQL; etiquetas duplicadas bloqueadas. Distingue fallos de prueba física frente a fallos puramente económicos. No es E2E real por WhatsApp ni implica publicación. Docs/330, P0-G abierto.
+
+## 2026-11-05 — MVP205 (desarrollo, sin desplegar)
+
+- Comparador MVP185: moneda ARS/USD acreditable directamente de importes originales v9 solo con marcadores explícitos consistentes en unitarios, renglones y total. Contradicciones o `$` ambiguo bloquean la comparación; si hay fuente externa, se exige que no contradiga el documento. Mantiene todas las advertencias IVA/flete/stock y ningún efecto de despacho. Docs/329.
+
+## 2026-11-05 — MVP204 (desarrollo, sin desplegar)
+
+- El seguimiento del comprador obtiene un panel por oferta anónima con cobertura de importes acreditados y estados de IVA/flete/pago desde el documento fuente verificado, sin formularios nuevos. Edge→Vercel→DOM vinculados por texto aprobado, contrapesados contra RPC económica MVP180; invalidación por revocación.
+- Moneda continúa **sin acreditar** en las cuatro cotizaciones reales del piloto; ni `$` aislado ni silencio sobre IVA producen un total fiscal o ranking económico. Documentación y tests en docs/328. Sin cambios en SQL/WhatsApp/producción.
+
+## 2026-11-05 — MVP203 (desarrollo, sin desplegar)
+
+- Seguimiento comprador: orientación de cobertura al cierre derivada del MVP189 anónimo y previamente cotejado. Una o dos opciones individuales inequívocas o una pareja complementaria única, siempre sin orden de precio; situaciones ambiguas no eligen dos arbitrariamente. Se conservan todas las ofertas y sus parciales.
+- Proxy y UI repiten la comprobación, ocultan la propuesta alterada y limpian al revocar token. Pruebas de permisos, opciones múltiples, incompletos, tokens y datos privados. Ningún despliegue, WhatsApp, contactos ni descargas.
+
+## 2026-11-05 — MVP202 (desarrollo, sin publicar)
+
+- Comparador económico: cobertura sin truncar de hasta 200 proveedores y 100 artículos, pareja exacta con máximo 25 líneas flexibles y suspensión explícita de toda clasificación de pares si el costo global excede presupuesto. Ofertas individuales completas permanecen visibles sin puesto ni orden por precio.
+- Nuevas pruebas de 50 líneas forzadas/flexibles, 120 proveedores×50 artículos, 12 proveedores/66 pares, condiciones comerciales ausentes y topes explícitos. **No se desplegó en PILOTO ni producción.** Docs/326, #532 abierto.
+
+## 2026-11-05 — MVP201 (solo desarrollo, sin despliegue)
+
+- Auditoría persistente privada para descargas de originales del comprador: RPC `service_role`, control cruzado SHA/tamaño/vigencia desde MVP192 y denegación de bytes si no se puede registrar; evento de preparación de respuesta, no confirmación de descarga final.
+- Pruebas de caso válido, bases inaccesibles, bytes falsos, ACL y sesión revocada (Node + PostgreSQL17 aislado). Ningún efecto en WhatsApp, `main`, PILOTO ni producción. Docs/325, #525.
+
+## MVP200 — originales privados condicionados a fuente v9 e invitación vigente (05/11/2026, solo desarrollo)
+- SQL de catálogo MVP192 refuerza cruce exacto con verificador documental v9 `verified/covered` para cada presupuesto, invitación en estado `prepared` y bloqueo ante edición posterior. No exige ser recomendado: incluye TODOS los originales autorizados. PG17 aislado nuevo prueba instalación secuencial de políticas/Auth/catálogo, consentimiento individual, PDF/Excel, sesión, fuente errónea, vencimientos y revocaciones; workflow y tests unitarios nuevos. No se modificó el piloto, producción, WhatsApp, Vercel ni datos reales; política originales aún inexistente en PILOTO. docs/324 y #525.
+
+## MVP199 — regresión con estructura real de 4 presupuestos v9 anonimizados (05/11/2026; solo desarrollo)
+- Nueva fixture anónima de 2 solicitudes con 4 presupuestos originales v9 y 10 líneas comerciales conciliadas del piloto real: no conserva identificadores reales, contactos ni texto de chat. Testea los mismos JSON de entrada del diagnóstico privado MVP172 y del selector MVP196, parser económico argentino y rechazo ante versión/archivo alterados. No cambia datos reales del piloto, Whapi, producción ni `main`; SQL/Edge v196 todavía sin publicar. docs/322.
+
+## MVP198 — ronda cerrada sin cotizaciones no bloquea finalistas (04/11/2026, SOLO desarrollo)
+- Auditoría solo lectura de la base PILOTO confirmó una solicitud sin ofertas antes de dos con documentos v9. SQL propuesta ahora excluye ronda vacía del selector, continúa ante documentación incompleta, cuenta omitidas y no pierde rondas verificadas posteriores; verificación de invitación actual `prepared` antes de plan y de despacho/revelación. PG17 aislado incluye ronda vacía, inválida y válida y prueba cancelación de invitación; unitarios y documentación. No deploy, main, WhatsApp ni contactos. docs/321.
+
+## MVP197 — planificación fuente v9 sin Whapi y revalidación de revocaciones (04/11/2026; solo desarrollo)
+- El worker de finalistas ya puede planificar por RPC privada aun con mensajes OFF y sin secretos Whapi/AES/HMAC: la barrera de despacho es independiente. Lógica plan-only extraída a función testeable, con resultados anónimos acotados, sin red ni efectos de comunicación. SQL propuesto MVP196 refuerza permiso de fuente antes de cola/contactos mediante relectura expediente, confirmación de consentimientos, hash y última versión. Nuevas pruebas de selección/errores/mocks y orden de barreras. Sin deploy/activación/envíos. Docs/320; #523/#528/#529 siguen abiertos.
+
+## MVP196 — reemplazo de selector literal por fuente documental verificada (04/11/2026, SOLO desarrollo)
+- Nuevo `seleccion-finalistas-v9-mvp196.ts` utiliza diagnóstico técnico de fuente v9+SHA, cantidad física y ledger de descuentos cotejado para distinguir una/two ofertas completas o parejas con aporte exclusivo; todas las ofertas quedan en vista, sin ranking ni adjudicación, y casos ambiguos no generan plan. SQL propuesto (NO instalado) para rondas nuevas cerradas, revalidar bindings HMAC/SHA al proveedor, insertar plan y marcador inmutables y rechazar planes anteriores antes de notificar. Worker finalistas integrado a RPC nueva, sin invocar selector literal MVP159; envío Whapi gate OFF por bandera independiente. Tests unitarios de dos rondas y seguridad. No deploys, producción, main, contacto ni descarga. docs/319.
+
+## MVP195 — equivalencia 25/50 kg y 5 L, conciliación obligatoria de descuentos (04/11/2026, SOLO desarrollo)
+- `precios-cotizados-sin-iva-mvp185.ts` incorpora prueba privada de presentaciones comerciales de cemento gris e hidrófugo, apoyada en MVP174 y fuente v9/SHA/posición, para comparar el subtotal de materiales de **cantidades físicas iguales aunque cambie número de envases**. Advertencia específica; no ranking final, stock, IVA, flete o adjudicación. Reconciliación determinista adicional de precio unitario posdescuento y total original en misma página/fila para todas las líneas. Caso de regresión: 310.359,22 material completo vs oferta parcial con hidrófugo sin litros no acreditados. Sin SQL/Edge/Whapi/main/producción. docs/318.
+
+## MVP194 — vista de cobertura con importes originales por oferta y parejas al cierre (04/11/2026, SOLO desarrollo)
+- Integrados Edge existente, proxy Vercel y DOM de seguimiento para mostrar ofertas anónimas con cantidad de renglones de precio fuente verificados y, solo tras cerrar, parejas complementarias que reúnen importes para cada artículo. Fuente única MVP186 token-verified, validación independiente y whitelist en proxy, revocación limpia. Sin sumar importes o afirmar IVA/flete/stock, no hay ranking final ni contacto, envío, original descargable o adjudicación. Tests de 2 compradores, incompletos, fuente alterada y navegador. Sin publicación SQL/Edge/Vercel, main ni producción. Docs/317.
+
+## MVP193 — bolsones de áridos m³ nominal en comparación preliminar (04/11/2026, SOLO desarrollo)
+- El motor MVP185 reutiliza el cotejador MVP164 y el contrato privado de fuentes MVP165 para convertir 1 bolsón de áridos = 1 m³ nominal cuando hay cotejo de pedido, original v9/SHA, página/fila, presentación y familia/cantidad compatibles. Desbloquea referencias de material sin inventar unidad escrita, IVA, stock ni costo de entrega; advierte a cada opción. Pruebas de oferta individual, dos proveedores parciales, capacidad/diferencias/pallet y negativas. PILOTO: 4/10 líneas fuente big_bag y 10/10 unidades no explícitas; **no está probado ranking real**. No SQL, Edge, web piloto, WhatsApp, main o producción. Docs/316.
+
+## Portal originales: rutas Next.js PILOTO con barreras completas, solo DESARROLLO (04/11/2026)
+- Conexión Auth PILOTO independiente del portal DEV; rutas protegidas de catálogo íntegro y descarga por ID opaco; normal user JWT validado por `getUser(jwt)` y comprobación MVP191, servicio privado MVP192 con `buyerKey` exclusivamente servidor, almacenamiento SHA/revocación MVP190, 8 MiB. Habilitación OFF y pin exacto SHA de deployment Preview, tests negativos y positivos sintéticos. No hay OTP/Auth usuario PILOTO ni ruta habilitada ni descarga real; tampoco Vercel, WhatsApp o `main`. Docs/315, #525/#529.
+
+## Originales — conexión privada de identidad, catálogo y descarga (04/11/2026, SOLO desarrollo)
+- Nuevo adaptador servidor `src/server/originales-piloto-conexion-segura.ts`: vincula Auth y sesión PILOTO al RPC autenticado MVP191, consulta MVP192 con servicio privado, proyecta lista segura de **todos** los documentos consentidos y deriva descarga a MVP190 con SHA de bytes y doble revalidación post-I/O. Crea pruebas de acceso positivo simulado, aislamiento, cambio de sesión, revocación, fuente cambiada, falta de consentimiento, archivo adulterado y flag OFF. No crea endpoint ni despliega SQL/Supabase/WhatsApp/producción; #525/#529 abiertos. Docs/314.
+
+## Seguimiento — aislamiento al cambiar token privado (04/11/2026, solo desarrollo)
+- Corregida transición segura entre enlaces de distintas rondas en una misma pestaña: borrado inmediato, rechazo de respuestas antiguas, recuperación de token revocado solo mediante hash nuevo y ausencia de consultas con token inválido. Se agregaron seis pruebas de carrera, revocación, pérdida de conexión y privacidad. Sin despliegue ni WhatsApp. Docs/313; #528/#529 siguen abiertos hasta E2E real.
+
+## MVP192 — Catálogo de originales por ronda y proveedor consentido (04/11/2026, solo desarrollo)
+- Selector SQL server-only para enlistar TODOS los originales vigentes de proveedores con consentimiento específico de ronda prospectiva, con vínculo Auth PILOTO/WhatsApp, cierre, archivo inmutable SHA, última versión y anti-duplicados. Detalle interno único para MVP190. Proyección pública de lista blanca sin SHA, ruta, nombres de proveedores, contactos, totales ni URLs. Ensayo PostgreSQL de migración transaccional con rollback. Sin usuarios Auth, política, endpoint ni publicación. Docs/312; #525 abierto.
+
+## MVP191 — Vínculo de Auth con contacto WhatsApp verificado (04/11/2026, desarrollo)
+- Prepara RPC booleana con sesión JWT Auth PILOTO actual, teléfono OTP confirmado y contacto privado de Whapi, sin nuevas tablas ni revelar identidad/archivo, bloqueando rondas históricas por política OFF y fecha de activación. MVP190 ahora exige comprobar ese vínculo **antes y después** de leer Storage. Prueba reversible REAL en PostgreSQL del piloto: no autenticado denegado, ACL y política OFF, ROLLBACK comprobado; no se instalaron funciones ni se crearon Auth users. Docs/311; #525 sigue abierto.
+
+## MVP190 — Transporte de originales protegidos con verificación de bytes SHA (04/11/2026, solo desarrollo)
+- Nuevo manejador HTTP fail-closed, sin endpoint abierto ni despliegue, para descargar documentos PDF/Excel/Word/imagen auténticos con sesión/empresa y consentimiento documental específicos, evidencia vigente y lectura privada de Storage. SHA-256 de bytes reales y segunda verificación de revocación tras I/O; headers privados, sin URL pública ni PII. Se cierra además el caso de consentimiento anterior a ronda/política. Falta puente de identidad Auth PILOTO, selector privado/almacenamiento y E2E nuevo. Docs/310, #525.
+
+## MVP189 — Combinaciones comerciales de hasta dos proveedores después del cierre (04/11/2026, desarrollo)
+- Nuevo módulo fuente verificada v9 que proyecta combinaciones de cobertura uno/dos proveedores **sin dinero, puestos ni ganadores** y preserva todas las ofertas parciales. Solo con enlace del comprador autorizado tras cierre y doble guardia privado de seguimiento/cobertura/economía; saneamiento adicional Edge/Vercel/UI, revocación y anonimato. Suite de combinaciones y seguridad. No implementa IVA/flete/stock final, no despliega piloto ni WhatsApp. Docs/309.
+
+## MVP188 — Prueba reproducible y rollback de activación de precios (04/11/2026, desarrollo)
+- Script SQL de solo lectura comprueba los dos enlaces buyer, cuatro originales v9, correlación exacta de las ofertas, cinco artículos, conciliación de diez líneas a centavos y permisos service_role, sin PII. SQL nuevo y versión previa de rollback se instalaron temporalmente con BEGIN/ROLLBACK en cotironda-piloto, comprobando ausencia de cambios permanentes. No SQL instalado, Edge/Web desplegados, WhatsApp ni finalistas. Docs/308, #529/#528.
+
+## MVP187 — Comprador ve el material y ambas cantidades (04/11/2026, desarrollo)
+- Extiende proyección MVP186 del comprador con nombre, unidad y cantidad **del pedido**; cantidad literal de cada oferta solo cuando el importe de origen está auditado. Evita presentar dos subtotales de presentaciones diferentes como si fueran equivalentes. Validación repetida en dominio, proxy y navegador, sin PII de proveedor ni HTML interpretado. Tests de regresión, XSS, revocación, cantidades divergentes y whitelist. No despliegue. Docs/307.
+
+## MVP186 — Referencias de importe por artículo con seguimiento privado sin formularios (04/11/2026, desarrollo)
+- Se reutiliza selector de fuente privado MVP172/MVP175 y doble guardia de IVA/resumen MVP180; vínculo inequívoco de texto anónimo aprobado con la fuente v9. Componente Vercel muestra importes originales por artículo, presentaciones y salvedades sin generar puestos de ranking, contactos, stock, flete ni WhatsApps. La RPC MVP172 requerirá agregar una clave privada `publicText` y probar su instalación reversible antes del despliegue. Docs/306; issues #529/#535/#525.
+
+## MVP185 — Convención para presupuestos que no mencionan IVA (04/11/2026, desarrollo)
+- Por regla comercial del usuario, el silencio IVA se presenta como **precio cotizado sin IVA solo para comparación de materiales**, sin inventar tasa fiscal. Módulo offline de comparación orientativa: fuentes v9+SHA, descuentos conciliados, cobertura de hasta dos proveedores, canasta completa, monedas separadas, sin líneas extra ocultas; no modifica ranking final MVP118 ni adjudica. Copia de seguimiento piloto explica convención sin desplegar. Pruebas con importes ficticios y fallos seguros. Docs/305.
+
+## MVP184 — Base IVA por renglón, sin doble conteo (04/11/2026, desarrollo)
+- El contrato de `TerminosAuditados` exige `tratamientoIva` comprobado, incluido/excluido. Cotizaciones con precio SIN IVA concilian su base original y el comparador calcula el bruto final con la tasa acreditada; IVA incluido se concilia contra bruto. Faltantes o inconsistencias quedan visibles sin comparar. Cuatro regresiones; no SQL, Supabase, Vercel ni producción. Docs/304, issue #535.
+
+## MVP183 — Usar cotizaciones parciales corroboradas para una canasta completa (04/11/2026, desarrollo)
+- PR #560 conserva renglones verificados de cada oferta parcial, con faltantes explícitos. El comparador existente evalúa canasta completa de hasta dos proveedores, sin comparar subtotales de parciales. Tres regresiones propuestas; no alterar Supabase, WhatsApp, dominios ni producción. Docs/303, issues #535/#524.
+
+## MVP182 — Seguimiento económico visible SOLO PILOTO (04/11/2026)
+- PR #558 MERGED por squash únicamente a rama de desarrollo, 39/39 blobs idénticos al HEAD MVP181 y 2.087/2.087 unitarias y 6/6 CI PASS; PR previos #550/#552–#557 cerrados como SUPERADOS sin merge individual. Preview Vercel READY existente `dpl_9merKhfKMDACowaQqtsLyPc3XRoJ` probada por HTTP, cuatro archivos frontend idénticos a integración.
+- Edge privada buyer v12 ACTIVE SOLO en `cotironda-piloto`, staging económico v2, 9 archivos, paquete igual. GET redirección a nueva vista económica, GET query 400, POST token falso not_found. SQL 2 enlaces, 4 ofertas visibles, 2 resúmenes económicos, 0 finalistas/avisos, 0 ACK, 0 usuarios web. No producción/WhatsApp/originales alterados. Falta prueba E2E con tokens del comprador; docs/302.
+
+## MVP181 — ACK diferido de archivos del proveedor, sin retroactividad (04/11/2026, desarrollo)
+- Recuperación documental opcional puede agradecer una vez después de registrar una cotización nueva PDF/Excel/imagen, con reserva SQL por mensaje y reuso de ledger de entrega; respuesta Whapi incierta terminal, sin renegociación de importes. Política DB inicialmente OFF, activación con reloj servidor y flag Edge independiente, ambas sin habilitar. SQL real BEGIN/ROLLBACK y posterior instalación SOLO en PILOTO con política OFF: 4 presupuestos históricos bloqueados y 0 ACK. Edge staging v1 (19 archivos) ACTIVE, webhook de WhatsApp activo v45 intacto; HTTP GET 405 y POST no firmado probe_only, sin envíos. 11 pruebas agregadas; 2.086/2.086 unitarias y 6/6 CI PASS. Docs/301, issue #526.
+
+## MVP180 — Resumen económico anónimo para el comprador (04/11/2026, desarrollo)
+- SQL privado service_role-only con token buyer y comparación exacta multiconjunto de ofertas habilitadas contra fuente v9/SHA, sin revelar nombres ni precios normalizados. Prueba BEGIN/ROLLBACK en PostgreSQL 17 PILOTO: 2 resúmenes/4 ofertas; IVA 4 sin informar, flete 3 no informado + 1 a convenir, stock 4 sin corroborar; RPC luego instalada SOLO en PILOTO con permisos anon/auth revocados y service_role habilitado; Edge económica en staging (9 archivos) con smoke GET/POST falso aprobado. Frontend y proxy preparados en PR; nueva Preview Vercel bloqueada por cuota 402, sin publicar UI. No WhatsApp/contactos/originales modificados. Docs/300.
+
+## MVP178 — Precondición privada de originales al cierre (04/11/2026, desarrollo)
+- Política inicialmente OFF, consentimiento individual con prueba de mensaje y revocación, barrera no retroactiva y preflight SQL solo service_role, sin URLs/documentos ni cambios a WhatsApp. Ensayo real BEGIN/ROLLBACK PostgreSQL 17 PILOTO y confirmación de ausencia de tablas/función después. 8 pruebas nuevas, 2.058/2.058 unitarias PASS. Docs/298, PR #554.
+
+## MVP177 — Resultados de cierre no excluyentes (04/11/2026, desarrollo)
+- Nueva sección de cierre del comprador: conserva todas las ofertas habilitadas, muestra cuántas de las recibidas están visibles, advierte pendientes y no elimina parciales ni obliga a comprar recomendados. Respeta revocación, ausencia de autorización y conteos desconocidos; pruebas sintéticas de 4 y 30 ofertas y estados de privacidad. Sin acceso a originales, ranking, base, WhatsApp o producción; ver docs/297.
+
+## MVP176 — Cobertura en el frontend real de Vercel del PILOTO (04/11/2026, solo desarrollo)
+- Se endureció el proxy `/api/estado`: salida mínima de datos del comprador, jamás entrega ofertas, cobertura o contactos sin `can_open=true`, solo finalistas tras cierre, y conserva exactamente el texto verificado de cada presupuesto; sumadas 7 pruebas de privacidad. Frontend: convención BIG BAG/bolsón nominal de áridos sin confirmaciones artificiales y prueba adicional. **2.044/2.044 unitarias PASS** en GitHub. Reintento Preview rechazado 402 `api-deployments-free-per-day`; no se publicó ni se modificó Supabase/Whapi/producción. Docs/296.
+- Identificado error de publicación: HTML viejo servido desde `piloto/seguimiento-web`, mientras el código de cobertura MVP175 estaba solo en `site/seguimiento`. Solución en desarrollo agrega sección de cobertura a la carpeta realmente desplegada, conserva las cotizaciones originales en tarjetas y limpia todos los datos privados en revocación/falla. Edge/Supabase y Whapi intactos. Rechazado el atajo Edge HTML (re-escrito text/plain por Supabase, PR #551 cerrado). Vercel Preview nueva pendiente de cuota 402 y prueba navegador; docs/296.
+
+## MVP175 — Resumen seguro de cobertura en seguimiento del comprador (desarrollo)
+- Nuevo selector privado por hash del enlace comprador, con validación independiente de consentimiento, revocación y vencimiento, service_role-only. Edge de seguimiento existente reduce fuentes MVP172/174 a conteos agregados y UI de Cotironda muestra alternativas, envases no acreditados, no evaluados y diferencias; sin precios, ranking o identidad. Smoke PostgreSQL 17 con BEGIN/ROLLBACK y POST-instalación SOLO en cotironda-piloto: 2/2 rondas, 4 ofertas, 5 artículos; anon/auth denegados, token falso not_found; 0 mensajes/finalistas. **2.028/2.028 unitarios y 6/6 GitHub CI PASS**. Docs/294; Edge de seguimiento y web del comprador todavía NO desplegadas ni publicadas.
+
+## MVP174 — Despliegue staging v2 y auditoría real SQL (04/11/2026)
+- Edge `cotironda-piloto-round-preview-staging` v2 ACTIVE, 10 archivos, solo piloto; 401 sin token y con token falso. Consultas SQL de solo lectura confirman 9 coincidencias de cantidades nominales y 1 presentación sin litros acreditados entre los 10 cruces. Auditoría: 4 originales v9, 4 registros económicos, 0 cron/outbox/finalistas; recuperador v25 intacto. **2.011/2.011 pruebas PASS y 6/6 GitHub CI PASS.** No se ejecutó HTTP autenticado v2 por bloqueo de controles de seguridad para uso del token Vault; ranking fiscal/contactos siguen OFF. PR #549 y docs/293.
+
+## MVP174 — Cotejo de cemento e hidrófugo por presentación acreditada (desarrollo)
+- Agrega pesos de bolsas y litros por envase al diagnóstico privado de fuentes verificadas. Si falta la presentación, registra `presentacion_sin_acreditar` sin descartar oferta. 8 tests nuevos, 2.008/2.008 unitarios y 6/6 GitHub CI PASS. PR #549, docs/293. Staging sigue en v1: herramienta bloqueó la actualización; WhatsApp y ranking intactos.
+
 ## MVP173 — Diagnóstico real de dos rondas mediante backend privado (PILOTO 04/11/2026)
 - RPC privada instalada en cotironda-piloto (anon/auth sin EXECUTE); Edge staging v1 solo lectura con Vault, sin cron ni afectar recuperador v25. HTTP 401 sin token; dos llamadas reales HTTP 200: 2/2 rondas, 4/4 ofertas, 5/5 artículos, 4 alternativas comerciales razonables en áridos, 6 cruces aún sin cotejo genérico (NO incompatibles). 2.000/2.000 unitarios PASS y 6/6 CI GitHub, ranking, finalistas, mensajes OFF. Docs/292, PR #548.
 

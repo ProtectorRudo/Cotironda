@@ -1,0 +1,63 @@
+name: Cotironda IA Central - permiso y procedencia OCR MVP253
+on:
+  pull_request:
+    branches:
+      - feat/mvp174-supplier-packaging-equivalence
+    paths:
+      - 'supabase/piloto/mvp253_visual_ocr_policy_provenance.sql'
+      - 'supabase/tests/ci/mvp253-visual-ocr-permission-pg17.sql'
+      - 'supabase/functions/cotironda-piloto-whapi/private-document-recovery.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/supplier-visual-ocr-audit-mvp252.ts'
+      - 'tests/unit/mvp253-visual-ocr-ledger.test.mjs'
+      - '.github/workflows/cotironda-mvp253-ocr-control.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pg17-leases-and-consent:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: test_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: 'MVP253: consentimiento, no duplicados, cuota, SHA y ACL PostgreSQL 17'
+        run: >-
+          psql -X -v ON_ERROR_STOP=1
+          -f supabase/tests/ci/mvp253-visual-ocr-permission-pg17.sql
+  recovery-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: 'MVP253 y regresión OCR sin comunicación externa'
+        run: >-
+          node --experimental-strip-types --test
+          tests/unit/mvp253-visual-ocr-ledger.test.mjs
+          tests/unit/mvp252-ocr-visual-independiente.test.mjs
+          tests/unit/mvp251-visual-quote-review.test.mjs
+          tests/unit/mvp245-documentos-comerciales-ia-central.test.mjs

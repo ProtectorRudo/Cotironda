@@ -1,0 +1,108 @@
+name: Cotironda IA Central etapa 7 - vigilancia acotada MVP263
+on:
+  pull_request:
+    branches:
+      - feat/mvp174-supplier-packaging-equivalence
+    paths:
+      - 'supabase/piloto/mvp263_supervisor_bounded_watchdog.sql'
+      - 'supabase/piloto/mvp263_operator_cron_activate_MANUAL.sql'
+      - 'supabase/tests/ci/mvp263-supervisor-watchdog-pg17.sql'
+      - 'supabase/tests/ci/mvp263-watchdog-concurrency-setup-pg17.sql'
+      - 'tests/unit/mvp263-supervisor-watchdog-gated.test.mjs'
+      - '.github/workflows/cotironda-mvp263-supervisor-watchdog.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  postgres17-watchdog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: test_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: 'PG17: gate OFF, alertas, dedup, daily cap, resolución y reactivación'
+        run: >-
+          psql -X -v ON_ERROR_STOP=1
+          -f supabase/tests/ci/mvp263-supervisor-watchdog-pg17.sql
+  postgres17-concurrent-real:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: test_only
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: 'PG17 real: dos sesiones peleando por el mismo tick'
+        run: |
+          set -euo pipefail
+          createdb cotironda_parallel
+          export PGDATABASE=cotironda_parallel
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/mvp263-watchdog-concurrency-setup-pg17.sql
+          psql -X -At -v ON_ERROR_STOP=1 -c "BEGIN; SELECT 1 FROM cotironda_piloto_privado.supervisor_policy_mvp263 WHERE only_row FOR UPDATE; SELECT pg_sleep(2); SELECT public.cotironda_piloto_supervisor_tick_mvp263()->>'state'; COMMIT;" > /tmp/tick1.log &
+          first=$!
+          sleep 0.3
+          psql -X -At -v ON_ERROR_STOP=1 -c "SELECT public.cotironda_piloto_supervisor_tick_mvp263()->>'state';" > /tmp/tick2.log &
+          second=$!
+          wait "$first"
+          wait "$second"
+          cat /tmp/tick1.log /tmp/tick2.log
+          grep -Fxq 'recorded_private' /tmp/tick1.log
+          grep -Fxq 'interval_guard' /tmp/tick2.log
+          count=$(psql -X -At -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM cotironda_piloto_privado.supervisor_runs_mvp263;")
+          test "$count" -eq 1
+          alerts=$(psql -X -At -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM cotironda_piloto_privado.supervisor_alerts_mvp263;")
+          test "$alerts" -eq 1
+  node-watchdog-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: 'Node: instalación OFF, privacidad, cron y límite SQL'
+        run: >-
+          node --experimental-strip-types --test
+          tests/unit/mvp263-supervisor-watchdog-gated.test.mjs
+          tests/unit/mvp262-supervisor-ia-central-readonly.test.mjs
+          tests/unit/mvp258-whapi-uncertain-triage.test.mjs
+# No real cron, no WhatsApp, no OpenAI, no payment and no deploy.

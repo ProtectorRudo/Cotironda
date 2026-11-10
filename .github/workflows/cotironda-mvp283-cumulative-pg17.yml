@@ -1,0 +1,56 @@
+name: Cotironda MVP283 - aplicacion acumulativa PG17 aislado
+on:
+  pull_request:
+    branches:
+      - feat/mvp174-supplier-packaging-equivalence
+    paths:
+      - 'scripts/piloto/mvp283-*'
+      - 'tests/unit/mvp283-*'
+      - 'supabase/piloto/mvp2*.sql'
+      - '.github/workflows/cotironda-mvp283-cumulative-pg17.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  cumulative-synthetic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: test_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Test de integridad y no-publicación
+        run: |
+          node --test tests/unit/mvp283-cumulative-builder.test.mjs
+          node scripts/piloto/mvp283-cumulative-builder.mjs --check
+      - name: 21 archivos un esquema una transacción - rollback real PG17
+        run: |
+          set -euo pipefail
+          node scripts/piloto/mvp283-cumulative-builder.mjs --assert-local
+          node scripts/piloto/mvp283-cumulative-builder.mjs --sql > supabase/tests/ci/.mvp283-cumulative-generated.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/.mvp283-cumulative-generated.sql >/dev/null
+          psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT (to_regnamespace('cotironda_piloto_privado') IS NULL AND to_regnamespace('auth') IS NULL AND to_regnamespace('storage') IS NULL)" | grep -Fx 't'
+          rm supabase/tests/ci/.mvp283-cumulative-generated.sql
+# No secretos, datos reales, Supabase/Whapi ni alteraciones de piloto.

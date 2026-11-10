@@ -5,6 +5,7 @@
  * as the authenticated Whapi webhook's dispatchTwo. No secrets in source/logs.
  */
 import {generarSolicitudPdfMvp091} from '../cotironda-piloto-whapi/request-pdf.ts';
+import {CAPTION_PEDIDO_COTIRONDA_MVP305} from '../_shared/aviso-proveedores-cierre-mvp305.ts';
 
 type RpcResult={data:unknown;error:unknown};
 export type Rpc=(name:string,params?:Record<string,unknown>)=>Promise<RpcResult>;
@@ -105,7 +106,7 @@ export async function dispatchPendingPilotSupplierPdfs(
     headers:{'Authorization':'Bearer '+config.token,'Content-Type':'application/json'},
     body:JSON.stringify({to,media,mime_type:'application/pdf',
       filename:'Solicitud-Cotironda.pdf',
-      caption:'Cotironda · Nueva solicitud de cotización'}),
+      caption:CAPTION_PEDIDO_COTIRONDA_MVP305}),
     signal:AbortSignal.timeout(12000)
    });
    const answer=response.ok?await response.json().catch(()=>null):null;

@@ -8,6 +8,7 @@
  * comparación final con IVA/flete completos.
  */
 import {prepararPresentacionesAridosMvp170} from './adaptador-documental-mvp162.ts';
+import {cotejarPresentacionObraMvp174} from './cotejo-presentaciones-mvp174.ts';
 import type {
  DocumentoFuente,HechosPresentacionMvp170,PedidoItemOriginalMvp170,
  MotivoPresentacionMvp170
@@ -43,7 +44,7 @@ type EstadoPreview='alternativa_comercial_con_aclaracion'|
  'coincide_volumen_nominal_sin_stock'|
  'variedad_diferente'|'cantidad_diferente'|
  'variedad_no_acreditada'|'presentacion_ambigua'|
- 'sin_presentacion_corroborada'|'no_aplica';
+ 'sin_presentacion_corroborada'|'presentacion_sin_acreditar'|'no_aplica';
 export type ResultadoPreviewMvp172=Readonly<{
  estado:'insumos_invalidos'|'diagnostico_privado';
  rondaResumen:Readonly<{articulosSolicitados:number;cotizacionesTotales:number;
@@ -77,10 +78,11 @@ function result(
  });
 }
 const invalid=()=>result('insumos_invalidos',0,[]);
-const estados=new Set<MotivoPresentacionMvp170>([
+const estados=new Set<EstadoPreview>([
  'no_aplica','sin_presentacion_corroborada','cantidad_diferente',
  'variedad_no_acreditada','variedad_diferente','presentacion_ambigua',
- 'coincide_volumen_nominal_sin_stock','alternativa_comercial_con_aclaracion'
+ 'coincide_volumen_nominal_sin_stock','alternativa_comercial_con_aclaracion',
+ 'presentacion_sin_acreditar'
 ]);
 
 export function diagnosticarRondaPrivadaMvp172(
@@ -89,9 +91,9 @@ export function diagnosticarRondaPrivadaMvp172(
  if(!input||input.state!=='private_inputs'||input.rankingAllowed!==false||
   input.contactsRevealed!==false||
   !Array.isArray(input.requestItems)||input.requestItems.length<1||
-  input.requestItems.length>25||
+  input.requestItems.length>30||
   !Array.isArray(input.quotations)||input.quotations.length<1||
-  input.quotations.length>10)return invalid();
+  input.quotations.length>12)return invalid();
  const ids=new Set<string>();
  for(const item of input.requestItems){
   if(!item||!ID.test(item.id)||ids.has(item.id)||
@@ -136,13 +138,23 @@ export function diagnosticarRondaPrivadaMvp172(
    analysis.diagnosticos.length!==input.requestItems.length||
    analysis.diagnosticos.some(x=>!ids.has(x.itemId)||!estados.has(x.estado)))
    return invalid();
+  // Preserve all v9/SHA checks above. Additional rubros only refine no_aplica.
+  const diagnostics=analysis.diagnosticos.map((line,index)=>{
+   if(line.estado!=='no_aplica')return line;
+   const extra=cotejarPresentacionObraMvp174(
+    input.requestItems[index],doc.lineas,fuente.lines
+   );
+   return extra.estado==='no_aplica'?line:extra;
+  });
+  if(diagnostics.some((x,i)=>x.itemId!==analysis.diagnosticos[i].itemId||
+   !estados.has(x.estado)))return invalid();
   outputs.push(Object.freeze({
    oferta:'oferta_'+String(i+1).padStart(3,'0'),
    precioTotalComparable:null as null,
    fiscalidad:'sin_base_comparable' as const,
    flete:'no_acreditado_para_total' as const,
    disponibilidad:'no_acreditada' as const,
-   articulos:Object.freeze(analysis.diagnosticos.map(x=>Object.freeze({
+   articulos:Object.freeze(diagnostics.map(x=>Object.freeze({
     itemId:x.itemId,estado:x.estado as EstadoPreview,lineaFuente:x.lineNo
    })))
   }));

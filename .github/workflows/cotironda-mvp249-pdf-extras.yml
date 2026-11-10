@@ -1,0 +1,28 @@
+name: Cotironda — PDF real con cargos sin unitario MVP249
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/cotironda-piloto-whapi/supplier-source-pdf-general.ts'
+      - 'tests/unit/mvp249-flete-pdf-independiente.test.mjs'
+      - '.github/workflows/cotironda-mvp249-pdf-extras.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  independent-pdf:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+      - name: 'MVP249 y regresión documental/IA Central'
+        run: >-
+          node --experimental-strip-types --test
+          tests/unit/mvp249-flete-pdf-independiente.test.mjs
+          tests/unit/mvp245-documentos-comerciales-ia-central.test.mjs
+          tests/unit/mvp244-presupuestos-sin-omision-de-cargos.test.mjs
+          tests/unit/mvp227-recepcion-presupuesto-evaluado.test.mjs

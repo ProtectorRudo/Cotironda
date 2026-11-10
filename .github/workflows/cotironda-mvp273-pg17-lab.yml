@@ -1,0 +1,32 @@
+name: Cotironda PILOTO - laboratorio PG17 sin red MVP273
+on:
+  pull_request:
+    branches:
+      - feat/mvp174-supplier-packaging-equivalence
+    paths:
+      - 'scripts/ops/replay-pilot-sql-lab-mvp273.mjs'
+      - 'scripts/ops/verify-pilot-offline-rehearsal-mvp273.mjs'
+      - 'tests/unit/mvp273-disposable-pg17-sql-replay.test.mjs'
+      - 'tests/unit/mvp273-offline-restore-rehearsal.test.mjs'
+      - '.github/workflows/cotironda-mvp273-pg17-lab.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-no-network-sandbox-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Static syntax checks
+        run: |
+          node --check scripts/ops/replay-pilot-sql-lab-mvp273.mjs
+          node --check scripts/ops/verify-pilot-offline-rehearsal-mvp273.mjs
+      - name: SQL sandbox lifecycle with synthetic mocked processes only
+        run: node --test tests/unit/mvp273-disposable-pg17-sql-replay.test.mjs tests/unit/mvp273-offline-restore-rehearsal.test.mjs
+# No Docker daemon, real user SQL, Supabase credentials or ZIP artifacts here.

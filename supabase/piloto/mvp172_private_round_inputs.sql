@@ -77,6 +77,9 @@ begin
       'revisionVigente',true,'cotizacionVigente',true
      )
     ),
+    -- Exact REVIEWED text binds an internal source revision to the correct
+    -- tracking offer; no raw hash, supplier name or private file goes public.
+    'publicText',e.public_text,
     'fuente',jsonb_build_object(
      'requestId',q.request_id,'messageHmac',q.message_hmac,
      'sourceSha256',q.source_sha256,
@@ -128,6 +131,7 @@ begin
    and snapshot.n=q.line_count and snapshot.first_line=1
    and snapshot.last_line=q.line_count
    and e.state='verified' and e.reason='covered'
+   and e.public_text is not null and length(e.public_text) between 1 and 16000
    and e.sum_line_cents=e.declared_total_cents
    and e.declared_total_cents is not null
    and sf.state='source_checked' and eco.state='source_checked'

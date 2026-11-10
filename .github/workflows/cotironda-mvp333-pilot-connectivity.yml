@@ -1,0 +1,63 @@
+name: MVP333 - pilot connectivity guard candidate only
+on:
+  pull_request:
+    branches:
+      - feat/mvp174-supplier-packaging-equivalence
+    paths:
+      - 'scripts/piloto/mvp333-connection-check-candidate.mjs'
+      - 'tests/unit/mvp333-pilot-connectivity.test.mjs'
+      - 'docs/465-mvp333-prueba-conexion-sin-falsa-revision.md'
+      - '.github/workflows/cotironda-mvp333-pilot-connectivity.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Candidate overlay, anchored baseline and true/false classification
+        run: |
+          set -euo pipefail
+          node --check scripts/piloto/mvp333-connection-check-candidate.mjs
+          node --check tests/unit/mvp333-pilot-connectivity.test.mjs
+          node --test tests/unit/mvp333-pilot-connectivity.test.mjs
+          node scripts/piloto/mvp333-connection-check-candidate.mjs
+      - name: Historical MVP332 manifest must remain independently valid
+        run: |
+          node scripts/piloto/mvp332-whapi-bundle-readonly.mjs
+          node --test tests/unit/mvp332-whapi-rollout-bundle.test.mjs
+      - name: Regressions — automatic buyer flow and dynamic recipients
+        run: |
+          node --experimental-strip-types --test \
+            tests/unit/mvp306-auto-release-and-supplier-contacts.test.mjs \
+            tests/unit/mvp313-dynamic-recipients.test.mjs \
+            tests/unit/mvp314-batch-dispatch.test.mjs \
+            tests/unit/mvp315-buyer-notice-after-batch.test.mjs
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Deno typecheck only temporary candidate (no deployment or real messages)
+        run: |
+          set -euo pipefail
+          node --input-type=module -e "
+          import {prepararCandidatoMvp333} from './scripts/piloto/mvp333-connection-check-candidate.mjs';
+          import {writeFileSync} from 'node:fs';
+          const c=prepararCandidatoMvp333();
+          if(c.deployment_authorized||c.messages_sent||c.database_mutated)
+            throw Error('MVP333 candidate is not offline');
+          writeFileSync('supabase/functions/cotironda-piloto-whapi/index-mvp333-preview.ts',c.source);
+          "
+          trap 'rm -f supabase/functions/cotironda-piloto-whapi/index-mvp333-preview.ts' EXIT
+          deno check --node-modules-dir=auto \
+            supabase/functions/cotironda-piloto-whapi/index-mvp333-preview.ts
+      - name: No unintended tracked changes
+        run: |
+          test -z "$(git status --porcelain --untracked-files=no)"
+# Do not deploy Supabase, enable gates, use tokens, contact Whapi or OpenAI.

@@ -1,0 +1,55 @@
+name: MVP312 - alta WhatsApp administrada cifrada y sin solicitudes de permiso
+on:
+  pull_request:
+    branches: [feat/mvp174-supplier-packaging-equivalence]
+    paths:
+      - 'supabase/piloto/mvp312_alta_canal_administrada_cifrada.sql'
+      - 'supabase/piloto/mvp312b_proveedor_contacto_admin.sql'
+      - 'supabase/piloto/mvp312c_contactos_postcierre_admin.sql'
+      - 'src/server/pilot-admin-channel-mvp312.ts'
+      - 'supabase/tests/ci/mvp312-admin-encrypted-channels-pg17.sql'
+      - 'scripts/piloto/mvp312-generar-fixture-pg17.mjs'
+      - 'tests/unit/mvp312-*'
+      - '.github/workflows/cotironda-mvp312-admin-channel.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  admin-channel-pg17:
+    runs-on: ubuntu-latest
+    timeout-minutes: 17
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: test_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: AES-GCM, HMAC, doble ingreso administrativo y contrato privado
+        run: |
+          node --experimental-strip-types --test tests/unit/mvp312-admin-channel.test.mjs
+      - name: PostgreSQL17 - alta administrada, privacidad, duplicados y bajas
+        run: |
+          set -euo pipefail
+          node scripts/piloto/mvp312-generar-fixture-pg17.mjs
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/.mvp312-generated-pg17.sql >/dev/null
+# No Whapi real, no SQL remoto, no publicación; ROLLBACK total.

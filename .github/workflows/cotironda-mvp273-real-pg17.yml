@@ -1,0 +1,47 @@
+name: Cotironda PILOTO - Docker PG17 real aislado MVP273
+on:
+  pull_request:
+    branches:
+      - feat/mvp174-supplier-packaging-equivalence
+    paths:
+      - 'scripts/ops/replay-pilot-sql-lab-mvp273.mjs'
+      - 'tests/ci/mvp273-pg17-real-sandbox-ci.mjs'
+      - '.github/workflows/cotironda-mvp273-real-pg17.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-standalone-pg17-synthetic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 13
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Install real age and unzip but NEVER real user credentials
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq age zip unzip
+          command -v age
+          command -v docker
+      - name: Pull standalone PG17 image prior to networkless Docker replay
+        run: |
+          docker pull postgres:17-alpine
+          docker image inspect postgres:17-alpine --format '{{.Id}}'
+      - name: Replay encrypted synthetic SQL in disposable PG17 without ports or network
+        env:
+          COTIRONDA_MVP273_REAL_DOCKER: 'true'
+        run: node --test tests/ci/mvp273-pg17-real-sandbox-ci.mjs
+      - name: No disposable containers left by test
+        if: always()
+        run: |
+          set -euo pipefail
+          if docker ps --format '{{.Names}}' | grep -q 'cotironda_pilot_replay_lab'; then
+            echo 'Unexpected leftover pilot lab container'
+            exit 1
+          fi
+# Synthetic SQL only; no Supabase network, secrets, uploads or artifacts.

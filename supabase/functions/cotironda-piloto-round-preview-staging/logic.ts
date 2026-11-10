@@ -15,7 +15,8 @@ const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]
 const STATES=new Set([
  'no_aplica','sin_presentacion_corroborada','cantidad_diferente',
  'variedad_no_acreditada','variedad_diferente','presentacion_ambigua',
- 'coincide_volumen_nominal_sin_stock','alternativa_comercial_con_aclaracion'
+ 'coincide_volumen_nominal_sin_stock','alternativa_comercial_con_aclaracion',
+ 'presentacion_sin_acreditar'
 ]);
 type Reply=Readonly<{data:unknown;error:unknown}>;
 type Options=Readonly<{

@@ -18,7 +18,7 @@ test('MVP151: context authenticated by sender allowlist and exact Whapi outbound
  const sql=readFileSync(new URL('../../supabase/piloto/mvp151_supplier_quoted_context.sql',import.meta.url),'utf8');
  assert.match(edge,/const quotedId=quotedWhapiMessageId\(row\)/u);
  assert.match(edge,/equalSecret\(expected,chatHash\)/u);
- assert.match(edge,/p_city:supplierQuotedId\?'__quoted_supplier_reply__':parsed.city/u);
+ assert.match(edge,/p_city:supplierQuotedId\|\|centralSupplier\s*\?'__quoted_supplier_reply__':parsed.city/u);
  assert.match(edge,/cotironda_piloto_link_quoted_text_mvp151/u);
  assert.match(edge,/cotironda_piloto_link_quoted_media_mvp151/u);
  assert.match(sql,/if v_count=1 and p_city is distinct from '__quoted_supplier_reply__'/u);

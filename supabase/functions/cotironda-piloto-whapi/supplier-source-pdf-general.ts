@@ -33,7 +33,12 @@ const mentions=(source:string,term:string|null):boolean=>term===null||
 const regexEscape=(value:string):string=>value.replace(/[.*+?^${}()|[\]\\]/gu,'\\$&');
 const quantityUnitEvidence=(row:string,description:string,quantity:string|null,unit:string|null):boolean=>{
  const q=normalized(quantity??''),u=normalized(unit??''),desc=normalized(description);
- if(!/^\d+(?:[.,]\d+)?$/u.test(q)||!desc)return false;
+ if(!desc)return false;
+ // Cargo, descuento o pallet pueden tener un total sin precio unitario.
+ // Nunca deducir "1 unidad". Ambos campos NULL son aceptables SOLAMENTE
+ // si no hay un número sin atribuir en la fila fuente original.
+ if(quantity===null&&unit===null)return true;
+ if(!/^\d+(?:[.,]\d+)?$/u.test(q))return false;
  const at=row.indexOf(desc);
  if(at<0)return false;
  // Strip description with sizes; stop before explicitly marked monetary price.
@@ -117,8 +122,10 @@ export async function checkGeneralPdfSource(
     !/^[a-f0-9]{64}$/u.test(f.sha256))
   return invalid(f,n,'invalid_source');
  if(p.unanswered.length||!p.total_declared||p.lines.some(v=>
-   v.ambiguity!==null||!v.original_description||!v.unit_price||!v.line_total||
-   !v.quantity||!v.evidence_location.trim()))
+   v.ambiguity!==null||!v.original_description||
+   (v.unit_price!==null&&v.quantity===null)||
+   (v.quantity===null&&v.unit!==null)||
+   !v.evidence_location.trim()))
   return invalid(f,n,'unresolved');
  for(const line of p.lines){
   if(PII.test(line.original_description)||PII.test(line.unit??'')||
@@ -162,7 +169,7 @@ export async function checkGeneralPdfSource(
     if(pos>=0)all.splice(pos,1);
    }
   }
-  return wanted.length>0&&all.length===wanted.length&&wanted.every(v=>{
+  return all.length===wanted.length&&wanted.every(v=>{
    const i=all.indexOf(v);if(i<0)return false;all.splice(i,1);return true;
   });
  };
@@ -172,8 +179,22 @@ export async function checkGeneralPdfSource(
    quantityUnitEvidence(row,line.original_description,line.quantity,line.unit)&&
    mentions(row,line.unit_price)&&mentions(row,line.line_total));
   if(idx<0)return invalid(f,n,'line_not_found');
-  if(!exactAmounts(rows[idx],[line.unit_price!,line.line_total!],line.quantity))
+  const declared=[line.unit_price,line.line_total]
+    .filter((v):v is string=>typeof v==='string'&&v.length>0);
+  if(!exactAmounts(rows[idx],declared,line.quantity))
    return invalid(f,n,'uncovered_money');
+  // Sin cantidad/unidad, ninguna cifra puede ser inventada o perderse.
+  // Después de retirar literalmente descripción y TODOS los importes,
+  // un porcentaje/desplazamiento/importe sin citar obliga a revisión.
+  if(line.quantity===null&&line.unit===null){
+   const at=rows[idx].indexOf(normalized(line.original_description));
+   if(at<0)return invalid(f,n,'line_not_found');
+   const raw=(rows[idx].slice(0,at)+' '+
+     rows[idx].slice(at+normalized(line.original_description).length))
+     .replace(MONEY,' ');
+   MONEY.lastIndex=0;
+   if(/\d/u.test(raw))return invalid(f,n,'uncovered_number');
+  }
   const economicTerm=rows[idx].match(TERMS)?.[0]??null;
   if(economicTerm&&
     !mentions(line.original_description,economicTerm)&&

@@ -1,0 +1,38 @@
+name: Cotironda PILOTO - auditoria criptografica age MVP272
+on:
+  pull_request:
+    branches:
+      - feat/mvp174-supplier-packaging-equivalence
+    paths:
+      - 'scripts/ops/audit-pilot-mobile-ciphertext-mvp272.mjs'
+      - 'tests/unit/mvp272-mobile-age-audit.test.mjs'
+      - '.github/workflows/cotironda-mvp272-age-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  synthetic-actual-age:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Install real age and archive tools for FAKE fixtures only
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq age zip unzip
+          command -v age
+          command -v age-keygen
+          command -v zip
+          command -v unzip
+      - name: Execute genuine age encrypt/decrypt and ZIP rejection suite
+        env:
+          COTIRONDA_MVP272_REQUIRE_REAL_AGE: 'true'
+        run: node --test tests/unit/mvp272-mobile-age-audit.test.mjs
+# Only fake public text and disposable fake age identity, no real connections.
+# Never attach backup archives or age private keys as workflow artifacts.

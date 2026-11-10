@@ -1,0 +1,58 @@
+name: MVP308 - autorizacion unica todos los roles y privacidad del comprador
+on:
+  pull_request:
+    branches: [feat/mvp174-supplier-packaging-equivalence]
+    paths:
+      - 'supabase/piloto/mvp308_autorizacion_unica_todos_roles_y_privacidad.sql'
+      - 'supabase/tests/ci/mvp308-consent-all-roles-pg17.sql'
+      - 'scripts/piloto/mvp308-generar-fixture-pg17.mjs'
+      - 'supabase/piloto/mvp073_onboarding_codes_operator.sql'
+      - 'supabase/functions/cotironda-piloto-whapi/index.ts'
+      - 'tests/unit/mvp308-*'
+      - 'tests/unit/mvp307-*'
+      - '.github/workflows/cotironda-mvp308-autorizacion-unica.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  registro-unico:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: test_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Una aceptacion, sin permiso por ronda, sin datos del arquitecto
+        run: |
+          node --experimental-strip-types --test \
+            tests/unit/mvp308-one-time-terms-all-roles.test.mjs \
+            tests/unit/mvp307-enrollment-consent-and-preroute.test.mjs \
+            tests/unit/mvp306-auto-release-and-supplier-contacts.test.mjs
+      - name: PostgreSQL 17 - onboarding de ambos roles, privacidad y replay
+        run: |
+          set -euo pipefail
+          node scripts/piloto/mvp308-generar-fixture-pg17.mjs
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/.mvp308-generated-pg17.sql >/dev/null
+# Sin Whapi, sin IA externa y sin cambios en Supabase real.

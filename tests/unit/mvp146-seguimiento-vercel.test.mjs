@@ -48,10 +48,11 @@ test("MVP146: static pilot page is CSP constrained; no token in GET URLs",()=>{
   assert.deepEqual(vercel.rewrites,[{source:"/seguimiento",destination:"/index.html"}]);
   assert.match(vercel.headers[0].headers.find(x=>x.key==="Content-Security-Policy").value,/script-src 'self'/);
 });
-test("MVP146: legacy pilot link redirects by GET without a fragment or token in Location",()=>{
+test("MVP179: legacy buyer link redirects to verified pilot Preview without a token in Location",()=>{
   const src=readFileSync(new URL("../../supabase/functions/cotironda-piloto-seguimiento/index.ts",import.meta.url),"utf8");
   assert.match(src,/status:302/);
-  assert.ok(src.includes('https://cotironda-seguimiento-vist-git-43f7cf-protector-rudo-s-projects.vercel.app/seguimiento'));
+  assert.match(src,/Location:DESTINO_SEGUIMIENTO_PILOTO_MVP212/);
+   assert.match(src,/enlace-seguimiento-piloto-mvp212/);
   assert.ok(!src.includes('https://cotironda-seguimiento-vista-piloto.vercel.app/seguimiento'));
   assert.doesNotMatch(src,/Location:[^\n]*#\$\{/);
   assert.match(src,/if\(req\.method!==\x27POST\x27\)/);

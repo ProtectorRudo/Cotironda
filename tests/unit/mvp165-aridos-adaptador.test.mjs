@@ -41,9 +41,9 @@ const terminos=()=>({
  plazoEntregaDias:2,fleteFinal:'0.00',minimoCompraFinal:'0.00',
  tratamientoFlete:'sin_cargo',
  precios:[
-  {lineNo:1,sourceSha256:SHA,unitarioNetoTrasDescuento:'100.00',ivaExplicito:'21'},
-  {lineNo:2,sourceSha256:SHA,unitarioNetoTrasDescuento:'50.00',ivaExplicito:'21'},
-  {lineNo:3,sourceSha256:SHA,unitarioNetoTrasDescuento:'10.00',ivaExplicito:'21'}
+  {lineNo:1,sourceSha256:SHA,unitarioNetoTrasDescuento:'100.00',ivaExplicito:'21',tratamientoIva:'incluido_en_total'},
+  {lineNo:2,sourceSha256:SHA,unitarioNetoTrasDescuento:'50.00',ivaExplicito:'21',tratamientoIva:'incluido_en_total'},
+  {lineNo:3,sourceSha256:SHA,unitarioNetoTrasDescuento:'10.00',ivaExplicito:'21',tratamientoIva:'incluido_en_total'}
  ]
 });
 const adaptar=(d=documento(),e=correlaciones(),t=terminos(),b=pruebas(),p=pedido())=>

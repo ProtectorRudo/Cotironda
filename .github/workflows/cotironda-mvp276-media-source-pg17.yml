@@ -1,0 +1,52 @@
+name: Cotironda IA Central - TXT comprador con fuente SHA MVP276
+on:
+  pull_request:
+    branches:
+      - feat/mvp174-supplier-packaging-equivalence
+    paths:
+      - 'supabase/piloto/mvp276_comprador_archivo_txt_csv_autoridad_sha.sql'
+      - 'supabase/tests/ci/mvp276-buyer-media-sha-pg17.sql'
+      - 'supabase/functions/cotironda-piloto-whapi/ai-central-buyer-media-mvp276.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/index.ts'
+      - 'tests/unit/mvp276-buyer-media-central-broker.test.mjs'
+      - '.github/workflows/cotironda-mvp276-media-source-pg17.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  media-original-snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: test_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Verificar broker IA y fuentes simuladas sin red
+        run: node --experimental-strip-types --test tests/unit/mvp276-buyer-media-central-broker.test.mjs
+      - name: Guardar logs SQL mínimos, ejecutar prueba transaccional sintética
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/mvp276-buyer-media-sha-pg17.sql >/dev/null
+# No access to SUPABASE PILOTO, no real buyer files, messages or API keys.

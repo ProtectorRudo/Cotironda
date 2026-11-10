@@ -1,0 +1,61 @@
+name: Cotironda MVP291 - correlacion IA autonoma y PG17
+on:
+  pull_request:
+    branches:
+      - feat/mvp174-supplier-packaging-equivalence
+    paths:
+      - 'supabase/functions/cotironda-piloto-whapi/index.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/supplier-auto-correlation-mvp291.ts'
+      - 'supabase/piloto/mvp291_*'
+      - 'supabase/tests/ci/mvp291-*'
+      - 'scripts/piloto/mvp291-*'
+      - 'tests/unit/mvp291-*'
+      - '.github/workflows/cotironda-mvp291-auto-correlation-pg17.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-automatic-supplier-association:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: test_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Node - semantic evidence, no user prompts, full regression
+        run: |
+          node --experimental-strip-types --test \
+            tests/unit/mvp291-automatic-correlation.test.mjs \
+            tests/unit/mvp289-buyer-tracking-confirmation.test.mjs \
+            tests/unit/mvp288-fidelidad-presentaciones.test.mjs
+          node scripts/piloto/mvp291-automatic-correlation-builder.mjs --assert-local
+      - name: PostgreSQL 17 - combined schema, source attribution, no external effects
+        run: |
+          set -euo pipefail
+          node scripts/piloto/mvp291-automatic-correlation-builder.mjs --sql > supabase/tests/ci/.mvp291.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/.mvp291.sql >/dev/null
+          psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regnamespace('cotironda_piloto_privado') IS NULL" | grep -Fx 't'
+          rm supabase/tests/ci/.mvp291.sql
+# Synthetic only. No WhatsApp, no OpenAI, no production and no real pilot writes.

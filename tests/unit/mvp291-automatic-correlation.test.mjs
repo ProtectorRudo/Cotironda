@@ -1,0 +1,143 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {
+ corroborarCantidadMvp291,elegirRondaUnicaMvp291,
+ correlacionAutomaticaMvp291
+} from '../../supabase/functions/cotironda-piloto-whapi/supplier-auto-correlation-mvp291.ts';
+const H='a'.repeat(64),E='b'.repeat(64),SHA='c'.repeat(64);
+const newId='11111111-1111-4111-8111-111111111111',
+ oldId='22222222-2222-4222-8222-222222222222';
+const src=[
+ {line_no:1,description:'Cemento Avellaneda bolsa 25 kg',quantity:'40',unit:'bolsas'},
+ {line_no:2,description:'Arena BIG BAG',quantity:'3',unit:'big bag'}
+];
+const latest={request_id:newId,lines:[
+ {line_no:1,description:'Cemento CPC de 50 kg',quantity:'20',unit:'bag'},
+ {line_no:2,description:'Bolsones de arena',quantity:'3',unit:'bag'}
+]};
+const earlier={request_id:oldId,lines:[
+ {line_no:1,description:'Cemento CPC 50 kg',quantity:'10',unit:'bag'},
+ {line_no:2,description:'Arena fina',quantity:'4',unit:'m3'},
+ {line_no:3,description:'Piedra partida',quantity:'2',unit:'m3'}
+]};
+const evidence={matches:[
+ {candidate:'r1',source_line:1,request_line:1,relation:'equivalent'},
+ {candidate:'r1',source_line:2,request_line:2,relation:'equivalent'},
+ {candidate:'r2',source_line:1,request_line:1,relation:'equivalent'},
+ {candidate:'r2',source_line:2,request_line:2,relation:'uncertain'}
+]};
+test('correlates 40 bags × 25kg to 20 bags × 50kg, not 10 bags × 50kg',()=>{
+ assert.equal(corroborarCantidadMvp291(src[0],latest.lines[0]),'strong');
+ assert.equal(corroborarCantidadMvp291(src[0],earlier.lines[0]),'different');
+ assert.equal(corroborarCantidadMvp291({line_no:1,description:'Cemento 25 kg',
+ quantity:'20',unit:'bag'},latest.lines[0]),'different');
+ assert.equal(corroborarCantidadMvp291(src[1],latest.lines[1]),'strong');
+});
+test('two independent matching interpretations, unique margin, no total price',()=>{
+ const r=elegirRondaUnicaMvp291({quote:src,options:[latest,earlier]},
+ evidence,{matches:[...evidence.matches].reverse()});
+ assert.equal(r.requestId,newId);
+ assert.deepEqual(r.scores,[6,0]);
+});
+test('indistinguishable or model-disagreeing requests are NOT forced into buyer',()=>{
+ const identical={...latest,request_id:oldId,lines:[...latest.lines]};
+ const amb={quote:src,options:[latest,identical]};
+ const data={matches:evidence.matches.slice(0,2).flatMap(x=>[
+ x,{...x,candidate:'r2'}])};
+ assert.equal(elegirRondaUnicaMvp291(amb,data,data).requestId,null);
+ assert.equal(elegirRondaUnicaMvp291({quote:src,options:[latest,earlier]},
+ evidence,{matches:[]}).requestId,null);
+});
+test('partial distinctive offers may link, partial shared or unsupported remain private',()=>{
+ const short={quote:[src[0]],options:[latest,
+  {request_id:oldId,lines:[{line_no:1,description:'Pintura látex',
+    quantity:'5',unit:'l'}]}]};
+ const one={matches:[{candidate:'r1',source_line:1,request_line:1,
+  relation:'equivalent'}]};
+ assert.equal(elegirRondaUnicaMvp291(short,one,one).requestId,newId);
+ const shared={quote:[src[0]],options:[latest,
+  {...earlier,lines:[{...earlier.lines[0],quantity:'20'},...earlier.lines.slice(1)]}]};
+ const both={matches:[...one.matches,{
+  candidate:'r2',source_line:1,request_line:1,relation:'equivalent'}]};
+ assert.equal(elegirRondaUnicaMvp291(shared,both,both).requestId,null);
+ const weak={matches:[{candidate:'r1',source_line:1,request_line:1,relation:'uncertain'}]};
+ assert.equal(elegirRondaUnicaMvp291(short,weak,weak).requestId,null);
+});
+test('SQL is the only binding authority, source and chat HMAC required',async()=>{
+ const calls=[];let reads=0;
+ const snapshot={state:'reserved',source_sha256:SHA,quote:src,
+  candidates:[latest,earlier],note:null};
+ const done=await correlacionAutomaticaMvp291({
+  enabled:true,webhookAuthenticated:true,sourceHmac:H,chatHmac:E,
+  apiKey:'this-is-a-fake-test-token-not-real',model:'gpt-6-luna',
+  rpc:async(name,params)=>{
+   calls.push({name,params});
+   if(name==='cotironda_piloto_auto_correlation_prepare_mvp291')
+    return {data:snapshot,error:null};
+   if(name==='cotironda_piloto_auto_correlation_bind_mvp291'){
+    assert.equal(params.p_request,newId);
+    assert.equal(params.p_source_sha256,SHA);
+    assert.equal(params.p_chat_hmac,E);
+    return {data:{state:'linked_private'},error:null};
+   }
+   throw Error('unexpected DB write '+name);
+  },
+  compare:async input=>{
+   reads++;
+   assert.equal(JSON.stringify(input).includes('precio'),false);
+   return evidence;
+  }
+ });
+ assert.equal(done.state,'linked_private');
+ assert.equal(done.outboundMessages,0);
+ assert.equal(reads,2);
+ assert.deepEqual(calls.map(x=>x.name),[
+  'cotironda_piloto_auto_correlation_prepare_mvp291',
+  'cotironda_piloto_auto_correlation_bind_mvp291']);
+});
+test('no candidate, disabled flag and wrong HMAC fail closed without OpenAI',async()=>{
+ let called=0;
+ const no=()=>{called++;throw Error('unexpected call')};
+ const base={enabled:true,webhookAuthenticated:true,
+  sourceHmac:H,chatHmac:E,
+  apiKey:'this-is-a-fake-test-token-not-real',model:'gpt-6-luna',
+  rpc:no,compare:no};
+ assert.equal((await correlacionAutomaticaMvp291({...base,enabled:false})).state,'disabled');
+ assert.equal((await correlacionAutomaticaMvp291({...base,chatHmac:'bad'})).state,'not_eligible');
+ assert.equal((await correlacionAutomaticaMvp291({...base,webhookAuthenticated:false})).state,'not_eligible');
+ assert.equal(called,0);
+ const noCandidate=await correlacionAutomaticaMvp291({
+  ...base,rpc:async()=>({data:{state:'not_ambiguous_anymore'},error:null})
+ });
+ assert.equal(noCandidate.state,'not_eligible');assert.equal(called,0);
+});
+test('uncertain AI or duplicated source never binds, never sends WhatsApp',async()=>{
+ const calls=[];
+ const v=await correlacionAutomaticaMvp291({
+  enabled:true,webhookAuthenticated:true,sourceHmac:H,chatHmac:E,
+  apiKey:'this-is-a-fake-test-token-not-real',model:'gpt-6-luna',
+  rpc:async(name,params)=>{
+   calls.push(name);
+   if(name==='cotironda_piloto_auto_correlation_prepare_mvp291')
+    return {data:{state:'reserved',source_sha256:SHA,quote:src,
+     candidates:[latest,earlier]},error:null};
+   assert.equal(name,'cotironda_piloto_auto_correlation_finish_mvp291');
+   assert.equal(params.p_state,'review');
+   return {data:{state:'recorded'},error:null};
+  },
+  compare:async()=>({matches:[]})
+ });
+ assert.equal(v.state,'unresolved_private');
+ assert.equal(v.outboundMessages,0);
+ assert.ok(!calls.includes('cotironda_piloto_auto_correlation_bind_mvp291'));
+});
+test('webhook does not introduce supplier choice codes or require user action',()=>{
+ const content=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/index.ts',import.meta.url),'utf8');
+ const archived=content.indexOf("cotironda_piloto_note_media_proposal_mvp095");
+ const automatic=content.indexOf('correlacionAutomaticaMvp291({',archived);
+ const receipt=content.indexOf("cotironda_piloto_record_supplier_media_mvp098");
+ assert.ok(archived>0&&automatic>archived&&receipt>automatic);
+ assert.match(content,/COTIRONDA_PILOT_AUTO_CORRELATION_MVP291_ENABLED/u);
+ assert.doesNotMatch(content,/supplierChoiceReply|REVISAR COTI|consultarRondaMvp290/u);
+});

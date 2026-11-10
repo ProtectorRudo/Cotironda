@@ -1,0 +1,615 @@
+{
+  "fixtureVersion": 1,
+  "origin": "read-only real PILOTO MVP172 shape, anonymized; no source hashes or contacts",
+  "rounds": [
+    {
+      "caseLabel": "aridos-bolson-cemento",
+      "input": {
+        "state": "private_inputs",
+        "requestItems": [
+          {
+            "id": "item_001",
+            "unidad": "m3",
+            "familia": "arena_fina",
+            "cantidad": "1.000",
+            "descripcionLiteral": "arena fina"
+          },
+          {
+            "id": "item_002",
+            "unidad": "m3",
+            "familia": "piedra_partida",
+            "cantidad": "2.000",
+            "descripcionLiteral": "piedra partida"
+          },
+          {
+            "id": "item_003",
+            "unidad": "bag",
+            "familia": "cemento_gris_obra",
+            "cantidad": "25.000",
+            "descripcionLiteral": "cemento gris de 25 kg"
+          }
+        ],
+        "quotations": [
+          {
+            "doc": {
+              "anonId": "anon_private",
+              "lineas": [
+                {
+                  "lineNo": 1,
+                  "unitLiteral": null,
+                  "quantityLiteral": "1,00",
+                  "lineTotalLiteral": "$70.830,98",
+                  "unitPriceLiteral": "$70.830,98",
+                  "descriptionLiteral": "BIG BAG de Arena; Dscto.: 0.0%"
+                },
+                {
+                  "lineNo": 2,
+                  "unitLiteral": null,
+                  "quantityLiteral": "2,00",
+                  "lineTotalLiteral": "$218.436,46",
+                  "unitPriceLiteral": "$109.218,23",
+                  "descriptionLiteral": "BIG BAG de Piedra; Dscto.: 0.0%"
+                },
+                {
+                  "lineNo": 3,
+                  "unitLiteral": null,
+                  "quantityLiteral": "25,00",
+                  "lineTotalLiteral": "$244.964,50",
+                  "unitPriceLiteral": "$9.798,58",
+                  "descriptionLiteral": "cemento avellaneda x 25 kg; Dscto.: 0.0%"
+                }
+              ],
+              "prueba": {
+                "state": "verified",
+                "reason": "covered",
+                "version": 9,
+                "lineCount": 3,
+                "sumLineCents": "53423194",
+                "rankingAllowed": false,
+                "revisionVigente": true,
+                "cotizacionVigente": true,
+                "declaredTotalCents": "53423194",
+                "requestId": "469cb459-5f00-49c2-b0b9-bc8b11e5c900",
+                "messageHmac": "1111111111111111111111111111111111111111111111111111111111111111",
+                "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              },
+              "declaredTotalLiteral": "$534.231,94",
+              "requestId": "469cb459-5f00-49c2-b0b9-bc8b11e5c900",
+              "messageHmac": "1111111111111111111111111111111111111111111111111111111111111111",
+              "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "fuente": {
+              "lines": [
+                {
+                  "row": 8,
+                  "page": 1,
+                  "unit": null,
+                  "lineNo": 1,
+                  "unitStatus": "not_explicit",
+                  "presentation": "big_bag"
+                },
+                {
+                  "row": 9,
+                  "page": 1,
+                  "unit": null,
+                  "lineNo": 2,
+                  "unitStatus": "not_explicit",
+                  "presentation": "big_bag"
+                },
+                {
+                  "row": 10,
+                  "page": 1,
+                  "unit": null,
+                  "lineNo": 3,
+                  "unitStatus": "not_explicit",
+                  "presentation": "none"
+                }
+              ],
+              "state": "source_checked",
+              "rankingAllowed": false,
+              "sourceImmutabilityPreserved": true,
+              "requestId": "469cb459-5f00-49c2-b0b9-bc8b11e5c900",
+              "messageHmac": "1111111111111111111111111111111111111111111111111111111111111111",
+              "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "economia": {
+              "state": "source_checked",
+              "rankingAllowed": false,
+              "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "descuentos": {
+                "estado": "descuentos_conciliados_sin_iva",
+                "precios": [
+                  {
+                    "fila": 8,
+                    "linea": 1,
+                    "estado": "descuento_explicito_conciliado",
+                    "pagina": 1,
+                    "ivaAcreditado": false,
+                    "descuentoPorcentaje": "0.00",
+                    "unitarioComercialTrasDescuento": "70830.98"
+                  },
+                  {
+                    "fila": 9,
+                    "linea": 2,
+                    "estado": "descuento_explicito_conciliado",
+                    "pagina": 1,
+                    "ivaAcreditado": false,
+                    "descuentoPorcentaje": "0.00",
+                    "unitarioComercialTrasDescuento": "109218.23"
+                  },
+                  {
+                    "fila": 10,
+                    "linea": 3,
+                    "estado": "descuento_explicito_conciliado",
+                    "pagina": 1,
+                    "ivaAcreditado": false,
+                    "descuentoPorcentaje": "0.00",
+                    "unitarioComercialTrasDescuento": "9798.58"
+                  }
+                ]
+              },
+              "condiciones": {
+                "iva": {
+                  "tasa": null,
+                  "estado": "no_informado",
+                  "ubicaciones": []
+                },
+                "pago": {
+                  "estado": "contado",
+                  "ubicaciones": [
+                    {
+                      "fila": 4,
+                      "pagina": 1
+                    }
+                  ]
+                },
+                "flete": {
+                  "estado": "no_informado",
+                  "importe": null,
+                  "ubicaciones": []
+                },
+                "estado": "fuente_leida",
+                "plazoCorroborado": false,
+                "stockCorroborado": false,
+                "rankingHabilitado": false,
+                "contactosRevelados": false,
+                "netoSinIvaAcreditado": false,
+                "originalesModificados": false,
+                "minimoCompraCorroborado": false
+              }
+            }
+          },
+          {
+            "doc": {
+              "anonId": "anon_private",
+              "lineas": [
+                {
+                  "lineNo": 1,
+                  "unitLiteral": null,
+                  "quantityLiteral": "1,00",
+                  "lineTotalLiteral": "$54.964,84",
+                  "unitPriceLiteral": "$70.830,98",
+                  "descriptionLiteral": "BIG BAG de Arena; Dscto. 22.4%"
+                },
+                {
+                  "lineNo": 2,
+                  "unitLiteral": null,
+                  "quantityLiteral": "2,00",
+                  "lineTotalLiteral": "$169.506,70",
+                  "unitPriceLiteral": "$109.218,23",
+                  "descriptionLiteral": "BIG BAG de Piedra; Dscto. 22.4%"
+                },
+                {
+                  "lineNo": 3,
+                  "unitLiteral": null,
+                  "quantityLiteral": "25,00",
+                  "lineTotalLiteral": "$190.092,50",
+                  "unitPriceLiteral": "$9.798,58",
+                  "descriptionLiteral": "cemento avellaneda x 25 kg; Dscto. 22.4%"
+                }
+              ],
+              "prueba": {
+                "state": "verified",
+                "reason": "covered",
+                "version": 9,
+                "lineCount": 3,
+                "sumLineCents": "41456404",
+                "rankingAllowed": false,
+                "revisionVigente": true,
+                "cotizacionVigente": true,
+                "declaredTotalCents": "41456404",
+                "requestId": "469cb459-5f00-49c2-b0b9-bc8b11e5c900",
+                "messageHmac": "2222222222222222222222222222222222222222222222222222222222222222",
+                "sourceSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+              },
+              "declaredTotalLiteral": "$414.564,04",
+              "requestId": "469cb459-5f00-49c2-b0b9-bc8b11e5c900",
+              "messageHmac": "2222222222222222222222222222222222222222222222222222222222222222",
+              "sourceSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            },
+            "fuente": {
+              "lines": [
+                {
+                  "row": 8,
+                  "page": 1,
+                  "unit": null,
+                  "lineNo": 1,
+                  "unitStatus": "not_explicit",
+                  "presentation": "big_bag"
+                },
+                {
+                  "row": 9,
+                  "page": 1,
+                  "unit": null,
+                  "lineNo": 2,
+                  "unitStatus": "not_explicit",
+                  "presentation": "big_bag"
+                },
+                {
+                  "row": 10,
+                  "page": 1,
+                  "unit": null,
+                  "lineNo": 3,
+                  "unitStatus": "not_explicit",
+                  "presentation": "none"
+                }
+              ],
+              "state": "source_checked",
+              "rankingAllowed": false,
+              "sourceImmutabilityPreserved": true,
+              "requestId": "469cb459-5f00-49c2-b0b9-bc8b11e5c900",
+              "messageHmac": "2222222222222222222222222222222222222222222222222222222222222222",
+              "sourceSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            },
+            "economia": {
+              "state": "source_checked",
+              "rankingAllowed": false,
+              "sourceSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "descuentos": {
+                "estado": "descuentos_conciliados_sin_iva",
+                "precios": [
+                  {
+                    "fila": 8,
+                    "linea": 1,
+                    "estado": "descuento_explicito_conciliado",
+                    "pagina": 1,
+                    "ivaAcreditado": false,
+                    "descuentoPorcentaje": "22.40",
+                    "unitarioComercialTrasDescuento": "54964.84"
+                  },
+                  {
+                    "fila": 9,
+                    "linea": 2,
+                    "estado": "descuento_explicito_conciliado",
+                    "pagina": 1,
+                    "ivaAcreditado": false,
+                    "descuentoPorcentaje": "22.40",
+                    "unitarioComercialTrasDescuento": "84753.35"
+                  },
+                  {
+                    "fila": 10,
+                    "linea": 3,
+                    "estado": "descuento_explicito_conciliado",
+                    "pagina": 1,
+                    "ivaAcreditado": false,
+                    "descuentoPorcentaje": "22.40",
+                    "unitarioComercialTrasDescuento": "7603.70"
+                  }
+                ]
+              },
+              "condiciones": {
+                "iva": {
+                  "tasa": null,
+                  "estado": "no_informado",
+                  "ubicaciones": []
+                },
+                "pago": {
+                  "estado": "contado",
+                  "ubicaciones": [
+                    {
+                      "fila": 4,
+                      "pagina": 1
+                    }
+                  ]
+                },
+                "flete": {
+                  "estado": "no_informado",
+                  "importe": null,
+                  "ubicaciones": []
+                },
+                "estado": "fuente_leida",
+                "plazoCorroborado": false,
+                "stockCorroborado": false,
+                "rankingHabilitado": false,
+                "contactosRevelados": false,
+                "netoSinIvaAcreditado": false,
+                "originalesModificados": false,
+                "minimoCompraCorroborado": false
+              }
+            }
+          }
+        ],
+        "rankingAllowed": false,
+        "contactsRevealed": false
+      }
+    },
+    {
+      "caseLabel": "cemento-hidrofugo",
+      "input": {
+        "state": "private_inputs",
+        "requestItems": [
+          {
+            "id": "item_001",
+            "unidad": "bag",
+            "familia": "cemento_gris_obra",
+            "cantidad": "20.000",
+            "descripcionLiteral": "cemento CPC 50 kg"
+          },
+          {
+            "id": "item_002",
+            "unidad": "l",
+            "familia": "hidrofugo",
+            "cantidad": "5.000",
+            "descripcionLiteral": "hidrófugo"
+          }
+        ],
+        "quotations": [
+          {
+            "doc": {
+              "anonId": "anon_private",
+              "lineas": [
+                {
+                  "lineNo": 1,
+                  "unitLiteral": null,
+                  "quantityLiteral": "20",
+                  "lineTotalLiteral": "205000",
+                  "unitPriceLiteral": "10250",
+                  "descriptionLiteral": "CEMENTO CPC 50 KG"
+                },
+                {
+                  "lineNo": 2,
+                  "unitLiteral": null,
+                  "quantityLiteral": "5",
+                  "lineTotalLiteral": "15250",
+                  "unitPriceLiteral": "3050",
+                  "descriptionLiteral": "HIDROFUGO EN PASTA"
+                }
+              ],
+              "prueba": {
+                "state": "verified",
+                "reason": "covered",
+                "version": 9,
+                "lineCount": 2,
+                "sumLineCents": "22025000",
+                "rankingAllowed": false,
+                "revisionVigente": true,
+                "cotizacionVigente": true,
+                "declaredTotalCents": "22025000",
+                "requestId": "469cb459-5f00-49c2-b0b9-bc8b11e5c901",
+                "messageHmac": "3333333333333333333333333333333333333333333333333333333333333333",
+                "sourceSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+              },
+              "declaredTotalLiteral": "220250",
+              "requestId": "469cb459-5f00-49c2-b0b9-bc8b11e5c901",
+              "messageHmac": "3333333333333333333333333333333333333333333333333333333333333333",
+              "sourceSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+            },
+            "fuente": {
+              "lines": [
+                {
+                  "row": 3,
+                  "page": 1,
+                  "unit": null,
+                  "lineNo": 1,
+                  "unitStatus": "not_explicit",
+                  "presentation": "none"
+                },
+                {
+                  "row": 4,
+                  "page": 1,
+                  "unit": null,
+                  "lineNo": 2,
+                  "unitStatus": "not_explicit",
+                  "presentation": "none"
+                }
+              ],
+              "state": "source_checked",
+              "rankingAllowed": false,
+              "sourceImmutabilityPreserved": true,
+              "requestId": "469cb459-5f00-49c2-b0b9-bc8b11e5c901",
+              "messageHmac": "3333333333333333333333333333333333333333333333333333333333333333",
+              "sourceSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+            },
+            "economia": {
+              "state": "source_checked",
+              "rankingAllowed": false,
+              "sourceSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "descuentos": {
+                "estado": "descuentos_conciliados_sin_iva",
+                "precios": [
+                  {
+                    "fila": 3,
+                    "linea": 1,
+                    "estado": "importe_sin_ajuste_conciliado",
+                    "pagina": 1,
+                    "ivaAcreditado": false,
+                    "descuentoPorcentaje": null,
+                    "unitarioComercialTrasDescuento": "10250.00"
+                  },
+                  {
+                    "fila": 4,
+                    "linea": 2,
+                    "estado": "importe_sin_ajuste_conciliado",
+                    "pagina": 1,
+                    "ivaAcreditado": false,
+                    "descuentoPorcentaje": null,
+                    "unitarioComercialTrasDescuento": "3050.00"
+                  }
+                ]
+              },
+              "condiciones": {
+                "iva": {
+                  "tasa": null,
+                  "estado": "no_informado",
+                  "ubicaciones": []
+                },
+                "pago": {
+                  "estado": "no_informado",
+                  "ubicaciones": []
+                },
+                "flete": {
+                  "estado": "no_informado",
+                  "importe": null,
+                  "ubicaciones": []
+                },
+                "estado": "fuente_leida",
+                "plazoCorroborado": false,
+                "stockCorroborado": false,
+                "rankingHabilitado": false,
+                "contactosRevelados": false,
+                "netoSinIvaAcreditado": false,
+                "originalesModificados": false,
+                "minimoCompraCorroborado": false
+              }
+            }
+          },
+          {
+            "doc": {
+              "anonId": "anon_private",
+              "lineas": [
+                {
+                  "lineNo": 1,
+                  "unitLiteral": null,
+                  "quantityLiteral": "40,00",
+                  "lineTotalLiteral": "$304.148,00",
+                  "unitPriceLiteral": "$9.798,58",
+                  "descriptionLiteral": "cemento avellaneda x 25 kg"
+                },
+                {
+                  "lineNo": 2,
+                  "unitLiteral": null,
+                  "quantityLiteral": "1,00",
+                  "lineTotalLiteral": "$6.211,22",
+                  "unitPriceLiteral": "$8.004,15",
+                  "descriptionLiteral": "Sinteplast Hidrofugo 5lts"
+                }
+              ],
+              "prueba": {
+                "state": "verified",
+                "reason": "covered",
+                "version": 9,
+                "lineCount": 2,
+                "sumLineCents": "31035922",
+                "rankingAllowed": false,
+                "revisionVigente": true,
+                "cotizacionVigente": true,
+                "declaredTotalCents": "31035922",
+                "requestId": "469cb459-5f00-49c2-b0b9-bc8b11e5c901",
+                "messageHmac": "4444444444444444444444444444444444444444444444444444444444444444",
+                "sourceSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+              },
+              "declaredTotalLiteral": "$310.359,22",
+              "requestId": "469cb459-5f00-49c2-b0b9-bc8b11e5c901",
+              "messageHmac": "4444444444444444444444444444444444444444444444444444444444444444",
+              "sourceSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+            },
+            "fuente": {
+              "lines": [
+                {
+                  "row": 8,
+                  "page": 1,
+                  "unit": null,
+                  "lineNo": 1,
+                  "unitStatus": "not_explicit",
+                  "presentation": "none"
+                },
+                {
+                  "row": 9,
+                  "page": 1,
+                  "unit": null,
+                  "lineNo": 2,
+                  "unitStatus": "not_explicit",
+                  "presentation": "none"
+                }
+              ],
+              "state": "source_checked",
+              "rankingAllowed": false,
+              "sourceImmutabilityPreserved": true,
+              "requestId": "469cb459-5f00-49c2-b0b9-bc8b11e5c901",
+              "messageHmac": "4444444444444444444444444444444444444444444444444444444444444444",
+              "sourceSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+            },
+            "economia": {
+              "state": "source_checked",
+              "rankingAllowed": false,
+              "sourceSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "descuentos": {
+                "estado": "descuentos_conciliados_sin_iva",
+                "precios": [
+                  {
+                    "fila": 8,
+                    "linea": 1,
+                    "estado": "descuento_explicito_conciliado",
+                    "pagina": 1,
+                    "ivaAcreditado": false,
+                    "descuentoPorcentaje": "22.40",
+                    "unitarioComercialTrasDescuento": "7603.70"
+                  },
+                  {
+                    "fila": 9,
+                    "linea": 2,
+                    "estado": "descuento_explicito_conciliado",
+                    "pagina": 1,
+                    "ivaAcreditado": false,
+                    "descuentoPorcentaje": "22.40",
+                    "unitarioComercialTrasDescuento": "6211.22"
+                  }
+                ]
+              },
+              "condiciones": {
+                "iva": {
+                  "tasa": null,
+                  "estado": "no_informado",
+                  "ubicaciones": []
+                },
+                "pago": {
+                  "estado": "contado",
+                  "ubicaciones": [
+                    {
+                      "fila": 4,
+                      "pagina": 1
+                    },
+                    {
+                      "fila": 12,
+                      "pagina": 1
+                    }
+                  ]
+                },
+                "flete": {
+                  "estado": "a_convenir",
+                  "importe": null,
+                  "ubicaciones": [
+                    {
+                      "fila": 13,
+                      "pagina": 1
+                    }
+                  ]
+                },
+                "estado": "fuente_leida",
+                "plazoCorroborado": false,
+                "stockCorroborado": false,
+                "rankingHabilitado": false,
+                "contactosRevelados": false,
+                "netoSinIvaAcreditado": false,
+                "originalesModificados": false,
+                "minimoCompraCorroborado": false
+              }
+            }
+          }
+        ],
+        "rankingAllowed": false,
+        "contactsRevealed": false
+      }
+    }
+  ]
+}

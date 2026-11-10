@@ -46,3 +46,101 @@ footer{font-size:12px;color:#777;margin-top:18px;text-align:center}
  .offer-item-values{grid-template-columns:repeat(2,minmax(0,1fr))}
  .offer-subtotal{grid-column:1 / -1}
 }
+
+/* MVP176 — Cobertura agregada sin confundir artículos con puestos de precios. */
+[hidden]{display:none!important}
+.coverage-panel{border:1px solid #dce5ef;border-radius:12px;padding:20px;margin:18px 0;background:#f8fbff}
+.coverage-panel h2{margin:0 0 8px;font-size:17px;letter-spacing:-.02em;color:#193350}
+.coverage-caption{font-size:13px;color:#617389;line-height:1.5;margin:0 0 14px}
+.coverage-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:9px}
+.coverage-metric{display:flex;align-items:center;gap:10px;padding:13px;border:1px solid #dbe5ed;border-radius:9px;background:white}
+.coverage-metric strong{font-size:22px;color:#193b59;font-variant-numeric:tabular-nums}
+.coverage-metric span{font-size:12px;line-height:1.4;color:#536677}
+.coverage-note{color:#596b80;font-size:12px;line-height:1.65;margin:16px 0 0}
+@media(max-width:560px){.coverage-panel{padding:16px}.coverage-grid{grid-template-columns:1fr 1fr}.coverage-metric{padding:10px;gap:7px}}
+
+/* MVP177: cierre abierto a todas las ofertas verificadas, sin ranking ficticio. */
+.results-panel{border:1px solid #dedede;border-radius:11px;background:#fafafa;padding:17px 19px;margin:20px 0 12px}
+.results-panel h2{font-size:18px;margin:0 0 7px;letter-spacing:-.02em}
+.results-panel p{font-size:13px;line-height:1.6;margin:7px 0;color:#454545}
+.results-panel .results-note{color:#606060}
+
+/* MVP180 — Evidence gaps are not zero tax, zero freight or a stockout. */
+.economy-panel{border:1px solid #dedede;border-radius:12px;padding:20px;margin:18px 0;background:#fafafa}
+.economy-panel h2{margin:0 0 8px;font-size:17px;letter-spacing:-.02em}
+.economy-caption{color:#555;font-size:13px;margin:0 0 14px}
+.economy-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:9px}
+.economy-metric{display:flex;align-items:center;gap:10px;border:1px solid #e2e2e2;border-radius:9px;background:white;padding:12px}
+.economy-metric strong{font-size:22px;font-variant-numeric:tabular-nums}
+.economy-metric span{font-size:12px;line-height:1.4;color:#505050}
+.economy-note{font-size:12px;line-height:1.6;color:#656565;margin:14px 0 0}
+@media(max-width:560px){.economy-panel{padding:16px}.economy-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:410px){.economy-grid{grid-template-columns:1fr}}
+
+/* MVP186 — Sin formularios: referencias originales por articulo, no ranking. */
+.itemprices-panel{border:1px solid #dce5ef;border-radius:12px;padding:20px;margin:18px 0;background:#f8fbff}
+.itemprices-panel h2{font-size:17px;letter-spacing:-.02em;margin:0 0 8px}
+.itemprices-caption{font-size:13px;color:#536779;line-height:1.55;margin:0 0 14px}
+.itemprices-grid{display:grid;gap:12px}
+.itemprices-card{background:#fff;border:1px solid #dfe5eb;border-radius:10px;padding:13px 15px}
+.itemprices-card h3{font-size:14px;margin:0 0 12px}
+.itemprices-row{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 14px;padding:9px 0;border-top:1px solid #e8edf3}
+.itemprices-row strong{min-width:110px;font-size:13px}
+.itemprices-amount{font-variant-numeric:tabular-nums;font-weight:690;font-size:15px}
+.itemprices-detail{font-size:12px;color:#66727f;flex:1 1 170px}
+.itemprices-note{font-size:12px;color:#596b80;line-height:1.65;margin:14px 0 0}
+@media(max-width:560px){.itemprices-panel{padding:16px}.itemprices-row{display:grid;grid-template-columns:1fr 1fr}.itemprices-detail{grid-column:1 / -1}}
+
+/* MVP187 — solicitud visible junto al importe de origen, sin ranking. */
+.itemprices-request{font-size:12px;color:#607183;margin:0 0 11px;line-height:1.45;overflow-wrap:anywhere}
+
+/* MVP189 — opciones de cobertura al cierre, sin clasificar precios. */
+.coverage-options-panel{border:1px solid #dce5ef;border-radius:12px;margin:18px 0;padding:20px;background:#f8fbff}
+.coverage-options-panel h2{font-size:17px;margin:0 0 9px;letter-spacing:-.01em}
+.coverage-options-caption,.economic-readiness-grid{display:grid;gap:10px;margin-top:13px}
+.economic-readiness-card{background:#fff;border:1px solid #e2e2e2;border-radius:10px;padding:14px 16px;overflow-wrap:anywhere}
+.economic-readiness-card strong{font-size:14px}
+.economic-readiness-list{margin:10px 0 0;padding-left:18px;font-size:13px;color:#515151}
+.economic-readiness-list li{margin-top:4px}
+.orientacion-choice{padding:14px 16px;border:1px solid #dedede;background:#fafafa;border-radius:10px;overflow-wrap:anywhere}
+.orientacion-choice strong{display:block;font-size:14px}
+.orientacion-choice p{margin:8px 0 0;color:#555;font-size:13px}
+.coverage-options-note{font-size:12px;color:#596b80;line-height:1.6}
+.coverage-options-counts{display:grid;gap:7px;margin:12px 0}
+.coverage-options-count{border-radius:8px;background:#fff;padding:8px 12px;font-size:13px;border:1px solid #e4eaf1}
+.coverage-options-grid{display:grid;gap:10px;margin-top:14px}
+.coverage-options-card{padding:12px 14px;background:#fff;border-radius:9px;border:1px solid #e0e5ed}
+.coverage-options-card summary{font-size:14px;font-weight:650;cursor:pointer}
+.coverage-options-list{margin:10px 0 0 0;padding-left:20px;color:#46576a;font-size:13px;line-height:1.65}
+.coverage-options-note{margin:14px 0 0}
+@media(max-width:560px){.coverage-options-panel{padding:16px}}
+
+/* MVP216 — rubros del pedido, nunca agrupar por totales parciales. */
+.rubro-section{border:1px solid #d6e4f1;border-radius:12px;padding:15px;background:#fff;min-width:0}
+.rubro-header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;border-bottom:1px solid #e6ebf1;padding-bottom:12px;margin-bottom:12px}
+.rubro-title{font-size:17px!important;font-weight:750;color:#20364f;margin:0!important}
+.rubro-count{font-size:12px;font-weight:600;color:#546a82}
+.rubro-items{display:grid;gap:10px}
+.rubro-items .itemprices-card{border:1px solid #e1e8f1;background:#f8fbff}
+
+/* MVP322: buyer-safe live per-offer previews, never a price ranking. */
+.preliminar-panel{border:1px solid #d8e5ec;background:#f5f9fc;border-radius:13px;padding:20px;margin:18px 0}
+.preliminar-panel h2{font-size:19px;margin:0 0 8px;letter-spacing:-.02em;color:#203650}
+.preliminar-caption{font-size:13px;color:#52677b;margin:0 0 13px;line-height:1.5}
+.preliminar-grid{display:grid;gap:12px}
+.preliminar-card{background:#fff;border:1px solid #dbe4ed;border-radius:11px;padding:15px;min-width:0}
+.preliminar-header{display:flex;align-items:start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.preliminar-heading{font-size:16px;font-weight:750;margin:0;color:#173452}
+.preliminar-badge{font-size:12px;font-weight:650;color:#53687b;margin:5px 0 0}
+.preliminar-total{text-align:right;font-variant-numeric:tabular-nums}
+.preliminar-total span{display:block;color:#64768a;font-size:12px}
+.preliminar-total strong{display:block;font-size:22px;color:#183c63}
+.preliminar-items{list-style:none;padding:0;margin:13px 0 0}
+.preliminar-items li{padding:10px 0;border-top:1px solid #e6ebf0;display:flex;align-items:baseline;justify-content:space-between;gap:14px}
+.preliminar-items .detail{min-width:0;overflow-wrap:anywhere;font-size:13px}
+.preliminar-items .detail strong{display:block;font-size:13px}
+.preliminar-items .detail span{display:block;color:#607287;font-size:12px;margin-top:3px}
+.preliminar-items .money{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.preliminar-conditions{font-size:12px;color:#5b6c7c;line-height:1.55;margin:10px 0 0}
+.preliminar-note{font-size:12px;color:#5e7181;line-height:1.65;margin:14px 0 0}
+@media(max-width:500px){.preliminar-panel{padding:15px}.preliminar-header{display:block}.preliminar-total{text-align:left;margin-top:10px}.preliminar-items li{align-items:flex-start}}

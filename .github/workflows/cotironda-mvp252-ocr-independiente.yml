@@ -1,0 +1,35 @@
+name: Cotironda IA Central — OCR independiente en recuperación MVP252
+on:
+  pull_request:
+    branches:
+      - feat/mvp174-supplier-packaging-equivalence
+    paths:
+      - 'supabase/functions/cotironda-piloto-whapi/supplier-ocr-google-mvp252.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/supplier-visual-ocr-audit-mvp252.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/supplier-source-image-mvp251.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/private-document-recovery.ts'
+      - 'supabase/functions/cotironda-piloto-document-recovery/index.ts'
+      - 'tests/unit/mvp252-ocr-visual-independiente.test.mjs'
+      - '.github/workflows/cotironda-mvp252-ocr-independiente.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  visual-ocr-no-network:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: 'OCR mock: origen SHA, JWT sintético, dinero íntegro y no-publicación'
+        run: >-
+          node --experimental-strip-types --test
+          tests/unit/mvp252-ocr-visual-independiente.test.mjs
+          tests/unit/mvp251-visual-quote-review.test.mjs
+          tests/unit/mvp245-documentos-comerciales-ia-central.test.mjs
+          tests/unit/mvp127-document-ai-recovery.test.mjs
+# Sin Google Cloud, secretos, WhatsApp ni llamadas externas.

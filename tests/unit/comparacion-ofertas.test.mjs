@@ -192,7 +192,9 @@ test('ids repetidos, request corrupto y límite de complejidad se rechazan',()=>
   assert.throws(()=>run({items:[]},[a]),/comparacion_entrada_invalida/);
   assert.throws(()=>run(pedido(['bolsa_001','0']),[a]),/comparacion_entrada_invalida/);
   assert.throws(()=>run(pedido(['bolsa_001','1'],['bolsa_001','2']),[a]),/comparacion_entrada_invalida/);
-  assert.throws(()=>run(pedido(...Array.from({length:26},(_,i)=>['sku_'+i,'1'])),[]),/comparacion_entrada_invalida/);
+  assert.throws(()=>run(pedido(...Array.from({length:101},(_,i)=>['sku_'+i,'1'])),[]),/comparacion_entrada_invalida/);
+  assert.throws(()=>run(p,Array.from({length:201},(_,i)=>
+    oferta('anon_'+String(i).padStart(3,'0'),[linea('bolsa_001')]))),/comparacion_entrada_invalida/);
 });
 
 test('un par con líneas no cubiertas nunca se considera compra completa',()=>{
@@ -212,4 +214,109 @@ test('puntuación estable en entrada reordenada, sin inferencia ni red',()=>{
   const r=run(p,[b,a]),r2=run(p,[a,b]);
   assert.deepEqual(r.opcionesCompletas,r2.opcionesCompletas);
   assert.equal(JSON.stringify(r).includes('whatsapp'),false);
+});
+
+
+test('MVP202: 50 materiales con cobertura complementaria exacta, sin recortar lista',()=>{
+ const ids=Array.from({length:50},(_,i)=>'sku_'+String(i+1).padStart(3,'0'));
+ const p=pedido(...ids.map(id=>[id,'1']));
+ const a=oferta('anon_aaa',ids.slice(0,25).map(id=>linea(id,'1.00',{ivaPorcentaje:'0'})));
+ const b=oferta('anon_bbb',ids.slice(25).map(id=>linea(id,'2.00',{ivaPorcentaje:'0'})));
+ const r=run(p,[a,b]);
+ assert.equal(r.cobertura.length,2);
+ assert.deepEqual(r.cobertura.map(o=>o.lineas.length),[50,50]);
+ assert.equal(r.comparacionPares,'exhaustiva');
+ assert.equal(r.paresCalculados,1);
+ assert.equal(r.opcionesCompletas.length,1);
+ assert.deepEqual(r.opcionesCompletas[0].proveedoresAnonimos,['anon_aaa','anon_bbb']);
+ assert.equal(r.opcionesCompletas[0].totalFinal,'75.00');
+ assert.equal(r.opcionesCompletas[0].asignacion.length,50);
+ assert.deepEqual(r.opcionesCompletas[0].asignacion.map(x=>x.anonId),
+  [...Array(25).fill('anon_aaa'),...Array(25).fill('anon_bbb')]);
+ assert.equal(r.contactoRevelado,false);
+});
+
+test('MVP202: 50 líneas flexibles detienen TODO ranking por pares; individuales siguen visibles',()=>{
+ const ids=Array.from({length:50},(_,i)=>'sku_'+String(i+1).padStart(3,'0'));
+ const p=pedido(...ids.map(id=>[id,'1']));
+ const a=oferta('anon_aaa',ids.map(id=>linea(id,'20.00',{ivaPorcentaje:'0'})));
+ const b=oferta('anon_bbb',ids.map(id=>linea(id,'1.00',{ivaPorcentaje:'0'})));
+ const r=run(p,[a,b]);
+ assert.equal(r.comparacionPares,'suspendida_por_complejidad');
+ assert.equal(r.paresCalculados,0);
+ assert.deepEqual(r.cobertura.map(o=>o.lineasCompletas),[50,50]);
+ assert.deepEqual(r.cobertura.map(o=>o.totalComparable),['1000.00','50.00']);
+ assert.equal(r.opcionesCompletas.length,2);
+ assert.ok(r.opcionesCompletas.every(x=>x.proveedoresAnonimos.length===1 &&
+  x.puestoDentroDeCondiciones===null));
+ assert.deepEqual(r.opcionesCompletas.map(x=>x.proveedoresAnonimos[0]),
+  ['anon_aaa','anon_bbb'],'sin ordenar por precio una búsqueda incompleta');
+});
+
+test('MVP202: 120 proveedores y 50 artículos se conservan íntegros en cobertura',()=>{
+ const ids=Array.from({length:50},(_,i)=>'sku_'+String(i+1).padStart(3,'0'));
+ const p=pedido(...ids.map(id=>[id,'1']));
+ const qs=Array.from({length:120},(_,i)=>
+  oferta('anon_'+String(i+1).padStart(3,'0'),
+   ids.map(id=>linea(id,Number(i+1).toFixed(2),{ivaPorcentaje:'0'}))));
+ const r=run(p,qs);
+ assert.equal(r.comparacionPares,'suspendida_por_complejidad');
+ assert.equal(r.cobertura.length,120);
+ assert.equal(r.cobertura.reduce((n,o)=>n+o.lineas.length,0),6000);
+ assert.equal(new Set(r.cobertura.map(o=>o.anonId)).size,120);
+ assert.equal(r.opcionesCompletas.length,120);
+ assert.ok(r.opcionesCompletas.every(o=>o.puestoDentroDeCondiciones===null));
+ const reversed=run(p,[...qs].reverse());
+ assert.deepEqual(r.opcionesCompletas,reversed.opcionesCompletas);
+});
+
+test('MVP202: doce ofertas por dos materiales mantienen evaluación exacta de TODOS los pares',()=>{
+ const ids=['sku_001','sku_002'];
+ const p=pedido(...ids.map(id=>[id,'1']));
+ const qs=Array.from({length:12},(_,i)=>oferta(
+  'anon_'+String(i+1).padStart(3,'0'),
+  ids.map(id=>linea(id,Number(i+1).toFixed(2),{ivaPorcentaje:'0'}))
+ ));
+ const r=run(p,qs);
+ assert.equal(r.comparacionPares,'exhaustiva');
+ assert.equal(r.cobertura.length,12);
+ assert.equal(r.paresCalculados,66);
+ assert.equal(r.opcionesCompletas.length,78);
+ assert.equal(r.opcionesCompletas[0].puestoDentroDeCondiciones,1);
+ assert.equal(r.opcionesCompletas.at(-1).puestoDentroDeCondiciones!==null,true);
+});
+
+test('MVP202: falta de IVA, flete o pago nunca se normaliza para ganar en 50 líneas',()=>{
+ const ids=Array.from({length:50},(_,i)=>'sku_'+String(i+1).padStart(3,'0'));
+ const p=pedido(...ids.map(id=>[id,'1']));
+ const a=oferta('anon_aaa',ids.map(id=>linea(id,'0.01',{ivaPorcentaje:null})));
+ const b=oferta('anon_bbb',ids.map(id=>linea(id,'1.00')),{
+  fleteFinal:null,formaPago:null});
+ const r=run(p,[a,b]);
+ assert.equal(r.cobertura.length,2);
+ assert.ok(r.cobertura.every(o=>o.lineasCompletas===50));
+ assert.deepEqual(r.opcionesCompletas,[]);
+ assert.ok(r.cobertura[0].motivos.includes('precio_o_iva_desconocido'));
+ assert.ok(r.cobertura[1].motivos.includes('flete_desconocido'));
+ assert.ok(r.cobertura[1].motivos.includes('forma_pago_desconocida'));
+});
+
+test('MVP202: 200 proveedores parciales y 100 artículos no generan millones de parejas',()=>{
+ const ids=Array.from({length:100},(_,i)=>'sku_'+String(i+1).padStart(3,'0'));
+ const p=pedido(...ids.map(id=>[id,'1']));
+ const qs=Array.from({length:200},(_,i)=>oferta(
+  'anon_'+String(i+1).padStart(3,'0'),
+  (i%2===0?ids.slice(0,50):ids.slice(50)).map(id=>
+   linea(id,'1.00',{ivaPorcentaje:'0'}))
+ ));
+ const r=run(p,qs);
+ assert.equal(r.cobertura.length,200);
+ assert.equal(r.cobertura.reduce((sum,o)=>sum+o.lineas.length,0),20000);
+ assert.ok(r.cobertura.every(x=>x.lineasCompletas===50&&
+  x.totalComparable===null));
+ assert.equal(r.comparacionPares,'suspendida_por_complejidad');
+ assert.equal(r.paresCalculados,0);
+ assert.deepEqual(r.opcionesCompletas,[]);
+ assert.equal(r.contactoRevelado,false);
+ assert.equal(r.adjudicacionAutomatica,false);
 });

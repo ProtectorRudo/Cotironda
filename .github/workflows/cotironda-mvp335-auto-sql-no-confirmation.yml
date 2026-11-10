@@ -1,0 +1,67 @@
+name: MVP335 - SQL controls auto release, no CONFIRMAR, authenticated webhook
+on:
+  pull_request:
+    branches:
+      - feat/mvp174-supplier-packaging-equivalence
+    paths:
+      - 'scripts/piloto/mvp335-no-confirmation-candidate.mjs'
+      - 'tests/unit/mvp335-no-confirmation-and-secret-diagnostics.test.mjs'
+      - 'docs/468-mvp335-sql-only-sin-confirmacion-y-secretos.md'
+      - '.github/workflows/cotironda-mvp335-auto-sql-no-confirmation.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  candidate-security-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Check candidate builder and 19 incident/security cases
+        run: |
+          set -euo pipefail
+          node --check scripts/piloto/mvp335-no-confirmation-candidate.mjs
+          node --check tests/unit/mvp335-no-confirmation-and-secret-diagnostics.test.mjs
+          node --test tests/unit/mvp335-no-confirmation-and-secret-diagnostics.test.mjs
+          node scripts/piloto/mvp335-no-confirmation-candidate.mjs
+      - name: Historical baseline v71 and connectivity guard remain valid
+        run: |
+          set -euo pipefail
+          node --test tests/unit/mvp333-pilot-connectivity.test.mjs
+          node --test tests/unit/mvp332-whapi-rollout-bundle.test.mjs
+      - name: Regression for SQL release, contacts, recipient routing and notice
+        run: |
+          set -euo pipefail
+          node --experimental-strip-types --test \
+            tests/unit/mvp306-auto-release-and-supplier-contacts.test.mjs \
+            tests/unit/mvp313-dynamic-recipients.test.mjs \
+            tests/unit/mvp314-batch-dispatch.test.mjs \
+            tests/unit/mvp315-buyer-notice-after-batch.test.mjs
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Typecheck the complete v73 candidate in memory, never deploy
+        run: |
+          set -euo pipefail
+          node --input-type=module -e "
+          import {prepararCandidatoMvp335} from './scripts/piloto/mvp335-no-confirmation-candidate.mjs';
+          import {writeFileSync} from 'node:fs';
+          const c=prepararCandidatoMvp335();
+          if(c.database_mutated||c.whatsapp_messages_sent||c.webhook_security_bypassed||c.production_published)
+            throw Error('candidate must remain offline and authenticated');
+          writeFileSync('supabase/functions/cotironda-piloto-whapi/index-mvp335-preview.ts',c.source);
+          "
+          trap 'rm -f supabase/functions/cotironda-piloto-whapi/index-mvp335-preview.ts' EXIT
+          deno check --node-modules-dir=auto \
+            supabase/functions/cotironda-piloto-whapi/index-mvp335-preview.ts
+      - name: Ensure generated preview was removed and tracked files unchanged
+        run: |
+          set -euo pipefail
+          test ! -f supabase/functions/cotironda-piloto-whapi/index-mvp335-preview.ts
+          test -z "$(git status --porcelain --untracked-files=no)"
+# No Supabase writes, secret inspection, WhatsApp or production deploy.

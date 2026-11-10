@@ -1,0 +1,26 @@
+name: Cotironda IA Central — localidades naturales MVP234
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/cotironda-piloto-whapi/ai-central-city-mvp234.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/index.ts'
+      - 'tests/unit/mvp234-localidad-natural.test.mjs'
+      - '.github/workflows/cotironda-mvp234-localidad-natural.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  buyer-natural-city:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+      - name: 'MVP234: solo ciudades, sin materiales ni instrucciones adicionales'
+        run: node --experimental-strip-types --test tests/unit/mvp234-localidad-natural.test.mjs
+      - name: 'MVP233: regresión de fuente original y continuación SQL'
+        run: node --experimental-strip-types --test tests/unit/mvp233-continuacion-localidad.test.mjs

@@ -4,6 +4,8 @@
  * Pure TS / Uint8Array: works in Deno Edge and Node 22; no network/deps.
  * Important: source lines MUST come from the trusted request_lines SQL snapshot.
  */
+import {lineaComercialLegibleMvp288} from '../../../src/domain/ia-central/fidelidad-pedido-mvp288.ts';
+import {PIE_PDF_PROVEEDORES_MVP305} from '../_shared/aviso-proveedores-cierre-mvp305.ts';
 export type ItemSolicitudMvp091=Readonly<{
  description:string;quantity:string;unit:string;
 }>;
@@ -74,9 +76,12 @@ export function generarSolicitudPdfMvp091(input:SolicitudPdfMvp091):Uint8Array{
  const lines=input.items.map((it,i)=>{
   if(!it||!textOk(it.description,75)||CONTACT.test(it.description)||
     typeof it.unit!=='string'||!Object.hasOwn(UNITS,it.unit))fail();
-  const qty=decimal(it.quantity);
-  if((qty+' '+UNITS[it.unit]).length>35)fail();
-  return {name:it.description,display:qty+' '+UNITS[it.unit],i};
+  const readable=lineaComercialLegibleMvp288(
+   it.quantity,it.unit,it.description);
+  if(!readable)fail();
+  const display=readable.cantidad+' '+readable.unidad;
+  if(display.length>35||!textOk(readable.descripcion,75))fail();
+  return {name:readable.descripcion,display,i};
  });
  const deadline=formatDay(input.deadlineIso);
  const note=input.deliveryNote??null;
@@ -123,7 +128,7 @@ export function generarSolicitudPdfMvp091(input:SolicitudPdfMvp091):Uint8Array{
   }
   drawText(cmds,48,62,'Respondé por WhatsApp con tu presupuesto.',
    9,false,'0.40 0.46 0.55');
-  drawText(cmds,48,43,'Cotironda · Solicitud privada para proveedor invitado',
+  drawText(cmds,48,43,PIE_PDF_PROVEEDORES_MVP305,
    8,false,'0.40 0.46 0.55');
   drawText(cmds,492,43,'Pág. '+(page+1)+'/'+pageCount,8,false,
    '0.40 0.46 0.55');

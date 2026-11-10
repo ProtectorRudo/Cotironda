@@ -1,0 +1,87 @@
+name: Cotironda MVP299 - pending coverage without economic claims
+on:
+  pull_request:
+    branches: [feat/mvp174-supplier-packaging-equivalence]
+    paths:
+      - 'supabase/piloto/mvp299_*'
+      - 'supabase/tests/ci/mvp299-*'
+      - 'supabase/functions/cotironda-piloto-whapi/ai-central-supplier-mvp227.ts'
+      - 'supabase/functions/cotironda-piloto-seguimiento/index.ts'
+      - 'src/domain/ia-central/vista-pendientes-rubros-mvp299.ts'
+      - 'piloto/seguimiento-web/api/estado.js'
+      - 'piloto/seguimiento-web/site.js'
+      - 'piloto/seguimiento-web/index.html'
+      - 'tests/unit/mvp299-*'
+      - '.github/workflows/cotironda-mvp299-pending-coverage.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  safe-pending-coverage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: New coverage tests and existing commercial regressions
+        run: |
+          node --experimental-strip-types --test \
+            tests/unit/mvp299-pending-coverage.test.mjs \
+            tests/unit/mvp227-recepcion-presupuesto-evaluado.test.mjs \
+            tests/unit/mvp295-linked-commercial-recovery.test.mjs \
+            tests/unit/mvp297-diagnostico-fuente.test.mjs
+      - name: Browser and proxy syntax
+        run: |
+          node --check piloto/seguimiento-web/site.js
+          node --check piloto/seguimiento-web/api/estado.js
+  pg17-pending-isolation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 13
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: test_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: PostgreSQL 17 - source review, ACL, buyer isolation, supersession and rollback
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/mvp299-pending-coverage-pg17.sql >/dev/null
+          psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regnamespace('cotironda_piloto_privado') IS NULL" | grep -Fx t
+  edge-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb
+        with:
+          deno-version: v2.x
+      - name: Deno typechecks without secrets or live API requests
+        run: |
+          deno check --node-modules-dir=auto src/domain/ia-central/vista-pendientes-rubros-mvp299.ts
+          deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-seguimiento/index.ts
+          deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/index.ts
+# Offline synthetic only. No Supabase pilot, OpenAI, WhatsApp, cron or Vercel deploy.

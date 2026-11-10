@@ -1,0 +1,40 @@
+name: Cotironda PILOTO - replay aislado Storage cifrado MVP273
+on:
+  pull_request:
+    branches:
+      - feat/mvp174-supplier-packaging-equivalence
+    paths:
+      - 'scripts/ops/inspect-pilot-storage-tar-mvp273.mjs'
+      - 'scripts/ops/audit-pilot-mobile-storage-mvp273.mjs'
+      - 'tests/unit/mvp273-storage-tar-replay.test.mjs'
+      - 'tests/unit/mvp273-storage-crypto-zip.test.mjs'
+      - '.github/workflows/cotironda-mvp273-storage-restore-check.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-synthetic-archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Real age dependencies for synthetic ZIP only
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq age zip unzip
+          command -v age
+          command -v unzip
+      - name: Verify streaming TAR parser and actual age ZIP fixture
+        env:
+          COTIRONDA_MVP273_REQUIRE_REAL_AGE: 'true'
+        run: |
+          node --check scripts/ops/inspect-pilot-storage-tar-mvp273.mjs
+          node --check scripts/ops/audit-pilot-mobile-storage-mvp273.mjs
+          node --test tests/unit/mvp273-storage-tar-replay.test.mjs tests/unit/mvp273-storage-crypto-zip.test.mjs
+# No credentials, no real archives, no Supabase network, no upload artifacts.

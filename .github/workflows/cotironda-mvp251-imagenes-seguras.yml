@@ -1,0 +1,32 @@
+name: Cotironda — imágenes de presupuestos en revisión privada MVP251
+on:
+  pull_request:
+    branches:
+      - feat/mvp174-supplier-packaging-equivalence
+    paths:
+      - 'supabase/functions/cotironda-piloto-whapi/supplier-source-image-mvp251.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/index.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/private-document-recovery.ts'
+      - 'tests/unit/mvp251-visual-quote-review.test.mjs'
+      - '.github/workflows/cotironda-mvp251-imagenes-seguras.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  image-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Imágenes, SHA, lecturas divergentes, PII, bloqueo de publicación
+        run: >-
+          node --experimental-strip-types --test
+          tests/unit/mvp251-visual-quote-review.test.mjs
+          tests/unit/mvp245-documentos-comerciales-ia-central.test.mjs
+          tests/unit/mvp249-flete-pdf-independiente.test.mjs
+          tests/unit/mvp127-document-ai-recovery.test.mjs

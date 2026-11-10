@@ -4,6 +4,7 @@ import {
  adaptarDocumentoMvp162,centavosFuenteMvp162,cantidadFuenteMvp162
 } from '../../src/domain/adaptador-documental-mvp162.ts';
 import {compararCotizacionesOffline} from '../../src/domain/comparacion-ofertas.ts';
+import {recomendarHastaDosOffline} from '../../src/domain/recomendaciones-mvp160.ts';
 
 const H='a'.repeat(64),M='b'.repeat(64),R='469cb459-5f00-49c2-b0b9-bc8b11e5c900';
 const req={items:[{id:'cemento_001',cantidad:'2',unidad:'bag'}]};
@@ -23,7 +24,7 @@ const terms=()=>({sourceSha256:H,sourceVerified:true,moneda:'ARS',
  pago:'contado',plazoEntregaDias:2,fleteFinal:'0.00',minimoCompraFinal:'0.00',
  tratamientoFlete:'sin_cargo',
  precios:[{lineNo:1,sourceSha256:H,unitarioNetoTrasDescuento:'100.00',
-  ivaExplicito:'21'}]});
+  ivaExplicito:'21',tratamientoIva:'incluido_en_total'}]});
 const run=(d=doc(),m=mapping(),t=terms(),p=req)=>
  adaptarDocumentoMvp162(p,d,m,t);
 
@@ -217,4 +218,158 @@ test('MVP162: BIG BAG explicitamente cotizado como envase se normaliza a bolsa, 
  const bad=run(d,mapping(),terms(),{items:[{id:'cemento_001',cantidad:'2',unidad:'m3'}]});
  assert.equal(bad.estado,'visible_no_comparable');
  assert.ok(bad.motivos.includes('unidad_sin_acreditar'));
+});
+
+
+test('MVP183: dos PDFs parciales verificados pueden cubrir juntos la canasta, sin atribuir cobertura total a ninguno',()=>{
+ const pedido={items:[
+  {id:'cemento_001',cantidad:'2',unidad:'bag'},
+  {id:'arena_001',cantidad:'1',unidad:'bag'}
+ ]};
+ const a=run(doc(),mapping(),terms(),pedido);
+ assert.equal(a.estado,'comparable');
+ assert.deepEqual(a.articulosSinCobertura,['arena_001']);
+ assert.deepEqual(a.motivos,['faltan_articulos']);
+ assert.equal(a.ofertaComparable.items.length,1);
+ assert.equal(compararCotizacionesOffline(pedido,[a.ofertaComparable]).opcionesCompletas.length,0);
+
+ const B='c'.repeat(64),BM='d'.repeat(64);
+ const bdoc=doc();
+ bdoc.anonId='anon_bbb';bdoc.sourceSha256=B;bdoc.messageHmac=BM;
+ bdoc.declaredTotalLiteral='$ 60,50';
+ bdoc.lineas[0]={lineNo:1,descriptionLiteral:'Arena en bolsa',quantityLiteral:'1',
+  unitLiteral:'bolsa',unitPriceLiteral:'$ 50,00',lineTotalLiteral:'$ 60,50'};
+ bdoc.prueba={...bdoc.prueba,sourceSha256:B,messageHmac:BM,
+  sumLineCents:'6050',declaredTotalCents:'6050'};
+ const bmap=[{itemId:'arena_001',lineNo:1,sourceSha256:B,
+  equivalencia:'verificada',disponibilidadCorroborada:true}];
+ const bterms={...terms(),sourceSha256:B,
+  precios:[{lineNo:1,sourceSha256:B,unitarioNetoTrasDescuento:'50.00',ivaExplicito:'21',tratamientoIva:'incluido_en_total'}]};
+ const b=run(bdoc,bmap,bterms,pedido);
+ assert.equal(b.estado,'comparable');
+ assert.deepEqual(b.articulosSinCobertura,['cemento_001']);
+ const result=recomendarHastaDosOffline(pedido,[a.ofertaComparable,b.ofertaComparable]);
+ assert.equal(result.estado,'alternativas_comparables');
+ assert.deepEqual(result.recomendadosAnonimos,['anon_aaa','anon_bbb']);
+ assert.equal(result.opcionPrincipal.totalFinal,'302.50');
+ assert.equal(result.opcionPrincipal.asignacion.length,2);
+ assert.deepEqual(result.cobertura.map(x=>x.lineasCompletas),[1,1]);
+ assert.equal(result.contactosRevelados,false);
+ assert.equal(result.adjudicacion,false);
+});
+
+test('MVP183: parcial sin IVA/flete o disponibilidad NO se vuelve comparable',()=>{
+ const pedido={items:[...req.items,{id:'arena_001',cantidad:'1',unidad:'bag'}]};
+ const noFlete=run(doc(),mapping(),{...terms(),fleteFinal:null},pedido);
+ assert.equal(noFlete.estado,'visible_no_comparable');
+ assert.equal(noFlete.ofertaComparable,null);
+ assert.deepEqual(noFlete.articulosSinCobertura,['arena_001']);
+ assert.ok(noFlete.motivos.includes('condiciones_sin_acreditar'));
+ const noStock=mapping();noStock[0].disponibilidadCorroborada=false;
+ const sinStock=run(doc(),noStock,terms(),pedido);
+ assert.equal(sinStock.estado,'visible_no_comparable');
+ assert.equal(sinStock.ofertaComparable,null);
+ assert.ok(sinStock.motivos.includes('disponibilidad_sin_acreditar'));
+});
+
+test('MVP183: renglones ajenos no clasificados y oferta sin renglones asignados nunca ingresan a ranking',()=>{
+ const pedido={items:[...req.items,{id:'arena_001',cantidad:'1',unidad:'bag'}]};
+ const conExtra=doc();conExtra.lineas.push({
+  lineNo:2,descriptionLiteral:'Pallet',quantityLiteral:'1',unitLiteral:'unidad',
+  unitPriceLiteral:'$ 10,00',lineTotalLiteral:'$ 10,00'
+ });
+ conExtra.prueba.lineCount=2;conExtra.prueba.sumLineCents='25200';
+ conExtra.prueba.declaredTotalCents='25200';conExtra.declaredTotalLiteral='$ 252,00';
+ const a=run(conExtra,mapping(),terms(),pedido);
+ assert.equal(a.estado,'visible_no_comparable');
+ assert.equal(a.ofertaComparable,null);
+ assert.deepEqual(a.lineasNoAsignadas,[2]);
+ assert.ok(a.motivos.includes('extras_sin_clasificar'));
+ const b=run(doc(),[],terms(),pedido);
+ assert.equal(b.estado,'visible_no_comparable');
+ assert.equal(b.ofertaComparable,null);
+ assert.ok(b.motivos.includes('extras_sin_clasificar'));
+});
+
+
+test('MVP184: proveedor expresa 21% FUERA del total; precio base concilia y motor suma IVA solo una vez',()=>{
+ const d=doc();
+ d.declaredTotalLiteral='$ 200,00';
+ d.lineas[0].lineTotalLiteral='$ 200,00';
+ d.prueba.declaredTotalCents='20000';
+ d.prueba.sumLineCents='20000';
+ const t=terms();
+ t.precios[0].tratamientoIva='excluido_del_total';
+ const bridge=run(d,mapping(),t);
+ assert.equal(bridge.estado,'comparable');
+ assert.equal(bridge.fuenteCuadra,true);
+ assert.equal(bridge.ofertaComparable.items[0].precioUnitarioNeto,'100.00');
+ assert.equal(bridge.ofertaComparable.items[0].ivaPorcentaje,'21');
+ const ranked=compararCotizacionesOffline(req,[bridge.ofertaComparable]);
+ assert.equal(ranked.opcionesCompletas[0].materialesConIva,'242.00');
+ assert.equal(ranked.opcionesCompletas[0].totalFinal,'242.00');
+ assert.equal(bridge.contactosRevelados,false);
+});
+
+test('MVP184: base IVA no acreditada se rechaza aun con alícuota explícita',()=>{
+ for(const basis of [null,undefined,'desconocido']){
+  const t=terms();
+  t.precios[0].tratamientoIva=basis;
+  const result=run(doc(),mapping(),t);
+  assert.equal(result.estado,'visible_no_comparable',String(basis));
+  assert.equal(result.ofertaComparable,null);
+  assert.ok(result.motivos.includes('condiciones_sin_acreditar'));
+ }
+ // "Sin IVA" sin alícuota comprobada jamás equivale a 21% por defecto.
+ const d=doc();d.lineas[0].lineTotalLiteral='$ 200,00';
+ d.declaredTotalLiteral='$ 200,00';
+ d.prueba.sumLineCents='20000';d.prueba.declaredTotalCents='20000';
+ const noRate=terms();
+ noRate.precios[0].tratamientoIva='excluido_del_total';
+ noRate.precios[0].ivaExplicito=null;
+ const result=run(d,mapping(),noRate);
+ assert.equal(result.estado,'visible_no_comparable');
+ assert.equal(result.ofertaComparable,null);
+ assert.ok(result.motivos.includes('importe_sin_acreditar'));
+});
+
+test('MVP184: equivocarse de base incluido/excluido NO acredita el importe documental',()=>{
+ const included=terms();
+ included.precios[0].tratamientoIva='excluido_del_total';
+ const a=run(doc(),mapping(),included);
+ assert.equal(a.estado,'visible_no_comparable');
+ assert.ok(a.motivos.includes('importe_no_conciliado'));
+ const d=doc();d.lineas[0].lineTotalLiteral='$ 200,00';
+ d.declaredTotalLiteral='$ 200,00';
+ d.prueba.sumLineCents='20000';d.prueba.declaredTotalCents='20000';
+ const b=run(d,mapping(),terms());
+ assert.equal(b.estado,'visible_no_comparable');
+ assert.ok(b.motivos.includes('importe_no_conciliado'));
+});
+
+test('MVP184: dos artículos del MISMO presupuesto con base IVA distinta se concilian por línea, sin falsificar total',()=>{
+ const d=doc();
+ d.declaredTotalLiteral='$ 260,50';
+ d.lineas[0].lineTotalLiteral='$ 200,00';
+ d.lineas.push({
+  lineNo:2,descriptionLiteral:'Bolsa de arena comercial',
+  quantityLiteral:'1',unitLiteral:'bolsa',unitPriceLiteral:'$ 50,00',
+  lineTotalLiteral:'$ 60,50'
+ });
+ d.prueba.lineCount=2;d.prueba.sumLineCents='26050';
+ d.prueba.declaredTotalCents='26050';
+ const t=terms();
+ t.precios[0].tratamientoIva='excluido_del_total';
+ t.precios.push({lineNo:2,sourceSha256:H,unitarioNetoTrasDescuento:'50.00',
+  ivaExplicito:'21',tratamientoIva:'incluido_en_total'});
+ const order={items:[...req.items,{id:'arena_001',cantidad:'1',unidad:'bag'}]};
+ const mapping2=[...mapping(),{itemId:'arena_001',lineNo:2,sourceSha256:H,
+  equivalencia:'verificada',disponibilidadCorroborada:true}];
+ const result=run(d,mapping2,t,order);
+ assert.equal(result.estado,'comparable');
+ assert.equal(result.ofertaComparable.items.length,2);
+ const comparison=compararCotizacionesOffline(order,[result.ofertaComparable]);
+ assert.equal(comparison.opcionesCompletas[0].totalFinal,'302.50');
+ assert.equal(d.declaredTotalLiteral,'$ 260,50');
+ assert.equal(result.originalesDescargables,false);
 });

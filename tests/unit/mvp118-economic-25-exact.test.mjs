@@ -124,9 +124,11 @@ test('MVP118: 25-item competing 10 suppliers remains bounded, no contacts or pri
  assert.ok(r.opcionesCompletas.length>10);
  assert.equal(r.contactoRevelado,false);
 });
-test('MVP118: cap 26 is rejected and data source is immutable',()=>{
- assert.throws(()=>compararCotizacionesOffline(request(26),[]),
+test('MVP202: guardas físicas 101 y 26 líneas flexibles se informan sin truncar',()=>{
+ assert.throws(()=>compararCotizacionesOffline(request(101),[]),
   /comparacion_entrada_invalida/);
- assert.throws(()=>elegirParExacto25({precios:Array.from({length:26},()=>({a:1n,b:1n})),
+ assert.throws(()=>elegirParExacto25({precios:Array.from({length:101},()=>({a:1n,b:1n})),
    minimoA:0n,minimoB:0n,preferirA:true}),/par_economico_invalido/);
+ assert.throws(()=>elegirParExacto25({precios:Array.from({length:26},()=>({a:1n,b:1n})),
+   minimoA:0n,minimoB:0n,preferirA:true}),/par_economico_complejidad_excedida/);
 });

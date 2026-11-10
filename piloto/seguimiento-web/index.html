@@ -9,13 +9,87 @@
 <main class="card">
 <div class="eyebrow">SEGUIMIENTO PRIVADO</div>
 <h1>Tu ronda de cotizaciones</h1>
-<p class="intro">Acá podés seguir las respuestas de los negocios. Los presupuestos verificados se muestran sin revelar qué comercio los presentó.</p>
+<p class="intro">Durante la ronda, los presupuestos se muestran de manera anónima. Una vez vencido el plazo y cerrada la ronda, se identifican todos los proveedores invitados, hayan cotizado o no. Esto no significa adjudicación.</p>
 <section class="summary" aria-label="Resumen">
 <div><span class="count" id="count" aria-live="polite">—</span><div class="caption">Presupuestos recibidos</div></div>
 <div class="statusbox"><strong id="state" aria-live="polite">Consultando…</strong><p id="deadline"></p></div>
 </section>
 <p class="notice" id="files" aria-live="polite"></p>
 <p class="equivalence" id="equivalence" aria-live="polite"></p>
+<section id="previewSection" class="preliminar-panel" aria-labelledby="previewHeading" hidden>
+<h2 id="previewHeading">Presupuestos anónimos que ya llegaron</h2>
+<p id="previewCaption" class="preliminar-caption" aria-live="polite"></p>
+<div id="previewGrid" class="preliminar-grid" aria-live="polite"></div>
+<p class="preliminar-note">Los importes son la suma de renglones de materiales con precio verificado. <strong>No representan el total final del presupuesto</strong> ni incluyen cargos adicionales que no estén acreditados en esos renglones. Cuando faltan artículos, el subtotal es parcial. IVA, flete, pago, presentaciones y disponibilidad deben revisarse antes de comparar. No hay posiciones ni ganadores durante la ronda.</p>
+</section>
+<section id="pendingRubrosSection" class="coverage-panel" aria-labelledby="pendingRubrosHeading" hidden>
+<h2 id="pendingRubrosHeading">Respuestas recibidas · precios pendientes de comparar</h2>
+<p id="pendingRubrosCaption" class="coverage-caption" aria-live="polite"></p>
+<div id="pendingRubrosGrid" class="coverage-grid" aria-live="polite"></div>
+<p class="coverage-note">Los materiales indicados son una interpretación inicial de respuestas con origen corroborado, no una oferta económica aprobada. Pueden necesitar verificación de cantidades, equivalencias, moneda o importes. No forman parte del ranking, la selección de negocios ni la adjudicación.</p>
+</section>
+<section id="coverageSection" class="coverage-panel" aria-labelledby="coverageHeading" hidden>
+<h2 id="coverageHeading">Cobertura comercial de los presupuestos</h2>
+<p id="coverageCaption" class="coverage-caption" aria-live="polite"></p>
+<div id="coverageGrid" class="coverage-grid" aria-live="polite"></div>
+<p class="coverage-note">Estas coincidencias comerciales no son un ranking de precios ni garantizan disponibilidad, IVA o flete. Las alternativas sin especificación acreditada se muestran con aclaraciones, nunca como equivalentes exactos.</p>
+</section>
+<section id="itemPricesSection" class="itemprices-panel" aria-labelledby="itemPricesHeading" hidden>
+<h2 id="itemPricesHeading">Cotizaciones de materiales por rubro</h2>
+<p id="itemPricesCaption" class="itemprices-caption" aria-live="polite"></p>
+<div id="itemPricesGrid" class="itemprices-grid" aria-live="polite"></div>
+<p class="itemprices-note">Cada rubro reúne los materiales solicitados y las respuestas anónimas correspondientes. Más abajo podés revisar el presupuesto íntegro de cada comercio, incluso los parciales.</p>
+<p class="itemprices-note">Son importes del presupuesto original asociados a alternativas comerciales. Cuando el documento no aclara IVA se interpretan sin IVA por convención. No son precios finales, equivalencias exactas ni posiciones de un ranking; flete, stock y condiciones pueden cambiar la comparación.</p>
+</section>
+<section id="rubroCompareSection" class="itemprices-panel" aria-labelledby="rubroCompareHeading" hidden>
+<h2 id="rubroCompareHeading">Alternativas por rubro · IA Central</h2>
+<p id="rubroCompareCaption" class="itemprices-caption" aria-live="polite"></p>
+<div id="rubroCompareGrid" class="itemprices-grid" aria-live="polite"></div>
+<p class="itemprices-note">Esta comparación agrupa únicamente artículos con importe acreditado de su presupuesto original. Una oferta puede haber respondido más materiales que los que tienen precio comparable. Las combinaciones de uno o dos comercios muestran cobertura, no un orden por precio ni una adjudicación.</p>
+<p class="itemprices-note">Moneda, IVA, flete y pago no informados siguen sin acreditarse. Que dos presupuestos declaren las mismas condiciones no significa que el total final, la entrega o el stock sean equivalentes.</p>
+</section>
+<section id="economicReadinessSection" class="economy-panel" aria-labelledby="economicReadinessHeading" hidden>
+<h2 id="economicReadinessHeading">Condiciones de cada presupuesto</h2>
+<p id="economicReadinessCaption" class="economy-caption" aria-live="polite"></p>
+<div id="economicReadinessGrid" class="economic-readiness-grid" aria-live="polite"></div>
+<p class="economy-note">El IVA no informado se toma como precio SIN IVA por convención comercial, no como IVA 0%. Un importe declarado no significa que el material esté disponible ni que los fletes estén incluidos. La información no adjudica ni establece ganadores.</p>
+</section>
+<section id="materialBasketsSection" class="economy-panel" aria-labelledby="materialBasketsHeading" hidden>
+<h2 id="materialBasketsHeading">Referencias de costo de materiales</h2>
+<p id="materialBasketsCaption" class="economy-caption" aria-live="polite"></p>
+<div id="materialBasketsGrid" class="economic-readiness-grid" aria-live="polite"></div>
+<p class="economy-note">Únicamente se calculan canastas completas a partir de importes verificados del documento original, con moneda expresamente acreditada. Son subtotales de materiales interpretados sin IVA cuando no se informó; NO incluyen flete, impuestos calculados, stock, mínimos ni pago. No son un precio final, un ranking definitivo ni una adjudicación. Podés revisar TODOS los presupuestos, incluidos los parciales.</p>
+</section>
+<section id="pricedCoverageSection" class="itemprices-panel" aria-labelledby="pricedCoverageHeading" hidden>
+<h2 id="pricedCoverageHeading">Artículos con importe comprobado por oferta</h2>
+<p id="pricedCoverageCaption" class="itemprices-caption" aria-live="polite"></p>
+<div id="pricedCoverageGrid" class="itemprices-grid" aria-live="polite"></div>
+<p class="itemprices-note">Solo se cuentan renglones del presupuesto cuya referencia de precio está vinculada a la fuente verificada. Una combinación puede cubrir la lista con importes, pero no demuestra cuál cuesta menos: IVA, flete, forma de pago, disponibilidad y mínimos siguen pendientes de normalizar. No hay ganadores ni compras obligatorias.</p>
+</section>
+<section id="economySection" class="economy-panel" aria-labelledby="economyHeading" hidden>
+<h2 id="economyHeading">Qué falta para comparar precios</h2>
+<p id="economyCaption" class="economy-caption" aria-live="polite"></p>
+<div id="economyGrid" class="economy-grid" aria-live="polite"></div>
+<p class="economy-note">Son observaciones de los documentos, no condiciones cobradas ni falta de stock. No modifican lo cotizado. Hasta verificar impuestos, entregas y artículos equivalentes, no hay un orden económico confiable.</p>
+</section>
+<section id="coverageOptionsSection" class="coverage-options-panel" aria-labelledby="coverageOptionsHeading" hidden>
+<h2 id="coverageOptionsHeading">Alternativas comerciales para cubrir el pedido</h2>
+<p id="coverageOptionsCaption" class="coverage-options-caption" aria-live="polite"></p>
+<div id="coverageOptionsCounts" class="coverage-options-counts" aria-live="polite"></div>
+<div id="coverageOptionsGrid" class="coverage-options-grid" aria-live="polite"></div>
+<p class="coverage-options-note">Estas combinaciones se muestran solo al cerrar la ronda y reflejan posibles coberturas de materiales, no posiciones de precio, ganadores ni disponibilidad confirmada. Las presentaciones y especificaciones deben verificarse antes de elegir. Podés evaluar todas las ofertas, incluso las parciales que no formen una combinación completa.</p>
+</section>
+<section id="orientacionSection" class="coverage-options-panel" aria-labelledby="orientacionHeading" hidden>
+<h2 id="orientacionHeading">Sugerencias de cobertura para revisar</h2>
+<p id="orientacionCaption" class="coverage-options-caption" aria-live="polite"></p>
+<div id="orientacionGrid" class="coverage-options-grid" aria-live="polite"></div>
+<p class="coverage-options-note">Estas sugerencias se basan únicamente en posibles coincidencias comerciales de materiales. No representan un ranking económico, equivalencias técnicas definitivas, disponibilidad garantizada ni una adjudicación. Podés evaluar todos los presupuestos.</p>
+</section>
+<section id="resultsSection" class="results-panel" aria-labelledby="resultsHeading" hidden>
+<h2 id="resultsHeading">Resultados de la ronda</h2>
+<p id="resultsCaption" aria-live="polite"></p>
+<p class="results-note">Podés evaluar todas las ofertas habilitadas, sean completas o parciales. Los totales de pedidos con distinta cobertura no son comparables. Cotironda no te obliga a comprarle a los negocios destacados.</p>
+</section>
 <div id="offers" aria-live="polite"></div>
 <div id="receipts" aria-live="polite"></div>
 <div id="finalists" aria-live="polite"></div>

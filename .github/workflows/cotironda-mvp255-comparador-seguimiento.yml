@@ -1,0 +1,38 @@
+name: Cotironda etapa 4 — comparador privado Edge a Vercel a DOM MVP255
+on:
+  pull_request:
+    branches:
+      - feat/mvp174-supplier-packaging-equivalence
+    paths:
+      - 'src/domain/ia-central/opciones-cobertura-rubros-mvp254.ts'
+      - 'src/domain/ia-central/resumen-comparador-rubros-mvp255.ts'
+      - 'supabase/functions/cotironda-piloto-seguimiento/index.ts'
+      - 'piloto/seguimiento-web/api/estado.js'
+      - 'piloto/seguimiento-web/site.js'
+      - 'piloto/seguimiento-web/index.html'
+      - 'tests/unit/mvp255-seguimiento-comparador-rubros.test.mjs'
+      - '.github/workflows/cotironda-mvp255-comparador-seguimiento.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  comparador-privado:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: 'Etapa 4: comparar solo importes autorizados y probar revocación de enlace'
+        run: >-
+          node --experimental-strip-types --test
+          tests/unit/mvp255-seguimiento-comparador-rubros.test.mjs
+          tests/unit/mvp254-comparador-rubros.test.mjs
+          tests/unit/mvp227-vista-rubros-comprador.test.mjs
+          tests/unit/mvp218-rubros-buyer-proxy.test.mjs
+          tests/unit/mvp175-tracking-dom.test.mjs
+          tests/unit/mvp212-enlace-seguimiento-cliente-e2e.test.mjs
+# Contratos en memoria/sintéticos: NO Supabase real, NO WhatsApp ni Vercel deploy.

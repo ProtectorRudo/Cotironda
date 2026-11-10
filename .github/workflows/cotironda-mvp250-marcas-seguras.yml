@@ -1,0 +1,39 @@
+name: Cotironda — marcas comerciales seguras por rubro MVP250
+on:
+  pull_request:
+    paths:
+      - 'supabase/piloto/mvp250_marcas_materiales_seguras_publicador.sql'
+      - 'supabase/tests/ci/mvp250-marcas-materiales-sin-pii.sql'
+      - '.github/workflows/cotironda-mvp250-marcas-seguras.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  brand-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: cotironda_ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: test_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: 'MVP250: marcas de producto y privacidad con SQL real'
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/mvp250-marcas-materiales-sin-pii.sql > /dev/null

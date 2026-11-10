@@ -35,7 +35,7 @@ test('MVP155: asociación tras borrador IA, antes del recibo de presupuesto',()=
  const b=edge.indexOf('cotironda_piloto_autolink_unquoted_media_mvp155',a);
  const c=edge.indexOf('cotironda_piloto_record_supplier_media_mvp098',a);
  assert.ok(a>=0&&b>a&&c>b);
- assert.match(edge,/if\(!quotedId&&verifiedSupplier\)/u);
+ assert.match(edge,/if\(!quotedId&&verifiedSupplier&&!centralSupplier\)/u);
 });
 test('MVP155: acceso privado y no publicar resultados comerciales por atribución',()=>{
  assert.match(sql,/security definer set search_path=''/u);

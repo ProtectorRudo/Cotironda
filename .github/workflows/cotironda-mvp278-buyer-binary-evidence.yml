@@ -1,0 +1,52 @@
+name: Cotironda IA Central - atestado PDF Office doble SHA MVP278
+on:
+  pull_request:
+    branches:
+      - feat/mvp174-supplier-packaging-equivalence
+    paths:
+      - 'supabase/piloto/mvp278_autorizacion_binarios_lectura_independiente.sql'
+      - 'supabase/tests/ci/mvp278-binary-evidence-pg17.sql'
+      - 'supabase/functions/cotironda-piloto-whapi/ai-central-buyer-binary-broker-mvp278.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/index.ts'
+      - 'tests/unit/mvp278-buyer-binary-central-broker.test.mjs'
+      - '.github/workflows/cotironda-mvp278-buyer-binary-evidence.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-identity-and-original-coverage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: test_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Contractual buyer source proof no API keys or network
+        run: node --experimental-strip-types --test tests/unit/mvp278-buyer-binary-central-broker.test.mjs
+      - name: Real PostgreSQL17 synthetic end-to-end from original evidence to dispatch gate
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/mvp278-binary-evidence-pg17.sql >/dev/null
+# Synthetic only. No PILOTO DB connection, WhatsApp, OpenAI or artifacts.

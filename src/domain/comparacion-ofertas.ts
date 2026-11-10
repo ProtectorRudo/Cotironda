@@ -1,4 +1,4 @@
-import {elegirParExacto25} from './comparacion-pares-exacta.ts';
+import {elegirParExacto25,type PrecioPar} from './comparacion-pares-exacta.ts';
 
 /**
  * Cotironda / Etapa 03 - Comparador económico OFFLINE y conservador.
@@ -47,6 +47,9 @@ export type ResultadoComparacion = Readonly<{
   gruposComparables:number;
   limite:'solo_asignacion_de_lineas_completas_sin_fraccionar';
   optimoGlobalGarantizado:false;
+  /** Full pair search or fail-closed on expensive cases; never partial rankings. */
+  comparacionPares:'exhaustiva'|'suspendida_por_complejidad';
+  paresCalculados:number;
   contactoRevelado:false;adjudicacionAutomatica:false;
 }>;
 type Item = {id:string;unidad:UnidadCotizada;q:bigint;cantidad:string};
@@ -57,7 +60,11 @@ type Candidate={ids:string[];assignment:string[];currency:MonedaCotizada;pay:For
 const UNIDADES=new Set<UnidadCotizada>(['unit','bag','box','kg','g','l','ml','m','m2','m3','roll','pack']);
 const PAGO=new Set<FormaPago>(['contado','transferencia','cuenta_corriente_30_dias']);
 const IVA:{[K in IvaExplicito]:bigint}={'0':0n,'10.5':1050n,'21':2100n};
-const MAX_ITEMS=25,MAX_OFERTAS=10,MAX_AMOUNT=1000000000000n; // 10.000 millones ARS (centavos).
+const MAX_ITEMS=100,MAX_OFERTAS=200,MAX_AMOUNT=1000000000000n; // 10.000 millones ARS (centavos).
+// Deterministic CPU ceiling, not a list truncation. At this limit the engine
+// still shows every offer's coverage and comparable individual total, but it
+// suspends ALL pair rankings instead of presenting a deceptive partial search.
+const PAIR_WORK_BUDGET=500000;
 function error():never{throw new TypeError('comparacion_entrada_invalida');}
 function record(x:unknown):x is Record<string,unknown>{
   return x!==null&&typeof x==='object'&&!Array.isArray(x);
@@ -151,13 +158,11 @@ function candidate(items:Item[],qs:Q[],assignment:number[]):Candidate|null{
     total:materials+freight,materials,freight,
     group:[first.moneda,first.formaPago,String(first.plazoEntregaDias)].join('|')};
 }
-/** Exact cheapest whole-line allocation for a supplier PAIR, up to 25 lines.
- * Every economic field must be explicitly verified; otherwise no price option.
- * Used only OFFLINE: it never supplies identities or sends buyer notifications.
- */
-function exactPair(items:Item[],qs:Q[],a:number,b:number):Candidate|null{
- // A one-item basket cannot be divided between two suppliers without
- // splitting the requested quantity. Single-provider candidates remain valid.
+/** Reject obviously incomparable pairs before any expensive allocation.
+ * Up to 100 requested lines: 25 is the MAXIMUM number of lines flexible
+ * between both providers, not a limit on the size of the buyer's request. */
+function pairInputs(items:Item[],qs:Q[],a:number,b:number):
+ {prices:readonly PrecioPar[];work:number|null}|null {
  if(items.length<2)return null;
  const left=qs[a],right=qs[b],x=left.src,y=right.src;
  if(!x.confirmada||!y.confirmada||
@@ -165,19 +170,28 @@ function exactPair(items:Item[],qs:Q[],a:number,b:number):Candidate|null{
    x.formaPago!==y.formaPago||x.plazoEntregaDias===null||
    x.plazoEntregaDias!==y.plazoEntregaDias||
    left.flete===null||right.flete===null||
-   left.minimo===null||right.minimo===null)
-  return null;
- const prices=items.map(item=>{
+   left.minimo===null||right.minimo===null)return null;
+ const prices:PrecioPar[]=items.map(item=>{
   const la=validLine(left,item),lb=validLine(right,item);
   const pa=la&&la.disponible>=item.q?linePrice(la,item.q):null;
   const pb=lb&&lb.disponible>=item.q?linePrice(lb,item.q):null;
   return {a:pa,b:pb};
  });
+ // A missing article is never filled from a third supplier or price 0.
+ if(prices.some(p=>p.a===null&&p.b===null))return null;
+ const flex=prices.filter(p=>p.a!==null&&p.b!==null).length;
+ // Include linear output cost as well: 200 suppliers × 100 lines with
+ // forced pair allocations would otherwise generate millions of results.
+ return {prices,work:flex>25?null:2**Math.ceil(flex/2)+items.length*5};
+}
+/** Exact allocation for a pair with at most 25 FLEXIBLE lines; other
+ * requested lines may be forced to one provider. No price approximation. */
+function exactPair(items:Item[],qs:Q[],a:number,b:number,
+ prices:readonly PrecioPar[]):Candidate|null {
  const assignment=elegirParExacto25({precios:prices,
-  minimoA:left.minimo,minimoB:right.minimo,
-  preferirA:x.anonId<y.anonId});
- if(assignment===null)return null;
- return candidate(items,qs,assignment.map(useA=>useA?a:b));
+  minimoA:qs[a].minimo as bigint,minimoB:qs[b].minimo as bigint,
+  preferirA:qs[a].src.anonId<qs[b].src.anonId});
+ return assignment===null?null:candidate(items,qs,assignment.map(useA=>useA?a:b));
 }
 
 export function compararCotizacionesOffline(pedido:PedidoComparable,
@@ -232,17 +246,32 @@ export function compararCotizacionesOffline(pedido:PedidoComparable,
   for(let a=0;a<qs.length;a++){
     const c=candidate(items,qs,items.map(()=>a));if(c)candidates.push(c);
   }
-  // Min-cost TWO-supplier assignment with separate minimum purchase limits.
-  // Exact meet-in-the-middle search (bounded to 25 non-splittable lines).
-  // It finds the cheapest valid pair allocation without evaluating 2^25 masks.
-  for(let a=0;a<qs.length;a++)for(let b=a+1;b<qs.length;b++){
-    const best=exactPair(items,qs,a,b);
+  // All-pairs preflight first. If the total estimated work is excessive,
+  // withhold EVERY pair result and rank rather than ignoring "late" providers.
+  let pairWork=0,pairsExhaustive=true,paresCalculados=0;
+  pairPreflight:for(let a=0;a<qs.length;a++){
+   for(let b=a+1;b<qs.length;b++){
+    const input=pairInputs(items,qs,a,b);
+    if(!input)continue;
+    if(input.work===null||pairWork+input.work>PAIR_WORK_BUDGET){
+     pairsExhaustive=false;break pairPreflight;
+    }
+    pairWork+=input.work;
+   }
+  }
+  if(pairsExhaustive){
+   for(let a=0;a<qs.length;a++)for(let b=a+1;b<qs.length;b++){
+    const input=pairInputs(items,qs,a,b);
+    if(!input||input.work===null)continue;
+    paresCalculados++;
+    const best=exactPair(items,qs,a,b,input.prices);
     if(best)candidates.push(best);
+   }
   }
   const groupCounts=new Map<string,number>();
   for(const c of candidates)groupCounts.set(c.group,(groupCounts.get(c.group)??0)+1);
   candidates.sort((a,b)=>a.group.localeCompare(b.group)||
-    (a.total<b.total?-1:a.total>b.total?1:0)||
+    (pairsExhaustive?(a.total<b.total?-1:a.total>b.total?1:0):0)||
     a.ids.join('|').localeCompare(b.ids.join('|'))||
     a.assignment.join('|').localeCompare(b.assignment.join('|')));
   let lastGroup='',lastTotal:bigint|null=null,rank=0;
@@ -258,11 +287,15 @@ export function compararCotizacionesOffline(pedido:PedidoComparable,
       moneda:c.currency,formaPago:c.pay,plazoEntregaDias:c.days,totalFinal:money(c.total),
       materialesConIva:money(c.materials),fletesFinal:money(c.freight),
       grupoCondiciones:c.group,
-      puestoDentroDeCondiciones:(groupCounts.get(c.group)??0)>1?rank:null,
+      puestoDentroDeCondiciones:pairsExhaustive&&
+        (groupCounts.get(c.group)??0)>1?rank:null,
       ...(warnings.length?{advertencias:warnings}:{})};
   });
   return {estado:'comparacion_offline_sin_adjudicacion',cobertura:coverage,
     opcionesCompletas:options,gruposComparables:groupCounts.size,
     limite:'solo_asignacion_de_lineas_completas_sin_fraccionar',
-    optimoGlobalGarantizado:false,contactoRevelado:false,adjudicacionAutomatica:false};
+    optimoGlobalGarantizado:false,
+    comparacionPares:pairsExhaustive?'exhaustiva':'suspendida_por_complejidad',
+    paresCalculados,
+    contactoRevelado:false,adjudicacionAutomatica:false};
 }

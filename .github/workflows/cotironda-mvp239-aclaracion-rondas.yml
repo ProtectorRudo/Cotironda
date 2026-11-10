@@ -1,0 +1,54 @@
+name: Cotironda IA Central — aclaración segura de rondas MVP239
+on:
+  pull_request:
+    paths:
+      - 'supabase/piloto/mvp239_aclarar_ronda_con_cita_whapi.sql'
+      - 'supabase/tests/ci/mvp239_aclaracion_ronda_pg17.sql'
+      - 'supabase/functions/cotironda-piloto-whapi/ai-supplier-clarification-mvp239.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/index.ts'
+      - 'tests/unit/mvp239-aclaracion-ronda.test.mjs'
+      - '.github/workflows/cotironda-mvp239-aclaracion-rondas.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  selection:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+      - name: 'MVP239: intención explícita y mensaje sin datos privados'
+        run: node --experimental-strip-types --test tests/unit/mvp239-aclaracion-ronda.test.mjs
+  sql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: cotironda_ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: test_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: 'MVP239: aclaración con ID original sin cruzar proveedor o presupuesto'
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/mvp239_aclaracion_ronda_pg17.sql

@@ -53,7 +53,10 @@ test('MVP147: no ocultar material sin identificar ni confundir saludo por un ped
 });
 test('MVP147: solo pedidos completamente comprobados omiten gasto/decisión de IA',()=>{
  const edge=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/index.ts',import.meta.url),'utf8');
- assert.match(edge,/if\(row\.type==='text'&&!webLinkCode&&\s*!canPrepareBuyerPilot\(local\)&&\s*Deno\.env\.get\('COTIRONDA_PILOT_AI_ENABLED'\)==='true'\)/u);
- assert.match(edge,/p_items:canPrepareBuyerPilot\(parsed\)\?parsed\.items:null/u);
+ assert.match(edge,/if\(row\.type==='text'&&!webLinkCode&&!centralBuyerText&&\s*!buyerReviewCommand&&!buyerLinkCommand&&!canPrepareBuyerPilot\(local\)&&\s*Deno\.env\.get\('COTIRONDA_PILOT_AI_ENABLED'\)==='true'\)/u);
+ // La confirmación nunca se envía a IA ni se acepta como un material nuevo.
+ assert.match(edge,/const buyerReviewCommand=row\.type==='text'&&esRespuestaConfirmacionMvp279\(body\)/u);
+ assert.match(edge,/p_items:!centralBuyerText&&canPrepareBuyerPilot\(parsed\)\?parsed\.items:null/u);
+ assert.match(edge,/const centralBuyerText=centralConfigured/u);
  assert.match(edge,/cotironda_piloto_receive_whapi_v1/u);
 });

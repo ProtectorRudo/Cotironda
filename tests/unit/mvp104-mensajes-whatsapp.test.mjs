@@ -18,7 +18,7 @@ test('MVP104: buyer gets tracking for image/PDF immediately or after clarificati
  assert.match(edge,/ready\.data\?\.state==='prepared'/);
  assert.match(edge,/cotironda_piloto_issue_tracking_mvp091/);
  assert.match(edge,/Cotironda ya tiene los datos de tu pedido/);
- assert.match(edge,/cotironda-piloto-seguimiento#/);
+ assert.match(edge,/crearEnlacePrivadoSeguimientoMvp212\(token\)/);
 });
 test('MVP104: both text/media supplier ACK only after a stored quote',()=>{
  assert.match(edge,/supplierAckMode='text_quote'/);

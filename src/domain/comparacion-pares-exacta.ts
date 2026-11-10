@@ -1,7 +1,8 @@
 /**
  * Cotironda: exact (not heuristic) indivisible-line assignment to TWO suppliers.
- * Meet-in-the-middle, offline and pure. 25 lines => at most 2^13 states/half,
- * rather than 2^25 candidate evaluations per supplier pair.
+ * Meet-in-the-middle, offline and pure. At most 25 FLEXIBLE lines =>
+ * 2^13 states per half, even if the request has 100 lines and the rest are
+ * necessarily assigned to a particular supplier.
  *
  * All prices are already source-confirmed CENTS including explicit line VAT.
  * Freight is constant per used supplier and is handled by the caller; minimum
@@ -49,7 +50,7 @@ export function elegirParExacto25(args:Readonly<{
  precios:readonly PrecioPar[];minimoA:bigint;minimoB:bigint;preferirA:boolean;
 }>):readonly boolean[]|null{
  if(!args||!Array.isArray(args.precios)||args.precios.length<2||
-    args.precios.length>25||typeof args.minimoA!=='bigint'||
+    args.precios.length>100||typeof args.minimoA!=='bigint'||
     typeof args.minimoB!=='bigint'||args.minimoA<0n||args.minimoB<0n||
     typeof args.preferirA!=='boolean')
   throw new TypeError('par_economico_invalido');
@@ -66,6 +67,9 @@ export function elegirParExacto25(args:Readonly<{
   else if(a===null){forcedB+=b;forceHasB=true;base[i]=false}
   else flex.push({index:i,a,b});
  }
+ // Bound exponential work by flexible-line count, never by a silent
+ // truncation of the original request or the suppliers' submissions.
+ if(flex.length>25)throw new TypeError('par_economico_complejidad_excedida');
  const middle=Math.floor(flex.length/2);
  const firstItems=flex.slice(0,middle),secondItems=flex.slice(middle);
  const fst=enumerate(firstItems,args.preferirA);

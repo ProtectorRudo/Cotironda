@@ -1,0 +1,64 @@
+name: Cotironda IA Central etapa 6 - memoria protegida en proveedor MVP260
+on:
+  pull_request:
+    branches:
+      - feat/mvp174-supplier-packaging-equivalence
+    paths:
+      - 'supabase/piloto/mvp260_memory_broker_bridge.sql'
+      - 'supabase/tests/ci/mvp260-memory-broker-pg17.sql'
+      - 'supabase/functions/cotironda-piloto-whapi/ai-central-memory-mvp260.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/ai-central-supplier-mvp227.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/index.ts'
+      - 'tests/unit/mvp260-ia-central-memory-bridge.test.mjs'
+      - '.github/workflows/cotironda-mvp260-memory-broker.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pg17-alcance-memoria:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: test_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: 'MVP260: aislar 2 empresas, revisión y vinculación idempotente'
+        run: >-
+          psql -X -v ON_ERROR_STOP=1
+          -f supabase/tests/ci/mvp260-memory-broker-pg17.sql
+  no-precios-desde-memoria:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: 'MVP260: flag OFF, precios del documento, contexto y revision'
+        run: >-
+          node --experimental-strip-types --test
+          tests/unit/mvp260-ia-central-memory-bridge.test.mjs
+          tests/unit/mvp227-recepcion-presupuesto-evaluado.test.mjs
+          tests/unit/mvp259-memoria-comercial-aislada.test.mjs
+# No llama OpenAI, Whapi, Vercel ni Supabase real.

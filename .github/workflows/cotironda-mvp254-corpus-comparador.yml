@@ -1,0 +1,49 @@
+name: Cotironda — validación offline etapas 1–3 e inicio etapa 4 MVP254
+on:
+  pull_request:
+    branches:
+      - feat/mvp174-supplier-packaging-equivalence
+    paths:
+      - 'src/domain/ia-central/contrato-v1.ts'
+      - 'src/domain/ia-central/calificador-cotizaciones-mvp225.ts'
+      - 'src/domain/ia-central/opciones-cobertura-rubros-mvp254.ts'
+      - 'tests/unit/mvp254-*.test.mjs'
+      - '.github/workflows/cotironda-mvp254-corpus-comparador.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  corpus-123:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: 336 escenarios sintéticos de lectura, más ruteo y asociación
+        run: >-
+          node --experimental-strip-types --test
+          tests/unit/mvp254-corpus-etapas-123.test.mjs
+          tests/unit/ia-central-etapas-123-integradas.test.mjs
+          tests/unit/mvp216-ia-central-rubros.test.mjs
+          tests/unit/mvp225-asociacion-calificacion-rubros.test.mjs
+  comparador-etapa-4:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Cobertura por rubro y hasta dos proveedores anónimos sin ranking engañoso
+        run: >-
+          node --experimental-strip-types --test
+          tests/unit/mvp254-comparador-rubros.test.mjs
+          tests/unit/mvp225-asociacion-calificacion-rubros.test.mjs
+          tests/unit/mvp245-documentos-comerciales-ia-central.test.mjs
+# No llama APIs externas, no publica cotizaciones, no envía WhatsApps.
