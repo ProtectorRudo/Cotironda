@@ -1,3 +1,9 @@
+## 10/11/2026 — MVP335 publicado en piloto, Whapi Edge v74
+
+- Publicado `cotironda-piloto-whapi` v74 `ACTIVE` en Supabase `cotironda-piloto`. Comparación criptográfica de 61 archivos del paquete, 1 índice modificado y digest exacto `3df77172138e27689123080335e65f2da111a14caac0b2a8034978435371f063` tras despliegue.
+- Eliminada la dependencia redundante del secreto booleano `COTIRONDA_PILOT_BUYER_AUTO_RELEASE_MVP306_ENABLED` para no generar más `CONFIRMAR COTI`. Gate SQL MVP306 sigue siendo autoridad positiva de publicación, con comprobaciones de origen, comprador y proveedores.
+- Conservado el secreto del webhook obligatorio y agregado diagnóstico interno `missing`/`invalid_length`. **El error 503 registrado en v73 no se considera recuperado** hasta probar nueva recepción firmada; sin reintentos, sin mensajes enviados, sin migraciones. Snapshot postdeploy: 32 inbox, 6 rondas, 0 publicaciones automáticas, 0 envíos inciertos. [Acta 469](docs/469-mvp335-v74-publicacion-verificada-piloto.md).
+
 ## 09/11/2026 — MVP335: candidato de corrección, SOLO desarrollo
 
 - Evidencia real: sexta ronda correctamente interpretada y roteada a dos proveedores, pero `draft` con revisión WhatsApp de comprador; solicitud posterior no capturada debido a 503 `webhook_secret` del Edge v73. No atribuir la falla al cliente ni a la caducidad del token Whapi sin evidencia.
