@@ -27,7 +27,7 @@ BEGIN
  -- Synthetic-only reset of successful MVP340 row, inside ROLLBACK.
  DELETE FROM cotironda_piloto_privado.ai_supplier_lot_ledger_mvp340
  WHERE source_hmac=v_source;
- SELECT a.content_sha256,a.mime,a.size_bytes,a.storage_path,
+ SELECT a.content_sha256,a.mime,a.size_bytes,a.storage_path,a.proposal,
   m.chat_hmac,m.participant_key
  INTO v_archive
  FROM cotironda_piloto_privado.media_archive_mvp095 a
@@ -53,6 +53,18 @@ BEGIN
  IF (public.cotironda_piloto_source_for_lots_mvp341(repeat('f',64)))->>'state'<>'not_eligible'
  OR (public.cotironda_piloto_source_for_lots_mvp341('invalid')) ->>'state'<>'not_eligible'
  THEN RAISE EXCEPTION 'mvp341_unknown_source_allowed';END IF;
+
+ -- Not every archived attachment is a supplier quote. The model draft
+ -- must explicitly classify it as supplier_quote before any lot analysis.
+ UPDATE cotironda_piloto_privado.media_archive_mvp095
+ SET proposal=pg_catalog.jsonb_set(proposal,'{kind}',
+  '"unrelated_attachment"'::jsonb,true)
+ WHERE message_hmac=v_source;
+ v_result:=public.cotironda_piloto_source_for_lots_mvp341(v_source);
+ IF v_result->>'state'<>'not_eligible'
+ THEN RAISE EXCEPTION 'mvp341_non_quote_attachment_allowed';END IF;
+ UPDATE cotironda_piloto_privado.media_archive_mvp095
+ SET proposal=v_archive.proposal WHERE message_hmac=v_source;
 
  UPDATE cotironda_piloto_privado.participants
  SET opted_out_at=pg_catalog.clock_timestamp()
