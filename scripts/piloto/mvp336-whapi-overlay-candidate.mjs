@@ -19,7 +19,7 @@ const newImport="from './supplier-auto-correlation-mvp336.ts';";
 const sha256=s=>createHash('sha256').update(s,'utf8').digest('hex');
 const gitBlob=text=>{
  const bytes=Buffer.from(text,'utf8');
- return createHash('sha1').update('blob '+bytes.length+'\\0').update(bytes).digest('hex');
+ return createHash('sha1').update('blob '+bytes.length+String.fromCharCode(0)).update(bytes).digest('hex');
 };
 export function prepararMvp336Overlay({root=ROOT,source}={}){
  const prior=inspeccionarWebhookMvp332(root);
