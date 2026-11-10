@@ -1,0 +1,50 @@
+name: MVP334 - Preflight de 2 proveedores sin envios
+on:
+  pull_request:
+    branches:
+      - feat/mvp174-supplier-packaging-equivalence
+    paths:
+      - 'scripts/piloto/mvp334-dos-proveedores-preflight-readonly.sql'
+      - 'scripts/piloto/mvp334-minimal-two-supplier-decision.mjs'
+      - 'tests/unit/mvp334-two-supplier-readiness.test.mjs'
+      - 'docs/466-mvp334-preflight-dos-proveedores.md'
+      - '.github/workflows/cotironda-mvp334-two-supplier-preflight.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pure-readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Check offline preflight and its read-only SQL
+        run: |
+          set -euo pipefail
+          node --check scripts/piloto/mvp334-minimal-two-supplier-decision.mjs
+          node --check tests/unit/mvp334-two-supplier-readiness.test.mjs
+          node scripts/piloto/mvp334-minimal-two-supplier-decision.mjs
+          node --test tests/unit/mvp334-two-supplier-readiness.test.mjs
+      - name: Preserve previous connectivity fix and bundle baseline
+        run: |
+          set -euo pipefail
+          node --test tests/unit/mvp333-pilot-connectivity.test.mjs
+          node --test tests/unit/mvp332-whapi-rollout-bundle.test.mjs
+      - name: Revalidate two-supplier dispatch and post-dispatch notice
+        run: |
+          set -euo pipefail
+          node --experimental-strip-types --test             tests/unit/mvp306-auto-release-and-supplier-contacts.test.mjs             tests/unit/mvp313-dynamic-recipients.test.mjs             tests/unit/mvp314-batch-dispatch.test.mjs             tests/unit/mvp315-buyer-notice-after-batch.test.mjs
+      - name: Prevent network or mutation in the readiness helpers
+        run: |
+          set -euo pipefail
+          if grep -En 'fetch\(|gate.whapi.cloud|Deno.env|service_role|execute_sql\(|deploy_edge_function\('            scripts/piloto/mvp334-minimal-two-supplier-decision.mjs; then
+            echo 'Readiness helper must not use network, credentials, SQL writes or deployments' >&2
+            exit 1
+          fi
+          test -z "$(git status --porcelain --untracked-files=no)"
+# Solo pruebas y lectura local. No secretos, WhatsApp, Supabase ni despliegues.
