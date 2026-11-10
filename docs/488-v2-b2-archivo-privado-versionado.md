@@ -33,3 +33,11 @@ En Node, falsos API, original sintético PDF, hash/tamaño incorrectos, fuente d
 «Luz verde» autoriza cambios en rama y pruebas sintéticas, no despliegue. Para «Publicalo» se requerirá verificar diferencia exacta contra piloto, migración en orden, rollback seguro, seguridad RLS, bundle/Edge con doble autenticación y una prueba controlada con una sola fuente, sin envíos WhatsApp. Se preserva el beneficio de proveedores gratis y cero pasos extra para comprador/proveedor.
 
 **GitHub fuente de verdad:** README, AGENTS, CHANGELOG, Actas 486–488, PRs #761–#763, Issue #759 y #760.
+## Incidentes prevenidos en CI (no llegaron al piloto)
+
+- **Validación SQL triestado:** el primer test detectó que una condición con `p_candidate->>'document_kind' <> 'supplier_quote'` evaluaba `UNKNOWN` cuando faltaba la clave, y aceptaba `{}`. Se reemplazó por comprobaciones secuenciales con `IS DISTINCT FROM`; se agregaron pruebas de JSON sin campos, arrays inexistentes/vacíos y diagnósticos ausentes. En Postgres, **FALSE y UNKNOWN no son equivalentes**.
+- **Escritura de SQL mediante código:** una sustitución JavaScript con una cadena de reemplazo que contenía `$'` (fin de regex + comilla) expandió el sufijo de todo el archivo y elevó su tamaño de ~11 KB a ~52 KB. PostgreSQL17 rechazó el SQL; se reconstruyó desde el commit limpio y se evitó la expansión usando una función como reemplazo, con verificación de longitud y patrón antes de publicar un PR. La migración real NUNCA se ejecutó.
+- **Coherencia de fuente:** se agregó chequeo de HMAC hexadecimal y de `kind` entre archivo, inbox y registro de revisión; los dos PDF reales coincidían (consulta solamente de lectura).
+- **Doble validación:** aun cuando el lector declare `can_publish=false`, el worker verifica otra vez el contrato documental, reconstruye diagnósticos estables y rechaza cualquier propiedad extra o campo malformado antes de guardar su candidata privada.
+
+**Estado de CI tras las correcciones:** pruebas B2 Node **47/47** aprobadas; Deno tipo correcto; PostgreSQL17 de aislamiento del nuevo ledger **aprobado**; suite general Node **3.573 aprobadas, 0 fallidas, 10 omitidas**; PostgREST y verificación web aprobados. Build seguro Next.js todavía en ejecución al redactar esta nota. Todos estos ensayos fueron sintéticos; no se procesaron archivos reales ni se publicó nada.
