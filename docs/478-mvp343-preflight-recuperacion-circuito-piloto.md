@@ -25,6 +25,19 @@ La ronda nueva de 10/11 tiene dos invitaciones con envío aceptado y cero oferta
 
 **Hallazgo:** el PDF no se perdió. El correlador MVP291 exige cantidades con unidad y lo retuvo como ambiguo. MVP336 incorpora evidencia numérica limitada para el caso 15/2/1 versus 20/3, **solo para identificar una ronda**, y un único reintento privado del original archivado. Esa migración todavía no está publicada y no autoriza publicar precios, IVA, flete, unidades o cobertura.
 
+## Verificación adicional del código desplegado (solo lectura)
+
+Consulté el inventario y los archivos de las Edge Functions desplegadas en el proyecto piloto, **sin modificar versiones**:
+
+| Función | Versión real | Archivos / correlador |
+|---|---:|---|
+| cotironda-piloto-whapi | **75** | 61 archivos; importa el módulo histórico supplier-auto-correlation-mvp291.ts, NO MVP336 |
+| cotironda-piloto-auto-recovery | **10** | 25 archivos; contiene el correlador histórico MVP291, NO el módulo nuevo MVP336 |
+
+El paquete candidato local MVP336 agrega un archivo (61 → 62) y cambia únicamente el import previsto en el index, pero **no se ha comparado aún byte a byte** contra el despliegue real; se necesita ese preflight previo a publicación. La evidencia confirma por qué el PDF sigue sin recuperar: el circuito activo no ejecuta MVP336 y la base no tiene su tabla de reintento.
+
+No basta aplicar SQL: hay que mantener sincronizados webhook y trabajador, y comprobar el presupuesto de llamadas de IA, credenciales de host y consentimiento vigente antes de activar el reintento.
+
 ## Dos tracks separados
 
 ### A. Recuperación mínima del circuito existente
