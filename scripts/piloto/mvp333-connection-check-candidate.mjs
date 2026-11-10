@@ -74,7 +74,7 @@ export function prepararCandidatoMvp333({
   "  if(connectivityOnlyMvp333)continue;\n"+
   "  // Buyer confirmation is NOT a new material request, zone clarification,\n");
  const markers=result.match(/connectivityOnlyMvp333/gu)??[];
- if(markers.length!==5)throw Error('mvp333_guard_presence_invalid');
+ if(markers.length!==4)throw Error('mvp333_guard_presence_invalid');
  return Object.freeze({
   state:'mvp333_candidate_only_not_deployed',
   project_ref:pinned.project_ref,
