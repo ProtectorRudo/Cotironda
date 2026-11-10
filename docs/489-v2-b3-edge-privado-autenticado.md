@@ -33,7 +33,7 @@ No dispara un cron nuevo, no envía WhatsApps, no asocia rondas, no publica prec
 
 1. Preflight de la pila de PR #761 → #762 → #763 → B3, auditoría de módulos/versiones, permisos y validación del entorno exacto `cotironda-piloto`.
 2. Aplicar migración B2 **con flag SQL apagado**, desplegar función B3 **aprovechando el flag de recuperación existente, sin nueva variable**, sin tocar cron ni worker MVP292.
-3. Verificar que una llamada sin credenciales da 401 solamente si el flag está encendido; con flag OFF debe responder `shadow_disabled` (503). Nunca mostrar la clave ni pegarla en un chat.
+3. Verificar las dos barreras separadas: con el **flag de recuperación Edge existente ON**, una llamada sin credenciales devuelve 401; con doble autenticación válida y el **flag SQL V2 OFF**, devuelve `shadow_disabled` (503) sin descargar archivos. Nunca mostrar ni pegar credenciales en un chat.
 4. Probar autorización de doble factor y un tick controlado **solo cuando los dos flags estén habilitados expresamente**, con evidencia de lectura del SHA y registro privado de la candidata. No repetir al segundo archivo hasta comprobar exactamente cuál fue el resultado del primero.
 5. Auditar el resultado contra el original PDF por artículo, cantidad y precio antes de cualquier proyección de seguimiento. Sin auditor de fuente V2 no declarar una oferta publicada ni un ranking completo.
 6. Ante cualquier fallo, apagar flags y conservar ledger y originales; no resetear leases ni reactivar el cron de recuperación viejo. No hacer cambios en producción.
@@ -45,3 +45,9 @@ No dispara un cron nuevo, no envía WhatsApps, no asocia rondas, no publica prec
 - Asociación comercial de ronda inequívoca y proyección anónima de líneas verificadas al comprador; cierre con revelación según reglas. No es E2E todavía.
 
 **Reglas:** «Luz verde» = desarrollo/CI, sin merge obligatorio ni publicación. «Publicalo» = despliegue del piloto autorizado, con preflight y pruebas reales. Nunca confundir un HTTP 200, una candidata privada o un programa sintético con un presupuesto acreditado.
+## Hallazgos del CI y prevención de regresiones
+
+- El primer chequeo Deno/Node encontró una colisión de símbolos: una constante del endpoint se llamaba `URL` y ocultaba `globalThis.URL`, por lo que la validación de parámetros lanzaba excepción y devolvía 503 incluso a usuarios de servicio autorizados. Se renombró a `PROJECT_URL` y se añadieron pruebas HTTP de casos reales y maliciosos. Ningún endpoint fue desplegado mientras existía el defecto.
+- La autorización tiene prioridad sobre el diagnóstico de configuración. Si falta una service key, devuelve **401** en vez de exponer un 503 informativo: el test se corrigió, no la seguridad.
+- Se añadió un **ensayo integral sintético** de los componentes reales B3 → worker B2 → Storage privado → verificación SHA → lector Responses con respuesta simulada → escritura RPC privada. Incluye variante de archivo alterado, cola vacía, flag SQL apagado y error upstream. El modelo real no fue invocado.
+- La habilitación independiente de B3 se simplificó para **reutilizar `COTIRONDA_PILOT_AUTO_RECOVERY_MVP292_ENABLED`, ya presente en Supabase**, y `v2_shadow_settings.enabled=false` por defecto. Esto evita pedirle al usuario otra variable/secreto y conserva dos barreras (Edge existente + SQL nuevo). No se activa ni se despliega nada con «Luz verde».
