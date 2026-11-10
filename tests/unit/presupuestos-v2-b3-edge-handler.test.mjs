@@ -10,7 +10,7 @@ const modern='sb_secret_'+ 'm'.repeat(38);
 const legacy=['e'.repeat(24),'y'.repeat(24),'z'.repeat(24)].join('.');
 const api='sk-'+'a'.repeat(40);
 const baseEnv=()=>({
- COTIRONDA_PILOT_V2_SHADOW_ENABLED:'true',
+ COTIRONDA_PILOT_AUTO_RECOVERY_MVP292_ENABLED:'true',
  COTIRONDA_PILOT_AUTO_RECOVERY_SECRET:secret,
  COTIRONDA_PILOT_OPENAI_API_KEY:api,
  COTIRONDA_PILOT_AI_CENTRAL_MODEL:'gpt-6.1-sol',
@@ -77,7 +77,7 @@ test('B3: off by default even with valid credentials, no backend call',async()=>
  for(const value of [undefined,'','false','TRUE','1']){
   const {calls,deps}=setup();
   const env=baseEnv();
-  env.COTIRONDA_PILOT_V2_SHADOW_ENABLED=value;
+  env.COTIRONDA_PILOT_AUTO_RECOVERY_MVP292_ENABLED=value;
   await check(await ejecutarSolicitudSombraV2B3(req(),
    env,deps),503,'shadow_disabled');
   assert.equal(calls.db,0);assert.equal(calls.run,0);
