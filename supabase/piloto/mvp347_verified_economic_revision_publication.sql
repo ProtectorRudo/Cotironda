@@ -152,7 +152,7 @@ begin
  if length(text_) not between 20 and 12000 or
   text_ ~* '(https?://|www[.]|wa[.]me|@[[:alnum:]_]|cuit|cuil|tel[eé]fono|whatsapp|direcci[oó]n|domicilio|contacto|raz[oó]n social|[[:alnum:]_.%+-]+@[[:alnum:].-]+|[0-9]{8,})'
   or text_ ~ '[<>]'
-  or replace(text_,E'\\n','') ~ '[[:cntrl:]]'
+  or replace(text_,E'\n','') ~ '[[:cntrl:]]'
  then return jsonb_build_object('state','privacy_or_quality_review');end if;
  digest_:=encode(sha256(convert_to(candidate::text,'UTF8')),'hex');
  insert into cotironda_piloto_privado.anonymous_supplier_revisions_mvp347(
