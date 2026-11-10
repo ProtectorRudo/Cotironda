@@ -12,6 +12,14 @@ BEGIN
  SELECT pg_catalog.pg_get_functiondef(
   'public.cotironda_piloto_publish_source_text_mvp107(text)'::regprocedure
  ) INTO v_ddl;
+ -- Only synthetic CI diagnostics: boolean invariants, never SQL body or data.
+ RAISE NOTICE 'MVP344 baseline checks: old=% definer=% searchpath=% pii=% arithmetic=% source=%',
+  pg_catalog.length(v_ddl)-pg_catalog.length(pg_catalog.replace(v_ddl,v_old,'')),
+  pg_catalog.strpos(v_ddl,'SECURITY DEFINER')>0,
+  pg_catalog.strpos(v_ddl,'search_path TO ''''')>0,
+  pg_catalog.strpos(v_ddl,'l.description_literal ~*')>0,
+  pg_catalog.strpos(v_ddl,'cotironda_piloto_privado.supplier_amount_checks_mvp103')>0,
+  pg_catalog.strpos(v_ddl,'cotironda_piloto_privado.supplier_source_checks_mvp106')>0;
  IF v_ddl IS NULL
   OR pg_catalog.length(v_ddl)-pg_catalog.length(
    pg_catalog.replace(v_ddl,v_old,'')) <> pg_catalog.length(v_old)
