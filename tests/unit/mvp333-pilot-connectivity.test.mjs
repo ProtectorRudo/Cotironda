@@ -69,7 +69,7 @@ test('MVP333: no legacy classifier or IA Central call for the test',()=>{
  const {source}=prepararCandidatoMvp333();
  assert.match(source,/!webLinkCode&&!centralBuyerText&&\s*!buyerReviewCommand&&!buyerLinkCommand&&!connectivityOnlyMvp333&&/u);
  assert.match(source,/!buyerReviewCommand&&!buyerLinkCommand&&!connectivityOnlyMvp333;/u);
- assert.match(source,/if\(connectivityOnlyMvp333\)continue;/u);
+ assert.match(source,/if\(connectivityOnlyMvp333\)\{connectivityCountMvp333\+\+;continue;\}/u);
 });
 test('MVP333: the inbox is archived BEFORE skipping false review',()=>{
  const {source}=prepararCandidatoMvp333();
