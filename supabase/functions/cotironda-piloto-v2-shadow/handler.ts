@@ -25,7 +25,7 @@ type Db={rpc:(name:string,params:Record<string,unknown>)=>
  storage:{from:(bucket:string)=>{download:(path:string)=>
  Promise<{data:Blob|null;error:unknown}>}}};
 export type EnvV2B3=Readonly<{
- COTIRONDA_PILOT_V2_SHADOW_ENABLED?:string;
+ COTIRONDA_PILOT_AUTO_RECOVERY_MVP292_ENABLED?:string;
  COTIRONDA_PILOT_AUTO_RECOVERY_SECRET?:string;
  COTIRONDA_PILOT_OPENAI_API_KEY?:string;
  COTIRONDA_PILOT_AI_CENTRAL_MODEL?:string;
@@ -69,7 +69,7 @@ export async function ejecutarSolicitudSombraV2B3(
 ):Promise<Response>{
  try{
   if(request.method!=='POST')return json(405,'method_not_allowed');
-  if(env.COTIRONDA_PILOT_V2_SHADOW_ENABLED!=='true')
+  if(env.COTIRONDA_PILOT_AUTO_RECOVERY_MVP292_ENABLED!=='true')
    return json(503,'shadow_disabled');
 
   // Old MVP294 security: exact secret + project service key; modern
