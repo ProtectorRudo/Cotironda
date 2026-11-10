@@ -1,3 +1,9 @@
+## 10/11/2026 — V2 B2: originales archivados con ledger privado versionado (SOLO DESARROLLO)
+
+- Se crea en rama una migración aditiva con flag sombra desactivado, lease único por archivo/versión, RPCs privados con RLS y autenticación `service_role`, sin tocar registros históricos MVP292.
+- Nuevo worker B2 descarga desde el bucket privado, corrobora SHA y tamaño antes del lector V2 B1 y solo persiste candidata privada no verificada con diagnóstico por renglón. Prohibido entregar al comprador o usar en ranking sin auditoría independiente.
+- Auditoría solo lectura: 2 PDF ya archivados cumplen permisos e invitación entregada. No hay relectura real con V2 ni conexión a cron/Edge, y no se modificó Supabase/Whapi/Vercel. Pruebas sintéticas Node/Deno/PG17. [Acta 488](docs/488-v2-b2-archivo-privado-versionado.md).
+
 ## 10/11/2026 — Presupuestos V2 B1: lector multiformato privado (SIN PUBLICAR)
 
 - Nuevo lector en sombra de PDF visual, imágenes, Word, Excel y texto, basado en SHA de bytes archivados y JSON Schema estricto: preserva literales sin completar unidades/precios/moneda/IVA/flete. Resultado **siempre privado/no verificable para ranking**.
