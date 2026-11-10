@@ -14,7 +14,7 @@ BEGIN
  THEN RAISE EXCEPTION 'mvp341_function_acl_failed';END IF;
 
  v_source:=pg_catalog.encode(
-  public.digest('mvp336_document_15_2_1'::text,'sha256'),'hex');
+  pg_catalog.sha256(pg_catalog.convert_to('mvp336_document_15_2_1','UTF8')),'hex');
  SELECT ledger.request_id INTO v_round
  FROM cotironda_piloto_privado.ai_supplier_lot_ledger_mvp340 ledger
  WHERE ledger.source_hmac=v_source;
