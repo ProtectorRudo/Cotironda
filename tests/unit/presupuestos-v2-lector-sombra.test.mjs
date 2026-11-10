@@ -104,6 +104,8 @@ test('V2 B1: XLSX uses correct filename and marks augmentation limitations',asyn
   }));
  assert.equal(r.state,'private_extraction_unverified');
  assert.equal(r.mode,'spreadsheet_augmented');
+ assert.equal(r.code,'spreadsheet_requires_cell_audit');
+ assert.equal(r.completeness,'not_checked');
  assert.equal(r.can_publish,false);
  assert.equal(capture.body.input[1].content[0].filename,
   'cotironda-source.xlsx');
@@ -189,6 +191,7 @@ test('V2 B1: forged MIME, unsupported file and malformed input fail closed',asyn
  for(const [bytes,mime,expected] of [
   [pdf,'image/png','invalid_file'],
   [pdf,'application/octet-stream','unsupported_mime'],
+  [pdf,'toString','unsupported_mime'],
   [txt,'application/pdf','invalid_file'],
   [new Uint8Array([1,2,3]),'application/pdf','invalid_file']
  ]){
