@@ -6,9 +6,18 @@ import {extraerEvidenciaPrivadaMvp338 as extraerCore} from
  '../../src/domain/ia-central/fuente-binaria-privada-mvp338.ts';
 import {readOfficeVisibleRows} from
  '../../supabase/functions/cotironda-piloto-whapi/supplier-source-office.ts';
+import {contieneFormulaXlsxMvp338} from
+ '../../supabase/functions/cotironda-piloto-whapi/guardia-formulas-excel-mvp338.ts';
 const extraerEvidenciaPrivadaMvp338=(source,reader)=>
- extraerCore(source,{readOfficeVisibleRows,
-  ...(reader?{readPdfPositioned:reader}:{})});
+ extraerCore(source,{
+  readOfficeVisibleRows:async original=>{
+   if(original.mime==='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'&&
+      await contieneFormulaXlsxMvp338(original.bytes))
+    throw Error('mvp338_formula_requires_review');
+   return readOfficeVisibleRows(original);
+  },
+  ...(reader?{readPdfPositioned:reader}:{})
+ });
 
 const PDF='application/pdf',XLSX=
  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
@@ -84,6 +93,8 @@ test('MVP338: XLSX real ZIP/XML con 2 hojas visibles y 35 renglones sin truncar'
 test('MVP338: fórmula, macro, Excel oculto y XML externo NO se publican',async()=>{
  const cases=[
   file(XLSX,xlsx([['Cemento $ 100','TOTAL $ 100']],{
+   'xl/worksheets/sheet1.xml':'<worksheet><sheetData><row r="1"><c r="A1"><f>100*2</f><v>200</v></c></row></sheetData></worksheet>'})),
+  file(XLSX,xlsx([['Cemento $ 100','TOTAL $ 100']],{
    'xl/vbaProject.bin':'MALICIOUS_MARKER'})),
   file(XLSX,xlsx([['Cemento $ 100','TOTAL $ 100']],{
    'xl/externalLinks/externalLink1.xml':'external'},false)),
@@ -99,6 +110,16 @@ test('MVP338: fórmula, macro, Excel oculto y XML externo NO se publican',async(
   assert.equal(r.plan,null);
   privateResult(r);
  }
+});
+test('MVP338: Excel con caché de fórmula se retiene sin publicar precio',async()=>{
+ const formula=file(XLSX,xlsx([['Cemento $ 100','TOTAL $ 100']],{
+  'xl/worksheets/sheet1.xml':'<worksheet><sheetData><row r="1"><c r="A1"><f>100*2</f><v>200</v></c></row></sheetData></worksheet>'
+ }));
+ assert.equal(await contieneFormulaXlsxMvp338(formula.bytes),true);
+ const result=await extraerEvidenciaPrivadaMvp338(formula);
+ assert.equal(result.state,'review_required');
+ assert.equal(result.reason,'xlsx_formula_requires_review');
+ privateResult(result);
 });
 test('MVP338: TXT y CSV con bytes reales y decimal AR se mantienen literales',async()=>{
  for(const mime of ['text/plain','text/csv']){
