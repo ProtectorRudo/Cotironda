@@ -18,7 +18,7 @@ El manifiesto MVP332 es archivo inmutable (61 fuentes y SHA256). No se modifica 
 
 - Solo reconoce como test la frase completa «Hola Cotironda, prueba de conexión del piloto.» con tolerancia a mayúsculas, tildes y espacios. Cualquier material anexado invalida el atajo.
 - Se aplica exclusivamente al comprador autenticado que ya participa en IA Central; jamás a un proveedor.
-- Mantiene almacenamiento cifrado, fuente firmada, deduplicación y binding del número. Después de registrar el evento ignora la clasificación del modelo, el aviso erróneo y cualquier publicación de ronda para ese mensaje.
+- Mantiene almacenamiento cifrado, fuente firmada, deduplicación y binding del número. Después de registrar el evento ignora la clasificación del modelo, el aviso erróneo y cualquier publicación de ronda para ese mensaje. Cuando el lote contiene exclusivamente diagnósticos autenticados, el webhook retorna antes del despachador oportunista y de la recuperación en segundo plano; si el lote es mixto, los mensajes comerciales siguen el flujo habitual. Se incorporan dos pruebas para verificar ambos casos.
 - Los saludos generales y los pedidos en lenguaje libre, incluidos materiales, cantidades, marcas, variantes y zona, siguen el flujo normal. No limita vocabulario.
 - No lee ni escribe secretos, no manda Whapi, no toca SQL real, no cambia producción ni Vercel.
 
