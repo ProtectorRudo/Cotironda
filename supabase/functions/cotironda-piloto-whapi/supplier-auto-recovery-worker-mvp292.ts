@@ -62,7 +62,11 @@ export async function procesarPendienteAutomaticoMvp292(args:{
  let code='source_recovery_unavailable';
  let state:WorkerResultMvp292['state']='reconciliation_required';
  try{
-  const claimed=await db('cotironda_piloto_claim_auto_recovery_mvp292');
+  // Prefer never-attempted sources. Only when the queue is empty, consider
+  // one previously reviewed DOCUMENT through a separate, bounded SQL lease.
+  let claimed=await db('cotironda_piloto_claim_auto_recovery_mvp292');
+  if(claimed.state==='empty')
+   claimed=await db('cotironda_piloto_claim_reviewed_auto_recovery_mvp336');
   if(claimed.state!=='claimed')
    return done(claimed.state==='empty'?'empty':'review_required',
     String(claimed.state),0);
@@ -121,6 +125,7 @@ export async function procesarPendienteAutomaticoMvp292(args:{
     enabled:true,webhookAuthenticated:true,sourceHmac:source as string,
     chatHmac:chat as string,
     ...(observations?{textQuote:observations,textSha256:hash as string}:{}),
+    retryReviewedOnce:claimed.retry_reviewed===true,
     apiKey:args.apiKey,model:args.model,rpc:args.rpc
    });
    if(correlated.state==='linked_private'){
