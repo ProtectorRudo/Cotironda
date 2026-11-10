@@ -184,6 +184,8 @@ test('MVP348: recovery cron already bridges to worker, never rotate secret from 
   '../../supabase/functions/cotironda-piloto-document-recovery/index.ts',
   import.meta.url),'utf8');
  assert.match(source,/invokeAutoRecoveryMvp293/u);
+ assert.match(source,/const tick=await invokeAutoRecoveryMvp293\(\{/u);
+ assert.match(source,/cotironda_mvp293_internal_tick/u);
  assert.match(source,/COTIRONDA_PILOT_AUTO_RECOVERY_SECRET/u);
  const jwt=['a'.repeat(32),'b'.repeat(32),'c'.repeat(32)].join('.');
  let invoked=0;
