@@ -68,6 +68,36 @@ BEGIN
  IF reply->>'state'='reserved'
  THEN RAISE EXCEPTION 'mvp340_incomplete_budget_accepted';END IF;
 
+ -- An opted-out supplier/buyer and an undelivered request are never
+ -- eligible. All changes below affect only synthetic transaction fixtures.
+ UPDATE cotironda_piloto_privado.participants
+ SET opted_out_at=clock_timestamp() WHERE key='corralon_ailin';
+ reply:=public.cotironda_piloto_reserve_supplier_lots_mvp340(
+  rid,'corralon_ailin',v_source,chat,source_hash,
+  plan_hash,3,1,2,1024);
+ IF reply->>'state'='reserved'
+ THEN RAISE EXCEPTION 'mvp340_opted_out_supplier_accepted';END IF;
+ UPDATE cotironda_piloto_privado.participants
+ SET opted_out_at=NULL WHERE key='corralon_ailin';
+ UPDATE cotironda_piloto_privado.participants
+ SET opted_out_at=clock_timestamp() WHERE key='arquitecto';
+ reply:=public.cotironda_piloto_reserve_supplier_lots_mvp340(
+  rid,'corralon_ailin',v_source,chat,source_hash,
+  plan_hash,3,1,2,1024);
+ IF reply->>'state'='reserved'
+ THEN RAISE EXCEPTION 'mvp340_opted_out_buyer_accepted';END IF;
+ UPDATE cotironda_piloto_privado.participants
+ SET opted_out_at=NULL WHERE key='arquitecto';
+ UPDATE cotironda_piloto_privado.ai_dispatch_jobs_mvp222
+ SET state='pending' WHERE request_id=rid AND supplier_key='corralon_ailin';
+ reply:=public.cotironda_piloto_reserve_supplier_lots_mvp340(
+  rid,'corralon_ailin',v_source,chat,source_hash,
+  plan_hash,3,1,2,1024);
+ IF reply->>'state'='reserved'
+ THEN RAISE EXCEPTION 'mvp340_undelivered_request_accepted';END IF;
+ UPDATE cotironda_piloto_privado.ai_dispatch_jobs_mvp222
+ SET state='api_accepted' WHERE request_id=rid AND supplier_key='corralon_ailin';
+
  -- Valid source with real linkage, consent and outbound acceptance.
  reply:=public.cotironda_piloto_reserve_supplier_lots_mvp340(
   rid,'corralon_ailin',v_source,chat,source_hash,
