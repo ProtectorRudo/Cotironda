@@ -11,6 +11,7 @@ import {promoteVerifiedSupplierQuote} from './supplier-role-hint.ts';
 import type {DownloadedMedia} from './whapi-media-archive.ts';
 import type {MediaManifest} from './media-intake.ts';
 import {procesarPresupuestoCentralMvp227} from './ai-central-supplier-mvp227.ts';
+import {evaluarMaterialesRecuperadosMvp348} from './supplier-material-fidelity-mvp348.ts';
 
 type Modelo='gpt-6-luna'|'gpt-6.1-sol';
 type Rpc=(name:string,args:Record<string,unknown>)=>Promise<{data:unknown;error:unknown}>;
@@ -27,9 +28,6 @@ export type WorkerResultMvp292=Readonly<{state:
  reason:string;outboundMessages:0;processed:0|1}>;
 const done=(state:WorkerResultMvp292['state'],reason:string,processed:0|1):
  WorkerResultMvp292=>Object.freeze({state,reason,outboundMessages:0,processed});
-const sameMaterials=(a:DocumentDraft,b:DocumentDraft)=>a.lines.length===b.lines.length&&
- a.lines.every((v,i)=>v.original_description===b.lines[i]?.original_description&&
-  v.quantity===b.lines[i]?.quantity&&v.unit===b.lines[i]?.unit);
 async function verifyBytes(bytes:Uint8Array,expected:string):Promise<boolean>{
  const actual=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',Uint8Array.from(bytes).buffer)),
   b=>b.toString(16).padStart(2,'0')).join('');
@@ -116,9 +114,19 @@ export async function procesarPendienteAutomaticoMvp292(args:{
     perspective:'corroboration'
    });
    const second=promoteVerifiedSupplierQuote(reread,true);
-   if(!draft(second)||!sameMaterials(claimed.draft as DocumentDraft,second)){
-    finish='review';code='archived_materials_disagree';state='review_required';
-   }else verifiedSecond=second;
+   if(!draft(second)){
+    finish='review';code='archived_second_draft_invalid';state='review_required';
+   }else{
+    // MVP348: preserve both literal model readings; distinguish unsafe
+    // material/quantity/unit disagreement from harmless format changes.
+    // This gate is only for PRIVATE correlation. Publication still requires
+    // the unmodified MVP102/103/106 and MVP346/347 SHA/source/economic gates.
+    const verdict=evaluarMaterialesRecuperadosMvp348(
+     claimed.draft as DocumentDraft,second);
+    if(!verdict.matched){
+     finish='review';code=verdict.reason;state='review_required';
+    }else verifiedSecond=second;
+   }
   }
   if(observations||verifiedSecond){
    const correlated=await (args.correlate??correlacionAutomaticaMvp291)({

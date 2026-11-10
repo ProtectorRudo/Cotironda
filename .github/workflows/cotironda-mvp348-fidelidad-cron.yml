@@ -1,0 +1,54 @@
+name: Cotironda MVP348 - fidelidad de lecturas y cron existente
+on:
+  pull_request:
+    branches:
+      - feat/mvp347-revision-pdf-publicacion-segura
+    paths:
+      - 'supabase/functions/cotironda-piloto-whapi/supplier-material-fidelity-mvp348.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/supplier-auto-recovery-worker-mvp292.ts'
+      - 'tests/unit/mvp348-fidelidad-y-operacion-cron.test.mjs'
+      - 'docs/484*'
+      - 'docs/485*'
+      - 'README.md'
+      - 'AGENTS.md'
+      - 'CHANGELOG.md'
+      - '.github/workflows/cotironda-mvp348-fidelidad-cron.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  fidelity-node:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Economic and source safety regression (synthetic only)
+        run: |
+          node --experimental-strip-types --test \
+            tests/unit/mvp348-fidelidad-y-operacion-cron.test.mjs \
+            tests/unit/mvp292-archive-auto-recovery.test.mjs \
+            tests/unit/mvp293-scheduled-recovery-bridge.test.mjs \
+            tests/unit/mvp346-revision-economica-privada.test.mjs \
+            tests/unit/mvp347-revision-pdf-publicacion.test.mjs
+  edge-deno:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb
+        with:
+          deno-version: v2.x
+      - name: Typecheck internal recovery and revised material validator
+        run: |
+          deno check --node-modules-dir=auto \
+            supabase/functions/cotironda-piloto-whapi/supplier-material-fidelity-mvp348.ts \
+            supabase/functions/cotironda-piloto-whapi/supplier-auto-recovery-worker-mvp292.ts \
+            supabase/functions/cotironda-piloto-auto-recovery/index.ts
+# No live database, OpenAI, WhatsApp, cron, secrets, or Supabase deployment.
