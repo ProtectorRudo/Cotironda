@@ -74,7 +74,8 @@ export async function cifrarLecturaMvp342(args:{
   throw Error('mvp342_plaintext_size');
  const iv=crypto.getRandomValues(new Uint8Array(12));
  const cipher=new Uint8Array(await crypto.subtle.encrypt({
-  name:'AES-GCM',iv,additionalData:aadLoteMvp342(context),
+  name:'AES-GCM',iv:Uint8Array.from(iv),
+  additionalData:Uint8Array.from(aadLoteMvp342(context)),
   tagLength:128
  },key,raw));
  return Object.freeze({
@@ -92,9 +93,10 @@ export async function descifrarLecturaMvp342(args:{
  if(iv.length!==12||cipher.length<46||cipher.length>43000)
   throw Error('mvp342_envelope_size');
  const clear=new Uint8Array(await crypto.subtle.decrypt({
-  name:'AES-GCM',iv,additionalData:aadLoteMvp342(context),
+  name:'AES-GCM',iv:Uint8Array.from(iv),
+  additionalData:Uint8Array.from(aadLoteMvp342(context)),
   tagLength:128
- },key,cipher));
+ },key,Uint8Array.from(cipher)));
  const sha=hex(new Uint8Array(await crypto.subtle.digest('SHA-256',clear)));
  if(sha!==envelope.sha256)throw Error('mvp342_digest_mismatch');
  const parsed:unknown=JSON.parse(dec.decode(clear));
