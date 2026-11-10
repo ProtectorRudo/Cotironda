@@ -136,7 +136,7 @@ BEGIN
 
  -- No guarantee of token price at SQL level; this reserves max request calls.
  -- A separate per-company billing cap remains necessary before live inference.
- SELECT pg_catalog.coalesce(pg_catalog.sum(max_model_calls),0)
+ SELECT coalesce(pg_catalog.sum(max_model_calls),0)
  INTO v_daily
  FROM cotironda_piloto_privado.ai_supplier_lot_ledger_mvp340
  WHERE supplier_key=p_supplier_key
