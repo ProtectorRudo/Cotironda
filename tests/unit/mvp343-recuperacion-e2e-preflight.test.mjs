@@ -13,7 +13,8 @@ const snapshot=Object.freeze({
  stateReviewedInsufficient:true,recoveryPreviouslyClaimed:false,
  sourceRows:3,unitlessRows:3,eligibleDispatchedRounds:2,
  mvp336SqlPresent:false,liveBackupVerified:false,
- workerAndWebhookSynced:false,explicitPilotPublicationAuthorized:false
+ workerAndWebhookSynced:false,recoveryAiSpendControlled:false,
+ explicitPilotPublicationAuthorized:false
 });
 test('MVP343: paquete de recuperación acotado genera overlay de webhook y PG17 rollback sin publicar',()=>{
  const r=generarPaqueteRecuperacionMvp343();
@@ -54,10 +55,16 @@ test('MVP343: migración sola no autoriza IA, presupuesto ni edición del piloto
   ...snapshot,mvp336SqlPresent:true,liveBackupVerified:true,
   workerAndWebhookSynced:true
  });
- assert.equal(synced.reason,'pilot_publication_not_authorized');
+ assert.equal(synced.reason,'recovery_ai_spend_uncontrolled');
+ const budgeted=evaluarFuenteArchivadaMvp343({
+  ...snapshot,mvp336SqlPresent:true,liveBackupVerified:true,
+  workerAndWebhookSynced:true,recoveryAiSpendControlled:true
+ });
+ assert.equal(budgeted.reason,'pilot_publication_not_authorized');
  const authorized=evaluarFuenteArchivadaMvp343({
   ...snapshot,mvp336SqlPresent:true,liveBackupVerified:true,
-  workerAndWebhookSynced:true,explicitPilotPublicationAuthorized:true
+  workerAndWebhookSynced:true,recoveryAiSpendControlled:true,
+  explicitPilotPublicationAuthorized:true
  });
  assert.equal(authorized.state,'ready_for_one_internal_retry');
  assert.equal(authorized.canBindAutomatically,false);
@@ -121,4 +128,16 @@ test('MVP343: el PDF 15/2/1 de ensayo es UNICO ante 20/3 solo con doble lectura 
  ])},{matches:p.matches.filter(x=>x.candidate==='r1').flatMap(x=>[
   x,{...x,candidate:'r2'}
  ])}).requestId,null);
+});
+
+test('MVP343: autorización de publicación sin medidor del recovery NO dispara IA',()=>{
+ const v=evaluarFuenteArchivadaMvp343({
+  ...snapshot,mvp336SqlPresent:true,liveBackupVerified:true,
+  workerAndWebhookSynced:true,explicitPilotPublicationAuthorized:true,
+  recoveryAiSpendControlled:false
+ });
+ assert.equal(v.state,'blocked');
+ assert.equal(v.reason,'recovery_ai_spend_uncontrolled');
+ assert.equal(v.canBindAutomatically,false);
+ assert.equal(v.needsSupplierAction,false);
 });
