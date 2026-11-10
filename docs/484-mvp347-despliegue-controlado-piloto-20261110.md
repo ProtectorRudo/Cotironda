@@ -1,6 +1,6 @@
 # Acta 484 — Publicación controlada MVP347 en cotironda-piloto
 
-**Fecha:** 10/11/2026. **Autorización:** usuario dijo «Publicalo». **Entorno:** Supabase `cotironda-piloto` (proyecto `ilggkalaafhtiysyzlmg`), NO producción. **Estado:** infraestructura publicada; recuperación real pendiente de invocación interna segura. No declarar E2E completo.
+**Fecha:** 10/11/2026. **Autorización:** usuario dijo «Publicalo». **Entorno:** Supabase `cotironda-piloto` (proyecto `ilggkalaafhtiysyzlmg`), NO producción. **Estado:** infraestructura publicada, cron padre activo y relectura efectuada; cotización aún en revisión. **Fe de erratas comprobada posteriormente:** el cron y el secreto ya existían. No declarar E2E completo. Véase acta 485.
 
 ## Versión exacta instalada
 
@@ -14,7 +14,7 @@
 - `ai_supplier_correlation_retries_mvp336`, `supplier_revision_candidates_mvp346` y `anonymous_supplier_revisions_mvp347` existen.
 - Los RPC nuevos de recuperación y publicación y la función de seguimiento son ejecutables por `service_role`, **no** por `anon` ni `authenticated`.
 - Consulta con token inválido a seguimiento => `not_found`. Intento de publicar una revisión sin candidato/atribución => `not_permitted`. Petición HTTP a Edge sin claves => `401 unauthorized`.
-- Recuento posterior: 2 rondas vigentes, 2 archivos PDF sin vincular; 1 fuente revisable con razón `insufficient_material_evidence` y sin lease, otra ya en revisión por `independent_reads_disagree`. No se han creado candidatas MVP346, publicaciones MVP347 ni reintentos MVP336.
+- Recuento **al instante de la publicación**: 2 rondas vigentes, 2 archivos PDF sin vincular; 1 fuente revisable con razón `insufficient_material_evidence` y sin lease, otra ya en revisión por `independent_reads_disagree`. **Posteriormente, el cron existente ejecutó un intento para el primer PDF y lo dejó en `review/archived_materials_disagree`.** No se han creado candidatas MVP346, publicaciones MVP347 ni reintentos MVP336.
 - Código anterior: CI Node 3.527 casos / 3.517 aprobados / 0 fallidos / 10 omitidos, PG17 Deno y seguridad aprobados; estas son **pruebas sintéticas**, no evidencia de oferta real procesada.
 
 ## Reversión y contingencia
@@ -23,11 +23,16 @@
 - Si hubiera que desactivar la nueva vía de publicación, primero detener el invocador de auto-recovery; restaurar la función SQL de seguimiento desde `supabase/tests/ci/mvp347-tracking-baseline-readonly.sql`, verificando huellas y versión antes de cambiar funciones. Las tablas nuevas son privadas y el SQL fue aditivo. **Nunca hacer DROP** de tablas de candidatos/publicaciones sin verificar que estén vacías y respaldadas. Conservar original, ofertas y enlaces.
 - No se contrató backup pago ni se asumió que GitHub sustituye un respaldo completo de PostgreSQL. La reversión anterior cubre el bundle nuevo y el overlay, no una restauración integral de la base.
 
-## Falta para activar la prueba real
+## Fe de erratas verificada el 10/11/2026: el cron y el secreto YA EXISTÍAN
 
-1. No existe entrada activa de `cron.job` que invoque `cotironda-piloto-auto-recovery`. El cron activo de `document-recovery` es **otro** Edge endpoint. Se necesita un disparo/cron autenticado con la credencial interna y una clave de servidor, sin compartir claves en chat ni pasarlas por frontend. No se desactiva el doble factor.
-2. Ejecutar exactamente un tick autorizado, verificar el lease, la correlación única y los controles económicos de **un** PDF sin crear rondas, enviar WhatsApps o pedir archivos otra vez.
-3. Si la lectura fuente confirma la interpretación, comprobar publicación anónima en el enlace del arquitecto; si hay diferencias, conservar revisión y diagnóstico. Luego Nahuel y cierre de ronda. No anunciar dos presupuestos publicados hasta leer sus registros reales.
-4. Antes de cualquier nueva publicación: monitorear cambios de hash de seguimiento, límite Vercel y estados de candidatos, importes, permisos y cron. El resto del piloto queda operativo sin alterar webhook.
+**Corrección obligatoria que invalida expresamente el diagnóstico original:** no faltaba un cron ni había que crear COTIRONDA_PILOT_AUTO_RECOVERY_SECRET. El cron activo cotironda_piloto_document_recovery_5min llama cada cinco minutos a cotironda-piloto-document-recovery v34. Este último llama internamente a cotironda-piloto-auto-recovery v11 mediante invokeAutoRecoveryMvp293, usando la credencial de servicio y el secreto existente. Supabase registró eventos cotironda_mvp293_internal_tick accepted repetidos de 18:20 a 18:55 UTC.
+
+**El motivo real del bloqueo:** el PDF de tres renglones fue reclamado 18:20:03 UTC y finalizó 18:20:13 UTC con state=review/reason_code=archived_materials_disagree. Otro PDF continúa review/multiple_indistinguishable_rounds. Dos rondas activas, cero candidatas MVP346 y cero publicaciones MVP347. «accepted» en el puente solo significa respuesta HTTP satisfactoria; no acredita oferta publicada.
+
+**Acciones prohibidas a raíz de esta comprobación:** no agregar otro cron, no reemplazar secret, no pedir reenvío de PDF y no resetear el ledger de recuperación. La interfaz avisó que el secreto ya existía; se indicó Cancelar. Ninguna credencial se debe copiar en un chat.
+
+**Siguiente paso real:** mejorar de forma conservadora el cotejo de materiales y motivos de revisión (desarrollo MVP348) y diseñar por separado un reintento controlado para el documento cuyo lease ya fue consumido. El siguiente despliegue requiere «Publicalo», pruebas y fuente verificada. No declarar circuito E2E completado.
+
+**Detalles, evidencia, prevención y consultas de auditoría:** [Acta 485](485-mvp348-incidente-recuperacion-documental-y-cron.md). Esta fe de erratas debe prevalecer sobre toda línea anterior de esta acta que haya sugerido crear un cron/secreto nuevo.
 
 **Observación:** «Publicalo» autorizó este despliegue de pilotaje, no revelación de teléfonos, adjudicación automática ni producción.
