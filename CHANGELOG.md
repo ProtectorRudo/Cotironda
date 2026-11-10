@@ -1,3 +1,9 @@
+## 10/11/2026 — MVP343 mínimo: prioridad de circuito funcional (no publicado)
+
+- Nuevo PR independiente #752 sobre MVP336 #742: preflight offline de recuperación única del archivo ya recibido, sin publicar MVP337–342.
+- La contabilidad fina del costo de IA queda posterior al piloto; el gate conservador de un reintento, integridad del original y la auditoría económica permanecen. Ningún gasto real se calificó como cero.
+- Ensayo sintético del worker MVP292 → relectura PDF → correlación MVP336 (15/2/1 vs 20/3) → revisión comercial sin forzar publicación. Pruebas de divergencia y duplicados, PG17 con ROLLBACK. [Acta 478](docs/478-mvp343-preflight-recuperacion-circuito-piloto.md), [Issue #750](https://github.com/ProtectorRudo/Cotironda/issues/750).
+
 ## 10/11/2026 — MVP336: corrección en desarrollo de asociación de PDFs sin unidades
 
 - Primer documento de Ailín guardado en Supabase (08:19 ART), 3 líneas con cantidades literales 15/2/1; ronda nueva 15/2/1 vs anterior 20/3. Estado real `insufficient_material_evidence`, sin oferta publicada.
