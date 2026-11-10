@@ -15,7 +15,7 @@
 ## Criterios de aceptación
 
 1. La IA propone vínculos de materiales con dos lecturas; una función determinista evalúa si una ronda tiene ventaja comprobable. No se usan precios, posiciones ni «más reciente» como evidencia única.
-2. Si falta unidad, tres renglones de material diferentes y cantidades numéricas literales coincidentes pueden sustentar **solamente la asociación privada** cuando hay una ventaja de al menos cuatro puntos frente a cualquier ronda rival.
+2. Si falta unidad, tres pares de renglones distintos propuestos como correspondientes por dos lecturas independientes, con cantidades numéricas literales coincidentes pueden sustentar **solamente la asociación privada** cuando hay una ventaja de al menos cuatro puntos frente a cualquier ronda rival.
 3. Dos coincidencias, cantidades ausentes, equivalencia de envases contradictoria, empate, lecturas IA divergentes, identidad/canal incorrectos o rondas vencidas **no deben atribuir automáticamente**. La unidad omitida permanece omitida; no hay equivalencias comerciales inferidas.
 4. Una cotización cuyo primer intento quedó en `review/insufficient_material_evidence` puede reexaminarse **una sola vez**, sin reenvío del proveedor. Se conserva la razón original en una tabla de auditoría privada.
 5. Solo el worker interno autorizado puede reservar una fuente archivada, con SHA, remitente/consentimiento, invitación y despacho verificados. La fuente permanece inmutable; no se duplican trabajos ni gastos indefinidamente.
@@ -25,16 +25,17 @@
 
 ## Cambios en desarrollo
 
-- `supplier-auto-correlation-mvp291.ts`: evidencia numérica débil con unidad ausente (2 puntos), aceptable solo con tres concordancias y margen único ampliado. No cambia `corroborarCantidadMvp291` ni inventa unidades.
+- Nuevo `supplier-auto-correlation-mvp336.ts`: evidencia numérica débil con unidad ausente (2 puntos), aceptable solo con tres concordancias y margen único ampliado. No cambia `corroborarCantidadMvp291`, el módulo histórico `supplier-auto-correlation-mvp291.ts` ni inventa unidades. El paquete MVP332 original conserva las mismas huellas.
+- `mvp336-whapi-overlay-candidate.mjs`: aplica la sustitución del import de correlación solamente en memoria sobre el index de MVP335 de hash fijo, comprueba el módulo nuevo y preserva el manifiesto original; no desplega ni altera fuentes originales.
 - `mvp336_recorrelacion_una_vez_sin_unidades.sql`: nueva tabla privada de historial, nuevo claim de documentos previamente revisados y preparación protegida del único reintento. Los RPC MVP291/MVP292 existentes NO se sustituyen.
 - `supplier-auto-recovery-worker-mvp292.ts`: primero atiende fuentes pendientes; si no hay ninguna, intenta la única recuperación elegible, sin mensajes.
 - Pruebas unitarias con caso documentado Ailín 15/2/1; pruebas de rechazos, segundo intento, idempotencia y regresión. Workflow propio para PG17/Deno/Node.
 
 ## Puntos que siguen pendientes
 
-- CI y revisión PR aprobados; ejecución PostgreSQL17 sintética, no real. Un resultado verde **no equivale** a la prueba WhatsApp → presupuesto verificado → seguimiento anónimo.
+- **CI específico MVP336 aprobado:** Node, PostgreSQL17 aislado con ROLLBACK y Deno. Pruebas unitarias generales, workflow MVP291, MVP292 y comprobación del manifiesto MVP332 aprobados. **PR #742 todavía en borrador/sin integrar** y falta revisión final; las pruebas PG17 fueron sintéticas, no sobre la base real. Un resultado verde **no equivale** a la prueba WhatsApp → presupuesto verificado → seguimiento anónimo.
 - Aplicación SQL en `cotironda-piloto` y despliegue sincronizado del worker + webhook requieren nueva orden explícita «Publicalo». Nunca publicar parcialmente por detrás del operador.
-- Verificar si el worker privado `cotironda-piloto-auto-recovery` está habilitado con credenciales actuales. No leer ni exponer valores secretos; no activar costos o cron sin aprobación.
+- Verificar y cotejar primero los archivos desplegados del webhook v75 y del worker privado v10 con el bundle autorizado, porque actualizar solo uno rompería la recuperación. Verificar si el worker `cotironda-piloto-auto-recovery` está habilitado con credenciales actuales. No leer ni exponer valores secretos; no activar costos o cron sin aprobación.
 - El documento real de Ailín permanece en revisión hasta desplegar y validar; no atribuirlo manualmente mientras tanto.
 - No existe respaldo real/restauración verificada; mantener plan de contingencia y evitar mutaciones en vivo antes de un preflight.
 - Una vez autorizado y publicado, inspeccionar solo el estado de la fuente y cada gate: vínculo correcto, cotejo independiente del original, integridad comercial, oferta anónima y ranking sin comparar totales parciales. Registrar resultados reales en otra acta.
