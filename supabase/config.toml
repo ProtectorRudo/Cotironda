@@ -16,3 +16,10 @@ verify_jwt = false
 [functions.cotironda-piloto-document-recovery]
 # Service-to-service only: withSupabase auth secret; never publish this API key.
 verify_jwt = false
+
+[functions.cotironda-piloto-v2-shadow]
+# PRIVATE, manual tick only. Supabase modern sb_secret_ is NOT a JWT.
+# Authorization is checked independently in handler.ts with TWO factors:
+# project service key and existing recovery secret. SQL flag defaults OFF.
+# This entry DOES NOT deploy or enable the Edge function.
+verify_jwt = false

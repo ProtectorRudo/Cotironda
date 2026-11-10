@@ -1,3 +1,9 @@
+## 10/11/2026 — V2 B3: función Edge privada de invocación (SOLO DESARROLLO)
+
+- Nuevo handler + adapter Supabase `cotironda-piloto-v2-shadow` para el worker de relectura V2 B2. Usa autenticación de doble factor ya existente (key de servicio + secreto de recuperación) y habilitación Edge de recuperación ya existente; solo el nuevo flag SQL V2 queda apagado por defecto.
+- Solo POST sin cuerpo ni parámetros; selección de archivo por SQL privado, una sola fuente por ejecución; respuestas sin datos sensibles ni acceso al publicador, WhatsApp o ranking.
+- Tests Node de seguridad HTTP modernos/heredados, Deno del bundle completo y PG17 ROLLBACK, sin ejecutar IA real ni cambiar Supabase. [Acta 489](docs/489-v2-b3-edge-privado-autenticado.md).
+
 ## 10/11/2026 — V2 B2: originales archivados con ledger privado versionado (SOLO DESARROLLO)
 
 - Se crea en rama una migración aditiva con flag sombra desactivado, lease único por archivo/versión, RPCs privados con RLS y autenticación `service_role`, sin tocar registros históricos MVP292.
