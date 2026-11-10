@@ -28,6 +28,9 @@ CREATE TABLE cotironda_piloto_privado.v2_supplier_shadow_runs (
  reason_code text,
  -- PRIVATE, UNVERIFIED extracted literals. Not a buyer-facing offer.
  candidate jsonb,
+ line_diagnostics jsonb,
+ completeness text CHECK(completeness IS NULL OR completeness IN(
+  'not_checked','model_reported_complete','model_reported_incomplete')),
  claimed_at timestamptz NOT NULL DEFAULT clock_timestamp(),
  finished_at timestamptz,
  PRIMARY KEY(source_hmac,processor_version),
@@ -36,10 +39,13 @@ CREATE TABLE cotironda_piloto_privado.v2_supplier_shadow_runs (
  CONSTRAINT v2_shadow_reason_ck
  CHECK(reason_code IS NULL OR reason_code ~ '^[a-z_]{3,60}$'),
  CONSTRAINT v2_shadow_candidate_ck
- CHECK (candidate IS NULL OR (
-  state='candidate_private'
-  AND jsonb_typeof(candidate)='object'
-  AND octet_length(candidate::text)<=250000))
+ CHECK ((candidate IS NULL AND line_diagnostics IS NULL AND completeness IS NULL)
+  OR (state='candidate_private' AND candidate IS NOT NULL
+   AND line_diagnostics IS NOT NULL AND completeness IS NOT NULL
+   AND jsonb_typeof(candidate)='object'
+   AND jsonb_typeof(line_diagnostics)='array'
+   AND octet_length(candidate::text)<=250000
+   AND octet_length(line_diagnostics::text)<=50000))
 );
 ALTER TABLE cotironda_piloto_privado.v2_supplier_shadow_runs ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON cotironda_piloto_privado.v2_supplier_shadow_runs
@@ -144,7 +150,8 @@ END $fn$;
 -- original file; no ranking or anonymous publication exists in this RPC.
 CREATE OR REPLACE FUNCTION public.cotironda_piloto_finish_v2_shadow_b2(
  p_source_hmac text,p_source_sha256 text,p_state text,p_reason_code text,
- p_candidate jsonb DEFAULT NULL)
+ p_candidate jsonb DEFAULT NULL,
+ p_line_diagnostics jsonb DEFAULT NULL,p_completeness text DEFAULT NULL)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
 AS $fn$
 DECLARE v_n int;
@@ -153,19 +160,27 @@ BEGIN
  OR p_source_sha256 IS NULL OR p_source_sha256 !~ '^[a-f0-9]{64}$'
  OR p_state NOT IN('candidate_private','review','uncertain')
  OR p_reason_code IS NULL OR p_reason_code !~ '^[a-z_]{3,60}$'
- OR (p_state<>'candidate_private' AND p_candidate IS NOT NULL)
+ OR (p_state<>'candidate_private' AND (p_candidate IS NOT NULL
+     OR p_line_diagnostics IS NOT NULL OR p_completeness IS NOT NULL))
  THEN RETURN jsonb_build_object('state','invalid');END IF;
  IF p_state='candidate_private' AND
   (p_candidate IS NULL OR jsonb_typeof(p_candidate)<>'object'
    OR octet_length(p_candidate::text)>250000
    OR p_candidate->>'document_kind'<>'supplier_quote'
    OR jsonb_typeof(p_candidate->'lines')<>'array'
-   OR jsonb_array_length(p_candidate->'lines') NOT BETWEEN 1 AND 500)
+   OR jsonb_array_length(p_candidate->'lines') NOT BETWEEN 1 AND 500
+   OR p_line_diagnostics IS NULL
+   OR jsonb_typeof(p_line_diagnostics)<>'array'
+   OR jsonb_array_length(p_line_diagnostics) <> jsonb_array_length(p_candidate->'lines')
+   OR octet_length(p_line_diagnostics::text)>50000
+   OR p_completeness IS NULL OR p_completeness NOT IN(
+    'not_checked','model_reported_complete','model_reported_incomplete'))
  THEN RETURN jsonb_build_object('state','invalid');END IF;
 
  UPDATE cotironda_piloto_privado.v2_supplier_shadow_runs run
  SET state=p_state,reason_code=p_reason_code,
-  candidate=p_candidate,finished_at=clock_timestamp()
+  candidate=p_candidate,line_diagnostics=p_line_diagnostics,
+  completeness=p_completeness,finished_at=clock_timestamp()
  FROM cotironda_piloto_privado.media_archive_mvp095 a
  WHERE run.source_hmac=p_source_hmac
   AND run.processor_version='v2_b2_20261110'
@@ -186,8 +201,8 @@ END $fn$;
 REVOKE ALL ON FUNCTION public.cotironda_piloto_claim_v2_shadow_b2()
  FROM PUBLIC,anon,authenticated;
 REVOKE ALL ON FUNCTION public.cotironda_piloto_finish_v2_shadow_b2(
- text,text,text,text,jsonb) FROM PUBLIC,anon,authenticated;
+ text,text,text,text,jsonb,jsonb,text) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.cotironda_piloto_claim_v2_shadow_b2()
  TO service_role;
 GRANT EXECUTE ON FUNCTION public.cotironda_piloto_finish_v2_shadow_b2(
- text,text,text,text,jsonb) TO service_role;
+ text,text,text,text,jsonb,jsonb,text) TO service_role;
