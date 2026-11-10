@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS cotironda_piloto_privado.ai_supplier_lot_ledger_mvp34
  FOREIGN KEY(request_id,supplier_key)
   REFERENCES cotironda_piloto_privado.invitations(request_id,supplier_key) ON DELETE RESTRICT,
  CHECK(planned_lots >= (planned_rows + 19)/20),
+ CHECK(planned_lots <= planned_rows),
  CHECK(max_model_calls = planned_lots*2),
  CHECK(max_input_chars >= planned_rows*2),
  CHECK(model_calls <= max_model_calls),
@@ -62,6 +63,7 @@ BEGIN
  OR p_total_rows IS NULL OR p_total_rows NOT BETWEEN 1 AND 1200
  OR p_total_lots IS NULL OR p_total_lots NOT BETWEEN 1 AND 60
  OR p_total_lots < (p_total_rows+19)/20
+ OR p_total_lots > p_total_rows
  OR p_max_model_calls IS NULL OR p_max_model_calls<>p_total_lots*2
  OR p_max_input_chars IS NULL OR p_max_input_chars NOT BETWEEN 2 AND 900000
  OR p_max_input_chars<p_total_rows*2
