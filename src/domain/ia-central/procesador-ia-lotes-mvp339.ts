@@ -13,7 +13,7 @@ import {
 } from './ingesta-evidencia-flexible-mvp337.ts';
 
 export type AmbitoMvp339=Readonly<{
- roundId:string;supplierId:string;messageHmac:string;chatHmac:string;
+ roundId:string;supplierKey:string;messageHmac:string;chatHmac:string;
 }>;
 export type PresupuestoMvp339=Readonly<{
  maxModelCalls:number;maxInputChars:number;
@@ -29,7 +29,7 @@ export type SolicitudLectorMvp339=Readonly<{
 }>;
 export type ReservaMvp339=Readonly<{
  state:'reserved'|'already_processed'|'not_eligible';
- sourceSha256?:string;roundId?:string;supplierId?:string;
+ sourceSha256?:string;roundId?:string;supplierKey?:string;
  messageHmac?:string;chatHmac?:string;receipt?:string;
 }>;
 export type FinalizacionMvp339=Readonly<{
@@ -47,6 +47,7 @@ export type ResultadoMvp339=Readonly<{
 const SHA=/^[a-f0-9]{64}$/u;
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 const RECEIPT=/^[A-Za-z0-9_-]{24,128}$/u;
+const SUPPLIER_KEY=/^[a-z][a-z0-9_-]{2,90}$/u;
 const CONTROL=/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/u;
 const result=(state:ResultadoMvp339['state'],reason:string,
  sourceSha256:string|null,totalRows:number,modelCalls=0,
@@ -56,7 +57,7 @@ const result=(state:ResultadoMvp339['state'],reason:string,
  economicPublicationAllowed:false,whatsappMessages:0
 });
 const validScope=(v:AmbitoMvp339):boolean=>!!v&&
- UUID.test(v.roundId)&&UUID.test(v.supplierId)&&
+ UUID.test(v.roundId)&&SUPPLIER_KEY.test(v.supplierKey)&&
  SHA.test(v.messageHmac)&&SHA.test(v.chatHmac);
 function validPlan(p:PlanMvp337):boolean{
  if(p?.state!=='planned'||!SHA.test(p.sourceSha256??'')||
@@ -136,7 +137,7 @@ export async function procesarLotesIAInternosMvp339(args:{
  if(reservation?.state!=='reserved'||!RECEIPT.test(reservation.receipt??'')||
     reservation.sourceSha256!==hash||
     reservation.roundId!==scope.roundId||
-    reservation.supplierId!==scope.supplierId||
+    reservation.supplierKey!==scope.supplierKey||
     reservation.messageHmac!==scope.messageHmac||
     reservation.chatHmac!==scope.chatHmac)
   return result('reconciliation_required','reservation_scope_mismatch',hash,total);
