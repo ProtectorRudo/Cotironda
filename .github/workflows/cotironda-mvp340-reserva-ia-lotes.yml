@@ -42,7 +42,7 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '22.16.0'
-      - name: Contrato JS/TS: SHA del plan, scope y RPC sin precios publicados
+      - name: 'Contrato JS/TS: SHA del plan, scope y RPC sin precios publicados'
         run: |
           node --experimental-strip-types --test tests/unit/mvp340-reserva-sql-adapter.test.mjs
           node --experimental-strip-types --test tests/unit/mvp339-lotes-ia-privados.test.mjs
