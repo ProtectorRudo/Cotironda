@@ -128,7 +128,7 @@ function inputMode(mime:string):MimeMode|null{
  if(mime==='application/vnd.ms-excel'||
     mime==='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
   return 'spreadsheet_augmented';
- if(mime in MIME_FILES)return 'office_text';
+ if(Object.hasOwn(MIME_FILES,mime))return 'office_text';
  return null;
 }
 function fileInput(mime:string,bytes:Uint8Array,mode:MimeMode){
