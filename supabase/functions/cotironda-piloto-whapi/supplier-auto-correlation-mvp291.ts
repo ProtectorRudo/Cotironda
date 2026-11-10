@@ -48,6 +48,17 @@ export function corroborarCantidadMvp291(source:Line,requested:Line):'strong'|'u
  if(au===bu&&Math.abs(a-b)<0.0001)return 'strong';
  return 'different';
 }
+/** A literal matching count with an omitted unit is only a weak clue to
+ * which REQUEST the original belongs. It must NEVER be used to infer the
+ * supplier's unit, package volume, economic coverage, or verified price.
+ * Explicitly conflicting package sizes do not earn this clue. */
+function cantidadLiteralSinUnidadMvp336(source:Line,requested:Line):boolean{
+ const a=numeric(source.quantity),b=numeric(requested.quantity);
+ if(a===null||b===null||Math.abs(a-b)>=0.0001||
+    (cleanUnit(source.unit)!==null&&cleanUnit(requested.unit)!==null))return false;
+ const sa=massOrVolume(source.description),sb=massOrVolume(requested.description);
+ return !(sa&&sb&&(sa.unit!==sb.unit||Math.abs(sa.per-sb.per)>=0.0001));
+}
 const goodLine=(x:unknown):x is Line=>object(x)&&
  Number.isSafeInteger(x.line_no)&&Number(x.line_no)>0&&Number(x.line_no)<=200&&
  typeof x.description==='string'&&x.description.length>=2&&x.description.length<=500&&
@@ -162,7 +173,7 @@ export function elegirRondaUnicaMvp291(
  const matches:Pair[]=JSON.parse(a);
  const scored=snapshot.options.map((candidate,i)=>{
   const links=matches.filter(x=>x.candidate==='r'+(i+1)&&x.relation!=='uncertain');
-  let points=0,strong=0,related=0;
+  let points=0,strong=0,related=0,nominalWithoutUnit=0;
   const seen=new Set<number>();
   for(const pair of links){
    if(seen.has(pair.request_line))continue;
@@ -172,16 +183,28 @@ export function elegirRondaUnicaMvp291(
    if(!offer||!requested)continue;
    const quantity=corroborarCantidadMvp291(offer,requested);
    if(quantity==='strong'){points+=3;strong++}
-   else if(quantity==='unknown'){points+=1}
+   else if(cantidadLiteralSinUnidadMvp336(offer,requested)){
+    // 2 points < an actual unit-consistent match (3 points).
+    // A single or double nominal coincidence can NEVER link a round.
+    points+=2;nominalWithoutUnit++;
+   }else if(quantity==='unknown'){points+=1}
    related++;
   }
-  return {candidate,points,strong,related};
+  return {candidate,points,strong,related,nominalWithoutUnit};
  });
  const ranked=[...scored].sort((a,b)=>b.points-a.points);
  const best=ranked[0],other=ranked[1];
  const no=(reason:string)=>({requestId:null,reason,scores:scored.map(x=>x.points)});
  if(!best||!other)return no('candidate_count_invalid');
- if(best.points<3||best.strong<1)return no('insufficient_material_evidence');
+ // When the supplier PDF omitted units (e.g. 15 cemento, 2 arena,
+ // 1 piedra), require THREE independently matched material lines with
+ // identical nominal counts and a wider lead over all rival rounds.
+ // This is source attribution only; economic verification still requires
+ // the original's unit/packaging evidence and independent source gates.
+ if(best.strong<1&&!(best.nominalWithoutUnit>=3&&best.related>=3&&
+  best.points>=6&&best.points-other.points>=4))
+  return no('insufficient_material_evidence');
+ if(best.points<3)return no('insufficient_material_evidence');
  if(best.related===1&&!(best.points===3&&other.points===0))
   return no('single_item_not_unique');
  if(best.points-other.points<3)return no('insufficient_unique_margin');
