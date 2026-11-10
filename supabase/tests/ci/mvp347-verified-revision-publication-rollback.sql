@@ -16,7 +16,7 @@ create table cotironda_piloto_privado.participants(
  consent_at timestamptz,opted_out_at timestamptz
 );
 create table cotironda_piloto_privado.requests(
- id uuid primary key,state text,closes_at timestamptz
+ id uuid primary key,state text,closes_at timestamptz,buyer_key text
 );
 create table cotironda_piloto_privado.invitations(
  request_id uuid,supplier_key text,state text
@@ -58,9 +58,10 @@ $fn$;
 
 insert into cotironda_piloto_privado.participants(
  key,chat_hmac,participant_role,consent_at)
-values('proveedor_sintetico',repeat('c',64),'supplier',now());
-insert into cotironda_piloto_privado.requests(id,state,closes_at)
-values('11111111-1111-4111-8111-111111111111','prepared',now()+interval '1 day');
+values('proveedor_sintetico',repeat('c',64),'supplier',now()),
+ ('comprador_sintetico',repeat('d',64),'buyer',now());
+insert into cotironda_piloto_privado.requests(id,state,closes_at,buyer_key)
+values('11111111-1111-4111-8111-111111111111','prepared',now()+interval '1 day','comprador_sintetico');
 insert into cotironda_piloto_privado.invitations(request_id,supplier_key,state)
 values('11111111-1111-4111-8111-111111111111','proveedor_sintetico','prepared');
 insert into cotironda_piloto_privado.media_archive_mvp095(
