@@ -53,3 +53,14 @@ Casos sintéticos Node: dos PDF reales reconstruidos con sus cinco importes, red
 4. **B7 seguimiento real:** mostrar ítems verificados en el enlace del comprador, conservar originales y anonimato durante ronda, revelar proveedores al cierre y contactar ganadores según permisos, con pruebas E2E reales.
 
 **Estado honesto:** la lectura de los dos PDF Ailín de punta a punta en sombra ya funciona; **no** se han acreditado ofertas comerciales ni se ha probado el Excel de Nahuel por V2; no hay fecha garantizada de piloto final antes de cerrar B5/B6/B7. **No publicar este módulo con «Luz verde»**.
+## Segunda protección B5 — cotejo independiente de renglones contra PDF original
+
+Se añadió `src/domain/presupuestos-v2/evidencia-pdf-original-b5.ts`, que reutiliza **el lector posicional PDF.js/unpdf ya presente en Cotironda** (`supplier-source-pdf-general.ts`) en lugar de crear otro extractor. Siempre opera sobre **bytes originales SHA256 comprobados**, no una imagen que devuelve otro modelo.
+
+Para cada renglón comprueba en una fila concreta y página del PDF: descripción literal, cantidad fuera de las medidas del producto (25 kg ≠ 25 bolsas), precio unitario y subtotal citados. Rechaza archivos alterados, PDFs sin texto, páginas incompatibles, filas duplicadas ambiguas, precios imaginados y notas comerciales que el borrador añadió pero no aparecen en fuente. Los errores retornan **códigos neutros sin datos personales**, y las pruebas no usan ningún archivo real.
+
+**Limitación deliberada:** incluso si todas las filas del borrador coinciden, la fuente puede tener **filas extra no capturadas, IVA, flete, descuentos de columna, importes o totales**. El resultado conserva siempre `full_document_covered=false`, `discount_column_verified=false`, `can_publish=false` y `can_rank=false`. Esto **no** constituye auditoría integral ni permite publicar; solo agrega evidencia independiente por renglón para B5/B6.
+
+Pruebas adicionales: PDF original SHA verificado, integridad alterada, cantidad confundida con tamaño, documento escaneado, mención inventada de IVA, filas duplicadas, datos no cubiertos, fallo del lector, falta de ubicación y notas verdaderamente presentes. CI B5 Node + Deno completo resuelve `npm:unpdf@2.1.0` con `--node-modules-dir=auto`, sin descargar PDF privado ni llamar OpenAI.
+
+**Próximo trabajo obligatorio:** enchufar este verificador al worker protegido, ejecutar lectura real del PDF ya guardado sin crear otra oferta ni resetear el ledger histórico, resolver descuento explícito mediante encabezado de columna y corroboración de todos los importes, y después soportar Excel de Nahuel vinculado. No confundir coincidencia de filas con cobertura total.
