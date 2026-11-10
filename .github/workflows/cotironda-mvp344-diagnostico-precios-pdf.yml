@@ -1,0 +1,39 @@
+name: Cotironda MVP344 - precios PDF privados sin atajos
+on:
+  push:
+    branches:
+      - fix/mvp344-diagnostico-precios-pdf-piloto
+  pull_request:
+    paths:
+      - 'supabase/functions/cotironda-piloto-whapi/supplier-archive-replay-mvp292.ts'
+      - 'tests/unit/mvp344-*'
+      - 'docs/480-*'
+      - '.github/workflows/cotironda-mvp344-diagnostico-precios-pdf.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-price-diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: 'MVP344: precio unitario no inferido, fuente independiente y negativo PII'
+        run: |
+          node --experimental-strip-types --test tests/unit/mvp344-diagnostico-precios-original-pdf.test.mjs
+          node --experimental-strip-types --test tests/unit/mvp292-archive-auto-recovery.test.mjs
+      - name: Regresion completa de Cotironda sin contactos reales
+        run: |
+          node --experimental-strip-types --test tests/unit/*.test.mjs
+          node scripts/ci/verify-dev-ai-migration-sources-d037.mjs
+      - uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb
+        with:
+          deno-version: v2.x
+      - name: Deno typecheck del worker de recuperación económica
+        run: deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/supplier-archive-replay-mvp292.ts
+# No SQL, no WhatsApp, no OpenAI real, no deployment.

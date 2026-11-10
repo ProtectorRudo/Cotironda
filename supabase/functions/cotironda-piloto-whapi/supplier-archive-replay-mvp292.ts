@@ -142,6 +142,12 @@ export async function reprocesarOriginalHistoricoMvp292(args:{
         reason='semantic_followup_review';
       }
      }else reason='public_projection_not_authorized';
+    }else if(sums.reason==='line_multiplication_mismatch'){
+      // The supplier's literal unit price and extended line amount conflict.
+      // Neither guess an implied price nor call this a discount; only the
+      // SHA-verified ORIGINAL can resolve the columns and conditions.
+      // Source/amount gates above remain mandatory before any publication.
+      reason='unit_price_source_recheck_required';
     }else reason='source_or_amounts_unverified';
    }
   }
