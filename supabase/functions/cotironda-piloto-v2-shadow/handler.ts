@@ -17,7 +17,7 @@ import {
 } from '../../../src/domain/presupuestos-v2/worker-archivo-sombra.ts';
 
 const PROJECT='ilggkalaafhtiysyzlmg';
-const URL='https://'+PROJECT+'.supabase.co';
+const PROJECT_URL='https://'+PROJECT+'.supabase.co';
 const API_KEY=/^sk-[A-Za-z0-9_-]{16,}$/u;
 type Model='gpt-6-luna'|'gpt-6.1-sol';
 type Db={rpc:(name:string,params:Record<string,unknown>)=>
@@ -98,11 +98,11 @@ export async function ejecutarSolicitudSombraV2B3(
   const api=env.COTIRONDA_PILOT_OPENAI_API_KEY??'';
   const model:Model=env.COTIRONDA_PILOT_AI_CENTRAL_MODEL==='gpt-6.1-sol'
    ?'gpt-6.1-sol':'gpt-6-luna';
-  if(env.SUPABASE_URL!==URL||!role||
+  if(env.SUPABASE_URL!==PROJECT_URL||!role||
      !API_KEY.test(api)||typeof deps?.createDb!=='function')
    return json(503,'backend_configuration_invalid');
 
-  const db=deps.createDb(URL,role);
+  const db=deps.createDb(PROJECT_URL,role);
   const outcome=await (deps.run??procesarSombraArchivadaV2)({
    enabled:true,trustedInternalWorker:true,
    rpc:async(name,params)=>db.rpc(name,params),
