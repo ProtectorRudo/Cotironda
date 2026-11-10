@@ -1,5 +1,7 @@
 # Acta 490 — Despliegue controlado V2 sombra a Supabase piloto
 
+> **ACTUALIZACIÓN FINAL VERIFICADA — 10/11/2026 19:42 ART:** la corrección HTTP 413 ya fue publicada como V2 Edge **v2** y funcionó: **2 de 2 PDF archivados se procesaron privadamente**, ambos pertenecen a **Corralón Ailín**, con **5 materiales + 2 notas en total**, 0 ofertas publicadas. Flag SQL V2 **OFF**, 0 WhatsApps enviados, cron existente y archivos originales intactos. El apartado «siguiente paso» histórico de esta acta describe acciones YA COMPLETADAS y queda reemplazado por el cierre operativo al final.
+
 **Fecha:** 10/11/2026 (ART). **Único entorno autorizado:** Supabase `cotironda-piloto`, ref `ilggkalaafhtiysyzlmg`. **Autorización:** «Publicalo». **Producción:** no tocada. **Alcance:** reingreso PRIVATE de originales ya archivados; NO publicar ofertas, rankings, WhatsApp ni identidad.
 
 ## Origen y controles
@@ -35,3 +37,20 @@
 Este trabajo prepara y ensaya el camino de lectura privada. Todavía falta auditor económico independiente por campo, asociación inequívoca de ronda y proyección parcial anónima. No declarar E2E completa por HTTP 200 ni `candidate_private`. Ante fallas, SQL flag OFF y examinar logs genéricos; no reiniciar versiones/leases ni pedir reenvío. Para revertir v12, reconstruir y redeplegar exactamente el bundle v11 desde el historial de Supabase, usando el branch de respaldo como referencia; nunca sustituyendo con un estado GitHub divergente.
 
 **Métricas finales e incidentes posteriores se registran en #759/#760/#765 al cierre.**
+## Cierre operativo real del piloto — 10/11/2026 19:42 ART
+
+**Publicación comprobada:** Edge `cotironda-piloto-v2-shadow` **v2 ACTIVE** (`ezbr_sha256` `670d7b2c62c04db97757262076a8c925ada3abc5157ee5b0a4ae0b4c50416ae7`) y Edge cron puente `cotironda-piloto-auto-recovery` **v12 ACTIVE** (`ezbr_sha256` `78e67bdddbab9a53482f11242bffa3e3c7b756cce5e9de7907e9b447cf54b0fa`). B2 migración SQL `20261110221810`; B4 RPC solo servicio. Ningún secreto ni cron nuevo.
+
+**Error HTTP 413 resuelto**: se cambió la validación para aceptar un POST de **cero bytes** incluso cuando Supabase lo representa como un `ReadableStream` o transferencia chunked, conservando rechazo 413 ante cualquier byte, contenido largo, query o caller no autenticado. Tests B4 Node 61/61, Deno bundle y PostgreSQL17 ROLLBACK aprobados antes de deploy; la prueba de integración real corroboró que se tomó el SHA.
+
+**Prueba PDF privado 1 (19:37:06–19:37:17 ART):** `candidate_private/shadow_candidate_unverified`, 2 artículos: cemento Avellaneda 25 kg, 40 unidades; BIG BAG arena, 3 unidades. Total declarado `469.042,52` según lectura IA, coincidente con interpretación archivada anterior. Dos líneas pendientes de validación de evidencia fuente; el modelo dice completitud, no constituye certificación.
+
+**Prueba PDF privado 2 (19:41:48–19:42:03 ART):** `candidate_private/shadow_candidate_unverified`, 3 artículos: cemento Avellaneda 15 unidades; BIG BAG arena 2 unidades; BIG BAG piedra 1 unidad; **más 2 notas** de precios en efectivo y flete a convenir. Total declarado `392.850,58` según IA, coincidente con interpretación archivada. Cinco renglones extraídos no significan cinco materiales: son tres materiales y dos notas. Cinco campos de renglón siguen pendientes de source-check.
+
+**Hallazgo de auditoría comercial CRÍTICO:** ambos presupuestos son de **Corralón Ailín · prueba**, no uno de Ailín y otro de Nahuel. Nahuel tiene un Excel y un PDF archivados ya asociados a rondas, por lo tanto fuera de la cola B2 sin vincular. Las primeras interpretaciones archivadas de ambas fuentes documentaron explícitamente `Dscto. 22.4%` en sus líneas de material; V2 conservó `22.4%` en el campo literal `original_line_raw` de las **cinco líneas de material**, pero no existe aún un campo estructurado `discount_raw`. Los unitarios son de **lista**, mientras que sus subtotales reflejan una proporción de 77,6% con pequeñas diferencias de centavos por redondeo. **Nunca inferir descuento ni comparabilidad únicamente por esa proporción**: auditar el original y registrar la evidencia exacta. No comparar totales de pedidos de distinta cobertura/cantidades. Seguimiento P0: [Issue #766](https://github.com/ProtectorRudo/Cotironda/issues/766).
+
+**Postcondiciones confirmadas mediante SQL a las ~19:43 ART:** 2 candidatas privadas, **0 leases abiertos**, `v2_shadow_settings.enabled=false`, 2 PDF originales `stored` sin vincular y 2 reviews históricas intactas, **0 nuevas revisiones económicas publicadas**, 3 cron existentes activos. Desde el despliegue: **0 WhatsApps enviados** por los registros Outbox y dispatch jobs. Ninguna adjudicación, ranking, identidad ni teléfono revelado por V2.
+
+**Pendiente para la entrega comercial:** un verificador de línea anclado al archivo PDF original, descuento explícito y comprobación determinista de precios, IVA/flete y totalidad de contenidos; admitir fuentes ya asociadas (incluido Excel de Nahuel) sin romper idempotencia; proyección anónima parcial. Sin esas pruebas **NO se declara E2E completo** ni se publica una oferta al arquitecto.
+
+**Regla para evitar repetir el incidente:** HTTP 200 y `model_reported_complete` no equivalen a precio acreditado. Tampoco un JSON con tres materiales y dos notas equivale a cinco materiales. Para nuevos archivos, correr B5 con contrato de descuento antes de exponer importes. Flag V2 debe permanecer OFF hasta despliegue posterior autorizado.
