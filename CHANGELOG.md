@@ -1,3 +1,10 @@
+## 10/11/2026 — MVP341: primer worker interno de originales y lotes (sin publicar)
+
+- RPC SQL de preflight de documento de proveedor, solo service_role, devuelve identidad técnica/ubicación privada sin precios ni contactos; exige asociación, invitación, recepción posterior al despacho, consentimiento y ronda abierta; si el origen ya fue procesado no genera otra descarga ni costo. Incluye filtro explícito de propuesta supplier_quote.
+- Worker compartido comprueba Blob, longitud, SHA-256 real y plan del lector MVP338 antes de reservar la doble lectura IA MVP339; puente Edge aislado, sin endpoint y sin tocar webhook histórico.
+- Tests offline binarios DOCX/XLSX, PDF real sintético con unpdf Deno, errores de integridad, cuotas y dos solicitudes del mismo origen. PG17 acumulado BEGIN/ROLLBACK verifica permisos, consentimientos, archivo no comercial, invitación y despacho; no modifica el piloto.
+- CI del primer candidato funcional: MVP341 2/2 jobs aprobados, 10/10 tests nuevos, 4/4 tests de reserva, Deno PDF real y PostgreSQL17 aprobados; suite Node 3.727 PASS, 0 FAIL, 10 SKIP. Registro privado **agregado únicamente**; no se ha validado economía ni se han utilizado modelos IA reales. PR #748 depende de #747/#746/#745/#743/#742. [Acta 476](docs/476-mvp341-trabajador-privado-documentos-lotes.md).
+
 ## 10/11/2026 — MVP340: ledger privado de IA por lotes (solo desarrollo)
 
 - Migración NUEVA y SIN PUBLICAR: tabla privada RLS `ai_supplier_lot_ledger_mvp340` y dos RPC internos service_role exclusivos para reservar y finalizar el análisis de presupuesto archivado y asociado a ronda/proveedor autorizado.
