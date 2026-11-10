@@ -77,7 +77,7 @@ test('MVP339: 87+ renglones y extras/IVA/flete/total no se pierden',async()=>{
  assert.equal(events.at(-1).state,'analysis_ready_private');
  assert.equal(v.readings.some(x=>x.kind==='condition'),true);
  assert.equal(v.readings.some(x=>x.kind==='total'),true);
- assert.equal(v.readings.some(x=>x.kind==='extra'),false); // variant15
+ assert.equal(v.readings.some(x=>x.kind==='extra'),true); // descuento variante15
 });
 test('MVP339: 192 corpus heterogéneo completo conserva todas las filas',async()=>{
  for(const fixture of presupuestosMvp337){
