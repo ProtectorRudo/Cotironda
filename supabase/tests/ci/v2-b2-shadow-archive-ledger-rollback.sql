@@ -51,6 +51,7 @@ CREATE TABLE cotironda_piloto_privado.ai_supplier_unresolved_mvp237(
  source_sha256 text,kind text,state text,resolved_request_id uuid
 );
 \i supabase/piloto/v2_b2_shadow_archived_supplier_read.sql
+\i supabase/piloto/v2_b4_existing_cron_readonly_gate.sql
 
 INSERT INTO cotironda_piloto_privado.integration_flags
  VALUES(true,true,true);
@@ -101,10 +102,23 @@ BEGIN
  IF NOT has_function_privilege('service_role',
   'public.cotironda_piloto_claim_v2_shadow_b2()','EXECUTE')
  THEN RAISE EXCEPTION 'service role cannot call';END IF;
+ IF has_function_privilege('anon',
+  'public.cotironda_piloto_v2_shadow_enabled_b4()','EXECUTE')
+ OR has_function_privilege('authenticated',
+  'public.cotironda_piloto_v2_shadow_enabled_b4()','EXECUTE')
+ OR NOT has_function_privilege('service_role',
+  'public.cotironda_piloto_v2_shadow_enabled_b4()','EXECUTE')
+ THEN RAISE EXCEPTION 'cron bridge flag RPC permissions invalid';END IF;
+ IF public.cotironda_piloto_v2_shadow_enabled_b4() IS NOT FALSE
+ THEN RAISE EXCEPTION 'bridge must default off';END IF;
+
  v:=public.cotironda_piloto_claim_v2_shadow_b2();
  IF v->>'state'<>'disabled' THEN RAISE EXCEPTION 'flag must default disabled';END IF;
 
  UPDATE cotironda_piloto_privado.v2_shadow_settings SET enabled=true;
+ IF public.cotironda_piloto_v2_shadow_enabled_b4() IS NOT TRUE
+ THEN RAISE EXCEPTION 'private gate does not read enabled flag';END IF;
+
  v:=public.cotironda_piloto_claim_v2_shadow_b2();
  IF v->>'state'<>'claimed'
  OR v->>'source_hmac'<>repeat('a',64)
