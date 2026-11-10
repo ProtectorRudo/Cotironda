@@ -1,3 +1,10 @@
+## 10/11/2026 — Hito validado de piloto: pedido automático hasta 2 proveedores
+
+- Auditada en Supabase la ronda real `aefe169e-7801-4efc-aabf-25cd134744eb`: ingreso desde arquitecto, 15 bolsas CPC 50 kg + 2 bolsones arena + 1 bolsón piedra, entrega La Plata; líneas, rubro y destinos correctos.
+- **1** auto-release SQL, **0** confirmaciones del comprador, **2/2** envíos de solicitud aceptados por Whapi y enlace al arquitecto con recibo `read`. Ailín y Nahuel informados como receptores **por el usuario**, sin recibos de entrega instrumentados en la base.
+- Webhook v75 activo; corte 07:18 ART: ronda preparada, **0 ofertas**, proveedores aún sin respuesta, **0 trabajos inciertos**. Son pendientes: recibir presupuestos, interpretarlos fielmente, publicación anónima, ranking comparable, cierre/revelaciones y rotación segura de credenciales expuestas.
+- **Solo documentación GitHub; sin cambios a aplicaciones, tablas, WhatsApp, cron ni secretos.** [Acta 470](docs/470-hito-piloto-arquitecto-a-proveedores-20261110.md).
+
 ## 10/11/2026 — MVP335 publicado en piloto, Whapi Edge v74
 
 - Publicado `cotironda-piloto-whapi` v74 `ACTIVE` en Supabase `cotironda-piloto`. Comparación criptográfica de 61 archivos del paquete, 1 índice modificado y digest exacto `3df77172138e27689123080335e65f2da111a14caac0b2a8034978435371f063` tras despliegue.
