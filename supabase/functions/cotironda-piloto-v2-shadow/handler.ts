@@ -86,13 +86,31 @@ export async function ejecutarSolicitudSombraV2B3(
 
   // No user payload, identifiers or arguments are accepted. One source per
   // DB claim, source chosen ONLY by private SQL eligibility checks.
+  // Supabase's gateway may represent a truly empty POST as a non-null
+  // ReadableStream / chunked transfer. Reject *bytes*, not a stream object.
   const len=request.headers.get('content-length');
   if(len!==null&&(!/^\d{1,6}$/u.test(len)||Number(len)!==0))
    return json(413,'body_not_allowed');
-  if(request.headers.has('transfer-encoding')||request.body!==null)
-   return json(413,'body_not_allowed');
   if(new URL(request.url).search!=='')
    return json(400,'parameters_not_allowed');
+  if(request.body!==null){
+   const reader=request.body.getReader();
+   try{
+    const timer=AbortSignal.timeout(5000);
+    const expired=new Promise<never>((_resolve,reject)=>{
+     timer.addEventListener('abort',()=>reject(Error('empty_body_timeout')),
+      {once:true});
+    });
+    let reachedEnd=false;
+    for(let i=0;i<4;i++){
+     const chunk=await Promise.race([reader.read(),expired]);
+     if(chunk.done){reachedEnd=true;break}
+     if((chunk.value?.byteLength??0)>0)return json(413,'body_not_allowed');
+    }
+    if(!reachedEnd)return json(413,'body_not_allowed');
+   }catch{return json(413,'body_not_allowed')}
+   finally{void reader.cancel().catch(()=>{})}
+  }
 
   const role=internalRoleKey(env);
   const api=env.COTIRONDA_PILOT_OPENAI_API_KEY??'';

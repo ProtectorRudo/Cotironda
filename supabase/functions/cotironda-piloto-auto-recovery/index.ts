@@ -6,6 +6,8 @@ import {createClient} from 'npm:@supabase/supabase-js@2.118.0';
 import {procesarPendienteAutomaticoMvp292} from '../cotironda-piloto-whapi/supplier-auto-recovery-worker-mvp292.ts';
 import {procesarTextoVinculadoMvp295} from '../cotironda-piloto-whapi/supplier-linked-text-replay-mvp295.ts';
 import {authorizeRecoveryMvp294} from './internal-auth-mvp294.ts';
+import {scheduleV2ShadowB4} from './v2-shadow-bridge-b4.ts';
+declare const EdgeRuntime:{waitUntil:(promise:Promise<void>)=>void};
 const REF='ilggkalaafhtiysyzlmg';
 const URL='https://'+REF+'.supabase.co';
 const json=(status:number,state:string)=>new Response(JSON.stringify({state}),{
@@ -90,6 +92,23 @@ async function execute(req:Request):Promise<Response>{
  });
  if(outcome.state==='reconciliation_required')
   return json(503,'reconciliation_required');
+ // V2 B4: reuse the existing Vault-backed cron and both server-side secrets.
+ // PRIVATE SQL flag OFF -> one harmless read-only RPC, no external HTTP.
+ // The async V2 shadow request never blocks MVP293's 55s timeout or
+ // modifies this worker's existing correlation/text-recovery outputs.
+ const b4=await scheduleV2ShadowB4({
+  enabled:true,pilotUrl:url,serviceRoleKey:role,
+  recoverySecret:Deno.env.get('COTIRONDA_PILOT_AUTO_RECOVERY_SECRET')??'',
+  checkSqlEnabled:async()=>{
+   const {data,error}=await db.rpc('cotironda_piloto_v2_shadow_enabled_b4');
+   return !error&&data===true;
+  },
+  post:fetch,
+  schedule:promise=>EdgeRuntime.waitUntil(promise),
+  report:state=>console.info('cotironda_v2_shadow_b4_result',state)
+ });
+ if(b4==='scheduled')console.info('cotironda_v2_shadow_b4_tick','scheduled');
+
  // On an EMPTY historical-correlation queue, consume at most ONE source
  // already linked by verified IA Central. Never re-read the same source
  // twice: SQL claim ledger + MVP227 review + MVP264 usage ledger.
