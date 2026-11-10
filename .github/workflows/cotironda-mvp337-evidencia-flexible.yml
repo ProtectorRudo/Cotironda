@@ -31,7 +31,7 @@ jobs:
       - name: Regresion del baseline congelado y recuperacion MVP336
         run: |
           node --experimental-strip-types --test \
-            tests/unit/mvp332-whapi-bundle.test.mjs \
+            tests/unit/mvp332-whapi-rollout-bundle.test.mjs \
             tests/unit/mvp291-automatic-correlation.test.mjs \
             tests/unit/mvp292-archive-auto-recovery.test.mjs \
             tests/unit/mvp336-whapi-overlay.test.mjs
