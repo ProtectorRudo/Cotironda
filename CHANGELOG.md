@@ -1,3 +1,10 @@
+## 09/11/2026 — Publicación efectiva de MVP333 y activación prospectiva MVP306 (piloto)
+
+- Publicado en Supabase `cotironda-piloto` el webhook Whapi de **v71 a v72**, con el candidato final de MVP333 (SHA-256 de `index.ts`: `91481dfd1ec51843346d233dfe654e8f3ce0ef699364424b625fe68d05f24f95`). **61/61 fuentes cotejadas postdeploy**, sin cambiar el canal Whapi, producción, seguimiento ni worker diferido.
+- Activado únicamente SQL `ai_auto_release_gate_mvp306` con barrera prospectiva 09/11 21:55:45 ART, tras verificación atómica de 1 comprador + 2 proveedores con canales y permisos, catálogo, estado de IA y cero despachos inciertos. Sin rondas nuevas ni envíos causados por la activación.
+- Batch MVP314 y buyer notice diferido MVP315 permanecen OFF. Postcheck: 31 inbox históricos, 5 rondas previas, 0 autoaprobaciones y 0 trabajos inciertos.
+- Sigue **sin verificarse** valor del secreto Edge de auto-release ni un circuito real nuevo completo. Token Whapi de captura anterior sin rotar por decisión del propietario, riesgo del piloto. [Acta 467](docs/467-mvp333-v72-mvp306-gate-publicacion-piloto.md).
+
 ## 09/11/2026 — MVP334 (desarrollo, no publicado)
 
 - Confirmado sobre Supabase real con SQL exclusivamente SELECT el preflight del circuito mínimo de 1 comprador + 2 proveedores: canales y permisos 1+2, 106 renglones de catálogo (86 curados, 20 pendientes), cero despachos inciertos, recepción comprobada, nueva liberación MVP306 y lotes/avisos MVP314/MVP315 OFF.
