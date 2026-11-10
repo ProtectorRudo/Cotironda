@@ -1,0 +1,52 @@
+name: Cotironda MVP344 - BIG BAG anonimo sin datos personales
+on:
+  pull_request:
+    paths:
+      - 'supabase/piloto/mvp344_*'
+      - 'supabase/tests/ci/mvp344-*'
+      - 'scripts/piloto/mvp344-*'
+      - 'docs/479-*'
+      - '.github/workflows/cotironda-mvp344-bigbag-publicacion-anonima.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  bigbag-pg17-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: test_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: 'MVP344: comprobar ambiente aislado, sin supabase real'
+        run: node scripts/piloto/mvp344-bigbag-publication-builder.mjs --assert-local
+      - name: 'MVP344: PDF original sintetico, monto, source checks, BIG BAG y privacidad'
+        run: |
+          set -euo pipefail
+          node scripts/piloto/mvp344-bigbag-publication-builder.mjs --sql > supabase/tests/ci/.mvp344.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/.mvp344.sql >/dev/null
+          psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regnamespace('cotironda_piloto_privado') IS NULL" | grep -Fx 't'
+          rm supabase/tests/ci/.mvp344.sql
+# Never deploy or invoke Whapi/OpenAI; database exists only in CI.
