@@ -2,8 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {armarZip} from '../helpers/xlsx-fixture.mjs';
-import {extraerEvidenciaPrivadaMvp338} from
+import {extraerEvidenciaPrivadaMvp338 as extraerCore} from
  '../../src/domain/ia-central/fuente-binaria-privada-mvp338.ts';
+import {readOfficeVisibleRows} from
+ '../../supabase/functions/cotironda-piloto-whapi/supplier-source-office.ts';
+const extraerEvidenciaPrivadaMvp338=(source,reader)=>
+ extraerCore(source,{readOfficeVisibleRows,
+  ...(reader?{readPdfPositioned:reader}:{})});
 
 const PDF='application/pdf',XLSX=
  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
