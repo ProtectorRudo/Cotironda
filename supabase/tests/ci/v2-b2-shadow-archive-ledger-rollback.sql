@@ -39,7 +39,7 @@ CREATE TABLE cotironda_piloto_privado.whapi_inbox(
 );
 CREATE TABLE cotironda_piloto_privado.media_archive_mvp095(
  message_hmac text PRIMARY KEY,chat_hmac text,participant_key text,
- request_id uuid,mime text,state text,review_state text,
+ request_id uuid,kind text,mime text,state text,review_state text,
  size_bytes integer,content_sha256 text,storage_path text
 );
 CREATE TABLE cotironda_piloto_privado.ai_supplier_auto_recovery_mvp292(
@@ -48,7 +48,7 @@ CREATE TABLE cotironda_piloto_privado.ai_supplier_auto_recovery_mvp292(
 );
 CREATE TABLE cotironda_piloto_privado.ai_supplier_unresolved_mvp237(
  message_hmac text PRIMARY KEY,supplier_key text,
- source_sha256 text,state text,resolved_request_id uuid
+ source_sha256 text,kind text,state text,resolved_request_id uuid
 );
 \i supabase/piloto/v2_b2_shadow_archived_supplier_read.sql
 
@@ -72,7 +72,7 @@ INSERT INTO cotironda_piloto_privado.whapi_inbox
  FROM (VALUES ('a'),('b')) v(label);
 INSERT INTO cotironda_piloto_privado.media_archive_mvp095
  SELECT repeat(label,64),repeat('c',64),'supplier_a',null,
- 'application/pdf','stored','suggested_only',500,
+ 'document','application/pdf','stored','suggested_only',500,
  repeat(label,64),'media/'||repeat(label,64)
  FROM (VALUES ('a'),('b')) v(label);
 INSERT INTO cotironda_piloto_privado.ai_supplier_auto_recovery_mvp292
@@ -80,7 +80,7 @@ INSERT INTO cotironda_piloto_privado.ai_supplier_auto_recovery_mvp292
  FROM (VALUES ('a'),('b')) v(label);
 INSERT INTO cotironda_piloto_privado.ai_supplier_unresolved_mvp237
  SELECT repeat(label,64),'supplier_a',repeat(label,64),
- 'ambiguous_round',null
+ 'document','ambiguous_round',null
  FROM (VALUES ('a'),('b')) v(label);
 
 DO $checks$
