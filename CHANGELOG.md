@@ -1,3 +1,9 @@
+## 09/11/2026 — MVP334 (desarrollo, no publicado)
+
+- Confirmado sobre Supabase real con SQL exclusivamente SELECT el preflight del circuito mínimo de 1 comprador + 2 proveedores: canales y permisos 1+2, 106 renglones de catálogo (86 curados, 20 pendientes), cero despachos inciertos, recepción comprobada, nueva liberación MVP306 y lotes/avisos MVP314/MVP315 OFF.
+- Auditoría de código: webhook v71 ya permite despacho inmediato de hasta 2 invitaciones y seguimiento postenvío; **la primera ronda no necesita el worker de lotes ni el aviso diferido**. La activación posterior deberá centrarse en MVP306, tras publicar MVP333 y verificar secret/cupo del Sandbox.
+- Nuevo SELECT read-only y evaluador puro sin envíos, 22 pruebas nuevas, 13 MVP333, 9 MVP332 y 37 regresiones: **81/81 aprobadas** en CI específico; sin mutar piloto ni pagar servicios. Riesgo de corte del gate MVP306 durante ronda activa documentado. [Decisión 466](docs/466-mvp334-preflight-dos-proveedores.md).
+
 ## 2026-11-09 — MVP333 (solo desarrollo)
 
 - Corroborado el recorrido de la prueba «Hola Cotironda, prueba de conexión del piloto.»: inbox del arquitecto y POST Whapi OK; IA Central entró en revisión genérica y emitió un aviso de revisión api_accepted, sin crear ronda.
