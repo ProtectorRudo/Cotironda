@@ -25,7 +25,7 @@ En `emitirRevisionUnificada`, si la fuente corresponde al comprador auténtico, 
 3. Gate SQL OFF, comprador no autorizado, proveedor, fuente/catálogo dudosos -> retención segura sin mensaje `CONFIRMAR COTI` ni job; no abrir gate por inscripción.
 4. Queda intacta continuidad de rondas anteriores y confirmaciones históricas; no reactivar ronda sexta con revisión ya registrada.
 5. Secret ausente/corto/largo -> 503 antes de PostgREST, nunca una ruta pública alternativa; secreto en rango 32–256 no garantiza coincidencia de header (sigue verificación HMAC).
-6. Pruebas normales y extremas: 19 casos MVP335 + regresiones MVP333, MVP332, MVP306/MVP313/MVP314/MVP315, análisis TypeScript Deno completo de candidato in-memory. **Aún no hay resultado hasta que GitHub Actions termine.**
+6. Pruebas normales y extremas: 19 casos MVP335 + regresiones MVP333, MVP332, MVP306/MVP313/MVP314/MVP315, análisis TypeScript Deno completo de candidato in-memory. **Pruebas ejecutadas y aprobadas:** 19/19 casos MVP335 + 13/13 MVP333 + 9/9 MVP332 + 37/37 regresiones MVP306/MVP313/MVP314/MVP315 = **78/78**. Deno validó tipado completo del candidato in-memory y los 6 workflows iniciales finalizaron exitosamente (sujeto al CI final del acta). SHA-256 final del candidato: `3df77172138e27689123080335e65f2da111a14caac0b2a8034978435371f063`.
 7. No publicar con «Luz verde»: próximo deploy solo con «Publicalo» y comprobación de huellas / preflight real. No activar batch MVP314 ni diferidos MVP315. No activar reintentos inciertos.
 
 ## Ruta de recuperación de autenticación
