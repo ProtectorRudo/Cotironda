@@ -35,6 +35,8 @@ jobs:
         run: |
           deno check --node-modules-dir=auto src/domain/ia-central/worker-privado-lotes-mvp341.ts
           deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/worker-originales-lotes-mvp341.ts
+      - name: PDF de dos paginas por unpdf real, reserva y doble lectura mock
+        run: deno run --node-modules-dir=auto tests/unit/mvp341-pdf-edge-worker-deno.smoke.ts
   source-preflight-pg17:
     runs-on: ubuntu-latest
     timeout-minutes: 20
