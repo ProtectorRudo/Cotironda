@@ -73,7 +73,8 @@ export function evaluarFuenteArchivadaMvp343(v){
   'stateReviewedInsufficient','recoveryPreviouslyClaimed',
   'unitlessRows','sourceRows','eligibleDispatchedRounds',
   'mvp336SqlPresent','liveBackupVerified',
-  'workerAndWebhookSynced','explicitPilotPublicationAuthorized'];
+  'workerAndWebhookSynced','recoveryAiSpendControlled',
+  'explicitPilotPublicationAuthorized'];
  if(!v||typeof v!=='object'||Array.isArray(v)||
     Object.keys(v).some(k=>!allowed.includes(k)))
   return Object.freeze({state:'blocked',reason:'invalid_private_preflight',
@@ -95,6 +96,9 @@ export function evaluarFuenteArchivadaMvp343(v){
    needsSupplierAction:false,canBindAutomatically:false,canPublish:false});
  if(!bool(v.workerAndWebhookSynced))
   return Object.freeze({state:'blocked',reason:'worker_webhook_versions_not_synced',
+   needsSupplierAction:false,canBindAutomatically:false,canPublish:false});
+ if(!bool(v.recoveryAiSpendControlled))
+  return Object.freeze({state:'blocked',reason:'recovery_ai_spend_uncontrolled',
    needsSupplierAction:false,canBindAutomatically:false,canPublish:false});
  if(!bool(v.explicitPilotPublicationAuthorized))
   return Object.freeze({state:'blocked',reason:'pilot_publication_not_authorized',
