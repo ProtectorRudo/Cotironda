@@ -3,8 +3,8 @@
  * verificables con ubicación de página y SHA de archivo. Sin red de
  * negocio, archivos reales privados, OpenAI, Whapi, Supabase ni publicación.
  */
-import {extraerEvidenciaPrivadaMvp338} from
- '../../src/domain/ia-central/fuente-binaria-privada-mvp338.ts';
+import {leerOriginalBinarioSeguroMvp338} from
+ '../../supabase/functions/cotironda-piloto-whapi/lector-evidencia-binaria-mvp338.ts';
 const enc=new TextEncoder();
 const lit=(s:string)=>s.replaceAll('\\','\\\\').replaceAll('(','\\(').replaceAll(')','\\)');
 const stream=(lines:readonly string[]):string=>{
@@ -34,7 +34,7 @@ const bytes=enc.encode(pdf);
 const digest=await crypto.subtle.digest('SHA-256',bytes);
 const sha256=Array.from(new Uint8Array(digest),x=>x.toString(16).padStart(2,'0')).join('');
 const original={mime:'application/pdf' as const,bytes,sha256};
-const outcome=await extraerEvidenciaPrivadaMvp338(original);
+const outcome=await leerOriginalBinarioSeguroMvp338(original);
 if(outcome.state!=='evidence_planned_private'||!outcome.plan||
    outcome.sourceSha256!==sha256||outcome.rows!==5||
    outcome.economicPublicationAllowed!==false||outcome.whatsappMessages!==0)
@@ -46,7 +46,7 @@ if(rows[0].section!=='pagina:1'||
    !rows[3].literal.includes('Flete a convenir')||
    !rows[4].literal.includes('200500'))
  throw Error('mvp338_real_pdf_missing_page_or_economic_row');
-const wrong=await extraerEvidenciaPrivadaMvp338({...original,sha256:'f'.repeat(64)});
+const wrong=await leerOriginalBinarioSeguroMvp338({...original,sha256:'f'.repeat(64)});
 if(wrong.state!=='review_required'||wrong.reason!=='original_sha256_mismatch')
  throw Error('mvp338_real_pdf_hash_bypass');
 console.log('MVP338 PDF 2 pages / 5 rows / SHA integrity / no publication: PASS');
