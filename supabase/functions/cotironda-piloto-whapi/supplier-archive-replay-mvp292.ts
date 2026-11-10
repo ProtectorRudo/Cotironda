@@ -12,6 +12,7 @@ import {checkSupplierOfficeSource} from './supplier-source-office.ts';
 import {checkSupplierTextSource,type SourceCheckResult} from './supplier-source-text.ts';
 import {procesarDocumentoCentralMvp245} from './ai-central-document-mvp245.ts';
 import {registrarRevisionEconomicaPrivadaMvp346} from './supplier-economic-revision-mvp346.ts';
+import {publicarRevisionEconomicaVerificadaMvp347} from './supplier-economic-publication-mvp347.ts';
 type Modelo='gpt-6-luna'|'gpt-6.1-sol';
 type Rpc=(name:string,args:Record<string,unknown>)=>Promise<{data:unknown;error:unknown}>;
 type Download=(path:string)=>Promise<{data:Blob|null;error:unknown}>;
@@ -116,6 +117,24 @@ export async function reprocesarOriginalHistoricoMvp292(args:{
      throw Error('economic_revision_persistence_uncertain');
     privateRevisionRecorded=revision.state==='candidate_stored';
    }
+   // The first AI transcription remains immutable. Only a corrected,
+   // SOURCE-COVERED candidate may take the new independent MVP347 route.
+   // The ordinary MVP102/103/106/MVP107 path is unchanged otherwise.
+   let revisedPublished=false;
+   if(privateRevisionRecorded){
+    const promoted=await publicarRevisionEconomicaVerificadaMvp347({
+     sourceHmac:args.sourceHmac,sha256:sha,originalFile:file,
+     candidate:second,rpc:args.rpc,sourceCheck:args.revisionSourceCheck
+    });
+    if(promoted.state==='reconciliation_required')
+     throw Error('revised_quote_publication_uncertain');
+    if(promoted.state==='published_private'){
+     finishState='published';state='published_private';
+     reason='independent_revised_source_verified';
+     revisedPublished=true;
+    }else reason=promoted.reason;
+   }
+   if(!revisedPublished){
    const compared=await db('cotironda_piloto_compare_supplier_readings_mvp102',{
     p_message_hmac:args.sourceHmac,p_second_proposal:second
    });
@@ -166,6 +185,7 @@ export async function reprocesarOriginalHistoricoMvp292(args:{
       // Source/amount gates above remain mandatory before any publication.
       reason='unit_price_source_recheck_required';
     }else reason='source_or_amounts_unverified';
+   }
    }
   }
  }catch{
