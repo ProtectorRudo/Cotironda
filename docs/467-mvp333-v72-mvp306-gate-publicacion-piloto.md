@@ -16,7 +16,7 @@ La RPC `cotironda_piloto_ia_auto_release_mvp306` fue inspeccionada **antes** de 
 
 La habilitación se ejecutó en **una transacción administrativa SQL** bajo sesión `postgres` con bloqueo de concurrencia, condiciones de 1 comprador + 2 proveedores activos, 3 canales vinculados, 3 permisos previos registrados, catálogos para ambos, IA Central y despacho heredado activos, cero trabajos inciertos, recepción de arquitecto menor a 24 h y MVP314/MVP315 apagados. **MVP306 quedó enabled=true, activated_at=2026-11-10 00:55:45.315899+00 (09/11 21:55:45 ART)**.
 
-Postcheck SQL posterior: MVP306 true, MVP314 false, MVP315 false, 31 inbox, 5 rondas, 0 autoaprobaciones anteriores, 0 jobs pendientes o inciertos, 0 outbox inciertos, 3 autorizaciones comerciales del propietario registradas y Ailín/Nahuel contactables. No se alteraron permisos ni se crearon rondas.
+Postcheck SQL posterior: MVP306 true, MVP314 false, MVP315 false, 31 inbox, 5 rondas, 0 autoaprobaciones anteriores, 0 jobs pendientes o inciertos, 0 outbox inciertos, 3 autorizaciones previas declaradas por el propietario (1 comprador y 2 proveedores) registradas y Ailín/Nahuel contactables. No se alteraron permisos ni se crearon rondas.
 
 ## Lo que NO está verificado
 
