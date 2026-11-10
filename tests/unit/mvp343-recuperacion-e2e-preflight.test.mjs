@@ -31,6 +31,7 @@ test('MVP343: paquete de recuperación acotado genera overlay de webhook y PG17 
  assert.equal(r.db_mutated,false);
  assert.equal(r.whatsapp_messages,0);
  assert.equal(r.openai_paid_calls,0);
+ assert.equal(r.legacy_recovery_ai_spend_metered,false);
  assert.equal(r.can_publish_quote,false);
 });
 test('MVP343: diagnóstico real sanitizado bloquea publicar y no exige reenviar',()=>{
