@@ -59,7 +59,6 @@ export type PrivateCommercialAuditB5=Readonly<{
  source_verified:false;
  issue?:'invalid_structure';
 }>;
-const safeText=(v:unknown):string=>typeof v==='string'?v:'';
 function parseDecimal(value:string,decimals:number):bigint|null{
  const text=value.trim();
  if(!/^(?:\d{1,3}(?:\.\d{3})+|\d+)(?:,\d+)?$/u.test(text))
@@ -143,7 +142,7 @@ function extractConditions(doc:RawSupplierQuoteV2):CommercialMentionsB5{
   flete?:{state:FreightPresence;literal:string;amount_raw?:string};
  }={};
  if(iva.length){
-  const included=iva.some(x=>/\b(?:IVA\s+incluid[oa]|incluy\w*\s+(?:el\s+)?IVA|con\s+IVA\b)/iu.test(x));
+  const included=iva.some(x=>/\b(?:IVA\s+incluid[oa]|(?<!no\s)incluy\w*\s+(?:el\s+)?IVA|con\s+IVA\b)/iu.test(x));
   const excluded=iva.some(x=>/\b(?:sin\s+IVA\b|IVA\s+no\s+incluid[oa]|no\s+incluy\w*\s+(?:el\s+)?IVA)/iu.test(x));
   const rate=iva.some(x=>/\bIVA\s*(?:del\s*)?\d{1,2}(?:[,.]\d+)?\s*%/iu.test(x));
   const state:Presence=included&&excluded?'conflicting_mentions':
@@ -182,7 +181,7 @@ function lineAudit(
  const unit=parseArgentineMoneyCentsB5(row.unit_price_raw);
  const total=parseArgentineMoneyCentsB5(row.line_total_raw);
  const discount=discountFromText(row,archived);
- const extra:Partial<AuditedLineB5>={
+ const extra:{-readonly [K in keyof AuditedLineB5]?:AuditedLineB5[K]}={
   ...(unit!==null?{listed_unit_cents:unit.toString()}:{})
  };
  if(total!==null)extra.declared_line_total_cents=total.toString();
