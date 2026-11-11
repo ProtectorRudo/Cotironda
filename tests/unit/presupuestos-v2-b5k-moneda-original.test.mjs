@@ -117,11 +117,12 @@ test('B5k: no symbol in the only footer is not source proof',()=>{
  assert.equal(evidence.code,'footer_currency_unconfirmed');
  assert.equal(economicAfter.code,'currency_ambiguous');sealed(evidence);
 });
-test('B5k: wrong total / repeated price markers never create false proof',()=>{
+test('B5k: repeated total candidate is safely rejected earlier by geometry',()=>{
  const rows=[...sourceRows,row(530,[c('$5.100,00',510)])];
  const {evidence,economicAfter}=analyze(candidate,rows);
- assert.notEqual(evidence.code,'uniform_dollar_symbol_iso_unstated');
- assert.equal(economicAfter.code,'currency_ambiguous');sealed(evidence);
+ assert.equal(evidence.code,'geometry_unconfirmed');
+ assert.equal(economicAfter.code,'geometry_unconfirmed');
+ sealed(evidence);
 });
 test('B5k: declared foreign currency conflicts with dollar-source markers',()=>{
  const doc={...candidate,currency_declared_raw:'USD'};
