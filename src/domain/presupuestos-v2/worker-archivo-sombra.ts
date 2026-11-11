@@ -10,6 +10,10 @@ import {
  leerPresupuestoSombraV2,type ShadowReadResultV2
 } from './lector-sombra.ts';
 import {revisarContratoProveedorV2} from './contrato-lectura.ts';
+import {auditarComercialPrivadoB5} from './auditoria-comercial-b5.ts';
+import {
+ comprobarRenglonesPdfOriginalB5,type EvidenceReaderB5
+} from './evidencia-pdf-original-b5.ts';
 
 type Rpc=(name:string,args:Record<string,unknown>)=>
  Promise<{data:unknown;error:unknown}>;
@@ -55,6 +59,8 @@ async function checkedRpc(rpc:Rpc,name:string,args:Record<string,unknown>={}):
 export async function procesarSombraArchivadaV2(args:{
  enabled:boolean;trustedInternalWorker:boolean;rpc:Rpc;storage:Storage;
  apiKey:string;model:Model;read?:Read;
+ /** Independent positioned PDF reader provided only by the Edge boundary. */
+ readPdfEvidence?:EvidenceReaderB5;
 }):Promise<ShadowWorkerOutcomeV2>{
  if(!args?.enabled)return done('disabled','flag_off',0);
  if(!args.trustedInternalWorker||typeof args.rpc!=='function'||
@@ -126,6 +132,29 @@ export async function procesarSombraArchivadaV2(args:{
     diagnostics=revalidated.line_diagnostics;
     completeness=response.completeness;
     userState='candidate_private';
+    // B5: independently corroborate ORIGINAL PDF bytes, never a second
+    // model's transcription. All reports remain PRIVATE and non-publishable;
+    // even matching rows do NOT establish full-document/discount coverage.
+    if(mime==='application/pdf'&&args.readPdfEvidence){
+     const commercial=auditarComercialPrivadoB5(revalidated.document);
+     const proof=await comprobarRenglonesPdfOriginalB5({
+       originalBytes:bytes,sourceSha256:sha,
+       candidate:revalidated.document,readPdf:args.readPdfEvidence
+     });
+     const augmented=revalidated.line_diagnostics.map((d,i)=>({
+      ...d,
+      source_b5:proof.lines[i]?.state??'source_not_located',
+      source_reason_b5:proof.reason,
+      arithmetic_b5:commercial.lines[i]?.result??'insufficient_numeric_data'
+     }));
+     // The current private SQL RPC permits only 50KB of diagnostics.
+     // Do not cause an unbounded audit payload to discard a valid candidate.
+     if(JSON.stringify(augmented).length<=49000)
+      diagnostics=augmented;
+     reason=proof.state==='source_rows_correspond_private'
+       ?'shadow_pdf_rows_correspond_private'
+       :'shadow_pdf_source_review_required';
+    }
    }else{
     state='review';reason='shadow_reader_review_required';
     userState='review_required';

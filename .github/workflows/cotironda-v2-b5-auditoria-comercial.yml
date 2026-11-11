@@ -1,0 +1,51 @@
+name: Cotironda V2 B5 - IVA flete explicitos y descuentos deterministas
+on:
+  pull_request:
+    branches:
+      - feat/v2-b4-puente-cron-existente
+    paths:
+      - 'src/domain/presupuestos-v2/**'
+      - 'tests/unit/presupuestos-v2-*.test.mjs'
+      - '.github/workflows/cotironda-v2-b5-auditoria-comercial.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  node:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: IVA/flete sin supuestos, descuentos, casos reales simulados
+        run: |
+          node --experimental-strip-types --test \
+            tests/unit/presupuestos-v2-auditoria-comercial-b5.test.mjs \
+            tests/unit/presupuestos-v2-evidencia-pdf-original-b5.test.mjs \
+            tests/unit/presupuestos-v2-b5-worker-pdf-evidence.test.mjs \
+            tests/unit/presupuestos-v2-contrato.test.mjs \
+            tests/unit/presupuestos-v2-lector-sombra.test.mjs \
+            tests/unit/presupuestos-v2-worker-archivo-sombra.test.mjs
+  deno:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb
+        with:
+          deno-version: v2.x
+      - run: |
+          deno check --node-modules-dir=auto \
+            src/domain/presupuestos-v2/contrato-lectura.ts \
+            src/domain/presupuestos-v2/auditoria-comercial-b5.ts \
+            src/domain/presupuestos-v2/evidencia-pdf-original-b5.ts \
+            src/domain/presupuestos-v2/lector-sombra.ts \
+            src/domain/presupuestos-v2/worker-archivo-sombra.ts \
+            supabase/functions/cotironda-piloto-v2-shadow/index.ts
+# No calls to live OpenAI/Supabase/Whapi and no deployment.
