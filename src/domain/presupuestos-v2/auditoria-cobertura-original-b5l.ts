@@ -47,7 +47,7 @@ const plain=(s:string)=>norm(s).replace(/\s*([.,:;])\s*/gu,'$1');
 // Never discard letters, numbers, percentages, currency or inner text from
 // a PDF.js part: these may be evidence of tax, freight or another item.
 const conditionLiteral=(s:string)=>plain(s)
- .replace(/^[\\s:;.!·•—–-]+|[\\s:;.!·•—–-]+$/gu,'').trim();
+ .replace(/^[\s:;.!·•—–-]+|[\s:;.!·•—–-]+$/gu,'').trim();
 
 /**
  * A condition is independently attributable only when its COMPLETE text
