@@ -169,3 +169,21 @@ test('B5l: source metadata (phone / tax code) cannot be dropped silently',()=>{
   [part('CUIT 20-00000000-1',100)])]});
  assert.equal(v.code,'unmapped_text');sealed(v);
 });
+
+test('B5l: an extra dollar amount in the material row cannot hide in source claim',()=>{
+ const rows=sourceRows.map((r,i)=>i===1?row(700,[
+  part('40,00',20),part('Cemento CPC',120),
+  part('$100,00',350),part('$4.000,00',510),part('$150,00',580)]):r);
+ const v=calc({rows});
+ assert.equal(v.code,'unmapped_fiscal_or_logistics');sealed(v);
+});
+test('B5l: a material line that mentions an unpriced IVA remains in review',()=>{
+ const material={...lines[0],
+  original_line_raw:lines[0].original_line_raw+' IVA incluido'};
+ const candidate=doc([material,lines[1]]);
+ const rows=sourceRows.map((r,i)=>i===1?row(700,[
+  part('40,00',20),part('Cemento CPC',120),
+  part('$100,00',350),part('$4.000,00',510),part('IVA incluido',580)]):r);
+ const v=calc({candidate,rows});
+ assert.equal(v.code,'unmapped_fiscal_or_logistics');sealed(v);
+});
