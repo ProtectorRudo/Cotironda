@@ -1,3 +1,6 @@
+## 2026-11-11 — B7: no ocultar IVA/flete tras la primera fila PDF desconocida (desarrollo)
+B5l ahora analiza todas las filas PDF.js pendientes y conserva el diagnóstico privado de mayor riesgo (fiscal/logístico, monetario/porcentaje, luego texto desconocido), sin aceptar datos arbitrarios ni modificar los flags de publicación. Cobertura histórica B5o aún 8/13 filas: no se tocó la base ni se hizo otra lectura. Pruebas Node + PDF.js Deno, CI PostgreSQL 17/Next.js. [PR #788](https://github.com/ProtectorRudo/Cotironda/pull/788), [Acta 516](docs/516-b7-auditoria-riesgos-filas-pdf-pendientes.md).
+
 ## 2026-11-11 — B5o revisión privada final (solo desarrollo)
 Se preparó `v2_b5o_20261111`, en el ledger privado existente, para contrastar una sola vez el PDF histórico B5n con la corrección de nota comercial/condición idénticas. Claim por SHA/proveedor, primer bloqueo B5n `source_part_mixed` ordinal 4/5, ventana B4 de ocho minutos y autoapagado, sin nuevas tablas, claves, cron ni WhatsApp. PostgreSQL 17 ROLLBACK y pruebas Node/Deno/Next en CI. **No desplegado ni fusionado**; priorizar transición al piloto comercial tras resultado real. [PR #786](https://github.com/ProtectorRudo/Cotironda/pull/786), [Acta 514](docs/514-v2-b5o-comprobacion-final-y-salida-e2e.md).
 

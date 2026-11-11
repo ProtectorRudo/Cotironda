@@ -312,21 +312,27 @@ export function auditarCoberturaPdfOriginalB5l(args:{
  if(totalMatches.length!==1||accounted.has(totalMatches[0]))
   return fail('source_geometry_unconfirmed');
  accounted.add(totalMatches[0]);n.attributed++;
- // Any other visible row must be a *strictly recognized* table heading.
- // Unknown, seemingly harmless text (including extra supplier conditions)
- // stays in review; do not white-list names, dates, CUIT or promotional copy.
+ // B7: inspect ALL remaining PDF.js rows before assigning the private
+ // review code. Previously the first harmless-looking unknown hid a later
+ // unclaimed IVA/freight clause or monetary value behind 'unmapped_text'.
+ // Nothing is automatically accepted: even a nonfinancial unknown still
+ // blocks full coverage. Risk precedence is fiscal > monetary > other text.
+ // Never return text, prices, supplier identity or source coordinates.
+ let unresolved:CoverageCodeB5l|null=null;
  for(let i=0;i<rows.length;i++){
   if(accounted.has(i))continue;
   const text=norm(rows[i].text);
   if(!text){accounted.add(i);n.attributed++;continue;}
-  if(fiscal.test(text)&&!structural.test(text))
-   return fail('unmapped_fiscal_or_logistics');
-  if(financial.test(text))
-   return fail('unmapped_monetary_or_percentage');
   if(structural.test(text)){
    accounted.add(i);n.attributed++;continue;
   }
-  return fail('unmapped_text');
+  if(fiscal.test(text))
+   unresolved='unmapped_fiscal_or_logistics';
+  else if(financial.test(text)&&
+          unresolved!=='unmapped_fiscal_or_logistics')
+   unresolved='unmapped_monetary_or_percentage';
+  else if(unresolved===null)
+   unresolved='unmapped_text';
  }
- return out('visible_rows_accounted_private',n);
+ return out(unresolved??'visible_rows_accounted_private',n);
 }

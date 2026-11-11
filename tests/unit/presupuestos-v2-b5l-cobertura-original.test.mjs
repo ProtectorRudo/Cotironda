@@ -511,3 +511,72 @@ test('B5o: percentage-bearing note cannot be silently counted as condition',()=>
  const v=calc({candidate:doc([...lines,note],['descuento 10%']),rows:r});
  assert.notEqual(v.code,'visible_rows_accounted_private');sealed(v);
 });
+
+
+test('B7: fiscal clause AFTER harmless unknown overrides unmapped_text',()=>{
+ const rows=[...sourceRows,row(540,[part('Nota interna de proveedor',130)]),
+  row(525,[part('IVA no incluido',120)])];
+ const v=calc({rows});
+ assert.equal(v.code,'unmapped_fiscal_or_logistics');
+ assert.equal(v.source_rows,7);
+ assert.equal(v.unattributed_rows,2);
+ sealed(v);
+});
+test('B7: later monetary source is not hidden by an earlier unknown',()=>{
+ const rows=[...sourceRows,row(540,[part('Sin observaciones adicionales',130)]),
+  row(520,[part('$150,00',510)])];
+ const v=calc({rows});
+ assert.equal(v.code,'unmapped_monetary_or_percentage');
+ assert.equal(v.unattributed_rows,2);
+ sealed(v);
+});
+test('B7: freight outranks monetary even if printed last',()=>{
+ const rows=[...sourceRows,row(540,[part('$150,00',510)]),
+  row(520,[part('Condiciones especiales',130)]),
+  row(500,[part('Flete a convenir',130)])];
+ const v=calc({rows});
+ assert.equal(v.code,'unmapped_fiscal_or_logistics');
+ assert.equal(v.unattributed_rows,3);
+ sealed(v);
+});
+test('B7: unclaimed percentage is a price risk, not plain text',()=>{
+ const rows=[...sourceRows,row(540,[part('Aviso',130)]),
+  row(520,[part('5%',130)])];
+ const v=calc({rows});
+ assert.equal(v.code,'unmapped_monetary_or_percentage');
+ sealed(v);
+});
+test('B7: five unknown visible lines remain five without auto-acceptance',()=>{
+ const rows=[...sourceRows,...Array.from({length:5},(_,i)=>
+  row(540-i*20,[part('Referencia interna '+String(i+1),130)]))];
+ const v=calc({rows});
+ assert.equal(v.code,'unmapped_text');
+ assert.equal(v.unattributed_rows,5);
+ assert.equal(v.attributed_rows,5);
+ sealed(v);
+});
+test('B7: real table headings AFTER unknown are still accounted conservatively',()=>{
+ const rows=[...sourceRows,row(540,[part('Texto desconocido',130)]),
+  row(520,[part('Cantidad',20),part('Unitario',350),part('Total',510)])];
+ const v=calc({rows});
+ assert.equal(v.code,'unmapped_text');
+ assert.equal(v.unattributed_rows,1);
+ assert.equal(v.attributed_rows,6);
+ sealed(v);
+});
+test('B7: extra explicit shipping amount always dominates after another text row',()=>{
+ const rows=[...sourceRows,row(540,[part('Promoción válida hoy',130)]),
+  row(520,[part('Transporte: $250,00',130)])];
+ const v=calc({rows});
+ assert.equal(v.code,'unmapped_fiscal_or_logistics');
+ assert.equal(v.unattributed_rows,2);
+ sealed(v);
+});
+test('B7: amount-free unknown and a supplier identifier stay blocked and private',()=>{
+ const rows=[...sourceRows,row(540,[part('Advertencia comercial',130)]),
+  row(520,[part('CUIT 20-00000000-1',130)])];
+ const v=calc({rows});
+ assert.equal(v.code,'unmapped_text');
+ assert.equal(v.unattributed_rows,2);
+ sealed(v);
+});
