@@ -145,6 +145,7 @@ export async function procesarSombraArchivadaV2(args:{
      const augmented=revalidated.line_diagnostics.map((d,i)=>({
       ...d,
       source_b5:proof?.lines[i]?.state??'source_not_checked',
+      source_reason_b5:proof?.reason??'reader_not_connected',
       arithmetic_b5:commercial.lines[i]?.result??'insufficient_numeric_data'
      }));
      // The current private SQL RPC permits only 50KB of diagnostics.
