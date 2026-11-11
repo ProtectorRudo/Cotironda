@@ -36,3 +36,26 @@
 ## Restricciones operativas
 
 Los PR #789 y #790 siguen apilados y en borrador. Este cambio parte de #790 y no los fusiona. La limitación de compilaciones Vercel no equivale a fallo del correlador; debe auditarse por separado. Mantener la identidad del arquitecto reservada y no publicar contactos salvo cierre autorizado. El piloto **no** queda completado por estas pruebas.
+
+
+## Preflight adicional de publicación (solo lectura, 11/11/2026)
+
+Auditoría externa sobre **Supabase `cotironda-piloto`**:
+- `ai_supplier_correlation_retries_mvp336` ya existe.
+- `supplier_revision_candidates_mvp346` y `anonymous_supplier_revisions_mvp347` ya existen; **no reinstalar estas tablas**.
+- `ai_supplier_recovery_second_attempt_mvp351` todavía NO existe (migración de este PR pendiente).
+- La Edge `cotironda-piloto-auto-recovery` está ACTIVE en versión **12**; el archivo `supplier-auto-recovery-worker-mvp292.ts` de esa versión **no importa MVP348**. La rama de desarrollo sí contiene la importación y el control de fidelidad. Esto impide concluir que publicar solo la migración SQL activaría el circuito completo.
+- `cotironda-piloto-whapi` está ACTIVE en versión **75**; comparar el bundle real antes de actualizarlo, sin modificar secretos/credenciales.
+- Todos los 7 workflows principales del commit `7c3492ea82b0` finalizaron verdes en GitHub. Los estados externos de Vercel siguen fallando por límite de compilaciones; no confundir ese error con una prueba del worker.
+
+**Nuevo control offline**: `scripts/piloto/mvp351-release-bundle-readonly.mjs` valida las dependencias entre el correlador aprobado por SHA (allowlist), worker + fidelidad MVP348, RPC de reintento y candidatas comerciales MVP346/347, autenticación y persistencia. Devuelve siempre `ready_to_publish=false` y `ready_for_e2e=false`, porque no puede verificar con archivos locales el código activo, resguardo ni resultados de negocios. Pruebas de mutación y workflow incluidas. No configura servicios ni contiene secretos.
+
+### Orden mínimo para una futura autorización «Publicalo» (NO ejecutado)
+
+1. Comprobar nuevamente rondas activas, cron, documentos pendientes, ids de mensajes y copia recuperable; congelar si hay otra ejecución concurrente.
+2. Aplicar **solo** migración MVP351 en el proyecto `cotironda-piloto` después de revisar su diff, RLS y permisos. No volver a aplicar MVP346/347.
+3. Preparar un paquete de Edge **exactamente de la rama autorizada**, con el módulo MVP348 y el correlador MVP351 coincidentes en worker/webhook. Compararlo con los bundles activos y preservar secreto/auth; no reemplazar parcialmente una sola función.
+4. Ejecutar **un único intento interno controlado**, guardar outcome sin documentos/contactos en logs. Si nuevamente hay `archived_materials_disagree` o error comercial, conservar revisión privada y priorizar revisión operativa en vez de un nuevo parser.
+5. Confirmar costo, precio, IVA/flete explícitos, ofertas anónimas visibles desde navegador real y segunda cotización; ejecutar cierre y revelación con reglas de privacidad. No comparar totales parciales.
+
+Sin orden «Publicalo» no hay mutaciones ni mensajes; hasta nueva verificación del SHA real y dos ofertas, **no está certificado el piloto**.
