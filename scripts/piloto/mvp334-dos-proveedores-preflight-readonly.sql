@@ -1,6 +1,7 @@
 -- MVP334: preflight EXCLUSIVAMENTE DE LECTURA para 1 comprador y 2 proveedores.
 -- No devuelve claves HMAC, teléfonos, nombres, textos, presupuestos ni secretos.
 -- MVP350: auto-release es el circuito vigente, y falta de respuesta de hoy
+-- MVP353: PREPARAR nueva ronda NO implica apta si ya hay otra preparada viva.
 -- se reporta como evidencia E2E ausente, no como bloqueo para PREPARAR prueba.
 -- Cero DML/DDL, cero envíos, cero activación. El resultado no prueba AUTH
 -- remoto de Whapi ni secretos Edge, y no autoriza publicar.
@@ -63,6 +64,14 @@ WITH personas AS (
   (SELECT count(*) FROM cotironda_piloto_privado.admin_authorizations_mvp309
    WHERE role='supplier' AND scope='supplier_business_contact_after_close') AS permisos_proveedores,
   (SELECT count(*) FROM cron.job WHERE active AND jobname ILIKE '%batch%') AS programadores_lote
+), rondas_activas AS (
+ SELECT
+  count(*) FILTER (WHERE r.state='prepared' AND r.closes_at>now()) AS preparadas,
+  count(*) FILTER (WHERE r.state='draft' AND r.closes_at>now()) AS borradores,
+  count(*) FILTER (WHERE r.state='prepared' AND r.closes_at>now() AND
+    EXISTS (SELECT 1 FROM cotironda_piloto_privado.ai_dispatch_jobs_mvp222 d
+            WHERE d.request_id=r.id AND d.state='api_accepted')) AS preparadas_despachadas
+ FROM cotironda_piloto_privado.requests r
 )
 SELECT jsonb_build_object(
  'fase','mvp334_preflight_solo_lectura',
@@ -84,6 +93,8 @@ SELECT jsonb_build_object(
    'lote_por_comprador',g.limite_comprador_lote,'avisos_diarios',g.limite_diario_avisos),
  'riesgos_de_reenvio',jsonb_build_object('trabajos_inseguros',o.trabajos_inseguros,
    'mensajes_inseguros',o.mensajes_inseguros),
+ 'rondas_activas',jsonb_build_object('preparadas',ra.preparadas,
+   'borradores',ra.borradores,'preparadas_despachadas',ra.preparadas_despachadas),
  'evidencia_recepcion_24h',o.entradas_comprador_24h,
  'programadores_lote',o.programadores_lote,
  'verificacion_externa_pendiente',true,
@@ -96,6 +107,8 @@ SELECT jsonb_build_object(
    AND g.entrada_whatsapp AND g.salida_whatsapp AND g.ia_central AND g.despacho_legacy
    AND g.nueva_liberacion AND NOT g.lote_diferido AND NOT g.aviso_diferido
    AND o.trabajos_inseguros=0 AND o.mensajes_inseguros=0
+   AND ra.preparadas=0
  ))
  AS evidence_snapshot
-FROM personas p CROSS JOIN catalogos c CROSS JOIN controles g CROSS JOIN operaciones o;
+FROM personas p CROSS JOIN catalogos c CROSS JOIN controles g CROSS JOIN operaciones o
+ CROSS JOIN rondas_activas ra;
