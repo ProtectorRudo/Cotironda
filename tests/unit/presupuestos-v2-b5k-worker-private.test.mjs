@@ -70,6 +70,7 @@ test('B5k: only SHA-checked originals produce private arithmetic codes',async()=
  assert.deepEqual(calls,['cotironda_piloto_claim_v2_currency_b5k',
   'download','pdf','cotironda_piloto_finish_v2_currency_b5k']);
  assert.equal(stored.p_state,'private_diagnosed');
+ assert.equal(stored.p_reason_code,'b5k_private_currency_diagnosis');
  assert.equal(stored.p_diagnostics.currency_code,'uniform_dollar_symbol_iso_unstated');
  assert.equal(stored.p_diagnostics.economic_code,'grand_total_balances_private');
  assert.equal(stored.p_diagnostics.iso_verified,false);
