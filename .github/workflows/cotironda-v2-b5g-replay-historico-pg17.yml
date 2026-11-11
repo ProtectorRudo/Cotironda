@@ -45,6 +45,8 @@ jobs:
       - run: |
           deno check --node-modules-dir=auto \
             supabase/functions/cotironda-piloto-v2-shadow/index.ts
+          deno test --allow-all --node-modules-dir=auto \
+            tests/deno/b5f-geometria-pdf-real.test.ts
   postgres17-private:
     runs-on: ubuntu-latest
     timeout-minutes: 15
