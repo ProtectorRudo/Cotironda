@@ -70,63 +70,9 @@ begin
    if cents is null then
      reason:='ambiguous_line_amount';problem:=l.line_no;exit;
    end if;
-   -- A source-explicit percent suffix is a condition on the priced item,
-   -- never a separate positive discount credit. Keep literal mirror intact.
+   -- A percent suffix belongs to the supplier item, not a separate credit.
    discount_parts:=regexp_match(coalesce(l.description_literal,''),
-    '^([^;]{3,250});[[:space:]]*(dscto[.]?|dcto[.]?|dto[.]?|descuento|bonif[.]?|bonificaci[oó]n)[[:space:]]*:?[[:space:]]*([0-9]{1,3}([.,][0-9]{1,3})?)[[:space:]]*%[[:space:]]*
-   if l.unit_price_literal is not null then
-    unit_cents:=cotironda_piloto_privado.parse_amount_cents_mvp103(
-     l.unit_price_literal);
-    if unit_cents is null then
-      reason:='ambiguous_line_amount';problem:=l.line_no;exit;
-    end if;
-    if l.quantity_literal is null or
-     l.quantity_literal !~ '^[0-9]{1,6}([.,][0-9]{1,3})?$' then
-      reason:='invalid_quantity';problem:=l.line_no;exit;
-    end if;
-    qty:=replace(l.quantity_literal,',','.')::numeric;
-    if qty<=0 or qty>1000000 then
-      reason:='invalid_quantity';problem:=l.line_no;exit;
-    end if;
-    IF discount_parts IS NULL THEN
-     -- Existing exact multiplication remains unchanged when no discount.
-     IF unit_cents::numeric*qty<>cents THEN
-      reason:='line_multiplication_mismatch';problem:=l.line_no;exit;
-     END IF;
-    ELSE
-     discount_percent:=replace(discount_parts[3],',','.')::numeric;
-     IF discount_percent<0 OR discount_percent>100 OR unit_cents<=0 OR cents<0 THEN
-      reason:='line_multiplication_mismatch';problem:=l.line_no;exit;
-     END IF;
-     -- Discount unit LIST price, round it to CENTS, then multiply the
-     -- quantity and round the extended amount. No floating arithmetic.
-     effective_unit_cents:=round(unit_cents::numeric*
-      (100-discount_percent)/100,0);
-     expected_line_cents:=round(effective_unit_cents*qty,0);
-     IF expected_line_cents<>cents THEN
-      reason:='line_multiplication_mismatch';problem:=l.line_no;exit;
-     END IF;
-    END IF;
-   end if;
-   sum_:=sum_+cents;
-  end loop;
-  if reason='balanced' then
-   observed:=sum_;
-   if sum_<>total then reason:='total_mismatch';end if;
-  end if;
- end if;
- state_:=case when reason='balanced' then 'balanced'
-  when reason in ('total_mismatch','line_multiplication_mismatch',
-   'discount_sign_inconsistent') then 'difference'
-  else 'needs_review' end;
- insert into cotironda_piloto_privado.supplier_amount_checks_mvp103(
-  message_hmac,source_sha256,line_count,state,reason_code,
-  first_problem_line,observed_sum_cents,declared_total_cents)
- values(p_message_hmac,a.source_sha256,a.line_count,state_,reason,
-  problem,observed,total);
- return jsonb_build_object('state',state_,'reason',reason,
-  'line_no',problem,'source_verified',false,'ranking_allowed',false);
-end;$fn$;,'i');
+    '^([^;]{3,250});[[:space:]]*(dscto[.]?|dcto[.]?|dto[.]?|descuento|bonif[.]?|bonificaci[oó]n)[[:space:]]*:?[[:space:]]*([0-9]{1,3}([.,][0-9]{1,3})?)[[:space:]]*%[[:space:]]*$','i');
    IF discount_parts IS NULL AND
       l.description_literal ~* '(descuento|bonificaci[oó]n|rebaja)'
       AND cents>=0 THEN
@@ -149,9 +95,23 @@ end;$fn$;,'i');
     if qty<=0 or qty>1000000 then
       reason:='invalid_quantity';problem:=l.line_no;exit;
     end if;
-    if (unit_cents::numeric*qty)<>cents then
+    IF discount_parts IS NULL THEN
+     IF unit_cents::numeric*qty<>cents THEN
       reason:='line_multiplication_mismatch';problem:=l.line_no;exit;
-    end if;
+     END IF;
+    ELSE
+     discount_percent:=replace(discount_parts[3],',','.')::numeric;
+     IF discount_percent<0 OR discount_percent>100 OR unit_cents<=0 OR cents<0 THEN
+      reason:='line_multiplication_mismatch';problem:=l.line_no;exit;
+     END IF;
+     -- Discount UNIT price, round to cents, then multiply quantity.
+     effective_unit_cents:=round(unit_cents::numeric*
+      (100-discount_percent)/100,0);
+     expected_line_cents:=round(effective_unit_cents*qty,0);
+     IF expected_line_cents<>cents THEN
+      reason:='line_multiplication_mismatch';problem:=l.line_no;exit;
+     END IF;
+    END IF;
    end if;
    sum_:=sum_+cents;
   end loop;
