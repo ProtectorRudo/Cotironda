@@ -174,6 +174,12 @@ BEGIN
  "economic_material_count":1,"economic_material_matches":1,
  "economic_conditions_count":0,"economic_conditions_matches":0,
  "economic_total_balances":true,
+ "coverage_code":"visible_rows_accounted_private",
+ "coverage_source_rows":3,"coverage_attributed_rows":3,
+ "coverage_unattributed_rows":0,
+ "coverage_lines":1,"coverage_lines_matched":1,
+ "coverage_conditions":0,"coverage_conditions_matched":0,
+ "coverage_pages":1,
  "proof_reason":"source_total_unverified",
  "matched_lines":1,"expected_lines":1,
  "source_verified":false,"full_document_covered":false,
@@ -192,6 +198,17 @@ BEGIN
   'b5k_private_currency_diagnosis',
   jsonb_set(d,'{can_publish}','true'::jsonb));
  IF v->>'state'<>'invalid' THEN RAISE EXCEPTION 'public offer forgery accepted';END IF;
+ v:=public.cotironda_piloto_finish_v2_currency_b5k(
+  repeat('a',64),repeat('a',64),'private_diagnosed',
+  'b5k_private_currency_diagnosis',
+  jsonb_set(d,'{coverage_code}','"invented_success"'::jsonb));
+ IF v->>'state'<>'invalid' THEN RAISE EXCEPTION 'coverage forgery accepted';END IF;
+ v:=public.cotironda_piloto_finish_v2_currency_b5k(
+  repeat('a',64),repeat('a',64),'private_diagnosed',
+  'b5k_private_currency_diagnosis',
+  jsonb_set(d,'{coverage_unattributed_rows}','1'::jsonb));
+ IF v->>'state'<>'invalid' THEN RAISE EXCEPTION 'impossible coverage census accepted';END IF;
+
  v:=public.cotironda_piloto_finish_v2_currency_b5k(
   repeat('a',64),repeat('a',64),'private_diagnosed',
   'b5k_private_currency_diagnosis',d);
