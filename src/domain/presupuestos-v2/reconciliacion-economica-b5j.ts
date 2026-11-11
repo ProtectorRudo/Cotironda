@@ -66,16 +66,22 @@ export function reconciliarEconomiaTotalB5j(args:{
  n.discounts=doc.lines.filter(l=>l.kind==='discount').length;
  n.terms=doc.commercial_conditions_raw.length;
  const fail=(code:ReconciliationCodeB5j)=>result(code,n);
+ if(args.source.reason==='unmapped_source_content')
+  return fail('source_unmapped_content');
+ // B5 intentionally returns needs_source_review for a source total lacking
+ // a label, even when EVERY material row corresponds. B5j may still run a
+ // PRIVATE calculation, but never promote any source verification flags.
+ const eligibleSource=
+  (args.source.reason==='source_total_unverified'&&
+   (args.source.state==='needs_source_review'||
+    args.source.state==='source_rows_correspond_private'))||
+  (args.source.reason==='rows_correspond_but_full_coverage_unchecked'&&
+   args.source.state==='source_rows_correspond_private');
  if(!Array.isArray(args.rows)||!args.rows.length||args.rows.length>300||
-    !args.source.sha_verified||args.source.state!=='source_rows_correspond_private'||
+    !args.source.sha_verified||!eligibleSource||
     args.source.lines.length!==doc.lines.length||
     args.source.lines.some((line,i)=>line.ordinal!==i+1||
       line.state!=='source_line_corresponds'))
-  return fail('source_rows_unconfirmed');
- if(args.source.reason==='unmapped_source_content')
-  return fail('source_unmapped_content');
- if(args.source.reason!=='source_total_unverified'&&
-    args.source.reason!=='rows_correspond_but_full_coverage_unchecked')
   return fail('source_rows_unconfirmed');
  if(args.geometry.code!=='amount_after_material_table'||
     args.geometry.column!=='aligned_material_total'||
