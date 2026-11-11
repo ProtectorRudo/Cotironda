@@ -144,6 +144,10 @@ export async function ejecutarSolicitudSombraV2B3(
      typeof deps?.createDb!=='function')
    return json(503,'backend_configuration_invalid');
 
+  // Preserve B3's original no-DB-on-missing-OpenAI-key guarantee when
+  // the standalone B5h maintenance capability is not installed.
+  if(deps.runB5hWhenSelected!==true&&!API_KEY.test(api))
+   return json(503,'backend_configuration_invalid');
   const db=deps.createDb(PROJECT_URL,role);
   // Exclusive B5h mode is checked BEFORE B2, B5g or B5d. When ON,
   // not even an empty total-audit queue may fall through to paid IA.
