@@ -8,7 +8,9 @@ export function buildMvp352Sql(){
  if(previous.split(tail).length!==2)throw Error('MVP352_NO_ROLLBACK');
  const result=previous.replace(tail,
   '\n\\ir ../../piloto/mvp352_reevaluacion_semantica_unica.sql'+
-  '\n\\ir ./mvp352-semantic-reassessment-pg17.sql'+tail);
+  '\n\\ir ../../piloto/mvp352_discount_unit_price_audit.sql'+
+  '\n\\ir ./mvp352-semantic-reassessment-pg17.sql'+
+  '\n\\ir ./mvp352-discount-unit-pg17.sql'+tail);
  if(result.split(/^ROLLBACK;\s*$/gm).length!==2)
   throw Error('MVP352_UNSAFE_TRANSACTION');
  return result;
