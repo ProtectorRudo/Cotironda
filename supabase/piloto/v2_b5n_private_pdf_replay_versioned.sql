@@ -209,7 +209,18 @@ BEGIN
         THEN false
        WHEN jsonb_typeof(p_diagnostics->'first_unresolved_condition_ordinal')<>'number'
         THEN true
-       WHEN p_diagnostics->>'first_unresolved_condition_ordinal' !~ '^[1-9][0-9]?
+       WHEN p_diagnostics->>'first_unresolved_condition_ordinal' !~ '^[1-9][0-9]?$'
+        THEN true
+       ELSE (p_diagnostics->>'first_unresolved_condition_ordinal')::int <>
+         (p_diagnostics->>'coverage_conditions_matched')::int + 1
+        OR (p_diagnostics->>'first_unresolved_condition_ordinal')::int >
+         (p_diagnostics->>'coverage_conditions')::int
+      END
+   OR (p_diagnostics->>'condition_failure_kind' IS NOT NULL AND
+       p_diagnostics->>'coverage_code' NOT IN(
+       'line_assignment_ambiguous','commercial_condition_unverified',
+       'unmapped_fiscal_or_logistics'))
+   OR p_diagnostics->>'source_verified' IS DISTINCT FROM 'false'
    OR p_diagnostics->>'full_document_covered' IS DISTINCT FROM 'false'
    OR p_diagnostics->>'can_publish' IS DISTINCT FROM 'false'
    OR p_diagnostics->>'can_rank' IS DISTINCT FROM 'false'
