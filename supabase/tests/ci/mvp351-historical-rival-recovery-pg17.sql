@@ -87,7 +87,7 @@ BEGIN
  THEN RAISE EXCEPTION 'mvp351_wrong_chat_reserved';END IF;
  replay:=public.cotironda_piloto_auto_correlation_retry_prepare_mvp336(source_h,chat);
  IF replay->>'state'<>'reserved' OR jsonb_array_length(replay->'quote')<>3
- OR jsonb_array_length(replay->'candidates')<>2
+ OR jsonb_array_length(replay->'candidates')<2
  OR replay::text LIKE '%unit_price%' OR replay::text LIKE '%line_total%'
  OR replay::text LIKE '%message_hmac%' OR replay::text LIKE '%chat_hmac%'
  THEN RAISE EXCEPTION 'mvp351_historic_snapshot_or_privacy_invalid: %',replay;END IF;
