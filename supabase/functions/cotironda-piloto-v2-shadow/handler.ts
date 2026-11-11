@@ -141,7 +141,7 @@ export async function ejecutarSolicitudSombraV2B3(
   const model:Model=env.COTIRONDA_PILOT_AI_CENTRAL_MODEL==='gpt-6.1-sol'
    ?'gpt-6.1-sol':'gpt-6-luna';
   if(env.SUPABASE_URL!==PROJECT_URL||!role||
-     !API_KEY.test(api)||typeof deps?.createDb!=='function')
+     typeof deps?.createDb!=='function')
    return json(503,'backend_configuration_invalid');
 
   const db=deps.createDb(PROJECT_URL,role);
@@ -171,6 +171,8 @@ export async function ejecutarSolicitudSombraV2B3(
     }
    }
   }
+  // B5h is entirely non-LLM. Require an OpenAI key only in the old path.
+  if(!API_KEY.test(api))return json(503,'backend_configuration_invalid');
   const outcome=await (deps.run??procesarSombraArchivadaV2)({
    enabled:true,trustedInternalWorker:true,
    rpc:async(name,params)=>db.rpc(name,params),
