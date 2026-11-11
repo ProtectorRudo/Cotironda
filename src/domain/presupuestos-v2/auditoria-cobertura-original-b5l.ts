@@ -43,6 +43,11 @@ const out=(code:CoverageCodeB5l,n:Counts):CoverageResultB5l=>
 const norm=(s:string)=>s.normalize('NFKC').trim().replace(/\s+/gu,' ')
  .toLocaleLowerCase('es-AR');
 const plain=(s:string)=>norm(s).replace(/\s*([.,:;])\s*/gu,'$1');
+// B5n: only leading/trailing PRINT punctuation is semantically empty.
+// Never discard letters, numbers, percentages, currency or inner text from
+// a PDF.js part: these may be evidence of tax, freight or another item.
+const conditionLiteral=(s:string)=>plain(s)
+ .replace(/^[\\s:;.!·•—–-]+|[\\s:;.!·•—–-]+$/gu,'').trim();
 
 /**
  * A condition is independently attributable only when its COMPLETE text
@@ -54,16 +59,16 @@ function uniqueConditionParts(
  parts:readonly {text:string;x:number}[],term:string,
  reserved:ReadonlySet<number>
 ):readonly number[]|null{
- const wanted=plain(term);
+ const wanted=conditionLiteral(term);
  if(wanted.length<3)return null;
  const found:number[][]=[];
  for(let start=0;start<parts.length;start++){
-  if(reserved.has(start)||!plain(parts[start].text))continue;
+  if(reserved.has(start)||!conditionLiteral(parts[start].text))continue;
   let text='';
   for(let end=start;end<Math.min(parts.length,start+12);end++){
    if(reserved.has(end))break;
    text+=(text?' ':'')+parts[end].text;
-   const current=plain(text);
+   const current=conditionLiteral(text);
    if(current===wanted){
     // Prefer the shortest complete source span. Trailing empty PDF.js
     // fragments must not create a second, fake matching condition.
@@ -194,10 +199,10 @@ export function auditarCoberturaPdfOriginalB5l(args:{
  // a payment or delivery term on the SAME geometric row as a material.
  const conditionParts=new Map<number,Set<number>>();
  for(const condition of doc.commercial_conditions_raw){
-  const wanted=plain(condition);
+  const wanted=conditionLiteral(condition);
   if(wanted.length<3)return fail('commercial_condition_unverified');
   const matches=rows.flatMap((row,index)=>
-   plain(row.text).includes(wanted)?[index]:[]);
+   conditionLiteral(row.text).includes(wanted)?[index]:[]);
   if(matches.length!==1)return fail('commercial_condition_unverified');
   const index=matches[0];
   const used=conditionParts.get(index)??new Set<number>();
@@ -206,7 +211,7 @@ export function auditarCoberturaPdfOriginalB5l(args:{
    // A shared source part with the material is still ambiguous. A
    // standalone condition containing extra IVA/cost is commercial risk.
    if(attributed.has(index))return fail('line_assignment_ambiguous');
-   const residue=plain(rows[index].text).replace(wanted,'').trim();
+   const residue=conditionLiteral(rows[index].text).replace(wanted,'').trim();
    return fail(financial.test(residue)||fiscal.test(residue)||
      pending.test(residue)?'unmapped_fiscal_or_logistics':
      'commercial_condition_unverified');
@@ -214,7 +219,7 @@ export function auditarCoberturaPdfOriginalB5l(args:{
   if(attributed.has(index)){
    const material=attributed.get(index)!;
    const description=plain(material.original_description_raw);
-   const segment=plain(span.map(i=>rows[index].parts[i].text).join(' '));
+   const segment=conditionLiteral(span.map(i=>rows[index].parts[i].text).join(' '));
    // Never claim a price, quantity or original material description as an
    // independently documented commercial condition.
    if((description.length>2&&segment.includes(description))||
