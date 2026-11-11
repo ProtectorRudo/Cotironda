@@ -1,5 +1,8 @@
 name: Cotironda B5g - reauditoria historica sin IA ni sobrescritura
 on:
+  push:
+    branches:
+      - feat/v2-b5g-reauditar-dos-pdf-sin-repetir-ia-20261111
   pull_request:
     branches:
       - feat/v2-b5f-cotejo-pdf-total-descuento-posicional-20261111
@@ -15,7 +18,7 @@ on:
       - 'docs/495-v2-b5g-reauditoria-pdf-historico-versionada.md'
       - 'README.md'
       - 'AGENTS.md'
-      - 'CHANGELOG.md
+      - 'CHANGELOG.md'
       - '.github/workflows/cotironda-v2-b5g-replay-historico-pg17.yml'
   workflow_dispatch:
 permissions:
