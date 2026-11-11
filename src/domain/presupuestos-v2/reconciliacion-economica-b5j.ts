@@ -112,7 +112,7 @@ export function reconciliarEconomiaTotalB5j(args:{
  // logistics charge inside a note must NEVER silently become zero.
  if(doc.lines.some(line=>line.kind==='commercial_note'&&
   fiscalUnknown.test(line.original_line_raw)&&
-  /(?:\\$\\s*\\d|\\b(?:ars|usd)\\b\\s*\\d|\\b(?:a\\s+cotizar|a\\s+confirmar|pendiente|sin\\s+precio)\\b)/iu
+  /(?:\$\s*\d|\b(?:ars|usd)\b\s*\d|\b(?:a\s+cotizar|a\s+confirmar|pendiente|sin\s+precio)\b)/iu
    .test(line.original_line_raw)))
   return fail('fiscal_or_freight_ambiguous');
 
