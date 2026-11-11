@@ -13,7 +13,8 @@ export type MaterialVerdictMvp348=Readonly<{
  matched:boolean;
  mode:'literal'|'format_only'|'reordered_unique'|'review';
  reason:
-  'material_scope_literal'|'material_scope_format_only'|\n  'material_scope_unique_reorder'|
+  'material_scope_literal'|'material_scope_format_only'|
+  'material_scope_unique_reorder'|
   'archived_draft_shape_invalid'|'archived_line_count_mismatch'|
   'archived_material_description_mismatch'|'archived_quantity_mismatch'|
   'archived_unit_mismatch';
