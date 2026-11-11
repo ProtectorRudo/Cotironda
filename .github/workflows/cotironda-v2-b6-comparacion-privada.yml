@@ -10,6 +10,7 @@ on:
       - 'src/domain/adaptador-documental-mvp162.ts'
       - 'src/domain/ia-central/vista-comprador-rubros-mvp227.ts'
       - 'tests/unit/mvp227-vista-rubros-comprador.test.mjs'
+      - 'tests/unit/mvp295-linked-commercial-recovery.test.mjs'
       - '.github/workflows/cotironda-v2-b6-comparacion-privada.yml'
   workflow_dispatch:
 permissions:
@@ -31,6 +32,7 @@ jobs:
             tests/unit/presupuestos-v2-comparacion-privada-b6.test.mjs \
             tests/unit/mvp162-document-economic-adapter.test.mjs \
             tests/unit/mvp227-vista-rubros-comprador.test.mjs \
+            tests/unit/mvp295-linked-commercial-recovery.test.mjs \
             tests/unit/mvp255-seguimiento-comparador-rubros.test.mjs \
             tests/unit/comparacion-ofertas.test.mjs
   deno:
