@@ -49,6 +49,9 @@ function hasUnmappedCommercialSource(
  rows:readonly PdfRowB5h[],doc:RawSupplierQuoteV2,total:bigint
 ):boolean{
  const used=new Set<number>();
+ const materialClaims:{index:number;raw:string}[]=[];
+ const conditionClaims=new Map<number,string[]>();
+ const financial=/\b(?:iva|flete|env[ií]o|transporte|cargos?|recargos?|embalaje|pallets?|impuestos?|percepciones?|retenciones?|descuentos?|dscto|dcto|bonificaci[oó]n|subtotal|sub\s*total)\b/iu;
  for(const line of doc.lines){
   const desc=normalize(line.original_description_raw);
   if(!desc)return true;
@@ -58,20 +61,43 @@ function hasUnmappedCommercialSource(
   // cannot be attributed unambiguously without further source evidence.
   if(matches.length!==1)return true;
   used.add(matches[0]);
+  materialClaims.push({index:matches[0],
+   raw:line.original_line_raw+' '+line.original_description_raw});
  }
  for(const term of doc.commercial_conditions_raw){
   const wanted=body(term);
   if(wanted.length<3)continue;
   rows.forEach((row,index)=>{
-   if(body(row.text).includes(wanted))used.add(index);
+   if(body(row.text).includes(wanted)){
+    used.add(index);
+    conditionClaims.set(index,[...(conditionClaims.get(index)??[]),wanted]);
+   }
   });
+ }
+ // An extracted article may match all expected amounts while the PDF
+ // contains an extra tax or delivery term in that SAME article row.
+ for(const {index,raw} of materialClaims){
+  const residual=rows[index].text;
+  if(financial.test(residual)&&!financial.test(raw)&&
+     !doc.commercial_conditions_raw.some(t=>financial.test(t)&&
+       body(residual).includes(body(t))))return true;
+ }
+ // A short extracted condition ('Transferencia') must not mask IVA or
+ // a separate amount printed on the same PDF.js source row.
+ for(const [index,terms] of conditionClaims){
+  if(materialClaims.some(p=>p.index===index))continue;
+  let residual=body(rows[index].text);
+  for(const term of terms)residual=residual.replace(term,' ');
+  if(financial.test(residual)||
+     /(?:\$\s*|(?:ARS|USD|U\$S)\s*)\d/u.test(residual)||
+     /\b(?:\d{1,3}(?:\.\d{3})+|\d+),\d{2}\b/u.test(residual))
+   return true;
  }
  const footers=rows.flatMap((row,index)=>
   (row.parts??[]).filter(p=>parseArgentineMoneyCentsB5(p.text)===total)
    .length===1?[index]:[]);
  if(footers.length!==1||used.has(footers[0]))return true;
  used.add(footers[0]);
- const financial=/\b(?:iva|flete|env[ií]o|transporte|cargos?|recargos?|embalaje|pallets?|impuestos?|percepciones?|retenciones?|descuentos?|dscto|dcto|bonificaci[oó]n|subtotal|sub\s*total)\b/iu;
  const currency=/(?:\$\s*|(?:ARS|USD|U\$S)\s*)\d/u;
  const decimal=/\b(?:\d{1,3}(?:\.\d{3})+|\d+),\d{2}\b/u;
  const tableHeading=/\b(?:cant(?:idad)?|descripci[oó]n|art[ií]culo|precio|unitario)\b/iu;
