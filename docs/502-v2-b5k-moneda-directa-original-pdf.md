@@ -35,3 +35,16 @@ Un `$` corroborado representa un **símbolo monetario uniforme**, no una identif
 **Estado inicial del piloto:** Edge V2 v7 activo, cuatro flags V2/B5h/B5i/B5j OFF, dos diagnósticos B5j privados, cero ofertas creadas desde B5j. B5k **no instalado**.
 
 **Próximo ensayo real (solo tras «Publicalo»):** migración SQL B5k primero con flag OFF, Edge actualizada después, solo una llamada interna autenticada para PDF 2, cierre de cinco flags y auditoría de ledger/WhatsApp/ofertas. El resultado puede confirmar símbolo uniforme, o marcar un bloqueo legítimo si el texto PDF carece del símbolo.
+
+## Control adicional de integración antes de piloto
+
+Durante la auditoría del contrato worker–SQL se detectó que el trabajador
+nombraba el resultado final `b5k_private_economic_diagnosis`, mientras
+la restricción de la tabla y la RPC exigían
+`b5k_private_currency_diagnosis`. Esa inconsistencia habría impedido
+registrar el diagnóstico privado real pese a que otras pruebas pasaran.
+
+Se corrigió el código del trabajador y se incorporó una prueba que examina
+**el SQL versionado real** junto con el código de resultado enviado por el
+worker. La migración sigue sin instalarse en el piloto. Ningún dato real
+resultó afectado; el cambio de código no se desplegó.
