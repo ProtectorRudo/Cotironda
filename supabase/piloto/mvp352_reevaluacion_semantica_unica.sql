@@ -226,10 +226,22 @@ BEGIN
    AND third.supplier_key=v_source.participant_key
    AND third.source_sha256=v_source.content_sha256
  ) THEN RETURN jsonb_build_object('state','already_retried');END IF;
- IF (SELECT count(*) FROM cotironda_piloto_privado.ai_supplier_correlation_retries_mvp336
-  WHERE supplier_key=v_source.participant_key
-  AND retried_at>clock_timestamp()-interval '24 hours')>=2
- THEN RETURN jsonb_build_object('state','retry_daily_quota');END IF;
+ -- The prior retry is preserved and reused for the single MVP352
+ -- semantic assessment; never relax the quota for ordinary sources.
+ IF EXISTS(SELECT 1 FROM cotironda_piloto_privado.ai_supplier_semantic_reassessment_mvp352 third
+  WHERE third.source_hmac=p_source_hmac
+   AND third.supplier_key=v_source.participant_key
+   AND third.source_sha256=v_source.content_sha256) THEN
+  IF (SELECT count(*) FROM cotironda_piloto_privado.ai_supplier_correlation_retries_mvp336
+   WHERE supplier_key=v_source.participant_key
+    AND retried_at>clock_timestamp()-interval '24 hours')>=3
+  THEN RETURN jsonb_build_object('state','retry_daily_quota');END IF;
+ ELSE
+  IF (SELECT count(*) FROM cotironda_piloto_privado.ai_supplier_correlation_retries_mvp336
+   WHERE supplier_key=v_source.participant_key
+    AND retried_at>clock_timestamp()-interval '24 hours')>=2
+  THEN RETURN jsonb_build_object('state','retry_daily_quota');END IF;
+ END IF;
  IF (SELECT count(*) FROM cotironda_piloto_privado.ai_supplier_auto_correlation_mvp291
     WHERE supplier_key=v_source.participant_key
       AND reserved_at>=clock_timestamp()-interval '24 hours')>=10
