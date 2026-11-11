@@ -24,6 +24,7 @@ jobs:
             tests/unit/mvp351-private-historical-review.test.mjs \
             tests/unit/mvp351-release-bundle-readonly.test.mjs \
             tests/unit/mvp352-material-identity-hints.test.mjs \
+            tests/unit/mvp352-discount-math.test.mjs \
             tests/unit/mvp351-recovery-to-commercial-e2e.test.mjs \
             tests/unit/mvp291-automatic-correlation.test.mjs \
             tests/unit/mvp292-archive-auto-recovery.test.mjs \
@@ -83,5 +84,6 @@ jobs:
       - run: |
           deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/supplier-auto-correlation-mvp336.ts
           deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/supplier-material-identity-hint-mvp352.ts
+          deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/supplier-discount-arithmetic-mvp352.ts
           deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/supplier-auto-recovery-worker-mvp292.ts
 # No SQL writes to piloto, no WhatsApp, no secrets, no Vercel production.
