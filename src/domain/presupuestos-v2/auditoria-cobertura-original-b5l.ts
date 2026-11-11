@@ -43,6 +43,36 @@ const out=(code:CoverageCodeB5l,n:Counts):CoverageResultB5l=>
 const norm=(s:string)=>s.normalize('NFKC').trim().replace(/\s+/gu,' ')
  .toLocaleLowerCase('es-AR');
 const plain=(s:string)=>norm(s).replace(/\s*([.,:;])\s*/gu,'$1');
+
+/**
+ * A condition is independently attributable only when its COMPLETE text
+ * occupies one or more consecutive PDF.js source parts, with no unassigned
+ * text inside those parts. A substring in the material description is NOT
+ * sufficient evidence. The same source part cannot be claimed twice.
+ */
+function uniqueConditionParts(
+ parts:readonly {text:string;x:number}[],term:string,
+ reserved:ReadonlySet<number>
+):readonly number[]|null{
+ const wanted=plain(term);
+ if(wanted.length<3)return null;
+ const found:number[][]=[];
+ for(let start=0;start<parts.length;start++){
+  if(reserved.has(start))continue;
+  let text='';
+  for(let end=start;end<Math.min(parts.length,start+12);end++){
+   if(reserved.has(end))break;
+   text+=(text?' ':'')+parts[end].text;
+   const current=plain(text);
+   if(current===wanted){
+    found.push(Array.from({length:end-start+1},(_,i)=>start+i));
+   }
+   if(current.length>wanted.length+10)break;
+  }
+ }
+ return found.length===1?found[0]:null;
+}
+
 const fiscal=/\b(?:iva|flete|env[ií]o|transporte|envios?|impuestos?|percepciones?|retenciones?|recargos?|cargos?|log[ií]stica|pallets?|embalaje|bonificaciones?|descuentos?|dscto|dcto|rebajas?|subtotal|sub\s*total)\b/iu;
 const financial=/(?:\$\s*|(?:ARS|USD|U\$S|EUR|US\$)\s*|€\s*)\d|(?<![\p{L}\p{N}])\d{1,3}(?:\.\d{3})*,\d{2}(?![\p{L}\p{N}])|\b\d{1,3}(?:[,.]\d{1,2})?\s*%/iu;
 const pending=/\b(?:a\s+cotizar|a\s+confirmar|pendiente|seg[uú]n\s+zona|consultar\s+precio|consultar\s+disponibilidad)\b/iu;
@@ -157,35 +187,68 @@ export function auditarCoberturaPdfOriginalB5l(args:{
   n.matched++;n.attributed++;
  }
  const accounted=new Set(attributed.keys());
- // A commercial condition is attributed only by the WHOLE textual source
- // literal, not a short keyword that could hide another fee on the row.
+ // Reserve exact PDF.js parts, not whole rows. Real supplier PDFs may print
+ // a payment or delivery term on the SAME geometric row as a material.
+ const conditionParts=new Map<number,Set<number>>();
  for(const condition of doc.commercial_conditions_raw){
   const wanted=plain(condition);
   if(wanted.length<3)return fail('commercial_condition_unverified');
   const matches=rows.flatMap((row,index)=>
-    plain(row.text).includes(wanted)?[index]:[]);
+   plain(row.text).includes(wanted)?[index]:[]);
   if(matches.length!==1)return fail('commercial_condition_unverified');
-  const index=matches[0];n.corroborated++;
-  if(attributed.has(index)){
-   // When an extracted condition shares a material row we cannot separate
-   // the value/meaning safely by merely matching a short substring.
-   return fail('line_assignment_ambiguous');
+  const index=matches[0];
+  const used=conditionParts.get(index)??new Set<number>();
+  const span=uniqueConditionParts(rows[index].parts,condition,used);
+  if(span===null){
+   // A shared source part with the material is still ambiguous. A
+   // standalone condition containing extra IVA/cost is commercial risk.
+   if(attributed.has(index))return fail('line_assignment_ambiguous');
+   const residue=plain(rows[index].text).replace(wanted,'').trim();
+   return fail(financial.test(residue)||fiscal.test(residue)||
+     pending.test(residue)?'unmapped_fiscal_or_logistics':
+     'commercial_condition_unverified');
   }
-  let residue=plain(rows[index].text).replace(wanted,'').trim();
-  if(financial.test(residue)||fiscal.test(residue)||pending.test(residue))
-   return fail('unmapped_fiscal_or_logistics');
+  if(attributed.has(index)){
+   const material=attributed.get(index)!;
+   const description=plain(material.original_description_raw);
+   const segment=plain(span.map(i=>rows[index].parts[i].text).join(' '));
+   // Never claim a price, quantity or original material description as an
+   // independently documented commercial condition.
+   if((description.length>2&&segment.includes(description))||
+      financial.test(segment))
+    return fail('line_assignment_ambiguous');
+  }
+  for(const part of span)used.add(part);
+  conditionParts.set(index,used);
+  n.corroborated++;
   if(!accounted.has(index)){accounted.add(index);n.attributed++}
+ }
+ // A wholly separate condition row may contain several independently
+ // printed terms, but unexplained trailing text, IVA or prices still block.
+ for(const [index,assigned] of conditionParts){
+  if(attributed.has(index))continue;
+  const rest=rows[index].parts.filter((_,i)=>!assigned.has(i))
+   .map(part=>part.text).join(' ').trim();
+  if(financial.test(rest)||fiscal.test(rest)||pending.test(rest))
+   return fail('unmapped_fiscal_or_logistics');
+  if(rest&&!/^[\p{P}\p{S}\s]*$/u.test(rest))
+   return fail('unmapped_text');
  }
  // Check all materials and the cited discounts before declaring their
  // source rows accounted for.
  for(const [index,line] of attributed){
   const evidence=source.lines[line.ordinal-1];
+  // Strip ONLY independently corroborated condition parts. Never remove
+  // an unverified substring from the material row or its monetary cells.
+  const segments=conditionParts.get(index)??new Set<number>();
+  const materialParts=rows[index].parts.filter((_,i)=>!segments.has(i));
+  const materialText=materialParts.map(p=>p.text).join(' ');
   if(materialLineHasUnclaimedCommercial(
-     rows[index].text,rows[index].parts,line,
+     materialText,materialParts,line,
      evidence?.discount_evidence?.literal??null))
     return fail('unmapped_fiscal_or_logistics');
   if(line.kind==='commercial_note'&&
-    (fiscal.test(rows[index].text)||pending.test(rows[index].text)))
+    (fiscal.test(materialText)||pending.test(materialText)))
     return fail('unpriced_commercial_risk');
  }
  const total=doc.total_declared_raw===null?null:
