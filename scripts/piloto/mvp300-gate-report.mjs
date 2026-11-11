@@ -59,6 +59,14 @@ export function evaluarCircuitoPilotoMvp300(value){
     !value.whatsapp_inbound_enabled||!value.whatsapp_outbound_enabled||
     !value.trial_enabled)stage='pilot_gates_closed';
  else if(value.eligible_latest_rounds===0)stage='no_confirmed_round';
+ // MVP350: a closed, INCOMPLETE historic round cannot receive the missing
+ // supplier reply now. Treat it as evidence for a NEW controlled E2E test,
+ // never suggest resending or reopening an old request.
+ else if(value.round_state==='closed'&&
+   (value.suppliers_replied_after_dispatch<2||
+    value.verified_supplier_quotes<2||
+    value.buyer_verified_offers<2))
+   stage='closed_round_incomplete_new_trial_needed';
  else if(value.dispatch_jobs<2||value.dispatch_with_whapi_id<2)
    stage='supplier_dispatch_incomplete';
  else if(value.suppliers_replied_after_dispatch<2)
