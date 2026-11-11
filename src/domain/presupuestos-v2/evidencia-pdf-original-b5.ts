@@ -163,10 +163,15 @@ function findSourceTotal(rows:readonly GeometricRow[],
  let seenLabels=0;
  for(let i=0;i<rows.length;i++){
   if(used.has(i)||!totalLabel.test(rows[i].text))continue;
-  seenLabels++;
   const labelRow=rows[i].text;
-  if(totalUnsafe.test(labelRow))continue;
   const nums=amountsIn(labelRow);
+  // A table header may have a "Total" COLUMN, not a document total.
+  // Never count it as a competing total just because it says "Total".
+  if(nums?.length===0&&
+    /\b(?:cantidad|descripci[oó]n|art[ií]culo|unitario|precio|dscto|descuento)\b/iu.test(labelRow))
+   continue;
+  seenLabels++;
+  if(totalUnsafe.test(labelRow))continue;
   // Same-row label + one exactly equal, parsed monetary value.
   if(nums?.length===1&&nums[0]===amount){
    candidates.push([i]);continue;
@@ -230,7 +235,7 @@ export async function comprobarRenglonesPdfOriginalB5(args:{
     typeof r.text!=='string'||r.text.length>8000||
     (r.y!==undefined&&!Number.isFinite(r.y))||
     (r.parts!==undefined&&(!Array.isArray(r.parts)||
-      r.parts.length>100||r.parts.some(p=>!Number.isFinite(p.x)||
+      r.parts.length>100||r.parts.some((p:{x:number;text:string})=>!Number.isFinite(p.x)||
         typeof p.text!=='string'||p.text.length>2000)))))
   return fail('pdf_unreadable',real,true);
  const used=new Set<number>();
