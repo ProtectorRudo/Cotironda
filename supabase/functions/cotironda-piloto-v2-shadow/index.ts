@@ -40,5 +40,6 @@ Deno.serve(request=>ejecutarSolicitudSombraV2B3(request,{
    })}
   };
  },
- readPdfEvidence:readPdfPositioned
+ readPdfEvidence:readPdfPositioned,
+ runB5dWhenEmpty:true
 }));
