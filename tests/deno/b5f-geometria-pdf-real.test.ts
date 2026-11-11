@@ -3,6 +3,8 @@ import {readPdfWithGeometryB5f} from
 import {comprobarRenglonesPdfOriginalB5} from
  '../../src/domain/presupuestos-v2/evidencia-pdf-original-b5.ts';
 import {assertEquals,assert} from 'jsr:@std/assert@1.0.15';
+import {diagnosticarTotalPdfB5h} from
+ '../../src/domain/presupuestos-v2/diagnostico-total-pdf-b5h.ts';
 
 function pdfFixture():Uint8Array{
  // One genuinely parseable PDF: no OCR, remote fonts, model or user files.
@@ -78,4 +80,15 @@ Deno.test('B5f: PDF.js extracts actual x/y and corroborates same source total/di
  assertEquals(proof.can_publish,false);
  assertEquals(proof.can_rank,false);
  assertEquals(proof.full_document_covered,false);
+});
+
+Deno.test('B5h: PDF auténtico en memoria clasifica total, sin habilitar publicación',async()=>{
+ const parsed=await readPdfWithGeometryB5f(pdfFixture());
+ const d=diagnosticarTotalPdfB5h(parsed.rows,'$304.148,00');
+ assertEquals(d.code,'same_row_corresponds_private');
+ assertEquals(d.header_rows,1);
+ assertEquals(d.matching_amount_cells,1);
+ assertEquals(d.source_verified,false);
+ assertEquals(d.can_publish,false);
+ assertEquals(d.can_rank,false);
 });
