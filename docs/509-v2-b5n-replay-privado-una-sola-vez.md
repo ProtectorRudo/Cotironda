@@ -20,6 +20,17 @@ B5m ya procesó una vez el PDF histórico y quedó con 3/5 condiciones atribuida
 4. RLS, roles `anon/authenticated`, modo exclusivo y flags OFF verificados; 0 cambios en la base real, Whapi, Vercel, cron o interfaz.
 5. No publicar el código bajo «Luz verde» ni modificar historial de PR #778. La futura prueba real requiere «Publicalo» **solo para `cotironda-piloto`**.
 
+
+## Auditoría de causa sin revelar presupuestos (ampliación B5n)
+
+La lectura de condiciones B5l ahora produce siempre dos atributos **privados y tipados**:
+- `first_unresolved_condition_ordinal`: número 1-based de la primera condición que no pudo corroborar, o `null` cuando no se detuvo dentro de la lista.
+- `condition_failure_kind`: únicamente `condition_too_short`, `source_row_not_unique`, `source_span_not_independent`, `source_part_mixed`, o `null`.
+
+No se guardan fragmentos de texto del PDF, proveedor, teléfonos, coordenadas, cantidades ni precios en estos campos. El ordinal tiene que ser exactamente uno más que las condiciones corroboradas, nunca mayor a la cantidad total; ambos campos deben coexistir o ser nulos. Cualquier razón libre, tipo inesperado o estructura parcialmente presente se rechaza en la **RPC de PostgreSQL**, no solo en la capa TypeScript.
+
+Este diagnóstico evita una cuarta relectura ciega: el resultado del PDF real podrá indicar si la condición ordinal 4 está en varias filas, mezclada dentro del fragmento material, o tiene otro bloqueo categorizado. Los códigos no implican aprobación de cobertura ni cambian el veredicto económico. Tests Node y PG17 sintéticos comprueban rechazo de textos arbitrarios, ordinales imposibles y diagnósticos incompletos.
+
 ## Plan para una publicación futura autorizada
 - Confirmar 6 workflows generales SUCCESS + 4 trabajos B5n SUCCESS, origen GitHub exacto, Edge piloto v9, flags OFF, 0 leases, B5k=1 B5m=1 B5n=0, cero WhatsApps pendientes.
 - Aplicar SQL B5n con los flags OFF; confirmar versiones, permisos y evidencia previa intacta.
