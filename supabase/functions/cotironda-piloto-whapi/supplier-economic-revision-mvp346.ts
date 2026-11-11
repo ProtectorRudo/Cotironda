@@ -12,6 +12,7 @@ import type {DownloadedMedia} from './whapi-media-archive.ts';
 import type {SourceCheckResult} from './supplier-source-text.ts';
 import {checkSupplierPdfSource} from './supplier-source-pdf.ts';
 import {comprobarDescuentoUnitarioMvp352} from './supplier-discount-arithmetic-mvp352.ts';
+import {pistaIdentidadMaterialMvp352} from './supplier-material-identity-hint-mvp352.ts';
 
 type Rpc=(name:string,params:Record<string,unknown>)=>
  Promise<{data:unknown;error:unknown}>;
@@ -80,6 +81,8 @@ export function auditCandidateAmountsMvp346(d:DocumentDraft):boolean{
   // positive credit. Standalone/ambiguous discount lines remain rejected.
   if(/descuento|bonificaci[oó]n|rebaja/iu.test(line.original_description)&&
     amount>=0n&&discounted.state!=='consistent')return false;
+  if(pistaIdentidadMaterialMvp352(line.original_description)!==null&&
+     discounted.state!=='consistent')return false;
   if(line.unit_price!==null){
    const unit=parseCents(line.unit_price),q=parseQuantityMilli(line.quantity);
    if(unit===null||q===null)return false;
