@@ -68,13 +68,32 @@ function sourceHasExtraMoney(row:string,line:RawLineV2):boolean{
 
 const structural=/^(?:(?:n[úu]m(?:ero)?|nro|c[oó]d(?:igo)?|cant(?:idad)?|unidad|um|u\.?m\.?|descripci[oó]n|detalle|art[ií]culo|producto|material|precio|unitario|unit|valor|descuento|dscto|dto|bonif|total|importe|marca|%|[-|:;/])\s*)+$/iu;
 function materialLineHasUnclaimedCommercial(
- row:string,line:RawLineV2,discountPercent:string|null
+ row:string,parts:readonly {x:number;text:string}[],
+ line:RawLineV2,discountPercent:string|null
 ):boolean{
  // Source fiscal/logistic text must be accounted for by a whole extracted
  // commercial line/condition, never by an unrelated material description.
  const original=norm(line.original_line_raw);
  const unexpectedFiscal=fiscal.test(row)&&!fiscal.test(original);
  if(unexpectedFiscal||sourceHasExtraMoney(row,line))return true;
+ // Some PDF.js readers split "$" and its numeric amount across cells.
+ // Look for an additional bare numeric cell beyond quantity/unit/line total;
+ // a description containing 25kg is not a standalone monetary cell.
+ const expected=[line.quantity_raw,line.unit_price_raw,
+  line.line_total_raw].flatMap(raw=>{
+   if(raw===null)return [];
+   const value=parseArgentineMoneyCentsB5(raw);
+   return value===null?[]:[value];
+ });
+ const sourceCells=parts.flatMap(p=>{
+  const value=parseArgentineMoneyCentsB5(p.text);
+  return value===null?[]:[value];
+ });
+ for(const amount of expected){
+  const i=sourceCells.findIndex(x=>x===amount);
+  if(i>=0)sourceCells.splice(i,1);
+ }
+ if(sourceCells.length>0)return true;
  // An amount-bearing material description that includes an unpriced tax or
  // logistic clause needs separate business semantics, not a quiet pass.
  if(line.kind==='material'&&
@@ -162,7 +181,7 @@ export function auditarCoberturaPdfOriginalB5l(args:{
  for(const [index,line] of attributed){
   const evidence=source.lines[line.ordinal-1];
   if(materialLineHasUnclaimedCommercial(
-     rows[index].text,line,
+     rows[index].text,rows[index].parts,line,
      evidence?.discount_evidence?.literal??null))
     return fail('unmapped_fiscal_or_logistics');
   if(line.kind==='commercial_note'&&
@@ -184,7 +203,7 @@ export function auditarCoberturaPdfOriginalB5l(args:{
  for(let i=0;i<rows.length;i++){
   if(accounted.has(i))continue;
   const text=norm(rows[i].text);
-  if(!text)continue;
+  if(!text){accounted.add(i);n.attributed++;continue;}
   if(fiscal.test(text)&&!structural.test(text))
    return fail('unmapped_fiscal_or_logistics');
   if(financial.test(text))
