@@ -8,6 +8,10 @@ on:
       - 'supabase/functions/cotironda-piloto-whapi/supplier-source-pdf-general.ts'
       - 'tests/unit/presupuestos-v2-*'
       - 'tests/deno/b5f-geometria-pdf-real.test.ts'
+      - 'docs/494-v2-b5f-cotejo-total-y-descuento-pdf-posicional.md'
+      - 'README.md'
+      - 'AGENTS.md'
+      - 'CHANGELOG.md
       - 'supabase/functions/cotironda-piloto-v2-shadow/pdf-geometry-b5f.ts'
       - '.github/workflows/cotironda-v2-b5f-total-y-descuentos-posicional.yml'
   workflow_dispatch:
