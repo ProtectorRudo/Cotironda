@@ -9,6 +9,7 @@ import {auditarComercialPrivadoB5,parseArgentineMoneyCentsB5}
 import type {OriginalPdfCheckB5} from './evidencia-pdf-original-b5.ts';
 import type {GeometryResultB5i} from './diagnostico-geometria-total-b5i.ts';
 import type {PdfRowB5h} from './diagnostico-total-pdf-b5h.ts';
+import type {CurrencyEvidenceB5k} from './cotejo-moneda-original-b5k.ts';
 
 export type ReconciliationCodeB5j=
  'invalid_candidate'|'source_rows_unconfirmed'|'geometry_unconfirmed'|
@@ -134,6 +135,8 @@ const result=(code:ReconciliationCodeB5j,n:Counts):EconomicResultB5j=>Object.fre
 export function reconciliarEconomiaTotalB5j(args:{
  candidate:unknown;source:OriginalPdfCheckB5;
  geometry:GeometryResultB5i;rows:readonly PdfRowB5h[];
+ /** Optional B5k evidence; never changes the original candidate fields. */
+ currencyEvidence?:CurrencyEvidenceB5k;
 }):EconomicResultB5j{
  const n=empty();
  const report=revisarContratoProveedorV2(args.candidate);
@@ -173,7 +176,97 @@ export function reconciliarEconomiaTotalB5j(args:{
 
  // Require some explicit currency in original; never infer by geography.
  const currency=normalize(doc.currency_declared_raw??'');
- if(!['$','ars','pesos','peso argentino'].includes(currency)||
+ const proof=args.currencyEvidence;
+ // "$" in an original proves a currency SYMBOL, not an ISO code.
+ // Only use this narrow observation for PRIVATE arithmetic, never ranking.
+ if(proof!==undefined){
+  const acceptable=proof.code==='uniform_dollar_symbol_iso_unstated'||
+    proof.code==='explicit_ars_source';
+  if(!acceptable||proof.source_verified!==false||
+      proof.can_publish!==false||proof.can_rank!==false||
+      !proof.footer_with_symbol||
+      proof.material_count!==n.materials||
+      proof.material_lines_with_symbol!==n.materials||
+      proof.unit_prices_with_symbol!==doc.lines.filter(l=>
+       l.kind==='material'&&l.unit_price_raw!==null).length)
+   return fail('currency_ambiguous');
+ }
+ const documentedCurrency=['
+
+ const discounts=args.source.lines.flatMap(p=>p.discount_evidence===undefined?[]:
+  [{ordinal:p.ordinal,basis_points:p.discount_evidence.basis_points,
+    literal:p.discount_evidence.literal,origin:p.discount_evidence.origin}]);
+ const audit=auditarComercialPrivadoB5(doc,[],discounts);
+ if(audit.state!=='private_arithmetic_only'||audit.lines.length!==doc.lines.length)
+  return fail('line_arithmetic_unconfirmed');
+ n.matched=audit.lines.filter(x=>x.kind==='material'&&
+  x.result==='matched_arithmetic_unverified').length;
+ if(n.materials<1||n.matched!==n.materials)
+  return fail('line_arithmetic_unconfirmed');
+
+ // Notes have no priced-line amount. A monetary or unpriced fiscal/
+ // logistics charge inside a note must NEVER silently become zero.
+ if(doc.lines.some(line=>line.kind==='commercial_note'&&
+  fiscalUnknown.test(line.original_line_raw)&&
+  /(?:\$\s*\d|\b(?:ars|usd)\b\s*\d|\b(?:a\s+cotizar|a\s+confirmar|pendiente|sin\s+precio)\b)/iu
+   .test(line.original_line_raw)))
+  return fail('fiscal_or_freight_ambiguous');
+
+ // Discounts already reflected in line_total_raw are not subtracted twice.
+ let sum=0n;
+ for(const line of doc.lines){
+  if(line.kind==='commercial_note')continue;
+  const amount=parseArgentineMoneyCentsB5(line.line_total_raw);
+  if(amount===null||amount>MAX_AMOUNT||amount< -MAX_AMOUNT)
+   return fail('missing_line_amount');
+  if(line.kind==='material'){
+   if(amount<0n)return fail('missing_line_amount');
+   sum+=amount;
+  }else if(line.kind==='additional_charge'){
+   if(amount<0n||!chargeLabel.test(line.original_line_raw))
+    return fail('invalid_charge_or_discount');
+   sum+=amount;
+  }else{
+   if(!discountLabel.test(line.original_line_raw))
+    return fail('invalid_charge_or_discount');
+   if(discounts.length>0)return fail('discount_scope_ambiguous');
+   sum-=amount<0n?-amount:amount;
+  }
+  if(sum>MAX_AMOUNT||sum< -MAX_AMOUNT)return fail('missing_line_amount');
+ }
+ const total=parseArgentineMoneyCentsB5(doc.total_declared_raw);
+ if(total===null||total<0n||total>MAX_AMOUNT)return fail('missing_line_amount');
+ if(hasUnmappedCommercialSource(args.rows,doc,total))
+  return fail('source_unmapped_content');
+ // All natural-language conditions must be corroborated verbatim in original.
+ const sourceRows=args.rows.map(row=>body(row.text));
+ n.verifiedTerms=doc.commercial_conditions_raw.filter(term=>{
+  const literal=body(term);return literal.length>=3&&
+   sourceRows.some(row=>row.includes(literal));
+ }).length;
+ if(n.verifiedTerms!==n.terms)return fail('source_conditions_unconfirmed');
+
+ n.iva=audit.mentions.iva?.state??'not_mentioned';
+ n.freight=audit.mentions.flete?.state??'not_mentioned';
+ // Absence means UNKNOWN, not "sin IVA". Unpriced/ambiguous fiscal or
+ // freight terms cannot be supplied with invented additions.
+ if(n.iva==='conflicting_mentions'||n.iva==='rate_mentioned'||
+    n.iva==='mentioned_unpriced'||n.freight==='conflicting_mentions'||
+    n.freight==='mentioned_unpriced'||
+    (n.freight==='quoted_price_explicit'&&n.charges===0)||
+    doc.commercial_conditions_raw.some(s=>fiscalUnknown.test(s)&&
+      /\b(?:pendiente|a\s+cotizar|a\s+confirmar)\b/iu.test(s)))
+  return fail('fiscal_or_freight_ambiguous');
+
+ n.balance=sum===total;
+ return result(n.balance?'grand_total_balances_private':
+  'grand_total_differs',n);
+}
+,'ars','pesos','peso argentino'].includes(currency);
+ const privateSymbolFallback=currency===''&&proof!==undefined&&
+  (proof.code==='uniform_dollar_symbol_iso_unstated'||
+   proof.code==='explicit_ars_source');
+ if((!documentedCurrency&&!privateSymbolFallback)||
     !args.rows.some(row=>/(?:\$\s*\d|(?:ars|pesos)\s+\d)/iu.test(row.text)))
   return fail('currency_ambiguous');
 
