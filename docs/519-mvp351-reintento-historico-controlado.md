@@ -59,3 +59,26 @@ Auditoría externa sobre **Supabase `cotironda-piloto`**:
 5. Confirmar costo, precio, IVA/flete explícitos, ofertas anónimas visibles desde navegador real y segunda cotización; ejecutar cierre y revelación con reglas de privacidad. No comparar totales parciales.
 
 Sin orden «Publicalo» no hay mutaciones ni mensajes; hasta nueva verificación del SHA real y dos ofertas, **no está certificado el piloto**.
+
+
+## Registro de publicación real — 11/11/2026, `Publicalo` (piloto solamente)
+
+Se publicó **únicamente en Supabase `cotironda-piloto`**, proyecto `ilggkalaafhtiysyzlmg`, desde el commit de código probado **`fadf4411d6cfa3cf6c4100ed02724aec339c3cc3`** (PR #791). Nunca se desplegó a producción ni a Vercel, y no se enviaron WhatsApps adicionales.
+
+- Antes: auto-recovery **v12**, webhook Whapi **v75**, seguimiento **v29**.
+- Durante el cambio: se desactivó de forma temporal SOLO `cotironda_piloto_document_recovery_5min`; los otros cron quedaron intactos. No había ninguna recuperación tomada en ese instante.
+- **Auto-recovery v13 ACTIVE:** módulo de correlación MVP351 identificado por Git blob SHA `eb522a681eb53e2cf6ef62a7bf497114ebcdaf65`, control de fidelidad MVP348 y worker actualizado. Se preservaron exactamente las 26 dependencias existentes no afectadas, incluidas sus variantes comerciales en producción piloto.
+- **SQL:** migración instalada `20261111213152_mvp351_reintento_fidelidad_y_rivales_historicos`; ledger privado creado, RLS ON, SELECT prohibido a `anon`/`authenticated`, funciones internas con permisos `service_role`. No se reinstalaron las tablas existentes MVP346/347.
+- **Webhook Whapi v76 ACTIVE:** se sustituyó **solamente** la importación del correlador MVP291 por MVP336/MVP351 y se agregó el módulo exacto aprobado; se mantuvieron la lógica original del webhook y sus comprobaciones de autenticación. El bundle activo tiene 61 módulos: el anterior correlador MVP291 quedó sin uso y fue omitido automáticamente por el empaquetado.
+- El cron documental fue reactivado con su programación previa `*/5 * * * *`; verificado `active=true` y el puente MVP293 presente. Tracking v29 y demás funciones/cron no fueron reemplazados.
+- El commit de código tuvo **7/7 workflows generales principales aprobados**, además de sus controles específicos de correlación y PostgreSQL 17. Vercel no se utilizó por el límite de builds que reportaba en PR anteriores.
+
+### Resultado observado, sin adornos
+
+En la primera ejecución automática del cron posterior a la publicación, la fuente histórica **sí fue tomada** una sola vez: apareció un registro en `ai_supplier_recovery_second_attempt_mvp351` y uno en `ai_supplier_correlation_retries_mvp336`. El worker finalizó `review/multiple_indistinguishable_rounds`, con la decisión de correlación `review/insufficient_material_evidence`. **No se publicó ninguna oferta** en MVP107 ni MVP347. El registro inicial `archived_materials_disagree` se conserva en el nuevo ledger, sin borrar el original. Ya no está tomada ni debe reintentarse automáticamente por segunda vez.
+
+La auditoría de cantidades y documentos, sin copiar precios ni identidades a los registros públicos, observó que **los tres renglones archivados comparten cantidades con la ronda preparada** y no con la ronda cerrada previa; sin embargo, los materiales fuente llegaron con unidades nulas y anotaciones comerciales de descuento dentro de la descripción. El veredicto del modelo **no logró evidenciar suficientemente** tres correspondencias físicas confiables. No se atribuye causalidad exclusiva a los descuentos ni se declara un fallo de precios; no es correcto forzar un enlace por cantidades.
+
+**Resultado real:** MVP351 está técnicamente publicado y su circuito automático corre, pero **la cotización sigue privada**. Faltan una mejora semántica probada para separar notas/descuentos del nombre del material sin alterar el original, un mecanismo seguro de nuevo análisis respetando el ledger consumido, verificación económica integral, respuesta del segundo proveedor y prueba de seguimiento/cierre en navegador.
+
+**Siguiente autorización:** `Luz verde` para desarrollar y probar una nueva versión que atienda `insufficient_material_evidence` con evidencia fuente; `Publicalo` para desplegarla al piloto tras controles. El PR #791 queda en borrador y apilado sobre #790; el deploy a piloto **no** equivale a merge a `main`. Antes de otro despliegue, reconciliar las ramas apiladas para que GitHub siga siendo la fuente de verdad.
