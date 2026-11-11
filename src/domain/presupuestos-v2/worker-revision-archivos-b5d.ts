@@ -10,6 +10,8 @@ import {comprobarRenglonesPdfOriginalB5,type EvidenceReaderB5}
  from './evidencia-pdf-original-b5.ts';
 import {leerPresupuestoSombraV2,type ShadowReadResultV2}
  from './lector-sombra.ts';
+import {comprobarFilasXlsxPrivadasB5e,type XlsxRowReaderB5e}
+ from './evidencia-xlsx-original-b5e.ts';
 
 type Rpc=(name:string,params:Record<string,unknown>)=>
  Promise<{data:unknown;error:unknown}>;
@@ -51,7 +53,8 @@ async function sha256(bytes:Uint8Array):Promise<string>{
 export async function revisarArchivosVersionadosB5d(args:{
  enabled:boolean;trustedInternalWorker:boolean;
  rpc:Rpc;storage:Storage;apiKey:string;model:Model;
- readPdfEvidence?:EvidenceReaderB5;read?:Read;
+ readPdfEvidence?:EvidenceReaderB5;
+ readXlsxEvidence?:XlsxRowReaderB5e;read?:Read;
 }):Promise<PrivateReviewOutcomeB5d>{
  if(!args?.enabled)return result('disabled','flag_off',0);
  if(!args.trustedInternalWorker||typeof args.rpc!=='function'||
@@ -120,9 +123,16 @@ export async function revisarArchivosVersionadosB5d(args:{
       originalBytes:original,sourceSha256:sha,candidate:doc,
       readPdf:args.readPdfEvidence})
      :null;
+    const xlsxProof=mime===XLSX&&args.readXlsxEvidence
+     ?await comprobarFilasXlsxPrivadasB5e({
+      originalBytes:original,sourceSha256:sha,candidate:doc,
+      readRows:args.readXlsxEvidence})
+     :null;
     const lineChecks=checked.line_diagnostics.map((d,i)=>({
-      ...d,source_b5:proof?.lines[i]?.state??'source_not_checked',
-      source_reason_b5:proof?.reason??(mime===XLSX
+      ...d,
+      source_b5:proof?.lines[i]?.state??
+       xlsxProof?.lines[i]?.state??'source_not_checked',
+      source_reason_b5:proof?.reason??xlsxProof?.reason??(mime===XLSX
        ?'spreadsheet_requires_cell_audit':'reader_unavailable'),
       arithmetic_b5:commercial.lines[i]?.result??'insufficient_numeric_data',
       source_verified:false,can_publish:false
@@ -134,7 +144,9 @@ export async function revisarArchivosVersionadosB5d(args:{
     }else{
      state='candidate_private';
      candidate=doc;diagnostics=lineChecks;
-     code=mime===XLSX?'b5d_cell_audit_pending':
+     code=mime===XLSX?
+      (xlsxProof?.state==='rows_correspond_private'
+       ?'b5e_rows_match_not_complete':'b5d_cell_audit_pending'):
       proof?.state==='source_rows_correspond_private'
        ?'b5d_rows_match_not_complete':'b5d_pdf_review_pending';
     }
