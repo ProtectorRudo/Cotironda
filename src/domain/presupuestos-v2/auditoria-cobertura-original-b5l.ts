@@ -46,7 +46,27 @@ const plain=(s:string)=>norm(s).replace(/\s*([.,:;])\s*/gu,'$1');
 const fiscal=/\b(?:iva|flete|env[ií]o|transporte|envios?|impuestos?|percepciones?|retenciones?|recargos?|cargos?|log[ií]stica|pallets?|embalaje|bonificaciones?|descuentos?|dscto|dcto|rebajas?|subtotal|sub\s*total)\b/iu;
 const financial=/(?:\$\s*|(?:ARS|USD|U\$S|EUR|US\$)\s*|€\s*)\d|(?<![\p{L}\p{N}])\d{1,3}(?:\.\d{3})*,\d{2}(?![\p{L}\p{N}])|\b\d{1,3}(?:[,.]\d{1,2})?\s*%/iu;
 const pending=/\b(?:a\s+cotizar|a\s+confirmar|pendiente|seg[uú]n\s+zona|consultar\s+precio|consultar\s+disponibilidad)\b/iu;
-const structural=/^(?:(?:n[úu]m(?:ero)?|nro|c[oó]d(?:igo)?|cant(?:idad)?|unidad|um|u\.?m\.?|descripci[oó]n|detalle|art[ií]culo|producto|material|precio|unitario|valor|descuento|dscto|dto|bonif|total|importe|marca|%|[-|:;/])\s*)+$/iu;
+const moneyCell=/(?<![\p{L}\p{N}])(?:(?:ARS|USD|U\$S|US\$|EUR|€)\s*|\$\s*)\d{1,3}(?:\.\d{3})*(?:,\d{1,2})?(?![\p{L}\p{N}])/giu;
+function sourceHasExtraMoney(row:string,line:RawLineV2):boolean{
+ const source=[...row.matchAll(moneyCell)].flatMap(m=>{
+  const value=parseArgentineMoneyCentsB5(m[0]);
+  return value===null?[]:[value];
+ });
+ const expected=[line.unit_price_raw,line.line_total_raw].flatMap(raw=>{
+  if(raw===null)return [];
+  const value=parseArgentineMoneyCentsB5(raw);
+  return value===null?[]:[value];
+ });
+ const remaining=[...source];
+ for(const amount of expected){
+  const at=remaining.findIndex(x=>x===amount);
+  if(at<0)return true;
+  remaining.splice(at,1);
+ }
+ return remaining.length!==0;
+}
+
+const structural=/^(?:(?:n[úu]m(?:ero)?|nro|c[oó]d(?:igo)?|cant(?:idad)?|unidad|um|u\.?m\.?|descripci[oó]n|detalle|art[ií]culo|producto|material|precio|unitario|unit|valor|descuento|dscto|dto|bonif|total|importe|marca|%|[-|:;/])\s*)+$/iu;
 function materialLineHasUnclaimedCommercial(
  row:string,line:RawLineV2,discountPercent:string|null
 ):boolean{
@@ -54,7 +74,12 @@ function materialLineHasUnclaimedCommercial(
  // commercial line/condition, never by an unrelated material description.
  const original=norm(line.original_line_raw);
  const unexpectedFiscal=fiscal.test(row)&&!fiscal.test(original);
- if(unexpectedFiscal)return true;
+ if(unexpectedFiscal||sourceHasExtraMoney(row,line))return true;
+ // An amount-bearing material description that includes an unpriced tax or
+ // logistic clause needs separate business semantics, not a quiet pass.
+ if(line.kind==='material'&&
+    /\b(?:iva|flete|env[ií]o|transporte|percepci[oó]n|retenci[oó]n|recargo|cargo)\b/iu
+     .test(original))return true;
  if(pending.test(row)&&!pending.test(original))return true;
  const sourcePercent=[...row.matchAll(/\b\d{1,3}(?:[,.]\d{1,2})?\s*%/giu)]
   .map(m=>plain(m[0]));
