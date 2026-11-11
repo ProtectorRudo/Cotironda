@@ -47,3 +47,11 @@ La prioridad comercial sigue siendo recibir cualquier presupuesto razonable sin 
 Se ejecutó en `cotironda-piloto` la condición **equivalente al SELECT de claim B5d**, sin instalar la migración, crear leases ni activar V2. Los seis archivos cumplen el conjunto de predicados de archivo almacenado, mismo SHA/origen, ventana, consentimientos, emisor, invitación y entrega, según corresponda: **2 PDF históricos B2**, **3 PDF vinculados** y **1 Excel vinculado**. Esta prueba es una verificación de datos reales del selector, distinta de los ensayos PG17 sintéticos. No se leyeron bytes privados con B5d ni se certificaron importes.
 
 El código no hizo consultas SELECT que impriman números, HMAC, identificadores de ronda o texto personal. Se mantiene el flag OFF y `0` publicaciones V2. Cuando se autorice el despliegue, se debe contrastar de nuevo que el selector no cambió por nuevos mensajes, revocaciones o vencimientos.
+
+## Extensión B5e — evidencia independiente de renglones XLSX (solo desarrollo)
+
+Se reutiliza `readOfficeVisibleRows` de Cotironda, lector ZIP/XML del archivo Excel **original**, sin depender de la transcripción de OpenAI. La Edge B3 inyecta el adaptador al trabajador B5d; el verificador puro `evidencia-xlsx-original-b5e.ts` comprueba SHA de bytes, compara descripción y cifras literales por renglón, rechaza coincidencias duplicadas y detecta filas monetarias/fiscales omitidas.
+
+Su éxito se llama `rows_match_but_xlsx_not_certified` y se guarda solamente como diagnóstico privado; `cell_coordinates_verified=false`, `formulae_verified=false`, `full_document_covered=false`, `can_publish=false`. Si el parser nativo no puede abrir la planilla, si la moneda está formateada sin literal o si hay campos dudosos, sigue en revisión. No convertir esta detección de coincidencias en una cotización verificada.
+
+Pruebas nuevas con ZIP/XLSX sintético real en Node: coincidencia de fila, pallet con precio omitido, IVA omitido, precio alterado, hash corrupto y fallo de parser; más Deno Edge y PostgreSQL17. **El Excel real de Nahuel continúa sin probar con este nuevo auditor**, porque B5d/B5e todavía no se instaló en piloto.
