@@ -1,9 +1,9 @@
 name: Cotironda MVP351 - recuperación revisada y rival histórico sin envíos
 on:
   push:
-    branches: [fix/mvp351-review-retry-historic-candidates-20261111]
+    branches: [fix/mvp351-review-retry-historic-candidates-20261111, fix/mvp352-material-identity-hints-20261111]
   pull_request:
-    branches: [fix/mvp350-preflight-ronda-fresca-20261111]
+    branches: [fix/mvp350-preflight-ronda-fresca-20261111, fix/mvp351-review-retry-historic-candidates-20261111]
   workflow_dispatch:
 permissions:
   contents: read
