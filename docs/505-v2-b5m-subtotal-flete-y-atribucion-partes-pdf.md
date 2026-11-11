@@ -35,8 +35,8 @@ Se modificó el módulo B5l que ya existe (no se incorporó nueva tabla, RPC, co
 - **Node:** flete mencionado pero no cotizado y subtotal coincidente/diferente, gratis explícito, IVA 21 % ambiguo; condiciones separadas de la fila material, múltiples condiciones/celdas, texto fragmentado en varias partes, descripción/condición mezcladas en un mismo fragmento, cargos extra, IVA oculto y uso duplicado de texto.
 - **Deno/PDF.js:** PDF sintético REAL con material y texto de flete en la **misma coordenada vertical** pero dos fragmentos independientes, censo de cobertura privado y suma de artículos coincidente sin certificar el importe pagadero.
 - **PostgreSQL 17 con rollback:** los controles de RLS, modos exclusivos, ledger privado y campos permitidos no cambiaron.
-- **Regresión completa:** **3.917 tests, 3.907 aprobados, 10 omitidos y 0 fallas** en la última batería de código comprobada. Workflow específico 4/4 jobs `SUCCESS`.
-- **CI general:** ejecutar y confirmar workflows sobre último HEAD antes de declarar el cierre de desarrollo.
+- **Regresión completa:** **3.918 tests, 3.908 aprobados, 10 omitidos y 0 fallas** en la última batería de código comprobada. Workflow específico 4/4 jobs `SUCCESS`.
+- **CI general:** control específico B5m aprobado con 4/4 trabajos (Node, PDF.js Deno, PostgreSQL 17 rollback, regresión). Los seis workflows generales se verifican sobre el último HEAD documental. Se agregó un ensayo para fragmentos vacíos de PDF.js que no deben duplicar una condición.
 
 ## Criterios antes de la prueba real
 
