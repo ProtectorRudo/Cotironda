@@ -21,7 +21,7 @@ export type CurrencyOutcomeB5k=Readonly<{
  sourceVerified:false;canRank:false;canRevealContacts:false;
 }>;
 const HASH=/^[a-f0-9]{64}$/u;
-const VERSION='v2_b5m_20261111';
+const VERSION='v2_b5n_20261111';
 const result=(state:CurrencyOutcomeB5k['state'],reason:string,
  processed:0|1):CurrencyOutcomeB5k=>Object.freeze({
  state,reason,processed,outboundMessages:0,publishedOffers:0,
