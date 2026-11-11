@@ -15,6 +15,7 @@ const EXTRA='supabase/functions/cotironda-piloto-whapi/supplier-auto-correlation
 const BASE_SHA256='3df77172138e27689123080335e65f2da111a14caac0b2a8034978435371f063';
 const EXTRA_GIT_SHA='e94b1aad254389efda09c7e544bf62e12a7b5c42'; // MVP336 original
 const EXTRA_GIT_SHA_MVP351='eb522a681eb53e2cf6ef62a7bf497114ebcdaf65'; // reviewed branch
+const EXTRA_GIT_SHA_MVP352='b5ea8c2b64ba7fe07409943b9c810d7a6e270b84'; // semantic hints only
 const oldImport="from './supplier-auto-correlation-mvp291.ts';";
 const newImport="from './supplier-auto-correlation-mvp336.ts';";
 const sha256=s=>createHash('sha256').update(s,'utf8').digest('hex');
@@ -36,10 +37,11 @@ export function prepararMvp336Overlay({root=ROOT,source}={}){
  const exactCorrelatorHash=gitBlob(extra);
  // Versioned allowlist: old pinned module remains valid; new reviewed
  // MVP351 module adds closed-round non-binding guard, never arbitrary code.
- if(![EXTRA_GIT_SHA,EXTRA_GIT_SHA_MVP351].includes(exactCorrelatorHash)||
+ if(![EXTRA_GIT_SHA,EXTRA_GIT_SHA_MVP351,EXTRA_GIT_SHA_MVP352].includes(exactCorrelatorHash)||
     !extra.includes('elegirRondaUnicaMvp291')||
     !extra.includes('retryReviewedOnce')||
-    !extra.includes('cantidadLiteralSinUnidadMvp336('))
+    !extra.includes('cantidadLiteralSinUnidadMvp336(')||
+    (exactCorrelatorHash===EXTRA_GIT_SHA_MVP352&&!extra.includes('pistasMaterialesMvp352(input.quote)')))
   throw Error('mvp336_new_correlator_not_pinned');
  const worker=readFileSync(resolve(root,
   'supabase/functions/cotironda-piloto-whapi/supplier-auto-recovery-worker-mvp292.ts'),'utf8');
@@ -57,7 +59,10 @@ export function prepararMvp336Overlay({root=ROOT,source}={}){
   source_path:INDEX,source:patched,
   baseline_index_sha256:BASE_SHA256,index_sha256:sha256(patched),
   added_file:EXTRA,added_file_git_sha:exactCorrelatorHash,
-  file_count:62,original_manifest_preserved:true,
+  file_count:62,
+  dependency_added_file:exactCorrelatorHash===EXTRA_GIT_SHA_MVP352?
+   'supabase/functions/cotironda-piloto-whapi/supplier-material-identity-hint-mvp352.ts':null,
+  original_manifest_preserved:true,
   source_changed_on_disk:false,db_mutated:false,
   outbound_whatsapp_messages:0,production_published:false
  });
