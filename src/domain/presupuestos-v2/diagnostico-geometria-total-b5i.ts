@@ -29,10 +29,8 @@ export type GeometryResultB5i=Readonly<{
  can_reveal_contacts:false;
 }>;
 const money=/(?<![\p{L}\p{N}.,])(?:(?:ARS|USD|U\$S)\s*|\$\s*)?(?:\d{1,3}(?:\.\d{3})+|\d+)(?:,\d{1,2})?(?![\p{L}\p{N}.,])/giu;
-const fiscal=/\b(?:iva|flete|env[ií]o|transporte|percepci[oó]n|
- retenci[oó]n|impuesto|pallets?|descuento|dscto|bonificaci[oó]n)\b/iu;
-const altLabel=/\b(?:importe|monto|saldo|suma|neto|liquidaci[oó]n|
- presupuesto|a\s+pagar|total|final)\b/iu;
+const fiscal=/\b(?:iva|flete|env[ií]o|transporte|percepci[oó]n|retenci[oó]n|impuesto|pallets?|descuento|dscto|bonificaci[oó]n)\b/iu;
+const altLabel=/\b(?:importe|monto|saldo|suma|neto|liquidaci[oó]n|presupuesto|a\s+pagar|total|final)\b/iu;
 const norm=(value:string)=>value.normalize('NFKC')
  .replace(/\s+/gu,' ').trim().toLocaleLowerCase('es-AR');
 const exact=(value:string,expected:bigint)=>!value.includes('%')&&
