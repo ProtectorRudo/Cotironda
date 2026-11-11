@@ -72,3 +72,24 @@ test('MVP227: dos proveedores pueden cotizar rubro compartido sin ranking global
  assert.equal(r.offers.length,2);
  assert.ok(r.offers.every(x=>!x.text.includes('ganador')&&!/\bpuesto\s+[1-9]/iu.test(x.label)));
 });
+
+test('B6: la vista NO inventa IVA/flete/pago cuando el presupuesto guarda silencio',()=>{
+ const out=vistaCotizacionesRubrosMvp227(source);
+ assert.ok(out);
+ assert.doesNotMatch(out.offers[0].text,
+  /\b(?:IVA|flete|envío|pago|no informado)\b/iu);
+ assert.match(out.offers[1].text,/Sin IVA \(expreso\)/u);
+ assert.match(out.offers[1].text,/Flete a convenir \(expreso\)/u);
+ assert.match(out.offers[1].text,/Pago: transferencia/u);
+ assert.doesNotMatch(out.offers[1].text,/IVA incluido|Flete incluido/u);
+});
+test('B6: ausencia de las tres condiciones no agrega etiquetas al parcial',()=>{
+ const x=structuredClone(source);
+ x.ofertas[0].rubros[0].respondidos=0;
+ x.ofertas[0].rubros[0].cobertura='parcial';
+ x.ofertas[0].precios=[];
+ const out=vistaCotizacionesRubrosMvp227(x);
+ assert.ok(out);
+ assert.doesNotMatch(out.offers[0].text,/IVA|Flete|Pago:/iu);
+ assert.match(out.offers[0].text,/Cotizó 0 de 1/u);
+});
