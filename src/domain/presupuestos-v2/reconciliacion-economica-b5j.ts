@@ -101,12 +101,14 @@ function hasUnmappedCommercialSource(
  const currency=/(?:\$\s*|(?:ARS|USD|U\$S)\s*)\d/u;
  const decimal=/\b(?:\d{1,3}(?:\.\d{3})+|\d+),\d{2}\b/u;
  const tableHeading=/\b(?:cant(?:idad)?|descripci[oó]n|art[ií]culo|precio|unitario)\b/iu;
+ const unsafeHeader=/\b(?:iva|flete|env[ií]o|transporte|cargos?|recargos?|impuestos?|percepciones?|retenciones?|pallets?|embalaje)\b/iu;
  for(let index=0;index<rows.length;index++){
   if(used.has(index))continue;
   const text=rows[index].text;
-  // The discount-column heading ("Dscto.") is not an extra priced line.
-  if(tableHeading.test(text)&&!currency.test(text)&&
-     !decimal.test(text))continue;
+  // A generic discount-column heading is normal; an unexplained
+  // VAT/freight/tax COLUMN is not, even if the same row says "Precio".
+  if(tableHeading.test(text)&&!unsafeHeader.test(text)&&
+     !currency.test(text)&&!decimal.test(text))continue;
   if(financial.test(text)||currency.test(text)||decimal.test(text))
    return true;
  }
