@@ -174,3 +174,20 @@ test('B5l via B5k worker: omitted cash price in an extra source row stays privat
  assert.equal(x.stored.p_diagnostics.full_document_covered,false);
  assert.equal(x.stored.p_diagnostics.can_publish,false);
 });
+
+test('B5m: an old B5k claim cannot masquerade as a fresh replay',async()=>{
+ const x=await run({request:{...claim,processor_version:'v2_b5k_20261111'}});
+ assert.equal(x.outcome.state,'reconciliation_required');
+ assert.equal(x.outcome.reason,'claim_invalid');
+ assert.ok(!x.calls.includes('download'));
+});
+test('B5m: versioned SQL requires the old private economic and coverage blockers',()=>{
+ const sql=readFileSync(new URL(
+  '../../supabase/piloto/v2_b5m_private_pdf_replay_versioned.sql',
+  import.meta.url),'utf8');
+ assert.ok(sql.includes("old.processor_version='v2_b5k_20261111'"));
+ assert.ok(sql.includes("old.diagnostics->>'economic_code'='fiscal_or_freight_ambiguous'"));
+ assert.ok(sql.includes("old.diagnostics->>'coverage_code'='line_assignment_ambiguous'"));
+ assert.ok(sql.includes("WHERE processor_version='v2_b5m_20261111'"));
+ assert.ok(sql.includes("AND NOT b5h_only AND NOT b5i_only AND NOT b5j_only AND NOT b5k_only"));
+});
