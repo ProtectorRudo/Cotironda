@@ -22,7 +22,7 @@ const candidate={
  commercial_conditions_raw:[]
 };
 const claim={state:'claimed',source_hmac:id,source_sha256:sha,
- size_bytes:bytes.length,processor_version:'v2_b5k_20261111',
+ size_bytes:bytes.length,processor_version:'v2_b5m_20261111',
  historic_candidate:candidate};
 const row=(y,parts)=>({page:1,y,parts,
  text:parts.map(x=>x.text).join(' ')});
