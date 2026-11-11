@@ -172,3 +172,66 @@ Deno.test('B5l: real PDF.js places a full freight term in an independent part on
  assertEquals(economic.can_publish,false);
  assertEquals(economic.can_rank,false);
 });
+
+
+Deno.test('B5n: PDF.js real attributes punctuation-marked payment as its own source part',async()=>{
+ const bytes=originalPdf('$4.600,00',[[555,710,'precios en efectivo:']]);
+ const reader=await readPdfWithGeometryB5f(bytes);
+ assertEquals(reader.scanned,false);
+ assert(reader.rows.some(r=>r.text.includes('Cemento CPC')&&
+  r.parts?.some(p=>p.text==='precios en efectivo:')));
+ const sha=Array.from(new Uint8Array(await crypto.subtle.digest(
+  'SHA-256',Uint8Array.from(bytes).buffer)),x=>
+   x.toString(16).padStart(2,'0')).join('');
+ const quote={...makeQuote('$4.600,00'),
+  currency_declared_raw:'$',
+  commercial_conditions_raw:['precios en efectivo']};
+ const proof=await comprobarRenglonesPdfOriginalB5({
+  originalBytes:bytes,sourceSha256:sha,candidate:quote,
+  readPdf:async()=>reader
+ });
+ const geometry=diagnosticarGeometriaTotalB5i({
+  rows:reader.rows,declaredTotal:quote.total_declared_raw,
+  lines:quote.lines
+ });
+ const coverage=auditarCoberturaPdfOriginalB5l({
+  candidate:quote,rows:reader.rows,source:proof,geometry,
+  scanned:reader.scanned,pages:reader.pages
+ });
+ assertEquals(coverage.code,'visible_rows_accounted_private');
+ assertEquals(coverage.corroborated_conditions,1);
+ assertEquals(coverage.unattributed_rows,0);
+ assertEquals(coverage.source_verified,false);
+ assertEquals(coverage.full_document_covered,false);
+ assertEquals(coverage.can_publish,false);
+ assertEquals(coverage.can_rank,false);
+ assertEquals(coverage.can_reveal_contacts,false);
+});
+Deno.test('B5n: PDF.js real rejects payment and unpriced freight merged in one source part',async()=>{
+ const bytes=originalPdf('$4.600,00',
+  [[555,710,'precios en efectivo: flete a convenir']]);
+ const reader=await readPdfWithGeometryB5f(bytes);
+ const sha=Array.from(new Uint8Array(await crypto.subtle.digest(
+  'SHA-256',Uint8Array.from(bytes).buffer)),x=>
+   x.toString(16).padStart(2,'0')).join('');
+ const quote={...makeQuote('$4.600,00'),
+  currency_declared_raw:'$',
+  commercial_conditions_raw:['precios en efectivo','flete a convenir']};
+ const proof=await comprobarRenglonesPdfOriginalB5({
+  originalBytes:bytes,sourceSha256:sha,candidate:quote,
+  readPdf:async()=>reader
+ });
+ const geometry=diagnosticarGeometriaTotalB5i({
+  rows:reader.rows,declaredTotal:quote.total_declared_raw,
+  lines:quote.lines
+ });
+ const coverage=auditarCoberturaPdfOriginalB5l({
+  candidate:quote,rows:reader.rows,source:proof,geometry,
+  scanned:reader.scanned,pages:reader.pages
+ });
+ assertEquals(coverage.code,'line_assignment_ambiguous');
+ assertEquals(coverage.corroborated_conditions,0);
+ assertEquals(coverage.source_verified,false);
+ assertEquals(coverage.can_publish,false);
+ assertEquals(coverage.can_rank,false);
+});
