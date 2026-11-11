@@ -129,6 +129,8 @@ export async function cotejarPdfMonedaHistoricaB5k(args:{
        coverage_lines_matched:coverage.attributed_lines,
        coverage_conditions:coverage.commercial_conditions,
        coverage_conditions_matched:coverage.corroborated_conditions,
+       first_unresolved_condition_ordinal:coverage.first_unresolved_condition_ordinal,
+       condition_failure_kind:coverage.condition_failure_kind,
        coverage_pages:coverage.page_count,
        proof_reason:proof.reason,
        matched_lines:proof.lines.filter(x=>
