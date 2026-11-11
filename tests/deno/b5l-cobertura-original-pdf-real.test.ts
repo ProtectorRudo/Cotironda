@@ -12,7 +12,7 @@ import {cotejarMonedaOriginalB5k} from
 import {auditarCoberturaPdfOriginalB5l} from
  '../../src/domain/presupuestos-v2/auditoria-cobertura-original-b5l.ts';
 
-function originalPdf(total:string='$4.600,00'):Uint8Array{
+function originalPdf(total:string='$4.600,00',extra:[number,number,string][]=[]) :Uint8Array{
  const items:[number,number,string][]=[
   [30,750,'Cantidad'],[130,750,'Descripcion'],
   [350,750,'Unitario'],[500,750,'Total'],
@@ -20,7 +20,7 @@ function originalPdf(total:string='$4.600,00'):Uint8Array{
   [350,710,'$100,00'],[500,710,'$4.000,00'],
   [30,680,'3,00'],[130,680,'Arena Big Bag'],
   [350,680,'$200,00'],[500,680,'$600,00'],
-  [500,620,total]
+  [500,620,total],...extra
  ];
  const commands=items.map(([x,y,value])=>
   'BT /F1 9 Tf '+x+' '+y+' Td ('+value+') Tj ET').join('\n')+'\n';
@@ -133,4 +133,42 @@ Deno.test('B5l: synthetic real PDF.js rows fully attributed without source certi
  assertEquals(coverage.can_publish,false);
  assertEquals(coverage.can_rank,false);
  assertEquals(coverage.can_reveal_contacts,false);
+});
+
+Deno.test('B5l: real PDF.js places a full freight term in an independent part on material row',async()=>{
+ const bytes=originalPdf('$4.600,00',[[555,710,'Flete a coordinar']]);
+ const geom=await readPdfWithGeometryB5f(bytes);
+ assertEquals(geom.scanned,false);
+ assert(geom.rows.some(r=>r.text.includes('Cemento CPC')&&
+  r.text.includes('Flete a coordinar')));
+ const sha=Array.from(new Uint8Array(await crypto.subtle.digest(
+  'SHA-256',Uint8Array.from(bytes).buffer)),x=>
+   x.toString(16).padStart(2,'0')).join('');
+ const quote={...makeQuote('$4.600,00'),
+  currency_declared_raw:'$',
+  commercial_conditions_raw:['Flete a coordinar']};
+ const proof=await comprobarRenglonesPdfOriginalB5({
+  originalBytes:bytes,sourceSha256:sha,candidate:quote,
+  readPdf:async()=>geom
+ });
+ const geometry=diagnosticarGeometriaTotalB5i({
+  rows:geom.rows,declaredTotal:quote.total_declared_raw,lines:quote.lines
+ });
+ const coverage=auditarCoberturaPdfOriginalB5l({
+  candidate:quote,rows:geom.rows,source:proof,geometry,
+  scanned:geom.scanned,pages:geom.pages
+ });
+ const economic=reconciliarEconomiaTotalB5j({
+  candidate:quote,rows:geom.rows,source:proof,geometry
+ });
+ assertEquals(coverage.code,'visible_rows_accounted_private');
+ assertEquals(coverage.corroborated_conditions,1);
+ assertEquals(coverage.unattributed_rows,0);
+ assertEquals(economic.code,'fiscal_or_freight_ambiguous');
+ assertEquals(economic.freight,'mentioned_unpriced');
+ assertEquals(economic.material_total_matches_declared,true);
+ assertEquals(economic.source_verified,false);
+ assertEquals(coverage.full_document_covered,false);
+ assertEquals(economic.can_publish,false);
+ assertEquals(economic.can_rank,false);
 });
