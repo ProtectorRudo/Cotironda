@@ -26,7 +26,7 @@ BEGIN
  THEN RAISE EXCEPTION 'mvp351_rls_broken';END IF;
  SELECT count(*) INTO jobs_before FROM cotironda_piloto_privado.ai_dispatch_jobs_mvp222;
  SELECT count(*) INTO out_before FROM cotironda_piloto_privado.whapi_outbox;
- SELECT count(*) INTO offers_before FROM cotironda_piloto_privado.anonymous_offers_mvp091;
+ SELECT count(*) INTO offers_before FROM cotironda_piloto_privado.anonymous_supplier_docs_mvp107;
  source_h:=encode(sha256(convert_to('mvp351_reviewed_document','UTF8')),'hex');
  source_sha:=encode(sha256(convert_to('mvp351_exact_archived_pdf','UTF8')),'hex');
  archived:=jsonb_build_object('kind','supplier_quote','status','review_required',
@@ -109,7 +109,7 @@ BEGIN
  THEN RAISE EXCEPTION 'mvp351_double_recovery_attempt';END IF;
  IF (SELECT count(*) FROM cotironda_piloto_privado.ai_dispatch_jobs_mvp222)<>jobs_before
  OR (SELECT count(*) FROM cotironda_piloto_privado.whapi_outbox)<>out_before
- OR (SELECT count(*) FROM cotironda_piloto_privado.anonymous_offers_mvp091)<>offers_before
+ OR (SELECT count(*) FROM cotironda_piloto_privado.anonymous_supplier_docs_mvp107)<>offers_before
  THEN RAISE EXCEPTION 'mvp351_generated_offer_or_whatsapp';END IF;
  RAISE NOTICE 'MVP351 PASS: single audited retry, old closed negative control, new private link, no messages or offers';
 END $test$;
