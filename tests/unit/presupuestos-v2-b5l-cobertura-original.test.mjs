@@ -306,3 +306,62 @@ test('B5l: PDF.js empty fragments after a complete freight term do not cause a f
  assert.equal(v.unattributed_rows,0);
  sealed(v);
 });
+
+
+test('B5n: punctuation-only suffix on a separate PDF.js condition part is safe',()=>{
+ const rows=sourceRows.slice(0,4).map((r,i)=>i===1?row(700,[
+  ...r.parts,part('precios en efectivo:',625)]):r);
+ const v=calc({rows,candidate:doc(lines,['precios en efectivo'])});
+ assert.equal(v.code,'visible_rows_accounted_private');
+ assert.equal(v.corroborated_conditions,1);
+ assert.equal(v.unattributed_rows,0);sealed(v);
+});
+test('B5n: punctuation-only prefix and suffix never claims material cells',()=>{
+ const rows=sourceRows.slice(0,4).map((r,i)=>i===1?row(700,[
+  ...r.parts,part(' - precios en efectivo. ',625)]):r);
+ const v=calc({rows,candidate:doc(lines,['precios en efectivo'])});
+ assert.equal(v.code,'visible_rows_accounted_private');
+ assert.equal(v.corroborated_conditions,1);sealed(v);
+});
+test('B5n: punctuation-only extra part cannot manufacture a second match',()=>{
+ const rows=sourceRows.slice(0,4).map((r,i)=>i===1?row(700,[
+  ...r.parts,part(':',600),part('precios en efectivo.',625)]):r);
+ const v=calc({rows,candidate:doc(lines,['precios en efectivo'])});
+ assert.equal(v.code,'visible_rows_accounted_private');
+ assert.equal(v.corroborated_conditions,1);sealed(v);
+});
+test('B5n: extra IVA embedded in same source part remains ambiguous',()=>{
+ const rows=sourceRows.slice(0,4).map((r,i)=>i===1?row(700,[
+  ...r.parts,part('precios en efectivo: IVA 21%',625)]):r);
+ const v=calc({rows,candidate:doc(lines,['precios en efectivo'])});
+ assert.equal(v.code,'line_assignment_ambiguous');
+ assert.equal(v.corroborated_conditions,0);sealed(v);
+});
+test('B5n: extra money in same source part remains ambiguous',()=>{
+ const rows=sourceRows.slice(0,4).map((r,i)=>i===1?row(700,[
+  ...r.parts,part('precios en efectivo: $350,00',625)]):r);
+ const v=calc({rows,candidate:doc(lines,['precios en efectivo'])});
+ assert.equal(v.code,'line_assignment_ambiguous');
+ assert.equal(v.corroborated_conditions,0);sealed(v);
+});
+test('B5n: an unbroken material+condition part is NOT independent',()=>{
+ const rows=sourceRows.slice(0,4).map((r,i)=>i===1?
+  row(700,r.parts.map((p,j)=>j===1?
+   part('Cemento CPC precios en efectivo:',120):p)):r);
+ const v=calc({rows,candidate:doc(lines,['precios en efectivo'])});
+ assert.equal(v.code,'line_assignment_ambiguous');sealed(v);
+});
+test('B5n: double printed punctuation-marked term is not silently deduplicated',()=>{
+ const rows=sourceRows.slice(0,4).map((r,i)=>i===1?row(700,[
+  ...r.parts,part('precios en efectivo:',625),
+  part('precios en efectivo.',730)]):r);
+ const v=calc({rows,candidate:doc(lines,['precios en efectivo'])});
+ assert.equal(v.code,'line_assignment_ambiguous');
+ assert.equal(v.corroborated_conditions,0);sealed(v);
+});
+test('B5n: punctuation normalization cannot absorb a percentage',()=>{
+ const rows=sourceRows.slice(0,4).map((r,i)=>i===1?row(700,[
+  ...r.parts,part('precios en efectivo: 10%',625)]):r);
+ const v=calc({rows,candidate:doc(lines,['precios en efectivo'])});
+ assert.equal(v.code,'line_assignment_ambiguous');sealed(v);
+});
