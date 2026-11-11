@@ -1,3 +1,9 @@
+## 2026-11-11 — B5j publicado solo en piloto: prueba económica REAL de 2 PDF (Acta 501)
+- Aplicada migración privada B5j y Edge sombra V2 v7 desde código `e2e7dd5fe3779636f0be7c491517a2b143e46e16` (CI 6/6 aprobado), sin desplegar a producción ni integrar PR #774.
+- Ejecutadas 2 reauditorías privadas: PDF 1 `grand_total_balances_private` (2 materiales, 3 condiciones, suma coincidente), PDF 2 `currency_ambiguous` (campo moneda general no especificado; hay `$` en 3 renglones extraídos, pero total no comprobado).
+- V2/B5h/B5i/B5j apagados al finalizar. Cero ofertas nuevas, cero WhatsApps salientes, auditorías previas intactas, tabla B5j RLS cerrada. Ambos totales siguen no certificados ni rankeables.
+- Próximo desarrollo sugerido: cotejo de moneda sobre original y cobertura integral, previo a nueva prueba WhatsApp E2E. [Acta 501](docs/501-v2-b5j-piloto-reconciliacion-real-dos-pdf.md).
+
 ## 2026-11-11 — B5j: conciliación económica determinista y privada (SOLO DESARROLLO)
 - PR #774 sobre #773: cotejo exacto en centavos de materiales y descuentos con fuente PDF, cargos explícitos, IVA/flete informados o no informados sin suponer, y condiciones comprobadas contra el original.
 - Nuevo ledger B5j de códigos y contadores sin precios ni PII, RLS y RPC servicio; modo Edge B5j exclusivo con flag OFF por defecto y sin fallback hacia IA/WhatsApp.
