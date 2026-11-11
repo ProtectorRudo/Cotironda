@@ -76,6 +76,10 @@ test('B5k: only SHA-checked originals produce private arithmetic codes',async()=
  assert.equal(stored.p_diagnostics.economic_code,'grand_total_balances_private');
  assert.equal(stored.p_diagnostics.iso_verified,false);
  assert.equal(stored.p_diagnostics.economic_material_matches,2);
+ assert.equal(stored.p_diagnostics.coverage_code,'visible_rows_accounted_private');
+ assert.equal(stored.p_diagnostics.coverage_source_rows,4);
+ assert.equal(stored.p_diagnostics.coverage_unattributed_rows,0);
+ assert.equal(stored.p_diagnostics.coverage_lines_matched,2);
  assert.equal(stored.p_diagnostics.source_verified,false);
  assert.equal(stored.p_diagnostics.can_publish,false);
  assert.equal(stored.p_diagnostics.can_rank,false);
@@ -150,4 +154,23 @@ test('B5k: worker finish reason is accepted by the actual committed SQL contract
   "reason_code='b5k_private_currency_diagnosis'"));
  assert.ok(sql.includes(
   "ADD COLUMN b5k_only boolean NOT NULL DEFAULT false"));
+ assert.ok(sql.includes("'coverage_code'"));
+ assert.ok(sql.includes("visible_rows_accounted_private"));
+});
+
+test('B5l via B5k worker: invisible source total does not certify public completeness',async()=>{
+ const {stored}=await run();
+ assert.equal(stored.p_diagnostics.coverage_code,
+  'visible_rows_accounted_private');
+ assert.equal(stored.p_diagnostics.full_document_covered,false);
+ assert.equal(stored.p_diagnostics.can_publish,false);
+ assert.equal(stored.p_diagnostics.can_rank,false);
+});
+test('B5l via B5k worker: omitted cash price in an extra source row stays private',async()=>{
+ const withUnmapped=[...rows,row(530,[part('Descuento en efectivo',120),part('$50,00',510)])];
+ const x=await run({readRows:withUnmapped});
+ assert.equal(x.outcome.state,'private_diagnosed');
+ assert.equal(x.stored.p_diagnostics.coverage_code,'unmapped_fiscal_or_logistics');
+ assert.equal(x.stored.p_diagnostics.full_document_covered,false);
+ assert.equal(x.stored.p_diagnostics.can_publish,false);
 });
