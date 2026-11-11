@@ -64,7 +64,7 @@ export function diagnosticarGeometriaTotalB5i(args:{
       !Array.isArray(r.parts)&&r.parts!==undefined||
       typeof r.text!=='string'||r.text.length>8000||
       (r.y!==undefined&&!Number.isFinite(r.y))||
-      (r.parts??[]).some(p=>!Number.isFinite(p.x)||
+      (r.parts??[]).some((p:{x:number;text:string})=>!Number.isFinite(p.x)||
         typeof p.text!=='string'||p.text.length>2000)))
   return none('invalid_geometry');
  const expected=declaredTotal===null?null:
@@ -86,8 +86,8 @@ export function diagnosticarGeometriaTotalB5i(args:{
    norm(r.text).includes(description)?[{row:r,line}]:[]);
  });
  const materialRows=materialPositions.length;
- const cells=(row.parts??[]).filter(part=>exact(part.text,expected));
- const embedded=(row.parts??[]).filter(part=>containsAmount(part.text,expected));
+ const cells=(row.parts??[]).filter((part:{x:number;text:string})=>exact(part.text,expected));
+ const embedded=(row.parts??[]).filter((part:{x:number;text:string})=>containsAmount(part.text,expected));
  if(cells.length===0)return none('amount_embedded_in_text_item',1,embedded.length,materialRows);
  if(cells.length!==1)return none('multiple_matching_cells',1,cells.length,materialRows);
  if(!Number.isFinite(row.y))return none('amount_with_missing_coordinates',1,1,materialRows);
@@ -102,9 +102,9 @@ export function diagnosticarGeometriaTotalB5i(args:{
   tokens.some(x=>altLabel.test(x))?'alternative_commercial_label':
   'no_recognizable_label';
  const colXs=materialPositions.flatMap(({row:r,line})=>
-  (r.parts??[]).filter(part=>line.line_total_raw!==null&&
+  (r.parts??[]).filter((part:{x:number;text:string})=>line.line_total_raw!==null&&
     exact(part.text,parseArgentineMoneyCentsB5(line.line_total_raw)??-1n))
-   .map(part=>part.x));
+   .map((part:{x:number;text:string})=>part.x));
  const uniqueColumn=colXs.length>=2&&
   colXs.every(x=>Math.abs(x-colXs[0])<=12);
  const column:TotalColumnB5i=colXs.length<2?'unknown_material_column':
