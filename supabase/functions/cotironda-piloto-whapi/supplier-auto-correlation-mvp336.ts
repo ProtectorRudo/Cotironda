@@ -74,11 +74,13 @@ function decodeInput(raw:unknown):Readonly<{sha:string;quote:Line[];options:Cand
  for(const c of raw.candidates){
   if(!object(c)||typeof c.request_id!=='string'||!UUID.test(c.request_id)||
    ids.has(c.request_id)||!Array.isArray(c.lines)||
-   c.lines.length<1||c.lines.length>25||!c.lines.every(goodLine))
+   c.lines.length<1||c.lines.length>25||!c.lines.every(goodLine)||
+   (c.bind_allowed!==undefined&&typeof c.bind_allowed!=='boolean'))
    return null;
   ids.add(c.request_id);
   if(new Set(c.lines.map((l:Line)=>l.line_no)).size!==c.lines.length)return null;
-  candidates.push({request_id:c.request_id,lines:c.lines});
+  candidates.push({request_id:c.request_id,lines:c.lines,
+   ...(typeof c.bind_allowed==='boolean'?{bind_allowed:c.bind_allowed}:{})});
  }
  if(new Set(raw.quote.map((l:Line)=>l.line_no)).size!==raw.quote.length)return null;
  return {sha:raw.source_sha256 as string,quote:raw.quote as Line[],
