@@ -117,7 +117,6 @@ export async function revisarArchivosVersionadosB5d(args:{
     state='review';code='b5d_bad_candidate';
    }else{
     const doc=checked.document;
-    const commercial=auditarComercialPrivadoB5(doc);
     const proof=mime===PDF&&args.readPdfEvidence
      ?await comprobarRenglonesPdfOriginalB5({
       originalBytes:original,sourceSha256:sha,candidate:doc,
@@ -128,6 +127,12 @@ export async function revisarArchivosVersionadosB5d(args:{
       originalBytes:original,sourceSha256:sha,candidate:doc,
       readRows:args.readXlsxEvidence})
      :null;
+    const sourced=proof?.sha_verified&&proof.source_sha256===sha
+     ?proof.lines.flatMap(line=>line.state==='source_line_corresponds'&&
+       line.discount_evidence
+       ?[{ordinal:line.ordinal,...line.discount_evidence}]:[])
+     :[];
+    const commercial=auditarComercialPrivadoB5(doc,[],sourced);
     const lineChecks=checked.line_diagnostics.map((d,i)=>({
       ...d,
       source_b5:proof?.lines[i]?.state??
@@ -135,6 +140,9 @@ export async function revisarArchivosVersionadosB5d(args:{
       source_reason_b5:proof?.reason??xlsxProof?.reason??(mime===XLSX
        ?'spreadsheet_requires_cell_audit':'reader_unavailable'),
       arithmetic_b5:commercial.lines[i]?.result??'insufficient_numeric_data',
+      discount_evidence_b5:proof?.lines[i]?.discount_evidence?.origin??
+        'source_discount_unverified',
+      source_total_b5:proof?.total_state??'source_total_unverified',
       source_verified:false,can_publish:false
     }));
     // SQL protects the private table from uncontrolled model payloads.

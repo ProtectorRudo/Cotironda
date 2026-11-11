@@ -36,7 +36,7 @@ export type AuditedLineB5=Readonly<{
   * or a PREVIOUS unverified transcription. Not inferred from arithmetic.
   */
  discount_literal?:string;
- discount_origin?:'candidate_literal'|'historical_unverified';
+ discount_origin?:'candidate_literal'|'historical_unverified'|'pdf_positioned_private';
  listed_unit_cents?:string;
  computed_effective_unit_cents?:string;
  computed_line_total_cents?:string;
@@ -84,8 +84,15 @@ export function parseQuantityThousandthsB5(raw:string|null):bigint|null{
  return raw===null||typeof raw!=='string'?null:parseDecimal(raw,3);
 }
 type DiscountCandidate=Readonly<{
- basisPoints:bigint; literal:string;
- origin:'candidate_literal'|'historical_unverified';
+ basisPoints:bigint;literal:string;
+ origin:'candidate_literal'|'historical_unverified'|'pdf_positioned_private';
+}>;
+/** Supplied exclusively by an internal SHA-checked PDF reader. This is
+ * row evidence only; it cannot certify whole-document coverage or publish.
+ */
+export type PositionedDiscountEvidenceB5=Readonly<{
+ ordinal:number;basis_points:string;literal:string;
+ origin:'inline_explicit'|'aligned_header';
 }>;
 function scanLabeledDiscount(text:string):DiscountCandidate[] {
  const pattern=/\b(?:dscto\.?|dcto\.?|dto\.?|descuento|bonif(?:icaci[oó]n)?\.?|rebaja)\s*(?::|de|del)?\s*(\d{1,2}(?:[.,]\d{1,2})?)\s*%/giu;
@@ -100,7 +107,8 @@ function scanLabeledDiscount(text:string):DiscountCandidate[] {
  return items;
 }
 function discountFromText(
- line:RawLineV2,archived?:string
+ line:RawLineV2,archived?:string,
+ positioned?:PositionedDiscountEvidenceB5
 ):DiscountCandidate| 'conflict' | null{
  const now=scanLabeledDiscount([
   line.original_line_raw,line.original_description_raw
@@ -108,11 +116,25 @@ function discountFromText(
  const earlier=archived===undefined?[]:
   scanLabeledDiscount(archived).map(x=>({...x,
    origin:'historical_unverified' as const}));
- const all=[...now,...earlier];
+ let source:DiscountCandidate|null=null;
+ if(positioned!==undefined){
+  if(positioned.ordinal!==line.ordinal||
+     !/^(?:0|[1-9][0-9]{0,4})$/u.test(positioned.basis_points)||
+     positioned.literal.length>30||
+     !['inline_explicit','aligned_header'].includes(positioned.origin))
+   return 'conflict';
+  const evidence=scanLabeledDiscount('Descuento '+positioned.literal);
+  if(evidence.length!==1||
+     evidence[0].basisPoints.toString()!==positioned.basis_points)
+   return 'conflict';
+  source={basisPoints:evidence[0].basisPoints,
+   literal:positioned.literal,origin:'pdf_positioned_private'};
+ }
+ const all=[...now,...earlier,...(source?[source]:[])];
  if(!all.length)return null;
  if(all.some(x=>x.basisPoints!==all[0].basisPoints))
   return 'conflict';
- return now[0]??earlier[0];
+ return source??now[0]??earlier[0];
 }
 const roundHalfUp=(num:bigint,den:bigint):bigint=>{
  if(num<0n)return -roundHalfUp(-num,den);
@@ -171,7 +193,8 @@ function extractConditions(doc:RawSupplierQuoteV2):CommercialMentionsB5{
 }
 const MAX_CENTS=1000000000000000n;
 function lineAudit(
- row:RawLineV2,archived?:string
+ row:RawLineV2,archived?:string,
+ positioned?:PositionedDiscountEvidenceB5
 ):AuditedLineB5{
  const base={ordinal:row.ordinal,kind:row.kind,
   original_source_verified:false as const};
@@ -180,7 +203,7 @@ function lineAudit(
  const q=parseQuantityThousandthsB5(row.quantity_raw);
  const unit=parseArgentineMoneyCentsB5(row.unit_price_raw);
  const total=parseArgentineMoneyCentsB5(row.line_total_raw);
- const discount=discountFromText(row,archived);
+ const discount=discountFromText(row,archived,positioned);
  const extra:{-readonly [K in keyof AuditedLineB5]?:AuditedLineB5[K]}={
   ...(unit!==null?{listed_unit_cents:unit.toString()}:{})
  };
@@ -223,7 +246,8 @@ function lineAudit(
  * The caller must NOT display this audit as an accepted offer.
  */
 export function auditarComercialPrivadoB5(
- value:unknown,archivedDescriptions:readonly string[]=[]
+ value:unknown,archivedDescriptions:readonly string[]=[],
+ positionedDiscounts:readonly PositionedDiscountEvidenceB5[]=[]
 ):PrivateCommercialAuditB5{
  const report=revisarContratoProveedorV2(value);
  const empty:Pick<PrivateCommercialAuditB5,
@@ -236,8 +260,16 @@ export function auditarComercialPrivadoB5(
    material_count:0,notes_count:0,mentions:{},issue:'invalid_structure'};
  const doc=report.document;
  let materialNumber=0;
+ if(positionedDiscounts.length>doc.lines.length||
+    positionedDiscounts.some((p,i)=>
+     !Number.isInteger(p.ordinal)||p.ordinal<1||
+     !['inline_explicit','aligned_header'].includes(p.origin)||
+     positionedDiscounts.findIndex(x=>x.ordinal===p.ordinal)!==i))
+  return {...empty,state:'invalid_candidate',lines:[],
+   material_count:0,notes_count:0,mentions:{},issue:'invalid_structure'};
  const lines=doc.lines.map(row=>lineAudit(row,
-  row.kind==='material'?archivedDescriptions[materialNumber++]:undefined));
+  row.kind==='material'?archivedDescriptions[materialNumber++]:undefined,
+  positionedDiscounts.find(p=>p.ordinal===row.ordinal)));
  const total=parseArgentineMoneyCentsB5(doc.total_declared_raw);
  const materialLineAmounts=doc.lines.filter(x=>x.kind==='material')
   .map(x=>parseArgentineMoneyCentsB5(x.line_total_raw));
