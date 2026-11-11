@@ -41,3 +41,9 @@ Fecha: 10/11/2026 (Argentina). Autorización: «Avanza», **solo desarrollo y pr
 5. Conservar la evidencia y continuar auditoría íntegra de descuentos y celdas; solo cuando exista acreditación completa implementar B6/B7 y prueba E2E. No hacer proyección pública de candidatas actuales.
 
 La prioridad comercial sigue siendo recibir cualquier presupuesto razonable sin pedirle trabajo adicional al proveedor y entregar precios **fieles al original**, no aparentar avance por tests aislados.
+
+## Auditoría de elegibilidad REAL, solo SELECT (10/11/2026)
+
+Se ejecutó en `cotironda-piloto` la condición **equivalente al SELECT de claim B5d**, sin instalar la migración, crear leases ni activar V2. Los seis archivos cumplen el conjunto de predicados de archivo almacenado, mismo SHA/origen, ventana, consentimientos, emisor, invitación y entrega, según corresponda: **2 PDF históricos B2**, **3 PDF vinculados** y **1 Excel vinculado**. Esta prueba es una verificación de datos reales del selector, distinta de los ensayos PG17 sintéticos. No se leyeron bytes privados con B5d ni se certificaron importes.
+
+El código no hizo consultas SELECT que impriman números, HMAC, identificadores de ronda o texto personal. Se mantiene el flag OFF y `0` publicaciones V2. Cuando se autorice el despliegue, se debe contrastar de nuevo que el selector no cambió por nuevos mensajes, revocaciones o vencimientos.
