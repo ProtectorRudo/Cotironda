@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {cotejarPdfMonedaHistoricaB5k} from
  '../../src/domain/presupuestos-v2/worker-moneda-original-b5k.ts';
@@ -137,4 +138,16 @@ test('B5k: forged source path rejected before Storage',async()=>{
   storage:{from:()=>{reads++;throw Error('forbidden')}}
  });
  assert.equal(x.reason,'claim_invalid');assert.equal(reads,0);
+});
+
+test('B5k: worker finish reason is accepted by the actual committed SQL contract',()=>{
+ const sql=readFileSync(new URL(
+  '../../supabase/piloto/v2_b5k_private_currency_source_versioned.sql',
+  import.meta.url),'utf8');
+ assert.ok(sql.includes(
+  "p_reason_code<>'b5k_private_currency_diagnosis'"));
+ assert.ok(sql.includes(
+  "reason_code='b5k_private_currency_diagnosis'"));
+ assert.ok(sql.includes(
+  "ADD COLUMN b5k_only boolean NOT NULL DEFAULT false"));
 });
