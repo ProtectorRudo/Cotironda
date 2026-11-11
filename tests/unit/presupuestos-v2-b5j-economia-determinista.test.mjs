@@ -257,3 +257,16 @@ test('B5j: an unpriced freight column header cannot be treated as included',()=>
  const v=calc({pdfRows:r});
  assert.equal(v.code,'source_unmapped_content');sealed(v);
 });
+
+test('B5j: a global discount rate hidden in a table heading is not harmless',()=>{
+ const changed=rows.map((r,i)=>i===0?row(750,[
+  cell('Cantidad',25),cell('Descripción',130),
+  cell('Descuento general 10%',375),cell('Total',500)
+ ]):r);
+ const v=calc({pdfRows:changed});
+ assert.equal(v.code,'source_unmapped_content');sealed(v);
+});
+test('B5j: an unclaimed percentage outside articles requires manual context',()=>{
+ const v=calc({pdfRows:[...rows,row(540,[cell('Bonificación adicional 5%',140)])]});
+ assert.equal(v.code,'source_unmapped_content');sealed(v);
+});
