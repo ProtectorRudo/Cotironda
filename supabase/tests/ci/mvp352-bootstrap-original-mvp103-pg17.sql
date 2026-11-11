@@ -2,6 +2,10 @@
 -- baseline tables, but omits legacy MVP103 functions.
 -- Restore original unmodified function sources before applying the pinned
 -- replacement SQL. Never apply this file to the Supabase pilot.
+-- The cumulative recovery fixture carries a minimal supplier quote shape;
+-- its sole missing real MVP098 field is restored only inside ROLLBACK.
+ALTER TABLE cotironda_piloto_privado.supplier_media_quotes_mvp098
+ ADD COLUMN IF NOT EXISTS declared_total_literal text;
 CREATE OR REPLACE FUNCTION cotironda_piloto_privado.parse_amount_cents_mvp103(
  p_literal text
 ) returns bigint language plpgsql immutable set search_path='' as $fn$
