@@ -372,7 +372,25 @@ BEGIN
  OR v->>'processor_version'<>'v2_b5n_20261111'
  OR v->>'source_hmac'<>repeat('a',64)
  THEN RAISE EXCEPTION 'B5n did not claim one eligible PDF: %',v;END IF;
- new_diagnostic:=prior_b5m;
+ -- An ordinal diagnosis must be a validated fixed-code, not PII or text.
+ new_diagnostic:=prior_b5m || jsonb_build_object(
+  'first_unresolved_condition_ordinal',4,
+  'condition_failure_kind','source_span_not_independent');
+ v:=public.cotironda_piloto_finish_v2_currency_b5k(
+  repeat('a',64),repeat('a',64),'private_diagnosed',
+  'b5k_private_currency_diagnosis',
+  jsonb_set(new_diagnostic,'{condition_failure_kind}','"free_text_forbidden"'::jsonb));
+ IF v->>'state'<>'invalid' THEN RAISE EXCEPTION 'B5n accepted free text';END IF;
+ v:=public.cotironda_piloto_finish_v2_currency_b5k(
+  repeat('a',64),repeat('a',64),'private_diagnosed',
+  'b5k_private_currency_diagnosis',
+  jsonb_set(new_diagnostic,'{first_unresolved_condition_ordinal}','8'::jsonb));
+ IF v->>'state'<>'invalid' THEN RAISE EXCEPTION 'B5n accepted bad ordinal';END IF;
+ v:=public.cotironda_piloto_finish_v2_currency_b5k(
+  repeat('a',64),repeat('a',64),'private_diagnosed',
+  'b5k_private_currency_diagnosis',
+  new_diagnostic-'condition_failure_kind');
+ IF v->>'state'<>'invalid' THEN RAISE EXCEPTION 'B5n accepted missing code';END IF;
  v:=public.cotironda_piloto_finish_v2_currency_b5k(
   repeat('a',64),repeat('b',64),'private_diagnosed',
   'b5k_private_currency_diagnosis',new_diagnostic);
