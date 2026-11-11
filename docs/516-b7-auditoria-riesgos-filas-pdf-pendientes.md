@@ -30,6 +30,14 @@ La causa técnica encontrada en `auditoria-cobertura-original-b5l.ts` es especí
 - Comprador: las vistas privadas de cobertura/precios `MVP175/186/204/210` y comparación B6 **ya existen**. No duplicarlas. Para usarlas en el piloto deben recibir **fuentes verificadas y correctamente asociadas a la ronda**.
 - 5 flags V2 OFF, 0 leases, B5k/B5m/B5n/B5o=1 cada uno, `whapi_outbox=6`, sin nuevos mensajes. Este PR solo contiene código y pruebas.
 
+## Auditoría puntual de correlación (sin modificar datos)
+
+Para **una** fuente que sigue en `ambiguous_round`, existe `ai_supplier_auto_correlation_mvp291` en `review:insufficient_material_evidence` y un diagnóstico anterior **de la misma fuente** en `ai_supplier_auto_recovery_mvp292` con `review:archived_materials_disagree`. Una consulta en el piloto confirmó, sin copiar identificadores ni documentos: proveedor autorizado, PDF almacenado y SHA coincidente, mensaje entrante sin ronda vinculada, una invitación preparada aún dentro de plazo y evidencia de envío previo confirmada. **No** es un problema de cron detenido, mensaje perdido o consentimiento.
+
+La ruta `MVP336` de reintento una vez tiene **0 reintentos ejecutados**, pero su `claim` exige que no exista un `ai_supplier_auto_recovery_mvp292` previo para esa fuente: aquí ya existe un registro de revisión porque los materiales archivados y los evaluados **no coincidieron**. Ese requisito evita que una lectura posterior tape un desacuerdo económico. **No eliminar la guarda `NOT EXISTS` solo para desbloquear el piloto** ni vincular por proximidad temporal. Corresponde comprobar el contenido original y las lecturas discordantes, documentar diferencias de cantidades/unidades, y recién después decidir una regla automatizable o una revisión operativa privada.
+
+Esta auditoría es **solo lectura**. No se ejecutó `MVP336`, no se alteró su ledger, no se reintentó por WhatsApp y no se vinculó artificialmente una cotización.
+
 ## Orden del trabajo pendiente, sin desarrollar indefinidamente
 
 1. Evidencia original: las **cinco filas reales** requieren clasificación fundada (texto estructural vs. cargo/flete/IVA vs. otra condición), manteniendo el PDF original, su hash y privacidad. El cambio B7 evita diagnósticos falsamente benignos, **pero no prueba el contenido histórico por sí solo**.
