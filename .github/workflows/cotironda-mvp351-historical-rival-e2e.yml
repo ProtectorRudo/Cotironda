@@ -29,6 +29,7 @@ jobs:
             tests/unit/mvp292-archive-auto-recovery.test.mjs \
             tests/unit/mvp348-fidelidad-y-operacion-cron.test.mjs
           node scripts/piloto/mvp351-review-retry-builder.mjs --check
+          node scripts/piloto/mvp352-semantic-reassessment-builder.mjs --check
           node scripts/piloto/mvp351-release-bundle-readonly.mjs --check
   pg17-rollback:
     runs-on: ubuntu-latest
@@ -65,7 +66,10 @@ jobs:
           node scripts/piloto/mvp351-review-retry-builder.mjs --sql > supabase/tests/ci/.mvp351.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/.mvp351.sql >/dev/null
           psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regnamespace('cotironda_piloto_privado') IS NULL" | grep -Fx 't'
-          rm supabase/tests/ci/.mvp351.sql
+          node scripts/piloto/mvp352-semantic-reassessment-builder.mjs --sql > supabase/tests/ci/.mvp352.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/.mvp352.sql >/dev/null
+          psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regnamespace('cotironda_piloto_privado') IS NULL" | grep -Fx 't'
+          rm supabase/tests/ci/.mvp351.sql supabase/tests/ci/.mvp352.sql
   deno-module:
     runs-on: ubuntu-latest
     timeout-minutes: 12
@@ -79,4 +83,5 @@ jobs:
       - run: |
           deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/supplier-auto-correlation-mvp336.ts
           deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/supplier-material-identity-hint-mvp352.ts
+          deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/supplier-auto-recovery-worker-mvp292.ts
 # No SQL writes to piloto, no WhatsApp, no secrets, no Vercel production.
