@@ -140,6 +140,7 @@ BEGIN
     'coverage_code','coverage_source_rows','coverage_attributed_rows',
     'coverage_unattributed_rows','coverage_lines','coverage_lines_matched',
     'coverage_conditions','coverage_conditions_matched','coverage_pages',
+    'first_unresolved_condition_ordinal','condition_failure_kind',
     'proof_reason','matched_lines','expected_lines',
     'source_verified','full_document_covered','can_publish','can_rank',
     'can_reveal_contacts']
@@ -153,6 +154,7 @@ BEGIN
     'coverage_code','coverage_source_rows','coverage_attributed_rows',
     'coverage_unattributed_rows','coverage_lines','coverage_lines_matched',
     'coverage_conditions','coverage_conditions_matched','coverage_pages',
+    'first_unresolved_condition_ordinal','condition_failure_kind',
     'proof_reason','matched_lines','expected_lines',
     'source_verified','full_document_covered','can_publish','can_rank',
     'can_reveal_contacts'))
@@ -194,6 +196,117 @@ BEGIN
       AND (jsonb_typeof(value)<>'number' OR value::text !~ '^[0-9]{1,4}$'
        OR CASE WHEN value::text ~ '^[0-9]{1,4}$'
         THEN value::text::integer>9000 ELSE true END))
+   -- B5n: no arbitrary free-text diagnostics or raw snippets can enter
+   -- the private ledger. Only a 1-based ordinal and fixed-code reason.
+   OR ((p_diagnostics->>'first_unresolved_condition_ordinal' IS NULL) <>
+       (p_diagnostics->>'condition_failure_kind' IS NULL))
+   OR (p_diagnostics->>'condition_failure_kind' IS NOT NULL AND
+       p_diagnostics->>'condition_failure_kind' NOT IN(
+       'condition_too_short','source_row_not_unique',
+       'source_span_not_independent','source_part_mixed'))
+   OR CASE
+       WHEN p_diagnostics->>'first_unresolved_condition_ordinal' IS NULL
+        THEN false
+       WHEN jsonb_typeof(p_diagnostics->'first_unresolved_condition_ordinal')<>'number'
+        THEN true
+       WHEN p_diagnostics->>'first_unresolved_condition_ordinal' !~ '^[1-9][0-9]?
+   OR p_diagnostics->>'full_document_covered' IS DISTINCT FROM 'false'
+   OR p_diagnostics->>'can_publish' IS DISTINCT FROM 'false'
+   OR p_diagnostics->>'can_rank' IS DISTINCT FROM 'false'
+   OR p_diagnostics->>'can_reveal_contacts' IS DISTINCT FROM 'false'
+   OR (p_diagnostics->>'currency_lines_with_symbol')::int >
+      (p_diagnostics->>'currency_material_count')::int
+   OR (p_diagnostics->>'currency_units_with_symbol')::int >
+      (p_diagnostics->>'currency_material_count')::int
+   OR (p_diagnostics->>'economic_material_matches')::int >
+      (p_diagnostics->>'economic_material_count')::int
+   OR (p_diagnostics->>'coverage_attributed_rows')::int+
+      (p_diagnostics->>'coverage_unattributed_rows')::int <>
+      (p_diagnostics->>'coverage_source_rows')::int
+   OR (p_diagnostics->>'coverage_lines_matched')::int >
+      (p_diagnostics->>'coverage_lines')::int
+   OR (p_diagnostics->>'coverage_conditions_matched')::int >
+      (p_diagnostics->>'coverage_conditions')::int
+   OR (p_diagnostics->>'economic_conditions_matches')::int >
+      (p_diagnostics->>'economic_conditions_count')::int
+   OR (p_diagnostics->>'coverage_code'='visible_rows_accounted_private'
+      AND (p_diagnostics->>'coverage_unattributed_rows')::int<>0)
+  THEN RETURN jsonb_build_object('state','invalid');END IF;
+ END IF;
+ UPDATE cotironda_piloto_privado.v2_pdf_currency_diagnostics_b5k run
+ SET state=p_state,reason_code=p_reason_code,
+  diagnostics=p_diagnostics,finished_at=clock_timestamp()
+ FROM cotironda_piloto_privado.v2_pdf_economic_diagnostics_b5j prev,
+      cotironda_piloto_privado.v2_source_review_b5d r,
+      cotironda_piloto_privado.media_archive_mvp095 a,
+      cotironda_piloto_privado.participants s
+ WHERE run.source_hmac=p_source_hmac
+ AND run.processor_version='v2_b5n_20261111'
+ AND run.state='leased'
+ AND run.claimed_at>clock_timestamp()-interval '5 minutes'
+ AND run.source_sha256=p_source_sha256
+ AND prev.source_hmac=run.source_hmac
+ AND prev.processor_version=run.source_processor_version
+ AND prev.source_sha256=run.source_sha256
+ AND prev.state='private_diagnosed'
+ AND prev.diagnostics->>'code'='currency_ambiguous'
+ AND r.source_hmac=run.source_hmac
+ AND r.processor_version='v2_b5d_20261110'
+ AND r.state='candidate_private'
+ AND r.source_mode='historical_pdf'
+ AND r.source_sha256=run.source_sha256
+ AND a.message_hmac=run.source_hmac
+ AND a.content_sha256=run.source_sha256
+ AND a.state='stored'
+ AND a.storage_path='media/'||a.message_hmac
+ AND a.participant_key=run.supplier_key
+ AND s.key=run.supplier_key
+ AND s.participant_role='supplier'
+ AND s.consent_at IS NOT NULL AND s.opted_out_at IS NULL
+
+ AND EXISTS(
+  SELECT 1 FROM cotironda_piloto_privado.v2_pdf_currency_diagnostics_b5k old
+  WHERE old.source_hmac=run.source_hmac
+   AND old.processor_version='v2_b5m_20261111'
+   AND old.source_sha256=run.source_sha256
+   AND old.supplier_key=run.supplier_key
+   AND old.state='private_diagnosed'
+   AND old.finished_at IS NOT NULL
+   AND old.diagnostics->>'economic_code'='fiscal_or_freight_ambiguous'
+   AND old.diagnostics->>'coverage_code'='line_assignment_ambiguous'
+   AND old.diagnostics->>'economic_total_balances'='true'
+   AND old.diagnostics->>'coverage_conditions'='5'
+   AND old.diagnostics->>'coverage_conditions_matched'='3'
+ )
+ AND (p_diagnostics IS NULL OR
+     (p_diagnostics->>'expected_lines')::int =
+       jsonb_array_length(r.candidate->'lines'));
+ GET DIAGNOSTICS n=ROW_COUNT;
+ RETURN jsonb_build_object('state',CASE WHEN n=1 THEN 'recorded' ELSE 'not_leased' END);
+END $fn$;
+
+REVOKE ALL ON FUNCTION public.cotironda_piloto_v2_b5k_only_enabled()
+ FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.cotironda_piloto_claim_v2_currency_b5k()
+ FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.cotironda_piloto_finish_v2_currency_b5k(
+ text,text,text,text,jsonb) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.cotironda_piloto_v2_b5k_only_enabled() TO service_role;
+GRANT EXECUTE ON FUNCTION public.cotironda_piloto_claim_v2_currency_b5k() TO service_role;
+GRANT EXECUTE ON FUNCTION public.cotironda_piloto_finish_v2_currency_b5k(
+ text,text,text,text,jsonb) TO service_role;
+
+
+        THEN true
+       ELSE (p_diagnostics->>'first_unresolved_condition_ordinal')::int <>
+         (p_diagnostics->>'coverage_conditions_matched')::int+1
+        OR (p_diagnostics->>'first_unresolved_condition_ordinal')::int >
+         (p_diagnostics->>'coverage_conditions')::int
+      END
+   OR (p_diagnostics->>'condition_failure_kind' IS NOT NULL AND
+      p_diagnostics->>'coverage_code' NOT IN(
+      'line_assignment_ambiguous','commercial_condition_unverified',
+      'unmapped_fiscal_or_logistics'))
    OR p_diagnostics->>'source_verified' IS DISTINCT FROM 'false'
    OR p_diagnostics->>'full_document_covered' IS DISTINCT FROM 'false'
    OR p_diagnostics->>'can_publish' IS DISTINCT FROM 'false'
