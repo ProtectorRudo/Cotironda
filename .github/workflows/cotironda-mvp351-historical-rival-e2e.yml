@@ -23,6 +23,7 @@ jobs:
           node --experimental-strip-types --test \
             tests/unit/mvp351-private-historical-review.test.mjs \
             tests/unit/mvp351-release-bundle-readonly.test.mjs \
+            tests/unit/mvp352-material-identity-hints.test.mjs \
             tests/unit/mvp351-recovery-to-commercial-e2e.test.mjs \
             tests/unit/mvp291-automatic-correlation.test.mjs \
             tests/unit/mvp292-archive-auto-recovery.test.mjs \
@@ -75,5 +76,7 @@ jobs:
       - uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb
         with:
           deno-version: v2.x
-      - run: deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/supplier-auto-correlation-mvp336.ts
+      - run: |
+          deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/supplier-auto-correlation-mvp336.ts
+          deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/supplier-material-identity-hint-mvp352.ts
 # No SQL writes to piloto, no WhatsApp, no secrets, no Vercel production.
