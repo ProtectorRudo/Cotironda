@@ -227,8 +227,8 @@ export function auditarCoberturaPdfOriginalB5l(args:{
  // printed terms, but unexplained trailing text, IVA or prices still block.
  for(const [index,assigned] of conditionParts){
   if(attributed.has(index))continue;
-  const rest=rows[index].parts.filter((_,i)=>!assigned.has(i))
-   .map(part=>part.text).join(' ').trim();
+  const rest=rows[index].parts.filter((_: {text:string;x:number},i:number)=>!assigned.has(i))
+   .map((part:{text:string;x:number})=>part.text).join(' ').trim();
   if(financial.test(rest)||fiscal.test(rest)||pending.test(rest))
    return fail('unmapped_fiscal_or_logistics');
   if(rest&&!/^[\p{P}\p{S}\s]*$/u.test(rest))
@@ -241,8 +241,8 @@ export function auditarCoberturaPdfOriginalB5l(args:{
   // Strip ONLY independently corroborated condition parts. Never remove
   // an unverified substring from the material row or its monetary cells.
   const segments=conditionParts.get(index)??new Set<number>();
-  const materialParts=rows[index].parts.filter((_,i)=>!segments.has(i));
-  const materialText=materialParts.map(p=>p.text).join(' ');
+  const materialParts=rows[index].parts.filter((_: {text:string;x:number},i:number)=>!segments.has(i));
+  const materialText=materialParts.map((p:{text:string;x:number})=>p.text).join(' ');
   if(materialLineHasUnclaimedCommercial(
      materialText,materialParts,line,
      evidence?.discount_evidence?.literal??null))
