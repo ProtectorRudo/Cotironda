@@ -10,7 +10,7 @@ const read=(description,quantity,unit_price,line_total)=>
 test('MVP352 discount: price-list unit -> discount -> rounded effective unit -> extended total',()=>{
  const lines=[
   ['Cemento; Dscto. 22.4%','15,00','$100,07','$1.164,75','$77.65'],
-  ['BIG BAG de Arena; Dscto. 22.4%','2,00','$70,83','$109,94','$54.97'],
+  ['BIG BAG de Arena; Dscto. 22.4%','2,00','$70,83','$109,92','$54.96'],
   ['BIG BAG de Piedra; Dscto. 22.4%','1,00','$109,22','$84,75','$84.75']
  ];
  for(const [name,quantity,unit,listTotal,netUnit] of lines){
