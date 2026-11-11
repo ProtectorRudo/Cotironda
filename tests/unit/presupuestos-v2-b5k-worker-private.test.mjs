@@ -22,7 +22,7 @@ const candidate={
  commercial_conditions_raw:[]
 };
 const claim={state:'claimed',source_hmac:id,source_sha256:sha,
- size_bytes:bytes.length,processor_version:'v2_b5m_20261111',
+ size_bytes:bytes.length,processor_version:'v2_b5n_20261111',
  historic_candidate:candidate};
 const row=(y,parts)=>({page:1,y,parts,
  text:parts.map(x=>x.text).join(' ')});
@@ -190,4 +190,25 @@ test('B5m: versioned SQL requires the old private economic and coverage blockers
  assert.ok(sql.includes("old.diagnostics->>'coverage_code'='line_assignment_ambiguous'"));
  assert.ok(sql.includes("WHERE processor_version='v2_b5m_20261111'"));
  assert.ok(sql.includes("AND NOT b5h_only AND NOT b5i_only AND NOT b5j_only AND NOT b5k_only"));
+});
+
+
+test('B5n: an already consumed B5m source claim cannot read Storage',async()=>{
+ const x=await run({request:{...claim,processor_version:'v2_b5m_20261111'}});
+ assert.equal(x.outcome.state,'reconciliation_required');
+ assert.equal(x.outcome.reason,'claim_invalid');
+ assert.ok(!x.calls.includes('download'));
+});
+test('B5n: SQL claim needs prior SHA-identical B5m with 3 of 5 conditions',()=>{
+ const sql=readFileSync(new URL(
+  '../../supabase/piloto/v2_b5n_private_pdf_replay_versioned.sql',
+  import.meta.url),'utf8');
+ assert.ok(sql.includes("old.processor_version='v2_b5m_20261111'"));
+ assert.ok(sql.includes("old.diagnostics->>'economic_total_balances'='true'"));
+ assert.ok(sql.includes("old.diagnostics->>'coverage_conditions'='5'"));
+ assert.ok(sql.includes("old.diagnostics->>'coverage_conditions_matched'='3'"));
+ assert.ok(sql.includes("AND prior.processor_version='v2_b5n_20261111'"));
+ assert.ok(sql.includes("CHECK (processor_version IN ('v2_b5k_20261111','v2_b5m_20261111','v2_b5n_20261111'))"));
+ assert.ok(sql.includes("AND NOT b5h_only AND NOT b5i_only"));
+ assert.ok(sql.includes("AND NOT b5j_only AND NOT b5k_only"));
 });
