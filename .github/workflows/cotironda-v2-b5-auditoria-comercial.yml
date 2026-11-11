@@ -26,6 +26,7 @@ jobs:
           node --experimental-strip-types --test \
             tests/unit/presupuestos-v2-auditoria-comercial-b5.test.mjs \
             tests/unit/presupuestos-v2-evidencia-pdf-original-b5.test.mjs \
+            tests/unit/presupuestos-v2-b5-worker-pdf-evidence.test.mjs \
             tests/unit/presupuestos-v2-contrato.test.mjs \
             tests/unit/presupuestos-v2-lector-sombra.test.mjs \
             tests/unit/presupuestos-v2-worker-archivo-sombra.test.mjs
@@ -45,5 +46,6 @@ jobs:
             src/domain/presupuestos-v2/auditoria-comercial-b5.ts \
             src/domain/presupuestos-v2/evidencia-pdf-original-b5.ts \
             src/domain/presupuestos-v2/lector-sombra.ts \
-            src/domain/presupuestos-v2/worker-archivo-sombra.ts
+            src/domain/presupuestos-v2/worker-archivo-sombra.ts \
+            supabase/functions/cotironda-piloto-v2-shadow/index.ts
 # No calls to live OpenAI/Supabase/Whapi and no deployment.
