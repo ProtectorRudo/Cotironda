@@ -9,6 +9,13 @@ on:
       - 'supabase/piloto/v2_b5g*'
       - 'supabase/tests/ci/v2-b5g*'
       - 'tests/unit/presupuestos-v2-b5g-*'
+      - 'tests/deno/b5f-geometria-pdf-real.test.ts'
+      - 'supabase/functions/cotironda-piloto-v2-shadow/pdf-geometry-b5f.ts'
+      - 'docs/494-v2-b5f-cotejo-total-y-descuento-pdf-posicional.md'
+      - 'docs/495-v2-b5g-reauditoria-pdf-historico-versionada.md'
+      - 'README.md'
+      - 'AGENTS.md'
+      - 'CHANGELOG.md
       - '.github/workflows/cotironda-v2-b5g-replay-historico-pg17.yml'
   workflow_dispatch:
 permissions:
