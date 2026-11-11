@@ -161,3 +161,35 @@ test('B5 source: missing quantity or source location stays private even if row m
  assert.equal(r.full_document_covered,false);
  assert.equal(r.discount_column_verified,false);
 });
+
+test('B5 source: omitted priced material is an independent negative finding',async()=>{
+ const r=await check({readPdf:reader([
+  pageRows[0],
+  {page:1,text:'2 bolsas de cal $15.000,00'},
+  pageRows[1]
+ ])});
+ assert.equal(r.state,'needs_source_review');
+ assert.equal(r.reason,'unmapped_source_content');
+ assert.equal(r.lines[0].state,'source_line_corresponds');
+ assert.equal(r.full_document_covered,false);
+ assert.equal(r.can_publish,false);
+});
+test('B5 source: unclaimed IVA or freight is not silently discarded',async()=>{
+ for(const commercial of ['IVA según factura','Flete a convenir']){
+  const r=await check({readPdf:reader([pageRows[0],
+   {page:1,text:commercial},pageRows[1]])});
+  assert.equal(r.reason,'unmapped_source_content');
+  assert.equal(r.can_rank,false);
+ }
+});
+test('B5 source: missing declared total line cannot corroborate document',async()=>{
+ const r=await check({readPdf:reader([pageRows[0]])});
+ assert.equal(r.state,'needs_source_review');
+ assert.equal(r.reason,'source_total_unverified');
+});
+test('B5 source: duplicate total rows require private review',async()=>{
+ const r=await check({readPdf:reader([
+  ...pageRows,pageRows[1]
+ ])});
+ assert.equal(r.reason,'source_total_unverified');
+});
