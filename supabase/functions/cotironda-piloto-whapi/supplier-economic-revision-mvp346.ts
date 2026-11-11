@@ -11,6 +11,7 @@ import type {DocumentDraft} from './document-ai-draft.ts';
 import type {DownloadedMedia} from './whapi-media-archive.ts';
 import type {SourceCheckResult} from './supplier-source-text.ts';
 import {checkSupplierPdfSource} from './supplier-source-pdf.ts';
+import {comprobarDescuentoUnitarioMvp352} from './supplier-discount-arithmetic-mvp352.ts';
 
 type Rpc=(name:string,params:Record<string,unknown>)=>
  Promise<{data:unknown;error:unknown}>;
@@ -74,7 +75,18 @@ export function auditCandidateAmountsMvp346(d:DocumentDraft):boolean{
     amount>=0n)return false;
   if(line.unit_price!==null){
    const unit=parseCents(line.unit_price),q=parseQuantityMilli(line.quantity);
-   if(unit===null||q===null||unit*q!==amount*1000n)return false;
+   if(unit===null||q===null)return false;
+   if(unit*q!==amount*1000n){
+    // Validate ONLY an explicit, unambiguous discount on the UNIT list price.
+    // This never alters literal price nor authorizes publication: SQL mirror,
+    // original SHA and full source check still gate a revised candidate.
+    const economic=comprobarDescuentoUnitarioMvp352({
+     original_description:line.original_description,
+     quantity:line.quantity,unit_price:line.unit_price,
+     line_total:line.line_total
+    });
+    if(economic.state!=='consistent')return false;
+   }
   }
   sum+=amount;
  }
