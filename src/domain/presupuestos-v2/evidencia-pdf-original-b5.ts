@@ -84,7 +84,7 @@ function rowProof(row:RawLineV2,sourceRow:string):boolean{
 
 type GeometricRow=Awaited<ReturnType<EvidenceReaderB5>>['rows'][number];
 const percentPattern=/(?<![\d.,])(\d{1,3}(?:[.,]\d{1,2})?)\s*%(?!\d)/giu;
-const discountLabel=/\b(?:descuentos?|dscto\.?|dcto\.?|dto\.?|bonif(?:icaci[oó]n)?\.?|rebaja)\b/iu;
+const discountLabel=/\b(?:descuentos?|dscto|dcto|dto|bonif(?:icaci[oó]n)?|rebaja)\b\.?/iu;
 const nonsupplierPercent=/\b(?:iva|impuestos?|percepciones?|retenciones?|inter[eé]s)\b/iu;
 function percentEvidence(src:string):{basis_points:string;literal:string}|null{
  const all=[...src.matchAll(percentPattern)];
