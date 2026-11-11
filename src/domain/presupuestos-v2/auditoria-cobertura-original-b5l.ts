@@ -108,7 +108,7 @@ export function auditarCoberturaPdfOriginalB5l(args:{
     args.pages<1||args.pages>12||rows.some(r=>r.page<1||
       r.page>args.pages||typeof r.text!=='string'||r.text.length>8000||
       !Array.isArray(r.parts)||r.parts.length>100||
-      r.parts.some(p=>!Number.isFinite(p.x)||typeof p.text!=='string')))
+      r.parts.some((p:{x:number;text:string})=>!Number.isFinite(p.x)||typeof p.text!=='string')))
   return fail('reader_unconfirmed');
  const source=args.source;
  if(!source.sha_verified||
@@ -173,7 +173,7 @@ export function auditarCoberturaPdfOriginalB5l(args:{
   parseArgentineMoneyCentsB5(doc.total_declared_raw);
  if(total===null)return fail('source_geometry_unconfirmed');
  const totalMatches=rows.flatMap((row,index)=>
-  row.parts.filter(p=>parseArgentineMoneyCentsB5(p.text)===total)
+  row.parts.filter((p:{x:number;text:string})=>parseArgentineMoneyCentsB5(p.text)===total)
    .length===1?[index]:[]);
  if(totalMatches.length!==1||accounted.has(totalMatches[0]))
   return fail('source_geometry_unconfirmed');
