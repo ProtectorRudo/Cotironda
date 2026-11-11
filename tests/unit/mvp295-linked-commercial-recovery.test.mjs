@@ -125,7 +125,8 @@ test('the first VERIFIED IA-only quote can open the buyer rubro view; unverified
  };
  const view=vistaCotizacionesRubrosMvp227(input);
  assert.ok(view);assert.equal(view.offers.length,1);
- assert.match(view.offers[0].text,/IVA no informado/u);
+ // Regla comercial vigente 10/11/2026: la ausencia no se menciona.
+ assert.doesNotMatch(view.offers[0].text,/IVA|Flete|Pago:/iu);
  assert.doesNotMatch(view.offers[0].text,/ganador|adjudicado/u);
  const noPrice=vistaCotizacionesRubrosMvp227({...input,ofertas:[]});
  assert.ok(noPrice);assert.equal(noPrice.offers.length,0);
