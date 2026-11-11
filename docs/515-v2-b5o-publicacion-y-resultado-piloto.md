@@ -18,7 +18,29 @@
 
 ## Resultado de la única relectura real
 
-**PENDIENTE DE COMPROBACIÓN AL MOMENTO DEL PRIMER REGISTRO.** No afirmar que el cron o el PDF se procesaron solo por haber aplicado SQL y desplegado Edge. Se completará en esta misma acta con la evidencia postflight.
+**EJECUCIÓN REAL CONFIRMADA:** el cron documental existente inició su ciclo a las **18:50:00 UTC** (estado `succeeded`). Mediante el puente B4 y la Edge V2 v11, se reclamó y terminó el **único PDF autorizado** bajo la nueva versión `v2_b5o_20261111`. La consulta del 11/11/2026 18:50:18 UTC observó **B5o=1, `private_diagnosed=1`, leases=0, cinco flags OFF y B4=FALSE**, evidenciando el apagado automático transaccional.
+
+**Comparación determinista de los cuatro diagnósticos sobre el mismo HMAC y SHA256 del original** (sin copiar presupuestos ni datos del proveedor):
+
+| Indicador privado | B5k | B5m | B5n | B5o |
+|---|---:|---:|---:|---:|
+| Estado `private_diagnosed` | sí | sí | sí | sí |
+| Materiales corroborados | 3/3 | 3/3 | 3/3 | 3/3 |
+| Subtotal de materiales coincide | NO | sí | sí | sí |
+| Condiciones comerciales corroboradas | 4/5 | 3/5 | 3/5 | **5/5** |
+| Cobertura `coverage_code` | `line_assignment_ambiguous` | igual | igual | **`unmapped_text`** |
+| Filas visibles PDF.js | 13 | 13 | 13 | 13 |
+| Filas atribuidas / sin atribuir | 8 / 5 | 8 / 5 | 8 / 5 | 8 / 5 |
+| Fuente verificada integralmente | NO | NO | NO | NO |
+| Economía `economic_code` | `fiscal_or_freight_ambiguous` | igual | igual | igual |
+| ISO de moneda comprobado | NO | NO | NO | NO |
+| Publicar / ranking / revelar contactos | NO | NO | NO | NO |
+
+**Resultado técnico:** B5o **sí resolvió el falso positivo de doble referencia entre dos notas comerciales y sus dos condiciones**, que habían quedado detenidas desde B5n. No hay primera condición pendiente (`first_unresolved_condition_ordinal=null`, `condition_failure_kind=null`); los cinco términos están atribuidos. **No permite concluir que el documento completo esté acreditado:** siguen cinco filas PDF.js visibles sin atribuir (`unmapped_text`), y además el total pagadero y los términos fiscales/flete/moneda ISO continúan inciertos. No atribuir arbitrariamente esas filas a encabezados o decoraciones sin corroboración.
+
+**Postflight final auditado a las 18:50:56 UTC:** B5k=1, B5m=1, B5n=1, B5o=1; los cuatro diagnósticos comparten **un** HMAC y **un** SHA256 (las pruebas históricas permanecen intactas). Cinco flags OFF, B4 y gate B5o FALSE, 0 leases. `whapi_outbox=6`, `anonymous_offers_mvp091=0`, `offer_versions=1`, `finalist_whapi_outbox_mvp110=0`, B5j histórico=2, trabajadores sombra históricos=2, **sin cambios**. RLS activa; `anon` no lee el ledger ni llama B4 y `authenticated` no reclama fuente.
+
+**Decisión:** la prueba real de relectura B5o **terminó bien**; el documento comercial **no está listo para publicarse**. No abrir un B5p por inercia ni anunciar E2E. Priorizar una auditoría estructural de las cinco filas no atribuidas, comprobación de IVA/flete/moneda y la asociación de ofertas PDF/Excel a la ronda correcta, seguida del comparador B6 y la vista del arquitecto.
 
 ## Seguridad y alcance
 
