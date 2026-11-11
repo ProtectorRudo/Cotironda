@@ -48,5 +48,6 @@ Deno.serve(request=>ejecutarSolicitudSombraV2B3(request,{
  } as Parameters<typeof readOfficeVisibleRows>[0]),
  runB5dWhenEmpty:true,
  runB5gBeforeB5d:true,
- runB5hWhenSelected:true
+ runB5hWhenSelected:true,
+ runB5iWhenSelected:true
 }));

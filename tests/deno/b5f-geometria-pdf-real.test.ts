@@ -5,15 +5,17 @@ import {comprobarRenglonesPdfOriginalB5} from
 import {assertEquals,assert} from 'jsr:@std/assert@1.0.15';
 import {diagnosticarTotalPdfB5h} from
  '../../src/domain/presupuestos-v2/diagnostico-total-pdf-b5h.ts';
+import {diagnosticarGeometriaTotalB5i} from
+ '../../src/domain/presupuestos-v2/diagnostico-geometria-total-b5i.ts';
 
-function pdfFixture():Uint8Array{
+function pdfFixture(materialTotal='$304.148,00'):Uint8Array{
  // One genuinely parseable PDF: no OCR, remote fonts, model or user files.
  const items=[
   [50,735,'Cantidad'],[135,735,'Descripcion'],[310,735,'Lista'],
   [430,735,'Dscto.'],[530,735,'Total'],
   [50,700,'40,00'],[135,700,'Cemento CPC'],
   [310,700,'$9.798,58'],[430,700,'22.4%'],
-  [530,700,'$304.148,00'],
+  [530,700,materialTotal],
   [420,650,'TOTAL GENERAL'],[530,650,'304.148,00']
  ] as const;
  const commands=items.map(([x,y,value])=>
@@ -90,5 +92,29 @@ Deno.test('B5h: PDF auténtico en memoria clasifica total, sin habilitar publica
  assertEquals(d.matching_amount_cells,1);
  assertEquals(d.source_verified,false);
  assertEquals(d.can_publish,false);
+ assertEquals(d.can_rank,false);
+});
+
+Deno.test('B5i: real generated PDF.js geometry finds footer position but never certifies',async()=>{
+ const geometry=await readPdfWithGeometryB5f(pdfFixture('$300.000,00'));
+ const d=diagnosticarGeometriaTotalB5i({
+  rows:geometry.rows,declaredTotal:'$304.148,00',
+  lines:[{kind:'material',original_description_raw:'Cemento CPC',
+   line_total_raw:'$300.000,00'}]
+ });
+ assertEquals(d.code,'amount_after_material_table');
+ assertEquals(d.column,'unknown_material_column');
+ assertEquals(d.exact_cells,1);
+ assertEquals(d.can_publish,false);
+ assertEquals(d.source_verified,false);
+});
+Deno.test('B5i: duplicate amount in material and footer is not a certified total',async()=>{
+ const geometry=await readPdfWithGeometryB5f(pdfFixture());
+ const d=diagnosticarGeometriaTotalB5i({
+  rows:geometry.rows,declaredTotal:'$304.148,00',
+  lines:[{kind:'material',original_description_raw:'Cemento CPC',
+   line_total_raw:'$304.148,00'}]
+ });
+ assertEquals(d.code,'multiple_matching_rows');
  assertEquals(d.can_rank,false);
 });
