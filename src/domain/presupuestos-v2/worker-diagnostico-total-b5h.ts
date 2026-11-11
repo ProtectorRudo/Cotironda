@@ -86,7 +86,11 @@ export async function diagnosticarPdfHistoricoB5h(args:{
          originalBytes:bytes,sourceSha256:sha,
          candidate:parsed.document,readPdf:async()=>raw
        });
-       if(!proof.sha_verified||proof.source_sha256!==sha){
+       if(!proof.sha_verified||proof.source_sha256!==sha||
+          raw.scanned||raw.pages<1||raw.pages>12||
+          !Array.isArray(raw.rows)||raw.rows.length<1||
+          proof.lines.length!==parsed.document.lines.length||
+          proof.lines.some(x=>x.state!=='source_line_corresponds')){
          state='review';reason='b5h_original_not_verified';
        }else{
          const total=diagnosticarTotalPdfB5h(
