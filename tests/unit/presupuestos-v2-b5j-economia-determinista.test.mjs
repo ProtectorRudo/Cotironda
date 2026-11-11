@@ -142,16 +142,16 @@ test('B5j: a commercial note without price stays a note, not zero priced item',(
 test('B5j: standalone and per-material discounts require scope proof',()=>{
  const discounted={...raw(1,'material','Cemento CPC','10,00','$100,00','$900,00','list_explicit'),
   original_line_raw:'10,00 Cemento CPC $100,00 10% $900,00'};
- const second=raw(2,'material','Arena Big Bag','1,00','$100,00','$100,00');
+ const second=raw(2,'material','Arena Big Bag','2,00','$100,00','$200,00');
  const adjustment=raw(3,'discount','Descuento $150,00',null,null,'$150,00','absent');
- const doc=quote([discounted,second,adjustment],'$850,00');
+ const doc=quote([discounted,second,adjustment],'$950,00');
  const r=[row(750,[cell('Total',500)]),
   row(720,[cell('10,00',25),cell('Cemento CPC',130),cell('$100,00',350),
    cell('10%',430),cell('$900,00')]),
-  row(690,[cell('1,00',25),cell('Arena Big Bag',130),cell('$100,00',350),
-   cell('$100,00')]),
+  row(690,[cell('2,00',25),cell('Arena Big Bag',130),cell('$100,00',350),
+   cell('$200,00')]),
   row(650,[cell('Descuento',100),cell('$150,00')]),
-  row(600,[cell('$850,00')])];
+  row(600,[cell('$950,00')])];
  const v=calc({doc,pdfRows:r,evidence:[
   {basis_points:'1000',literal:'10%',origin:'inline_explicit'}]});
  assert.equal(v.code,'discount_scope_ambiguous');sealed(v);
