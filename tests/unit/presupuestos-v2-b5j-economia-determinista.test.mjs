@@ -28,9 +28,9 @@ const rows=[
  row(610,[cell('$4.600,00')])
 ];
 function calc({doc=quote(),pdfRows=rows,reason='source_total_unverified',
- states=[],evidence=[]}={}){
+ states=[],evidence=[],sourceState='source_rows_correspond_private'}={}){
  const source={
-  state:'source_rows_correspond_private',reason,sha_verified:true,
+  state:sourceState,reason,sha_verified:true,
   source_sha256:'a'.repeat(64),
   lines:doc.lines.map((line,i)=>({
    ordinal:line.ordinal,kind:line.kind,
@@ -143,15 +143,15 @@ test('B5j: standalone and per-material discounts require scope proof',()=>{
  const discounted={...raw(1,'material','Cemento CPC','10,00','$100,00','$900,00','list_explicit'),
   original_line_raw:'10,00 Cemento CPC $100,00 10% $900,00'};
  const second=raw(2,'material','Arena Big Bag','1,00','$100,00','$100,00');
- const adjustment=raw(3,'discount','Descuento $100,00',null,null,'$100,00','absent');
- const doc=quote([discounted,second,adjustment],'$900,00');
+ const adjustment=raw(3,'discount','Descuento $150,00',null,null,'$150,00','absent');
+ const doc=quote([discounted,second,adjustment],'$850,00');
  const r=[row(750,[cell('Total',500)]),
   row(720,[cell('10,00',25),cell('Cemento CPC',130),cell('$100,00',350),
    cell('10%',430),cell('$900,00')]),
   row(690,[cell('1,00',25),cell('Arena Big Bag',130),cell('$100,00',350),
    cell('$100,00')]),
-  row(650,[cell('Descuento',100),cell('$100,00')]),
-  row(600,[cell('$900,00')])];
+  row(650,[cell('Descuento',100),cell('$150,00')]),
+  row(600,[cell('$850,00')])];
  const v=calc({doc,pdfRows:r,evidence:[
   {basis_points:'1000',literal:'10%',origin:'inline_explicit'}]});
  assert.equal(v.code,'discount_scope_ambiguous');sealed(v);
@@ -174,4 +174,12 @@ test('B5j: symbolless source amount cannot be assumed ARS',()=>{
 test('B5j: unrecognized declared currency fails closed',()=>{
  const v=calc({doc:quote(standard,'$4.600,00',[],'EUROS')});
  assert.equal(v.code,'currency_ambiguous');sealed(v);
+});
+
+test('B5j: a B5 needs_source_review total is still only a PRIVATE arithmetic candidate',()=>{
+ const v=calc({sourceState:'needs_source_review'});
+ assert.equal(v.code,'grand_total_balances_private');
+ assert.equal(v.source_verified,false);
+ assert.equal(v.full_document_covered,false);
+ assert.equal(v.can_publish,false);
 });
