@@ -9,7 +9,7 @@ const HEX=/^[a-f0-9]{64}$/u,UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89a
 type Modelo='gpt-6-luna'|'gpt-6.1-sol';
 type Rpc=(name:string,args:Record<string,unknown>)=>Promise<{data:unknown;error:unknown}>;
 type Line=Readonly<{line_no:number;description:string;quantity:string|null;unit:string|null}>;
-type Candidate=Readonly<{request_id:string;lines:readonly Line[]}>;
+type Candidate=Readonly<{request_id:string;lines:readonly Line[];bind_allowed?:boolean}>;
 type Pair=Readonly<{candidate:string;source_line:number;request_line:number;relation:'same'|'equivalent'|'uncertain'}>;
 type Proposal=Readonly<{matches:readonly Pair[]}>;
 export type ResultMvp291=Readonly<{state:'disabled'|'not_eligible'|'linked_private'|
@@ -209,6 +209,9 @@ export function elegirRondaUnicaMvp291(
   return no('single_item_not_unique');
  if(best.points-other.points<3)return no('insufficient_unique_margin');
  if(best.related>=2&&best.points<4)return no('partial_weak_evidence');
+ // MVP351: closed historical rounds are comparison controls, never destinations.
+ // SQL independently requires a prepared request and verified dispatch.
+ if(best.candidate.bind_allowed===false)return no('historical_round_best_fit');
  return {requestId:best.candidate.request_id,reason:'unique_material_evidence',
   scores:scored.map(x=>x.points)};
 }
