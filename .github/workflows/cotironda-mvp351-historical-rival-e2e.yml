@@ -1,0 +1,76 @@
+name: Cotironda MVP351 - recuperación revisada y rival histórico sin envíos
+on:
+  push:
+    branches: [fix/mvp351-review-retry-historic-candidates-20261111]
+  pull_request:
+    branches: [fix/mvp350-preflight-ronda-fresca-20261111]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  node-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Correlación, fuentes previas y privacidad sin red
+        run: |
+          node --experimental-strip-types --test \
+            tests/unit/mvp351-private-historical-review.test.mjs \
+            tests/unit/mvp291-automatic-correlation.test.mjs \
+            tests/unit/mvp292-archive-auto-recovery.test.mjs \
+            tests/unit/mvp348-fidelidad-y-operacion-cron.test.mjs
+          node scripts/piloto/mvp351-review-retry-builder.mjs --assert-local
+  pg17-rollback:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: test_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Ensayo local PostgreSQL 17, transacción reversible
+        run: |
+          set -euo pipefail
+          node scripts/piloto/mvp351-review-retry-builder.mjs --sql > supabase/tests/ci/.mvp351.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/.mvp351.sql >/dev/null
+          psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regnamespace('cotironda_piloto_privado') IS NULL" | grep -Fx 't'
+          rm supabase/tests/ci/.mvp351.sql
+  deno-module:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9afbd3f7d6820020
+        with:
+          persist-credentials: false
+      - uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb
+        with:
+          deno-version: v2.x
+      - run: deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/supplier-auto-correlation-mvp336.ts
+# No SQL writes to piloto, no WhatsApp, no secrets, no Vercel production.
