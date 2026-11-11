@@ -123,7 +123,7 @@ export async function cotejarPdfMonedaHistoricaB5k(args:{
        source_verified:false,full_document_covered:false,
        can_publish:false,can_rank:false,can_reveal_contacts:false
      };
-     state='private_diagnosed';reason='b5k_private_economic_diagnosis';
+     state='private_diagnosed';reason='b5k_private_currency_diagnosis';
     }
    }
   }
