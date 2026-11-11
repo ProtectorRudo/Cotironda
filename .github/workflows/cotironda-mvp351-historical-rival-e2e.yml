@@ -23,6 +23,7 @@ jobs:
           node --experimental-strip-types --test \
             tests/unit/mvp351-private-historical-review.test.mjs \
             tests/unit/mvp351-release-bundle-readonly.test.mjs \
+            tests/unit/mvp351-recovery-to-commercial-e2e.test.mjs \
             tests/unit/mvp291-automatic-correlation.test.mjs \
             tests/unit/mvp292-archive-auto-recovery.test.mjs \
             tests/unit/mvp348-fidelidad-y-operacion-cron.test.mjs
