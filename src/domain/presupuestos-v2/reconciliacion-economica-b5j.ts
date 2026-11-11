@@ -38,6 +38,55 @@ const MAX_AMOUNT=1000000000000000n;
 const normalize=(x:string):string=>x.normalize('NFKC').trim().replace(/\s+/gu,' ')
  .toLocaleLowerCase('es-AR');
 const body=(value:string)=>normalize(value).replace(/\s*([:;,.])\s*/gu,'$1');
+/**
+ * B5 exits with source_total_unverified before its unclaimed-row scan when
+ * the document lacks a total label. B5j must NOT silently ignore extra
+ * source prices/charges/IVA just because all extracted lines were matched.
+ * This is negative evidence only; returning false DOES NOT establish
+ * full-document coverage.
+ */
+function hasUnmappedCommercialSource(
+ rows:readonly PdfRowB5h[],doc:RawSupplierQuoteV2,total:bigint
+):boolean{
+ const used=new Set<number>();
+ for(const line of doc.lines){
+  const desc=normalize(line.original_description_raw);
+  if(!desc)return true;
+  const matches=rows.flatMap((row,index)=>
+   normalize(row.text).includes(desc)?[index]:[]);
+  // Duplicate descriptions may be benign in some supplier formats, but
+  // cannot be attributed unambiguously without further source evidence.
+  if(matches.length!==1)return true;
+  used.add(matches[0]);
+ }
+ for(const term of doc.commercial_conditions_raw){
+  const wanted=body(term);
+  if(wanted.length<3)continue;
+  rows.forEach((row,index)=>{
+   if(body(row.text).includes(wanted))used.add(index);
+  });
+ }
+ const footers=rows.flatMap((row,index)=>
+  (row.parts??[]).filter(p=>parseArgentineMoneyCentsB5(p.text)===total)
+   .length===1?[index]:[]);
+ if(footers.length!==1||used.has(footers[0]))return true;
+ used.add(footers[0]);
+ const financial=/\b(?:iva|flete|env[ií]o|transporte|cargos?|recargos?|embalaje|pallets?|impuestos?|percepciones?|retenciones?|descuentos?|dscto|dcto|bonificaci[oó]n|subtotal|sub\s*total)\b/iu;
+ const currency=/(?:\$\s*|(?:ARS|USD|U\$S)\s*)\d/u;
+ const decimal=/\b(?:\d{1,3}(?:\.\d{3})+|\d+),\d{2}\b/u;
+ const tableHeading=/\b(?:cant(?:idad)?|descripci[oó]n|art[ií]culo|precio|unitario)\b/iu;
+ for(let index=0;index<rows.length;index++){
+  if(used.has(index))continue;
+  const text=rows[index].text;
+  // The discount-column heading ("Dscto.") is not an extra priced line.
+  if(tableHeading.test(text)&&!currency.test(text)&&
+     !decimal.test(text))continue;
+  if(financial.test(text)||currency.test(text)||decimal.test(text))
+   return true;
+ }
+ return false;
+}
+
 const empty=()=>({materials:0,matched:0,notes:0,charges:0,discounts:0,
  terms:0,verifiedTerms:0,iva:'not_mentioned' as MentionCodeB5j,
  freight:'not_mentioned' as MentionCodeB5j,balance:false});
@@ -140,6 +189,8 @@ export function reconciliarEconomiaTotalB5j(args:{
  }
  const total=parseArgentineMoneyCentsB5(doc.total_declared_raw);
  if(total===null||total<0n||total>MAX_AMOUNT)return fail('missing_line_amount');
+ if(hasUnmappedCommercialSource(args.rows,doc,total))
+  return fail('source_unmapped_content');
  // All natural-language conditions must be corroborated verbatim in original.
  const sourceRows=args.rows.map(row=>body(row.text));
  n.verifiedTerms=doc.commercial_conditions_raw.filter(term=>{
