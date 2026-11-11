@@ -32,6 +32,24 @@ test('MVP300: baseline real sin datos personales identifica segunda respuesta fa
    'authorized_final_contact_release']);
  assert.doesNotMatch(JSON.stringify(s),/supplier_key|token_hash|message_hmac|phone/i);
 });
+test('MVP350: ronda cerrada sin ofertas no espera respuestas imposibles',()=>{
+ const old={...copy(),round_state:'closed',before_deadline:false};
+ const r=evaluarCircuitoPilotoMvp300(old);
+ assert.equal(r.state,'closed_round_incomplete_new_trial_needed');
+ assert.equal(r.metrics.dispatch_accepted,2);
+ assert.equal(r.metrics.suppliers_replied,1);
+ assert.equal(r.full_e2e_certified,false);
+ assert.equal(r.evidence_scope,'database_only');
+ assert.equal(r.missing_external_proofs.length,3);
+});
+test('MVP350: una ronda cerrada completa todavía requiere validación externa',()=>{
+ const s={...copy(),round_state:'closed',before_deadline:false,
+  suppliers_replied_after_dispatch:2,verified_supplier_quotes:2,
+  reviewed_supplier_quotes:0,buyer_verified_offers:2};
+ const r=evaluarCircuitoPilotoMvp300(s);
+ assert.equal(r.state,'needs_real_e2e_proof');
+ assert.equal(r.full_e2e_certified,false);
+});
 test('MVP300: no habilitar estado completo sin prueba externa real',()=>{
  for(const changes of [
   {suppliers_replied_after_dispatch:2,verified_supplier_quotes:1,

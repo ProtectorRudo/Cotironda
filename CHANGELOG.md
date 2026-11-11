@@ -1,3 +1,6 @@
+## 2026-11-11 — MVP350: separar preparación de nueva ronda y evidencia E2E real (solo desarrollo)
+Se actualizó el preflight MVP334 para admitir auto-release ON y no confundir falta de mensaje reciente con inseguridad para preparar la primera prueba. El evaluador E2E MVP300 detecta una ronda cerrada con ofertas incompletas y exige nueva prueba, sin recomendar esperar respuestas en una ronda vencida. SQL piloto real validado solo lectura (1 comprador + 2 proveedores contactables; WhatsApp/IA ON; 0 envíos inciertos; preflight de preparación apto). Tests Node y CI general; **sin activar ninguna ronda, migración, deploy o WhatsApp**. [Acta 518](docs/518-mvp350-ronda-nueva-preflight-y-e2e.md).
+
 ## 2026-11-11 — MVP349: correlación privada con permutación única de materiales (solo desarrollo)
 La comprobación MVP348 ya no asume que las líneas de un PDF aparecen en el mismo orden en dos lecturas. Acepta exclusivamente la misma lista de descripciones/cantidades/unidades con asignación biyectiva **única**, sin cambiar el orden ni asociar precios a otras líneas. Datos ambiguos, duplicados, marcas y cantidades alteradas siguen bloqueados. Se agregaron regresiones sintéticas de corrección y seguridad. Sin replay, base real, WhatsApp, publicación o merge. [Acta 517](docs/517-mvp349-orden-unico-lecturas-materiales.md).
 

@@ -1,0 +1,41 @@
+name: Cotironda MVP350 - preparación real de una ronda nueva, sin envíos
+on:
+  push:
+    branches:
+      - fix/mvp350-preflight-ronda-fresca-20261111
+  pull_request:
+    branches:
+      - fix/mvp348-orden-unico-sin-inferir-materiales-20261111
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preflight-node:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Contratos de un comprador, dos proveedores y ronda E2E cerrada
+        run: |
+          node --experimental-strip-types --test \
+            tests/unit/mvp334-two-supplier-readiness.test.mjs \
+            tests/unit/mvp300-pilot-e2e-readonly-gate.test.mjs \
+            tests/unit/mvp112-full-circuit.test.mjs
+  full-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Regresión de dominio, sin red ni mensajes
+        run: node --experimental-strip-types --test tests/unit/*.test.mjs
+# NO deployment, cron, SQL writes, credentials, OpenAI calls, or WhatsApp.

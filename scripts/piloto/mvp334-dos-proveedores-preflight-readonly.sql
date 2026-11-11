@@ -1,5 +1,7 @@
 -- MVP334: preflight EXCLUSIVAMENTE DE LECTURA para 1 comprador y 2 proveedores.
 -- No devuelve claves HMAC, teléfonos, nombres, textos, presupuestos ni secretos.
+-- MVP350: auto-release es el circuito vigente, y falta de respuesta de hoy
+-- se reporta como evidencia E2E ausente, no como bloqueo para PREPARAR prueba.
 -- Cero DML/DDL, cero envíos, cero activación. El resultado no prueba AUTH
 -- remoto de Whapi ni secretos Edge, y no autoriza publicar.
 WITH personas AS (
@@ -92,9 +94,8 @@ SELECT jsonb_build_object(
    AND c.proveedores_con_familias=2 AND o.permisos_comprador=1
    AND o.permisos_proveedores=2
    AND g.entrada_whatsapp AND g.salida_whatsapp AND g.ia_central AND g.despacho_legacy
-   AND NOT g.nueva_liberacion AND NOT g.lote_diferido AND NOT g.aviso_diferido
+   AND g.nueva_liberacion AND NOT g.lote_diferido AND NOT g.aviso_diferido
    AND o.trabajos_inseguros=0 AND o.mensajes_inseguros=0
-   AND o.entradas_comprador_24h>=1
  ))
  AS evidence_snapshot
 FROM personas p CROSS JOIN catalogos c CROSS JOIN controles g CROSS JOIN operaciones o;

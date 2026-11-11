@@ -19,7 +19,7 @@ const fixture=()=>({
  permisos_administrativos:{comprador:1,proveedores:2},
  servicios:{whatsapp_entrada:true,whatsapp_salida:true,ia_central:true,
   despacho_legacy:true,comprador_operativo:true},
- gates_nuevos:{auto_release:false,batch:false,buyer_notice:false},
+ gates_nuevos:{auto_release:true,batch:false,buyer_notice:false},
  riesgos_de_reenvio:{trabajos_inseguros:0,mensajes_inseguros:0},
  presupuestos_de_intentos:{lote_diario:20,lote_por_comprador:8,avisos_diarios:10},
  evidencia_recepcion_24h:1,programadores_lote:0,
@@ -70,12 +70,11 @@ for(const [name,transform,reason] of [
  ['sin permiso comercial',s=>{s.permisos_administrativos.proveedores=1},'permisos_sin_evidencia'],
  ['sin catalogo reconocido',s=>{s.catalogos.proveedores_con_familias=1},'catalogos_insuficientes'],
  ['sin ruta IA',s=>{s.servicios.comprador_operativo=false},'flujo_ia_o_whatsapp_inhabilitado'],
- ['auto liberacion ya activa',s=>{s.gates_nuevos.auto_release=true},'gates_ya_activos_revisar_previamente'],
- ['lotes ya activos',s=>{s.gates_nuevos.batch=true},'gates_ya_activos_revisar_previamente'],
- ['avisos ya activos',s=>{s.gates_nuevos.buyer_notice=true},'gates_ya_activos_revisar_previamente'],
+ ['auto liberacion apagada',s=>{s.gates_nuevos.auto_release=false},'configuracion_auto_liberacion_o_lotes_incorrecta'],
+ ['lotes ya activos',s=>{s.gates_nuevos.batch=true},'configuracion_auto_liberacion_o_lotes_incorrecta'],
+ ['avisos ya activos',s=>{s.gates_nuevos.buyer_notice=true},'configuracion_auto_liberacion_o_lotes_incorrecta'],
  ['outbox incierto',s=>{s.riesgos_de_reenvio.mensajes_inseguros=1},'reconciliar_envios_inciertos'],
  ['job leased',s=>{s.riesgos_de_reenvio.trabajos_inseguros=1},'reconciliar_envios_inciertos'],
- ['sin ultimo ingreso',s=>{s.evidencia_recepcion_24h=0},'falta_recepcion_reciente'],
  ['SQL dice no apto',s=>{s.preflight_sql_apto=false},'preflight_sql_no_apto'],
  ['permiso publicar accidental',s=>{s.publicacion_autorizada=true},'sello_fuera_de_lectura'],
  ['check externo falsamente negado',s=>{s.verificacion_externa_pendiente=false},'sello_fuera_de_lectura']
@@ -89,6 +88,22 @@ for(const [name,transform,reason] of [
   assert.equal(r.mensajes_enviados,0);
  });
 }
+test('MVP350: auto-release ON y sin mensajes recientes permite PREPARAR sin aprobar E2E',()=>{
+ const s=fixture();s.evidencia_recepcion_24h=0;
+ const r=decide(s);
+ assert.equal(r.estado,'sql_apto_para_preparacion_controlada');
+ assert.deepEqual(r.bloqueos_sql,[]);
+ assert(r.advertencias.includes('sin_ingreso_comprador_reciente_no_prueba_whatsapp_e2e'));
+ assert.equal(r.habilitacion_ejecucion,false);
+ assert.equal(r.mensajes_enviados,0);
+ assert.equal(r.pendiente_whapi_sandbox_auth_cupo_y_token,true);
+});
+test('MVP350: la consulta SQL es solo lectura y auto-release ON no dispara un mensaje',()=>{
+ const uncommented=source.replace(/^--.*$/gmu,'');
+ assert.match(uncommented,/AND g\.nueva_liberacion AND NOT g\.lote_diferido/u);
+ assert.doesNotMatch(uncommented,/AND o\.entradas_comprador_24h\s*>=\s*1/u);
+ assert.equal(inspeccionarSqlMvp334(source).allow_mutations,false);
+});
 test('MVP334: sin evidencia o tipos inyectados se bloquea',()=>{
  for(const v of [null,undefined,{},[],{...fixture(),catalogos:null},
   {...fixture(),evidencia_recepcion_24h:'1'},
