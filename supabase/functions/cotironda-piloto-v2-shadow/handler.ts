@@ -17,6 +17,9 @@ import {
 } from '../../../src/domain/presupuestos-v2/worker-archivo-sombra.ts';
 import type {EvidenceReaderB5} from
  '../../../src/domain/presupuestos-v2/evidencia-pdf-original-b5.ts';
+import {revisarArchivosVersionadosB5d,
+ type PrivateReviewOutcomeB5d} from
+ '../../../src/domain/presupuestos-v2/worker-revision-archivos-b5d.ts';
 
 const PROJECT='ilggkalaafhtiysyzlmg';
 const PROJECT_URL='https://'+PROJECT+'.supabase.co';
@@ -38,6 +41,10 @@ export type EnvV2B3=Readonly<{
 export type EdgeDepsV2B3=Readonly<{
  createDb:(url:string,roleKey:string)=>Db;
  readPdfEvidence?:EvidenceReaderB5;
+ /** Enabled only by the installed private Edge adapter; no user request can. */
+ runB5dWhenEmpty?:boolean;
+ runB5d?:(args:Parameters<typeof revisarArchivosVersionadosB5d>[0])=>
+  Promise<PrivateReviewOutcomeB5d>;
  run?:(args:Parameters<typeof procesarSombraArchivadaV2>[0])=>
  Promise<ShadowWorkerOutcomeV2>;
 }>;
@@ -134,6 +141,28 @@ export async function ejecutarSolicitudSombraV2B3(
   // keep external response private and flag a violation.
   if(outcome.outboundMessages!==0||outcome.publishedOffers!==0)
    return json(503,'shadow_contract_violation');
+  if(outcome.state==='empty'&&deps.runB5dWhenEmpty===true){
+   // B5d reuses the existing authenticated POST and private V2 gate.
+   // Claim SQL is versioned and never asks the caller for a source/round.
+   const next=await (deps.runB5d??revisarArchivosVersionadosB5d)({
+    enabled:true,trustedInternalWorker:true,
+    rpc:async(name,params)=>db.rpc(name,params),
+    storage:db.storage,apiKey:api,model,
+    readPdfEvidence:deps.readPdfEvidence
+   });
+   if(next.publishedOffers!==0||next.outboundMessages!==0||
+      next.sourceVerified!==false)
+    return json(503,'shadow_contract_violation');
+   switch(next.state){
+    case 'candidate_private':return json(200,'candidate_private');
+    case 'review_required':return json(200,'review_required');
+    case 'empty':return json(200,'queue_empty');
+    case 'disabled':return json(503,'shadow_disabled');
+    case 'reconciliation_required':
+     return json(503,'reconciliation_required');
+    default:return json(503,'shadow_contract_violation');
+   }
+  }
   switch(outcome.state){
    case 'candidate_private':return json(200,'candidate_private');
    case 'review_required':return json(200,'review_required');
