@@ -5,6 +5,7 @@
  * Model: suggests SKU links twice; deterministic validator calculates the
  * unique margin and rejects equivocal cases. SQL alone owns the binding.
  */
+import {pistasMaterialesMvp352} from './supplier-material-identity-hint-mvp352.ts';
 const HEX=/^[a-f0-9]{64}$/u,UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/iu;
 type Modelo='gpt-6-luna'|'gpt-6.1-sol';
 type Rpc=(name:string,args:Record<string,unknown>)=>Promise<{data:unknown;error:unknown}>;
@@ -110,6 +111,10 @@ const instruction=[
  'Arena fina, piedra partida, cemento, etc., NO son sinónimos universales.',
  'Same: mismo material y presentación. Equivalent: material razonablemente',
  'equivalente con presentación diferente. Uncertain: dudas importantes.',
+ 'Las pistas material_identity_hint se crean SOLO al separar un descuento',
+ 'porcentual explícito al final, luego de punto y coma. Son orientación',
+ 'de identidad física, NO reemplazan ni corrigen el original.',
+ 'No uses el descuento como artículo, cantidad, unidad ni precio.',
  'No infieras cantidades, pesos ni unidades ausentes. Para renglones',
  'extra (flete, pallets) sin contraparte, omitir el vínculo.',
  'Usá SOLO números y códigos exactamente presentes en las opciones.',
@@ -123,7 +128,8 @@ async function modelRead(input:{quote:Line[];options:Candidate[]},apiKey:string,
    input:[
     {role:'system',content:[{type:'input_text',text:instruction}]},
     {role:'user',content:[{type:'input_text',text:JSON.stringify({
-      source_items:input.quote,candidates
+      source_items:input.quote,
+      material_identity_hints:pistasMaterialesMvp352(input.quote),candidates
     })}]}
    ],
    text:{format:{type:'json_schema',strict:true,
