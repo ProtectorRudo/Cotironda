@@ -1,6 +1,6 @@
 # Acta 509 — B5n: relectura privada versionada para comprobar condiciones PDF.js
 
-**Fecha:** 11/11/2026 · **Autorización:** «Luz verde» = solo desarrollo/CI, **no instalar ni ejecutar en Supabase piloto**. **PR:** [#781](https://github.com/ProtectorRudo/Cotironda/pull/781), apilado sobre [#778](https://github.com/ProtectorRudo/Cotironda/pull/778). **Origen:** [Acta 507](507-v2-b5m-publicacion-y-resultados-reales-piloto.md) (en PR documental #780) y [Acta 508](508-v2-b5n-puntuacion-pdf-condiciones.md).
+**Fecha:** 11/11/2026 · **Autorización:** «Luz verde» = solo desarrollo/CI, **no instalar ni ejecutar en Supabase piloto**. **PR:** [#781](https://github.com/ProtectorRudo/Cotironda/pull/781), apilado sobre [#778](https://github.com/ProtectorRudo/Cotironda/pull/778). **Origen:** [Acta 507](https://github.com/ProtectorRudo/Cotironda/blob/docs/v2-b5m-piloto-postflight-20261111/docs/507-v2-b5m-publicacion-y-resultados-reales-piloto.md) (en PR documental #780) y [Acta 508](508-v2-b5n-puntuacion-pdf-condiciones.md).
 
 ## Hecho real y objetivo limitado
 B5m ya procesó una vez el PDF histórico y quedó con 3/5 condiciones atribuidas, a pesar de verificar 3/3 materiales y coincidencia del subtotal. El primer término no corroborado fue el ordinal 4, `precios en efectivo`. La modificación B5n prueba la **hipótesis** de que el original podría contener únicamente puntuación de borde (p. ej. `precios en efectivo:`); no se puede afirmar esto del PDF real sin volver a leer el original y comparar fragmentos.
@@ -23,7 +23,7 @@ B5m ya procesó una vez el PDF histórico y quedó con 3/5 condiciones atribuida
 ## Plan para una publicación futura autorizada
 - Confirmar 6 workflows generales SUCCESS + 4 trabajos B5n SUCCESS, origen GitHub exacto, Edge piloto v9, flags OFF, 0 leases, B5k=1 B5m=1 B5n=0, cero WhatsApps pendientes.
 - Aplicar SQL B5n con los flags OFF; confirmar versiones, permisos y evidencia previa intacta.
-- Desplegar únicamente Edge `cotironda-piloto-v2-shadow`, preservando 23 archivos de v9 y reemplazando exclusivamente los tres módulos de código alterados (lector B5l y worker; revisar diferencias reales antes de empaquetar).
+- Desplegar únicamente Edge `cotironda-piloto-v2-shadow`, preservando los archivos de v9 que no hayan cambiado y reemplazando únicamente los módulos efectivamente modificados (B5l y worker), tras comparar las dependencias reales.
 - Usar puente interno ya autorizado para **una única** invocación privada, apagando todos los flags aunque el resultado sea incierto. Verificar B5n nuevo sin alteración de B5k/B5m, ofertas, Whapi y contactos.
 - Si la condición ordinal 4 continúa ambigua, **no forzar** `visible_rows_accounted_private`; documentar motivo y priorizar el circuito completo comprador → proveedor → arquitecto, sin generar diagnósticos indefinidos.
 
