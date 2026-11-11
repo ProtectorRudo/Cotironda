@@ -1,5 +1,8 @@
 name: Cotironda B5f - total PDF y descuentos por evidencia independiente
 on:
+  push:
+    branches:
+      - feat/v2-b5f-cotejo-pdf-total-descuento-posicional-20261111
   pull_request:
     branches:
       - feat/v2-b6-comparacion-privada-sin-totales-enganosos-20261110
@@ -11,7 +14,7 @@ on:
       - 'docs/494-v2-b5f-cotejo-total-y-descuento-pdf-posicional.md'
       - 'README.md'
       - 'AGENTS.md'
-      - 'CHANGELOG.md
+      - 'CHANGELOG.md'
       - 'supabase/functions/cotironda-piloto-v2-shadow/pdf-geometry-b5f.ts'
       - '.github/workflows/cotironda-v2-b5f-total-y-descuentos-posicional.yml'
   workflow_dispatch:
