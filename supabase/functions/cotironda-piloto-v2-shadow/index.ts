@@ -5,8 +5,7 @@
  */
 import {createClient} from 'npm:@supabase/supabase-js@2.118.0';
 import {ejecutarSolicitudSombraV2B3} from './handler.ts';
-import {readPdfPositioned} from
- '../cotironda-piloto-whapi/supplier-source-pdf-general.ts';
+import {readPdfWithGeometryB5f} from './pdf-geometry-b5f.ts';
 import {readOfficeVisibleRows} from
  '../cotironda-piloto-whapi/supplier-source-office.ts';
 Deno.serve(request=>ejecutarSolicitudSombraV2B3(request,{
@@ -42,7 +41,7 @@ Deno.serve(request=>ejecutarSolicitudSombraV2B3(request,{
    })}
   };
  },
- readPdfEvidence:readPdfPositioned,
+ readPdfEvidence:readPdfWithGeometryB5f,
  readXlsxEvidence:(bytes,sha256)=>readOfficeVisibleRows({
   bytes,sha256,
   mime:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
