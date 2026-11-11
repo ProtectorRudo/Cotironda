@@ -270,3 +270,53 @@ test('B5j: an unclaimed percentage outside articles requires manual context',()=
  const v=calc({pdfRows:[...rows,row(540,[cell('Bonificación adicional 5%',140)])]});
  assert.equal(v.code,'source_unmapped_content');sealed(v);
 });
+
+test('B5j: freight mentioned without price preserves listed subtotal, NOT final total',()=>{
+ const doc=quote(standard,'$4.600,00',['Flete a coordinar']);
+ const v=calc({doc,pdfRows:[...rows,row(545,[cell('Flete a coordinar',130)])]});
+ assert.equal(v.code,'fiscal_or_freight_ambiguous');
+ assert.equal(v.freight,'mentioned_unpriced');
+ assert.equal(v.material_count,2);
+ assert.equal(v.material_arithmetic_matches,2);
+ assert.equal(v.conditions_corroborated,1);
+ // The listed figures match the source candidate, but a payable FINAL
+ // amount is NOT verified when freight has not been priced.
+ assert.equal(v.material_total_matches_declared,true);
+ sealed(v);
+});
+test('B5j: unknown freight cannot hide even a one-cent source mismatch',()=>{
+ const doc=quote(standard,'$4.600,01',['Flete a coordinar']);
+ const r=[...rows.slice(0,-1),row(610,[cell('$4.600,01')]),
+  row(540,[cell('Flete a coordinar',130)])];
+ const v=calc({doc,pdfRows:r});
+ assert.equal(v.code,'fiscal_or_freight_ambiguous');
+ assert.equal(v.freight,'mentioned_unpriced');
+ assert.equal(v.material_total_matches_declared,false);
+ sealed(v);
+});
+test('B5j: a price-free freight condition never becomes free or included',()=>{
+ const doc=quote(standard,'$4.600,00',['Flete según zona de entrega']);
+ const v=calc({doc,pdfRows:[...rows,row(545,[cell('Flete según zona de entrega',130)])]});
+ assert.equal(v.freight,'mentioned_unpriced');
+ assert.equal(v.material_total_matches_declared,true);
+ assert.equal(v.code,'fiscal_or_freight_ambiguous');
+ assert.equal(v.can_publish,false);
+ assert.equal(v.can_rank,false);
+ sealed(v);
+});
+test('B5j: an explicitly free freight term retains the existing full-line balance code',()=>{
+ const doc=quote(standard,'$4.600,00',['Flete gratis']);
+ const v=calc({doc,pdfRows:[...rows,row(545,[cell('Flete gratis',130)])]});
+ assert.equal(v.freight,'free_explicit');
+ assert.equal(v.code,'grand_total_balances_private');
+ assert.equal(v.material_total_matches_declared,true);
+ sealed(v);
+});
+test('B5j: IVA rate mentioned still blocks commercial certification even if lines sum',()=>{
+ const doc=quote(standard,'$4.600,00',['IVA 21%']);
+ const v=calc({doc,pdfRows:[...rows,row(545,[cell('IVA 21%',130)])]});
+ assert.equal(v.code,'fiscal_or_freight_ambiguous');
+ assert.equal(v.iva,'rate_mentioned');
+ assert.equal(v.material_total_matches_declared,true);
+ sealed(v);
+});
