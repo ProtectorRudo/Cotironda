@@ -15,7 +15,7 @@ BEGIN
  LIMIT 1;
  IF sc IS NULL OR rid IS NULL THEN RAISE EXCEPTION 'mvp352_discount_fixture_missing';END IF;
  SELECT count(*) INTO messages_before FROM cotironda_piloto_privado.whapi_outbox;
- SELECT count(*) INTO offers_before FROM cotironda_piloto_privado.offer_versions;
+ SELECT count(*) INTO offers_before FROM cotironda_piloto_privado.anonymous_supplier_docs_mvp107;
  IF has_function_privilege('anon',
    'public.cotironda_piloto_audit_supplier_amounts_mvp103(text)','EXECUTE')
  OR has_function_privilege('authenticated',
@@ -69,7 +69,7 @@ BEGIN
   THEN RAISE EXCEPTION 'mvp352_discount_original_mutated';END IF;
  END LOOP;
  IF (SELECT count(*) FROM cotironda_piloto_privado.whapi_outbox)<>messages_before
- OR (SELECT count(*) FROM cotironda_piloto_privado.offer_versions)<>offers_before
+ OR (SELECT count(*) FROM cotironda_piloto_privado.anonymous_supplier_docs_mvp107)<>offers_before
  THEN RAISE EXCEPTION 'mvp352_discount_created_messages_or_offers';END IF;
  RAISE NOTICE 'MVP352 discount PASS: unit discount rounded cents, wrong prices denied, SQL source gate retained, zero WhatsApp';
 END $test$;
