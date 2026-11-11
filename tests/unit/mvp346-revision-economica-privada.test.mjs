@@ -178,3 +178,33 @@ test('MVP346: lector independiente de filas PDF controla todos los importes y no
  assert.equal(result.state,'source_review_required');
  assert.equal(bad.calls.length,0);
 });
+
+
+test('MVP352/MVP346: descuento porcentual explícito calcula centavos sin alterar presupuesto original',()=>{
+ const d=structuredClone(original);
+ d.lines=[
+  {original_description:'Cemento; Dscto. 22.4%',quantity:'15,00',unit:null,
+   unit_price:'$100,07',line_total:'$1.164,75',
+   evidence_location:'hoja 1 renglón 1',ambiguity:null},
+  {original_description:'BIG BAG de Arena; Descuento 22,4%',quantity:'2,00',unit:null,
+   unit_price:'$70,83',line_total:'$109,92',
+   evidence_location:'hoja 1 renglón 2',ambiguity:null},
+  {original_description:'BIG BAG de Piedra; bonificación 22.4%',quantity:'1,00',unit:null,
+   unit_price:'$109,22',line_total:'$84,75',
+   evidence_location:'hoja 1 renglón 3',ambiguity:null}
+ ];
+ d.total_declared='$1.359,42';
+ const mirror=structuredClone(d);
+ assert.equal(auditCandidateAmountsMvp346(d),true);
+ assert.deepEqual(d,mirror);
+ for(const [which,change] of [
+  ['bad net total',v=>v.lines[0].line_total='$1.164,81'],
+  ['no list unit',v=>v.lines[0].unit_price=null],
+  ['false discount',v=>v.lines[0].original_description='Cemento; Dscto. 20%'],
+  ['ambiguous claim',v=>v.lines[0].original_description='Cemento; descuento 22% + flete'],
+  ['incorrect total',v=>v.total_declared='$1.359,43']
+ ]){
+  const bad=structuredClone(d);change(bad);
+  assert.equal(auditCandidateAmountsMvp346(bad),false,which);
+ }
+});

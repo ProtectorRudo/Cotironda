@@ -1,9 +1,9 @@
 name: Cotironda MVP351 - recuperación revisada y rival histórico sin envíos
 on:
   push:
-    branches: [fix/mvp351-review-retry-historic-candidates-20261111]
+    branches: [fix/mvp351-review-retry-historic-candidates-20261111, fix/mvp352-material-identity-hints-20261111]
   pull_request:
-    branches: [fix/mvp350-preflight-ronda-fresca-20261111]
+    branches: [fix/mvp350-preflight-ronda-fresca-20261111, fix/mvp351-review-retry-historic-candidates-20261111]
   workflow_dispatch:
 permissions:
   contents: read
@@ -23,11 +23,14 @@ jobs:
           node --experimental-strip-types --test \
             tests/unit/mvp351-private-historical-review.test.mjs \
             tests/unit/mvp351-release-bundle-readonly.test.mjs \
+            tests/unit/mvp352-material-identity-hints.test.mjs \
+            tests/unit/mvp352-discount-math.test.mjs \
             tests/unit/mvp351-recovery-to-commercial-e2e.test.mjs \
             tests/unit/mvp291-automatic-correlation.test.mjs \
             tests/unit/mvp292-archive-auto-recovery.test.mjs \
             tests/unit/mvp348-fidelidad-y-operacion-cron.test.mjs
           node scripts/piloto/mvp351-review-retry-builder.mjs --check
+          node scripts/piloto/mvp352-semantic-reassessment-builder.mjs --check
           node scripts/piloto/mvp351-release-bundle-readonly.mjs --check
   pg17-rollback:
     runs-on: ubuntu-latest
@@ -64,7 +67,10 @@ jobs:
           node scripts/piloto/mvp351-review-retry-builder.mjs --sql > supabase/tests/ci/.mvp351.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/.mvp351.sql >/dev/null
           psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regnamespace('cotironda_piloto_privado') IS NULL" | grep -Fx 't'
-          rm supabase/tests/ci/.mvp351.sql
+          node scripts/piloto/mvp352-semantic-reassessment-builder.mjs --sql > supabase/tests/ci/.mvp352.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/.mvp352.sql >/dev/null
+          psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regnamespace('cotironda_piloto_privado') IS NULL" | grep -Fx 't'
+          rm supabase/tests/ci/.mvp351.sql supabase/tests/ci/.mvp352.sql
   deno-module:
     runs-on: ubuntu-latest
     timeout-minutes: 12
@@ -75,5 +81,9 @@ jobs:
       - uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb
         with:
           deno-version: v2.x
-      - run: deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/supplier-auto-correlation-mvp336.ts
+      - run: |
+          deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/supplier-auto-correlation-mvp336.ts
+          deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/supplier-material-identity-hint-mvp352.ts
+          deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/supplier-discount-arithmetic-mvp352.ts
+          deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/supplier-auto-recovery-worker-mvp292.ts
 # No SQL writes to piloto, no WhatsApp, no secrets, no Vercel production.
