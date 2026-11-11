@@ -232,9 +232,9 @@ test('B5j: a copied material description cannot hide omitted freight in its row'
  const v=calc({pdfRows:altered});
  assert.equal(v.code,'source_unmapped_content');sealed(v);
 });
-test('B5j: repeated material descriptions outside priced source rows require review',()=>{
+test('B5j: duplicated descriptions fail at geometry before economic audit',()=>{
  const v=calc({pdfRows:[...rows,row(540,[cell('Cemento CPC',130)])]});
- assert.equal(v.code,'source_unmapped_content');sealed(v);
+ assert.equal(v.code,'geometry_unconfirmed');sealed(v);
 });
 test('B5j: an unclaimed amount printed on a later page is still scanned',()=>{
  const v=calc({pdfRows:[...rows,row(540,[cell('Otros importes',130),cell('150,00')],2)]});
