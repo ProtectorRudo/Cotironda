@@ -1,3 +1,9 @@
+## 2026-11-11 — B5j: conciliación económica determinista y privada (SOLO DESARROLLO)
+- PR #774 sobre #773: cotejo exacto en centavos de materiales y descuentos con fuente PDF, cargos explícitos, IVA/flete informados o no informados sin suponer, y condiciones comprobadas contra el original.
+- Nuevo ledger B5j de códigos y contadores sin precios ni PII, RLS y RPC servicio; modo Edge B5j exclusivo con flag OFF por defecto y sin fallback hacia IA/WhatsApp.
+- Pruebas Node, PDF.js Deno, PostgreSQL 17 rollback, archivos SHA alterados, reintentos, condiciones contradictorias y diferencia de un centavo; integración WhatsApp sin cambios.
+- No publicado ni integrado; incluso `grand_total_balances_private` conserva `source_verified=false`, `can_publish=false`, `can_rank=false`. Falta certificar cobertura económica completa. [Acta 500](docs/500-v2-b5j-conciliacion-economica-privada.md).
+
 ## 2026-11-11 — B5i PUBLICADO en `cotironda-piloto` (Acta 499)
 - Migración `cotironda_v2_b5i_private_total_geometry_20261111` y Edge sombra V2 versión 6 publicadas desde commit de código `0a50796cd45d9cb5222d8cf5bb7c862cb13476f5`, únicamente en piloto.
 - Dos PDF históricos procesados por canal interno autenticado: una cifra coincidente por documento, en celda debajo de materiales y alineada con columna de importes; sin etiqueta de total reconocida. No representa una certificación de importe final.
