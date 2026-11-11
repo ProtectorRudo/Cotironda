@@ -45,13 +45,23 @@ const pairs={matches:[
   candidate:'r2',source_line:i,request_line:i,relation:'equivalent'
  }))
 ]};
-function setup({inconsistent=false,duplicate=false}={}){
+function setup({inconsistent=false,duplicate=false,semantic=false}={}){
  const events=[];let once=duplicate,readings=0,comparing=0,replayCount=0;
  const rpc=async(name,args={})=>{
   events.push(name);
   if(name==='cotironda_piloto_claim_auto_recovery_mvp292')
    return {data:{state:'empty'},error:null};
   if(name==='cotironda_piloto_claim_reviewed_auto_recovery_mvp336'){
+   if(once||semantic)return {data:{state:'empty'},error:null};
+   once=true;
+   return {data:{
+    state:'claimed',retry_reviewed:true,
+    source_hmac:H,chat_hmac:C,source_sha256:sha,
+    kind:'document',mime:'application/pdf',size_bytes:bytes.length,draft
+   },error:null};
+  }
+  if(name==='cotironda_piloto_claim_semantic_reassessment_mvp352'){
+   if(!semantic)return {data:{state:'empty'},error:null};
    if(once)return {data:{state:'empty'},error:null};
    once=true;
    return {data:{
@@ -170,4 +180,21 @@ test('MVP343 E2E privado: no new claim means zero downloads/AI',async()=>{
  assert.equal(s.comparing,0);
  assert.equal(s.replayCount,0);
  assert.equal(s.events.includes('storage_download'),false);
+});
+
+test('MVP352 E2E privado: tercer claim existe solo tras ambos previos vacíos',async()=>{
+ const s=setup({semantic:true});
+ const result=await procesarPendienteAutomaticoMvp292(s.args);
+ assert.equal(result.state,'review_required');
+ assert.equal(result.reason,'archive_quote_economic_or_source_review_required');
+ assert.deepEqual(s.events.slice(0,3),[
+  'cotironda_piloto_claim_auto_recovery_mvp292',
+  'cotironda_piloto_claim_reviewed_auto_recovery_mvp336',
+  'cotironda_piloto_claim_semantic_reassessment_mvp352'
+ ]);
+ assert.equal(s.readings,1);
+ assert.equal(s.comparing,2);
+ assert.equal(s.replayCount,1);
+ assert.equal((await procesarPendienteAutomaticoMvp292(s.args)).state,'empty');
+ assert.equal(s.readings,1);
 });
