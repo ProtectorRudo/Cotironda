@@ -136,16 +136,26 @@ export async function procesarSombraArchivadaV2(args:{
     // model's transcription. All reports remain PRIVATE and non-publishable;
     // even matching rows do NOT establish full-document/discount coverage.
     if(mime==='application/pdf'&&args.readPdfEvidence){
-     const commercial=auditarComercialPrivadoB5(revalidated.document);
      const proof=await comprobarRenglonesPdfOriginalB5({
        originalBytes:bytes,sourceSha256:sha,
        candidate:revalidated.document,readPdf:args.readPdfEvidence
      });
+     const sourced=proof.sha_verified&&proof.source_sha256===sha
+      ?proof.lines.flatMap(line=>line.state==='source_line_corresponds'&&
+        line.discount_evidence
+        ?[{ordinal:line.ordinal,...line.discount_evidence}]:[])
+      :[];
+     const commercial=auditarComercialPrivadoB5(
+      revalidated.document,[],sourced);
      const augmented=revalidated.line_diagnostics.map((d,i)=>({
       ...d,
       source_b5:proof.lines[i]?.state??'source_not_located',
       source_reason_b5:proof.reason,
-      arithmetic_b5:commercial.lines[i]?.result??'insufficient_numeric_data'
+      arithmetic_b5:commercial.lines[i]?.result??'insufficient_numeric_data',
+      discount_evidence_b5:proof.lines[i]?.discount_evidence?.origin??
+       'source_discount_unverified',
+      source_total_b5:proof.total_state??'source_total_unverified',
+      source_verified:false,can_publish:false
      }));
      // The current private SQL RPC permits only 50KB of diagnostics.
      // Do not cause an unbounded audit payload to discard a valid candidate.
