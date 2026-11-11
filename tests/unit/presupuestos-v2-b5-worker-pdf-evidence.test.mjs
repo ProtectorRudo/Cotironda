@@ -117,8 +117,9 @@ test('B5 wiring: PDF evidence reader errors remain private, no original leaks',a
 
 test('B5 wiring: absent Edge PDF adapter never silently claims verified source',async()=>{
  const {result,persisted,events}=await processPdf({attach:false});
- assert.equal(result.reason,'shadow_pdf_audit_not_connected');
+ // Backward-compatible B2 private path: no adapter is never source-verified.
+ assert.equal(result.reason,'shadow_candidate_unverified');
  assert.ok(!events.some(e=>e.name==='source_pdf'));
- assert.equal(persisted.p_line_diagnostics[0].source_b5,'source_not_checked');
+ assert.deepEqual(persisted.p_line_diagnostics,diag);
  assert.equal(result.publishedOffers,0);
 });
