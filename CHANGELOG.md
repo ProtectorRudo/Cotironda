@@ -1,3 +1,9 @@
+## 2026-11-11 — B5i PUBLICADO en `cotironda-piloto` (Acta 499)
+- Migración `cotironda_v2_b5i_private_total_geometry_20261111` y Edge sombra V2 versión 6 publicadas desde commit de código `0a50796cd45d9cb5222d8cf5bb7c862cb13476f5`, únicamente en piloto.
+- Dos PDF históricos procesados por canal interno autenticado: una cifra coincidente por documento, en celda debajo de materiales y alineada con columna de importes; sin etiqueta de total reconocida. No representa una certificación de importe final.
+- B5d/B5g/B5h intactos, sin ofertas ni mensajes nuevos; RLS confirmado y `enabled`, `b5h_only`, `b5i_only` apagados al finalizar.
+- PR #773 abierto y sin merge, producción sin cambios. Próximo: validación económica integral determinista (IVA, flete, cargos, descuentos y cobertura). [Acta 499](docs/499-v2-b5i-publicacion-piloto-diagnostico-geometria-real.md).
+
 ## 2026-11-11 — B5i, posición geométrica del total sin rótulo (solo desarrollo)
 - Nuevo PR #773, apilado sobre B5h #772: analizador puro de posiciones PDF.js x/y, importes repetidos, columna de artículos y proximidad de IVA/flete sin inferencia de totales.
 - Ledger privado B5i versionado y nuevo modo exclusivo OFF por defecto (RLS, SHA, cuota, idempotencia); no reabre B5h/B5g/B5d.
