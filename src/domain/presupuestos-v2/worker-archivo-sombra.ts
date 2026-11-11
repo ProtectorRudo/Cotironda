@@ -135,25 +135,23 @@ export async function procesarSombraArchivadaV2(args:{
     // B5: independently corroborate ORIGINAL PDF bytes, never a second
     // model's transcription. All reports remain PRIVATE and non-publishable;
     // even matching rows do NOT establish full-document/discount coverage.
-    if(mime==='application/pdf'){
+    if(mime==='application/pdf'&&args.readPdfEvidence){
      const commercial=auditarComercialPrivadoB5(revalidated.document);
-     const proof=args.readPdfEvidence
-      ?await comprobarRenglonesPdfOriginalB5({
+     const proof=await comprobarRenglonesPdfOriginalB5({
        originalBytes:bytes,sourceSha256:sha,
        candidate:revalidated.document,readPdf:args.readPdfEvidence
-      }):null;
+     });
      const augmented=revalidated.line_diagnostics.map((d,i)=>({
       ...d,
-      source_b5:proof?.lines[i]?.state??'source_not_checked',
-      source_reason_b5:proof?.reason??'reader_not_connected',
+      source_b5:proof.lines[i]?.state??'source_not_located',
+      source_reason_b5:proof.reason,
       arithmetic_b5:commercial.lines[i]?.result??'insufficient_numeric_data'
      }));
      // The current private SQL RPC permits only 50KB of diagnostics.
      // Do not cause an unbounded audit payload to discard a valid candidate.
      if(JSON.stringify(augmented).length<=49000)
       diagnostics=augmented;
-     reason=proof===null?'shadow_pdf_audit_not_connected':
-      proof.state==='source_rows_correspond_private'
+     reason=proof.state==='source_rows_correspond_private'
        ?'shadow_pdf_rows_correspond_private'
        :'shadow_pdf_source_review_required';
     }
