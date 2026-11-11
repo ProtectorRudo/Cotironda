@@ -23,13 +23,13 @@ Se agrega `conditionLiteral`, que descarta únicamente signos de puntuación de 
 - Node: condiciones con `:`, `.`, guion, puntuación aislada y dos términos independientes; rechazar término unido al material, IVA 21%, importes adicionales, porcentajes, duplicados o cláusulas monetarias en un mismo fragmento.
 - Node: secuencia de **cinco condiciones** simuladas, con cuarto término puntuado y quinto independiente, puede atribuir **5/5 solo en una prueba sintética**; con quinto unido al material vuelve a detenerse de modo conservador luego de **4/5**.
 - Deno PDF.js: PDF sintético real que contiene condición completa puntuado en fragmento independiente vs. misma parte con flete, y verifica además condiciones públicas FALSE.
-- PostgreSQL 17 ROLLBACK: asegurar que la migración B5m instalada sigue protegida por RLS y claves de versión, sin crear nueva migración ni alterar datos reales.
+- PostgreSQL 17 ROLLBACK: ejecutar también la nueva migración privada B5n preparada en desarrollo y comprobar RLS, versiones B5k/B5m/B5n, rechazo de duplicados e historial intacto, sin alterar la base real. Ver [Acta 509](509-v2-b5n-replay-privado-una-sola-vez.md).
 - Regresión general y build Next.js, sin afectar Whapi o lector PDF fijo de MVP332.
 
 ## Qué NO se demuestra
 
-Este PR **no prueba** que la condición ordinal 4 del **PDF histórico** esté dividida de esa manera. Podría estar mezclada con un material o un importe; si es así, el bloqueo debe mantenerse. El registro histórico B5k/B5m permanece intacto y consumido. Una nueva prueba privada real necesitaría ejecución **nueva versionada** y orden separada «Publicalo»; no reabrir ni sobrescribir B5k/B5m. Antes de hacerlo, evaluar si existe una forma más directa y económica de inspeccionar la evidencia original dentro del entorno privado, evitando otra serie de diagnósticos aislados.
+Este PR **no prueba** que la condición ordinal 4 del **PDF histórico** esté dividida de esa manera. Podría estar mezclada con un material o un importe; si es así, el bloqueo debe mantenerse. El registro histórico B5k/B5m permanece intacto y consumido. El mecanismo de ejecución **nueva versionada B5n** ya está preparado en código y pruebas, pero NO instalado; una nueva prueba privada real requiere «Publicalo» por separado, sin reabrir ni sobrescribir B5k/B5m. Antes de hacerlo, evaluar si existe una forma más directa y económica de inspeccionar la evidencia original dentro del entorno privado, evitando otra serie de diagnósticos aislados.
 
 ## Foco comercial
 
-No confundir coincidencia del subtotal de materiales con importe final: el flete a convenir sigue sin costo y la moneda ISO no está acreditada. Priorizar después la prueba E2E desde WhatsApp hasta el arquitecto, por rubro, con equivalencias y comparaciones verificables, sin publicaciones engañosas.
+No confundir coincidencia del subtotal de materiales con importe final: el flete a convenir sigue sin importe informado y la moneda ISO no está acreditada. Priorizar después la prueba E2E desde WhatsApp hasta el arquitecto, por rubro, con equivalencias y comparaciones verificables, sin publicaciones engañosas.
