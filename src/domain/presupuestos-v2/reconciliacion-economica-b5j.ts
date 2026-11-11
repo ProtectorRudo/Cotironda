@@ -191,7 +191,13 @@ export function reconciliarEconomiaTotalB5j(args:{
        l.kind==='material'&&l.unit_price_raw!==null).length)
    return fail('currency_ambiguous');
  }
- const documentedCurrency=['
+ const documentedCurrency=['$','ars','pesos','peso argentino'].includes(currency);
+ const privateSymbolFallback=currency===''&&proof!==undefined&&
+  (proof.code==='uniform_dollar_symbol_iso_unstated'||
+   proof.code==='explicit_ars_source');
+ if((!documentedCurrency&&!privateSymbolFallback)||
+    !args.rows.some(row=>/(?:\$\s*\d|(?:ars|pesos)\s+\d)/iu.test(row.text)))
+  return fail('currency_ambiguous');
 
  const discounts=args.source.lines.flatMap(p=>p.discount_evidence===undefined?[]:
   [{ordinal:p.ordinal,basis_points:p.discount_evidence.basis_points,
