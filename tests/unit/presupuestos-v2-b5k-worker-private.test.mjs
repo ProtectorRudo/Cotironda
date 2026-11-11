@@ -22,7 +22,7 @@ const candidate={
  commercial_conditions_raw:[]
 };
 const claim={state:'claimed',source_hmac:id,source_sha256:sha,
- size_bytes:bytes.length,processor_version:'v2_b5n_20261111',
+ size_bytes:bytes.length,processor_version:'v2_b5o_20261111',
  historic_candidate:candidate};
 const row=(y,parts)=>({page:1,y,parts,
  text:parts.map(x=>x.text).join(' ')});
@@ -235,4 +235,25 @@ test('B5n: successful worker stores nulls instead of a false failure',async()=>{
  assert.equal(x.outcome.state,'private_diagnosed');
  assert.equal(x.stored.p_diagnostics.first_unresolved_condition_ordinal,null);
  assert.equal(x.stored.p_diagnostics.condition_failure_kind,null);
+});
+
+test('B5o: historic B5n claim is rejected before reading Storage',async()=>{
+ const x=await run({request:{...claim,processor_version:'v2_b5n_20261111'}});
+ assert.equal(x.outcome.state,'reconciliation_required');
+ assert.equal(x.outcome.reason,'claim_invalid');
+ assert.ok(!x.calls.includes('download'));
+});
+test('B5o: only historical B5n source-part-mixed 4/5 is eligible',()=>{
+ const sql=readFileSync(new URL(
+  '../../supabase/piloto/v2_b5o_final_private_pdf_check.sql',
+  import.meta.url),'utf8');
+ assert.ok(sql.includes("old.processor_version='v2_b5n_20261111'"));
+ assert.ok(sql.includes("old.diagnostics->>'first_unresolved_condition_ordinal'='4'"));
+ assert.ok(sql.includes("old.diagnostics->>'condition_failure_kind'='source_part_mixed'"));
+ assert.ok(sql.includes("'v2_b5o_20261111'"));
+ assert.ok(sql.includes("AND NOT b5h_only AND NOT b5i_only"));
+ assert.ok(sql.includes("b5n_gate_changed_during_claim"));
+ assert.ok(sql.includes("interval '8 minutes'"));
+ assert.ok(!sql.includes('cron.schedule('));
+ assert.ok(!sql.includes('vault.decrypted_secrets'));
 });
