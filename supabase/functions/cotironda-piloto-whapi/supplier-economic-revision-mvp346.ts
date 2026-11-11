@@ -71,22 +71,22 @@ export function auditCandidateAmountsMvp346(d:DocumentDraft):boolean{
      line.line_total!==null&&line.line_total.length>120)return false;
   const amount=parseCents(line.line_total);
   if(amount===null)return false;
+  const discounted=comprobarDescuentoUnitarioMvp352({
+   original_description:line.original_description,
+   quantity:line.quantity,unit_price:line.unit_price,
+   line_total:line.line_total
+  });
+  // An explicit discount suffix is a line condition, not a separate
+  // positive credit. Standalone/ambiguous discount lines remain rejected.
   if(/descuento|bonificaci[oó]n|rebaja/iu.test(line.original_description)&&
-    amount>=0n)return false;
+    amount>=0n&&discounted.state!=='consistent')return false;
   if(line.unit_price!==null){
    const unit=parseCents(line.unit_price),q=parseQuantityMilli(line.quantity);
    if(unit===null||q===null)return false;
-   if(unit*q!==amount*1000n){
-    // Validate ONLY an explicit, unambiguous discount on the UNIT list price.
-    // This never alters literal price nor authorizes publication: SQL mirror,
-    // original SHA and full source check still gate a revised candidate.
-    const economic=comprobarDescuentoUnitarioMvp352({
-     original_description:line.original_description,
-     quantity:line.quantity,unit_price:line.unit_price,
-     line_total:line.line_total
-    });
-    if(economic.state!=='consistent')return false;
-   }
+   // Monetary consistency cannot substitute original PDF source coverage.
+   if(discounted.state!=='not_evaluable'){
+    if(discounted.state!=='consistent')return false;
+   }else if(unit*q!==amount*1000n)return false;
   }
   sum+=amount;
  }
