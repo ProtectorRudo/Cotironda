@@ -15,6 +15,7 @@ const ROOT=resolve(dirname(fileURLToPath(import.meta.url)),'../..');
 export const FILES_MVP351=Object.freeze({
  correlator:'supabase/functions/cotironda-piloto-whapi/supplier-auto-correlation-mvp336.ts',
  identityHint:'supabase/functions/cotironda-piloto-whapi/supplier-material-identity-hint-mvp352.ts',
+ discountArithmetic:'supabase/functions/cotironda-piloto-whapi/supplier-discount-arithmetic-mvp352.ts',
  worker:'supabase/functions/cotironda-piloto-whapi/supplier-auto-recovery-worker-mvp292.ts',
  material:'supabase/functions/cotironda-piloto-whapi/supplier-material-fidelity-mvp348.ts',
  archived:'supabase/functions/cotironda-piloto-whapi/supplier-archive-replay-mvp292.ts',
@@ -23,10 +24,12 @@ export const FILES_MVP351=Object.freeze({
  entry:'supabase/functions/cotironda-piloto-auto-recovery/index.ts',
  auth:'supabase/functions/cotironda-piloto-auto-recovery/internal-auth-mvp294.ts',
  sql:'supabase/piloto/mvp351_reintento_fidelidad_y_rivales_historicos.sql',
- semanticSql:'supabase/piloto/mvp352_reevaluacion_semantica_unica.sql'
+ semanticSql:'supabase/piloto/mvp352_reevaluacion_semantica_unica.sql',
+ discountSql:'supabase/piloto/mvp352_discount_unit_price_audit.sql'
 });
 const PINNED_CORRELATOR='b5ea8c2b64ba7fe07409943b9c810d7a6e270b84';
 const PINNED_HINT='58ee374e77793c092b3b65b2cf1ffa3a1ad880e9';
+const PINNED_DISCOUNT_MATH='5aa9087d718b87b887e8d607c709472590d0b971';
 function gitBlob(s){
  const bytes=Buffer.from(s,'utf8');
  return createHash('sha1').update('blob '+bytes.length+'\0').update(bytes).digest('hex');
@@ -49,6 +52,8 @@ export function validarBundleMvp351(files){
   throw Error('MVP351_CORRELATOR_PIN_DRIFT');
  if(gitBlob(files.identityHint)!==PINNED_HINT)
   throw Error('MVP352_MATERIAL_HINT_PIN_DRIFT');
+ if(gitBlob(files.discountArithmetic)!==PINNED_DISCOUNT_MATH)
+  throw Error('MVP352_DISCOUNT_ARITHMETIC_PIN_DRIFT');
  requireAll('correlator',files.correlator,[
   "if(best.candidate.bind_allowed===false)",
   "'historical_round_best_fit'",
@@ -61,6 +66,12 @@ export function validarBundleMvp351(files){
   "pistaIdentidadMaterialMvp352",
   "pistasMaterialesMvp352",
   "material_identity_hint"
+ ]);
+ requireAll('discountArithmetic',files.discountArithmetic,[
+  "comprobarDescuentoUnitarioMvp352",
+  "unit_discount_rounded_then_extended",
+  "source_verified:false;publication_allowed:false",
+  "pistaIdentidadMaterialMvp352(description)"
  ]);
  requireAll('worker',files.worker,[
   "supplier-auto-correlation-mvp336.ts",
@@ -89,6 +100,8 @@ export function validarBundleMvp351(files){
   "auditCandidateAmountsMvp346",
   "checkSupplierPdfSource",
   "source_sha_mismatch",
+  "comprobarDescuentoUnitarioMvp352(",
+  "pistaIdentidadMaterialMvp352(",
   "cotironda_piloto_store_revision_candidate_mvp346"
  ]);
  requireAll('publication',files.publication,[
@@ -130,6 +143,18 @@ export function validarBundleMvp351(files){
   "REVOKE ALL ON FUNCTION public.cotironda_piloto_claim_semantic_reassessment_mvp352()",
   "third.source_sha256=v_source.content_sha256"
  ]);
+ requireAll('discountSql',files.discountSql,[
+  "mvp352_mvp103_baseline_drift",
+  "7f5112a2146650f43e6cba2857663c68",
+  "CREATE OR REPLACE FUNCTION public.cotironda_piloto_audit_supplier_amounts_mvp103",
+  "discount_parts:=regexp_match",
+  "round(effective_unit_cents*qty,0)",
+  "'model_readings_match'",
+  "'source_verified',false,'ranking_allowed',false",
+  "REVOKE ALL ON FUNCTION public.cotironda_piloto_audit_supplier_amounts_mvp103(text)"
+ ]);
+ if(/(?:INSERT INTO|UPDATE|DELETE FROM)\s+cotironda_piloto_privado\.(?:whapi_outbox|anonymous_supplier_docs_mvp107|offer_versions)/iu.test(files.discountSql))
+  throw Error('MVP352_DISCOUNT_SQL_SEND_OR_PUBLISH');
  if(/(?:INSERT INTO|UPDATE|DELETE FROM)\s+cotironda_piloto_privado\.(?:whapi_outbox|anonymous_supplier_docs_mvp107)/iu.test(files.sql))
   throw Error('MVP351_UNAUTHORIZED_SEND_OR_OFFER');
  if(/(?:INSERT INTO|UPDATE|DELETE FROM)\s+cotironda_piloto_privado\.(?:whapi_outbox|anonymous_supplier_docs_mvp107)/iu.test(files.semanticSql))
@@ -174,6 +199,7 @@ export function inspeccionarCandidatoMvp351({root=ROOT}={}){
    'confirmar_base_y_resguardo',
    'verificar_SQL_mvp351_instalado',
    'instalar_SQL_mvp352_solo_piloto',
+   'auditar_MVP103_baseline_y_aplicar_SQL_descuentos_unitarios',
    'desplegar_worker_con_mvp352_y_modulo_pistas',
    'desplegar_webhook_compatible_si_se_actualiza',
    'probar_un_solo_documento_SHA_y_estado_economico',
