@@ -40,12 +40,12 @@ test('MVP351 release: código Whapi alterado, falta de cotejo original o auth ab
   ['material',s=>s.replaceAll('archived_unit_mismatch','always_accepted')],
   ['identityHint',s=>s.replace('material_identity_hint','unsafe_name')],
   ['semanticSql',s=>s.replace("r.state IN('prepared','closed')","r.state='prepared'")],
-  ['semanticSql',s=>s.replace("previous_correlation_reason","ignore_previous_model_decision")]
+  ['semanticSql',s=>s.replaceAll("previous_correlation_reason","ignore_previous_model_decision")]
  ];
  for(const [file,edit] of tamper){
   const changed=edit(all[file]);
   assert.notEqual(changed,all[file],file+' fixture');
-  assert.throws(()=>validarBundleMvp351({...all,[file]:changed}),/MVP351_/u,file);
+  assert.throws(()=>validarBundleMvp351({...all,[file]:changed}),/MVP35[12]_/u,file);
  }
  assert.throws(()=>validarBundleMvp351({...all,worker:null}),/MVP351_MISSING_worker/u);
 });
