@@ -253,7 +253,15 @@ export function auditarCoberturaPdfOriginalB5l(args:{
     material.unit_price_role==='absent'&&
     segment===wanted&&
     conditionLiteral(material.original_description_raw)===wanted&&
-    !financial.test(segment);
+    !financial.test(segment)&&
+    // A candidate note with additional fiscal/monetary content in its raw
+    // line is NOT interchangeable with the shorter declared condition.
+    !(financial.test(material.original_line_raw)&&
+      !financial.test(material.original_description_raw))&&
+    !(fiscal.test(material.original_line_raw)&&
+      !fiscal.test(material.original_description_raw))&&
+    !(pending.test(material.original_line_raw)&&
+      !pending.test(material.original_description_raw));
    // A MATERIAL's description overlapping a condition is still unsafe:
    // it could be a product name or a mixed fragment. Unpriced notes with
    // identical evidence aren't allowed to fabricate two separate source rows.
