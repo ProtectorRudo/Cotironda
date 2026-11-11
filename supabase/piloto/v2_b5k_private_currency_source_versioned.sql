@@ -145,6 +145,9 @@ BEGIN
     'currency_footer_with_symbol','economic_code','economic_material_count',
     'economic_material_matches','economic_conditions_count',
     'economic_conditions_matches','economic_total_balances',
+    'coverage_code','coverage_source_rows','coverage_attributed_rows',
+    'coverage_unattributed_rows','coverage_lines','coverage_lines_matched',
+    'coverage_conditions','coverage_conditions_matched','coverage_pages',
     'proof_reason','matched_lines','expected_lines',
     'source_verified','full_document_covered','can_publish','can_rank',
     'can_reveal_contacts']
@@ -155,6 +158,9 @@ BEGIN
     'currency_footer_with_symbol','economic_code','economic_material_count',
     'economic_material_matches','economic_conditions_count',
     'economic_conditions_matches','economic_total_balances',
+    'coverage_code','coverage_source_rows','coverage_attributed_rows',
+    'coverage_unattributed_rows','coverage_lines','coverage_lines_matched',
+    'coverage_conditions','coverage_conditions_matched','coverage_pages',
     'proof_reason','matched_lines','expected_lines',
     'source_verified','full_document_covered','can_publish','can_rank',
     'can_reveal_contacts'))
@@ -171,6 +177,13 @@ BEGIN
     'line_arithmetic_unconfirmed','source_conditions_unconfirmed',
     'fiscal_or_freight_ambiguous','grand_total_differs',
     'grand_total_balances_private')
+   OR p_diagnostics->>'coverage_code' NOT IN(
+    'candidate_invalid','reader_unconfirmed','source_lines_unconfirmed',
+    'source_geometry_unconfirmed','line_assignment_ambiguous',
+    'source_line_unaccounted','unmapped_fiscal_or_logistics',
+    'unmapped_monetary_or_percentage','unmapped_text',
+    'commercial_condition_unverified','unpriced_commercial_risk',
+    'visible_rows_accounted_private')
    OR p_diagnostics->>'proof_reason' NOT IN(
     'source_total_unverified','rows_correspond_but_full_coverage_unchecked')
    OR EXISTS(SELECT 1 FROM jsonb_each(p_diagnostics) AS e(key,value)
@@ -182,7 +195,10 @@ BEGIN
       WHERE key IN('currency_material_count','currency_lines_with_symbol',
       'currency_units_with_symbol','economic_material_count',
       'economic_material_matches','economic_conditions_count',
-      'economic_conditions_matches','matched_lines','expected_lines')
+      'economic_conditions_matches','matched_lines','expected_lines',
+      'coverage_source_rows','coverage_attributed_rows',
+      'coverage_unattributed_rows','coverage_lines','coverage_lines_matched',
+      'coverage_conditions','coverage_conditions_matched','coverage_pages')
       AND (jsonb_typeof(value)<>'number' OR value::text !~ '^[0-9]{1,4}$'
        OR CASE WHEN value::text ~ '^[0-9]{1,4}$'
         THEN value::text::integer>9000 ELSE true END))
@@ -197,8 +213,17 @@ BEGIN
       (p_diagnostics->>'currency_material_count')::int
    OR (p_diagnostics->>'economic_material_matches')::int >
       (p_diagnostics->>'economic_material_count')::int
+   OR (p_diagnostics->>'coverage_attributed_rows')::int+
+      (p_diagnostics->>'coverage_unattributed_rows')::int <>
+      (p_diagnostics->>'coverage_source_rows')::int
+   OR (p_diagnostics->>'coverage_lines_matched')::int >
+      (p_diagnostics->>'coverage_lines')::int
+   OR (p_diagnostics->>'coverage_conditions_matched')::int >
+      (p_diagnostics->>'coverage_conditions')::int
    OR (p_diagnostics->>'economic_conditions_matches')::int >
       (p_diagnostics->>'economic_conditions_count')::int
+   OR (p_diagnostics->>'coverage_code'='visible_rows_accounted_private'
+      AND (p_diagnostics->>'coverage_unattributed_rows')::int<>0)
   THEN RETURN jsonb_build_object('state','invalid');END IF;
  END IF;
  UPDATE cotironda_piloto_privado.v2_pdf_currency_diagnostics_b5k run
