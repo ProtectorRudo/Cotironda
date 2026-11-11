@@ -444,3 +444,70 @@ test('B5n: no unresolved condition on successful private attribution',()=>{
  assert.equal(v.condition_failure_kind,null);
  sealed(v);
 });
+
+
+test('B5o: one PDF row can corroborate a note and the IDENTICAL condition once',()=>{
+ const note=line(3,'commercial_note','precios en efectivo',null,null,null);
+ const r=[...sourceRows.slice(0,4),row(560,[part('precios en efectivo',100)])];
+ const v=calc({candidate:doc([...lines,note],['precios en efectivo']),rows:r});
+ assert.equal(v.code,'visible_rows_accounted_private');
+ assert.equal(v.attributed_lines,3);
+ assert.equal(v.corroborated_conditions,1);
+ assert.equal(v.attributed_rows,r.length);sealed(v);
+});
+test('B5o: two distinct unpriced notes represented also as conditions share no false duplicate',()=>{
+ const a=line(3,'commercial_note','precios en efectivo',null,null,null);
+ const b=line(4,'commercial_note','flete a convenir',null,null,null);
+ const r=[...sourceRows.slice(0,4),row(560,[part('precios en efectivo:',100)]),
+  row(540,[part('flete a convenir',100)])];
+ const v=calc({candidate:doc([...lines,a,b],
+  ['precios en efectivo','flete a convenir']),rows:r});
+ assert.equal(v.code,'visible_rows_accounted_private');
+ assert.equal(v.corroborated_conditions,2);
+ assert.equal(v.attributed_lines,4);
+ assert.equal(v.can_publish,false);sealed(v);
+});
+test('B5o: mixed MATERIAL and condition remain blocked despite identical strings',()=>{
+ const material={...lines[0],original_description_raw:'precios en efectivo',
+  original_line_raw:'40,00 precios en efectivo $100,00 $4.000,00'};
+ const r=[...sourceRows.slice(0,4)];
+ r[1]=row(700,[part('40,00',20),part('precios en efectivo',120),
+  part('$100,00',350),part('$4.000,00',510)]);
+ const v=calc({candidate:doc([material,lines[1]],['precios en efectivo']),rows:r});
+ assert.equal(v.code,'line_assignment_ambiguous');
+ assert.equal(v.condition_failure_kind,'source_part_mixed');sealed(v);
+});
+test('B5o: partial note does not masquerade as full payment condition',()=>{
+ const note=line(3,'commercial_note','precios',null,null,null);
+ const r=[...sourceRows.slice(0,4),row(560,[part('precios en efectivo',100)])];
+ const v=calc({candidate:doc([...lines,note],['precios en efectivo']),rows:r});
+ assert.equal(v.code,'line_assignment_ambiguous');
+ assert.equal(v.condition_failure_kind,'source_part_mixed');sealed(v);
+});
+test('B5o: unpriced note containing additional IVA in raw candidate stays ambiguous',()=>{
+ const note={...line(3,'commercial_note','precios en efectivo',null,null,null),
+  original_line_raw:'precios en efectivo IVA 21%'};
+ const r=[...sourceRows.slice(0,4),row(560,[part('precios en efectivo',100)])];
+ const v=calc({candidate:doc([...lines,note],['precios en efectivo']),rows:r});
+ assert.notEqual(v.code,'visible_rows_accounted_private');sealed(v);
+});
+test('B5o: additional source price in same note row remains unverified',()=>{
+ const note=line(3,'commercial_note','precios en efectivo',null,null,null);
+ const r=[...sourceRows.slice(0,4),row(560,[
+  part('precios en efectivo',100),part('$500,00',350)])];
+ const v=calc({candidate:doc([...lines,note],['precios en efectivo']),rows:r});
+ assert.equal(v.code,'unmapped_fiscal_or_logistics');sealed(v);
+});
+test('B5o: source duplicated identical commercial note does not produce invented second evidence',()=>{
+ const note=line(3,'commercial_note','precios en efectivo',null,null,null);
+ const r=[...sourceRows.slice(0,4),row(560,[part('precios en efectivo',100)]),
+  row(540,[part('precios en efectivo',100)])];
+ const v=calc({candidate:doc([...lines,note],['precios en efectivo']),rows:r});
+ assert.notEqual(v.code,'visible_rows_accounted_private');sealed(v);
+});
+test('B5o: percentage-bearing note cannot be silently counted as condition',()=>{
+ const note=line(3,'commercial_note','descuento 10%',null,null,null);
+ const r=[...sourceRows.slice(0,4),row(560,[part('descuento 10%',100)])];
+ const v=calc({candidate:doc([...lines,note],['descuento 10%']),rows:r});
+ assert.notEqual(v.code,'visible_rows_accounted_private');sealed(v);
+});
