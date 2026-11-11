@@ -7,6 +7,8 @@ import {createClient} from 'npm:@supabase/supabase-js@2.118.0';
 import {ejecutarSolicitudSombraV2B3} from './handler.ts';
 import {readPdfPositioned} from
  '../cotironda-piloto-whapi/supplier-source-pdf-general.ts';
+import {readOfficeVisibleRows} from
+ '../cotironda-piloto-whapi/supplier-source-office.ts';
 Deno.serve(request=>ejecutarSolicitudSombraV2B3(request,{
  COTIRONDA_PILOT_AUTO_RECOVERY_MVP292_ENABLED:
   Deno.env.get('COTIRONDA_PILOT_AUTO_RECOVERY_MVP292_ENABLED')??'',
@@ -41,5 +43,9 @@ Deno.serve(request=>ejecutarSolicitudSombraV2B3(request,{
   };
  },
  readPdfEvidence:readPdfPositioned,
+ readXlsxEvidence:(bytes,sha256)=>readOfficeVisibleRows({
+  bytes,sha256,
+  mime:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+ } as Parameters<typeof readOfficeVisibleRows>[0]),
  runB5dWhenEmpty:true
 }));
