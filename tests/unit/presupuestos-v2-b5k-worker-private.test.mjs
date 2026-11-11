@@ -212,3 +212,27 @@ test('B5n: SQL claim needs prior SHA-identical B5m with 3 of 5 conditions',()=>{
  assert.ok(sql.includes("AND NOT b5h_only AND NOT b5i_only"));
  assert.ok(sql.includes("AND NOT b5j_only AND NOT b5k_only"));
 });
+
+
+test('B5n: worker persists ordinal-only source failure without supplier text',async()=>{
+ const request={...claim,historic_candidate:{
+  ...candidate,commercial_conditions_raw:['precios en efectivo']}};
+ const joined=rows.map((r,i)=>i===1?row(700,[
+  part('40,00',20),part('Cemento CPC precios en efectivo',100),
+  part('$100,00',300),part('$4.000,00',500)]):r);
+ const x=await run({request,readRows:joined});
+ assert.equal(x.outcome.state,'private_diagnosed');
+ assert.equal(x.stored.p_diagnostics.coverage_code,'line_assignment_ambiguous');
+ assert.equal(x.stored.p_diagnostics.first_unresolved_condition_ordinal,1);
+ assert.equal(x.stored.p_diagnostics.condition_failure_kind,'source_span_not_independent');
+ const saved=JSON.stringify(x.stored.p_diagnostics);
+ for(const forbidden of ['Cemento CPC','precios en efectivo','Transferencia','$350'])
+  assert.equal(saved.includes(forbidden),false);
+ assert.equal(x.stored.p_diagnostics.can_publish,false);
+});
+test('B5n: successful worker stores nulls instead of a false failure',async()=>{
+ const x=await run();
+ assert.equal(x.outcome.state,'private_diagnosed');
+ assert.equal(x.stored.p_diagnostics.first_unresolved_condition_ordinal,null);
+ assert.equal(x.stored.p_diagnostics.condition_failure_kind,null);
+});
