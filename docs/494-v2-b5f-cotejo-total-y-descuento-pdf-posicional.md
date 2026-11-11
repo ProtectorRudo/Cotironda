@@ -34,3 +34,9 @@ El 11/11/2026 la publicación privada de B5d en `cotironda-piloto` reauditó **2
 - CI Node de B5/B5f, trabajadores B2/B5d, Deno Edge completa; suite general de GitHub, seguridad, Next.js y DB sin cambios.
 
 **No confundir pruebas sintéticas con cotejo real de Ailín.** Estado final se constata únicamente con GitHub Actions; sin «Publicalo» no hay ejecución sobre el piloto.
+
+## Verificación reforzada — PDF auténtico sintético
+
+Se añadió `tests/deno/b5f-geometria-pdf-real.test.ts`: genera en memoria un PDF 1.4 real con sus objetos, tabla de referencias y fuente Helvetica integrada, con posiciones de cantidad, descripción, precio de lista, «Dscto.», 22,4% y total declarado. El test llama al lector V2 **real** (`npm:unpdf@2.1.0`), comprueba x/y y luego coteja el mismo PDF mediante el auditor B5f. En GitHub Actions **pasó 1/1** (y el chequeo de tipos completo) en el [workflow B5f](https://github.com/ProtectorRudo/Cotironda/actions/workflows/cotironda-v2-b5f-total-y-descuentos-posicional.yml), sin OCR, API de IA ni archivos de proveedores.
+
+Durante la regresión general se detectaron **seis fallos por huella fija del lector Whapi MVP332** al modificar el módulo PDF compartido. La arquitectura se corrigió: el lector original fue restaurado al Git blob original y la geometría se aisló en `cotironda-piloto-v2-shadow/pdf-geometry-b5f.ts`. Esta corrección está cubierta nuevamente por la suite general. No debilitar la comprobación de huella ni actualizar manifiestos para esconder la deriva.
