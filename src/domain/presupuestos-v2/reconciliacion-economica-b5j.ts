@@ -9,6 +9,7 @@ import {auditarComercialPrivadoB5,parseArgentineMoneyCentsB5}
 import type {OriginalPdfCheckB5} from './evidencia-pdf-original-b5.ts';
 import type {GeometryResultB5i} from './diagnostico-geometria-total-b5i.ts';
 import type {PdfRowB5h} from './diagnostico-total-pdf-b5h.ts';
+import type {CurrencyEvidenceB5k} from './cotejo-moneda-original-b5k.ts';
 
 export type ReconciliationCodeB5j=
  'invalid_candidate'|'source_rows_unconfirmed'|'geometry_unconfirmed'|
@@ -134,6 +135,8 @@ const result=(code:ReconciliationCodeB5j,n:Counts):EconomicResultB5j=>Object.fre
 export function reconciliarEconomiaTotalB5j(args:{
  candidate:unknown;source:OriginalPdfCheckB5;
  geometry:GeometryResultB5i;rows:readonly PdfRowB5h[];
+ /** Optional B5k evidence; never changes the original candidate fields. */
+ currencyEvidence?:CurrencyEvidenceB5k;
 }):EconomicResultB5j{
  const n=empty();
  const report=revisarContratoProveedorV2(args.candidate);
@@ -173,7 +176,26 @@ export function reconciliarEconomiaTotalB5j(args:{
 
  // Require some explicit currency in original; never infer by geography.
  const currency=normalize(doc.currency_declared_raw??'');
- if(!['$','ars','pesos','peso argentino'].includes(currency)||
+ const proof=args.currencyEvidence;
+ // "$" in an original proves a currency SYMBOL, not an ISO code.
+ // Only use this narrow observation for PRIVATE arithmetic, never ranking.
+ if(proof!==undefined){
+  const acceptable=proof.code==='uniform_dollar_symbol_iso_unstated'||
+    proof.code==='explicit_ars_source';
+  if(!acceptable||proof.source_verified!==false||
+      proof.can_publish!==false||proof.can_rank!==false||
+      !proof.footer_with_symbol||
+      proof.material_count!==n.materials||
+      proof.material_lines_with_symbol!==n.materials||
+      proof.unit_prices_with_symbol!==doc.lines.filter(l=>
+       l.kind==='material'&&l.unit_price_raw!==null).length)
+   return fail('currency_ambiguous');
+ }
+ const documentedCurrency=['$','ars','pesos','peso argentino'].includes(currency);
+ const privateSymbolFallback=currency===''&&proof!==undefined&&
+  (proof.code==='uniform_dollar_symbol_iso_unstated'||
+   proof.code==='explicit_ars_source');
+ if((!documentedCurrency&&!privateSymbolFallback)||
     !args.rows.some(row=>/(?:\$\s*\d|(?:ars|pesos)\s+\d)/iu.test(row.text)))
   return fail('currency_ambiguous');
 

@@ -1,3 +1,10 @@
+## 2026-11-11 — B5k moneda corroborada en original (SOLO DESARROLLO)
+- PR #775 sobre #774: compara símbolos monetarios de cada precio unitario, total de renglón y pie con texto PDF.js SHA verificado. Distingue `## 2026-11-11 — B5k moneda corroborada en original (SOLO DESARROLLO)
+- PR #775 sobre #774: compara símbolos monetarios de cada precio unitario, total de renglón y pie con texto PDF.js SHA verificado. Distingue  uniforme sin ISO de ARS explícito y bloquea USD/U$S/EUR/mezclas.
+- B5j acepta evidencia de moneda original para matemática PRIVADA con cabecera IA nula, sin editar candidatos históricos; `source_verified` y todos los permisos públicos siempre false.
+- Worker y ledger B5k seleccionan solo el PDF 2 B5j con `currency_ambiguous`, sin IA, con RLS/servicio, control SHA, cuota 1 y flag OFF. Edge exclusivo sin fallback.
+- Pruebas de Node/Deno PDF.js/PG17 y regresión; sin merge ni despliegue al piloto. [Acta 502](docs/502-v2-b5k-moneda-directa-original-pdf.md).
+
 ## 2026-11-11 — B5j publicado solo en piloto: prueba económica REAL de 2 PDF (Acta 501)
 - Aplicada migración privada B5j y Edge sombra V2 v7 desde código `e2e7dd5fe3779636f0be7c491517a2b143e46e16` (CI 6/6 aprobado), sin desplegar a producción ni integrar PR #774.
 - Ejecutadas 2 reauditorías privadas: PDF 1 `grand_total_balances_private` (2 materiales, 3 condiciones, suma coincidente), PDF 2 `currency_ambiguous` (campo moneda general no especificado; hay `$` en 3 renglones extraídos, pero total no comprobado).

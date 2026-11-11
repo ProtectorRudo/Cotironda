@@ -30,6 +30,8 @@ import {diagnosticarGeometriaHistoricaB5i,type GeometryOutcomeB5i}
  from '../../../src/domain/presupuestos-v2/worker-geometria-total-b5i.ts';
 import {reconciliarPdfHistoricoB5j,type EconomicOutcomeB5j}
  from '../../../src/domain/presupuestos-v2/worker-economia-total-b5j.ts';
+import {cotejarPdfMonedaHistoricaB5k,type CurrencyOutcomeB5k}
+ from '../../../src/domain/presupuestos-v2/worker-moneda-original-b5k.ts';
 
 const PROJECT='ilggkalaafhtiysyzlmg';
 const PROJECT_URL='https://'+PROJECT+'.supabase.co';
@@ -61,6 +63,10 @@ export type EdgeDepsV2B3=Readonly<{
  runB5iWhenSelected?:boolean;
  /** Only the private SQL maintenance switch may select B5j. */
  runB5jWhenSelected?:boolean;
+ /** Currency-only private SQL mode; always checked before older workers. */
+ runB5kWhenSelected?:boolean;
+ runB5k?:(args:Parameters<typeof cotejarPdfMonedaHistoricaB5k>[0])=>
+  Promise<CurrencyOutcomeB5k>;
  runB5j?:(args:Parameters<typeof reconciliarPdfHistoricoB5j>[0])=>
   Promise<EconomicOutcomeB5j>;
  runB5i?:(args:Parameters<typeof diagnosticarGeometriaHistoricaB5i>[0])=>
@@ -160,9 +166,35 @@ export async function ejecutarSolicitudSombraV2B3(
   // the standalone B5h maintenance capability is not installed.
   if(deps.runB5hWhenSelected!==true&&
      deps.runB5iWhenSelected!==true&&
-     deps.runB5jWhenSelected!==true&&!API_KEY.test(api))
+     deps.runB5jWhenSelected!==true&&
+     deps.runB5kWhenSelected!==true&&!API_KEY.test(api))
    return json(503,'backend_configuration_invalid');
   const db=deps.createDb(PROJECT_URL,role);
+  // B5k is EXCLUSIVE and never falls through to a paid AI worker.
+  if(deps.runB5kWhenSelected===true){
+   const mode=await db.rpc('cotironda_piloto_v2_b5k_only_enabled',{});
+   if(mode.error||typeof mode.data!=='boolean')
+    return json(503,'b5k_mode_unconfirmed');
+   if(mode.data){
+    const audit=await (deps.runB5k??cotejarPdfMonedaHistoricaB5k)({
+     enabled:true,trustedInternalWorker:true,
+     rpc:async(name,params)=>db.rpc(name,params),
+     storage:db.storage,readPdfEvidence:deps.readPdfEvidence
+    });
+    if(audit.outboundMessages!==0||audit.publishedOffers!==0||
+       audit.sourceVerified!==false||audit.canRank!==false||
+       audit.canRevealContacts!==false)
+     return json(503,'shadow_contract_violation');
+    switch(audit.state){
+     case 'private_diagnosed':return json(200,'private_diagnosed');
+     case 'review_required':return json(200,'review_required');
+     case 'empty':return json(200,'queue_empty');
+     case 'disabled':return json(503,'shadow_disabled');
+     case 'reconciliation_required':return json(503,'reconciliation_required');
+     default:return json(503,'shadow_contract_violation');
+    }
+   }
+  }
   // B5j is an EXCLUSIVE no-LLM economic audit, before B5i/B5h/B2.
   // SQL errors block all fallbacks to model, WhatsApp or other PDFs.
   if(deps.runB5jWhenSelected===true){
