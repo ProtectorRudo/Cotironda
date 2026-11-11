@@ -103,17 +103,22 @@ export function vistaCotizacionesRubrosMvp227(input:unknown):
     v.descripcion+' ('+v.cantidad+' '+v.unidad+'): '+
     (price.has(id)?displayCentavos(price.get(id)!,offer.moneda as 'ARS'|'USD'):
       'Sin precio directamente comparable')).join('\n');
-   const iva=offer.iva==='incluido_explicito'?'IVA incluido explícito':
-    offer.iva==='sin_iva_explicito'?'Sin IVA explícito':'IVA no informado';
-   const flete=offer.flete==='incluido_explicito'?'Flete incluido':
-    offer.flete==='excluido_explicito'?'Flete no incluido':
-    offer.flete==='a_convenir'?'Flete a convenir':'Flete no informado';
+   // The supplier's silence is NOT a commercial condition: never turn
+   // no_informado into a buyer-visible mention of IVA, freight or payment.
+   const explicitConditions=[
+    offer.iva==='incluido_explicito'?'IVA incluido (expreso)':
+     offer.iva==='sin_iva_explicito'?'Sin IVA (expreso)':null,
+    offer.flete==='incluido_explicito'?'Flete incluido (expreso)':
+     offer.flete==='excluido_explicito'?'Flete no incluido (expreso)':
+     offer.flete==='a_convenir'?'Flete a convenir (expreso)':null,
+    offer.pago==='no_informado'?null:'Pago: '+offer.pago
+   ].filter((x):x is string=>x!==null);
    offers.push({label:offer.label+' · '+RUBROS_MVP216[rubro],
     text:'Cotizó '+nRespondidos+' de '+nSolicitados+
      ' artículos asignados a este negocio ('+corresponding.length+
-     ' solicitados en el rubro completo).\n'+
-     details+'\n'+iva+' · '+flete+
-     ' · Pago: '+offer.pago+'. Sin adjudicación automática.'});
+     ' solicitados en el rubro completo).\n'+details+
+     (explicitConditions.length?'\n'+explicitConditions.join(' · '):'')+
+     '\nSin adjudicación automática.'});
   }
   // Una línea de precio no puede aparecer en un rubro que el negocio
   // no cotizó ni está acreditado por el reporte de la misma fuente.
