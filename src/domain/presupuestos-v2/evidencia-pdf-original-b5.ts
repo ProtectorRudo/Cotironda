@@ -7,17 +7,27 @@
  // Keep this pure module independent from Deno's npm: imports so Next.js
  // and the complete repository's TypeScript build remain compatible.
 export type EvidenceReaderB5=(bytes:Uint8Array)=>Promise<{
- rows:readonly {page:number;text:string}[];
+ rows:readonly {
+  page:number;text:string;
+  /** Independent PDF.js geometry. No coordinate = no column proof. */
+  y?:number;parts?:readonly {x:number;text:string}[];
+ }[];
  pages:number;scanned:boolean;
 }>;
 import {revisarContratoProveedorV2} from './contrato-lectura.ts';
 import type {RawLineV2} from './contrato-lectura.ts';
+import {parseArgentineMoneyCentsB5} from './auditoria-comercial-b5.ts';
 
 export type SourceRowCheckB5=Readonly<{
  ordinal:number;kind:RawLineV2['kind'];
  state:'source_line_corresponds'|'source_line_not_located'|
   'source_value_missing'|'source_ambiguous'|'source_location_conflict';
  page?:number;
+ /** A row-level, private SOURCE observation, never publication authority. */
+ discount_evidence?:Readonly<{
+  basis_points:string;literal:string;
+  origin:'inline_explicit'|'aligned_header';
+ }>;
 }>;
 export type OriginalPdfCheckB5=Readonly<{
  state:'source_rows_correspond_private'|'needs_source_review';
@@ -27,6 +37,7 @@ export type OriginalPdfCheckB5=Readonly<{
   'unmapped_source_content';
  source_sha256:string|null;
  sha_verified:boolean;source_rows_extracted:number;
+ total_state?:'unique_source_total'|'not_declared';
  lines:readonly SourceRowCheckB5[];
  full_document_covered:false;discount_column_verified:false;
  can_publish:false;can_rank:false;can_reveal_contacts:false;
@@ -70,6 +81,101 @@ function rowProof(row:RawLineV2,sourceRow:string):boolean{
  }
  return true;
 }
+
+type GeometricRow=Awaited<ReturnType<EvidenceReaderB5>>['rows'][number];
+const percentPattern=/(?<![\d.,])(\d{1,3}(?:[.,]\d{1,2})?)\s*%(?!\d)/giu;
+const discountLabel=/\b(?:descuentos?|dscto\.?|dcto\.?|dto\.?|bonif(?:icaci[oó]n)?\.?|rebaja)\b/iu;
+const nonsupplierPercent=/\b(?:iva|impuestos?|percepciones?|retenciones?|inter[eé]s)\b/iu;
+function percentEvidence(src:string):{basis_points:string;literal:string}|null{
+ const all=[...src.matchAll(percentPattern)];
+ if(all.length!==1)return null;
+ const [whole,fraction='']=all[0][1].replace('.',',').split(',');
+ if(!/^\d{1,3}$/u.test(whole)||fraction.length>2)return null;
+ const basis=BigInt(whole)*100n+BigInt(fraction.padEnd(2,'0')||'0');
+ if(basis>10000n)return null;
+ return {basis_points:basis.toString(),literal:all[0][0].trim()};
+}
+/**
+ * A number in a source row is NOT automatically a discount. Require either
+ * an explicit discount label on the same row or PDF.js x alignment to an
+ * unambiguous, earlier discount-column heading. Never trust AI to choose
+ * the discount semantics or use an unrelated IVA percentage.
+ */
+function sourceDiscount(row:RawLineV2,src:GeometricRow,
+ preceding:readonly GeometricRow[]):SourceRowCheckB5['discount_evidence']{
+ if(row.kind!=='material'||row.unit_price_role!=='list_explicit')return;
+ const pct=percentEvidence(src.text);
+ if(!pct)return;
+ const source=norm(src.text);
+ if(nonsupplierPercent.test(source))return;
+ if(discountLabel.test(source))return {...pct,origin:'inline_explicit'};
+ if(!Number.isFinite(src.y)||!Array.isArray(src.parts))return;
+ const percentCells=src.parts.filter(part=>
+  typeof part.text==='string'&&Number.isFinite(part.x)&&
+  percentEvidence(part.text)?.basis_points===pct.basis_points);
+ if(percentCells.length!==1)return;
+ const x=percentCells[0].x;
+ const headings=preceding.filter(h=>
+  h.page===src.page&&Number.isFinite(h.y)&&
+  h.y!>(src.y as number)&&
+  h.y!-(src.y as number)<=360&&Array.isArray(h.parts))
+  .flatMap(h=>(h.parts??[]).filter(p=>
+   Number.isFinite(p.x)&&Math.abs(p.x-x)<=10&&
+   discountLabel.test(p.text)&&!nonsupplierPercent.test(h.text)));
+ if(headings.length!==1)return;
+ return {...pct,origin:'aligned_header'};
+}
+const totalLabel=/\b(?:total(?:\s+(?:general|final|neto|presupuesto|comprobante|de\s+factura|a\s+pagar))?|importe\s+total|monto\s+total|a\s+pagar)\b/iu;
+const totalUnsafe=/\b(?:iva|flete|env[ií]o|transporte|descuento|bonificaci[oó]n|pallets?|sub\s*total)\b/iu;
+const numericMoney=/(?<![\p{L}\p{N}.,])(?:(?:ARS|USD|U\$S)\s*|\$\s*)?(?:\d{1,3}(?:\.\d{3})+|\d+)(?:,\d{1,2})?(?![\p{L}\p{N}.,])/giu;
+function amountsIn(text:string):bigint[]|null{
+ const tokens=[...text.matchAll(numericMoney)];
+ const cents:bigint[]=[];
+ for(const t of tokens){
+  const amount=parseArgentineMoneyCentsB5(t[0]);
+  if(amount===null)return null;
+  cents.push(amount);
+ }
+ return cents;
+}
+function onlyAmount(text:string,expected:bigint):boolean{
+ const tokens=[...text.matchAll(numericMoney)];
+ if(tokens.length!==1)return false;
+ const amount=parseArgentineMoneyCentsB5(tokens[0][0]);
+ if(amount!==expected)return false;
+ const rest=text.replace(numericMoney,'').replace(/[\s:;=|()-]/gu,'');
+ return rest.length===0;
+}
+/** Match exactly one labeled total, with the amount in the same PDF row
+ * or the immediate next amount-only row. No inference from material sums.
+ * A repeated/competing total or mixed IVA/freight terms is NOT accepted.
+ */
+function findSourceTotal(rows:readonly GeometricRow[],
+ used:ReadonlySet<number>,declared:string):number[]|null{
+ const amount=parseArgentineMoneyCentsB5(declared);
+ if(amount===null||amount<0n)return null;
+ const candidates:number[][]=[];
+ let seenLabels=0;
+ for(let i=0;i<rows.length;i++){
+  if(used.has(i)||!totalLabel.test(rows[i].text))continue;
+  seenLabels++;
+  const labelRow=rows[i].text;
+  if(totalUnsafe.test(labelRow))continue;
+  const nums=amountsIn(labelRow);
+  // Same-row label + one exactly equal, parsed monetary value.
+  if(nums?.length===1&&nums[0]===amount){
+   candidates.push([i]);continue;
+  }
+  if(nums?.length!==0)continue;
+  const next=rows[i+1];
+  if(!next||used.has(i+1)||next.page!==rows[i].page||
+     !onlyAmount(next.text,amount))continue;
+  candidates.push([i,i+1]);
+ }
+ if(seenLabels!==1||candidates.length!==1)return null;
+ return candidates[0];
+}
+
 function fail(reason:OriginalPdfCheckB5['reason'],sha:string|null=null,
  verified=false,rows:readonly SourceRowCheckB5[]=[],
  count=0):OriginalPdfCheckB5{
@@ -116,7 +222,11 @@ export async function comprobarRenglonesPdfOriginalB5(args:{
    !Array.isArray(extracted.rows)||extracted.rows.length<1||
    extracted.rows.length>300||
    extracted.rows.some(r=>r.page<1||r.page>extracted.pages||
-    typeof r.text!=='string'||r.text.length>8000))
+    typeof r.text!=='string'||r.text.length>8000||
+    (r.y!==undefined&&!Number.isFinite(r.y))||
+    (r.parts!==undefined&&(!Array.isArray(r.parts)||
+      r.parts.length>100||r.parts.some(p=>!Number.isFinite(p.x)||
+        typeof p.text!=='string'||p.text.length>2000)))))
   return fail('pdf_unreadable',real,true);
  const used=new Set<number>();
  const checks:SourceRowCheckB5[]=[];
@@ -139,8 +249,11 @@ export async function comprobarRenglonesPdfOriginalB5(args:{
     else status='source_value_missing';
    }
   }
+  const earlier=selected?extracted.rows.slice(0,selected.i):[];
+  const discount=selected?sourceDiscount(row,selected.sr,earlier):undefined;
   checks.push({ordinal:row.ordinal,kind:row.kind,state:status,
-   ...(selected?{page:selected.sr.page}:{})});
+   ...(selected?{page:selected.sr.page}:{}),
+   ...(discount?{discount_evidence:discount}:{})});
  }
  if(checks.some(x=>x.state!=='source_line_corresponds'))
   return fail('line_discrepancy',real,true,checks,extracted.rows.length);
@@ -150,13 +263,10 @@ export async function comprobarRenglonesPdfOriginalB5(args:{
  // a complete source audit (unmarked numbers/columns may still be missed).
  const total=structural.document.total_declared_raw;
  if(total!==null){
-  const totalRows=extracted.rows.map((sr,i)=>({sr,i})).filter(x=>
-   !used.has(x.i)&&
-   /\b(?:total(?:\s+general)?|importe\s+total|a\s+pagar)\b/iu.test(x.sr.text)&&
-   hasToken(norm(x.sr.text),total));
-  if(totalRows.length!==1)
+  const matched=findSourceTotal(extracted.rows,used,total);
+  if(matched===null)
    return fail('source_total_unverified',real,true,checks,extracted.rows.length);
-  used.add(totalRows[0].i);
+  for(const index of matched)used.add(index);
  }
  const unclaimedTerm=/\b(?:iva|flete|env[ií]o|transporte|descuento|dscto|dcto|bonificaci[oó]n|pallets?|contado|efectivo|transferencia)\b/iu;
  if(extracted.rows.some((sr,i)=>!used.has(i)&&
@@ -166,6 +276,7 @@ export async function comprobarRenglonesPdfOriginalB5(args:{
   reason:'rows_correspond_but_full_coverage_unchecked',
   source_sha256:real,sha_verified:true,
   source_rows_extracted:extracted.rows.length,lines:checks,
+  total_state:total===null?'not_declared':'unique_source_total',
   full_document_covered:false,discount_column_verified:false,
   can_publish:false,can_rank:false,can_reveal_contacts:false};
 }
