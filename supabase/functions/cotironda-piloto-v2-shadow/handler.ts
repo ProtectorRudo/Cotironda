@@ -17,6 +17,8 @@ import {
 } from '../../../src/domain/presupuestos-v2/worker-archivo-sombra.ts';
 import type {EvidenceReaderB5} from
  '../../../src/domain/presupuestos-v2/evidencia-pdf-original-b5.ts';
+import type {XlsxRowReaderB5e} from
+ '../../../src/domain/presupuestos-v2/evidencia-xlsx-original-b5e.ts';
 import {revisarArchivosVersionadosB5d,
  type PrivateReviewOutcomeB5d} from
  '../../../src/domain/presupuestos-v2/worker-revision-archivos-b5d.ts';
@@ -41,6 +43,7 @@ export type EnvV2B3=Readonly<{
 export type EdgeDepsV2B3=Readonly<{
  createDb:(url:string,roleKey:string)=>Db;
  readPdfEvidence?:EvidenceReaderB5;
+ readXlsxEvidence?:XlsxRowReaderB5e;
  /** Enabled only by the installed private Edge adapter; no user request can. */
  runB5dWhenEmpty?:boolean;
  runB5d?:(args:Parameters<typeof revisarArchivosVersionadosB5d>[0])=>
@@ -148,7 +151,8 @@ export async function ejecutarSolicitudSombraV2B3(
     enabled:true,trustedInternalWorker:true,
     rpc:async(name,params)=>db.rpc(name,params),
     storage:db.storage,apiKey:api,model,
-    readPdfEvidence:deps.readPdfEvidence
+    readPdfEvidence:deps.readPdfEvidence,
+    readXlsxEvidence:deps.readXlsxEvidence
    });
    if(next.publishedOffers!==0||next.outboundMessages!==0||
       next.sourceVerified!==false)
