@@ -122,7 +122,8 @@ test('B5f: sin coordenadas del PDF una cabecera no acredita descuento',async()=>
   {page:1,text:product().text},
   total()
  ]);
- assert.equal(r.state,'source_rows_correspond_private');
+ assert.equal(r.state,'needs_source_review');
+ assert.equal(r.reason,'unmapped_source_content');
  assert.equal(r.lines[0].discount_evidence,undefined);
 });
 test('B5f: encabezado lejano, x equivocado o en página distinta NO certifica',async()=>{
