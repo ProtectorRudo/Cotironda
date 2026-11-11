@@ -30,5 +30,16 @@
 - PostgreSQL 17 en ROLLBACK y pruebas de lector PDF.js Deno con casos de condiciones en una misma fila.
 - Fallos de Vercel por **límite de build** no se confunden con éxito de despliegue.
 
+## Comprobación del piloto en solo lectura (11/11/2026)
+Consulta directa al proyecto `ilggkalaafhtiysyzlmg`, sin modificar registros:
+- 1 B5k histórico diagnosticado; 1 fuente coincide con los dos bloqueos originales de B5m y con los filtros de SHA, proveedor, almacenamiento, procedencia y plazo de 14 días.
+- 0 registros de B5m; 0 B5k en estado `leased`.
+- Los cinco flags V2 siguen `false`.
+- RLS privada habilitada; `anon` no puede leer el ledger ni ejecutar la RPC de claim.
+- Este resultado confirma **elegibilidad previa**, no que B5m se haya ejecutado ni que el PDF resulte publicable.
+
+## Control adicional de no repetición
+El fixture PostgreSQL 17 incorpora dos escenarios negativos: una segunda reclamación inmediata solo admite `quota/empty`; vencida la cuota simulada, la misma fuente debe devolver `empty` porque ya existe un B5m completo. La simulación corre enteramente dentro de `ROLLBACK`, sin tocar el piloto. Un resultado exitoso no reemplaza el postflight de la ejecución real.
+
 ## Criterio comercial posterior
 Primero prueba privada B5m, luego completar asociación real de respuesta WhatsApp a ronda, comparador determinista por rubro y equivalencia, vista anónima de condiciones/subtotales y cierre con revelación de todos los proveedores. La moneda `$` no certifica ARS; el flete mencionado sin importe no vale cero. Nunca equiparar una auditoría sintética o un diagnóstico privado con un presupuesto visible para el arquitecto.
