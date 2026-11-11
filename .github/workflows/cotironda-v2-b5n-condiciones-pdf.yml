@@ -94,7 +94,7 @@ jobs:
       - run: |
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -tA \
-            -f supabase/tests/ci/v2-b5m-private-replay-pg17-rollback.sql \
+            -f supabase/tests/ci/v2-b5n-private-replay-pg17-rollback.sql \
             | grep -Fx 't'
           psql -X -tA -c "SELECT to_regnamespace('cotironda_piloto_privado') IS NULL" | grep -Fx 't'
 # Only synthetic CI. No database migrations, deployed functions or messages.
