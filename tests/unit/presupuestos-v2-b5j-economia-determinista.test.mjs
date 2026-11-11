@@ -240,3 +240,20 @@ test('B5j: an unclaimed amount printed on a later page is still scanned',()=>{
  const v=calc({pdfRows:[...rows,row(540,[cell('Otros importes',130),cell('150,00')],2)]});
  assert.equal(v.code,'source_unmapped_content');sealed(v);
 });
+
+test('B5j: an unmodeled IVA column header forces source review',()=>{
+ const r=rows.map((v,i)=>i===0?row(750,[
+  cell('Cantidad',25),cell('Descripción',130),
+  cell('Precio',350),cell('IVA 21%',430),cell('Total',500)
+ ]):v);
+ const v=calc({pdfRows:r});
+ assert.equal(v.code,'source_unmapped_content');sealed(v);
+});
+test('B5j: an unpriced freight column header cannot be treated as included',()=>{
+ const r=rows.map((v,i)=>i===0?row(750,[
+  cell('Cantidad',25),cell('Descripción',130),
+  cell('Precio',350),cell('Flete',430),cell('Total',500)
+ ]):v);
+ const v=calc({pdfRows:r});
+ assert.equal(v.code,'source_unmapped_content');sealed(v);
+});
