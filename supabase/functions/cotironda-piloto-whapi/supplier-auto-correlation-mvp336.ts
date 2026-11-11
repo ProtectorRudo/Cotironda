@@ -9,7 +9,7 @@ const HEX=/^[a-f0-9]{64}$/u,UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89a
 type Modelo='gpt-6-luna'|'gpt-6.1-sol';
 type Rpc=(name:string,args:Record<string,unknown>)=>Promise<{data:unknown;error:unknown}>;
 type Line=Readonly<{line_no:number;description:string;quantity:string|null;unit:string|null}>;
-type Candidate=Readonly<{request_id:string;lines:readonly Line[]}>;
+type Candidate=Readonly<{request_id:string;lines:readonly Line[];bind_allowed?:boolean}>;
 type Pair=Readonly<{candidate:string;source_line:number;request_line:number;relation:'same'|'equivalent'|'uncertain'}>;
 type Proposal=Readonly<{matches:readonly Pair[]}>;
 export type ResultMvp291=Readonly<{state:'disabled'|'not_eligible'|'linked_private'|
@@ -74,11 +74,13 @@ function decodeInput(raw:unknown):Readonly<{sha:string;quote:Line[];options:Cand
  for(const c of raw.candidates){
   if(!object(c)||typeof c.request_id!=='string'||!UUID.test(c.request_id)||
    ids.has(c.request_id)||!Array.isArray(c.lines)||
-   c.lines.length<1||c.lines.length>25||!c.lines.every(goodLine))
+   c.lines.length<1||c.lines.length>25||!c.lines.every(goodLine)||
+   (c.bind_allowed!==undefined&&typeof c.bind_allowed!=='boolean'))
    return null;
   ids.add(c.request_id);
   if(new Set(c.lines.map((l:Line)=>l.line_no)).size!==c.lines.length)return null;
-  candidates.push({request_id:c.request_id,lines:c.lines});
+  candidates.push({request_id:c.request_id,lines:c.lines,
+   ...(typeof c.bind_allowed==='boolean'?{bind_allowed:c.bind_allowed}:{})});
  }
  if(new Set(raw.quote.map((l:Line)=>l.line_no)).size!==raw.quote.length)return null;
  return {sha:raw.source_sha256 as string,quote:raw.quote as Line[],
@@ -209,6 +211,9 @@ export function elegirRondaUnicaMvp291(
   return no('single_item_not_unique');
  if(best.points-other.points<3)return no('insufficient_unique_margin');
  if(best.related>=2&&best.points<4)return no('partial_weak_evidence');
+ // MVP351: closed historical rounds are comparison controls, never destinations.
+ // SQL independently requires a prepared request and verified dispatch.
+ if(best.candidate.bind_allowed===false)return no('historical_round_best_fit');
  return {requestId:best.candidate.request_id,reason:'unique_material_evidence',
   scores:scored.map(x=>x.points)};
 }
