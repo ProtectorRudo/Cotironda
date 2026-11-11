@@ -24,6 +24,8 @@ import {revisarArchivosVersionadosB5d,
  '../../../src/domain/presupuestos-v2/worker-revision-archivos-b5d.ts';
 import {reauditarPdfHistoricoB5g,type PdfReauditOutcomeB5g}
  from '../../../src/domain/presupuestos-v2/worker-reauditoria-pdf-b5g.ts';
+import {diagnosticarPdfHistoricoB5h,type TotalOutcomeB5h}
+ from '../../../src/domain/presupuestos-v2/worker-diagnostico-total-b5h.ts';
 
 const PROJECT='ilggkalaafhtiysyzlmg';
 const PROJECT_URL='https://'+PROJECT+'.supabase.co';
@@ -49,6 +51,10 @@ export type EdgeDepsV2B3=Readonly<{
  /** Enabled only by the installed private Edge adapter; no user request can. */
  runB5dWhenEmpty?:boolean;
  runB5gBeforeB5d?:boolean;
+ /** B5h only runs when an independent private SQL maintenance switch is ON. */
+ runB5hWhenSelected?:boolean;
+ runB5h?:(args:Parameters<typeof diagnosticarPdfHistoricoB5h>[0])=>
+  Promise<TotalOutcomeB5h>;
  runB5g?:(args:Parameters<typeof reauditarPdfHistoricoB5g>[0])=>
   Promise<PdfReauditOutcomeB5g>;
  runB5d?:(args:Parameters<typeof revisarArchivosVersionadosB5d>[0])=>
@@ -139,6 +145,32 @@ export async function ejecutarSolicitudSombraV2B3(
    return json(503,'backend_configuration_invalid');
 
   const db=deps.createDb(PROJECT_URL,role);
+  // Exclusive B5h mode is checked BEFORE B2, B5g or B5d. When ON,
+  // not even an empty total-audit queue may fall through to paid IA.
+  if(deps.runB5hWhenSelected===true){
+   const mode=await db.rpc('cotironda_piloto_v2_b5h_only_enabled',{});
+   if(mode.error||typeof mode.data!=='boolean')
+    return json(503,'b5h_mode_unconfirmed');
+   if(mode.data){
+    const audit=await (deps.runB5h??diagnosticarPdfHistoricoB5h)({
+     enabled:true,trustedInternalWorker:true,
+     rpc:async(name,params)=>db.rpc(name,params),
+     storage:db.storage,readPdfEvidence:deps.readPdfEvidence
+    });
+    if(audit.outboundMessages!==0||audit.publishedOffers!==0||
+       audit.sourceVerified!==false||audit.canRank!==false||
+       audit.canRevealContacts!==false)
+     return json(503,'shadow_contract_violation');
+    switch(audit.state){
+     case 'private_diagnosed':return json(200,'private_diagnosed');
+     case 'review_required':return json(200,'review_required');
+     case 'empty':return json(200,'queue_empty');
+     case 'disabled':return json(503,'shadow_disabled');
+     case 'reconciliation_required':return json(503,'reconciliation_required');
+     default:return json(503,'shadow_contract_violation');
+    }
+   }
+  }
   const outcome=await (deps.run??procesarSombraArchivadaV2)({
    enabled:true,trustedInternalWorker:true,
    rpc:async(name,params)=>db.rpc(name,params),
