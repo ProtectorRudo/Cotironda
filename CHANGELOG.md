@@ -1,3 +1,6 @@
+## 2026-11-11 — B5o revisión privada final (solo desarrollo)
+Se preparó `v2_b5o_20261111`, en el ledger privado existente, para contrastar una sola vez el PDF histórico B5n con la corrección de nota comercial/condición idénticas. Claim por SHA/proveedor, primer bloqueo B5n `source_part_mixed` ordinal 4/5, ventana B4 de ocho minutos y autoapagado, sin nuevas tablas, claves, cron ni WhatsApp. PostgreSQL 17 ROLLBACK y pruebas Node/Deno/Next en CI. **No desplegado ni fusionado**; priorizar transición al piloto comercial tras resultado real. [PR #786](https://github.com/ProtectorRudo/Cotironda/pull/786), [Acta 514](docs/514-v2-b5o-comprobacion-final-y-salida-e2e.md).
+
 ## 2026-11-11 — B5o: no duplicar nota comercial como otra fuente PDF (desarrollo)
 Se ajustó el verificador B5l para permitir que un renglón `commercial_note` sin importe y una condición comercial EXACTAMENTE idéntica refieran al mismo fragmento PDF.js comprobado. No habilita materiales, cláusulas monetarias, IVA no acreditado ni fragmentación libre, y sigue sin certificar totales o publicar ranking. Agregados tests Node y Deno con PDF sintético + PG17 rollback + regresión. Cambio exclusivamente en código y CI; no instalado en piloto, sin WhatsApps ni merge. [PR #785](https://github.com/ProtectorRudo/Cotironda/pull/785), [Acta 513](docs/513-v2-b5o-doble-referencia-nota-condicion.md).
 
