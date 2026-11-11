@@ -23,7 +23,7 @@ const privateResult=(state)=>({
  sourceVerified:false,canRank:false,canRevealContacts:false
 });
 async function exercise({mode=true,validMode=true,key=secret,
-  b5hState='private_diagnosed',tamper=false}={}){
+  b5hState='private_diagnosed',tamper=false,noApiKey=false}={}){
  const calls=[];
  const deps={
   runB5hWhenSelected:true,runB5dWhenEmpty:true,runB5gBeforeB5d:true,
@@ -49,7 +49,8 @@ async function exercise({mode=true,validMode=true,key=secret,
    return {...privateResult(b5hState),...(tamper?{canRank:true}:{})};
   }
  };
- const response=await ejecutarSolicitudSombraV2B3(req(key),env,deps);
+ const nextEnv=noApiKey?{...env,COTIRONDA_PILOT_OPENAI_API_KEY:''}:env;
+ const response=await ejecutarSolicitudSombraV2B3(req(key),nextEnv,deps);
  return {status:response.status,body:await response.json(),calls};
 }
 test('B5h: exclusive mode never touches B2, B5d or B5g',async()=>{
@@ -88,5 +89,16 @@ test('B5h: incorrect publish/rank capability from worker fails closed',async()=>
 test('B5h: review state is private and does not invoke a fallback',async()=>{
  const r=await exercise({b5hState:'review_required'});
  assert.equal(r.body.state,'review_required');
+ assert.ok(!r.calls.includes('b2'));
+});
+
+test('B5h: exclusive no-LLM audit does not depend on OpenAI API credentials',async()=>{
+ const r=await exercise({noApiKey:true,mode:true});
+ assert.equal(r.status,200);assert.equal(r.body.state,'private_diagnosed');
+ assert.deepEqual(r.calls,['db','cotironda_piloto_v2_b5h_only_enabled','b5h']);
+});
+test('B5h: normal route still requires its previous OpenAI credential',async()=>{
+ const r=await exercise({noApiKey:true,mode:false});
+ assert.equal(r.status,503);
  assert.ok(!r.calls.includes('b2'));
 });
