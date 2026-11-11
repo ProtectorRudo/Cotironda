@@ -65,7 +65,7 @@ La prueba B5h en `cotironda-piloto` encontró, en los dos PDF históricos:
 - Deno: comprobar el lector real `unpdf` y la Edge completa.
 - CI de toda la aplicación y build Next.js.
 - Para publicar: SQL **primero** y Edge después, ambos flags OFF;
-  ventana 2 ticks autenticados, apagad o de ambos flags, lectura de
+  ventana 2 ticks autenticados, apagado de ambos flags, lectura de
   códigos reales; cero ofertas nuevas, cero WhatsApp y sin cambios en
   las otras auditorías.
 
