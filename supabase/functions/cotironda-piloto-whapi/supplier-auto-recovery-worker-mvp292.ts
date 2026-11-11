@@ -65,6 +65,12 @@ export async function procesarPendienteAutomaticoMvp292(args:{
   let claimed=await db('cotironda_piloto_claim_auto_recovery_mvp292');
   if(claimed.state==='empty')
    claimed=await db('cotironda_piloto_claim_reviewed_auto_recovery_mvp336');
+  // MVP352: a separate one-shot SQL ledger owns the third and FINAL
+  // assessment of a source that already exhausted MVP351. Its PDF,
+  // supplier, archive SHA, earlier decisions and live-round entitlement
+  // are all verified in SQL before a lease is granted.
+  if(claimed.state==='empty')
+   claimed=await db('cotironda_piloto_claim_semantic_reassessment_mvp352');
   if(claimed.state!=='claimed')
    return done(claimed.state==='empty'?'empty':'review_required',
     String(claimed.state),0);
