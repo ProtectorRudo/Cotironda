@@ -40,7 +40,9 @@ test('MVP351 release: código Whapi alterado, falta de cotejo original o auth ab
   ['material',s=>s.replaceAll('archived_unit_mismatch','always_accepted')],
   ['identityHint',s=>s.replace('material_identity_hint','unsafe_name')],
   ['semanticSql',s=>s.replace("r.state IN('prepared','closed')","r.state='prepared'")],
-  ['semanticSql',s=>s.replaceAll("previous_correlation_reason","ignore_previous_model_decision")]
+  ['semanticSql',s=>s.replaceAll("previous_correlation_reason","ignore_previous_model_decision")],
+  ['discountArithmetic',s=>s.replaceAll('publication_allowed:false','publication_allowed:true')],
+  ['discountSql',s=>s.replace("round(effective_unit_cents*qty,0)","skip_discount_proof")]
  ];
  for(const [file,edit] of tamper){
   const changed=edit(all[file]);
