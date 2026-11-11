@@ -1,3 +1,6 @@
+## 2026-11-11 — MVP349: correlación privada con permutación única de materiales (solo desarrollo)
+La comprobación MVP348 ya no asume que las líneas de un PDF aparecen en el mismo orden en dos lecturas. Acepta exclusivamente la misma lista de descripciones/cantidades/unidades con asignación biyectiva **única**, sin cambiar el orden ni asociar precios a otras líneas. Datos ambiguos, duplicados, marcas y cantidades alteradas siguen bloqueados. Se agregaron regresiones sintéticas de corrección y seguridad. Sin replay, base real, WhatsApp, publicación o merge. [Acta 517](docs/517-mvp349-orden-unico-lecturas-materiales.md).
+
 ## 2026-11-11 — B7: no ocultar IVA/flete tras la primera fila PDF desconocida (desarrollo)
 B5l ahora analiza todas las filas PDF.js pendientes y conserva el diagnóstico privado de mayor riesgo (fiscal/logístico, monetario/porcentaje, luego texto desconocido), sin aceptar datos arbitrarios ni modificar los flags de publicación. Cobertura histórica B5o aún 8/13 filas: no se tocó la base ni se hizo otra lectura. Pruebas Node + PDF.js Deno, CI PostgreSQL 17/Next.js. [PR #788](https://github.com/ProtectorRudo/Cotironda/pull/788), [Acta 516](docs/516-b7-auditoria-riesgos-filas-pdf-pendientes.md).
 
