@@ -101,8 +101,10 @@ function percentEvidence(src:string):{basis_points:string;literal:string}|null{
  * unambiguous, earlier discount-column heading. Never trust AI to choose
  * the discount semantics or use an unrelated IVA percentage.
  */
+type LocatedDiscount=NonNullable<SourceRowCheckB5['discount_evidence']> &
+ Readonly<{header_index?:number}>;
 function sourceDiscount(row:RawLineV2,src:GeometricRow,
- preceding:readonly GeometricRow[]):SourceRowCheckB5['discount_evidence']{
+ preceding:readonly GeometricRow[]):LocatedDiscount|undefined{
  if(row.kind!=='material'||row.unit_price_role!=='list_explicit')return;
  const pct=percentEvidence(src.text);
  if(!pct)return;
@@ -115,15 +117,18 @@ function sourceDiscount(row:RawLineV2,src:GeometricRow,
   percentEvidence(part.text)?.basis_points===pct.basis_points);
  if(percentCells.length!==1)return;
  const x=percentCells[0].x;
- const headings=preceding.filter(h=>
-  h.page===src.page&&Number.isFinite(h.y)&&
-  h.y!>(src.y as number)&&
-  h.y!-(src.y as number)<=360&&Array.isArray(h.parts))
-  .flatMap(h=>(h.parts??[]).filter(p=>
+ const headings=preceding.flatMap((h,index)=>{
+  if(h.page!==src.page||!Number.isFinite(h.y)||
+     h.y!<=(src.y as number)||h.y!-(src.y as number)>360||
+     !Array.isArray(h.parts)||nonsupplierPercent.test(h.text)||
+     /\$\s*\d|\b(?:flete|env[ií]o|transporte|pallets?)\b/iu.test(h.text))
+   return [];
+  return (h.parts??[]).filter(p=>
    Number.isFinite(p.x)&&Math.abs(p.x-x)<=10&&
-   discountLabel.test(p.text)&&!nonsupplierPercent.test(h.text)));
+   discountLabel.test(p.text)).map(()=>index);
+ });
  if(headings.length!==1)return;
- return {...pct,origin:'aligned_header'};
+ return {...pct,origin:'aligned_header',header_index:headings[0]};
 }
 const totalLabel=/\b(?:total(?:\s+(?:general|final|neto|presupuesto|comprobante|de\s+factura|a\s+pagar))?|importe\s+total|monto\s+total|a\s+pagar)\b/iu;
 const totalUnsafe=/\b(?:iva|flete|env[ií]o|transporte|descuento|bonificaci[oó]n|pallets?|sub\s*total)\b/iu;
@@ -251,9 +256,14 @@ export async function comprobarRenglonesPdfOriginalB5(args:{
   }
   const earlier=selected?extracted.rows.slice(0,selected.i):[];
   const discount=selected?sourceDiscount(row,selected.sr,earlier):undefined;
+  if(discount?.header_index!==undefined)used.add(discount.header_index);
+  const publicDiscount=discount===undefined?undefined:{
+   basis_points:discount.basis_points,literal:discount.literal,
+   origin:discount.origin
+  };
   checks.push({ordinal:row.ordinal,kind:row.kind,state:status,
    ...(selected?{page:selected.sr.page}:{}),
-   ...(discount?{discount_evidence:discount}:{})});
+   ...(publicDiscount?{discount_evidence:publicDiscount}:{})});
  }
  if(checks.some(x=>x.state!=='source_line_corresponds'))
   return fail('line_discrepancy',real,true,checks,extracted.rows.length);
