@@ -25,7 +25,7 @@ jobs:
             tests/unit/mvp291-automatic-correlation.test.mjs \
             tests/unit/mvp292-archive-auto-recovery.test.mjs \
             tests/unit/mvp348-fidelidad-y-operacion-cron.test.mjs
-          node scripts/piloto/mvp351-review-retry-builder.mjs --assert-local
+          node scripts/piloto/mvp351-review-retry-builder.mjs --check
   pg17-rollback:
     runs-on: ubuntu-latest
     timeout-minutes: 22
@@ -66,7 +66,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9afbd3f7d6820020
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           persist-credentials: false
       - uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb
