@@ -297,6 +297,24 @@ BEGIN
   repeat('a',64),repeat('a',64),'private_diagnosed',
   'b5k_private_currency_diagnosis',diagnostic);
  IF v->>'state'<>'not_leased' THEN RAISE EXCEPTION 'duplicate finish';END IF;
+ -- Immediate second claim must be throttled or empty; no duplicate source.
+ v:=public.cotironda_piloto_claim_v2_currency_b5k();
+ IF v->>'state' NOT IN ('quota','empty')
+ THEN RAISE EXCEPTION 'duplicate B5m claim accepted: %',v;END IF;
+ -- Simulate quota expiration within this ROLLBACK-only fixture. Even after
+ -- the hour, a finished B5m result must make the same SHA ineligible forever.
+ UPDATE cotironda_piloto_privado.v2_pdf_currency_diagnostics_b5k
+ SET claimed_at=clock_timestamp()-interval '2 hours'
+ WHERE source_hmac=repeat('a',64)
+ AND processor_version='v2_b5m_20261111'
+ AND state='private_diagnosed';
+ v:=public.cotironda_piloto_claim_v2_currency_b5k();
+ IF v->>'state'<>'empty'
+ THEN RAISE EXCEPTION 'B5m source replayed after quota expired: %',v;END IF;
+ IF (SELECT count(*) FROM cotironda_piloto_privado.v2_pdf_currency_diagnostics_b5k
+  WHERE processor_version='v2_b5k_20261111'
+  AND diagnostics IS NOT DISTINCT FROM before_result)<>1
+ THEN RAISE EXCEPTION 'B5k previous evidence unexpectedly changed';END IF;
  UPDATE cotironda_piloto_privado.v2_shadow_settings
  SET enabled=false,b5k_only=false;
  v:=public.cotironda_piloto_claim_v2_currency_b5k();
