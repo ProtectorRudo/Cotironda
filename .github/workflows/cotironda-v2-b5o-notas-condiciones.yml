@@ -1,0 +1,101 @@
+name: Cotironda B5o - identidad nota comercial y condicion PDF
+on:
+  push:
+    branches:
+      - fix/v2-b5o-particiones-estrictas-pdf-20261111
+  pull_request:
+    branches:
+      - fix/v2-b5n-b4-ventana-unica-20261111
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  node-specific:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - run: |
+          node --experimental-strip-types --test \
+            tests/unit/presupuestos-v2-b5j-economia-determinista.test.mjs \
+            tests/unit/presupuestos-v2-b5l-cobertura-original.test.mjs \
+            tests/unit/presupuestos-v2-b5k-moneda-original.test.mjs \
+            tests/unit/presupuestos-v2-b5k-worker-private.test.mjs \
+            tests/unit/presupuestos-v2-b5n-b4-once.test.mjs \
+            tests/unit/presupuestos-v2-b5k-edge-exclusive.test.mjs \
+            tests/unit/presupuestos-v2-b5i-geometria-total.test.mjs \
+            tests/unit/presupuestos-v2-b5i-worker-private.test.mjs \
+            tests/unit/presupuestos-v2-b5i-edge-exclusive.test.mjs \
+            tests/unit/presupuestos-v2-b5h-total-diagnostic.test.mjs \
+            tests/unit/presupuestos-v2-b5h-worker-private.test.mjs \
+            tests/unit/presupuestos-v2-b5h-edge-exclusive.test.mjs \
+            tests/unit/presupuestos-v2-b5g-replay-private.test.mjs \
+            tests/unit/presupuestos-v2-b5g-edge-private.test.mjs
+  full-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - run: |
+          node --experimental-strip-types --test tests/unit/*.test.mjs
+          node scripts/ci/verify-dev-ai-migration-sources-d037.mjs
+  deno:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb
+        with:
+          deno-version: v2.x
+      - run: |
+          deno check --node-modules-dir=auto \
+            supabase/functions/cotironda-piloto-v2-shadow/index.ts
+          deno test --allow-all --node-modules-dir=auto \
+            tests/deno/b5f-geometria-pdf-real.test.ts \
+            tests/deno/b5k-moneda-original-pdf-real.test.ts \
+            tests/deno/b5l-cobertura-original-pdf-real.test.ts
+  postgres17:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: test_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -tA \
+            -f supabase/tests/ci/v2-b5n-b4-once-pg17-rollback.sql \
+            | grep -Fx 't'
+          psql -X -tA -c "SELECT to_regnamespace('cotironda_piloto_privado') IS NULL" | grep -Fx 't'
+# Only synthetic CI. No database migrations, deployed functions or messages.

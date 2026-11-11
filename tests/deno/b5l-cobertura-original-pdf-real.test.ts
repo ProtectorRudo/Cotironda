@@ -235,3 +235,83 @@ Deno.test('B5n: PDF.js real rejects payment and unpriced freight merged in one s
  assertEquals(coverage.can_publish,false);
  assertEquals(coverage.can_rank,false);
 });
+
+
+Deno.test('B5o: PDF.js source note and condition are the SAME one source fact',async()=>{
+ const bytes=originalPdf('$4.600,00',[
+  [130,560,'precios en efectivo'],[130,530,'flete a convenir']]);
+ const reader=await readPdfWithGeometryB5f(bytes);
+ const sha=Array.from(new Uint8Array(await crypto.subtle.digest(
+  'SHA-256',Uint8Array.from(bytes).buffer)),x=>
+   x.toString(16).padStart(2,'0')).join('');
+ const note=(ordinal:number,value:string)=>({
+  ordinal,kind:'commercial_note' as const,
+  original_line_raw:value,original_description_raw:value,
+  quantity_raw:null,unit_raw:null,unit_price_raw:null,
+  unit_price_role:'absent' as const,line_total_raw:null,
+  source_location_raw:'página 1'
+ });
+ const quote={...makeQuote('$4.600,00'),
+  currency_declared_raw:'$',
+  lines:[...makeQuote('$4.600,00').lines,
+   note(3,'precios en efectivo'),note(4,'flete a convenir')],
+  commercial_conditions_raw:['precios en efectivo','flete a convenir']};
+ const proof=await comprobarRenglonesPdfOriginalB5({
+  originalBytes:bytes,sourceSha256:sha,candidate:quote,readPdf:async()=>reader
+ });
+ assertEquals(proof.sha_verified,true);
+ assert(proof.lines.every(l=>l.state==='source_line_corresponds'));
+ const geometry=diagnosticarGeometriaTotalB5i({
+  rows:reader.rows,declaredTotal:quote.total_declared_raw,lines:quote.lines
+ });
+ const coverage=auditarCoberturaPdfOriginalB5l({
+  candidate:quote,rows:reader.rows,source:proof,geometry,
+  scanned:reader.scanned,pages:reader.pages
+ });
+ assertEquals(coverage.code,'visible_rows_accounted_private');
+ assertEquals(coverage.attributed_lines,4);
+ assertEquals(coverage.corroborated_conditions,2);
+ assertEquals(coverage.first_unresolved_condition_ordinal,null);
+ assertEquals(coverage.source_verified,false);
+ assertEquals(coverage.full_document_covered,false);
+ assertEquals(coverage.can_publish,false);
+ assertEquals(coverage.can_rank,false);
+ assertEquals(coverage.can_reveal_contacts,false);
+ const economic=reconciliarEconomiaTotalB5j({
+  candidate:quote,rows:reader.rows,source:proof,geometry
+ });
+ assertEquals(economic.code,'fiscal_or_freight_ambiguous');
+ assertEquals(economic.freight,'mentioned_unpriced');
+ assertEquals(economic.can_publish,false);
+});
+Deno.test('B5o: PDF.js note with EXTRA IVA does not become a verified condition',async()=>{
+ const bytes=originalPdf('$4.600,00',[
+  [130,560,'precios en efectivo'],[355,560,'IVA 21%']]);
+ const reader=await readPdfWithGeometryB5f(bytes);
+ const sha=Array.from(new Uint8Array(await crypto.subtle.digest(
+  'SHA-256',Uint8Array.from(bytes).buffer)),x=>
+   x.toString(16).padStart(2,'0')).join('');
+ const quote={...makeQuote('$4.600,00'),
+  currency_declared_raw:'$',
+  lines:[...makeQuote('$4.600,00').lines,{
+   ordinal:3,kind:'commercial_note' as const,
+   original_line_raw:'precios en efectivo',
+   original_description_raw:'precios en efectivo',
+   quantity_raw:null,unit_raw:null,unit_price_raw:null,
+   unit_price_role:'absent' as const,line_total_raw:null,
+   source_location_raw:'página 1'
+  }],commercial_conditions_raw:['precios en efectivo']};
+ const proof=await comprobarRenglonesPdfOriginalB5({
+  originalBytes:bytes,sourceSha256:sha,candidate:quote,readPdf:async()=>reader
+ });
+ const geometry=diagnosticarGeometriaTotalB5i({
+  rows:reader.rows,declaredTotal:quote.total_declared_raw,lines:quote.lines
+ });
+ const coverage=auditarCoberturaPdfOriginalB5l({
+  candidate:quote,rows:reader.rows,source:proof,geometry,
+  scanned:reader.scanned,pages:reader.pages
+ });
+ assertEquals(coverage.code,'unmapped_fiscal_or_logistics');
+ assertEquals(coverage.can_publish,false);
+ assertEquals(coverage.can_rank,false);
+});

@@ -240,10 +240,34 @@ export function auditarCoberturaPdfOriginalB5l(args:{
    const material=attributed.get(index)!;
    const description=plain(material.original_description_raw);
    const segment=conditionLiteral(span.map(i=>rows[index].parts[i].text).join(' '));
-   // Never claim a price, quantity or original material description as an
-   // independently documented commercial condition.
-   if((description.length>2&&segment.includes(description))||
-      financial.test(segment))
+   // B5o: the SAME unpriced commercial note can appear in both
+   // candidate.lines and commercial_conditions_raw. This is ONE source fact,
+   // not a material plus a second payable item. Only accept an exact whole
+   // PDF.js span, already unique and reserved, for an unpriced note whose
+   // description equals the condition. Never generalize this to materials,
+   // partial matches, another condition, percentages or monetary clauses.
+   const identicalUnpricedNote=
+    material.kind==='commercial_note'&&
+    material.quantity_raw===null&&material.unit_raw===null&&
+    material.unit_price_raw===null&&material.line_total_raw===null&&
+    material.unit_price_role==='absent'&&
+    segment===wanted&&
+    conditionLiteral(material.original_description_raw)===wanted&&
+    !financial.test(segment)&&
+    // A candidate note with additional fiscal/monetary content in its raw
+    // line is NOT interchangeable with the shorter declared condition.
+    !(financial.test(material.original_line_raw)&&
+      !financial.test(material.original_description_raw))&&
+    !(fiscal.test(material.original_line_raw)&&
+      !fiscal.test(material.original_description_raw))&&
+    !(pending.test(material.original_line_raw)&&
+      !pending.test(material.original_description_raw));
+   // A MATERIAL's description overlapping a condition is still unsafe:
+   // it could be a product name or a mixed fragment. Unpriced notes with
+   // identical evidence aren't allowed to fabricate two separate source rows.
+   if(financial.test(segment)||
+      (description.length>2&&segment.includes(description)&&
+       !identicalUnpricedNote))
     return conditionFail('line_assignment_ambiguous','source_part_mixed');
   }
   for(const part of span)used.add(part);
