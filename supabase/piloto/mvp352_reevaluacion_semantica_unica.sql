@@ -13,9 +13,20 @@ CREATE TABLE cotironda_piloto_privado.ai_supplier_semantic_reassessment_mvp352(
 ALTER TABLE cotironda_piloto_privado.ai_supplier_semantic_reassessment_mvp352 ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON cotironda_piloto_privado.ai_supplier_semantic_reassessment_mvp352
  FROM PUBLIC,anon,authenticated,service_role;
+-- Self-contained immutable trigger: the slim PG17 test schema does not
+-- install unrelated MVP101 helpers. This function cannot mutate anything.
+CREATE FUNCTION cotironda_piloto_privado.reject_semantic_reassessment_mutation_mvp352()
+ RETURNS trigger LANGUAGE plpgsql SET search_path TO '' AS $immutable$
+BEGIN
+ RAISE EXCEPTION 'mvp352_immutable_reassessment';
+END $immutable$;
+REVOKE ALL ON FUNCTION
+ cotironda_piloto_privado.reject_semantic_reassessment_mutation_mvp352()
+ FROM PUBLIC,anon,authenticated;
 CREATE TRIGGER mvp352_reassessment_immutable
  BEFORE UPDATE OR DELETE ON cotironda_piloto_privado.ai_supplier_semantic_reassessment_mvp352
- FOR EACH ROW EXECUTE FUNCTION cotironda_piloto_privado.reject_supplier_line_mutation_mvp101();
+ FOR EACH ROW EXECUTE FUNCTION
+ cotironda_piloto_privado.reject_semantic_reassessment_mutation_mvp352();
 
 CREATE OR REPLACE FUNCTION public.cotironda_piloto_claim_semantic_reassessment_mvp352()
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
