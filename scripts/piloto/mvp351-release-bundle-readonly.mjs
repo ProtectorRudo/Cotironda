@@ -14,6 +14,7 @@ import {prepararMvp336Overlay} from './mvp336-whapi-overlay-candidate.mjs';
 const ROOT=resolve(dirname(fileURLToPath(import.meta.url)),'../..');
 export const FILES_MVP351=Object.freeze({
  correlator:'supabase/functions/cotironda-piloto-whapi/supplier-auto-correlation-mvp336.ts',
+ identityHint:'supabase/functions/cotironda-piloto-whapi/supplier-material-identity-hint-mvp352.ts',
  worker:'supabase/functions/cotironda-piloto-whapi/supplier-auto-recovery-worker-mvp292.ts',
  material:'supabase/functions/cotironda-piloto-whapi/supplier-material-fidelity-mvp348.ts',
  archived:'supabase/functions/cotironda-piloto-whapi/supplier-archive-replay-mvp292.ts',
@@ -23,7 +24,7 @@ export const FILES_MVP351=Object.freeze({
  auth:'supabase/functions/cotironda-piloto-auto-recovery/internal-auth-mvp294.ts',
  sql:'supabase/piloto/mvp351_reintento_fidelidad_y_rivales_historicos.sql'
 });
-const PINNED_CORRELATOR='eb522a681eb53e2cf6ef62a7bf497114ebcdaf65';
+const PINNED_CORRELATOR='b5ea8c2b64ba7fe07409943b9c810d7a6e270b84';
 function gitBlob(s){
  const bytes=Buffer.from(s,'utf8');
  return createHash('sha1').update('blob '+bytes.length+'\0').update(bytes).digest('hex');
@@ -48,7 +49,14 @@ export function validarBundleMvp351(files){
   "if(best.candidate.bind_allowed===false)",
   "'historical_round_best_fit'",
   "retryReviewedOnce",
-  "cotironda_piloto_auto_correlation_bind_mvp291"
+  "cotironda_piloto_auto_correlation_bind_mvp291",
+  "pistasMaterialesMvp352(input.quote)",
+  "material_identity_hints:"
+ ]);
+ requireAll('identityHint',files.identityHint,[
+  "pistaIdentidadMaterialMvp352",
+  "pistasMaterialesMvp352",
+  "material_identity_hint"
  ]);
  requireAll('worker',files.worker,[
   "supplier-auto-correlation-mvp336.ts",
@@ -112,6 +120,7 @@ export function validarBundleMvp351(files){
  return Object.freeze({
   state:'local_sources_compatible',
   historical_source_pinned:true,
+  semantic_material_hints_only:true,
   worker_material_fidelity_included:true,
   source_and_amount_gates_included:true,
   previous_reason_audited:true,
