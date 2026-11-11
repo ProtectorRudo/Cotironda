@@ -315,3 +315,62 @@ Deno.test('B5o: PDF.js note with EXTRA IVA does not become a verified condition'
  assertEquals(coverage.can_publish,false);
  assertEquals(coverage.can_rank,false);
 });
+
+
+Deno.test('B7: original PDF.js scans late IVA even after an unknown text row',async()=>{
+ const bytes=originalPdf('$4.600,00',[
+  [130,550,'Una nota sin clasificar'],
+  [130,530,'IVA no incluido']
+ ]);
+ const reader=await readPdfWithGeometryB5f(bytes);
+ assertEquals(reader.scanned,false);
+ const sha=Array.from(new Uint8Array(await crypto.subtle.digest(
+  'SHA-256',Uint8Array.from(bytes).buffer)),x=>
+   x.toString(16).padStart(2,'0')).join('');
+ const quote=makeQuote('$4.600,00');
+ const source=await comprobarRenglonesPdfOriginalB5({
+  originalBytes:bytes,sourceSha256:sha,candidate:quote,readPdf:async()=>reader
+ });
+ const geometry=diagnosticarGeometriaTotalB5i({
+  rows:reader.rows,declaredTotal:quote.total_declared_raw,lines:quote.lines
+ });
+ const coverage=auditarCoberturaPdfOriginalB5l({
+  candidate:quote,rows:reader.rows,source,geometry,
+  scanned:reader.scanned,pages:reader.pages
+ });
+ assertEquals(source.sha_verified,true);
+ assertEquals(coverage.code,'unmapped_fiscal_or_logistics');
+ assertEquals(coverage.unattributed_rows,2);
+ assertEquals(coverage.source_verified,false);
+ assertEquals(coverage.can_publish,false);
+ assertEquals(coverage.can_rank,false);
+ assertEquals(coverage.can_reveal_contacts,false);
+ assertEquals(JSON.stringify(coverage).includes('IVA no incluido'),false);
+});
+Deno.test('B7: real PDF.js keeps late price unknown, even after note',async()=>{
+ const bytes=originalPdf('$4.600,00',[
+  [130,550,'Observaciones generales'],
+  [500,530,'$150,00']
+ ]);
+ const reader=await readPdfWithGeometryB5f(bytes);
+ const sha=Array.from(new Uint8Array(await crypto.subtle.digest(
+  'SHA-256',Uint8Array.from(bytes).buffer)),x=>
+   x.toString(16).padStart(2,'0')).join('');
+ const quote=makeQuote('$4.600,00');
+ const source=await comprobarRenglonesPdfOriginalB5({
+  originalBytes:bytes,sourceSha256:sha,candidate:quote,readPdf:async()=>reader
+ });
+ const geometry=diagnosticarGeometriaTotalB5i({
+  rows:reader.rows,declaredTotal:quote.total_declared_raw,lines:quote.lines
+ });
+ const coverage=auditarCoberturaPdfOriginalB5l({
+  candidate:quote,rows:reader.rows,source,geometry,
+  scanned:reader.scanned,pages:reader.pages
+ });
+ assertEquals(source.sha_verified,true);
+ assertEquals(coverage.code,'unmapped_monetary_or_percentage');
+ assertEquals(coverage.unattributed_rows,2);
+ assertEquals(coverage.full_document_covered,false);
+ assertEquals(coverage.can_publish,false);
+ assertEquals(JSON.stringify(coverage).includes('$150,00'),false);
+});
