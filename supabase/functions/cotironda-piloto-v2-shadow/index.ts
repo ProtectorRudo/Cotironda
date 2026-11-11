@@ -49,5 +49,6 @@ Deno.serve(request=>ejecutarSolicitudSombraV2B3(request,{
  runB5dWhenEmpty:true,
  runB5gBeforeB5d:true,
  runB5hWhenSelected:true,
- runB5iWhenSelected:true
+ runB5iWhenSelected:true,
+ runB5jWhenSelected:true
 }));
