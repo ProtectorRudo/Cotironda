@@ -1,3 +1,10 @@
+## 2026-11-11 — B5k + B5l publicados en piloto: relectura privada del PDF 2 (Acta 504)
+- Migración `cotironda_v2_b5k_private_currency_source_with_b5l_20261111` instalada y Edge sombra `cotironda-piloto-v2-shadow` v8 ACTIVE con 23 archivos. Commit publicado `339330f88d7539d953f7eec239f236fa99eb0236`; PR #776 apilado, DRAFT y sin merge.
+- UNA relectura histórica por canal interno pg_net: `uniform_dollar_symbol_iso_unstated`, 3/3 materiales con símbolo corroborado y aritmética individual; moneda ISO no acreditada.
+- B5j detuvo conciliación en `fiscal_or_freight_ambiguous`: flete mencionado sin costo ni inclusión/gratuidad; B5l detuvo cobertura en `line_assignment_ambiguous` por condición que comparte fila material. Total final no certificado.
+- Cinco flags SQL apagados al cerrar; RLS activo, auditorías B5d–B5j intactas, cero ofertas creadas y cero WhatsApps pendientes; sin despliegue de Vercel/producción/Whapi.
+- Próximo: atribución precisa de condiciones en fila y flete no cotizado como condición a aclarar, sin inventar importes ni bloquear comparación de subtotales equivalentes. [Acta 504](docs/504-v2-b5k-b5l-publicacion-piloto-moneda-flete-cobertura.md).
+
 ## 2026-11-11 — B5l: censo conservador de cobertura del PDF original (SOLO DESARROLLO)
 - PR #776 sobre B5k PR #775; módulo puro de atribución de todas las filas PDF.js originales con evidencia SHA y geometría previa.
 - Detecta cargos y artículos omitidos (incluidos precios extra en la misma fila), IVA, flete, descuentos, condiciones no modeladas, páginas adicionales, ambigüedades, PDF escaneado y cláusulas no interpretadas.
