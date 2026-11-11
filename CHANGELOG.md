@@ -1,3 +1,9 @@
+## 2026-11-11 — B5l: censo conservador de cobertura del PDF original (SOLO DESARROLLO)
+- PR #776 sobre B5k PR #775; módulo puro de atribución de todas las filas PDF.js originales con evidencia SHA y geometría previa.
+- Detecta cargos y artículos omitidos (incluidos precios extra en la misma fila), IVA, flete, descuentos, condiciones no modeladas, páginas adicionales, ambigüedades, PDF escaneado y cláusulas no interpretadas.
+- Integra códigos/contadores **sin precios/PII** en trabajador B5k ya previsto. Migración B5k aún sin publicar valida los nuevos campos con RLS y flag OFF. No se crea otro cron/Edge/cola.
+- Incluso con filas visibles atribuidas, todas las banderas de certificación/publicación/ranking son FALSE. Pruebas Node, Deno PDF.js, PostgreSQL17 rollback y regresión [Acta 503](docs/503-v2-b5l-cobertura-negativa-original-pdf.md).
+
 ## 2026-11-11 — B5k moneda corroborada en original (SOLO DESARROLLO)
 - PR #775 sobre #774: compara símbolos monetarios de cada precio unitario, total de renglón y pie con texto PDF.js SHA verificado. Distingue `## 2026-11-11 — B5k moneda corroborada en original (SOLO DESARROLLO)
 - PR #775 sobre #774: compara símbolos monetarios de cada precio unitario, total de renglón y pie con texto PDF.js SHA verificado. Distingue  uniforme sin ISO de ARS explícito y bloquea USD/U$S/EUR/mezclas.
