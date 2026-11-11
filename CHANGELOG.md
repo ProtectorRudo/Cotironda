@@ -1,3 +1,6 @@
+## 2026-11-11 — B5n/B4: puente existente y relectura de un solo uso (desarrollo)
+Se verificó que el cron ya autorizado invoca IA V2 a través del puente interno B4. Se preparó `supabase/piloto/v2_b5n_b4_one_shot_lease_window.sql` con ventana B5n de 8 minutos y desactivación del modo en la misma transacción del claim; preserva modos B4 ajenos, no crea credenciales, transportes o cron nuevos. Prueba PostgreSQL 17 ROLLBACK y Node. No instalado en `cotironda-piloto`, sin cambios en ofertas, mensajes ni producción. [PR #783](https://github.com/ProtectorRudo/Cotironda/pull/783), [Acta 511](docs/511-v2-b5n-b4-una-sola-ejecucion-sin-secretos.md).
+
 ## 2026-11-11 — B5n reingreso privado versionado (desarrollo)
 Se agregó versión `v2_b5n_20261111` con SQL privado y worker que impiden reutilizar B5k/B5m como resultado nuevo. Requiere una única fuente histórica con subtotal B5m comprobado y 3/5 condiciones, SHA/proveedor intactos, cinco flags apagados antes de instalar. Pruebas PG17 ROLLBACK comprueban elegibilidad, denegación y no alteración del historial. **No se desplegó ni se ejecutó**; [Acta 509](docs/509-v2-b5n-replay-privado-una-sola-vez.md).
 
