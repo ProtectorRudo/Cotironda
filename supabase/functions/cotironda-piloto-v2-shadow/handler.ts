@@ -22,6 +22,8 @@ import type {XlsxRowReaderB5e} from
 import {revisarArchivosVersionadosB5d,
  type PrivateReviewOutcomeB5d} from
  '../../../src/domain/presupuestos-v2/worker-revision-archivos-b5d.ts';
+import {reauditarPdfHistoricoB5g,type PdfReauditOutcomeB5g}
+ from '../../../src/domain/presupuestos-v2/worker-reauditoria-pdf-b5g.ts';
 
 const PROJECT='ilggkalaafhtiysyzlmg';
 const PROJECT_URL='https://'+PROJECT+'.supabase.co';
@@ -46,6 +48,9 @@ export type EdgeDepsV2B3=Readonly<{
  readXlsxEvidence?:XlsxRowReaderB5e;
  /** Enabled only by the installed private Edge adapter; no user request can. */
  runB5dWhenEmpty?:boolean;
+ runB5gBeforeB5d?:boolean;
+ runB5g?:(args:Parameters<typeof reauditarPdfHistoricoB5g>[0])=>
+  Promise<PdfReauditOutcomeB5g>;
  runB5d?:(args:Parameters<typeof revisarArchivosVersionadosB5d>[0])=>
   Promise<PrivateReviewOutcomeB5d>;
  run?:(args:Parameters<typeof procesarSombraArchivadaV2>[0])=>
@@ -145,6 +150,26 @@ export async function ejecutarSolicitudSombraV2B3(
   if(outcome.outboundMessages!==0||outcome.publishedOffers!==0)
    return json(503,'shadow_contract_violation');
   if(outcome.state==='empty'&&deps.runB5dWhenEmpty===true){
+   // B5g is a new version, rechecking only the two ALREADY-READ
+   // historical PDFs. No LLM, no old ledgers touched, one original/tick.
+   if(deps.runB5gBeforeB5d===true){
+    const back=await (deps.runB5g??reauditarPdfHistoricoB5g)({
+     enabled:true,trustedInternalWorker:true,
+     rpc:async(name,params)=>db.rpc(name,params),
+     storage:db.storage,readPdfEvidence:deps.readPdfEvidence
+    });
+    if(back.outboundMessages!==0||back.publishedOffers!==0||
+       back.sourceVerified!==false||back.canRank!==false||
+       back.canRevealContacts!==false)
+     return json(503,'shadow_contract_violation');
+    switch(back.state){
+     case 'private_source_observed':return json(200,'private_source_observed');
+     case 'review_required':return json(200,'review_required');
+     case 'reconciliation_required':return json(503,'reconciliation_required');
+     case 'empty':case 'disabled':break;
+     default:return json(503,'shadow_contract_violation');
+    }
+   }
    // B5d reuses the existing authenticated POST and private V2 gate.
    // Claim SQL is versioned and never asks the caller for a source/round.
    const next=await (deps.runB5d??revisarArchivosVersionadosB5d)({

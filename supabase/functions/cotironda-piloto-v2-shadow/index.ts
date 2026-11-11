@@ -46,5 +46,6 @@ Deno.serve(request=>ejecutarSolicitudSombraV2B3(request,{
   bytes,sha256,
   mime:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
  } as Parameters<typeof readOfficeVisibleRows>[0]),
- runB5dWhenEmpty:true
+ runB5dWhenEmpty:true,
+ runB5gBeforeB5d:true
 }));
