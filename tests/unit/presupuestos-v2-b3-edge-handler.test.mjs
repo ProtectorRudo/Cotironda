@@ -245,3 +245,33 @@ test('B3: SQL default-off outcome cannot be turned into source by Edge',async()=
  await check(await ejecutarSolicitudSombraV2B3(
   req(),baseEnv(),deps),503,'shadow_disabled');
 });
+
+test('B5d: empty B2 queue cascades to one private B5d candidate',async()=>{
+ const {deps}=setup('empty');
+ let next=0;
+ deps.runB5dWhenEmpty=true;
+ deps.runB5d=async()=>{next++;return {
+  state:'candidate_private',reason:'b5d_rows_match_not_complete',
+  processed:1,outboundMessages:0,publishedOffers:0,sourceVerified:false
+ }};
+ await check(await ejecutarSolicitudSombraV2B3(req(),baseEnv(),deps),
+  200,'candidate_private');
+ assert.equal(next,1);
+});
+test('B5d: active B2 is prioritized, so no double processing on one tick',async()=>{
+ const {deps}=setup();
+ deps.runB5dWhenEmpty=true;
+ deps.runB5d=async()=>{throw Error('must not call B5d')};
+ await check(await ejecutarSolicitudSombraV2B3(req(),baseEnv(),deps),
+  200,'candidate_private');
+});
+test('B5d: secondary queue cannot claim publication or source verification',async()=>{
+ const {deps}=setup('empty');
+ deps.runB5dWhenEmpty=true;
+ deps.runB5d=async()=>({
+  state:'candidate_private',publishedOffers:1,outboundMessages:0,
+  sourceVerified:false
+ });
+ await check(await ejecutarSolicitudSombraV2B3(req(),baseEnv(),deps),
+  503,'shadow_contract_violation');
+});
