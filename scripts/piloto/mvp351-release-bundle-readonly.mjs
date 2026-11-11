@@ -22,9 +22,11 @@ export const FILES_MVP351=Object.freeze({
  publication:'supabase/functions/cotironda-piloto-whapi/supplier-economic-publication-mvp347.ts',
  entry:'supabase/functions/cotironda-piloto-auto-recovery/index.ts',
  auth:'supabase/functions/cotironda-piloto-auto-recovery/internal-auth-mvp294.ts',
- sql:'supabase/piloto/mvp351_reintento_fidelidad_y_rivales_historicos.sql'
+ sql:'supabase/piloto/mvp351_reintento_fidelidad_y_rivales_historicos.sql',
+ semanticSql:'supabase/piloto/mvp352_reevaluacion_semantica_unica.sql'
 });
 const PINNED_CORRELATOR='b5ea8c2b64ba7fe07409943b9c810d7a6e270b84';
+const PINNED_HINT='58ee374e77793c092b3b65b2cf1ffa3a1ad880e9';
 function gitBlob(s){
  const bytes=Buffer.from(s,'utf8');
  return createHash('sha1').update('blob '+bytes.length+'\0').update(bytes).digest('hex');
@@ -45,6 +47,8 @@ export function validarBundleMvp351(files){
  }
  if(gitBlob(files.correlator)!==PINNED_CORRELATOR)
   throw Error('MVP351_CORRELATOR_PIN_DRIFT');
+ if(gitBlob(files.identityHint)!==PINNED_HINT)
+  throw Error('MVP352_MATERIAL_HINT_PIN_DRIFT');
  requireAll('correlator',files.correlator,[
   "if(best.candidate.bind_allowed===false)",
   "'historical_round_best_fit'",
@@ -63,6 +67,7 @@ export function validarBundleMvp351(files){
   "supplier-material-fidelity-mvp348.ts",
   "evaluarMaterialesRecuperadosMvp348(",
   "cotironda_piloto_claim_reviewed_auto_recovery_mvp336",
+  "cotironda_piloto_claim_semantic_reassessment_mvp352",
   "retryReviewedOnce:claimed.retry_reviewed===true",
   "archive_quote_economic_or_source_review_required",
   "cotironda_piloto_finish_auto_recovery_mvp292"
@@ -115,8 +120,20 @@ export function validarBundleMvp351(files){
   "IF v_active<1 THEN RETURN",
   "REVOKE ALL ON FUNCTION public.cotironda_piloto_claim_reviewed_auto_recovery_mvp336()"
  ]);
+ requireAll('semanticSql',files.semanticSql,[
+  "ai_supplier_semantic_reassessment_mvp352",
+  "claim_semantic_reassessment_mvp352",
+  "a.mime='application/pdf'",
+  "r.state IN('prepared','closed')",
+  "previous_recovery_reason",
+  "previous_correlation_reason",
+  "REVOKE ALL ON FUNCTION public.cotironda_piloto_claim_semantic_reassessment_mvp352()",
+  "third.source_sha256=v_source.content_sha256"
+ ]);
  if(/(?:INSERT INTO|UPDATE|DELETE FROM)\s+cotironda_piloto_privado\.(?:whapi_outbox|anonymous_supplier_docs_mvp107)/iu.test(files.sql))
   throw Error('MVP351_UNAUTHORIZED_SEND_OR_OFFER');
+ if(/(?:INSERT INTO|UPDATE|DELETE FROM)\s+cotironda_piloto_privado\.(?:whapi_outbox|anonymous_supplier_docs_mvp107)/iu.test(files.semanticSql))
+  throw Error('MVP352_UNAUTHORIZED_SEND_OR_OFFER');
  return Object.freeze({
   state:'local_sources_compatible',
   historical_source_pinned:true,
@@ -136,6 +153,7 @@ export function inspeccionarCandidatoMvp351({root=ROOT}={}){
  const compatible=validarBundleMvp351(local);
  const overlay=prepararMvp336Overlay({root});
  if(overlay.added_file_git_sha!==PINNED_CORRELATOR||
+    overlay.dependency_added_file!==FILES_MVP351.identityHint||
     !overlay.original_manifest_preserved||
     overlay.db_mutated!==false||
     overlay.outbound_whatsapp_messages!==0)
@@ -154,8 +172,9 @@ export function inspeccionarCandidatoMvp351({root=ROOT}={}){
   whapi_sends:0,
   requires_order:Object.freeze([
    'confirmar_base_y_resguardo',
-   'instalar_SQL_mvp351_solo_piloto',
-   'desplegar_worker_con_mvp348_y_correlador_pinned',
+   'verificar_SQL_mvp351_instalado',
+   'instalar_SQL_mvp352_solo_piloto',
+   'desplegar_worker_con_mvp352_y_modulo_pistas',
    'desplegar_webhook_compatible_si_se_actualiza',
    'probar_un_solo_documento_SHA_y_estado_economico',
    'verificar_tracking_y_cierre_sin_reenviar_pedidos'
