@@ -78,3 +78,35 @@ supuestamente verificado.
 
 **Piloto real:** B5j no desplegado. Hasta autorización distinta,
 Supabase queda Edge V2 v6 con V2/B5h/B5i OFF; B5i real 2/2 privado.
+
+## Auditoría adicional: cobertura negativa de la fuente (11/11/2026)
+
+Antes de cualquier publicación de B5j se detectó una brecha de lógica: B5f
+retorna `source_total_unverified` cuando no encuentra una etiqueta de total,
+**antes** de completar su comprobación de renglones comerciales no asignados.
+Por eso, aunque todos los artículos extraídos coincidieran, una cifra al pie
+podía cuadrar y seguir ocultando un costo o una cláusula del documento.
+
+Se corrigió en el módulo determinista B5j, **sin alterar B5f histórico**:
+
+- Recorre cada fila PDF.js de todas las páginas y busca renglones monetarios,
+  IVA, fletes, descuentos y cargos no cubiertos por materiales, notas,
+  condiciones corroboradas o la única celda candidata al pie. Si aparece un
+  concepto sin explicar, devuelve `source_unmapped_content`.
+- Bloquea expresiones fiscales omitidas por la IA incluso si el total cuadra;
+  bloquea importes adicionales en otra página, costos en la misma fila del
+  material, notas extraídas de forma parcial y columnas IVA/flete sin modelar.
+- Encabezados puramente estructurales (p. ej. «Cantidad / Descripción /
+  Descuento / Total») no se interpretan automáticamente como cargos;
+  encabezados IVA o Flete sin cobertura sí fuerzan revisión.
+- Mantiene el rechazo seguro por ambigüedad geométrica previa cuando una
+  descripción de material aparece dos veces. Una revisión económica **no**
+  puede invalidar un bloqueo de etapa anterior.
+- Aun con `grand_total_balances_private`, las banderas `source_verified`,
+  `full_document_covered`, `can_publish`, `can_rank` y
+  `can_reveal_contacts` siguen necesariamente en `false`.
+
+**Límite:** este barrido es *evidencia negativa*, no una certificación de
+cobertura completa. Puede quedar contenido no interpretado sin símbolos
+monetarios evidentes. Los dos PDF reales no fueron reejecutados en B5j
+porque el usuario autorizó «Luz verde», no «Publicalo».
