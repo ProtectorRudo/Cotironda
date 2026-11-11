@@ -58,14 +58,17 @@ function uniqueConditionParts(
  if(wanted.length<3)return null;
  const found:number[][]=[];
  for(let start=0;start<parts.length;start++){
-  if(reserved.has(start))continue;
+  if(reserved.has(start)||!plain(parts[start].text))continue;
   let text='';
   for(let end=start;end<Math.min(parts.length,start+12);end++){
    if(reserved.has(end))break;
    text+=(text?' ':'')+parts[end].text;
    const current=plain(text);
    if(current===wanted){
+    // Prefer the shortest complete source span. Trailing empty PDF.js
+    // fragments must not create a second, fake matching condition.
     found.push(Array.from({length:end-start+1},(_,i)=>start+i));
+    break;
    }
    if(current.length>wanted.length+10)break;
   }
