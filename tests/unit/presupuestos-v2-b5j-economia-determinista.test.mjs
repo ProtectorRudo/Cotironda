@@ -193,3 +193,50 @@ test('B5j: a B5 needs_source_review total is still only a PRIVATE arithmetic can
  assert.equal(v.full_document_covered,false);
  assert.equal(v.can_publish,false);
 });
+
+test('B5j: an omitted third monetary PDF row blocks an apparently balancing basket',()=>{
+ const v=calc({pdfRows:[...rows,row(540,[cell('Cargo extra',140),cell('$90,00')])]});
+ assert.equal(v.code,'source_unmapped_content');sealed(v);
+});
+test('B5j: an omitted IVA percentage elsewhere in original cannot be overlooked',()=>{
+ const v=calc({pdfRows:[...rows,row(540,[cell('IVA 21%',140)])]});
+ assert.equal(v.code,'source_unmapped_content');sealed(v);
+});
+test('B5j: a hidden flete a cotizar is not assumed free',()=>{
+ const v=calc({pdfRows:[...rows,row(540,[cell('Flete a cotizar',140)])]});
+ assert.equal(v.code,'source_unmapped_content');sealed(v);
+});
+test('B5j: discount mentioned in source but omitted by AI blocks private balance',()=>{
+ const v=calc({pdfRows:[...rows,row(540,[cell('Descuento adicional 10%',140)])]});
+ assert.equal(v.code,'source_unmapped_content');sealed(v);
+});
+test('B5j: a standard table heading with Descuento is not a hidden charge',()=>{
+ const r=rows.map((v,i)=>i===0?row(750,[
+  cell('Cantidad',25),cell('Descripción',130),
+  cell('Unitario',350),cell('Descuento',430),cell('Total',500)
+ ]):v);
+ const v=calc({pdfRows:r});
+ assert.equal(v.code,'grand_total_balances_private');sealed(v);
+});
+test('B5j: a transfer condition must not absorb omitted IVA on same PDF row',()=>{
+ const doc=quote(standard,'$4.600,00',['Transferencia']);
+ const v=calc({doc,pdfRows:[...rows,row(550,[cell('Transferencia IVA 21%',120)])]});
+ assert.equal(v.code,'source_unmapped_content');sealed(v);
+});
+test('B5j: a copied material description cannot hide omitted freight in its row',()=>{
+ const altered=rows.map((r,i)=>i===1?row(720,[
+  cell('40,00',25),cell('Cemento CPC',130),
+  cell('$100,00',350),cell('$4.000,00'),
+  cell('Flete adicional $100,00',580)
+ ]):r);
+ const v=calc({pdfRows:altered});
+ assert.equal(v.code,'source_unmapped_content');sealed(v);
+});
+test('B5j: repeated material descriptions outside priced source rows require review',()=>{
+ const v=calc({pdfRows:[...rows,row(540,[cell('Cemento CPC',130)])]});
+ assert.equal(v.code,'source_unmapped_content');sealed(v);
+});
+test('B5j: an unclaimed amount printed on a later page is still scanned',()=>{
+ const v=calc({pdfRows:[...rows,row(540,[cell('Otros importes',130),cell('150,00')],2)]});
+ assert.equal(v.code,'source_unmapped_content');sealed(v);
+});
