@@ -26,6 +26,8 @@ import {reauditarPdfHistoricoB5g,type PdfReauditOutcomeB5g}
  from '../../../src/domain/presupuestos-v2/worker-reauditoria-pdf-b5g.ts';
 import {diagnosticarPdfHistoricoB5h,type TotalOutcomeB5h}
  from '../../../src/domain/presupuestos-v2/worker-diagnostico-total-b5h.ts';
+import {diagnosticarGeometriaHistoricaB5i,type GeometryOutcomeB5i}
+ from '../../../src/domain/presupuestos-v2/worker-geometria-total-b5i.ts';
 
 const PROJECT='ilggkalaafhtiysyzlmg';
 const PROJECT_URL='https://'+PROJECT+'.supabase.co';
@@ -53,6 +55,10 @@ export type EdgeDepsV2B3=Readonly<{
  runB5gBeforeB5d?:boolean;
  /** B5h only runs when an independent private SQL maintenance switch is ON. */
  runB5hWhenSelected?:boolean;
+ /** B5i runs only under its independent, default-OFF SQL maintenance mode. */
+ runB5iWhenSelected?:boolean;
+ runB5i?:(args:Parameters<typeof diagnosticarGeometriaHistoricaB5i>[0])=>
+  Promise<GeometryOutcomeB5i>;
  runB5h?:(args:Parameters<typeof diagnosticarPdfHistoricoB5h>[0])=>
   Promise<TotalOutcomeB5h>;
  runB5g?:(args:Parameters<typeof reauditarPdfHistoricoB5g>[0])=>
@@ -146,9 +152,36 @@ export async function ejecutarSolicitudSombraV2B3(
 
   // Preserve B3's original no-DB-on-missing-OpenAI-key guarantee when
   // the standalone B5h maintenance capability is not installed.
-  if(deps.runB5hWhenSelected!==true&&!API_KEY.test(api))
+  if(deps.runB5hWhenSelected!==true&&
+     deps.runB5iWhenSelected!==true&&!API_KEY.test(api))
    return json(503,'backend_configuration_invalid');
   const db=deps.createDb(PROJECT_URL,role);
+  // B5i is isolated from B5h/B5g/B5d/B2 and does not call OpenAI.
+  // Unknown/failed SQL mode is NEVER interpreted as 'normal recovery'.
+  if(deps.runB5iWhenSelected===true){
+   const mode=await db.rpc('cotironda_piloto_v2_b5i_only_enabled',{});
+   if(mode.error||typeof mode.data!=='boolean')
+    return json(503,'b5i_mode_unconfirmed');
+   if(mode.data){
+    const audit=await (deps.runB5i??diagnosticarGeometriaHistoricaB5i)({
+     enabled:true,trustedInternalWorker:true,
+     rpc:async(name,params)=>db.rpc(name,params),
+     storage:db.storage,readPdfEvidence:deps.readPdfEvidence
+    });
+    if(audit.outboundMessages!==0||audit.publishedOffers!==0||
+       audit.sourceVerified!==false||audit.canRank!==false||
+       audit.canRevealContacts!==false)
+     return json(503,'shadow_contract_violation');
+    switch(audit.state){
+     case 'private_diagnosed':return json(200,'private_diagnosed');
+     case 'review_required':return json(200,'review_required');
+     case 'empty':return json(200,'queue_empty');
+     case 'disabled':return json(503,'shadow_disabled');
+     case 'reconciliation_required':return json(503,'reconciliation_required');
+     default:return json(503,'shadow_contract_violation');
+    }
+   }
+  }
   // Exclusive B5h mode is checked BEFORE B2, B5g or B5d. When ON,
   // not even an empty total-audit queue may fall through to paid IA.
   if(deps.runB5hWhenSelected===true){
