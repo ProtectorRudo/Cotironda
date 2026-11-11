@@ -1,3 +1,9 @@
+## 2026-11-11 — B5i, posición geométrica del total sin rótulo (solo desarrollo)
+- Nuevo PR #773, apilado sobre B5h #772: analizador puro de posiciones PDF.js x/y, importes repetidos, columna de artículos y proximidad de IVA/flete sin inferencia de totales.
+- Ledger privado B5i versionado y nuevo modo exclusivo OFF por defecto (RLS, SHA, cuota, idempotencia); no reabre B5h/B5g/B5d.
+- Worker privado sin OpenAI, sin WhatsApp ni publicaciones; Edge fail-closed antes de la ruta normal. CI Node/Deno/PG17 rollback y regresión total.
+- **No instalar ni publicar** sin autorización. Los dos totales reales permanecen `source_total_unverified`. [Acta 498](docs/498-v2-b5i-geometria-total-sin-etiqueta.md).
+
 ## 2026-11-11 — B5h PUBLICADO en Supabase piloto (Acta 497)
 - Migración B5h instalada y Edge sombra V2 actualizada a v5 desde el commit de código `7d2b8fc8dd974e659ac91f89c8f0d976cc98bb39`, sin desplegar a producción ni integrar PR.
 - Ejecutadas dos reauditorías privadas reales por cron/Vault existente, ambas `unlabeled_amount_found`: número coincidente presente, etiqueta de total no reconocida; la fuente NO está económicamente certificada.
