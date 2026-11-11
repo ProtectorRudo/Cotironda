@@ -187,3 +187,19 @@ test('B5l: a material line that mentions an unpriced IVA remains in review',()=>
  const v=calc({candidate,rows});
  assert.equal(v.code,'unmapped_fiscal_or_logistics');sealed(v);
 });
+
+test('B5l: stray bare monetary cell in an otherwise matching item is blocked',()=>{
+ const rows=sourceRows.map((r,i)=>i===1?row(700,[
+  part('40,00',20),part('Cemento CPC',120),part('$100,00',350),
+  part('$4.000,00',510),part('150,00',570)]):r);
+ const v=calc({rows});
+ assert.equal(v.code,'unmapped_fiscal_or_logistics');sealed(v);
+});
+test('B5l: an empty reader line cannot create impossible coverage counters',()=>{
+ const rows=[...sourceRows,row(530,[])];
+ const v=calc({rows});
+ assert.equal(v.code,'visible_rows_accounted_private');
+ assert.equal(v.unattributed_rows,0);
+ assert.equal(v.source_rows,v.attributed_rows);
+ sealed(v);
+});
