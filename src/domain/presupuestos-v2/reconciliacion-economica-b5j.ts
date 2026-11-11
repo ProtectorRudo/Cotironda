@@ -108,6 +108,14 @@ export function reconciliarEconomiaTotalB5j(args:{
  if(n.materials<1||n.matched!==n.materials)
   return fail('line_arithmetic_unconfirmed');
 
+ // Notes have no priced-line amount. A monetary or unpriced fiscal/
+ // logistics charge inside a note must NEVER silently become zero.
+ if(doc.lines.some(line=>line.kind==='commercial_note'&&
+  fiscalUnknown.test(line.original_line_raw)&&
+  /(?:\\$\\s*\\d|\\b(?:ars|usd)\\b\\s*\\d|\\b(?:a\\s+cotizar|a\\s+confirmar|pendiente|sin\\s+precio)\\b)/iu
+   .test(line.original_line_raw)))
+  return fail('fiscal_or_freight_ambiguous');
+
  // Discounts already reflected in line_total_raw are not subtracted twice.
  let sum=0n;
  for(const line of doc.lines){
