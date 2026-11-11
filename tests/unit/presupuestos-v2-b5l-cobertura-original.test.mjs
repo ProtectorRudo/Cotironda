@@ -295,3 +295,14 @@ test('B5l: same part cannot count as two separately proved conditions',()=>{
  assert.equal(v.code,'line_assignment_ambiguous');
  sealed(v);
 });
+
+test('B5l: PDF.js empty fragments after a complete freight term do not cause a false duplicate',()=>{
+ const pdf=sourceRows.slice(0,4).map((r,i)=>i===1?
+  row(700,[...r.parts,part('Flete a coordinar',625),
+   part(' ',760),part('',790)]):r);
+ const v=calc({candidate:doc(lines,['Flete a coordinar']),rows:pdf});
+ assert.equal(v.code,'visible_rows_accounted_private');
+ assert.equal(v.corroborated_conditions,1);
+ assert.equal(v.unattributed_rows,0);
+ sealed(v);
+});
