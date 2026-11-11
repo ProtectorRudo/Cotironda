@@ -254,6 +254,12 @@ export function reconciliarEconomiaTotalB5j(args:{
 
  n.iva=audit.mentions.iva?.state??'not_mentioned';
  n.freight=audit.mentions.flete?.state??'not_mentioned';
+ // A matching sum proves ONLY the explicitly listed lines balance against
+ // the source's candidate amount. It is NOT the final payable price when
+ // freight, taxes or other conditions are still unpriced/ambiguous.
+ // Record that narrow fact before the commercial-condition gate; the gate
+ // must retain its private, non-publishable failure code.
+ n.balance=sum===total;
  // Absence means UNKNOWN, not "sin IVA". Unpriced/ambiguous fiscal or
  // freight terms cannot be supplied with invented additions.
  if(n.iva==='conflicting_mentions'||n.iva==='rate_mentioned'||
@@ -264,7 +270,6 @@ export function reconciliarEconomiaTotalB5j(args:{
       /\b(?:pendiente|a\s+cotizar|a\s+confirmar)\b/iu.test(s)))
   return fail('fiscal_or_freight_ambiguous');
 
- n.balance=sum===total;
  return result(n.balance?'grand_total_balances_private':
   'grand_total_differs',n);
 }
