@@ -37,7 +37,7 @@ test('MVP351 release: código Whapi alterado, falta de cotejo original o auth ab
   ['entry',s=>s.replace('authorizeRecoveryMvp294({','allowAll({')],
   ['sql',s=>s.replace("r.state IN('prepared','closed')","r.state='prepared'")],
   ['sql',s=>s.replace("'bind_allowed',(v_request.state='prepared')","'bind_allowed',true")],
-  ['material',s=>s.replace('archived_unit_mismatch','always_accepted')]
+  ['material',s=>s.replaceAll('archived_unit_mismatch','always_accepted')]
  ];
  for(const [file,edit] of tamper){
   const changed=edit(all[file]);
