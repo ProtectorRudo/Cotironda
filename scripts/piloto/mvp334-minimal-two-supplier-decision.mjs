@@ -56,17 +56,21 @@ export function decidirPilotoDosProveedoresMvp334(snapshot){
   if(!g.whatsapp_entrada||!g.whatsapp_salida||!g.ia_central||
    !g.despacho_legacy||!g.comprador_operativo)
    fallos.push('flujo_ia_o_whatsapp_inhabilitado');
-  if(w.auto_release||w.batch||w.buyer_notice)
-   fallos.push('gates_ya_activos_revisar_previamente');
+  // Auto-release is the APPROVED no-confirmation flow, not a rollout
+  // hazard. Batch and deferred notices are intentionally still off.
+  if(!w.auto_release||w.batch||w.buyer_notice)
+   fallos.push('configuracion_auto_liberacion_o_lotes_incorrecta');
   if(r.trabajos_inseguros!==0||r.mensajes_inseguros!==0)
    fallos.push('reconciliar_envios_inciertos');
-  if(snapshot.evidencia_recepcion_24h<1)
-   fallos.push('falta_recepcion_reciente');
+  // A recent inbound message proves E2E activity, but must NOT be
+  // required BEFORE the first message of a fresh controlled round.
   if(snapshot.preflight_sql_apto!==true)fallos.push('preflight_sql_no_apto');
   if(snapshot.verificacion_externa_pendiente!==true||
    snapshot.publicacion_autorizada!==false)fallos.push('sello_fuera_de_lectura');
  }
  const warnings=[];
+ if(validateShape(snapshot)&&snapshot.evidencia_recepcion_24h===0)
+  warnings.push('sin_ingreso_comprador_reciente_no_prueba_whatsapp_e2e');
  if(validateShape(snapshot)&&snapshot.catalogos.sin_confirmacion_formal>0)
   warnings.push('catalogos_registrados_sin_confirmacion_stock');
  if(validateShape(snapshot)&&snapshot.catalogos.en_revision>0)
