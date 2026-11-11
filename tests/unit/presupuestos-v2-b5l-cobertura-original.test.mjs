@@ -365,3 +365,38 @@ test('B5n: punctuation normalization cannot absorb a percentage',()=>{
  const v=calc({rows,candidate:doc(lines,['precios en efectivo'])});
  assert.equal(v.code,'line_assignment_ambiguous');sealed(v);
 });
+
+
+test('B5n: sequential five-condition fixture isolates an unresolved fifth source fragment',()=>{
+ const terms=['Mantenimiento de la oferta : 0',
+  'Condición de pago : 1. Contado Efectivo',
+  'Plazo de entrega : 0 DIAS','precios en efectivo','flete a convenir'];
+ const rows=sourceRows.slice(0,4).map((r,i)=>i===1?row(700,[
+  part('40,00',20),part('Cemento CPC flete a convenir',120),
+  part('$100,00',350),part('$4.000,00',510),
+  part('precios en efectivo:',625)]):r);
+ rows.push(...terms.slice(0,3).map((term,i)=>row(580-i*25,
+  [part(term,120)])));
+ const v=calc({rows,candidate:doc(lines,terms)});
+ assert.equal(v.code,'line_assignment_ambiguous');
+ assert.equal(v.corroborated_conditions,4);
+ assert.equal(v.source_verified,false);
+ sealed(v);
+});
+test('B5n: all five source terms count only with five independent spans',()=>{
+ const terms=['Mantenimiento de la oferta : 0',
+  'Condición de pago : 1. Contado Efectivo',
+  'Plazo de entrega : 0 DIAS','precios en efectivo','flete a convenir'];
+ const rows=sourceRows.slice(0,4).map((r,i)=>i===1?row(700,[
+  ...r.parts,part('precios en efectivo:',625),
+  part('flete a convenir',750)]):r);
+ rows.push(...terms.slice(0,3).map((term,i)=>row(580-i*25,
+  [part(term,120)])));
+ const v=calc({rows,candidate:doc(lines,terms)});
+ assert.equal(v.code,'visible_rows_accounted_private');
+ assert.equal(v.corroborated_conditions,5);
+ assert.equal(v.unattributed_rows,0);
+ assert.equal(v.can_publish,false);
+ assert.equal(v.full_document_covered,false);
+ sealed(v);
+});
