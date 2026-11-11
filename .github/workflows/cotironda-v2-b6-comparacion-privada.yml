@@ -1,0 +1,44 @@
+name: Cotironda V2 B6 - canasta completa y parciales sin ranking ficticio
+on:
+  pull_request:
+    branches:
+      - feat/v2-b5d-reauditoria-y-vinculados-piloto-20261110
+    paths:
+      - 'src/domain/presupuestos-v2/comparacion-privada-b6.ts'
+      - 'tests/unit/presupuestos-v2-comparacion-privada-b6.test.mjs'
+      - 'src/domain/comparacion-ofertas.ts'
+      - 'src/domain/adaptador-documental-mvp162.ts'
+      - '.github/workflows/cotironda-v2-b6-comparacion-privada.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  node-comparison:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: B6 private source gate, coverage and item comparison
+        run: |
+          node --experimental-strip-types --test \
+            tests/unit/presupuestos-v2-comparacion-privada-b6.test.mjs \
+            tests/unit/mvp162-document-economic-adapter.test.mjs \
+            tests/unit/comparacion-ofertas.test.mjs
+  deno:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb
+        with:
+          deno-version: v2.x
+      - run: |
+          deno check src/domain/presupuestos-v2/comparacion-privada-b6.ts
+# No SQL, OpenAI, WhatsApp, Vercel or Supabase writes.
