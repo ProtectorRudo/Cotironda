@@ -9,6 +9,7 @@ import {comprobarRenglonesPdfOriginalB5,type EvidenceReaderB5}
 import {diagnosticarGeometriaTotalB5i} from './diagnostico-geometria-total-b5i.ts';
 import {reconciliarEconomiaTotalB5j} from './reconciliacion-economica-b5j.ts';
 import {cotejarMonedaOriginalB5k} from './cotejo-moneda-original-b5k.ts';
+import {auditarCoberturaPdfOriginalB5l} from './auditoria-cobertura-original-b5l.ts';
 type Rpc=(name:string,params:Record<string,unknown>)=>
  Promise<{data:unknown;error:unknown}>;
 type Storage={from:(bucket:string)=>{download:(path:string)=>
@@ -103,6 +104,10 @@ export async function cotejarPdfMonedaHistoricaB5k(args:{
        candidate:parsed.document,source:proof,geometry,rows:reading.rows,
        currencyEvidence:currency
      });
+     const coverage=auditarCoberturaPdfOriginalB5l({
+       candidate:parsed.document,source:proof,geometry,
+       rows:reading.rows,pages:reading.pages,scanned:reading.scanned
+     });
      diagnostics={
        currency_code:currency.code,
        iso_verified:currency.currency_iso_verified,
@@ -116,6 +121,15 @@ export async function cotejarPdfMonedaHistoricaB5k(args:{
        economic_conditions_count:economic.source_condition_count,
        economic_conditions_matches:economic.conditions_corroborated,
        economic_total_balances:economic.material_total_matches_declared,
+       coverage_code:coverage.code,
+       coverage_source_rows:coverage.source_rows,
+       coverage_attributed_rows:coverage.attributed_rows,
+       coverage_unattributed_rows:coverage.unattributed_rows,
+       coverage_lines:coverage.source_lines,
+       coverage_lines_matched:coverage.attributed_lines,
+       coverage_conditions:coverage.commercial_conditions,
+       coverage_conditions_matched:coverage.corroborated_conditions,
+       coverage_pages:coverage.page_count,
        proof_reason:proof.reason,
        matched_lines:proof.lines.filter(x=>
         x.state==='source_line_corresponds').length,
