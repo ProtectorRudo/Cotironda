@@ -1,0 +1,82 @@
+name: Cotironda B5d - reauditoria versionada de originales y vinculados
+on:
+  pull_request:
+    branches:
+      - feat/v2-b5-iva-flete-explicitos-auditoria-descuentos
+    paths:
+      - 'src/domain/presupuestos-v2/**'
+      - 'supabase/functions/cotironda-piloto-v2-shadow/**'
+      - 'supabase/piloto/v2_b5d*'
+      - 'supabase/tests/ci/v2-b5d*'
+      - 'tests/unit/presupuestos-v2-*'
+      - '.github/workflows/cotironda-v2-b5d-recuperacion-versionada.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  node-private:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Ledger, SHA, dos colas, contratos, privacidad y regresion
+        run: |
+          node --experimental-strip-types --test \
+            tests/unit/presupuestos-v2-worker-revision-archivos-b5d.test.mjs \
+            tests/unit/presupuestos-v2-b3-edge-handler.test.mjs \
+            tests/unit/presupuestos-v2-b3-integracion-privada.test.mjs \
+            tests/unit/presupuestos-v2-worker-archivo-sombra.test.mjs \
+            tests/unit/presupuestos-v2-evidencia-pdf-original-b5.test.mjs \
+            tests/unit/presupuestos-v2-auditoria-comercial-b5.test.mjs
+  deno-edge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb
+        with:
+          deno-version: v2.x
+      - name: Typecheck Edge completo con npm unpdf acoplado solo a adapter
+        run: |
+          deno check --node-modules-dir=auto \
+            supabase/functions/cotironda-piloto-v2-shadow/index.ts
+  postgres17-rollback:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: test_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -tA \
+            -f supabase/tests/ci/v2-b5d-recheck-linked-pg17-rollback.sql \
+            | grep -Fx 't'
+          psql -X -tA -c "select to_regnamespace('cotironda_piloto_privado') is null" | grep -Fx 't'
+# CI synthetic only. Never deploys, accesses credentials or sends WhatsApp.
