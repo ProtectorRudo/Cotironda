@@ -203,3 +203,95 @@ test('B5l: an empty reader line cannot create impossible coverage counters',()=>
  assert.equal(v.source_rows,v.attributed_rows);
  sealed(v);
 });
+
+test('B5l: transfer term printed as its own PDF.js part in material row is accounted',()=>{
+ const pdf=sourceRows.slice(0,4).map((r,i)=>i===1?
+  row(700,[...r.parts,part('Transferencia',625)]):r);
+ const v=calc({rows:pdf});
+ assert.equal(v.code,'visible_rows_accounted_private');
+ assert.equal(v.attributed_lines,2);
+ assert.equal(v.corroborated_conditions,1);
+ assert.equal(v.source_rows,4);
+ assert.equal(v.unattributed_rows,0);
+ sealed(v);
+});
+test('B5l: unpriced freight in a distinct part can be attributed, never certified',()=>{
+ const pdf=sourceRows.slice(0,4).map((r,i)=>i===1?
+  row(700,[...r.parts,part('Flete a coordinar',625)]):r);
+ const v=calc({candidate:doc(lines,['Flete a coordinar']),rows:pdf});
+ assert.equal(v.code,'visible_rows_accounted_private');
+ assert.equal(v.corroborated_conditions,1);
+ assert.equal(v.unattributed_rows,0);
+ assert.equal(v.full_document_covered,false);
+ assert.equal(v.can_publish,false);
+ sealed(v);
+});
+test('B5l: condition split into two independent PDF.js parts is still attributable',()=>{
+ const pdf=sourceRows.slice(0,4).map((r,i)=>i===1?
+  row(700,[...r.parts,part('Flete',625),part('a coordinar',680)]):r);
+ const v=calc({candidate:doc(lines,['Flete a coordinar']),rows:pdf});
+ assert.equal(v.code,'visible_rows_accounted_private');
+ assert.equal(v.corroborated_conditions,1);
+ sealed(v);
+});
+test('B5l: two complete terms in separate parts of material row both count',()=>{
+ const pdf=sourceRows.slice(0,4).map((r,i)=>i===1?
+  row(700,[...r.parts,part('Transferencia',610),
+   part('Flete a coordinar',690)]):r);
+ const v=calc({candidate:doc(lines,['Transferencia','Flete a coordinar']),rows:pdf});
+ assert.equal(v.code,'visible_rows_accounted_private');
+ assert.equal(v.corroborated_conditions,2);
+ assert.equal(v.unattributed_rows,0);
+ sealed(v);
+});
+test('B5l: condition embedded inside SAME material part remains ambiguous',()=>{
+ const pdf=sourceRows.slice(0,4).map((r,i)=>i===1?
+  row(700,r.parts.map((p,j)=>j===1?part('Cemento CPC Transferencia',120):p)):r);
+ const v=calc({rows:pdf});
+ assert.equal(v.code,'line_assignment_ambiguous');
+ assert.equal(v.can_publish,false);
+ sealed(v);
+});
+test('B5l: conditions may not claim the material description as an independent term',()=>{
+ const pdf=sourceRows.slice(0,4);
+ const v=calc({candidate:doc(lines,['Cemento CPC']),rows:pdf});
+ assert.equal(v.code,'line_assignment_ambiguous');
+ sealed(v);
+});
+test('B5l: same material row cannot hide an extra priced delivery item',()=>{
+ const pdf=sourceRows.slice(0,4).map((r,i)=>i===1?
+  row(700,[...r.parts,part('Flete a coordinar',625),
+   part('$150,00',800)]):r);
+ const v=calc({candidate:doc(lines,['Flete a coordinar']),rows:pdf});
+ assert.equal(v.code,'unmapped_fiscal_or_logistics');
+ sealed(v);
+});
+test('B5l: priced freight in an isolated part is not a priced item by itself',()=>{
+ const pdf=sourceRows.slice(0,4).map((r,i)=>i===1?
+  row(700,[...r.parts,part('Flete $150,00',625)]):r);
+ const v=calc({candidate:doc(lines,['Flete $150,00']),rows:pdf});
+ assert.notEqual(v.code,'visible_rows_accounted_private');
+ assert.equal(v.can_rank,false);
+ sealed(v);
+});
+test('B5l: shortened term cannot absorb IVA in same material part',()=>{
+ const pdf=sourceRows.slice(0,4).map((r,i)=>i===1?
+  row(700,[...r.parts,part('Transferencia IVA 21%',625)]):r);
+ const v=calc({rows:pdf});
+ assert.equal(v.code,'line_assignment_ambiguous');
+ sealed(v);
+});
+test('B5l: unmatched IVA next to a standalone condition is never hidden',()=>{
+ const pdf=sourceRows.map((r,i)=>i===4?
+  row(560,[part('Transferencia',100),part('IVA 21%',220)]):r);
+ const v=calc({rows:pdf});
+ assert.equal(v.code,'unmapped_fiscal_or_logistics');
+ sealed(v);
+});
+test('B5l: same part cannot count as two separately proved conditions',()=>{
+ const pdf=sourceRows.slice(0,4).map((r,i)=>i===1?
+  row(700,[...r.parts,part('Transferencia Flete a coordinar',625)]):r);
+ const v=calc({candidate:doc(lines,['Transferencia','Flete a coordinar']),rows:pdf});
+ assert.equal(v.code,'line_assignment_ambiguous');
+ sealed(v);
+});
