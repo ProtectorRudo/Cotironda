@@ -7,6 +7,8 @@ on:
       - 'src/domain/presupuestos-v2/**'
       - 'supabase/functions/cotironda-piloto-whapi/supplier-source-pdf-general.ts'
       - 'tests/unit/presupuestos-v2-*'
+      - 'tests/deno/b5f-geometria-pdf-real.test.ts'
+      - 'supabase/functions/cotironda-piloto-v2-shadow/pdf-geometry-b5f.ts'
       - '.github/workflows/cotironda-v2-b5f-total-y-descuentos-posicional.yml'
   workflow_dispatch:
 permissions:
@@ -45,4 +47,6 @@ jobs:
         run: |
           deno check --node-modules-dir=auto \
             supabase/functions/cotironda-piloto-v2-shadow/index.ts
+          deno test --allow-all --node-modules-dir=auto \
+            tests/deno/b5f-geometria-pdf-real.test.ts
 # No deploy, paid model, SQL mutations, WhatsApp or publication.
