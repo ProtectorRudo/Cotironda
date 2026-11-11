@@ -16,9 +16,11 @@ export function inspeccionarSqlMvp334(source){
   throw Error('mvp334_sql_missing_or_oversized');
  const plain=source.replace(/--[^\n]*/gu,'').trim();
  if(!/^WITH\s+personas\s+AS\s*\(/iu.test(plain)||
-  !/AS\s+evidence_snapshot\s+FROM\s+personas\s+p\s+CROSS\s+JOIN\s+catalogos\s+c\s+CROSS\s+JOIN\s+controles\s+g\s+CROSS\s+JOIN\s+operaciones\s+o\s*;\s*$/iu.test(plain)||
+  !/AS\s+evidence_snapshot\s+FROM\s+personas\s+p\s+CROSS\s+JOIN\s+catalogos\s+c\s+CROSS\s+JOIN\s+controles\s+g\s+CROSS\s+JOIN\s+operaciones\s+o\s+CROSS\s+JOIN\s+rondas_activas\s+ra\s*;\s*$/iu.test(plain)||
   /\b(INSERT|UPDATE|DELETE|UPSERT|MERGE|CREATE|DROP|ALTER|TRUNCATE|COPY|EXECUTE|CALL|GRANT|REVOKE|DO)\b/iu.test(plain)||
   (plain.match(/;/gu)??[]).length!==1||
+  !plain.includes('rondas_activas AS (')||
+  !plain.includes('ra.preparadas=0')||
   !plain.includes('proveedor_contactable_mvp307')||
   !plain.includes('cotironda_piloto_ia_trial_flags_mvp229')||
   !plain.includes('cotironda_piloto_ia_review_launch_mvp285'))
@@ -28,14 +30,17 @@ export function inspeccionarSqlMvp334(source){
 function validateShape(s){
  if(!isObj(s)||s.fase!=='mvp334_preflight_solo_lectura')return false;
  const p=s.participantes_activos,c=s.catalogos,a=s.permisos_administrativos,
-  g=s.servicios,w=s.gates_nuevos,r=s.riesgos_de_reenvio,b=s.presupuestos_de_intentos;
- if(![p,c,a,g,w,r,b].every(isObj))return false;
+  g=s.servicios,w=s.gates_nuevos,r=s.riesgos_de_reenvio,b=s.presupuestos_de_intentos,
+  ra=s.rondas_activas;
+ if(![p,c,a,g,w,r,b,ra].every(isObj))return false;
  return [p.comprador,p.proveedores,p.comprador_vinculado,p.proveedores_contactables,
   c.articulos,c.con_familia,c.en_revision,c.proveedores_con_familias,
   c.sin_confirmacion_formal,a.comprador,a.proveedores,
   r.trabajos_inseguros,r.mensajes_inseguros,
   s.evidencia_recepcion_24h,s.programadores_lote,
+  ra.preparadas,ra.borradores,ra.preparadas_despachadas,
   b.lote_diario,b.lote_por_comprador,b.avisos_diarios].every(num)&&
+  ra.preparadas_despachadas<=ra.preparadas&&
   [g.whatsapp_entrada,g.whatsapp_salida,g.ia_central,g.despacho_legacy,
    g.comprador_operativo,w.auto_release,w.batch,w.buyer_notice,
    s.preflight_sql_apto,s.verificacion_externa_pendiente,
@@ -47,7 +52,8 @@ export function decidirPilotoDosProveedoresMvp334(snapshot){
  else {
   const p=snapshot.participantes_activos,c=snapshot.catalogos,
    a=snapshot.permisos_administrativos,g=snapshot.servicios,
-   w=snapshot.gates_nuevos,r=snapshot.riesgos_de_reenvio;
+   w=snapshot.gates_nuevos,r=snapshot.riesgos_de_reenvio,
+   ra=snapshot.rondas_activas;
   if(p.comprador!==1||p.proveedores!==2||p.comprador_vinculado!==1||
    p.proveedores_contactables!==2)fallos.push('participantes_o_canales_incompletos');
   if(a.comprador!==1||a.proveedores!==2)fallos.push('permisos_sin_evidencia');
@@ -62,6 +68,10 @@ export function decidirPilotoDosProveedoresMvp334(snapshot){
    fallos.push('configuracion_auto_liberacion_o_lotes_incorrecta');
   if(r.trabajos_inseguros!==0||r.mensajes_inseguros!==0)
    fallos.push('reconciliar_envios_inciertos');
+  // MVP353: already-dispatched, live prepared rounds must be investigated,
+  // never create another competing round just because infrastructure is ON.
+  if(ra.preparadas>0)
+   fallos.push('ronda_preparada_vigente_no_crear_otra');
   // A recent inbound message proves E2E activity, but must NOT be
   // required BEFORE the first message of a fresh controlled round.
   if(snapshot.preflight_sql_apto!==true)fallos.push('preflight_sql_no_apto');
@@ -69,6 +79,8 @@ export function decidirPilotoDosProveedoresMvp334(snapshot){
    snapshot.publicacion_autorizada!==false)fallos.push('sello_fuera_de_lectura');
  }
  const warnings=[];
+ if(validateShape(snapshot)&&snapshot.rondas_activas.borradores>0)
+  warnings.push('borrador_vigente_revisar_antes_de_crear');
  if(validateShape(snapshot)&&snapshot.evidencia_recepcion_24h===0)
   warnings.push('sin_ingreso_comprador_reciente_no_prueba_whatsapp_e2e');
  if(validateShape(snapshot)&&snapshot.catalogos.sin_confirmacion_formal>0)

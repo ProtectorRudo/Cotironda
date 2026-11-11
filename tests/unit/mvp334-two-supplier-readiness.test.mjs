@@ -21,6 +21,7 @@ const fixture=()=>({
   despacho_legacy:true,comprador_operativo:true},
  gates_nuevos:{auto_release:true,batch:false,buyer_notice:false},
  riesgos_de_reenvio:{trabajos_inseguros:0,mensajes_inseguros:0},
+ rondas_activas:{preparadas:0,borradores:0,preparadas_despachadas:0},
  presupuestos_de_intentos:{lote_diario:20,lote_por_comprador:8,avisos_diarios:10},
  evidencia_recepcion_24h:1,programadores_lote:0,
  verificacion_externa_pendiente:true,publicacion_autorizada:false,
@@ -120,4 +121,40 @@ test('MVP334: no prometer aprobación por estar en el Sandbox',()=>{
  assert.equal(r.requerir_procesador_lotes_mvp314,false);
  assert.equal(r.habilitacion_ejecucion,false);
  assert.equal(r.pendiente_whapi_sandbox_auth_cupo_y_token,true);
+});
+
+// MVP353: avoid recreating a round while another one still awaits supplier evidence.
+test('MVP353: ronda prepared viva bloquea NUEVA preparación aun con servicios sanos',()=>{
+ const s=fixture();s.rondas_activas={preparadas:1,borradores:1,preparadas_despachadas:1};
+ // Guard against SQL snapshots that still claim an old optimistic preflight.
+ s.preflight_sql_apto=true;
+ const r=decide(s);
+ assert.equal(r.estado,'no_apto_para_activar');
+ assert(r.bloqueos_sql.includes('ronda_preparada_vigente_no_crear_otra'));
+ assert(r.advertencias.includes('borrador_vigente_revisar_antes_de_crear'));
+ assert.equal(r.habilitacion_ejecucion,false);
+ assert.equal(r.mensajes_enviados,0);
+});
+test('MVP353: borrador vivo sin invitaciones es advertencia, nunca permiso E2E',()=>{
+ const s=fixture();s.rondas_activas.borradores=1;
+ const r=decide(s);
+ assert.equal(r.estado,'sql_apto_para_preparacion_controlada');
+ assert(r.advertencias.includes('borrador_vigente_revisar_antes_de_crear'));
+ assert.equal(r.habilitacion_ejecucion,false);
+});
+test('MVP353: evidencia de rondas es obligatoria y coherente',()=>{
+ for(const rounds of [null,{},
+  {preparadas:1,borradores:0,preparadas_despachadas:2},
+  {preparadas:'1',borradores:0,preparadas_despachadas:0},
+  {preparadas:0,borradores:-1,preparadas_despachadas:0}]){
+  const s=fixture();s.rondas_activas=rounds;
+  assert(decide(s).bloqueos_sql.includes('evidencia_sql_invalida'));
+ }
+});
+test('MVP353: SQL debe exigir cero prepared activos; no alcanza con cero outbox incierto',()=>{
+ assert.match(source,/rondas_activas AS \(/u);
+ assert.match(source,/ra\.preparadas=0/u);
+ assert.match(source,/r\.state='prepared' AND r\.closes_at>now\(\)/u);
+ assert.throws(()=>inspeccionarSqlMvp334(source.replace('AND ra.preparadas=0','AND TRUE')),
+  /mvp334_not_audited_readonly_sql/u);
 });
