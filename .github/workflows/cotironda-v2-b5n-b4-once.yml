@@ -26,6 +26,7 @@ jobs:
             tests/unit/presupuestos-v2-b5l-cobertura-original.test.mjs \
             tests/unit/presupuestos-v2-b5k-moneda-original.test.mjs \
             tests/unit/presupuestos-v2-b5k-worker-private.test.mjs \
+            tests/unit/presupuestos-v2-b5n-b4-once.test.mjs \
             tests/unit/presupuestos-v2-b5k-edge-exclusive.test.mjs \
             tests/unit/presupuestos-v2-b5i-geometria-total.test.mjs \
             tests/unit/presupuestos-v2-b5i-worker-private.test.mjs \
