@@ -8,6 +8,10 @@ export function buildMvp352Sql(){
  if(previous.split(tail).length!==2)throw Error('MVP352_NO_ROLLBACK');
  const result=previous.replace(tail,
   '\n\\ir ../../piloto/mvp352_reevaluacion_semantica_unica.sql'+
+  '\n\\ir ../../piloto/mvp098_document_line_coverage_and_supplier_media.sql'+
+  '\n\\ir ../../piloto/mvp101_supplier_quote_full_line_mirror.sql'+
+  '\n\\ir ../../piloto/mvp102_supplier_dual_reading_gate.sql'+
+  '\n\\ir ../../piloto/mvp103_supplier_amount_integrity.sql'+
   '\n\\ir ../../piloto/mvp352_discount_unit_price_audit.sql'+
   '\n\\ir ./mvp352-semantic-reassessment-pg17.sql'+
   '\n\\ir ./mvp352-discount-unit-pg17.sql'+tail);
