@@ -14,7 +14,7 @@ function quote({
  freight='0.00',freightTreatment='sin_cargo',sourceState='verified',
  sourceVerified=true,availability=true,equivalence='verificada'
 }={}){
- const source=letter.repeat(64),message=(letter.toUpperCase()).repeat(64);
+ const source=letter.repeat(64),message=(letter==='a'?'b':'c').repeat(64);
  const base=unitCents*BigInt(qty);
  const withVat=base+(iva==='21'?(base*2100n+5000n)/10000n:
   iva==='10.5'?(base*1050n+5000n)/10000n:0n);
@@ -178,7 +178,7 @@ test('B6: output has no request UUID, archive SHA or WhatsApp identifiers',()=>{
 });
 test('B6: invalid requested quantity or item fails without partial rank',()=>{
  const r=compare([quote()],{items:[{id:'cemento_001',
-  cantidad:'1.000',unidad:'bag'}]});
+  cantidad:'1,000',unidad:'bag'}]});
  assert.equal(r.estado,'entrada_invalida');
  assert.equal(r.comparacionCanastaCompleta,null);
 });
