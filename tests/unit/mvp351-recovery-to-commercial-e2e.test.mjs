@@ -55,7 +55,12 @@ async function run(privateSourceCovered,which='r1'){
     chat_hmac:chat,source_sha256:sha,kind:'document',
     mime:'application/pdf',size_bytes:bytes.length,draft:first},error:null};
   if(name==='cotironda_piloto_auto_correlation_retry_prepare_mvp336')
-   return {data:{state:'reserved',source_sha256:sha,quote,candidates,note:null},error:null};
+   return {data:{state:'reserved',source_sha256:sha,quote,
+    candidates:which==='r2'?[
+     candidates[0],{...candidates[1],lines:candidates[1].lines.map((x,i)=>({
+      ...x,quantity:quote[i].quantity
+     }))}
+    ]:candidates,note:null},error:null};
   if(name==='cotironda_piloto_auto_correlation_bind_mvp291'){
    assert.equal(args.p_source_hmac,source);
    assert.equal(args.p_chat_hmac,chat);
