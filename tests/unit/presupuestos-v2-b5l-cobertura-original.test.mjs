@@ -90,12 +90,12 @@ test('B5l: monetary source row with no symbol still requires review',()=>{
  const v=calc({rows:[...sourceRows,row(540,[part('500,00',510)])]});
  assert.equal(v.code,'unmapped_monetary_or_percentage');sealed(v);
 });
-test('B5l: global percentage cannot be dismissed as a table heading',()=>{
+test('B5l: global discount percentage in heading is blocked as commercial risk',()=>{
  const rows=sourceRows.map((r,i)=>i===0?row(740,[part('Cantidad',20),
   part('Descripción',120),part('Descuento general 10%',350),
   part('Total',510)]):r);
  const v=calc({rows});
- assert.equal(v.code,'unmapped_monetary_or_percentage');sealed(v);
+ assert.equal(v.code,'unmapped_fiscal_or_logistics');sealed(v);
 });
 test('B5l: IVA in a header is an unexplained fiscal term',()=>{
  const rows=sourceRows.map((r,i)=>i===0?row(740,[part('Cantidad',20),
@@ -126,10 +126,10 @@ test('B5l: unclaimed line in another format with no money remains unknown',()=>{
   [part('Consulta por horarios de entrega',120)])]});
  assert.equal(v.code,'unmapped_text');sealed(v);
 });
-test('B5l: duplicated item descriptions are ambiguous, not a pass',()=>{
+test('B5l: duplicated material text is safely blocked by earlier geometry',()=>{
  const v=calc({rows:[...sourceRows,row(540,
   [part('Cemento CPC',120)])]});
- assert.equal(v.code,'line_assignment_ambiguous');sealed(v);
+ assert.equal(v.code,'source_geometry_unconfirmed');sealed(v);
 });
 test('B5l: source row not corroborated by B5 cannot be attributed',()=>{
  const v=calc({states:['source_line_not_located']});
