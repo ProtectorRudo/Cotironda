@@ -152,15 +152,15 @@ export async function comprobarRenglonesPdfOriginalB5(args:{
  if(total!==null){
   const totalRows=extracted.rows.map((sr,i)=>({sr,i})).filter(x=>
    !used.has(x.i)&&
-   /\\b(?:total(?:\\s+general)?|importe\\s+total|a\\s+pagar)\\b/iu.test(x.sr.text)&&
+   /\b(?:total(?:\s+general)?|importe\s+total|a\s+pagar)\b/iu.test(x.sr.text)&&
    hasToken(norm(x.sr.text),total));
   if(totalRows.length!==1)
    return fail('source_total_unverified',real,true,checks,extracted.rows.length);
   used.add(totalRows[0].i);
  }
- const unclaimedTerm=/\\b(?:iva|flete|env[ií]o|transporte|descuento|dscto|dcto|bonificaci[oó]n|pallets?|contado|efectivo|transferencia)\\b/iu;
+ const unclaimedTerm=/\b(?:iva|flete|env[ií]o|transporte|descuento|dscto|dcto|bonificaci[oó]n|pallets?|contado|efectivo|transferencia)\b/iu;
  if(extracted.rows.some((sr,i)=>!used.has(i)&&
-   (/\\$\\s*\\d/u.test(sr.text)||unclaimedTerm.test(sr.text))))
+   (/\$\s*\d/u.test(sr.text)||unclaimedTerm.test(sr.text))))
   return fail('unmapped_source_content',real,true,checks,extracted.rows.length);
  return {state:'source_rows_correspond_private',
   reason:'rows_correspond_but_full_coverage_unchecked',
