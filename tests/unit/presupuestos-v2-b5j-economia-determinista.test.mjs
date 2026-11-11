@@ -139,6 +139,16 @@ test('B5j: a commercial note without price stays a note, not zero priced item',(
  assert.equal(v.code,'grand_total_balances_private');
  assert.equal(v.note_count,1);sealed(v);
 });
+
+test('B5j: unpriced freight hidden in an otherwise unpriced note cannot be silently zero',()=>{
+ const note=raw(3,'commercial_note','Flete $500,00 a cotizar',
+  null,null,null,'absent');
+ const doc=quote([...standard,note]);
+ const v=calc({doc,pdfRows:[...rows,row(530,[cell('Flete $500,00 a cotizar',100)])]});
+ assert.equal(v.code,'fiscal_or_freight_ambiguous');
+ assert.equal(v.can_publish,false);sealed(v);
+});
+
 test('B5j: standalone and per-material discounts require scope proof',()=>{
  const discounted={...raw(1,'material','Cemento CPC','10,00','$100,00','$900,00','list_explicit'),
   original_line_raw:'10,00 Cemento CPC $100,00 10% $900,00'};
