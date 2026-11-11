@@ -1,3 +1,9 @@
+## 2026-11-11 — B5n reingreso privado versionado (desarrollo)
+Se agregó versión `v2_b5n_20261111` con SQL privado y worker que impiden reutilizar B5k/B5m como resultado nuevo. Requiere una única fuente histórica con subtotal B5m comprobado y 3/5 condiciones, SHA/proveedor intactos, cinco flags apagados antes de instalar. Pruebas PG17 ROLLBACK comprueban elegibilidad, denegación y no alteración del historial. **No se desplegó ni se ejecutó**; [Acta 509](docs/509-v2-b5n-replay-privado-una-sola-vez.md).
+
+## 2026-11-11 — B5n (desarrollo, no desplegado)
+Corrección acotada de atribución PDF.js: se ignora únicamente puntuación periférica al corroborar el texto **íntegro** de una condición. No se fragmentan celdas mixtas de materiales, IVA o flete; no se aprueba cobertura pública. Se agregaron pruebas Node, PDF.js real Deno, PG17 rollback y regresión. Caso histórico B5m permanece sin nueva relectura; datos y flags de Supabase piloto sin modificar. [PR #781](https://github.com/ProtectorRudo/Cotironda/pull/781), [Acta 508](docs/508-v2-b5n-puntuacion-pdf-condiciones.md).
+
 ## 2026-11-11 — B5m replay versionado (solo desarrollo)
 Se preparó el reingreso privado del PDF ya procesado por B5k: conserva el registro anterior y habilita `v2_b5m_20261111` en la misma tabla RLS y RPC restringidas. Un claim antiguo o sin ambos bloqueos económicos/de cobertura es rechazado; no altera ofertas, WhatsApp, cron, Vercel ni base piloto. Test PG17 ROLLBACK y nueva CI. [Acta 506](docs/506-v2-b5m-replay-versionado-sin-perder-evidencia.md).
 

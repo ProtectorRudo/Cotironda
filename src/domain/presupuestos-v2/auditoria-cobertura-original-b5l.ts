@@ -20,29 +20,43 @@ export type CoverageCodeB5l=
  'unmapped_monetary_or_percentage'|'unmapped_text'|
  'commercial_condition_unverified'|'unpriced_commercial_risk'|
  'visible_rows_accounted_private';
+export type ConditionFailureKindB5n=
+ 'condition_too_short'|'source_row_not_unique'|
+ 'source_span_not_independent'|'source_part_mixed';
 export type CoverageResultB5l=Readonly<{
  code:CoverageCodeB5l;
  source_rows:number;attributed_rows:number;unattributed_rows:number;
  source_lines:number;attributed_lines:number;
  commercial_conditions:number;corroborated_conditions:number;
+ /** Private, ordinal-only first failure. Never includes PDF text, prices, PII. */
+ first_unresolved_condition_ordinal:number|null;
+ condition_failure_kind:ConditionFailureKindB5n|null;
  page_count:number;source_verified:false;full_document_covered:false;
  can_publish:false;can_rank:false;can_reveal_contacts:false;
 }>;
 type Counts={rows:number;attributed:number;lines:number;matched:number;
- conditions:number;corroborated:number;pages:number};
+ conditions:number;corroborated:number;pages:number;
+ firstUnresolvedOrdinal:number|null;conditionFailureKind:ConditionFailureKindB5n|null};
 const out=(code:CoverageCodeB5l,n:Counts):CoverageResultB5l=>
  Object.freeze({
   code,source_rows:n.rows,attributed_rows:n.attributed,
   unattributed_rows:n.rows-n.attributed,
   source_lines:n.lines,attributed_lines:n.matched,
   commercial_conditions:n.conditions,
-  corroborated_conditions:n.corroborated,page_count:n.pages,
+  corroborated_conditions:n.corroborated,
+  first_unresolved_condition_ordinal:n.firstUnresolvedOrdinal,
+  condition_failure_kind:n.conditionFailureKind,page_count:n.pages,
   source_verified:false,full_document_covered:false,can_publish:false,
   can_rank:false,can_reveal_contacts:false
  });
 const norm=(s:string)=>s.normalize('NFKC').trim().replace(/\s+/gu,' ')
  .toLocaleLowerCase('es-AR');
 const plain=(s:string)=>norm(s).replace(/\s*([.,:;])\s*/gu,'$1');
+// B5n: only leading/trailing PRINT punctuation is semantically empty.
+// Never discard letters, numbers, percentages, currency or inner text from
+// a PDF.js part: these may be evidence of tax, freight or another item.
+const conditionLiteral=(s:string)=>plain(s)
+ .replace(/^[\s:;.!·•—–-]+|[\s:;.!·•—–-]+$/gu,'').trim();
 
 /**
  * A condition is independently attributable only when its COMPLETE text
@@ -54,16 +68,16 @@ function uniqueConditionParts(
  parts:readonly {text:string;x:number}[],term:string,
  reserved:ReadonlySet<number>
 ):readonly number[]|null{
- const wanted=plain(term);
+ const wanted=conditionLiteral(term);
  if(wanted.length<3)return null;
  const found:number[][]=[];
  for(let start=0;start<parts.length;start++){
-  if(reserved.has(start)||!plain(parts[start].text))continue;
+  if(reserved.has(start)||!conditionLiteral(parts[start].text))continue;
   let text='';
   for(let end=start;end<Math.min(parts.length,start+12);end++){
    if(reserved.has(end))break;
    text+=(text?' ':'')+parts[end].text;
-   const current=plain(text);
+   const current=conditionLiteral(text);
    if(current===wanted){
     // Prefer the shortest complete source span. Trailing empty PDF.js
     // fragments must not create a second, fake matching condition.
@@ -150,6 +164,7 @@ export function auditarCoberturaPdfOriginalB5l(args:{
  const d=revisarContratoProveedorV2(args.candidate);
  const n:Counts={rows:Array.isArray(args.rows)?args.rows.length:0,
   attributed:0,lines:0,matched:0,conditions:0,corroborated:0,
+  firstUnresolvedOrdinal:null,conditionFailureKind:null,
   pages:Number.isSafeInteger(args.pages)?args.pages:0};
  const fail=(code:CoverageCodeB5l)=>out(code,n);
  if(d.state!=='private_extract'||!d.document)return fail('candidate_invalid');
@@ -193,33 +208,43 @@ export function auditarCoberturaPdfOriginalB5l(args:{
  // Reserve exact PDF.js parts, not whole rows. Real supplier PDFs may print
  // a payment or delivery term on the SAME geometric row as a material.
  const conditionParts=new Map<number,Set<number>>();
+ let conditionOrdinal=0;
+ const conditionFail=(code:CoverageCodeB5l,kind:ConditionFailureKindB5n)=>{
+  n.firstUnresolvedOrdinal=conditionOrdinal;
+  n.conditionFailureKind=kind;
+  return fail(code);
+ };
  for(const condition of doc.commercial_conditions_raw){
-  const wanted=plain(condition);
-  if(wanted.length<3)return fail('commercial_condition_unverified');
+  conditionOrdinal++;
+  const wanted=conditionLiteral(condition);
+  if(wanted.length<3)
+   return conditionFail('commercial_condition_unverified','condition_too_short');
   const matches=rows.flatMap((row,index)=>
-   plain(row.text).includes(wanted)?[index]:[]);
-  if(matches.length!==1)return fail('commercial_condition_unverified');
+   conditionLiteral(row.text).includes(wanted)?[index]:[]);
+  if(matches.length!==1)
+   return conditionFail('commercial_condition_unverified','source_row_not_unique');
   const index=matches[0];
   const used=conditionParts.get(index)??new Set<number>();
   const span=uniqueConditionParts(rows[index].parts,condition,used);
   if(span===null){
    // A shared source part with the material is still ambiguous. A
    // standalone condition containing extra IVA/cost is commercial risk.
-   if(attributed.has(index))return fail('line_assignment_ambiguous');
-   const residue=plain(rows[index].text).replace(wanted,'').trim();
-   return fail(financial.test(residue)||fiscal.test(residue)||
+   if(attributed.has(index))
+    return conditionFail('line_assignment_ambiguous','source_span_not_independent');
+   const residue=conditionLiteral(rows[index].text).replace(wanted,'').trim();
+   return conditionFail(financial.test(residue)||fiscal.test(residue)||
      pending.test(residue)?'unmapped_fiscal_or_logistics':
-     'commercial_condition_unverified');
+     'commercial_condition_unverified','source_span_not_independent');
   }
   if(attributed.has(index)){
    const material=attributed.get(index)!;
    const description=plain(material.original_description_raw);
-   const segment=plain(span.map(i=>rows[index].parts[i].text).join(' '));
+   const segment=conditionLiteral(span.map(i=>rows[index].parts[i].text).join(' '));
    // Never claim a price, quantity or original material description as an
    // independently documented commercial condition.
    if((description.length>2&&segment.includes(description))||
       financial.test(segment))
-    return fail('line_assignment_ambiguous');
+    return conditionFail('line_assignment_ambiguous','source_part_mixed');
   }
   for(const part of span)used.add(part);
   conditionParts.set(index,used);

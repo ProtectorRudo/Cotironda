@@ -306,3 +306,141 @@ test('B5l: PDF.js empty fragments after a complete freight term do not cause a f
  assert.equal(v.unattributed_rows,0);
  sealed(v);
 });
+
+
+test('B5n: punctuation-only suffix on a separate PDF.js condition part is safe',()=>{
+ const rows=sourceRows.slice(0,4).map((r,i)=>i===1?row(700,[
+  ...r.parts,part('precios en efectivo:',625)]):r);
+ const v=calc({rows,candidate:doc(lines,['precios en efectivo'])});
+ assert.equal(v.code,'visible_rows_accounted_private');
+ assert.equal(v.corroborated_conditions,1);
+ assert.equal(v.unattributed_rows,0);sealed(v);
+});
+test('B5n: punctuation-only prefix and suffix never claims material cells',()=>{
+ const rows=sourceRows.slice(0,4).map((r,i)=>i===1?row(700,[
+  ...r.parts,part(' - precios en efectivo. ',625)]):r);
+ const v=calc({rows,candidate:doc(lines,['precios en efectivo'])});
+ assert.equal(v.code,'visible_rows_accounted_private');
+ assert.equal(v.corroborated_conditions,1);sealed(v);
+});
+test('B5n: punctuation-only extra part cannot manufacture a second match',()=>{
+ const rows=sourceRows.slice(0,4).map((r,i)=>i===1?row(700,[
+  ...r.parts,part(':',600),part('precios en efectivo.',625)]):r);
+ const v=calc({rows,candidate:doc(lines,['precios en efectivo'])});
+ assert.equal(v.code,'visible_rows_accounted_private');
+ assert.equal(v.corroborated_conditions,1);sealed(v);
+});
+test('B5n: extra IVA embedded in same source part remains ambiguous',()=>{
+ const rows=sourceRows.slice(0,4).map((r,i)=>i===1?row(700,[
+  ...r.parts,part('precios en efectivo: IVA 21%',625)]):r);
+ const v=calc({rows,candidate:doc(lines,['precios en efectivo'])});
+ assert.equal(v.code,'line_assignment_ambiguous');
+ assert.equal(v.corroborated_conditions,0);sealed(v);
+});
+test('B5n: extra money in same source part remains ambiguous',()=>{
+ const rows=sourceRows.slice(0,4).map((r,i)=>i===1?row(700,[
+  ...r.parts,part('precios en efectivo: $350,00',625)]):r);
+ const v=calc({rows,candidate:doc(lines,['precios en efectivo'])});
+ assert.equal(v.code,'line_assignment_ambiguous');
+ assert.equal(v.corroborated_conditions,0);sealed(v);
+});
+test('B5n: an unbroken material+condition part is NOT independent',()=>{
+ const rows=sourceRows.slice(0,4).map((r,i)=>i===1?
+  row(700,r.parts.map((p,j)=>j===1?
+   part('Cemento CPC precios en efectivo:',120):p)):r);
+ const v=calc({rows,candidate:doc(lines,['precios en efectivo'])});
+ assert.equal(v.code,'line_assignment_ambiguous');sealed(v);
+});
+test('B5n: double printed punctuation-marked term is not silently deduplicated',()=>{
+ const rows=sourceRows.slice(0,4).map((r,i)=>i===1?row(700,[
+  ...r.parts,part('precios en efectivo:',625),
+  part('precios en efectivo.',730)]):r);
+ const v=calc({rows,candidate:doc(lines,['precios en efectivo'])});
+ assert.equal(v.code,'line_assignment_ambiguous');
+ assert.equal(v.corroborated_conditions,0);sealed(v);
+});
+test('B5n: punctuation normalization cannot absorb a percentage',()=>{
+ const rows=sourceRows.slice(0,4).map((r,i)=>i===1?row(700,[
+  ...r.parts,part('precios en efectivo: 10%',625)]):r);
+ const v=calc({rows,candidate:doc(lines,['precios en efectivo'])});
+ assert.equal(v.code,'line_assignment_ambiguous');sealed(v);
+});
+
+
+test('B5n: sequential five-condition fixture isolates an unresolved fifth source fragment',()=>{
+ const terms=['Mantenimiento de la oferta : 0',
+  'Condición de pago : 1. Contado Efectivo',
+  'Plazo de entrega : 0 DIAS','precios en efectivo','flete a convenir'];
+ const rows=sourceRows.slice(0,4).map((r,i)=>i===1?row(700,[
+  part('40,00',20),part('Cemento CPC flete a convenir',120),
+  part('$100,00',350),part('$4.000,00',510),
+  part('precios en efectivo:',625)]):r);
+ rows.push(...terms.slice(0,3).map((term,i)=>row(580-i*25,
+  [part(term,120)])));
+ const v=calc({rows,candidate:doc(lines,terms)});
+ assert.equal(v.code,'line_assignment_ambiguous');
+ assert.equal(v.corroborated_conditions,4);
+ assert.equal(v.source_verified,false);
+ sealed(v);
+});
+test('B5n: all five source terms count only with five independent spans',()=>{
+ const terms=['Mantenimiento de la oferta : 0',
+  'Condición de pago : 1. Contado Efectivo',
+  'Plazo de entrega : 0 DIAS','precios en efectivo','flete a convenir'];
+ const rows=sourceRows.slice(0,4).map((r,i)=>i===1?row(700,[
+  ...r.parts,part('precios en efectivo:',625),
+  part('flete a convenir',750)]):r);
+ rows.push(...terms.slice(0,3).map((term,i)=>row(580-i*25,
+  [part(term,120)])));
+ const v=calc({rows,candidate:doc(lines,terms)});
+ assert.equal(v.code,'visible_rows_accounted_private');
+ assert.equal(v.corroborated_conditions,5);
+ assert.equal(v.unattributed_rows,0);
+ assert.equal(v.can_publish,false);
+ assert.equal(v.full_document_covered,false);
+ sealed(v);
+});
+
+
+test('B5n: condition failure exposes only ordinal 4 and closed reason',()=>{
+ const terms=['Mantenimiento de la oferta : 0',
+  'Condición de pago : 1. Contado Efectivo',
+  'Plazo de entrega : 0 DIAS','precios en efectivo','flete a convenir'];
+ const pdf=sourceRows.slice(0,4).map((r,i)=>i===1?
+  row(700,r.parts.map((p,j)=>j===1?
+   part('Cemento CPC precios en efectivo',120):p)):r);
+ pdf.push(...terms.slice(0,3).map((term,i)=>
+  row(580-25*i,[part(term,120)])));
+ const v=calc({candidate:doc(lines,terms),rows:pdf});
+ assert.equal(v.code,'line_assignment_ambiguous');
+ assert.equal(v.corroborated_conditions,3);
+ assert.equal(v.first_unresolved_condition_ordinal,4);
+ assert.equal(v.condition_failure_kind,'source_span_not_independent');
+ sealed(v);
+});
+test('B5n: duplicate condition source row gets ordinal, never text',()=>{
+ const pdf=[...sourceRows,row(515,[part('Transferencia',100)])];
+ const v=calc({rows:pdf});
+ assert.equal(v.code,'commercial_condition_unverified');
+ assert.equal(v.first_unresolved_condition_ordinal,1);
+ assert.equal(v.condition_failure_kind,'source_row_not_unique');
+ sealed(v);
+});
+test('B5n: mixed payment and amount in one part gets fixed code only',()=>{
+ const pdf=sourceRows.slice(0,4).map((r,i)=>i===1?row(700,[
+  ...r.parts,part('precios en efectivo $350,00',625)]):r);
+ const v=calc({candidate:doc(lines,['precios en efectivo']),rows:pdf});
+ assert.equal(v.code,'line_assignment_ambiguous');
+ assert.equal(v.first_unresolved_condition_ordinal,1);
+ assert.equal(v.condition_failure_kind,'source_span_not_independent');
+ sealed(v);
+});
+test('B5n: no unresolved condition on successful private attribution',()=>{
+ const pdf=sourceRows.slice(0,4).map((r,i)=>i===1?
+  row(700,[...r.parts,part('precios en efectivo:',625)]):r);
+ const v=calc({candidate:doc(lines,['precios en efectivo']),rows:pdf});
+ assert.equal(v.code,'visible_rows_accounted_private');
+ assert.equal(v.first_unresolved_condition_ordinal,null);
+ assert.equal(v.condition_failure_kind,null);
+ sealed(v);
+});

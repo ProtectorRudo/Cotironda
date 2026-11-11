@@ -21,7 +21,7 @@ export type CurrencyOutcomeB5k=Readonly<{
  sourceVerified:false;canRank:false;canRevealContacts:false;
 }>;
 const HASH=/^[a-f0-9]{64}$/u;
-const VERSION='v2_b5m_20261111';
+const VERSION='v2_b5n_20261111';
 const result=(state:CurrencyOutcomeB5k['state'],reason:string,
  processed:0|1):CurrencyOutcomeB5k=>Object.freeze({
  state,reason,processed,outboundMessages:0,publishedOffers:0,
@@ -129,6 +129,8 @@ export async function cotejarPdfMonedaHistoricaB5k(args:{
        coverage_lines_matched:coverage.attributed_lines,
        coverage_conditions:coverage.commercial_conditions,
        coverage_conditions_matched:coverage.corroborated_conditions,
+       first_unresolved_condition_ordinal:coverage.first_unresolved_condition_ordinal,
+       condition_failure_kind:coverage.condition_failure_kind,
        coverage_pages:coverage.page_count,
        proof_reason:proof.reason,
        matched_lines:proof.lines.filter(x=>
