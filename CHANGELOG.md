@@ -1,3 +1,6 @@
+## 2026-11-11 — B5m replay versionado (solo desarrollo)
+Se preparó el reingreso privado del PDF ya procesado por B5k: conserva el registro anterior y habilita `v2_b5m_20261111` en la misma tabla RLS y RPC restringidas. Un claim antiguo o sin ambos bloqueos económicos/de cobertura es rechazado; no altera ofertas, WhatsApp, cron, Vercel ni base piloto. Test PG17 ROLLBACK y nueva CI. [Acta 506](docs/506-v2-b5m-replay-versionado-sin-perder-evidencia.md).
+
 ## 2026-11-11 — B5m: flete no cotizado y atribución de condiciones en fila compartida (SOLO DESARROLLO)
 - PR #777 apilado sobre #776: en B5j se separa la coincidencia aritmética de renglones documentados del costo final no verificable cuando flete/IVA son ambiguos. Código fiscal sigue `fiscal_or_freight_ambiguous` y no autoriza publicar ni rankear.
 - En B5l se atribuyen condiciones completas por fragmentos independientes PDF.js, incluso dentro de una fila material, con guardas contra mezcla con descripción, precios, IVA oculto y atribuciones duplicadas.
