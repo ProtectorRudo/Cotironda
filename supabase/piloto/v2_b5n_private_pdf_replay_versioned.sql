@@ -196,30 +196,6 @@ BEGIN
       AND (jsonb_typeof(value)<>'number' OR value::text !~ '^[0-9]{1,4}$'
        OR CASE WHEN value::text ~ '^[0-9]{1,4}$'
         THEN value::text::integer>9000 ELSE true END))
-   -- B5n: no arbitrary free-text diagnostics or raw snippets can enter
-   -- the private ledger. Only a 1-based ordinal and fixed-code reason.
-   OR ((p_diagnostics->>'first_unresolved_condition_ordinal' IS NULL) <>
-       (p_diagnostics->>'condition_failure_kind' IS NULL))
-   OR (p_diagnostics->>'condition_failure_kind' IS NOT NULL AND
-       p_diagnostics->>'condition_failure_kind' NOT IN(
-       'condition_too_short','source_row_not_unique',
-       'source_span_not_independent','source_part_mixed'))
-   OR CASE
-       WHEN p_diagnostics->>'first_unresolved_condition_ordinal' IS NULL
-        THEN false
-       WHEN jsonb_typeof(p_diagnostics->'first_unresolved_condition_ordinal')<>'number'
-        THEN true
-       WHEN p_diagnostics->>'first_unresolved_condition_ordinal' !~ '^[1-9][0-9]?$'
-        THEN true
-       ELSE (p_diagnostics->>'first_unresolved_condition_ordinal')::int <>
-         (p_diagnostics->>'coverage_conditions_matched')::int + 1
-        OR (p_diagnostics->>'first_unresolved_condition_ordinal')::int >
-         (p_diagnostics->>'coverage_conditions')::int
-      END
-   OR (p_diagnostics->>'condition_failure_kind' IS NOT NULL AND
-       p_diagnostics->>'coverage_code' NOT IN(
-       'line_assignment_ambiguous','commercial_condition_unverified',
-       'unmapped_fiscal_or_logistics'))
    OR p_diagnostics->>'source_verified' IS DISTINCT FROM 'false'
    OR p_diagnostics->>'full_document_covered' IS DISTINCT FROM 'false'
    OR p_diagnostics->>'can_publish' IS DISTINCT FROM 'false'
@@ -243,6 +219,28 @@ BEGIN
    OR (p_diagnostics->>'coverage_code'='visible_rows_accounted_private'
       AND (p_diagnostics->>'coverage_unattributed_rows')::int<>0)
   THEN RETURN jsonb_build_object('state','invalid');END IF;
+  -- B5n: validate extra diagnostic in ordered fail-closed branches.
+  -- Neither field may be free text. They must both be NULL or both valid.
+  IF (p_diagnostics->>'first_unresolved_condition_ordinal' IS NULL) <>
+     (p_diagnostics->>'condition_failure_kind' IS NULL)
+  THEN RETURN jsonb_build_object('state','invalid');END IF;
+  IF p_diagnostics->>'condition_failure_kind' IS NOT NULL THEN
+   IF p_diagnostics->>'condition_failure_kind' NOT IN(
+      'condition_too_short','source_row_not_unique',
+      'source_span_not_independent','source_part_mixed')
+    OR p_diagnostics->>'coverage_code' NOT IN(
+      'line_assignment_ambiguous','commercial_condition_unverified',
+      'unmapped_fiscal_or_logistics')
+   THEN RETURN jsonb_build_object('state','invalid');END IF;
+   IF jsonb_typeof(p_diagnostics->'first_unresolved_condition_ordinal') <> 'number'
+    OR p_diagnostics->>'first_unresolved_condition_ordinal' !~ '^[1-9][0-9]?$'
+   THEN RETURN jsonb_build_object('state','invalid');END IF;
+   IF (p_diagnostics->>'first_unresolved_condition_ordinal')::integer <>
+      (p_diagnostics->>'coverage_conditions_matched')::integer + 1
+    OR (p_diagnostics->>'first_unresolved_condition_ordinal')::integer >
+      (p_diagnostics->>'coverage_conditions')::integer
+   THEN RETURN jsonb_build_object('state','invalid');END IF;
+  END IF;
  END IF;
  UPDATE cotironda_piloto_privado.v2_pdf_currency_diagnostics_b5k run
  SET state=p_state,reason_code=p_reason_code,
