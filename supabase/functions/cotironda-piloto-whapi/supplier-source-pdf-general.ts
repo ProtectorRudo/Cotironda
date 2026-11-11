@@ -7,12 +7,7 @@ import type {DownloadedMedia} from './whapi-media-archive.ts';
 import type {DocumentDraft} from './document-ai-draft.ts';
 import type {SourceCheckResult} from './supplier-source-text.ts';
 
-export type PageRow=Readonly<{
- page:number;text:string;
- /** PDF.js native coordinates, optional to preserve every prior reader. */
- y?:number;
- parts?:readonly Readonly<{x:number;text:string}>[];
-}>;
+export type PageRow=Readonly<{page:number;text:string}>;
 export type PdfSourceEvidence=Readonly<{
  rows:readonly PageRow[];
  pages:number;
@@ -99,8 +94,7 @@ export async function readPdfPositioned(bytes:Uint8Array):Promise<PdfSourceEvide
    for(const group of groups.sort((a,b)=>b.y-a.y)){
     const line=group.parts.sort((a,b)=>a.x-b.x).map(v=>v.text.trim())
      .filter(Boolean).join(' ').replace(/\s+/gu,' ').trim();
-    if(line)rows.push({page:index+1,text:line,y:group.y,
-     parts:group.parts.map(p=>({x:p.x,text:p.text}))});
+    if(line)rows.push({page:index+1,text:line});
     if(rows.length>300)throw Error('pdf_too_many_rows');
    }
   }
