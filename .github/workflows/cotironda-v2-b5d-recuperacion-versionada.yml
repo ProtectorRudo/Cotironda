@@ -28,6 +28,7 @@ jobs:
         run: |
           node --experimental-strip-types --test \
             tests/unit/presupuestos-v2-worker-revision-archivos-b5d.test.mjs \
+            tests/unit/presupuestos-v2-evidencia-xlsx-original-b5e.test.mjs \
             tests/unit/presupuestos-v2-b3-edge-handler.test.mjs \
             tests/unit/presupuestos-v2-b3-integracion-privada.test.mjs \
             tests/unit/presupuestos-v2-worker-archivo-sombra.test.mjs \
