@@ -44,3 +44,9 @@ Se agregaron tests del MVP227 para ausencia de las tres condiciones y preservaci
 - **E2E real:** ronda nueva completa WhatsApp comprador → solicitudes → dos proveedores reales PDF/Excel → fuente verificada → ofertas anónimas/rubros → cierre y revelación. El PR B6 por sí solo NO cierra la prueba.
 
 **Estado:** desarrollado en rama, sin publicar. La evidencia de CI del commit final debe verificarse en GitHub Actions; ningún acta reemplaza esa ejecución.
+
+## Regresión general detectada y corregida
+
+El primer CI del PR aprobó la batería B6 (75/75) y Deno, pero el conjunto general encontró **un test de MVP295** que esperaba precisamente la frase «IVA no informado» en la vista de rubros del arquitecto. Esa expectativa contradice la regla comercial vigente y el cambio deliberado de MVP227. Se actualizó su aserción para exigir que **ninguna mención IVA/flete/pago se genere por ausencia**. No se retiró la prueba: sigue corroborando que una cotización verificada abre la vista, sin ganador automático. Se incorporó al workflow específico B6 para evitar esta regresión nuevamente.
+
+El CI final debe comprobar que tanto la prueba aislada como la batería completa vuelvan a pasar antes de calificar el PR como validado. Los dos workflows heredados que GitHub reporta como fallidos sin jobs desde PR B5 son incidencias de configuración independientes y no pueden ocultarse ni contarse como aprobación.
