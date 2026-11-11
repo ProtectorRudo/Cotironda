@@ -1,3 +1,9 @@
+## 2026-11-11 — B5h PUBLICADO en Supabase piloto (Acta 497)
+- Migración B5h instalada y Edge sombra V2 actualizada a v5 desde el commit de código `7d2b8fc8dd974e659ac91f89c8f0d976cc98bb39`, sin desplegar a producción ni integrar PR.
+- Ejecutadas dos reauditorías privadas reales por cron/Vault existente, ambas `unlabeled_amount_found`: número coincidente presente, etiqueta de total no reconocida; la fuente NO está económicamente certificada.
+- Modo exclusivo evitó fall-through: B5d y B5g intactos, 0 ofertas públicas nuevas, 0 mensajes pendientes. Ambos flags SQL apagados y verificados.
+- Las cifras permanecen bloqueadas para ranking y comprador. Próximo B5i: localizar evidencia geométrica y contexto del importe. [Acta 497](docs/497-v2-b5h-publicacion-controlada-diagnostico-originales.md).
+
 ## 2026-11-11 — B5h: diagnóstico total PDF y modo exclusivo (SOLO DESARROLLO)
 - PR #772: diagnósticos cerrados sin importes ni datos personales sobre los dos PDF B5g reales, cuyos totales siguen sin verificar.
 - Nuevo trabajador SHA y ledger B5h privado con RLS, idempotencia, selección de los históricos y ningún mensaje ni ranking.
