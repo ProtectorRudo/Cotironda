@@ -50,6 +50,20 @@ El objetivo comercial es que, **al cierre**, el comprador pueda obtener los orig
 
 **CI FINAL MVP355 (11/11/2026):** el SHA técnico [`721ecc12d2a9a35e54d53b35f009d419b4cca3f6`](https://github.com/ProtectorRudo/Cotironda/pull/798) pasó **5/5 workflows generales**: Next.js, unidad general (incluye **PG17 documental** y **Deno seguimiento** como jobs separados), PostgREST, PG17 aislamiento y verificación sitio. Probados dos formatos sintéticos, SHA, links débiles/ausentes, vínculo de aviso previo, duplicados, rondas solapadas y revocación. Además SELECT del nuevo SQL sin escrituras contra piloto: `2 despachos / 0 documentos acreditados`; token falso `not_found`. **Sin despliegue**, PR draft; no E2E real.
 
+## P0 — contacto cifrado de proveedor ANTES de la ronda (12/11/2026)
+
+**[PR #809](https://github.com/ProtectorRudo/Cotironda/pull/809)** DRAFT sobre #808, [Acta 536](https://github.com/ProtectorRudo/Cotironda/blob/feat/p0-resolver-contacto-cifrado-20261112/docs/536-p0-contacto-cifrado-antes-de-ronda.md). **Desarrollo sin integración/despliegue de SQL, Whapi ni nueva ronda.**
+
+- [x] Se comprobó el webhook real `cotironda-piloto-whapi/index.ts` y el catálogo de contactos cifrados en `participant_channels_mvp109`: 3 canales cifrados autentificados, **2 proveedores cifrados habilitados** (Supabase PILOTO, SELECT solo lectura). No se leyeron teléfonos.
+- [x] M313 requiere `requestId` y D068 utiliza otro HMAC: no son válidos para el alta pre-ronda. Se agregó a SQL P0 `terms_recipient_packet_p0(job,lease)` con acceso exclusivo al rol NOLOGIN, retorno de AES-GCM del contacto autenticado para ese proveedor/chat, mientras el job siga `leased` y con política y consentimiento válidos. **Nunca entrega teléfono en claro por SQL**.
+- [x] El claim deja fuera trabajos sin contacto cifrado verificado, sin quemar lease para números inexistentes.
+- [x] `src/server/whapi-terms-recipient-p0.ts`: descifrado con AAD/HMAC/SHA idénticos al webhook PILOTO. Rechaza datos cruzados/alterados, sin fallback a lista ni lectura HTTP del cliente. `crearPuertosSqlAvisosCifradosP0` compone el resolver con los puertos SQL ya desarrollados.
+- [x] Tests Node AES sintético y SQL PG17 (RLS/lease/chats/bloqueo después de BEGIN), job CI activado para rama P0 nueva. **CI final pendiente de verificar por SHA exacto**.
+- [ ] Emisor no ejecutándose: sin login SQL de servicio autenticado ni inyección real de claves, sin operador Auth MFA ni términos legales aprobados, sin mensaje de Whapi enviado. **P0–P5 ABIERTOS**.
+- [ ] Comprador Auth OTP, 2 originales fuertes misma ronda, seguimiento y descarga E2E siguen pendientes. No crear ronda superpuesta.
+
+**PRÓXIMA ACCIÓN ESTRICTA:** ejecutar el runner aislado (Postgres TLS + rol mínimo, resolver cifrado), dar acceso a operador MFA al revisor de respuesta **expresa** y, solo con `Publicalo en cotironda-piloto` y política aprobada, enviar un aviso de prueba real. Después, concentrarse en 1 comprador/2 proveedores/2 originales y cierre. Sin nuevos refactors que no desbloqueen E2E.
+
 ## P0 — bloqueo de envío SQL atómico antes de Whapi (12/11/2026)
 
 **[PR #808](https://github.com/ProtectorRudo/Cotironda/pull/808)**, [Acta 535](https://github.com/ProtectorRudo/Cotironda/blob/feat/p0-whapi-aviso-alta-sin-reenvio-20261112/docs/535-p0-aviso-whapi-reserva-ack-transaccional.md). Sigue en **DESARROLLO**, SIN instalar ni activar en piloto y SIN WhatsApps reales.
