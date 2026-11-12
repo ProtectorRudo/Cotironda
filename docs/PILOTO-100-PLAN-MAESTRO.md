@@ -44,7 +44,7 @@ Un comprador envía una lista de obra. Cotironda identifica cada producto y cons
 - [PR #816](https://github.com/ProtectorRudo/Cotironda/pull/816): referencia visible de solicitud en caption del pedido saliente y lookup para respuestas de texto con ese código, no instalado.
 - **Nuevo [PR #817](https://github.com/ProtectorRudo/Cotironda/pull/817):** si un proveedor manda PDF/Excel/foto sin citar el pedido, pero conserva una referencia inequívoca en el **caption del adjunto original**, lookup verifica fuente exacta cifrada/SHA, bytes ya archivados, invitación/consentimientos anteriores al despacho y Whapi `api_accepted`. MVP225 conserva vinculación definitiva. Tests Node + PG17 ROLLBACK + Deno, flag OFF. **No desplegado**.
 - **Archivo sin cita, sin código, sin preámbulo:** ninguna fecha, monto o similitud garantiza pedido correcto en concurrencia; revisión interna y ninguna exposición al comprador. No asignar a ciegas el PDF histórico.
-- **Única próxima acción:** auditoría de CI/Edge del PR #817, luego vista del comprador con Auth y original verificable para respondedores; completar V2-01 D013 por producto antes de E2E.
+- **Única próxima acción actual:** con PR #817 y #818 probados sin desplegar, desarrollar V2-03b: descarga autenticada con SHA de bytes y auditoría, vista buyer y alta Auth real. D013 por producto antes del E2E completo.
 
 ## V2-00 — INVENTARIO PENDIENTE DE CERRAR (auditar antes de desplegar)
 
@@ -85,7 +85,7 @@ Un comprador envía una lista de obra. Cotironda identifica cada producto y cons
 **Primer incremento en desarrollo** [PR #818](https://github.com/ProtectorRudo/Cotironda/pull/818) apilado sobre #817/#816. Nuevo catálogo privado con fuente Auth viva y perfil comprador vinculado a WhatsApp; prueba fuerte de original y referencia MVP225; política y consentimiento prospectivo por proveedor (nunca copiado de opt-in WhatsApp general o permiso v1 `tras_cierre`). Solo muestra negocios efectivamente respondedores, formato, fecha y `Análisis en preparación`. La política comienza OFF y el endpoint exige preview y SHA exacto. No depende del cierre ni de que la IA procese correctamente los precios.
 
 - [x] Contratos y código de listado en rama (NO instalados).
-- [ ] Validación CI final (Node, PG17 ROLLBACK con 0/1/2 respuestas y permisos, Next).
+- [x] CI PR #818 SHA `21f7d1e47197a45dfffdc0fe084a1db93e945c2e` **6/6 SUCCESS** (Node, PG17 ROLLBACK con 0/1/2 respuestas y permisos, Next, aislamiento, PostgREST, sitio). Solo sintético/compilación.
 - [ ] **V2-03b:** descarga original autenticada con bytes SHA, auditoría, consentimiento vigente y pantalla real conectada. No quitar restricciones al MVP161/MVP192 viejo sin reemplazo integral.
 - [ ] Comprador real en PILOTO Auth y permisos de proveedores previamente capturados.
 - [ ] Prueba WhatsApp → original visible y descargable → comentario individual (NO E2E aún).
