@@ -8,6 +8,9 @@ import {auditarPublicacionV2}
 const observed=JSON.parse(readFileSync(new URL(
  '../../scripts/piloto/observaciones/v2-readiness-piloto-20261112.json',import.meta.url
 ),'utf8'));
+const postrelease=JSON.parse(readFileSync(new URL(
+ '../../scripts/piloto/observaciones/v2-readiness-piloto-postrelease-20261112.json',import.meta.url
+),'utf8'));
 const copy=(x)=>structuredClone(x);
 
 test('Preflight: fotografía PILOTO 12/11 realmente BLOQUEADA en ambos niveles',()=>{
@@ -70,11 +73,45 @@ function readySnapshot(){
   'COTIRONDA_PILOT_V2_PDF_ENABLED',
   'COTIRONDA_PILOT_V2_PDF_SHARED_SECRET'
  ];
+ s.vercel.git_linked=true;
+ s.vercel.git_org='ProtectorRudo';
+ s.vercel.git_repo='Cotironda';
+ s.vercel.deployment_quota_available=true;
  s.vercel.preview_sha='a'.repeat(40);
  s.vercel.release_sha='a'.repeat(40);
  s.vercel.target='preview';
  return s;
 }
+test('Postrelease: 9 RPC privadas y 4 tablas realmente instaladas no equivalen a portal V2',()=>{
+ const r=auditarPublicacionV2(postrelease);
+ assert.equal(r.result,'BLOCKED');
+ assert.equal(r.can_publish,false);
+ assert.equal(r.checked.filter(x=>x.code.startsWith('rpc_')&&!x.ok).length,0);
+ assert.equal(r.checked.filter(x=>x.code.startsWith('table_')&&!x.ok).length,0);
+ assert.ok(r.checked.find(x=>x.code==='whapi_baseline_preservado')?.ok);
+ assert.ok(r.checked.find(x=>x.code==='portal_preview_protegida')?.ok);
+ const blockers=r.blockers.map(x=>x.code);
+ for(const code of ['portal_git_correcto','vercel_cuota','comprador_auth',
+ 'sms_otp_validado','consentimiento_prospectivo','politica_original_activa',
+ 'lector_pdf_privado','variables_preview','build_sha_fijado']){
+  assert.ok(blockers.includes(code),code);
+ }
+ assert.equal(postrelease.supabase.auth_users,0);
+ assert.equal(postrelease.supabase.historical_rounds,7);
+ assert.equal(postrelease.proof.eligible_whatsapp_buyers_verified_by_private_rpc,1);
+});
+test('Vercel no usa otro proyecto enlazado ni salta el límite de Hobby',()=>{
+ const a=readySnapshot();
+ a.vercel.git_linked=false;
+ assert.ok(auditarPublicacionV2(a).blockers.some(x=>x.code==='portal_git_correcto'));
+ a.vercel.git_linked=true;
+ a.vercel.git_org='ProtectorRudo';
+ a.vercel.git_repo='OtroProyecto';
+ assert.ok(auditarPublicacionV2(a).blockers.some(x=>x.code==='portal_git_correcto'));
+ a.vercel.git_repo='Cotironda';
+ a.vercel.deployment_quota_available=false;
+ assert.ok(auditarPublicacionV2(a).blockers.some(x=>x.code==='vercel_cuota'));
+});
 test('Preflight: Auth user sin SMS real no equivale a portal accesible',()=>{
  const a=readySnapshot();
  a.proof.phone_sms_verified=false;
