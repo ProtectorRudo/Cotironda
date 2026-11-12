@@ -24,12 +24,13 @@ export function seleccionarAnalisisPendientesV2(
   return [];
  const seleccionados:string[]=[];
  const vistos=new Set<string>();
+ let nuevos=0;
  for(const item of items){
   if(!item||!UUID.test(item.documentoId)||vistos.has(item.documentoId)||
    !Array.isArray(item.puntos)||item.puntos.length>0)continue;
   vistos.add(item.documentoId);
   const anterior=historial.get(item.documentoId);
-  if(!anterior&&historial.size>=MAX_ORIGINALES_ANALISIS_V2)continue;
+  if(!anterior&&historial.size+nuevos>=MAX_ORIGINALES_ANALISIS_V2)continue;
   if(anterior&&(
     !Number.isSafeInteger(anterior.intentos)||anterior.intentos<1||
     anterior.intentos>=MAX_INTENTOS_ANALISIS_V2||
@@ -37,6 +38,7 @@ export function seleccionarAnalisisPendientesV2(
     ahoraMs<anterior.ultimoMs||
     ahoraMs-anterior.ultimoMs<INTERVALO_REINTENTO_ANALISIS_V2_MS
   ))continue;
+  if(!anterior)nuevos++;
   seleccionados.push(item.documentoId);
   if(seleccionados.length>=MAX_ANALISIS_SIMULTANEOS_V2)break;
  }
