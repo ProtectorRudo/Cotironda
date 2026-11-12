@@ -16,18 +16,15 @@ CREATE TABLE IF NOT EXISTS cotironda_piloto_privado.v2_business_calendar (
 CREATE TABLE IF NOT EXISTS cotironda_piloto_privado.v2_business_holidays (
  locality text NOT NULL,
  day date NOT NULL,
+ calendar_year integer NOT NULL CHECK(calendar_year BETWEEN 2026 AND 2100),
  description text NOT NULL CHECK(length(description) BETWEEN 4 AND 200),
  evidence text NOT NULL CHECK(length(evidence) BETWEEN 8 AND 300),
  PRIMARY KEY(locality,day),
- FOREIGN KEY(locality,EXTRACT(YEAR FROM day)::integer)
+ FOREIGN KEY(locality,calendar_year)
  REFERENCES cotironda_piloto_privado.v2_business_calendar(locality,year)
 );
--- PostgreSQL does NOT permit an expression in a FOREIGN KEY. Instead, use
--- a direct year column so approval/holiday rows remain referentially bound.
-ALTER TABLE cotironda_piloto_privado.v2_business_holidays
- ADD COLUMN IF NOT EXISTS calendar_year integer
- CHECK(calendar_year BETWEEN 2026 AND 2100);
--- A separate trigger below ensures calendar_year equals EXTRACT(YEAR).
+-- PostgreSQL requires direct FK columns. The trigger below also asserts
+-- calendar_year matches the date, so no year spoofing is possible.
 CREATE OR REPLACE FUNCTION cotironda_piloto_privado.v2_holiday_year_guard()
 RETURNS trigger LANGUAGE plpgsql SET search_path TO '' AS $guard$
 BEGIN
@@ -40,9 +37,6 @@ DROP TRIGGER IF EXISTS v2_holiday_year_guard
 CREATE TRIGGER v2_holiday_year_guard BEFORE INSERT OR UPDATE
  ON cotironda_piloto_privado.v2_business_holidays FOR EACH ROW
  EXECUTE FUNCTION cotironda_piloto_privado.v2_holiday_year_guard();
-ALTER TABLE cotironda_piloto_privado.v2_business_holidays
- ADD CONSTRAINT v2_holidays_calendar_fk FOREIGN KEY(locality,calendar_year)
- REFERENCES cotironda_piloto_privado.v2_business_calendar(locality,year);
 
 CREATE TABLE IF NOT EXISTS cotironda_piloto_privado.v2_business_policy(
  singleton boolean PRIMARY KEY DEFAULT true CHECK(singleton),
