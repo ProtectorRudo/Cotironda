@@ -46,6 +46,14 @@ El objetivo comercial es que, **al cierre**, el comprador pueda obtener los orig
 
 **Resolver en P0** el alcance definitivo del documento completo de TODOS los participantes, y el consentimiento/aviso prospectivo incluido en el alta o invitación. Hasta entonces, deshabilitar la liberación de originales identificables de no ganadores; no sustituir consentimiento por una inferencia. No introducir nuevas confirmaciones en cada mensaje. Proteger siempre datos privados del comprador antes de las reglas de cierre.
 
+## Avance técnico verificable — PR #797 / MVP354 (11/11/2026)
+
+**Desarrollo propuesto, no publicado ni integrado:** [PR #797](https://github.com/ProtectorRudo/Cotironda/pull/797), apilado sobre el técnico #793. Se implementó la primera vía de **recepción documental independiente de IA económica**: RPC de SOLO LECTURA que exige comprador con token válido, invitación y despacho Whapi aceptado, proveedor coincidente con HMAC, original almacenado con SHA y ausencia de otra ronda aceptada del mismo proveedor en la misma ventana; cuenta una vez por proveedor. Su respuesta pública queda limitada a 8 campos de conteos y booleanos siempre `false` para revelar precios/contactos/descargas. Edge integra la llamada opcional bajo flag **OFF por defecto**, sin modificar los estados o números económicos previos; HTML distingue claramente archivo recibido de precio verificado.
+
+**Validación hasta ahora:** consulta SELECT del cuerpo SQL sobre piloto (sin instalar RPC) con token inexistente -> `not_found`; para prepared vigente -> 2 despachados, 0 archivos acreditados, 2 pendientes. Unidad/ACL/banco real y navegador **aún deben verificarse en CI y piloto**, por lo tanto **P1, P2, P3 no terminadas**. Este camino solo cubre adjuntos archivados; las respuestas de texto sin archivo necesitarán fuente propia inmutable. No confundir 0 archivos con 0 mensajes de proveedor ni reconocer documentos de otras rondas por fecha.
+
+**Pendientes para activación:** PostgreSQL17 con rollback de RPC + prueba de roles y revocación; verificación contra dos archivos realmente recibidos, duplicados, otra empresa, ronda solapada y comprador autenticado; confirmar URL de portal; política de originales/contactos P0. No habilitar el flag ni publicar Edge hasta superar estas pruebas y recibir «Publicalo en piloto».
+
 ## Hoja de ruta verificable
 
 | Etapa | Trabajo necesario | Prueba de aceptación | Avance inicial |
