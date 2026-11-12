@@ -64,6 +64,14 @@ CREATE FUNCTION cotironda_piloto_privado.terms_job_allowed_p0(
     ON p.key=j.supplier_key AND p.participant_role='supplier'
     AND p.chat_hmac=j.chat_hmac AND p.consent_at IS NOT NULL
     AND p.opted_out_at IS NULL
+  -- Recheck the authenticated, encrypted contact even AFTER BEGIN:
+  -- deleting/revoking a bound channel before HTTP must block delivery.
+  JOIN cotironda_piloto_privado.participant_channels_mvp109 c
+    ON c.participant_key=j.supplier_key AND c.chat_hmac=j.chat_hmac
+    AND c.authenticated_message_hmac ~ '^[a-f0-9]{64}$'
+    AND c.contact_sha256 ~ '^[a-f0-9]{64}$'
+    AND c.nonce_b64 IS NOT NULL AND c.ciphertext_b64 IS NOT NULL
+    AND c.bound_at IS NOT NULL AND c.bound_at<=j.created_at
   JOIN cotironda_piloto_privado.original_terms_policy_mvp362 t
     ON t.terms_version=j.terms_version AND t.enabled IS TRUE
     AND t.approved_at IS NOT NULL AND t.activated_at IS NOT NULL
@@ -146,6 +154,16 @@ BEGIN
   WHERE (j.state='queued' OR
     (j.state='leased' AND j.leased_at<clock_timestamp()-interval '2 minutes'))
    AND cotironda_piloto_privado.terms_job_allowed_p0(j.job_id)
+   -- A supplier is eligible only with a verified pre-round encrypted channel.
+   -- Otherwise do not burn leases every two minutes without any destination.
+   AND EXISTS (
+     SELECT 1 FROM cotironda_piloto_privado.participant_channels_mvp109 c
+     WHERE c.participant_key=j.supplier_key AND c.chat_hmac=j.chat_hmac
+       AND c.authenticated_message_hmac ~ '^[a-f0-9]{64}$'
+       AND c.contact_sha256 ~ '^[a-f0-9]{64}$'
+       AND c.nonce_b64 IS NOT NULL AND c.ciphertext_b64 IS NOT NULL
+       AND c.bound_at IS NOT NULL AND c.bound_at<=j.created_at
+   )
   ORDER BY j.created_at,j.job_id
   LIMIT 1 FOR UPDATE OF j SKIP LOCKED
  )
@@ -245,4 +263,37 @@ REVOKE ALL ON FUNCTION cotironda_piloto_privado.terms_finish_p0(
  FROM PUBLIC,anon,authenticated,service_role;
 GRANT EXECUTE ON FUNCTION cotironda_piloto_privado.terms_finish_p0(
  uuid,uuid,text,text,text,text,text,text)
+ TO cotironda_pilot_terms_sender_p0;
+
+-- Pre-round supplier contact: use the EXISTING MVP109 encrypted channel,
+-- NOT MVP313 (which requires a live request_id). This private read returns
+-- only AES-GCM material tied to the exact sender lease, never a clear phone.
+-- Its caller must use the same PILOT contact key/AAD as the native Edge
+-- webhook; receipt of a packet alone is NOT send authorization.
+CREATE FUNCTION cotironda_piloto_privado.terms_recipient_packet_p0(
+ p_job uuid,p_lease uuid
+) RETURNS jsonb LANGUAGE sql VOLATILE SECURITY DEFINER SET search_path='' AS $fn$
+ SELECT jsonb_build_object(
+   'state','ready','jobId',j.job_id,'leaseToken',j.lease_token,
+   'supplierKey',j.supplier_key,'channel',j.channel,'chatHmac',j.chat_hmac,
+   'contactSha256',c.contact_sha256,
+   'nonceB64',c.nonce_b64,'ciphertextB64',c.ciphertext_b64)
+ FROM cotironda_piloto_privado.supplier_terms_send_jobs_p0 j
+ JOIN cotironda_piloto_privado.participant_channels_mvp109 c
+   ON c.participant_key=j.supplier_key AND c.chat_hmac=j.chat_hmac
+   AND c.authenticated_message_hmac ~ '^[a-f0-9]{64}$'
+   AND c.contact_sha256 ~ '^[a-f0-9]{64}$'
+   AND c.nonce_b64 IS NOT NULL AND c.ciphertext_b64 IS NOT NULL
+   AND c.bound_at IS NOT NULL AND c.bound_at<=j.created_at
+ WHERE j.job_id=p_job AND j.lease_token=p_lease
+   AND j.state='leased'
+   AND j.leased_at>=clock_timestamp()-interval '2 minutes'
+   AND cotironda_piloto_privado.terms_job_allowed_p0(j.job_id)
+ LIMIT 1;
+$fn$;
+REVOKE ALL ON FUNCTION
+ cotironda_piloto_privado.terms_recipient_packet_p0(uuid,uuid)
+ FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION
+ cotironda_piloto_privado.terms_recipient_packet_p0(uuid,uuid)
  TO cotironda_pilot_terms_sender_p0;
