@@ -80,7 +80,7 @@ test('P0 aviso: falta trabajo o claim no confiable bloquea antes de comenzar',as
  assert.equal(empty.calls.begin,0);
  for(const patch of [
   {termsSha256:'0'.repeat(64)}, {chatHmac:'0'.repeat(64)},
-  {termsVersion:'invalid'}, {supplierKey:'arquitecto'},
+  {termsVersion:'invalid'}, {supplierKey:'x'},
   {channel:'other_channel'}, {jobId:'not-uuid'},
   {body:'Cotización enviada'}, {body:BODY+'x'},
   {body:BODY+'\u0000'}, {leaseToken:'bad-lease'}
@@ -98,6 +98,16 @@ test('P0 aviso: destino cambiado o no permitido impide HTTP',async()=>{
   assert.deepEqual(await x.run(),{estado:'bloqueado_preenvio'});
   assert.equal(x.calls.begin,0);assert.equal(x.calls.fetch,0);
  }
+});
+test('P0 aviso: participante que no es proveedor debe ser rechazado por SQL antes de HTTP',async()=>{
+ const x=fixture({
+  claim:{...CLAIM,supplierKey:'arquitecto'},
+  ports:{authorizeCommitted:async()=>false}
+ });
+ assert.deepEqual(await x.run(),{estado:'incierto_sin_reenvio'});
+ assert.equal(x.calls.fetch,0);
+ assert.equal(x.calls.finish.length,1);
+ assert.equal(x.calls.finish[0].noticeMessageHmac,null);
 });
 test('P0 aviso: BEGIN desconocido o falla SQL => nunca llega a Whapi',async()=>{
  for(const beginCommitted of [
