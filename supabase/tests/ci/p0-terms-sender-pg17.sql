@@ -25,7 +25,8 @@ CREATE TABLE cotironda_piloto_privado.original_share_consents_mvp178(
  revoked_at timestamptz,consent_message_hmac text);
 CREATE TABLE cotironda_piloto_privado.whapi_inbox(
  message_hmac text,request_id uuid,participant_key text,chat_hmac text,
- received_at timestamptz,kind text,plaintext_sha256 text);
+ received_at timestamptz,kind text,plaintext_sha256 text,
+ nonce_b64 text,ciphertext_b64 text);
 -- Stub for CI ONLY. Does NOT emulate or certify Auth MFA.
 CREATE FUNCTION cotironda_piloto_privado.operator_session_mvp267()
  RETURNS uuid LANGUAGE sql STABLE AS $fn$
@@ -33,6 +34,7 @@ CREATE FUNCTION cotironda_piloto_privado.operator_session_mvp267()
 $fn$;
 \ir ../../piloto/mvp362_originales_alta_consentimiento_off.sql
 \ir ../../piloto/p0_whapi_terms_sender_atomic_off.sql
+\ir ../../piloto/p0_whapi_terms_review_mfa_off.sql
 
 DO $acl$
 BEGIN
@@ -215,4 +217,160 @@ BEGIN
  THEN RAISE EXCEPTION 'p0_uncertain_reenqueue_allowed';END IF;
  RAISE NOTICE 'P0 SENDER PASS: isolated role, Auth MFA stub, begin, atomic ACK, uncertain, no resend, ROLLBACK';
 END $assert$;
+
+-- P0 review tests: Whapi ciphertext is synthetic. In production this is AES,
+-- and the separate Node tests verify the exact webhook AAD and plaintext SHA.
+-- Data is ephemeral; all operations and even the mock operator are ROLLED BACK.
+DO $review_acls$
+BEGIN
+ IF has_table_privilege('anon',
+   'cotironda_piloto_privado.supplier_original_reviews_p0','SELECT')
+ OR has_table_privilege('authenticated',
+   'cotironda_piloto_privado.supplier_original_reviews_p0','INSERT')
+ OR has_table_privilege('service_role',
+   'cotironda_piloto_privado.supplier_original_reviews_p0','INSERT')
+ OR has_function_privilege('anon',
+   'public.cotironda_piloto_terms_review_packet_auth_p0(text)','EXECUTE')
+ OR has_function_privilege('anon',
+   'public.cotironda_piloto_terms_review_decide_auth_p0(text,text,text,text,boolean)',
+   'EXECUTE')
+ OR has_function_privilege('service_role',
+   'public.cotironda_piloto_terms_review_decide_auth_p0(text,text,text,text,boolean)',
+   'EXECUTE')
+ OR NOT has_function_privilege('authenticated',
+   'public.cotironda_piloto_terms_review_packet_auth_p0(text)','EXECUTE')
+ OR NOT has_function_privilege('authenticated',
+   'public.cotironda_piloto_terms_review_decide_auth_p0(text,text,text,text,boolean)',
+   'EXECUTE')
+ THEN RAISE EXCEPTION 'p0_review_acl_exposes_consent';END IF;
+END $review_acls$;
+
+DO $review_fixture$
+DECLARE
+ now_ timestamptz:=clock_timestamp();
+ plain_ text:='Confirmo que autorizo expresamente compartir originales de rondas futuras.';
+ no_ text:='No, no autorizo compartir mis originales.';
+ h text; result_ jsonb;
+BEGIN
+ -- The synthetic sender previously generated one valid API ACK for supplier1.
+ -- Put notice before the inbound event; never assert delivery/read status.
+ UPDATE cotironda_piloto_privado.supplier_original_terms_notices_mvp364
+ SET sent_at=now_-interval '30 minutes',
+     recorded_at=now_-interval '29 minutes'
+ WHERE supplier_key='supplier_1' AND notice_message_hmac=repeat('d',64);
+ h:=encode(extensions.digest(convert_to(plain_,'UTF8'),'sha256'),'hex');
+ INSERT INTO cotironda_piloto_privado.whapi_inbox
+ (message_hmac,request_id,participant_key,chat_hmac,received_at,kind,
+  plaintext_sha256,nonce_b64,ciphertext_b64)
+ VALUES
+ (repeat('4',64),NULL,'supplier_1',repeat('a',64),
+  now_-interval '10 minutes','text',h,'AQIDBAUGBwgJCgsM',repeat('A',80)),
+ (repeat('5',64),NULL,'supplier_1',repeat('a',64),
+  now_-interval '45 minutes','text',h,'AQIDBAUGBwgJCgsM',repeat('B',80)),
+ (repeat('6',64),NULL,'supplier_1',repeat('b',64),
+  now_-interval '9 minutes','text',h,'AQIDBAUGBwgJCgsM',repeat('C',80)),
+ (repeat('7',64),NULL,'supplier_2',repeat('b',64),
+  now_-interval '8 minutes','text',h,'AQIDBAUGBwgJCgsM',repeat('D',80)),
+ (repeat('8',64),NULL,'supplier_1',repeat('a',64),
+  now_-interval '7 minutes','document',h,'AQIDBAUGBwgJCgsM',repeat('E',80)),
+ (repeat('9',64),NULL,'supplier_1',repeat('a',64),
+  now_-interval '6 minutes','text',encode(extensions.digest(
+     convert_to(no_,'UTF8'),'sha256'),'hex'),
+  'AQIDBAUGBwgJCgsM',repeat('F',80));
+
+ PERFORM set_config('cotironda.ci_operator','',true);
+ result_:=public.cotironda_piloto_terms_review_packet_auth_p0(repeat('4',64));
+ IF result_->>'state'<>'not_authorized'
+ THEN RAISE EXCEPTION 'p0_mfa_no_operator_packet_visible';END IF;
+ result_:=public.cotironda_piloto_terms_review_decide_auth_p0(
+  repeat('4',64),repeat('d',64),plain_,'explicit_accept',true);
+ IF result_->>'state'<>'not_authorized'
+ THEN RAISE EXCEPTION 'p0_mfa_no_operator_accepts';END IF;
+ PERFORM set_config('cotironda.ci_operator',
+  '55555555-5555-4555-8555-555555555555',true);
+
+ FOREACH h IN ARRAY ARRAY[repeat('5',64),repeat('6',64),
+                         repeat('7',64),repeat('8',64)] LOOP
+  result_:=public.cotironda_piloto_terms_review_packet_auth_p0(h);
+  IF result_->>'state'<>'unavailable'
+  THEN RAISE EXCEPTION 'p0_invalid_supplier_or_old_message_candidate %',h;END IF;
+ END LOOP;
+
+ result_:=public.cotironda_piloto_terms_review_packet_auth_p0(repeat('4',64));
+ IF result_->>'state'<>'ready' OR result_->>'supplierKey'<>'supplier_1'
+  OR result_->>'noticeMessageHmac'<>repeat('d',64)
+  OR result_->>'chatHmac'<>repeat('a',64)
+  OR result_->>'plaintextSha256'<>
+    encode(extensions.digest(convert_to(plain_,'UTF8'),'sha256'),'hex')
+  OR result_->>'nonceB64'<>'AQIDBAUGBwgJCgsM'
+ THEN RAISE EXCEPTION 'p0_mfa_valid_review_packet_unavailable';END IF;
+
+ IF (public.cotironda_piloto_terms_review_decide_auth_p0(
+  repeat('4',64),repeat('e',64),plain_,'explicit_accept',true)->>'state')
+  <>'unavailable'
+ THEN RAISE EXCEPTION 'p0_wrong_notice_accepted';END IF;
+ IF (public.cotironda_piloto_terms_review_decide_auth_p0(
+  repeat('4',64),repeat('d',64),'invented text','explicit_accept',true)->>'state')
+  <>'mismatch'
+ THEN RAISE EXCEPTION 'p0_wrong_plaintext_accepted';END IF;
+ IF (public.cotironda_piloto_terms_review_decide_auth_p0(
+  repeat('4',64),repeat('d',64),plain_,'explicit_accept',false)->>'state')
+  <>'invalid'
+ THEN RAISE EXCEPTION 'p0_no_human_attestation_accepted';END IF;
+ IF (public.cotironda_piloto_terms_review_decide_auth_p0(
+  repeat('4',64),repeat('d',64),plain_,'automatic_accept',true)->>'state')
+  <>'invalid'
+ THEN RAISE EXCEPTION 'p0_automatic_decision_accepted';END IF;
+
+ result_:=public.cotironda_piloto_terms_review_decide_auth_p0(
+  repeat('4',64),repeat('d',64),plain_,'explicit_accept',true);
+ IF result_->>'state'<>'recorded' OR result_->>'decision'<>'explicit_accept'
+ THEN RAISE EXCEPTION 'p0_valid_explicit_review_denied';END IF;
+ IF (SELECT count(*) FROM cotironda_piloto_privado.supplier_original_optins_mvp362
+    WHERE evidence_message_hmac=repeat('4',64))<>1
+ THEN RAISE EXCEPTION 'p0_review_not_atomic_with_optin';END IF;
+ IF NOT EXISTS (
+  SELECT 1 FROM cotironda_piloto_privado.supplier_original_reviews_p0 r
+  JOIN cotironda_piloto_privado.supplier_original_optins_mvp362 o
+    ON o.evidence_message_hmac=r.evidence_message_hmac
+  WHERE r.evidence_message_hmac=repeat('4',64)
+    AND r.review_sha256=o.evidence_review_sha256
+    AND r.reviewed_by_operator=o.reviewed_by_operator
+    AND r.decision='explicit_accept'
+ ) THEN RAISE EXCEPTION 'p0_review_actor_or_digest_unlinked';END IF;
+ IF (public.cotironda_piloto_terms_review_decide_auth_p0(
+  repeat('4',64),repeat('d',64),plain_,'explicit_accept',true)->>'state')
+  <>'unavailable'
+ THEN RAISE EXCEPTION 'p0_review_replayed';END IF;
+
+ IF (public.cotironda_piloto_terms_review_decide_auth_p0(
+  repeat('9',64),repeat('d',64),no_,'not_explicit',true)->>'state')
+  <>'recorded'
+ THEN RAISE EXCEPTION 'p0_explicit_rejection_not_recorded';END IF;
+ IF EXISTS(SELECT 1 FROM cotironda_piloto_privado.supplier_original_optins_mvp362
+  WHERE evidence_message_hmac=repeat('9',64))
+ THEN RAISE EXCEPTION 'p0_rejection_created_consent';END IF;
+ IF (SELECT count(*) FROM cotironda_piloto_privado.supplier_original_reviews_p0)<>2
+ THEN RAISE EXCEPTION 'p0_decisions_wrong_count';END IF;
+
+ -- Revocation after optin MUST prevent an old notice from legitimizing a
+ -- later response. Reacceptance requires an independently sent new notice.
+ INSERT INTO cotironda_piloto_privado.supplier_original_revocations_mvp362
+ (supplier_key,terms_version,evidence_message_hmac,optin_message_hmac,
+  revoked_at,recorded_at,reviewed_by_operator)
+ VALUES('supplier_1','cotironda-originales-alta-v1',repeat('3',64),
+  repeat('4',64),clock_timestamp(),clock_timestamp(),
+  '55555555-5555-4555-8555-555555555555');
+ INSERT INTO cotironda_piloto_privado.whapi_inbox
+ (message_hmac,request_id,participant_key,chat_hmac,received_at,kind,
+  plaintext_sha256,nonce_b64,ciphertext_b64)
+ VALUES(repeat('2',64),NULL,'supplier_1',repeat('a',64),clock_timestamp(),
+  'text',encode(extensions.digest(convert_to(plain_,'UTF8'),'sha256'),'hex'),
+  'AQIDBAUGBwgJCgsM',repeat('G',80));
+ IF (public.cotironda_piloto_terms_review_packet_auth_p0(repeat('2',64))
+    ->>'state')<>'unavailable'
+ THEN RAISE EXCEPTION 'p0_old_notice_reused_after_revocation';END IF;
+ RAISE NOTICE 'P0 MFA REVIEW PASS: operator stub, plaintext SHA, notice, replay, refusal, cross-chat, revocation, ROLLBACK';
+END $review_fixture$;
+
 ROLLBACK;
