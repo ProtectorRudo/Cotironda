@@ -45,6 +45,14 @@ jobs:
           node-version: '22.16.0'
       - name: Pre-filtro y contrato de fuente
         run: node --experimental-strip-types --test tests/unit/v2-02-referencia-ronda-proveedor.test.mjs
+      - name: Generar overlay V2 desde baseline historico verificado
+        run: node scripts/piloto/v2-02-whapi-overlay.mjs --write-candidate
+      - name: Instalar Deno 2
+        uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb
+        with:
+          deno-version: v2.x
+      - name: Validar tipos del webhook V2 sin publicarlo
+        run: deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/index.v2-02-candidate.ts
       - name: PostgreSQL 17 - concurrencia, ACL, SHA y rollback
         run: |
           set -euo pipefail
