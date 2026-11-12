@@ -154,6 +154,19 @@ SELECT CASE WHEN (SELECT n FROM round_count)=1
    AS proveedores_con_inbox_y_archivo_en_ronda,
  (SELECT count(DISTINCT supplier_key)::integer FROM with_proof)
    AS proveedores_con_prueba_fuerte,
+ (SELECT count(DISTINCT s.supplier_key)::integer FROM stored s
+  WHERE s.inbox_request_id IS NULL)
+   AS proveedores_con_inbox_sin_ronda,
+ (SELECT count(DISTINCT s.supplier_key)::integer FROM stored s
+  WHERE s.archive_request_id IS NULL)
+   AS proveedores_con_archivo_sin_ronda,
+ (SELECT count(DISTINCT s.supplier_key)::integer FROM stored s
+  JOIN target r ON true WHERE EXISTS (
+   SELECT 1 FROM cotironda_piloto_privado.ai_supplier_links_mvp225 p
+   WHERE p.message_hmac=s.message_hmac
+     AND p.supplier_key=s.supplier_key AND p.request_id<>r.id
+     AND p.source_sha256=s.content_sha256
+  )) AS proveedores_con_prueba_otra_ronda,
  (SELECT count(*)::integer FROM states WHERE state='recibido_verificado')
    AS recibidos_verificados,
  (SELECT count(*)::integer FROM states WHERE state='conflicto_privado')
