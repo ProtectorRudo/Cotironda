@@ -60,6 +60,9 @@ test('P1 preflight: report contains only anonymous counters and boolean',()=>{
   'proveedores_con_inbox_y_archivo_en_ronda',
   'proveedores_con_prueba_fuerte','proveedores_con_inbox_sin_ronda',
   'proveedores_con_archivo_sin_ronda','proveedores_con_prueba_otra_ronda',
+  'proveedores_ambiguous_round_mvp237',
+  'max_rondas_candidatas_en_fallo','proveedores_m291_sin_evidencia',
+  'proveedores_con_reintento_registrado',
   'recibidos_verificados',
   'requiere_revision_por_conflicto','solo_candidato_temporal_no_atribuible',
   'sin_archivo_verificado','proyeccion_mvp354_instalada'
@@ -69,4 +72,27 @@ test('P1 preflight: diagnostic is NOT buyer tracking, price ranking or authoriza
  assert(!/GRANT EXECUTE|SECURITY DEFINER|CREATE OR REPLACE FUNCTION/iu.test(sql));
  assert(!/offer_price|total_amount|comparison_permitted|precios_validados/iu.test(sql));
  assert(sql.includes("to_regprocedure('public.cotironda_piloto_document_receipts_mvp354(text)')"));
+});
+
+test('P1 preflight: ambiguity is counted BEFORE a proof record exists',()=>{
+ const from=sql.indexOf('blocked AS (');
+ const until=sql.indexOf('verified AS (',from);
+ assert(from>=0&&until>from);
+ const blocked=sql.slice(from,until);
+ assert.match(blocked,/JOIN candidates s ON true/u);
+ assert.doesNotMatch(blocked,/JOIN with_proof s ON true/u);
+ assert.match(blocked,/ai_supplier_unresolved_mvp237/u);
+ assert.match(blocked,/ambiguous_round/u);
+ // A verified source still requires the immutable MIME/SHA/round proof.
+ const verified=sql.slice(until,sql.indexOf('states AS (',until));
+ assert.match(verified,/JOIN with_proof s ON true/u);
+ assert.match(verified,/ai_supplier_unresolved_mvp237/u);
+});
+test('P1 preflight: only fixed semantic reason codes and counters are exposed',()=>{
+ assert.match(sql,/x.state='review' AND x.reason='insufficient_material_evidence'/u);
+ assert.match(sql,/u.state='ambiguous_round'/u);
+ assert.match(sql,/ai_supplier_correlation_retries_mvp336/u);
+ // Never export arbitrary free-text failure reasons, document or source IDs.
+ const final=sql.slice(sql.lastIndexOf('\nSELECT CASE WHEN (SELECT n FROM round_count)=1'));
+ assert.doesNotMatch(final,/array_agg\(.*reason|SELECT .*source_hmac/iu);
 });
