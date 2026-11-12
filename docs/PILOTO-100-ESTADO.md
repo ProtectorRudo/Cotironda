@@ -81,13 +81,13 @@
 - La referencia no sustituye prueba de origen para archivos no citados. El bloqueo comercial persiste hasta demostrar 2 respuestas reales, Auth del comprador, originales visibles y análisis.
 - **No hubo despliegue ni cambio de datos PILOTO**; no confundir el PR con funcionalidad activa.
 
-## ÚNICA PRÓXIMA ACCIÓN (trabajar ESTO primero)
+## ÚNICA PRÓXIMA ACCIÓN ACTUAL (corte 12/11/2026)
 
-**V2-00: auditoría de reutilización con mapa de módulos y PR.** Verificar en particular si los catálogos actuales registran productos individuales, sinónimos, especificaciones y presentaciones, y si la distribución depende incorrectamente del rubro (D013). Leer código/despliegues reales de WhatsApp, catálogo, enlace de fuentes, Storage, portal, Auth, IA, cierre. Registrar para cada módulo si reutilizar, adaptar o congelar. **Marcar PR #814 NO DESPLEGAR EN V2**; puede usarse su análisis de seguridad, pero no su prohibición de varias rondas al mismo proveedor. Identificar PR antiguos de anonimizaciones, ganadores o descargas solo al cierre y sacarlos de la ruta crítica.
+**V2-02: cerrar la verificación de [PR #817](https://github.com/ProtectorRudo/Cotironda/pull/817) en desarrollo y preparar la vista autenticada de originales (V2-03).** Confirmar todos los controles CI del último SHA, conciliar versión desplegada de Edge Whapi v76 y validar que no se pierdan funciones existentes. El lookup por caption jamás habilita asignar documentos sin prueba de origen. Seguir con portal autenticado de solo negocios que realmente respondieron, original privado descargable y estado «Análisis en preparación».
 
-**Al completar V2-00, siguiente implementación V2-02 pequeña:** correlación segura por referencia del pedido o mensaje citado en escenarios donde un mismo proveedor atiende varias rondas, sin pedirle trabajo extra y sin reatribuir documentos del pasado.
+**V2-00 sigue parcialmente pendiente:** conciliación SHA de Edge/Storage, auditoría del catálogo por producto D013 y selección de ramas. Resolver esas dependencias concretas antes de desplegar o probar E2E. **PR #814 NO DESPLEGAR** (bloquea rondas concurrentes). No reintroducir rankings/anónimos ni crear nuevas rondas para sortear la falta de evidencia.
 
-**No hacer ahora:** otra pila de consentimientos MFA para cada original, nuevas interfaces de rankings, nuevas etapas de parser económico o suscripción, reenvíos Whapi, despliegues o ronda superpuesta de prueba.
+**No hacer ahora:** optimizaciones económicas, rankings, MFA repetitivo para cada presupuesto, reenvío de archivos ambiguos, nueva ronda de prueba sin preflight o despliegue bajo «Avanza».
 
 ## Autorizaciones y cómo registrar un avance
 
