@@ -67,7 +67,8 @@ test('MVP362: consent ledger starts OFF, never auto-authorizes old suppliers',()
  assert.match(policy,/enabled boolean NOT NULL DEFAULT false/u);
  assert.doesNotMatch(policy,/INSERT INTO cotironda_piloto_privado\.original_terms_policy_mvp362/iu);
  assert.match(policy,/approved_at IS NOT NULL AND activated_at IS NOT NULL/u);
- assert.match(policy,/terms_sha256 text GENERATED ALWAYS AS/u);
+ assert.match(policy,/terms_sha256 text NOT NULL CHECK/u);
+ assert.match(policy,/t\\.terms_sha256=encode\\(extensions\\.digest\\(/u);
  assert.match(policy,/msg\.plaintext_sha256=o\.ack_plaintext_sha256/u);
  assert.match(policy,/o\.recorded_at<=a\.created_at/u);
  assert.match(policy,/o\.accepted_at<a\.created_at/u);
