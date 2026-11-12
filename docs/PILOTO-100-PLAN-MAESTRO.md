@@ -34,6 +34,9 @@ Un comprador envía una lista de obra. Cotironda identifica cada producto y cons
 
 ## V2-00 — PRIMERA ACCIÓN DE DESARROLLO (no iniciar código a ciegas)
 
+**Auditoría inicial en curso, 12/11/2026:** [Inventario V2-00 de código y PILOTO](V2-00-INVENTARIO-REUTILIZACION-20261112.md). Se verificó en SOLO LECTURA la diferencia entre `main` estático, núcleo de la rama operativa #813, PR documental #815 y funciones/tablas reales. Hay 106 líneas de catálogo pero sin campos completos de SKU y sin confirmación formal; los motores offline conservan filtros por rubro, no cumplen aún D013 en el piloto. Próximo control antes de escribir código: comparar SHA de funciones y despliegue Vercel, Storage/RLS y elegir la rama funcional de V2-02 **sin** PR #814. No hay nuevos envíos ni E2E.
+
+
 **Auditoría de reutilización sobre el código desplegado y el repositorio.** Guardar una tabla `componente → qué hace ahora → ruta/fuente → instalado o no → reutilizar/adaptar/congelar → prueba pendiente`.
 
 - [ ] Inventariar Whapi, webhook autenticado, parsing, **catálogos por producto, normalización de nombres/marcas/presentaciones y zona**, y envíos. Auditar si el legado filtra indebidamente por rubro (**D013**).
