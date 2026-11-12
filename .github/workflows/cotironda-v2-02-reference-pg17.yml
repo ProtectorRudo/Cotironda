@@ -1,0 +1,53 @@
+name: Cotironda V2-02 - referencia segura de pedido PG17
+on:
+  pull_request:
+    paths:
+      - 'supabase/piloto/v2_02_ref_codigo_pedido_solo_lectura.sql'
+      - 'supabase/tests/ci/v2-02-ref-pg17.sql'
+      - 'supabase/functions/cotironda-piloto-whapi/referencia-pedido-v2.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/index.ts'
+      - 'tests/unit/v2-02-referencia-ronda-proveedor.test.mjs'
+      - '.github/workflows/cotironda-v2-02-reference-pg17.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  reference-lookup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: synthetic_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: synthetic_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - name: Checkout sin secretos
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Node 22.16
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22.16.0'
+      - name: Pre-filtro y contrato de fuente
+        run: node --experimental-strip-types --test tests/unit/v2-02-referencia-ronda-proveedor.test.mjs
+      - name: PostgreSQL 17 - concurrencia, ACL, SHA y rollback
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/v2-02-ref-pg17.sql
+          psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regnamespace('cotironda_piloto_privado') IS NULL" | grep -Fx 't'
+          psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regprocedure('public.cotironda_piloto_v2_quoted_id_for_reference(text,text,text)') IS NULL" | grep -Fx 't'
