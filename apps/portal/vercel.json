@@ -3,7 +3,8 @@
   "git": {
     "deploymentEnabled": {
       "**": false,
-      "integration/mvp-piloto-20261031": true
+      "integration/mvp-piloto-20261031": true,
+      "release/cotironda-v2-piloto-preview": true
     }
   }
 }
