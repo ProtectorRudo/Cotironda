@@ -51,6 +51,14 @@
 - **CI FINAL PR #821 APROBADO:** SHA `51583f5c6b5a7375978f8499e6641f6f3f8b36d0`: **9/9 workflows GitHub SUCCESS** (Node, Deno Edge v76, PG17 calendario y migraciones en orden con ROLLBACK, aislamiento, Auth, documental, Next.js build, sitio). Primera corrida falló por fuente histórica bloqueada; corregido con módulos V2 y todo verde en último SHA. NO significa instalación ni E2E.
 - **Nuevo bloqueo único:** calendario oficial nacional, provincial y local aprobado + auditoría de contrato técnico IA D013 + preparación de despliegue conjunto #816→#821 en PREVIEW PILOTO con Auth del comprador y consentimiento V2 del proveedor, **únicamente bajo autorización `Publicalo`**. Sin implementación en base/Edge/Vercel ni WhatsApps reales.
 
+## V2-D013b — evidencia técnica y feriados opcionales: PR #822 (12/11/2026)
+
+- **Rama de código:** [PR #822](https://github.com/ProtectorRudo/Cotironda/pull/822) (draft, basada en #821) agrega un control independiente posterior a IA y previo a SQL/Whapi: valida atributos técnicos contenidos en el pedido y catálogo, no toma texto imaginado por IA como ficha técnica. En pruebas incluye 100 bolsas×50 kg → 200×25 kg y 100 envases×4 L → 80×5 L (solo masa/volumen), restricciones de marca, Portland/albañilería, cable mm², yeso/OSB, espesor mm, látex interior/exterior. Casos sin evidencia quedan en revisión interna.
+- **Cotizaciones parciales conservadas:** un material dudoso NO cancela otros productos compatibles ni proveedores legítimos. El ruteador V2 registra `revisionTecnica` por producto/proveedor sin enviarlo; mantiene otros pares verificados para preparación. **Identidad, zona, permiso o catálogo inválidos siguen provocando fallo completo**.
+- **Feriados reales 2026 revisados** sin aprobar calendario anual: 19/11 La Plata = optativo para comercio según resolución provincial 516/2026; 23/11 = feriado nacional; 07/12 = no laborable turístico; 08/12 y 25/12 = feriados nacionales. Fuentes verificables documentadas en [acta PR #822](https://github.com/ProtectorRudo/Cotironda/blob/feat/v2-d013-evidencia-tecnica-feriados-20261112/docs/V2-D013-EVIDENCIA-TECNICA-Y-FERIADOS-20261112.md). Manifest de fechas **parcial** `publicable:false`, sin `approved_at`, sin SQL instalado, sin considerar optativos como feriados obligatorios. PG17 prueba casos nacionales y locales.
+- **Estado CI:** comprobar último SHA del PR #822 para declarar aprobado; no afirmar E2E ni configuración de producción. Módulos históricos SHA de Whapi v76 intactos y nuevo overlay en preview candidato.
+- **Próximo bloqueo:** validación técnica con fichas originales para sinónimos de uso distinto, completar calendario ANUAL por localidad con criterio privado/optativo, y preparar Auth/consentimientos y único portal Vercel. Instalación PILOTO exclusivamente con `Publicalo`, sin nuevas rondas ni WhatsApps hasta entonces.
+
 ## SI ABRÍS UNA CONVERSACIÓN NUEVA: LEÉ ESTO PRIMERO
 
 1. [Contrato V2 vigente](COTIRONDA-V2-CONTRATO.md).
