@@ -13,6 +13,16 @@
 
 **CI FINAL MVP355 (11/11/2026):** el SHA técnico [`721ecc12d2a9a35e54d53b35f009d419b4cca3f6`](https://github.com/ProtectorRudo/Cotironda/pull/798) pasó **5/5 workflows generales**: Next.js, unidad general (incluye **PG17 documental** y **Deno seguimiento** como jobs separados), PostgREST, PG17 aislamiento y verificación sitio. Probados dos formatos sintéticos, SHA, links débiles/ausentes, vínculo de aviso previo, duplicados, rondas solapadas y revocación. Además SELECT del nuevo SQL sin escrituras contra piloto: `2 despachos / 0 documentos acreditados`; token falso `not_found`. **Sin despliegue**, PR draft; no E2E real.
 
+## MVP365 — corrección de reaceptación y no retroactividad (12/11/2026)
+
+**[PR #807](https://github.com/ProtectorRudo/Cotironda/pull/807)**, borrador sobre #806. [Acta 533](https://github.com/ProtectorRudo/Cotironda/blob/fix/mvp365-reaceptacion-no-retroactiva-20261112/docs/533-mvp365-reaceptacion-prospectiva-episodios.md).
+
+- [x] Bloqueo de reaceptación detectado y corregido **solo en código**: historial de aceptaciones por episodio de WhatsApp y revocación con referencia al evento anterior. Aceptar nuevamente requiere un nuevo aviso y respuesta registrados posteriores a la revocación. El permiso anterior no resucita rondas ya creadas.
+- [x] PG17 sintético del circuito de revocación/reaceptación y contrato Node extendidos. **CI del SHA final pendiente de verificar**. No hay validación Whapi real ni cierre de P0–P5.
+- [ ] Operador Auth MFA AAL2 real, envío verificable de condiciones y aceptación explícita revisada; texto comercial/legal aprobado, Auth comprador OTP, 2 archivos y seguimiento+descarga HTTP real. No crear ronda superpuesta ni habilitar política por defecto.
+
+**Próxima acción sin desvíos:** ensayar una aceptación explícita usando Whapi real y operador habilitado, y después realizar la prueba E2E documental. No introducir otro subsistema. Ningún deploy ni mensaje por esta autorización.
+
 ## MVP364 — aviso de condiciones previo a aceptación (12/11/2026)
 
 **[PR #806](https://github.com/ProtectorRudo/Cotironda/pull/806)** DRAFT sobre #805 y [acta 532](https://github.com/ProtectorRudo/Cotironda/blob/feat/mvp364-proof-terms-delivered-20261112/docs/532-mvp364-aviso-terminos-proveedor-previo.md). **No desplegado; política OFF; ningún Whapi, SMS, consentimiento o ronda nuevos**.
