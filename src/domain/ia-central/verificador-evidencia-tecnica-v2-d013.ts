@@ -71,7 +71,7 @@ function mandatoryPhrase(request:string):string|null{
  return marked?.[1]??null;
 }
 function cableSize(text:string):string|null{
- const items=[...fold(text).matchAll(/\b(\d{1,3}(?:[.,]\d{1,2})?)\s*mm\s*(?:2|²)\b/gu)];
+ const items=[...fold(text).matchAll(/\b(\d{1,3}(?:[.,]\d{1,2})?)\s*mm\s*(?:2|²)(?=\W|$)/gu)];
  if(items.length!==1)return null;
  return String(Number(items[0][1].replace(',','.')));
 }
@@ -86,6 +86,17 @@ function materialGroup(text:string):string|null{
   if(/\bexterior\b/u.test(s))return 'pintura_exterior';
   if(/\binterior\b/u.test(s))return 'pintura_interior';
   return 'pintura_uso_desconocido';
+ }
+ if(/\bcable\b/u.test(s))return 'cable';
+ if(/\bplaca\b/u.test(s)){
+  if(/\bosb\b/u.test(s))return 'placa_osb';
+  if(/\byeso\b/u.test(s))return 'placa_yeso';
+  return 'placa_tipo_desconocido';
+ }
+ if(/\barena\b/u.test(s)){
+  if(/\bfina\b/u.test(s))return 'arena_fina';
+  if(/\bgruesa\b/u.test(s))return 'arena_gruesa';
+  return 'arena_tipo_desconocido';
  }
  return null;
 }
@@ -105,8 +116,7 @@ export function verificarCorrespondenciaTecnicaD013(
  const wantedGroup=materialGroup(demand),offeredGroup=materialGroup(catalogo);
  if(wantedGroup&&offeredGroup&&wantedGroup!==offeredGroup)
   return refuse('tipo_o_aplicacion_tecnica_diferente');
- if((wantedGroup&&!offeredGroup||!wantedGroup&&offeredGroup)&&
-  tipo==='alternativa_razonable')
+ if(wantedGroup&&!offeredGroup||!wantedGroup&&offeredGroup)
   return refuse('prestacion_tecnica_sin_acreditar');
 
  const wantedCable=cableSize(demand),offeredCable=cableSize(catalogo);
