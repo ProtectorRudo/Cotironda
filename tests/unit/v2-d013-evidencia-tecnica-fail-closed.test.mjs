@@ -114,3 +114,63 @@ test('D013: AI no puede inventar producto de catalogo ni ignorar riesgo tecnico'
  assert.equal(r.whatsappEnviado,false);
  assert.deepEqual(r.propuestas,[]);
 });
+
+test('D013: rechazo tecnico parcial NO cancela otras cotizaciones validas',()=>{
+ const pintura={
+  evidencia:'100 baldes pintura latex interior 4 L',
+  inicio:60,fin:95,descripcion:'Pintura latex interior blanco 4 L',
+  cantidad:'100',unidad:'unit',rubro:'pintura',presentacion:'4 L',
+  aclaracion:null
+ };
+ const pedido={intencion:'cotizar',zona_entrega:'La Plata',dudas:[],
+  articulos:[base,pintura]};
+ const proveedores=[
+  {clave:'ferre_123',activo:true,consentido:true,localidades:['La Plata'],
+   articulos:[{numero:1,descripcion:'Cemento albañilería 25 kg',rubro:'ferreteria'}]},
+  {clave:'pinturas_123',activo:true,consentido:true,localidades:['La Plata'],
+   articulos:[{numero:2,descripcion:'Pintura latex interior blanco 5 L',rubro:'otros'}]}
+ ];
+ const propuestas=[
+  {proveedor:'ferre_123',correspondencias:[{
+   indicePedido:0,numeroCatalogo:1,tipo:'alternativa_razonable',
+   explicacion:'El cemento diferente NO tiene prueba tecnica'
+  }]},
+  {proveedor:'pinturas_123',correspondencias:[{
+   indicePedido:1,numeroCatalogo:2,tipo:'alternativa_razonable',
+   explicacion:'Pintura latex interior misma finalidad, diferente envase'
+  }]}
+ ];
+ const result=route(pedido,proveedores,propuestas);
+ assert.equal(result.estado,'ruteo_valido_para_preparacion');
+ assert.equal(result.propuestas.length,1);
+ assert.equal(result.propuestas[0].proveedor,'pinturas_123');
+ assert.deepEqual(result.cobertura.map(x=>x.proveedoresAutorizados),[0,1]);
+ assert.deepEqual(result.revisionTecnica,[{
+  proveedor:'ferre_123',indicePedido:0,numeroCatalogo:1,
+  motivo:'tipo_o_aplicacion_tecnica_diferente'
+ }]);
+ assert.equal(result.whatsappEnviado,false);
+});
+test('D013: un mismo negocio cotiza solo articulos demostrados',()=>{
+ const pintura={...base,descripcion:'Pintura latex interior 4 L',
+  evidencia:'100 envases pintura latex interior 4 L',unidad:'unit',rubro:'pintura'};
+ const pedido={intencion:'cotizar',zona_entrega:'La Plata',dudas:[],
+  articulos:[base,pintura]};
+ const supplier={clave:'multirubro_123',consentido:true,activo:true,
+  localidades:['La Plata'],articulos:[
+   {numero:1,descripcion:'Cemento Portland bolsa 25 kg',rubro:'ferreteria'},
+   {numero:2,descripcion:'Pintura latex exterior 5 L',rubro:'pintura'}
+  ]};
+ const res=route(pedido,[supplier],[{
+  proveedor:'multirubro_123',correspondencias:[
+   {indicePedido:0,numeroCatalogo:1,tipo:'alternativa_razonable',
+    explicacion:'Misma clase Portland con envase 25 kg'},
+   {indicePedido:1,numeroCatalogo:2,tipo:'alternativa_razonable',
+    explicacion:'Exterior no corresponde a interior'}
+  ]
+ }]);
+ assert.equal(res.estado,'ruteo_valido_para_preparacion');
+ assert.deepEqual(res.propuestas[0].correspondencias.map(x=>x.indicePedido),[0]);
+ assert.deepEqual(res.cobertura.map(x=>x.proveedoresAutorizados),[1,0]);
+ assert.equal(res.revisionTecnica.length,1);
+});
