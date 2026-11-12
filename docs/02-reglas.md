@@ -4,7 +4,7 @@
 
 ## Solicitud y distribución
 - Comprador autenticado envía PDF/Excel/Word/imagen/texto; IA identifica materiales, cantidades, rubros, unidades y variantes. No inventar datos. Preguntar localidad de entrega **solo si falta**; no exigir correcciones o confirmaciones por cada pedido en el flujo normal.
-- Negocios seleccionados por **catálogo declarado, rubro y zona**, con consentimiento WhatsApp. Catálogo no garantiza stock. Enviar a cada comercio solo su rubro, con referencia de pedido única, sin notificaciones adicionales presionando precios.
+- **D013 obligatoria:** negocios seleccionados **por coincidencia de cada artículo solicitado con productos de su catálogo individual y zona**, nunca por rubro/nicho; catálogo no garantiza stock. Interpretar sinónimos y equivalencias técnicamente sustentadas, con marcas flexibles salvo marca obligatoria y presentaciones convertidas correctamente. Enviar solo artículos compatibles de cada comercio, incluso de rubros diferentes, con referencia única y consentimiento WhatsApp. Detalle: [D013](V2-D013-CATALOGOS-EQUIVALENCIAS.md).
 - Admitir múltiples rondas de diferentes arquitectos **simultáneamente para un mismo negocio**. La asociación se fundamenta en referencia/mensaje citado/procedencia, no en bloquear al proveedor ni elegir automáticamente por fecha.
 
 ## Respuesta y original
