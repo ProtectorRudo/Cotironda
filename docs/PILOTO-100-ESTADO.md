@@ -19,7 +19,7 @@
 
 - [x] Driver `whapi-terms-pg-driver-p0.ts`: conexión PostgreSQL directa SSL con CA, proyecto PILOTO exacto, `session_user` técnico, `SET ROLE` mínimo comprobado, una conexión y cierre por RPC; deny SQL no listado y entornos no autorizados. No reusa D088 que apunta a otra base.
 - [x] `whapi-terms-runner-p0.ts`: encadena cinco RPC de DB y descifrado AES P0 al transporte D055, un aviso por invocación, banderas dobles OFF, cero ruta/cron instalados.
-- [x] Tests sintéticos Node de login y conexión, errores fail-closed, recorrido del aviso. CI PG17 con rollback heredado y ejecutándose en esta rama. **No acreditar CI último SHA sin inspección.**
+- [x] Tests sintéticos Node de login y conexión, errores fail-closed, recorrido del aviso. CI PG17 con rollback heredado y ejecutándose en esta rama. **CI FINAL 5/5 SUCCESS** en SHA `bb96efb0bc99107d9e13fb6c20f7d477afbb8e45`: Node (driver/runner integrales), PG17 P0 con rollback, Next.js, PostgREST, aislamiento por empresa y sitio. Los servicios de WhatsApp y Auth REAL no se invocaron.
 - [x] Snapshot Supabase PILOTO 12/11: Auth 0, operadores activos 0, consentimientos originales 0, política OFF, 1 prepared vigente, M362/P0 SQL sin instalar. Ningún envío ni mutación.
 - [ ] **NO APTO PARA PILOTO E2E:** falta provisionar login DB, credenciales seguras, operator Auth MFA verdadero, términos aprobados y aceptación explícita auditada; comprador OTP y 2 originales/seguimiento/cierre pendientes. P0–P5 ABIERTOS.
 
