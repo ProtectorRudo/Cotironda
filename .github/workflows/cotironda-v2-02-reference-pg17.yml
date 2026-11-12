@@ -3,10 +3,14 @@ on:
   pull_request:
     paths:
       - 'supabase/piloto/v2_02_ref_codigo_pedido_solo_lectura.sql'
+      - 'supabase/piloto/v2_02_referencia_caption_adjunto_solo_lectura.sql'
+      - 'supabase/tests/ci/v2-02-media-caption-pg17.sql'
+      - 'scripts/piloto/v2-02-whapi-overlay.mjs'
       - 'supabase/tests/ci/v2-02-ref-pg17.sql'
       - 'supabase/functions/cotironda-piloto-whapi/referencia-pedido-v2.ts'
       - 'supabase/functions/cotironda-piloto-whapi/index.ts'
       - 'tests/unit/v2-02-referencia-ronda-proveedor.test.mjs'
+      - 'tests/unit/v2-02-referencia-caption-adjunto.test.mjs'
       - '.github/workflows/cotironda-v2-02-reference-pg17.yml'
   workflow_dispatch:
 permissions:
@@ -45,6 +49,8 @@ jobs:
           node-version: '22.16.0'
       - name: Pre-filtro y contrato de fuente
         run: node --experimental-strip-types --test tests/unit/v2-02-referencia-ronda-proveedor.test.mjs
+      - name: Validar referencia de caption PDF/Excel sin cita
+        run: node --experimental-strip-types --test tests/unit/v2-02-referencia-caption-adjunto.test.mjs
       - name: Generar overlay V2 desde baseline historico verificado
         run: node scripts/piloto/v2-02-whapi-overlay.mjs --write-candidate
       - name: Instalar Deno 2
@@ -57,5 +63,6 @@ jobs:
         run: |
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/v2-02-ref-pg17.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/v2-02-media-caption-pg17.sql
           psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regnamespace('cotironda_piloto_privado') IS NULL" | grep -Fx 't'
           psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regprocedure('public.cotironda_piloto_v2_quoted_id_for_reference(text,text,text)') IS NULL" | grep -Fx 't'

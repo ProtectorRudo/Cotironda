@@ -56,6 +56,27 @@ export function generarWebhookV202(original){
   '       ?etiquetaReferenciaPedidoV2(ready.data.request_id):null;',
   ''
  ].join('\n'),'outgoing');
+ const captionMediaBlock=[
+  '        // La leyenda del adjunto NO es permiso. SQL comprueba manifiesto',
+  '        // cifrado SHA, bytes almacenados, proveedor, invitacion y envio.',
+  "        if(!supplierQuotedId&&",
+  "           Deno.env.get('COTIRONDA_PILOT_V2_REFERENCE_LINK_ENABLED')==='true'&&",
+  '           contieneReferenciaPedidoV2(media?.caption)){',
+  "          const found=await db.rpc('cotironda_piloto_v2_quoted_id_for_media_reference',{",
+  '            p_message_hmac:messageHash,p_chat_hmac:chatHash,',
+  '            p_original_manifest:body',
+  '          });',
+  "          if(found.error)return json(503,'supplier_media_reference_lookup_unavailable');",
+  '          const quoteId=found.data?.quoted_whapi_id;',
+  "          if(found.data?.state==='matched'&&",
+  "             typeof quoteId==='string'&&/^[A-Za-z0-9._:-]{8,160}$/u.test(quoteId))",
+  '            supplierQuotedId=quoteId;',
+  '        }',
+  ''
+ ].join('\n');
+ code=one(code,'        let attachmentState:string|null=null;\n',
+  captionMediaBlock+'        let attachmentState:string|null=null;\n',
+  'supplier-media-caption');
  code=one(code,'       caption:CAPTION_PEDIDO_COTIRONDA_MVP305\n',
   "       caption:CAPTION_PEDIDO_COTIRONDA_MVP305+(refCaption?'\\n'+refCaption:'')\n",
   'caption');
