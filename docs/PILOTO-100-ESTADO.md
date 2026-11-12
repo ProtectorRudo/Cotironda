@@ -14,8 +14,9 @@
 
 ## Regla de negocio V2 (en una línea)
 
-**Pedido del arquitecto → separación de rubros/catálogos → comercios cotizan por WhatsApp → solo negocios que respondieron aparecen IDENTIFICADOS con presupuesto ORIGINAL y análisis breve útil → cierre de DOS días hábiles → comparación general con recomendaciones.**
+**Pedido del arquitecto → IA cruza cada PRODUCTO con CATÁLOGOS PROPIOS de proveedores y zona (NO por rubro; equivalencias D013) → comercios cotizan por WhatsApp → solo respondedores IDENTIFICADOS con ORIGINAL y análisis → cierre de DOS días hábiles → comparación general.**
 
+- **D013 aprobada:** [catálogo por producto y equivalencias técnicas](V2-D013-CATALOGOS-EQUIVALENCIAS.md). IA reconoce sinónimos, marcas no excluyentes y presentaciones convertibles (Ceresita/hidrófugo compatible, cemento 50/25 kg del mismo tipo). Cada proveedor recibe solo los artículos que vende; no asumir equivalencia sin respaldo técnico. **DOCUMENTADO, NO IMPLEMENTADO.**
 - **No** anonimato, ranking de ganadores ni lista/contador de invitados pendientes.
 - Original recibido + fuente asociada + permiso **visible sin esperar al parser ni al cierre**. Comentario IA sin bloquear el original.
 - En caso de ambigüedad, revisión interna, jamás atribución inventada.
@@ -46,7 +47,7 @@
 ## Estado de etapas
 
 - **V2-00 — EN CURSO:** contrato, checklist, README/AGENTS y estado orientados a nueva dirección; **PENDIENTE AUDITORÍA DE COMPONENTES REALES Y TRIAGE DE PR**.
-- **V2-01 — PENDIENTE DE REVALIDAR:** la distribución anterior funcionó 2/2, pero la V2 necesita referencia inequívoca y reglas nuevas.
+- **V2-01 — PENDIENTE DE REVALIDAR:** la distribución anterior funcionó 2/2, pero V2 necesita referencias inequívocas y **matching D013 por producto de catálogo con equivalencias verificadas**, no por rubro.
 - **V2-02 — BLOQUEO PRINCIPAL:** vínculo de respuestas, conservar original y soportar muchas rondas concurrentes.
 - **V2-03 — PENDIENTE:** UX muestra únicamente respondedores identificados, permisos/descarga inmediata.
 - **V2-04 — PENDIENTE:** análisis individual útil, no bloqueante.
@@ -55,7 +56,7 @@
 
 ## ÚNICA PRÓXIMA ACCIÓN (trabajar ESTO primero)
 
-**V2-00: auditoría de reutilización con mapa de módulos y PR.** Leer código/despliegues reales de WhatsApp, catálogo, enlace de fuentes, Storage, portal, Auth, IA, cierre. Registrar para cada módulo si reutilizar, adaptar o congelar. **Marcar PR #814 NO DESPLEGAR EN V2**; puede usarse su análisis de seguridad, pero no su prohibición de varias rondas al mismo proveedor. Identificar PR antiguos de anonimizaciones, ganadores o descargas solo al cierre y sacarlos de la ruta crítica.
+**V2-00: auditoría de reutilización con mapa de módulos y PR.** Verificar en particular si los catálogos actuales registran productos individuales, sinónimos, especificaciones y presentaciones, y si la distribución depende incorrectamente del rubro (D013). Leer código/despliegues reales de WhatsApp, catálogo, enlace de fuentes, Storage, portal, Auth, IA, cierre. Registrar para cada módulo si reutilizar, adaptar o congelar. **Marcar PR #814 NO DESPLEGAR EN V2**; puede usarse su análisis de seguridad, pero no su prohibición de varias rondas al mismo proveedor. Identificar PR antiguos de anonimizaciones, ganadores o descargas solo al cierre y sacarlos de la ruta crítica.
 
 **Al completar V2-00, siguiente implementación V2-02 pequeña:** correlación segura por referencia del pedido o mensaje citado en escenarios donde un mismo proveedor atiende varias rondas, sin pedirle trabajo extra y sin reatribuir documentos del pasado.
 
