@@ -3,7 +3,7 @@ import {revisionMfaHTTPHabilitada,responderRevisionMfaOperadorP0}
  from '../../../src/server/whapi-terms-mfa-http-p0.ts';
 import {puertosOperadorSupabasePiloto} from './piloto-operador-cliente.ts';
 
-type Action='preparar'|'decidir';
+type Action='bandeja'|'preparar'|'decidir';
 /** Existing M267 auth adapter: no service_role, no passwords in server logs. */
 export async function revisarTerminosPiloto(
  req:Request,action:Action
