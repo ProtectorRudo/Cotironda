@@ -126,10 +126,12 @@ export function verificarCorrespondenciaTecnicaD013(
  if(wantedGroup&&!offeredGroup||!wantedGroup&&offeredGroup)
   return refuse('prestacion_tecnica_sin_acreditar');
 
- const wantedCable=cableSize(demand),offeredCable=cableSize(catalogo);
+ const wantedCable=cableSize(pedido.descripcion)||cableSize(pedido.evidencia),
+  offeredCable=cableSize(catalogo);
  if((wantedCable||offeredCable)&&wantedCable!==offeredCable)
   return refuse('seccion_cable_no_equivalente');
- const wantThickness=thicknessMillimeters(demand);
+ const wantThickness=thicknessMillimeters(pedido.descripcion)||
+  thicknessMillimeters(pedido.evidencia);
  const haveThickness=thicknessMillimeters(catalogo);
  if(wantThickness&&wantThickness!==haveThickness)
   return refuse('dimension_tecnica_no_equivalente');
