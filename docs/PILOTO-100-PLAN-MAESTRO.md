@@ -52,7 +52,7 @@ El objetivo comercial es que, **al cierre**, el comprador pueda obtener los orig
 - [x] Tracking con opt-in **OFF por defecto**, sin reemplazar contador económico ni exponer contenido.
 - [x] SQL de solo lectura ensayado en piloto: token inválido `not_found`; ronda preparada 2/0.
 - [x] CI unitaria general, Deno Whapi, PostgREST y PostgreSQL17 de aislamiento histórico **verdes** sobre commit `c8a937f614a701ea2eb46e366685668021da79ee`.
-- [ ] Build Next.js de ese commit: pendiente de resultado al momento de este relevo.
+- [x] **Build Next.js del SHA `c8a937f614a701ea2eb46e366685668021da79ee` completado con éxito**; mismo SHA con unidad/PG17 histórico/PostgREST/Deno verdes.
 - [ ] **PG17 específico de DDL MVP354**: fixture y workflow creados, **sin ejecución certificada todavía**. No confundir con el control general PG17.
 - [ ] Asociación de 2 archivos reales e ingreso de texto libre, recuperación por SHA de bytes (P1/P2) y navegador del comprador real (P3).
 - [ ] P0 identidad de comprador, reglas de originales de no ganadores y ruta efectiva autorizada.
