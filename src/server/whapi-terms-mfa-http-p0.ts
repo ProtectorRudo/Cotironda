@@ -44,10 +44,6 @@ function exact(v:unknown,keys:readonly string[]):v is Record<string,unknown>{
 export function revisionMfaHTTPHabilitada(env:Env):boolean{
  return operadorPilotoHabilitado(env)&&
   env.COTIRONDA_P0_TERMS_REVIEW_UI_ENABLED==='true'&&
-  /^sb_publishable_[A-Za-z0-9_-]{8,}$/u.test(
-   env.NEXT_PUBLIC_COTIRONDA_PILOT_OPERATOR_PUBLISHABLE_KEY??'')&&
-  env.NEXT_PUBLIC_COTIRONDA_PILOT_OPERATOR_PUBLISHABLE_KEY===
-   env.COTIRONDA_PILOT_SUPABASE_PUBLISHABLE_KEY&&
   typeof env.COTIRONDA_P0_TERMS_INBOX_AES_HEX==='string'&&
   /^[a-fA-F0-9]{64}$/u.test(env.COTIRONDA_P0_TERMS_INBOX_AES_HEX);
 }
