@@ -60,6 +60,23 @@ test('V2-12: no excede cuatro análisis simultáneos ni cien originales',()=>{
   docs.slice(MAX_ORIGINALES_ANALISIS_V2),map,HORA+360_000),[]);
 });
 
+test('V2-12: no rebasa capacidad cuando quedan solo una o dos posiciones',()=>{
+ const map=new Map();
+ for(let i=0;i<MAX_ORIGINALES_ANALISIS_V2-1;i++){
+  map.set('00000000-0000-4000-8000-'+String(i).padStart(12,'0'),{
+   intentos:3,ultimoMs:HORA
+  });
+ }
+ const items=Array.from({length:4},(_,i)=>({
+  documentoId:'11111111-1111-4111-8111-'+String(i).padStart(12,'0'),
+  puntos:[]
+ }));
+ const chosen=seleccionarAnalisisPendientesV2(items,map,HORA);
+ assert.equal(chosen.length,1);
+ registrarIntentosAnalisisV2(map,chosen,HORA);
+ assert.equal(map.size,MAX_ORIGINALES_ANALISIS_V2);
+});
+
 test('V2-12: datos inválidos, documentos repetidos o reloj retrocedido no disparan llamadas',()=>{
  const invalid={documentoId:'../otro',puntos:[]};
  const map=new Map();
