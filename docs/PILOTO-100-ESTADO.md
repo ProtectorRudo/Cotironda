@@ -1,7 +1,7 @@
 # COTIRONDA V2 — ESTADO REAL Y RELEVO ENTRE CONVERSACIONES
 
 **Última actualización de documentación: 12/11/2026 (Argentina).**
-**Estado:** V2-03b portal + descarga en desarrollo PR #819 (apilado sobre #818/#817/#816), CI 6/6 verde, SIN desplegar ni E2E. D013 por PRODUCTO pendiente. Los datos de Supabase caducan; reconsultar cuando se necesite estado vivo.
+**Estado:** PR #821 en desarrollo (D013 por PRODUCTO y plazo 2 días hábiles), apilado sobre #820/#819/#818/#817/#816; **SIN desplegar ni E2E**, con controles sintéticos. D013 técnicas/feriados reales siguen pendientes. Los datos de Supabase caducan; reconsultar cuando se necesite estado vivo.
 
 ## Relevo actualizado — V2-02 (12/11/2026)
 
@@ -41,6 +41,15 @@
 - **Vercel:** cinco proyectos Cotironda; el identificado como Next.js es `cotironda-portal-dev` y su preview todavía no tiene variables V2 requeridas. No confundir build GitHub con ruta V2 realmente disponible.
 - **CI PR #820 APROBADO:** SHA `a388f60338a06f33fefe68f1585b9f981dda1ce3` con **7/7 workflows SUCCESS**: preflight v76 Node+Deno, Whapi Deno, PG17, unitarias, autenticación, sitio y build Next.js. Pruebas sintéticas/compilación; **NO E2E**, sin desplegar, enviar mensajes ni cambiar permisos. Ver [Acta preflight](https://github.com/ProtectorRudo/Cotironda/blob/feat/v2-preflight-conciliar-whapi-v76-20261112/docs/V2-PREFLIGHT-EDGE-V76-Y-PILOTO-20261112.md).
 - **Próximo bloqueo único:** corregir reloj SQL/feriados a 2 días hábiles y validar catálogo D013 por PRODUCTO, luego preparar migración ordenada y reversible de #816–#820 en único proyecto PREVIEW PILOTO y Auth/consentimiento reales. **Solo instalar bajo `Publicalo`**. No atribuir presupuesto ambiguo por fecha.
+
+## V2-D013 + V2-05 — productos concretos y 2 días hábiles (PR #821, 12/11/2026)
+
+- **Código en rama [PR #821](https://github.com/ProtectorRudo/Cotironda/pull/821)** apilada sobre #820 (y #819/#818/#817/#816). Se localizaron tres filtros antiguos de igualdad de rubro: en ruteador, puente TypeScript y RPC real `cotironda_piloto_ia_shadow_prepare_mvp221`. D013 **solo invita por productos CONCRETOS del catálogo y zona**, nunca por rubro. El código nuevo se aisló en `ruteador-catalogos-v2-d013.ts`, `planificador-piloto-v2-d013.ts`, `puente-sql-rondas-v2-d013.ts` y `ai-central-buyer-v2-d013.ts`, conectado **solo** al candidato Edge v76. Se restauraron los archivos históricos con SHA del manifiesto MVP332. Una primera corrida detectó 9 regresiones por alterar archivos históricos; corregidas con módulos nuevos.
+- **SQL D013 candidato SIN instalar:** parche pinned SHA `a2225bc...c25cf9` de función pública de preparación, mantiene chequeos de producto literal, proveedor, zona, consentimiento y origen. Reemplaza exclusivamente igualdad entre etiquetas de rubro por validación de etiqueta permitida. **La IA semántica aún requiere acreditar normas, tipo, marcas obligatorias y demás equivalencias técnicas**; no presumir que el nombre implica sustitución segura.
+- **SQL plazo candidato SIN instalar:** `v2_05_plazo_dos_dias_habiles_candidate.sql` configura modalidad prospectiva `business_two_days` (18:00 del segundo día hábil siguiente, `America/Argentina/Buenos_Aires`) con calendario anual/feriados por localidad **aprobado o bloqueo cerrado**. Política OFF y rondas legadas 3–7 días intactas. `v2_05_shadow_prepare_activar_modo_habil.sql` adapta la creación de rondas cuando esa política esté ON, también con fuente SQL SHA pinned. No se cargaron ni aprobaron feriados reales.
+- **Prueba sintética PG17:** el archivo `v2-05-plazo-habil-pg17.sql` instala en `BEGIN/ROLLBACK` una copia real de la función de preparación y las **tres migraciones ordenadas D013→calendario→modo de creación**; verifica fin de semana, feriado, cruce de año, región no aprobada, flag OFF, legados intactos y niega cambios retroactivos. No es prueba sobre PILOTO real ni E2E.
+- **CI del PR #821:** verificar resultado final del SHA y distinguir PG17/Node/Deno verdes de los workflows generales.
+- **Nuevo bloqueo único:** calendario oficial nacional, provincial y local aprobado + auditoría de contrato técnico IA D013 + preparación de despliegue conjunto #816→#821 en PREVIEW PILOTO con Auth del comprador y consentimiento V2 del proveedor, **únicamente bajo autorización `Publicalo`**. Sin implementación en base/Edge/Vercel ni WhatsApps reales.
 
 ## SI ABRÍS UNA CONVERSACIÓN NUEVA: LEÉ ESTO PRIMERO
 
@@ -106,9 +115,9 @@
 - La referencia no sustituye prueba de origen para archivos no citados. El bloqueo comercial persiste hasta demostrar 2 respuestas reales, Auth del comprador, originales visibles y análisis.
 - **No hubo despliegue ni cambio de datos PILOTO**; no confundir el PR con funcionalidad activa.
 
-## ÚNICA PRÓXIMA ACCIÓN ACTUAL — Corrigir reloj de 2 días hábiles, preservar Edge v76 y matching D013
+## ÚNICA PRÓXIMA ACCIÓN ACTUAL — Cerrar calendario real, equivalencia técnica D013 y preparar PREVIEW PILOTO
 
-**PR #820** demuestra preflight `ready_for_v2_release=false`: webhook v76 tiene mejoras ausentes en código base; hay 2 `CHECK` SQL de duración 3–7 días calendario; faltan Auth comprador, permisos V2 y proyecto Vercel unificado. **Terminar CI del candidato v76**, luego corregir reloj SQL con feriados y D013 envío por PRODUCTO sin afectar rondas históricas. Preparar migraciones coordinadas y pruebas de revertir sin activar flags hasta `Publicalo`. Ningún envío ni producción.
+**PR #821 propone** el calendario 2 días hábiles y selección por producto, con migraciones SQL SHA-pinned y flags OFF. Primero verificar todos los checks del último SHA, después validar catálogo/identidad exacta de productos (incluidas marcas excluyentes, presentaciones y riesgos técnicos) y feriados completos por ciudad y año. Confirmar el **proyecto Vercel PILOTO único**, Auth comprador/OTP, consentimiento prospectivo de proveedor, migraciones ordenadas con rollback y reconciliación Edge v76. **No activar ni enviar Whapi hasta `Publicalo` para el entorno PILOTO.** Terminar informe individual/general y E2E con 2 originales. No reactivar anonimato ni #814.
 
 ## Autorizaciones y cómo registrar un avance
 
