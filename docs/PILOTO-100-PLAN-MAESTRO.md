@@ -62,7 +62,7 @@ Se propone bloqueo transaccional de ambos reclamos `cotironda_piloto_ia_claim_mv
 
 - [x] Evidencia de concurrencia histórica y versión instalada de ambas RPC de claim inspeccionadas.
 - [x] Desarrollo de exclusión con bandera OFF en PR #799 y documentación [Acta 524](https://github.com/ProtectorRudo/Cotironda/blob/fix/mvp356-guard-despachos-solapados-piloto-20261112/docs/524-mvp356-despachos-sin-solapamientos-piloto.md).
-- [ ] CI de SHA final + validación de DDL en PG17 con rollback.
+- [x] CI técnico del SHA `137b5ad98521e0f2661f389999c168df1531ae1e`: **5/5 workflows generales SUCCESS**, incluyendo build Next.js, unidad general, PG17 aislamiento, PostgREST, sitio; además **pg17-mvp356-claim-anti-solapamientos, pg17-mvp354-documental y deno-mvp354-seguimiento SUCCESS** en el workflow unitario. DB sintética, no instalación en Supabase.
 - [ ] Reintento automático, idempotente y con secretos privados para trabajo `pending` (sin reenviar `uncertain`).
 - [ ] Convivencia del despachador legado auditada y bandera habilitada SOLO con autorización de publicación de piloto.
 - [ ] P0 Auth y política de originales, P1/P2 fuentes reales, P3 portal y P4/P5 cierre/E2E pendientes.
