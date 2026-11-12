@@ -1,15 +1,18 @@
 {
   "observed_at": "2026-11-12T20:49:00Z",
-  "provenance": "Supabase PILOTO, Vercel project metadata, GitHub PR826. Read-only; no environment values.",
+  "provenance": "Consulta read-only v2_06_release_inventory_readonly.sql en cotironda-piloto; Vercel metadatos preview; Supabase lista Edge v76. No secretos ni datos personales.",
   "supabase": {
     "project_ref": "ilggkalaafhtiysyzlmg",
     "pg_version": "17.11",
     "auth_users": 0,
     "bucket_private": true,
     "bucket_limit_bytes": 8388608,
-    "rpcs": [],
+    "rpcs": [
+      "cotironda_piloto_ia_shadow_prepare_mvp221"
+    ],
     "tables": [],
-    "v2_original_share_policy_enabled": null
+    "v2_original_share_policy_enabled": null,
+    "historical_constraint_count": 2
   },
   "consent": {
     "suppliers_accepted": null,
