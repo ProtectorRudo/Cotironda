@@ -18,6 +18,14 @@
 - **PILOTO solo lectura:** 0 RPC V2-02 instaladas; `auth.users=0`; 4 archivos históricos `stored` ligados a alguna solicitud, **sin acreditar la nueva ronda V2**. SQL V2-02, overlay Edge, WhatsApp y Vercel NO publicados. Ningún pedido ni presupuesto real enviado desde esta intervención.
 - **Próxima tarea:** completar/verificar CI y auditoría del nuevo vínculo; después habilitar **portal comprador autenticado para los originales de quienes respondieron**, antes de la IA de análisis comercial. D013 por catálogo PRODUCTO sigue pendiente y obligatorio antes del piloto final.
 
+## Nuevo incremento V2-03a — listado de respondedores (PR #818, 12/11/2026)
+
+- **Rama y código:** [PR #818](https://github.com/ProtectorRudo/Cotironda/pull/818) sobre #817/#816, **sin #814**. Se propuso un catálogo privado `cotironda_piloto_v2_responders_private` que elimina los gates heredados de cierre y certificación económica, pero **solo lista originales con vínculo fuerte MVP225, SHA, despacho real y permiso V2 prospectivo**. Contrato de `auth.users` + `auth.sessions` y comprador asociado a WhatsApp, con política V2 OFF por defecto. Ningún cambio en las descargas v1 existentes.
+- **API candidata:** GET `/api/piloto/v2/rondas/[rondaId]/respuestas` verificada con `getUser(jwt)`, SHA exacto de release y `preview`; devuelve únicamente nombre comercial, tipo, fecha y estado `Análisis en preparación`, **nunca invitados sin respuesta, rutas, hashes ni montos**.
+- **Test sintético:** [workflow CI V2-03a](https://github.com/ProtectorRudo/Cotironda/actions/workflows/cotironda-v2-03-respondedores-pg17.yml) prueba 0/1/2 originales autorizados, sesión/empresa ajena, proveedor sin permiso, consentimiento revocado, política apagada, Node, Postgres 17 con rollback. Verificar CI del SHA final antes de marcar aprobado.
+- **NO instalado:** función, tabla, endpoint ni políticas en Supabase/Vercel; `auth.users` continuaba en cero al último SELECT. Sin descarga real, sin interfaz autenticada en navegador, sin E2E. No se registraron consentimientos nuevos ni se enviaron WhatsApps.
+- **Próxima tarea única tras CI:** V2-03b — permitir descargar bytes originales únicamente con Auth, relectura de SHA, permisos prospectivos y auditoría; conectarlo a tarjetas de solo respondedores. Luego validar E2E real con comprador Auth. D013 por producto sigue pendiente antes del piloto completo.
+
 ## SI ABRÍS UNA CONVERSACIÓN NUEVA: LEÉ ESTO PRIMERO
 
 1. [Contrato V2 vigente](COTIRONDA-V2-CONTRATO.md).
@@ -64,7 +72,7 @@
 - **V2-00 — EN CURSO (AUDITORÍA PARCIAL 12/11):** inventario de repositorio, código en rama #813 y consultas SOLO LECTURA del PILOTO registrado en [V2-00 Inventario de reutilización](V2-00-INVENTARIO-REUTILIZACION-20261112.md). **PENDIENTE** conciliar versiones Vercel/Edge, Storage/RLS y estrategia de rama base; no se modificó código ni se probó E2E.
 - **V2-01 — PENDIENTE DE REVALIDAR:** la distribución anterior funcionó 2/2, pero V2 necesita referencias inequívocas y **matching D013 por producto de catálogo con equivalencias verificadas**, no por rubro.
 - **V2-02 — EN DESARROLLO, BLOQUEO PRINCIPAL:** [PR #816](https://github.com/ProtectorRudo/Cotironda/pull/816) preparó referencia visible en caption y lookup seguro de mensaje acreditado, con flag OFF. **Sin SQL/Edge instalados**, sin evidencias E2E ni solución completa para PDF sin cita. Conservar original y varias rondas concurrentes sigue pendiente.
-- **V2-03 — PENDIENTE:** UX muestra únicamente respondedores identificados, permisos/descarga inmediata.
+- **V2-03 — EN DESARROLLO:** PR #818 prepara API privada de listado de respondedores Auth; **descarga y vista conectada aún pendientes**.
 - **V2-04 — PENDIENTE:** análisis individual útil, no bloqueante.
 - **V2-05 — PENDIENTE:** dos días hábiles e informe general.
 - **V2-06 — PENDIENTE:** permisos, Auth real, piloto E2E.
@@ -82,13 +90,11 @@
 - La referencia no sustituye prueba de origen para archivos no citados. El bloqueo comercial persiste hasta demostrar 2 respuestas reales, Auth del comprador, originales visibles y análisis.
 - **No hubo despliegue ni cambio de datos PILOTO**; no confundir el PR con funcionalidad activa.
 
-## ÚNICA PRÓXIMA ACCIÓN ACTUAL (corte 12/11/2026)
+## ÚNICA PRÓXIMA ACCIÓN ACTUAL — V2-03b
 
-**V2-02: cerrar la verificación de [PR #817](https://github.com/ProtectorRudo/Cotironda/pull/817) en desarrollo y preparar la vista autenticada de originales (V2-03).** Confirmar todos los controles CI del último SHA, conciliar versión desplegada de Edge Whapi v76 y validar que no se pierdan funciones existentes. El lookup por caption jamás habilita asignar documentos sin prueba de origen. Seguir con portal autenticado de solo negocios que realmente respondieron, original privado descargable y estado «Análisis en preparación».
+**Primero validar CI de [PR #818](https://github.com/ProtectorRudo/Cotironda/pull/818). Después desarrollar el guard y endpoint de descarga V2 en pequeño**: verificar sesión comprador viva, pertenencia a esa ronda, permiso prospectivo del proveedor, SHA original por bytes en Storage, registro privado de cada descarga y cero exposición sin prueba. Conectar tarjetas del portal mostrando únicamente los comercios que respondieron. No reutilizar MVP161/MVP192 sin adaptar sus gates antiguos de cierre y economía.
 
-**V2-00 sigue parcialmente pendiente:** conciliación SHA de Edge/Storage, auditoría del catálogo por producto D013 y selección de ramas. Resolver esas dependencias concretas antes de desplegar o probar E2E. **PR #814 NO DESPLEGAR** (bloquea rondas concurrentes). No reintroducir rankings/anónimos ni crear nuevas rondas para sortear la falta de evidencia.
-
-**No hacer ahora:** optimizaciones económicas, rankings, MFA repetitivo para cada presupuesto, reenvío de archivos ambiguos, nueva ronda de prueba sin preflight o despliegue bajo «Avanza».
+**No publicar todavía:** la política de listado V2 queda OFF hasta tener alta de comprador Auth, términos/captura prospectiva del proveedor, descarga segura y pruebas. Corregir dependencias V2-00 y distribución D013 antes del E2E. No reatribuir el documento histórico ambiguo, no activar PR #814 ni recuperar rankings.
 
 ## Autorizaciones y cómo registrar un avance
 
