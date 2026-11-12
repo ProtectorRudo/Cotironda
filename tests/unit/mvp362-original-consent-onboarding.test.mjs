@@ -124,6 +124,7 @@ test('MVP362: fixture covers onboarding/legacy, terms hash, revocation and rollb
   'mvp365_valid_post_revocation_reaccept_denied',
   'mvp365_second_revocation_ignored',
   'mvp365_backdated_reaccept_opened',
+  'mvp365_valid_episode_not_restored',
   'ROLLBACK;'
  ])assert(fixture.includes(c),c);
 });
