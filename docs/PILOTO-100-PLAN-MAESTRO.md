@@ -50,6 +50,20 @@ El objetivo comercial es que, **al cierre**, el comprador pueda obtener los orig
 
 **CI FINAL MVP355 (11/11/2026):** el SHA técnico [`721ecc12d2a9a35e54d53b35f009d419b4cca3f6`](https://github.com/ProtectorRudo/Cotironda/pull/798) pasó **5/5 workflows generales**: Next.js, unidad general (incluye **PG17 documental** y **Deno seguimiento** como jobs separados), PostgREST, PG17 aislamiento y verificación sitio. Probados dos formatos sintéticos, SHA, links débiles/ausentes, vínculo de aviso previo, duplicados, rondas solapadas y revocación. Además SELECT del nuevo SQL sin escrituras contra piloto: `2 despachos / 0 documentos acreditados`; token falso `not_found`. **Sin despliegue**, PR draft; no E2E real.
 
+## MVP364 — aviso de condiciones probado antes de aceptar originales (12/11/2026)
+
+**[PR técnico #806](https://github.com/ProtectorRudo/Cotironda/pull/806)** sobre #805, DRAFT sin publicar, [Acta 532](https://github.com/ProtectorRudo/Cotironda/blob/feat/mvp364-proof-terms-delivered-20261112/docs/532-mvp364-aviso-terminos-proveedor-previo.md). **El código está en desarrollo; ninguna aceptación es real ni se habilitó la descarga**.
+
+- [x] Se identificó que el hash de un mensaje WhatsApp **entrante** no acredita que previamente se enviaran los términos exactos. El `whapi_outbox` actual es de **rondas**, no de **altas**; no se lo reutiliza como evidencia falsa.
+- [x] Se agregó **en la fuente SQL M362 todavía NO instalada** un ledger privado de avisos M364, vacío por defecto, con HMAC de envío aceptado por API, proveedor, chat, versión, SHA de condiciones, huella del mensaje y tiempo. `anon`, `authenticated` y `service_role` sin acceso directo.
+- [x] Opt-in prospectivo obliga FK a **aviso de condiciones específico**, y la misma puerta de autorización privada cruza proveedor, chat, versión, SHA, política activa y tiempos: aviso registrado antes de aceptación y ronda. No relaja consentimiento por ronda legado, cierre ni revocaciones.
+- [x] Casos negativos añadidos a PG17 de aviso con SHA de términos falso, chat cruzado, notificación posterior a la aceptación o anterior a activación; tests Node y job específico en CI. **No marcar batería verde hasta comprobar resultados del SHA final**.
+- [ ] Persistir comprobante **real** del proveedor WhatsApp mediante un emisor autenticado e idempotente, sin duplicación ante envíos inciertos; verificar cuerpo/versión entregados. Hasta entonces una fila de aviso **por sí sola** no acredita entrega real.
+- [ ] Revisión humana de la aceptación literal (texto cifrado), operador Auth + MFA AAL2 habilitado, autorización operativa atómica; resolver reaceptación por episodios tras revocación.
+- [ ] Términos legales/comerciales aprobados; Auth comprador Phone/OTP; dos originales PDF/XLSX vinculados con evidencia fuerte; vista navegador, cierre, descargas y REST `net` externos. **P0–P5 ABIERTOS**.
+
+**SIGUIENTE ACCIÓN EXCLUSIVA:** conectar emisión autenticada del aviso versionado + constancia WhatsApp y revisión de respuesta por operador MFA, sin publicar a usuarios ni activar política. No crear ronda superpuesta. Publicar solamente tras autorización específica `Publicalo en cotironda-piloto`, con términos aprobados y preflight seguro.
+
 ## MVP363 — preflight real del alta explícita y auditoría del operador (12/11/2026)
 
 **[PR técnico #805](https://github.com/ProtectorRudo/Cotironda/pull/805)** sobre #804, borrador, **sin despliegue**. [Acta 531](https://github.com/ProtectorRudo/Cotironda/blob/feat/mvp363-preflight-alta-explicita-20261112/docs/531-mvp363-preflight-aceptacion-real-operador.md). No crear rondas superpuestas ni enviar WhatsApps.
