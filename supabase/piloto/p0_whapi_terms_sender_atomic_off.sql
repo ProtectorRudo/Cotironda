@@ -64,6 +64,14 @@ CREATE FUNCTION cotironda_piloto_privado.terms_job_allowed_p0(
     ON p.key=j.supplier_key AND p.participant_role='supplier'
     AND p.chat_hmac=j.chat_hmac AND p.consent_at IS NOT NULL
     AND p.opted_out_at IS NULL
+  -- Recheck the authenticated, encrypted contact even AFTER BEGIN:
+  -- deleting/revoking a bound channel before HTTP must block delivery.
+  JOIN cotironda_piloto_privado.participant_channels_mvp109 c
+    ON c.participant_key=j.supplier_key AND c.chat_hmac=j.chat_hmac
+    AND c.authenticated_message_hmac ~ '^[a-f0-9]{64}$'
+    AND c.contact_sha256 ~ '^[a-f0-9]{64}$'
+    AND c.nonce_b64 IS NOT NULL AND c.ciphertext_b64 IS NOT NULL
+    AND c.bound_at IS NOT NULL AND c.bound_at<=j.created_at
   JOIN cotironda_piloto_privado.original_terms_policy_mvp362 t
     ON t.terms_version=j.terms_version AND t.enabled IS TRUE
     AND t.approved_at IS NOT NULL AND t.activated_at IS NOT NULL
