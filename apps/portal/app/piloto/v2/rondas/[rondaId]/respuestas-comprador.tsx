@@ -5,12 +5,9 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
 import {createClient} from '@supabase/supabase-js';
 import type {CatalogoRespuestasV2} from '../../../../../../../src/server/v2-03-catalogo-respondedores.ts';
+import {nombreDescargaOriginalV2} from '../../../../../lib/piloto-v2-nombre-descarga.ts';
 
 const PILOT='https://ilggkalaafhtiysyzlmg.supabase.co';
-const EXT:Readonly<Record<string,string>>={
- PDF:'pdf',Excel:'xlsx',Word:'docx','Imagen JPEG':'jpg',
- 'Imagen PNG':'png','Imagen WebP':'webp',CSV:'csv',Texto:'txt'
-};
 export function RespuestasCompradorV2({rondaId}:{rondaId:string}){
  const client=useMemo(()=>{
   const url=process.env.NEXT_PUBLIC_COTIRONDA_PILOT_SUPABASE_URL;
@@ -131,7 +128,7 @@ export function RespuestasCompradorV2({rondaId}:{rondaId:string}){
   }catch{setError('No pudimos comprobar el código de acceso.')}
   finally{setBusy(false)}
  }
- async function download(documentId:string,format:string){
+ async function download(documentId:string){
   if(busy)return;
   setBusy(true);setError('');
   try{
@@ -149,7 +146,7 @@ export function RespuestasCompradorV2({rondaId}:{rondaId:string}){
    const objectUrl=URL.createObjectURL(blob);
    const anchor=document.createElement('a');
    anchor.href=objectUrl;
-   anchor.download='cotironda-original-'+documentId.slice(0,8)+'.'+(EXT[format]||'bin');
+   anchor.download=nombreDescargaOriginalV2(documentId,response.headers.get('content-type'));
    anchor.style.display='none';
    document.body.appendChild(anchor);anchor.click();anchor.remove();
    window.setTimeout(()=>URL.revokeObjectURL(objectUrl),30000);
@@ -205,7 +202,7 @@ export function RespuestasCompradorV2({rondaId}:{rondaId:string}){
     </li>)}
    </ul>}
    <button className="button" type="button" disabled={busy}
-    onClick={()=>void download(item.documentoId,item.formato)}>
+    onClick={()=>void download(item.documentoId)}>
     Descargar presupuesto original
    </button>
   </article>)}
