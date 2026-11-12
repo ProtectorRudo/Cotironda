@@ -24,9 +24,12 @@ SELECT auth_usuarios,operadores_activos,consentimientos_antiguos_vigentes,
  CASE WHEN NOT funcion_mfa_instalada OR NOT ledger_mvp362_instalado
    OR auth_usuarios=0 OR operadores_activos=0
    OR politicas_originales_activas=0
-   OR rondas_preparadas_vigentes>0
  THEN 'NO_APTO_PARA_ALTA_REAL'
  ELSE 'PRECONDICIONES_PARCIALES_PENDIENTE_EVIDENCIA_Y_REVISION'
  END AS resultado,
+ CASE WHEN rondas_preparadas_vigentes>0
+ THEN 'NO_CREAR_RONDA_SUPERPUESTA'
+ ELSE 'SIN_RONDA_PREPARADA_VIGENTE'
+ END AS estado_rondas,
  'NINGUN_RESULTADO_AUTORIZA_REGISTRAR_CONSENTIMIENTO' AS limite
 FROM estado;
