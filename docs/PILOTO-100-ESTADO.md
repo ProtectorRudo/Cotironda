@@ -19,7 +19,7 @@
 
 - [x] No hay preámbulo MVP238 autenticado registrado para el candidato del 10/11; M225 mostró dos rondas posibles y M291 insuficiente. No se recuperó ni atribuyó el archivo.
 - [x] Función de publicación IA Central reforzada en código: guarda una nueva ronda sin publicar si algún proveedor participa en otra `prepared` no vencida. Bloqueo transaccional por filas de proveedor antes de invitaciones, también frente a invitación legacy. Emite estado `supplier_active_round_conflict`, ningún Whapi ni reintento. Los demás proveedores pueden cotizar en otra ronda sin conflicto.
-- [x] Tests Node y PG17 con rollback sintéticos y control de ACL añadidos; **CI final aún por certificar**.
+- [x] Tests Node y PG17 con rollback sintéticos y control de ACL añadidos; **Corrección auditada antes de publicar:** se comprobó que la definición LIVE de la función de publicación tiene protecciones MVP276/278/280 ausentes del SQL MVP222 histórico; el primer borrador del parche las habría borrado. Fue sustituido por una versión basada en MVP280 LIVE, probada con un test de equivalencia exacta y PG17 de aprobación del comprador + bloqueo de solapamiento con ROLLBACK. **CI sobre SHA final pendiente de verificar**. 0 deploy, 0 mensajes.
 - [ ] No está en base PILOTO. Prueba real 2/2 pendientes, MVP354 sin instalar, Auth comprador/permiso original/MFA y cierre sin E2E, **P0–P5 ABIERTOS**. Una ronda `prepared` vigente: NO publicar otra.
 
 **ÚNICO SIGUIENTE PASO:** certificar CI final y compatibilidad de error con consumidor de publicación. Luego, previa orden `Publicalo en cotironda-piloto`, completar prueba con un arquitecto + dos proveedores + dos originales.
