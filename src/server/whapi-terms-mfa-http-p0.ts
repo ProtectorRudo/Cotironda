@@ -135,8 +135,19 @@ export async function responderRevisionMfaOperadorP0(
    const v=await reviewer.preparar(valid.messageHmac);
    return response(200,{state:'ready',...v});
   }
-  if(!('decision' in valid))return fail(400,'solicitud_invalida');
-  const result=await reviewer.decidir(valid);
+  if(!('decision' in valid)||
+     typeof valid.messageHmac!=='string'||
+     typeof valid.noticeMessageHmac!=='string'||
+     typeof valid.reviewedPlaintextSha256!=='string'||
+     (valid.decision!=='explicit_accept'&&valid.decision!=='not_explicit')||
+     valid.humanAttestation!==true)
+    return fail(400,'solicitud_invalida');
+  const result=await reviewer.decidir({
+   messageHmac:valid.messageHmac,
+   noticeMessageHmac:valid.noticeMessageHmac,
+   reviewedPlaintextSha256:valid.reviewedPlaintextSha256,
+   decision:valid.decision,humanAttestation:true
+  });
   return response(200,result);
  }catch{return fail(409,'revision_no_disponible')}
 }
