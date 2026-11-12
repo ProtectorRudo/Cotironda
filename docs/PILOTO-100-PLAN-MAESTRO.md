@@ -24,7 +24,7 @@ Un comprador envía una lista de obra. Cotironda identifica cada producto y cons
 | --- | --- | --- | --- |
 | **V2-00** | Consolidar dirección e inventario de legado | Documentación coherente, mapa exacto de módulos vivos y PR clasificados | **PARCIAL:** conciliación Edge/Storage/Auth pendiente |
 | **V2-01** | IA por producto, catálogo individual y distribución selectiva | Coincidencias por artículo y equivalencias técnicas, sin filtro por rubro, con zona y deduplicación | Revalidar (parcialmente existente) |
-| **V2-02** | Recepción del ORIGINAL y vínculo a ronda | 2 respuestas originales auténticas, SHA+remitente+pedido correcto, incluso con rondas concurrentes | **EN DESARROLLO:** PR #816 referencia segura; no desplegado ni E2E |
+| **V2-02** | Recepción del ORIGINAL y vínculo a ronda | 2 respuestas originales auténticas, SHA+remitente+pedido correcto, incluso con rondas concurrentes | **EN DESARROLLO:** PR #816 texto + PR #817 caption de adjuntos, ambos sin desplegar ni E2E |
 | **V2-03** | Portal comprador, solo respondedores | 0/1/2 respuestas: mostrar únicamente negocios que cotizaron, identidad y original seguro | Pendiente |
 | **V2-04** | Análisis breve individual | Cobertura, variantes, condiciones, conclusión accionable, no bloquear original | Pendiente |
 | **V2-05** | 2 días hábiles e informe general | Cierre horario verificable + comparación por rubro, parciales, IVA/flete no inferidos | Pendiente |
@@ -46,7 +46,7 @@ Un comprador envía una lista de obra. Cotironda identifica cada producto y cons
 - **Archivo sin cita, sin código, sin preámbulo:** ninguna fecha, monto o similitud garantiza pedido correcto en concurrencia; revisión interna y ninguna exposición al comprador. No asignar a ciegas el PDF histórico.
 - **Única próxima acción:** auditoría de CI/Edge del PR #817, luego vista del comprador con Auth y original verificable para respondedores; completar V2-01 D013 por producto antes de E2E.
 
-## V2-00 — PRIMERA ACCIÓN DE DESARROLLO (no iniciar código a ciegas)
+## V2-00 — INVENTARIO PENDIENTE DE CERRAR (auditar antes de desplegar)
 
 **Auditoría inicial en curso, 12/11/2026:** [Inventario V2-00 de código y PILOTO](V2-00-INVENTARIO-REUTILIZACION-20261112.md). Se verificó en SOLO LECTURA la diferencia entre `main` estático, núcleo de la rama operativa #813, PR documental #815 y funciones/tablas reales. Hay 106 líneas de catálogo pero sin campos completos de SKU y sin confirmación formal; los motores offline conservan filtros por rubro, no cumplen aún D013 en el piloto. Próximo control antes de escribir código: comparar SHA de funciones y despliegue Vercel, Storage/RLS y elegir la rama funcional de V2-02 **sin** PR #814. No hay nuevos envíos ni E2E.
 
@@ -59,7 +59,7 @@ Un comprador envía una lista de obra. Cotironda identifica cada producto y cons
 - [ ] Auditar portal comprador/Auth/URLs originales y la viabilidad legal/técnica de revelar nombre + archivo **al recibirse**, no al cierre.
 - [ ] Auditar código de análisis individual, comparador económico verificable, reloj/cierre existente, WhatsApp y costos.
 - [ ] **Clasificar PR abiertos** en reutilizable/adaptable/obsoleto. **PR #814 NO DESPLEGAR TAL CUAL:** prohíbe que un proveedor participe en dos rondas simultáneas, cosa que Cotironda V2 necesita permitir. Conservar su auditoría de seguridad MVP280, no la restricción comercial.
-- [ ] Especificar primer cambio V2-02 pequeño: identificador inequívoco de solicitud/mensaje citado y asociación segura incluso con varias rondas vivas para un mismo comercio, sin pedir reenvíos por fallos nuestros.
+- [x] **Especificación y código candidato inicial** V2-02: referencia de texto #816 y caption original #817 bajo seguridad, con varias rondas vivas. **No instalado ni probado E2E**; faltan archivos sin ninguna referencia.
 - [ ] Actualizar Estado con qué reutilizamos, componentes reales y la primera tarea de implementación. Solo entonces comenzar V2-01/02.
 
 ## V2-01 — pedidos y envíos
