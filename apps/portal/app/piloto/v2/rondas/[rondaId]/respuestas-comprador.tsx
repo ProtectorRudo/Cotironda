@@ -79,10 +79,10 @@ export function RespuestasCompradorV2({rondaId}:{rondaId:string}){
  // No buyer confirmation needed: analyze only verified responders.
  // SQL claim prevents concurrent model calls and duplicate charges.
  useEffect(()=>{
-  if(!authenticated||!catalog||analysisAttempted.current.size>=4)return;
+  if(!authenticated||!catalog||analysisAttempted.current.size>=100)return;
   const missing=catalog.respuestas.filter(item=>item.puntos.length===0&&
    !analysisAttempted.current.has(item.documentoId)).slice(
-    0,4-analysisAttempted.current.size);
+    0,Math.min(4,100-analysisAttempted.current.size));
   if(missing.length===0)return;
   for(const item of missing)analysisAttempted.current.add(item.documentoId);
   void (async()=>{
