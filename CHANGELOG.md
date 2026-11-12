@@ -1,3 +1,6 @@
+## 2026-11-12 — MVP356: exclusión de despachos solapados en piloto (DESARROLLO)
+PR #799: dos funciones de claim (`mvp222`, `mvp314`) comparten lock transaccional y guardia privada pilot-only para impedir nuevos envíos simultáneos al mismo proveedor de varias rondas abiertas. Flag SQL OFF al instalar, no se toca piloto. PG17 con ROLLBACK y Node. **Bloqueador:** no hay scheduler verificado para ejecutar de nuevo lotes pending y el despachador legacy debe auditarse. No activar sin esos requisitos. [Acta 524](docs/524-mvp356-despachos-sin-solapamientos-piloto.md), [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794).
+
 ## 2026-11-11 — MVP355: contador documental exige origen firmado (SOLO DESARROLLO)
 Se reforzó la RPC de MVP354 para que un archivo NO cuente solo por fecha/request_id preasignado. Exige misma fuente en inbox firmado + vínculo privado MVP225 con método `quoted_whapi_id` o `single_active_round` y SHA exacto, sin conflicto no resuelto; usa fecha real de recepción. PG17 incluye negativos y casos de dos proveedores/archivos, con ROLLBACK. [Acta 523](docs/523-mvp355-procedencia-documentos-recepcion.md); [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794). Nada desplegado.
 
