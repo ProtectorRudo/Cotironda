@@ -8,7 +8,7 @@ CREATE TABLE cotironda_piloto_privado.original_terms_policy_mvp362 (
  terms_version text PRIMARY KEY
     CHECK (terms_version='cotironda-originales-alta-v1'),
  terms_body text NOT NULL CHECK(length(terms_body) BETWEEN 200 AND 20000),
- terms_sha256 text NOT NULL CHECK(terms_sha256 ~ '^[a-f0-9]{64}
+ terms_sha256 text NOT NULL CHECK(terms_sha256 ~ '^[a-f0-9]{64}$'),
  scope text NOT NULL DEFAULT 'original_identificable_tras_cierre'
    CHECK(scope='original_identificable_tras_cierre'),
  approved_at timestamptz,
