@@ -13,6 +13,17 @@
 
 **CI FINAL MVP355 (11/11/2026):** el SHA técnico [`721ecc12d2a9a35e54d53b35f009d419b4cca3f6`](https://github.com/ProtectorRudo/Cotironda/pull/798) pasó **5/5 workflows generales**: Next.js, unidad general (incluye **PG17 documental** y **Deno seguimiento** como jobs separados), PostgREST, PG17 aislamiento y verificación sitio. Probados dos formatos sintéticos, SHA, links débiles/ausentes, vínculo de aviso previo, duplicados, rondas solapadas y revocación. Además SELECT del nuevo SQL sin escrituras contra piloto: `2 despachos / 0 documentos acreditados`; token falso `not_found`. **Sin despliegue**, PR draft; no E2E real.
 
+## P0 — revisión explícita de aceptación Whapi con MFA (12/11/2026)
+
+**[PR #811](https://github.com/ProtectorRudo/Cotironda/pull/811)** DRAFT sobre #810, [Acta 538](https://github.com/ProtectorRudo/Cotironda/blob/feat/p0-revision-mfa-aceptacion-20261112/docs/538-p0-revision-mfa-respuesta-expresa.md).
+
+- [x] SQL `p0_whapi_terms_review_mfa_off.sql`: revisor conectado en código a Auth AAL2/M267, bandeja cifrada del webhook, aviso M364 anterior y política M362. Registro de auditoría y consentimiento **en transacción única** solo ante `explicit_accept` del operador (no por IA ni ACK Whapi).
+- [x] Módulo servidor `whapi-terms-mfa-review-p0.ts`: muestra respuesta original descifrada bajo RPC autenticada y exige segunda decisión humana que revalida SHA de mensaje y aviso. Sin teléfono/clave en logs, sin ruta ni mensaje real.
+- [x] Node con AES sintético y pruebas PostgreSQL17 con ROLLBACK preparadas. **CI SHA final por verificar**. El fixture MFA es un stub, **NO** prueba sesión Auth viva.
+- [ ] Sin operador real AAL2 provisionado, texto de originales de no ganadores aprobado, UI de operador protegida o puesta en piloto. Faltan contacto real con proveedor, Auth comprador, 2 originales y browser E2E. **P0–P5 ABIERTOS**.
+
+**SIGUIENTE ACCIÓN:** flujo de revisión privado autenticado y prueba real SOLO tras aprobar política y autorizar `Publicalo en cotironda-piloto`; luego completar recorrido con arquitecto y dos proveedores. No hay nueva ronda ni despliegue.
+
 ## P0 — controlador de ejecución PostgreSQL TLS para Whapi (12/11/2026)
 
 **[PR #810](https://github.com/ProtectorRudo/Cotironda/pull/810)** DRAFT sobre #809; [Acta 537](https://github.com/ProtectorRudo/Cotironda/blob/feat/p0-executor-postgres-tls-20261112/docs/537-p0-runner-postgres-tls-whapi.md).
