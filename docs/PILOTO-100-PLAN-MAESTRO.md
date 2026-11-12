@@ -91,6 +91,21 @@ Calendario 2026 parcialmente contrastado con fuentes oficiales: 2026-11-19 (La P
 
 **Estado:** solo código/CI, no Supabase/Edge/Vercel real, no contactos ni rondas reales. **Próximo paso único:** cerrar preflight de calendario y permisos, preparar despliegue en PILOTO seguro y completar análisis individual/general.
 
+## D014 — IA Central gobierna todo, sin feriados manuales del usuario (PR #823)
+
+**Decisión de producto 12/11/2026:** IA Central gestiona automáticamente calendario y equivalencias además de pedidos, respuestas y análisis. Modelos interpretan, fuentes oficiales y documentación real aportan evidencia, y cálculos de fechas/cantidades/condiciones son deterministas. **Ni compradores ni proveedores cargan feriados, editan documentos para que el sistema funcione ni aprueban cada cotización.** Las excepciones son revisiones internas, no reconfirmaciones externas.
+
+[PR #823](https://github.com/ProtectorRudo/Cotironda/pull/823), apilado sobre #822, agrega preflight que coteja feriados entre fuentes nacional oficial y secundaria, distingue obligatorios/optativos, calcula 2 días hábiles a las 18 en Argentina, admite año siguiente; orquestador central valida calendario antes del ruteo semántico D013 para ahorrar IA. Adaptador de JSON público solo permite HTTPS/host conocido, sin cookies/JWT, sin redirects, timeout y tamaño. Aún no se instaló SQL ni cron; requiere conectar el recurso oficial exacto, ingesta local y snapshot DB versionado. **No considerar el viejo requisito técnico de "aprobar a mano un año entero" un paso de usuario**: debe transformarse en sincronización automática auditada. Sin fuente consistente, revisión interna y nunca fecha inventada.
+
+- [ ] CI Node orquestador, calendario multifuente y fetch seguro; Next.js build, Deno y regresiones para SHA final.
+- [ ] Obtener y confirmar **URL exacta** del JSON oficial de JGM, documentar metadatos y cotejo con fuente independiente, incluyendo cambios de decretos; no adivinar URL.
+- [ ] Implementar sincronización/almacenamiento automático de calendario verificado y cobertura local en SQL V2-05 con control de revisión y rollback. Feriados optativos del comercio no se consideran obligatorios salvo adhesión comprobada.
+- [ ] IA Central enriquecer equivalencias con fichas técnicas de fuente verificable y sin vocabulario cerrado. Cálculos numéricos deterministas, solo cobertura comprobada por catálogo.
+- [ ] Auth real de comprador, consentimiento previo del proveedor y piloto Vercel/Whapi seguro, todo bajo `Publicalo`.
+- [ ] E2E completo 1 arquitecto + 2 proveedores + 2 originales descargables, comentario individual y cierre/informe general.
+
+**Estado:** solo código/CI, **no desplegado**. Próximo paso único: **fuentes oficiales + integración SQL de calendario automática**, seguida de preflight completo para PILOTO. No convertir un paso interno de validación en trabajo para el negocio.
+
 ## V2-00 — INVENTARIO PENDIENTE DE CERRAR (auditar antes de desplegar)
 
 **Auditoría inicial en curso, 12/11/2026:** [Inventario V2-00 de código y PILOTO](V2-00-INVENTARIO-REUTILIZACION-20261112.md). Se verificó en SOLO LECTURA la diferencia entre `main` estático, núcleo de la rama operativa #813, PR documental #815 y funciones/tablas reales. Hay 106 líneas de catálogo pero sin campos completos de SKU y sin confirmación formal; los motores offline conservan filtros por rubro, no cumplen aún D013 en el piloto. Próximo control antes de escribir código: comparar SHA de funciones y despliegue Vercel, Storage/RLS y elegir la rama funcional de V2-02 **sin** PR #814. No hay nuevos envíos ni E2E.
