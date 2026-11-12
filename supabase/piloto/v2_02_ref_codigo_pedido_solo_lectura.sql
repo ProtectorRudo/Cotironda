@@ -24,7 +24,7 @@ BEGIN
 
  -- ÚNICAMENTE un texto original efectivamente registrado por el webhook,
  -- de proveedor permitido. Ni un LLM ni el comprador pueden inventar el código.
- SELECT m.participant_key,m.received_at
+ SELECT m.participant_key,m.received_at,p.consent_at AS supplier_consent_at
  INTO v_source
  FROM cotironda_piloto_privado.whapi_inbox m
  JOIN cotironda_piloto_privado.participants p
@@ -35,7 +35,8 @@ BEGIN
  AND m.processing_state IN('unmatched_quote','needs_review')
  AND m.plaintext_sha256=encode(sha256(convert_to(p_original_text,'UTF8')),'hex')
  AND p.participant_role='supplier'
- AND p.consent_at IS NOT NULL AND p.opted_out_at IS NULL;
+ AND p.consent_at IS NOT NULL AND p.opted_out_at IS NULL
+ AND p.consent_at<=m.received_at;
  IF NOT FOUND THEN
   RETURN jsonb_build_object('state','source_not_authorized');
  END IF;
@@ -74,6 +75,11 @@ BEGIN
  AND job.whapi_message_id ~ '^[A-Za-z0-9._:-]{8,160}$'
  AND job.finished_at IS NOT NULL
  AND job.finished_at<=v_source.received_at
+ -- La autorizacion y la invitacion deben existir ANTES del envio,
+ -- no haberse registrado retroactivamente tras recibir el presupuesto.
+ AND v_source.supplier_consent_at<=job.finished_at
+ AND buyer.consent_at<=job.finished_at
+ AND inv.created_at<=job.finished_at
  AND r.created_at<=v_source.received_at
  AND r.closes_at>v_source.received_at
  AND r.state='prepared' AND inv.state='prepared'
