@@ -22,7 +22,10 @@ export function puertosOperadorSupabasePiloto(jwt:string){
     'cotironda_piloto_operator_queue_auth_mvp267',
     'cotironda_piloto_operator_usage_auth_mvp267',
     'cotironda_piloto_operator_case_action_auth_mvp267',
-    'cotironda_piloto_operator_usage_review_auth_mvp267'
+    'cotironda_piloto_operator_usage_review_auth_mvp267',
+    'cotironda_piloto_terms_review_queue_auth_p0',
+    'cotironda_piloto_terms_review_packet_auth_p0',
+    'cotironda_piloto_terms_review_decide_auth_p0'
    ]);
    if(!methods.has(name))throw new Error('operador_rpc_no_permitida');
    const {data,error}=await client.rpc(name,params);

@@ -103,6 +103,39 @@ REVOKE ALL ON FUNCTION
  cotironda_piloto_privado.terms_review_candidate_p0(text)
  FROM PUBLIC,anon,authenticated,service_role;
 
+-- Small, redacted PRIVATE inbox for an operator to choose a message without
+-- pasting a hash manually. No ciphertext/plaintext/phone in list results.
+-- The candidate resolver validates each item; access is AAL2 + live operator.
+CREATE FUNCTION public.cotironda_piloto_terms_review_queue_auth_p0()
+RETURNS jsonb LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path='' AS $fn$
+DECLARE actor uuid; pending jsonb;
+BEGIN
+ actor:=cotironda_piloto_privado.operator_session_mvp267();
+ IF actor IS NULL THEN RETURN jsonb_build_object('state','not_authorized');END IF;
+ SELECT coalesce(jsonb_agg(jsonb_build_object(
+  'messageHmac',q.message_hmac,
+  'supplierKey',q.supplier_key,
+  'receivedAt',q.received_at
+ ) ORDER BY q.received_at DESC),'[]'::jsonb)
+ INTO pending
+ FROM (
+  SELECT c.message_hmac,c.supplier_key,c.received_at
+  FROM cotironda_piloto_privado.whapi_inbox inbox
+  JOIN LATERAL cotironda_piloto_privado.terms_review_candidate_p0(
+    inbox.message_hmac) c ON true
+  WHERE inbox.kind='text' AND inbox.request_id IS NULL
+  ORDER BY inbox.received_at DESC
+  LIMIT 12
+ ) q;
+ RETURN jsonb_build_object('state','ready','items',pending);
+END;$fn$;
+REVOKE ALL ON FUNCTION
+ public.cotironda_piloto_terms_review_queue_auth_p0()
+ FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION
+ public.cotironda_piloto_terms_review_queue_auth_p0()
+ TO authenticated;
+
 -- Returns encrypted evidence ONLY to an active Supabase Auth AAL2 incident
 -- manager with an unrevoked live session (M267). Caller never supplies
 -- supplier_key, phone, actor UUID or consent boolean.
