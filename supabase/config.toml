@@ -23,3 +23,10 @@ verify_jwt = false
 # project service key and existing recovery secret. SQL flag defaults OFF.
 # This entry DOES NOT deploy or enable the Edge function.
 verify_jwt = false
+
+[functions.cotironda-piloto-v2-pdf-reader]
+# Isolated PDF text extraction. Only the V2 buyer Auth SERVER can call.
+# Verify long COTIRONDA_PILOT_V2_PDF_SHARED_SECRET inside the handler;
+# modern sb_secret_ and the opaque shared secret are NOT a JWT.
+# Feature flags remain OFF; this stanza alone does NOT deploy the function.
+verify_jwt = false
