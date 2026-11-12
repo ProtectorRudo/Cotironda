@@ -97,6 +97,14 @@
 
 **Siguiente tarea única:** pasar preflight de instalación segura del circuito #816–#826 para PILOTO, preparar buyer Auth + consentimiento original real de cada proveedor y probar la primera cotización auténtica PDF/Excel por navegador; después cierre 2 días hábiles e informe global. Evitar nuevas mejoras cosméticas y no exponer presupuestos históricos ambiguos como V2.
 
+## V2-06 — PREPUBLICACIÓN BLOQUEANTE (PR #827, 12/11/2026)
+
+**Actualización real con Supabase/Vercel/Edge SOLO LECTURA**: [PR #827](https://github.com/ProtectorRudo/Cotironda/pull/827) apilado sobre #826 incorpora preflight automatizable para dos etapas distintas: `primer_original` y `piloto_completo`. No despliega ni puede hacerlo. SQL `supabase/piloto/v2_06_release_inventory_readonly.sql` ejecutado en Supabase PILOTO PostgreSQL 17.11 devolvió **0 usuarios Auth**, **0 nuevas funciones V2-02/03/04**, **0 tablas V2**, bucket privado original 8MiB confirmado, funciones legadas de preparación presentes, y 2 constraints históricas de `round_days`. Whapi activo **v76**, SHA `656cb24bd1cbfdbb0de6d87a9acae17ad911c13b6e404667029dd4d0b55b822e` intacto. Vercel `cotironda-portal-dev` es Next.js y Preview protegida por SSO, **solo están los cinco nombres de env del acceso anterior**; los flags/secretos/URLs privados V2 NO figuran en Preview. No se leyeron valores secretos. No se probó ningún original V2 fuertemente asociado ni consentimiento prospectivo efectivo de proveedor.
+
+**Desarrollo:** `scripts/piloto/v2-release-readiness.mjs` compara observación no sensible contra requisitos: comprador Auth, proveedor consentido prospectivamente, vinculación documental fuerte, RPC y tablas reales, Edge PDF, SHA exacto del build Vercel y Preview protegida. Para `piloto_completo` exige además 2 originales de proveedores distintos, ruteo D013, calendario con cierre a 2 días hábiles, Whapi E2E e informe final real. Si falta uno, `BLOCKED`. **Aunque pasara todos, nunca publica ni autoriza: `can_publish=false`.** Foto sanitizada del estado de hoy en `scripts/piloto/observaciones/v2-readiness-piloto-20261112.json`; sus datos deben refrescarse antes de cualquier release. Control CI específico PR #827 aprobado; verificación de toda CI pendiente para SHA final. [Acta](https://github.com/ProtectorRudo/Cotironda/blob/feat/v2-06-preflight-publicacion-bloqueante-20261112/docs/V2-06-PREFLIGHT-PUBLICACION-20261112.md).
+
+**Orden crítico:** NO seguir acumulando PRs de IA: asegurar Auth de arquitecto, consentimiento prospectivo proveedor para mostrar originales, instalación SQL V2-03/04, lector PDF, Vercel Preview pin SHA/flags OFF, prueba primer original real. Luego ruteo/feriados/cierre/informe final. Todo deploy requiere **`Publicalo`**, sin afectar producción ni Whapi v76 hasta verificación de compatibilidad.
+
 ## SI ABRÍS UNA CONVERSACIÓN NUEVA: LEÉ ESTO PRIMERO
 
 1. [Contrato V2 vigente](COTIRONDA-V2-CONTRATO.md).
