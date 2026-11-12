@@ -106,6 +106,23 @@ Calendario 2026 parcialmente contrastado con fuentes oficiales: 2026-11-19 (La P
 
 **Estado:** solo código/CI, **no desplegado**. Próximo paso único: **fuentes oficiales + integración SQL de calendario automática**, seguida de preflight completo para PILOTO. No convertir un paso interno de validación en trabajo para el negocio.
 
+## Ruta crítica real tras PR #824 — dejar de acumular piezas sin conectar
+
+**Estado 12/11/2026:** en GitHub están propuestos y testeados varios componentes D013, calendario, original seguro y respuesta; en el PILOTO **no está instalado el circuito nuevo**, comprador Auth=0, no hay consentimiento proveedor V2 real. La regla de cierre de 3–7 días vigente no es la V2. PR #824 agregó guía individual con **evidencia literal y fallback no bloqueante**, solo para texto previamente extraído y autenticado: **NO es una función del portal hasta integrar recepción→trabajador→SQL→listado**.
+
+[PR #824](https://github.com/ProtectorRudo/Cotironda/pull/824) código `src/server/v2-04-analisis-individual.ts`, pruebas de huella de fuente, permisos, salida de IA y citas reales, error de IVA/flete y confidencialidad. Original siempre disponible incluso si IA falla. Un documento PDF/Excel requiere el extractor fidedigno, trazable y vinculado al original; no se convierte en texto por ficción ni se edita el archivo proveedor.
+
+**Orden único a ejecutar (no más escalones de complejidad):**
+1. [ ] Cerrar y verificar CI final PR #824.
+2. [ ] Integrar el **primer original real** y fuente textual verificada a la guía individual con persistencia privada/colas idempotentes por (ronda, docId, SHA); comprador solo ve respuestas reales. Texto de WhatsApp también debe conservarse literalmente como original, aun si no es archivo PDF.
+3. [ ] Integrar la visualización real de esas guías en el portal Auth; habilitación con feature flag OFF hasta release y pruebas de aislamiento/revocación. No exponer datos por la mera posesión de un enlace.
+4. [ ] Resolver cuentas Auth reales de comprador, consentimientos prospectivos por proveedor, configuración OTP y único proyecto Vercel PILOTO.
+5. [ ] Revalidar Edge Whapi v76 al momento de instalar y ejecutar migraciones SQL V2 verificadas con backup y rollback, sin tocar rondas históricas. **Instalación SOLO con `Publicalo`.**
+6. [ ] E2E real WhatsApp comprador→2 proveedores→2 originales descargables→2 guías→cierre 2 días hábiles→informe general; verificar flujos de error y costos.
+7. [ ] Calendario automático desde fuentes oficiales, contraste y reglas locales **sin pasos de usuarios**. No activar reloj hábil si fuentes/cron/snapshots no están verificados. Evitar usar esto como excusa para bloquear el primer original seguro.
+
+**No afirmar plazos ni porcentajes** sin evidencia real; el objetivo es una transacción comercial completa, no un conteo de PR.
+
 ## V2-00 — INVENTARIO PENDIENTE DE CERRAR (auditar antes de desplegar)
 
 **Auditoría inicial en curso, 12/11/2026:** [Inventario V2-00 de código y PILOTO](V2-00-INVENTARIO-REUTILIZACION-20261112.md). Se verificó en SOLO LECTURA la diferencia entre `main` estático, núcleo de la rama operativa #813, PR documental #815 y funciones/tablas reales. Hay 106 líneas de catálogo pero sin campos completos de SKU y sin confirmación formal; los motores offline conservan filtros por rubro, no cumplen aún D013 en el piloto. Próximo control antes de escribir código: comparar SHA de funciones y despliegue Vercel, Storage/RLS y elegir la rama funcional de V2-02 **sin** PR #814. No hay nuevos envíos ni E2E.
