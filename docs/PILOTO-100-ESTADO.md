@@ -107,6 +107,16 @@
 
 **Orden crítico:** NO seguir acumulando PRs de IA: asegurar Auth de arquitecto, consentimiento prospectivo proveedor para mostrar originales, instalación SQL V2-03/04, lector PDF, Vercel Preview pin SHA/flags OFF, prueba primer original real. Luego ruteo/feriados/cierre/informe final. Todo deploy requiere **`Publicalo`**, sin afectar producción ni Whapi v76 hasta verificación de compatibilidad.
 
+## V2-07 — PRIMER ARQUITECTO AUTH, sin registro público (PR #828, 12/11/2026)
+
+**[PR #828](https://github.com/ProtectorRudo/Cotironda/pull/828)** (draft sobre #827) implementa **en rama, sin deploy**, el procedimiento de alta del primer comprador Auth. `auth.users=0` verificado en PILOTO; el portal `signInWithOtp({shouldCreateUser:false})` **no registra al primer comprador**. Nuevo SQL `v2_07_buyer_auth_bootstrap_check_private.sql`: RPC `service_role` que coteja la huella SHA del teléfono E.164 con **un solo comprador consentido**, canal y mensaje Whapi autenticados, sin duplicados ni revocación. Devuelve únicamente verdadero/falso. El nuevo CLI `apps/portal/scripts/v2-buyer-bootstrap.mjs` hace **dry-run por defecto**, restringido al proyecto PILOTO+Preview, SHA de release y sin registros públicos; `--execute` requiere **`Publicalo` explícito**. En ejecución futura la cuenta nace **`phone_confirm:false`**, no verificada: el arquitecto debe ingresar el OTP SMS REAL antes de que la base permita ver sus originales.
+
+**V2-06 corregido:** ni siquiera basta `auth.users>=1`: el guard `primer_original` exige prueba real de **SMS enviado, OTP verificado y sesión válida**; no está comprobada la configuración del proveedor SMS. El preflight permanecerá `BLOCKED` hasta esa verificación. Tests Node de ejecución accidental, huella/identidad y escenarios negativos; PG17 rollback con ACL, comprador ajeno, revocación y canal duplicado. **CI PR #828 pendiente de verificar último SHA.**
+
+**Último estado PILOTO SIN CAMBIOS:** 0 Auth compradores, 0 RPC/tabla comerciales V2 instaladas, Edge Whapi v76, portal Vercel aún no configurado para V2; **no hubo nueva cuenta, SMS, WhatsApp, migración, activación ni prueba E2E real**.
+
+**Siguiente paso único para el piloto vivo:** congelar PR #816→#828 y preflight/rollback; publicación PILOTO **con funciones OFF solo bajo `Publicalo`**; después bootstrap autorizado de primer comprador, prueba SMS OTP real y consentimiento V2 del proveedor; recién entonces mostrar PDF/Excel originales auténticos al arquitecto con comentarios y hacer la ronda completa. **No pedir al arquitecto confirmar cotización por cotización**.
+
 ## SI ABRÍS UNA CONVERSACIÓN NUEVA: LEÉ ESTO PRIMERO
 
 1. [Contrato V2 vigente](COTIRONDA-V2-CONTRATO.md).
