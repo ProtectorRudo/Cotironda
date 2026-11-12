@@ -1,32 +1,30 @@
-# 02 — Reglas funcionales
+# 02 — Reglas funcionales V2 (12/11/2026)
 
-## Pedido
-- Empresa compradora autenticada carga documento o texto, datos de entrega, urgencia, condiciones y plazo.
-- IA extrae líneas con cantidades, unidades, rubros, marca y especificaciones; dudas visibles. Nada inventado.
-- Comprador revisa y **confirma** antes de publicar. El envío automático sin confirmación está prohibido.
-- Plazos candidatos: 24/48 horas; 3, 5, 7 o 10 días. Vigencia y zona horaria se verifican antes del piloto.
+> **Vigente:** [Contrato V2](COTIRONDA-V2-CONTRATO.md) prevalece si hubiera una diferencia. Las reglas de anonimato/ganadores/confirmación anteriores quedaron reemplazadas por D012.
 
-## Proveedores
-- Registro gratuito, catálogo por archivo o selección de categorías, revisado por el proveedor.
-- Selección por producto ofrecido, entrega en zona, aceptación de comunicaciones y disponibilidad para cotizar.
-- Catálogo declarado no equivale a stock disponible.
-- Si omite un ítem, distinguir: no comercializa, sin stock, sin precio, olvidado.
-- Invitaciones limitadas y pertinentes, con rotación y mecanismo de baja.
+## Solicitud y distribución
+- Comprador autenticado envía PDF/Excel/Word/imagen/texto; IA identifica materiales, cantidades, rubros, unidades y variantes. No inventar datos. Preguntar localidad de entrega **solo si falta**; no exigir correcciones o confirmaciones por cada pedido en el flujo normal.
+- Negocios seleccionados por **catálogo declarado, rubro y zona**, con consentimiento WhatsApp. Catálogo no garantiza stock. Enviar a cada comercio solo su rubro, con referencia de pedido única, sin notificaciones adicionales presionando precios.
+- Admitir múltiples rondas de diferentes arquitectos **simultáneamente para un mismo negocio**. La asociación se fundamenta en referencia/mensaje citado/procedencia, no en bloquear al proveedor ni elegir automáticamente por fecha.
 
-## Ofertas
-- Recibidas por WhatsApp o portal y estructuradas en borrador; **el proveedor confirma** antes de validez.
-- Oferta incluye moneda, cantidad, unidad, especificación, IVA, precio, transporte, descuentos, mínimo, plazo, disponibilidad y forma de pago.
-- Si faltan datos determinantes, marcar «requiere aclaración». No asumir IVA ni flete.
-- Cada cambio confirmado crea versión inmutable. Al cierre se congela la oferta vigente, salvo reapertura auditada.
-- Marcas alternativas válidas si son técnicamente equivalentes y no hay requisito obligatorio; alternativas no equivalentes, visibles pero fuera del cálculo conforme.
+## Respuesta y original
+- Respuestas libres por WhatsApp (texto o adjuntos, formatos habituales). Preservar original inmutable, fecha, remitente, SHA y versiones. Conservar ítems adicionales, descuentos y condiciones incluso si no están en la solicitud.
+- Webhook autenticado, deduplicación y vínculo inequívoco por fuente. Ante varias rondas posibles, **revisión interna**; jamás reasignar histórico sin evidencia. No pedir al negocio reenvío por una limitación interna.
+- Al comprador se le muestra el documento original **tan pronto está asociado y autorizado**, independientemente de que IA haya finalizado su análisis.
 
-## Privacidad y resultado
-- Comprador ve importes y condiciones pero no nombre/contacto del proveedor durante ronda, según política a aprobar.
-- Proveedores no ven identidad, oferta detallada ni archivos de competidores.
-- No compartir ranking ordinal salvo canasta completa y comparación realmente equivalente.
-- Adjudicación manual a uno o hasta dos proveedores por rubro con asignación de cantidades no duplicada.
-- Sólo ganadores y comprador intercambian identidad/contacto después de confirmación. No garantizar compra ni entrega en MVP.
-- Registrar transiciones, quién decidió, por qué y cuándo; prohibir adjudicación después de cambios no confirmados.
+## Durante la ronda
+- Mostrar solo comercios que **respondieron**, nombre, rubro, fecha, original y comentario individual. **Prohibido** mostrar lista/número de invitados, nombres de pendientes, cuántos faltan, ranking u ofertas de otras empresas. Si nadie respondió: «Todavía no recibimos cotizaciones».
+- Análisis breve orientativo 70–110 palabras: cobertura y faltantes, diferencia de presentación/unidad/marca, condiciones relevantes, conclusión práctica. Debe aportar valor sin ser un testamento. Si IA falla, original permanece y comentario pendiente/no disponible.
+- Identidad de comercios que respondieron visible al comprador destinatario bajo términos de participación informados; archivos privados y descargas autenticadas. No mostrar a proveedores cotizaciones de otros.
 
-## Casos antiabuso
-Pedidos falsos, invitaciones duplicadas por rubro compartido, cambios fuera de plazo, modificación de oferta ajena, proveedor sin consentimiento, archivos maliciosos y spam.
+## Cierre y análisis general
+- Plazo predeterminado **dos días hábiles**; fecha/hora fijadas y visibles, huso Argentina, feriados y excepciones probados. Hora 18:00 del segundo día hábil siguiente propuesta para el piloto, calendario por validar.
+- A la hora de cierre comparar únicamente respuestas válidas en plazo, por **rubro, cobertura y productos equivalentes**. Precio por unidad normalizada con cálculo determinista; descuentos, IVA, flete, disponibilidad y forma de pago SOLO cuando aparecen de modo explícito.
+- Si no consta IVA/flete/pago, informar «No informado», no «incluido», «gratis» o «sin IVA». Ofertas parciales deben diferenciarse de compras completas. Sin un número de ofertas comparable, indicar limitaciones. Recomendación IA justificada, no adjudicación automática.
+
+## Seguridad
+- Términos claros a comercios sobre exhibición de identidad comercial y originales al comprador de la ronda; revisar datos personales/bancarios y base legal antes de activar. Evitar consentimiento adicional por mensaje.
+- Comprador autenticado, RLS por empresa, Storage privado, URLs firmadas temporales, opt-out WhatsApp, anti-spam, auditoría y mínimos privilegios. No considerar pertenencia a Cotironda como permiso ilimitado para todos los usos.
+- Prohibidos secretos/PII en repo público. Sin despliegue con «Avanza» o «Documentalo».
+
+**Fuente operativa:** [Plan maestro V2](PILOTO-100-PLAN-MAESTRO.md) y [Estado](PILOTO-100-ESTADO.md).
