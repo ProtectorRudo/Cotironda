@@ -1,3 +1,6 @@
+## 2026-11-12 — Cotironda V2-02: prueba temporal de autorizaciones (SOLO DESARROLLO)
+PR #816: el lookup por referencia exige consentimiento comprador/proveedor e invitación anteriores al despacho Whapi, además de consentimiento del proveedor anterior a su respuesta. Se agregaron pruebas sintéticas PG17 de autorizaciones tardías. Consulta solo lectura en cotironda-piloto: 4/4 despachos aceptados cumplen orden cronológico; 0 altas tardías observadas. Sin SQL aplicado, Edge desplegada, WhatsApp enviado ni E2E. Fuente vigente: PR #815 e Issue #794.
+
 ## 2026-11-11 — MVP355: contador documental exige origen firmado (SOLO DESARROLLO)
 Se reforzó la RPC de MVP354 para que un archivo NO cuente solo por fecha/request_id preasignado. Exige misma fuente en inbox firmado + vínculo privado MVP225 con método `quoted_whapi_id` o `single_active_round` y SHA exacto, sin conflicto no resuelto; usa fecha real de recepción. PG17 incluye negativos y casos de dos proveedores/archivos, con ROLLBACK. [Acta 523](docs/523-mvp355-procedencia-documentos-recepcion.md); [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794). Nada desplegado.
 
