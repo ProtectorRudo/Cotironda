@@ -55,7 +55,9 @@ CREATE TABLE cotironda_piloto_privado.supplier_original_optins_mvp362 (
    CHECK(evidence_review_sha256 ~ '^[a-f0-9]{64}$'),
  method text NOT NULL DEFAULT 'whapi_onboarding_explicit'
    CHECK(method='whapi_onboarding_explicit'),
- PRIMARY KEY(supplier_key,terms_version),
+ -- Historical episodes: a new explicitly reviewed acceptance after a
+ -- recorded revocation has its own inbound event. Do not overwrite old proof.
+ PRIMARY KEY(supplier_key,terms_version,evidence_message_hmac),
  UNIQUE(evidence_message_hmac),
  CHECK (recorded_at>=accepted_at)
 );
@@ -64,12 +66,15 @@ CREATE TABLE cotironda_piloto_privado.supplier_original_revocations_mvp362 (
  terms_version text NOT NULL,
  evidence_message_hmac text NOT NULL
    CHECK(evidence_message_hmac ~ '^[a-f0-9]{64}$'),
+ optin_message_hmac text NOT NULL
+   CHECK(optin_message_hmac ~ '^[a-f0-9]{64}$'),
  revoked_at timestamptz NOT NULL,
  recorded_at timestamptz NOT NULL DEFAULT clock_timestamp(),
  reviewed_by_operator uuid NOT NULL,
  PRIMARY KEY(supplier_key,terms_version,evidence_message_hmac),
- FOREIGN KEY(supplier_key,terms_version) REFERENCES
- cotironda_piloto_privado.supplier_original_optins_mvp362(supplier_key,terms_version),
+ FOREIGN KEY(supplier_key,terms_version,optin_message_hmac) REFERENCES
+ cotironda_piloto_privado.supplier_original_optins_mvp362
+ (supplier_key,terms_version,evidence_message_hmac),
  CHECK(recorded_at>=revoked_at)
 );
 -- Deny all direct API roles; only a tightly reviewed operator/owner action
@@ -121,7 +126,8 @@ AS $mvp362$
    AND r.closed_at<=clock_timestamp()
  ), opts AS (
   -- Legacy specific authorization remains valid ONLY under its old rules.
-  SELECT c.accepted_at,c.version,1 priority
+  SELECT c.accepted_at,c.version,1 priority,
+    NULL::timestamptz AS evidence_recorded_at
   FROM allowed a
   JOIN cotironda_piloto_privado.original_share_consents_mvp178 c
    ON c.request_id=a.id AND c.supplier_key=p_supplier_key
@@ -141,7 +147,8 @@ AS $mvp362$
   UNION ALL
 
   -- One-time explicit onboarding consent, only for future rounds.
-  SELECT o.accepted_at,o.terms_version AS version,2 priority
+  SELECT o.accepted_at,o.terms_version AS version,2 priority,
+    o.recorded_at AS evidence_recorded_at
   FROM allowed a
   JOIN cotironda_piloto_privado.supplier_original_optins_mvp362 o
    ON o.supplier_key=p_supplier_key
@@ -191,7 +198,15 @@ AS $mvp362$
   SELECT 1 FROM cotironda_piloto_privado.supplier_original_revocations_mvp362 rev
   WHERE rev.supplier_key=p_supplier_key
     AND rev.revoked_at<=clock_timestamp()
-    -- A global revocation blocks BOTH legacy and onboarding downloads.
+    AND rev.recorded_at<=clock_timestamp()
+    -- Legacy round-level consent is never revived by new onboarding.
+    -- Onboarding episode is valid ONLY if accepted & recorded AFTER the
+    -- latest recorded/reported revocation; old rounds stay excluded by
+    -- accepted_at and recorded_at both preceding request.created_at.
+    AND (opts.priority=1
+      OR rev.revoked_at>=opts.accepted_at
+      OR rev.recorded_at>=opts.accepted_at
+      OR rev.recorded_at>=opts.evidence_recorded_at)
  )
  -- If an explicit per-round consent was revoked, don't fall back to
  -- an older onboarding acceptance to override that withdrawal.
