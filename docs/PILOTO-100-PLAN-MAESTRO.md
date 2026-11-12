@@ -167,6 +167,20 @@ Se reutilizó lector existente de ZIP/XML para Word/Excel, además de TXT/CSV; s
 
 **Prioridad de negocio:** dejar de agregar modelos/parsers sin necesidad. El bloqueo actual es **identidad/consentimiento + instalación + prueba comercial**, no otra prueba de un PDF sintético. [Acta V2-06](https://github.com/ProtectorRudo/Cotironda/blob/feat/v2-06-preflight-publicacion-bloqueante-20261112/docs/V2-06-PREFLIGHT-PUBLICACION-20261112.md).
 
+## V2-07 — Alta de primer comprador Auth con identidad Whapi (PR #828, 12/11/2026)
+
+**Estado anterior confirmado:** `auth.users=0`, ninguna función/tabla de la nueva V2 en Supabase PILOTO, Whapi v76 vivo. El portal V2 solicita OTP SMS con `shouldCreateUser:false`, por lo que **es imposible iniciar sesión sin una cuenta creada por el operador**. No cambiar esa opción a registro público.
+
+[PR #828](https://github.com/ProtectorRudo/Cotironda/pull/828) candidato no desplegado: RPC `cotironda_piloto_v2_bootstrap_buyer_check_private` (solo service_role) verifica buyer consentido y único con huella de contacto + prueba Whapi auténtica, nunca devuelve teléfono; servidor y CLI operador **dry-run por defecto**, proyecto PILOTO exacto, SHA de release, registro cerrado y `--execute` bloqueado sin autorización `Publicalo`. Al crear en futuro, `phone_confirm:false`: acceso SOLO después de OTP SMS real. **No validar un número porque simplemente aparece en un catálogo o respondió WhatsApp.**
+
+- [ ] Validar CI de PR #828: Node unitarios sin secretos y PG17 ROLLBACK (comprador correcto, contacto incorrecto/duplicado, opt-out, ACL, token ausente), Next.js y otras regresiones.
+- [ ] Con **`Publicalo`**, instalar primero infraestructura V2 PILOTO con flags OFF y backup/rollback; entonces instalar el RPC de comprobación Auth y ejecutar *dry-run* del primer buyer, sin publicar números.
+- [ ] Validar proveedor de SMS de Supabase PILOTO con pruebas reales (no basta inferir que está habilitado por `auth.users`), crear la cuenta bajo aprobación expresa y realizar el primer OTP por SMS verificando propiedad del teléfono. No autoconfirmar desde admin ni introducir contraseña.
+- [ ] Proveedor: consentimiento prospectivo comprobable V2 de compartir originales y nombres; comprador: JWT real + sesión viva + coincidencia en canal Whapi, sin filtrar por rubro.
+- [ ] Primer original descargable + resumen individual PDF/Excel; luego 2 proveedores y cierre 2 días hábiles con reporte general. **NO** proclamar piloto terminado antes del E2E real.
+
+**Guard preflight #827 actualizado:** `primer_original` no pasa si la prueba real SMS no fue completada; Auth precreado sin código verificado no alcanza. No hubo hoy nuevos usuarios ni mensajes.
+
 ## V2-00 — INVENTARIO PENDIENTE DE CERRAR (auditar antes de desplegar)
 
 **Auditoría inicial en curso, 12/11/2026:** [Inventario V2-00 de código y PILOTO](V2-00-INVENTARIO-REUTILIZACION-20261112.md). Se verificó en SOLO LECTURA la diferencia entre `main` estático, núcleo de la rama operativa #813, PR documental #815 y funciones/tablas reales. Hay 106 líneas de catálogo pero sin campos completos de SKU y sin confirmación formal; los motores offline conservan filtros por rubro, no cumplen aún D013 en el piloto. Próximo control antes de escribir código: comparar SHA de funciones y despliegue Vercel, Storage/RLS y elegir la rama funcional de V2-02 **sin** PR #814. No hay nuevos envíos ni E2E.
