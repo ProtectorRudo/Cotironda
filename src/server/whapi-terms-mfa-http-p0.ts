@@ -25,7 +25,7 @@ const HEADERS={
  'x-robots-tag':'noindex, nofollow, noarchive'
 };
 type Env=Record<string,string|undefined>;
-type Action='preparar'|'decidir';
+type Action='bandeja'|'preparar'|'decidir';
 type User=Readonly<{id:string;is_anonymous?:boolean|null}>;
 type Ports=Readonly<{
  getUser:(jwt:string)=>Promise<User|null>;
@@ -52,6 +52,7 @@ export function revisionMfaHTTPHabilitada(env:Env):boolean{
   /^[a-fA-F0-9]{64}$/u.test(env.COTIRONDA_P0_TERMS_INBOX_AES_HEX);
 }
 function parse(action:Action,v:unknown){
+ if(action==='bandeja')return exact(v,[])?{}:null;
  if(action==='preparar'){
   if(!exact(v,['messageHmac'])||
     typeof v.messageHmac!=='string'||!HASH.test(v.messageHmac))return null;
@@ -108,11 +109,33 @@ export async function responderRevisionMfaOperadorP0(
   const claims=JSON.parse(Buffer.from(encoded,'base64url').toString('utf8'));
   if(!exactMfa(claims))return fail(403,'mfa_requerido');
   // The private SQL itself checks the LIVE Auth session and AAL2 on EACH RPC.
+  if(action==='bandeja'){
+   const raw=await ports.authenticatedRpc(
+    'cotironda_piloto_terms_review_queue_auth_p0',{});
+   if(!exact(raw,['state','items'])||raw.state!=='ready'||
+     !Array.isArray(raw.items)||raw.items.length>12)
+     return fail(409,'revision_no_disponible');
+   const safe=[];
+   for(const item of raw.items){
+    if(!exact(item,['messageHmac','supplierKey','receivedAt'])||
+       typeof item.messageHmac!=='string'||!HASH.test(item.messageHmac)||
+       typeof item.supplierKey!=='string'||
+       !/^[a-z][a-z0-9_]{2,63}$/u.test(item.supplierKey)||
+       typeof item.receivedAt!=='string'||
+       !Number.isFinite(Date.parse(item.receivedAt)))
+       return fail(409,'revision_no_disponible');
+    safe.push(item);
+   }
+   return response(200,{state:'ready',items:safe});
+  }
   const key=Buffer.from(env.COTIRONDA_P0_TERMS_INBOX_AES_HEX!,'hex');
   const reviewer=crearRevisorMfaOriginalesP0({
    inboxAesKey:key,authenticatedRpc:ports.authenticatedRpc
   });
   if(action==='preparar'){
+   if(!('messageHmac' in valid)||
+      typeof valid.messageHmac!=='string')
+     return fail(400,'solicitud_invalida');
    const v=await reviewer.preparar(valid.messageHmac);
    return response(200,{state:'ready',...v});
   }
