@@ -44,6 +44,18 @@ Proyecto exclusivo: `ilggkalaafhtiysyzlmg`, entorno `cotironda-piloto`.
 
 **Precisiones críticas:** cuatro `request_id` NO prueban que el vínculo sea correcto con dos proveedores actuales; hay casos históricos ambiguos. Los 8 SHA en base no son una verificación byte-a-byte en esta auditoría. RPC instalada no equivale a endpoint autenticado funcionando. Comprobar en P1/P2/P4.
 
+## Revisión Vercel (11/11/2026, lectura sin modificaciones)
+
+**Hay varios proyectos Vercel vinculados a un mismo repositorio, no un portal único de piloto.** No confundir una compilación READY con un circuito publicado y probado:
+- `cotironda`, proyecto principal: último **production READY** comprobado en rama `main`, SHA `5987f1705ff1dba609489374531fa9e942150e7a`, corresponde a la **demostración web aislada** de Cotironda, NO a la ronda documental E2E. Se observan otras compilaciones `Preview READY` en ramas de desarrollo y documentación.
+- `cotironda-seguimiento-vista-piloto`: último **production READY** registrado en SHA `6ab1632581ca054b985a309cf71a9b85ac2831d0` de rama histórica de desarrollo; las últimas previews automáticas para cambios solo documentales en la rama del plan aparecen `ERROR`, mientras una preview anterior muestra `READY`. Hay que identificar ruta de navegación real y analizar causa de error ANTES de elegir este proyecto como portal comprador.
+- `cotironda-seguimiento-web-piloto`: existen previews antiguas `READY`, pero el despliegue registrado en `production` es `ERROR`.
+- `cotironda-portal-dev`: se encontraron previews `READY` de ramas antiguas, NO prueba de login Auth PILOTO ni descargas.
+
+**No se disparó un despliegue manual en esta auditoría** ni se modificó el objetivo `production`. Sin embargo, la integración GitHub↔Vercel crea **Previews automáticas** por commits en ramas, incluso cuando se modifica solo Markdown. Nunca afirmar «cero deploys» sin distinguir estos builds de una publicación operativa de piloto o producción.
+
+**Implicación P0:** identificar UNA URL autorizada del comprador, contrato de la Edge de seguimiento y ruta de originales; evitar usar como evidencia una preview de proyecto diferente. Anotar commit/SHA exacto y entorno; testear navegador con identidad sintética y luego comprador real autorizado.
+
 ## Evidencia de código Cotironda (rama técnica PR #793, NO integrada)
 
 - [Webhook de Whapi](https://github.com/ProtectorRudo/Cotironda/blob/fix/mvp353-preflight-sin-ronda-duplicada-20261111/supabase/functions/cotironda-piloto-whapi/index.ts): archiva mensajes y multimedia, intenta vincular respuesta y ejecuta análisis posterior.
