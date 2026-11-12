@@ -77,6 +77,19 @@ test('D013: latex para interior y exterior son aplicaciones distintas',()=>{
  const r=testCase(req,'Pintura latex exterior blanco 4 L');
  assert.equal(r.estado,'revision_interna');
 });
+test('D013: placas yeso/OSB y espesores no son intercambiables',()=>{
+ const req={descripcion:'Placa yeso 12.5 mm',
+  evidencia:'100 placas yeso 12.5 mm',unidad:'unit'};
+ const bad=testCase(req,'Placa OSB 12.5 mm');
+ assert.equal(bad.estado,'revision_interna');
+ assert.equal(bad.motivo,'tipo_o_aplicacion_tecnica_diferente');
+ const wrong=testCase(req,'Placa yeso 13 mm');
+ assert.equal(wrong.estado,'revision_interna');
+ assert.equal(wrong.motivo,'dimension_tecnica_no_equivalente');
+ const absent=testCase(req,'Placa yeso sin espesor declarado');
+ assert.equal(absent.estado,'revision_interna');
+ assert.equal(absent.motivo,'dimension_tecnica_no_equivalente');
+});
 test('D013: evitar cambio kg por litros y conversion fraccionaria de envases',()=>{
  const bad=testCase({},'Cemento Portland 25 L');
  assert.equal(bad.estado,'revision_interna');
