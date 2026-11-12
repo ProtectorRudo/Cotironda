@@ -8,6 +8,9 @@ BEGIN
  THEN CREATE ROLE authenticated NOLOGIN; END IF;
 END $roles$;
 CREATE SCHEMA cotironda_piloto_privado;
+CREATE SCHEMA extensions;
+CREATE EXTENSION pgcrypto WITH SCHEMA extensions;
+CREATE TABLE cotironda_piloto_privado.whapi_inbox(message_hmac text PRIMARY KEY);
 CREATE TABLE cotironda_piloto_privado.requests(
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
  delivery_city text NOT NULL,
@@ -25,7 +28,23 @@ INSERT INTO cotironda_piloto_privado.requests(
  VALUES('La Plata','2026-11-02T12:00:00Z',4,
  '2026-11-06T12:00:00Z','closed');
 
+-- Install exact baseline function in this disposable PG17 transaction.
+\ir ../fixtures/v2-d013-shadow-prepare-baseline.sql
+-- Simulate the production change order; digest mismatch MUST abort early.
+\ir ../../piloto/v2_d013_ruteo_productos_sin_filtro_rubro.sql
 \ir ../../piloto/v2_05_plazo_dos_dias_habiles_candidate.sql
+\ir ../../piloto/v2_05_shadow_prepare_activar_modo_habil.sql
+DO $combined$
+DECLARE v_fn text;
+BEGIN
+ v_fn:=pg_get_functiondef(
+  'public.cotironda_piloto_ia_shadow_prepare_mvp221(text,text,text,text,jsonb,jsonb)'::regprocedure);
+ IF position('v2_business_policy policy' IN v_fn)=0
+ OR position('v_match->>''rubroCatalogo'' NOT IN' IN v_fn)=0
+ OR position('timing_mode)' IN v_fn)=0
+ THEN RAISE EXCEPTION 'combined V2 SQL patches did not compose';END IF;
+ RAISE NOTICE 'D013_AND_V2_MODE_COMPOSED_PG17_PASS';
+END $combined$;
 
 DO $check$
 DECLARE v_count int;
