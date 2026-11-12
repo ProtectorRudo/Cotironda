@@ -97,7 +97,7 @@ BEGIN
  RETURN jsonb_build_object('state','leased','request_id',j.request_id,
    'supplier_key',j.supplier_key,'chat_hmac',j.chat_hmac,'lease_token',lease);
 END;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.cotironda_piloto_ia_claim_mvp314(p_request uuid)
@@ -184,7 +184,7 @@ BEGIN
  RETURN jsonb_build_object('state','leased',
    'request_id',j.request_id,'supplier_key',j.supplier_key,
    'chat_hmac',j.chat_hmac,'lease_token',v_lease);
-END $function$
+END $function$;
 
 
 -- Existing finish semantics preserved verbatim as tested source snapshot.
@@ -213,5 +213,5 @@ BEGIN
  GET DIAGNOSTICS n=ROW_COUNT;
  RETURN n=1;
 END
-$function$
+$function$;
 
