@@ -62,7 +62,8 @@ BEGIN
  FROM vault.decrypted_secrets
  WHERE name='cotironda_piloto_ai_batch_private_mvp357' LIMIT 1;
  -- El Edge solo exige dos headers privados scoped, sin llave administrativa.
- IF v_cron IS NULL OR v_cron !~ '^[A-Za-z0-9_-]{32,256}$'
+ IF v_cron IS NULL OR length(v_cron) NOT BETWEEN 32 AND 256
+ OR v_cron !~ '^[A-Za-z0-9_-]+$'
  OR v_private IS NULL OR length(v_private) NOT BETWEEN 32 AND 256
  OR btrim(v_private)<>v_private
  THEN RETURN 'credentials_unavailable';END IF;
