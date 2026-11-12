@@ -36,3 +36,40 @@ jobs:
           # Key publishable pública y ya presente en el cliente de prueba.
           COTIRONDA_DEV_PUBLISHABLE_KEY: 'sb_publishable_7Hw2C8N5ga2-b4eHdXMa2Q_jKeSPhio'
         run: node --experimental-strip-types scripts/ci/auth-settings-remote-probe.mjs
+
+  pg17-mvp354-documental:
+    # Asegura ejecución en el PR técnico aun si el nuevo workflow
+    # específico no está en la rama base de GitHub. Sin credenciales PILOTO.
+    if: ${{ github.event_name == 'pull_request' && github.head_ref == 'feat/mvp354-document-receipt-status-20261111' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: synthetic_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: synthetic_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - name: Checkout sin secretos
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: RPC MVP354 en PostgreSQL 17 con rollback garantizado
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/mvp354-document-receipts-pg17.sql
+          psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regnamespace('cotironda_piloto_privado') IS NULL" | grep -Fx 't'
+          psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regprocedure('public.cotironda_piloto_document_receipts_mvp354(text)') IS NULL" | grep -Fx 't'
