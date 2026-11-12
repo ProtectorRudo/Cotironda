@@ -73,3 +73,19 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/mvp354-document-receipts-pg17.sql
           psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regnamespace('cotironda_piloto_privado') IS NULL" | grep -Fx 't'
           psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regprocedure('public.cotironda_piloto_document_receipts_mvp354(text)') IS NULL" | grep -Fx 't'
+
+  deno-mvp354-seguimiento:
+    if: ${{ github.event_name == 'pull_request' && github.head_ref == 'feat/mvp354-document-receipt-status-20261111' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout sin secretos
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Preparar Deno
+        uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb
+        with:
+          deno-version: v2.x
+      - name: Deno check tracking completo MVP354
+        run: deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-seguimiento/index.ts
