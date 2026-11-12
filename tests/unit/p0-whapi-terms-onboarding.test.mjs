@@ -30,7 +30,7 @@ const answer=()=>new Response(JSON.stringify({
 }),{status:200,headers:{'content-type':'application/json'}});
 function fixture(override={}){
  const calls={claim:0,begin:0,auth:0,finish:[],fetch:0,recipients:0};
- const claim=override.claim??CLAIM;
+ const claim=Object.hasOwn(override,'claim')?override.claim:CLAIM;
  const ports={
   claim:async()=>{calls.claim++;return claim},
   resolveRecipient:async()=>{calls.recipients++;return TO},
