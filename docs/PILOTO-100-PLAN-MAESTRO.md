@@ -150,6 +150,21 @@ Se reutilizó lector existente de ZIP/XML para Word/Excel, además de TXT/CSV; s
 
 **Estado:** todo nuevo en rama, cero cambios en vivo, no WhatsApps, no E2E. Relevo PR #815/Issue #794 obliga a documentar SHA y tests reales.
 
+## V2-06 — Guard de publicación y ruta crítica real, PR #827 (12/11/2026)
+
+[PR #827](https://github.com/ProtectorRudo/Cotironda/pull/827) sobre #826 creó el **primer control automático de desbloqueo comercial**. No decide por número de PR, sino por evidencia **viva** de identidad del comprador, consentimiento de proveedores, asociaciones fuertes de documentos, RPC privadas instaladas, Storage, lector PDF Edge, variables V2 de Vercel y SHA de Preview. **Dos etapas distintas:** primer original (una cotización real descargable y comentada) y piloto completo (dos proveedores, IA D013 por producto, feriados/2 días hábiles, cierre real e informe general). `can_publish=false` SIEMPRE; jamás publica sin `Publicalo`.
+
+- [x] Auditoría SOLO LECTURA real 12/11: PostgreSQL 17.11; `auth.users=0`; originales Storage privado 8 MiB OK; funciones comerciales V2 0/8; tablas privadas V2 0/4; Whapi v76 intacto; Vercel `cotironda-portal-dev` Next.js con Preview SSO, **variables nuevas V2 faltantes** (nombres únicamente).
+- [x] SQL inventario `supabase/piloto/v2_06_release_inventory_readonly.sql` ejecutado con SELECT, sin PII ni tablas mutadas; `scripts/piloto/v2-release-readiness.mjs` y foto no sensible actual, con pruebas negativas de ausencia Auth/consentimiento, SHA, drift Edge y ronda semánticamente ambigua.
+- [ ] Confirmar CI completa PR #827 en último SHA (guard específico se ejecutó correctamente).
+- [ ] Antes de instalar, congelar SHA conjunto #816–#827, revisar las 61 dependencias activas de Edge Whapi, migraciones SQL en orden/rollback y privacidad por compañía. No sobrescribir con index.ts histórico.
+- [ ] Registrar y validar Auth del comprador en el PILOTO y consentimientos prospectivos V2 de los proveedores (no derivar consentimiento del opt-in genérico WhatsApp).
+- [ ] Preparar preview Vercel con variables privadas server-only, SHA fijado al build, banderas inicialmente OFF y lector PDF Edge aislado. No entregar claves en chats ni registrarlas en GitHub.
+- [ ] `Publicalo` expresamente para aplicar cambios de PILOTO; probar primer original REAL PDF/Excel con comprador autenticado en portal y guía IA (sin inventar textos).
+- [ ] Luego E2E WhatsApp completo, calendarios oficiales actualizados automáticamente por IA Central, 2 días hábiles/cierre y análisis general; primer original de prueba NO equivale a piloto terminado.
+
+**Prioridad de negocio:** dejar de agregar modelos/parsers sin necesidad. El bloqueo actual es **identidad/consentimiento + instalación + prueba comercial**, no otra prueba de un PDF sintético. [Acta V2-06](https://github.com/ProtectorRudo/Cotironda/blob/feat/v2-06-preflight-publicacion-bloqueante-20261112/docs/V2-06-PREFLIGHT-PUBLICACION-20261112.md).
+
 ## V2-00 — INVENTARIO PENDIENTE DE CERRAR (auditar antes de desplegar)
 
 **Auditoría inicial en curso, 12/11/2026:** [Inventario V2-00 de código y PILOTO](V2-00-INVENTARIO-REUTILIZACION-20261112.md). Se verificó en SOLO LECTURA la diferencia entre `main` estático, núcleo de la rama operativa #813, PR documental #815 y funciones/tablas reales. Hay 106 líneas de catálogo pero sin campos completos de SKU y sin confirmación formal; los motores offline conservan filtros por rubro, no cumplen aún D013 en el piloto. Próximo control antes de escribir código: comparar SHA de funciones y despliegue Vercel, Storage/RLS y elegir la rama funcional de V2-02 **sin** PR #814. No hay nuevos envíos ni E2E.
