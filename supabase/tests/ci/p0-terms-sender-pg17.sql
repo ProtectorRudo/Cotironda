@@ -110,6 +110,18 @@ BEGIN
  THEN RAISE EXCEPTION 'p0_queue_count_invalid';END IF;
 END $seed$;
 
+-- Synthetic privileged concurrent mutation only inside this ROLLBACK.
+-- Verifies that authorization sees contact revocation after BEGIN.
+CREATE FUNCTION public.ci_change_supplier_contact_p0(p_hash text)
+RETURNS void LANGUAGE sql SECURITY DEFINER SET search_path='' AS $ci$
+ UPDATE cotironda_piloto_privado.participant_channels_mvp109
+ SET authenticated_message_hmac=p_hash WHERE participant_key='supplier_1';
+$ci$;
+REVOKE ALL ON FUNCTION public.ci_change_supplier_contact_p0(text)
+ FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.ci_change_supplier_contact_p0(text)
+ TO cotironda_pilot_terms_sender_p0;
+
 SET ROLE cotironda_pilot_terms_sender_p0;
 DO $worker$
 DECLARE c jsonb; c2 jsonb; got jsonb; fin jsonb;
@@ -144,6 +156,12 @@ BEGIN
  THEN RAISE EXCEPTION 'p0_changed_chat_authorized';END IF;
  IF NOT cotironda_piloto_privado.terms_authorize_p0(job,lease,repeat('a',64))
  THEN RAISE EXCEPTION 'p0_valid_authorize_denied';END IF;
+ PERFORM public.ci_change_supplier_contact_p0(NULL);
+ IF cotironda_piloto_privado.terms_authorize_p0(job,lease,repeat('a',64))
+ THEN RAISE EXCEPTION 'p0_revoked_contact_allowed_before_http';END IF;
+ PERFORM public.ci_change_supplier_contact_p0(repeat('e',64));
+ IF NOT cotironda_piloto_privado.terms_authorize_p0(job,lease,repeat('a',64))
+ THEN RAISE EXCEPTION 'p0_restored_contact_not_authorized';END IF;
  fin:=cotironda_piloto_privado.terms_finish_p0(job,lease,
  'supplier_1','cotironda-originales-alta-v1',c->>'termsSha256',
  'api_accepted',null,c->>'termsSha256');
