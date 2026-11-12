@@ -13,6 +13,18 @@
 
 **CI FINAL MVP355 (11/11/2026):** el SHA técnico [`721ecc12d2a9a35e54d53b35f009d419b4cca3f6`](https://github.com/ProtectorRudo/Cotironda/pull/798) pasó **5/5 workflows generales**: Next.js, unidad general (incluye **PG17 documental** y **Deno seguimiento** como jobs separados), PostgREST, PG17 aislamiento y verificación sitio. Probados dos formatos sintéticos, SHA, links débiles/ausentes, vínculo de aviso previo, duplicados, rondas solapadas y revocación. Además SELECT del nuevo SQL sin escrituras contra piloto: `2 despachos / 0 documentos acreditados`; token falso `not_found`. **Sin despliegue**, PR draft; no E2E real.
 
+## MVP363 — preflight de alta de originales: seguridad preparada, sin aceptaciones (12/11/2026)
+
+**[PR #805](https://github.com/ProtectorRudo/Cotironda/pull/805)** (DRAFT, sobre #804), [Acta 531](https://github.com/ProtectorRudo/Cotironda/blob/feat/mvp363-preflight-alta-explicita-20261112/docs/531-mvp363-preflight-aceptacion-real-operador.md), preflight `supabase/tests/preflight/mvp363-originales-alta-readiness-readonly.sql`.
+
+- [x] **Supabase PILOTO reconsultado SOLO LECTURA el 12/11/2026**, sin PII: Auth 0, operadores activos 0, consentimientos de originales 0, política OFF, M362 NO instalado, función MFA M267 instalada, ronda preparada vigente 1. Preflight `NO_APTO_PARA_ALTA_REAL`.
+- [x] Código de preflight y tests Node versionados. **CI de #805 aún pendiente de certificar**. No hay registro real, SQL instalado, WhatsApp ni despliegue.
+- [ ] Debe acreditarse texto/version exactos entregados al proveedor en mensaje Whapi **antes** de su aceptación, más respuesta explícita y revisión descifrada solo por operador con Auth+MFA AAL2; el hash del mensaje recibido NO demuestra por sí solo intención.
+- [ ] Resolver reaceptación tras revocar: el PK M362 impide una segunda alta para misma versión; el diseño debe conservar ledger de episodios y prohibir retroactividad.
+- [ ] Revisión comercial/legal del alcance con archivos originales de no adjudicados, operador real, comprador Phone/OTP, fuentes PDF/Excel ligadas, navegador/cierre y comprobación REST `net`. P0–P5 sin cerrar.
+
+**Siguiente acción:** construir el mecanismo verificable *términos enviados → aceptación recibida → revisión humana MFA → registro duradero*, SIN crear una ronda adicional. Solo con aprobación y «Publicalo en cotironda-piloto» estudiar despliegue con gates OFF.
+
 ## MVP362 — consentimiento de originales UNA VEZ al alta, sin autorizaciones retroactivas (12/11/2026)
 
 **[PR técnico #804](https://github.com/ProtectorRudo/Cotironda/pull/804)** sobre #803, **SOLO DESARROLLO, sin despliegue**, [Acta 530](https://github.com/ProtectorRudo/Cotironda/blob/feat/mvp362-consentimiento-originales-una-vez-20261112/docs/530-mvp362-consentimiento-originales-una-vez.md). Términos disponibles como [BORRADOR](https://github.com/ProtectorRudo/Cotironda/blob/feat/mvp362-consentimiento-originales-una-vez-20261112/docs/politica-originales-alta-v1-borrador.md), NO aprobados ni presentados a proveedores.
