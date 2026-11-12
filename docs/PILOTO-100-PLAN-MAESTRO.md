@@ -77,6 +77,20 @@ La migración de plazo V2 añade `business_two_days` para **rondas nuevas** úni
 
 **Estado real:** nada de este PR instalado en PILOTO, sin WhatsApps ni E2E. Acta: [D013 y plazo](https://github.com/ProtectorRudo/Cotironda/blob/feat/v2-d013-productos-y-plazo-habil-20261112/docs/V2-D013-PLAZO-HABIL-IMPLEMENTACION-20261112.md). Próxima tarea única: **validar CI y preparar calendario/equivalencias antes de instalar el piloto**.
 
+## Incremento D013b — PR #822: verificación técnica y feriados clasificados
+
+[PR #822](https://github.com/ProtectorRudo/Cotironda/pull/822), apilado sobre #821. El nuevo verificador técnico D013 controla después de IA y antes de SQL/Whapi que la identidad del material tenga evidencia en ambas descripciones originales. Casos expresos: cemento Portland/albañilería, látex interior/exterior, cable mm², placas yeso/OSB, espesor mm, marca excluyente; calcula presentaciones por masa/volumen **sin inventar precios ni convertirlas en equivalencia funcional**. Cualquier renglón inseguro se retiene internamente y **no bloquea las otras solicitudes parciales verificadas**: la lista revisionTecnica registra proveedor, renglón, catálogo y motivo. Identidad/consentimiento/catálogo inválido sigue cerrando todo.
+
+Calendario 2026 parcialmente contrastado con fuentes oficiales: 2026-11-19 (La Plata) = feriado **optativo** para comercios, 2026-11-23 = nacional obligatorio, 2026-12-07 = día no laborable turístico, 2026-12-08 y 2026-12-25 = feriados nacionales. No igualar optativo con feriado obligatorio. **NO instalar** manifest parcial ni aprobar 2026: preflightFeriadosLaPlata2026().publicable=false. Fuentes en [acta de PR #822](https://github.com/ProtectorRudo/Cotironda/blob/feat/v2-d013-evidencia-tecnica-feriados-20261112/docs/V2-D013-EVIDENCIA-TECNICA-Y-FERIADOS-20261112.md).
+
+- [ ] Verificar checks del último SHA PR #822 (Node técnicos y parciales, PG17 fechas reales con rollback, Deno Edge v76, Next).
+- [ ] Verificar variantes adicionales con fichas técnicas de proveedores y marca obligatoria, sin una lista rígida de materiales ni autorizaciones inventadas.
+- [ ] Completar calendario ANUAL 2026–2027 por ciudad/feriados, resolver optativos del comercio antes de aprobar las fechas.
+- [ ] Desplegar SOLO bajo Publicalo en PILOTO designado con Auth comprador, consentimientos prospectivos, SQL migrado y firma Edge viva verificada.
+- [ ] E2E comprador, dos proveedores, originales, comentarios, cierre e informe.
+
+**Estado:** solo código/CI, no Supabase/Edge/Vercel real, no contactos ni rondas reales. **Próximo paso único:** cerrar preflight de calendario y permisos, preparar despliegue en PILOTO seguro y completar análisis individual/general.
+
 ## V2-00 — INVENTARIO PENDIENTE DE CERRAR (auditar antes de desplegar)
 
 **Auditoría inicial en curso, 12/11/2026:** [Inventario V2-00 de código y PILOTO](V2-00-INVENTARIO-REUTILIZACION-20261112.md). Se verificó en SOLO LECTURA la diferencia entre `main` estático, núcleo de la rama operativa #813, PR documental #815 y funciones/tablas reales. Hay 106 líneas de catálogo pero sin campos completos de SKU y sin confirmación formal; los motores offline conservan filtros por rubro, no cumplen aún D013 en el piloto. Próximo control antes de escribir código: comparar SHA de funciones y despliegue Vercel, Storage/RLS y elegir la rama funcional de V2-02 **sin** PR #814. No hay nuevos envíos ni E2E.
