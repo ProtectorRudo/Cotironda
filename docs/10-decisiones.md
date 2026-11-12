@@ -2,6 +2,14 @@
 
 **D012 — APROBADA por el propietario, 12/11/2026 — COTIRONDA V2.**
 
+## D013 — APROBADA 12/11/2026: selección por producto + equivalencias
+
+**Decisión del propietario:** cada proveedor dispone de ficha y catálogo propio con productos concretos. La IA Central selecciona proveedores **ítem por ítem**, por coincidencia de producto (exacta o alternativa técnicamente compatible) y zona, **nunca por rubro/nicho**, que queda solo como etiqueta. Un proveedor multirrubro recibe solicitudes parciales por lo que realmente comercializa; no se infiere stock. Debe entender marcas comerciales y nombres genéricos, sinónimos, presentaciones y unidades: Ceresita ↔ hidrófugo compatible; cemento Loma Negra 50 kg ↔ otra marca del mismo tipo, bolsas 25 kg, normalizando cantidades (100×50 kg = 200×25 kg = 5.000 kg). Las marcas son flexibles excepto requisito excluyente. Las diferencias técnicas relevantes invalidan falsas equivalencias; el original permanece intacto, el cálculo es verificable y el comprador ve cambios de marca/presentación.
+
+**Impacto:** precisa D008 y D012; sustituye cualquier regla de distribución por rubro. V2-00 inventaría catálogos y matching; V2-01 implementa selección; V2-04/05 explican y comparan alternativas. **No altera la próxima tarea V2-00 ni autoriza programación o despliegue.**
+
+**Pruebas pendientes:** Ceresita/hidrófugo funcionalmente equivalente, 50/25 kg con tipo igual, marca excluyente, multirrubro, cero invitaciones a no coincidentes, deduplicación y rechazo de falsas equivalencias. Documento completo: [D013 catálogos y equivalencias](V2-D013-CATALOGOS-EQUIVALENCIAS.md). **DOCUMENTADO EN PR, NO IMPLEMENTADO/PROBADO EN PILOTO.**
+
 ## Resolución vigente D012
 
 Cotironda se reorienta como **servicio de solicitud, organización y análisis inteligente de cotizaciones reales de materiales de obra**. IA procesa el pedido y lo distribuye por catálogo/rubro/zona; el proveedor responde libremente por WhatsApp; original intacto asociado a su ronda, nombre del comercio visible y comentario individual útil **desde que se recibe**, solo para proveedores que respondieron. Sin mostrar negocios invitados o pendientes. **A dos días hábiles** se produce análisis comparativo general y recomendaciones justificadas. La decisión de compra queda en el comprador.
