@@ -1,0 +1,53 @@
+name: Cotironda V2 D013 + plazo 2 dias habiles PG17
+on:
+  pull_request:
+    paths:
+      - 'src/domain/ia-central/ruteador-catalogos-v2.ts'
+      - 'src/domain/ia-central/puente-sql-rondas-mvp221.ts'
+      - 'supabase/piloto/v2_d013_ruteo_productos_sin_filtro_rubro.sql'
+      - 'supabase/piloto/v2_05_plazo_dos_dias_habiles_candidate.sql'
+      - 'supabase/tests/ci/v2-05-plazo-habil-pg17.sql'
+      - 'tests/unit/v2-d013-productos-sin-rubros.test.mjs'
+      - '.github/workflows/cotironda-v2-d013-plazo-habil-pg17.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  product-and-deadline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: synthetic_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: synthetic_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - name: Checkout sin credenciales
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Node 22.16
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22.16.0'
+      - name: Validar ruteo por PRODUCTO y puente de SQL
+        run: node --experimental-strip-types --test tests/unit/v2-d013-productos-sin-rubros.test.mjs
+      - name: PG17 2 dias habiles calendario y rollback
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/v2-05-plazo-habil-pg17.sql
+          psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regnamespace('cotironda_piloto_privado') IS NULL" | grep -Fx 't'
