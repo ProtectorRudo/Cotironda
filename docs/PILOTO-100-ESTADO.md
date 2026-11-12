@@ -5,6 +5,8 @@
 
 **FECHA DEL ÚLTIMO RELEVO:** 11/11/2026 (Argentina). Este archivo es un SNAPSHOT, no una consulta en tiempo real.
 
+> **VERCEL, VERIFICADO 11/11/2026:** `cotironda` producción READY es una demo aislada de `main` (SHA `5987f170...`), NO el piloto documental. `cotironda-seguimiento-vista-piloto` tiene producción READY de rama antigua y **previews documentales ERROR**; `cotironda-seguimiento-web-piloto` conserva producción ERROR y previews previas READY. Los commits de documentación activan builds de **Preview automáticos** por la conexión GitHub, aunque no se haya publicado a producción. Antes de P3/P4, identificar URL real autorizada del comprador, revisar build y validar con Auth/ACL. [Evidencia y matriz](P0-ERPNext-vs-Cotironda-evaluacion.md).
+
 **LECTURA OBLIGATORIA:** [Issue #794 — checklist canónico](https://github.com/ProtectorRudo/Cotironda/issues/794) y [Plan maestro](PILOTO-100-PLAN-MAESTRO.md).
 
 ## Próximo paso ÚNICO
