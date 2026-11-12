@@ -19,7 +19,7 @@
 
 - [x] Cierre de puertos simulados `claim/begin/authorize/finish` en **SQL privado preparado**, más adaptador `whapi-terms-sql-p0.ts`. Encadenamiento confirmado antes de HTTP, reserve lease y `in_flight` sin reintento. ACK API válido persiste el aviso versionado M364, **no una aceptación**. Resultado incierto no guarda aviso ni habilita descarga.
 - [x] Cola autorizada solo por operador Auth AAL2 `operator_session_mvp267()`, sin `operator_id` del cliente; rol emisor `NOLOGIN` aislado y sin permiso de `service_role`/usuarios API para fabricar constancias. Reutiliza D055 con huellas PILOTO.
-- [x] Primera prueba PG17 de reserva/acuse con ROLLBACK exitosa; Node encontró respuesta con campos de sobra, adaptador corregido y CI final pendiente de acreditar. Pruebas **sintéticas**: no operador real ni red Whapi.
+- [x] **CI FINAL 5/5 SUCCESS en SHA `d743c35be826320d77bb84fc908088b05a85f938`**, con `pg17-p0-terms-sender` SUCCESS y ROLLBACK. Node detectó y permitió corregir la aceptación de campos inesperados; Node final SUCCESS. Next.js, PostgREST, aislamiento PG17 y sitio SUCCESS. Sin MFA/Whapi reales. Pruebas **sintéticas**: no operador real ni red Whapi.
 - [x] Supabase PILOTO `SELECT` 12/11/2026: 0 usuarios Auth, 0 operadores activos, 0 consentimientos originales, política OFF, M362 y emisor P0 sin instalar, 1 ronda prepared activa.
 - [ ] **Bloqueo siguiente:** condiciones de originales de no ganadores aprobadas; crear operador MFA real, identidad DB autorizada y runner server-only, registrar anuncio Whapi real una vez y revisión expresa del mensaje entrante. Después Auth comprador OTP y prueba de dos originales.
 - [ ] P0–P5 siguen abiertos, ningún E2E. No crear ronda superpuesta, ni envío o despliegue bajo `Avanza`.
