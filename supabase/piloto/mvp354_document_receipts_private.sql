@@ -55,7 +55,8 @@ recibidos AS (
    AND proof.request_id=r.request_id
    AND proof.supplier_key=e.supplier_key
    AND proof.kind=a.kind AND proof.source_sha256=a.content_sha256
-   AND proof.association IN ('quoted_whapi_id','single_active_round')
+   AND proof.association IN ('quoted_whapi_id','single_active_round',
+     'prior_supplier_preamble')
  JOIN cotironda_piloto_privado.participants p
    ON p.key=e.supplier_key AND p.chat_hmac=a.chat_hmac
  WHERE a.state='stored' AND a.finished_at IS NOT NULL
