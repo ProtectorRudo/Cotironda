@@ -1,5 +1,8 @@
 # 03 — Arquitectura candidata (NO implementada)
 
+> **AVISO V2 — 12/11/2026: DOCUMENTO TÉCNICO HEREDADO, NO DIRECTRIZ ACTIVA.** El flujo antiguo con confirmación del comprador y del proveedor antes de cada cotización fue SUSTITUIDO. Este texto describe arquitectura histórica, no lo instalado hoy. Las reglas vigentes están en [Contrato V2](COTIRONDA-V2-CONTRATO.md), [Plan V2](PILOTO-100-PLAN-MAESTRO.md) y [Estado V2](PILOTO-100-ESTADO.md). Si contradice V2, **NO aplicar lo viejo**.
+
+
 ## Stack
 Next.js + TypeScript (web/API), Supabase PostgreSQL/Auth/Storage privado/RLS, OpenAI API para extracción, Whapi para WhatsApp, Mercado Pago para suscripción y Vercel para alojamiento. Confirmar compatibilidad, contratos y costos **antes de integrar**.
 
