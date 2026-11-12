@@ -54,7 +54,8 @@ export async function analizarOriginalPorPedidoV2(
   return json(503,'funcion_no_disponible');
  if(req.method!=='POST')return json(405,'metodo_no_permitido');
  if(!UUID.test(rondaId)||!UUID.test(documentoId)||
-  new URL(req.url).search||req.headers.get('content-length')||
+  new URL(req.url).search||
+  !['','0'].includes(req.headers.get('content-length')??'')||
   req.headers.get('content-type'))
   return json(400,'solicitud_invalida');
  const token=bearerPiloto(req);
