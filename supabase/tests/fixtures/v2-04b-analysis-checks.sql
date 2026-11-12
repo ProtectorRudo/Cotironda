@@ -32,6 +32,24 @@ BEGIN
  IF public.cotironda_piloto_v2_analysis_finish_private(rid,uid,sid,
  doc,job,repeat('1',64),repeat('9',64),notes,'ready')
  IS DISTINCT FROM false THEN RAISE EXCEPTION 'wrong_sha';END IF;
+ -- Controlled retry: review status cools down, cannot spend twice in 5 min.
+ IF public.cotironda_piloto_v2_analysis_finish_private(rid,uid,sid,
+ doc,job,repeat('0',64),NULL,NULL,'review')
+ IS DISTINCT FROM true THEN RAISE EXCEPTION 'review_status_not_persisted'; END IF;
+ IF public.cotironda_piloto_v2_analysis_claim_private(rid,uid,sid,doc)
+ IS NOT NULL THEN RAISE EXCEPTION 'review_retry_without_cooldown';END IF;
+ UPDATE cotironda_piloto_privado.v2_original_analysis
+ SET updated_at=clock_timestamp()-interval '6 minutes'
+ WHERE request_id=rid AND document_id=doc;
+ ticket:=public.cotironda_piloto_v2_analysis_claim_private(rid,uid,sid,doc);
+ IF ticket->>'state'<>'analysis_claimed_v2'
+ THEN RAISE EXCEPTION 'review_retry_after_cooldown_denied';END IF;
+ IF (ticket->>'jobToken')::uuid=job
+ THEN RAISE EXCEPTION 'reused_lease_token';END IF;
+ IF public.cotironda_piloto_v2_analysis_finish_private(rid,uid,sid,
+ doc,job,repeat('0',64),repeat('9',64),notes,'ready')
+ IS DISTINCT FROM false THEN RAISE EXCEPTION 'stale_lease_accepted';END IF;
+ job:=(ticket->>'jobToken')::uuid;
  IF public.cotironda_piloto_v2_analysis_finish_private(rid,uid,sid,
  doc,job,repeat('0',64),repeat('9',64),notes,'ready')
  IS DISTINCT FROM true THEN RAISE EXCEPTION 'persist_failed';END IF;
