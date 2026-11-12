@@ -25,7 +25,7 @@ Un comprador envía una lista de obra. Cotironda identifica cada producto y cons
 | **V2-00** | Consolidar dirección e inventario de legado | Documentación coherente, mapa exacto de módulos vivos y PR clasificados | **PARCIAL:** conciliación Edge/Storage/Auth pendiente |
 | **V2-01** | IA por producto, catálogo individual y distribución selectiva | Coincidencias por artículo y equivalencias técnicas, sin filtro por rubro, con zona y deduplicación | Revalidar (parcialmente existente) |
 | **V2-02** | Recepción del ORIGINAL y vínculo a ronda | 2 respuestas originales auténticas, SHA+remitente+pedido correcto, incluso con rondas concurrentes | **EN DESARROLLO:** PR #816 texto + PR #817 caption de adjuntos, ambos sin desplegar ni E2E |
-| **V2-03** | Portal comprador, solo respondedores | 0/1/2 respuestas: mostrar únicamente negocios que cotizaron, identidad y original seguro | **PARCIAL:** PR #818 backend seguro; descarga y UX real pendientes |
+| **V2-03** | Portal comprador, solo respondedores | 0/1/2 respuestas: mostrar únicamente negocios que cotizaron, identidad y original seguro | **CÓDIGO CANDIDATO PROBADO:** #818 listado + #819 descarga/vista; no instalado ni E2E |
 | **V2-04** | Análisis breve individual | Cobertura, variantes, condiciones, conclusión accionable, no bloquear original | Pendiente |
 | **V2-05** | 2 días hábiles e informe general | Cierre horario verificable + comparación por rubro, parciales, IVA/flete no inferidos | Pendiente |
 | **V2-06** | Seguridad, publicación y E2E | Identidad/consentimiento informado, móvil, descarga autorizada y recorrido real de punta a punta | Pendiente |
@@ -44,7 +44,7 @@ Un comprador envía una lista de obra. Cotironda identifica cada producto y cons
 - [PR #816](https://github.com/ProtectorRudo/Cotironda/pull/816): referencia visible de solicitud en caption del pedido saliente y lookup para respuestas de texto con ese código, no instalado.
 - **Nuevo [PR #817](https://github.com/ProtectorRudo/Cotironda/pull/817):** si un proveedor manda PDF/Excel/foto sin citar el pedido, pero conserva una referencia inequívoca en el **caption del adjunto original**, lookup verifica fuente exacta cifrada/SHA, bytes ya archivados, invitación/consentimientos anteriores al despacho y Whapi `api_accepted`. MVP225 conserva vinculación definitiva. Tests Node + PG17 ROLLBACK + Deno, flag OFF. **No desplegado**.
 - **Archivo sin cita, sin código, sin preámbulo:** ninguna fecha, monto o similitud garantiza pedido correcto en concurrencia; revisión interna y ninguna exposición al comprador. No asignar a ciegas el PDF histórico.
-- **Única próxima acción actual:** con PR #817 y #818 probados sin desplegar, desarrollar V2-03b: descarga autenticada con SHA de bytes y auditoría, vista buyer y alta Auth real. D013 por producto antes del E2E completo.
+- **Única próxima acción actual:** PR #819 ya suma descarga con SHA y auditoría + vista Auth (6/6 CI), aún sin desplegar. Ejecutar preflight de migraciones seguras, permisos de proveedor y alta buyer PILOTO; D013 matching por PRODUCTO y análisis/cierre antes de E2E completo.
 
 ## V2-00 — INVENTARIO PENDIENTE DE CERRAR (auditar antes de desplegar)
 
@@ -91,6 +91,19 @@ Un comprador envía una lista de obra. Cotironda identifica cada producto y cons
 - [ ] Prueba WhatsApp → original visible y descargable → comentario individual (NO E2E aún).
 
 **Próxima tarea única:** validar PR #818 y construir descarga V2-03b; después integrar tarjeta de respondedores. El catálogo por producto D013 debe aprobarse antes de decir que todo el piloto funciona.
+
+## V2-03b — descarga original auditada y pantalla buyer (PR #819)
+
+Nuevo [PR #819](https://github.com/ProtectorRudo/Cotironda/pull/819) **draft** sobre #818/#817/#816 (jamás #814). Fuente SQL privada reusa catálogo de respondedores + Auth de comprador vivo + consentimiento prospectivo, compara asociación, SHA y Storage. Endpoint GET de archivo rehashea bytes reales, vuelve a verificar sesión/permisos y exige auditoría privada antes de entregar, sin signed URLs. Pantalla auténtica de comprador con OTP para **usuarios existentes**, sin altas espontáneas; únicamente negocios que respondieron, fecha, original y `Análisis en preparación`.
+
+- [x] Código candidato: base SQL privada, fuente por documento y auditoría, adaptador HTTP, vista comprador y ruta de descarga.
+- [x] **CI PR #819 SHA `d3c45a75bc56bc41249b9c7bdeb033399843b30e`: 6/6 workflows SUCCESS**, tests Node (hash alterado, sesión ajena, revocación concurrente, auditoría fallida) y PG17 ROLLBACK, TypeScript/Next, PostgREST y aislamiento. **Sin E2E real**.
+- [ ] Despliegue coordinado en PREVIEW PILOTO de SQL #818/#819 + capas previas, con migración/rollback y feature flag OFF, solo con `Publicalo`.
+- [ ] Confirmar proveedor autorizó prospectivamente mostrar nombre/original a su comprador, y alta comprador con Auth PILOTO. Actualmente **0 `auth.users` y 0 SQL RPC/tabla V2-03 instaladas** según SELECT 12/11.
+- [ ] Prueba real desde WhatsApp y navegador: 2 originales descargados idénticos, 2 respondedores, sin mostrar invitados pendientes.
+- [ ] Análisis individual y cierre general de dos días hábiles, con D013 por producto y zona.
+
+**Próximo paso único:** preflight de publicación segura PILOTO y preparación de identidades/consentimientos reales. **No despliegue todavía**. No considerar que 6/6 CI equivalgan a piloto concluido.
 
 ## V2-03 — vista comprador
 
