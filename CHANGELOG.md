@@ -1,5 +1,5 @@
 ## 2026-11-11 — MVP354: tests y manifiesto de tracking (SOLO DESARROLLO)
-La regresión inicial detectó integridad MVP324; se integró el import documental en el manifiesto sin alterar baseline activo. Unidad general volvió a verde; el fixture PG17 específico tiene workflow preparado pero aún sin ejecución confirmada. PR #797 y Issue #794 conservan el semáforo pendiente.
+La regresión inicial detectó integridad MVP324; se integró el import documental en el manifiesto sin alterar baseline activo. Unidad general, Next.js y PG17 general terminaron en verde con SHA `c8a937...`; se agregó prueba PG17 específica al workflow unitario existente para que el siguiente SHA la ejecute en CI. No afirmar ese resultado hasta verificarlo. PR #797 y Issue #794 conservan el semáforo pendiente.
 
 ## 2026-11-11 — MVP354: proyección privada documental no bloqueante (DESARROLLO)
 Se registró [PR técnico #797](https://github.com/ProtectorRudo/Cotironda/pull/797): consulta por token, archivo original con SHA, invitación+despacho y exclusión de rondas solapadas; Edge/HTML bajo flag OFF y tests. Lecturas SQL con token falso/not_found y preparada 2/0. Sin deploy ni habilitación de originales; P0–P5 siguen pendientes de E2E.
