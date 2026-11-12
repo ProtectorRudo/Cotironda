@@ -13,6 +13,18 @@
 
 **CI FINAL MVP355 (11/11/2026):** el SHA técnico [`721ecc12d2a9a35e54d53b35f009d419b4cca3f6`](https://github.com/ProtectorRudo/Cotironda/pull/798) pasó **5/5 workflows generales**: Next.js, unidad general (incluye **PG17 documental** y **Deno seguimiento** como jobs separados), PostgREST, PG17 aislamiento y verificación sitio. Probados dos formatos sintéticos, SHA, links débiles/ausentes, vínculo de aviso previo, duplicados, rondas solapadas y revocación. Además SELECT del nuevo SQL sin escrituras contra piloto: `2 despachos / 0 documentos acreditados`; token falso `not_found`. **Sin despliegue**, PR draft; no E2E real.
 
+## P0 — resolver contacto AES-GCM pre-ronda (12/11/2026)
+
+**[PR #809](https://github.com/ProtectorRudo/Cotironda/pull/809)** DRAFT sobre #808, [Acta 536](https://github.com/ProtectorRudo/Cotironda/blob/feat/p0-resolver-contacto-cifrado-20261112/docs/536-p0-contacto-cifrado-antes-de-ronda.md).
+
+- [x] Se contrastó el HMAC/AES del Edge PILOTO con D068 y M313: D068 tiene formato de otro proyecto; M313 exige ronda. Para el alta anterior a ronda se añadió SQL `terms_recipient_packet_p0` con lease/propietario/chat exactos y ACL `NOLOGIN`.
+- [x] `whapi-terms-recipient-p0.ts` descifra el contacto ya existente `participant_channels_mvp109` con AES-GCM + AAD PILOTO, verifica SHA/HMAC y bloquea suplantaciones, sin teléfonos en BD de nuevos trabajos. Puerto SQL compositor listo en código, NO conectado a ejecución remota.
+- [x] Supabase PILOTO SELECT: 3 canales cifrados autenticados, 2 pertenecen a proveedores activos. 0 datos modificados, 0 envíos. Se preserva ronda `prepared` sin duplicarla.
+- [x] Tests Node AES sintético, PG17 de lease/ACL preparados. **CI final pendiente de certificar por SHA.**
+- [ ] Aún no hay login DB de runner, claves inyectadas, MFA real, condiciones legales aprobadas ni revisión de aceptación; tampoco comprador OTP y E2E documental. **P0–P5 ABIERTOS**.
+
+**SIGUIENTE ACCIÓN SIN DESVÍOS:** adaptar ejecutor servidor PostgreSQL TLS con rol exclusivo + revisión MFA del consentimiento; después autorización específica para despliegue en `cotironda-piloto`, y prueba comercial completa con un arquitecto y dos proveedores. No publicar con `Avanza`.
+
 ## P0 — reserva de aviso Whapi y ACK SQL atómicos (12/11/2026)
 
 **[PR #808](https://github.com/ProtectorRudo/Cotironda/pull/808)** DRAFT, [Acta 535](https://github.com/ProtectorRudo/Cotironda/blob/feat/p0-whapi-aviso-alta-sin-reenvio-20261112/docs/535-p0-aviso-whapi-reserva-ack-transaccional.md). Desarrollo sin despliegue ni WhatsApps.
