@@ -23,11 +23,11 @@ Un comprador envía una lista de obra. Cotironda identifica cada producto y cons
 | Etapa | Meta | Criterio de aprobación | Estado actual |
 | --- | --- | --- | --- |
 | **V2-00** | Consolidar dirección e inventario de legado | Documentación coherente, mapa exacto de módulos vivos y PR clasificados | **PARCIAL:** conciliación Edge/Storage/Auth pendiente |
-| **V2-01** | IA por producto, catálogo individual y distribución selectiva | Coincidencias por artículo y equivalencias técnicas, sin filtro por rubro, con zona y deduplicación | Revalidar (parcialmente existente) |
+| **V2-01** | IA por producto, catálogo individual y distribución selectiva | Coincidencias por artículo y equivalencias técnicas, sin filtro por rubro, con zona y deduplicación | **CÓDIGO V2 #821** filtro rubro retirado y producto literal; equivalencias técnicas/E2E pendientes |
 | **V2-02** | Recepción del ORIGINAL y vínculo a ronda | 2 respuestas originales auténticas, SHA+remitente+pedido correcto, incluso con rondas concurrentes | **EN DESARROLLO:** PR #816 texto + PR #817 caption de adjuntos, ambos sin desplegar ni E2E |
 | **V2-03** | Portal comprador, solo respondedores | 0/1/2 respuestas: mostrar únicamente negocios que cotizaron, identidad y original seguro | **CÓDIGO CANDIDATO PROBADO:** #818 listado + #819 descarga/vista; no instalado ni E2E |
 | **V2-04** | Análisis breve individual | Cobertura, variantes, condiciones, conclusión accionable, no bloquear original | Pendiente |
-| **V2-05** | 2 días hábiles e informe general | Cierre horario verificable + comparación por rubro, parciales, IVA/flete no inferidos | Pendiente |
+| **V2-05** | 2 días hábiles e informe general | Cierre horario verificable + comparación por rubro, parciales, IVA/flete no inferidos | **CÓDIGO RELOJ #821** con PG17; calendario real/informe general no implementados |
 | **V2-06** | Seguridad, publicación y E2E | Identidad/consentimiento informado, móvil, descarga autorizada y recorrido real de punta a punta | Pendiente |
 
 **Seguridad es transversal:** no publicar originales identificables antes de la aprobación legal/comercial del aviso a proveedores y permisos estrictos del comprador. No dejarlo artificialmente para V2-06.
@@ -59,6 +59,23 @@ Se revisaron **61 archivos del Edge Whapi v76 realmente desplegado**: 59 iguales
 - [ ] Solo tras todo lo anterior, orden de migraciones reversible, flags OFF, autorización explícita `Publicalo` para PREVIEW PILOTO y E2E con dos presupuestos/archivo original/análisis/cierre.
 
 **No publicar aún**; código/CI no equivalen a base/Edge/Vercel instalados. Relevo canónico: [Estado](PILOTO-100-ESTADO.md) y [acta #820](https://github.com/ProtectorRudo/Cotironda/blob/feat/v2-preflight-conciliar-whapi-v76-20261112/docs/V2-PREFLIGHT-EDGE-V76-Y-PILOTO-20261112.md).
+
+## Incremento V2-01 / V2-05 — PR #821 (12/11/2026)
+
+[PR #821](https://github.com/ProtectorRudo/Cotironda/pull/821), **solo código/CI**, apilado sobre #820 (Edge v76 preservado). Los filtros de rubro del ruteador/puente y la RPC real bloqueaban D013 aun cuando el producto constaba en el catálogo. Los módulos históricos están protegidos por MVP332 SHA; una primera ejecución detectó regresiones por alterarlos y se **restauraron exactamente**, creando duplicados SOLO V2 conectados al candidato Edge v76. La migración SQL D013 exige SHA real y conserva comprobaciones de producto literal, número, proveedor autorizado y zona.
+
+La migración de plazo V2 añade `business_two_days` para **rondas nuevas** únicamente, 18:00 del segundo día hábil siguiente en `America/Argentina/Buenos_Aires`, calendario por localidad/año con feriados aprobados y fallo cerrado. `legacy_calendar` y sus restricciones 3–7 días quedan para históricos. Flag **OFF**. El parche posterior de creación SQL usa también hash pinned para cambiar automáticamente al modo V2 solo cuando el policy está ON.
+
+- [x] Implementación aislada D013 de producto por catálogo y zona, sin filtrar por rubro en V2, sobre candidato Whapi v76.
+- [x] Calendario SQL 2 días hábiles, modo legacy preservado, cron puede seguir `closes_at`; flag OFF.
+- [x] Test PG17 con copia de RPC pública real y migraciones en orden D013→calendario→modo, rollback; fin de semana, feriado, cruce de año, política OFF y zona sin aprobación.
+- [ ] Verificar **toda** la CI para el último SHA #821 y corregir cualquier falla.
+- [ ] Validar **equivalencia técnica** IA real para D013: marca excluyente, tipo de cemento, hidrófugos y presentaciones, con catálogo/zonas actualizados. No asumir equivalencia por texto parecido.
+- [ ] Aprobar calendario de feriados nacional, provincial, municipal por localidad y año con fuentes; hoy NO hay datos oficiales cargados.
+- [ ] Preparar instalación controlada SQL/Edge/Vercel de #816–#821 y rollback, configurar comprador Auth + consentimiento de proveedores V2; instalar **solo bajo `Publicalo`**, sin mutar rondas históricas.
+- [ ] E2E 1 comprador → 2 proveedores → 2 originales → análisis individual → cierre hábil → comparación general.
+
+**Estado real:** nada de este PR instalado en PILOTO, sin WhatsApps ni E2E. Acta: [D013 y plazo](https://github.com/ProtectorRudo/Cotironda/blob/feat/v2-d013-productos-y-plazo-habil-20261112/docs/V2-D013-PLAZO-HABIL-IMPLEMENTACION-20261112.md). Próxima tarea única: **validar CI y preparar calendario/equivalencias antes de instalar el piloto**.
 
 ## V2-00 — INVENTARIO PENDIENTE DE CERRAR (auditar antes de desplegar)
 
