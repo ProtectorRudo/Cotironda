@@ -73,9 +73,9 @@ export function generarWebhookV202(original){
   '            supplierQuotedId=quoteId;',
   '        }',
   ''
- ].join('\\n');
- code=one(code,'        let attachmentState:string|null=null;\\n',
-  captionMediaBlock+'        let attachmentState:string|null=null;\\n',
+ ].join('\n');
+ code=one(code,'        let attachmentState:string|null=null;\n',
+  captionMediaBlock+'        let attachmentState:string|null=null;\n',
   'supplier-media-caption');
  code=one(code,'       caption:CAPTION_PEDIDO_COTIRONDA_MVP305\n',
   "       caption:CAPTION_PEDIDO_COTIRONDA_MVP305+(refCaption?'\\n'+refCaption:'')\n",
