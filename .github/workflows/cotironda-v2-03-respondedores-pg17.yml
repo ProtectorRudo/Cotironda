@@ -3,12 +3,17 @@ on:
   pull_request:
     paths:
       - 'supabase/piloto/v2_03_catalogo_respondedores_privado.sql'
+      - 'supabase/piloto/v2_03b_fuente_original_auditoria_privada.sql'
       - 'supabase/tests/ci/v2-03-respondedores-pg17.sql'
       - 'src/server/v2-03-catalogo-respondedores.ts'
       - 'src/server/v2-03-respuestas-http.ts'
       - 'apps/portal/lib/piloto-v2-respondedores-http.ts'
       - 'apps/portal/app/api/piloto/v2/rondas/**'
       - 'tests/unit/v2-03-respondedores-seguros.test.mjs'
+      - 'tests/unit/v2-03b-descarga-original-segura.test.mjs'
+      - 'src/server/v2-03b-descarga-originales.ts'
+      - 'apps/portal/lib/piloto-v2-descarga-http.ts'
+      - 'apps/portal/app/api/piloto/v2/rondas/**'
       - '.github/workflows/cotironda-v2-03-respondedores-pg17.yml'
   workflow_dispatch:
 permissions:
@@ -47,6 +52,8 @@ jobs:
           node-version: '22.16.0'
       - name: Casos de estado, identidad y filtraciones V2
         run: node --experimental-strip-types --test tests/unit/v2-03-respondedores-seguros.test.mjs
+      - name: V2-03b descarga byte a byte y auditoria
+        run: node --experimental-strip-types --test tests/unit/v2-03b-descarga-original-segura.test.mjs
       - name: PG17 aislamiento, autorizacion prospectiva y rollback
         run: |
           set -euo pipefail
