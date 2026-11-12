@@ -248,3 +248,39 @@ jobs:
           psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regnamespace('cotironda_piloto_privado') IS NULL" | grep -Fx 't'
           psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regnamespace('auth') IS NULL" | grep -Fx 't'
           psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regprocedure('public.cotironda_piloto_originals_private_mvp192(uuid,uuid,uuid,uuid)') IS NULL" | grep -Fx 't'
+
+  pg17-mvp361-buyer-auth-bootstrap:
+    if: ${{ github.event_name == 'pull_request' && github.head_ref == 'feat/mvp361-bootstrap-buyer-auth-piloto-20261112' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: synthetic_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: synthetic_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - name: Checkout sin credenciales
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Comprobar OTP preflight de identidad Whapi sin crear usuarios
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/mvp361-buyer-bootstrap-pg17.sql
+          psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regnamespace('cotironda_piloto_privado') IS NULL" | grep -Fx 't'
+          psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regnamespace('auth') IS NULL" | grep -Fx 't'
+          psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regprocedure('public.cotironda_piloto_buyer_bootstrap_allowed_mvp361(text)') IS NULL" | grep -Fx 't'
