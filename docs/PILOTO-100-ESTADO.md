@@ -13,6 +13,18 @@
 
 **CI FINAL MVP355 (11/11/2026):** el SHA técnico [`721ecc12d2a9a35e54d53b35f009d419b4cca3f6`](https://github.com/ProtectorRudo/Cotironda/pull/798) pasó **5/5 workflows generales**: Next.js, unidad general (incluye **PG17 documental** y **Deno seguimiento** como jobs separados), PostgREST, PG17 aislamiento y verificación sitio. Probados dos formatos sintéticos, SHA, links débiles/ausentes, vínculo de aviso previo, duplicados, rondas solapadas y revocación. Además SELECT del nuevo SQL sin escrituras contra piloto: `2 despachos / 0 documentos acreditados`; token falso `not_found`. **Sin despliegue**, PR draft; no E2E real.
 
+## P0 — emisor Whapi de condiciones listo en código OFF, aún no conectado (12/11/2026)
+
+**[PR #808](https://github.com/ProtectorRudo/Cotironda/pull/808)** (DRAFT, sobre #807) / [acta 534](https://github.com/ProtectorRudo/Cotironda/blob/feat/p0-whapi-aviso-alta-sin-reenvio-20261112/docs/534-p0-emisor-whapi-terminos-sin-reenvio.md).
+
+- [x] Se reutilizó transporte existente D055 para validación de Whapi API ACK: texto de condiciones completo y no truncado, versión/SHA exactas, destinatario/chat comprobados, `beginCommitted` antes de HTTP y `authorizeCommitted` inmediatamente antes. Rechazos, fallos o timeout → incierto sin reenvío. **No genera opt-ins**.
+- [x] Tests unitarios sintéticos creados. **CI final pendiente por SHA**, no marcar aprobación hasta verificar ejecución.
+- [x] Snapshot en Supabase PILOTO revalidado con `SELECT` el 12/11/2026: 0 usuarios Auth, 0 operadores habilitados, 0 consentimientos originales, política OFF, 1 ronda prepared vigente y M362 sin instalar. **0 modificaciones, 0 mensajes.**
+- [ ] **CÓDIGO NO CABLEADO:** falta adaptador real SQL con `claim/begin/authorize/finish` que persista HMAC de respuesta a M364, con operador AAL2 y anti-duplicación; no activar WhatsApp ni autorizar por ACK de API. El texto de términos sigue en borrador comercial/legal.
+- [ ] Comprador OTP, 2 archivos verdaderamente asociados, seguimiento y cierre/descarga en navegador, `net` externo; P0–P5 ABIERTOS.
+
+**Próximo paso exacto:** desarrollar adaptador SQL transaccional y tests PG17. Luego una autorización real con operador MFA y consentimiento explícito, y pasar directamente al E2E documental. Requiere `Publicalo en cotironda-piloto` para despliegue; no crear una segunda ronda aún.
+
 ## MVP365 — corrección de reaceptación y no retroactividad (12/11/2026)
 
 **[PR #807](https://github.com/ProtectorRudo/Cotironda/pull/807)**, borrador sobre #806. [Acta 533](https://github.com/ProtectorRudo/Cotironda/blob/fix/mvp365-reaceptacion-no-retroactiva-20261112/docs/533-mvp365-reaceptacion-prospectiva-episodios.md).
