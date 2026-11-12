@@ -20,6 +20,7 @@ import {avisarCompradorTrasLoteMvp315} from
  '../cotironda-piloto-whapi/buyer-tracking-after-batch-mvp315.ts';
 
 import {aceptarBodyVacioBatchMvp357} from './empty-cron-body-mvp357.ts';
+import {autorizarBatchCronMvp357} from './cron-auth-mvp357.ts';
 
 const REF='ilggkalaafhtiysyzlmg';
 const URL='https://'+REF+'.supabase.co';
@@ -46,14 +47,26 @@ async function tick(req:Request):Promise<Response>{
     Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_DISPATCH_ENABLED')!=='true'||
     Deno.env.get('COTIRONDA_PILOT_WHAPI_OUTBOUND_ENABLED')!=='true')
   return deny(503,'worker_disabled');
- if(!authorizeRecoveryMvp294({
-  privateHeader:req.headers.get('x-cotironda-ai-batch-secret')??'',
-  privateExpected:Deno.env.get('COTIRONDA_PILOT_AI_BATCH_SECRET')??'',
+ // Existing manual admin+batch-secret path preserved.
+ // Scheduled cron is a narrower path: two app-scoped secrets only.
+ // No service_role/project admin key travels through pg_net headers.
+ const privateHeader=req.headers.get('x-cotironda-ai-batch-secret')??'';
+ const privateExpected=Deno.env.get('COTIRONDA_PILOT_AI_BATCH_SECRET')??'';
+ const adminAuthorized=authorizeRecoveryMvp294({
+  privateHeader,privateExpected,
   apikeyHeader:req.headers.get('apikey')??'',
   authorizationHeader:req.headers.get('authorization')??'',
   legacyServiceRole:Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')??'',
   secretKeysJson:Deno.env.get('SUPABASE_SECRET_KEYS')??''
- }))return deny(401,'unauthorized');
+ });
+ const cronAuthorized=autorizarBatchCronMvp357({
+  expectedPrivate:privateExpected,presentedPrivate:privateHeader,
+  expectedCronProof:Deno.env.get('COTIRONDA_PILOT_AI_BATCH_CRON_SECRET')??'',
+  presentedCronProof:req.headers.get('x-cotironda-batch-cron-proof')??'',
+  apikey:req.headers.get('apikey')??'',
+  authorization:req.headers.get('authorization')??''
+ });
+ if(!adminAuthorized&&!cronAuthorized)return deny(401,'unauthorized');
  // pg_net sends JSON '{}' even for calls with no payload.
  // Keep this strict: no fields, IDs, commands or instructions are accepted.
  if(!await aceptarBodyVacioBatchMvp357(req))
