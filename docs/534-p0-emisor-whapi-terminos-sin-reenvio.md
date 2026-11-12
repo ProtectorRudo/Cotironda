@@ -15,7 +15,7 @@ Secuencia por un único aviso:
 3. Resuelve el destinatario únicamente desde el canal verificado de proveedor; coteja HMAC exacto de destinatario y allowlist. No acepta teléfono de un mensaje de IA ni un cliente.
 4. Exige `beginCommitted` antes del primer HTTP y `authorizeCommitted` inmediatamente antes de enviar, para verificar política activada, permiso/BAJA, identidad y cupo. Si falta COMMIT o su respuesta es incierta, **no envía**.
 5. Reutiliza `crearTransporteWhapiCloudD055`; exige respuesta `sent:true`, ID, estado y chat correctos. Un `pending` indica **aceptación de API** y nunca entrega/leído.
-6. Calcula el HMAC de ID Whapi con el **mismo contrato de identidad D029/D072** y entrega al backend de persistencia la huella del contenido y el resultado `api_accepted` o `uncertain`. Ante timeout, 401, 429, respuesta malformada o pérdida del COMMIT, **no reenvía automáticamente**.
+6. Calcula el HMAC de ID Whapi con el **contrato real del webhook PILOTO** (`cotironda|pilot|msg|canal|id`), no con D029/D072 y entrega al backend de persistencia la huella del contenido y el resultado `api_accepted` o `uncertain`. Ante timeout, 401, 429, respuesta malformada o pérdida del COMMIT, **no reenvía automáticamente**.
 7. No inserta ningún consentimiento ni revocación; la aceptación entrante, revisión MFA y registro de episodios M365 permanecen una etapa independiente.
 
 **Limitación importante:** `claim`, `beginCommitted`, `authorizeCommitted`, `finishCommitted` y resolución cifrada del destinatario están definidos como **puertos obligatorios**, pero **todavía falta implementar y conectar su adaptador SQL/servidor real al PILOTO**. No convertir un stub de CI en comprobante auténtico. La escritura de `supplier_original_terms_notices_mvp364` deberá ser transaccional, solo desde el resultado Whapi confirmado por el servidor, y no una inserción arbitraria con una cadena `api_accepted`.
@@ -25,6 +25,7 @@ Secuencia por un único aviso:
 - [x] Reutilización D055; sin segundo transporte/HTTP, sin enviar mensajes.
 - [x] OFF por defecto, dos flags, entrega sólo a lista permitida, sin números ni tokens en el resultado.
 - [x] SHA de texto exacto y versión correctos, canal/chat HMAC, lease y BEGIN previos.
+- [x] **Compatibilidad real corroborada en fuente Edge:** el piloto usa HMAC sobre `cotironda|pilot|chat|canal|chat_id` y `cotironda|pilot|msg|canal|message_id`. Los módulos D029/D056 usan JSON de arreglos y **NO** comparten huella. El adaptador calcula expresamente la huella piloto; un caso negativo rechaza una huella D029 aunque sea sintácticamente válida.
 - [x] Test Node agregado: OFF, texto modificado/hash falso, chat cambiado, destino no permitido, BEGIN fallido, guardia revocada, timeout, JSON malformado, chat Whapi cruzado, falla de persistencia e identificador HMAC; ningún reenvío.
 - [ ] Confirmar CI último SHA del PR técnico.
 - [ ] **Siguiente paso concreto:** implementar en backend confiable `claim / begin / authorize / finish` con transacciones y unicidad real, referenciando M364 y el operador Auth AAL2; no exponer un RPC que permita falsificar el acuse. Probar con PostgreSQL 17 y con adaptación HTTP sin enviar.
