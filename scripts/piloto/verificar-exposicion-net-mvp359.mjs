@@ -1,3 +1,5 @@
+import {resolve} from 'node:path';
+import {pathToFileURL} from 'node:url';
 /**
  * MVP359 — comprobación EXTERNA y solo lectura de esquema net.
  * NUNCA envía una clave administrativa. No lee tablas ni archivos.
@@ -53,7 +55,7 @@ export async function verificarExposicionNet({url, clave, fetchFn=fetch}) {
   return {estado:'INCONCLUSIVE',motivo:'unexpected_net_response'};
  } catch { return {estado:'INCONCLUSIVE',motivo:'network_or_timeout'}; }
 }
-if(process.argv[1] && import.meta.url === new URL('file://'+process.argv[1]).href) {
+if(process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
  if(!process.argv.includes('--live')) {
   process.stderr.write('No se ejecuta una consulta externa sin --live.\n');
   process.exitCode=2;
