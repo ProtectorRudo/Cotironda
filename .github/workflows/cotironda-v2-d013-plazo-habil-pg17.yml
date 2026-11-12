@@ -9,6 +9,8 @@ on:
       - 'scripts/piloto/v2-live76-candidate.mjs'
       - 'supabase/piloto/v2_d013_ruteo_productos_sin_filtro_rubro.sql'
       - 'supabase/piloto/v2_05_plazo_dos_dias_habiles_candidate.sql'
+      - 'supabase/piloto/v2_05_shadow_prepare_activar_modo_habil.sql'
+      - 'supabase/tests/fixtures/v2-d013-shadow-prepare-baseline.sql'
       - 'supabase/tests/ci/v2-05-plazo-habil-pg17.sql'
       - 'tests/unit/v2-d013-productos-sin-rubros.test.mjs'
       - '.github/workflows/cotironda-v2-d013-plazo-habil-pg17.yml'
