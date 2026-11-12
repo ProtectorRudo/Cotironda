@@ -1,3 +1,7 @@
+## 2026-11-12 — Cotironda V2-03a: catálogo privado de respondedores (SOLO DESARROLLO)
+
+Se preparó un listado basado en prueba firme del original (inbox + SHA Storage + MVP225), Auth del comprador y consentimiento V2 prospectivo por proveedor, sin usar el filtro antiguo de ronda cerrada o verificación económica V9. Política OFF por defecto; API Next.js GET en preview con SHA pinning, sin descarga ni datos de invitados pendientes, proyección segura y pruebas PG17/Node sintéticas. **No hubo cambios en base PILOTO, WhatsApp, Storage, Auth real ni producción; no es portal terminado.** [Acta V2-03a](docs/V2-03A-RESPONDEDORES-SEGUROS-20261112.md).
+
 ## 2026-11-12 — Cotironda V2-02: adjuntos con referencia en caption (DESARROLLO)
 Conservando el webhook histórico inmutable, se preparó overlay V2 (flag OFF) para que documentos PDF/Excel/fotos recibidos sin mensaje citado, pero con código en el caption Whapi, pasen una búsqueda de despacho verificado tras quedar archivados con SHA. RPC privada solo lectura exige emisor y original auténticos, consentimiento vigente y previo, invitación, único despacho acreditado y referencia inequívoca. MVP225 sigue asociando finalmente. Nuevos tests Node, Deno y PG17 con ROLLBACK. **Sin SQL ni Edge instalados, sin WhatsApps enviados, sin atribuir documentos históricos, sin E2E ni portal final.** [Acta V2-02 caption](docs/V2-02-CAPTION-ADJUNTOS-20261112.md).
 
