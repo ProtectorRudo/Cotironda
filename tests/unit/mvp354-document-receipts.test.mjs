@@ -70,7 +70,7 @@ test('MVP354: SQL valida token, proveedor, invitacion y archivo sin depender de 
  assert.match(sql,/m\.request_id=r\.request_id/u);
  assert.match(sql,/m\.message_hmac=a\.message_hmac/u);
  assert.match(sql,/proof\.source_sha256=a\.content_sha256/u);
- assert.match(sql,/proof\.association IN \('quoted_whapi_id','single_active_round'\)/u);
+ assert.match(sql,/proof\.association IN \('quoted_whapi_id','single_active_round',[\s\S]*?'prior_supplier_preamble'\)/u);
  assert.match(sql,/unresolved\.state IN/u);
  assert.match(sql,/other_job\.finished_at<=m\.received_at/u);
  assert.match(sql,/m\.received_at<=r\.closes_at/u);
