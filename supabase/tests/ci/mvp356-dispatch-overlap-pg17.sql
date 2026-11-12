@@ -57,6 +57,15 @@ DECLARE
  r4 uuid:='44444444-4444-4444-8444-444444444444';
  a jsonb;b jsonb;
 BEGIN
+ -- SQL installation alone cannot block a supplier. OFF until separately approved.
+ IF (SELECT enabled FROM cotironda_piloto_privado.ai_supplier_overlap_gate_mvp356
+     WHERE only_row) IS DISTINCT FROM false
+ THEN RAISE EXCEPTION 'mvp356_gate_not_off_by_default';END IF;
+ IF has_table_privilege('anon',
+   'cotironda_piloto_privado.ai_supplier_overlap_gate_mvp356','SELECT')
+ THEN RAISE EXCEPTION 'mvp356_gate_exposed';END IF;
+ UPDATE cotironda_piloto_privado.ai_supplier_overlap_gate_mvp356
+ SET enabled=true,activated_at=n-interval '1 hour' WHERE only_row;
  IF has_function_privilege('anon',
    'cotironda_piloto_privado.hay_despacho_solapado_mvp356(uuid,text)',
    'EXECUTE')
