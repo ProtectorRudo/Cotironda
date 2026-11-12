@@ -18,11 +18,32 @@ CREATE TABLE cotironda_piloto_privado.original_terms_policy_mvp362 (
    approved_at IS NOT NULL AND activated_at IS NOT NULL
    AND approved_at<=activated_at))
 );
+-- M364: notice ledger stays empty and private until the trusted sender is wired.
+-- A recorded notice does not itself prove operator MFA or informed intent.
+CREATE TABLE cotironda_piloto_privado.supplier_original_terms_notices_mvp364 (
+ notice_message_hmac text PRIMARY KEY CHECK(notice_message_hmac ~ '^[a-f0-9]{64}$'),
+ supplier_key text NOT NULL REFERENCES cotironda_piloto_privado.participants(key),
+ terms_version text NOT NULL REFERENCES
+   cotironda_piloto_privado.original_terms_policy_mvp362(terms_version),
+ terms_sha256 text NOT NULL CHECK(terms_sha256 ~ '^[a-f0-9]{64}$'),
+ supplier_chat_hmac text NOT NULL CHECK(supplier_chat_hmac ~ '^[a-f0-9]{64}$'),
+ outbound_body_sha256 text NOT NULL CHECK(outbound_body_sha256 ~ '^[a-f0-9]{64}$'),
+ delivery_state text NOT NULL CHECK(delivery_state='api_accepted'),
+ sent_at timestamptz NOT NULL,
+ recorded_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+ UNIQUE(supplier_key,terms_version,notice_message_hmac),
+ CHECK(recorded_at>=sent_at)
+);
 CREATE TABLE cotironda_piloto_privado.supplier_original_optins_mvp362 (
  supplier_key text NOT NULL,
  terms_version text NOT NULL
    REFERENCES cotironda_piloto_privado.original_terms_policy_mvp362(terms_version),
  terms_sha256 text NOT NULL CHECK(terms_sha256 ~ '^[a-f0-9]{64}$'),
+ notice_message_hmac text NOT NULL
+   CHECK(notice_message_hmac ~ '^[a-f0-9]{64}$'),
+ FOREIGN KEY(supplier_key,terms_version,notice_message_hmac)
+   REFERENCES cotironda_piloto_privado.supplier_original_terms_notices_mvp364
+     (supplier_key,terms_version,notice_message_hmac),
  evidence_message_hmac text NOT NULL
    CHECK(evidence_message_hmac ~ '^[a-f0-9]{64}$'),
  ack_plaintext_sha256 text NOT NULL
@@ -55,11 +76,14 @@ CREATE TABLE cotironda_piloto_privado.supplier_original_revocations_mvp362 (
 -- may register explicit optin/revocation. Never create public insert RPC.
 ALTER TABLE cotironda_piloto_privado.original_terms_policy_mvp362
  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cotironda_piloto_privado.supplier_original_terms_notices_mvp364
+ ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cotironda_piloto_privado.supplier_original_optins_mvp362
  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cotironda_piloto_privado.supplier_original_revocations_mvp362
  ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON cotironda_piloto_privado.original_terms_policy_mvp362,
+ cotironda_piloto_privado.supplier_original_terms_notices_mvp364,
  cotironda_piloto_privado.supplier_original_optins_mvp362,
  cotironda_piloto_privado.supplier_original_revocations_mvp362
  FROM PUBLIC,anon,authenticated,service_role;
@@ -136,6 +160,20 @@ AS $mvp362$
    AND t.terms_sha256=encode(extensions.digest(
        convert_to(t.terms_body,'UTF8'),'sha256'),'hex')
    AND t.scope='original_identificable_tras_cierre'
+  -- Require independently registered outbound Whapi acceptance for same
+  -- supplier, chat, terms SHA and an earlier delivery than incoming consent.
+  JOIN cotironda_piloto_privado.supplier_original_terms_notices_mvp364 n
+   ON n.notice_message_hmac=o.notice_message_hmac
+   AND n.supplier_key=o.supplier_key
+   AND n.terms_version=o.terms_version
+   AND n.terms_sha256=t.terms_sha256
+   AND n.supplier_chat_hmac=a.supplier_chat
+   AND n.delivery_state='api_accepted'
+   AND n.sent_at>=t.activated_at
+   AND n.sent_at<o.accepted_at
+   AND n.recorded_at<=o.accepted_at
+   AND n.sent_at<a.created_at
+   AND n.notice_message_hmac<>o.evidence_message_hmac
   JOIN cotironda_piloto_privado.whapi_inbox msg
    ON msg.message_hmac=o.evidence_message_hmac
    AND msg.participant_key=p_supplier_key

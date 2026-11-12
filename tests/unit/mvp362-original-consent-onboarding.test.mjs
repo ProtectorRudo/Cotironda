@@ -75,6 +75,13 @@ test('MVP362: consent ledger starts OFF, never auto-authorizes old suppliers',()
  assert.match(policy,/o\.accepted_at>=a\.policy_activated_at/u);
  assert.match(policy,/msg\.request_id IS NULL/u);
  assert.match(policy,/msg\.kind='text'/u);
+ assert.match(policy,/supplier_original_terms_notices_mvp364/u);
+ assert.match(policy,/FOREIGN KEY\(supplier_key,terms_version,notice_message_hmac\)/u);
+ assert.match(policy,/n\.terms_sha256=t\.terms_sha256/u);
+ assert.match(policy,/n\.supplier_chat_hmac=a\.supplier_chat/u);
+ assert.match(policy,/n\.sent_at<o\.accepted_at/u);
+ assert.match(policy,/n\.sent_at>=t\.activated_at/u);
+ assert.match(policy,/n\.recorded_at<=o\.accepted_at/u);
  assert.match(policy,/supplier_original_revocations_mvp362/u);
  assert.match(policy,/original_share_consents_mvp178 rev_c/u);
  assert.match(policy,/REVOKE ALL ON FUNCTION\s+cotironda_piloto_privado\.original_effective_consent_mvp362/u);
@@ -97,6 +104,10 @@ test('MVP362: fixture covers onboarding/legacy, terms hash, revocation and rollb
   'mvp362_valid_onboarding_not_accepted',
   'mvp362_onboarding_catalog_missing',
   'mvp362_onboarding_auth_contract_wrong',
+  'mvp364_wrong_notice_terms_sha_opened',
+  'mvp364_wrong_notice_chat_opened',
+  'mvp364_notice_after_ack_opened',
+  'mvp364_notice_before_policy_opened',
   'mvp362_wrong_terms_sha_opened',
   'mvp362_wrong_affirmative_sha_opened',
   'mvp362_retrospective_recording_opened',
