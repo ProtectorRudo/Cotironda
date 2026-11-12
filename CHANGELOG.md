@@ -1,5 +1,10 @@
 # Registro de cambios Cotironda
 
+## [Sin publicar] — 12/11/2026 — D013 / catálogos por producto y equivalencias
+
+- **Decisión DOCUMENTADA, sin código ni despliegue:** distribución por coincidencia de productos concretos del catálogo propio de cada proveedor, nunca por rubro/nicho. La IA comprende sinónimos, nombres comerciales (Ceresita/hidrófugo compatible), marcas flexibles y presentaciones (cemento 50/25 kg normalizado en masa), sin falsear equivalencias técnicas.
+- Se actualizan Contrato V2, Plan/Estado, AGENTS, decisión D013 e Issue #794; V2-00 continúa como única próxima tarea técnica y V2-01 incorporará pruebas de matching por artículo.
+
 ## [Sin publicar] — 12/11/2026 — D012 / reorientación V2
 
 - **Documentación, no código ni despliegue.** Dirección única: solicitudes por catálogo/zona; negocios identificados al responder, original exacto y análisis individual breve útil; durante ronda **solo respondedores**; cierre en **dos días hábiles** y análisis general comparativo justificado.
