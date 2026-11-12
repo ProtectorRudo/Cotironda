@@ -50,6 +50,20 @@ El objetivo comercial es que, **al cierre**, el comprador pueda obtener los orig
 
 **CI FINAL MVP355 (11/11/2026):** el SHA técnico [`721ecc12d2a9a35e54d53b35f009d419b4cca3f6`](https://github.com/ProtectorRudo/Cotironda/pull/798) pasó **5/5 workflows generales**: Next.js, unidad general (incluye **PG17 documental** y **Deno seguimiento** como jobs separados), PostgREST, PG17 aislamiento y verificación sitio. Probados dos formatos sintéticos, SHA, links débiles/ausentes, vínculo de aviso previo, duplicados, rondas solapadas y revocación. Además SELECT del nuevo SQL sin escrituras contra piloto: `2 despachos / 0 documentos acreditados`; token falso `not_found`. **Sin despliegue**, PR draft; no E2E real.
 
+## P0 — bloqueo de envío SQL atómico antes de Whapi (12/11/2026)
+
+**[PR #808](https://github.com/ProtectorRudo/Cotironda/pull/808)**, [Acta 535](https://github.com/ProtectorRudo/Cotironda/blob/feat/p0-whapi-aviso-alta-sin-reenvio-20261112/docs/535-p0-aviso-whapi-reserva-ack-transaccional.md). Sigue en **DESARROLLO**, SIN instalar ni activar en piloto y SIN WhatsApps reales.
+
+- [x] Completar en código el backend que faltaba en Acta 534: nueva migración SQL privada `p0_whapi_terms_sender_atomic_off.sql` y adaptador `whapi-terms-sql-p0.ts`. Cola única por proveedor/versión/episodio posterior a revocación; la crea exclusivamente operador verificado por `operator_session_mvp267()` (Supabase Auth MFA AAL2). Ninguna autorización automática de consentimiento por haber enviado aviso.
+- [x] Rol dedicado `cotironda_pilot_terms_sender_p0 NOLOGIN`, sin permisos de escritura directos para `anon`, `authenticated` o `service_role`; otorgamiento de login/credenciales restringido pendiente de instalación. El rol de operador puede únicamente **solicitar** la cola si la política y los términos exactos están aprobados.
+- [x] Asegurar transacción y secuencia `claim → begin COMMITTED → authorize → Whapi D055 → finish`: `FOR UPDATE SKIP LOCKED`, token de lease, revalidación de chat y política, no replay `in_flight`; ACK Whapi guarda M364 junto al estado final en una sola transacción; `uncertain` guarda estado sin aviso ni reenvío.
+- [x] Tests Node de consulta estricta e inyección de resultados, PG17 con ROLLBACK de cola, remitente incorrecto, lease falso, ACK faltante, finalización duplicada, rechazo `uncertain`, permisos RLS y ausencia de SMS/Whapi real. **Primera ejecución PG17 específica SUCCESS**; Node detectó resultado con campos extra y fue corregido. **Certificación del CI final por SHA en curso.**
+- [x] Reconsulta Supabase PILOTO 12/11/2026, solo lectura: Auth users 0, operadores habilitados 0, consentimientos originales 0, políticas de descarga ON 0, 1 ronda `prepared` vigente, M362 y P0 SQL sin instalar. Sin datos mutados.
+- [ ] **P0 AÚN ABIERTO:** texto de términos comerciales/legales aprobado; operador REAL MFA habilitado; provisionar login DB dedicado con permisos mínimos; conectar el runner confiable y resolver cifrado del proveedor; ejecutar un ensayo Whapi real autorizado con aceptación expresa y revisión MFA.
+- [ ] P1–P5: comprador Auth Phone/OTP, dos archivos originales asociados por evidencia fuerte a ronda, vista de seguimiento, cierre y descarga segura en navegador, exposición REST `net` sin fallas. No crear nueva ronda superpuesta ni afirmar E2E.
+
+**ÚNICA PRÓXIMA ACCIÓN:** completar despliegue controlado del emisor/operador real y prueba de aceptación única, previa aprobación de términos y autorización `Publicalo en cotironda-piloto`. Después abandonar mejoras de consentimiento que no desbloqueen la prueba comercial: 1 arquitecto, 2 proveedores, dos documentos recibidos, cierre y descarga. No publicar con `Avanza`.
+
 ## P0 — emisor de condiciones Whapi reutilizando D055 (12/11/2026)
 
 **[PR técnico #808](https://github.com/ProtectorRudo/Cotironda/pull/808)** DRAFT sobre #807, [Acta 534](https://github.com/ProtectorRudo/Cotironda/blob/feat/p0-whapi-aviso-alta-sin-reenvio-20261112/docs/534-p0-emisor-whapi-terminos-sin-reenvio.md). **Sin publicación y sin WhatsApps reales.**
