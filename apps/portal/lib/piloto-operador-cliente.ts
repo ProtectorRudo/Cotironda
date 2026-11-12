@@ -23,6 +23,7 @@ export function puertosOperadorSupabasePiloto(jwt:string){
     'cotironda_piloto_operator_usage_auth_mvp267',
     'cotironda_piloto_operator_case_action_auth_mvp267',
     'cotironda_piloto_operator_usage_review_auth_mvp267',
+    'cotironda_piloto_terms_review_queue_auth_p0',
     'cotironda_piloto_terms_review_packet_auth_p0',
     'cotironda_piloto_terms_review_decide_auth_p0'
    ]);
