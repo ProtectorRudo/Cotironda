@@ -23,7 +23,8 @@ test('preflight: V2 incorpora nuevos matches preservando MVP333 + M336 vivo',()=
   'webhookSecretState','COTIRONDA_PILOT_V2_REFERENCE_LINK_ENABLED',
   "db.rpc('cotironda_piloto_v2_quoted_id_for_reference'",
   "db.rpc('cotironda_piloto_v2_quoted_id_for_media_reference'",
-  'supplier-auto-correlation-mvp336.v76-snapshot.ts'
+  'supplier-auto-correlation-mvp336.v76-snapshot.ts',
+  'ai-central-buyer-v2-d013.ts'
  ])assert.ok(candidate.includes(match),match);
  assert.ok(candidate.length>v76.length);
  assert.ok(!historical.includes('COTIRONDA_PILOT_V2_REFERENCE_LINK_ENABLED'));

@@ -42,6 +42,9 @@ export function generarCandidatoV202DesdeLive76(index,supplier){
  const source="'./supplier-auto-correlation-mvp336.ts'";
  const pinned="'./supplier-auto-correlation-mvp336.v76-snapshot.ts'";
  candidate=matchOne(candidate,source,pinned,'supplier-m336');
+ // D013 is a V2 overlay ONLY; the deployed buyer pipeline stays untouched.
+ candidate=matchOne(candidate,"from './ai-central-buyer-mvp226.ts';",
+  "from './ai-central-buyer-v2-d013.ts';",'buyer-d013');
  for(const marker of [
   'connectivityOnlyMvp333','processedInboundMvp333',
   'webhookSecretState','index.v2-live76-candidate.ts'
