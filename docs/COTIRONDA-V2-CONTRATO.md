@@ -48,6 +48,14 @@ En segunda fase, se da de alta de manera segura al comprador mediante operador/f
 
 El guard de [PR #827](https://github.com/ProtectorRudo/Cotironda/pull/827) distingue `primer_original` de `piloto_completo` y **no publica nada nunca**. Una CI verde no prueba el flujo real. `Avanza` continúa significando desarrollo/pruebas, no instalación.
 
+## 2.4 Alta segura de compradores piloto — D016 (12/11/2026)
+
+Para ver los presupuestos originales, el comprador debe poder probar que controla **el mismo teléfono de la empresa que envió el pedido por WhatsApp**, mediante Supabase Auth y una sesión vigente. **La primera cuenta se prepara únicamente por servidor autorizado**: el registro general permanece cerrado (`shouldCreateUser:false` en OTP). No basta saber el nombre de la empresa, compartir un enlace o tener el teléfono en un catálogo.
+
+El operador verifica previamente la identidad Whapi del comprador y su consentimiento mediante una función privada. El teléfono de Auth debe coincidir inequívocamente con la huella SHA del canal WhatsApp ya autenticado; si hay ambigüedad, opt-out o dato faltante, no se crea la cuenta. La creación inicial es `phone_confirm:false`; **ningún administrador debe marcar un número como confirmado por comodidad**. El SMS OTP real es la prueba de posesión del teléfono antes del acceso y debe verificarse en PILOTO (incluida la configuración del proveedor SMS). La interfaz puede solicitar el código de ingreso, no confirmaciones repetidas por presupuesto.
+
+`Avanza` habilita código, simulaciones y controles PostgreSQL17 con rollback; `Publicalo` habilita solo la instalación PILOTO y el alta del comprador en el entorno expresamente autorizado. La política privada de originales y el consentimiento prospectivo de cada proveedor siguen siendo obligatorios. No se puede inferir que cualquier usuario Auth puede ver cualquier ronda, ni que `auth.users>0` equivale a identidad verificada. [PR #828](https://github.com/ProtectorRudo/Cotironda/pull/828).
+
 ## 3. Presentación y análisis: reglas firmes
 
 **Durante la ronda, una tarjeta por comercio que respondió:** nombre visible, fecha, rubro, archivo(s) original(es) verificables, total SOLO si lo declara inequívocamente el proveedor (señalando moneda/base), y breve **análisis comercial útil**. Ni lista de invitados ni estado de quienes todavía no enviaron.
