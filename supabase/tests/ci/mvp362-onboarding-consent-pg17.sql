@@ -266,8 +266,9 @@ BEGIN
  -- A policy with real text exists but is OFF by default, even with a
  -- genuine supplier message and audited operator attestation.
  INSERT INTO cotironda_piloto_privado.original_terms_policy_mvp362
- (terms_version,terms_body,approved_at,activated_at)
+ (terms_version,terms_body,terms_sha256,approved_at,activated_at)
  VALUES('cotironda-originales-alta-v1',repeat('BORRADOR LEGAL ',20),
+ encode(extensions.digest(convert_to(repeat('BORRADOR LEGAL ',20),'UTF8'),'sha256'),'hex'),
    now_-interval '5 days',now_-interval '4 days 12 hours');
  SELECT terms_sha256 INTO exact_sha
  FROM cotironda_piloto_privado.original_terms_policy_mvp362;
