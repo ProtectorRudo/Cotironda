@@ -44,7 +44,7 @@ DECLARE
  h text:=encode(extensions.digest(
  convert_to('15550123456@s.whatsapp.net','UTF8'),'sha256'),'hex');
  chat text:=repeat('c',64);
- msg text:=repeat('m',64);
+ msg text:=repeat('a',64);
  round_id uuid:='11111111-1111-4111-8111-111111111111';
 BEGIN
  IF has_function_privilege('anon',
