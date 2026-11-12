@@ -85,6 +85,26 @@ function safeObservation(value:string):boolean{
  return value.length>=12&&value.length<=205&&!pii(value)&&
   !/\b(?:ganador|primer puesto|mas barato que otros|mejor oferta del mercado)\b/iu.test(value);
 }
+/** Don't let the model introduce numbers or affirmative IVA/freight claims
+ * absent from its exact quoted evidence. Document may contain unrelated
+ * prices in other lines; evidence must support THIS observation.
+ */
+function claimGrounded(observation:string,evidence:string):boolean{
+ const numbers=(s:string)=>[...s.matchAll(/\d+(?:[.,]\d+)*/gu)]
+  .map(x=>x[0].replace(',','.'));
+ const proofNumbers=new Set(numbers(evidence));
+ if(numbers(observation).some(x=>!proofNumbers.has(x)))return false;
+ const a=observation.toLowerCase();
+ const e=evidence.toLowerCase();
+ if(/\b(?:iva\s+(?:incluido|excluido)|(?:con|sin)\s+iva|iva\s+no\s+informado)\b/u.test(a)&&
+  !/\biva\b/u.test(e))return false;
+ if(/\b(?:flete\s+(?:gratis|incluido|no\s+informado)|(?:sin|con)\s+flete|env[ií]o\s+gratis)\b/u.test(a)&&
+  !/\b(?:flete|env[ií]o)\b/u.test(e))return false;
+ if(/\b(?:no\s+(?:consta|se\s+indica|se\s+aclara)|no\s+est[aá]\s+especificado)\b/u.test(a)&&
+  !/\b(?:no\s+(?:consta|se\s+indica|se\s+aclara)|sin\s+definir)\b/u.test(e))
+  return false;
+ return true;
+}
 function clean(raw:unknown,source:string):readonly PuntoAnalisisV2[]|null{
  if(!object(raw)||!Array.isArray(raw.puntos)||raw.puntos.length<2||
   raw.puntos.length>4||Object.keys(raw).some(x=>x!=='puntos'))return null;
@@ -94,7 +114,8 @@ function clean(raw:unknown,source:string):readonly PuntoAnalisisV2[]|null{
     typeof p.categoria!=='string'||!CATS.includes(p.categoria as Categoria)||
     typeof p.evidencia!=='string'||!quoted(source,p.evidencia)||
     pii(p.evidencia)||typeof p.observacion!=='string'||
-    !safeObservation(p.observacion))return null;
+    !safeObservation(p.observacion)||
+    !claimGrounded(p.observacion,p.evidencia))return null;
   const key=p.categoria+'|'+p.evidencia;
   if(seen.has(key))return null;
   seen.add(key);
