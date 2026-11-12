@@ -18,7 +18,7 @@
 **[PR #807](https://github.com/ProtectorRudo/Cotironda/pull/807)**, borrador sobre #806. [Acta 533](https://github.com/ProtectorRudo/Cotironda/blob/fix/mvp365-reaceptacion-no-retroactiva-20261112/docs/533-mvp365-reaceptacion-prospectiva-episodios.md).
 
 - [x] Bloqueo de reaceptación detectado y corregido **solo en código**: historial de aceptaciones por episodio de WhatsApp y revocación con referencia al evento anterior. Aceptar nuevamente requiere un nuevo aviso y respuesta registrados posteriores a la revocación. El permiso anterior no resucita rondas ya creadas.
-- [x] PG17 sintético del circuito de revocación/reaceptación y contrato Node extendidos. **CI del SHA final pendiente de verificar**. No hay validación Whapi real ni cierre de P0–P5.
+- [x] PG17 sintético del circuito de revocación/reaceptación y contrato Node extendidos. **CI FINAL 5/5 workflows SUCCESS** en SHA `e625a7f8dfcb8fd6062b19e95a10cbc381f048f9`; job `pg17-mvp362-terms-onboarding` SUCCESS con ROLLBACK, Node SUCCESS; Next.js, PostgREST, PG17 empresarial y sitio SUCCESS. No hubo Auth ni WhatsApp reales. No hay validación Whapi real ni cierre de P0–P5.
 - [ ] Operador Auth MFA AAL2 real, envío verificable de condiciones y aceptación explícita revisada; texto comercial/legal aprobado, Auth comprador OTP, 2 archivos y seguimiento+descarga HTTP real. No crear ronda superpuesta ni habilitar política por defecto.
 
 **Próxima acción sin desvíos:** ensayar una aceptación explícita usando Whapi real y operador habilitado, y después realizar la prueba E2E documental. No introducir otro subsistema. Ningún deploy ni mensaje por esta autorización.
