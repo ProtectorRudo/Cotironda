@@ -143,6 +143,11 @@ BEGIN
  IF v->>'archivos_recibidos'<>'1'
  THEN RAISE EXCEPTION 'mvp355_weak_semantic_link_counted';END IF;
  UPDATE cotironda_piloto_privado.ai_supplier_links_mvp225
+ SET association='prior_supplier_preamble' WHERE supplier_key='supplier_b';
+ v:=public.cotironda_piloto_document_receipts_mvp354(tok);
+ IF v->>'archivos_recibidos'<>'2' THEN
+  RAISE EXCEPTION 'mvp355_trusted_preamble_link_not_counted';END IF;
+ UPDATE cotironda_piloto_privado.ai_supplier_links_mvp225
  SET association='quoted_whapi_id' WHERE supplier_key='supplier_b';
  INSERT INTO cotironda_piloto_privado.ai_supplier_unresolved_mvp237 VALUES
  (repeat('f',64),'supplier_b','ambiguous_round');
