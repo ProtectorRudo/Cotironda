@@ -2,7 +2,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash,createHmac} from 'node:crypto';
 import {crearEmisorAvisoTerminosP0} from '../../src/server/whapi-terms-onboarding-p0.ts';
-import {calcularChatDestinatarioD056} from '../../src/server/whapi-send-authorization-d056.ts';
 
 const TOKEN='CI_TOKEN_SYNTHETIC_ONLY_abcdefghijklmnopqrstuvwxyz';
 const CHANNEL='pilot_whapi_ci';
@@ -15,13 +14,15 @@ const BODY='Condiciones de alta '+VERSION+' — '+
  'Soy consciente de que el original puede contener datos de contacto o bancarios.';
 const sha=x=>createHash('sha256').update(x,'utf8').digest('hex');
 const noticeMac=x=>createHmac('sha256',KEY)
- .update(JSON.stringify(['cotironda','msg',1,CHANNEL,x]))
+ .update('cotironda|pilot|msg|'+CHANNEL+'|'+x,'utf8')
  .digest('hex');
 const CLAIM=Object.freeze({
  state:'leased',jobId:'eeeeeeee-0000-4000-8000-000000000551',
  leaseToken:'aaaaaaa1-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
  supplierKey:'corralon_ailin',channel:CHANNEL,
- chatHmac:calcularChatDestinatarioD056(CHANNEL,TO,KEY),
+ chatHmac:createHmac('sha256',KEY)
+ .update('cotironda|pilot|chat|'+CHANNEL+'|'+TO+'@s.whatsapp.net','utf8')
+ .digest('hex'),
  termsVersion:VERSION,termsSha256:sha(BODY),body:BODY
 });
 const answer=()=>new Response(JSON.stringify({
@@ -41,7 +42,7 @@ function fixture(override={}){
  };
  const config={
   habilitado:true,pilotoAutorizado:true,channel:CHANNEL,token:TOKEN,
-  identityKey:KEY,destinatariosPermitidos:[TO],
+  pilotHmacKey:KEY,destinatariosPermitidos:[TO],
   fetcher:async()=>{calls.fetch++;return answer()},ports,...override.config
  };
  return {calls,config,run:()=>crearEmisorAvisoTerminosP0(config).procesarUno()};
@@ -91,6 +92,16 @@ test('P0 aviso: falta trabajo o claim no confiable bloquea antes de comenzar',as
   assert.equal(x.calls.fetch,0);
   assert.equal(x.calls.begin,0);
  }
+});
+test('P0 aviso: huella D029 de otro subsistema NO equivale a huella del PILOTO',async()=>{
+ const d029=createHmac('sha256',KEY)
+  .update(JSON.stringify(['cotironda','chat',1,CHANNEL,
+    TO+'@s.whatsapp.net']))
+  .digest('hex');
+ const x=fixture({claim:{...CLAIM,chatHmac:d029}});
+ assert.deepEqual(await x.run(),{estado:'bloqueado_preenvio'});
+ assert.equal(x.calls.begin,0);
+ assert.equal(x.calls.fetch,0);
 });
 test('P0 aviso: destino cambiado o no permitido impide HTTP',async()=>{
  for(const to of ['5492219999999','+5492211234567','123']){
