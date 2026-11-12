@@ -7,7 +7,7 @@ import {bearerPiloto,claimsDeJwtValidado,type SupabaseUserPiloto}
  from './originales-piloto-http-runtime.ts';
 import {respuestasV2Habilitadas,type RespuestasEnv}
  from './v2-03-respuestas-http.ts';
-import {obtenerTextoVerificadoV2} from './v2-04b-texto-original-verificado.ts';
+import {obtenerTextoVerificadoV2,type PdfSourceReaderV2} from './v2-04b-texto-original-verificado.ts';
 import {analizarOriginalTextoConIAV2,type ResultadoAnalisisV2}
  from './v2-04-analisis-individual.ts';
 
@@ -22,6 +22,7 @@ export type AnalysisPorts=Readonly<{
  claim:(q:Readonly<{rondaId:string;documentoId:string;usuarioId:string;
   sessionId:string}>)=>Promise<unknown>;
  read:(bucket:string,path:string)=>Promise<Uint8Array|null>;
+ readPdf?:PdfSourceReaderV2;
  finish:(q:Readonly<{rondaId:string;documentoId:string;usuarioId:string;
   sessionId:string;jobToken:string;sourceSha256:string;
   textSha256:string|null;points:unknown;status:'ready'|'review'}>)
@@ -73,12 +74,18 @@ export async function analizarOriginalPorPedidoV2(
    raw.bucket!=='cotironda-piloto-originals'||
    typeof raw.sha256!=='string'||!SHA.test(raw.sha256)||
    typeof raw.mime!=='string'||
-   !['text/plain','text/csv',
+   !['text/plain','text/csv','application/pdf',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
    ].includes(raw.mime)||
    typeof raw.byteCount!=='number'||raw.byteCount<40||
    raw.byteCount>8388608)return json(202,'analisis_pendiente');
+  // Do not waste claim attempts if the private PDF reader isn't ready.
+  if(raw.mime==='application/pdf'&&
+   (env.COTIRONDA_PILOT_V2_PDF_ENABLED!=='true'||!ports.readPdf||
+    !/^[A-Za-z0-9_-]{40,256}$/u.test(
+     env.COTIRONDA_PILOT_V2_PDF_SHARED_SECRET??'')))
+    return json(202,'analisis_pendiente');
   const claimed=await ports.claim(q);
   if(!obj(claimed)||claimed.state!=='analysis_claimed_v2'||
    claimed.sourceSha256!==raw.sha256||
@@ -92,7 +99,8 @@ export async function analizarOriginalPorPedidoV2(
    const rawBytes=await ports.read(raw.bucket,raw.path);
    if(rawBytes&&rawBytes.byteLength===raw.byteCount){
     const source=await obtenerTextoVerificadoV2({
-     bytes:rawBytes,mime:raw.mime,shaBinario:raw.sha256
+     bytes:rawBytes,mime:raw.mime,shaBinario:raw.sha256,
+     pdfReader:ports.readPdf
     });
     if(source){
      const again=await auth(token,ports,now());

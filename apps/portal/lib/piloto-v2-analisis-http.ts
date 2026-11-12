@@ -6,6 +6,8 @@ import {bearerPiloto} from '../../../src/server/originales-piloto-http-runtime.t
 import {respuestasV2Habilitadas} from '../../../src/server/v2-03-respuestas-http.ts';
 import {analizarOriginalPorPedidoV2,type AnalysisPorts}
  from '../../../src/server/v2-04b-analisis-automatica-http.ts';
+import {leerPdfOriginalPorEdgeV2}
+ from '../../../src/server/v2-04c-pdf-edge-client.ts';
 
 const PILOT='https://ilggkalaafhtiysyzlmg.supabase.co';
 const BUCKET='cotironda-piloto-originals';
@@ -65,6 +67,12 @@ export async function responderAnalisisAutomaticaV2(
    if(error)throw Error('v2_analysis_claim_unavailable');
    return data;
   },
+  readPdf:async(bytes,sha)=>leerPdfOriginalPorEdgeV2(bytes,sha,{
+   COTIRONDA_PILOT_SUPABASE_URL:env.COTIRONDA_PILOT_SUPABASE_URL,
+   COTIRONDA_PILOT_V2_PDF_ENABLED:env.COTIRONDA_PILOT_V2_PDF_ENABLED,
+   COTIRONDA_PILOT_V2_PDF_SHARED_SECRET:
+    env.COTIRONDA_PILOT_V2_PDF_SHARED_SECRET
+  }),
   read:async(bucket,path)=>{
    if(bucket!==BUCKET||!/^media\/[a-f0-9]{64}$/u.test(path))
     return null;
