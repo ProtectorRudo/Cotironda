@@ -1,3 +1,6 @@
+## 2026-11-11 — MVP355: contador documental exige origen firmado (SOLO DESARROLLO)
+Se reforzó la RPC de MVP354 para que un archivo NO cuente solo por fecha/request_id preasignado. Exige misma fuente en inbox firmado + vínculo privado MVP225 con método `quoted_whapi_id` o `single_active_round` y SHA exacto, sin conflicto no resuelto; usa fecha real de recepción. PG17 incluye negativos y casos de dos proveedores/archivos, con ROLLBACK. [Acta 523](docs/523-mvp355-procedencia-documentos-recepcion.md); [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794). Nada desplegado.
+
 ## 2026-11-11 — MVP354: recepcion de originales independiente de IA (SOLO DESARROLLO)
 RPC privada de contador de medios recibidos con token de comprador, proveedor invitado/despachado, archivo SHA íntegro y ambigüedad entre rondas bloqueada; DTO seguro y tracking bajo flag OFF por defecto, sin precio, contacto ni descarga. SQL NO instalado, Edge NO publicado. Tests y criterios en [Acta 522](docs/522-mvp354-recepcion-documental-independiente.md). El plan de continuidad sigue en [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794); no marcar P1/P2/P3 aprobados todavía.
 
