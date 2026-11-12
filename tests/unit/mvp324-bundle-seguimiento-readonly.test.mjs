@@ -12,7 +12,8 @@ import {
 const ROOT=resolve(dirname(fileURLToPath(import.meta.url)),'../..');
 const EXTRA='src/domain/ia-central/preliminar-anonimo-presupuestos-mvp322.ts';
 const STATUS='src/domain/ia-central/estado-revision-comercial-mvp326.ts';
-const filePaths=[...ACTIVE_FILES_MVP324,EXTRA,STATUS,...MISSING_TRANSITIVE_MVP324];
+const RECEIPT='src/domain/ia-central/recepcion-documental-mvp354.ts';
+const filePaths=[...ACTIVE_FILES_MVP324,EXTRA,STATUS,RECEIPT,...MISSING_TRANSITIVE_MVP324];
 function fixture(t){
  const root=mkdtempSync(join(tmpdir(),'cotironda-mvp324-'));
  t.after(()=>rmSync(root,{recursive:true,force:true}));
@@ -27,13 +28,13 @@ function corrupt(root,name,update){
  const path=join(root,name);
  writeFileSync(path,update(readFileSync(path,'utf8')));
 }
-test('MVP324: 29 previous files, MVP322, MVP326 and 3 transitives = 34',()=>{
+test('MVP324 + MVP354: baseline y 35 dependencias con nuevo DTO revisado',()=>{
  const report=inspectSeguimientoBundleMvp324(ROOT);
  assert.equal(report.state,'mvp324_bundle_offline_verified');
- assert.equal(report.file_count,34);
+ assert.equal(report.file_count,35);
  assert.equal(report.unchanged_active_files,28);
  assert.equal(report.baseline_blob_sha,'9c38a10ba6b4ffd726ad2348a748b1598954bffc');
- assert.deepEqual(report.new_or_changed_files,[EDGE_ENTRY_MVP324,EXTRA,STATUS]);
+ assert.deepEqual(report.new_or_changed_files,[EDGE_ENTRY_MVP324,EXTRA,STATUS,RECEIPT]);
  assert.deepEqual(report.missing_transitive_dependencies,MISSING_TRANSITIVE_MVP324);
  assert.deepEqual(new Set(report.filePaths),new Set(filePaths));
  for(const field of ['scheduled_jobs_created','whapi_touched','deployment_authorized'])
@@ -44,9 +45,10 @@ test('MVP324: CLI outputs names only, no source or tokens',()=>{
  const out=execFileSync(process.execPath,[
   'scripts/piloto/mvp324-bundle-seguimiento-readonly.mjs','--paths'
  ],{cwd:ROOT,encoding:'utf8'});
- assert.equal(out.trim().split('\n').length,34);
+ assert.equal(out.trim().split('\n').length,35);
  assert.match(out,/preliminar-anonimo-presupuestos-mvp322\.ts/u);
  assert.match(out,/estado-revision-comercial-mvp326\.ts/u);
+ assert.match(out,/recepcion-documental-mvp354\.ts/u);
  assert.doesNotMatch(out,/SUPABASE|Bearer|secret|whapi\.cloud|npm:@supabase/u);
 });
 test('MVP324: fails closed on a single altered line in OLD tracking logic',t=>{
@@ -110,4 +112,24 @@ test('MVP324: rejects dynamic import in dependency',t=>{
  );
  assert.throws(()=>inspectSeguimientoBundleMvp324(root),
   /dynamic_import_not_reviewed/u);
+});
+
+test('MVP354: manifiesto detecta import o validacion documental ausentes',t=>{
+ const root=fixture(t);
+ corrupt(root,EDGE_ENTRY_MVP324,s=>s.replace(
+   'const reduced=recepcionDocumentalMvp354(docs.data,publicResult);',''
+ ));
+ assert.throws(()=>inspectSeguimientoBundleMvp324(root),
+   /document_receipt_not_fail_closed/u);
+});
+test('MVP354: manifiesto rechaza dependencia documental externa no auditada',t=>{
+ const root=fixture(t);
+ const unexpected='src/domain/ia-central/nonreviewed-mvp354.ts';
+ mkdirSync(dirname(join(root,unexpected)),{recursive:true});
+ writeFileSync(join(root,unexpected),'export const injected=1;\n');
+ corrupt(root,RECEIPT,s=>
+  "import {injected} from './nonreviewed-mvp354.ts';\n"+s
+ );
+ assert.throws(()=>inspectSeguimientoBundleMvp324(root),
+  /dependency_closure_diff/u);
 });
