@@ -146,6 +146,16 @@ BEGIN
   WHERE (j.state='queued' OR
     (j.state='leased' AND j.leased_at<clock_timestamp()-interval '2 minutes'))
    AND cotironda_piloto_privado.terms_job_allowed_p0(j.job_id)
+   -- A supplier is eligible only with a verified pre-round encrypted channel.
+   -- Otherwise do not burn leases every two minutes without any destination.
+   AND EXISTS (
+     SELECT 1 FROM cotironda_piloto_privado.participant_channels_mvp109 c
+     WHERE c.participant_key=j.supplier_key AND c.chat_hmac=j.chat_hmac
+       AND c.authenticated_message_hmac ~ '^[a-f0-9]{64}$'
+       AND c.contact_sha256 ~ '^[a-f0-9]{64}$'
+       AND c.nonce_b64 IS NOT NULL AND c.ciphertext_b64 IS NOT NULL
+       AND c.bound_at IS NOT NULL AND c.bound_at<=j.created_at
+   )
   ORDER BY j.created_at,j.job_id
   LIMIT 1 FOR UPDATE OF j SKIP LOCKED
  )
