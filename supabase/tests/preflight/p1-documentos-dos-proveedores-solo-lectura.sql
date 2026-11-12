@@ -130,7 +130,7 @@ states AS (
   WHEN v.supplier_key IS NOT NULL THEN 'recibido_verificado'
   WHEN b.supplier_key IS NOT NULL THEN 'conflicto_privado'
   WHEN EXISTS(SELECT 1 FROM candidates c WHERE c.supplier_key=d.supplier_key)
-    THEN 'requiere_vinculo'
+    THEN 'candidato_temporal_no_atribuible'
   ELSE 'sin_archivo_verificado'
  END AS state
  FROM dispatched d
@@ -145,13 +145,21 @@ SELECT CASE WHEN (SELECT n FROM round_count)=1
  (SELECT count(*)::integer FROM invited) AS proveedores_invitados,
  (SELECT count(*)::integer FROM dispatched) AS despachos_aceptados,
  (SELECT count(DISTINCT supplier_key)::integer FROM candidates)
-   AS proveedores_con_candidato_documental,
+   AS proveedores_con_candidato_temporal,
+ (SELECT count(DISTINCT supplier_key)::integer FROM stored)
+   AS proveedores_con_archivo_valido_en_ventana,
+ (SELECT count(DISTINCT s.supplier_key)::integer FROM stored s
+  JOIN target t ON true WHERE s.inbox_request_id=t.id
+   AND s.archive_request_id=t.id)
+   AS proveedores_con_inbox_y_archivo_en_ronda,
+ (SELECT count(DISTINCT supplier_key)::integer FROM with_proof)
+   AS proveedores_con_prueba_fuerte,
  (SELECT count(*)::integer FROM states WHERE state='recibido_verificado')
    AS recibidos_verificados,
  (SELECT count(*)::integer FROM states WHERE state='conflicto_privado')
    AS requiere_revision_por_conflicto,
- (SELECT count(*)::integer FROM states WHERE state='requiere_vinculo')
-   AS requiere_vinculo_fuerte,
+ (SELECT count(*)::integer FROM states WHERE state='candidato_temporal_no_atribuible')
+   AS solo_candidato_temporal_no_atribuible,
  (SELECT count(*)::integer FROM states WHERE state='sin_archivo_verificado')
    AS sin_archivo_verificado,
  (to_regprocedure('public.cotironda_piloto_document_receipts_mvp354(text)')
