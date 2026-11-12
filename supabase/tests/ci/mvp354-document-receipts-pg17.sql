@@ -18,6 +18,14 @@ CREATE TABLE cotironda_piloto_privado.invitations(
 CREATE TABLE cotironda_piloto_privado.ai_dispatch_jobs_mvp222(
  request_id uuid,supplier_key text,state text,
  whapi_message_id text,finished_at timestamptz);
+CREATE TABLE cotironda_piloto_privado.whapi_inbox(
+ message_hmac text,request_id uuid,participant_key text,chat_hmac text,
+ kind text,received_at timestamptz);
+CREATE TABLE cotironda_piloto_privado.ai_supplier_links_mvp225(
+ message_hmac text,request_id uuid,supplier_key text,kind text,
+ source_sha256 text,association text);
+CREATE TABLE cotironda_piloto_privado.ai_supplier_unresolved_mvp237(
+ message_hmac text,supplier_key text,state text);
 CREATE TABLE cotironda_piloto_privado.media_archive_mvp095(
  request_id uuid,participant_key text,chat_hmac text,state text,
  finished_at timestamptz,reserved_at timestamptz,
@@ -68,11 +76,22 @@ BEGIN
  OR v->>'pendientes'<>'2' OR key_count<>8
  THEN RAISE EXCEPTION 'mvp354_no_files_status_invalid';END IF;
 
- -- PDF auténtico del proveedor A: no hace falta extraer ni UN precio.
+ -- PDF original almacenado SIN vínculo: NO cuenta la mera preasignación.
  INSERT INTO cotironda_piloto_privado.media_archive_mvp095 VALUES
  (r1,'supplier_a','chat_a','stored',n-interval '29 minutes',
   n-interval '30 minutes',repeat('b',64),'media/'||repeat('b',64),
   repeat('c',64),1024,'application/pdf');
+ v:=public.cotironda_piloto_document_receipts_mvp354(tok);
+ IF v->>'archivos_recibidos'<>'0' THEN
+  RAISE EXCEPTION 'mvp355_archive_request_id_alone_counted'; END IF;
+ -- Incluso inbox ligado sin prueba formal MVP225 sigue siendo insuficiente.
+ INSERT INTO cotironda_piloto_privado.whapi_inbox VALUES
+ (repeat('b',64),r1,'supplier_a','chat_a','document',n-interval '31 minutes');
+ v:=public.cotironda_piloto_document_receipts_mvp354(tok);
+ IF v->>'archivos_recibidos'<>'0' THEN
+  RAISE EXCEPTION 'mvp355_inbox_request_id_alone_counted'; END IF;
+ INSERT INTO cotironda_piloto_privado.ai_supplier_links_mvp225 VALUES
+ (repeat('b',64),r1,'supplier_a','document',repeat('c',64),'quoted_whapi_id');
  v:=public.cotironda_piloto_document_receipts_mvp354(tok);
  IF v->>'archivos_recibidos'<>'1' OR v->>'pendientes'<>'1'
  OR v->>'precios_validados'<>'false' OR
@@ -80,25 +99,57 @@ BEGIN
  v->>'identidades_reveladas'<>'false'
  THEN RAISE EXCEPTION 'mvp354_stored_pdf_not_counted_safely';END IF;
 
- -- Doble adjunto / reintento del mismo proveedor NO duplica el contador.
+ -- Segunda respuesta auténtica del mismo proveedor se deduplica.
  INSERT INTO cotironda_piloto_privado.media_archive_mvp095 VALUES
  (r1,'supplier_a','chat_a','stored',n-interval '28 minutes',
   n-interval '29 minutes',repeat('d',64),'media/'||repeat('d',64),
   repeat('e',64),2048,'application/pdf');
+ INSERT INTO cotironda_piloto_privado.whapi_inbox VALUES
+ (repeat('d',64),r1,'supplier_a','chat_a','document',n-interval '30 minutes');
+ INSERT INTO cotironda_piloto_privado.ai_supplier_links_mvp225 VALUES
+ (repeat('d',64),r1,'supplier_a','document',repeat('e',64),'single_active_round');
  v:=public.cotironda_piloto_document_receipts_mvp354(tok);
  IF v->>'archivos_recibidos'<>'1'
  THEN RAISE EXCEPTION 'mvp354_duplicate_counted_as_supplier';END IF;
 
- -- Excel del proveedor B suma segundo proveedor sin interpretación económica.
+ -- Excel del proveedor B NO suma sin vínculo; sí con prueba consistente.
  INSERT INTO cotironda_piloto_privado.media_archive_mvp095 VALUES
  (r1,'supplier_b','chat_b','stored',n-interval '27 minutes',
   n-interval '28 minutes',repeat('f',64),'media/'||repeat('f',64),
   repeat('1',64),4100,
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
  v:=public.cotironda_piloto_document_receipts_mvp354(tok);
+ IF v->>'archivos_recibidos'<>'1' THEN
+  RAISE EXCEPTION 'mvp355_excel_without_proof_counted'; END IF;
+ INSERT INTO cotironda_piloto_privado.whapi_inbox VALUES
+ (repeat('f',64),r1,'supplier_b','chat_b','document',n-interval '29 minutes');
+ INSERT INTO cotironda_piloto_privado.ai_supplier_links_mvp225 VALUES
+ (repeat('f',64),r1,'supplier_b','document',repeat('1',64),'quoted_whapi_id');
+ v:=public.cotironda_piloto_document_receipts_mvp354(tok);
  IF v->>'archivos_recibidos'<>'2' OR v->>'pendientes'<>'0'
  THEN RAISE EXCEPTION 'mvp354_second_supplier_not_counted';END IF;
 
+ -- El SHA, emisor o método forjado del LINK tampoco cuenta.
+ UPDATE cotironda_piloto_privado.ai_supplier_links_mvp225
+ SET source_sha256=repeat('0',64) WHERE supplier_key='supplier_b';
+ v:=public.cotironda_piloto_document_receipts_mvp354(tok);
+ IF v->>'archivos_recibidos'<>'1'
+ THEN RAISE EXCEPTION 'mvp355_forged_link_sha_counted';END IF;
+ UPDATE cotironda_piloto_privado.ai_supplier_links_mvp225
+ SET source_sha256=repeat('1',64) WHERE supplier_key='supplier_b';
+ UPDATE cotironda_piloto_privado.ai_supplier_links_mvp225
+ SET association='semantic_unique_mvp291' WHERE supplier_key='supplier_b';
+ v:=public.cotironda_piloto_document_receipts_mvp354(tok);
+ IF v->>'archivos_recibidos'<>'1'
+ THEN RAISE EXCEPTION 'mvp355_weak_semantic_link_counted';END IF;
+ UPDATE cotironda_piloto_privado.ai_supplier_links_mvp225
+ SET association='quoted_whapi_id' WHERE supplier_key='supplier_b';
+ INSERT INTO cotironda_piloto_privado.ai_supplier_unresolved_mvp237 VALUES
+ (repeat('f',64),'supplier_b','ambiguous_round');
+ v:=public.cotironda_piloto_document_receipts_mvp354(tok);
+ IF v->>'archivos_recibidos'<>'1'
+ THEN RAISE EXCEPTION 'mvp355_unresolved_conflict_counted';END IF;
+ DELETE FROM cotironda_piloto_privado.ai_supplier_unresolved_mvp237;
  -- Alteración de SHA/ruta o persona incorrecta no cuenta.
  UPDATE cotironda_piloto_privado.media_archive_mvp095
   SET storage_path='media/archivo-forjado'
