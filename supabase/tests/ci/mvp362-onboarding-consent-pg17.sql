@@ -272,17 +272,24 @@ BEGIN
    now_-interval '5 days',now_-interval '4 days 12 hours');
  SELECT terms_sha256 INTO exact_sha
  FROM cotironda_piloto_privado.original_terms_policy_mvp362;
+ -- Provider-returned outgoing notice, separate from inbound acknowledgement.
+ INSERT INTO cotironda_piloto_privado.supplier_original_terms_notices_mvp364
+ (notice_message_hmac,supplier_key,terms_version,terms_sha256,
+  supplier_chat_hmac,outbound_body_sha256,delivery_state,sent_at,recorded_at)
+ VALUES(repeat('6',64),'supplier_1','cotironda-originales-alta-v1',
+ exact_sha,repeat('f',64),repeat('3',64),'api_accepted',
+ now_-interval '4 days 6 hours',now_-interval '4 days 5 hours');
  INSERT INTO cotironda_piloto_privado.whapi_inbox
  (message_hmac,request_id,participant_key,chat_hmac,received_at,kind,
   plaintext_sha256)
  VALUES(consent_event,null,'supplier_1',repeat('f',64),
         now_-interval '3 days 18 hours','text',repeat('8',64));
  INSERT INTO cotironda_piloto_privado.supplier_original_optins_mvp362
- (supplier_key,terms_version,terms_sha256,evidence_message_hmac,
-  ack_plaintext_sha256,accepted_at,recorded_at,
+ (supplier_key,terms_version,terms_sha256,notice_message_hmac,
+  evidence_message_hmac,ack_plaintext_sha256,accepted_at,recorded_at,
   reviewed_by_operator,evidence_review_sha256)
  VALUES('supplier_1','cotironda-originales-alta-v1',exact_sha,
- consent_event,repeat('8',64),now_-interval '3 days 18 hours',
+ repeat('6',64),consent_event,repeat('8',64),now_-interval '3 days 18 hours',
  now_-interval '3 days 12 hours',
  '55555555-5555-4555-8555-555555555555',repeat('7',64));
  IF public.cotironda_piloto_original_consent_preflight_mvp178(rid,'supplier_1')
@@ -307,6 +314,29 @@ BEGIN
  archived->'autorizacion'->'consentimiento'->>'version'
  <> 'cotironda-originales-alta-v1' THEN
  RAISE EXCEPTION 'mvp362_onboarding_auth_contract_wrong'; END IF;
+
+ -- Wrong outbound evidence must NOT be enough to open originals.
+ UPDATE cotironda_piloto_privado.supplier_original_terms_notices_mvp364
+ SET terms_sha256=repeat('1',64);
+ IF public.cotironda_piloto_original_consent_preflight_mvp178(rid,'supplier_1')
+ THEN RAISE EXCEPTION 'mvp364_wrong_notice_terms_sha_opened'; END IF;
+ UPDATE cotironda_piloto_privado.supplier_original_terms_notices_mvp364
+ SET terms_sha256=exact_sha,supplier_chat_hmac=repeat('2',64);
+ IF public.cotironda_piloto_original_consent_preflight_mvp178(rid,'supplier_1')
+ THEN RAISE EXCEPTION 'mvp364_wrong_notice_chat_opened'; END IF;
+ UPDATE cotironda_piloto_privado.supplier_original_terms_notices_mvp364
+ SET supplier_chat_hmac=repeat('f',64),
+ sent_at=now_-interval '3 days 17 hours',
+ recorded_at=now_-interval '3 days 16 hours';
+ IF public.cotironda_piloto_original_consent_preflight_mvp178(rid,'supplier_1')
+ THEN RAISE EXCEPTION 'mvp364_notice_after_ack_opened'; END IF;
+ UPDATE cotironda_piloto_privado.supplier_original_terms_notices_mvp364
+ SET sent_at=now_-interval '5 days',recorded_at=now_-interval '4 days 23 hours';
+ IF public.cotironda_piloto_original_consent_preflight_mvp178(rid,'supplier_1')
+ THEN RAISE EXCEPTION 'mvp364_notice_before_policy_opened'; END IF;
+ UPDATE cotironda_piloto_privado.supplier_original_terms_notices_mvp364
+ SET sent_at=now_-interval '4 days 6 hours',
+ recorded_at=now_-interval '4 days 5 hours';
 
  -- A different SHA of the terms or of the explicit affirmative message
  -- INVALIDATES enrollment; no fallback to participation.
@@ -353,6 +383,6 @@ BEGIN
  IF public.cotironda_piloto_original_consent_preflight_mvp178(rid,'supplier_1')
  THEN RAISE EXCEPTION 'mvp362_specific_withdrawal_ignored'; END IF;
 
- RAISE NOTICE 'MVP362 PASS: future-only onboarding, one-time, version/SHA, revocation, legacy, Auth, ROLLBACK';
+ RAISE NOTICE 'MVP362+364 PASS: onboarding, outbound notice linkage, version/SHA, revocation, legacy, Auth, ROLLBACK';
 END $test362$;
 ROLLBACK;
