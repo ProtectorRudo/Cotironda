@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import {createCipheriv,createHash,createHmac} from 'node:crypto';
 import {crearResolverContactoProveedorP0}
  from '../../src/server/whapi-terms-recipient-p0.ts';
+import {crearPuertosSqlAvisosCifradosP0}
+ from '../../src/server/whapi-terms-sql-p0.ts';
 
 const CHANNEL='pilot_whapi_ci',TO='5492211234567';
 const HMAC=Buffer.alloc(32,61),AES=Buffer.alloc(32,33);
@@ -107,4 +109,22 @@ test('P0: caller no puede pedir otro empleo o revivir lease con claim adulterado
    /p0_contacto_cifrado_no_disponible/u);
  }
  assert.equal(x.calls.length,0);
+});
+
+test('P0: puertos emisor SQL conectan al mismo paquete cifrado sin fallback',async()=>{
+ const calls=[];
+ const ports=crearPuertosSqlAvisosCifradosP0({
+  committedRpc:async(sql,args)=>{
+   calls.push({sql,args});
+   if(sql.includes('terms_recipient_packet_p0'))return {payload:packet()};
+   if(sql.includes('terms_claim_p0'))return {payload:claim};
+   throw Error('unexpected_sql');
+  },
+  keys:{pilotHmacKey:HMAC,contactAesKey:AES,channel:CHANNEL}
+ });
+ assert.deepEqual(await ports.claim(),claim);
+ assert.equal(await ports.resolveRecipient(claim),TO);
+ assert.deepEqual(calls.map(x=>x.args.length),[0,2]);
+ assert.equal(calls[1].sql,
+  'select cotironda_piloto_privado.terms_recipient_packet_p0($1::uuid,$2::uuid) as payload');
 });
