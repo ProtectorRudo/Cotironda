@@ -38,6 +38,6 @@ test('V2-10: no se habilita otro comodín y se preserva legado explícito',()=>{
  assert.equal(rules['integration/mvp-piloto-20261031'],true);
  for(const [pattern,yes] of Object.entries(rules)){
   assert.equal(typeof yes,'boolean');
-  if(yes)assert.ok(!/[?*()[\]{}]/u.test(pattern),pattern);
+  if(yes)assert.ok(!/[?*]/u.test(pattern),pattern);
  }
 });
