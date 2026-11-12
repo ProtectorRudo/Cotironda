@@ -98,6 +98,7 @@ function localSources(
   if(!obj(holiday)||typeof holiday.fecha!=='string'||
    !dateValid(holiday.fecha)||Number(holiday.fecha.slice(0,4))!==args.anio||
    typeof holiday.nombre!=='string'||holiday.nombre.trim().length<3||
+   typeof holiday.tipo!=='string'||
    !['feriado_local_obligatorio','feriado_local_optativo'].includes(holiday.tipo)||
    closed.has(holiday.fecha)||optional.has(holiday.fecha))return null;
   (holiday.tipo==='feriado_local_obligatorio'?closed:optional).add(holiday.fecha);
