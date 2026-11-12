@@ -41,12 +41,14 @@ El test Node `p1-supplier-round-overlap.test.mjs` compara de manera estricta **t
 
 - [x] Se verificó la causa de ambigüedad histórica y la ausencia de preámbulo asociado.
 - [x] Corrección prospectiva de publicación en código, sin tocar el documento antiguo.
-- [x] Fixture de regresión y CI PG17 agregados; **resultado final pendiente por SHA**.
+- [x] **CI 6/6 SUCCESS** verificada sobre SHA técnico `1228208aa7e3045672d394bace383f9b0759ab72`: Node (incluida equivalencia MVP280), PostgreSQL17 aislamiento, PG17 despacho con test propio `P1 ONE ACTIVE ROUND PER SUPPLIER PASS` + ROLLBACK, PostgREST, Next.js y sitio. El cambio de esta acta solo actualiza documentación; verificar de nuevo CI del HEAD.
 - [ ] Revisar concurrencia real y seguridad antes de activar en PILOTO.
 - [ ] Solo tras `Publicalo en cotironda-piloto` explícito: instalar y probar esta protección, así como MVP354/MVP355, usando una ronda controlada y **sin superponer una nueva sobre la vigente**.
 - [ ] Acreditar una nueva respuesta inequívoca de cada proveedor; si no llega, seguir mostrando PENDIENTE o revisión interna. Verificar comprador autenticado, cierre, consentimiento de originales y descarga segura.
 - [ ] P0–P5 abiertos.
 
-**Próximo paso único:** certificar CI y revisar efectos de compatibilidad de esta función con el despachador existente. Luego, con publicación autorizada, ensayar UNA ronda y confirmar dos originales verificados. No más parsers PDF ni reintentos históricos sin evidencia.
+**Compatibilidad comprobada en código:** el flujo de publicación del comprador M226 devuelve `ronda_en_sombra` / `needs_publication_review` cuando SQL no devuelve `ready_for_delivery`; auto-release M306 retorna `no_elegible`, y revisión M279 `confirmado_sin_envio`. Ninguno interpreta `supplier_active_round_conflict` como publicación exitosa ni autoriza automáticamente un segundo envío. **No son pruebas remotas Whapi.**
+
+**Próximo paso único:** con orden explícita `Publicalo en cotironda-piloto`, contrastar otra vez la definición viva MVP280, activar la guardia transaccional y probar UNA ronda después de resolver la ya preparada; verificar dos originales auténticos con vínculo, recepción/seguimiento y navegador. No más parsers PDF ni reintentos históricos sin evidencia.
 
 Continuidad: [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794) · [Plan Maestro](https://github.com/ProtectorRudo/Cotironda/blob/docs/p0-evaluacion-erpnext-vs-nucleo-20261111/docs/PILOTO-100-PLAN-MAESTRO.md) · [Acta 541](541-p1-ambiguedad-registrada-vinculo-seguro.md).
