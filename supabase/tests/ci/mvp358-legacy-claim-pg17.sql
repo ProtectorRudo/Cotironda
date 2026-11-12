@@ -46,6 +46,11 @@ CREATE FUNCTION cotironda_piloto_privado.proveedor_contactable_mvp307(text)
 RETURNS boolean LANGUAGE sql AS $$ SELECT true $$;
 
 
+ALTER TABLE cotironda_piloto_privado.whapi_outbox
+ ADD COLUMN message_body text,
+ ADD COLUMN created_at timestamptz,
+ ADD COLUMN lease_token uuid,
+ ADD COLUMN leased_at timestamptz;
 -- Allow-* stubs simulate business-approved invitations, not a bypass
 -- of the NEW cross-lane guard. Real versions are stricter than these.
 CREATE FUNCTION cotironda_piloto_privado.allow_next_pilot_send_mvp091(uuid,text)
