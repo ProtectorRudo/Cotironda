@@ -50,6 +50,18 @@ El objetivo comercial es que, **al cierre**, el comprador pueda obtener los orig
 
 **CI FINAL MVP355 (11/11/2026):** el SHA técnico [`721ecc12d2a9a35e54d53b35f009d419b4cca3f6`](https://github.com/ProtectorRudo/Cotironda/pull/798) pasó **5/5 workflows generales**: Next.js, unidad general (incluye **PG17 documental** y **Deno seguimiento** como jobs separados), PostgREST, PG17 aislamiento y verificación sitio. Probados dos formatos sintéticos, SHA, links débiles/ausentes, vínculo de aviso previo, duplicados, rondas solapadas y revocación. Además SELECT del nuevo SQL sin escrituras contra piloto: `2 despachos / 0 documentos acreditados`; token falso `not_found`. **Sin despliegue**, PR draft; no E2E real.
 
+## P1 — bloquear rondas concurrentes por proveedor antes del envío (12/11/2026)
+
+**[PR técnico #814](https://github.com/ProtectorRudo/Cotironda/pull/814)** DRAFT **sobre #813**, [Acta 542](https://github.com/ProtectorRudo/Cotironda/blob/fix/p1-bloquear-ronda-solapada-proveedor-20261112/docs/542-p1-no-solapar-rondas-por-proveedor.md). **SOLO DESARROLLO, sin SQL instalado ni WhatsApp enviado.**
+
+- [x] **Fuente del bloqueo:** el 10/11 el ledger guardó `ambiguous_round` con **2 rondas candidatas** y M291 terminó en `insufficient_material_evidence`, con reintento agotado. El archivo sigue SIN prueba de ronda (0/2); para su chat no hay preámbulo MVP238 registrado. No forzar enlace por similitud temporal, ni exigir proveedor elegir/editar.
+- [x] **Solución prospectiva a nivel BD:** nueva migración `p1_evitar_rondas_solapadas_proveedor.sql` reemplaza solo la función existente `cotironda_piloto_ia_publish_mvp222`: una vez bloqueados proveedores en orden `FOR UPDATE`, **antes de crear invitaciones**, verifica si ya tienen otra ronda `prepared` no vencida e invitación preparada. Incluye legacy y central, incluso si el envío viejo sigue pendiente. Devuelve `supplier_active_round_conflict` sin crear ronda nueva publicada, trabajos, outbox ni enviar Whapi.
+- [x] **No castiga a proveedores distintos:** los que no tienen invitación viva continúan, y las rondas cerradas/vencidas no bloquean. No nueva tabla/backend/parser, ni cambios en autorizaciones/economía.
+- [x] Test Node y PG17 con ROLLBACK agregados en PR #814: publicación para proveedor sin conflicto, rechazo con solapamiento y sin efectos parciales, eventual cierre y publicación posterior, ACL. **CI de último SHA pendiente de certificar.**
+- [ ] La migración está OFF **porque no se publicó**. Se exige verificar concurrencia/compatibilidad y publicar en PILOTO solo ante `Publicalo en cotironda-piloto`. P1/P2 siguen abiertos hasta **2 originales auténticos vinculados**, tracking MVP354 y E2E WhatsApp→browser. P0/P3–P5 igualmente abiertos.
+
+**SIGUIENTE ACCIÓN:** certificar PG17/CI, auditar que el despachador trate el nuevo resultado como bloqueo sin reintentar; después, con autorización de publicación, ensayar una única ronda sin proveedor superpuesto y confirmar 2 respuestas reales. No crear rondas simultáneas mientras la preparada actual siga viva.
+
 ## P1/P2 — causa confirmada de la no asociación MVP225 (12/11/2026)
 
 **[PR #813](https://github.com/ProtectorRudo/Cotironda/pull/813)** actualizado SIN NUEVO PR; [Acta 541](https://github.com/ProtectorRudo/Cotironda/blob/feat/p1-diagnostico-documental-20261112/docs/541-p1-ambiguedad-registrada-vinculo-seguro.md). **SOLO LECTURA en PILOTO; sin envíos, migraciones, reintentos ni rondas nuevas.**
