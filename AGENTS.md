@@ -20,7 +20,7 @@ Por cambio: auditar código/despliegue actual → impacto y criterios de aceptac
 ## Invariantes del producto V2
 
 - Arquitecto envía lista en formatos libres; IA interpreta materiales, cantidades y rubro. Si falta localidad de entrega, **una pregunta**. No pedir confirmación rutinaria ni edición por errores del parser.
-- Negocios elegidos por catálogo y zona, reciben pedido por WhatsApp y cotizan libremente. Proveedores gratis y sin comisiones.
+- **D013:** negocios elegidos EXCLUSIVAMENTE por coincidencias de cada producto del pedido con su catálogo individual y zona, jamás por nicho/rubro. IA reconoce nombres comerciales/genéricos, marcas flexibles, equivalencias técnicas y presentaciones convertibles; marca excluyente y especificaciones obligatorias se respetan. Ver [D013](docs/V2-D013-CATALOGOS-EQUIVALENCIAS.md). Reciben solo artículos compatibles y cotizan libremente. Proveedores gratis y sin comisiones.
 - Original exacto y fuente trazable; vínculo a **ronda correcta** incluso con varias rondas abiertas al mismo comercio. No inventar asociación por fecha, modificar documentos anteriores ni reintentar a ciegas.
 - Comprador ve **solo los negocios que respondieron**, desde que la respuesta esté atribuida y legalmente autorizada: **nombre del comercio + original accesible + análisis individual útil**. No invitados, pendientes, contadores de no respondedores, anonimato o ranking de ganadores.
 - El análisis individual (70–110 palabras ORIENTATIVAS) aporta cobertura, diferencias técnicas, condiciones y conclusión práctica. No bloquea el original ni declara un ganador.
