@@ -33,7 +33,7 @@ WITH target AS (
    AND r.closes_at>clock_timestamp()
 )
 SELECT
-  NOT EXISTS (
+  EXISTS (
    SELECT 1 FROM cotironda_piloto_privado.ai_supplier_overlap_gate_mvp356 gate
    WHERE gate.only_row AND gate.enabled AND gate.activated_at IS NOT NULL
      AND gate.activated_at<=clock_timestamp()
