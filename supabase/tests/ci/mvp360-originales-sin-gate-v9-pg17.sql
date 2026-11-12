@@ -128,6 +128,34 @@ BEGIN
  -- Function JSON is server-only. The HTTP adapter MUST project fields
  -- to the buyer without leaking supplier keys or source metadata.
 
+ -- Excel original is also deliverable even without an economic parser.
+ UPDATE cotironda_piloto_privado.media_archive_mvp095
+ SET mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+ WHERE message_hmac=msg;
+ catalog:=public.cotironda_piloto_originals_private_mvp192(
+  rid,userid,sessid,null);
+ IF catalog->>'state'<>'authorized_catalog' OR
+    (catalog->>'total')::int<>1 OR
+    catalog->'originals'->0->>'mime'<>
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+ THEN RAISE EXCEPTION 'mvp360_excel_original_not_listed';END IF;
+
+ -- Executables and forged storage paths never appear in a buyer catalog.
+ UPDATE cotironda_piloto_privado.media_archive_mvp095
+ SET mime='application/x-msdownload' WHERE message_hmac=msg;
+ catalog:=public.cotironda_piloto_originals_private_mvp192(
+  rid,userid,sessid,null);
+ IF (catalog->>'total')::int<>0
+ THEN RAISE EXCEPTION 'mvp360_dangerous_mime_opened';END IF;
+ UPDATE cotironda_piloto_privado.media_archive_mvp095
+ SET mime='application/pdf',storage_path='other/'||msg WHERE message_hmac=msg;
+ catalog:=public.cotironda_piloto_originals_private_mvp192(
+  rid,userid,sessid,null);
+ IF (catalog->>'total')::int<>0
+ THEN RAISE EXCEPTION 'mvp360_forged_storage_path_opened';END IF;
+ UPDATE cotironda_piloto_privado.media_archive_mvp095
+ SET storage_path='media/'||msg WHERE message_hmac=msg;
+
  -- Wrong buyer/session never reads any originals.
  IF public.cotironda_piloto_originals_private_mvp192(
   rid,otherid,sessid,null) IS NOT NULL
