@@ -63,9 +63,10 @@ test('MVP357: SQL no envía cuando bandera OFF ni repite cada segundo',()=>{
  assert.doesNotMatch(sql,/\b(?:NEXT_PUBLIC_|Authorization',v_admin)\b/u);
 });
 test('MVP357: secretos separados en Vault, POST {} y URL fija en piloto',()=>{
- assert.match(sql,/cotironda_piloto_ai_batch_apikey_mvp357/u);
+ assert.match(sql,/cotironda_piloto_ai_batch_cron_proof_mvp357/u);
  assert.match(sql,/cotironda_piloto_ai_batch_private_mvp357/u);
- assert(sql.includes("v_cron !~ '^[A-Za-z0-9_-]{32,256}$'"));
+ assert(sql.includes("length(v_cron) NOT BETWEEN 32 AND 256"));
+ assert(sql.includes("v_cron !~ '^[A-Za-z0-9_-]+$'"));
  assert.doesNotMatch(sql,/sb_secret_|'apikey',/u);
  assert.match(sql,/x-cotironda-batch-cron-proof/u);
  assert.match(sql,/net\.http_post\(/u);
