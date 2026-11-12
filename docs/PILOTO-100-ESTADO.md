@@ -13,6 +13,17 @@
 
 **CI FINAL MVP355 (11/11/2026):** el SHA técnico [`721ecc12d2a9a35e54d53b35f009d419b4cca3f6`](https://github.com/ProtectorRudo/Cotironda/pull/798) pasó **5/5 workflows generales**: Next.js, unidad general (incluye **PG17 documental** y **Deno seguimiento** como jobs separados), PostgREST, PG17 aislamiento y verificación sitio. Probados dos formatos sintéticos, SHA, links débiles/ausentes, vínculo de aviso previo, duplicados, rondas solapadas y revocación. Además SELECT del nuevo SQL sin escrituras contra piloto: `2 despachos / 0 documentos acreditados`; token falso `not_found`. **Sin despliegue**, PR draft; no E2E real.
 
+## P1 — bloqueo prospectivo para dos rondas del mismo proveedor (12/11/2026)
+
+**[PR #814](https://github.com/ProtectorRudo/Cotironda/pull/814)** DRAFT apilado sobre #813, [Acta 542](https://github.com/ProtectorRudo/Cotironda/blob/fix/p1-bloquear-ronda-solapada-proveedor-20261112/docs/542-p1-no-solapar-rondas-por-proveedor.md). **NO DESPLEGADO**.
+
+- [x] No hay preámbulo MVP238 autenticado registrado para el candidato del 10/11; M225 mostró dos rondas posibles y M291 insuficiente. No se recuperó ni atribuyó el archivo.
+- [x] Función de publicación IA Central reforzada en código: guarda una nueva ronda sin publicar si algún proveedor participa en otra `prepared` no vencida. Bloqueo transaccional por filas de proveedor antes de invitaciones, también frente a invitación legacy. Emite estado `supplier_active_round_conflict`, ningún Whapi ni reintento. Los demás proveedores pueden cotizar en otra ronda sin conflicto.
+- [x] Tests Node y PG17 con rollback sintéticos y control de ACL añadidos; **CI final aún por certificar**.
+- [ ] No está en base PILOTO. Prueba real 2/2 pendientes, MVP354 sin instalar, Auth comprador/permiso original/MFA y cierre sin E2E, **P0–P5 ABIERTOS**. Una ronda `prepared` vigente: NO publicar otra.
+
+**ÚNICO SIGUIENTE PASO:** certificar CI final y compatibilidad de error con consumidor de publicación. Luego, previa orden `Publicalo en cotironda-piloto`, completar prueba con un arquitecto + dos proveedores + dos originales.
+
 ## P1/P2 — resultado histórico MVP225: ambigüedad acreditada (12/11/2026)
 
 **[PR #813](https://github.com/ProtectorRudo/Cotironda/pull/813)** (mismo PR, sin rama nueva) / [Acta 541](https://github.com/ProtectorRudo/Cotironda/blob/feat/p1-diagnostico-documental-20261112/docs/541-p1-ambiguedad-registrada-vinculo-seguro.md).
