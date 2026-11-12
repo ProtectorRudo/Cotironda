@@ -13,6 +13,17 @@
 
 **CI FINAL MVP355 (11/11/2026):** el SHA técnico [`721ecc12d2a9a35e54d53b35f009d419b4cca3f6`](https://github.com/ProtectorRudo/Cotironda/pull/798) pasó **5/5 workflows generales**: Next.js, unidad general (incluye **PG17 documental** y **Deno seguimiento** como jobs separados), PostgREST, PG17 aislamiento y verificación sitio. Probados dos formatos sintéticos, SHA, links débiles/ausentes, vínculo de aviso previo, duplicados, rondas solapadas y revocación. Además SELECT del nuevo SQL sin escrituras contra piloto: `2 despachos / 0 documentos acreditados`; token falso `not_found`. **Sin despliegue**, PR draft; no E2E real.
 
+## MVP364 — aviso de condiciones previo a aceptación (12/11/2026)
+
+**[PR #806](https://github.com/ProtectorRudo/Cotironda/pull/806)** DRAFT sobre #805 y [acta 532](https://github.com/ProtectorRudo/Cotironda/blob/feat/mvp364-proof-terms-delivered-20261112/docs/532-mvp364-aviso-terminos-proveedor-previo.md). **No desplegado; política OFF; ningún Whapi, SMS, consentimiento o ronda nuevos**.
+
+- [x] SQL M362 (aún no instalado) ahora exige **aviso de términos anterior**, registrado en nuevo ledger privado M364, y opt-in asociado por FK; código de acceso verifica mismo proveedor, chat, versión y SHA y anterioridad a respuesta/ronda. `whapi_outbox` de ronda no se confunde con envío de condiciones de alta.
+- [x] PG17 extendido para aviso con términos adulterados, chat incorrecto, fecha posterior a respuesta o anterior a política; tests Node, ejecución CI M362 en rama M364. **CI final del PR debe verificarse por SHA**.
+- [ ] Falta emisor confiable Whapi con comprobante real de mensaje enviado, revisión por operador AAL2 de aceptación cifrada, consentimiento válido y reaceptación por episodio tras revocación. Hasta instalar y verificarlo, esto es **barrera de código**, NO certificación de intención.
+- [ ] Política legal/comercial de originales no ganadores, operador y comprador Auth reales, documentos con vínculo fuerte, interfaz al cierre y descarga E2E, `net` externo. P0–P5 siguen abiertos.
+
+**Próximo paso exacto:** integrar mensaje de condiciones enviado de forma comprobable + revisión de aceptación explícita MFA, sin crear ronda mientras exista prepared vigente y sin habilitar descargas. Fuente operativa [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794).
+
 ## MVP363 — preflight de alta de originales: seguridad preparada, sin aceptaciones (12/11/2026)
 
 **[PR #805](https://github.com/ProtectorRudo/Cotironda/pull/805)** (DRAFT, sobre #804), [Acta 531](https://github.com/ProtectorRudo/Cotironda/blob/feat/mvp363-preflight-alta-explicita-20261112/docs/531-mvp363-preflight-aceptacion-real-operador.md), preflight `supabase/tests/preflight/mvp363-originales-alta-readiness-readonly.sql`.
