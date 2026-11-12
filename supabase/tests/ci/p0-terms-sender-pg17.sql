@@ -15,6 +15,9 @@ CREATE TABLE cotironda_piloto_privado.invitations(
 CREATE TABLE cotironda_piloto_privado.participants(
  key text primary key,participant_role text,chat_hmac text,
  consent_at timestamptz,opted_out_at timestamptz);
+CREATE TABLE cotironda_piloto_privado.participant_channels_mvp109(
+ participant_key text,chat_hmac text,authenticated_message_hmac text,
+ contact_sha256 text,nonce_b64 text,ciphertext_b64 text,bound_at timestamptz);
 CREATE TABLE cotironda_piloto_privado.original_share_policy_mvp178(
  singleton boolean,enabled boolean,activated_at timestamptz);
 CREATE TABLE cotironda_piloto_privado.original_share_consents_mvp178(
@@ -46,6 +49,12 @@ BEGIN
  'EXECUTE')
  OR has_function_privilege('service_role',
  'cotironda_piloto_privado.terms_begin_p0(uuid,uuid)','EXECUTE')
+ OR has_function_privilege('anon',
+ 'cotironda_piloto_privado.terms_recipient_packet_p0(uuid,uuid)','EXECUTE')
+ OR has_function_privilege('authenticated',
+ 'cotironda_piloto_privado.terms_recipient_packet_p0(uuid,uuid)','EXECUTE')
+ OR has_function_privilege('service_role',
+ 'cotironda_piloto_privado.terms_recipient_packet_p0(uuid,uuid)','EXECUTE')
  THEN RAISE EXCEPTION 'p0_api_roles_have_sender_privileges';END IF;
  IF has_function_privilege('anon',
  'public.cotironda_piloto_terms_enqueue_auth_p0(text,text)','EXECUTE')
@@ -67,6 +76,15 @@ BEGIN
  ('supplier_1','supplier',repeat('a',64),now()-interval '1 day',null),
  ('supplier_2','supplier',repeat('b',64),now()-interval '1 day',null),
  ('buyer_1','buyer',repeat('c',64),now()-interval '1 day',null);
+ -- Source is existing encrypted MVP109, never a phone stored in sender jobs.
+ INSERT INTO cotironda_piloto_privado.participant_channels_mvp109
+ (participant_key,chat_hmac,authenticated_message_hmac,contact_sha256,
+  nonce_b64,ciphertext_b64,bound_at)
+ VALUES
+ ('supplier_1',repeat('a',64),repeat('e',64),repeat('c',64),
+  'AQIDBAUGBwgJCgsM',repeat('Z',40),now()-interval '1 hour'),
+ ('supplier_2',repeat('b',64),repeat('f',64),repeat('d',64),
+  'AQIDBAUGBwgJCgsM',repeat('Y',40),now()-interval '1 hour');
  sha_:=encode(extensions.digest(convert_to(body_,'UTF8'),'sha256'),'hex');
  INSERT INTO cotironda_piloto_privado.original_terms_policy_mvp362
  (terms_version,terms_body,terms_sha256,approved_at,activated_at,enabled)
@@ -105,8 +123,21 @@ BEGIN
  IF (cotironda_piloto_privado.terms_begin_p0(
    job,'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')->>'state')<>'cancelled'
  THEN RAISE EXCEPTION 'p0_wrong_lease_began';END IF;
+ -- Only the verified exact leased supplier may read ciphertext.
+ IF cotironda_piloto_privado.terms_recipient_packet_p0(job,
+     'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa') IS NOT NULL
+ THEN RAISE EXCEPTION 'p0_wrong_lease_read_contact';END IF;
+ got:=cotironda_piloto_privado.terms_recipient_packet_p0(job,lease);
+ IF got IS NULL OR got->>'state'<>'ready'
+  OR got->>'supplierKey'<>'supplier_1'
+  OR got->>'contactSha256'<>repeat('c',64)
+  OR got->>'nonceB64'<>'AQIDBAUGBwgJCgsM'
+  OR got->>'chatHmac'<>repeat('a',64)
+ THEN RAISE EXCEPTION 'p0_recipient_packet_cross_supplier';END IF;
  got:=cotironda_piloto_privado.terms_begin_p0(job,lease);
  IF got->>'state'<>'in_flight' THEN RAISE EXCEPTION 'p0_begin_failed';END IF;
+ IF cotironda_piloto_privado.terms_recipient_packet_p0(job,lease) IS NOT NULL
+ THEN RAISE EXCEPTION 'p0_contact_readable_after_begin';END IF;
  IF (cotironda_piloto_privado.terms_begin_p0(job,lease)->>'state')<>'cancelled'
  THEN RAISE EXCEPTION 'p0_duplicate_begin';END IF;
  IF cotironda_piloto_privado.terms_authorize_p0(job,lease,repeat('f',64))
