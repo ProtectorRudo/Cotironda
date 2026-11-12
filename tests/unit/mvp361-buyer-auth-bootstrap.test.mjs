@@ -72,7 +72,7 @@ function mockFetch({allowed=true,createStatus=201,created=true,throwOn=0}={}){
  const fetchFn=async(uri,options)=>{
   requests.push({uri,options});
   if(throwOn===requests.length)throw Error('do not log secret '+key);
-  if(uri.endsWith('/buyer_bootstrap_allowed_mvp361')){
+  if(uri.endsWith('/cotironda_piloto_buyer_bootstrap_allowed_mvp361')){
    return new Response(JSON.stringify(allowed),{status:200,
     headers:{'Content-Type':'application/json'}});
   }
@@ -145,7 +145,7 @@ test('MVP361: duplicate account / unexpected confirmation must not claim success
  assert.equal(r.status,'MANUAL_REVIEW_CREATE');
  const r2=await prepararCompradorAuthMvp361({...args,mode:'apply',
   approval:'PUBLICALO_MVP361_SOLO_COTIRONDA_PILOTO',
-  fetchFn:async(uri)=>uri.endsWith('/buyer_bootstrap_allowed_mvp361')?
+  fetchFn:async(uri)=>uri.endsWith('/cotironda_piloto_buyer_bootstrap_allowed_mvp361')?
    new Response('true',{status:200}):
    new Response(JSON.stringify({id:'55555555-5555-4555-8555-555555555555',
      phone,phone_confirmed_at:'2026-11-12T00:00:00Z'}),{status:201})
