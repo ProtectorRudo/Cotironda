@@ -1,7 +1,7 @@
 # COTIRONDA V2 — ESTADO REAL Y RELEVO ENTRE CONVERSACIONES
 
 **Última actualización de documentación: 12/11/2026 (Argentina).**
-**Estado:** dirección V2 documentada; primer código V2-02 en PR #816, sin despliegue ni prueba completa. Los datos de Supabase caducan; reconsultar cuando se necesite estado vivo.
+**Estado:** V2-03b portal + descarga en desarrollo PR #819 (apilado sobre #818/#817/#816), CI 6/6 verde, SIN desplegar ni E2E. D013 por PRODUCTO pendiente. Los datos de Supabase caducan; reconsultar cuando se necesite estado vivo.
 
 ## Relevo actualizado — V2-02 (12/11/2026)
 
@@ -25,6 +25,14 @@
 - **CI aprobado:** PR #818 SHA `21f7d1e47197a45dfffdc0fe084a1db93e945c2e`, **6/6 workflows SUCCESS**, incluidos Node, PG17 rollback (0/1/2 respondedores y permisos), TypeScript/Next.js, PostgREST y aislamiento. [Workflow específico V2-03a](https://github.com/ProtectorRudo/Cotironda/actions/workflows/cotironda-v2-03-respondedores-pg17.yml) prueba 0/1/2 originales autorizados, sesión/empresa ajena, proveedor sin permiso, consentimiento revocado, política apagada, Node, Postgres 17 con rollback. No es E2E: pruebas sintéticas/compilación únicamente.
 - **NO instalado:** función, tabla, endpoint ni políticas en Supabase/Vercel; `auth.users` continuaba en cero al último SELECT. Sin descarga real, sin interfaz autenticada en navegador, sin E2E. No se registraron consentimientos nuevos ni se enviaron WhatsApps.
 - **Próxima tarea única tras CI:** V2-03b — permitir descargar bytes originales únicamente con Auth, relectura de SHA, permisos prospectivos y auditoría; conectarlo a tarjetas de solo respondedores. Luego validar E2E real con comprador Auth. D013 por producto sigue pendiente antes del piloto completo.
+
+## V2-03b — Descarga original y vista comprador (PR #819, 12/11/2026)
+
+- **Código:** [PR #819](https://github.com/ProtectorRudo/Cotironda/pull/819) (draft, sobre #818/#817/#816, NO #814). Nueva fuente SQL privada que reusa el catálogo 03a y revalida usuario/sesión Auth, consentimiento prospectivo del proveedor, fuente original SHA y correlación a pedido. Auditoría transaccional de la descarga con nueva tabla privada.
+- **HTTP/UX:** endpoint GET privado para documento con bytes originales de Storage, SHA-256 verificado, segunda verificación de permiso tras I/O y auditoría obligatoria antes de devolver el archivo. Página `/piloto/v2/rondas/[rondaId]` para el comprador, con OTP de teléfono **solo cuentas existentes** (`shouldCreateUser:false`), lista **únicamente respondedores**, estado `Análisis en preparación` y descarga autenticada sin URL firmada.
+- **CI final verificado:** PR #819 SHA `d3c45a75bc56bc41249b9c7bdeb033399843b30e`, **6/6 workflows SUCCESS** (Node, PG17 ROLLBACK, Next.js build, PostgREST, aislamiento y sitio). Pruebas de bytes modificados, SHA/tamaño, buyer ajeno, revocación durante lectura y auditoría fallida. **No equivale a E2E real**.
+- **Estado PILOTO reconsultado solo lectura:** 0 usuarios `auth.users`, 0 RPC V2-03 de listado/descarga instaladas, 0 tablas V2 de políticas/consentimiento/auditoría instaladas. No se enviaron WhatsApps ni se hicieron descargas reales. No publicar sin orden `Publicalo`.
+- **Próximo bloqueo principal:** preparar instalación coordinada del conjunto #816 → #819 en **PREVIEW PILOTO autorizado**, con alta Auth del comprador y consentimiento V2 real de los comercios durante el alta. Antes: cerrar auditoría SHA/Storage/RLS; no inferir consentimientos. Luego E2E con dos presupuestos auténticos. D013 por PRODUCTO y análisis/cierre siguen pendientes.
 
 ## SI ABRÍS UNA CONVERSACIÓN NUEVA: LEÉ ESTO PRIMERO
 
@@ -72,7 +80,7 @@
 - **V2-00 — EN CURSO (AUDITORÍA PARCIAL 12/11):** inventario de repositorio, código en rama #813 y consultas SOLO LECTURA del PILOTO registrado en [V2-00 Inventario de reutilización](V2-00-INVENTARIO-REUTILIZACION-20261112.md). **PENDIENTE** conciliar versiones Vercel/Edge, Storage/RLS y estrategia de rama base; no se modificó código ni se probó E2E.
 - **V2-01 — PENDIENTE DE REVALIDAR:** la distribución anterior funcionó 2/2, pero V2 necesita referencias inequívocas y **matching D013 por producto de catálogo con equivalencias verificadas**, no por rubro.
 - **V2-02 — EN DESARROLLO, BLOQUEO PRINCIPAL:** [PR #816](https://github.com/ProtectorRudo/Cotironda/pull/816) preparó referencia visible en caption y lookup seguro de mensaje acreditado, con flag OFF. **Sin SQL/Edge instalados**, sin evidencias E2E ni solución completa para PDF sin cita. Conservar original y varias rondas concurrentes sigue pendiente.
-- **V2-03 — EN DESARROLLO:** PR #818 prepara API privada de listado de respondedores Auth; **descarga y vista conectada aún pendientes**.
+- **V2-03 — CÓDIGO PROPUESTO Y PROBADO:** PR #818 listado + PR #819 descarga/vista con Auth; **SIN SQL/Vercel desplegados ni E2E**.
 - **V2-04 — PENDIENTE:** análisis individual útil, no bloqueante.
 - **V2-05 — PENDIENTE:** dos días hábiles e informe general.
 - **V2-06 — PENDIENTE:** permisos, Auth real, piloto E2E.
@@ -90,11 +98,11 @@
 - La referencia no sustituye prueba de origen para archivos no citados. El bloqueo comercial persiste hasta demostrar 2 respuestas reales, Auth del comprador, originales visibles y análisis.
 - **No hubo despliegue ni cambio de datos PILOTO**; no confundir el PR con funcionalidad activa.
 
-## ÚNICA PRÓXIMA ACCIÓN ACTUAL — V2-03b
+## ÚNICA PRÓXIMA ACCIÓN ACTUAL — Preflight de instalación V2 y ensayo real
 
-**Primero validar CI de [PR #818](https://github.com/ProtectorRudo/Cotironda/pull/818). Después desarrollar el guard y endpoint de descarga V2 en pequeño**: verificar sesión comprador viva, pertenencia a esa ronda, permiso prospectivo del proveedor, SHA original por bytes en Storage, registro privado de cada descarga y cero exposición sin prueba. Conectar tarjetas del portal mostrando únicamente los comercios que respondieron. No reutilizar MVP161/MVP192 sin adaptar sus gates antiguos de cierre y economía.
+**CÓDIGO #819 listo para revisión (6/6 CI), NO PILOTO instalado.** Primero auditar la cadena de despliegue de #816/#817/#818/#819 frente a Supabase Edge v76, Storage privado y función de permisos; preparar migraciones atómicas, flags OFF y rollback. Falta confirmar el alcance legal/captura prospectiva de consentimiento del proveedor y preparar un comprador REAL en Supabase Auth PILOTO (hoy cero usuarios). No encender ni enviar WhatsApps sin autorización específica de publicación.
 
-**No publicar todavía:** la política de listado V2 queda OFF hasta tener alta de comprador Auth, términos/captura prospectiva del proveedor, descarga segura y pruebas. Corregir dependencias V2-00 y distribución D013 antes del E2E. No reatribuir el documento histórico ambiguo, no activar PR #814 ni recuperar rankings.
+Después habilitar SOLO el entorno PILOTO y versión autorizados ante `Publicalo`, probar navegador del arquitecto + dos archivos originales + análisis individual, cerrar a dos días hábiles e informe final. **La selección por PRODUCTO D013 sigue obligatoria antes de declarar el circuito completo**. No reintroducir bloqueo #814 de rondas solapadas, rankings/ganadores ni atribuciones inventadas de documentos ambiguos.
 
 ## Autorizaciones y cómo registrar un avance
 
