@@ -405,6 +405,37 @@ BEGIN
  VALUES(newrid,'supplier_1','prepared',now_-interval '5 hours');
  IF NOT public.cotironda_piloto_original_consent_preflight_mvp178(newrid,'supplier_1')
  THEN RAISE EXCEPTION 'mvp365_valid_post_revocation_reaccept_denied';END IF;
+ -- A valid inbound message which arrived BEFORE a prior withdrawal
+ -- was registered cannot revive access just because its acceptance record
+ -- was inserted later. Keep all notice/message timestamps self-consistent
+ -- to isolate the REVOCATION ordering check (not unrelated Whapi guards).
+ UPDATE cotironda_piloto_privado.supplier_original_terms_notices_mvp364
+ SET sent_at=now_-interval '14 hours',
+     recorded_at=now_-interval '13 hours 30 minutes'
+ WHERE notice_message_hmac=repeat('0',64);
+ UPDATE cotironda_piloto_privado.whapi_inbox
+ SET received_at=now_-interval '13 hours'
+ WHERE message_hmac=repeat('3',64);
+ UPDATE cotironda_piloto_privado.supplier_original_optins_mvp362
+ SET accepted_at=now_-interval '13 hours',
+     recorded_at=now_-interval '12 hours 30 minutes'
+ WHERE evidence_message_hmac=repeat('3',64);
+ IF public.cotironda_piloto_original_consent_preflight_mvp178(newrid,'supplier_1')
+ THEN RAISE EXCEPTION 'mvp365_backdated_reaccept_opened';END IF;
+ -- Restore the second legitimate episode before testing second revocation.
+ UPDATE cotironda_piloto_privado.supplier_original_terms_notices_mvp364
+ SET sent_at=now_-interval '11 hours',
+     recorded_at=now_-interval '10 hours 30 minutes'
+ WHERE notice_message_hmac=repeat('0',64);
+ UPDATE cotironda_piloto_privado.whapi_inbox
+ SET received_at=now_-interval '10 hours'
+ WHERE message_hmac=repeat('3',64);
+ UPDATE cotironda_piloto_privado.supplier_original_optins_mvp362
+ SET accepted_at=now_-interval '10 hours',
+     recorded_at=now_-interval '9 hours'
+ WHERE evidence_message_hmac=repeat('3',64);
+ IF NOT public.cotironda_piloto_original_consent_preflight_mvp178(newrid,'supplier_1')
+ THEN RAISE EXCEPTION 'mvp365_valid_episode_not_restored';END IF;
  -- Global revocation again closes the new episode without affecting past
  -- audit; no second reacceptance is implicitly created.
  INSERT INTO cotironda_piloto_privado.supplier_original_revocations_mvp362
@@ -415,14 +446,6 @@ BEGIN
  '55555555-5555-4555-8555-555555555555');
  IF public.cotironda_piloto_original_consent_preflight_mvp178(newrid,'supplier_1')
  THEN RAISE EXCEPTION 'mvp365_second_revocation_ignored';END IF;
- -- Negative case: a new event falsely reported BEFORE the revocation was
- -- recorded cannot re-open access. Previous rounds remain forever closed.
- UPDATE cotironda_piloto_privado.supplier_original_optins_mvp362
- SET accepted_at=now_-interval '13 hours',
-     recorded_at=now_-interval '12 hours 30 minutes'
- WHERE evidence_message_hmac=repeat('3',64);
- IF public.cotironda_piloto_original_consent_preflight_mvp178(newrid,'supplier_1')
- THEN RAISE EXCEPTION 'mvp365_backdated_reaccept_opened';END IF;
  -- The next specific withdrawal test isolates legacy behavior.
  DELETE FROM cotironda_piloto_privado.supplier_original_revocations_mvp362;
 
