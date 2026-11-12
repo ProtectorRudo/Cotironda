@@ -90,7 +90,7 @@ test('P0 MFA: no acepta suplantación, texto alterado ni otro aviso',async()=>{
   {nonceB64:'bad'},
   {ciphertextB64:packet().ciphertextB64.slice(0,-4)+'AAAA'},
   {receivedAt:'bad-date'},
-  {supplierKey:'buyer_invalid'},
+  {supplierKey:'Buyer Invalid'},
   {untrusted:'extra'}
  ]){
   const x=mock(packet(PLAIN,override));
