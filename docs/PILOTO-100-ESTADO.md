@@ -1,7 +1,14 @@
 # COTIRONDA V2 — ESTADO REAL Y RELEVO ENTRE CONVERSACIONES
 
 **Última actualización de documentación: 12/11/2026 (Argentina).**
-**Estado:** nueva dirección FUNCIONAL documentada, **sin implementación V2 ni despliegue**. Los datos de Supabase caducan; reconsultar cuando se necesite estado vivo.
+**Estado:** dirección V2 documentada; primer código V2-02 en PR #816, sin despliegue ni prueba completa. Los datos de Supabase caducan; reconsultar cuando se necesite estado vivo.
+
+## Relevo actualizado — V2-02 (12/11/2026)
+
+- **Rama operativa:** [PR #816](https://github.com/ProtectorRudo/Cotironda/pull/816) sobre #813 (NO #814). Lookup por referencia seguro, con consentimiento e invitación anteriores al envío y consentimiento proveedor anterior a respuesta. CI del último SHA debe verificarse; NO instalado.
+- **PILOTO — solo lectura:** cuatro despachos históricos `api_accepted`; 4/4 con consentimientos e invitación anteriores al envío, 0 permisos tardíos. No implica cuatro cotizaciones ni E2E. El esquema real tiene las columnas necesarias; no se modificó un registro.
+- **Supabase Edge instalado:** WhatsApp v76, seguimiento v29, recuperación v13. La nueva RPC V2-02 no está instalada. Estas versiones están identificadas, pero sigue pendiente reconciliar el bundle completo y las descargas.
+- **Una próxima tarea:** terminar CI, resolver correlación segura de archivos originales sin cita / evidencia de WhatsApp, y preparar acceso autenticado al comprador. V2-00 (inventario de SHA/Storage/Auth) y V2-01 (matching por PRODUCTO D013) permanecen parcialmente pendientes.
 
 ## SI ABRÍS UNA CONVERSACIÓN NUEVA: LEÉ ESTO PRIMERO
 
@@ -10,7 +17,7 @@
 3. **Este documento** (estado y próxima acción).
 4. [Issue #794 — tablero canónico](https://github.com/ProtectorRudo/Cotironda/issues/794) y PR V2 activo.
 
-**NO continúes** del último PR antiguo por reflejo. NO uses el texto viejo de README/AGENTS/histórico si contradice V2. Verificá rama, código y despliegue real antes de modificar nada. **Lo único que se autorizó en esta intervención es reorientar/documentar.**
+**NO continúes** del último PR antiguo por reflejo. NO uses el texto viejo de README/AGENTS/histórico si contradice V2. Verificá rama, código y despliegue real antes de modificar nada. **El propietario autorizó avanzar con código y pruebas en rama, sin desplegar.**
 
 ## Regla de negocio V2 (en una línea)
 
