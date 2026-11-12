@@ -246,3 +246,36 @@ REVOKE ALL ON FUNCTION cotironda_piloto_privado.terms_finish_p0(
 GRANT EXECUTE ON FUNCTION cotironda_piloto_privado.terms_finish_p0(
  uuid,uuid,text,text,text,text,text,text)
  TO cotironda_pilot_terms_sender_p0;
+
+-- Pre-round supplier contact: use the EXISTING MVP109 encrypted channel,
+-- NOT MVP313 (which requires a live request_id). This private read returns
+-- only AES-GCM material tied to the exact sender lease, never a clear phone.
+-- Its caller must use the same PILOT contact key/AAD as the native Edge
+-- webhook; receipt of a packet alone is NOT send authorization.
+CREATE FUNCTION cotironda_piloto_privado.terms_recipient_packet_p0(
+ p_job uuid,p_lease uuid
+) RETURNS jsonb LANGUAGE sql VOLATILE SECURITY DEFINER SET search_path='' AS $fn$
+ SELECT jsonb_build_object(
+   'state','ready','jobId',j.job_id,'leaseToken',j.lease_token,
+   'supplierKey',j.supplier_key,'channel',j.channel,'chatHmac',j.chat_hmac,
+   'contactSha256',c.contact_sha256,
+   'nonceB64',c.nonce_b64,'ciphertextB64',c.ciphertext_b64)
+ FROM cotironda_piloto_privado.supplier_terms_send_jobs_p0 j
+ JOIN cotironda_piloto_privado.participant_channels_mvp109 c
+   ON c.participant_key=j.supplier_key AND c.chat_hmac=j.chat_hmac
+   AND c.authenticated_message_hmac ~ '^[a-f0-9]{64}$'
+   AND c.contact_sha256 ~ '^[a-f0-9]{64}$'
+   AND c.nonce_b64 IS NOT NULL AND c.ciphertext_b64 IS NOT NULL
+   AND c.bound_at IS NOT NULL AND c.bound_at<=j.created_at
+ WHERE j.job_id=p_job AND j.lease_token=p_lease
+   AND j.state='leased'
+   AND j.leased_at>=clock_timestamp()-interval '2 minutes'
+   AND cotironda_piloto_privado.terms_job_allowed_p0(j.job_id)
+ LIMIT 1;
+$fn$;
+REVOKE ALL ON FUNCTION
+ cotironda_piloto_privado.terms_recipient_packet_p0(uuid,uuid)
+ FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION
+ cotironda_piloto_privado.terms_recipient_packet_p0(uuid,uuid)
+ TO cotironda_pilot_terms_sender_p0;
