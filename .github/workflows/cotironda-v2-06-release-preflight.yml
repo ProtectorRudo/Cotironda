@@ -4,6 +4,7 @@ on:
     paths:
       - 'scripts/piloto/v2-release-readiness.mjs'
       - 'scripts/piloto/observaciones/v2-readiness-piloto-20261112.json'
+      - 'scripts/piloto/observaciones/v2-readiness-piloto-postrelease-20261112.json'
       - 'supabase/piloto/v2_06_release_inventory_readonly.sql'
       - 'tests/unit/v2-06-preflight-publicacion.test.mjs'
       - '.github/workflows/cotironda-v2-06-release-preflight.yml'
@@ -40,6 +41,27 @@ jobs:
             if(x.result!=="BLOCKED"||x.can_publish!==false||
              !x.blockers.some(b=>b.code==="comprador_auth")||
              !x.blockers.some(b=>b.code==="variables_preview"))
+              process.exit(1);
+          '
+      - name: Verificar postrelease SQL listo pero Vercel Git y cuota bloqueados
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +e
+          node scripts/piloto/v2-release-readiness.mjs \
+            scripts/piloto/observaciones/v2-readiness-piloto-postrelease-20261112.json \
+            primer_original > /tmp/v2-readiness-postrelease.json
+          code=$?
+          set -e
+          test "$code" -eq 2
+          node --input-type=module -e '
+            import {readFileSync} from "node:fs";
+            const x=JSON.parse(readFileSync("/tmp/v2-readiness-postrelease.json","utf8"));
+            const names=new Set(x.blockers.map(b=>b.code));
+            if(x.result!=="BLOCKED"||x.can_publish!==false||
+              !names.has("portal_git_correcto")||
+              !names.has("vercel_cuota")||
+              [...names].some(n=>n.startsWith("rpc_")||n.startsWith("table_")))
               process.exit(1);
           '
       - name: Verificar SQL inventario estrictamente SELECT
