@@ -230,6 +230,10 @@ BEGIN
  OR has_table_privilege('service_role',
    'cotironda_piloto_privado.supplier_original_reviews_p0','INSERT')
  OR has_function_privilege('anon',
+   'public.cotironda_piloto_terms_review_queue_auth_p0()','EXECUTE')
+ OR has_function_privilege('service_role',
+   'public.cotironda_piloto_terms_review_queue_auth_p0()','EXECUTE')
+ OR has_function_privilege('anon',
    'public.cotironda_piloto_terms_review_packet_auth_p0(text)','EXECUTE')
  OR has_function_privilege('anon',
    'public.cotironda_piloto_terms_review_decide_auth_p0(text,text,text,text,boolean)',
@@ -237,6 +241,8 @@ BEGIN
  OR has_function_privilege('service_role',
    'public.cotironda_piloto_terms_review_decide_auth_p0(text,text,text,text,boolean)',
    'EXECUTE')
+ OR NOT has_function_privilege('authenticated',
+   'public.cotironda_piloto_terms_review_queue_auth_p0()','EXECUTE')
  OR NOT has_function_privilege('authenticated',
    'public.cotironda_piloto_terms_review_packet_auth_p0(text)','EXECUTE')
  OR NOT has_function_privilege('authenticated',
@@ -279,6 +285,9 @@ BEGIN
   'AQIDBAUGBwgJCgsM',repeat('F',80));
 
  PERFORM set_config('cotironda.ci_operator','',true);
+ result_:=public.cotironda_piloto_terms_review_queue_auth_p0();
+ IF result_->>'state'<>'not_authorized'
+ THEN RAISE EXCEPTION 'p0_queue_readable_without_mfa';END IF;
  result_:=public.cotironda_piloto_terms_review_packet_auth_p0(repeat('4',64));
  IF result_->>'state'<>'not_authorized'
  THEN RAISE EXCEPTION 'p0_mfa_no_operator_packet_visible';END IF;
@@ -288,6 +297,20 @@ BEGIN
  THEN RAISE EXCEPTION 'p0_mfa_no_operator_accepts';END IF;
  PERFORM set_config('cotironda.ci_operator',
   '55555555-5555-4555-8555-555555555555',true);
+ result_:=public.cotironda_piloto_terms_review_queue_auth_p0();
+ IF result_->>'state'<>'ready'
+    OR jsonb_array_length(result_->'items')<>2
+    OR NOT EXISTS (
+      SELECT 1 FROM jsonb_array_elements(result_->'items') item
+      WHERE item->>'messageHmac'=repeat('4',64)
+        AND item->>'supplierKey'='supplier_1'
+    )
+    OR EXISTS (
+      SELECT 1 FROM jsonb_array_elements(result_->'items') item
+      WHERE item ? 'nonceB64' OR item ? 'ciphertextB64'
+        OR item ? 'phone'
+    )
+ THEN RAISE EXCEPTION 'p0_queue_wrong_pending_or_leaks';END IF;
 
  FOREACH h IN ARRAY ARRAY[repeat('5',64),repeat('6',64),
                          repeat('7',64),repeat('8',64)] LOOP
@@ -352,6 +375,9 @@ BEGIN
  THEN RAISE EXCEPTION 'p0_rejection_created_consent';END IF;
  IF (SELECT count(*) FROM cotironda_piloto_privado.supplier_original_reviews_p0)<>2
  THEN RAISE EXCEPTION 'p0_decisions_wrong_count';END IF;
+ result_:=public.cotironda_piloto_terms_review_queue_auth_p0();
+ IF result_->>'state'<>'ready' OR jsonb_array_length(result_->'items')<>0
+ THEN RAISE EXCEPTION 'p0_reviewed_messages_remain_in_queue';END IF;
 
  -- Revocation after optin MUST prevent an old notice from legitimizing a
  -- later response. Reacceptance requires an independently sent new notice.
