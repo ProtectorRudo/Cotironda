@@ -1,8 +1,10 @@
--- P1: protect central publication from overlapping live supplier invitations.
--- Applied ONLY when explicitly authorized to publish in PILOTO.
--- Uses existing MVP222 function and supplier FOR UPDATE locks, not a new
--- inbox or extra WhatsApp. On conflict returns state, no invitation/job/send.
--- Does NOT alter existing requests or historic ambiguous sources.
+-- P1: no overlapping live supplier invitations. No new sends or tables.
+-- Derived from the LAST source of cotironda_piloto_ia_publish_mvp222 in
+-- mvp280_confirmacion_unificada_comprador.sql, matching live PILOT function
+-- body as inspected 12/11/2026. Preserves buyer confirmation and original
+-- TXT/CSV + PDF/Office/binary document provenance guards (MVP276/278/280).
+-- DO NOT apply to PILOTO except after explicit "Publicalo" authorization;
+-- no mutation of historical requests or ambiguous supplier source.
 CREATE OR REPLACE FUNCTION public.cotironda_piloto_ia_publish_mvp222(
  p_request uuid
 ) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
@@ -28,6 +30,10 @@ BEGIN
  IF v_round.state='prepared' THEN RETURN jsonb_build_object('state','already_published');END IF;
  IF v_round.state<>'draft' OR v_round.closes_at<=clock_timestamp()
  THEN RETURN jsonb_build_object('state','request_not_ready');END IF;
+ -- PDF/Office may NEVER publish without an authenticated, version-locked
+ -- one-time approval. Existing TEXT and TXT/CSV flows remain unchanged.
+ IF NOT cotironda_piloto_privado.confirmada_comprador_mvp280(v_round.id)
+ THEN RETURN jsonb_build_object('state','buyer_review_required');END IF;
 
  SELECT b.key,b.chat_hmac INTO buyer FROM cotironda_piloto_privado.participants b
  WHERE b.key=v_round.buyer_key AND b.participant_role='buyer'
@@ -40,8 +46,16 @@ BEGIN
  INTO source FROM cotironda_piloto_privado.whapi_inbox m
  WHERE m.message_hmac=v_round.source_hmac AND m.request_id=v_round.id
   AND m.participant_key=buyer.key AND m.chat_hmac=buyer.chat_hmac
-  AND m.kind='text' AND m.processing_state='needs_review'
-  AND m.plaintext_sha256=encode(sha256(convert_to(v_round.original_request,'UTF8')),'hex');
+  AND m.processing_state='needs_review'
+  AND ((m.kind='text' AND m.plaintext_sha256=
+   encode(sha256(convert_to(v_round.original_request,'UTF8')),'hex'))
+   OR (m.kind='document' AND
+   cotironda_piloto_privado.fuente_original_documental_mvp276(
+    m.message_hmac,m.chat_hmac,m.participant_key,encode(sha256(convert_to(v_round.original_request,'UTF8')),'hex')))
+   OR (m.kind='document' AND
+    cotironda_piloto_privado.fuente_binaria_comprador_mvp278(
+      m.message_hmac,m.chat_hmac,m.participant_key,
+      encode(sha256(convert_to(v_round.original_request,'UTF8')),'hex'),(SELECT count(*)::integer FROM cotironda_piloto_privado.request_lines l WHERE l.request_id=v_round.id))));
  IF NOT FOUND THEN RETURN jsonb_build_object('state','source_not_verified');END IF;
 
  SELECT count(*) INTO v_lines FROM cotironda_piloto_privado.request_lines l
@@ -77,23 +91,21 @@ BEGIN
   IF sup.delivery_city IS NULL
   THEN RETURN jsonb_build_object('state','supplier_without_zone');END IF;
  END LOOP;
- -- P1: the rows of every selected supplier are already locked FOR
- -- UPDATE OF p above, in sorted order. Publish transactions for the same
- -- supplier thus serialize before this check. No shadow/legacy invitation
- -- may be sent to a supplier with ANOTHER still prepared, unexpired round.
- -- A queued but not yet sent invitation also counts: otherwise a delayed
- -- Whapi send can recreate the ambiguity while another round is live.
+ -- P1: suppliers are already locked FOR UPDATE OF p above in
+ -- deterministic order. Competing publishes for a shared supplier
+ -- serialize before checking prior prepared invitations, including LEGACY.
+ -- Block even if the other WhatsApp invitation is not sent yet.
  IF EXISTS(
   SELECT 1
   FROM cotironda_piloto_privado.ai_shadow_destinos_mvp221 selected
   JOIN cotironda_piloto_privado.invitations prev
-   ON prev.supplier_key=selected.supplier_key
-    AND prev.request_id<>v_round.id AND prev.state='prepared'
+    ON prev.supplier_key=selected.supplier_key
+   AND prev.request_id<>v_round.id AND prev.state='prepared'
   JOIN cotironda_piloto_privado.requests previous
-   ON previous.id=prev.request_id
+    ON previous.id=prev.request_id
   WHERE selected.request_id=v_round.id
-   AND previous.state='prepared'
-   AND previous.closes_at>clock_timestamp()
+    AND previous.state='prepared'
+    AND previous.closes_at>clock_timestamp()
  ) THEN
   RETURN jsonb_build_object('state','supplier_active_round_conflict');
  END IF;
@@ -145,7 +157,6 @@ BEGIN
   'mapped_lines',v_pairs,'legacy_whapi_jobs',0);
 END;
 $publish$;
-
 REVOKE ALL ON FUNCTION public.cotironda_piloto_ia_publish_mvp222(uuid)
  FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.cotironda_piloto_ia_publish_mvp222(uuid)
