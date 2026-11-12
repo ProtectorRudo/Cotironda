@@ -4,6 +4,19 @@
 
 **ORDEN OBLIGATORIO DE LECTURA EN TODAS LAS CONVERSACIONES:** [Contrato V2](COTIRONDA-V2-CONTRATO.md) → **este plan** → [Estado y única próxima tarea](PILOTO-100-ESTADO.md) → [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794). **Estas páginas son las VIGENTES**. [Plan histórico íntegro](historico/2026-11-12-plan-maestro-pre-v2.md) (81 KB), [estado histórico](historico/2026-11-12-estado-pre-v2.md) e [issue histórico](historico/2026-11-12-issue-794-pre-v2.md) conservan evidencia pero NO deben usarse como guía de producto.
 
+## Relevo PR #829 — pospublicación sin perder avances (12/11/2026)
+
+[PR #829](https://github.com/ProtectorRudo/Cotironda/pull/829) corrige un problema de trazabilidad: el primer snapshot predeploy todavía decía `0 RPC/0 tablas`. **NO actualizar ese histórico**: se agregó un snapshot **nuevo** `v2-readiness-piloto-postrelease-20261112.json` donde consta la publicación verificada **9 RPC nuevas/4 tablas RLS y Edge PDF v1**, con política OFF, sin comprador Auth ni consentimientos proveedor y Whapi v76 intacto. El guard de publicación pasa a exigir tanto **Git enlazado al proyecto DEV correcto** como **cuota Vercel disponible**, para no declarar listo un portal antiguo o en otro proyecto.
+
+- [x] **Verificación contra base real**: comprador Whapi elegible **1/1** comprobado mediante la RPC nueva instalada, falso SHA **0 aceptados**; sin PII. No existe usuario Auth, no probaron SMS y por tanto **NO hay sesión válida todavía**.
+- [x] **Verificación Vercel**: equipo Hobby `ProtectorRudo's projects`, proyecto `cotironda-portal-dev` Next.js con SSO, **Git NO conectado**; hay otros proyectos Cotironda conectados pero NO se reutilizan para evitar impactos no autorizados. API creación Preview 402 cuota diaria de despliegues, variables por rama 400 falta Git.
+- [ ] CI final PR #829: tests del guard con snapshot anterior y postrelease, pruebas de Next.js, aislamiento y regresiones.
+- [ ] **Acción necesaria en Vercel**: verificar y conectar *únicamente* `cotironda-portal-dev` → `Settings → Git` → `ProtectorRudo/Cotironda`, evitando que conectarlo dispare un deploy de `main` a producción. No podemos hacer esta reconexión con el conector disponible. Resolver cuota Hobby sin cambiar de plan ni comprar nada.
+- [ ] Tras esto, bajo **nueva orden `Publicalo`** publicar exactamente el commit revisado en **Preview protegido, banderas V2 OFF**, preparar claves server-only, OTP SMS y consentimiento prospectivo, probar un primer original PDF/Excel real con guía.
+- [ ] Mantener calendario/feriados por IA Central y ruteo D013 por producto, pero no arriesgar SQL legacy ni Whapi v76 sin preflight explícito. No implementar ranking/ganadores V1.
+
+**Nota operativa:** la prueba positiva de la RPC comprador solo demuestra identidad WhatsApp susceptible de onboarding seguro, **no autoriza dar de alta al arquitecto ni compartir originales**. [Auditoría PR #829](https://github.com/ProtectorRudo/Cotironda/blob/feat/v2-08-release-postdeploy-vercel-gates-20261112/docs/V2-08-AUDITORIA-POSTRELEASE-VERCEL-20261112.md).
+
 ## Estado operativo POST-«Publicalo»: infraestructura SQL/Edge publicada y apagada
 
 La publicación de hoy NO fue total. [Acta de instalación comprobada](V2-RELEASE-PILOTO-PARCIAL-20261112.md): se aplicaron seis migraciones PILOTO SQL V2-02/02b/03a/03b/04b/07, dando **9/9 funciones privadas** y **4/4 tablas privadas RLS**, sin permiso público de nuevas funciones/tablas, policy `v2_original_share_policy.enabled=false` y cero usuarios/consentimientos/análisis. Edge PDF independiente v1 `8bf6e8da…22a` instalada pero sin secreto nuevo para habilitarla; Whapi v76 `656cb24b…822e` intacta. Siete rondas históricas continúan; V2-05/calendario y overlay real del webhook todavía no se instalaron. Las secciones antiguas que dicen “no instalado” son snapshots previos al release.
