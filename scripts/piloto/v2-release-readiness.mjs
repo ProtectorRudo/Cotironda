@@ -71,6 +71,8 @@ export function auditarPublicacionV2(input,phase='primer_original'){
   sup.bucket_private===true&&sup.bucket_limit_bytes===8388608);
  add('comprador_auth','Comprador autenticado realmente registrado',
   isNumber(sup.auth_users)&&sup.auth_users>=1);
+ add('sms_otp_validado','Ingreso SMS OTP real (proveedor y sesión) verificado',
+  proof.phone_sms_verified===true);
  add('consentimiento_prospectivo','Consentimiento V2 real por proveedor',
   isNumber(consent.suppliers_accepted)&&consent.suppliers_accepted>=1&&
   consent.prospectively_verified===true);

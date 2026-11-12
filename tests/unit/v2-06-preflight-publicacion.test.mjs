@@ -15,7 +15,7 @@ test('Preflight: fotografía PILOTO 12/11 realmente BLOQUEADA en ambos niveles',
  assert.equal(first.result,'BLOCKED');
  assert.equal(first.can_publish,false);
  const codes=new Set(first.blockers.map(x=>x.code));
- for(const code of ['comprador_auth','consentimiento_prospectivo',
+ for(const code of ['comprador_auth','sms_otp_validado','consentimiento_prospectivo',
   'asociacion_original_fuerte','politica_original_activa',
   'lector_pdf_privado','variables_preview','build_sha_fijado',
   'sin_produccion','smoke_privacidad']){
@@ -49,7 +49,8 @@ function readySnapshot(){
  ];
  s.consent={suppliers_accepted:2,prospectively_verified:true};
  s.proof={strong_originals:2,originals_verified:true,
-  buyer_browser_verified:true,business_calendar_approved:true,
+  buyer_browser_verified:true,phone_sms_verified:true,
+  business_calendar_approved:true,
   deadline_real_verified:true,auto_close_worker_verified:true,
   product_catalog_routing_verified:true,
   two_distinct_supplier_files_verified:true,
@@ -74,6 +75,13 @@ function readySnapshot(){
  s.vercel.target='preview';
  return s;
 }
+test('Preflight: Auth user sin SMS real no equivale a portal accesible',()=>{
+ const a=readySnapshot();
+ a.proof.phone_sms_verified=false;
+ const r=auditarPublicacionV2(a);
+ assert.equal(r.result,'BLOCKED');
+ assert.ok(r.blockers.some(x=>x.code==='sms_otp_validado'));
+});
 test('Preflight: caso hipotético completo supera el chequeo sin autorizar deploy',()=>{
  const s=readySnapshot();
  const first=auditarPublicacionV2(s);
