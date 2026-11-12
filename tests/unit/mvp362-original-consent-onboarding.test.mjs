@@ -35,7 +35,8 @@ function run(patch={}) {
   ...base,...patch,
   consentimiento:{...base.consentimiento,...patch.consentimiento},
   ronda:{...base.ronda,...patch.ronda},
-  sesion:{...base.sesion,...patch.sesion}
+  sesion:{...base.sesion,...patch.sesion},
+  archivo:{...base.archivo,...patch.archivo}
  });
 }
 test('MVP362: consent accepted ONCE before future round can authorize original',()=>{
@@ -67,7 +68,7 @@ test('MVP362: consent ledger starts OFF, never auto-authorizes old suppliers',()
  assert.doesNotMatch(policy,/INSERT INTO cotironda_piloto_privado\.original_terms_policy_mvp362/iu);
  assert.match(policy,/approved_at IS NOT NULL AND activated_at IS NOT NULL/u);
  assert.match(policy,/terms_sha256 text GENERATED ALWAYS AS/u);
- assert.match(policy,/ack_plaintext_sha256=o\.ack_plaintext_sha256/u);
+ assert.match(policy,/msg\.plaintext_sha256=o\.ack_plaintext_sha256/u);
  assert.match(policy,/o\.recorded_at<=a\.created_at/u);
  assert.match(policy,/o\.accepted_at<a\.created_at/u);
  assert.match(policy,/o\.accepted_at>=a\.policy_activated_at/u);
