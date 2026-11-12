@@ -46,13 +46,20 @@
 
 ## Estado de etapas
 
-- **V2-00 — EN CURSO:** contrato, checklist, README/AGENTS y estado orientados a nueva dirección; **PENDIENTE AUDITORÍA DE COMPONENTES REALES Y TRIAGE DE PR**.
+- **V2-00 — EN CURSO (AUDITORÍA PARCIAL 12/11):** inventario de repositorio, código en rama #813 y consultas SOLO LECTURA del PILOTO registrado en [V2-00 Inventario de reutilización](V2-00-INVENTARIO-REUTILIZACION-20261112.md). **PENDIENTE** conciliar versiones Vercel/Edge, Storage/RLS y estrategia de rama base; no se modificó código ni se probó E2E.
 - **V2-01 — PENDIENTE DE REVALIDAR:** la distribución anterior funcionó 2/2, pero V2 necesita referencias inequívocas y **matching D013 por producto de catálogo con equivalencias verificadas**, no por rubro.
 - **V2-02 — BLOQUEO PRINCIPAL:** vínculo de respuestas, conservar original y soportar muchas rondas concurrentes.
 - **V2-03 — PENDIENTE:** UX muestra únicamente respondedores identificados, permisos/descarga inmediata.
 - **V2-04 — PENDIENTE:** análisis individual útil, no bloqueante.
 - **V2-05 — PENDIENTE:** dos días hábiles e informe general.
 - **V2-06 — PENDIENTE:** permisos, Auth real, piloto E2E.
+
+## Hallazgos verificados V2-00 (12/11, solo lectura)
+
+- [Inventario técnico y mapa de reutilización](V2-00-INVENTARIO-REUTILIZACION-20261112.md): `main` contiene sitio estático y documentación; núcleo operativo en ramas PR apiladas (auditado #813); contrato V2 documentado en PR #815.
+- PILOTO: 2 proveedores, 106 líneas de catálogo (86 con `curated_family`), **0 catálogos formalmente confirmados**, 1 ronda `prepared`, 2 invitaciones en esa ronda, **0 compradores Auth**. Hay 3 registros históricos `ambiguous_round`, no deben reatribuirse a ciegas.
+- Código actual valida `rubro` además del catálogo y base SQL usa `family_code`: **NO demuestra el matching D013 por producto**. Componentes offline `identidad-producto.ts` e `invitaciones-por-producto.ts` son reutilizables con adaptación.
+- **V2-00 todavía no está cerrado**. Falta contrastar despliegues/seguridad; sin códigos nuevos, pruebas de integración ni WhatsApps enviados en esta auditoría.
 
 ## ÚNICA PRÓXIMA ACCIÓN (trabajar ESTO primero)
 
