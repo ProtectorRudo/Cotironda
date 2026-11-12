@@ -273,4 +273,6 @@ BEGIN
  RAISE NOTICE 'V2_03B_ORIGINAL_AUDIT_PG17_PASS';
  RAISE NOTICE 'V2_03_RESPONDER_CATALOG_PG17_PASS';
 END $test$;
+\ir ../../piloto/v2_04b_analisis_original_idempotente_privado.sql
+\ir ../fixtures/v2-04b-analysis-checks.sql
 ROLLBACK;
