@@ -50,6 +50,19 @@ El objetivo comercial es que, **al cierre**, el comprador pueda obtener los orig
 
 **CI FINAL MVP355 (11/11/2026):** el SHA técnico [`721ecc12d2a9a35e54d53b35f009d419b4cca3f6`](https://github.com/ProtectorRudo/Cotironda/pull/798) pasó **5/5 workflows generales**: Next.js, unidad general (incluye **PG17 documental** y **Deno seguimiento** como jobs separados), PostgREST, PG17 aislamiento y verificación sitio. Probados dos formatos sintéticos, SHA, links débiles/ausentes, vínculo de aviso previo, duplicados, rondas solapadas y revocación. Además SELECT del nuevo SQL sin escrituras contra piloto: `2 despachos / 0 documentos acreditados`; token falso `not_found`. **Sin despliegue**, PR draft; no E2E real.
 
+## P0 — interfaz privada de operador MFA y bandeja de respuestas (12/11/2026)
+
+**[PR técnico #812](https://github.com/ProtectorRudo/Cotironda/pull/812)** DRAFT sobre #811, [Acta 539](https://github.com/ProtectorRudo/Cotironda/blob/feat/p0-portal-operador-mfa-20261112/docs/539-p0-portal-operador-mfa-bandeja.md). **No publicado, no SQL en piloto, no mensajes**.
+
+- [x] **Acceso humano sin nuevo backend:** se reutiliza `operador-piloto-http-mvp267.ts`, `puertosOperadorSupabasePiloto` y `auth.getUser(jwt)` del piloto. El handler nuevo comprueba AAL2 y RPC M267 revalida rol/sesión viva, SHA exacto de Preview, origen HTTPS, body estricto y headers `no-store`; sin `service_role` ni JWT en cookies/URL.
+- [x] **Portal privado `/piloto/operador/terminos`:** página SSR desaparece con flags OFF; login solo para operador existente + TOTP verificado, sin registro ni token persistido. Muestra lista limitada de respuestas pendientes y, solo tras autenticación, el texto original AES-GCM verificado y las condiciones completas. Dos botones distintos `explicit_accept` / `not_explicit`, atestación humana obligatoria; leer no crea consentimiento.
+- [x] Nueva RPC de bandeja `cotironda_piloto_terms_review_queue_auth_p0` devuelve hasta 12 entradas pendientes con HMAC, proveedor y fecha, **nunca número/ciphertext/texto**; sólo a operador AAL2. La revisión decisoria mantiene el vínculo criptográfico y atomicidad del PR #811.
+- [x] Tests HTTP Node y PG17 específicos añadidos: flags OFF, origen, sin JWT/AAL1, doble decisión, fuga de datos, cola pendiente y desaparición de aprobados/rechazados; fixture MFA **simulado** con `ROLLBACK`. **CI definitivo pendiente de verificar por SHA.**
+- [ ] **P0 NO CERRADO:** aprobación de condiciones para originales identificables de no adjudicados, operador PILOTO Auth AAL2 real, custodia del AES entre Edge/Vercel y rol/login técnico del emisor, aprobación de release y un ensayo WhatsApp genuino. No exponer información comercial ante ninguno de esos faltantes.
+- [ ] **P1–P5 NO CERRADOS:** comprador Auth Phone/OTP, dos cotizaciones originales con vínculo fuerte a misma ronda, pantalla de seguimiento, cierre y descarga segura en navegador. No crear ronda superpuesta.
+
+**PRÓXIMA ACCIÓN ÚNICA:** una auditoría y prueba de provisión **real de operador/secretos/condiciones**, y con orden específica `Publicalo en cotironda-piloto` ensayar una alta única. **Después pasar inmediatamente al E2E de 1 arquitecto/2 proveedores/2 originales**, no ampliar infraestructura indefinidamente.
+
 ## P0 — revisión de consentimiento explícito por operador MFA (12/11/2026)
 
 **[PR técnico #811](https://github.com/ProtectorRudo/Cotironda/pull/811)** DRAFT sobre #810, [Acta 538](https://github.com/ProtectorRudo/Cotironda/blob/feat/p0-revision-mfa-aceptacion-20261112/docs/538-p0-revision-mfa-respuesta-expresa.md). **DESARROLLO, no desplegado; no WhatsApp, Auth ni SQL vivo.**
