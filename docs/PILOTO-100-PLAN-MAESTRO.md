@@ -46,6 +46,20 @@ Un comprador envía una lista de obra. Cotironda identifica cada producto y cons
 - **Archivo sin cita, sin código, sin preámbulo:** ninguna fecha, monto o similitud garantiza pedido correcto en concurrencia; revisión interna y ninguna exposición al comprador. No asignar a ciegas el PDF histórico.
 - **Única próxima acción actual:** PR #819 ya suma descarga con SHA y auditoría + vista Auth (6/6 CI), aún sin desplegar. Ejecutar preflight de migraciones seguras, permisos de proveedor y alta buyer PILOTO; D013 matching por PRODUCTO y análisis/cierre antes de E2E completo.
 
+## PREPUBLICACIÓN V2 — auditoría viva bloqueante (PR #820)
+
+[PR #820](https://github.com/ProtectorRudo/Cotironda/pull/820), draft sobre #819: consulta solo lectura sobre Supabase PG17 (`supabase/piloto/v2_release_preflight_readonly.sql`) devolvió `ready_for_v2_release=false`, **0 Auth buyer, 0 de 5 RPC V2, 0 de 3 tablas V2, Storage privado sí, 2 restricciones SQL heredadas 3–7 días corridos**. Una ronda preparada, asociación histórica `semantic_unique_mvp291` no suficiente para acceso V2.
+
+Se revisaron **61 archivos del Edge Whapi v76 realmente desplegado**: 59 iguales a rama GitHub, pero `index.ts` y correlador M336 no coinciden con el archivo base; v76 contiene verificaciones MVP333 y cambios de fuente que DEBEN preservarse. `scripts/piloto/v2-live76-candidate.mjs` produce offline un overlay desde el snapshot exacto y testea SHA; CI Node+Deno pendiente de verificación. No escribir encima de Edge v76 con índice histórico. Vercel tiene múltiples proyectos y `cotironda-portal-dev` preview no está configurado para V2.
+
+- [ ] CI completo de #820 Node+Deno y resto general, luego auditar SHA y módulos v76 inmediatamente antes de despliegue.
+- [ ] **BLOQUEO RELOJ:** migrar duración a 2 **días hábiles** con calendario de feriados y `America/Argentina/Buenos_Aires`, preservar rondas 3–7 días históricas y probar cierre de fin de semana/feriados. Nunca quitar checks sin reemplazo.
+- [ ] **BLOQUEO D013:** evidencia de selección estricta por **producto del catálogo**, zona y equivalencias razonables; no mandar por rubro solo.
+- [ ] **BLOQUEO ACCESO:** buyer Auth real, consentimiento prospectivo de proveedor al alta, Storage/RLS y único proyecto Vercel PILOTO identificado; ningún usuario ni permiso ficticio.
+- [ ] Solo tras todo lo anterior, orden de migraciones reversible, flags OFF, autorización explícita `Publicalo` para PREVIEW PILOTO y E2E con dos presupuestos/archivo original/análisis/cierre.
+
+**No publicar aún**; código/CI no equivalen a base/Edge/Vercel instalados. Relevo canónico: [Estado](PILOTO-100-ESTADO.md) y [acta #820](https://github.com/ProtectorRudo/Cotironda/blob/feat/v2-preflight-conciliar-whapi-v76-20261112/docs/V2-PREFLIGHT-EDGE-V76-Y-PILOTO-20261112.md).
+
 ## V2-00 — INVENTARIO PENDIENTE DE CERRAR (auditar antes de desplegar)
 
 **Auditoría inicial en curso, 12/11/2026:** [Inventario V2-00 de código y PILOTO](V2-00-INVENTARIO-REUTILIZACION-20261112.md). Se verificó en SOLO LECTURA la diferencia entre `main` estático, núcleo de la rama operativa #813, PR documental #815 y funciones/tablas reales. Hay 106 líneas de catálogo pero sin campos completos de SKU y sin confirmación formal; los motores offline conservan filtros por rubro, no cumplen aún D013 en el piloto. Próximo control antes de escribir código: comparar SHA de funciones y despliegue Vercel, Storage/RLS y elegir la rama funcional de V2-02 **sin** PR #814. No hay nuevos envíos ni E2E.
