@@ -1,33 +1,32 @@
-> **NUEVO PLAN DE PILOTO DOCUMENTAL — 11/11/2026 (propuesto, no desplegado):** El piloto no debe depender de que la IA interprete económicamente cada PDF. Fuente de seguimiento [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794), [plan maestro](docs/PILOTO-100-PLAN-MAESTRO.md) y [estado/relevo](docs/PILOTO-100-ESTADO.md). El README histórico inferior refleja Etapa 00 y NO acredita el estado vivo de Supabase; antes de desarrollar hay que leer estos documentos y consultar el piloto. La documentación está en PR sin merge; ningún circuito nuevo está publicado.
+# Cotironda V2 — Cotizaciones inteligentes de materiales de obra
 
-# Cotironda
+**Dirección comercial vigente desde 12/11/2026.** La nueva experiencia está **documentada**, no desplegada ni comprobada de punta a punta. El repositorio incluye código y pruebas anteriores; `main` no equivale al PILOTO real.
 
-**Estado: Etapa 00 — documentación para revisión. No hay producto desplegado.**
+> **PARA CUALQUIER CONVERSACIÓN/AGENTE:** seguir exclusivamente [Contrato V2](docs/COTIRONDA-V2-CONTRATO.md) → [Plan maestro y checklist V2](docs/PILOTO-100-PLAN-MAESTRO.md) → [Estado y única próxima tarea](docs/PILOTO-100-ESTADO.md) → [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794). **Reglas antiguas y PR abiertos no tienen prioridad sobre V2.**
 
-Cotironda es una plataforma argentina B2B para solicitar cotizaciones privadas de **materiales de obra**. El comprador carga una lista una sola vez; la IA la interpreta y separa por rubro; el comprador revisa y confirma. Se invita a proveedores pertinentes según catálogo y cobertura geográfica; estos pueden responder desde WhatsApp (Whapi + IA) o por un portal opcional. El comprador compara ofertas anónimas, completas o parciales, y adjudica manualmente.
+## Qué hacemos
 
-## Modelo
-- Proveedores: **gratuitos, sin comisiones ni abonos**.
-- Compradores: suscripción proyectada de **ARS 10.000/mes**, sujeta a validación económica; duración de prueba gratuita pendiente.
-- Solicitudes ilimitadas con condiciones de uso razonable por definir. No se cobran comisiones por venta.
-- MVP: Cotironda no compra materiales, no procesa pagos de esas compras ni garantiza su entrega.
+Un arquitecto envía una lista de materiales. Cotironda la interpreta, la separa por rubros y consulta a comercios según **catálogo y zona** por WhatsApp. Cada negocio responde libremente enviando texto o archivos; Cotironda conserva el **original intacto**, lo asocia al pedido y lo muestra al comprador con **el nombre del negocio y un análisis comercial breve y útil**. Cuando se cumplen **dos días hábiles**, produce un análisis comparativo general con recomendaciones argumentadas.
 
-## Invariantes
-1. Revisión del pedido por el comprador antes de publicar.
-2. IA interpreta; cálculos de precios y comparaciones son deterministas.
-3. Cobertura y competitividad separadas; nunca enfrentar totales de canastas diferentes.
-4. Identidad y contacto de oferentes protegidos durante la ronda y revelados según adjudicación.
-5. Precio y modificaciones de oferta sujetos a confirmación del proveedor.
-6. Proveedores seleccionados por productos realmente comercializados y zona, con consentimiento.
-7. Publicación a producción solamente con autorización explícita.
+**Durante la ronda solo aparecen los negocios que respondieron.** Ni invitados pendientes, ni cuántos faltan, ni ranking de ganadores, ni anonimato. El original verificado y autorizado no espera a que la IA termine de comentar. La IA no inventa precios ni condiciones. Si un mensaje es ambiguo, se revisa sin adjudicarlo a una ronda por simple coincidencia temporal.
 
-## Documentación
-- [Normas de trabajo](AGENTS.md).
-- [Producto](docs/01-producto.md), [reglas](docs/02-reglas.md), [arquitectura](docs/03-arquitectura.md), [IA documental](docs/04-ia-documental.md).
-- [WhatsApp](docs/05-whatsapp.md), [ranking](docs/06-ranking.md), [seguridad](docs/07-seguridad.md), [pruebas](docs/08-pruebas.md).
-- [Roadmap](docs/09-roadmap.md), [decisiones](docs/10-decisiones.md), [costos](docs/11-costos.md), [modelo de datos](docs/12-modelo-datos.md), [operaciones](docs/13-operaciones.md).
+**Modelo:** proveedores gratis, sin comisiones; compradores con prueba y suscripción inicial estimada en **ARS 10.000/mes**, ambas por validar. Cotironda facilita decisiones; no compra materiales ni garantiza la entrega.
 
-## Método
-Issue → alcance y aceptación → rama → implementación → pruebas/auditoría → PR → revisión → integración → despliegue autorizado.
+## Etapas activas
 
-> **Repositorio público por decisión del propietario.** No colocar aquí tokens, contraseñas, presupuestos reales, números de teléfono, datos personales, listas de clientes o información confidencial. Este material inicial es de diseño, no código funcional.
+`V2-00` auditoría de componentes y PR → `V2-01` pedido + distribución → **`V2-02` vínculo original↔ronda (bloqueo principal)** → `V2-03` vista solo de respondedores → `V2-04` comentario individual → `V2-05` cierre e informe final → `V2-06` permisos y prueba real.
+
+**Prueba que define éxito:** 1 arquitecto, 2 proveedores, 2 originales auténticos de formatos distintos, cada uno identificado y resumido, seguimiento sin pendientes visibles, informe al cierre y descargas verificadas desde el navegador.
+
+## Seguridad y desarrollo
+
+- Datos de compradores y proveedores privados; acceso por cuenta/empresa, Storage protegido, SHA, RLS, deduplicación y auditoría. Proveedores informados y autorizados prospectivamente para compartir su identidad comercial y originales con compradores destinatarios. No publicación pública ni confirmación de permisos por cada presupuesto.
+- WhatsApp del comercio sin carga extra, sin formularios obligatorios ni reenvíos por defectos internos. Se puede cotizar múltiples obras en paralelo: **NO desplegar PR #814 tal como está**, su regla de una ronda por proveedor contradice V2.
+- **Ningún despliegue sin `Publicalo`** al entorno/versión especificados. `Avanza/Luz verde` autoriza desarrollo y tests, no envíos reales.
+- Nunca incluir secretos, datos privados, números de teléfono o presupuestos reales en este repositorio público.
+
+## Documentación y memoria histórica
+
+[Contrato V2](docs/COTIRONDA-V2-CONTRATO.md) · [Plan](docs/PILOTO-100-PLAN-MAESTRO.md) · [Estado](docs/PILOTO-100-ESTADO.md) · [AGENTS.md](AGENTS.md) · [Decisiones](docs/10-decisiones.md) · [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794).
+
+Los documentos previos extensos están **archivados sin borrar evidencia** en [`docs/historico/`](docs/historico/2026-11-12-plan-maestro-pre-v2.md). Consultarlos solo para investigar código o decisiones anteriores, **nunca para recuperar el roadmap viejo**.
