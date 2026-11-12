@@ -20,7 +20,7 @@
 - [x] Se contrastó el HMAC/AES del Edge PILOTO con D068 y M313: D068 tiene formato de otro proyecto; M313 exige ronda. Para el alta anterior a ronda se añadió SQL `terms_recipient_packet_p0` con lease/propietario/chat exactos y ACL `NOLOGIN`.
 - [x] `whapi-terms-recipient-p0.ts` descifra el contacto ya existente `participant_channels_mvp109` con AES-GCM + AAD PILOTO, verifica SHA/HMAC y bloquea suplantaciones, sin teléfonos en BD de nuevos trabajos. Puerto SQL compositor listo en código, NO conectado a ejecución remota.
 - [x] Supabase PILOTO SELECT: 3 canales cifrados autenticados, 2 pertenecen a proveedores activos. 0 datos modificados, 0 envíos. Se preserva ronda `prepared` sin duplicarla.
-- [x] Tests Node AES sintético, PG17 de lease/ACL preparados. **CI final pendiente de certificar por SHA.**
+- [x] Tests Node AES sintético, PG17 de lease/ACL preparados. **CI FINAL 5/5 SUCCESS** en SHA `5e234f62f55511d73cec3dad78b24afc0a7ba541`: Node (incluidas pruebas AES), PG17 P0 con ROLLBACK, Next.js, PostgREST, aislamiento PG17 y sitio. Se reforzó la revalidación del contacto cifrado justo antes del HTTP y se probó su revocación tras BEGIN. La primera discrepancia fue un caso de test incorrectamente exigente; corregido y repetido. Sin contacto ni MFA reales en la prueba.
 - [ ] Aún no hay login DB de runner, claves inyectadas, MFA real, condiciones legales aprobadas ni revisión de aceptación; tampoco comprador OTP y E2E documental. **P0–P5 ABIERTOS**.
 
 **SIGUIENTE ACCIÓN SIN DESVÍOS:** adaptar ejecutor servidor PostgreSQL TLS con rol exclusivo + revisión MFA del consentimiento; después autorización específica para despliegue en `cotironda-piloto`, y prueba comercial completa con un arquitecto y dos proveedores. No publicar con `Avanza`.
