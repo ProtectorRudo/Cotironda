@@ -2,9 +2,13 @@
  * Ningun nombre, invitacion, precio, ruta, hash o token se toma del navegador.
  * El origen es la RPC privada, invocada DESPUES de verificar getUser+JWT.
  */
+export type PuntoVisibleV2=Readonly<{
+ categoria:string;evidencia:string;observacion:string;
+}>;
 export type RespuestaV2=Readonly<{
  documentoId:string;comercio:string;formato:string;recibidoMs:number;
- analisis:'Análisis en preparación';
+ analisis:string;
+ puntos:readonly PuntoVisibleV2[];
 }>;
 export type CatalogoRespuestasV2=Readonly<{
  estado:'cotizaciones_recibidas';
@@ -21,6 +25,31 @@ const FORMATS:Readonly<Record<string,string>>=Object.freeze({
  'image/jpeg':'Imagen JPEG','image/png':'Imagen PNG',
  'image/webp':'Imagen WebP','text/csv':'CSV','text/plain':'Texto'
 });
+const CATS=new Set([
+ 'cobertura','precio','iva','flete','forma_pago','plazo',
+ 'disponibilidad','material','presentacion','aclaracion'
+]);
+function safeAnalysis(value:unknown):readonly PuntoVisibleV2[]{
+ if(!obj(value)||value.state!=='ready'||!Array.isArray(value.points)||
+  value.points.length<2||value.points.length>4)return [];
+ const points:PuntoVisibleV2[]=[];
+ for(const part of value.points){
+  if(!obj(part)||typeof part.categoria!=='string'||
+   !CATS.has(part.categoria)||typeof part.evidencia!=='string'||
+   part.evidencia.length<6||part.evidencia.length>180||
+   typeof part.observacion!=='string'||part.observacion.length<12||
+   part.observacion.length>240||
+   /[<>\\u0000-\\u001f]/u.test(part.evidencia+part.observacion)||
+   /(?:\\+?\\d[\\s().-]?){9,}/u.test(part.observacion)||
+   /[\\w.+-]+@[\\w.-]+\\.\\w+/u.test(part.observacion))
+    return [];
+  points.push(Object.freeze({
+   categoria:part.categoria,evidencia:part.evidencia,
+   observacion:part.observacion
+  }));
+ }
+ return Object.freeze(points);
+}
 function obj(x:unknown):x is Record<string,unknown>{
  return !!x&&typeof x==='object'&&!Array.isArray(x);
 }
@@ -45,10 +74,13 @@ export function proyectarRespuestasV2(raw:unknown):CatalogoRespuestasV2|null{
      it.receivedAt<1577836800000||
      it.receivedAt>Date.now()+60_000)return null;
   found.add(it.documentId);
+  const points=safeAnalysis(it.analysis);
   res.push(Object.freeze({
    documentoId:it.documentId,comercio:it.supplierName,
    formato:FORMATS[it.mime],recibidoMs:it.receivedAt,
-   analisis:'Análisis en preparación' as const
+   analisis:points.length?'Lo importante de este presupuesto':
+    'Análisis en preparación',
+   puntos:points
   }));
  }
  return Object.freeze({
