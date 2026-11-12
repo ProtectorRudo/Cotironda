@@ -39,9 +39,9 @@ function safeAnalysis(value:unknown):readonly PuntoVisibleV2[]{
    part.evidencia.length<6||part.evidencia.length>180||
    typeof part.observacion!=='string'||part.observacion.length<12||
    part.observacion.length>240||
-   /[<>\\u0000-\\u001f]/u.test(part.evidencia+part.observacion)||
-   /(?:\\+?\\d[\\s().-]?){9,}/u.test(part.observacion)||
-   /[\\w.+-]+@[\\w.-]+\\.\\w+/u.test(part.observacion))
+   /[<>\u0000-\u001f]/u.test(part.evidencia+part.observacion)||
+   /(?:\+?\d[\s().-]?){9,}/u.test(part.observacion)||
+   /[\w.+-]+@[\w.-]+\.\w+/u.test(part.observacion))
     return [];
   points.push(Object.freeze({
    categoria:part.categoria,evidencia:part.evidencia,
