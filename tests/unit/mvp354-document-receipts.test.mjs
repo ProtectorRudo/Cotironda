@@ -66,7 +66,13 @@ test('MVP354: SQL valida token, proveedor, invitacion y archivo sin depender de 
  assert.match(sql,/a\.state='stored'/u);
  assert.match(sql,/a\.content_sha256 ~ /u);
  assert.match(sql,/a\.storage_path=\('media\/'\|\|a\.message_hmac\)/u);
- assert.match(sql,/a\.reserved_at>=e\.first_sent/u);
+ assert.match(sql,/m\\.received_at>=e\\.first_sent/u);
+ assert.match(sql,/m\\.request_id=r\\.request_id/u);
+ assert.match(sql,/m\\.message_hmac=a\\.message_hmac/u);
+ assert.match(sql,/proof\\.source_sha256=a\\.content_sha256/u);
+ assert.match(sql,/proof\\.association IN \\('quoted_whapi_id','single_active_round'\\)/u);
+ assert.match(sql,/unresolved\\.state IN/u);
+ assert.match(sql,/other_job\\.finished_at<=m\\.received_at/u);
  assert.match(sql,/a\.reserved_at<=r\.closes_at/u);
  assert.match(sql,/SELECT DISTINCT e\.supplier_key/u);
  assert.doesNotMatch(sql,/\b(INSERT|UPDATE|DELETE|TRUNCATE)\b/iu);
@@ -97,4 +103,32 @@ test('MVP354: Edge OFF por defecto y no reemplaza ofertas ni recibidos legados',
  assert.match(edge,/receipt\.originales_disponibles===false/u);
  assert.match(edge,/receipt\.identidades_reveladas===false/u);
  assert.match(edge,/No implica precios verificados ni habilita descargas/u);
+});
+
+test('MVP355: no basta el request_id escrito en archive por archivista',()=>{
+ assert.match(sql,/JOIN cotironda_piloto_privado\\.whapi_inbox m/u);
+ assert.match(sql,/JOIN cotironda_piloto_privado\\.ai_supplier_links_mvp225 proof/u);
+ assert.match(sql,/m\\.participant_key=e\\.supplier_key/u);
+ assert.match(sql,/m\\.chat_hmac=a\\.chat_hmac/u);
+ assert.match(sql,/m\\.kind=a\\.kind/u);
+ assert.match(sql,/proof\\.request_id=r\\.request_id/u);
+ assert.match(sql,/proof\\.supplier_key=e\\.supplier_key/u);
+ assert.match(sql,/proof\\.kind=a\\.kind/u);
+ assert.match(sql,/a\\.reserved_at>=m\\.received_at/u);
+ assert.doesNotMatch(sql,/other_job\\.finished_at<=a\\.reserved_at/u);
+});
+test('MVP355: fixture contempla vinculaciones verdaderas, negativas y revocaciones',()=>{
+ const fixture=readFileSync(resolve(root,
+  'supabase/tests/ci/mvp354-document-receipts-pg17.sql'),'utf8');
+ for(const marker of [
+  'mvp355_archive_request_id_alone_counted',
+  'mvp355_inbox_request_id_alone_counted',
+  'mvp355_excel_without_proof_counted',
+  'mvp355_forged_link_sha_counted',
+  'mvp355_weak_semantic_link_counted',
+  'mvp355_unresolved_conflict_counted',
+  'mvp354_ambiguous_round_was_counted',
+  'mvp354_revoked_token_count_leaked',
+  'ROLLBACK;'
+ ])assert(fixture.includes(marker));
 });
