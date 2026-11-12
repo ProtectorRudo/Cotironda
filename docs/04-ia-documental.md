@@ -1,5 +1,8 @@
 # 04 — Motor documental con IA
 
+> **AVISO V2 — 12/11/2026: DOCUMENTO TÉCNICO HEREDADO, NO DIRECTRIZ ACTIVA.** Mantener trazabilidad y no inventar datos. En V2 la extracción económica NO bloquea que el original verificado aparezca al comprador autorizado; el comentario individual es independiente. Las reglas vigentes están en [Contrato V2](COTIRONDA-V2-CONTRATO.md), [Plan V2](PILOTO-100-PLAN-MAESTRO.md) y [Estado V2](PILOTO-100-ESTADO.md). Si contradice V2, **NO aplicar lo viejo**.
+
+
 ## Contrato de extracción
 Por ítem: archivo/hoja/página/celda de origen; descripción original; producto normalizado; cantidad; unidad; dimensiones, espesor, calibre; marca preferida u obligatoria; rubro(s); notas; confianza/incertidumbre y causa.
 
