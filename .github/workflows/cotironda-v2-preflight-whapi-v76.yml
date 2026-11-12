@@ -1,0 +1,35 @@
+name: Cotironda V2 - Preflight Edge v76 real sin regresiones
+on:
+  pull_request:
+    paths:
+      - 'scripts/piloto/baselines/cotironda-whapi-v76.index.ts.txt'
+      - 'supabase/functions/cotironda-piloto-whapi/supplier-auto-correlation-mvp336.v76-snapshot.ts'
+      - 'scripts/piloto/v2-live76-candidate.mjs'
+      - 'tests/unit/v2-preflight-whapi-v76.test.mjs'
+      - '.github/workflows/cotironda-v2-preflight-whapi-v76.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preflight-edge-v76:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout sin secretos
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Node 22.16
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22.16.0'
+      - name: Probar baseline real, inmutabilidad y no perdida funcional
+        run: node --experimental-strip-types --test tests/unit/v2-preflight-whapi-v76.test.mjs
+      - name: Generar candidato desde Edge real (NO deploy)
+        run: node scripts/piloto/v2-live76-candidate.mjs --write-candidate
+      - name: Instalar Deno
+        uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb
+        with:
+          deno-version: v2.x
+      - name: Validar tipos del candidato que preserva Edge v76
+        run: deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/index.v2-live76-candidate.ts
