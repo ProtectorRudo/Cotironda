@@ -9,6 +9,14 @@
 
 **LECTURA OBLIGATORIA:** [Issue #794 — checklist canónico](https://github.com/ProtectorRudo/Cotironda/issues/794) y [Plan maestro](PILOTO-100-PLAN-MAESTRO.md).
 
+## Relevo de avance — 11/11/2026 (PR #797)
+
+**Código efectivamente creado:** [PR #797 — MVP354 recepción documental sin IA](https://github.com/ProtectorRudo/Cotironda/pull/797). Incluye nuevo SQL RPC PRIVADO, DTO de ocho campos, tracking opt-in con flag apagado, HTML de contador documental y tests Node. Basado en PR técnico #793. El PR está en borrador, no fusionado ni publicado; NO cambió las Edge live, base, Whapi o producción. Compilaciones automáticas de Preview de GitHub/Vercel no prueban el circuito E2E.
+
+**Ensayo SQL SOLO LECTURA:** token inexistente -> not_found; ronda preparada actual -> `2 despachados / 0 originales acreditados / 2 pendientes`. Esto evita inventar archivos recibidos y no altera datos. Faltan pruebas de DDL PG17 + autorización, regresión y 2 archivos reales; ninguna etapa P1–P5 está aprobada. Respuestas de texto puro aún requieren archivo inmutable propio.
+
+**Siguiente acción única:** completar P0 de política de originales/contactos + auditoría de identidad/ACL y URL real del comprador. Después validar el RPC MVP354 en PostgreSQL17 con rollback y pruebas de ambigüedad/duplicados, implementar P1/P2 para archivos/textos y P3 en la ronda E2E. Ver [Acta 522](https://github.com/ProtectorRudo/Cotironda/blob/feat/mvp354-document-receipt-status-20261111/docs/522-mvp354-recepcion-documental-independiente.md).
+
 ## Próximo paso ÚNICO
 **P0: hacer una auditoría de implementación y consentimiento de originales, SIN modificar producción ni activar E2E.** Hay que leer código actual, qué se desplegó realmente en Supabase/Vercel, las rutas del comprador, las descargas MVP178–207 y la relación entre ronda/invitación/inbox/Storage. Entregar una matriz con pruebas: existe en código / instalado en piloto / demostrado E2E. Resolver explícitamente si los originales de no ganadores se pueden descargar íntegros al cierre sin contradecir la norma de revelar contactos solo de los dos ganadores.
 
