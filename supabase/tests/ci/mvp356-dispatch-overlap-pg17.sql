@@ -114,6 +114,15 @@ BEGIN
  a:=public.cotironda_piloto_ia_claim_mvp222(r1);
  IF a->>'state'<>'leased' THEN
   RAISE EXCEPTION 'mvp356_old_claim_first_not_leased';END IF;
+ -- A disabled feature has no effect even though another lease exists.
+ UPDATE cotironda_piloto_privado.ai_supplier_overlap_gate_mvp356
+ SET enabled=false WHERE only_row;
+ IF cotironda_piloto_privado.hay_despacho_solapado_mvp356(r2,'supplier_a')
+ THEN RAISE EXCEPTION 'mvp356_off_gate_should_not_block';END IF;
+ UPDATE cotironda_piloto_privado.ai_supplier_overlap_gate_mvp356
+ SET enabled=true WHERE only_row;
+ IF NOT cotironda_piloto_privado.hay_despacho_solapado_mvp356(r2,'supplier_a')
+ THEN RAISE EXCEPTION 'mvp356_on_gate_should_block';END IF;
  b:=public.cotironda_piloto_ia_claim_mvp222(r2);
  IF b->>'state'<>'empty' THEN
   RAISE EXCEPTION 'mvp356_old_claim_overlapping_allowed';END IF;
