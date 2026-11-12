@@ -1,0 +1,57 @@
+{
+  "observed_at": "2026-11-12T20:49:00Z",
+  "provenance": "Supabase PILOTO, Vercel project metadata, GitHub PR826. Read-only; no environment values.",
+  "supabase": {
+    "project_ref": "ilggkalaafhtiysyzlmg",
+    "pg_version": "17.11",
+    "auth_users": 0,
+    "bucket_private": true,
+    "bucket_limit_bytes": 8388608,
+    "rpcs": [],
+    "tables": [],
+    "v2_original_share_policy_enabled": null
+  },
+  "consent": {
+    "suppliers_accepted": null,
+    "prospectively_verified": false
+  },
+  "proof": {
+    "strong_originals": null,
+    "originals_verified": false,
+    "buyer_browser_verified": false,
+    "business_calendar_approved": false,
+    "deadline_real_verified": false,
+    "auto_close_worker_verified": false,
+    "product_catalog_routing_verified": false,
+    "two_distinct_supplier_files_verified": false,
+    "whatsapp_e2e_verified": false,
+    "final_analysis_verified": false
+  },
+  "edge": {
+    "whapi": {
+      "version": 76,
+      "sha256": "656cb24bd1cbfdbb0de6d87a9acae17ad911c13b6e404667029dd4d0b55b822e"
+    },
+    "private_pdf_reader": {
+      "status": "NOT_INSTALLED",
+      "verify_jwt": null,
+      "secret_configured_in_both_services": false
+    }
+  },
+  "vercel": {
+    "project": "cotironda-portal-dev",
+    "framework": "nextjs",
+    "preview_protected": true,
+    "preview_env_names": [
+      "COTIRONDA_AUTH_PREVIEW_ENABLED",
+      "NEXT_PUBLIC_SUPABASE_URL",
+      "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+      "COTIRONDA_SUPABASE_PROJECT_REF",
+      "COTIRONDA_REGISTRATION_ENABLED"
+    ],
+    "preview_state": "READY",
+    "preview_sha": null,
+    "release_sha": null,
+    "target": null
+  }
+}
