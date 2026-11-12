@@ -38,7 +38,7 @@ test('MVP360: evidencia correlacionada, SHA y bloqueo de ambigüedades',()=>{
   /proof\.association in \('quoted_whapi_id','single_active_round',[\s\S]*?'prior_supplier_preamble'\)/iu,
   /j\.whapi_message_id is not null/iu,
   /source_msg\.received_at>=j\.finished_at/iu,
-  /m\.storage_path=\('media\/\|\|m\.message_hmac\)/iu,
+  /m\.storage_path=\('media\/'\|\|m\.message_hmac\)/iu,
   /ai_supplier_unresolved_mvp237/iu,
   /ambiguous_round/iu,
   /other_j\.request_id<>r\.id/iu,
