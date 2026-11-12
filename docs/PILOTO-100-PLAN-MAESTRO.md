@@ -39,6 +39,13 @@ Un comprador envía una lista de obra. Cotironda identifica cada producto y cons
 - **Prueba de compatibilidad con datos reales (SELECT):** 4/4 trabajos `api_accepted` históricos respetan la secuencia de autorizaciones; 0 permisos tardíos. Edge Whapi v76 vigente. Nada de V2-02 instalado ni E2E.
 - **Próxima tarea única:** verificar CI, conciliar bundle Edge y demostrar vínculo fuerte del ORIGINAL con su pedido (incluidos PDF/Excel sin cita); a continuación portal comprador seguro, análisis y cierre. D013 por PRODUCTO sigue obligatorio.
 
+## Incremento operativo V2-02 — referencias de adjunto (PR #817)
+
+- [PR #816](https://github.com/ProtectorRudo/Cotironda/pull/816): referencia visible de solicitud en caption del pedido saliente y lookup para respuestas de texto con ese código, no instalado.
+- **Nuevo [PR #817](https://github.com/ProtectorRudo/Cotironda/pull/817):** si un proveedor manda PDF/Excel/foto sin citar el pedido, pero conserva una referencia inequívoca en el **caption del adjunto original**, lookup verifica fuente exacta cifrada/SHA, bytes ya archivados, invitación/consentimientos anteriores al despacho y Whapi `api_accepted`. MVP225 conserva vinculación definitiva. Tests Node + PG17 ROLLBACK + Deno, flag OFF. **No desplegado**.
+- **Archivo sin cita, sin código, sin preámbulo:** ninguna fecha, monto o similitud garantiza pedido correcto en concurrencia; revisión interna y ninguna exposición al comprador. No asignar a ciegas el PDF histórico.
+- **Única próxima acción:** auditoría de CI/Edge del PR #817, luego vista del comprador con Auth y original verificable para respondedores; completar V2-01 D013 por producto antes de E2E.
+
 ## V2-00 — PRIMERA ACCIÓN DE DESARROLLO (no iniciar código a ciegas)
 
 **Auditoría inicial en curso, 12/11/2026:** [Inventario V2-00 de código y PILOTO](V2-00-INVENTARIO-REUTILIZACION-20261112.md). Se verificó en SOLO LECTURA la diferencia entre `main` estático, núcleo de la rama operativa #813, PR documental #815 y funciones/tablas reales. Hay 106 líneas de catálogo pero sin campos completos de SKU y sin confirmación formal; los motores offline conservan filtros por rubro, no cumplen aún D013 en el piloto. Próximo control antes de escribir código: comparar SHA de funciones y despliegue Vercel, Storage/RLS y elegir la rama funcional de V2-02 **sin** PR #814. No hay nuevos envíos ni E2E.
