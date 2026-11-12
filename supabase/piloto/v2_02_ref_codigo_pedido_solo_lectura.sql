@@ -20,7 +20,6 @@ BEGIN
  OR p_chat_hmac IS NULL OR p_chat_hmac !~ '^[a-f0-9]{64}$'
  OR p_original_text IS NULL
  OR length(p_original_text) NOT BETWEEN 1 AND 3000
- OR p_original_text ~ '[[:cntrl:]]'
  THEN RETURN jsonb_build_object('state','invalid_input'); END IF;
 
  -- ÚNICAMENTE un texto original efectivamente registrado por el webhook,
