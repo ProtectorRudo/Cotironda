@@ -1,6 +1,6 @@
 # Cotironda V2 — V2-00 Inventario de reutilización y bloqueos (12/11/2026)
 
-**Estado:** auditoría parcial de código y PILOTO en **SOLO LECTURA**. Sin cambio de esquema, datos, mensajes ni despliegues. **Este documento NO declara V2-00 aprobado**: falta conciliar el linaje del código, permisos de Storage y el despliegue Vercel/Whapi contra fuentes efectivas.
+**Estado:** auditoría parcial de código y PILOTO en **SOLO LECTURA**. Sin cambio de esquema, datos, mensajes ni publicación autorizada. **Este documento NO declara V2-00 aprobado**: falta conciliar los SHA de código de las funciones Edge, la configuración fina de acceso a originales y la rama integrable. Se consultaron ya proyectos/despliegues Vercel y banderas RLS/Storage; no se navegó una descarga real.
 
 ## Fuentes y advertencia sobre ramas
 
@@ -30,6 +30,12 @@
 - `requests` contiene `id,buyer_key,delivery_city,state,round_days,closes_at`; `invitations` relaciona `request_id` y `supplier_key`. `ai_dispatch_jobs_mvp222` conserva mensaje Whapi de salida; `ai_supplier_links_mvp225` evidencia hash y origen de asociación. Se puede extender de forma trazable, sin crear otro sistema.
 - Existen **1 ronda `prepared`** y **2 invitaciones de esa ronda**. Esto **no demuestra** dos presupuestos asociados ni V2 funcionando. **0 usuarios Auth**.
 - El motor offline `ruteador-catalogos-v2.ts` valida `source.rubro===requested.rubro` además de que la línea exista en el catálogo. D013 **prohíbe ese filtro excluyente**. El motor `invitaciones-por-producto.ts` también exige rubro en `evaluarSku`; el producto canónico y seguridad técnica deben reemplazarlo, no una simple eliminación ciega.
+
+## Contraste adicional de despliegues y seguridad (solo lectura)
+
+- **Vercel:** hay 5 proyectos cuyo nombre contiene Cotironda. En `cotironda`, el preview de la rama documental V2 (SHA `70446dd3`) figura `READY`, pero esto **solo valida la compilación de esa superficie**, no el circuito. En `cotironda-seguimiento-vista-piloto`, los dos previews más recientes de esa rama documental V2 figuran **ERROR**, mientras el preview de la rama de código operativa #813 figura `READY`. Hipótesis a confirmar: la rama de documentos no contiene `piloto/seguimiento-web`, que sí existe en la rama operativa. **No presentar preview Vercel como piloto validado**. `cotironda-portal-dev` conserva despliegues de una rama antigua: ningún usuario Auth fue encontrado en PILOTO.
+- **Supabase Storage:** 1 bucket, **0 públicos**; 0 políticas directas sobre `storage.objects` en la consulta. Las tablas `participants`, `requests`, `catalogue_lines`, `whapi_inbox`, `media_archive_mvp095` y `ai_supplier_links_mvp225` tienen RLS activado y no conceden SELECT directo a `anon` ni `authenticated`. Son **controles favorables, NO una prueba** de que la descarga firmada/endpoint sea segura.
+- **Edge PILOTO:** están activas las funciones Whapi v76 y seguimiento v29; las versiones/códigos desplegados siguen sin reconciliarse por SHA con un commit exacto. No se modificó ninguna función.
 
 ## Triage de PR abiertos (no integrar por inercia)
 
