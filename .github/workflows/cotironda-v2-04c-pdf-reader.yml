@@ -1,0 +1,37 @@
+name: Cotironda V2-04c PDF original privado
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/cotironda-piloto-v2-pdf-reader/**'
+      - 'src/server/v2-04c-pdf-edge-client.ts'
+      - 'src/server/v2-04b-texto-original-verificado.ts'
+      - 'src/server/v2-04b-analisis-automatica-http.ts'
+      - 'apps/portal/lib/piloto-v2-analisis-http.ts'
+      - 'tests/unit/v2-04c-pdf-evidencia-privada.test.mjs'
+      - '.github/workflows/cotironda-v2-04c-pdf-reader.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pdf-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout sin credenciales
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Node 22.16
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22.16.0'
+      - name: Probar contrato PDF/privacidad/SHA e integración Auth sin red
+        run: node --experimental-strip-types --test tests/unit/v2-04c-pdf-evidencia-privada.test.mjs
+      - name: Deno v2 (lector ya utilizado por Whapi)
+        uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb
+        with:
+          deno-version: v2.x
+      - name: Validar modulo Edge independiente
+        run: deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-v2-pdf-reader/index.ts
+      - name: PDF real una pagina y negativo corrupto
+        run: deno test --node-modules-dir=auto supabase/functions/cotironda-piloto-v2-pdf-reader/pdf-smoke.test.ts
