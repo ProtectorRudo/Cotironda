@@ -1,3 +1,6 @@
+## 2026-11-12 — MVP359: preflight SQL real y prueba REST fail-closed (SOLO DESARROLLO)
+Se versionó y ejecutó contra Supabase piloto una consulta de control SOLO SELECT: funciones SQL 4/4 huellas idénticas, 0 pending/uncertain, 1 ronda preparada vigente, 0 cron batch y 0 usuarios Auth. Se desarrolló probe GET con clave pública contra tabla inexistente para confirmar `net` NO expuesto (requiere 406/PGRST106); su ejecución externa REAL queda pendiente por falta de red/ajustes accesibles. [Acta 527](docs/527-mvp359-preflight-rest-y-huellas-sql.md), [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794), PR #801. Sin publicación ni mensajes.
+
 ## 2026-11-12 — MVP358: protección de salidas legacy vs IA Central (DESARROLLO)
 Se detectó que `cotironda_piloto_claim_whapi_v1` instalado no usa el lock compartido de la IA y podría reservar otro despacho al mismo proveedor incluso en la misma ronda. [Acta 526](docs/526-mvp358-legacy-outbound-anti-duplicacion.md): SQL pilot-only con guard MVP356 expandido a misma ronda y lock en claim legacy, fixture PG17 con ROLLBACK y CI. No se desplegó ni enviaron WhatsApps. Revisar exposición Data API del esquema `net` antes de instalar cron (grants SQL no prueban exposición externa). [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794).
 
