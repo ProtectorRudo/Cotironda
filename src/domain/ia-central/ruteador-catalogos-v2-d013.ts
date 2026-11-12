@@ -33,6 +33,9 @@ export type ResultadoCatalogoV2=Readonly<{
  cobertura:readonly Readonly<{
   indicePedido:number;proveedoresAutorizados:number
  }>[];
+ revisionTecnica:readonly Readonly<{
+  proveedor:string;indicePedido:number;numeroCatalogo:number;motivo:string
+ }>[];
  whatsappEnviado:false;
 }>;
 const KEY=/^[a-z][a-z0-9_]{2,63}$/u;
@@ -45,7 +48,7 @@ const text=(v:unknown,max:number):v is string=>
 const obj=(v:unknown):v is Record<string,unknown>=>
  v!==null&&typeof v==='object'&&!Array.isArray(v);
 function fail(motivo:string):ResultadoCatalogoV2{
- return {estado:'requiere_revision',motivo,propuestas:[],cobertura:[],whatsappEnviado:false};
+ return {estado:'requiere_revision',motivo,propuestas:[],cobertura:[],revisionTecnica:[],whatsappEnviado:false};
 }
 function zonaIgual(a:string,b:string):boolean{
  const fold=(s:string)=>s.normalize('NFD').replace(/[\u0300-\u036f]/gu,'')
@@ -81,6 +84,7 @@ export function autorizarPropuestasCatalogoV2(
  const assigned=new Set<string>();
  const good:PropuestaProveedorV2[]=[];
  const covered=Array.from({length:pedido.articulos.length},()=>0);
+ const pending:ResultadoCatalogoV2['revisionTecnica'][number][]=[];
  for(const raw of propuestas){
   if(!obj(raw))return fail('propuesta_invalida');
   const supplierKey=raw.proveedor;
@@ -114,9 +118,12 @@ export function autorizarPropuestasCatalogoV2(
     return fail('producto_no_declarado_en_catalogo');
    const proof=verificarCorrespondenciaTecnicaD013(requested,source.descripcion,
     tipo as 'producto_declarado'|'alternativa_razonable');
-   if(proof.estado!=='evidencia_suficiente')
-    return fail('equivalencia_tecnica_sin_prueba:'+proof.motivo);
    seen.add(idx);
+   if(proof.estado!=='evidencia_suficiente'){
+    pending.push({proveedor:supplierKey,indicePedido:idx,
+     numeroCatalogo:lineNo,motivo:proof.motivo});
+    continue; // Never block another independently verified product or supplier.
+   }
    covered[idx]++;
    matches.push({
     indicePedido:idx,
@@ -126,18 +133,22 @@ export function autorizarPropuestasCatalogoV2(
    });
   }
   assigned.add(supplier.clave);
-  good.push(Object.freeze({
+  if(matches.length>0)good.push(Object.freeze({
    proveedor:supplier.clave,
    correspondencias:Object.freeze(matches.sort((a,b)=>a.indicePedido-b.indicePedido))
   }));
  }
  return {
-  estado:'ruteo_valido_para_preparacion',
-  motivo:'productos_en_catalogo_y_zona_comprobados',
+  estado:pending.length>0&&good.length===0?
+   'requiere_revision':'ruteo_valido_para_preparacion',
+  motivo:pending.length>0?
+   'equivalencias_no_demostradas_en_revision_interna':
+   'productos_en_catalogo_y_zona_comprobados',
   propuestas:Object.freeze(good),
   cobertura:Object.freeze(covered.map((n,indicePedido)=>({
    indicePedido,proveedoresAutorizados:n
   }))),
+  revisionTecnica:Object.freeze(pending),
   whatsappEnviado:false
  };
 }
