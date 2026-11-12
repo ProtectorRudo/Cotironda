@@ -14,6 +14,7 @@ Para mensajes **textuales** del proveedor que incluyen voluntariamente ese códi
 1. El webhook Whapi autentica y conserva el mensaje original.
 2. Un prefiltrado local del **candidato generado** reconoce la referencia. Activación requiere `COTIRONDA_PILOT_V2_REFERENCE_LINK_ENABLED=true`, **OFF por defecto**.
 3. La RPC privada y exclusivamente de lectura `cotironda_piloto_v2_quoted_id_for_reference` corrobora HMAC, remitente proveedor consentido, SHA exacto de texto, una referencia inequívoca, ronda preparada, invitación vigente y **un único despacho Whapi aceptado enviado a ese proveedor**.
+   El permiso del comercio y del comprador, y la invitación, deben estar registrados **antes del despacho**. El permiso del comercio también debe preceder al mensaje entrante; una habilitación tardía nunca legitima un mensaje anterior.
 4. Devuelve únicamente el ID del mensaje **saliente realmente acreditado**. El flujo EXISTENTE `cotironda_piloto_ia_link_supplier_mvp225` vuelve a verificar el ID, identidad y fuente antes de persistir una vinculación.
 5. Con referencia ausente/ambigua, o varios despachos posibles, se mantiene revisión segura. NO hay invento de correspondencia. No cambia la historia de mensajes antiguos.
 
@@ -39,3 +40,9 @@ Para archivo PDF/Excel/foto **sin cita ni código**, esta mejora no garantiza as
 - [ ] Cierre de dos días hábiles e informe general comprobados.
 
 **Límite:** la vinculación por código no sustituye prueba del original, documento MIME, consentimiento, control de permisos o deduplicación. No hace que el PILOTO esté 100% completo.
+
+## Auditoría incremental V2-02 · 12/11/2026
+
+- Se contrastó en PILOTO, **solo lectura y sin exponer datos**, la cronología de 4 despachos `api_accepted`: 4/4 tienen consentimiento comprador/proveedor e invitación anteriores al envío; 0 altas tardías observadas. Esta observación **no valida** asociación de presupuestos ni E2E.
+- Se añadió guard temporal a la RPC propuesta y casos sintéticos PG17 para consentimiento de proveedor posterior al despacho, posterior a la recepción, consentimiento tardío del comprador e invitación creada después del despacho; deben fallar cerrados.
+- Sin SQL aplicado al piloto, sin cambios Whapi/Edge, sin comunicación a proveedores, sin publicación. Los tests y sus resultados se documentan por separado de la auditoría de datos.
