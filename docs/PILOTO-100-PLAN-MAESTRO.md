@@ -52,7 +52,7 @@ Un comprador envía una lista de obra. Cotironda identifica cada producto y cons
 
 Se revisaron **61 archivos del Edge Whapi v76 realmente desplegado**: 59 iguales a rama GitHub, pero `index.ts` y correlador M336 no coinciden con el archivo base; v76 contiene verificaciones MVP333 y cambios de fuente que DEBEN preservarse. `scripts/piloto/v2-live76-candidate.mjs` produce offline un overlay desde el snapshot exacto y testea SHA; CI Node+Deno pendiente de verificación. No escribir encima de Edge v76 con índice histórico. Vercel tiene múltiples proyectos y `cotironda-portal-dev` preview no está configurado para V2.
 
-- [ ] CI completo de #820 Node+Deno y resto general, luego auditar SHA y módulos v76 inmediatamente antes de despliegue.
+- [x] **CI PR #820** SHA `a388f60338a06f33fefe68f1585b9f981dda1ce3`: **7/7 SUCCESS**, incluyendo Node+Deno contra v76 y build Next.js. Antes de despliegue real revalidar SHA/módulos contra Edge activo.
 - [ ] **BLOQUEO RELOJ:** migrar duración a 2 **días hábiles** con calendario de feriados y `America/Argentina/Buenos_Aires`, preservar rondas 3–7 días históricas y probar cierre de fin de semana/feriados. Nunca quitar checks sin reemplazo.
 - [ ] **BLOQUEO D013:** evidencia de selección estricta por **producto del catálogo**, zona y equivalencias razonables; no mandar por rubro solo.
 - [ ] **BLOQUEO ACCESO:** buyer Auth real, consentimiento prospectivo de proveedor al alta, Storage/RLS y único proyecto Vercel PILOTO identificado; ningún usuario ni permiso ficticio.
