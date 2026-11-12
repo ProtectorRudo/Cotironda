@@ -32,6 +32,7 @@ DECLARE
  r2 uuid:='22222222-2222-4222-8222-222222222222';
  tok text:=repeat('a',64);
  v jsonb;
+ key_count integer;
  n timestamptz:=clock_timestamp();
 BEGIN
  IF has_function_privilege('anon',
@@ -58,12 +59,13 @@ BEGIN
   (r1,'supplier_b','api_accepted','id-b',n-interval '1 hour');
 
  v:=public.cotironda_piloto_document_receipts_mvp354(repeat('0',64));
- IF v->>'state'<>'not_found' OR jsonb_object_length(v)<>1
+ IF v<>'{"state":"not_found"}'::jsonb
  THEN RAISE EXCEPTION 'mvp354_invalid_token_not_closed';END IF;
  v:=public.cotironda_piloto_document_receipts_mvp354(tok);
+ SELECT count(*) INTO key_count FROM jsonb_object_keys(v);
  IF v->>'state'<>'recepcion_documental_anonima_mvp354'
  OR v->>'invitados'<>'2' OR v->>'archivos_recibidos'<>'0'
- OR v->>'pendientes'<>'2' OR jsonb_object_length(v)<>8
+ OR v->>'pendientes'<>'2' OR key_count<>8
  THEN RAISE EXCEPTION 'mvp354_no_files_status_invalid';END IF;
 
  -- PDF auténtico del proveedor A: no hace falta extraer ni UN precio.
