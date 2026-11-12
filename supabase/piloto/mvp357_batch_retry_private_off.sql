@@ -28,7 +28,7 @@ AS $mvp357$
 DECLARE
  v_gate record;
  v_next jsonb;
- v_admin text;
+ v_cron text;
  v_private text;
  v_response bigint;
 BEGIN
@@ -53,16 +53,41 @@ BEGIN
  IF v_next IS NULL OR v_next->>'state'<>'ready'
  THEN RETURN 'no_eligible_job';END IF;
 
- -- DOS secretos INDEPENDIENTES. El usuario que administra cron nunca
- -- recibe el texto descifrado; solo el owner PRIVADO los usa para pg_net.
- SELECT decrypted_secret INTO v_admin
+ -- DOS secretos INDEPENDIENTES de alcance limitado, SOLO tick batch.
+ -- Nunca transitar una clave admin/service_role en pg_net.
+ SELECT decrypted_secret INTO v_cron
  FROM vault.decrypted_secrets
- WHERE name='cotironda_piloto_ai_batch_apikey_mvp357' LIMIT 1;
+ WHERE name='cotironda_piloto_ai_batch_cron_proof_mvp357' LIMIT 1;
  SELECT decrypted_secret INTO v_private
  FROM vault.decrypted_secrets
  WHERE name='cotironda_piloto_ai_batch_private_mvp357' LIMIT 1;
- -- El Edge exige "apikey" moderna SIN Authorization, más secreto privado.
- IF v_admin IS NULL OR v_admin !~ '^sb_secret_[A-Za-z0-9_-]{20,}$'
+ -- El Edge exige dos encabezados dedicados, sin apikey ni Authorization.
+ IF v_cron IS NULL OR v_cron !~ '^[A-Za-z0-9_-]{32,256}
+ OR v_private IS NULL OR length(v_private) NOT BETWEEN 32 AND 256
+ OR btrim(v_private)<>v_private
+ THEN RETURN 'credentials_unavailable';END IF;
+
+ SELECT net.http_post(
+   url:='https://ilggkalaafhtiysyzlmg.supabase.co/functions/v1/cotironda-piloto-ai-batch',
+   body:='{}'::jsonb,
+   headers:=jsonb_build_object(
+     'Content-Type','application/json',
+     'x-cotironda-batch-cron-proof',v_cron,
+     'x-cotironda-ai-batch-secret',v_private),
+   timeout_milliseconds:=5000
+ ) INTO v_response;
+ IF v_response IS NULL OR v_response<=0
+ THEN RAISE EXCEPTION 'mvp357_http_queue_unavailable';END IF;
+ UPDATE cotironda_piloto_privado.ai_batch_retry_gate_mvp357
+ SET last_enqueued_at=clock_timestamp() WHERE only_row;
+ RETURN 'queued';
+END
+$mvp357$;
+REVOKE ALL ON FUNCTION cotironda_piloto_privado.ai_batch_retry_tick_mvp357()
+ FROM PUBLIC,anon,authenticated,service_role;
+-- La función SOLO la puede invocar el propietario de cron/SQL autorizado.
+-- No se crea cron ni se activa el gate en este archivo.
+
  OR v_private IS NULL OR length(v_private) NOT BETWEEN 32 AND 256
  OR btrim(v_private)<>v_private
  THEN RETURN 'credentials_unavailable';END IF;
