@@ -1,0 +1,86 @@
+{
+  "observed_at": "2026-11-12T21:51:22.812Z",
+  "provenance": "Conectores Supabase PILOTO: SELECT read-only + listado Edge; Vercel project, cuota 402 y Git-context; GitHub PR #828. Solo metadatos y conteos, sin PII ni valores de secretos.",
+  "release_type": "partial_infrastructure_flags_off",
+  "supabase": {
+    "project_ref": "ilggkalaafhtiysyzlmg",
+    "pg_version": "17.11",
+    "auth_users": 0,
+    "bucket_private": true,
+    "bucket_limit_bytes": 8388608,
+    "historical_rounds": 7,
+    "rpcs": [
+      "cotironda_piloto_v2_quoted_id_for_reference",
+      "cotironda_piloto_v2_quoted_id_for_media_reference",
+      "cotironda_piloto_v2_responders_private",
+      "cotironda_piloto_v2_original_source_private",
+      "cotironda_piloto_v2_record_download",
+      "cotironda_piloto_v2_analysis_claim_private",
+      "cotironda_piloto_v2_analysis_finish_private",
+      "cotironda_piloto_v2_responders_with_analysis_private",
+      "cotironda_piloto_v2_bootstrap_buyer_check_private",
+      "cotironda_piloto_ia_shadow_prepare_mvp221"
+    ],
+    "tables": [
+      "v2_original_share_policy",
+      "v2_supplier_original_consents",
+      "v2_original_download_audit",
+      "v2_original_analysis"
+    ],
+    "v2_original_share_policy_enabled": false,
+    "private_functions_without_public_execute": 9,
+    "private_tables_with_rls": 4,
+    "new_migrations_applied": 6
+  },
+  "consent": {
+    "suppliers_accepted": 0,
+    "prospectively_verified": false
+  },
+  "proof": {
+    "strong_originals": 0,
+    "originals_verified": false,
+    "buyer_browser_verified": false,
+    "phone_sms_verified": false,
+    "business_calendar_approved": false,
+    "deadline_real_verified": false,
+    "auto_close_worker_verified": false,
+    "product_catalog_routing_verified": false,
+    "two_distinct_supplier_files_verified": false,
+    "whatsapp_e2e_verified": false,
+    "final_analysis_verified": false,
+    "eligible_whatsapp_buyers_verified_by_private_rpc": 1
+  },
+  "edge": {
+    "whapi": {
+      "version": 76,
+      "sha256": "656cb24bd1cbfdbb0de6d87a9acae17ad911c13b6e404667029dd4d0b55b822e"
+    },
+    "private_pdf_reader": {
+      "status": "ACTIVE",
+      "version": 1,
+      "verify_jwt": false,
+      "sha256": "8bf6e8daf30b37a5c656b9ca516c48f8f832045b3767c416fe2a247cfa82522a",
+      "secret_configured_in_both_services": false
+    }
+  },
+  "vercel": {
+    "project": "cotironda-portal-dev",
+    "framework": "nextjs",
+    "git_linked": false,
+    "git_org": null,
+    "git_repo": null,
+    "deployment_quota_available": false,
+    "preview_protected": true,
+    "preview_env_names": [
+      "COTIRONDA_AUTH_PREVIEW_ENABLED",
+      "NEXT_PUBLIC_SUPABASE_URL",
+      "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+      "COTIRONDA_SUPABASE_PROJECT_REF",
+      "COTIRONDA_REGISTRATION_ENABLED"
+    ],
+    "preview_state": "READY",
+    "preview_sha": "e9ccc0069ca6bd772c9352dc6d7f5d3ef1a7b037",
+    "release_sha": "a94344ac39776085b0b31eef7abb54c945ab249c",
+    "target": null
+  }
+}
