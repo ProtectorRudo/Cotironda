@@ -9,7 +9,8 @@
  */
 import {createHash,createHmac,timingSafeEqual} from 'node:crypto';
 import {crearTransporteWhapiCloudD055} from './whapi-cloud-transport-d055.ts';
-import {calcularChatDestinatarioD056} from './whapi-send-authorization-d056.ts';
+// PILOT Edge uses legacy "cotironda|pilot|chat|..." HMAC, NOT D056's
+// JSON-array HMAC. Mixing both would silently invalidate real acknowledgments.
 
 const SHA=/^[a-f0-9]{64}$/u;
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/iu;
@@ -50,7 +51,7 @@ export type AvisoPortsP0=Readonly<{
 }>;
 export type AvisoSenderP0=Readonly<{
  habilitado:boolean;pilotoAutorizado:boolean;
- channel:string;token?:string;identityKey:Buffer;
+ channel:string;token?:string;pilotHmacKey:Buffer;
  destinatariosPermitidos:readonly string[];
  ports:AvisoPortsP0;
  fetcher?:typeof fetch;
@@ -87,14 +88,14 @@ function result(estado:AvisoResultadoP0['estado']):AvisoResultadoP0{
 }
 export function crearEmisorAvisoTerminosP0(config:AvisoSenderP0){
  if(!config||typeof config.channel!=='string'||!CHANNEL.test(config.channel)||
-   !Buffer.isBuffer(config.identityKey)||config.identityKey.length!==32||
+   !Buffer.isBuffer(config.pilotHmacKey)||config.pilotHmacKey.length!==32||
    !config.ports||typeof config.ports.claim!=='function'||
    typeof config.ports.resolveRecipient!=='function'||
    typeof config.ports.beginCommitted!=='function'||
    typeof config.ports.authorizeCommitted!=='function'||
    typeof config.ports.finishCommitted!=='function')
    throw Error('p0_aviso_configuracion_no_valida');
- const identityKey=Buffer.from(config.identityKey);
+ const hmacKey=Buffer.from(config.pilotHmacKey);
  async function procesarUno():Promise<AvisoResultadoP0>{
    if(config.habilitado!==true||config.pilotoAutorizado!==true||
      typeof config.fetcher!=='function'||typeof config.token!=='string'||
@@ -113,7 +114,9 @@ export function crearEmisorAvisoTerminosP0(config:AvisoSenderP0){
      to=await config.ports.resolveRecipient(claim);
      if(!PHONE.test(to)||!config.destinatariosPermitidos.includes(to))
        return result('bloqueado_preenvio');
-     computedChat=calcularChatDestinatarioD056(config.channel,to,identityKey);
+     computedChat=createHmac('sha256',hmacKey)
+       .update('cotironda|pilot|chat|'+config.channel+'|'+
+         to+'@s.whatsapp.net','utf8').digest('hex');
      if(!sameHash(computedChat,claim.chatHmac))
        return result('bloqueado_preenvio');
    }catch{return result('bloqueado_preenvio')}
@@ -140,10 +143,9 @@ export function crearEmisorAvisoTerminosP0(config:AvisoSenderP0){
      const response=await transport.sendText({
        jobId:claim.jobId,to,body:claim.body
      });
-     noticeMessageHmac=createHmac('sha256',identityKey)
-       .update(JSON.stringify(['cotironda','msg',1,
-         claim.channel,response.messageId]))
-       .digest('hex');
+     noticeMessageHmac=createHmac('sha256',hmacKey)
+       .update('cotironda|pilot|msg|'+claim.channel+'|'+
+         response.messageId,'utf8').digest('hex');
      outcome='api_accepted';
    }catch{/* Maybe delivered, never retry an in_flight notice. */}
    try{
