@@ -1,7 +1,17 @@
 # COTIRONDA V2 — ESTADO REAL Y RELEVO ENTRE CONVERSACIONES
 
 **Última actualización de documentación: 12/11/2026 (Argentina).**
-**Estado:** código D014 IA Central con [PR #823](https://github.com/ProtectorRudo/Cotironda/pull/823) en desarrollo, apilado sobre #822/#821/#820/#819/#818/#817/#816; **SIN desplegar ni E2E**. Automatización fuente oficial/DB todavía pendiente. Los datos de Supabase caducan; reconsultar cuando se necesite estado vivo.
+**ESTADO VIGENTE:** **PUBLICACIÓN PARCIAL PILOTO**: 9 funciones SQL V2 y 4 tablas privadas instaladas, política de compartir originales **OFF**, Edge PDF privado v1 instalado, Whapi histórico v76 intacto. **Portal V2 NO desplegado por Vercel 402 y Git desconectado; sin comprador Auth, sin consentimientos V2 y sin E2E.** [Acta verificada](V2-RELEASE-PILOTO-PARCIAL-20261112.md). Las secciones anteriores con '0 RPC/SIN desplegar' documentan hechos históricos PREVIOS a esta publicación. Los datos de Supabase caducan; reconsultar cuando se necesite estado vivo.
+
+## ÚLTIMA PUBLICACIÓN REAL — 12/11/2026 (prevalece sobre snapshots anteriores)
+
+**«Publicalo» ejecutado en PILOTO solo para infraestructura apagada**. [Registro completo del release](V2-RELEASE-PILOTO-PARCIAL-20261112.md): migraciones registradas `cotironda_v2_02_quoted_reference_off`, `cotironda_v2_02_media_reference_off`, `cotironda_v2_03_responders_consent_disabled`, `cotironda_v2_03b_originals_audit_disabled`, `cotironda_v2_04b_analysis_private_disabled`, `cotironda_v2_07_buyer_auth_check_private`.
+
+**Verificación SQL directa posterior:** 9 funciones privadas instaladas, 4 tablas nuevas con RLS, 0 EXECUTE para anon/authenticated, 9/9 para service_role, `v2_original_share_policy.enabled=false`, 0 consentimientos proveedor V2, 0 originales descargados, 0 análisis, 0 usuarios Auth y **7 rondas históricas preservadas**. No se modificaron restricciones antiguas de plazo. Edge PDF aislada `cotironda-piloto-v2-pdf-reader` ACTIVE v1 SHA `8bf6e8daf30b37a5c656b9ca516c48f8f832045b3767c416fe2a247cfa82522a` instalada sin secreto/activación, por lo que **no presta servicio de análisis hoy**. Whapi queda v76 SHA `656cb24bd1cbfdbb0de6d87a9acae17ad911c13b6e404667029dd4d0b55b822e`.
+
+**BLOQUEO EXTERNO REAL:** Vercel rechazó el deploy de `cotironda-portal-dev` (PR #828 SHA `a94344ac39776085b0b31eef7abb54c945ab249c`) con **402 `api-deployments-free-per-day`**. Rechazó variables solo de Preview con **400: proyecto sin Git conectado**. **No hubo deploy web, variables nuevas, conexión Git, compra ni producción**. Esto debe resolverlo Vercel/administrador de cuenta antes de retomar publicación web, sin saltear límites. No usar URL del portal antiguo como si fuese V2.
+
+**Siguiente paso único:** desbloquear cuota/conexión Git de Vercel en el proyecto específico; entonces desplegar **Preview protegido con flags OFF**, configurar secretos privados sin revelarlos; bootstrap seguro del primer arquitecto y verificación de SMS OTP real; consentimiento prospectivo proveedores y primera ronda con originales PDF/Excel verificables. D013/feriados/2 días hábiles y cierre general no fueron publicados. **No repetir ni reinstalar las seis migraciones ya asentadas**; siempre verificar primero el inventario.
 
 ## Relevo actualizado — V2-02 (12/11/2026)
 
