@@ -24,7 +24,7 @@ Un comprador envía una lista de obra. Cotironda identifica cada producto y cons
 | --- | --- | --- | --- |
 | **V2-00** | Consolidar dirección e inventario de legado | Documentación coherente, mapa exacto de módulos vivos y PR clasificados | **PRÓXIMA: inventario** |
 | **V2-01** | IA por producto, catálogo individual y distribución selectiva | Coincidencias por artículo y equivalencias técnicas, sin filtro por rubro, con zona y deduplicación | Revalidar (parcialmente existente) |
-| **V2-02** | Recepción del ORIGINAL y vínculo a ronda | 2 respuestas originales auténticas, SHA+remitente+pedido correcto, incluso con rondas concurrentes | **Bloqueo técnico principal** |
+| **V2-02** | Recepción del ORIGINAL y vínculo a ronda | 2 respuestas originales auténticas, SHA+remitente+pedido correcto, incluso con rondas concurrentes | **EN DESARROLLO:** PR #816 referencia segura; no desplegado ni E2E |
 | **V2-03** | Portal comprador, solo respondedores | 0/1/2 respuestas: mostrar únicamente negocios que cotizaron, identidad y original seguro | Pendiente |
 | **V2-04** | Análisis breve individual | Cobertura, variantes, condiciones, conclusión accionable, no bloquear original | Pendiente |
 | **V2-05** | 2 días hábiles e informe general | Cierre horario verificable + comparación por rubro, parciales, IVA/flete no inferidos | Pendiente |
@@ -57,6 +57,9 @@ Un comprador envía una lista de obra. Cotironda identifica cada producto y cons
 - [ ] Duplicados, mensajes fuera de rubro, catálogos incompletos y errores de entrega probados.
 
 ## V2-02 — recepción y correlación (PRIORIDAD COMERCIAL)
+
+**Primer incremento [PR #816](https://github.com/ProtectorRudo/Cotironda/pull/816) (draft):** código de solicitud visible, consulta SQL de solo lectura para obtener el ID de WhatsApp acreditado, usando fuente SHA y remitente correctos; el vinculador existente conserva la autorización final. Feature flag OFF. Tests Node/PG17 en CI; **no instalar ni declarar listo**. Continúa pendiente correlación de archivos sin cita y Auth/portal.
+
 
 - [ ] Guardar original **idéntico**, hash, fuente, proveedor, fecha y tipo; texto íntegro si responde por mensaje.
 - [ ] Probar múltiples rondas simultáneas al mismo negocio con mensajes citados y referencias únicas. Si no hay prueba fuerte, **REVISIÓN INTERNA**; nunca asociar por cercanía temporal sin evidencia.
