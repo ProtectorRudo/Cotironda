@@ -51,3 +51,12 @@ test('MVP356: ensayo PG17 con 2 compradores, 2 proveedores y todas las rutas',()
   'ROLLBACK;'
  ])assert(fixture.includes(needle));
 });
+
+test('MVP356: nunca activar exclusión al instalar DDL sin cron de reintentos',()=>{
+ assert.match(source,/CREATE TABLE cotironda_piloto_privado\.ai_supplier_overlap_gate_mvp356\(/u);
+ assert.match(source,/enabled boolean NOT NULL DEFAULT false/u);
+ assert.match(source,/VALUES\(true,false,null\)/u);
+ assert.match(source,/gate\.activated_at<=clock_timestamp\(\)/u);
+ assert.match(fixture,/mvp356_gate_not_off_by_default/u);
+ assert.match(fixture,/SET enabled=true,activated_at=n-interval '1 hour'/u);
+});
