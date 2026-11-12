@@ -14,18 +14,22 @@ test('MVP036: configuración Vercel documentada y solo de presupuesto Git',()=>{
 test('MVP036: regla catch-all deniega despliegues automáticos de ramas hijas',()=>{
  const config=parsed.git.deploymentEnabled;
  assert.deepEqual(Object.keys(config).sort(),[
-  '**','integration/mvp-piloto-20261031'
+  '**','integration/mvp-piloto-20261031',
+  'release/cotironda-v2-piloto-preview'
  ].sort());
  assert.equal(config['**'],false);
  for(const prefix of ['feat/','fix/','test/','audit/','security/','ops/','docs/']){
   assert.notEqual(Object.hasOwn(config,prefix+'*'),true);
  }
 });
-test('MVP036: excepción explícita solo para integración; no producción',()=>{
+test('MVP036: excepciones exactas de legado y Preview V2, nunca main',()=>{
  const config=parsed.git.deploymentEnabled;
  assert.equal(config['integration/mvp-piloto-20261031'],true);
  const allowed=Object.entries(config).filter(([,value])=>value===true);
- assert.deepEqual(allowed,[['integration/mvp-piloto-20261031',true]]);
+ assert.deepEqual(allowed,[
+  ['integration/mvp-piloto-20261031',true],
+  ['release/cotironda-v2-piloto-preview',true]
+ ]);
  assert.equal(Object.hasOwn(config,'main'),false);
 });
 test('MVP036: no se introducen redirects, domains, secrets ni overrides de build',()=>{
