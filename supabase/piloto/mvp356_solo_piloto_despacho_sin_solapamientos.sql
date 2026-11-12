@@ -186,3 +186,32 @@ BEGIN
    'chat_hmac',j.chat_hmac,'lease_token',v_lease);
 END $function$
 
+
+-- Existing finish semantics preserved verbatim as tested source snapshot.
+CREATE OR REPLACE FUNCTION public.cotironda_piloto_ia_finish_mvp222(p_request uuid, p_supplier text, p_lease uuid, p_state text, p_message_id text DEFAULT NULL::text)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+DECLARE n integer;
+BEGIN
+ IF p_request IS NULL OR p_supplier IS NULL OR p_lease IS NULL
+ OR p_state NOT IN('api_accepted','uncertain')
+ OR (p_state='api_accepted' AND
+   (p_message_id IS NULL OR length(p_message_id) NOT BETWEEN 8 AND 160
+    OR p_message_id !~ '^[A-Za-z0-9._:-]+$'))
+ OR (p_state='uncertain' AND p_message_id IS NOT NULL)
+ THEN RETURN false;END IF;
+ UPDATE cotironda_piloto_privado.ai_dispatch_jobs_mvp222
+ SET state=p_state,
+     whapi_message_id=CASE WHEN p_state='api_accepted'
+       THEN p_message_id ELSE NULL END,
+     finished_at=clock_timestamp()
+ WHERE request_id=p_request AND supplier_key=p_supplier
+   AND state='leased' AND lease_token=p_lease;
+ GET DIAGNOSTICS n=ROW_COUNT;
+ RETURN n=1;
+END
+$function$
+
