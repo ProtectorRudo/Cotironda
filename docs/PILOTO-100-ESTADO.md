@@ -34,6 +34,14 @@
 - **Estado PILOTO reconsultado solo lectura:** 0 usuarios `auth.users`, 0 RPC V2-03 de listado/descarga instaladas, 0 tablas V2 de políticas/consentimiento/auditoría instaladas. No se enviaron WhatsApps ni se hicieron descargas reales. No publicar sin orden `Publicalo`.
 - **Próximo bloqueo principal:** preparar instalación coordinada del conjunto #816 → #819 en **PREVIEW PILOTO autorizado**, con alta Auth del comprador y consentimiento V2 real de los comercios durante el alta. Antes: cerrar auditoría SHA/Storage/RLS; no inferir consentimientos. Luego E2E con dos presupuestos auténticos. D013 por PRODUCTO y análisis/cierre siguen pendientes.
 
+## V2-PREFLIGHT — VALIDACIÓN DE INSTALACIÓN (PR #820, 12/11/2026)
+
+- [PR #820](https://github.com/ProtectorRudo/Cotironda/pull/820) (**draft**, sobre #819/#818/#817/#816; nunca #814) documenta el piloto real y prepara **un candidato V2 desde el webhook Whapi v76 DESPLEGADO**, no desde el `index.ts` histórico. Comparación real: **59/61 archivos idénticos**; difieren solo `index.ts` y correlador `supplier-auto-correlation-mvp336.ts`, preservados en snapshots Git SHA verificados. v76 tiene protecciones y funciones MVP333 ausentes en la base histórica. Generator/CI Node+Deno para nueva candidata con funciones v76 + V2, no instalado.
+- **Supabase SOLO LECTURA:** proyecto sano PG17.11, Storage originales privado 8 MiB, **0 comprador Auth**, **0/5 RPC V2 nuevas**, **0/3 tablas V2 nuevas**, una ronda `prepared`, 2 `CHECK` que obligan 3–7 días corridos. Esto **bloquea** el contrato V2 de 2 días hábiles. La única asociación histórica es `semantic_unique_mvp291`, no evidencia suficiente para listado V2 seguro. Consulta auditable `supabase/piloto/v2_release_preflight_readonly.sql` confirmó `ready_for_v2_release=false`.
+- **Vercel:** cinco proyectos Cotironda; el identificado como Next.js es `cotironda-portal-dev` y su preview todavía no tiene variables V2 requeridas. No confundir build GitHub con ruta V2 realmente disponible.
+- **Estado de CI PR #820:** comprobar último SHA antes de declarar aprobado; ningún despliegue, WhatsApp ni cambio de permisos hecho. Ver [Acta preflight](https://github.com/ProtectorRudo/Cotironda/blob/feat/v2-preflight-conciliar-whapi-v76-20261112/docs/V2-PREFLIGHT-EDGE-V76-Y-PILOTO-20261112.md).
+- **Próximo bloqueo único:** corregir reloj SQL/feriados a 2 días hábiles y validar catálogo D013 por PRODUCTO, luego preparar migración ordenada y reversible de #816–#820 en único proyecto PREVIEW PILOTO y Auth/consentimiento reales. **Solo instalar bajo `Publicalo`**. No atribuir presupuesto ambiguo por fecha.
+
 ## SI ABRÍS UNA CONVERSACIÓN NUEVA: LEÉ ESTO PRIMERO
 
 1. [Contrato V2 vigente](COTIRONDA-V2-CONTRATO.md).
@@ -98,11 +106,9 @@
 - La referencia no sustituye prueba de origen para archivos no citados. El bloqueo comercial persiste hasta demostrar 2 respuestas reales, Auth del comprador, originales visibles y análisis.
 - **No hubo despliegue ni cambio de datos PILOTO**; no confundir el PR con funcionalidad activa.
 
-## ÚNICA PRÓXIMA ACCIÓN ACTUAL — Preflight de instalación V2 y ensayo real
+## ÚNICA PRÓXIMA ACCIÓN ACTUAL — Corrigir reloj de 2 días hábiles, preservar Edge v76 y matching D013
 
-**CÓDIGO #819 listo para revisión (6/6 CI), NO PILOTO instalado.** Primero auditar la cadena de despliegue de #816/#817/#818/#819 frente a Supabase Edge v76, Storage privado y función de permisos; preparar migraciones atómicas, flags OFF y rollback. Falta confirmar el alcance legal/captura prospectiva de consentimiento del proveedor y preparar un comprador REAL en Supabase Auth PILOTO (hoy cero usuarios). No encender ni enviar WhatsApps sin autorización específica de publicación.
-
-Después habilitar SOLO el entorno PILOTO y versión autorizados ante `Publicalo`, probar navegador del arquitecto + dos archivos originales + análisis individual, cerrar a dos días hábiles e informe final. **La selección por PRODUCTO D013 sigue obligatoria antes de declarar el circuito completo**. No reintroducir bloqueo #814 de rondas solapadas, rankings/ganadores ni atribuciones inventadas de documentos ambiguos.
+**PR #820** demuestra preflight `ready_for_v2_release=false`: webhook v76 tiene mejoras ausentes en código base; hay 2 `CHECK` SQL de duración 3–7 días calendario; faltan Auth comprador, permisos V2 y proyecto Vercel unificado. **Terminar CI del candidato v76**, luego corregir reloj SQL con feriados y D013 envío por PRODUCTO sin afectar rondas históricas. Preparar migraciones coordinadas y pruebas de revertir sin activar flags hasta `Publicalo`. Ningún envío ni producción.
 
 ## Autorizaciones y cómo registrar un avance
 
