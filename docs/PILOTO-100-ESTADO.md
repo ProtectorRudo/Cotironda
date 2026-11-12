@@ -9,6 +9,12 @@
 
 **LECTURA OBLIGATORIA:** [Issue #794 — checklist canónico](https://github.com/ProtectorRudo/Cotironda/issues/794) y [Plan maestro](PILOTO-100-PLAN-MAESTRO.md).
 
+## Actualización de pruebas y bloqueo real (11/11/2026)
+
+El [PR #797](https://github.com/ProtectorRudo/Cotironda/pull/797) ahora también incluye la actualización del manifiesto de seguridad MVP324 **sin cambiar su hash base**, tests de regresión y un fixture **PostgreSQL 17 con ROLLBACK** que cubre PDF/XLSX, duplicados, SHA/ruta forjada, varias rondas y token revocado. Unidad general, Deno Whapi, PostgREST y PG17 histórico pasan con commit `c8a937f614a701ea2eb46e366685668021da79ee`. El workflow específico PG17 del nuevo DDL **todavía no aparece ejecutado**; Next.js seguía compilando al registrar esto. Ninguna función nueva está instalada ni habilitada.
+
+**Próxima comprobación concreta antes de seguir:** CI del SHA final (especialmente Next y SQL PG17 específico); test de correlación P2 y política comercial P0. No abrir nuevas ramas de parser ni crear ronda sobre prepared activa.
+
 ## Relevo de avance — 11/11/2026 (PR #797)
 
 **Código efectivamente creado:** [PR #797 — MVP354 recepción documental sin IA](https://github.com/ProtectorRudo/Cotironda/pull/797). Incluye nuevo SQL RPC PRIVADO, DTO de ocho campos, tracking opt-in con flag apagado, HTML de contador documental y tests Node. Basado en PR técnico #793. El PR está en borrador, no fusionado ni publicado; NO cambió las Edge live, base, Whapi o producción. Compilaciones automáticas de Preview de GitHub/Vercel no prueban el circuito E2E.
