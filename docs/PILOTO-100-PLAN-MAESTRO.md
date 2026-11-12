@@ -50,6 +50,20 @@ El objetivo comercial es que, **al cierre**, el comprador pueda obtener los orig
 
 **CI FINAL MVP355 (11/11/2026):** el SHA técnico [`721ecc12d2a9a35e54d53b35f009d419b4cca3f6`](https://github.com/ProtectorRudo/Cotironda/pull/798) pasó **5/5 workflows generales**: Next.js, unidad general (incluye **PG17 documental** y **Deno seguimiento** como jobs separados), PostgREST, PG17 aislamiento y verificación sitio. Probados dos formatos sintéticos, SHA, links débiles/ausentes, vínculo de aviso previo, duplicados, rondas solapadas y revocación. Además SELECT del nuevo SQL sin escrituras contra piloto: `2 despachos / 0 documentos acreditados`; token falso `not_found`. **Sin despliegue**, PR draft; no E2E real.
 
+## P0 — ejecutor TLS aislado para aviso de condiciones (12/11/2026)
+
+**[PR #810](https://github.com/ProtectorRudo/Cotironda/pull/810)** DRAFT apilado sobre #809, [Acta 537](https://github.com/ProtectorRudo/Cotironda/blob/feat/p0-executor-postgres-tls-20261112/docs/537-p0-runner-postgres-tls-whapi.md). **SOLO DESARROLLO: sin desplegar SQL, Vercel, Whapi ni nuevos contactos.**
+
+- [x] **Cierre del puente de ejecución en código:** `src/server/whapi-terms-pg-driver-p0.ts` conecta los 5 RPC P0 a PostgreSQL exclusivamente en el proyecto PILOTO `ilggkalaafhtiysyzlmg`, por TLS con CA y login `cotironda_terms_sender_login_p0`. No permite reutilizar D088 de otro proyecto, credenciales `postgres/service_role`, pooler 6543, URI modificada o despliegue de producción.
+- [x] Cada operación usa sesión física independiente, verifica `session_user` y `current_user`, hace `SET ROLE cotironda_pilot_terms_sender_p0`, restringe SQL literal + argumentos y **cierra conexión antes de confirmar**. Si la respuesta DB/COMMIT/cierre es incierta, no se permite HTTP subsiguiente.
+- [x] `src/server/whapi-terms-runner-p0.ts` enlaza driver TLS → SQL privado P0 → contacto cifrado MVP109/AES → Whapi D055; **sin cron, API, global fetch ni token embebido**. Flags dobles OFF: no transmite nada por importar el módulo. Una invocación procesa máximo un aviso.
+- [x] Tests Node de identidad/URL/CA/puerto, SQL inyectado, error de rollback/COMMIT o cierre, y simulación de un circuito completo con AES y Whapi falsos. PG17 P0 de la rama heredada contiene `ROLLBACK`. **CI final por SHA pendiente de certificar antes de marcar éxito**.
+- [x] Estado PILOTO, SELECT 12/11/2026: Auth 0, operadores habilitados 0, consentimientos originales 0, política de originales OFF, 1 ronda `prepared` vigente, ni M362 ni P0 sender instalado. **No se alteraron datos**.
+- [ ] **BLOQUEOS P0 REAL:** login P0 dedicado aún no provisionado ni enlazado al rol NOLOGIN, claves/tokens sin inyectar, no hay worker autenticado programado ni ensayos externos, condiciones legales no aprobadas ni operador MFA real. La respuesta expresa del proveedor no está auditada por MFA.
+- [ ] **P1–P5 sin validar:** Auth comprador OTP, dos ofertas originales vinculadas sin ambigüedad, seguimiento, cierre y descarga real en navegador. No crear ronda superpuesta.
+
+**SIGUIENTE TAREA ÚNICA:** preparar evidencia del mensaje entrante y una decisión humana verificable por operador Supabase AAL2 (sin inferir consentimiento de la constancia Whapi), y luego ensayar bajo `Publicalo en cotironda-piloto` con permisos y condiciones aprobadas. Inmediatamente después pasar al recorrido 1 arquitecto/2 proveedores/2 archivos, sin seguir multiplicando infraestructura por comodidad.
+
 ## P0 — contacto cifrado de proveedor ANTES de la ronda (12/11/2026)
 
 **[PR #809](https://github.com/ProtectorRudo/Cotironda/pull/809)** DRAFT sobre #808, [Acta 536](https://github.com/ProtectorRudo/Cotironda/blob/feat/p0-resolver-contacto-cifrado-20261112/docs/536-p0-contacto-cifrado-antes-de-ronda.md). **Desarrollo sin integración/despliegue de SQL, Whapi ni nueva ronda.**
