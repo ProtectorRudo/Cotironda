@@ -13,6 +13,18 @@
 
 **CI FINAL MVP355 (11/11/2026):** el SHA técnico [`721ecc12d2a9a35e54d53b35f009d419b4cca3f6`](https://github.com/ProtectorRudo/Cotironda/pull/798) pasó **5/5 workflows generales**: Next.js, unidad general (incluye **PG17 documental** y **Deno seguimiento** como jobs separados), PostgREST, PG17 aislamiento y verificación sitio. Probados dos formatos sintéticos, SHA, links débiles/ausentes, vínculo de aviso previo, duplicados, rondas solapadas y revocación. Además SELECT del nuevo SQL sin escrituras contra piloto: `2 despachos / 0 documentos acreditados`; token falso `not_found`. **Sin despliegue**, PR draft; no E2E real.
 
+## P1/P2 — causa real de 0/2 originales recibidos (12/11/2026)
+
+**[PR #813](https://github.com/ProtectorRudo/Cotironda/pull/813)** DRAFT técnico independiente de P0 sobre MVP355 #798. [Acta 540](https://github.com/ProtectorRudo/Cotironda/blob/feat/p1-diagnostico-documental-20261112/docs/540-p1-diagnostico-dos-originales-solo-lectura.md). No despliegue, no WhatsApp ni SQL nuevo instalado.
+
+- [x] SELECT privado repetible y efectivamente ejecutado en Supabase PILOTO el 12/11. **1 ronda prepared, 2 invitados, 2 despachos aceptados**. Solo **1 candidato documental temporal con original `stored`** y **1 proveedor sin archivo candidato**. Ninguno con `request_id` de inbox+archivo que coincida con esa ronda, ningún vínculo fuerte MVP225, **0/2 recibidos verificados**. MVP354 sin instalar.
+- [x] Diferenciados **mensaje histórico**, **archivo válido**, **candidato por ventana** y **presupuesto de ronda demostrado**. No atribuir por fechas, ni editar `request_id` para simular recepción.
+- [x] Test Node de SQL read-only, prohibición de efectos secundarios/PII y evidencias fuertes añadido al PR #813. **CI por SHA final por certificar**.
+- [ ] P1/P2: observar y probar respuestas de ambos proveedores dentro de una misma ronda con archivo, fuente SHA y asociación Whapi verificada; la segunda hoy no tiene candidato. Sin WhatsApps reales de este PR.
+- [ ] P0/P3–P5 continúan abiertos: operador AAL2, términos originales aprobados, comprador Auth OTP, tracking/cierre/descarga autenticada. No generar nueva ronda antes de terminar la vigente.
+
+**Siguiente trabajo ÚNICO:** auditar correlación de nuevas respuestas en el webhook M225/M238 y probar efectivamente 2/2, no un nuevo parser económico. Solo publicar SQL/UI en PILOTO con orden `Publicalo` y pruebas/verificaciones previas; los PR abiertos no son software activado.
+
 ## P0 — panel del operador con TOTP y revisión de términos (12/11/2026)
 
 **[PR #812](https://github.com/ProtectorRudo/Cotironda/pull/812)** DRAFT sobre #811, [Acta 539](https://github.com/ProtectorRudo/Cotironda/blob/feat/p0-portal-operador-mfa-20261112/docs/539-p0-portal-operador-mfa-bandeja.md).
