@@ -2,8 +2,11 @@ name: Cotironda V2 D013 + plazo 2 dias habiles PG17
 on:
   pull_request:
     paths:
-      - 'src/domain/ia-central/ruteador-catalogos-v2.ts'
-      - 'src/domain/ia-central/puente-sql-rondas-mvp221.ts'
+      - 'src/domain/ia-central/ruteador-catalogos-v2-d013.ts'
+      - 'src/domain/ia-central/planificador-piloto-v2-d013.ts'
+      - 'src/domain/ia-central/puente-sql-rondas-v2-d013.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/ai-central-buyer-v2-d013.ts'
+      - 'scripts/piloto/v2-live76-candidate.mjs'
       - 'supabase/piloto/v2_d013_ruteo_productos_sin_filtro_rubro.sql'
       - 'supabase/piloto/v2_05_plazo_dos_dias_habiles_candidate.sql'
       - 'supabase/tests/ci/v2-05-plazo-habil-pg17.sql'
