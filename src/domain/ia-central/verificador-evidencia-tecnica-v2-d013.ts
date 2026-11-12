@@ -75,6 +75,13 @@ function cableSize(text:string):string|null{
  if(items.length!==1)return null;
  return String(Number(items[0][1].replace(',','.')));
 }
+/** Numeric thickness / dimensions (mm) are mandatory technical attributes.
+ * This is intentionally a NEGATIVE guard, not universal equivalence logic. */
+function thicknessMillimeters(text:string):string|null{
+ const all=[...fold(text).matchAll(/\b(\d{1,4}(?:[.,]\d{1,2})?)\s*mm(?!\s*(?:2|²))(?=\W|$)/gu)];
+ if(all.length!==1)return null;
+ return String(Number(all[0][1].replace(',','.')));
+}
 function materialGroup(text:string):string|null{
  const s=fold(text);
  if(/\bcemento\b/u.test(s)){
@@ -122,6 +129,10 @@ export function verificarCorrespondenciaTecnicaD013(
  const wantedCable=cableSize(demand),offeredCable=cableSize(catalogo);
  if((wantedCable||offeredCable)&&wantedCable!==offeredCable)
   return refuse('seccion_cable_no_equivalente');
+ const wantThickness=thicknessMillimeters(demand);
+ const haveThickness=thicknessMillimeters(catalogo);
+ if(wantThickness&&wantThickness!==haveThickness)
+  return refuse('dimension_tecnica_no_equivalente');
 
  // The AI's narrative is NEVER accepted as proof of a missing product;
  // product identity must have evidence in BOTH original description strings.
