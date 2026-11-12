@@ -70,8 +70,9 @@ export function crearPuertosSqlAvisosP0(config:TermsSqlPortP0):AvisoPortsP0{
    const raw=await rpc(FINISH,[result.jobId,result.leaseToken,
      result.supplierKey,result.termsVersion,result.termsSha256,
      result.state,result.noticeMessageHmac,result.outboundBodySha256]);
-   if(!isRecord(raw)||!['api_accepted','uncertain','rejected']
-     .includes(String(raw.state)))unavailable();
+   if(!isRecord(raw)||Object.keys(raw).length!==1||
+     !['api_accepted','uncertain','rejected'].includes(String(raw.state)))
+     unavailable();
    return raw;
   }
  });
