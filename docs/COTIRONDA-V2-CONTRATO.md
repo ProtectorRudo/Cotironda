@@ -38,6 +38,16 @@ No somos una bolsa de archivos, un ranking anónimo, un intermediario que oculta
 
 **Estado:** D014 es dirección APROBADA. El [PR #823](https://github.com/ProtectorRudo/Cotironda/pull/823) prepara orquestador de calendario y productos, pero **NO está desplegado, no sincroniza todavía un recurso JSON oficial confirmado con la base real, ni hay E2E**. El calendario anual manual del PR #821 es un preflight interno, NO un paso del comprador/proveedor ni una obligación permanente de carga manual.
 
+## 2.3 Publicación por etapas seguras (D015, 12/11/2026)
+
+**Publicación de infraestructura no es activación comercial.** Primero, tras autorización expresa `Publicalo`, se pueden instalar en **PILOTO** las tablas/RPC privadas, lector Edge PDF y portal Preview **con todas las banderas V2 OFF** y sin enviar WhatsApps. Esta primera fase no requiere que ya exista el arquitecto en Auth. No se despliega en producción.
+
+En segunda fase, se da de alta de manera segura al comprador mediante operador/flujo de onboarding apropiado, sin pedirle confirmaciones de presupuesto. La pantalla OTP de V2 usa `shouldCreateUser:false`, por lo que **no registra automáticamente al primer comprador**. Se comprueba también consentimiento prospectivo V2 de los proveedores para revelar su nombre y presupuestos originales al comprador, sin inferirlo de su alta genérica en WhatsApp.
+
+**La activación** de la vista del primer presupuesto privado se hace únicamente una vez demostrados Auth, consentimiento, asociación de documento firme, preview protegida, SHA exacta de build, original descargable y análisis sin inventar importes. Luego se habilita el cierre a 2 días hábiles según calendario oficial automático y se ensaya una ronda real con dos proveedores e informe general. Todas las migraciones, cambios de entorno, activaciones y envíos del piloto requieren nueva autorización `Publicalo` para el alcance concreto.
+
+El guard de [PR #827](https://github.com/ProtectorRudo/Cotironda/pull/827) distingue `primer_original` de `piloto_completo` y **no publica nada nunca**. Una CI verde no prueba el flujo real. `Avanza` continúa significando desarrollo/pruebas, no instalación.
+
 ## 3. Presentación y análisis: reglas firmes
 
 **Durante la ronda, una tarjeta por comercio que respondió:** nombre visible, fecha, rubro, archivo(s) original(es) verificables, total SOLO si lo declara inequívocamente el proveedor (señalando moneda/base), y breve **análisis comercial útil**. Ni lista de invitados ni estado de quienes todavía no enviaron.
