@@ -10,7 +10,7 @@
 
 - [x] **Verificación contra base real**: comprador Whapi elegible **1/1** comprobado mediante la RPC nueva instalada, falso SHA **0 aceptados**; sin PII. No existe usuario Auth, no probaron SMS y por tanto **NO hay sesión válida todavía**.
 - [x] **Verificación Vercel**: equipo Hobby `ProtectorRudo's projects`, proyecto `cotironda-portal-dev` Next.js con SSO, **Git NO conectado**; hay otros proyectos Cotironda conectados pero NO se reutilizan para evitar impactos no autorizados. API creación Preview 402 cuota diaria de despliegues, variables por rama 400 falta Git.
-- [ ] CI final PR #829: tests del guard con snapshot anterior y postrelease, pruebas de Next.js, aislamiento y regresiones.
+- [x] **PR #829 6/6 CI SUCCESS** SHA `70b9ede8d19fd1e3e5914b06f11abaf4caeee085`: guard histórico/posrelease, Next.js, PostgREST Auth, PostgreSQL17, unitarios y sitio. Además **3/3 RPC privadas** devuelven NULL con sesión falsa en Supabase PILOTO; no expusieron presupuesto.
 - [ ] **Acción necesaria en Vercel**: verificar y conectar *únicamente* `cotironda-portal-dev` → `Settings → Git` → `ProtectorRudo/Cotironda`, evitando que conectarlo dispare un deploy de `main` a producción. No podemos hacer esta reconexión con el conector disponible. Resolver cuota Hobby sin cambiar de plan ni comprar nada.
 - [ ] Tras esto, bajo **nueva orden `Publicalo`** publicar exactamente el commit revisado en **Preview protegido, banderas V2 OFF**, preparar claves server-only, OTP SMS y consentimiento prospectivo, probar un primer original PDF/Excel real con guía.
 - [ ] Mantener calendario/feriados por IA Central y ruteo D013 por producto, pero no arriesgar SQL legacy ni Whapi v76 sin preflight explícito. No implementar ranking/ganadores V1.
