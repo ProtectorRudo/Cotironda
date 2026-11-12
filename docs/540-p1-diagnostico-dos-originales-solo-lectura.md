@@ -26,6 +26,9 @@ Archivo: [`supabase/tests/preflight/p1-documentos-dos-proveedores-solo-lectura.s
 | Proveedores con documento candidato por ventana temporal | **1** |
 | Proveedores con archivo original `stored` e integridad básica de fuente | **1** |
 | Proveedores cuyo inbox **y** archivo están asociados a esa ronda | **0** |
+| Proveedores con inbox aún **sin** request_id | **1** |
+| Proveedores con original archivado aún **sin** request_id | **1** |
+| Proveedores con vínculo formal comprobado a **otra** ronda | **0** |
 | Proveedores con vínculo formal fuerte MVP225 de la misma ronda | **0** |
 | Proveedores con documento acreditado sin ambigüedad | **0** |
 | Proveedores con candidato temporal **no atribuible** | **1** |
@@ -33,7 +36,7 @@ Archivo: [`supabase/tests/preflight/p1-documentos-dos-proveedores-solo-lectura.s
 | Conflictos de asociación acreditada | **0** |
 | Función de recepción MVP354 instalada en PILOTO | **No** |
 
-El inbox contiene mensajes históricos con documentos, pero no equivale a recibir presupuesto de esta nueva ronda. **No modificar a mano `request_id`, `ai_supplier_links_mvp225` ni `supplier_media_quotes` para convertir el candidato temporal en respuesta válida.** Primero revisar evidencia del mensaje citado, preámbulo acreditado y fuente real, o esperar la respuesta genuina al pedido actual. No exigir al proveedor editar nada por problemas internos de Cotironda. No crear ronda nueva solapada.
+El inbox contiene mensajes históricos con documentos, pero **no sabemos si este candidato sin request_id corresponde al pedido actual o a otro**. El archivado y el inbox de ese candidato están ambos SIN referencia a ronda y no existe prueba formal hacia otra ronda. No inferir origen del archivo a partir de su fecha. **No modificar a mano `request_id`, `ai_supplier_links_mvp225` ni `supplier_media_quotes` para convertir el candidato temporal en respuesta válida.** Primero revisar evidencia del mensaje citado, preámbulo acreditado y fuente real, o esperar la respuesta genuina al pedido actual. No exigir al proveedor editar nada por problemas internos de Cotironda. No crear ronda nueva solapada.
 
 ## Próximo bloqueo y criterio exacto para cerrar P1/P2
 
