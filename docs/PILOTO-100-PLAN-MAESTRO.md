@@ -83,7 +83,7 @@ La migración de plazo V2 añade `business_two_days` para **rondas nuevas** úni
 
 Calendario 2026 parcialmente contrastado con fuentes oficiales: 2026-11-19 (La Plata) = feriado **optativo** para comercios, 2026-11-23 = nacional obligatorio, 2026-12-07 = día no laborable turístico, 2026-12-08 y 2026-12-25 = feriados nacionales. No igualar optativo con feriado obligatorio. **NO instalar** manifest parcial ni aprobar 2026: preflightFeriadosLaPlata2026().publicable=false. Fuentes en [acta de PR #822](https://github.com/ProtectorRudo/Cotironda/blob/feat/v2-d013-evidencia-tecnica-feriados-20261112/docs/V2-D013-EVIDENCIA-TECNICA-Y-FERIADOS-20261112.md).
 
-- [ ] Verificar checks del último SHA PR #822 (Node técnicos y parciales, PG17 fechas reales con rollback, Deno Edge v76, Next).
+- [x] **CI final #822** SHA `ef8d50f64c5de3184da7341a1b8e5d2751e7184a`: **8/8 SUCCESS** (Node evidencia técnica/parciales, PG17 con feriados reales y ROLLBACK, Deno Edge v76, Next.js, Auth, aislamiento y regresiones). No equivale a E2E.
 - [ ] Verificar variantes adicionales con fichas técnicas de proveedores y marca obligatoria, sin una lista rígida de materiales ni autorizaciones inventadas.
 - [ ] Completar calendario ANUAL 2026–2027 por ciudad/feriados, resolver optativos del comercio antes de aprobar las fechas.
 - [ ] Desplegar SOLO bajo Publicalo en PILOTO designado con Auth comprador, consentimientos prospectivos, SQL migrado y firma Edge viva verificada.
