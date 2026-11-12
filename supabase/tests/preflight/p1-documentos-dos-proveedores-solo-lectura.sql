@@ -3,7 +3,8 @@
 -- por operador de infraestructura en SQL privado. NO incrustar en portal.
 -- CERO nombres, identificadores, HMAC, archivos, direcciones o importes
 -- salen del SELECT final; una ronda preparada máxima para no mezclar datos.
--- "Requiere vínculo" NO significa que ese documento corresponda al pedido.
+-- Un error previo de asociación puede existir ANTES del vínculo formal.
+-- Un candidato temporal NO equivale a respuesta de la ronda ni a un permiso de reintento.
 WITH active_rounds AS MATERIALIZED (
  SELECT r.id,r.created_at,r.closes_at
  FROM cotironda_piloto_privado.requests r
@@ -79,8 +80,10 @@ with_proof AS (
    'prior_supplier_preamble')
 ),
 blocked AS (
+ -- An unresolved attempt exists BEFORE a durable MVP225 association.
+ -- Never require with_proof to recognize an unresolved source.
  SELECT DISTINCT s.supplier_key FROM target r
- JOIN with_proof s ON true
+ JOIN candidates s ON true
  WHERE EXISTS (
   SELECT 1 FROM cotironda_piloto_privado.ai_supplier_unresolved_mvp237 u
   WHERE u.message_hmac=s.message_hmac AND u.supplier_key=s.supplier_key
@@ -167,6 +170,23 @@ SELECT CASE WHEN (SELECT n FROM round_count)=1
      AND p.supplier_key=s.supplier_key AND p.request_id<>r.id
      AND p.source_sha256=s.content_sha256
   )) AS proveedores_con_prueba_otra_ronda,
+ (SELECT count(DISTINCT s.supplier_key)::integer FROM candidates s
+  JOIN cotironda_piloto_privado.ai_supplier_unresolved_mvp237 u
+   ON u.message_hmac=s.message_hmac AND u.supplier_key=s.supplier_key
+   AND u.state='ambiguous_round') AS proveedores_ambiguous_round_mvp237,
+ (SELECT max(u.candidate_count)::integer FROM candidates s
+  JOIN cotironda_piloto_privado.ai_supplier_unresolved_mvp237 u
+   ON u.message_hmac=s.message_hmac AND u.supplier_key=s.supplier_key
+   AND u.state='ambiguous_round') AS max_rondas_candidatas_en_fallo,
+ (SELECT count(DISTINCT s.supplier_key)::integer FROM candidates s
+  JOIN cotironda_piloto_privado.ai_supplier_auto_correlation_mvp291 x
+   ON x.source_hmac=s.message_hmac AND x.supplier_key=s.supplier_key
+  WHERE x.state='review' AND x.reason='insufficient_material_evidence')
+   AS proveedores_m291_sin_evidencia,
+ (SELECT count(DISTINCT s.supplier_key)::integer FROM candidates s
+  JOIN cotironda_piloto_privado.ai_supplier_correlation_retries_mvp336 r
+   ON r.source_hmac=s.message_hmac AND r.supplier_key=s.supplier_key)
+   AS proveedores_con_reintento_registrado,
  (SELECT count(*)::integer FROM states WHERE state='recibido_verificado')
    AS recibidos_verificados,
  (SELECT count(*)::integer FROM states WHERE state='conflicto_privado')
