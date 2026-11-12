@@ -1,5 +1,7 @@
 -- MVP354 — SOLO DESARROLLO. No ejecutado en piloto.
 -- Conteo documental por ronda y por proveedor, sin IA/precios.
+-- MVP355: exige vínculo fuente real desde inbox firmado + prueba del enlace;
+-- preasignación temporal del archivista NO basta para marcar como recibido.
 -- El bearer en el navegador se transforma en SHA-256 en Edge; el SQL
 -- REVALIDA token, comprador, vigencia, revocación, ronda e invitación.
 -- Servicio únicamente: nunca conceder EXECUTE a anon/authenticated.
@@ -40,11 +42,35 @@ recibidos AS (
  JOIN despachados e ON true
  JOIN cotironda_piloto_privado.media_archive_mvp095 a
    ON a.request_id=r.request_id AND a.participant_key=e.supplier_key
+ -- MVP355: a.request_id may be provisionally set by the archivist when
+ -- exactly one invitation is prepared. It is NOT binding evidence alone.
+ -- The signed inbox and committed supplier link MUST agree on source,
+ -- supplier and round, independently of any AI/economic parsing.
+ JOIN cotironda_piloto_privado.whapi_inbox m
+   ON m.message_hmac=a.message_hmac AND m.request_id=r.request_id
+   AND m.participant_key=e.supplier_key AND m.chat_hmac=a.chat_hmac
+   AND m.kind=a.kind AND m.kind IN ('image','document')
+ JOIN cotironda_piloto_privado.ai_supplier_links_mvp225 proof
+   ON proof.message_hmac=a.message_hmac
+   AND proof.request_id=r.request_id
+   AND proof.supplier_key=e.supplier_key
+   AND proof.kind=a.kind AND proof.source_sha256=a.content_sha256
+   AND proof.association IN ('quoted_whapi_id','single_active_round',
+     'prior_supplier_preamble')
  JOIN cotironda_piloto_privado.participants p
    ON p.key=e.supplier_key AND p.chat_hmac=a.chat_hmac
  WHERE a.state='stored' AND a.finished_at IS NOT NULL
-  AND a.reserved_at>=e.first_sent AND a.reserved_at<=r.closes_at
-  AND a.reserved_at>=r.created_at
+  AND m.received_at>=e.first_sent AND m.received_at<=r.closes_at
+  AND m.received_at>=r.created_at
+  AND a.reserved_at>=m.received_at
+  -- An unresolved/contradictory association is not buyer evidence.
+  AND NOT EXISTS (
+   SELECT 1 FROM cotironda_piloto_privado.ai_supplier_unresolved_mvp237 unresolved
+   WHERE unresolved.message_hmac=a.message_hmac
+     AND unresolved.supplier_key=e.supplier_key
+     AND unresolved.state IN (
+       'ambiguous_round','not_matched','media_context_conflict')
+  )
   AND a.message_hmac ~ '^[a-f0-9]{64}$'
   AND a.storage_path=('media/'||a.message_hmac)
   AND a.content_sha256 ~ '^[a-f0-9]{64}$'
@@ -71,11 +97,11 @@ recibidos AS (
      AND other_job.state='api_accepted'
      AND other_job.whapi_message_id IS NOT NULL
      AND other_job.finished_at IS NOT NULL
-     AND other_job.finished_at<=a.reserved_at
+     AND other_job.finished_at<=m.received_at
      AND other_inv.state='prepared'
      AND other_round.state IN ('prepared','closed')
-     AND other_round.created_at<=a.reserved_at
-     AND other_round.closes_at>=a.reserved_at
+     AND other_round.created_at<=m.received_at
+     AND other_round.closes_at>=m.received_at
   )
 ),
 totales AS (

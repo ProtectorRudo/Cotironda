@@ -40,7 +40,7 @@ jobs:
   pg17-mvp354-documental:
     # Asegura ejecución en el PR técnico aun si el nuevo workflow
     # específico no está en la rama base de GitHub. Sin credenciales PILOTO.
-    if: ${{ github.event_name == 'pull_request' && github.head_ref == 'feat/mvp354-document-receipt-status-20261111' }}
+    if: ${{ github.event_name == 'pull_request' && (github.head_ref == 'feat/mvp354-document-receipt-status-20261111' || github.head_ref == 'fix/mvp355-receipt-source-provenance-20261111') }}
     runs-on: ubuntu-latest
     timeout-minutes: 12
     services:
@@ -75,7 +75,7 @@ jobs:
           psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regprocedure('public.cotironda_piloto_document_receipts_mvp354(text)') IS NULL" | grep -Fx 't'
 
   deno-mvp354-seguimiento:
-    if: ${{ github.event_name == 'pull_request' && github.head_ref == 'feat/mvp354-document-receipt-status-20261111' }}
+    if: ${{ github.event_name == 'pull_request' && (github.head_ref == 'feat/mvp354-document-receipt-status-20261111' || github.head_ref == 'fix/mvp355-receipt-source-provenance-20261111') }}
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
