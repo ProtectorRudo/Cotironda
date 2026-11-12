@@ -52,7 +52,9 @@ function size(s:string):Pack|null{
  if(n<=0n)return null;
  const type=/^(?:kg|g)$/u.test(unit)?'kg':'l';
  const per=/^(?:g|ml)$/u.test(unit)?1n:1000n;
- return {kind:type,amount:n*per,size:number+' '+unit};
+ const scaled=n*per/1000n;
+ if(scaled<=0n||n*per%1000n!==0n)return null;
+ return {kind:type,amount:scaled,size:number+' '+unit};
 }
 function parseAmount(s:string):bigint|null{
  if(!/^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$/u.test(s))return null;
@@ -120,7 +122,8 @@ export function verificarCorrespondenciaTecnicaD013(
 
  let conversion:PruebaTecnicaD013['conversion']=null;
  if(['bag','unit','pack','box'].includes(pedido.unidad)){
-  const want=size(demand),have=size(catalogo),q=parseAmount(pedido.cantidad);
+  const want=size(pedido.descripcion)||size(pedido.presentacion??'')||
+   size(pedido.evidencia),have=size(catalogo),q=parseAmount(pedido.cantidad);
   if(want&&have){
    if(want.kind!==have.kind)return refuse('base_de_medida_incompatible');
    if(q===null)return refuse('cantidad_no_comprobable');
