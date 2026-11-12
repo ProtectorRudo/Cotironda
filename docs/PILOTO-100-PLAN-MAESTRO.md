@@ -163,6 +163,8 @@ Se reutilizó lector existente de ZIP/XML para Word/Excel, además de TXT/CSV; s
 - [ ] `Publicalo` expresamente para aplicar cambios de PILOTO; probar primer original REAL PDF/Excel con comprador autenticado en portal y guía IA (sin inventar textos).
 - [ ] Luego E2E WhatsApp completo, calendarios oficiales actualizados automáticamente por IA Central, 2 días hábiles/cierre y análisis general; primer original de prueba NO equivale a piloto terminado.
 
+**Corrección de orden (sin dependencia circular):** primero `Publicalo` puede autorizar instalar SQL/Edge/Preview **con flags OFF**; luego onboarding Auth del primer arquitecto y consentimiento V2 del proveedor; recién después activar flags autorizados, probar navegador y ejecutar guard `primer_original`. El OTP usa `shouldCreateUser:false` y no puede dar de alta al primer usuario por sí mismo. Las activaciones también requieren `Publicalo`. 
+
 **Prioridad de negocio:** dejar de agregar modelos/parsers sin necesidad. El bloqueo actual es **identidad/consentimiento + instalación + prueba comercial**, no otra prueba de un PDF sintético. [Acta V2-06](https://github.com/ProtectorRudo/Cotironda/blob/feat/v2-06-preflight-publicacion-bloqueante-20261112/docs/V2-06-PREFLIGHT-PUBLICACION-20261112.md).
 
 ## V2-00 — INVENTARIO PENDIENTE DE CERRAR (auditar antes de desplegar)
