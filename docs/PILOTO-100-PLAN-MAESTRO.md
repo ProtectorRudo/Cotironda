@@ -50,6 +50,18 @@ El objetivo comercial es que, **al cierre**, el comprador pueda obtener los orig
 
 **CI FINAL MVP355 (11/11/2026):** el SHA técnico [`721ecc12d2a9a35e54d53b35f009d419b4cca3f6`](https://github.com/ProtectorRudo/Cotironda/pull/798) pasó **5/5 workflows generales**: Next.js, unidad general (incluye **PG17 documental** y **Deno seguimiento** como jobs separados), PostgREST, PG17 aislamiento y verificación sitio. Probados dos formatos sintéticos, SHA, links débiles/ausentes, vínculo de aviso previo, duplicados, rondas solapadas y revocación. Además SELECT del nuevo SQL sin escrituras contra piloto: `2 despachos / 0 documentos acreditados`; token falso `not_found`. **Sin despliegue**, PR draft; no E2E real.
 
+## MVP365 — reaceptación sin reabrir rondas antiguas (12/11/2026)
+
+**[PR técnico #807](https://github.com/ProtectorRudo/Cotironda/pull/807)** (DRAFT sobre #806), [Acta 533](https://github.com/ProtectorRudo/Cotironda/blob/fix/mvp365-reaceptacion-no-retroactiva-20261112/docs/533-mvp365-reaceptacion-prospectiva-episodios.md). Desarrollo únicamente, sin SQL en piloto ni publicación.
+
+- [x] **Bloqueo lógico corregido en rama:** el PK antiguo `(proveedor,versión)` impedía volver a aceptar la misma versión después de una revocación. Se usa un episodio por mensaje HMAC único y cada revocación referencia una aceptación concreta, manteniendo historial.
+- [x] Una revocación global corta el acceso, y una aceptación nueva solo podría valer para **rondas creadas después** de la nueva aceptación **y del registro** (posteriores a la revocación informada y registrada). La aceptación anterior nunca revive y el régimen legado por ronda no se reactiva por esa reaceptación.
+- [x] Test PG17 ampliado con segunda aceptación posterior, ronda antigua bloqueada, ronda nueva sintética y segunda revocación. Tests Node y job PG17 vinculados a rama M365. **CI del SHA final pendiente de certificar**.
+- [ ] **NO CONFUNDIR** la mejora sintética con aceptación Whapi real: emisor verificable del aviso exacto, revisor de mensaje en claro con operador Supabase AAL2, aceptación auditada sin duplicados y prueba de Auth Phone/OTP del comprador siguen faltando.
+- [ ] Condiciones legales/comerciales de compartir originales de proveedores no adjudicados sin aprobar; dos PDFs/XLSX con vínculo fuerte, seguimiento y descarga E2E, REST `net` externo sin probar. **P0–P5 siguen ABIERTOS**.
+
+**SIGUIENTE ACCIÓN OBLIGATORIA:** detener nuevos cambios al modelo de consentimiento hasta tener **ensayo real de aviso Whapi → respuesta expresa → operador MFA**, y luego habilitar Auth comprador/OTP con autorización específica `Publicalo en cotironda-piloto`. Priorizar 1 comprador + 2 proveedores + 2 originales en navegador; jamás crear ronda superpuesta.
+
 ## MVP364 — aviso de condiciones probado antes de aceptar originales (12/11/2026)
 
 **[PR técnico #806](https://github.com/ProtectorRudo/Cotironda/pull/806)** sobre #805, DRAFT sin publicar, [Acta 532](https://github.com/ProtectorRudo/Cotironda/blob/feat/mvp364-proof-terms-delivered-20261112/docs/532-mvp364-aviso-terminos-proveedor-previo.md). **El código está en desarrollo; ninguna aceptación es real ni se habilitó la descarga**.
