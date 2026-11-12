@@ -7,6 +7,8 @@ on:
       - 'scripts/piloto/observaciones/v2-readiness-piloto-postrelease-20261112.json'
       - 'supabase/piloto/v2_06_release_inventory_readonly.sql'
       - 'tests/unit/v2-06-preflight-publicacion.test.mjs'
+      - 'apps/portal/vercel.json'
+      - 'tests/unit/v2-10-preview-git-policy.test.mjs'
       - '.github/workflows/cotironda-v2-06-release-preflight.yml'
   workflow_dispatch:
 permissions:
@@ -24,6 +26,8 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '22.16.0'
+      - name: Comprobar whitelist de Preview sin habilitar main
+        run: node --test tests/unit/v2-10-preview-git-policy.test.mjs
       - name: Probar fases, Auth, consentimiento, origen SHA, calendarios y flags
         run: node --test tests/unit/v2-06-preflight-publicacion.test.mjs
       - name: Probar bloqueo con snapshot real sin secretos
