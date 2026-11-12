@@ -50,6 +50,19 @@ El objetivo comercial es que, **al cierre**, el comprador pueda obtener los orig
 
 **CI FINAL MVP355 (11/11/2026):** el SHA técnico [`721ecc12d2a9a35e54d53b35f009d419b4cca3f6`](https://github.com/ProtectorRudo/Cotironda/pull/798) pasó **5/5 workflows generales**: Next.js, unidad general (incluye **PG17 documental** y **Deno seguimiento** como jobs separados), PostgREST, PG17 aislamiento y verificación sitio. Probados dos formatos sintéticos, SHA, links débiles/ausentes, vínculo de aviso previo, duplicados, rondas solapadas y revocación. Además SELECT del nuevo SQL sin escrituras contra piloto: `2 despachos / 0 documentos acreditados`; token falso `not_found`. **Sin despliegue**, PR draft; no E2E real.
 
+## MVP363 — preflight real del alta explícita y auditoría del operador (12/11/2026)
+
+**[PR técnico #805](https://github.com/ProtectorRudo/Cotironda/pull/805)** sobre #804, borrador, **sin despliegue**. [Acta 531](https://github.com/ProtectorRudo/Cotironda/blob/feat/mvp363-preflight-alta-explicita-20261112/docs/531-mvp363-preflight-aceptacion-real-operador.md). No crear rondas superpuestas ni enviar WhatsApps.
+
+- [x] **Verificación REAL solo SELECT** en Supabase `cotironda-piloto`: 0 usuarios Auth, 0 operadores habilitados, 0 consentimientos originales antiguos vigentes, política originales OFF, M362 no instalado, operador MFA M267 instalado y **1 ronda prepared vigente**. Resultado `NO_APTO_PARA_ALTA_REAL`.
+- [x] Consulta del preflight versionada en `supabase/tests/preflight/mvp363-originales-alta-readiness-readonly.sql`: solo conteos y estados, sin PII ni mutaciones; el resultado positivo únicamente indica precondiciones parciales, **NUNCA consentimiento**. Pruebas Node del contrato añadidas; **CI del PR #805 pendiente de certificar**.
+- [x] Revisada reutilización de operador `operator_session_mvp267()` con sesión Auth real y MFA AAL2, sin crear nuevo login.
+- [ ] **Riesgo P0 detectado:** MVP362 prueba mensaje de aceptación entrante pero no acredita que el proveedor recibió previamente **esa versión exacta** del texto de condiciones. Requiere prueba autenticada del mensaje saliente, referencia de respuesta y revisión del texto descifrado por operador con MFA. Un hash no prueba intención.
+- [ ] **Reaceptación:** el PK M362 admite un opt-in por proveedor/versión; tras revocar, una reaceptación de igual versión no cabe. Definir historial inmutable por episodio, con nuevos tests de revocación, antes de habilitar.
+- [ ] Aprobación comercial/legal del texto (incluye originales de no ganadores e identificadores), usuario operador MFA real, alta prospectiva auditada y comprador Auth Phone/OTP, dos fuentes con vínculo fuerte, portal y cierre E2E, control externo `net`. **P0–P5 continúan ABIERTOS**.
+
+**SIGUIENTE ACCIÓN ÚNICA:** desarrollar vínculo verificable *condiciones enviadas → aceptación expresa recibida* y revisión segura por operador MFA, dejando todas las puertas apagadas. No habilitar originales por participación general ni usar la ronda ya preparada como autorización retroactiva. Luego, autorización específica «Publicalo en cotironda-piloto» para instalar y probar, tras aprobar términos y preflight.
+
 ## MVP362 — consentimiento de originales UNA VEZ al alta, sin autorizaciones retroactivas (12/11/2026)
 
 **[PR técnico #804](https://github.com/ProtectorRudo/Cotironda/pull/804)** sobre #803, **SOLO DESARROLLO, sin despliegue**, [Acta 530](https://github.com/ProtectorRudo/Cotironda/blob/feat/mvp362-consentimiento-originales-una-vez-20261112/docs/530-mvp362-consentimiento-originales-una-vez.md). Términos disponibles como [BORRADOR](https://github.com/ProtectorRudo/Cotironda/blob/feat/mvp362-consentimiento-originales-una-vez-20261112/docs/politica-originales-alta-v1-borrador.md), NO aprobados ni presentados a proveedores.
