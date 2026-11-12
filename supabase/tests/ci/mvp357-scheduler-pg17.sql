@@ -70,10 +70,10 @@ BEGIN
   valid_endpoint,valid_dual_auth,empty_json_body,no_authorization_header
  ) VALUES (
   url='https://ilggkalaafhtiysyzlmg.supabase.co/functions/v1/cotironda-piloto-ai-batch',
-  headers->>'apikey'=('sb_secret_'||repeat('A',32)) AND
+  headers->>'x-cotironda-batch-cron-proof'=repeat('P',64) AND
     headers->>'x-cotironda-ai-batch-secret'=repeat('X',64),
   body='{}'::jsonb,
-  NOT headers ? 'Authorization'
+  NOT headers ? 'Authorization' AND NOT headers ? 'apikey'
  ) RETURNING call_id INTO xid;
  IF timeout_milliseconds<>5000 THEN
   RAISE EXCEPTION 'mvp357_timeout_not_bounded';END IF;
@@ -158,7 +158,7 @@ BEGIN
   RAISE EXCEPTION 'mvp357_no_vault_secrets_should_fail_closed';END IF;
 
  INSERT INTO vault.decrypted_secrets VALUES
- ('cotironda_piloto_ai_batch_apikey_mvp357','sb_secret_'||repeat('A',32)),
+ ('cotironda_piloto_ai_batch_cron_proof_mvp357',repeat('P',64)),
  ('cotironda_piloto_ai_batch_private_mvp357',repeat('X',64));
  msg:=cotironda_piloto_privado.ai_batch_retry_tick_mvp357();
  IF msg<>'queued' THEN RAISE EXCEPTION 'mvp357_eligible_not_queued';END IF;
