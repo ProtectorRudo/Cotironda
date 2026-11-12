@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
+import {readFileSync} from 'node:fs';
+import {dirname,resolve} from 'node:path';
+import {fileURLToPath} from 'node:url';
 import {contactoHashParaPiloto,claveAdminPilotoValida,
  prepararCompradorAuthMvp361} from '../../scripts/piloto/bootstrap-buyer-auth-mvp361.mjs';
 
@@ -148,4 +151,22 @@ test('MVP361: duplicate account / unexpected confirmation must not claim success
      phone,phone_confirmed_at:'2026-11-12T00:00:00Z'}),{status:201})
  });
  assert.equal(r2.status,'MANUAL_REVIEW_AUTH_RESPONSE');
+});
+
+test('MVP361: preflight LIVE es SOLO SELECT y no filtra ninguna identidad',()=>{
+ const root=resolve(dirname(fileURLToPath(import.meta.url)),'../..');
+ const sql=readFileSync(resolve(root,
+  'supabase/tests/preflight/mvp361-buyer-auth-readiness-readonly.sql'),'utf8');
+ const uncommented=sql.replace(/^--.*$/gmu,'');
+ assert.match(uncommented,/^\s*WITH buyers AS \(/u);
+ assert.doesNotMatch(uncommented,
+  /\b(?:INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|TRUNCATE|GRANT|REVOKE|CALL)\b/iu);
+ for(const marker of ['01_buyer_whapi_identity','02_auth_user',
+  '03_supplier_participation','04_originals_specific_consent',
+  '05_originals_policy','06_active_round','07_auth_bootstrap_rpc',
+  '08_phone_sms_provider','09_data_api_net'])
+  assert(sql.includes(marker),marker);
+ assert(!sql.includes('nonce_b64'));
+ assert(!sql.includes('ciphertext_b64'));
+ assert(!sql.includes('display_label'));
 });
