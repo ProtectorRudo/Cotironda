@@ -8,6 +8,9 @@ import type {CatalogoRespuestasV2} from '../../../../../../../src/server/v2-03-c
 import {nombreDescargaOriginalV2} from '../../../../../lib/piloto-v2-nombre-descarga.ts';
 import {debeActualizarRespuestasV2,INTERVALO_ACTUALIZACION_RESPUESTAS_V2_MS}
  from '../../../../../lib/piloto-v2-actualizacion-respuestas.ts';
+import {seleccionarAnalisisPendientesV2,registrarIntentosAnalisisV2,
+ type IntentoAnalisisV2}
+ from '../../../../../lib/piloto-v2-reintento-analisis.ts';
 
 const PILOT='https://ilggkalaafhtiysyzlmg.supabase.co';
 export function RespuestasCompradorV2({rondaId}:{rondaId:string}){
@@ -19,7 +22,7 @@ export function RespuestasCompradorV2({rondaId}:{rondaId:string}){
    auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}
   });
  },[]);
- const analysisAttempted=useRef(new Set<string>());
+ const historialAnalisis=useRef(new Map<string,IntentoAnalisisV2>());
  const authGeneration=useRef(0);
  const userIdActual=useRef<string|null>(null);
  const refreshInFlight=useRef(false);
@@ -41,7 +44,7 @@ export function RespuestasCompradorV2({rondaId}:{rondaId:string}){
    if(nextUserId!==userIdActual.current){
     authGeneration.current++;
     userIdActual.current=nextUserId;
-    analysisAttempted.current.clear();
+    historialAnalisis.current.clear();
     setCatalog(null);
     setSessionVersion(version=>version+1);
    }
@@ -132,32 +135,35 @@ export function RespuestasCompradorV2({rondaId}:{rondaId:string}){
   };
  },[authenticated,client,busy,refresh]);
 
- // No buyer confirmation needed: analyze only verified responders.
- // SQL claim prevents concurrent model calls and duplicate charges.
+ // Reintenta hasta tres veces por original, espaciado seis minutos:
+ // SQL mantiene el verdadero máximo de claims y los permisos por empresa.
+ // No añade mensajes WhatsApp ni ejecuta IA por el GET periódico.
  useEffect(()=>{
-  if(!authenticated||!catalog||analysisAttempted.current.size>=100)return;
-  const missing=catalog.respuestas.filter(item=>item.puntos.length===0&&
-   !analysisAttempted.current.has(item.documentoId)).slice(
-    0,Math.min(4,100-analysisAttempted.current.size));
-  if(missing.length===0)return;
-  for(const item of missing)analysisAttempted.current.add(item.documentoId);
+  if(!authenticated||!catalog||document.visibilityState!=='visible')return;
+  const ahoraMs=Date.now();
+  const pendientes=seleccionarAnalisisPendientesV2(
+   catalog.respuestas,historialAnalisis.current,ahoraMs);
+  if(pendientes.length===0)return;
+  // Registrar antes de await: renders nuevos no duplican la misma tanda.
+  registrarIntentosAnalisisV2(historialAnalisis.current,pendientes,ahoraMs);
+  const generation=authGeneration.current;
   void (async()=>{
    const access=await token();
-   if(!access)return;
+   if(!access||generation!==authGeneration.current)return;
    try{
-    await Promise.allSettled(missing.map(async item=>{
-     await fetch(api+'/originales/'+encodeURIComponent(item.documentoId)+
+    await Promise.allSettled(pendientes.map(async documentoId=>{
+     if(generation!==authGeneration.current)return;
+     await fetch(api+'/originales/'+encodeURIComponent(documentoId)+
       '/analizar',{
       method:'POST',cache:'no-store',credentials:'omit',
-      headers:{Authorization:'Bearer '+access}
+      headers:{Authorization:'Bearer '+access},
+      signal:AbortSignal.timeout(60_000)
      });
     }));
-    await refresh();
-   }catch{/* original stays visible; private analysis optional */}
+    if(generation===authGeneration.current)await refresh(true);
+   }catch{/* Nunca bloquea el original; habrá reintento espaciado. */}
   })();
-  // One bounded attempt per original for this session. No polling.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
- },[catalog,authenticated]);
+ },[catalog,authenticated,api,token,refresh]);
 
  function cerrarSesion(){
   authGeneration.current++;
