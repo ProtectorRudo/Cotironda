@@ -40,7 +40,7 @@ jobs:
   pg17-mvp354-documental:
     # Asegura ejecución en el PR técnico aun si el nuevo workflow
     # específico no está en la rama base de GitHub. Sin credenciales PILOTO.
-    if: ${{ github.event_name == 'pull_request' && (github.head_ref == 'feat/mvp354-document-receipt-status-20261111' || github.head_ref == 'fix/mvp355-receipt-source-provenance-20261111' || github.head_ref == 'fix/mvp356-guard-despachos-solapados-piloto-20261112' || github.head_ref == 'feat/mvp357-batch-retry-cron-piloto-20261112') }}
+    if: ${{ github.event_name == 'pull_request' && (github.head_ref == 'feat/mvp354-document-receipt-status-20261111' || github.head_ref == 'fix/mvp355-receipt-source-provenance-20261111' || github.head_ref == 'fix/mvp356-guard-despachos-solapados-piloto-20261112' || (github.head_ref == 'feat/mvp357-batch-retry-cron-piloto-20261112' || github.head_ref == 'fix/mvp358-legacy-dispatch-guard-piloto-20261112')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 12
     services:
@@ -75,7 +75,7 @@ jobs:
           psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regprocedure('public.cotironda_piloto_document_receipts_mvp354(text)') IS NULL" | grep -Fx 't'
 
   deno-mvp354-seguimiento:
-    if: ${{ github.event_name == 'pull_request' && (github.head_ref == 'feat/mvp354-document-receipt-status-20261111' || github.head_ref == 'fix/mvp355-receipt-source-provenance-20261111' || github.head_ref == 'fix/mvp356-guard-despachos-solapados-piloto-20261112' || github.head_ref == 'feat/mvp357-batch-retry-cron-piloto-20261112') }}
+    if: ${{ github.event_name == 'pull_request' && (github.head_ref == 'feat/mvp354-document-receipt-status-20261111' || github.head_ref == 'fix/mvp355-receipt-source-provenance-20261111' || github.head_ref == 'fix/mvp356-guard-despachos-solapados-piloto-20261112' || (github.head_ref == 'feat/mvp357-batch-retry-cron-piloto-20261112' || github.head_ref == 'fix/mvp358-legacy-dispatch-guard-piloto-20261112')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -91,7 +91,7 @@ jobs:
         run: deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-seguimiento/index.ts
 
   pg17-mvp356-claim-anti-solapamientos:
-    if: ${{ github.event_name == 'pull_request' && github.head_ref == 'fix/mvp356-guard-despachos-solapados-piloto-20261112' || github.head_ref == 'feat/mvp357-batch-retry-cron-piloto-20261112' }}
+    if: ${{ github.event_name == 'pull_request' && github.head_ref == 'fix/mvp356-guard-despachos-solapados-piloto-20261112' || (github.head_ref == 'feat/mvp357-batch-retry-cron-piloto-20261112' || github.head_ref == 'fix/mvp358-legacy-dispatch-guard-piloto-20261112') }}
     runs-on: ubuntu-latest
     timeout-minutes: 12
     services:
@@ -127,7 +127,7 @@ jobs:
           psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regprocedure('public.cotironda_piloto_ia_claim_mvp314(uuid)') IS NULL" | grep -Fx 't'
 
   pg17-mvp357-batch-retry:
-    if: ${{ github.event_name == 'pull_request' && github.head_ref == 'feat/mvp357-batch-retry-cron-piloto-20261112' }}
+    if: ${{ github.event_name == 'pull_request' && (github.head_ref == 'feat/mvp357-batch-retry-cron-piloto-20261112' || github.head_ref == 'fix/mvp358-legacy-dispatch-guard-piloto-20261112') }}
     runs-on: ubuntu-latest
     timeout-minutes: 12
     services:
@@ -163,7 +163,7 @@ jobs:
           psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regprocedure('public.cotironda_piloto_ia_next_batch_mvp314()') IS NULL" | grep -Fx 't'
 
   deno-mvp357-ai-batch:
-    if: ${{ github.event_name == 'pull_request' && github.head_ref == 'feat/mvp357-batch-retry-cron-piloto-20261112' }}
+    if: ${{ github.event_name == 'pull_request' && (github.head_ref == 'feat/mvp357-batch-retry-cron-piloto-20261112' || github.head_ref == 'fix/mvp358-legacy-dispatch-guard-piloto-20261112') }}
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -177,3 +177,38 @@ jobs:
           deno-version: v2.x
       - name: Verificar Edge real del lote y validador body
         run: deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-ai-batch/index.ts
+
+  pg17-mvp358-legacy-cross-pipeline:
+    if: ${{ github.event_name == 'pull_request' && github.head_ref == 'fix/mvp358-legacy-dispatch-guard-piloto-20261112' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: synthetic_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: synthetic_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - name: Checkout sin secretos
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Verificar guardia LEGACY + IA con misma ronda y dos compradores
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/mvp358-legacy-claim-pg17.sql
+          psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regnamespace('cotironda_piloto_privado') IS NULL" | grep -Fx 't'
+          psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regprocedure('public.cotironda_piloto_claim_whapi_v1()') IS NULL" | grep -Fx 't'
