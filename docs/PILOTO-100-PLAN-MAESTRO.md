@@ -138,6 +138,18 @@ Se reutilizó lector existente de ZIP/XML para Word/Excel, además de TXT/CSV; s
 
 **Estado real:** PR #825 no desplegado, sin Auth comprador en PILOTO según último inventario; pruebas son sintéticas. **Próxima tarea única:** validar CI final y preparar publicación de un primer presupuesto real privado, no sumar nuevas funciones alejadas del piloto.
 
+## Entrega técnica V2-04c — PR #826: PDF real y fuente probada (12/11/2026)
+
+[PR #826](https://github.com/ProtectorRudo/Cotironda/pull/826) encadena con #825 **sin tocar la Whapi v76 actual**: lector de texto posicionado de PDF ya existente (`supplier-source-pdf-general.ts`) ejecutado en función Supabase Edge privada Deno, servidor de portal Next.js envia bytes autorizados y hash original por HTTPS con secreto largo compartido **solo servidor-servidor**. SHA original y SHA texto revalidados, 8 MiB/12 páginas/300 filas/24k caracteres. PDF legible alimenta guía IA individual con citas; PDF escaneado o sin texto original sigue descargable, resumen pendiente. No incluye imágenes OCR ni texto de WhatsApp sin archivo.
+
+- [ ] Comprobar CI último SHA PR #826, incluido **Deno leyendo PDF sintético real**, Node seguridad y original→guía, Next.js, aislamiento PG17 y regresiones.
+- [ ] Preparar claves exclusivamente privadas Vercel/Supabase para PDF Edge, con `verify_jwt=false` y secreto largo validado en handler, feature flag OFF y release SHA exacta. **No configurar ni desplegar con `Avanza`, solo `Publicalo`**.
+- [ ] Preflight del Edge Whapi v76 y Supabase PILOTO: buyer Auth, consentimientos V2 de proveedores, tablas/RPC #816–#825, original Storage y DDL/backups ordenados; no asociar artificialmente históricos ambiguos.
+- [ ] Primera prueba REAL con PDF legible y Excel del proveedor, dos guías en portal autenticado y archivos originales sin modificaciones.
+- [ ] Después cerrar turno 2 días hábiles validado y entregar informe comparativo general; seguir con OCR de imágenes/escaneados sin inventar fuentes.
+
+**Estado:** todo nuevo en rama, cero cambios en vivo, no WhatsApps, no E2E. Relevo PR #815/Issue #794 obliga a documentar SHA y tests reales.
+
 ## V2-00 — INVENTARIO PENDIENTE DE CERRAR (auditar antes de desplegar)
 
 **Auditoría inicial en curso, 12/11/2026:** [Inventario V2-00 de código y PILOTO](V2-00-INVENTARIO-REUTILIZACION-20261112.md). Se verificó en SOLO LECTURA la diferencia entre `main` estático, núcleo de la rama operativa #813, PR documental #815 y funciones/tablas reales. Hay 106 líneas de catálogo pero sin campos completos de SKU y sin confirmación formal; los motores offline conservan filtros por rubro, no cumplen aún D013 en el piloto. Próximo control antes de escribir código: comparar SHA de funciones y despliegue Vercel, Storage/RLS y elegir la rama funcional de V2-02 **sin** PR #814. No hay nuevos envíos ni E2E.
