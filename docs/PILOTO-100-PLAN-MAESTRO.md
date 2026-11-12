@@ -50,6 +50,20 @@ El objetivo comercial es que, **al cierre**, el comprador pueda obtener los orig
 
 **CI FINAL MVP355 (11/11/2026):** el SHA técnico [`721ecc12d2a9a35e54d53b35f009d419b4cca3f6`](https://github.com/ProtectorRudo/Cotironda/pull/798) pasó **5/5 workflows generales**: Next.js, unidad general (incluye **PG17 documental** y **Deno seguimiento** como jobs separados), PostgREST, PG17 aislamiento y verificación sitio. Probados dos formatos sintéticos, SHA, links débiles/ausentes, vínculo de aviso previo, duplicados, rondas solapadas y revocación. Además SELECT del nuevo SQL sin escrituras contra piloto: `2 despachos / 0 documentos acreditados`; token falso `not_found`. **Sin despliegue**, PR draft; no E2E real.
 
+## P0 — emisor de condiciones Whapi reutilizando D055 (12/11/2026)
+
+**[PR técnico #808](https://github.com/ProtectorRudo/Cotironda/pull/808)** DRAFT sobre #807, [Acta 534](https://github.com/ProtectorRudo/Cotironda/blob/feat/p0-whapi-aviso-alta-sin-reenvio-20261112/docs/534-p0-emisor-whapi-terminos-sin-reenvio.md). **Sin publicación y sin WhatsApps reales.**
+
+- [x] Se revisó la ruta Whapi real del PILOTO y el transporte de texto D055 ya existente; no se duplica ni se modifica el envío de PDFs en producción/piloto.
+- [x] Adaptador server-only `whapi-terms-onboarding-p0.ts`, apagado por defecto, utiliza D055: texto íntegro con SHA256 de política y versión exacta, mismo proveedor/chat HMAC, destinatario autorizado, BEGIN transaccional confirmado **ANTES** de HTTP y revalidación inmediatamente previa. ACK Whapi válido genera HMAC opaco de mensaje, **no consentimiento**.
+- [x] Tests Node sintéticos añadidos: bandera OFF, SHA/chat/canal equivocados, destino no permitido, BEGIN desconocido, revocación pre-HTTP, timeout, ACK malformado, falla de persistencia y cero reenvíos. **CI SHA final pendiente de certificar**.
+- [x] **Supabase PILOTO reconsultado 12/11/2026 SOLO LECTURA**: Auth 0; operadores habilitados 0; consentimientos originales 0; política OFF; 1 ronda prepared vigente; M362 NO instalado. No se modificaron datos.
+- [ ] **BLOQUEO CONCRETO SIGUIENTE:** implementar y conectar puertos del backend real `claim / beginCommitted / authorizeCommitted / finishCommitted` con reserva SQL duradera, idempotencia y autenticación de operador AAL2; vincular ACK Whapi genuino al ledger M364. Este PR **no está cableado** a una ruta HTTP ni a SQL vivo: los tests son simulados. No declarar el emisor listo para uso real.
+- [ ] Aprobar versión y texto legal/comercial compartido (no ganadores/PII); nunca truncarlo para Whapi. Definir una presentación verificable si excede 1.500 caracteres; no autorizar por silencio.
+- [ ] Revisión humana MFA del mensaje de aceptación, comprador OTP, dos originales con asociación fuerte, vista de recepción, cierre/descarga E2E, prueba `net` externa. **P0–P5 ABIERTOS**.
+
+**SIGUIENTE ACCIÓN ÚNICA:** escribir adaptador SQL del emisor y probar reserva/BEGIN/ACK/uncertain en PG17, sin publicar. Tras aprobación jurídica, operador MFA y `Publicalo en cotironda-piloto`, efectuar un único ensayo real de alta; después dar prioridad absoluta al circuito 1 arquitecto + 2 proveedores + 2 documentos. No iniciar ronda superpuesta ni más trabajos del parser económico.
+
 ## MVP365 — reaceptación sin reabrir rondas antiguas (12/11/2026)
 
 **[PR técnico #807](https://github.com/ProtectorRudo/Cotironda/pull/807)** (DRAFT sobre #806), [Acta 533](https://github.com/ProtectorRudo/Cotironda/blob/fix/mvp365-reaceptacion-no-retroactiva-20261112/docs/533-mvp365-reaceptacion-prospectiva-episodios.md). Desarrollo únicamente, sin SQL en piloto ni publicación.
