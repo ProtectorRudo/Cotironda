@@ -168,7 +168,7 @@ export function RespuestasCompradorV2({rondaId}:{rondaId:string}){
  function cerrarSesion(){
   authGeneration.current++;
   userIdActual.current=null;
-  analysisAttempted.current.clear();
+  historialAnalisis.current.clear();
   setCatalog(null);setAuthenticated(false);setError('');
   void client?.auth.signOut();
  }
