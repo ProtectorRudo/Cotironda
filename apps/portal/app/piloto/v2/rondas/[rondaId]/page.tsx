@@ -1,5 +1,5 @@
 import {notFound} from 'next/navigation';
-import {respuestasV2Habilitadas} from '../../../../../src/server/v2-03-respuestas-http.ts';
+import {respuestasV2Habilitadas} from '../../../../../../../src/server/v2-03-respuestas-http.ts';
 import {RespuestasCompradorV2} from './respuestas-comprador';
 
 export const runtime='nodejs';
