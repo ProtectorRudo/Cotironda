@@ -1,3 +1,6 @@
+## 2026-11-12 — V2-03b: originales verificables y portal buyer (SOLO DESARROLLO)
+Se propuso fuente privada por documento autorizada contra V2-03a, copia SHA-256 exacta de Storage, sesión Auth vigente y revalidación tras I/O con auditoría SQL durable antes de entregar bytes. Ruta Next privada, acceso por teléfono autenticado para usuarios existentes (sin signup), pantalla de solo proveedores respondedores con análisis en preparación y descarga original. Kill switch previo OFF, preview SHA exacto. Tests Node y PostgreSQL 17 con rollback. **No instalado en PILOTO, sin usuarios Auth ni consentimientos V2 cargados, sin WhatsApps reales y sin E2E.** [Acta V2-03b](docs/V2-03B-DESCARGA-AUDITADA-20261112.md).
+
 ## 2026-11-12 — Cotironda V2-03a: catálogo privado de respondedores (SOLO DESARROLLO)
 
 Se preparó un listado basado en prueba firme del original (inbox + SHA Storage + MVP225), Auth del comprador y consentimiento V2 prospectivo por proveedor, sin usar el filtro antiguo de ronda cerrada o verificación económica V9. Política OFF por defecto; API Next.js GET en preview con SHA pinning, sin descarga ni datos de invitados pendientes, proyección segura y pruebas PG17/Node sintéticas. **No hubo cambios en base PILOTO, WhatsApp, Storage, Auth real ni producción; no es portal terminado.** [Acta V2-03a](docs/V2-03A-RESPONDEDORES-SEGUROS-20261112.md).
