@@ -1,3 +1,6 @@
+## 2026-11-12 — Cotironda V2-02: adjuntos con referencia en caption (DESARROLLO)
+Conservando el webhook histórico inmutable, se preparó overlay V2 (flag OFF) para que documentos PDF/Excel/fotos recibidos sin mensaje citado, pero con código en el caption Whapi, pasen una búsqueda de despacho verificado tras quedar archivados con SHA. RPC privada solo lectura exige emisor y original auténticos, consentimiento vigente y previo, invitación, único despacho acreditado y referencia inequívoca. MVP225 sigue asociando finalmente. Nuevos tests Node, Deno y PG17 con ROLLBACK. **Sin SQL ni Edge instalados, sin WhatsApps enviados, sin atribuir documentos históricos, sin E2E ni portal final.** [Acta V2-02 caption](docs/V2-02-CAPTION-ADJUNTOS-20261112.md).
+
 ## 2026-11-12 — Cotironda V2-02: prueba temporal de autorizaciones (SOLO DESARROLLO)
 PR #816: el lookup por referencia exige consentimiento comprador/proveedor e invitación anteriores al despacho Whapi, además de consentimiento del proveedor anterior a su respuesta. Se agregaron pruebas sintéticas PG17 de autorizaciones tardías. Consulta solo lectura en cotironda-piloto: 4/4 despachos aceptados cumplen orden cronológico; 0 altas tardías observadas. Sin SQL aplicado, Edge desplegada, WhatsApp enviado ni E2E. Fuente vigente: PR #815 e Issue #794.
 
