@@ -69,7 +69,7 @@ La migración de plazo V2 añade `business_two_days` para **rondas nuevas** úni
 - [x] Implementación aislada D013 de producto por catálogo y zona, sin filtrar por rubro en V2, sobre candidato Whapi v76.
 - [x] Calendario SQL 2 días hábiles, modo legacy preservado, cron puede seguir `closes_at`; flag OFF.
 - [x] Test PG17 con copia de RPC pública real y migraciones en orden D013→calendario→modo, rollback; fin de semana, feriado, cruce de año, política OFF y zona sin aprobación.
-- [ ] Verificar **toda** la CI para el último SHA #821 y corregir cualquier falla.
+- [x] **CI completa #821** SHA `51583f5c6b5a7375978f8499e6641f6f3f8b36d0` **9/9 SUCCESS**; PG17 aplica 3 SQL en orden con ROLLBACK, Deno preserva Edge v76, unitarias, Next y controles globales. Sin E2E ni despliegue.
 - [ ] Validar **equivalencia técnica** IA real para D013: marca excluyente, tipo de cemento, hidrófugos y presentaciones, con catálogo/zonas actualizados. No asumir equivalencia por texto parecido.
 - [ ] Aprobar calendario de feriados nacional, provincial, municipal por localidad y año con fuentes; hoy NO hay datos oficiales cargados.
 - [ ] Preparar instalación controlada SQL/Edge/Vercel de #816–#821 y rollback, configurar comprador Auth + consentimiento de proveedores V2; instalar **solo bajo `Publicalo`**, sin mutar rondas históricas.
