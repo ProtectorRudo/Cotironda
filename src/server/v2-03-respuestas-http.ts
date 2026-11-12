@@ -5,7 +5,7 @@ import {bearerPiloto,claimsDeJwtValidado,type SupabaseUserPiloto}
  from './originales-piloto-http-runtime.ts';
 import {proyectarRespuestasV2} from './v2-03-catalogo-respondedores.ts';
 
-const URL='https://ilggkalaafhtiysyzlmg.supabase.co';
+const PILOT_URL='https://ilggkalaafhtiysyzlmg.supabase.co';
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/iu;
 const SHA=/^[a-f0-9]{40}$/u;
 const HEADERS={
@@ -27,7 +27,7 @@ export function respuestasV2Habilitadas(env:RespuestasEnv):boolean{
  const sha=env.COTIRONDA_PILOT_V2_RESPONDERS_RELEASE_SHA;
  return env.COTIRONDA_PILOT_V2_RESPONDERS_ENABLED==='true'&&
   env.VERCEL_ENV==='preview'&&env.COTIRONDA_REGISTRATION_ENABLED==='false'&&
-  env.COTIRONDA_PILOT_SUPABASE_URL===URL&&
+  env.COTIRONDA_PILOT_SUPABASE_URL===PILOT_URL&&
   env.COTIRONDA_PILOT_SUPABASE_PUBLISHABLE_KEY?.startsWith('sb_publishable_')===true&&
   env.COTIRONDA_PILOT_SUPABASE_SECRET_KEY?.startsWith('sb_secret_')===true&&
   typeof sha==='string'&&SHA.test(sha)&&env.VERCEL_GIT_COMMIT_SHA===sha;
