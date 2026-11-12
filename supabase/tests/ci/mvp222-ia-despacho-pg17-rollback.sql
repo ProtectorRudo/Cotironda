@@ -197,6 +197,26 @@ CREATE TABLE cotironda_piloto_privado.integration_flags(
 INSERT INTO cotironda_piloto_privado.integration_flags VALUES(true,true);
 
 \ir ../../piloto/mvp222_ia_despacho_seguro_sin_activar.sql
+-- SYNTHETIC stand-ins ONLY for isolated CI: deployed PILOTO already has
+-- real MVP276/278/280 guards. Never copy these stubs into migrations.
+CREATE TABLE cotironda_piloto_privado.ci_buyer_review_mvp280(
+ request_id uuid PRIMARY KEY REFERENCES cotironda_piloto_privado.requests(id),
+ approved boolean NOT NULL
+);
+CREATE FUNCTION cotironda_piloto_privado.confirmada_comprador_mvp280(p_id uuid)
+RETURNS boolean LANGUAGE sql STABLE SET search_path='' AS $$
+ SELECT coalesce((SELECT approved FROM cotironda_piloto_privado.ci_buyer_review_mvp280
+  WHERE request_id=p_id),false)
+$$;
+CREATE FUNCTION cotironda_piloto_privado.fuente_original_documental_mvp276(
+ a text,b text,c text,d text) RETURNS boolean
+LANGUAGE sql IMMUTABLE SET search_path='' AS $$SELECT false$$;
+CREATE FUNCTION cotironda_piloto_privado.fuente_binaria_comprador_mvp278(
+ a text,b text,c text,d text,e integer) RETURNS boolean
+LANGUAGE sql IMMUTABLE SET search_path='' AS $$SELECT false$$;
+INSERT INTO cotironda_piloto_privado.ci_buyer_review_mvp280(request_id,approved)
+ SELECT request_id,true FROM cotironda_piloto_privado.ai_shadow_requests_mvp221;
+\ir ../../piloto/p1_evitar_rondas_solapadas_proveedor.sql
 CREATE TRIGGER enqueue_on_invitation
  AFTER INSERT ON cotironda_piloto_privado.invitations
  FOR EACH ROW EXECUTE FUNCTION cotironda_piloto_privado.queue_invitation_whapi_v1();
@@ -263,4 +283,133 @@ BEGIN
   'public.cotironda_piloto_ia_claim_mvp222(uuid)','EXECUTE')
  THEN RAISE EXCEPTION 'mvp222_privileges_invalid';END IF;
 END $test222$;
+
+-- P1: two concurrent business rounds may not publish invitations for the
+-- SAME supplier; unrelated suppliers remain available. ROLLBACK below.
+DO $p1_no_supplier_overlap$
+DECLARE prior uuid; next_round uuid; independent uuid; response jsonb;
+BEGIN
+ SELECT request_id INTO prior
+ FROM cotironda_piloto_privado.ai_shadow_requests_mvp221
+ ORDER BY created_at LIMIT 1;
+ IF prior IS NULL THEN RAISE EXCEPTION 'p1_missing_baseline';END IF;
+
+ -- A different fourth supplier has no current round; must NOT be blocked.
+ INSERT INTO cotironda_piloto_privado.participants
+ (key,participant_role,delivery_city,chat_hmac,consent_at,opted_out_at,catalogue_confirmed_at)
+ VALUES ('ferreteria_delta','supplier','La Plata',repeat('6',64),now(),null,now());
+ INSERT INTO cotironda_piloto_privado.catalogue_lines
+ (participant_key,line_no,literal_description,family_code,recognition_state)
+ VALUES('ferreteria_delta',1,'Cemento CPC bolsa 50 kilos',
+  'cemento_gris_obra','curated_family');
+
+ INSERT INTO cotironda_piloto_privado.requests
+ (buyer_key,delivery_city,original_request,source_hmac,state,closes_at)
+ SELECT buyer_key,delivery_city,original_request,repeat('d',64),'draft',
+  now()+interval '4 days'
+ FROM cotironda_piloto_privado.requests WHERE id=prior
+ RETURNING id INTO independent;
+ INSERT INTO cotironda_piloto_privado.whapi_inbox
+ (message_hmac,participant_key,chat_hmac,kind,processing_state,
+  plaintext_sha256,request_id)
+ SELECT repeat('d',64),participant_key,chat_hmac,kind,processing_state,
+  plaintext_sha256,independent FROM cotironda_piloto_privado.whapi_inbox
+ WHERE message_hmac=repeat('b',64);
+ INSERT INTO cotironda_piloto_privado.ai_shadow_requests_mvp221
+ (request_id,source_hmac,status)
+ VALUES(independent,repeat('d',64),'shadow');
+ INSERT INTO cotironda_piloto_privado.request_lines
+ (request_id,line_no,original_description,quantity,unit,family_code)
+ SELECT independent,line_no,original_description,quantity,unit,family_code
+ FROM cotironda_piloto_privado.request_lines WHERE request_id=prior AND line_no=1;
+ INSERT INTO cotironda_piloto_privado.ai_shadow_rubros_mvp221
+ (request_id,line_no,rubro,evidencia)
+ SELECT independent,line_no,rubro,evidencia
+ FROM cotironda_piloto_privado.ai_shadow_rubros_mvp221
+ WHERE request_id=prior AND line_no=1;
+ INSERT INTO cotironda_piloto_privado.ai_shadow_destinos_mvp221
+ (request_id,supplier_key,line_no,catalogue_line_no,catalogue_description,tipo,explicacion)
+ SELECT independent,'ferreteria_delta',line_no,catalogue_line_no,
+ catalogue_description,tipo,explicacion
+ FROM cotironda_piloto_privado.ai_shadow_destinos_mvp221
+ WHERE request_id=prior AND supplier_key='corralon_alfa';
+
+ UPDATE cotironda_piloto_privado.ai_dispatch_gate_mvp222
+ SET enabled=true,activated_at=now() WHERE only_row;
+ response:=public.cotironda_piloto_ia_publish_mvp222(independent);
+ IF response->>'state'<>'buyer_review_required'
+ THEN RAISE EXCEPTION 'p1_buyer_review_guard_lost_%',response;END IF;
+ IF EXISTS(SELECT 1 FROM cotironda_piloto_privado.invitations
+   WHERE request_id=independent)
+ THEN RAISE EXCEPTION 'p1_buyer_guard_made_invitation';END IF;
+ INSERT INTO cotironda_piloto_privado.ci_buyer_review_mvp280
+ (request_id,approved) VALUES(independent,true);
+ response:=public.cotironda_piloto_ia_publish_mvp222(independent);
+ IF response->>'state'<>'ready_for_delivery'
+ THEN RAISE EXCEPTION 'p1_unrelated_supplier_blocked_%',response;END IF;
+
+ -- A new round shares 3 already prepared suppliers with prior request.
+ INSERT INTO cotironda_piloto_privado.requests
+ (buyer_key,delivery_city,original_request,source_hmac,state,closes_at)
+ SELECT buyer_key,delivery_city,original_request,repeat('c',64),'draft',
+  now()+interval '4 days'
+ FROM cotironda_piloto_privado.requests WHERE id=prior
+ RETURNING id INTO next_round;
+ INSERT INTO cotironda_piloto_privado.whapi_inbox
+ (message_hmac,participant_key,chat_hmac,kind,processing_state,
+  plaintext_sha256,request_id)
+ SELECT repeat('c',64),participant_key,chat_hmac,kind,processing_state,
+  plaintext_sha256,next_round FROM cotironda_piloto_privado.whapi_inbox
+ WHERE message_hmac=repeat('b',64);
+ INSERT INTO cotironda_piloto_privado.ai_shadow_requests_mvp221
+ (request_id,source_hmac,status)
+ VALUES(next_round,repeat('c',64),'shadow');
+ INSERT INTO cotironda_piloto_privado.request_lines
+ (request_id,line_no,original_description,quantity,unit,family_code)
+ SELECT next_round,line_no,original_description,quantity,unit,family_code
+ FROM cotironda_piloto_privado.request_lines WHERE request_id=prior;
+ INSERT INTO cotironda_piloto_privado.ai_shadow_rubros_mvp221
+ (request_id,line_no,rubro,evidencia)
+ SELECT next_round,line_no,rubro,evidencia
+ FROM cotironda_piloto_privado.ai_shadow_rubros_mvp221 WHERE request_id=prior;
+ INSERT INTO cotironda_piloto_privado.ai_shadow_destinos_mvp221
+ (request_id,supplier_key,line_no,catalogue_line_no,catalogue_description,tipo,explicacion)
+ SELECT next_round,supplier_key,line_no,catalogue_line_no,
+  catalogue_description,tipo,explicacion
+ FROM cotironda_piloto_privado.ai_shadow_destinos_mvp221 WHERE request_id=prior;
+ INSERT INTO cotironda_piloto_privado.ci_buyer_review_mvp280
+ (request_id,approved) VALUES(next_round,true);
+ response:=public.cotironda_piloto_ia_publish_mvp222(next_round);
+ IF response->>'state'<>'supplier_active_round_conflict'
+ THEN RAISE EXCEPTION 'p1_overlap_not_blocked_%',response;END IF;
+ IF EXISTS(SELECT 1 FROM cotironda_piloto_privado.invitations
+   WHERE request_id=next_round)
+ OR EXISTS(SELECT 1 FROM cotironda_piloto_privado.ai_dispatch_jobs_mvp222
+   WHERE request_id=next_round)
+ OR EXISTS(SELECT 1 FROM cotironda_piloto_privado.whapi_outbox
+   WHERE request_id=next_round)
+ OR (SELECT state FROM cotironda_piloto_privado.requests
+   WHERE id=next_round)<>'draft'
+ THEN RAISE EXCEPTION 'p1_overlap_left_partial_side_effect';END IF;
+
+ -- A CLOSED former round no longer competes. Do not resurrect it.
+ UPDATE cotironda_piloto_privado.requests SET state='closed' WHERE id=prior;
+ response:=public.cotironda_piloto_ia_publish_mvp222(next_round);
+ IF response->>'state'<>'ready_for_delivery'
+ THEN RAISE EXCEPTION 'p1_closed_prior_blocks_new_%',response;END IF;
+ IF (SELECT count(*) FROM cotironda_piloto_privado.whapi_outbox)<>0
+ THEN RAISE EXCEPTION 'p1_unexpected_legacy_whapi_message';END IF;
+ IF (SELECT count(*) FROM cotironda_piloto_privado.invitations
+    WHERE request_id=next_round)<>3
+ THEN RAISE EXCEPTION 'p1_publish_after_old_closed_missing';END IF;
+ IF has_function_privilege('anon',
+     'public.cotironda_piloto_ia_publish_mvp222(uuid)','EXECUTE')
+ OR has_function_privilege('authenticated',
+     'public.cotironda_piloto_ia_publish_mvp222(uuid)','EXECUTE')
+ OR NOT has_function_privilege('service_role',
+     'public.cotironda_piloto_ia_publish_mvp222(uuid)','EXECUTE')
+ THEN RAISE EXCEPTION 'p1_release_acl_regression';END IF;
+ RAISE NOTICE 'P1 ONE ACTIVE ROUND PER SUPPLIER PASS, no Whapi, ROLLBACK';
+END $p1_no_supplier_overlap$;
+
 ROLLBACK;

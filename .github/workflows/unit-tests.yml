@@ -89,3 +89,40 @@ jobs:
           deno-version: v2.x
       - name: Deno check tracking completo MVP354
         run: deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-seguimiento/index.ts
+
+  pg17-p1-no-overlap:
+    # Ramas stacked: este guard protege el envío de nuevas rondas, NO migra PILOTO.
+    if: ${{ github.event_name == 'pull_request' && github.head_ref == 'fix/p1-bloquear-ronda-solapada-proveedor-20261112' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: synthetic_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: synthetic_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - name: Checkout sin secretos
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: MIG P1, rondas solapadas y ROLLBACK real PostgreSQL17
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/mvp222-ia-despacho-pg17-rollback.sql | tee /tmp/p1-pg17.log
+          grep -F 'P1 ONE ACTIVE ROUND PER SUPPLIER PASS' /tmp/p1-pg17.log || true
+          psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regnamespace('cotironda_piloto_privado') IS NULL" | grep -Fx 't'
+          psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regprocedure('public.cotironda_piloto_ia_publish_mvp222(uuid)') IS NULL" | grep -Fx 't'
