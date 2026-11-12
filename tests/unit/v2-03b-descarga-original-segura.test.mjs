@@ -4,6 +4,8 @@ import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {descargarOriginalV2}
  from '../../src/server/v2-03b-descarga-originales.ts';
+import {nombreDescargaOriginalV2}
+ from '../../apps/portal/lib/piloto-v2-nombre-descarga.ts';
 
 const uuid='aaaaaaaa-1111-4111-8111-111111111111';
 const doc='bbbbbbbb-bbbb-4bbb-abbb-bbbbbbbbbbbb';
@@ -167,4 +169,24 @@ test('V2-03b: SQL never drops V2 consent, identity or source guards',()=>{
  assert.doesNotMatch(sql,/supplier_evidence_mvp138/u);
  assert.doesNotMatch(sql,/original_share_consents_mvp178/u);
  assert.doesNotMatch(sql,/createSignedUrl|signedUrl|publicUrl/u);
+});
+
+test('V2-09: descarga privada DOC/XLS lleva mismo sufijo que navegador',async()=>{
+ for(const [mime,ext] of [
+  ['application/msword','doc'],
+  ['application/vnd.ms-excel','xls'],
+  ['application/vnd.openxmlformats-officedocument.wordprocessingml.document','docx'],
+  ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','xlsx']
+ ]){
+  const {state,ports}=mocked();
+  state.source.mime=mime;
+  const response=await descargarOriginalV2(request(),uuid,doc,ports,env);
+  assert.equal(response.status,200,mime);
+  assert.deepEqual(new Uint8Array(await response.arrayBuffer()),bytes);
+  const expected='cotironda-original-bbbbbbbb.'+ext;
+  assert.equal(response.headers.get('content-disposition'),
+   'attachment; filename="'+expected+'"');
+  assert.equal(nombreDescargaOriginalV2(doc,response.headers.get('content-type')),
+   expected);
+ }
 });

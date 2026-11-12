@@ -27,6 +27,8 @@ on:
       - 'src/server/v2-03b-descarga-originales.ts'
       - 'docs/V2-03B-DESCARGA-AUDITADA-20261112.md'
       - 'apps/portal/lib/piloto-v2-descarga-http.ts'
+      - 'apps/portal/lib/piloto-v2-nombre-descarga.ts'
+      - 'tests/unit/v2-09-extension-original.test.mjs'
       - 'apps/portal/app/api/piloto/v2/rondas/**'
       - '.github/workflows/cotironda-v2-03-respondedores-pg17.yml'
   workflow_dispatch:
@@ -68,6 +70,8 @@ jobs:
         run: node --experimental-strip-types --test tests/unit/v2-03-respondedores-seguros.test.mjs
       - name: V2-03b descarga byte a byte y auditoria
         run: node --experimental-strip-types --test tests/unit/v2-03b-descarga-original-segura.test.mjs
+      - name: Extensiones reales de Excel Word PDF y tipos antiguos
+        run: node --experimental-strip-types --test tests/unit/v2-09-extension-original.test.mjs
       - name: Analisis automatico, SHA, revocacion y proyeccion privada
         run: node --experimental-strip-types --test tests/unit/v2-04b-analisis-persistencia.test.mjs
       - name: Primer comprador Auth dry-run/OTP y bloqueo sin Publicalo
