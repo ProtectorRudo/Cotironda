@@ -4,7 +4,6 @@
  */
 import {createClient} from 'npm:@supabase/supabase-js@2.118.0';
 import {parseBuyerPilot,canPrepareBuyerPilot,validMessage,standaloneDeliveryCity,quotedWhapiMessageId} from './core.ts';
-import {etiquetaReferenciaPedidoV2,contieneReferenciaPedidoV2} from './referencia-pedido-v2.ts';
 import {generarSolicitudPdfMvp091} from './request-pdf.ts';
 import {CAPTION_PEDIDO_COTIRONDA_MVP305} from '../_shared/aviso-proveedores-cierre-mvp305.ts';
 import {despacharSolicitudCentralMvp223} from './ai-central-dispatch-mvp223.ts';
@@ -897,23 +896,6 @@ async function respond(req:Request):Promise<Response>{
   if(outcome(out.data)==='quote_recorded')supplierAckMode='text_quote';
   // A supplier can have several open invitations. A quoted PDF ID is
   // checked against the exact accepted Whapi outbox for this same seller.
-  // V2-02: un código visible SOLO sirve para hallar el WhatsApp saliente.
-  // SQL verifica SHA del texto, identidad/consentimiento del proveedor,
-  // ronda invitada y despacho aceptado. No atribuir por precio ni fecha.
-  // Sin migración y flag expresamente habilitado, sigue el legado intacto.
-  if(row.type==='text'&&centralSupplier&&!supplierQuotedId&&
-     Deno.env.get('COTIRONDA_PILOT_V2_REFERENCE_LINK_ENABLED')==='true'&&
-     ['unmatched_quote','needs_review'].includes(outcome(out.data))&&
-     contieneReferenciaPedidoV2(body)){
-    const lookup=await db.rpc('cotironda_piloto_v2_quoted_id_for_reference',{
-      p_message_hmac:messageHash,p_chat_hmac:chatHash,p_original_text:body
-    });
-    if(lookup.error)return json(503,'supplier_reference_lookup_unavailable');
-    const q=lookup.data?.quoted_whapi_id;
-    if(lookup.data?.state==='matched'&&
-       typeof q==='string'&&/^[A-Za-z0-9._:-]{8,160}$/u.test(q))
-      supplierQuotedId=q;
-  }
   let legacySupplierQuoteLinked=false;
   if(row.type==='text'&&supplierQuotedId&&!attachmentNotice&&
      !isClarificationAnswer&&
@@ -1754,8 +1736,6 @@ async function respond(req:Request):Promise<Response>{
     },
     createPdf:generarSolicitudPdfMvp091,
     sendWhapi:async(recipient,pdf)=>{
-     const refCaption=Deno.env.get('COTIRONDA_PILOT_V2_REFERENCE_LINK_ENABLED')==='true'
-       ?etiquetaReferenciaPedidoV2(ready.data.request_id):null;
      const response=await fetch('https://gate.whapi.cloud/messages/document',{
       method:'POST',
       headers:{Authorization:'Bearer '+sec.token,
@@ -1763,7 +1743,7 @@ async function respond(req:Request):Promise<Response>{
       body:JSON.stringify({
        to:recipient,media:'data:application/pdf;name=Solicitud-Cotironda.pdf;base64,'+b64(pdf),
        mime_type:'application/pdf',filename:'Solicitud-Cotironda.pdf',
-       caption:CAPTION_PEDIDO_COTIRONDA_MVP305+(refCaption?'\n'+refCaption:'')
+       caption:CAPTION_PEDIDO_COTIRONDA_MVP305
       }),
       signal:AbortSignal.timeout(12000)
      });
