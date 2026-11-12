@@ -43,6 +43,12 @@ Fuentes: RPC instaladas `next_batch_mvp314`, dos funciones claim y código Edge 
 
 **Escalabilidad**: el guard de una ronda por proveedor es un parche temporal de piloto, no estrategia nacional. En producción se necesitarán identificadores fuertes de solicitud, conversaciones y vínculo por mensaje y la posibilidad de cotizar concurrentemente.
 
+## Auditoría adicional de permisos en el piloto — 12/11/2026
+
+**Consulta SELECT, sin valores secretos ni cambios de roles.** Los objetos `net.http_request_queue` permiten `SELECT` a `anon`, `authenticated`, `authenticator`, `service_role`, `postgres` y `supabase_admin` por los grants estándar de la extensión. `anon`/`authenticated`/`service_role` **no tienen LOGIN**; `authenticator`, `postgres` y `supabase_admin` sí. La vista de Vault descifrado solo está accesible en esta muestra a `service_role`, `postgres` y `supabase_admin`, nunca se seleccionaron valores. **No se comprobó todavía si el esquema `net` está expuesto por el Data API en este proyecto** (por defecto, Supabase indica que NO). No intentar revocar permisos del objeto perteneciente a `supabase_admin` a ciegas: la [guía de Supabase](https://supabase.com/kb/troubleshooting/revoking-access-to-pg_net-objects-has-no-effect-0bbc16) advierte que esas revocaciones pueden ser inefectivas o romper el worker de `pg_net`.
+
+**Mitigación desarrollada:** el cron ya NO coloca ninguna clave administrativa `sb_secret_` o `service_role` en `net.http_request_queue`. Transporta solo dos pruebas de invocación dedicadas al Edge batch. Aunque se extrajeran, **no otorgan lectura genérica de Supabase**; permiten pedir un tick sujeto a cuatro flags, presupuesto SQL, lease e idempotencia. No obstante, todavía serían credenciales sensibles: verificar exposición de esquema `net`, roles LOGIN y activar rotación antes de publicar.
+
 ## Checklist de salida
 
 - [ ] Último SHA de PR #800 con PostgreSQL17 del scheduler PASS, Node PASS, Deno Edge PASS, Next.js/PostgREST/aislamiento sin regresiones.
