@@ -87,6 +87,16 @@
 
 **Bloqueos del PILOTO real:** compradores Auth 0 en última lectura; RPCs V2-03a/03b/04b no instaladas; consentimiento prospectivo por proveedor pendiente; Edge v76 y Vercel PILOTO requieren preflight de versión, configuración y autorización **`Publicalo`**. Falta WhatsApp texto puro, PDF e imagen, informe global al cierre, reloj hábil instalado y ensayo WhatsApp→2 originales→portal→análisis→cierre.
 
+## V2-04c — PDF con texto auténtico por lector Deno privado (PR #826, 12/11/2026)
+
+**[PR #826](https://github.com/ProtectorRudo/Cotironda/pull/826)** draft sobre #825: nueva Supabase Edge **aislada** `cotironda-piloto-v2-pdf-reader` usa el lector posicional PDF **ya existente** en Whapi (unpdf 2.1.0, Deno). El servidor Node Vercel verifica comprador/Auth, consentimiento y SHA del PDF original, lo envía SOLO a la nueva Edge usando secreto largo privado y verifica nuevamente SHA de PDF y del texto. La guía IA Central de 2–4 observaciones se guarda por (ronda, documento, SHA) con el mecanismo idempotente V2-04b y aparece junto al PDF descargable. PDF escaneado o ilegible NO produce un resumen ficticio: deja el original disponible. Whapi Edge **v76 no se modificó**.
+
+**CI obligatoria:** tests Node de intercambio seguro y circuito comprador→PDF→guía, `deno check` + **lector PDF real con documento sintético válido**, Next.js y PG17/regresiones. Primer Next detectó tipo de `process.env` y se corrigió explícitamente; confirmar CI del **último SHA** para declarar aprobado.
+
+**Sin publicar:** config de función Edge `verify_jwt=false` porque usa secreto opaco verificado en el propio handler; **NO establecer secreto inventado ni desplegar sin `Publicalo`**, flags de portal/lectura OFF. No se leyeron los PDF reales de los proveedores ni se abrió el portal V2 en PILOTO. Auth comprador sigue sin alta real y SQL V2 sin instalar según último preflight; no se puede declarar E2E. WhatsApp texto puro y PDF escaneado/imagen quedan pendientes.
+
+**Siguiente tarea única:** pasar preflight de instalación segura del circuito #816–#826 para PILOTO, preparar buyer Auth + consentimiento original real de cada proveedor y probar la primera cotización auténtica PDF/Excel por navegador; después cierre 2 días hábiles e informe global. Evitar nuevas mejoras cosméticas y no exponer presupuestos históricos ambiguos como V2.
+
 ## SI ABRÍS UNA CONVERSACIÓN NUEVA: LEÉ ESTO PRIMERO
 
 1. [Contrato V2 vigente](COTIRONDA-V2-CONTRATO.md).
@@ -151,9 +161,9 @@
 - La referencia no sustituye prueba de origen para archivos no citados. El bloqueo comercial persiste hasta demostrar 2 respuestas reales, Auth del comprador, originales visibles y análisis.
 - **No hubo despliegue ni cambio de datos PILOTO**; no confundir el PR con funcionalidad activa.
 
-## ÚNICA PRÓXIMA ACCIÓN ACTUAL — Prueba real y preflight de instalación del primer original
+## ÚNICA PRÓXIMA ACCIÓN ACTUAL — Preflight y primer original PDF + Excel real
 
-El circuito **V2-04b PR #825** ya une en código almacenamiento original verificado, guía IA y portal privado con reserva SQL. Verificar **CI final SHA** y **conseguir el primer acceso real Auth de comprador**; luego preparar deploy ordenado de #816–#825, con copia de seguridad, feature flags OFF y consentimiento V2 efectivo por proveedor. **Solo con `Publicalo`** instalar/probar en PILOTO y enviar WhatsApps. Priorizar las cotizaciones reales **PDF/Excel + texto WhatsApp** y reportar sin ficciones el primer resultado de punta a punta. El calendario se mantiene bajo IA Central, sin intervención manual de cliente/proveedor.
+**PR #826** ya propone PDF con texto y Excel, hash verificable, guía IA privada y portal. Validar CI final y después revalidar entorno Vercel PILOTO, Edge v76 vivo y migraciones SQL #816–#825 en el orden probado; preparar cuenta Auth comprador y consentimientos V2 prospectivos de proveedores sin suponerlos por haber usado WhatsApp. Desplegar ÚNICAMENTE con `Publicalo`. Primera prueba real: comprador ve dos originales verdaderos (PDF/Excel) y sus guías, sin confirmaciones extra, luego cierra a dos días hábiles con análisis global. Imágenes/escaneados aún requieren OCR/multimodal fiel con fuente probada; no inventar resultados.
 
 ## Autorizaciones y cómo registrar un avance
 
