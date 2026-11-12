@@ -69,6 +69,14 @@
 - **Cierre del desarrollo técnico actual:** compatibilidad entre preflight anual SQL V2-05 y fuente oficial sincronizada; NO exigir al usuario aprobar cada año de feriados. Sincronizar de forma automática y auditable en servidor, con versionado y fail-closed.
 - **Último estado PILOTO verificado:** funciones V2 no desplegadas, Auth comprador 0, consentimiento V2 pendiente, Whapi activo v76. Revalidar en nueva conversación antes de cambios.
 
+## V2-04 — Análisis individual con evidencia literal: PR #824 (12/11/2026)
+
+- **Nuevo [PR #824](https://github.com/ProtectorRudo/Cotironda/pull/824)** (draft, sobre #823/#822/#821/#820/#819/#818/#817/#816). Implementa un servicio V2-04 de análisis individual del texto original, **no del PDF binario por sí mismo**. Exige identificación de documento, SHA-256 textual, origen/proveedor/consentimiento/comprador ya verificados; salida JSON con 2–4 observaciones ancladas en **citas literales comprobables**; no inventa montos, IVA/flete, no ranking, no ganadores. Error IA/origen/datos → `analisis_pendiente`, el original sigue disponible. Tests con simulaciones de fuente real, errores API, privacidad y contraejemplos de montos inventados.
+- **Límite explícito:** nuevo procesador NO está aún conectado a recepción de WhatsApp, extracción fiel PDF/Excel, cola idempotente ni RPC autenticada del portal. En `respuestas-comprador.tsx` sigue figurando `Análisis en preparación`. **No marcar V2-04 terminada, ni inferir que 2 presupuestos históricos aparecen en V2.**
+- **Estado PILOTO SOLO LECTURA reconfirmado 12/11:** `auth.users=0`; 7 rondas históricas, 1 `prepared`; bucket privado de originales sí; **0 de las RPC V2-02/03/04 nuevas** instaladas; 5 RPC `cotironda_piloto_v2_*` que aparecen en inventario pertenecen SOLO a funciones de diagnóstico PDF histórico B5, no al nuevo piloto. Tabla de requests continúa limitada a 3–7 días corridos. El reloj V2 no está instalado ni activo.
+- **Evidencia CI:** verificar SHA final del PR #824 antes de declarar aprobado; servicio de comentarios no necesita enviar WhatsApp ni alterar credenciales. Sin despliegue ni E2E.
+- **PRIORIDAD REAL:** completar una ruta vertical de PILOTO, no generar más tareas de refinamiento semántico: enlazar original real → proceso IA → guía privada del comprador, terminar la autenticación del arquitecto y consentimiento V2 de proveedores, escoger portal de Vercel PILOTO y preparar despliegue conjunto únicamente tras `Publicalo`. Luego prueba con 1 arquitecto y 2 proveedores (texto/PDF/Excel originales), cierre real e informe general. El calendario autónomo D014 todavía NO sincroniza fuentes oficiales confirmadas a Supabase; no activarlo por defecto.
+
 ## SI ABRÍS UNA CONVERSACIÓN NUEVA: LEÉ ESTO PRIMERO
 
 1. [Contrato V2 vigente](COTIRONDA-V2-CONTRATO.md).
@@ -133,9 +141,9 @@
 - La referencia no sustituye prueba de origen para archivos no citados. El bloqueo comercial persiste hasta demostrar 2 respuestas reales, Auth del comprador, originales visibles y análisis.
 - **No hubo despliegue ni cambio de datos PILOTO**; no confundir el PR con funcionalidad activa.
 
-## ÚNICA PRÓXIMA ACCIÓN ACTUAL — Conectar fuentes oficiales/snapshot y preparar PILOTO real sin fricción
+## ÚNICA PRÓXIMA ACCIÓN ACTUAL — Integración REAL del primer presupuesto al portal
 
-**PR #823** provee coordinación IA Central para calendario automático y D013. Verificar CI del último SHA. Después conectar URL JSON real y verificada de dataset oficial, automatizar actualización periódica en servidor, cotejo con segunda fuente y normas locales y persistir snapshot versionado seguro en tablas V2-05 (hoy exige calendario aprobado). **No** crear feriados con el modelo, pedir al usuario llenar tablas o declarar el cron automático activo hasta comprobarlo. En paralelo validar equivalencias técnicas por evidencia documental real y preparar Auth comprador/proveedores consentidos, unico Vercel PILOTO y SQL/Edge v76. Desplegar SOLO bajo `Publicalo`; E2E 1 comprador + 2 originales + análisis/cierre antes de declarar piloto listo.
+El **PR #824** introduce el analizador individual con fuente exacta y evidencia; **no está conectado**. Próximo: enlazar worker idempotente al archivo recibido/almacenado por Whapi y al listado privado del arquitecto, sin exponer invitaciones pendientes ni bloquear originales por errores de IA. El piloto real aún carece de Auth comprador, consentimientos V2 prospectivos, funciones SQL V2-02/03 instaladas y reloj hábil activo. Preparar migración/release del circuito ya desarrollado, sin más capas arbitrarias de IA. **Solo bajo `Publicalo`** se instala y realiza E2E con dos proveedores auténticos. Feriados se administran por IA Central con fuentes verificadas, no por el usuario, y no se deben inventar fechas.
 
 ## Autorizaciones y cómo registrar un avance
 
