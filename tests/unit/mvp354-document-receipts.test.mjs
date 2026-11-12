@@ -85,7 +85,7 @@ test('MVP354: RPC reservada a service_role; SQL entrega SOLO ocho campos inocuos
   'originales_disponibles','identidades_reveladas','comparacion_permitida'
  ]);
  for(const sensitive of ['source_sha256','message_hmac','supplier_key','request_id',
-    'storage_path','phone','chat_hmac','buyer_key','precio','total']){
+    'storage_path','phone','chat_hmac','buyer_key','importe_renglon','monto_total']){
    assert(!response.includes(sensitive));
  }
 });
