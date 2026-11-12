@@ -1,3 +1,6 @@
+## 2026-11-12 — MVP356: evitar ambigüedad por despachos paralelos (SOLO DESARROLLO)
+[PR #799](https://github.com/ProtectorRudo/Cotironda/pull/799): se detectaron 2 originales ambiguos con despachos simultáneos del mismo proveedor. SQL privado de guardia en ambos claims (mvp222/mvp314) con lock transaccional compartido y bandera privada OFF por defecto; PG17 de dos compradores y proveedores con ROLLBACK aprobado. **Bloqueado para publicación** hasta demostrar cron idempotente de retry sobre trabajos pending y evitar que el dispatcher legacy opere en paralelo. Actualizados [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794), plan y relevo; sin cambios de piloto ni WhatsApp.
+
 ## 2026-11-11 — MVP355: origen firmado y P2 más seguro (DESARROLLO)
 [PR #798](https://github.com/ProtectorRudo/Cotironda/pull/798): se bloquea la falsa atribución de un original guardado por fecha con verificación de inbox+link WhatsApp+SHA. PG17 sintético y SELECT del SQL sin instalación aprobados. Sin publicación ni E2E; [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794).
 
