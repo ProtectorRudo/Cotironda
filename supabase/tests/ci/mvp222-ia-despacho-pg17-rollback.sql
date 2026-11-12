@@ -197,6 +197,25 @@ CREATE TABLE cotironda_piloto_privado.integration_flags(
 INSERT INTO cotironda_piloto_privado.integration_flags VALUES(true,true);
 
 \ir ../../piloto/mvp222_ia_despacho_seguro_sin_activar.sql
+-- SYNTHETIC stand-ins ONLY for isolated CI: deployed PILOTO already has
+-- real MVP276/278/280 guards. Never copy these stubs into migrations.
+CREATE TABLE cotironda_piloto_privado.ci_buyer_review_mvp280(
+ request_id uuid PRIMARY KEY REFERENCES cotironda_piloto_privado.requests(id),
+ approved boolean NOT NULL
+);
+CREATE FUNCTION cotironda_piloto_privado.confirmada_comprador_mvp280(p_id uuid)
+RETURNS boolean LANGUAGE sql STABLE SET search_path='' AS $$
+ SELECT coalesce((SELECT approved FROM cotironda_piloto_privado.ci_buyer_review_mvp280
+  WHERE request_id=p_id),false)
+$$;
+CREATE FUNCTION cotironda_piloto_privado.fuente_original_documental_mvp276(
+ a text,b text,c text,d text) RETURNS boolean
+LANGUAGE sql IMMUTABLE SET search_path='' AS $$SELECT false$$;
+CREATE FUNCTION cotironda_piloto_privado.fuente_binaria_comprador_mvp278(
+ a text,b text,c text,d text,e integer) RETURNS boolean
+LANGUAGE sql IMMUTABLE SET search_path='' AS $$SELECT false$$;
+INSERT INTO cotironda_piloto_privado.ci_buyer_review_mvp280(request_id,approved)
+ SELECT request_id,true FROM cotironda_piloto_privado.ai_shadow_requests_mvp221;
 \ir ../../piloto/p1_evitar_rondas_solapadas_proveedor.sql
 CREATE TRIGGER enqueue_on_invitation
  AFTER INSERT ON cotironda_piloto_privado.invitations
@@ -318,6 +337,14 @@ BEGIN
  UPDATE cotironda_piloto_privado.ai_dispatch_gate_mvp222
  SET enabled=true,activated_at=now() WHERE only_row;
  response:=public.cotironda_piloto_ia_publish_mvp222(independent);
+ IF response->>'state'<>'buyer_review_required'
+ THEN RAISE EXCEPTION 'p1_buyer_review_guard_lost_%',response;END IF;
+ IF EXISTS(SELECT 1 FROM cotironda_piloto_privado.invitations
+   WHERE request_id=independent)
+ THEN RAISE EXCEPTION 'p1_buyer_guard_made_invitation';END IF;
+ INSERT INTO cotironda_piloto_privado.ci_buyer_review_mvp280
+ (request_id,approved) VALUES(independent,true);
+ response:=public.cotironda_piloto_ia_publish_mvp222(independent);
  IF response->>'state'<>'ready_for_delivery'
  THEN RAISE EXCEPTION 'p1_unrelated_supplier_blocked_%',response;END IF;
 
@@ -350,6 +377,8 @@ BEGIN
  SELECT next_round,supplier_key,line_no,catalogue_line_no,
   catalogue_description,tipo,explicacion
  FROM cotironda_piloto_privado.ai_shadow_destinos_mvp221 WHERE request_id=prior;
+ INSERT INTO cotironda_piloto_privado.ci_buyer_review_mvp280
+ (request_id,approved) VALUES(next_round,true);
  response:=public.cotironda_piloto_ia_publish_mvp222(next_round);
  IF response->>'state'<>'supplier_active_round_conflict'
  THEN RAISE EXCEPTION 'p1_overlap_not_blocked_%',response;END IF;
