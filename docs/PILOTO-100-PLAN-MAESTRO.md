@@ -1,6 +1,6 @@
 # COTIRONDA V2 — PLAN MAESTRO Y CHECKLIST
 
-**Aprobado como NUEVA DIRECCIÓN DE PRODUCTO el 12/11/2026. Todavía no desarrollado/desplegado en el piloto.**
+**Dirección V2 aprobada el 12/11/2026. Código parcial V2-02 en desarrollo (PR #816), SIN desplegar en piloto.**
 
 **ORDEN OBLIGATORIO DE LECTURA EN TODAS LAS CONVERSACIONES:** [Contrato V2](COTIRONDA-V2-CONTRATO.md) → **este plan** → [Estado y única próxima tarea](PILOTO-100-ESTADO.md) → [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794). **Estas páginas son las VIGENTES**. [Plan histórico íntegro](historico/2026-11-12-plan-maestro-pre-v2.md) (81 KB), [estado histórico](historico/2026-11-12-estado-pre-v2.md) e [issue histórico](historico/2026-11-12-issue-794-pre-v2.md) conservan evidencia pero NO deben usarse como guía de producto.
 
@@ -22,7 +22,7 @@ Un comprador envía una lista de obra. Cotironda identifica cada producto y cons
 
 | Etapa | Meta | Criterio de aprobación | Estado actual |
 | --- | --- | --- | --- |
-| **V2-00** | Consolidar dirección e inventario de legado | Documentación coherente, mapa exacto de módulos vivos y PR clasificados | **PRÓXIMA: inventario** |
+| **V2-00** | Consolidar dirección e inventario de legado | Documentación coherente, mapa exacto de módulos vivos y PR clasificados | **PARCIAL:** conciliación Edge/Storage/Auth pendiente |
 | **V2-01** | IA por producto, catálogo individual y distribución selectiva | Coincidencias por artículo y equivalencias técnicas, sin filtro por rubro, con zona y deduplicación | Revalidar (parcialmente existente) |
 | **V2-02** | Recepción del ORIGINAL y vínculo a ronda | 2 respuestas originales auténticas, SHA+remitente+pedido correcto, incluso con rondas concurrentes | **EN DESARROLLO:** PR #816 referencia segura; no desplegado ni E2E |
 | **V2-03** | Portal comprador, solo respondedores | 0/1/2 respuestas: mostrar únicamente negocios que cotizaron, identidad y original seguro | Pendiente |
@@ -31,6 +31,13 @@ Un comprador envía una lista de obra. Cotironda identifica cada producto y cons
 | **V2-06** | Seguridad, publicación y E2E | Identidad/consentimiento informado, móvil, descarga autorizada y recorrido real de punta a punta | Pendiente |
 
 **Seguridad es transversal:** no publicar originales identificables antes de la aprobación legal/comercial del aviso a proveedores y permisos estrictos del comprador. No dejarlo artificialmente para V2-06.
+
+## Corte técnico 12/11 — continuidad comprobable
+
+- **Primer código en desarrollo:** [PR #816](https://github.com/ProtectorRudo/Cotironda/pull/816). La V2-00 sigue parcialmente abierta, pero se avanzó en la correlación V2-02 aprovechando la rama operativa #813. **No integrar #814:** impide varias rondas por comercio.
+- **Seguridad V2-02:** consentimientos e invitación registrados antes del despacho; consentimiento del proveedor previo al mensaje. PG17 y Node deben validar el SHA final, sin tocar la base del piloto.
+- **Prueba de compatibilidad con datos reales (SELECT):** 4/4 trabajos `api_accepted` históricos respetan la secuencia de autorizaciones; 0 permisos tardíos. Edge Whapi v76 vigente. Nada de V2-02 instalado ni E2E.
+- **Próxima tarea única:** verificar CI, conciliar bundle Edge y demostrar vínculo fuerte del ORIGINAL con su pedido (incluidos PDF/Excel sin cita); a continuación portal comprador seguro, análisis y cierre. D013 por PRODUCTO sigue obligatorio.
 
 ## V2-00 — PRIMERA ACCIÓN DE DESARROLLO (no iniciar código a ciegas)
 
