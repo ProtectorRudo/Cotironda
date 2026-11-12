@@ -1,3 +1,6 @@
+## 2026-11-11 — MVP355: origen firmado y P2 más seguro (DESARROLLO)
+[PR #798](https://github.com/ProtectorRudo/Cotironda/pull/798): se bloquea la falsa atribución de un original guardado por fecha con verificación de inbox+link WhatsApp+SHA. PG17 sintético y SELECT del SQL sin instalación aprobados. Sin publicación ni E2E; [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794).
+
 ## 2026-11-11 — MVP354: tests y manifiesto de tracking (SOLO DESARROLLO)
 La regresión inicial detectó integridad MVP324; se integró el import documental en el manifiesto sin alterar baseline activo. Unidad general, Next.js y PG17 general terminaron en verde con SHA `c8a937...`; la prueba PG17 específica se ejecutó finalmente desde el workflow unitario existente: `pg17-mvp354-documental` PASS, job `130900434755`, commit `97bf726dea3add014b027c971156a79b0126390c`. Sin despliegue; no certifica E2E. PR #797 y Issue #794 conservan el semáforo pendiente.
 
