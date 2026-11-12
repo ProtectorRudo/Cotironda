@@ -38,15 +38,23 @@ node scripts/piloto/v2-release-readiness.mjs scripts/piloto/observaciones/v2-rea
 
 El exit code es `2` cuando hay bloqueos; **es el resultado correcto para el estado actual**.
 
-## Secuencia de publicación PILOTO, a ejecutar solamente con «Publicalo»
+## Dos puertas separadas: instalar con flags OFF y luego activar el piloto
 
-1. **Congelar y revalidar código**: cada PR #816–#826 en orden y SHA, CI final del conjunto, diff firmado; conservar la lógica activa Whapi v76 y sus 61 archivos, verificar SHA en vivo antes de tocar Edge. No merge en producción por accidente.
-2. **Revisar backup, rollback y un entorno de pruebas aislado.** Ensayar las migraciones V2-02 → V2-03a → V2-03b → V2-04b → D013 → V2-05 en orden de dependencias y pruebas PG17, revalidar firma exacta de las funciones SQL. El orden real de D013/V2-05 sobre la función shadow requiere ejecutar exactamente los archivos candidatos probados; nunca soltar los checks históricos a ciegas.
-3. **Preparar seguridad e identidades**: alta autenticada del arquitecto en Auth PILOTO con confirmación telefónica real; consentimiento prospectivo de cada proveedor para exhibir su nombre y originales al comprador (no convertir el viejo opt-in de WhatsApp en autorización implícita). Registrar prueba de autorización sin copiar teléfonos al repositorio.
-4. **Instalar servicios sin activarlos**: RPCs y tablas privadas/Storage, nueva Edge PDF aislada y Vercel Preview correcto; comprobar nombres de variables y secreto PDF con controles del proveedor, sin mostrar valores a personas ni en GitHub. Preservar el proyecto Vercel original de producción.
-5. **Asegurar release**: URL privada de Preview, `VERCEL_ENV=preview`, `COTIRONDA_REGISTRATION_ENABLED=false`, bandera V2 inicialmente OFF y pin `COTIRONDA_PILOT_V2_RESPONDERS_RELEASE_SHA` exactamente igual a `VERCEL_GIT_COMMIT_SHA`. Habilitar únicamente tras probar permisos, consentimientos, Auth y SHA original.
-6. **Primera transacción comercial**: el comprador autenticado ve un PDF real y Excel real correctamente asociados a una ronda; descargables bit a bit y con guías individuales. Probar archivo PDF ilegible, proveedor revocado, archivo con asociación ambigua y usuario ajeno (debe bloquear la revelación). No enviar WhatsApps salvo ronda y números consentidos y autorización explícita de publicación.
-7. **Piloto completo**: ruteo por **catálogo real de producto y zona**, 2 días hábiles a las 18 con feriados actualizados por IA Central desde fuentes oficiales contrastadas, cierre real y análisis general de todas las ofertas; probar dos proveedores en una ronda y archivos originales.
+El **control `primer_original` no es una autorización para instalar infraestructura**. Incluye una prueba auténtica de navegador y por eso se evalúa **DESPUÉS** del primer despliegue autorizado, no antes. Para evitar un círculo imposible (hoy `auth.users=0` y el OTP del portal usa `shouldCreateUser:false`), la secuencia segura tiene dos puertas:
+
+1. **Instalación de infraestructura apagada**, exclusivamente tras el comando **«Publicalo»**: verificar proyecto, GitHub SHA, backup/rollback, última versión Edge Whapi y SQL exacta. Instalar solo en PILOTO las RPC/tablas de V2, Edge PDF aislada y Preview Vercel con todas las banderas V2 OFF. No compartir archivos ni enviar WhatsApps, no cambiar producción. No se requiere que ya exista un comprador para **instalar con flags OFF**.
+2. **Alta/Auth y consentimientos reales**: con el portal ya alcanzable por Preview protegida, un operador autorizado prepara el primer arquitecto en Auth por vía segura de onboarding. El OTP usa `shouldCreateUser:false`, por lo tanto **no puede registrar por sí solo al primer usuario**. Registrar consentimiento prospectivo de cada proveedor sobre exhibición de nombre y original, con evidencia auténtica; no inferirlo del opt-in previo.
+3. **Activación controlada del primer original**: revalidar JWT + sesión, consentimientos, asociación documental fuerte y SHA del documento; habilitar solo los flags V2 autorizados para PILOTO. Ejecutar comprobaciones negativas de identidad ajena/revocación y descargar el PDF/Excel original desde navegador de comprador; comprobar su guía IA no bloqueante. Reejecutar `primer_original` con observación nueva y testimonios de prueba (sin PII en el repositorio).
+4. **Piloto comercial completo**: sincronizar/validar calendario por IA Central y activar plazo de 2 días hábiles solo con evidencia; ronda real 1 arquitecto→2 proveedores→dos originales→cierre automático→informe general. Reejecutar `piloto_completo`, sin convertir CI en prueba real.
+
+En todas las fases, cualquier migración, deploy o activación requiere autorización expresa `Publicalo` para el entorno indicado. **«Avanza» permite desarrollar y probar sin publicar**, como hasta ahora.
+
+## Secuencia técnica de preparación (sin instalar)
+
+- Congelar y revalidar el árbol exacto de PR #816→#827, CI final y compatibilidad de los **61 archivos** del Edge Whapi v76 activo; detenerse si cambia el hash vivo.
+- Revisar las migraciones SQL y restricciones históricas bajo transacción sintética PG17, con backup y plan de reversión. Instalar V2-02→V2-03a→V2-03b→V2-04b y D013→V2-05 según dependencias SHA pinned; el contrato de cobertura por producto D013 no permite filtrar por rubro.
+- Preparar variables Preview Vercel **solo nombres y permisos**; secretos en el proveedor, no en GitHub/WhatsApp ni en chat. Lector PDF separado bajo `verify_jwt=false` con secreto opaco largo verificado dentro de la propia función, flag OFF hasta la activación.
+- Prohibido atribuir originales históricos ambiguos a una ronda V2 por similitud o antigüedad; un solo PDF/XLSX no constituye prueba de dos proveedores.
 
 ## Pendientes actuales
 
