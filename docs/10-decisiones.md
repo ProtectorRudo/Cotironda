@@ -1,35 +1,40 @@
-# 10 — Registro de decisiones
+# 10 — Registro de decisiones Cotironda
 
-Estados: **Aprobado**, **Propuesto**, **Pendiente**. Toda nueva decisión lleva ID, fecha, contexto, alternativas, resolución, impacto en reglas y pruebas.
+**D012 — APROBADA por el propietario, 12/11/2026 — COTIRONDA V2.**
 
-## Aprobadas en conversaciones del proyecto
-- D001 Nombre: **Cotironda**; confirmar disponibilidad de marca antes de inversión publicitaria.
-- D002 Proveedores gratis y sin comisión.
-- D003 Compradores con suscripción prevista de ARS 10.000/mes; validar monto y costos antes de lanzamiento.
-- D004 IA divide materiales por rubro; comprador debe revisar y confirmar antes de enviar.
-- D005 WhatsApp vía Whapi+IA como canal preferido de proveedores; portal alternativo.
-- D006 Anonimato durante ronda, adjudicación humana y revelación de contactos según decisión.
-- D007 Ranking separa cobertura, competitividad y costo completo. No enfrentar canastas diferentes.
-- D008 Marcas flexibles salvo especificación obligatoria del comprador.
-- D009 Evaluar compras completas con uno o hasta dos proveedores.
-- D010 Desarrollo modular con auditoría, pruebas y GitHub como fuente oficial.
-- D011 Repositorio inicialmente **público por instrucción del propietario (29-10-2026)**; prohibido incluir datos/secretos sensibles.
+## Resolución vigente D012
 
-## Propuestas pendientes de confirmar
-- P001 Prueba gratis de 30 días y posible extensión si no hubo cotizaciones válidas.
-- P002 Plazos configurables 24/48 horas, 3/5/7/10 días.
-- P003 Invitaciones a 5–8 proveedores pertinentes por rubro (rotación y volumen a validar).
-- P004 Comunicar a proveedores cobertura y competitividad sin puestos engañosos ni presión.
-- P005 No procesar compra y pago de materiales desde Cotironda en MVP.
+Cotironda se reorienta como **servicio de solicitud, organización y análisis inteligente de cotizaciones reales de materiales de obra**. IA procesa el pedido y lo distribuye por catálogo/rubro/zona; el proveedor responde libremente por WhatsApp; original intacto asociado a su ronda, nombre del comercio visible y comentario individual útil **desde que se recibe**, solo para proveedores que respondieron. Sin mostrar negocios invitados o pendientes. **A dos días hábiles** se produce análisis comparativo general y recomendaciones justificadas. La decisión de compra queda en el comprador.
 
-## Preguntas abiertas
-- A001 Límites claros de uso razonable de pedidos «ilimitados».
-- A002 Qué información de ofertas ve comprador antes del cierre.
-- A003 Condiciones de equivalencia técnica, marcas y unidades.
-- A004 Reglas concretas de garantía/calidad, vencimiento y reapertura.
-- A005 Roles y autorizaciones para adjudicación, compras a varios proveedores.
-- A006 Términos, privacidad, WhatsApp, política anti-spam.
-- A007 IVA, precio de suscripción, prueba gratis, ajustes y pagos.
-- A008 Cómo definir y medir objetivamente entrega/stock, filtros de confianza y reclamos.
+**Se reemplazan expresamente:** D004 (confirmación rutinaria de cada solicitud), D006 (anonimato/revelación por adjudicación), D009 como criterio de límite obligatorio de dos proveedores/ganadores y la propuesta P002 de plazos anteriores. D007 se conserva **solo** en el principio de cálculo justo y equivalencias reales; su ranking de ganadores queda suspendido. La experiencia normal debe ser automática; no se suprimen verificaciones de identidad, permisos ni trazabilidad.
 
-No considerar ninguna propuesta automáticamente aprobada solo por estar documentada.
+**Puntos V2 aprobados adicionales:**
+- Solo respondieron → solo esos comercios aparecen. Nunca revelar invitados, cantidad total consultada ni faltantes.
+- Identidad comercial y original mostrado al comprador destinatario al recibirse con fuente/permiso verificados, sin esperar a cierre ni a parser económico.
+- Ficha individual breve pero útil; no dictaminar ganadores en cada tarjeta.
+- Cierre en dos días hábiles; comparación de todos los recibidos y recomendación fundamentada al final.
+- Un proveedor puede cotizar múltiples rondas simultáneamente. **PR #814 queda funcionalmente OBSOLETO en V2; no desplegar tal como está** (conservar auditoría de seguridad).
+- Original inmutable; IA no inventa importes, IVA, flete, plazos ni artículos y nunca compara totales de canastas distintas.
+- Transparencia de nombres al comprador de la ronda, con aviso/condiciones apropiadas al proveedor y acceso privado, no divulgación pública de documentos.
+
+**Pendiente de precisión en implementación (NO revertir D012 por esto):** definición exacta de calendario/feriados y hora de corte (propuesta 18:00 del segundo hábil siguiente); redacción legal de condiciones prospectivas de proveedores; UX y formato editorial final del comentario IA; precio/trial/uso razonable validado con datos.
+
+**Fuentes:** [Contrato V2](COTIRONDA-V2-CONTRATO.md), [Plan V2](PILOTO-100-PLAN-MAESTRO.md), [Estado y relevo](PILOTO-100-ESTADO.md), [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794).
+
+## Decisiones anteriores (archivo, NO directrices vigentes)
+
+- **D001** Nombre Cotironda: se mantiene.
+- **D002** Proveedores gratis/sin comisiones: se mantiene.
+- **D003** Abono compradores ARS 10.000 proyectado: se mantiene como hipótesis a validar.
+- **D004** Confirmación previa del comprador: **SUSTITUIDA por D012**, no fricción rutinaria.
+- **D005** WhatsApp preferido de proveedores: se mantiene.
+- **D006** Oferentes anónimos/revelación por adjudicación: **SUSTITUIDA por D012**.
+- **D007** Separación de cobertura, comparabilidad económica, totales reales: se mantiene; ranking público automático se suspende.
+- **D008** Marcas flexibles con equivalencia técnica verificada: se mantiene.
+- **D009** Hasta dos proveedores/ganadores como restricción: **SUSTITUIDA por D012**; no limitar las cotizaciones ni el informe a dos ganadores.
+- **D010** Desarrollo modular, GitHub y pruebas: se mantiene.
+- **D011** Repositorio público y no incluir datos sensibles: se mantiene.
+
+**Archivo histórico de decisiones técnicas:** [Plan anterior](historico/2026-11-12-plan-maestro-pre-v2.md), [Estado anterior](historico/2026-11-12-estado-pre-v2.md) y versiones anteriores de este documento en Git. Ninguna decisión archivada vuelve a regir por abrir otro chat.
+
+**Toda nueva decisión lleva ID, fecha, estado, motivo, reglas sustituidas, impacto, criterios de prueba y enlaces. Se actualizan los cuatro documentos de continuidad en el mismo PR.**
