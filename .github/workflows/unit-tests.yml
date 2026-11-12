@@ -321,7 +321,7 @@ jobs:
           psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regprocedure('cotironda_piloto_privado.original_effective_consent_mvp362(uuid,text)') IS NULL" | grep -Fx 't'
 
   pg17-p0-terms-sender:
-    if: ${{ github.event_name == 'pull_request' && (github.head_ref == 'feat/p0-whapi-aviso-alta-sin-reenvio-20261112' || github.head_ref == 'feat/p0-resolver-contacto-cifrado-20261112' || github.head_ref == 'feat/p0-executor-postgres-tls-20261112' || github.head_ref == 'feat/p0-revision-mfa-aceptacion-20261112') }}
+    if: ${{ github.event_name == 'pull_request' && (github.head_ref == 'feat/p0-whapi-aviso-alta-sin-reenvio-20261112' || github.head_ref == 'feat/p0-resolver-contacto-cifrado-20261112' || github.head_ref == 'feat/p0-executor-postgres-tls-20261112' || github.head_ref == 'feat/p0-revision-mfa-aceptacion-20261112' || github.head_ref == 'feat/p0-portal-operador-mfa-20261112') }}
     runs-on: ubuntu-latest
     timeout-minutes: 12
     services:
