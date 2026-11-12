@@ -123,6 +123,21 @@ Calendario 2026 parcialmente contrastado con fuentes oficiales: 2026-11-19 (La P
 
 **No afirmar plazos ni porcentajes** sin evidencia real; el objetivo es una transacción comercial completa, no un conteo de PR.
 
+## Entrega técnica V2-04b — PR #825: persistencia y portal integrado (12/11/2026)
+
+[PR #825](https://github.com/ProtectorRudo/Cotironda/pull/825) integra por primera vez, **solo en código de PREVIEW**, la guía individual con catálogo y portal del arquitecto: el usuario autenticado ve original y guía breve con citas textuales. POST automático sin tareas de usuario y protegido por getUser + session_id; SQL privada graba `v2_original_analysis` por (ronda,documento,SHA), con lease exclusivo de 90 s, máximo 3 intentos y cooldown de 5 min. El SQL `v2_responders_with_analysis_private` proyecta guía únicamente al documento que el comprador ya puede ver por consentimiento V2 del proveedor. Todo el circuito permanece OFF hasta despliegue autorizado.
+
+Se reutilizó lector existente de ZIP/XML para Word/Excel, además de TXT/CSV; se comprueba SHA de bytes y después SHA del texto extraído. El archivo original sigue inalterable; PDF/imágenes y WhatsApp texto puro requieren integración de texto adicional, nunca publicación de análisis imaginado.
+
+- [ ] CI final PR #825: PostgreSQL17 03a/03b/04b y rollback, Node origen/hash/revocación/idempotencia, Next.js build y regresiones.
+- [ ] Completar lector seguro/extraído de PDF, imagen y capturar texto WhatsApp original de proveedor ligado correctamente a una ronda. Nunca enlazar por adivinación si hay rondas concurrentes.
+- [ ] Confirmar y preparar Auth comprador real, consentimiento V2 anticipado del proveedor, endpoint de mensajes Whapi v76 activo y sitio Vercel PREVIEW correcto.
+- [ ] Instalar migraciones #816–#825 solo bajo `Publicalo`; configurar flags OFF, rollback, SQL y lectura de orígenes originales verificada antes de activar.
+- [ ] Prueba **real** buyer→2 proveedores→dos originales PDF+Excel→guías privadas→cierre dos días hábiles→informe general. No calificar como terminado hasta medir ese resultado.
+- [ ] Mantener calendario bajo IA Central con fuentes oficiales sincronizadas, no cargar feriados ni corregir catálogos mediante pedidos al usuario.
+
+**Estado real:** PR #825 no desplegado, sin Auth comprador en PILOTO según último inventario; pruebas son sintéticas. **Próxima tarea única:** validar CI final y preparar publicación de un primer presupuesto real privado, no sumar nuevas funciones alejadas del piloto.
+
 ## V2-00 — INVENTARIO PENDIENTE DE CERRAR (auditar antes de desplegar)
 
 **Auditoría inicial en curso, 12/11/2026:** [Inventario V2-00 de código y PILOTO](V2-00-INVENTARIO-REUTILIZACION-20261112.md). Se verificó en SOLO LECTURA la diferencia entre `main` estático, núcleo de la rama operativa #813, PR documental #815 y funciones/tablas reales. Hay 106 líneas de catálogo pero sin campos completos de SKU y sin confirmación formal; los motores offline conservan filtros por rubro, no cumplen aún D013 en el piloto. Próximo control antes de escribir código: comparar SHA de funciones y despliegue Vercel, Storage/RLS y elegir la rama funcional de V2-02 **sin** PR #814. No hay nuevos envíos ni E2E.
