@@ -13,6 +13,19 @@
 
 **CI FINAL MVP355 (11/11/2026):** el SHA técnico [`721ecc12d2a9a35e54d53b35f009d419b4cca3f6`](https://github.com/ProtectorRudo/Cotironda/pull/798) pasó **5/5 workflows generales**: Next.js, unidad general (incluye **PG17 documental** y **Deno seguimiento** como jobs separados), PostgREST, PG17 aislamiento y verificación sitio. Probados dos formatos sintéticos, SHA, links débiles/ausentes, vínculo de aviso previo, duplicados, rondas solapadas y revocación. Además SELECT del nuevo SQL sin escrituras contra piloto: `2 despachos / 0 documentos acreditados`; token falso `not_found`. **Sin despliegue**, PR draft; no E2E real.
 
+## P0 — reserva de aviso Whapi y ACK SQL atómicos (12/11/2026)
+
+**[PR #808](https://github.com/ProtectorRudo/Cotironda/pull/808)** DRAFT, [Acta 535](https://github.com/ProtectorRudo/Cotironda/blob/feat/p0-whapi-aviso-alta-sin-reenvio-20261112/docs/535-p0-aviso-whapi-reserva-ack-transaccional.md). Desarrollo sin despliegue ni WhatsApps.
+
+- [x] Cierre de puertos simulados `claim/begin/authorize/finish` en **SQL privado preparado**, más adaptador `whapi-terms-sql-p0.ts`. Encadenamiento confirmado antes de HTTP, reserve lease y `in_flight` sin reintento. ACK API válido persiste el aviso versionado M364, **no una aceptación**. Resultado incierto no guarda aviso ni habilita descarga.
+- [x] Cola autorizada solo por operador Auth AAL2 `operator_session_mvp267()`, sin `operator_id` del cliente; rol emisor `NOLOGIN` aislado y sin permiso de `service_role`/usuarios API para fabricar constancias. Reutiliza D055 con huellas PILOTO.
+- [x] Primera prueba PG17 de reserva/acuse con ROLLBACK exitosa; Node encontró respuesta con campos de sobra, adaptador corregido y CI final pendiente de acreditar. Pruebas **sintéticas**: no operador real ni red Whapi.
+- [x] Supabase PILOTO `SELECT` 12/11/2026: 0 usuarios Auth, 0 operadores activos, 0 consentimientos originales, política OFF, M362 y emisor P0 sin instalar, 1 ronda prepared activa.
+- [ ] **Bloqueo siguiente:** condiciones de originales de no ganadores aprobadas; crear operador MFA real, identidad DB autorizada y runner server-only, registrar anuncio Whapi real una vez y revisión expresa del mensaje entrante. Después Auth comprador OTP y prueba de dos originales.
+- [ ] P0–P5 siguen abiertos, ningún E2E. No crear ronda superpuesta, ni envío o despliegue bajo `Avanza`.
+
+**Continuidad obligatoria:** próximo desarrollo solo integración ejecutable con servidor/roles y revisor MFA. Prohibido un nuevo refactor del ledger si no desbloquea el ensayo real. La publicación requiere `Publicalo en cotironda-piloto`, con términos aprobados y reversión preparada.
+
 ## P0 — emisor Whapi de condiciones listo en código OFF, aún no conectado (12/11/2026)
 
 **[PR #808](https://github.com/ProtectorRudo/Cotironda/pull/808)** (DRAFT, sobre #807) / [acta 534](https://github.com/ProtectorRudo/Cotironda/blob/feat/p0-whapi-aviso-alta-sin-reenvio-20261112/docs/534-p0-emisor-whapi-terminos-sin-reenvio.md).
