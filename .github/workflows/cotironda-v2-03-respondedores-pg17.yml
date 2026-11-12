@@ -1,0 +1,55 @@
+name: Cotironda V2-03 - catalogo de respondedores seguro
+on:
+  pull_request:
+    paths:
+      - 'supabase/piloto/v2_03_catalogo_respondedores_privado.sql'
+      - 'supabase/tests/ci/v2-03-respondedores-pg17.sql'
+      - 'src/server/v2-03-catalogo-respondedores.ts'
+      - 'src/server/v2-03-respuestas-http.ts'
+      - 'apps/portal/lib/piloto-v2-respondedores-http.ts'
+      - 'apps/portal/app/api/piloto/v2/rondas/**'
+      - 'tests/unit/v2-03-respondedores-seguros.test.mjs'
+      - '.github/workflows/cotironda-v2-03-respondedores-pg17.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test-v2-responders:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: synthetic_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: synthetic_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - name: Checkout sin secretos
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Node 22.16
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22.16.0'
+      - name: Casos de estado, identidad y filtraciones V2
+        run: node --experimental-strip-types --test tests/unit/v2-03-respondedores-seguros.test.mjs
+      - name: PG17 aislamiento, autorizacion prospectiva y rollback
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/v2-03-respondedores-pg17.sql
+          psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regnamespace('cotironda_piloto_privado') IS NULL" | grep -Fx 't'
+          psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regprocedure('public.cotironda_piloto_v2_responders_private(uuid,uuid,uuid)') IS NULL" | grep -Fx 't'
