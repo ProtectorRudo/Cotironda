@@ -19,6 +19,8 @@ import {CAPTION_PEDIDO_COTIRONDA_MVP305} from
 import {avisarCompradorTrasLoteMvp315} from
  '../cotironda-piloto-whapi/buyer-tracking-after-batch-mvp315.ts';
 
+import {aceptarBodyVacioBatchMvp357} from './empty-cron-body-mvp357.ts';
+
 const REF='ilggkalaafhtiysyzlmg';
 const URL='https://'+REF+'.supabase.co';
 const ENC=new TextEncoder();
@@ -52,8 +54,10 @@ async function tick(req:Request):Promise<Response>{
   legacyServiceRole:Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')??'',
   secretKeysJson:Deno.env.get('SUPABASE_SECRET_KEYS')??''
  }))return deny(401,'unauthorized');
- if(req.headers.get('content-length')&&
-    Number(req.headers.get('content-length'))>0)return deny(413,'body_not_allowed');
+ // pg_net sends JSON '{}' even for calls with no payload.
+ // Keep this strict: no fields, IDs, commands or instructions are accepted.
+ if(!await aceptarBodyVacioBatchMvp357(req))
+  return deny(413,'body_not_allowed');
  let role=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')??'';
  if(!role)try{
   const keys=JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS')??'{}');
