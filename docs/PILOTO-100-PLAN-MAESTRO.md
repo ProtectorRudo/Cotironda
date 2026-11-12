@@ -129,7 +129,7 @@ Calendario 2026 parcialmente contrastado con fuentes oficiales: 2026-11-19 (La P
 
 Se reutilizó lector existente de ZIP/XML para Word/Excel, además de TXT/CSV; se comprueba SHA de bytes y después SHA del texto extraído. El archivo original sigue inalterable; PDF/imágenes y WhatsApp texto puro requieren integración de texto adicional, nunca publicación de análisis imaginado.
 
-- [x] **CI código PR #825 6/6 SUCCESS** SHA `e481315a07afec23e6acc9663fe45d397a3b2a44`: PG17 03a/03b/04b + rollback, Node SHA/revocación/idempotencia, Next.js build y regresiones. Confirmar última corrida tras CHANGELOG.
+- [x] **CI código PR #825 6/6 SUCCESS** SHA `e481315a07afec23e6acc9663fe45d397a3b2a44`: PG17 03a/03b/04b + rollback, Node SHA/revocación/idempotencia, Next.js build y regresiones. **Última corrida con CHANGELOG SHA `686cf3d77a89e514c49a74ed11ca52f5fdd63efe`: 6/6 SUCCESS**.
 - [ ] Completar lector seguro/extraído de PDF, imagen y capturar texto WhatsApp original de proveedor ligado correctamente a una ronda. Nunca enlazar por adivinación si hay rondas concurrentes.
 - [ ] Confirmar y preparar Auth comprador real, consentimiento V2 anticipado del proveedor, endpoint de mensajes Whapi v76 activo y sitio Vercel PREVIEW correcto.
 - [ ] Instalar migraciones #816–#825 solo bajo `Publicalo`; configurar flags OFF, rollback, SQL y lectura de orígenes originales verificada antes de activar.
