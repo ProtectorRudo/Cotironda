@@ -44,7 +44,7 @@ function normalizedWords(s:string):Set<string>{
  return new Set(tokens);
 }
 function size(s:string):Pack|null{
- const all=[...fold(s).matchAll(/(?:^|\s)(\d{1,5}(?:[.,]\d{1,3})?)\s*(kg|g|litros?|lts?|ml)(?=\s|$|[.,;])/gu)];
+ const all=[...fold(s).matchAll(/(?:^|\s)(\d{1,5}(?:[.,]\d{1,3})?)\s*(kg|g|litros?|l|lt|lts|ml)(?=\s|$|[.,;])/gu)];
  if(all.length!==1)return null;
  const [,number,unit]=all[0];
  const n=BigInt(number.replace(',','.').split('.')[0]) * 1000n+
