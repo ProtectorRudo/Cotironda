@@ -95,6 +95,11 @@ export function auditarPublicacionV2(input,phase='primer_original'){
   edge.private_pdf_reader?.secret_configured_in_both_services===true);
  add('portal_next_unico','Proyecto Vercel Next.js específico',
   ver.project==='cotironda-portal-dev'&&ver.framework==='nextjs');
+ add('portal_git_correcto','Proyecto portal DEV vinculado al GitHub exacto',
+  ver.git_linked===true&&ver.git_org==='ProtectorRudo'&&
+  ver.git_repo==='Cotironda');
+ add('vercel_cuota','Vercel puede crear un Preview sin cuota agotada',
+  ver.deployment_quota_available===true);
  add('portal_preview_protegida','Preview Vercel protegida',
   ver.preview_protected===true);
  add('variables_preview','Todas las variables necesarias configuradas (NOMBRES solamente)',
