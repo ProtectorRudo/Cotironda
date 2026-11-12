@@ -6,7 +6,7 @@
 CREATE OR REPLACE FUNCTION public.cotironda_piloto_document_receipts_mvp354(
  p_token_hash text
 ) RETURNS jsonb
-LANGUAGE sql STABLE SECURITY DEFINER SET search_path = ''
+LANGUAGE sql VOLATILE SECURITY DEFINER SET search_path = ''
 AS $function$
 WITH contexto AS (
  SELECT r.id AS request_id,r.created_at,r.closes_at
