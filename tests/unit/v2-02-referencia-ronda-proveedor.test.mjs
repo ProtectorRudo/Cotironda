@@ -1,15 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {generarWebhookV202} from '../../scripts/piloto/v2-02-whapi-overlay.mjs';
 import {etiquetaReferenciaPedidoV2,contieneReferenciaPedidoV2} from
  '../../supabase/functions/cotironda-piloto-whapi/referencia-pedido-v2.ts';
 
 const sql=readFileSync(new URL(
  '../../supabase/piloto/v2_02_ref_codigo_pedido_solo_lectura.sql',
  import.meta.url),'utf8');
-const edge=readFileSync(new URL(
+const legacy=readFileSync(new URL(
  '../../supabase/functions/cotironda-piloto-whapi/index.ts',
  import.meta.url),'utf8');
+const edge=generarWebhookV202(legacy);
 
 test('V2-02: referencia visible reproduce el codigo del PDF sin contacto',()=>{
  const uuid='a1b2c3d4-1111-4111-8111-111111111111';
@@ -60,7 +62,12 @@ test('V2-02: el backend exige fuente autentica, hash y despacho del mismo provee
  assert.doesNotMatch(sql,/^\s*(?:INSERT\s+INTO|UPDATE\s+\w+|DELETE\s+FROM|TRUNCATE\s+)/gimu);
 });
 
-test('V2-02: sin instalacion y flag ON no cambia rutas anteriores',()=>{
+test('V2-02: genera solo candidato y deja intacto webhook historico',()=>{
+ assert.ok(!legacy.includes('COTIRONDA_PILOT_V2_REFERENCE_LINK_ENABLED'));
+ assert.ok(!legacy.includes('referencia-pedido-v2.ts'));
+ assert.notEqual(edge,legacy);
+ assert.throws(()=>generarWebhookV202(edge),/overlay_base_unexpected/u);
+
  assert.ok(edge.includes(
   "Deno.env.get('COTIRONDA_PILOT_V2_REFERENCE_LINK_ENABLED')==='true'"));
  assert.ok(edge.includes(
