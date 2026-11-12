@@ -71,7 +71,8 @@ function readySnapshot(){
   'COTIRONDA_PILOT_V2_ANALYSIS_ENABLED',
   'COTIRONDA_PILOT_OPENAI_API_KEY',
   'COTIRONDA_PILOT_V2_PDF_ENABLED',
-  'COTIRONDA_PILOT_V2_PDF_SHARED_SECRET'
+  'COTIRONDA_PILOT_V2_PDF_SHARED_SECRET',
+  'COTIRONDA_REGISTRATION_ENABLED'
  ];
  s.vercel.git_linked=true;
  s.vercel.git_org='ProtectorRudo';
@@ -176,4 +177,14 @@ test('Preflight: datos ausentes fallan cerrado, y fase desconocida arroja error'
  assert.equal(empty.result,'BLOCKED');
  assert.equal(empty.can_publish,false);
  assert.throws(()=>auditarPublicacionV2({},'produccion'),/fase_desconocida/);
+});
+
+test('Preflight V2: sin evidencia de nombre REGISTRATION bloquea portal',()=>{
+ const s=readySnapshot();
+ s.vercel.preview_env_names=s.vercel.preview_env_names.filter(
+  x=>x!=='COTIRONDA_REGISTRATION_ENABLED');
+ const report=auditarPublicacionV2(s);
+ assert.equal(report.result,'BLOCKED');
+ assert.ok(report.blockers.some(x=>x.code==='variables_preview'));
+ assert.equal(report.can_publish,false);
 });
