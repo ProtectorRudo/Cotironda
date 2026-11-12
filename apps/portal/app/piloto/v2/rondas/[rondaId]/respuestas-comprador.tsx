@@ -169,7 +169,13 @@ export function RespuestasCompradorV2({rondaId}:{rondaId:string}){
    <p>{item.formato} · Recibido el {new Date(item.recibidoMs).toLocaleString('es-AR',{
     timeZone:'America/Argentina/Buenos_Aires'
    })}</p>
-   <p>{item.analisis}</p>
+   <p><strong>{item.analisis}</strong></p>
+   {item.puntos.length>0&&<ul aria-label="Claves de este presupuesto">
+    {item.puntos.map((p,index)=><li key={item.documentoId+'-'+index}>
+     <p>{p.observacion}</p>
+     <small>Según el original: «{p.evidencia}»</small>
+    </li>)}
+   </ul>}
    <button className="button" type="button" disabled={busy}
     onClick={()=>void download(item.documentoId,item.formato)}>
     Descargar presupuesto original
