@@ -40,7 +40,7 @@ export async function responderListadoV2(req:Request,rondaId:string):Promise<Res
   consultarPrivado:async q=>{
    const db=createClient(url,secret,NO_SESSION);
    const {data,error}=await db.rpc(
-    'cotironda_piloto_v2_responders_private',{
+    'cotironda_piloto_v2_responders_with_analysis_private',{
       p_request_id:q.rondaId,
       p_auth_user_id:q.usuarioId,
       p_auth_session_id:q.sessionId
