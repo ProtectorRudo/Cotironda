@@ -18,6 +18,16 @@ Una inspección adicional del PILOTO revela **cero preámbulos MVP238 registrado
 - Se reutiliza la función, bloqueo y permisos actuales; sin nueva tabla, cron, IA, proveedor obligado a elegir ronda, ni texto saliente. La consulta es interna: no devuelve IDs, nombres, teléfonos, archivos o precios.
 - `FOR UPDATE` ordenado de proveedores serializa publicaciones concurrentes que involucran al mismo proveedor. El guard consulta las invitaciones antes de mutarlas y falla de forma conservadora. Se requiere validación de concurrencia real antes de instalar.
 
+## Auditoría de compatibilidad obligatoria (bloqueo real detectado)
+
+La primera versión del parche se derivó de `mvp222_ia_despacho_seguro_sin_activar.sql`, que NO es la última definición instalada. **Habría sobrescrito las protecciones posteriores** de confirmación autenticada del comprador `confirmada_comprador_mvp280` y autoridad de fuente documental `fuente_original_documental_mvp276` / `fuente_binaria_comprador_mvp278`. **La detecté antes de integrar o instalar y la corregí.** Ninguna base ni proveedor estuvo expuesto por esta versión en desarrollo.
+
+Se consultó la definición real de PostgreSQL del PILOTO **solo lectura** y se comprobó que su cuerpo equivale al de `supabase/piloto/mvp280_confirmacion_unificada_comprador.sql` (ignorando formato emitido por `pg_get_functiondef`). La versión final de `p1_evitar_rondas_solapadas_proveedor.sql` parte **exactamente de MVP280**, no de MVP222, e incorpora exclusivamente el guard de proveedores.
+
+El test Node `p1-supplier-round-overlap.test.mjs` compara de manera estricta **todo el cuerpo MVP280 contra la nueva función al quitar el único bloque P1**. Además de verificar la presencia de las tres autoridades, PG17 ahora incluye stubs **sintéticos solo para CI** para los checks MVP276/278/280 y prueba que una ronda sin revisión de comprador sigue bloqueada; después prueba el caso de ronda superpuesta y el de proveedor distinto. Los stubs **nunca forman parte de la migración real**.
+
+**Prerrequisito para cualquier publicación futura:** contrastar otra vez la función viva contra la fuente MVP280 (la política podría cambiar con PR intermedios). **No publicar** si una migración posterior cambió la función; rebasar y auditar primero. La protección no resuelve los documentos históricos y no sustituye consentimiento de originales.
+
 ## Pruebas y criterios
 
 - `tests/unit/p1-supplier-round-overlap.test.mjs`: guard después de lock y antes de invitaciones, resultado cerrado y ACL service_role.
