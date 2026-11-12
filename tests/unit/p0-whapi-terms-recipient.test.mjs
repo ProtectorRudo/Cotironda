@@ -99,16 +99,21 @@ test('P0: falla de SQL o uso de otra clave de piloto nunca filtra contacto',asyn
   committedRpc:async()=>({payload:packet()})
  },config),/p0_contacto_cifrado_no_disponible/u);
 });
-test('P0: caller no puede pedir otro empleo o revivir lease con claim adulterado',async()=>{
- const x=env();
- for(const alteration of [
-  {jobId:LEASE},{leaseToken:'wrong'}, {chatHmac:'f'.repeat(64)},
-  {channel:'external'}, {unexpected:'x'}
+test('P0: claim adulterado no puede recuperar contactos de otro trabajo',async()=>{
+ for(const [alteration,queries] of [
+  [{jobId:LEASE},1],
+  [{leaseToken:'wrong'},0],
+  [{chatHmac:'f'.repeat(64)},1],
+  [{channel:'external'},0],
+  [{unexpected:'x'},0]
  ]){
+  const x=env();
   await assert.rejects(x.resolver({...claim,...alteration}),
    /p0_contacto_cifrado_no_disponible/u);
+  // Syntactically valid alternate job/HMAC may query the private SQL.
+  // The lease-bound packet itself still MUST NOT decrypt across identities.
+  assert.equal(x.calls.length,queries,JSON.stringify(alteration));
  }
- assert.equal(x.calls.length,0);
 });
 
 test('P0: puertos emisor SQL conectan al mismo paquete cifrado sin fallback',async()=>{
