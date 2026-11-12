@@ -18,6 +18,7 @@
 **[PR #808](https://github.com/ProtectorRudo/Cotironda/pull/808)** (DRAFT, sobre #807) / [acta 534](https://github.com/ProtectorRudo/Cotironda/blob/feat/p0-whapi-aviso-alta-sin-reenvio-20261112/docs/534-p0-emisor-whapi-terminos-sin-reenvio.md).
 
 - [x] Se reutilizó transporte existente D055 para validación de Whapi API ACK: texto de condiciones completo y no truncado, versión/SHA exactas, destinatario/chat comprobados, `beginCommitted` antes de HTTP y `authorizeCommitted` inmediatamente antes. Rechazos, fallos o timeout → incierto sin reenvío. **No genera opt-ins**.
+- [x] **HMAC revisado en Edge activo**: el webhook PILOTO no usa el mismo HMAC que D029/D056; PR #808 corrigió cálculo de chat y message ID al prefijo exacto `cotironda|pilot|...` y agregó test de incompatibilidad. No se tocó el Edge vivo.
 - [x] Tests unitarios sintéticos creados. **CI final pendiente por SHA**, no marcar aprobación hasta verificar ejecución.
 - [x] Snapshot en Supabase PILOTO revalidado con `SELECT` el 12/11/2026: 0 usuarios Auth, 0 operadores habilitados, 0 consentimientos originales, política OFF, 1 ronda prepared vigente y M362 sin instalar. **0 modificaciones, 0 mensajes.**
 - [ ] **CÓDIGO NO CABLEADO:** falta adaptador real SQL con `claim/begin/authorize/finish` que persista HMAC de respuesta a M364, con operador AAL2 y anti-duplicación; no activar WhatsApp ni autorizar por ACK de API. El texto de términos sigue en borrador comercial/legal.
