@@ -41,7 +41,8 @@ export function proyectarRespuestasV2(raw:unknown):CatalogoRespuestasV2|null{
      it.supplierName.includes('@')||
      typeof it.mime!=='string'||!Object.hasOwn(FORMATS,it.mime)||
      !['document','image'].includes(String(it.kind))||
-     !Number.isSafeInteger(it.receivedAt)||it.receivedAt<1577836800000||
+     typeof it.receivedAt!=='number'||!Number.isSafeInteger(it.receivedAt)||
+     it.receivedAt<1577836800000||
      it.receivedAt>Date.now()+60_000)return null;
   found.add(it.documentId);
   res.push(Object.freeze({
