@@ -58,7 +58,9 @@ test('P1 preflight: report contains only anonymous counters and boolean',()=>{
   'despachos_aceptados','proveedores_con_candidato_temporal',
   'proveedores_con_archivo_valido_en_ventana',
   'proveedores_con_inbox_y_archivo_en_ronda',
-  'proveedores_con_prueba_fuerte','recibidos_verificados',
+  'proveedores_con_prueba_fuerte','proveedores_con_inbox_sin_ronda',
+  'proveedores_con_archivo_sin_ronda','proveedores_con_prueba_otra_ronda',
+  'recibidos_verificados',
   'requiere_revision_por_conflicto','solo_candidato_temporal_no_atribuible',
   'sin_archivo_verificado','proyeccion_mvp354_instalada'
  ])assert(final.includes('AS '+expected),expected);
