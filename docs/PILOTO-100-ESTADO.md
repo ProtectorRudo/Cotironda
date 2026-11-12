@@ -13,6 +13,25 @@
 
 **CI FINAL MVP355 (11/11/2026):** el SHA técnico [`721ecc12d2a9a35e54d53b35f009d419b4cca3f6`](https://github.com/ProtectorRudo/Cotironda/pull/798) pasó **5/5 workflows generales**: Next.js, unidad general (incluye **PG17 documental** y **Deno seguimiento** como jobs separados), PostgREST, PG17 aislamiento y verificación sitio. Probados dos formatos sintéticos, SHA, links débiles/ausentes, vínculo de aviso previo, duplicados, rondas solapadas y revocación. Además SELECT del nuevo SQL sin escrituras contra piloto: `2 despachos / 0 documentos acreditados`; token falso `not_found`. **Sin despliegue**, PR draft; no E2E real.
 
+## Avance MVP356 — prevenir nuevas ambigüedades de despacho (12/11/2026)
+
+**Estado: PR técnico [#799](https://github.com/ProtectorRudo/Cotironda/pull/799) en desarrollo, SIN merge ni publicación.** Basado en #798. Al reexaminar Supabase PILOTO se confirmó que los dos archivos `ambiguous_round` recibidos históricamente tuvieron competidores al tiempo de la recepción: **uno con dos despachos IA Central, otro con IA Central + Whapi legado**. Una ronda actualmente preparada contiene 2 despachos aceptados y 0 documentos probados; no reasociar sus archivos históricos con el pedido actual por fecha.
+
+Se propone bloqueo transaccional de ambos reclamos `cotironda_piloto_ia_claim_mvp222/mvp314` con un único advisory lock y helper privado: un mismo proveedor no recibe una segunda ronda `prepared` cuando otra está `leased/api_accepted/uncertain`, incluso si la otra invitación salió por Whapi anterior. Los demás proveedores continúan normalmente. **Solo piloto**: retener varios días un proveedor por cada solicitud no es aceptable para el negocio a escala.
+
+**Bandera de seguridad:** instalación de MVP356 deja `ai_supplier_overlap_gate_mvp356.enabled=false`; no altera despachos hasta activación separada. Se agregó fixture PostgreSQL17 (dos compradores, dos proveedores, legacy, batch, estados inciertos, cierre, ROLLBACK), tests Node y CI. Los resultados deben comprobarse con SHA exacto del PR antes de marcar las casillas.
+
+**Bloqueo nuevo fundamental:** existe el Edge privado `cotironda-piloto-ai-batch`, pero consulta real `cron.job` muestra que **ninguna tarea de cron llama a ese Edge**; están configuradas cierre, recuperación documental y conciliación IA. Si se activa el guard sin un reintento programado los envíos `pending` podrían quedarse detenidos indefinidamente. Tampoco se probó que el despachador legado use la misma exclusión: exigirlo deshabilitado en nuevas rondas o integrarlo a la guarda. **No publicar todavía**.
+
+- [x] Evidencia de concurrencia histórica y versión instalada de ambas RPC de claim inspeccionadas.
+- [x] Desarrollo de exclusión con bandera OFF en PR #799 y documentación [Acta 524](https://github.com/ProtectorRudo/Cotironda/blob/fix/mvp356-guard-despachos-solapados-piloto-20261112/docs/524-mvp356-despachos-sin-solapamientos-piloto.md).
+- [ ] CI de SHA final + validación de DDL en PG17 con rollback.
+- [ ] Reintento automático, idempotente y con secretos privados para trabajo `pending` (sin reenviar `uncertain`).
+- [ ] Convivencia del despachador legado auditada y bandera habilitada SOLO con autorización de publicación de piloto.
+- [ ] P0 Auth y política de originales, P1/P2 fuentes reales, P3 portal y P4/P5 cierre/E2E pendientes.
+
+**Siguiente paso ÚNICO: implementar y verificar el reintento controlado de lote `ai-batch` para recuperar pendientes, con cron privado y sin duplicados.** Luego prueba 2 proveedores/2 fuentes reales, publicación autorizada y navegador. Jamás considerar cerrado P2 por pruebas sintéticas.
+
 ## Avance MVP355 — prueba fuerte antes de contar una respuesta (11/11/2026)
 
 **[PR #798](https://github.com/ProtectorRudo/Cotironda/pull/798)**, apilado sobre [#797](https://github.com/ProtectorRudo/Cotironda/pull/797), es un cambio de SEGURIDAD Y CORRECCIÓN dentro del circuito documental, no un despliegue.
