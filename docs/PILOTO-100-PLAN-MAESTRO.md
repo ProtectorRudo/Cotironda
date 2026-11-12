@@ -1,5 +1,7 @@
 # Cotironda — Plan maestro del piloto documental 100%
 
+**Evaluación de reutilización (P0, solo desarrollo):** [ERPNext vs núcleo Cotironda](P0-ERPNext-vs-Cotironda-evaluacion.md). Decisión: conservar el núcleo existente y reusar el MODELO de trazabilidad RFQ/original de ERPNext; no instalar ERPNext ni importar código GPL. Esta evaluación NO completa P0 ni el piloto E2E: faltan permisos/consentimiento de originales y prueba real.
+
 **Decisión de producto:** 11 de noviembre de 2026. **Estado de este documento:** planificación, no código desplegado. **Único tablero de tareas:** [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794). **Estado diario y próxima acción:** [PILOTO-100-ESTADO.md](PILOTO-100-ESTADO.md).
 
 > REGLA DE CONTINUIDAD: al comenzar cualquier conversación sobre Cotironda, abrir primero Issue #794, leer este contrato y el estado diario, inspeccionar código/PR y verificar datos de Supabase; continuar el primer paso NO aprobado. Nunca inferir del historial del chat que un deploy o una prueba externa fue ejecutada.
