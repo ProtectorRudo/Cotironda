@@ -13,7 +13,7 @@ test('MVP358: el legado comparte exactamente el lock de claim MVP356',()=>{
  assert.match(src,/PERFORM pg_advisory_xact_lock\(7835634\);/u);
  assert.match(src,/AND NOT cotironda_piloto_privado\.hay_despacho_solapado_mvp356\(\s*o\.request_id,o\.supplier_key\)/u);
  assert.match(src,/FOR UPDATE OF o SKIP LOCKED LIMIT 1/iu);
- assert.match(src,/WHERE o\.state='pending'/u);
+ assert.match(src,/where o\.state='pending'/iu);
 });
 test('MVP358: evidencia de ambos canales, misma ronda y proveedor independiente',()=>{
  assert.match(src,/CREATE OR REPLACE FUNCTION cotironda_piloto_privado\.hay_despacho_solapado_mvp356/u);
