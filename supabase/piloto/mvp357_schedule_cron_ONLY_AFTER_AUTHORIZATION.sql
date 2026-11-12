@@ -11,7 +11,7 @@ BEGIN
  ) THEN RAISE EXCEPTION 'mvp357_cron_or_http_extension_missing';END IF;
  IF NOT EXISTS (
   SELECT 1 FROM vault.secrets
-  WHERE name='cotironda_piloto_ai_batch_apikey_mvp357'
+  WHERE name='cotironda_piloto_ai_batch_cron_proof_mvp357'
  ) OR NOT EXISTS (
   SELECT 1 FROM vault.secrets
   WHERE name='cotironda_piloto_ai_batch_private_mvp357'
