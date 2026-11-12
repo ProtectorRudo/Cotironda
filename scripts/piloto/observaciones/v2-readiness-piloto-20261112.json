@@ -1,6 +1,6 @@
 {
   "observed_at": "2026-11-12T20:49:00Z",
-  "provenance": "Consulta read-only v2_06_release_inventory_readonly.sql en cotironda-piloto; Vercel metadatos preview; Supabase lista Edge v76. No secretos ni datos personales.",
+  "provenance": "12/11/2026 read-only: Supabase Auth 0, OTP SMS proveedor sin prueba real, Supabase SQL metadata, Vercel preview env name metadata, Whapi Edge v76. Sin PII.",
   "supabase": {
     "project_ref": "ilggkalaafhtiysyzlmg",
     "pg_version": "17.11",
@@ -28,7 +28,8 @@
     "product_catalog_routing_verified": false,
     "two_distinct_supplier_files_verified": false,
     "whatsapp_e2e_verified": false,
-    "final_analysis_verified": false
+    "final_analysis_verified": false,
+    "phone_sms_verified": false
   },
   "edge": {
     "whapi": {
