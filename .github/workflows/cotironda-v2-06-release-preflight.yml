@@ -1,0 +1,54 @@
+name: Cotironda V2-06 - preflight de publicacion bloqueante (NO deploy)
+on:
+  pull_request:
+    paths:
+      - 'scripts/piloto/v2-release-readiness.mjs'
+      - 'scripts/piloto/observaciones/v2-readiness-piloto-20261112.json'
+      - 'supabase/piloto/v2_06_release_inventory_readonly.sql'
+      - 'tests/unit/v2-06-preflight-publicacion.test.mjs'
+      - '.github/workflows/cotironda-v2-06-release-preflight.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  safe-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout sin credenciales
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Node 22.16
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22.16.0'
+      - name: Probar fases, Auth, consentimiento, origen SHA, calendarios y flags
+        run: node --test tests/unit/v2-06-preflight-publicacion.test.mjs
+      - name: Probar bloqueo con snapshot real sin secretos
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +e
+          node scripts/piloto/v2-release-readiness.mjs             scripts/piloto/observaciones/v2-readiness-piloto-20261112.json             primer_original > /tmp/v2-readiness-output.json
+          code=$?
+          set -e
+          test "$code" -eq 2
+          node --input-type=module -e '
+            import {readFileSync} from "node:fs";
+            const x=JSON.parse(readFileSync("/tmp/v2-readiness-output.json","utf8"));
+            if(x.result!=="BLOCKED"||x.can_publish!==false||
+             !x.blockers.some(b=>b.code==="comprador_auth")||
+             !x.blockers.some(b=>b.code==="variables_preview"))
+              process.exit(1);
+          '
+      - name: Verificar SQL inventario estrictamente SELECT
+        run: |
+          node --input-type=module -e '
+            import {readFileSync} from "node:fs";
+            const sql=readFileSync("supabase/piloto/v2_06_release_inventory_readonly.sql","utf8");
+            const body=sql.split("\n").filter(x=>!x.trim().startsWith("--")).join("\n");
+            if(!/^\s*WITH\s/u.test(body)||
+              /\b(?:INSERT|UPDATE|DELETE|ALTER|CREATE|DROP|TRUNCATE|GRANT|REVOKE|EXECUTE)\b/iu.test(body))
+              process.exit(1);
+          '
