@@ -47,4 +47,4 @@ El preflight **NUNCA** aprueba por sí solo una aceptación; incluso con precond
 
 **Siguiente paso de desarrollo:** implementar el vínculo comprobable condiciones salientes → respuesta entrante y la revisión con MFA, sin activar permisos ni crear ronda superpuesta. Luego ensayar registro bajo condiciones aprobadas. **Solo `Publicalo en cotironda-piloto` habilita proponer una instalación controlada, sin desbloquear consentimiento automáticamente.**
 
-Referencias: [Checklist #794](https://github.com/ProtectorRudo/Cotironda/issues/794), [PR #804](https://github.com/ProtectorRudo/Cotironda/pull/804), [plan maestro](PILOTO-100-PLAN-MAESTRO.md), [acta 530](530-mvp362-consentimiento-originales-una-vez.md).
+Referencias: [Checklist #794](https://github.com/ProtectorRudo/Cotironda/issues/794), [PR #804](https://github.com/ProtectorRudo/Cotironda/pull/804), [plan maestro](https://github.com/ProtectorRudo/Cotironda/blob/docs/p0-evaluacion-erpnext-vs-nucleo-20261111/docs/PILOTO-100-PLAN-MAESTRO.md), [acta 530](530-mvp362-consentimiento-originales-una-vez.md).
