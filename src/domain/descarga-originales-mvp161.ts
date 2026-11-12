@@ -56,12 +56,19 @@ export function evaluarDescargaOriginalMvp161(d:AccesoOriginal):ResultadoAcceso{
   return out('ronda_abierta');
  if(!time(d.politicaDesdeMs)||r.creadaMs<d.politicaDesdeMs)
   return out('politica_no_aplicable');
+ // Two STRICT forms of explicit supplier approval:
+ // Legacy: one verified message after creating THIS round.
+ // MVP362: once at onboarding, versioned + verified by the SQL evidence
+ // gate, strictly BEFORE creating the round. General participation is NOT
+ // original disclosure consent; the server cannot fabricate this record.
+ const legacy=c?.version==='cotironda-originales-v1' &&
+   time(c?.aceptadoMs)&&c.aceptadoMs>=r.creadaMs;
+ const onboarding=c?.version==='cotironda-originales-alta-v1' &&
+   time(c?.aceptadoMs)&&c.aceptadoMs<r.creadaMs;
  if(!c||c.alcance!=='original_identificable_tras_cierre'||
-   c.version!=='cotironda-originales-v1'||c.rondaId!==r.id||
-   c.proveedorId!==a.proveedorId||!time(c.aceptadoMs)||
-   // No consent captured before this round or the future-only policy start.
-   // A general earlier WhatsApp opt-in is NOT permission to share originals.
-   c.aceptadoMs<r.creadaMs||c.aceptadoMs<d.politicaDesdeMs!||
+   (!legacy&&!onboarding)||c.rondaId!==r.id||
+   c.proveedorId!==a.proveedorId||
+   !time(c.aceptadoMs)||c.aceptadoMs<d.politicaDesdeMs!||
    c.aceptadoMs>i.enviadaMs||c.revocadoMs!==null)
   return out('sin_consentimiento');
  if(i.rondaId!==r.id||i.proveedorId!==a.proveedorId||
