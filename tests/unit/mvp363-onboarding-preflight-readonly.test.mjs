@@ -23,7 +23,7 @@ test('MVP363: operator MFA, consent policy, ledger and no overlapping round requ
   'original_share_consents_mvp178','original_share_policy_mvp178',
   'operator_session_mvp267()','original_terms_policy_mvp362',
   "state='prepared'","closes_at>clock_timestamp()",
-  'rondas_preparadas_vigentes>0',
+  'rondas_preparadas_vigentes>0','NO_CREAR_RONDA_SUPERPUESTA',
   'funcion_mfa_instalada','ledger_mvp362_instalado',
   'operadores_activos=0','auth_usuarios=0','politicas_originales_activas=0'
  ])assert(sql.includes(required),required);
