@@ -83,6 +83,12 @@ test('MVP362: consent ledger starts OFF, never auto-authorizes old suppliers',()
  assert.match(policy,/n\.sent_at>=t\.activated_at/u);
  assert.match(policy,/n\.recorded_at<=o\.accepted_at/u);
  assert.match(policy,/supplier_original_revocations_mvp362/u);
+ assert.match(policy,/PRIMARY KEY\(supplier_key,terms_version,evidence_message_hmac\)/u);
+ assert.match(policy,/FOREIGN KEY\(supplier_key,terms_version,optin_message_hmac\)/u);
+ assert.match(policy,/o\.recorded_at AS evidence_recorded_at/u);
+ assert.match(policy,/rev\.recorded_at>=opts\.accepted_at/u);
+ assert.match(policy,/rev\.recorded_at>=opts\.evidence_recorded_at/u);
+ assert.match(policy,/opts\.priority=1/u);
  assert.match(policy,/original_share_consents_mvp178 rev_c/u);
  assert.match(policy,/REVOKE ALL ON FUNCTION\s+cotironda_piloto_privado\.original_effective_consent_mvp362/u);
  assert.match(policy,/TO service_role/u);
@@ -114,6 +120,10 @@ test('MVP362: fixture covers onboarding/legacy, terms hash, revocation and rollb
   'mvp362_revoked_onboarding_opened',
   'mvp362_revoked_catalog_opened',
   'mvp362_specific_withdrawal_ignored',
+  'mvp365_older_round_reopened_after_reaccept',
+  'mvp365_valid_post_revocation_reaccept_denied',
+  'mvp365_second_revocation_ignored',
+  'mvp365_backdated_reaccept_opened',
   'ROLLBACK;'
  ])assert(fixture.includes(c),c);
 });
