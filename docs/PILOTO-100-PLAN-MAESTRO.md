@@ -113,7 +113,7 @@ Calendario 2026 parcialmente contrastado con fuentes oficiales: 2026-11-19 (La P
 [PR #824](https://github.com/ProtectorRudo/Cotironda/pull/824) código `src/server/v2-04-analisis-individual.ts`, pruebas de huella de fuente, permisos, salida de IA y citas reales, error de IVA/flete y confidencialidad. Original siempre disponible incluso si IA falla. Un documento PDF/Excel requiere el extractor fidedigno, trazable y vinculado al original; no se convierte en texto por ficción ni se edita el archivo proveedor.
 
 **Orden único a ejecutar (no más escalones de complejidad):**
-1. [ ] Cerrar y verificar CI final PR #824.
+1. [x] **CI PR #824** SHA `f3f9a03cb75dc24bdcbd5a62ef4ab3ad3d7261f4`: **6/6 SUCCESS** (Node V2-04, unitarias, Auth, aislamiento, sitio y Next.js). Sin instalación ni E2E.
 2. [ ] Integrar el **primer original real** y fuente textual verificada a la guía individual con persistencia privada/colas idempotentes por (ronda, docId, SHA); comprador solo ve respuestas reales. Texto de WhatsApp también debe conservarse literalmente como original, aun si no es archivo PDF.
 3. [ ] Integrar la visualización real de esas guías en el portal Auth; habilitación con feature flag OFF hasta release y pruebas de aislamiento/revocación. No exponer datos por la mera posesión de un enlace.
 4. [ ] Resolver cuentas Auth reales de comprador, consentimientos prospectivos por proveedor, configuración OTP y único proyecto Vercel PILOTO.
