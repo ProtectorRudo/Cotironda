@@ -19,7 +19,9 @@
 
 - [x] SELECT privado repetible y efectivamente ejecutado en Supabase PILOTO el 12/11. **1 ronda prepared, 2 invitados, 2 despachos aceptados**. Solo **1 candidato documental temporal con original `stored`** y **1 proveedor sin archivo candidato**. El candidato tiene **inbox.request_id=NULL y media_archive.request_id=NULL** (no está probado que sea antiguo ni que sea actual), **0 pruebas fuertes MVP225**, ninguna otra ronda acreditada y **0/2 recibidos verificados**. MVP354 sin instalar.
 - [x] Diferenciados **mensaje histórico**, **archivo válido**, **candidato por ventana** y **presupuesto de ronda demostrado**. No atribuir por fechas, ni editar `request_id` para simular recepción.
-- [x] Test Node de SQL read-only, prohibición de efectos secundarios/PII y evidencias fuertes añadido al PR #813. **CI por SHA final por certificar**.
+- [x] Test Node de SQL read-only, prohibición de efectos secundarios/PII y evidencias fuertes añadido al PR #813. **CI FINAL 5/5 SUCCESS** en SHA `3405527bd8fec87f3dc53ebea4de21eff8fdaf2a`: nuevo test Node, Next.js, PostgREST, aislamiento PG17, sitio, y SQL privado ejecutado como SELECT contra piloto real. Sin despliegue ni mensajes.
+- [x] **CANDIDATO MVP225 (solo observación técnica, NO vínculo):** el único candidato es admisible para el estado de entrada de M225 y tiene una ronda IA compatible, pero **no fue vinculado**; sin mensaje citado/preámbulo verificado no promoverlo solo por tiempo. Auditar invocación y resultado del webhook, sin reescribir historial.
+
 - [ ] P1/P2: observar y probar respuestas de ambos proveedores dentro de una misma ronda con archivo, fuente SHA y asociación Whapi verificada; la segunda hoy no tiene candidato. Sin WhatsApps reales de este PR.
 - [ ] P0/P3–P5 continúan abiertos: operador AAL2, términos originales aprobados, comprador Auth OTP, tracking/cierre/descarga autenticada. No generar nueva ronda antes de terminar la vigente.
 
