@@ -67,7 +67,12 @@ export async function responderAnalisisAutomaticaV2(
    if(error)throw Error('v2_analysis_claim_unavailable');
    return data;
   },
-  readPdf:async(bytes,sha)=>leerPdfOriginalPorEdgeV2(bytes,sha,env),
+  readPdf:async(bytes,sha)=>leerPdfOriginalPorEdgeV2(bytes,sha,{
+   COTIRONDA_PILOT_SUPABASE_URL:env.COTIRONDA_PILOT_SUPABASE_URL,
+   COTIRONDA_PILOT_V2_PDF_ENABLED:env.COTIRONDA_PILOT_V2_PDF_ENABLED,
+   COTIRONDA_PILOT_V2_PDF_SHARED_SECRET:
+    env.COTIRONDA_PILOT_V2_PDF_SHARED_SECRET
+  }),
   read:async(bucket,path)=>{
    if(bucket!==BUCKET||!/^media\/[a-f0-9]{64}$/u.test(path))
     return null;
