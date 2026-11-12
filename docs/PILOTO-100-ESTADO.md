@@ -13,6 +13,17 @@
 
 **CI FINAL MVP355 (11/11/2026):** el SHA técnico [`721ecc12d2a9a35e54d53b35f009d419b4cca3f6`](https://github.com/ProtectorRudo/Cotironda/pull/798) pasó **5/5 workflows generales**: Next.js, unidad general (incluye **PG17 documental** y **Deno seguimiento** como jobs separados), PostgREST, PG17 aislamiento y verificación sitio. Probados dos formatos sintéticos, SHA, links débiles/ausentes, vínculo de aviso previo, duplicados, rondas solapadas y revocación. Además SELECT del nuevo SQL sin escrituras contra piloto: `2 despachos / 0 documentos acreditados`; token falso `not_found`. **Sin despliegue**, PR draft; no E2E real.
 
+## P1/P2 — resultado histórico MVP225: ambigüedad acreditada (12/11/2026)
+
+**[PR #813](https://github.com/ProtectorRudo/Cotironda/pull/813)** (mismo PR, sin rama nueva) / [Acta 541](https://github.com/ProtectorRudo/Cotironda/blob/feat/p1-diagnostico-documental-20261112/docs/541-p1-ambiguedad-registrada-vinculo-seguro.md).
+
+- [x] Ya NO es hipótesis de webhook omitido: en logs del 10/11 a las 11:19 UTC **MVP225 se invocó** y respondió HTTP 200, pero su ledger privado registra `ambiguous_round` con **2 rondas candidatas**; M291 terminó `review / insufficient_material_evidence` y hubo **1 reintento**. No atribuir por fecha aunque hoy solo exista una ronda.
+- [x] Corrección de falso negativo del preflight: estaba filtrando conflictos a través de `with_proof`, justamente ausente en mensajes ambiguos. SQL reporta ahora **1 proveedor en revisión por conflicto, 1 sin documento candidato, 0/2 originales verificados**, más contadores internos no identificables. Ejecutado sobre la BD PILOTO real con SELECT; sin modificar filas, rondas, archivos, Whapi ni autorización.
+- [x] Test Node verifica `blocked` desde candidatos y `verified` únicamente desde prueba formal, además de salida agregada. **CI SHA definitivo por verificar.**
+- [ ] El primer documento requiere referencia autentificada de pedido o queda EN REVISIÓN. El segundo requiere respuesta genuina. MVP354, Auth comprador, permiso comercial/MFA y E2E siguen pendientes. **P0–P5 ABIERTOS**.
+
+**SIGUIENTE PASO:** probar nuevos vínculos mediante fuente WHAPI real y sin alterar documentos anteriores. Sólo publicar o enviar con `Publicalo en cotironda-piloto` específico. No crear ronda `prepared` superpuesta ni rehacer IA de presupuestos.
+
 ## P1/P2 — causa real de 0/2 originales recibidos (12/11/2026)
 
 **[PR #813](https://github.com/ProtectorRudo/Cotironda/pull/813)** DRAFT técnico independiente de P0 sobre MVP355 #798. [Acta 540](https://github.com/ProtectorRudo/Cotironda/blob/feat/p1-diagnostico-documental-20261112/docs/540-p1-diagnostico-dos-originales-solo-lectura.md). No despliegue, no WhatsApp ni SQL nuevo instalado.
