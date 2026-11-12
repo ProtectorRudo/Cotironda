@@ -30,7 +30,7 @@ const answer={
     observacion:'Cementos en bultos de 50 kg; conviene contrastar la presentación solicitada.'},
    {categoria:'flete',
     evidencia:'Entrega indicada: zona La Plata, dentro de 72 horas.',
-    observacion:'Se indica zona y plazo; el costo del transporte no queda especificado.'},
+    observacion:'El proveedor menciona un plazo de entrega para La Plata; revisar las condiciones completas en el original.'},
    {categoria:'forma_pago',
     evidencia:'Pago: transferencia bancaria anticipada.',
     observacion:'La transferencia anticipada es una condición comercial para considerar.'}
@@ -102,6 +102,21 @@ test('V2-04: datos privados en observación no se muestran',async()=>{
   corrupted.output[0].content[0].text=JSON.stringify(payload);
   const r=await go({},fake(corrupted));
   assert.equal(r.estado,'analisis_pendiente');
+ }
+});
+test('V2-04: cifras o IVA/flete inventados en una observación no pasan',async()=>{
+ for(const wrong of [
+  'El precio acordado es $65.000 y corresponde abonarlo ahora.',
+  'El IVA incluido se detalla explícitamente en esta oferta.',
+  'Flete gratis en todas las compras, sin excepción.',
+  'IVA no informado por este proveedor.'
+ ]){
+  const altered=structuredClone(answer);
+  const doc=JSON.parse(altered.output[0].content[0].text);
+  doc.puntos[0].observacion=wrong;
+  altered.output[0].content[0].text=JSON.stringify(doc);
+  const r=await go({},fake(altered));
+  assert.equal(r.estado,'analisis_pendiente',wrong);
  }
 });
 test('V2-04: no acepta rankings o ganadores engañosos',async()=>{
