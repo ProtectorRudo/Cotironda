@@ -13,6 +13,18 @@
 
 **CI FINAL MVP355 (11/11/2026):** el SHA técnico [`721ecc12d2a9a35e54d53b35f009d419b4cca3f6`](https://github.com/ProtectorRudo/Cotironda/pull/798) pasó **5/5 workflows generales**: Next.js, unidad general (incluye **PG17 documental** y **Deno seguimiento** como jobs separados), PostgREST, PG17 aislamiento y verificación sitio. Probados dos formatos sintéticos, SHA, links débiles/ausentes, vínculo de aviso previo, duplicados, rondas solapadas y revocación. Además SELECT del nuevo SQL sin escrituras contra piloto: `2 despachos / 0 documentos acreditados`; token falso `not_found`. **Sin despliegue**, PR draft; no E2E real.
 
+## P0 — panel del operador con TOTP y revisión de términos (12/11/2026)
+
+**[PR #812](https://github.com/ProtectorRudo/Cotironda/pull/812)** DRAFT sobre #811, [Acta 539](https://github.com/ProtectorRudo/Cotironda/blob/feat/p0-portal-operador-mfa-20261112/docs/539-p0-portal-operador-mfa-bandeja.md).
+
+- [x] Preparada pantalla SSR protegida `/piloto/operador/terminos` y rutas POST `bandeja/preparar/decidir` con gate OFF, SHA Preview, Auth PILOTO verificada, sesión AAL2 y revalidación del rol en SQL M267. El navegador solo obtiene publishable key, contraseña/login y TOTP en memoria, jamás AES o service_role.
+- [x] Bandeja de hasta 12 mensajes elegibles, sin PII en la lista; el operador lee el original verificado con AES y elige explícito/no explícito, atestando revisión humana. Decisión `not_explicit` no autoriza compartir originales.
+- [x] Node HTTP y PG17 ampliados para ACL de bandeja, autenticación, CSRF, fuga de texto/secretos, estado tras decisión y `ROLLBACK`; **CI del SHA final por verificar**.
+- [ ] NO hay operador MFA real ni claves AES de piloto provisionadas para Preview, SQL aún NO instalado, texto legal/comercial sin aprobación. Sin solicitudes WhatsApp reales ni originales habilitados. **P0–P5 ABIERTOS.**
+- [ ] Comprador Auth OTP y prueba de 2 presupuestos/seguimiento/cierre/descarga siguen pendientes.
+
+**SIGUIENTE PASO:** comprobar CI último SHA, después cerrar autorización comercial y ensayo MFA real. Despliegue solo por `Publicalo en cotironda-piloto`. No crear segunda ronda preparada.
+
 ## P0 — revisión explícita de aceptación Whapi con MFA (12/11/2026)
 
 **[PR #811](https://github.com/ProtectorRudo/Cotironda/pull/811)** DRAFT sobre #810, [Acta 538](https://github.com/ProtectorRudo/Cotironda/blob/feat/p0-revision-mfa-aceptacion-20261112/docs/538-p0-revision-mfa-respuesta-expresa.md).
