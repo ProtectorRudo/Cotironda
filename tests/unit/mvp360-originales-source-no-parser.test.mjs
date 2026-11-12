@@ -59,6 +59,9 @@ test('MVP360: prueba PG17 sin tablas IA económicas, negatives y rollback',()=>{
  for(const marker of [
   'mvp360_parser_free_catalog_missing',
   'mvp360_valid_doc_not_authorized',
+  'mvp360_excel_original_not_listed',
+  'mvp360_dangerous_mime_opened',
+  'mvp360_forged_storage_path_opened',
   'mvp360_other_user_authorized',
   'mvp360_other_session_authorized',
   'mvp360_semantic_weak_link_opened',
