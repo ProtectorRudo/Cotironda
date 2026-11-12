@@ -25,7 +25,7 @@ Un comprador envía una lista de obra. Cotironda identifica cada producto y cons
 | **V2-00** | Consolidar dirección e inventario de legado | Documentación coherente, mapa exacto de módulos vivos y PR clasificados | **PARCIAL:** conciliación Edge/Storage/Auth pendiente |
 | **V2-01** | IA por producto, catálogo individual y distribución selectiva | Coincidencias por artículo y equivalencias técnicas, sin filtro por rubro, con zona y deduplicación | Revalidar (parcialmente existente) |
 | **V2-02** | Recepción del ORIGINAL y vínculo a ronda | 2 respuestas originales auténticas, SHA+remitente+pedido correcto, incluso con rondas concurrentes | **EN DESARROLLO:** PR #816 texto + PR #817 caption de adjuntos, ambos sin desplegar ni E2E |
-| **V2-03** | Portal comprador, solo respondedores | 0/1/2 respuestas: mostrar únicamente negocios que cotizaron, identidad y original seguro | Pendiente |
+| **V2-03** | Portal comprador, solo respondedores | 0/1/2 respuestas: mostrar únicamente negocios que cotizaron, identidad y original seguro | **PARCIAL:** PR #818 backend seguro; descarga y UX real pendientes |
 | **V2-04** | Análisis breve individual | Cobertura, variantes, condiciones, conclusión accionable, no bloquear original | Pendiente |
 | **V2-05** | 2 días hábiles e informe general | Cierre horario verificable + comparación por rubro, parciales, IVA/flete no inferidos | Pendiente |
 | **V2-06** | Seguridad, publicación y E2E | Identidad/consentimiento informado, móvil, descarga autorizada y recorrido real de punta a punta | Pendiente |
@@ -79,6 +79,18 @@ Un comprador envía una lista de obra. Cotironda identifica cada producto y cons
 - [ ] Probar múltiples rondas simultáneas al mismo negocio con mensajes citados y referencias únicas. Si no hay prueba fuerte, **REVISIÓN INTERNA**; nunca asociar por cercanía temporal sin evidencia.
 - [ ] Dos proveedores, dos formatos, misma ronda correcta; respuestas duplicadas o corregidas versionadas, sin IA bloqueando el original.
 - [ ] Confirmar fuente Auth, pertenencia y ausencia de filtración de información entre compradores.
+
+## V2-03a — backend seguro de respondedores (PR #818)
+
+**Primer incremento en desarrollo** [PR #818](https://github.com/ProtectorRudo/Cotironda/pull/818) apilado sobre #817/#816. Nuevo catálogo privado con fuente Auth viva y perfil comprador vinculado a WhatsApp; prueba fuerte de original y referencia MVP225; política y consentimiento prospectivo por proveedor (nunca copiado de opt-in WhatsApp general o permiso v1 `tras_cierre`). Solo muestra negocios efectivamente respondedores, formato, fecha y `Análisis en preparación`. La política comienza OFF y el endpoint exige preview y SHA exacto. No depende del cierre ni de que la IA procese correctamente los precios.
+
+- [x] Contratos y código de listado en rama (NO instalados).
+- [ ] Validación CI final (Node, PG17 ROLLBACK con 0/1/2 respuestas y permisos, Next).
+- [ ] **V2-03b:** descarga original autenticada con bytes SHA, auditoría, consentimiento vigente y pantalla real conectada. No quitar restricciones al MVP161/MVP192 viejo sin reemplazo integral.
+- [ ] Comprador real en PILOTO Auth y permisos de proveedores previamente capturados.
+- [ ] Prueba WhatsApp → original visible y descargable → comentario individual (NO E2E aún).
+
+**Próxima tarea única:** validar PR #818 y construir descarga V2-03b; después integrar tarjeta de respondedores. El catálogo por producto D013 debe aprobarse antes de decir que todo el piloto funciona.
 
 ## V2-03 — vista comprador
 
