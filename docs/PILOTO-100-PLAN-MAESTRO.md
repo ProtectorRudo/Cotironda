@@ -6,7 +6,7 @@
 
 ## Objetivo único del piloto
 
-Un comprador envía una lista de obra. Cotironda separa rubros y consulta por WhatsApp a negocios según catálogo y zona. Cada respuesta auténtica se guarda intacta y queda asociada a la ronda correcta. **Solo los negocios que respondieron** aparecen en el portal con su nombre, original descargable y comentario de IA útil. **Al cerrar en dos días hábiles**, la IA entrega una comparación general fundamentada por rubro. Sin anonimato, ranking de ganadores, confirmaciones rutinarias ni listas de invitados pendientes.
+Un comprador envía una lista de obra. Cotironda identifica cada producto y consulta por WhatsApp a comercios cuyos catálogos propios incluyan ese producto o una alternativa técnicamente compatible, según zona. **D013: los rubros organizan, no seleccionan proveedores.** Cada respuesta auténtica se guarda intacta y queda asociada a la ronda correcta. **Solo los negocios que respondieron** aparecen en el portal con su nombre, original descargable y comentario de IA útil. **Al cerrar en dos días hábiles**, la IA entrega una comparación general fundamentada por rubro. Sin anonimato, ranking de ganadores, confirmaciones rutinarias ni listas de invitados pendientes.
 
 **Prueba de aceptación final:** 1 comprador real + 2 proveedores reales + 2 originales en formatos diferentes enviados por WhatsApp, vinculados correctamente, visibles y descargables con identidad/permiso del proveedor, análisis individual, cierre e informe general, sin intervención humana en el caso normal. Hasta pasar esta prueba, NO declarar el piloto terminado.
 
@@ -23,7 +23,7 @@ Un comprador envía una lista de obra. Cotironda separa rubros y consulta por Wh
 | Etapa | Meta | Criterio de aprobación | Estado actual |
 | --- | --- | --- | --- |
 | **V2-00** | Consolidar dirección e inventario de legado | Documentación coherente, mapa exacto de módulos vivos y PR clasificados | **PRÓXIMA: inventario** |
-| **V2-01** | Pedido, IA por rubro y distribución selectiva | 1 pedido auténtico → 2 destinatarios pertinentes sin duplicados/confirmaciones | Revalidar (parcialmente existente) |
+| **V2-01** | IA por producto, catálogo individual y distribución selectiva | Coincidencias por artículo y equivalencias técnicas, sin filtro por rubro, con zona y deduplicación | Revalidar (parcialmente existente) |
 | **V2-02** | Recepción del ORIGINAL y vínculo a ronda | 2 respuestas originales auténticas, SHA+remitente+pedido correcto, incluso con rondas concurrentes | **Bloqueo técnico principal** |
 | **V2-03** | Portal comprador, solo respondedores | 0/1/2 respuestas: mostrar únicamente negocios que cotizaron, identidad y original seguro | Pendiente |
 | **V2-04** | Análisis breve individual | Cobertura, variantes, condiciones, conclusión accionable, no bloquear original | Pendiente |
@@ -36,7 +36,7 @@ Un comprador envía una lista de obra. Cotironda separa rubros y consulta por Wh
 
 **Auditoría de reutilización sobre el código desplegado y el repositorio.** Guardar una tabla `componente → qué hace ahora → ruta/fuente → instalado o no → reutilizar/adaptar/congelar → prueba pendiente`.
 
-- [ ] Inventariar Whapi, webhook autenticado, parsing de pedido, catálogo/rubros/zona y envíos (sin generar otro mensaje).
+- [ ] Inventariar Whapi, webhook autenticado, parsing, **catálogos por producto, normalización de nombres/marcas/presentaciones y zona**, y envíos. Auditar si el legado filtra indebidamente por rubro (**D013**).
 - [ ] Inventariar Storage, SHA, inbox, deduplicación, MIME, originales, PDFs/Excel/Word/texto, enlaces al mensaje.
 - [ ] Auditar correlación M225/M237/M238/M291/M336: caso histórico `ambiguous_round` entre **dos rondas**, reintento agotado; no falsear vínculo por fecha.
 - [ ] Auditar portal comprador/Auth/URLs originales y la viabilidad legal/técnica de revelar nombre + archivo **al recibirse**, no al cierre.
@@ -47,8 +47,10 @@ Un comprador envía una lista de obra. Cotironda separa rubros y consulta por Wh
 
 ## V2-01 — pedidos y envíos
 
+**D013 — [Decisión obligatoria de catálogos y equivalencias](V2-D013-CATALOGOS-EQUIVALENCIAS.md):** asignar exclusivamente por producto concreto del catálogo, no por nicho. Probar Ceresita↔hidrófugo técnicamente compatible y cemento 50 kg↔25 kg del mismo tipo; respetar marcas excluyentes, especificaciones, cantidades efectivas y conversiones deterministas.
+
 - [ ] Extraer materiales/cantidades/unidades/variantes por rubro de archivos y texto, sin inventos. Solicitar **solo zona** si falta; sin confirmación rutinaria del comprador.
-- [ ] Elegir comercios por catálogo y localidad, consentimiento WhatsApp, rotación razonable. Pedidos por rubro con referencia única visible para asociar respuestas.
+- [ ] Elegir comercios por **coincidencia de cada producto** en su catálogo individual, equivalencias válidas, localidad y consentimiento WhatsApp. Enviar solo líneas compatibles; un proveedor multirrubro puede recibir solicitud parcial. Referencia única para asociar respuestas; no invitar por rubro ni duplicar mensajes.
 - [ ] Duplicados, mensajes fuera de rubro, catálogos incompletos y errores de entrega probados.
 
 ## V2-02 — recepción y correlación (PRIORIDAD COMERCIAL)
@@ -72,7 +74,7 @@ Un comprador envía una lista de obra. Cotironda separa rubros y consulta por Wh
 ## V2-05 — cierre e informe
 
 - [ ] Plazo por defecto **2 días hábiles**, propuesta de cierre a las **18:00 del segundo día hábil siguiente** al envío, zona Argentina, feriados/fines de semana y pruebas de límites. Guardar timestamp de vencimiento desde el inicio.
-- [ ] Informe general al cierre por rubro; equivalencias verificadas, cobertura/parcialidad, IVA/flete/pagos/descuentos/disponibilidad, escenarios con uno o varios proveedores y recomendaciones justificadas.
+- [ ] Informe general organizado por rubro, pero cotejado **por productos técnicamente equivalentes** y unidades efectivas (bolsas 50↔25 kg por masa total), cobertura/parcialidad, IVA/flete/pagos/descuentos/disponibilidad, escenarios y recomendaciones justificadas.
 - [ ] Casos 0/1/múltiples cotizaciones, llegada tardía, vacaciones/feriados, porcentajes, descuentos y unidades distintas.
 
 ## V2-06 — piloto real
