@@ -1,3 +1,5 @@
+> **NUEVO CONTRATO DE CONTINUIDAD COTIRONDA — 11/11/2026 (documentación, no deploy):** Leer primero [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794), [plan maestro del piloto](docs/PILOTO-100-PLAN-MAESTRO.md) y [archivo de relevo](docs/PILOTO-100-ESTADO.md). El paso obligatorio inmediato es **P0: auditar código/entorno y conciliar reglas de originales/contactos**. E2E de 1 comprador y 2 proveedores por WhatsApp, con originales inmutables, asociación segura, estado recibido sin IA, cierre y descarga Auth. No añadir nuevos parsers como rutina, no crear rondas superpuestas, no divulgar identidad/archivos sin permisos, no marcar checklist sin evidencia. Actualizar Issue #794 al terminar cada etapa, con siguiente paso ÚNICO. Esta indicación está en PR documental independiente hasta su integración; el código anterior permanece intacto.
+
 # AGENTS.md — Contrato técnico de Cotironda
 
 ## Rol

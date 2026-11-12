@@ -1,3 +1,5 @@
+> **NUEVO PLAN DE PILOTO DOCUMENTAL — 11/11/2026 (propuesto, no desplegado):** El piloto no debe depender de que la IA interprete económicamente cada PDF. Fuente de seguimiento [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794), [plan maestro](docs/PILOTO-100-PLAN-MAESTRO.md) y [estado/relevo](docs/PILOTO-100-ESTADO.md). El README histórico inferior refleja Etapa 00 y NO acredita el estado vivo de Supabase; antes de desarrollar hay que leer estos documentos y consultar el piloto. La documentación está en PR sin merge; ningún circuito nuevo está publicado.
+
 # Cotironda
 
 **Estado: Etapa 00 — documentación para revisión. No hay producto desplegado.**
