@@ -22,7 +22,6 @@ test('P1 preflight: refuses to merge multiple prepared rounds',()=>{
 });
 test('P1 preflight: stored PDF alone NEVER counts as delivered',()=>{
  for(const marker of [
-  'm.message_hmac=a.message_hmac',
   "m.kind IN ('document','image')",
   'a.message_hmac=m.message_hmac',
   "c.archive_state='stored'",
