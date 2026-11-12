@@ -1,3 +1,6 @@
+## 2026-11-11 — MVP354: recepcion de originales independiente de IA (SOLO DESARROLLO)
+RPC privada de contador de medios recibidos con token de comprador, proveedor invitado/despachado, archivo SHA íntegro y ambigüedad entre rondas bloqueada; DTO seguro y tracking bajo flag OFF por defecto, sin precio, contacto ni descarga. SQL NO instalado, Edge NO publicado. Tests y criterios en [Acta 522](docs/522-mvp354-recepcion-documental-independiente.md). El plan de continuidad sigue en [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794); no marcar P1/P2/P3 aprobados todavía.
+
 ## 2026-11-11 — MVP353: preflight detecta una ronda preparada vigente (SOLO DESARROLLO)
 El control de preparación MVP334 ahora evita recomendar otra ronda cuando existe una `prepared` aún vigente: contador de rondas y despachos agregados sin identidad, validación de esquema y tests de mutación/falla cerrada. En la base real: 1 preparada con 2 despachos aceptados, 1 borrador, 0 ofertas nuevas; nuevo SQL solo lectura devuelve `preflight_sql_apto=false`. Sin tocar la ronda, sin publicación ni WhatsApp. [Acta 521](docs/521-mvp353-preflight-sin-ronda-duplicada.md).
 
