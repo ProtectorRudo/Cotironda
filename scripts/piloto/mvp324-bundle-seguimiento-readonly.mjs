@@ -22,6 +22,8 @@ const ADDITIONAL_MODULE=
  'src/domain/ia-central/preliminar-anonimo-presupuestos-mvp322.ts';
 const STATUS_MODULE=
  'src/domain/ia-central/estado-revision-comercial-mvp326.ts';
+const RECEIPT_MODULE_MVP354=
+ 'src/domain/ia-central/recepcion-documental-mvp354.ts';
 export const MISSING_TRANSITIVE_MVP324=Object.freeze([
  'src/domain/auditoria-condiciones-mvp167.ts',
  'src/domain/auditoria-descuentos-mvp166.ts',
@@ -67,6 +69,15 @@ const STATUS_IMPORT_MARKER=
  "import {estadoRevisionComercialMvp326} from\n"+
  " '../../../src/domain/ia-central/estado-revision-comercial-mvp326.ts';\n";
 const STATUS_ADDITION_RE=/\s*\/\/ MVP326: independently token-bound status, not a new AI review\.[\s\S]*?\s*\}catch\{\/\* Optional count projection fails closed\. \*\/\}/g;
+const RECEIPT_IMPORT_MVP354=
+ "import {recepcionDocumentalMvp354} from\n"+
+ " '../../../src/domain/ia-central/recepcion-documental-mvp354.ts';\n";
+const RECEIPT_HTML_MVP354=
+ '<div id="docReceipts" class="caption" aria-live="polite"></div>\n';
+const RECEIPT_CLIENT_RE_MVP354=
+ /\n   \/\/ MVP354: evidencia documental privada y anónima\.[\s\S]*?\n   \}\n(?=   \$\("deadline"\)\.textContent)/gu;
+const RECEIPT_SERVER_RE_MVP354=
+ /\n\n \/\/ MVP354: este contador es INDEPENDIENTE del parsing,[\s\S]*?(?=\n let verifiedRoundInputs:unknown=null;)/gu;
 const blobSha=s=>createHash('sha1').update('blob '+Buffer.byteLength(s)+'\0'+s).digest('hex');
 const fail=m=>{throw new Error('mvp324_bundle_gate:'+m)};
 const inside=(root,path)=>path===root||path.startsWith(root+sep);
@@ -95,7 +106,22 @@ export function inspectSeguimientoBundleMvp324(root=REPO){
    fail('review_import_not_exactly_once');
  if([...index.matchAll(STATUS_ADDITION_RE)].length!==1)
    fail('review_projection_not_exactly_once');
- const original=index.replace(IMPORT_MARKER,'').replace(ADDITION_RE,'')
+ if(index.split(RECEIPT_IMPORT_MVP354).length!==2)
+   fail('document_receipt_import_not_exactly_once');
+ if(index.split(RECEIPT_HTML_MVP354).length!==2||
+    [...index.matchAll(RECEIPT_CLIENT_RE_MVP354)].length!==1||
+    [...index.matchAll(RECEIPT_SERVER_RE_MVP354)].length!==1)
+   fail('document_receipt_ui_or_server_not_reviewed');
+ if(!index.includes("COTIRONDA_PILOT_DOCUMENT_RECEIPTS_MVP354_ENABLED')==='true'")||
+    !index.includes("const reduced=recepcionDocumentalMvp354(docs.data,publicResult);")||
+    !index.includes("receipt.originales_disponibles===false")||
+    !index.includes("receipt.identidades_reveladas===false"))
+   fail('document_receipt_not_fail_closed');
+ const original=index.replace(RECEIPT_IMPORT_MVP354,'')
+   .replace(RECEIPT_HTML_MVP354,'')
+   .replace(RECEIPT_CLIENT_RE_MVP354,'\n')
+   .replace(RECEIPT_SERVER_RE_MVP354,'\n')
+   .replace(IMPORT_MARKER,'').replace(ADDITION_RE,'')
    .replace(STATUS_IMPORT_MARKER,'').replace(STATUS_ADDITION_RE,'');
  if(blobSha(original)!==ACTIVE_INDEX_BLOB_SHA)
    fail('live_index_baseline_drift_unreviewed_change');
@@ -103,7 +129,7 @@ export function inspectSeguimientoBundleMvp324(root=REPO){
    fail('source_verified_projection_absent');
  if(!index.includes("const reduced=estadoRevisionComercialMvp326(status.data,safe);"))
    fail('terminal_review_stage_projection_absent');
- for(const p of [ADDITIONAL_MODULE,STATUS_MODULE]){
+ for(const p of [ADDITIONAL_MODULE,STATUS_MODULE,RECEIPT_MODULE_MVP354]){
   const source=readFileSync(resolve(absRoot,p),'utf8');
   if(/(?:\bfetch\s*\(|\bcreateClient\s*\(|\bDeno\.serve\b)/u.test(source))
     fail('projection_must_be_pure:'+p);
@@ -133,8 +159,8 @@ export function inspectSeguimientoBundleMvp324(root=REPO){
    if(filePaths.length>40)fail('unexpected_dependency_growth');
  }
  const expected=new Set([...ACTIVE_FILES_MVP324,ADDITIONAL_MODULE,
-  STATUS_MODULE,...MISSING_TRANSITIVE_MVP324]);
- if(expected.size!==34||seen.size!==34||[...expected].some(f=>!seen.has(f))||
+  STATUS_MODULE,RECEIPT_MODULE_MVP354,...MISSING_TRANSITIVE_MVP324]);
+ if(expected.size!==35||seen.size!==35||[...expected].some(f=>!seen.has(f))||
     [...seen].some(f=>!expected.has(f)))
    fail('dependency_closure_diff:'+[
       ...[...seen].filter(x=>!expected.has(x)),
@@ -144,7 +170,7 @@ export function inspectSeguimientoBundleMvp324(root=REPO){
    state:'mvp324_bundle_offline_verified',
    entrypoint_path:EDGE_ENTRY_MVP324,
    file_count:seen.size,unchanged_active_files:28,
-   new_or_changed_files:[EDGE_ENTRY_MVP324,ADDITIONAL_MODULE,STATUS_MODULE],
+   new_or_changed_files:[EDGE_ENTRY_MVP324,ADDITIONAL_MODULE,STATUS_MODULE,RECEIPT_MODULE_MVP354],
    missing_transitive_dependencies:MISSING_TRANSITIVE_MVP324,
    baseline_blob_sha:ACTIVE_INDEX_BLOB_SHA,
    verify_jwt_must_remain_false:true,

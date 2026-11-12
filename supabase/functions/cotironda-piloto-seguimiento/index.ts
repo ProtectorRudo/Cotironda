@@ -26,6 +26,8 @@ import {preliminarAnonimoPresupuestosMvp322} from
  '../../../src/domain/ia-central/preliminar-anonimo-presupuestos-mvp322.ts';
 import {estadoRevisionComercialMvp326} from
  '../../../src/domain/ia-central/estado-revision-comercial-mvp326.ts';
+import {recepcionDocumentalMvp354} from
+ '../../../src/domain/ia-central/recepcion-documental-mvp354.ts';
 import {vistaPendientesRubrosMvp299} from '../../../src/domain/ia-central/vista-pendientes-rubros-mvp299.ts';
 import {vistaProveedoresCierreMvp303} from '../../../src/domain/ia-central/vista-proveedores-cierre-mvp303.ts';
 import {contactosConsentidosMvp304} from '../../../src/domain/ia-central/contactos-consentidos-cierre-mvp304.ts';
@@ -54,6 +56,7 @@ Al cerrar la ronda se identifica a todos los proveedores invitados y se indica s
 <div class="caption">Presupuestos recibidos</div>
 <div class="deadline"><b id="state">Consultando…</b><p id="deadline"></p></div>
 <div id="files" class="caption" aria-live="polite"></div>
+<div id="docReceipts" class="caption" aria-live="polite"></div>
 <div id="receipts" aria-live="polite"></div>
 <div id="offers" aria-live="polite"></div><div id="finalists" aria-live="polite"></div></main>
 <p><small>Enlace privado. No lo compartas con otras personas.</small></p>
@@ -77,6 +80,23 @@ if(!/^[a-f0-9]{64}$/.test(token)){
    $("files").textContent=Number.isSafeInteger(files)&&files>0
     ?files+" archivo(s) de proveedores pendiente(s) de verificar. No son presupuestos validados."
     :"";
+   // MVP354: evidencia documental privada y anónima. No usar el contador
+   // económico como sinónimo de documento auténtico recibido.
+   const panel=$("docReceipts");panel.replaceChildren();
+   const receipt=d.document_receipts;
+   if(receipt&&receipt.state==="recepcion_documental_anonima_mvp354"&&
+      Number.isSafeInteger(receipt.invitados)&&receipt.invitados>=0&&receipt.invitados<=25&&
+      Number.isSafeInteger(receipt.archivos_recibidos)&&receipt.archivos_recibidos>=0&&
+      receipt.archivos_recibidos<=receipt.invitados&&
+      receipt.pendientes===receipt.invitados-receipt.archivos_recibidos&&
+      receipt.originales_disponibles===false&&receipt.identidades_reveladas===false&&
+      receipt.precios_validados===false&&receipt.comparacion_permitida===false){
+     const summary=document.createElement("p");
+     summary.textContent="Archivos originales vinculados: "+
+       receipt.archivos_recibidos+" de "+receipt.invitados+
+       " proveedores despachados. No implica precios verificados ni habilita descargas.";
+     panel.appendChild(summary);
+   }
    $("deadline").textContent="Fecha límite: "+
      new Date(d.deadline).toLocaleString("es-AR",{timeZone:"America/Argentina/Buenos_Aires"});
    // Only the server-provided reviewed anonymous projection is displayed.
@@ -206,6 +226,24 @@ Deno.serve(async req=>{
  const result=await db.rpc('cotironda_piloto_tracking_status_mvp091',{p_token_hash:digest});
  if(result.error)return new Response('',{status:503,headers:headers('text/plain')});
  let publicResult=result.data as Record<string,unknown>;
+
+ // MVP354: este contador es INDEPENDIENTE del parsing, los importes
+ // y los resultados económicos. APAGADO hasta instalar RPC privada
+ // + comprobar piloto y aprobar publicación. RPC comprueba nuevamente
+ // token/revocación/empresa y evidencias archivadas del proveedor.
+ if(Deno.env.get('COTIRONDA_PILOT_DOCUMENT_RECEIPTS_MVP354_ENABLED')==='true'&&
+    publicResult&&(publicResult.state==='waiting'||publicResult.state==='closed')){
+   try{
+     const docs=await db.rpc('cotironda_piloto_document_receipts_mvp354',{
+       p_token_hash:digest
+     });
+     if(!docs.error){
+       const reduced=recepcionDocumentalMvp354(docs.data,publicResult);
+       if(reduced)publicResult={...publicResult,document_receipts:reduced};
+     }
+   }catch{/* RPC ausente/revocación/error: no publicar ningún dato. */}
+ }
+
 
  let verifiedRoundInputs:unknown=null;
  // Only a valid, consented buyer tracking token can reach this gate.
