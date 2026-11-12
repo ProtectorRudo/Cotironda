@@ -8,6 +8,8 @@ const sql=readFileSync(resolve(root,
  'supabase/piloto/mvp360_originals_from_verified_source_not_parser.sql'),'utf8');
 const fixture=readFileSync(resolve(root,
  'supabase/tests/ci/mvp360-originales-sin-gate-v9-pg17.sql'),'utf8');
+const consentSql=readFileSync(resolve(root,
+ 'supabase/piloto/mvp362_originales_alta_consentimiento_off.sql'),'utf8');
 
 test('MVP360: el catálogo de originales ya no depende de la IA económica',()=>{
  assert.match(sql,/CREATE OR REPLACE FUNCTION public\.cotironda_piloto_originals_private_mvp192/u);
@@ -21,14 +23,18 @@ test('MVP360: identidad, consentimientos prospectivos y ronda cerrada',()=>{
   /from auth\.users u/iu,
   /join auth\.sessions sess/iu,
   /original_share_policy_mvp178/iu,
-  /original_share_consents_mvp178/iu,
-  /c\.revoked_at is null/iu,
+  /original_effective_consent_mvp362/iu,
   /r\.state='closed'/iu,
   /r\.created_at>pol\.activated_at/iu,
-  /c\.accepted_at<=i\.created_at/iu,
   /r\.buyer_key=v_buyer/iu,
   /m\.state='stored'/iu
  ])assert.match(sql,pattern);
+ for(const pattern of [
+  /original_share_consents_mvp178/iu,
+  /c\.revoked_at IS NULL/iu,
+  /c\.accepted_at<=a\.invited_at/iu,
+  /supplier_original_revocations_mvp362/iu
+ ])assert.match(consentSql,pattern);
 });
 test('MVP360: evidencia correlacionada, SHA y bloqueo de ambigüedades',()=>{
  for(const pattern of [

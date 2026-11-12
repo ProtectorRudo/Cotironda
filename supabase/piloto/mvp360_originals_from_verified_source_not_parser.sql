@@ -1,3 +1,8 @@
+-- MVP362 layered integration for M360 (NOT deployed).
+-- This M360 definition now requires mvp362_originales_alta_consentimiento_off.sql
+-- BEFORE applying it, and after all MVP360 dependencies.
+-- The LATERAL helper enforces identical permission in the preflight and
+-- downloads. No Auth/session/byte hash/legacy blocking was removed.
 -- MVP360 ONLY IN DEVELOPMENT, DO NOT INSTALL WITHOUT PILOT PUBLICATION.
 -- Source pg_get_functiondef fetched from cotironda-piloto 2026-11-12.
 -- Replace ONLY the original catalog source: immutable media + audited
@@ -80,6 +85,7 @@ begin
       source_msg.received_at,
       proof.supplier_key,m.mime,m.kind,m.size_bytes,m.storage_path,
       i.created_at invited_at,c.accepted_at consent_at,
+      c.version consent_version,
       r.created_at round_created,r.closes_at,r.closed_at
    from cotironda_piloto_privado.media_archive_mvp095 m
    join cotironda_piloto_privado.ai_supplier_links_mvp225 proof
@@ -117,19 +123,13 @@ begin
      and supplier.participant_role='supplier'
      and supplier.chat_hmac=m.chat_hmac
      and supplier.consent_at is not null and supplier.opted_out_at is null
-   join cotironda_piloto_privado.original_share_consents_mvp178 c
-     on c.request_id=proof.request_id and c.supplier_key=proof.supplier_key
-     and c.alcance='original_identificable_tras_cierre'
-     and c.version='cotironda-originales-v1'
-     and c.revoked_at is null
-     and c.accepted_at>=v_activation
-     and c.accepted_at>=r.created_at and c.accepted_at<=i.created_at
-   join cotironda_piloto_privado.whapi_inbox consent_msg
-     on consent_msg.message_hmac=c.consent_message_hmac
-     and consent_msg.participant_key=proof.supplier_key
-     and consent_msg.received_at=c.accepted_at
-     and (consent_msg.request_id is null
-        or consent_msg.request_id=proof.request_id)
+   -- MVP362: the SAME private consent gate is used by preflight and
+   -- the actual original-catalog, including future-only onboarding terms.
+   -- It rejects revoked/retroactive/ambiguous enrollments, keeping legacy
+   -- per-round permission only when its original evidentiary rules hold.
+   join lateral cotironda_piloto_privado.original_effective_consent_mvp362(
+     r.id,proof.supplier_key
+   ) c on true
    where proof.request_id=p_request_id
      and m.message_hmac ~ '^[a-f0-9]{64}$'
      and m.content_sha256 ~ '^[a-f0-9]{64}$'
@@ -243,7 +243,7 @@ begin
            'rondaId',p_request_id::text,
            'proveedorId',v_rec.supplier_key,
            'alcance','original_identificable_tras_cierre',
-           'version','cotironda-originales-v1',
+           'version',v_rec.consent_version,
            'aceptadoMs',(extract(epoch from v_rec.consent_at)*1000)::bigint,
            'revocadoMs',null
          ),
