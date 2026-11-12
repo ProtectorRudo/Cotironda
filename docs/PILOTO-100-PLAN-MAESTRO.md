@@ -50,6 +50,19 @@ El objetivo comercial es que, **al cierre**, el comprador pueda obtener los orig
 
 **CI FINAL MVP355 (11/11/2026):** el SHA técnico [`721ecc12d2a9a35e54d53b35f009d419b4cca3f6`](https://github.com/ProtectorRudo/Cotironda/pull/798) pasó **5/5 workflows generales**: Next.js, unidad general (incluye **PG17 documental** y **Deno seguimiento** como jobs separados), PostgREST, PG17 aislamiento y verificación sitio. Probados dos formatos sintéticos, SHA, links débiles/ausentes, vínculo de aviso previo, duplicados, rondas solapadas y revocación. Además SELECT del nuevo SQL sin escrituras contra piloto: `2 despachos / 0 documentos acreditados`; token falso `not_found`. **Sin despliegue**, PR draft; no E2E real.
 
+## P1/P2 — causa confirmada de la no asociación MVP225 (12/11/2026)
+
+**[PR #813](https://github.com/ProtectorRudo/Cotironda/pull/813)** actualizado SIN NUEVO PR; [Acta 541](https://github.com/ProtectorRudo/Cotironda/blob/feat/p1-diagnostico-documental-20261112/docs/541-p1-ambiguedad-registrada-vinculo-seguro.md). **SOLO LECTURA en PILOTO; sin envíos, migraciones, reintentos ni rondas nuevas.**
+
+- [x] **Causa real confirmada:** logs 10/11 11:19 UTC muestran llamada RPC `cotironda_piloto_ia_link_supplier_mvp225` HTTP 200 desde la ingesta; el webhook era v75. El estado privado asociado al documento es `ai_supplier_unresolved_mvp237.state='ambiguous_round'`, `candidate_count=2`, método `single_active_round`. **HTTP 200 no es resultado `linked`**: ni inbox ni archivo recibieron `request_id`. No se puede decidir hoy qué ronda era.
+- [x] **Segundo intento sin evidencia:** `ai_supplier_auto_correlation_mvp291` quedó `state='review'`, `reason='insufficient_material_evidence'`; un registro `ai_supplier_correlation_retries_mvp336` documenta reintento. No enviar otro a la IA ni cambiar el pedido retrospectivamente.
+- [x] **Error en nuestro preflight detectado y reparado:** la versión anterior exigía `with_proof` incluso para contar un documento rechazado antes de vincular y mostraba **0 conflictos falsamente**. Ahora `blocked` consulta candidatos archivados y ledgers MVP237 independientemente de proof; `verified` sigue requiriendo inbox+archivo+SHA+asociación formal. Contadores agregados para `ambiguous_round`, máximo de candidatos históricos, insuficiencia M291 y reintento, sin datos identificables. Tests Node actualizados.
+- [x] **SQL corregido ejecutado realmente** en Supabase: **1** ronda preparada, **2** despachos, **1** proveedor en `conflicto_privado` por ambigüedad (había **2** rondas candidatas), **1** proveedor sin archivo candidato, **0/2** originales de esa ronda acreditados; MVP354 aún **no instalado**. **CI del último SHA técnico pendiente de certificar**.
+- [ ] **P1/P2 bloqueados hasta nueva EVIDENCIA:** verificar identificador Whapi citado, preámbulo autenticado o respuesta nueva inequívoca del primer proveedor, sin reconvertir historial por tiempo; obtener original genuino del segundo proveedor. No crear nueva ronda mientras exista la preparada vigente, ni generar WhatsApp bajo «Avanza».
+- [ ] P0/P3–P5 continúan abiertos: consentimiento expreso comercial, operador MFA real, Auth comprador, seguimiento, cierre y descargas probadas.
+
+**PRÓXIMA ACCIÓN ESTRICTA:** no más parsers ni reintentos de correlación sin evidencia. Auditar un mensaje de respuesta NUEVO/citado que identifique ronda de forma verificable; si no existe, mantener el estado de revisión. Validar 2 archivos fuente originales vinculados y activar seguimiento solo tras `Publicalo en cotironda-piloto`.
+
 ## P1/P2 — diagnóstico REAL de originales de la ronda vigente (12/11/2026)
 
 **[PR #813](https://github.com/ProtectorRudo/Cotironda/pull/813)** DRAFT **independiente de P0** sobre #798, [Acta 540](https://github.com/ProtectorRudo/Cotironda/blob/feat/p1-diagnostico-documental-20261112/docs/540-p1-diagnostico-dos-originales-solo-lectura.md). Código y SELECT real sin publicación, sin mensajes, sin tocar base ni ronda.
