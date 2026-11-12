@@ -2,7 +2,7 @@
 /** Buyer-only V2 portal. Session JWT is sent ONLY in Authorization header;
  * the server independently verifies getUser + auth.sessions and V2 source.
  */
-import {useEffect,useMemo,useState} from 'react';
+import {useEffect,useMemo,useRef,useState} from 'react';
 import {createClient} from '@supabase/supabase-js';
 import type {CatalogoRespuestasV2} from '../../../../../../../src/server/v2-03-catalogo-respondedores.ts';
 
@@ -20,6 +20,7 @@ export function RespuestasCompradorV2({rondaId}:{rondaId:string}){
    auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}
   });
  },[]);
+ const analysisAttempted=useRef(new Set<string>());
  const [authenticated,setAuthenticated]=useState(false);
  const [busy,setBusy]=useState(false);
  const [loading,setLoading]=useState(true);
@@ -74,6 +75,33 @@ export function RespuestasCompradorV2({rondaId}:{rondaId:string}){
   // Refresh once when authenticated; additional refreshes only by user action.
   // eslint-disable-next-line react-hooks/exhaustive-deps
  },[authenticated]);
+
+ // No buyer confirmation needed: analyze only verified responders.
+ // SQL claim prevents concurrent model calls and duplicate charges.
+ useEffect(()=>{
+  if(!authenticated||!catalog||analysisAttempted.current.size>=4)return;
+  const missing=catalog.respuestas.filter(item=>item.puntos.length===0&&
+   !analysisAttempted.current.has(item.documentoId)).slice(
+    0,4-analysisAttempted.current.size);
+  if(missing.length===0)return;
+  for(const item of missing)analysisAttempted.current.add(item.documentoId);
+  void (async()=>{
+   const access=await token();
+   if(!access)return;
+   try{
+    await Promise.allSettled(missing.map(async item=>{
+     await fetch(api+'/originales/'+encodeURIComponent(item.documentoId)+
+      '/analizar',{
+      method:'POST',cache:'no-store',credentials:'omit',
+      headers:{Authorization:'Bearer '+access}
+     });
+    }));
+    await refresh();
+   }catch{/* original stays visible; private analysis optional */}
+  })();
+  // One bounded attempt per original for this session. No polling.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+ },[catalog,authenticated]);
 
  async function sendOtp(){
   if(!client||busy)return;
