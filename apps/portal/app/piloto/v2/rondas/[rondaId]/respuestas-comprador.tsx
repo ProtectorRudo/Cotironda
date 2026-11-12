@@ -2,10 +2,12 @@
 /** Buyer-only V2 portal. Session JWT is sent ONLY in Authorization header;
  * the server independently verifies getUser + auth.sessions and V2 source.
  */
-import {useEffect,useMemo,useRef,useState} from 'react';
-import {createClient} from '@supabase/supabase-js';
+import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
+import {createClient,type Session} from '@supabase/supabase-js';
 import type {CatalogoRespuestasV2} from '../../../../../../../src/server/v2-03-catalogo-respondedores.ts';
 import {nombreDescargaOriginalV2} from '../../../../../lib/piloto-v2-nombre-descarga.ts';
+import {debeActualizarRespuestasV2,INTERVALO_ACTUALIZACION_RESPUESTAS_V2_MS}
+ from '../../../../../lib/piloto-v2-actualizacion-respuestas.ts';
 
 const PILOT='https://ilggkalaafhtiysyzlmg.supabase.co';
 export function RespuestasCompradorV2({rondaId}:{rondaId:string}){
@@ -18,6 +20,10 @@ export function RespuestasCompradorV2({rondaId}:{rondaId:string}){
   });
  },[]);
  const analysisAttempted=useRef(new Set<string>());
+ const authGeneration=useRef(0);
+ const userIdActual=useRef<string|null>(null);
+ const refreshInFlight=useRef(false);
+ const [sessionVersion,setSessionVersion]=useState(0);
  const [authenticated,setAuthenticated]=useState(false);
  const [busy,setBusy]=useState(false);
  const [loading,setLoading]=useState(true);
@@ -30,48 +36,101 @@ export function RespuestasCompradorV2({rondaId}:{rondaId:string}){
  useEffect(()=>{
   if(!client){setLoading(false);return}
   let active=true;
-  void client.auth.getSession().then(({data})=>{
-   if(!active)return;
-   setAuthenticated(!!data.session?.access_token);
+  const aplicarSesion=(session:Session|null)=>{
+   const nextUserId=session?.user?.id??null;
+   if(nextUserId!==userIdActual.current){
+    authGeneration.current++;
+    userIdActual.current=nextUserId;
+    analysisAttempted.current.clear();
+    setCatalog(null);
+    setSessionVersion(version=>version+1);
+   }
+   setAuthenticated(!!session?.access_token);
    setLoading(false);
+  };
+  void client.auth.getSession().then(({data})=>{
+   if(active)aplicarSesion(data.session);
   }).catch(()=>{if(active)setLoading(false)});
   const {data:{subscription}}=client.auth.onAuthStateChange((_event,session)=>{
-   if(!active)return;
-   setAuthenticated(!!session?.access_token);
-   if(!session)setCatalog(null);
+   if(active)aplicarSesion(session);
   });
   return ()=>{active=false;subscription.unsubscribe()};
  },[client]);
 
- async function token():Promise<string|null>{
+ const token=useCallback(async ():Promise<string|null>=>{
   if(!client)return null;
   const {data,error:authError}=await client.auth.getSession();
   if(authError)return null;
-  // getSession is transport ONLY, never trusted as authorization by server.
+  // getSession is transport ONLY; getUser + auth.sessions validate on server.
   return data.session?.access_token??null;
- }
- async function refresh(){
-  setBusy(true);setError('');
+ },[client]);
+
+ const refresh=useCallback(async (silencioso=false):Promise<void>=>{
+  // Nunca iniciar dos lecturas simultáneas ni conservar datos tras logout.
+  if(refreshInFlight.current)return;
+  refreshInFlight.current=true;
+  const generation=authGeneration.current;
+  if(!silencioso){setBusy(true);setError('');}
   try{
    const access=await token();
-   if(!access){setCatalog(null);setAuthenticated(false);return;}
+   if(generation!==authGeneration.current)return;
+   if(!access){
+    authGeneration.current++;
+    userIdActual.current=null;
+    setCatalog(null);setAuthenticated(false);
+    return;
+   }
    const response=await fetch(api+'/respuestas',{
     method:'GET',cache:'no-store',credentials:'omit',
-    headers:{Authorization:'Bearer '+access}
+    headers:{Authorization:'Bearer '+access},
+    signal:AbortSignal.timeout(15_000)
    });
-   if(!response.ok){setCatalog(null);setError('No se pudo cargar tu pedido.');return;}
+   if(generation!==authGeneration.current)return;
+   // Fail closed: flags revocados o sesión inválida nunca dejan datos viejos.
+   if(!response.ok){
+    setCatalog(null);setError('No se pudo cargar tu pedido.');return;
+   }
    const payload:CatalogoRespuestasV2=await response.json();
+   if(generation!==authGeneration.current)return;
    if(payload.estado!=='cotizaciones_recibidas'||
       !Array.isArray(payload.respuestas))throw Error('invalid_response');
-   setCatalog(payload);
-  }catch{setError('No se pudo cargar tu pedido.')}
-  finally{setBusy(false)}
- }
+   setCatalog(payload);setError('');
+  }catch{
+   if(generation===authGeneration.current){
+    setCatalog(null);setError('No se pudo cargar tu pedido.');
+   }
+  }finally{
+   refreshInFlight.current=false;
+   if(!silencioso)setBusy(false);
+  }
+ },[api,token]);
+
  useEffect(()=>{
-  if(authenticated&&!catalog&&!busy)void refresh();
-  // Refresh once when authenticated; additional refreshes only by user action.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
- },[authenticated]);
+  if(authenticated)void refresh();
+  // New auth identity/sessionVersion also refreshes, never trusts local JWT.
+ },[authenticated,sessionVersion,refresh]);
+
+ // Only a visible, authenticated buyer polls for NEW responders.
+ // While hidden or signed out, no background requests/IA are started.
+ useEffect(()=>{
+  if(!authenticated||!client)return;
+  const sincronizar=()=>{
+   if(debeActualizarRespuestasV2({
+    autenticado:authenticated,
+    paginaVisible:document.visibilityState==='visible',
+    ocupado:busy,
+    consultaEnCurso:refreshInFlight.current
+   }))void refresh(true);
+  };
+  const intervalo=window.setInterval(sincronizar,INTERVALO_ACTUALIZACION_RESPUESTAS_V2_MS);
+  document.addEventListener('visibilitychange',sincronizar);
+  window.addEventListener('focus',sincronizar);
+  return ()=>{
+   window.clearInterval(intervalo);
+   document.removeEventListener('visibilitychange',sincronizar);
+   window.removeEventListener('focus',sincronizar);
+  };
+ },[authenticated,client,busy,refresh]);
 
  // No buyer confirmation needed: analyze only verified responders.
  // SQL claim prevents concurrent model calls and duplicate charges.
@@ -100,6 +159,13 @@ export function RespuestasCompradorV2({rondaId}:{rondaId:string}){
   // eslint-disable-next-line react-hooks/exhaustive-deps
  },[catalog,authenticated]);
 
+ function cerrarSesion(){
+  authGeneration.current++;
+  userIdActual.current=null;
+  analysisAttempted.current.clear();
+  setCatalog(null);setAuthenticated(false);setError('');
+  void client?.auth.signOut();
+ }
  async function sendOtp(){
   if(!client||busy)return;
   if(!/^\+[1-9]\d{8,15}$/u.test(phone.trim())){
@@ -180,10 +246,11 @@ export function RespuestasCompradorV2({rondaId}:{rondaId:string}){
    <button className="button outline" type="button" disabled={busy}
     onClick={()=>void refresh()}>Actualizar respuestas</button>
    <button className="button outline" type="button" disabled={busy}
-    onClick={()=>{void client.auth.signOut();setCatalog(null);}}>
+    onClick={cerrarSesion}>
     Cerrar sesión
    </button>
   </div>
+  <p>Las cotizaciones se actualizan automáticamente cada minuto mientras mirás esta página.</p>
   {busy&&<p role="status">Verificando información…</p>}
   {error&&<p role="alert">{error}</p>}
   {catalog?.respuestas.length===0&&
