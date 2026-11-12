@@ -70,7 +70,7 @@ DECLARE
  sha text:=repeat('d',64);
  chatbuyer text:=repeat('e',64);
  chatsupplier text:=repeat('f',64);
- doc jsonb;
+ doc text;
  catalog jsonb;
  count_ integer;
 BEGIN
@@ -121,16 +121,12 @@ BEGIN
  SELECT catalog->'originals'->0->>'documentId' INTO doc;
  IF doc IS NULL THEN RAISE EXCEPTION 'mvp360_missing_opaque_id'; END IF;
  catalog:=public.cotironda_piloto_originals_private_mvp192(
-  rid,userid,sessid,(doc#>>'{}')::uuid);
+  rid,userid,sessid,doc::uuid);
  IF catalog->>'state'<>'authorized_original' THEN
   RAISE EXCEPTION 'mvp360_valid_doc_not_authorized';
  END IF;
- IF catalog::text LIKE '%supplier_1%' THEN
-  -- Internal SQL result DOES contain supplier_key for the privileged
-  -- server adapter; the public JSON projection MUST omit this object.
-  -- Do not claim it is safe to return the full JSON to the browser.
-  NULL;
- END IF;
+ -- Function JSON is server-only. The HTTP adapter MUST project fields
+ -- to the buyer without leaking supplier keys or source metadata.
 
  -- Wrong buyer/session never reads any originals.
  IF public.cotironda_piloto_originals_private_mvp192(
