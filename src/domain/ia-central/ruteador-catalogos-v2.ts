@@ -107,7 +107,7 @@ export function autorizarPropuestasCatalogoV2(
     return fail('correspondencia_invalida');
    const source=catalog.get(lineNo);
    const requested=pedido.articulos[idx];
-   if(!source||!requested||source.rubro!==requested.rubro)
+   if(!source||!requested)
     return fail('rubro_o_catalogo_no_declarado');
    seen.add(idx);
    covered[idx]++;
