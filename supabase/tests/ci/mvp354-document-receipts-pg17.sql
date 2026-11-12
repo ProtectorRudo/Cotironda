@@ -30,7 +30,7 @@ CREATE TABLE cotironda_piloto_privado.media_archive_mvp095(
  request_id uuid,participant_key text,chat_hmac text,state text,
  finished_at timestamptz,reserved_at timestamptz,
  message_hmac text,storage_path text,content_sha256 text,
- size_bytes integer,mime text);
+ size_bytes integer,mime text,kind text NOT NULL DEFAULT 'document');
 
 \ir ../../piloto/mvp354_document_receipts_private.sql
 
