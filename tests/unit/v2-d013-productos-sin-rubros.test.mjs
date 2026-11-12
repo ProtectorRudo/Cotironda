@@ -2,9 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {autorizarPropuestasCatalogoV2}
- from '../../src/domain/ia-central/ruteador-catalogos-v2.ts';
+ from '../../src/domain/ia-central/ruteador-catalogos-v2-d013.ts';
 import {armarPreparacionSombraMvp221}
- from '../../src/domain/ia-central/puente-sql-rondas-mvp221.ts';
+ from '../../src/domain/ia-central/puente-sql-rondas-v2-d013.ts';
 
 const original='100 bolsas cemento Loma Negra 50 kg, entregar en La Plata';
 const span='100 bolsas cemento Loma Negra 50 kg';
