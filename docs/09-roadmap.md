@@ -5,7 +5,7 @@
 | Etapa | Entregable | Puerta de salida |
 | --- | --- | --- |
 | V2-00 | Triage de código y PR; mapa de reutilización | Fuente desplegada/auditoría y primera implementación definida |
-| V2-01 | Lista y distribución por catálogo/zona | 1 pedido, 2 negocios pertinentes, WhatsApp sin duplicados |
+| V2-01 | **D013:** matching PRODUCTO↔catálogo propio y zona (no por rubro); sinónimos, marca/presentación compatibles | 1 pedido, negocios con productos pertinentes, conversiones/alternativas correctas, cero duplicados |
 | V2-02 | Respuesta original y referencia segura | 2 originales auténticos, mismo pedido; concurrencia entre rondas admitida |
 | V2-03 | Portal comprador solo respondedores | Nombres/originales autorizados; ninguna lista de invitados pendientes |
 | V2-04 | Análisis individual | Cobertura, diferencias, condiciones, conclusión; no bloquea originales |
