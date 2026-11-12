@@ -241,6 +241,7 @@ DECLARE
  consent_event text:=repeat('4',64);
  exact_sha text;
  archived jsonb;
+ newrid uuid:='77777777-7777-4777-8777-777777777777';
 BEGIN
  -- The earlier M360 test left a newer archival document to test replacement.
  -- Remove it to isolate consent gating.
@@ -362,16 +363,90 @@ BEGIN
  -- Explicit opt-out/revocation works even after round closure:
  -- the same buyer cannot fetch the original a second time.
  INSERT INTO cotironda_piloto_privado.supplier_original_revocations_mvp362
- (supplier_key,terms_version,evidence_message_hmac,revoked_at,recorded_at,
-  reviewed_by_operator)
+ (supplier_key,terms_version,evidence_message_hmac,optin_message_hmac,
+ revoked_at,recorded_at,reviewed_by_operator)
  VALUES('supplier_1','cotironda-originales-alta-v1',repeat('5',64),
- now_-interval '1 day',now_-interval '12 hours',
+ consent_event,now_-interval '1 day',now_-interval '12 hours',
  '55555555-5555-4555-8555-555555555555');
  IF public.cotironda_piloto_original_consent_preflight_mvp178(rid,'supplier_1')
  THEN RAISE EXCEPTION 'mvp362_revoked_onboarding_opened'; END IF;
  archived:=public.cotironda_piloto_originals_private_mvp192(rid,uid,sess,null);
  IF (archived->>'total')::int<>0 THEN
  RAISE EXCEPTION 'mvp362_revoked_catalog_opened'; END IF;
+ -- New explicit enrollment after the revocation is accepted for future
+ -- rounds ONLY. Old original stays denied, even after the new acceptance.
+ INSERT INTO cotironda_piloto_privado.supplier_original_terms_notices_mvp364
+ (notice_message_hmac,supplier_key,terms_version,terms_sha256,
+  supplier_chat_hmac,outbound_body_sha256,delivery_state,sent_at,recorded_at)
+ VALUES(repeat('0',64),'supplier_1','cotironda-originales-alta-v1',
+ exact_sha,repeat('f',64),repeat('3',64),'api_accepted',
+ now_-interval '11 hours',now_-interval '10 hours 30 minutes');
+ INSERT INTO cotironda_piloto_privado.whapi_inbox
+ (message_hmac,request_id,participant_key,chat_hmac,received_at,kind,
+  plaintext_sha256)
+ VALUES(repeat('3',64),null,'supplier_1',repeat('f',64),
+ now_-interval '10 hours','text',repeat('9',64));
+ INSERT INTO cotironda_piloto_privado.supplier_original_optins_mvp362
+ (supplier_key,terms_version,terms_sha256,notice_message_hmac,
+ evidence_message_hmac,ack_plaintext_sha256,accepted_at,recorded_at,
+ reviewed_by_operator,evidence_review_sha256)
+ VALUES('supplier_1','cotironda-originales-alta-v1',exact_sha,
+ repeat('0',64),repeat('3',64),repeat('9',64),now_-interval '10 hours',
+ now_-interval '9 hours',
+ '55555555-5555-4555-8555-555555555555',repeat('7',64));
+ IF public.cotironda_piloto_original_consent_preflight_mvp178(rid,'supplier_1')
+ THEN RAISE EXCEPTION 'mvp365_older_round_reopened_after_reaccept';END IF;
+ INSERT INTO cotironda_piloto_privado.requests
+ (id,buyer_key,state,created_at,closes_at,closed_at)
+ VALUES(newrid,'buyer_1','closed',now_-interval '6 hours',
+ now_-interval '4 hours',now_-interval '3 hours');
+ INSERT INTO cotironda_piloto_privado.invitations
+ (request_id,supplier_key,state,created_at)
+ VALUES(newrid,'supplier_1','prepared',now_-interval '5 hours');
+ IF NOT public.cotironda_piloto_original_consent_preflight_mvp178(newrid,'supplier_1')
+ THEN RAISE EXCEPTION 'mvp365_valid_post_revocation_reaccept_denied';END IF;
+ -- A valid inbound message which arrived BEFORE a prior withdrawal
+ -- was registered cannot revive access just because its acceptance record
+ -- was inserted later. Keep all notice/message timestamps self-consistent
+ -- to isolate the REVOCATION ordering check (not unrelated Whapi guards).
+ UPDATE cotironda_piloto_privado.supplier_original_terms_notices_mvp364
+ SET sent_at=now_-interval '14 hours',
+     recorded_at=now_-interval '13 hours 30 minutes'
+ WHERE notice_message_hmac=repeat('0',64);
+ UPDATE cotironda_piloto_privado.whapi_inbox
+ SET received_at=now_-interval '13 hours'
+ WHERE message_hmac=repeat('3',64);
+ UPDATE cotironda_piloto_privado.supplier_original_optins_mvp362
+ SET accepted_at=now_-interval '13 hours',
+     recorded_at=now_-interval '12 hours 30 minutes'
+ WHERE evidence_message_hmac=repeat('3',64);
+ IF public.cotironda_piloto_original_consent_preflight_mvp178(newrid,'supplier_1')
+ THEN RAISE EXCEPTION 'mvp365_backdated_reaccept_opened';END IF;
+ -- Restore the second legitimate episode before testing second revocation.
+ UPDATE cotironda_piloto_privado.supplier_original_terms_notices_mvp364
+ SET sent_at=now_-interval '11 hours',
+     recorded_at=now_-interval '10 hours 30 minutes'
+ WHERE notice_message_hmac=repeat('0',64);
+ UPDATE cotironda_piloto_privado.whapi_inbox
+ SET received_at=now_-interval '10 hours'
+ WHERE message_hmac=repeat('3',64);
+ UPDATE cotironda_piloto_privado.supplier_original_optins_mvp362
+ SET accepted_at=now_-interval '10 hours',
+     recorded_at=now_-interval '9 hours'
+ WHERE evidence_message_hmac=repeat('3',64);
+ IF NOT public.cotironda_piloto_original_consent_preflight_mvp178(newrid,'supplier_1')
+ THEN RAISE EXCEPTION 'mvp365_valid_episode_not_restored';END IF;
+ -- Global revocation again closes the new episode without affecting past
+ -- audit; no second reacceptance is implicitly created.
+ INSERT INTO cotironda_piloto_privado.supplier_original_revocations_mvp362
+ (supplier_key,terms_version,evidence_message_hmac,optin_message_hmac,
+ revoked_at,recorded_at,reviewed_by_operator)
+ VALUES('supplier_1','cotironda-originales-alta-v1',repeat('2',64),
+ repeat('3',64),now_-interval '2 hours',now_-interval '1 hour',
+ '55555555-5555-4555-8555-555555555555');
+ IF public.cotironda_piloto_original_consent_preflight_mvp178(newrid,'supplier_1')
+ THEN RAISE EXCEPTION 'mvp365_second_revocation_ignored';END IF;
+ -- The next specific withdrawal test isolates legacy behavior.
  DELETE FROM cotironda_piloto_privado.supplier_original_revocations_mvp362;
 
  -- Legacy cancellation of THIS round cannot be circumvented by a global
@@ -383,6 +458,6 @@ BEGIN
  IF public.cotironda_piloto_original_consent_preflight_mvp178(rid,'supplier_1')
  THEN RAISE EXCEPTION 'mvp362_specific_withdrawal_ignored'; END IF;
 
- RAISE NOTICE 'MVP362+364 PASS: onboarding, outbound notice linkage, version/SHA, revocation, legacy, Auth, ROLLBACK';
+ RAISE NOTICE 'MVP362+364+365 PASS: onboarding, notice, reaccept episodes, revocation, legacy, Auth, ROLLBACK';
 END $test362$;
 ROLLBACK;
