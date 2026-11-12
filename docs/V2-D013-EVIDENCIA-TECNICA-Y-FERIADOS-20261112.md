@@ -8,6 +8,8 @@ El ruteador V2 del [PR #821](https://github.com/ProtectorRudo/Cotironda/pull/821
 
 Requiere que haya material reconocible en **ambas descripciones originales**; no acepta la explicación del modelo como prueba de existencia. Bloquea, al menos, las contradicciones de materiales que hoy sabemos especialmente delicadas: cemento Portland/albañilería, aplicaciones de látex interior/exterior, calibre de cable mm², placas OSB frente a yeso, espesores exigidos en mm y marcas obligatorias explícitas. Cuando falta evidencia, devuelve `revision_interna`: no anuncia compatibilidad ni dispara WhatsApp. El catálogo, zona, consentimiento e identidad del negocio continúan sujetos a las validaciones D013 del PR #821.
 
+**Corrección operativa adicional:** la revisión técnica de una línea ya NO cancela otras coincidencias válidas de esa misma solicitud. Solo se descarta la correspondencia insegura, registrada en `revisionTecnica` con proveedor, índice original, número de catálogo y motivo. Las demás líneas/negocios continúan como propuesta válida. Si todas las propuestas resultan inciertas, el circuito queda en `requiere_revision` sin envío. Errores de identidad, catálogo inexistente o permisos continúan bloqueando la operación completa (no se degradan a advertencia).
+
 Cuando el material tiene evidencia común y no aparecen contradicciones, calcula **únicamente cantidades nominales**, no condiciones comerciales:
 - 100 bolsas de cemento Portland de 50 kg = 5.000 kg; una presentación de 25 kg representa 200 bolsas.
 - 100 envases de 4 L = 400 L; una presentación de 5 L representa 80 envases.
