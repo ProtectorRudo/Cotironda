@@ -50,6 +50,19 @@ El objetivo comercial es que, **al cierre**, el comprador pueda obtener los orig
 
 **CI FINAL MVP355 (11/11/2026):** el SHA técnico [`721ecc12d2a9a35e54d53b35f009d419b4cca3f6`](https://github.com/ProtectorRudo/Cotironda/pull/798) pasó **5/5 workflows generales**: Next.js, unidad general (incluye **PG17 documental** y **Deno seguimiento** como jobs separados), PostgREST, PG17 aislamiento y verificación sitio. Probados dos formatos sintéticos, SHA, links débiles/ausentes, vínculo de aviso previo, duplicados, rondas solapadas y revocación. Además SELECT del nuevo SQL sin escrituras contra piloto: `2 despachos / 0 documentos acreditados`; token falso `not_found`. **Sin despliegue**, PR draft; no E2E real.
 
+## P0 — revisión de consentimiento explícito por operador MFA (12/11/2026)
+
+**[PR técnico #811](https://github.com/ProtectorRudo/Cotironda/pull/811)** DRAFT sobre #810, [Acta 538](https://github.com/ProtectorRudo/Cotironda/blob/feat/p0-revision-mfa-aceptacion-20261112/docs/538-p0-revision-mfa-respuesta-expresa.md). **DESARROLLO, no desplegado; no WhatsApp, Auth ni SQL vivo.**
+
+- [x] Se auditó fuente de verdad: M267 `operator_session_mvp267()` requiere JWT firmado, sesión activa, `aal2` y operador habilitado; M362/M364/M365 conservan aviso anterior y comprobante Whapi; webhook PILOTO conserva AES-GCM AAD `chat_hmac|message_hmac|text`, SHA256 y HMAC.
+- [x] `p0_whapi_terms_review_mfa_off.sql`: tabla privada append-only de revisión con decisiones `explicit_accept` / `not_explicit`, acceso directo negado a roles API. Dos RPC autenticadas: una devuelve evidencia *cifrada* solo a operador AAL2 y otra requiere texto exacto y atestación humana tras revalidar proveedor/chat, aviso anterior, versión SHA, política, no revocación, respuesta Whapi tipo texto y unicidad del mensaje. Solo `explicit_accept` crea consentimiento M362 **en la misma transacción**, sin dar permiso por `api_accepted` del transporte.
+- [x] `whapi-terms-mfa-review-p0.ts` realiza descifrado AES-GCM en servidor confiable, verifica el SHA de texto y condiciones, y separa **consultar** de **decidir**: para decidir vuelve a obtener y verificar el mismo mensaje/aviso. No introduce lenguaje de aceptación fijo al proveedor ni clasificación automática de IA.
+- [x] Tests Node de cifrado real sintético, mensaje/adulteración, JWT sin operador a nivel RPC, doble decisión y pérdida de autorización; PG17 fixture de Auth MFA **simulado**, replays, texto falso, aviso anterior, proveedor distinto y rechazo sin acceso. **CI final pendiente de verificar por SHA definitivo.**
+- [ ] **OPERATIVO NO COMPLETO:** aprobar texto comercial/legal sobre originales de no ganadores; provisionar operador Supabase Auth con MFA real, pantalla privada para mostrar respuesta y recibir decisión, runner DB login real, activar por orden `Publicalo en cotironda-piloto` y probar WhatsApp con respuesta expresa. En piloto aún sin operador/consentimientos reales.
+- [ ] Comprador Auth Phone/OTP, 2 presupuestos originales de una ronda, seguimiento, cierre y descarga verificables. **P0–P5 ABIERTOS**; no crear otra ronda `prepared`.
+
+**ÚNICO PRÓXIMO PASO:** integrar UI/endpoint estrictamente privado y operator AAL2 para revisión de texto, sin permitir aprobación automática; luego autorización comercial y prueba de alta real. **Inmediatamente después** concentrarse en la ronda documental real 1 arquitecto/2 proveedores. Mantener flags OFF y ninguna publicación bajo «Avanza».
+
 ## P0 — ejecutor TLS aislado para aviso de condiciones (12/11/2026)
 
 **[PR #810](https://github.com/ProtectorRudo/Cotironda/pull/810)** DRAFT apilado sobre #809, [Acta 537](https://github.com/ProtectorRudo/Cotironda/blob/feat/p0-executor-postgres-tls-20261112/docs/537-p0-runner-postgres-tls-whapi.md). **SOLO DESARROLLO: sin desplegar SQL, Vercel, Whapi ni nuevos contactos.**
