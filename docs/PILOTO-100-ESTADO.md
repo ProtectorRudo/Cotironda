@@ -19,7 +19,7 @@
 
 - [x] SQL `p0_whapi_terms_review_mfa_off.sql`: revisor conectado en código a Auth AAL2/M267, bandeja cifrada del webhook, aviso M364 anterior y política M362. Registro de auditoría y consentimiento **en transacción única** solo ante `explicit_accept` del operador (no por IA ni ACK Whapi).
 - [x] Módulo servidor `whapi-terms-mfa-review-p0.ts`: muestra respuesta original descifrada bajo RPC autenticada y exige segunda decisión humana que revalida SHA de mensaje y aviso. Sin teléfono/clave en logs, sin ruta ni mensaje real.
-- [x] Node con AES sintético y pruebas PostgreSQL17 con ROLLBACK preparadas. **CI SHA final por verificar**. El fixture MFA es un stub, **NO** prueba sesión Auth viva.
+- [x] Node con AES sintético y pruebas PostgreSQL17 con ROLLBACK preparadas. **CI FINAL 5/5 SUCCESS** en SHA `3734f513dd008a26c0b6b2a22e71c15fd84df5d2`: Node AES + módulo de revisión y job PG17 `P0 MFA REVIEW PASS` con ROLLBACK; Next.js, PostgREST, aislamiento PG17 y sitio SUCCESS. Es prueba sintética; ningún operador real ni envío Whapi. El fixture MFA es un stub, **NO** prueba sesión Auth viva.
 - [ ] Sin operador real AAL2 provisionado, texto de originales de no ganadores aprobado, UI de operador protegida o puesta en piloto. Faltan contacto real con proveedor, Auth comprador, 2 originales y browser E2E. **P0–P5 ABIERTOS**.
 
 **SIGUIENTE ACCIÓN:** flujo de revisión privado autenticado y prueba real SOLO tras aprobar política y autorizar `Publicalo en cotironda-piloto`; luego completar recorrido con arquitecto y dos proveedores. No hay nueva ronda ni despliegue.
