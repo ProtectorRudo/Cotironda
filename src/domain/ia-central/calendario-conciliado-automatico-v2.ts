@@ -13,11 +13,16 @@ export type FuenteAnualV2=Readonly<{
  url:string;anio:number;cobertura:'anual_completa';
  feriados:readonly FeriadoNormalizadoV2[];
 }>;
-export type PeticionCalendarioCentralV2=Readonly<{
- fechaCreacionISO:string;localidad:string;anio:number;
+export type FuentesAnoCalendarioV2=Readonly<{
  gobierno:FuenteAnualV2;contraste:FuenteAnualV2;
  locales:Readonly<{cobertura:'anual_completa';
   fuente:string;feriados:readonly FeriadoNormalizadoV2[]}>;
+}>;
+export type PeticionCalendarioCentralV2=Readonly<{
+ fechaCreacionISO:string;localidad:string;anio:number;
+ gobierno:FuenteAnualV2;contraste:FuenteAnualV2;
+ locales:FuentesAnoCalendarioV2['locales'];
+ siguienteAnio?:FuentesAnoCalendarioV2;
  reglaOptativos:'contar_como_habiles'|'excluir_solo_si_adheridos';
  adhesionOptativosConfirmada:boolean;
 }>;
@@ -82,7 +87,7 @@ function normalize(source:FuenteAnualV2,year:number,role:'gobierno'|'contraste')
  return {obligatorios:closed,optativos:optional};
 }
 function localSources(
- args:PeticionCalendarioCentralV2,
+ args:Readonly<{locales:FuentesAnoCalendarioV2['locales'];anio:number}>,
 ):{closed:Set<string>;optional:Set<string>}|null{
  if(!args.locales||args.locales.cobertura!=='anual_completa'||
   !urlTrusted(args.locales.fuente,'local')||
@@ -143,14 +148,35 @@ export function decidirVencimientoCentralV2(args:PeticionCalendarioCentralV2):
   args.adhesionOptativosConfirmada;
  if(honorOptional)for(const d of optional)excluding.add(d);
  const current=new Date(from+'T12:00:00Z');
+ const nextInfo=args.siguienteAnio;
+ let next:Readonly<{
+  excluding:Set<string>;optional:Set<string>;
+  urls:readonly string[];
+ }> | null=null;
+ if(nextInfo){
+  const year=args.anio+1;
+  const a2=normalize(nextInfo.gobierno,year,'gobierno');
+  const b2=normalize(nextInfo.contraste,year,'contraste');
+  const l2=localSources({anio:year,locales:nextInfo.locales});
+  if(!a2||!b2||!l2||!sameSet(a2.obligatorios,b2.obligatorios))
+   return deny('fuentes_anio_siguiente_no_conciliadas');
+  const excluded=new Set([...a2.obligatorios,...l2.closed]);
+  const opt=new Set([...a2.optativos,...b2.optativos,...l2.optional]);
+  if(honorOptional)for(const day of opt)excluded.add(day);
+  next={excluding:excluded,optional:opt,
+   urls:[nextInfo.gobierno.url,nextInfo.contraste.url,nextInfo.locales.fuente]};
+ }
  let count=0;
  for(let offset=1;offset<=35;offset++){
   const next=new Date(current.getTime()+offset*86400000);
   const day=next.toISOString().slice(0,10);
-  if(Number(day.slice(0,4))!==args.anio)
-   return deny('calendario_anio_siguiente_no_conciliado',
-    [args.gobierno.url,args.contraste.url,args.locales.fuente]);
-  if(next.getUTCDay()===0||next.getUTCDay()===6||excluding.has(day))continue;
+  const following=Number(day.slice(0,4))===args.anio+1;
+  if(following&&!next)
+   return deny('calendario_anio_siguiente_no_conciliado');
+  if(Number(day.slice(0,4))>args.anio+1)
+   return deny('calendario_horizonte_excedido');
+  const excluded=following?next!.excluding:excluding;
+  if(next.getUTCDay()===0||next.getUTCDay()===6||excluded.has(day))continue;
   count++;
   if(count===2){
    const utc=new Date(day+'T21:00:00Z');
@@ -158,11 +184,13 @@ export function decidirVencimientoCentralV2(args:PeticionCalendarioCentralV2):
    return Object.freeze({
     estado:'vencimiento_verificable',codigo:'dos_dias_habiles',
     venceISO:utc.toISOString(),venceLocal:day+' 18:00',
-    feriadosExcluidos:Object.freeze([...excluding].sort()),
-    diasOptativosNoExcluidos:Object.freeze([...optional].filter(x=>
-     !excluding.has(x)).sort()),
+    feriadosExcluidos:Object.freeze([...excluding,
+     ...(next?.excluding??[])].sort()),
+    diasOptativosNoExcluidos:Object.freeze([...optional,
+     ...(next?.optional??[])].filter(x=>!
+     excluding.has(x)&&!(next?.excluding.has(x)??false)).sort()),
     trazabilidad:Object.freeze([args.gobierno.url,args.contraste.url,
-     args.locales.fuente]),
+     args.locales.fuente,...(next?.urls??[])]),
     escrituraDB:false,whatsappEnviado:false
    });
   }
