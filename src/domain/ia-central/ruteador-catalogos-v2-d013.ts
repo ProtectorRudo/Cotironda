@@ -6,6 +6,7 @@
  * Un broker distinto valida identidad, zona, rubro y el catálogo real.
  */
 import type {PropuestaPedido} from './contrato-v1.ts';
+import {verificarCorrespondenciaTecnicaD013} from './verificador-evidencia-tecnica-v2-d013.ts';
 import type {RubroMvp216} from '../rubros-comprador-mvp216.ts';
 import {RUBROS_MVP216} from '../rubros-comprador-mvp216.ts';
 
@@ -110,7 +111,11 @@ export function autorizarPropuestasCatalogoV2(
    const source=catalog.get(lineNo);
    const requested=pedido.articulos[idx];
    if(!source||!requested)
-    return fail('rubro_o_catalogo_no_declarado');
+    return fail('producto_no_declarado_en_catalogo');
+   const proof=verificarCorrespondenciaTecnicaD013(requested,source.descripcion,
+    tipo as 'producto_declarado'|'alternativa_razonable');
+   if(proof.estado!=='evidencia_suficiente')
+    return fail('equivalencia_tecnica_sin_prueba:'+proof.motivo);
    seen.add(idx);
    covered[idx]++;
    matches.push({
