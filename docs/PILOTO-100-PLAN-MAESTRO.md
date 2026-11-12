@@ -156,7 +156,7 @@ Se reutilizó lector existente de ZIP/XML para Word/Excel, además de TXT/CSV; s
 
 - [x] Auditoría SOLO LECTURA real 12/11: PostgreSQL 17.11; `auth.users=0`; originales Storage privado 8 MiB OK; funciones comerciales V2 0/8; tablas privadas V2 0/4; Whapi v76 intacto; Vercel `cotironda-portal-dev` Next.js con Preview SSO, **variables nuevas V2 faltantes** (nombres únicamente).
 - [x] SQL inventario `supabase/piloto/v2_06_release_inventory_readonly.sql` ejecutado con SELECT, sin PII ni tablas mutadas; `scripts/piloto/v2-release-readiness.mjs` y foto no sensible actual, con pruebas negativas de ausencia Auth/consentimiento, SHA, drift Edge y ronda semánticamente ambigua.
-- [ ] Confirmar CI completa PR #827 en último SHA (guard específico se ejecutó correctamente).
+- [x] **CI PR #827** SHA `b7380a437b04f100db96827c5576d4e2c5d8915e` **6/6 SUCCESS** (guard real bloqueante, Node, Auth, PG17, Next.js y sitio). NO hubo instalación ni E2E.
 - [ ] Antes de instalar, congelar SHA conjunto #816–#827, revisar las 61 dependencias activas de Edge Whapi, migraciones SQL en orden/rollback y privacidad por compañía. No sobrescribir con index.ts histórico.
 - [ ] Registrar y validar Auth del comprador en el PILOTO y consentimientos prospectivos V2 de los proveedores (no derivar consentimiento del opt-in genérico WhatsApp).
 - [ ] Preparar preview Vercel con variables privadas server-only, SHA fijado al build, banderas inicialmente OFF y lector PDF Edge aislado. No entregar claves en chats ni registrarlas en GitHub.
