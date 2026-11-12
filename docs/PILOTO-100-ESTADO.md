@@ -13,6 +13,18 @@
 
 **CI FINAL MVP355 (11/11/2026):** el SHA técnico [`721ecc12d2a9a35e54d53b35f009d419b4cca3f6`](https://github.com/ProtectorRudo/Cotironda/pull/798) pasó **5/5 workflows generales**: Next.js, unidad general (incluye **PG17 documental** y **Deno seguimiento** como jobs separados), PostgREST, PG17 aislamiento y verificación sitio. Probados dos formatos sintéticos, SHA, links débiles/ausentes, vínculo de aviso previo, duplicados, rondas solapadas y revocación. Además SELECT del nuevo SQL sin escrituras contra piloto: `2 despachos / 0 documentos acreditados`; token falso `not_found`. **Sin despliegue**, PR draft; no E2E real.
 
+## P0 — controlador de ejecución PostgreSQL TLS para Whapi (12/11/2026)
+
+**[PR #810](https://github.com/ProtectorRudo/Cotironda/pull/810)** DRAFT sobre #809; [Acta 537](https://github.com/ProtectorRudo/Cotironda/blob/feat/p0-executor-postgres-tls-20261112/docs/537-p0-runner-postgres-tls-whapi.md).
+
+- [x] Driver `whapi-terms-pg-driver-p0.ts`: conexión PostgreSQL directa SSL con CA, proyecto PILOTO exacto, `session_user` técnico, `SET ROLE` mínimo comprobado, una conexión y cierre por RPC; deny SQL no listado y entornos no autorizados. No reusa D088 que apunta a otra base.
+- [x] `whapi-terms-runner-p0.ts`: encadena cinco RPC de DB y descifrado AES P0 al transporte D055, un aviso por invocación, banderas dobles OFF, cero ruta/cron instalados.
+- [x] Tests sintéticos Node de login y conexión, errores fail-closed, recorrido del aviso. CI PG17 con rollback heredado y ejecutándose en esta rama. **No acreditar CI último SHA sin inspección.**
+- [x] Snapshot Supabase PILOTO 12/11: Auth 0, operadores activos 0, consentimientos originales 0, política OFF, 1 prepared vigente, M362/P0 SQL sin instalar. Ningún envío ni mutación.
+- [ ] **NO APTO PARA PILOTO E2E:** falta provisionar login DB, credenciales seguras, operator Auth MFA verdadero, términos aprobados y aceptación explícita auditada; comprador OTP y 2 originales/seguimiento/cierre pendientes. P0–P5 ABIERTOS.
+
+**SIGUIENTE ACCIÓN:** revisar consentimiento entrante con operador AAL2, sin atajos; publicación solo con `Publicalo en cotironda-piloto` y política comercial aprobada. Luego E2E 1 comprador/2 proveedores.
+
 ## P0 — resolver contacto AES-GCM pre-ronda (12/11/2026)
 
 **[PR #809](https://github.com/ProtectorRudo/Cotironda/pull/809)** DRAFT sobre #808, [Acta 536](https://github.com/ProtectorRudo/Cotironda/blob/feat/p0-resolver-contacto-cifrado-20261112/docs/536-p0-contacto-cifrado-antes-de-ronda.md).
