@@ -77,6 +77,16 @@
 - **CI PR #824 verificada:** SHA `f3f9a03cb75dc24bdcbd5a62ef4ab3ad3d7261f4` **6/6 SUCCESS**, V2-04 con fuente SHA/evidencias/PII/IVA/flete, pruebas globales, PostgREST Auth, PG17 aislamiento, sitio y Next.js build. **Código no conectado al portal ni desplegado, sin E2E.**
 - **PRIORIDAD REAL:** completar una ruta vertical de PILOTO, no generar más tareas de refinamiento semántico: enlazar original real → proceso IA → guía privada del comprador, terminar la autenticación del arquitecto y consentimiento V2 de proveedores, escoger portal de Vercel PILOTO y preparar despliegue conjunto únicamente tras `Publicalo`. Luego prueba con 1 arquitecto y 2 proveedores (texto/PDF/Excel originales), cierre real e informe general. El calendario autónomo D014 todavía NO sincroniza fuentes oficiales confirmadas a Supabase; no activarlo por defecto.
 
+## V2-04b — Análisis persistido asociado a original y portal (PR #825, 12/11/2026)
+
+**Nuevo [PR #825](https://github.com/ProtectorRudo/Cotironda/pull/825)** apilado sobre #824. Se preparó una integración real de código (NO desplegada) para que el comprador autenticado vea, al lado del archivo original, las 2–4 observaciones con citas originales sin pedir confirmación: **Storage privado → SHA bytes → extractor TXT/CSV/DOCX/XLSX ya existente → IA Central → reserva SQL por (ronda, documento, SHA) → guía SQL privada → RPC del listado de respondedores → vista buyer**. El portal la solicita automáticamente al mostrar una respuesta. Fallos del extractor/IA dejan la cotización original descargable y análisis pendiente. PDF, imagen y WhatsApp texto puro aún no cuentan con integración segura de texto para esta ruta; no inventar lecturas.
+
+**Privacidad y costo:** nueva tabla `v2_original_analysis` con RLS, RPCs `cotironda_piloto_v2_analysis_claim_private`, `cotironda_piloto_v2_analysis_finish_private` y `cotironda_piloto_v2_responders_with_analysis_private`: solo service_role del servidor, reválida de buyer Auth sesión y consentimiento V2 proveedor. Reservas con token/lease exclusivo y reintentos acotados. Las guías se muestran únicamente si el catálogo privado ya permite ver ese original. Fuente original prevalece, no hay rankings.
+
+**Pruebas:** [`v2-04b-analysis-checks.sql`](https://github.com/ProtectorRudo/Cotironda/blob/feat/v2-04b-analisis-persistido-portal-20261112/supabase/tests/fixtures/v2-04b-analysis-checks.sql) verifica rol ajeno, doble reserva, token viejo, cooldown, revocación, ACL y publicación autenticada dentro de transacción PG17 **ROLLBACK**; Node valida origen, SHA, procesador, propuesta y proyección privada. CI #825 pendiente de verificar en último SHA. No se ejecutó ninguna migración ni llamada OpenAI real.
+
+**Bloqueos del PILOTO real:** compradores Auth 0 en última lectura; RPCs V2-03a/03b/04b no instaladas; consentimiento prospectivo por proveedor pendiente; Edge v76 y Vercel PILOTO requieren preflight de versión, configuración y autorización **`Publicalo`**. Falta WhatsApp texto puro, PDF e imagen, informe global al cierre, reloj hábil instalado y ensayo WhatsApp→2 originales→portal→análisis→cierre.
+
 ## SI ABRÍS UNA CONVERSACIÓN NUEVA: LEÉ ESTO PRIMERO
 
 1. [Contrato V2 vigente](COTIRONDA-V2-CONTRATO.md).
@@ -141,9 +151,9 @@
 - La referencia no sustituye prueba de origen para archivos no citados. El bloqueo comercial persiste hasta demostrar 2 respuestas reales, Auth del comprador, originales visibles y análisis.
 - **No hubo despliegue ni cambio de datos PILOTO**; no confundir el PR con funcionalidad activa.
 
-## ÚNICA PRÓXIMA ACCIÓN ACTUAL — Integración REAL del primer presupuesto al portal
+## ÚNICA PRÓXIMA ACCIÓN ACTUAL — Prueba real y preflight de instalación del primer original
 
-El **PR #824** introduce el analizador individual con fuente exacta y evidencia; **no está conectado**. Próximo: enlazar worker idempotente al archivo recibido/almacenado por Whapi y al listado privado del arquitecto, sin exponer invitaciones pendientes ni bloquear originales por errores de IA. El piloto real aún carece de Auth comprador, consentimientos V2 prospectivos, funciones SQL V2-02/03 instaladas y reloj hábil activo. Preparar migración/release del circuito ya desarrollado, sin más capas arbitrarias de IA. **Solo bajo `Publicalo`** se instala y realiza E2E con dos proveedores auténticos. Feriados se administran por IA Central con fuentes verificadas, no por el usuario, y no se deben inventar fechas.
+El circuito **V2-04b PR #825** ya une en código almacenamiento original verificado, guía IA y portal privado con reserva SQL. Verificar **CI final SHA** y **conseguir el primer acceso real Auth de comprador**; luego preparar deploy ordenado de #816–#825, con copia de seguridad, feature flags OFF y consentimiento V2 efectivo por proveedor. **Solo con `Publicalo`** instalar/probar en PILOTO y enviar WhatsApps. Priorizar las cotizaciones reales **PDF/Excel + texto WhatsApp** y reportar sin ficciones el primer resultado de punta a punta. El calendario se mantiene bajo IA Central, sin intervención manual de cliente/proveedor.
 
 ## Autorizaciones y cómo registrar un avance
 
