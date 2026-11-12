@@ -6,6 +6,21 @@
 -- No Whapi, network, AI, PII, original download or outgoing messages here.
 -- Update this source snapshot if pilot functions change before release.
 
+-- Gate begins DISABLED on installation. Enabling requires a separate,
+-- explicit PILOT-only approval AND a tested re-claim scheduler; without it
+-- pending work would remain stuck instead of being retried automatically.
+CREATE TABLE cotironda_piloto_privado.ai_supplier_overlap_gate_mvp356(
+ only_row boolean PRIMARY KEY DEFAULT true CHECK(only_row),
+ enabled boolean NOT NULL DEFAULT false,
+ activated_at timestamptz
+);
+INSERT INTO cotironda_piloto_privado.ai_supplier_overlap_gate_mvp356(
+ only_row,enabled,activated_at) VALUES(true,false,null);
+REVOKE ALL ON cotironda_piloto_privado.ai_supplier_overlap_gate_mvp356
+ FROM PUBLIC,anon,authenticated;
+ALTER TABLE cotironda_piloto_privado.ai_supplier_overlap_gate_mvp356
+ ENABLE ROW LEVEL SECURITY;
+
 CREATE OR REPLACE FUNCTION cotironda_piloto_privado.hay_despacho_solapado_mvp356(
  p_request uuid, p_supplier text
 ) RETURNS boolean
@@ -18,6 +33,11 @@ WITH target AS (
    AND r.closes_at>clock_timestamp()
 )
 SELECT
+  NOT EXISTS (
+   SELECT 1 FROM cotironda_piloto_privado.ai_supplier_overlap_gate_mvp356 gate
+   WHERE gate.only_row AND gate.enabled AND gate.activated_at IS NOT NULL
+     AND gate.activated_at<=clock_timestamp()
+  ) AND (
   NOT EXISTS (SELECT 1 FROM target)
   OR p_supplier IS NULL
   OR btrim(p_supplier)=''
@@ -46,6 +66,7 @@ SELECT
        AND old_round.closes_at>clock_timestamp()
    WHERE old_round.created_at<t.closes_at
      AND t.created_at<old_round.closes_at
+  )
   );
 $mvp356$;
 REVOKE ALL ON FUNCTION cotironda_piloto_privado.hay_despacho_solapado_mvp356(uuid,text)
