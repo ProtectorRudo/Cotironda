@@ -5,6 +5,8 @@ import {dirname,resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {aceptarBodyVacioBatchMvp357} from
  '../../supabase/functions/cotironda-piloto-ai-batch/empty-cron-body-mvp357.ts';
+import {autorizarBatchCronMvp357} from
+ '../../supabase/functions/cotironda-piloto-ai-batch/cron-auth-mvp357.ts';
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'../..');
 const sql=readFileSync(resolve(root,'supabase/piloto/mvp357_batch_retry_private_off.sql'),'utf8');
@@ -39,10 +41,12 @@ test('MVP357: rechaza streaming >2 bytes y tamaño anunciado falso',async()=>{
  assert.equal(await aceptarBodyVacioBatchMvp357(missing),false);
 });
 test('MVP357: autenticación de Edge sigue ANTES de leer body y enviar',()=>{
- const auth=edge.indexOf('if(!authorizeRecoveryMvp294(');
+ const auth=edge.indexOf('const adminAuthorized=authorizeRecoveryMvp294(');
+ const proof=edge.indexOf('const cronAuthorized=autorizarBatchCronMvp357(');
+ const reject=edge.indexOf('if(!adminAuthorized&&!cronAuthorized)');
  const body=edge.indexOf('aceptarBodyVacioBatchMvp357(req)');
  const dispatch=edge.indexOf('const result=await continuarDespachoMvp314(');
- assert(auth>=0&&body>auth&&dispatch>body);
+ assert(auth>=0&&proof>auth&&reject>proof&&body>reject&&dispatch>body);
  assert.match(edge,/COTIRONDA_PILOT_AI_BATCH_MVP314_ENABLED'\)!=='true'/u);
  assert.match(edge,/x-cotironda-ai-batch-secret/u);
  assert.match(edge,/if\(!await aceptarBodyVacioBatchMvp357\(req\)\)/u);
@@ -61,7 +65,9 @@ test('MVP357: SQL no envía cuando bandera OFF ni repite cada segundo',()=>{
 test('MVP357: secretos separados en Vault, POST {} y URL fija en piloto',()=>{
  assert.match(sql,/cotironda_piloto_ai_batch_apikey_mvp357/u);
  assert.match(sql,/cotironda_piloto_ai_batch_private_mvp357/u);
- assert.match(sql,/v_admin !~ '\^sb_secret_/u);
+ assert(sql.includes("v_cron !~ '^[A-Za-z0-9_-]{32,256}$'"));
+ assert.doesNotMatch(sql,/sb_secret_|'apikey',/u);
+ assert.match(sql,/x-cotironda-batch-cron-proof/u);
  assert.match(sql,/net\.http_post\(/u);
  assert.match(sql,/body:='\{\}'::jsonb/u);
  assert.match(sql,/x-cotironda-ai-batch-secret/u);
@@ -96,4 +102,26 @@ test('MVP357: PostgreSQL17 testea no jobs, saltos, duplicación y rollback',()=>
   'mvp357_cannot_disable',
   'ROLLBACK;'
  ])assert(fixture.includes(marker),marker);
+});
+
+test('MVP357: el cron usa exclusivamente 2 secretos, no llave admin',()=>{
+ const ok={
+  expectedPrivate:'X'.repeat(64),
+  presentedPrivate:'X'.repeat(64),
+  expectedCronProof:'P'.repeat(64),
+  presentedCronProof:'P'.repeat(64),
+  apikey:'',authorization:''
+ };
+ assert.equal(autorizarBatchCronMvp357(ok),true);
+ for(const override of [
+  {presentedPrivate:'bad'},
+  {presentedCronProof:'bad'},
+  {apikey:'sb_secret_unscoped_admin_secret'},
+  {authorization:'Bearer dummy'},
+  {expectedCronProof:''},
+  {expectedPrivate:''},
+  {expectedCronProof:'X'.repeat(64)},
+  {expectedCronProof:'P'.repeat(31)}
+ ])assert.equal(autorizarBatchCronMvp357({...ok,...override}),false,
+   JSON.stringify(Object.keys(override)));
 });
