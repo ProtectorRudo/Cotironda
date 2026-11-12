@@ -18,6 +18,7 @@ CREATE TABLE cotironda_piloto_privado.requests (
 );
 CREATE TABLE cotironda_piloto_privado.invitations (
  request_id uuid, supplier_key text, state text,
+ created_at timestamptz DEFAULT (now()-interval '3 days'),
  PRIMARY KEY(request_id,supplier_key)
 );
 CREATE TABLE cotironda_piloto_privado.ai_shadow_requests_mvp221 (
@@ -103,6 +104,38 @@ BEGIN
  'Cotironda pedido: AAAABBBB');
  IF r->>'state'<>'source_not_authorized'
  THEN RAISE EXCEPTION 'revoked_supplier_allowed_%',r; END IF;
+
+ -- Un alta posterior al despacho NO legitima un mensaje anterior.
+ UPDATE cotironda_piloto_privado.participants
+ SET consent_at=now()-interval '30 minutes' WHERE key='supplier_a';
+ r:=public.cotironda_piloto_v2_quoted_id_for_reference(repeat('a',64),repeat('1',64),t);
+ IF r->>'state'<>'reference_not_linkable'
+ THEN RAISE EXCEPTION 'supplier_consent_after_dispatch_allowed_%',r; END IF;
+ UPDATE cotironda_piloto_privado.participants
+ SET consent_at=now()+interval '1 hour' WHERE key='supplier_a';
+ r:=public.cotironda_piloto_v2_quoted_id_for_reference(repeat('a',64),repeat('1',64),t);
+ IF r->>'state'<>'source_not_authorized'
+ THEN RAISE EXCEPTION 'supplier_consent_after_message_allowed_%',r; END IF;
+ UPDATE cotironda_piloto_privado.participants
+ SET consent_at=now()-interval '3 days' WHERE key='supplier_a';
+
+ UPDATE cotironda_piloto_privado.participants
+ SET consent_at=now()-interval '30 minutes' WHERE key='buyer_a';
+ r:=public.cotironda_piloto_v2_quoted_id_for_reference(repeat('a',64),repeat('1',64),t);
+ IF r->>'state'<>'reference_not_linkable'
+ THEN RAISE EXCEPTION 'buyer_consent_after_dispatch_allowed_%',r; END IF;
+ UPDATE cotironda_piloto_privado.participants
+ SET consent_at=now()-interval '3 days' WHERE key='buyer_a';
+
+ UPDATE cotironda_piloto_privado.invitations
+ SET created_at=now()-interval '30 minutes'
+ WHERE request_id='aaaabbbb-1111-4111-8111-111111111111';
+ r:=public.cotironda_piloto_v2_quoted_id_for_reference(repeat('a',64),repeat('1',64),t);
+ IF r->>'state'<>'reference_not_linkable'
+ THEN RAISE EXCEPTION 'invitation_after_dispatch_allowed_%',r; END IF;
+ UPDATE cotironda_piloto_privado.invitations
+ SET created_at=now()-interval '3 days'
+ WHERE request_id='aaaabbbb-1111-4111-8111-111111111111';
 
  UPDATE cotironda_piloto_privado.ai_dispatch_jobs_mvp222
  SET state='leased' WHERE request_id='aaaabbbb-1111-4111-8111-111111111111';
