@@ -121,9 +121,10 @@ INSERT INTO cotironda_piloto_privado.ai_supplier_links_mvp225 VALUES
  'supplier_c',repeat('8',64),'document','awaiting_semantic_review','quoted_whapi_id');
 
 \ir ../../piloto/v2_03_catalogo_respondedores_privado.sql
+\ir ../../piloto/v2_03b_fuente_original_auditoria_privada.sql
 
 DO $test$
-DECLARE got jsonb;
+DECLARE got jsonb; source_record jsonb; doc uuid; audit_total int;
 BEGIN
  got:=public.cotironda_piloto_v2_responders_private(
   'aaaaaaaa-1111-4111-8111-111111111111',
@@ -151,6 +152,66 @@ BEGIN
  IF jsonb_array_length(got->'originals')<>1
  OR got->'originals'->0->>'supplierName'<>'Corralón Oriente'
  THEN RAISE EXCEPTION 'one_responder_expected:%',got;END IF;
+ -- V2-03b: source exact of the sole consented responder; no economic parser.
+ SELECT (got->'originals'->0->>'documentId')::uuid INTO doc;
+ source_record:=public.cotironda_piloto_v2_original_source_private(
+  'aaaaaaaa-1111-4111-8111-111111111111',
+  '11111111-1111-4111-8111-111111111111',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',doc);
+ IF source_record->>'state'<>'authorized_original_v2'
+ OR source_record->>'sha256'<>repeat('0',64)
+ OR source_record->>'path'<>'media/'||repeat('d',64)
+ OR source_record->>'mime'<>'application/pdf'
+ OR (source_record->>'byteCount')::int<>1234
+ THEN RAISE EXCEPTION 'v2_source_exact_failed:%',source_record;END IF;
+
+ IF public.cotironda_piloto_v2_original_source_private(
+  'aaaaaaaa-1111-4111-8111-111111111111',
+  '22222222-2222-4222-8222-222222222222',
+  'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',doc) IS NOT NULL
+ THEN RAISE EXCEPTION 'v2_cross_buyer_download';END IF;
+ IF public.cotironda_piloto_v2_original_source_private(
+  'bbbbbbbb-2222-4222-8222-222222222222',
+  '11111111-1111-4111-8111-111111111111',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',doc) IS NOT NULL
+ THEN RAISE EXCEPTION 'v2_cross_round_download';END IF;
+
+ IF public.cotironda_piloto_v2_record_download(
+  'aaaaaaaa-1111-4111-8111-111111111111',
+  '11111111-1111-4111-8111-111111111111',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',doc,
+  repeat('7',64),1234) IS DISTINCT FROM false
+ THEN RAISE EXCEPTION 'v2_wrong_sha_audited';END IF;
+ IF public.cotironda_piloto_v2_record_download(
+  'aaaaaaaa-1111-4111-8111-111111111111',
+  '11111111-1111-4111-8111-111111111111',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',doc,
+  repeat('0',64),999) IS DISTINCT FROM false
+ THEN RAISE EXCEPTION 'v2_wrong_size_audited';END IF;
+ IF public.cotironda_piloto_v2_record_download(
+  'aaaaaaaa-1111-4111-8111-111111111111',
+  '11111111-1111-4111-8111-111111111111',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',doc,
+  repeat('0',64),1234) IS DISTINCT FROM true
+ THEN RAISE EXCEPTION 'v2_good_audit_refused';END IF;
+ SELECT count(*) INTO audit_total
+ FROM cotironda_piloto_privado.v2_original_download_audit;
+ IF audit_total<>1 THEN RAISE EXCEPTION 'v2_audit_count_invalid_%',audit_total;END IF;
+ UPDATE cotironda_piloto_privado.v2_supplier_original_consents
+ SET revoked_at=now() WHERE supplier_key='supplier_a';
+ IF public.cotironda_piloto_v2_original_source_private(
+  'aaaaaaaa-1111-4111-8111-111111111111',
+  '11111111-1111-4111-8111-111111111111',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',doc) IS NOT NULL
+ OR public.cotironda_piloto_v2_record_download(
+  'aaaaaaaa-1111-4111-8111-111111111111',
+  '11111111-1111-4111-8111-111111111111',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',doc,
+  repeat('0',64),1234) IS DISTINCT FROM false
+ THEN RAISE EXCEPTION 'v2_revocation_race_allowed';END IF;
+ UPDATE cotironda_piloto_privado.v2_supplier_original_consents
+ SET revoked_at=null WHERE supplier_key='supplier_a';
+
  INSERT INTO cotironda_piloto_privado.v2_supplier_original_consents VALUES
  ('supplier_b',repeat('c',64),'cotironda-originales-v2',
  now()-interval '4 days',null);
@@ -198,6 +259,18 @@ BEGIN
  OR NOT has_function_privilege('service_role',
   'public.cotironda_piloto_v2_responders_private(uuid,uuid,uuid)','EXECUTE')
  THEN RAISE EXCEPTION 'rpc_not_private';END IF;
+ IF has_function_privilege('anon',
+  'public.cotironda_piloto_v2_original_source_private(uuid,uuid,uuid,uuid)','EXECUTE')
+ OR has_function_privilege('authenticated',
+  'public.cotironda_piloto_v2_original_source_private(uuid,uuid,uuid,uuid)','EXECUTE')
+ OR has_function_privilege('anon',
+  'public.cotironda_piloto_v2_record_download(uuid,uuid,uuid,uuid,text,integer)','EXECUTE')
+ OR has_function_privilege('authenticated',
+  'public.cotironda_piloto_v2_record_download(uuid,uuid,uuid,uuid,text,integer)','EXECUTE')
+ OR NOT has_function_privilege('service_role',
+  'public.cotironda_piloto_v2_record_download(uuid,uuid,uuid,uuid,text,integer)','EXECUTE')
+ THEN RAISE EXCEPTION 'v2_download_rpc_acl_broken';END IF;
+ RAISE NOTICE 'V2_03B_ORIGINAL_AUDIT_PG17_PASS';
  RAISE NOTICE 'V2_03_RESPONDER_CATALOG_PG17_PASS';
 END $test$;
 ROLLBACK;
