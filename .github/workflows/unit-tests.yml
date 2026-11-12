@@ -286,7 +286,7 @@ jobs:
           psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regprocedure('public.cotironda_piloto_buyer_bootstrap_allowed_mvp361(text)') IS NULL" | grep -Fx 't'
 
   pg17-mvp362-terms-onboarding:
-    if: ${{ github.event_name == 'pull_request' && github.head_ref == 'feat/mvp362-consentimiento-originales-una-vez-20261112' }}
+    if: ${{ github.event_name == 'pull_request' && (github.head_ref == 'feat/mvp362-consentimiento-originales-una-vez-20261112' || github.head_ref == 'feat/mvp364-proof-terms-delivered-20261112') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     services:
