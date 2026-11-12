@@ -21,7 +21,7 @@ export function clasificarRespuesta(status, code, esquema) {
   return status === 404 && code === 'PGRST205' ? 'PUBLIC_AVAILABLE' : 'UNKNOWN';
  }
  if(status === 406 && code === 'PGRST106') return 'NET_NOT_EXPOSED';
- if(code === 'PGRST205' || status === 200) return 'NET_EXPOSED';
+ if((status === 404 && code === 'PGRST205') || status === 200) return 'NET_EXPOSED';
  return 'UNKNOWN';
 }
 export async function verificarExposicionNet({url, clave, fetchFn=fetch}) {
