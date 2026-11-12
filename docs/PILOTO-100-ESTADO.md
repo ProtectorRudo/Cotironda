@@ -18,7 +18,7 @@
 **[PR #806](https://github.com/ProtectorRudo/Cotironda/pull/806)** DRAFT sobre #805 y [acta 532](https://github.com/ProtectorRudo/Cotironda/blob/feat/mvp364-proof-terms-delivered-20261112/docs/532-mvp364-aviso-terminos-proveedor-previo.md). **No desplegado; política OFF; ningún Whapi, SMS, consentimiento o ronda nuevos**.
 
 - [x] SQL M362 (aún no instalado) ahora exige **aviso de términos anterior**, registrado en nuevo ledger privado M364, y opt-in asociado por FK; código de acceso verifica mismo proveedor, chat, versión y SHA y anterioridad a respuesta/ronda. `whapi_outbox` de ronda no se confunde con envío de condiciones de alta.
-- [x] PG17 extendido para aviso con términos adulterados, chat incorrecto, fecha posterior a respuesta o anterior a política; tests Node, ejecución CI M362 en rama M364. **CI final del PR debe verificarse por SHA**.
+- [x] PG17 extendido para aviso con términos adulterados, chat incorrecto, fecha posterior a respuesta o anterior a política; tests Node, ejecución CI M362 en rama M364. **CI FINAL 5/5 SUCCESS en SHA `da3fdfb31d7f52834a25f1242ebf6bec6026f241`**, incluido job `pg17-mvp362-terms-onboarding` con ROLLBACK y suite Node; Next.js, PostgREST, aislamiento y sitio también SUCCESS. Jobs específicos de ramas anteriores SKIPPED.
 - [ ] Falta emisor confiable Whapi con comprobante real de mensaje enviado, revisión por operador AAL2 de aceptación cifrada, consentimiento válido y reaceptación por episodio tras revocación. Hasta instalar y verificarlo, esto es **barrera de código**, NO certificación de intención.
 - [ ] Política legal/comercial de originales no ganadores, operador y comprador Auth reales, documentos con vínculo fuerte, interfaz al cierre y descarga E2E, `net` externo. P0–P5 siguen abiertos.
 
