@@ -142,7 +142,7 @@ Se reutilizó lector existente de ZIP/XML para Word/Excel, además de TXT/CSV; s
 
 [PR #826](https://github.com/ProtectorRudo/Cotironda/pull/826) encadena con #825 **sin tocar la Whapi v76 actual**: lector de texto posicionado de PDF ya existente (`supplier-source-pdf-general.ts`) ejecutado en función Supabase Edge privada Deno, servidor de portal Next.js envia bytes autorizados y hash original por HTTPS con secreto largo compartido **solo servidor-servidor**. SHA original y SHA texto revalidados, 8 MiB/12 páginas/300 filas/24k caracteres. PDF legible alimenta guía IA individual con citas; PDF escaneado o sin texto original sigue descargable, resumen pendiente. No incluye imágenes OCR ni texto de WhatsApp sin archivo.
 
-- [ ] Comprobar CI último SHA PR #826, incluido **Deno leyendo PDF sintético real**, Node seguridad y original→guía, Next.js, aislamiento PG17 y regresiones.
+- [x] **CI PR #826** SHA `6e63ff606e4c592f9f3d88821337e65911a4a7f7`: **7/7 SUCCESS**, incluido Deno leyendo PDF sintético real, Node seguridad/flujo Auth→PDF→guía, Next.js, PG17 aislamiento y resto de regresiones. NO significa instalación en PILOTO.
 - [ ] Preparar claves exclusivamente privadas Vercel/Supabase para PDF Edge, con `verify_jwt=false` y secreto largo validado en handler, feature flag OFF y release SHA exacta. **No configurar ni desplegar con `Avanza`, solo `Publicalo`**.
 - [ ] Preflight del Edge Whapi v76 y Supabase PILOTO: buyer Auth, consentimientos V2 de proveedores, tablas/RPC #816–#825, original Storage y DDL/backups ordenados; no asociar artificialmente históricos ambiguos.
 - [ ] Primera prueba REAL con PDF legible y Excel del proveedor, dos guías en portal autenticado y archivos originales sin modificaciones.
