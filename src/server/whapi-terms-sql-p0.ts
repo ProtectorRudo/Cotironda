@@ -9,6 +9,9 @@
  */
 import type {AvisoClaimP0,AvisoPortsP0,AvisoPersistidoP0}
  from './whapi-terms-onboarding-p0.ts';
+import {crearResolverContactoProveedorP0}
+ from './whapi-terms-recipient-p0.ts';
+import type {RecipientKeysP0} from './whapi-terms-recipient-p0.ts';
 
 const CLAIM='select cotironda_piloto_privado.terms_claim_p0() as payload';
 const BEGIN='select cotironda_piloto_privado.terms_begin_p0($1::uuid,$2::uuid) as payload';
@@ -75,5 +78,21 @@ export function crearPuertosSqlAvisosP0(config:TermsSqlPortP0):AvisoPortsP0{
      unavailable();
    return raw;
   }
+ });
+}
+
+/** Production-ready wiring contract, still disabled until operator/DB login
+ * provisioned. Uses pilot MVP109 AES ciphertext, never a static phone map. */
+export function crearPuertosSqlAvisosCifradosP0(
+ config:Readonly<{
+  committedRpc:(query:string,args:readonly unknown[])=>Promise<unknown>;
+  keys:RecipientKeysP0;
+ }>
+):AvisoPortsP0{
+ if(!config||typeof config.committedRpc!=='function')unavailable();
+ const verifiedRecipient=crearResolverContactoProveedorP0(
+  {committedRpc:config.committedRpc},config.keys);
+ return crearPuertosSqlAvisosP0({
+  committedRpc:config.committedRpc,verifiedRecipient
  });
 }
