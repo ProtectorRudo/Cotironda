@@ -46,6 +46,19 @@ El objetivo comercial es que, **al cierre**, el comprador pueda obtener los orig
 
 **Resolver en P0** el alcance definitivo del documento completo de TODOS los participantes, y el consentimiento/aviso prospectivo incluido en el alta o invitación. Hasta entonces, deshabilitar la liberación de originales identificables de no ganadores; no sustituir consentimiento por una inferencia. No introducir nuevas confirmaciones en cada mensaje. Proteger siempre datos privados del comprador antes de las reglas de cierre.
 
+## Controles del avance MVP354 (11/11/2026)
+
+- [x] Código de la RPC documental y DTO de 8 campos seguros en [PR #797](https://github.com/ProtectorRudo/Cotironda/pull/797) (desarrollo, **NO integrado**).
+- [x] Tracking con opt-in **OFF por defecto**, sin reemplazar contador económico ni exponer contenido.
+- [x] SQL de solo lectura ensayado en piloto: token inválido `not_found`; ronda preparada 2/0.
+- [x] CI unitaria general, Deno Whapi, PostgREST y PostgreSQL17 de aislamiento histórico **verdes** sobre commit `c8a937f614a701ea2eb46e366685668021da79ee`.
+- [ ] Build Next.js de ese commit: pendiente de resultado al momento de este relevo.
+- [ ] **PG17 específico de DDL MVP354**: fixture y workflow creados, **sin ejecución certificada todavía**. No confundir con el control general PG17.
+- [ ] Asociación de 2 archivos reales e ingreso de texto libre, recuperación por SHA de bytes (P1/P2) y navegador del comprador real (P3).
+- [ ] P0 identidad de comprador, reglas de originales de no ganadores y ruta efectiva autorizada.
+
+**Semáforo:** P0 [ ], P1 [ ], P2 [ ], P3 [ ], P4 [ ], P5 [ ]. Es avance real de código pero no de piloto en ejecución. No aplicar SQL ni activar flag sin «Publicalo».
+
 ## Avance técnico verificable — PR #797 / MVP354 (11/11/2026)
 
 **Desarrollo propuesto, no publicado ni integrado:** [PR #797](https://github.com/ProtectorRudo/Cotironda/pull/797), apilado sobre el técnico #793. Se implementó la primera vía de **recepción documental independiente de IA económica**: RPC de SOLO LECTURA que exige comprador con token válido, invitación y despacho Whapi aceptado, proveedor coincidente con HMAC, original almacenado con SHA y ausencia de otra ronda aceptada del mismo proveedor en la misma ventana; cuenta una vez por proveedor. Su respuesta pública queda limitada a 8 campos de conteos y booleanos siempre `false` para revelar precios/contactos/descargas. Edge integra la llamada opcional bajo flag **OFF por defecto**, sin modificar los estados o números económicos previos; HTML distingue claramente archivo recibido de precio verificado.
