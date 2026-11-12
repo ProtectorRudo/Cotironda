@@ -5,6 +5,9 @@ on:
       - 'scripts/piloto/baselines/cotironda-whapi-v76.index.ts.txt'
       - 'supabase/functions/cotironda-piloto-whapi/supplier-auto-correlation-mvp336.v76-snapshot.ts'
       - 'scripts/piloto/v2-live76-candidate.mjs'
+      - 'src/domain/ia-central/verificador-evidencia-tecnica-v2-d013.ts'
+      - 'src/domain/ia-central/ruteador-catalogos-v2-d013.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/ai-central-buyer-v2-d013.ts'
       - 'tests/unit/v2-preflight-whapi-v76.test.mjs'
       - '.github/workflows/cotironda-v2-preflight-whapi-v76.yml'
   workflow_dispatch:
