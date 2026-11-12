@@ -50,6 +50,20 @@ El objetivo comercial es que, **al cierre**, el comprador pueda obtener los orig
 
 **CI FINAL MVP355 (11/11/2026):** el SHA técnico [`721ecc12d2a9a35e54d53b35f009d419b4cca3f6`](https://github.com/ProtectorRudo/Cotironda/pull/798) pasó **5/5 workflows generales**: Next.js, unidad general (incluye **PG17 documental** y **Deno seguimiento** como jobs separados), PostgREST, PG17 aislamiento y verificación sitio. Probados dos formatos sintéticos, SHA, links débiles/ausentes, vínculo de aviso previo, duplicados, rondas solapadas y revocación. Además SELECT del nuevo SQL sin escrituras contra piloto: `2 despachos / 0 documentos acreditados`; token falso `not_found`. **Sin despliegue**, PR draft; no E2E real.
 
+## P1/P2 — diagnóstico REAL de originales de la ronda vigente (12/11/2026)
+
+**[PR #813](https://github.com/ProtectorRudo/Cotironda/pull/813)** DRAFT **independiente de P0** sobre #798, [Acta 540](https://github.com/ProtectorRudo/Cotironda/blob/feat/p1-diagnostico-documental-20261112/docs/540-p1-diagnostico-dos-originales-solo-lectura.md). Código y SELECT real sin publicación, sin mensajes, sin tocar base ni ronda.
+
+- [x] **No más P0 ficticiamente cerrado:** la política de originales no ganadores, Auth comprador y operador AAL2 siguen abiertos. P1/P2 pueden medirse sin aprobar descargas ni inventar un precio. No mezclar pilotos/documentos históricos.
+- [x] SQL de diagnóstico `supabase/tests/preflight/p1-documentos-dos-proveedores-solo-lectura.sql`: evalúa **solo una ronda `prepared` vigente**, exige invitación y dispatch `api_accepted`, documento `stored` con SHA/ruta/MIME/tamaño, inbox del proveedor y doble vínculo a esa ronda, asociación MVP225 válida, ausencia de contradicciones y ronda solapada. Devuelve **solo conteos agregados**, sin nombres/ID/HMAC ni SQL de escritura.
+- [x] **Ejecutado REAL en Supabase PILOTO con SELECT 12/11:** 1 ronda `prepared`, 2 invitados y 2 despachos, 1 proveedor con candidato de archivo guardado por ventana temporal, pero **0** con `whapi_inbox` y archivo ambos vinculados a la ronda actual, **0** `ai_supplier_links_mvp225` fuertes, **0/2 documentos recibidos VERIFICADOS**; el segundo proveedor no tiene un archivo candidato en la ventana. Contador MVP354 **no instalado**.
+- [x] Se determinó que un candidato temporal de una ronda anterior no debe promocionarse: **NO editar manualmente request_id ni pruebas**, y no agregar ronda nueva. P1/P2 son reales y permanecen sin aprobar; recibidos no equivale a enviado ni a archivado histórico.
+- [x] Test Node nuevo asegura solo SELECT, única ronda, joins fuertes, exclusión de conflictos y proyección sin información sensible. **CI del PR #813 por SHA pendiente de verificar**.
+- [ ] **P1/P2 siguiente bloqueo:** probar dos respuestas NUEVAS genuinas del proveedor (formato libre) correlacionadas y archivadas de forma fuerte para la misma ronda, sin requerir que edite presupuesto. Si no llega respuesta real, reportar PENDIENTE y no falsear 2/2. Bajo `Publicalo`, activar MVP354/MVP355 y comprobar tracking comprador.
+- [ ] **P3–P5:** Auth comprador OTP, vista y cierre real, originales tras consentimiento comercial/MFA y descarga auditada. No hay prueba de punta a punta.
+
+**PRÓXIMA TAREA DE DESARROLLO:** auditar y probar el camino existente `whapi_inbox → media_archive_mvp095 → ai_supplier_links_mvp225` con evidencia NUEVA y sin reatribuir historial. Después activar recepción segura solo por publicación aprobada, cerrar prueba real 1 comprador + 2 proveedores. **No volver a construir un subsistema de originales ni refinar PDF por costumbre.**
+
 ## P0 — interfaz privada de operador MFA y bandeja de respuestas (12/11/2026)
 
 **[PR técnico #812](https://github.com/ProtectorRudo/Cotironda/pull/812)** DRAFT sobre #811, [Acta 539](https://github.com/ProtectorRudo/Cotironda/blob/feat/p0-portal-operador-mfa-20261112/docs/539-p0-portal-operador-mfa-bandeja.md). **No publicado, no SQL en piloto, no mensajes**.
