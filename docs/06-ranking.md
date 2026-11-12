@@ -1,5 +1,8 @@
 # 06 — Ranking justo y compra óptima
 
+> **AVISO V2 — 12/11/2026: DOCUMENTO TÉCNICO HEREDADO, NO DIRECTRIZ ACTIVA.** El ranking de ganadores/anónimo anterior fue SUSTITUIDO. Se conservan solamente sus principios de comparación justa y matemática verificable para el INFORME FINAL V2. Las reglas vigentes están en [Contrato V2](COTIRONDA-V2-CONTRATO.md), [Plan V2](PILOTO-100-PLAN-MAESTRO.md) y [Estado V2](PILOTO-100-ESTADO.md). Si contradice V2, **NO aplicar lo viejo**.
+
+
 ## Regla principal
 **Nunca comparar totales de ofertas que contienen distinta cantidad de materiales.** Evaluar cobertura y competitividad por separado.
 
