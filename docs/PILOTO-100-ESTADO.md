@@ -15,11 +15,15 @@
 
 ## MVP359 — preflight comprobado antes de publicar (12/11/2026)
 
+**Evidencia adicional:** rol `authenticator` sin override `pgrst.db_schemas` en `pg_roles.rolconfig` (consultado SOLO LECTURA); esto NO sustituye verificar el panel ni el HTTP REST real. La CI prueba la lógica, no la configuración del proyecto.
+
+
+
 **[Acta 527](https://github.com/ProtectorRudo/Cotironda/blob/fix/mvp358-legacy-dispatch-guard-piloto-20261112/docs/527-mvp359-preflight-rest-y-huellas-sql.md), código de pruebas en [PR #801](https://github.com/ProtectorRudo/Cotironda/pull/801).** Se evitó abrir otro PR apilado: los nuevos controles están dentro de la rama técnica actual, **sin despliegue ni nuevos WhatsApps**.
 
 - [x] Preflight SQL **ejecutado realmente** contra `cotironda-piloto` SOLO LECTURA el 12/11/2026: **4/4 huellas SHA256 de las funciones `claim_whapi_v1`, `ia_claim_mvp222`, `ia_claim_mvp314`, `ia_next_batch_mvp314` coinciden** con el código de Supabase capturado. Resultado: **0 pendientes / 0 inciertos** en ambas colas, **1 ronda prepared vigente** (NO crear otra), **0 cron batch / 0 secretos Vault MVP357**, **0 usuarios Auth**.
 - [x] SQL versionado de preflight `supabase/tests/preflight/mvp359-piloto-solo-lectura.sql`; no ejecuta ninguna escritura, no lee documentos ni secretos. Cambios futuros de función => `BLOQUEADO` antes del despliegue.
-- [x] Verificador REST `scripts/piloto/verificar-exposicion-net-mvp359.mjs` desarrollado (CI del SHA nuevo pendiente): `GET` de **tabla inexistente** usando clave pública, `public` debe devolver 404/PGRST205 y `net` **406/PGRST106**. Si `net` expuesto, falla; si no hay conexión o autenticación, queda **INCONCLUSIVE** y bloquea publicación. Tests con HTTP simulado; no hay llave administrativa ni lectura de la cola.
+- [x] Verificador REST `scripts/piloto/verificar-exposicion-net-mvp359.mjs` desarrollado y **CI verificada sobre commit `4549ca0c63853c69ae2f7e3da35542d7d16856e7`: 5/5 workflows generales SUCCESS y 7/7 jobs unitarios/específicos SUCCESS**: `GET` de **tabla inexistente** usando clave pública, `public` debe devolver 404/PGRST205 y `net` **406/PGRST106**. Si `net` expuesto, falla; si no hay conexión o autenticación, queda **INCONCLUSIVE** y bloquea publicación. Tests con HTTP simulado; no hay llave administrativa ni lectura de la cola.
 - [ ] **Control REST REAL `net`: NO VERIFICADO.** La sesión SQL y los metadatos del conector no muestran el listado «Exposed schemas». Desde este entorno el host externo no resuelve DNS; los grants SQL de `net` no son evidencia de exposición. Necesitamos ejecutar el probe en entorno con red y clave pública (sin publicar) o constancia de <https://supabase.com/dashboard/project/ilggkalaafhtiysyzlmg/integrations/data_api/settings>. Hasta entonces NO instalar cron ni activar gates.
 - [ ] **Bloqueo P0/P4 independiente:** `auth.users=0`; descargas identificables no se pueden habilitar hasta autenticación/empresa y condiciones aceptadas. La CI técnica no lo resuelve.
 - [ ] **P1/P2/P3/P5**: 2 presupuestos originales reales asociados a ronda correcta, seguimiento en navegador, fin y originales descargables conforme a la autorización siguen sin E2E.
