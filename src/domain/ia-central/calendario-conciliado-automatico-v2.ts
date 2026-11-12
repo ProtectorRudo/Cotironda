@@ -149,7 +149,7 @@ export function decidirVencimientoCentralV2(args:PeticionCalendarioCentralV2):
  if(honorOptional)for(const d of optional)excluding.add(d);
  const current=new Date(from+'T12:00:00Z');
  const nextInfo=args.siguienteAnio;
- let next:Readonly<{
+ let nextCal:Readonly<{
   excluding:Set<string>;optional:Set<string>;
   urls:readonly string[];
  }> | null=null;
@@ -163,7 +163,7 @@ export function decidirVencimientoCentralV2(args:PeticionCalendarioCentralV2):
   const excluded=new Set([...a2.obligatorios,...l2.closed]);
   const opt=new Set([...a2.optativos,...b2.optativos,...l2.optional]);
   if(honorOptional)for(const day of opt)excluded.add(day);
-  next={excluding:excluded,optional:opt,
+  nextCal={excluding:excluded,optional:opt,
    urls:[nextInfo.gobierno.url,nextInfo.contraste.url,nextInfo.locales.fuente]};
  }
  let count=0;
@@ -171,11 +171,11 @@ export function decidirVencimientoCentralV2(args:PeticionCalendarioCentralV2):
   const next=new Date(current.getTime()+offset*86400000);
   const day=next.toISOString().slice(0,10);
   const following=Number(day.slice(0,4))===args.anio+1;
-  if(following&&!next)
+  if(following&&!nextCal)
    return deny('calendario_anio_siguiente_no_conciliado');
   if(Number(day.slice(0,4))>args.anio+1)
    return deny('calendario_horizonte_excedido');
-  const excluded=following?next!.excluding:excluding;
+  const excluded=following?nextCal!.excluding:excluding;
   if(next.getUTCDay()===0||next.getUTCDay()===6||excluded.has(day))continue;
   count++;
   if(count===2){
@@ -185,12 +185,12 @@ export function decidirVencimientoCentralV2(args:PeticionCalendarioCentralV2):
     estado:'vencimiento_verificable',codigo:'dos_dias_habiles',
     venceISO:utc.toISOString(),venceLocal:day+' 18:00',
     feriadosExcluidos:Object.freeze([...excluding,
-     ...(next?.excluding??[])].sort()),
+     ...(nextCal?.excluding??[])].sort()),
     diasOptativosNoExcluidos:Object.freeze([...optional,
-     ...(next?.optional??[])].filter(x=>!
-     excluding.has(x)&&!(next?.excluding.has(x)??false)).sort()),
+     ...(nextCal?.optional??[])].filter(x=>!
+     excluding.has(x)&&!(nextCal?.excluding.has(x)??false)).sort()),
     trazabilidad:Object.freeze([args.gobierno.url,args.contraste.url,
-     args.locales.fuente,...(next?.urls??[])]),
+     args.locales.fuente,...(nextCal?.urls??[])]),
     escrituraDB:false,whatsappEnviado:false
    });
   }
