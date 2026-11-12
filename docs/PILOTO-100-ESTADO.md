@@ -19,7 +19,7 @@
 
 - [x] Preparada pantalla SSR protegida `/piloto/operador/terminos` y rutas POST `bandeja/preparar/decidir` con gate OFF, SHA Preview, Auth PILOTO verificada, sesión AAL2 y revalidación del rol en SQL M267. El navegador solo obtiene publishable key, contraseña/login y TOTP en memoria, jamás AES o service_role.
 - [x] Bandeja de hasta 12 mensajes elegibles, sin PII en la lista; el operador lee el original verificado con AES y elige explícito/no explícito, atestando revisión humana. Decisión `not_explicit` no autoriza compartir originales.
-- [x] Node HTTP y PG17 ampliados para ACL de bandeja, autenticación, CSRF, fuga de texto/secretos, estado tras decisión y `ROLLBACK`; **CI del SHA final por verificar**.
+- [x] Node HTTP y PG17 ampliados para ACL de bandeja, autenticación, CSRF, fuga de texto/secretos, estado tras decisión y `ROLLBACK`; **CI FINAL 5/5 SUCCESS** en SHA `886524954a87285bed8e0732e905537558f1db04`: Node del límite HTTP/React y PostgreSQL 17 de bandeja `P0 MFA REVIEW PASS` + ROLLBACK, Next.js (tras corregir import y tipos), PostgREST, aislamiento PG17 y sitio SUCCESS. Ningún ensayo con JWT Auth AAL2 ni WhatsApp reales.
 - [ ] NO hay operador MFA real ni claves AES de piloto provisionadas para Preview, SQL aún NO instalado, texto legal/comercial sin aprobación. Sin solicitudes WhatsApp reales ni originales habilitados. **P0–P5 ABIERTOS.**
 - [ ] Comprador Auth OTP y prueba de 2 presupuestos/seguimiento/cierre/descarga siguen pendientes.
 
