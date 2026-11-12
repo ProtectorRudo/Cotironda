@@ -1,7 +1,7 @@
 # COTIRONDA V2 — ESTADO REAL Y RELEVO ENTRE CONVERSACIONES
 
 **Última actualización de documentación: 12/11/2026 (Argentina).**
-**Estado:** PR #821 en desarrollo (D013 por PRODUCTO y plazo 2 días hábiles), apilado sobre #820/#819/#818/#817/#816; **SIN desplegar ni E2E**, con controles sintéticos. D013 técnicas/feriados reales siguen pendientes. Los datos de Supabase caducan; reconsultar cuando se necesite estado vivo.
+**Estado:** código D014 IA Central con [PR #823](https://github.com/ProtectorRudo/Cotironda/pull/823) en desarrollo, apilado sobre #822/#821/#820/#819/#818/#817/#816; **SIN desplegar ni E2E**. Automatización fuente oficial/DB todavía pendiente. Los datos de Supabase caducan; reconsultar cuando se necesite estado vivo.
 
 ## Relevo actualizado — V2-02 (12/11/2026)
 
@@ -58,6 +58,16 @@
 - **Feriados reales 2026 revisados** sin aprobar calendario anual: 19/11 La Plata = optativo para comercio según resolución provincial 516/2026; 23/11 = feriado nacional; 07/12 = no laborable turístico; 08/12 y 25/12 = feriados nacionales. Fuentes verificables documentadas en [acta PR #822](https://github.com/ProtectorRudo/Cotironda/blob/feat/v2-d013-evidencia-tecnica-feriados-20261112/docs/V2-D013-EVIDENCIA-TECNICA-Y-FERIADOS-20261112.md). Manifest de fechas **parcial** `publicable:false`, sin `approved_at`, sin SQL instalado, sin considerar optativos como feriados obligatorios. PG17 prueba casos nacionales y locales.
 - **CI PR #822 confirmado:** SHA `ef8d50f64c5de3184da7341a1b8e5d2751e7184a`, **8/8 workflows SUCCESS**, incluidos Node/D013, PG17 de feriados reales y rollback, Deno candidato Whapi v76, Next.js build, Auth, aislamiento y regresiones. Corregido error detectado por CI: tamaño `L` en comparación 4 L vs 5 L. **Sin E2E, sin deploy ni cambios SQL reales.**
 - **Próximo bloqueo:** validación técnica con fichas originales para sinónimos de uso distinto, completar calendario ANUAL por localidad con criterio privado/optativo, y preparar Auth/consentimientos y único portal Vercel. Instalación PILOTO exclusivamente con `Publicalo`, sin nuevas rondas ni WhatsApps hasta entonces.
+
+## D014 — IA Central responsable del calendario y equivalencias (PR #823, 12/11/2026)
+
+**Decisión explícita del propietario:** la IA Central coordina **calendario, selección por producto, equivalencias, originales y análisis** sin pedir a comprador/proveedor que editen, carguen feriados ni confirmen rutinariamente nada. Modelo interpreta y orquesta; fuentes verificadas y cálculos deterministas protegen la exactitud. Ver sección D014 en [Contrato V2](COTIRONDA-V2-CONTRATO.md).
+
+**Nuevo [PR #823](https://github.com/ProtectorRudo/Cotironda/pull/823)** (draft, sobre #822/#821/.../#816): lector de fuente pública JSON con HTTPS/host allowlist, tamaño/timeout, cero secretos/cookies y sin redirects; cálculo determinista de 2 días hábiles a las 18 con dos fuentes anuales nacional+contraste, local y año siguiente, diferenciando feriados obligatorios/optativos; orquestador IA Central que revisa calendario antes de consumir IA para el ruteo semántico D013. Falta URL JSON gubernamental **exacta** y validada (dataset oficial comprobado), lectura municipal automática, ingesta/snapshot SQL y cron automático: NO atribuir al piloto una función que hoy solo está en código. SI una fuente discrepa, revisión/recuperación **interna**, sin consulta al cliente. 0 envíos y 0 escrituras SQL por el nuevo orquestador.
+
+- **Pruebas:** CI SHA final #823 a verificar; casos de fuentes contradictorias, feriado optativo, cruce de año, URL insegura, identidad de catálogo y evitar gasto IA si calendario falló.
+- **Cierre del desarrollo técnico actual:** compatibilidad entre preflight anual SQL V2-05 y fuente oficial sincronizada; NO exigir al usuario aprobar cada año de feriados. Sincronizar de forma automática y auditable en servidor, con versionado y fail-closed.
+- **Último estado PILOTO verificado:** funciones V2 no desplegadas, Auth comprador 0, consentimiento V2 pendiente, Whapi activo v76. Revalidar en nueva conversación antes de cambios.
 
 ## SI ABRÍS UNA CONVERSACIÓN NUEVA: LEÉ ESTO PRIMERO
 
@@ -123,9 +133,9 @@
 - La referencia no sustituye prueba de origen para archivos no citados. El bloqueo comercial persiste hasta demostrar 2 respuestas reales, Auth del comprador, originales visibles y análisis.
 - **No hubo despliegue ni cambio de datos PILOTO**; no confundir el PR con funcionalidad activa.
 
-## ÚNICA PRÓXIMA ACCIÓN ACTUAL — Cerrar calendario real, equivalencia técnica D013 y preparar PREVIEW PILOTO
+## ÚNICA PRÓXIMA ACCIÓN ACTUAL — Conectar fuentes oficiales/snapshot y preparar PILOTO real sin fricción
 
-**PR #821 propone** el calendario 2 días hábiles y selección por producto, con migraciones SQL SHA-pinned y flags OFF. Primero verificar todos los checks del último SHA, después validar catálogo/identidad exacta de productos (incluidas marcas excluyentes, presentaciones y riesgos técnicos) y feriados completos por ciudad y año. Confirmar el **proyecto Vercel PILOTO único**, Auth comprador/OTP, consentimiento prospectivo de proveedor, migraciones ordenadas con rollback y reconciliación Edge v76. **No activar ni enviar Whapi hasta `Publicalo` para el entorno PILOTO.** Terminar informe individual/general y E2E con 2 originales. No reactivar anonimato ni #814.
+**PR #823** provee coordinación IA Central para calendario automático y D013. Verificar CI del último SHA. Después conectar URL JSON real y verificada de dataset oficial, automatizar actualización periódica en servidor, cotejo con segunda fuente y normas locales y persistir snapshot versionado seguro en tablas V2-05 (hoy exige calendario aprobado). **No** crear feriados con el modelo, pedir al usuario llenar tablas o declarar el cron automático activo hasta comprobarlo. En paralelo validar equivalencias técnicas por evidencia documental real y preparar Auth comprador/proveedores consentidos, unico Vercel PILOTO y SQL/Edge v76. Desplegar SOLO bajo `Publicalo`; E2E 1 comprador + 2 originales + análisis/cierre antes de declarar piloto listo.
 
 ## Autorizaciones y cómo registrar un avance
 
