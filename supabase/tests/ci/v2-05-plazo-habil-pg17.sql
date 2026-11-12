@@ -77,6 +77,9 @@ INSERT INTO cotironda_piloto_privado.v2_business_calendar(
 INSERT INTO cotironda_piloto_privado.v2_business_holidays(
  locality,day,calendar_year,description,evidence) VALUES
  ('la plata','2026-11-16',2026,'Feriado ficticio caso de prueba','Fixture sintética'),
+ ('la plata','2026-11-23',2026,'Día de la Soberanía Nacional','BCRA listado oficial 2026'),
+ ('la plata','2026-12-08',2026,'Inmaculada Concepción','BCRA listado oficial 2026'),
+ ('la plata','2026-12-25',2026,'Navidad','BCRA listado oficial 2026'),
  ('la plata','2027-01-01',2027,'Año nuevo caso de prueba','Fixture sintética');
 
 DO $cases$
@@ -101,6 +104,23 @@ BEGIN
  IF cotironda_piloto_privado.v2_deadline(
   '2026-11-12T12:00:00Z','berisso') IS NOT NULL
  THEN RAISE EXCEPTION 'unapproved city allowed';END IF;
+ -- Nov 19 is local optativo for COMMERCE and NOT an automatic holiday.
+ -- Nov 23 is a mandatory national holiday.
+ expected:=cotironda_piloto_privado.v2_deadline(
+  '2026-11-18T12:00:00Z','la plata');
+ IF expected IS DISTINCT FROM '2026-11-20T21:00:00Z'::timestamptz
+ THEN RAISE EXCEPTION 'optativo_local_not_automatically_blocked %',expected; END IF;
+ expected:=cotironda_piloto_privado.v2_deadline(
+  '2026-11-20T12:00:00Z','la plata');
+ IF expected IS DISTINCT FROM '2026-11-25T21:00:00Z'::timestamptz
+ THEN RAISE EXCEPTION 'national_nov23_not_skipped %',expected; END IF;
+ -- Dec 7 is a day NON-working for tourism (optional in business policy),
+ -- Dec 8 is a mandatory holiday. Do not silently mark Dec 7 mandatory.
+ expected:=cotironda_piloto_privado.v2_deadline(
+  '2026-12-04T12:00:00Z','la plata');
+ IF expected IS DISTINCT FROM '2026-12-09T21:00:00Z'::timestamptz
+ THEN RAISE EXCEPTION 'tourism_optional_vs_dec8_national %',expected; END IF;
+
 
  UPDATE cotironda_piloto_privado.v2_business_policy
  SET enabled=true,activated_at=now() WHERE singleton=true;
