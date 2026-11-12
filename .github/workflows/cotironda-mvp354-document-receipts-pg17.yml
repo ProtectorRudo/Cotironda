@@ -1,0 +1,62 @@
+name: Cotironda MVP354 - recepcion documental privada PG17
+on:
+  pull_request:
+    paths:
+      - 'supabase/piloto/mvp354_document_receipts_private.sql'
+      - 'supabase/tests/ci/mvp354-document-receipts-pg17.sql'
+      - 'src/domain/ia-central/recepcion-documental-mvp354.ts'
+      - 'supabase/functions/cotironda-piloto-seguimiento/index.ts'
+      - 'tests/unit/mvp354-document-receipts.test.mjs'
+      - '.github/workflows/cotironda-mvp354-document-receipts-pg17.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pg17-rollback:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: synthetic_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: synthetic_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - name: Checkout sin secretos
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: PostgreSQL 17: token, ACL, PDF/XLSX, duplicados, ambiguedad y ROLLBACK
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/mvp354-document-receipts-pg17.sql
+          psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regnamespace('cotironda_piloto_privado') IS NULL" | grep -Fx 't'
+          psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regprocedure('public.cotironda_piloto_document_receipts_mvp354(text)') IS NULL" | grep -Fx 't'
+  edge-typecheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout sin secretos
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Preparar Deno
+        uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb
+        with:
+          deno-version: v2.x
+      - name: Validar nuevo tracking y DTO
+        run: deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-seguimiento/index.ts
+# No despliegue, no acceso al piloto, no reenvios WhatsApp.
