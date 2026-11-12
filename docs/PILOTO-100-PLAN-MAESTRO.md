@@ -48,6 +48,8 @@ El objetivo comercial es que, **al cierre**, el comprador pueda obtener los orig
 
 ## Controles del avance MVP354 (11/11/2026)
 
+**Última CI del PR técnico #797:** commit `de8a9d31a56a776efe69ff2843cb529c89140305`, **7/7 workflows generales SUCCESS** y jobs específicos `pg17-mvp354-documental` y `deno-mvp354-seguimiento` **SUCCESS**. Todo en desarrollo; no prueba externa ni despliegue del nuevo circuito.
+
 - [x] Código de la RPC documental y DTO de 8 campos seguros en [PR #797](https://github.com/ProtectorRudo/Cotironda/pull/797) (desarrollo, **NO integrado**).
 - [x] Tracking con opt-in **OFF por defecto**, sin reemplazar contador económico ni exponer contenido.
 - [x] SQL de solo lectura ensayado en piloto: token inválido `not_found`; ronda preparada 2/0.
@@ -63,7 +65,7 @@ El objetivo comercial es que, **al cierre**, el comprador pueda obtener los orig
 
 **Desarrollo propuesto, no publicado ni integrado:** [PR #797](https://github.com/ProtectorRudo/Cotironda/pull/797), apilado sobre el técnico #793. Se implementó la primera vía de **recepción documental independiente de IA económica**: RPC de SOLO LECTURA que exige comprador con token válido, invitación y despacho Whapi aceptado, proveedor coincidente con HMAC, original almacenado con SHA y ausencia de otra ronda aceptada del mismo proveedor en la misma ventana; cuenta una vez por proveedor. Su respuesta pública queda limitada a 8 campos de conteos y booleanos siempre `false` para revelar precios/contactos/descargas. Edge integra la llamada opcional bajo flag **OFF por defecto**, sin modificar los estados o números económicos previos; HTML distingue claramente archivo recibido de precio verificado.
 
-**Validación hasta ahora:** consulta SELECT del cuerpo SQL sobre piloto (sin instalar RPC) con token inexistente -> `not_found`; para prepared vigente -> 2 despachados, 0 archivos acreditados, 2 pendientes. Unidad/ACL/banco real y navegador **aún deben verificarse en CI y piloto**, por lo tanto **P1, P2, P3 no terminadas**. Este camino solo cubre adjuntos archivados; las respuestas de texto sin archivo necesitarán fuente propia inmutable. No confundir 0 archivos con 0 mensajes de proveedor ni reconocer documentos de otras rondas por fecha.
+**Validación hasta ahora:** consulta SELECT del cuerpo SQL sobre piloto (sin instalar RPC) con token inexistente -> `not_found`; para prepared vigente -> 2 despachados, 0 archivos acreditados, 2 pendientes. Unidad general y ensayo de ACL/DDL PostgreSQL17 sintético **ya aprobados**; siguen pendientes pruebas integradas reales en piloto y navegador del comprador. Por lo tanto **P1, P2 y P3 NO terminadas**. Este camino solo cubre adjuntos archivados; las respuestas de texto sin archivo necesitarán fuente propia inmutable. No confundir 0 archivos con 0 mensajes de proveedor ni reconocer documentos de otras rondas por fecha.
 
 **Pendientes para activación:** PostgreSQL17 con rollback de RPC + prueba de roles y revocación; verificación contra dos archivos realmente recibidos, duplicados, otra empresa, ronda solapada y comprador autenticado; confirmar URL de portal; política de originales/contactos P0. No habilitar el flag ni publicar Edge hasta superar estas pruebas y recibir «Publicalo en piloto».
 
