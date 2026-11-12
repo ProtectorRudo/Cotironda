@@ -48,10 +48,19 @@ BEGIN
  ON CONFLICT(request_id,document_id) DO UPDATE
  SET job_token=gen_random_uuid(),
      attempt_count=cotironda_piloto_privado.v2_original_analysis.attempt_count+1,
+     status='processing',
+     text_sha256=NULL,
+     points=NULL,
      lease_until=clock_timestamp()+interval '90 seconds',
      updated_at=clock_timestamp()
- WHERE cotironda_piloto_privado.v2_original_analysis.status='processing'
-   AND cotironda_piloto_privado.v2_original_analysis.lease_until<clock_timestamp()
+ WHERE (
+    (cotironda_piloto_privado.v2_original_analysis.status='processing'
+     AND cotironda_piloto_privado.v2_original_analysis.lease_until<clock_timestamp())
+    OR
+    (cotironda_piloto_privado.v2_original_analysis.status='review'
+     AND cotironda_piloto_privado.v2_original_analysis.updated_at<
+       clock_timestamp()-interval '5 minutes')
+   )
    AND cotironda_piloto_privado.v2_original_analysis.attempt_count<3
    AND cotironda_piloto_privado.v2_original_analysis.original_sha256=v_sha
  RETURNING job_token INTO v_token;
