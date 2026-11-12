@@ -1,6 +1,6 @@
 import {notFound} from 'next/navigation';
 import {revisionMfaHTTPHabilitada}
- from '../../../../../src/server/whapi-terms-mfa-http-p0.ts';
+ from '../../../../../../src/server/whapi-terms-mfa-http-p0.ts';
 import {PanelRevisionTerminos} from './panel-revision';
 export const runtime='nodejs';
 export const dynamic='force-dynamic';
