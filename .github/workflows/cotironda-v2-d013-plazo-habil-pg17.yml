@@ -3,6 +3,10 @@ on:
   pull_request:
     paths:
       - 'src/domain/ia-central/ruteador-catalogos-v2-d013.ts'
+      - 'src/domain/ia-central/verificador-evidencia-tecnica-v2-d013.ts'
+      - 'src/domain/ia-central/calendario-operativo-preflight-2026.ts'
+      - 'tests/unit/v2-d013-evidencia-tecnica-fail-closed.test.mjs'
+      - 'tests/unit/v2-05-preflight-feriados-reales.test.mjs'
       - 'src/domain/ia-central/planificador-piloto-v2-d013.ts'
       - 'src/domain/ia-central/puente-sql-rondas-v2-d013.ts'
       - 'supabase/functions/cotironda-piloto-whapi/ai-central-buyer-v2-d013.ts'
@@ -51,6 +55,10 @@ jobs:
           node-version: '22.16.0'
       - name: Validar ruteo por PRODUCTO y puente de SQL
         run: node --experimental-strip-types --test tests/unit/v2-d013-productos-sin-rubros.test.mjs
+      - name: Evidencia tecnica y conversiones de envases negativas
+        run: node --experimental-strip-types --test tests/unit/v2-d013-evidencia-tecnica-fail-closed.test.mjs
+      - name: Feriados nacionales versus locales/turismo y bloqueo preflight
+        run: node --experimental-strip-types --test tests/unit/v2-05-preflight-feriados-reales.test.mjs
       - name: PG17 2 dias habiles calendario y rollback
         run: |
           set -euo pipefail
