@@ -89,7 +89,7 @@ export function armarPreparacionSombraMvp221(args:{
       !Number.isSafeInteger(match.numeroCatalogo)||
       positions.has(match.indicePedido))return no('indice_de_pedido_invalido');
    const row=source.articulos.find(x=>x.numero===match.numeroCatalogo);
-   if(!row||row.rubro!==fullItems[match.indicePedido].rubro||
+   if(!row||
       !['producto_declarado','alternativa_razonable'].includes(match.tipo)||
       typeof match.explicacion!=='string'||
       match.explicacion.length<3||match.explicacion.length>240)
