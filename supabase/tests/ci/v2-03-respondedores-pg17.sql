@@ -275,4 +275,6 @@ BEGIN
 END $test$;
 \ir ../../piloto/v2_04b_analisis_original_idempotente_privado.sql
 \ir ../fixtures/v2-04b-analysis-checks.sql
+\ir ../../piloto/v2_07_buyer_auth_bootstrap_check_private.sql
+\ir ../fixtures/v2-07-buyer-auth-checks.sql
 ROLLBACK;
