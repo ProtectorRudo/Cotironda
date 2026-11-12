@@ -53,7 +53,7 @@ El objetivo comercial es que, **al cierre**, el comprador pueda obtener los orig
 - [x] SQL de solo lectura ensayado en piloto: token inválido `not_found`; ronda preparada 2/0.
 - [x] CI unitaria general, Deno Whapi, PostgREST y PostgreSQL17 de aislamiento histórico **verdes** sobre commit `c8a937f614a701ea2eb46e366685668021da79ee`.
 - [x] **Build Next.js del SHA `c8a937f614a701ea2eb46e366685668021da79ee` completado con éxito**; mismo SHA con unidad/PG17 histórico/PostgREST/Deno verdes.
-- [ ] **PG17 específico de DDL MVP354**: fixture y workflow creados; también agregado a la batería existente en el PR técnico para que se ejecute en CI. **Resultado específico pendiente de comprobar en SHA `97bf726dea3add014b027c971156a79b0126390c`**. No confundir con PG17 histórico.
+- [x] **PG17 ESPECÍFICO de DDL MVP354 aprobado** en SHA `97bf726dea3add014b027c971156a79b0126390c`: job `pg17-mvp354-documental` ID `130900434755`, PASS. Fixture con PDF, Excel, duplicados, solapamiento de rondas, rutas forjadas, revocación/vencimiento de token y ROLLBACK completo; además controles PG17 existentes y unidad general PASS.
 - [ ] Asociación de 2 archivos reales e ingreso de texto libre, recuperación por SHA de bytes (P1/P2) y navegador del comprador real (P3).
 - [ ] P0 identidad de comprador, reglas de originales de no ganadores y ruta efectiva autorizada.
 
