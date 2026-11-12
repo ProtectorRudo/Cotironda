@@ -1,8 +1,24 @@
 # COTIRONDA V2 — PLAN MAESTRO Y CHECKLIST
 
-**Dirección V2 aprobada el 12/11/2026. Código parcial V2-02 en desarrollo (PR #816), SIN desplegar en piloto.**
+**Dirección V2 aprobada el 12/11/2026. PUBLICACIÓN PARCIAL en PILOTO verificada: 9 funciones SQL/4 tablas privadas + Edge PDF v1; política OFF. Portal NO desplegado (Vercel 402 y Git sin conectar), 0 Auth, 0 consentimientos V2, sin E2E.** [Registro del release](V2-RELEASE-PILOTO-PARCIAL-20261112.md).
 
 **ORDEN OBLIGATORIO DE LECTURA EN TODAS LAS CONVERSACIONES:** [Contrato V2](COTIRONDA-V2-CONTRATO.md) → **este plan** → [Estado y única próxima tarea](PILOTO-100-ESTADO.md) → [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794). **Estas páginas son las VIGENTES**. [Plan histórico íntegro](historico/2026-11-12-plan-maestro-pre-v2.md) (81 KB), [estado histórico](historico/2026-11-12-estado-pre-v2.md) e [issue histórico](historico/2026-11-12-issue-794-pre-v2.md) conservan evidencia pero NO deben usarse como guía de producto.
+
+## Estado operativo POST-«Publicalo»: infraestructura SQL/Edge publicada y apagada
+
+La publicación de hoy NO fue total. [Acta de instalación comprobada](V2-RELEASE-PILOTO-PARCIAL-20261112.md): se aplicaron seis migraciones PILOTO SQL V2-02/02b/03a/03b/04b/07, dando **9/9 funciones privadas** y **4/4 tablas privadas RLS**, sin permiso público de nuevas funciones/tablas, policy `v2_original_share_policy.enabled=false` y cero usuarios/consentimientos/análisis. Edge PDF independiente v1 `8bf6e8da…22a` instalada pero sin secreto nuevo para habilitarla; Whapi v76 `656cb24b…822e` intacta. Siete rondas históricas continúan; V2-05/calendario y overlay real del webhook todavía no se instalaron. Las secciones antiguas que dicen “no instalado” son snapshots previos al release.
+
+**Publicación Vercel bloqueada externamente**: `cotironda-portal-dev` (Next.js, Preview SSO) arrojó **402: cuota diaria de despliegues agotada**; al intentar crear variables para la rama V2 arrojó **400: proyecto sin Git conectado**. No se desplegó el portal, ni se creó una URL nueva, ni se configuraron variables, ni se tocó producción. Requerida resolución de cuenta Vercel (sin comprar planes ni vincular Git de forma insegura).
+
+- [x] SQL V2-02, 02b, 03a, 03b, 04b y 07 aplicadas en cotironda-piloto y registradas como migraciones.
+- [x] 9 RPC solo service_role y 4 tablas nuevas con RLS auditadas; `policy.enabled=false`.
+- [x] Edge PDF privada V1 instalada, sin secreto activo; Whapi v76 verificada sin cambios.
+- [ ] **Desbloquear Vercel (cuota 402 y Git sin enlace)** y desplegar exactamente PR #828 en Preview protegido, release SHA fijado y banderas OFF.
+- [ ] Agregar claves y SMS solo a través de gestores seguros. Nunca en GitHub, chat o variables públicas. Verificar proveedor SMS y OTP reales.
+- [ ] Primer arquitecto Auth seguro, canal Whapi único y consentimiento prospectivo de cada proveedor; activar vistas V2 solo después.
+- [ ] Probar un primer PDF y Excel ORIGINAL de proveedores auténticos con descarga y guía desde navegador; después D013 catálogo por producto, calendario automático 2 días hábiles, cierre/informe general y ronda completa.
+
+**NO reiniciar el desarrollo ni reinstalar migraciones**. Próximo paso de desarrollo/despliegue: corregir bloqueo Vercel y comprobar first-buyer login. No hay piloto 100 % hasta superar E2E.
 
 ## Objetivo único del piloto
 
