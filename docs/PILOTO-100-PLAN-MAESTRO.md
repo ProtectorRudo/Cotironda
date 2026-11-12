@@ -50,6 +50,21 @@ El objetivo comercial es que, **al cierre**, el comprador pueda obtener los orig
 
 **CI FINAL MVP355 (11/11/2026):** el SHA técnico [`721ecc12d2a9a35e54d53b35f009d419b4cca3f6`](https://github.com/ProtectorRudo/Cotironda/pull/798) pasó **5/5 workflows generales**: Next.js, unidad general (incluye **PG17 documental** y **Deno seguimiento** como jobs separados), PostgREST, PG17 aislamiento y verificación sitio. Probados dos formatos sintéticos, SHA, links débiles/ausentes, vínculo de aviso previo, duplicados, rondas solapadas y revocación. Además SELECT del nuevo SQL sin escrituras contra piloto: `2 despachos / 0 documentos acreditados`; token falso `not_found`. **Sin despliegue**, PR draft; no E2E real.
 
+## MVP360 — originales verificables sin bloquearse por parser económico (12/11/2026)
+
+**[PR técnico #802](https://github.com/ProtectorRudo/Cotironda/pull/802)**, basado en #801, **SOLO DESARROLLO, sin publicación**. [Acta 528](https://github.com/ProtectorRudo/Cotironda/blob/feat/mvp360-originales-sin-gate-ia-economica-20261112/docs/528-mvp360-originales-sin-interpretacion-economica.md).
+
+**Nuevo bloqueo real encontrado con `pg_get_functiondef` en PILOTO:** `cotironda_piloto_originals_private_mvp192` todavía exigía filas en `supplier_media_quotes_mvp098` **y** `supplier_evidence_mvp138` con `verifier_version=9,state='verified'`. Un PDF original con fuente verdadera pero con lectura comercial imperfecta no se podía descargar, **contradiciendo el camino crítico P0 de originales independientes del parser**.
+
+- [x] Código MVP360 preparado sobre la función REAL desplegada: cambia la fuente del catálogo a `media_archive_mvp095` + `ai_supplier_links_mvp225` + `whapi_inbox`, con SHA, message_hmac, chat, mismo proveedor y ronda, y método fuerte `quoted_whapi_id` / `single_active_round` / `prior_supplier_preamble`. Rechaza `semantic_unique_mvp291`, rondas IA/legacy solapadas, archivo reemplazado/corregido y permisos insuficientes.
+- [x] Se preservan `auth.users` + `auth.sessions`, dueño comprador, cierre, política prospectiva MVP178, consentimiento revocable de cada proveedor, nombres opacos y proyección únicamente por HTTP autorizado con SHA/auditoría MVP190/201. **NO se abren originales durante la ronda ni a personas sin consentimiento**.
+- [x] Test específico PostgreSQL17 sintético de ejecución completa **APROBADO en el PR técnico**: el fixture NO CREA siquiera las tablas de lectura económica V9 y exige catálogo original válido, buyer correcto, sesión correcta, consentimiento vigente, fuente no ambigua y hash correcto; revocación, superposición y ronda abierta bloquean. Todo con ROLLBACK; no Whapi real. Las demás CI deben comprobarse en el HEAD final.
+- [x] Auditoría piloto SQL SELECT: `auth.users=0`, consentimientos originales activos = **0**, política original habilitada = **0**, asociaciones por métodos fuertes = **0**, un único vínculo `semantic_unique_mvp291` NO aceptable, una ronda `prepared` vigente. También `originals_private_mvp192` solo concede EXECUTE a `service_role`, no a `anon/authenticated`. **Nada fue modificado en el piloto**.
+- [ ] No se habilita P0/P4 todavía: faltan usuario comprador y SMS OTP en Auth, consentimiento prospectivo de cada proveedor para ronda NUEVA, vínculo seguro de dos originales, permisos multiempresa, prueba en navegador/HTTP y cierre. El control de exposición REST `net` del MVP359 también queda **[ ] pendiente**, no suponerlo verde.
+- [ ] **P0–P5 continúan abiertos**. Una función con test sintético no equivale a una descarga real del comprador.
+
+**Siguiente acción exacta:** revisar CI final del PR #802 y ejecutar, en cuanto exista autorización de publicación del piloto y políticas/identidad preparadas, una ronda NO superpuesta con 1 comprador y 2 proveedores; acreditar ambos documentos PDF/Excel, ver seguimiento real y cerrar con descarga auténtica conforme a consentimiento. Antes de instalar cron, cerrar el test HTTP real de `net`. No pedir al comercio rehacer el presupuesto por fallas de IA.
+
 ## MVP359 — preflight comprobado antes de publicar (12/11/2026)
 
 **Evidencia adicional:** rol `authenticator` sin override `pgrst.db_schemas` en `pg_roles.rolconfig` (consultado SOLO LECTURA); esto NO sustituye verificar el panel ni el HTTP REST real. La CI prueba la lógica, no la configuración del proyecto.
