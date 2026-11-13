@@ -7,6 +7,8 @@
 
 **No retomar OTP SMS como siguiente paso.** El propietario aprobó [D016: enlace privado enviado por WhatsApp, un toque y sesión segura](V2-D016-ACCESO-WHATSAPP-SIN-SMS-20261113.md). El comprador no debe registrarse ni introducir teléfono, OTP, correo o contraseña. No usar enlace de seguimiento legado para acceder a archivos.
 
+**Nuevo incremento de desarrollo registrado — [PR #837](https://github.com/ProtectorRudo/Cotironda/pull/837), 13/11/2026:** token aleatorio de 256 bits, TTL 10 minutos, HMAC persistido sin texto legible, enlace `#d016` y canje por POST solo una vez. Candidato SQL privado PostgreSQL 17 con revalidación de WhatsApp, comprador/ronda y ACL; tests Node/PG17 ROLLBACK específicos **SUCCESS** en SHA `0b689f7`. **NO hay login completo:** el resultado es `CLAIMED_AWAITING_AUTH` y no emite sesión real; falta el puente de Auth sin SMS, la UI y sustitución segura de `phone_confirmed_at` en RPC/HTTP. No desplegado, sin mensajes ni cambios de usuario/Auth/SQL.
+
 **Estado real observado hoy (no confundir con historial 12/11):**
 - Vercel Preview **`cotironda-portal-dev`** protegida por SSO, deployment `dpl_9d7DghjFZpP9Lo8hW4JtouUPiZnh` READY, SHA publicado `06e1700`, con diagnóstico SMS (histórico) que devolvió `BLOCKED`. No es sesión de comprador real.
 - GitHub PR #836 draft SHA `8fdf2d0e72a4a412b1bcc24f0ee150f6665b35da` con **12/12 checks SUCCESS** para el código SMS anterior. No publicado ni adaptado todavía a D016.
