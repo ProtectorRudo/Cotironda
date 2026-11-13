@@ -1,5 +1,15 @@
 # Cotironda V2 D016 — Acta de publicación REAL · 13/11/2026
 
+## Anexo — última publicación UI f985 bloqueada por cuota 402
+
+GitHub PR #837 último HEAD `f98527c9516478783bd7cf95433c58f5ca445937`, **CI 8/8 SUCCESS**. Fallback de `/piloto/v2/acceso` para Preview inactivo corregido en código, tests pasan. Se intentó desplegar Preview del SHA f985 al proyecto correcto `cotironda-portal-dev`; **Vercel rechazó HTTP 402 `api-deployments-free-per-day` (más de 100, retryAfter 86400)**. NO hay nueva versión publicada ni cambio de producción. Último deployment READY `dpl_DZkYMAzzVbZitq4Dz1NwyYN7Yued` SHA `64b8573...`; URL <https://cotironda-portal-myz6huv21-protector-rudo-s-projects.vercel.app>. La ruta D016 allí sigue 404 por gates OFF; el nuevo código reemplazaría ese 404 por mensaje informativo sin permitir consultas privadas.
+
+Calendario 2026 ahora aprobado (18 feriados, viernes 13 a martes 17, 18:00 AR). Los 2 proveedores consentidos GENERALMENTE tienen WhatsApp verificado, pero 0 consentimiento específico de originales V2. Issue [#838](https://github.com/ProtectorRudo/Cotironda/issues/838) exige resolverlo prospectivamente y sin pasos extra. Políticas V2 3 OFF, cron 0, ronda V2 0, secretos D016 no provisionados. No mensajes reales enviados ni cierres ejecutados.
+
+**NO declarar nuevo Preview READY, E2E ni piloto al 100%.** El propietario debe resolver la cuota si precisa el build inmediato; se puede continuar trabajando código y SQL solo en rama. Un enlace de bypass temporal se entregó en chat, no documentar token.
+
+--- 
+
 ## ACTUALIZACIÓN POSTERIOR — 13/11/2026, 15:20 AR · publicación acotada y calendario aprobado
 
 **Esta sección sustituye las cifras anteriores que indicaban calendario sin aprobar.** El usuario volvió a autorizar «Avanza y publicalo (lo que debas hacer)», siempre SOLO PILOTO.
