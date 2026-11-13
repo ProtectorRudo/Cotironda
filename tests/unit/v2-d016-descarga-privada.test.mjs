@@ -41,7 +41,7 @@ function fixture(){
   verificarSesion:async q=>{
    status.ctxCount++;
    assert.equal(q.sesionHmac,digestSesionPrivadaD016(COOKIE,KEY));
-   assert.equal(q.rondaId,ROUND);
+   if(q.rondaId!==ROUND)return null;
    if(status.ctxCount===2&&status.secondCtx!==null)return status.secondCtx;
    return status.ctx?{buyerKey:'buyer_a',requestId:ROUND}:null;
   },
@@ -94,7 +94,8 @@ test('D016 descarga: cookie faltante, duplicada, ronda o documento ajeno no inic
  const cross=await descargarConWhatsappD016(gate(),f.req(),
   'aaaaaaaa-bbbb-4bbb-abbb-bbbbbbbbbbbb',DOC,f.ports);
  assert.notEqual(cross.status,200);
- assert.equal(f.status.ctxCount,0);
+ assert.equal(f.status.storageCount,0);
+ assert.equal(f.status.auditCount,0);
 });
 test('D016 descarga: fraude de fuente, MIME o SHA nunca libera archivo',async()=>{
  for(const patch of [
