@@ -37,3 +37,19 @@ Resultado en Node 22.16: 6/6 casos aprobados. Los tests comprenden aviso único,
 6. Resolver cuota Vercel sin eludirla y provisionar secretos server-only por gestor privado, solo piloto.
 
 Referencias: Issue #838, https://github.com/ProtectorRudo/Cotironda/issues/838 ; plan maestro Issue #794, https://github.com/ProtectorRudo/Cotironda/issues/794 . El Preview READY actual tiene SHA 64b8573, no contiene este candidato.
+
+
+## Segundo incremento — ledger SQL y pruebas PG17 (13/11)
+
+Se agregó el candidato SQL supabase/piloto/v2_d016_original_reply_proof_CANDIDATE.sql y fixture supabase/tests/ci/v2-d016-original-proof-pg17.sql. Este código **no está instalado en la base de piloto** y no cambia las RPC existentes de catálogo, descarga ni worker.
+
+La máquina de estados deliberadamente falla cerrado:
+
+- Reservar registro de versión+SHA del aviso **antes** del POST a Whapi, con proveedor, empresa/ronda, chat real, política V2 prospectiva y una sola reserva por ronda/proveedor.
+- Confirmar aceptación de API **únicamente** cuando el despacho real asociado tiene el mismo identificador Whapi y la hora documentada es posterior a la reserva; un envío incierto no habilita la evidencia.
+- Observar respuesta en whapi_inbox ligada a ai_supplier_links_mvp225, al proveedor, chat, SHA del original PDF/Word/Excel/imagen o texto; exigir enlace por respuesta al mensaje esperado o única ronda activa comprobable, sin ambigüedades, reenviados, bajas ni señales de NO COMPARTIR.
+- Revocar por mensaje de texto auténtico del mismo proveedor y rondas, negando la evidencia incluso cuando ya se observó una respuesta. La validación del contenido textual NO COMPARTIR debe realizarse en servidor antes de llamar a revocar; el SQL sólo comprueba origen y procedencia.
+- Las funciones privilegiadas son exclusivamente para service_role. RLS sin SELECT público, ninguna salida con bytes ni contacto. La respuesta verificada devuelve explícitamente verified_reply_not_authorization; **no reemplaza la autorización legal ni abre las RPC actuales**.
+- PostgreSQL 17 sintético con BEGIN/ROLLBACK y dos controles: validación de reserva/envío, respuesta, SHA, suplantación, reenvío, duplicados, ACL/RLS, baja y revocación; base limpia al terminar. Workflow GitHub dedicado.
+
+Este candidato todavía necesita auditoría de integridad del POST real, su orden de escritura y captación Whapi v76; además, verificación legal del mecanismo. Nunca habilitarlo sólo por haber pasado una CI sintética.
