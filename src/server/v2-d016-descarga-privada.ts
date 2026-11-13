@@ -1,6 +1,6 @@
 /** D016: descarga de archivo original por cookie privada WhatsApp.
  * SEPARADA de la ruta GoTrue previa; jamás acepta token de seguimiento.
- * La ruta de texto cifrado espera un lector Edge con validación D016 propia.
+ * El texto se lee SOLO via Edge D016 (nunca clave AES en Next).
  */
 import {createHash} from 'node:crypto';
 import {puertaD016Lista,type PuertaD016}
@@ -17,7 +17,8 @@ const TYPES:Readonly<Record<string,string>>=Object.freeze({
  'image/webp':'webp',
  'application/vnd.openxmlformats-officedocument.wordprocessingml.document':'docx',
  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':'xlsx',
- 'application/msword':'doc','application/vnd.ms-excel':'xls','text/csv':'csv'
+ 'application/msword':'doc','application/vnd.ms-excel':'xls',
+ 'text/csv':'csv','text/plain':'txt'
 });
 const HEADERS={
  'cache-control':'private, no-store, no-cache, max-age=0, must-revalidate',
@@ -31,6 +32,12 @@ type FuenteD016=Readonly<{
  bucket:'cotironda-piloto-originals';path:string;mime:string;
  byteCount:number;sha256:string;consentAt:number;invitedAt:number;
 }>;
+type FuenteTextoD016=Readonly<{
+ state:'authorized_text_v2';requestId:string;documentId:string;
+ buyerKey:string;supplierKey:string;messageHmac:string;chatHmac:string;
+ nonceB64:string;ciphertextB64:string;sha256:string;mime:'text/plain';
+ consentAt:number;invitedAt:number;
+}>;
 type Contexto=Readonly<{buyerKey:string;requestId:string}>;
 export type DescargaWhatsappPortsD016=Readonly<{
  verificarSesion:(q:Readonly<{sesionHmac:string;rondaId:string}>)
@@ -39,6 +46,11 @@ export type DescargaWhatsappPortsD016=Readonly<{
   =>Promise<unknown>;
  leerStorage:(q:Readonly<{bucket:string;path:string}>)
   =>Promise<Uint8Array|null>;
+ leerTexto?:(source:FuenteTextoD016,sessionHmac:string)
+  =>Promise<Uint8Array|null>;
+ registrarAuditoriaTexto?:(q:Readonly<{sesionHmac:string;rondaId:string;
+  documentoId:string;sha256:string;byteCount:number}>)
+  =>Promise<boolean>;
  registrarAuditoria:(q:Readonly<{sesionHmac:string;rondaId:string;
   documentoId:string;sha256:string;byteCount:number}>)
   =>Promise<boolean>;
@@ -63,6 +75,25 @@ function sourceValid(x:unknown,ronda:string,doc:string):FuenteD016|null{
   x.invitedAt<x.consentAt)return null;
  return x as FuenteD016;
 }
+function textSourceValid(x:unknown,ronda:string,doc:string):
+ FuenteTextoD016|null{
+ if(!obj(x)||x.state!=='authorized_text_v2'||
+  x.requestId!==ronda||x.documentId!==doc||
+  typeof x.buyerKey!=='string'||!BUYER.test(x.buyerKey)||
+  typeof x.supplierKey!=='string'||!BUYER.test(x.supplierKey)||
+  typeof x.messageHmac!=='string'||!HASH.test(x.messageHmac)||
+  typeof x.chatHmac!=='string'||!HASH.test(x.chatHmac)||
+  typeof x.nonceB64!=='string'||x.nonceB64.length!==16||
+  typeof x.ciphertextB64!=='string'||x.ciphertextB64.length<24||
+  x.ciphertextB64.length>20000||
+  x.mime!=='text/plain'||
+  typeof x.sha256!=='string'||!HASH.test(x.sha256)||
+  typeof x.consentAt!=='number'||!Number.isSafeInteger(x.consentAt)||
+  x.consentAt<=0||
+  typeof x.invitedAt!=='number'||!Number.isSafeInteger(x.invitedAt)||
+  x.invitedAt<x.consentAt)return null;
+ return x as FuenteTextoD016;
+}
 function deny(status:number):Response{
  return new Response(JSON.stringify({error:'archivo_no_disponible'}),{
   status,headers:{...HEADERS,'content-type':'application/json; charset=utf-8'}
@@ -85,30 +116,41 @@ export async function descargarConWhatsappD016(
   if(!ctx||!BUYER.test(ctx.buyerKey)||ctx.requestId!==rondaId)
    return deny(404);
   const q={sesionHmac,rondaId,documentoId};
-  const first=sourceValid(await ports.fuentePrivada(q),rondaId,documentoId);
-  if(!first||first.buyerKey!==ctx.buyerKey)return deny(404);
-  const bytes=await ports.leerStorage({bucket:first.bucket,path:first.path});
-  if(!(bytes instanceof Uint8Array)||bytes.byteLength<1||
-   bytes.byteLength!==first.byteCount||bytes.byteLength>MAX)
+  const firstRaw=await ports.fuentePrivada(q);
+  const file=sourceValid(firstRaw,rondaId,documentoId);
+  const text=textSourceValid(firstRaw,rondaId,documentoId);
+  if((!file&&!text)||(file??text)!.buyerKey!==ctx.buyerKey)
    return deny(404);
+  if(text&&(!ports.leerTexto||!ports.registrarAuditoriaTexto))
+   return deny(503);
+  const bytes=text?await ports.leerTexto!(text,sesionHmac):
+   await ports.leerStorage({bucket:file!.bucket,path:file!.path});
+  const limit=text?4000:MAX;
+  if(!(bytes instanceof Uint8Array)||bytes.byteLength<(text?5:1)||
+   bytes.byteLength>limit||
+   (file&&bytes.byteLength!==file.byteCount))return deny(404);
   const copied=Uint8Array.from(bytes);
   const sha=createHash('sha256').update(copied).digest('hex');
-  if(sha!==first.sha256)return deny(404);
-  // Las revocaciones del proveedor y comprador pueden ocurrir durante I/O.
+  if(sha!==(file??text)!.sha256)return deny(404);
+  if(text)new TextDecoder('utf-8',{fatal:true}).decode(copied);
+  // Revocaciones durante lectura/AES invalidan este pedido y su documento.
   const again=await ports.verificarSesion({sesionHmac,rondaId});
   if(!again||again.buyerKey!==ctx.buyerKey||again.requestId!==rondaId)
    return deny(404);
-  const second=sourceValid(await ports.fuentePrivada(q),rondaId,documentoId);
-  if(!second||JSON.stringify(first)!==JSON.stringify(second))
+  const later=await ports.fuentePrivada(q);
+  const second=text?textSourceValid(later,rondaId,documentoId):
+   sourceValid(later,rondaId,documentoId);
+  if(!second||JSON.stringify(firstRaw)!==JSON.stringify(second))
    return deny(404);
-  const audited=await ports.registrarAuditoria({
-   ...q,sha256:sha,byteCount:copied.byteLength
-  });
+  const proof={...q,sha256:sha,byteCount:copied.byteLength};
+  const audited=text?await ports.registrarAuditoriaTexto!(proof):
+   await ports.registrarAuditoria(proof);
   if(audited!==true)return deny(503);
-  const name='cotironda-original-'+documentoId.slice(0,8)+'.'+TYPES[first.mime];
+  const mime=text?'text/plain':file!.mime;
+  const name='cotironda-original-'+documentoId.slice(0,8)+'.'+TYPES[mime];
   const output=new Uint8Array(copied.length);output.set(copied);
   return new Response(output.buffer,{status:200,headers:{
-   ...HEADERS,'content-type':first.mime,
+   ...HEADERS,'content-type':mime,
    'content-length':String(output.length),
    'content-disposition':'attachment; filename="'+name+'"'
   }});
