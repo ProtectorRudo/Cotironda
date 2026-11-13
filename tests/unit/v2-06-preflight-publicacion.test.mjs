@@ -83,6 +83,9 @@ function readySnapshot(){
   'COTIRONDA_PILOT_V2_TEXT_SHARED_SECRET',
   'COTIRONDA_REGISTRATION_ENABLED'
  ];
+ s.vercel.project_id='prj_d13rTHxJADvP2K9PcrM0CJQD9Zok';
+ s.vercel.team_id='team_CE76WzHKVPy9e28LXIw2r3J4';
+ s.vercel.root_directory='apps/portal';
  s.vercel.git_linked=true;
  s.vercel.git_org='ProtectorRudo';
  s.vercel.git_repo='Cotironda';
@@ -317,4 +320,23 @@ test('V2-15: Github desconectado sin Preview SHA comprobada no pasa',()=>{
  assert.equal(result.result,'BLOCKED');
  assert.ok(result.blockers.some(x=>x.code==='portal_git_correcto'));
  assert.equal(result.can_publish,false);
+});
+
+test('V2-15: Vercel project ID, team y carpeta son obligatorios también con Git',()=>{
+ const sample=readySnapshot();
+ for(const mutation of [
+  {project_id:'prj_wrong'},
+  {team_id:'team_wrong'},
+  {root_directory:null},
+  {root_directory:''},
+  {root_directory:'apps/seguimiento'}
+ ]){
+  const bad=copy(sample);
+  Object.assign(bad.vercel,mutation);
+  const result=auditarPublicacionV2(bad);
+  assert.equal(result.result,'BLOCKED',JSON.stringify(mutation));
+  assert.ok(result.blockers.some(x=>[
+   'portal_next_unico','portal_root_correcto'
+  ].includes(x.code)));
+ }
 });
