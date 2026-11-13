@@ -3,6 +3,7 @@
 DO $d016_resp$
 DECLARE
  old_catalog jsonb;new_catalog jsonb;old_source jsonb;new_source jsonb;
+ old_text jsonb;new_text jsonb;text_doc uuid;
  doc uuid;session_hmac text:=repeat('a',64);
 BEGIN
  -- V2-14 revocó consentimiento al terminar; devolverlo en fixture
@@ -67,7 +68,40 @@ BEGIN
  IF (SELECT count(*) FROM cotironda_piloto_privado.v2_d016_original_download_audit)<>1
  THEN RAISE EXCEPTION 'd016_audit_count_wrong';END IF;
 
- IF public.cotironda_piloto_v2_d016_responders_with_analysis_private(
+-- V2-14 incluye presupuesto original de texto cifrado: replicar la
+ -- fuente pero jamás descifrar en PostgreSQL; el Edge valida AES/SHA.
+ SELECT (value->>'documentId')::uuid INTO text_doc
+ FROM jsonb_array_elements(new_catalog->'originals')
+ WHERE value->>'kind'='text' LIMIT 1;
+ IF text_doc IS NULL THEN RAISE EXCEPTION 'd016_text_not_listed';END IF;
+ old_text:=public.cotironda_piloto_v2_original_source_private(
+  'aaaaaaaa-1111-4111-8111-111111111111',
+  '11111111-1111-4111-8111-111111111111',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',text_doc);
+ new_text:=public.cotironda_piloto_v2_d016_original_source_private(
+  'aaaaaaaa-1111-4111-8111-111111111111',session_hmac,text_doc);
+ IF new_text IS NULL OR new_text->>'state'<>'authorized_text_v2'
+ OR new_text->>'sha256'<>old_text->>'sha256'
+ OR new_text->>'nonceB64'<>old_text->>'nonceB64'
+ OR new_text->>'ciphertextB64'<>old_text->>'ciphertextB64'
+ OR new_text->>'chatHmac'<>old_text->>'chatHmac'
+ THEN RAISE EXCEPTION 'd016_text_source_differs_from_auth';END IF;
+ IF public.cotironda_piloto_v2_d016_record_text_download_private(
+  'aaaaaaaa-1111-4111-8111-111111111111',
+  session_hmac,text_doc,repeat('f',64),120) IS DISTINCT FROM false
+ THEN RAISE EXCEPTION 'd016_wrong_text_sha_audited';END IF;
+ IF public.cotironda_piloto_v2_d016_record_text_download_private(
+  'aaaaaaaa-1111-4111-8111-111111111111',
+  session_hmac,text_doc,new_text->>'sha256',120) IS DISTINCT FROM true
+ THEN RAISE EXCEPTION 'd016_text_audit_denied';END IF;
+ IF public.cotironda_piloto_v2_d016_record_text_download_private(
+  'aaaaaaaa-1111-4111-8111-111111111111',
+  session_hmac,doc,new_source->>'sha256',120) IS DISTINCT FROM false
+ THEN RAISE EXCEPTION 'd016_pdf_as_text_audited';END IF;
+ IF (SELECT count(*) FROM cotironda_piloto_privado.v2_d016_original_download_audit)<>2
+ THEN RAISE EXCEPTION 'd016_text_audit_count';END IF;
+
+  IF public.cotironda_piloto_v2_d016_responders_with_analysis_private(
   'aaaaaaaa-1111-4111-8111-111111111111',session_hmac) IS NULL
  THEN RAISE EXCEPTION 'd016_analysis_projection_denied';END IF;
 
@@ -82,6 +116,14 @@ BEGIN
   (new_source->>'byteCount')::integer) IS DISTINCT FROM false
  THEN RAISE EXCEPTION 'd016_supplier_revocation_ignored';END IF;
 
+ IF public.cotironda_piloto_v2_d016_original_source_private(
+  'aaaaaaaa-1111-4111-8111-111111111111',session_hmac,text_doc)
+ IS NOT NULL
+ OR public.cotironda_piloto_v2_d016_record_text_download_private(
+  'aaaaaaaa-1111-4111-8111-111111111111',
+  session_hmac,text_doc,new_text->>'sha256',120) IS DISTINCT FROM false
+ THEN RAISE EXCEPTION 'd016_text_revoked';END IF;
+
  UPDATE cotironda_piloto_privado.v2_d016_browser_sessions
  SET revoked_at=clock_timestamp() WHERE sesion_hmac=session_hmac;
  IF public.cotironda_piloto_v2_d016_responders_private(
@@ -94,6 +136,12 @@ BEGIN
   'public.cotironda_piloto_v2_d016_responders_private(uuid,text)','EXECUTE')
  OR NOT has_function_privilege('service_role',
   'public.cotironda_piloto_v2_d016_record_download_private(uuid,text,uuid,text,integer)','EXECUTE')
+ OR NOT has_function_privilege('service_role',
+  'public.cotironda_piloto_v2_d016_record_text_download_private(uuid,text,uuid,text,integer)','EXECUTE')
+ OR has_function_privilege('anon',
+  'public.cotironda_piloto_v2_d016_record_text_download_private(uuid,text,uuid,text,integer)','EXECUTE')
+ OR has_function_privilege('authenticated',
+  'public.cotironda_piloto_v2_d016_record_text_download_private(uuid,text,uuid,text,integer)','EXECUTE')
  OR has_table_privilege('anon',
   'cotironda_piloto_privado.v2_d016_original_download_audit','SELECT')
  THEN RAISE EXCEPTION 'd016_acl_broken';END IF;
