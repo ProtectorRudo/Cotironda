@@ -36,6 +36,10 @@ on:
       - 'tests/unit/v2-13-aviso-adjunto-original.test.mjs'
       - 'src/server/v2-14-texto-whatsapp-cifrado.ts'
       - 'tests/unit/v2-14-texto-whatsapp-original.test.mjs'
+      - 'src/server/v2-15-texto-edge-client.ts'
+      - 'supabase/functions/cotironda-piloto-v2-text-reader/**'
+      - 'supabase/config.toml'
+      - 'tests/unit/v2-15-texto-edge-seguro.test.mjs'
       - 'supabase/piloto/mvp238_aviso_proveedor_adjunto_una_ronda.sql'
       - 'apps/portal/app/api/piloto/v2/rondas/**'
       - '.github/workflows/cotironda-v2-03-respondedores-pg17.yml'
@@ -88,6 +92,8 @@ jobs:
         run: node --experimental-strip-types --test tests/unit/v2-13-aviso-adjunto-original.test.mjs
       - name: Texto WhatsApp cifrado V2, descargas, guías y ACL
         run: node --experimental-strip-types --test tests/unit/v2-14-texto-whatsapp-original.test.mjs
+      - name: V2-15 texto Edge sin AES en Vercel, JWT y permisos dobles
+        run: node --experimental-strip-types --test tests/unit/v2-15-texto-edge-seguro.test.mjs
       - name: Analisis automatico, SHA, revocacion y proyeccion privada
         run: node --experimental-strip-types --test tests/unit/v2-04b-analisis-persistencia.test.mjs
       - name: Primer comprador Auth dry-run/OTP y bloqueo sin Publicalo
