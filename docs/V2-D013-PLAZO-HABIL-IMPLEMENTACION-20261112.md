@@ -2,6 +2,8 @@
 
 **Fecha:** 12/11/2026. **Estado:** código CANDIDATO en GitHub, NO INSTALADO. No mensajes, cambios de la base real ni publicación.
 
+> **ACTUALIZACIÓN V2-21/V2-22 — 13/11/2026:** Este documento conserva la historia de diseño, pero **NO indica el orden SQL publicable vigente**. No instalar `v2_d013_ruteo_productos_sin_filtro_rubro.sql`: modifica la función M221 histórica. La solución V2 aprobada en desarrollo crea la RPC **`cotironda_piloto_v2_shadow_prepare_d013`** con `v2_21_d013_ruteo_v2_rpc_aislado_candidate.sql`, luego instala las tablas/triggers de `v2_05_plazo_dos_dias_habiles_candidate.sql` con política **OFF**, y finalmente aplica `v2_05_shadow_prepare_activar_modo_habil.sql` **solo a esa RPC V2**. Pruebas PG17 sintéticas verifican M221 intacta, ACL cerrada y rollback. Ver acta viva [V2-21/V2-22](V2-21-RUTEO-D013-RPC-AISLADA-20261113.md). **Nada de V2-21/V2-22 está instalado en Supabase piloto.**
+
 ## D013 — cambios concretos en la selección
 
 Se corrigieron dos condiciones que excluían indebidamente coincidencias de productos por etiquetas de rubro:
