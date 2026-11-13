@@ -31,6 +31,10 @@ test('D016: las APIs WhatsApp dependen de cookie y RPC exclusivamente privada',(
  assert.match(response,/listarPorWhatsappD016/u);
  assert.match(file,/descargarOriginalPorWhatsappD016/u);
  assert.match(ticket,/canjearAccesoPortalD016/u);
+ const logout=src('apps/portal/app/api/piloto/v2/acceso/salir/route.ts');
+ assert.match(logout,/cerrarSesionPortalD016/u);
+ assert.match(adapter,/cotironda_piloto_v2_d016_logout_private/u);
+ assert.match(adapter,/sec-fetch-site/u);
  assert.doesNotMatch(response+file+ticket,/COTIRONDA_REGISTRATION_ENABLED='true'/u);
 });
 test('D016: archivos sólo por sesión privada, nunca por JWT de SMS',()=>{
@@ -45,6 +49,8 @@ test('D016: archivos sólo por sesión privada, nunca por JWT de SMS',()=>{
  assert.match(client,/credentials:'same-origin'/u);
  assert.match(client,/respuestas-whatsapp/u);
  assert.match(client,/originales-whatsapp/u);
+ assert.match(client,/api\/piloto\/v2\/acceso\/salir/u);
+ assert.match(client,/Cerrar sesión/u);
  assert.match(client,/WhatsApp \(texto\)/u);
  assert.doesNotMatch(client,/Bearer |getSession\(|auth\.signOut\(|sms/u);
 });
