@@ -64,3 +64,28 @@ Se comprobó también que las variables heredadas del portal siguen usando una *
 **Estado final de esta autorización:** infraestructura SQL publicada y Preview protegida READY; flujo comercial V2 **INACTIVO**, producción y WhatsApp histórico intactos. No usuarios, SMS, compras, consentimientos, ni despliegues a producción.
 
 **Próximo paso:** configurar las claves y proveedor SMS en los paneles del proyecto exacto; realizar un **nuevo** deploy Preview con esas variables y todos los flags OFF; verificar Auth SMS real; solo entonces abrir el primer caso comercial bajo autorización controlada.
+
+## V2-18 — Avanza: clave publicable existente y diagnóstico SMS de solo lectura
+
+**Estado:** desarrollo/CI únicamente, **sin nuevo deploy ni activaciones**.
+
+Se consultó el inventario del **Supabase PILOTO exacto** mediante su integración. Existen una clave legacy `anon` y **una clave moderna `sb_publishable_*` de tipo `publishable`, `disabled=false`**. Se utilizará **exclusivamente la moderna** para configurar las dos variables de Preview
+`COTIRONDA_PILOT_SUPABASE_PUBLISHABLE_KEY` y
+`NEXT_PUBLIC_COTIRONDA_PILOT_SUPABASE_PUBLISHABLE_KEY`
+en la próxima publicación autorizada. **Ningún valor se volcó a GitHub, logs ni documentación.** Esa clave NO reemplaza la credencial secreta `sb_secret_*` exclusiva del servidor.
+
+También se verificó que la Preview actualmente sigue sin las dos variables públicas V2, sin clave secreta del servidor y con `RESPONDERS/ANALYSIS/PDF/TEXT=false`. La Preview READY anterior no incorpora variables añadidas después de su build. Se deberá **volver a desplegar** cuando se configure el acceso piloto. Esto es un bloqueo de conexión real; no inferir que se solucionó por tener una key disponible en Supabase.
+
+El archivo `src/server/v2-18-auth-publica-preflight.ts` verifica por **GET público** `/auth/v1/settings` (API key publicable, sin cookies ni bearer) que Supabase anuncia `external.phone=true`, `disable_signup=true`, `phone_autoconfirm=false` y un proveedor SMS válido. Devuelve únicamente booleanos y códigos seguros; **no imprime el payload ni la key**. El operador puede ejecutar, con ambas variables públicas inyectadas localmente:
+
+```bash
+cd apps/portal
+node --experimental-strip-types scripts/v2-auth-pilot-preflight.mjs
+```
+
+- `BLOCKED`: clave/URL equivocada, fallo de red/API o configuración SMS insegura/incompleta, sin alta de cuentas.
+- `SETTINGS_READY_REQUIRES_REAL_SMS`: la configuración declarada es compatible, **NO** un SMS entregado. El siguiente paso sigue siendo un OTP **real** con el primer comprador autorizado y sin abrir el registro público.
+
+El comando no hace POST, no crea usuarios, no envía SMS, no consulta secret keys ni registra PII. CI verifica respuesta válida, errores, fallos cerrados y ausencia de filtración. Fuente de contrato GoTrue: https://github.com/supabase/auth/blob/master/internal/api/settings.go .
+
+**Fuera de alcance de «Avanza»:** instalar publishable en Vercel, configurar credenciales privadas, modificar Auth, activar flags, mandar SMS/WhatsApp o volver a publicar Preview. Requieren una orden de «Publicalo» para el entorno PILOTO.
