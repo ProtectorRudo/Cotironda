@@ -4,6 +4,8 @@ import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {continuarZonaCentralMvp233}
  from '../../supabase/functions/cotironda-piloto-whapi/ai-central-zone-v2-d013.ts';
+import {procesarCompradorCentralMvp226}
+ from '../../supabase/functions/cotironda-piloto-whapi/ai-central-buyer-v2-d013.ts';
 import {autorizarPropuestasCatalogoV2}
  from '../../src/domain/ia-central/ruteador-catalogos-v2-d013.ts';
 import {generarCandidatoV202DesdeLive76}
@@ -143,4 +145,50 @@ test('V2-23: worker de zona V2 importa solo planificador/puente D013',()=>{
  assert.match(src,/puente-sql-rondas-v2-d013\.ts/u);
  assert.doesNotMatch(src,/from .*planificador-piloto-mvp220\.ts/u);
  assert.doesNotMatch(src,/from .*puente-sql-rondas-mvp221\.ts/u);
+});
+
+test('V2-23: pedido CON localidad usa exactamente misma RPC V2 que la continuación',async()=>{
+ const fake=db();const names=[];
+ const rpc=async(name,params)=>{
+  names.push(name);
+  if(name==='cotironda_piloto_ia_reserve_buyer_mvp226')
+   return {error:null,data:{state:'reserved'}};
+  return fake.rpc(name,params);
+ };
+ const r=await procesarCompradorCentralMvp226({
+  habilitado:true,publicar:false,autenticadoPorWebhook:true,
+  chatHmac:base.chatHmac,messageHmac:base.sourceHmac,
+  sourceSha256:sourceHash,fuente:original,
+  apiKey:base.apiKey,model:base.model,planificar:async()=>plan,rpc
+ });
+ assert.equal(r.estado,'ronda_en_sombra');
+ assert.equal(r.requestId,requestId);
+ assert.deepEqual(names,[
+  'cotironda_piloto_ia_reserve_buyer_mvp226',
+  'cotironda_piloto_v2_shadow_prepare_d013',
+  'cotironda_piloto_ia_lookup_round_mvp226',
+  'cotironda_piloto_ia_finish_buyer_mvp226'
+ ]);
+ assert.ok(!names.some(name=>/cotironda_piloto_ia_shadow_prepare_mvp221|cotironda_piloto_ia_publish_mvp222/u.test(name)));
+});
+
+test('V2-23: si SQL V2 no está, el pedido directo exige conciliación sin fallback',async()=>{
+ let oldCalls=0;const fake=db();
+ const rpc=async(name,params)=>{
+  if(name==='cotironda_piloto_ia_reserve_buyer_mvp226')
+   return {error:null,data:{state:'reserved'}};
+  if(name==='cotironda_piloto_v2_shadow_prepare_d013')
+   return {error:{code:'PGRST202'},data:null};
+  if(name==='cotironda_piloto_ia_shadow_prepare_mvp221'){oldCalls++;throw Error('legacy not allowed')}
+  return fake.rpc(name,params);
+ };
+ const r=await procesarCompradorCentralMvp226({
+  habilitado:true,publicar:false,autenticadoPorWebhook:true,
+  chatHmac:base.chatHmac,messageHmac:base.sourceHmac,
+  sourceSha256:sourceHash,fuente:original,
+  apiKey:base.apiKey,model:base.model,planificar:async()=>plan,rpc
+ });
+ assert.equal(r.estado,'conciliacion_requerida');
+ assert.equal(oldCalls,0);
+ assert.ok(fake.calls.every(c=>c.name!=='cotironda_piloto_ia_publish_mvp222'));
 });
