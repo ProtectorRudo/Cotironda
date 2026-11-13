@@ -27,6 +27,7 @@ test('V2-18: endpoint GET solo con clave publicable PILOTO y ningún secreto',as
   state:'SETTINGS_READY_REQUIRES_REAL_SMS',
   code:'configuracion_auth_publica_compatible',
   serviceAccessible:true,signupClosed:true,phoneConfigured:true,
+  phoneEnabled:true,autoConfirmDisabled:true,smsProviderReady:true,
   smsConfirmedByUser:false,writesPerformed:false
  });
  assert.equal(mock.called.length,1);
@@ -124,4 +125,36 @@ test('V2-18: CLI falla sin variables y nunca imprime valores confidenciales',()=
  assert.equal(out.writesPerformed,false);
  assert.ok(!run.stdout.includes('sb_publishable_'));
  assert.ok(!run.stdout.includes('sb_secret_'));
+});
+
+test('V2-18: identifica con precisión cada control ausente, sin declarar SMS entregado',async()=>{
+ const cases=[
+  [{...good,disable_signup:false},
+   {signupClosed:false,phoneEnabled:true,autoConfirmDisabled:true,smsProviderReady:true}],
+  [{...good,external:{phone:false}},
+   {signupClosed:true,phoneEnabled:false,autoConfirmDisabled:true,smsProviderReady:true}],
+  [{...good,phone_autoconfirm:true},
+   {signupClosed:true,phoneEnabled:true,autoConfirmDisabled:false,smsProviderReady:true}],
+  [{...good,sms_provider:'mock'},
+   {signupClosed:true,phoneEnabled:true,autoConfirmDisabled:true,smsProviderReady:false}],
+  [{...good,sms_provider:undefined},
+   {signupClosed:true,phoneEnabled:true,autoConfirmDisabled:true,smsProviderReady:false}],
+  [null,{signupClosed:false,phoneEnabled:false,autoConfirmDisabled:false,smsProviderReady:false}]
+ ];
+ for(const [cfg,expected] of cases){
+  const mock=fn(cfg);
+  const result=await comprobarAuthPublicaPilotoV2(PILOT_URL,KEY,mock.fetchImpl);
+  const actual={
+   signupClosed:result.signupClosed,phoneEnabled:result.phoneEnabled,
+   autoConfirmDisabled:result.autoConfirmDisabled,
+   smsProviderReady:result.smsProviderReady
+  };
+  assert.deepEqual(actual,expected);
+  assert.equal(result.state,'BLOCKED');
+  assert.equal(result.phoneConfigured,false);
+  assert.equal(result.smsConfirmedByUser,false);
+  assert.equal(result.writesPerformed,false);
+  assert.ok(!JSON.stringify(result).includes('twilio'));
+  assert.ok(!JSON.stringify(result).includes(KEY));
+ }
 });
