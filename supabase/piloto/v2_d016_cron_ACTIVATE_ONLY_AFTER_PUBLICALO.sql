@@ -27,10 +27,10 @@ BEGIN
  THEN RAISE EXCEPTION 'D016_SQL_NOT_INSTALLED';END IF;
  IF NOT EXISTS(SELECT 1 FROM vault.decrypted_secrets
   WHERE name='cotironda_d016_worker_service_key'
-   AND secret LIKE 'sb_secret_%' AND length(secret)>32)
+   AND decrypted_secret LIKE 'sb_secret_%' AND length(decrypted_secret)>32)
  OR NOT EXISTS(SELECT 1 FROM vault.decrypted_secrets
   WHERE name='cotironda_d016_worker_shared_secret'
-   AND length(secret)>=40)
+   AND length(decrypted_secret)>=40)
  THEN RAISE EXCEPTION 'D016_VAULT_SECRETS_MISSING';END IF;
  -- Debe haber al menos un calendario aprobado; si no, el cron cerraría cero.
  IF NOT EXISTS(
