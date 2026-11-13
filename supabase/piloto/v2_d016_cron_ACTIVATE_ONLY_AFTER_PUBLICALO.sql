@@ -5,6 +5,7 @@
 -- Crear secretos Vault SOLO a través del canal protegido, sin imprimirlos:
 --   cotironda_d016_worker_service_key = sb_secret_... del PILOTO
 --   cotironda_d016_worker_shared_secret = secreto independiente (40+ chars)
+--   cotironda_d016_pilot_project_ref = ilggkalaafhtiysyzlmg (guard entorno)
 -- NO incluir secretos en este archivo ni en registros ni en changelog.
 -- NOTA: pg_net retiene temporalmente headers descifrados en su cola;
 -- limitar permisos de inspección al entorno de infraestructura del piloto.
@@ -13,6 +14,13 @@
 
 DO $preflight_d016_cron$
 BEGIN
+ -- Verificación positiva del proyecto; si se ejecuta en otro Supabase,
+ -- aborta SIN crear jobs ni tocar rondas.
+ IF NOT EXISTS(
+  SELECT 1 FROM vault.decrypted_secrets
+  WHERE name='cotironda_d016_pilot_project_ref'
+   AND decrypted_secret='ilggkalaafhtiysyzlmg'
+ ) THEN RAISE EXCEPTION 'D016_NOT_PILOT_PROJECT';END IF;
  IF to_regprocedure('public.cotironda_piloto_v2_d016_worker_due_private(integer)')
  IS NULL OR to_regprocedure('public.cotironda_piloto_v2_d016_close_due_private(integer)')
  IS NULL OR to_regclass('cotironda_piloto_privado.v2_d016_closure_audit') IS NULL
