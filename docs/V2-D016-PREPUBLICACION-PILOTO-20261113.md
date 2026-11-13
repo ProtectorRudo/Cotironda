@@ -11,57 +11,61 @@
 - **Vercel:** proyecto correcto `cotironda-portal-dev`, ID `prj_d13rTHxJADvP2K9PcrM0CJQD9Zok`. El Preview READY previo apunta a commit `06e1700...`, NO a PR #837; SSO está habilitado para todos los despliegues. En la consulta de metadata Preview **no figuran variables con prefijo `COTIRONDA_D016_`**, ni la llave privada del lado servidor `COTIRONDA_PILOT_SUPABASE_SECRET_KEY`; no se consultaron ni imprimieron valores cifrados.
 - **WhatsApp:** no se enviaron mensajes reales, no se activó el sender D016 ni se alteró el webhook histórico.
 
-## Preflight automatizado y bloqueo de permisos pg_net — 13/11/2026
+## Auditoría corregida — pg_net y arquitectura sin secretos en cola (13/11/2026)
 
-**Se creó y ejecutó contra Supabase PILOTO, exclusivamente con SELECT,**
-`supabase/piloto/v2_d016_preflight_SOLO_LECTURA.sql`. No incluye nombres,
-números telefónicos, archivos, tokens, ni valores de Vault. CI valida
-estáticamente que este archivo no modifique permisos ni datos.
+**CORRECCIÓN DE AUDITORÍA:** La documentación oficial de Supabase
+([KB, 04/11/2026](https://supabase.com/kb/troubleshooting/revoking-access-to-pg_net-objects-has-no-effect-0bbc16))
+indica que los grants por defecto de `pg_net` son del propietario
+`supabase_admin`: `postgres` no puede revocarlos; incluso una revocación
+hecha por el propietario rompería jobs/webhooks dependientes de `PUBLIC`.
+Además, `anon` y `authenticated` son roles `NOLOGIN` y la API de
+Supabase no expone `net` por defecto. **El informe anterior confundía
+`has_table_privilege` con exposición pública de datos mediante API.**
 
-Resultado de la base real (verificación 13/11/2026, sin cambios):
-- Compradores con consentimiento general y WhatsApp autenticado: **1**.
-- Proveedores con **consentimiento específico V2 para compartir originales**
-  vigente: **0**. Este contador no significa que no estén registrados,
-  que no puedan cotizar por WhatsApp o que hayan revocado su participación.
-- Políticas `v2_business_policy`, `v2_original_share_policy`,
-  `v2_auto_release_policy`: **todas OFF**.
-- Calendarios 2026/2027 de La Plata aprobados: **0**.
-- RPC D016 de token, sesión, worker, cierre e informe: **no instaladas**.
-- PostgreSQL respeta el CHECK de cierre a **18:00 AR**.
-- `pg_cron`, `pg_net` y Vault instalados.
-- **11 bloqueos de activación detectados en total.**
+Se RETIRÓ la propuesta de revocar permisos:
+`v2_d016_pgnet_acl_REVIEW_ONLY.sql` es ahora **un stub que aborta
+explícitamente** y no modifica ningún grant. La cola sí es legible por
+roles de base de datos con `LOGIN`, y los headers usados por `pg_net`
+permanecen temporalmente en ella. Por lo tanto, la solución soportada
+para Cotironda D016 es **no pasar credenciales por `pg_net`**.
 
-**Hallazgo crítico: cola HTTP con permisos públicos.** En el proyecto
-`net.http_request_queue` tiene `relrowsecurity=false` y su ACL
-`=arwdDxtm/supabase_admin` concede acceso a `PUBLIC`;
-`anon` y `authenticated` tienen además USAGE del esquema `net`.
-La cola puede guardar temporalmente los encabezados HTTP con credenciales
-de `pg_net`, según la [documentación de Supabase](https://supabase.com/docs/guides/functions/schedule-functions).
-No se enviaron nuevas claves D016 por ese canal.
+**Nueva arquitectura de activación (solo código, sin publicar):**
 
-El script `v2_d016_cron_ACTIVATE_ONLY_AFTER_PUBLICALO.sql` ahora
-**ABORTA** con `D016_PGNET_QUEUE_EXPOSED_TO_CLIENT_ROLES` si
-`anon` o `authenticated` conservan permiso de lectura de la cola.
-La consulta de preflight también devuelve
-`cola_pgnet_expone_headers_a_roles_cliente`.
+1. Cierre a dos días hábiles: `v2_d016_cron_ACTIVATE_ONLY_AFTER_PUBLICALO.sql`
+   programa **una única tarea `pg_cron` SQL** (cada 5 minutos)
+   que invoca `public.cotironda_piloto_v2_d016_close_due_private(5)`.
+   La tarea no usa Vault para API keys, HTTP ni `pg_net`; verifica proyecto
+   PILOTO por marcador de Vault, políticas activas, calendario aprobado,
+   instalación de SQL y ausencia de cron duplicado.
+2. IA de ofertas con comprador desconectado:
+   `.github/workflows/cotironda-d016-worker-piloto.yml` programa HTTPS
+   **directo GitHub Actions → Supabase Edge**, usando repositorio exacto,
+   dos secretos de GitHub (separados del navegador y de PostgreSQL),
+   variable de habilitación OFF por defecto y máximo un trabajo por
+   invocación según el worker. Cada ejecución descarta el cuerpo de
+   respuesta y sólo muestra un código de estado, sin copiar el presupuesto.
+   Frecuencia inicial de **dos veces por hora** (minutos 13 y 43 UTC);
+   el portal conserva análisis bajo demanda. GitHub permite retrasos u
+   omisiones de jobs programados, por lo que **no es un SLA en tiempo real**.
+3. Los workflows programados se ejecutan solo en la rama **default**
+   después de integrar código autorizado. El PR #837 está DRAFT,
+   apilado sobre #836, y no dispara esos cron. Se requiere aprobar
+   costos de GitHub Actions y presupuestos OpenAI antes de activar
+   `vars.COTIRONDA_D016_PILOTO_WORKER_ENABLED=true`.
 
-Se preparó únicamente para auditoría y futura aprobación el archivo
-`v2_d016_pgnet_acl_REVIEW_ONLY.sql`: propone revocar **SELECT**
-a `PUBLIC, anon, authenticated` manteniendo el derecho INSERT y
-sin cambiar permisos de USAGE del esquema. Incluye una comprobación
-previa del project ref de Vault y verificación posterior de privilegios.
-**NO se ejecutó ni se incluye en migraciones automáticas.** Antes de
-aprobarlo hay que evaluar impacto sobre todas las integraciones que
-usen `pg_net`, respaldar la ACL anterior y revisar la compatibilidad
-con las políticas de extensiones administradas por Supabase.
+**Preflight comprobable:** `v2_d016_preflight_SOLO_LECTURA.sql` mantiene
+el conteo de políticas, calendarios, consentimientos y RPCs pendientes;
+ahora **no clasifica los grants nativos de `pg_net` como fuga a
+usuarios API**. En cambio, bloquea si detecta un cron D016 antiguo del
+worker dentro de la base de datos, porque podría incluir credenciales
+en `pg_net`. La última ejecución anterior al cambio arrojaba 11
+bloqueos, de los cuales **uno fue un falso positivo de seguridad**.
+Volver a ejecutar el nuevo preflight antes de dar el número actualizado.
+No se manipularon permisos reales ni se envió ningún secreto D016.
 
-**Próxima secuencia:** auditar alcance de ese permiso; mitigar sin
-afectar el webhook histórico; luego validar consentimiento prospectivo
-de originales V2 para los proveedores participantes, aprobar calendario
-oficial local, instalar candidatos D016 con flags apagados bajo
-`Publicalo`, probar seguridad, habilitar worker y cron por fases y
-realizar el E2E con arquitecto y dos proveedores. Ninguno de estos
-pasos se declara ejecutado por tener CI verde.
+**Referencias oficiales:** [Supabase sobre grants de pg_net](https://supabase.com/kb/troubleshooting/revoking-access-to-pg_net-objects-has-no-effect-0bbc16),
+[headers en cola pg_net](https://supabase.com/kb/troubleshooting/database-roles-can-read-request-headers-queued-by-pg_net-ad6357),
+[GitHub Actions scheduling](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows).
 
 ## Gate de publicación exclusivo PILOTO (checklist)
 
@@ -74,7 +78,7 @@ pasos se declara ejecutado por tener CI verde.
 - [ ] Instalar funciones Edge D016 en PILOTO con flags **OFF**. Generar paquete Whapi desde overlay inmutable V2-02 + D016 y comprobar diff exacto; nunca modificar `index.ts` histórico directamente.
 - [ ] Construir y desplegar exclusivamente un Preview en `cotironda-portal-dev` con SHA auditado, no asignar dominio público de producción. Confirmar que SSO permite la prueba autorizada o habilitar acceso privado específico, **sin desactivar seguridad global sin una decisión expresa**.
 - [ ] Ejecutar pruebas negativas EN PILOTO: inicio sin consentimiento, enlace reenviado/vencido, sesión revocada, ronda ajena, descargas sin originales, duplicados de Whapi, no leak de PII, costos ante fallos, fuentes SHA alteradas, calendario sin aprobar, cierre fuera de hora.
-- [ ] Solo tras pasar negativas, activar flags de D016 acotados por piloto y aprobar el script `v2_d016_cron_ACTIVATE_ONLY_AFTER_PUBLICALO.sql`; comprobar Vault `decrypted_secret`, identidad de proyecto, rol de `pg_net` y el riesgo de retención de headers en su cola. No programar cron ni envío real automáticamente por un merge.
+- [ ] Solo tras pasar negativas, activar flags D016 acotados por piloto, programar **solo cierre SQL** con `v2_d016_cron_ACTIVATE_ONLY_AFTER_PUBLICALO.sql` y programar **IA offline directamente por GitHub Actions con secrets**, nunca mediante `pg_net`. Comprobar proyecto Vault, ramas, costos y funcionamiento. No activar automáticamente por merge.
 - [ ] Prueba real: arquitecto manda pedido por WhatsApp; se detecta zona, matchean productos de catálogo, Ailín/Nahuel reciben solicitudes consentidas, devuelven PDF/Excel/TXT, aparecen como respondedores, los originales y guías se abren, y el resumen final se publica después del cierre hábil verificado. **Cero pasos extra a compradores/proveedores**. Usar una ronda nueva aprobada, no una ronda histórica pre-V2.
 - [ ] Medir costos OpenAI/Whapi, logs de colas, retry e idempotencia, cron ejecutado y auditoría, latencia e integridad; decidir continuar o revertir solo flags/cron/Preview si falla. No borrar originales ni registros.
 
