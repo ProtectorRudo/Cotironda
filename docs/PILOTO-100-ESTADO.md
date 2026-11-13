@@ -1,5 +1,16 @@
 # COTIRONDA V2 — ESTADO REAL Y RELEVO ENTRE CONVERSACIONES
 
+### RELEVO FINAL ACTUAL — 13/11/2026 · Publicado en PILOTO, sin activación comercial
+
+**Sí se publicó:** Vercel Preview Cotironda V2 D016 **READY**, commit `64b8573fde5321dabaef557d2bea40c7d80bc503`, <https://cotironda-portal-anhy2cgft-protector-rudo-s-projects.vercel.app>, SSO protegido; proyecto `cotironda-portal-dev` correcto. Supabase `cotironda-piloto`: dos Edge D016 ACTIVE v1; **7 migraciones SQL instaladas** (22 RPC privadas servicio, 5 tablas RLS); calendario `la plata/2026/lp_v2_r1` **18 feriados instalados pero `approved_at=NULL`**. Whapi antiguo permanece ACTIVE v76. No se tocó producción ni se integró a `main`.
+
+**No está habilitado el circuito:** siguen OFF `v2_business_policy`, `v2_original_share_policy`, `v2_auto_release_policy`; 0 calendario aprobado, 0 consentimientos V2 específicos de originales de proveedores registrados; faltan secretos backend de D016 Preview/Edge/GitHub. **0 jobs cron D016 y cero nuevas acciones WhatsApp/IA reales**. Worker devuelve cola vacía, ronda inexistente rechazada. No denominar esto un E2E ni piloto 100%.
+
+**Próximo objetivo único:** administrar consentimientos reales de originales V2 y aprobar calendario comercial 2026/2027 según zona, completar secretos sin mostrarlos, habilitar gradualmente en PREVIEW con protección SSO, probar transmisión WhatsApp de arquitecto/Ailín/Nahuel y cierre/informe final. No pedir SMS ni modificar Whapi v76 sin revisión de huella.
+
+**Acta verificada:** [Publicación real D016](docs/PILOTO-D016-PUBLICACION-REAL-20261113.md). **Cualquier sección posterior que diga “no instalado/no desplegado” es histórico ANTERIOR y está superada por este estado.**
+
+
 ### RELEVO ACTUAL — 13/11/2026 · calendario legal 2026 en código (NO PUBLICADO)
 
 El cuello de botella priorizado es el calendario hábil de La Plata. Verificado **en Supabase SOLO LECTURA**: `cotironda_piloto_privado.v2_business_calendar` y `v2_business_holidays` están **vacíos**; ninguna aprobación `approved_at`. El D016 exige 2 días hábiles y cierre **18:00 Argentina**.
