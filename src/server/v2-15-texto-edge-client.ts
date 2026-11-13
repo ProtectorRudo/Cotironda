@@ -33,7 +33,8 @@ export async function leerTextoOriginalPorEdgeV2(
   typeof s.sha256!=='string'||!SHA.test(s.sha256)||
   typeof jwt!=='string'||!JWT.test(jwt)||jwt.length>4096||
   env.COTIRONDA_PILOT_SUPABASE_URL!==PILOT||
-  env.COTIRONDA_PILOT_V2_TEXT_ENABLED!=='true'||!KEY.test(secret))
+  env.COTIRONDA_PILOT_V2_TEXT_ENABLED!=='true'||!KEY.test(secret)||
+  new Set(secret).size<8)
   return null;
  try{
   const response=await fetchImpl(TARGET,{
