@@ -1,5 +1,14 @@
 # COTIRONDA V2 — ESTADO REAL Y RELEVO ENTRE CONVERSACIONES
 
+### Último avance: worker IA offline + cierre automático D016 — 13/11/2026
+
+Código candidato agregado a [PR #837](https://github.com/ProtectorRudo/Cotironda/pull/837), sin deploy/merge: Edge worker para analizar originales recibidos aunque el comprador no navegue, protegido por segundo secreto, consentimientos, SHA y cuotas SQL; y cierre atómico en PostgreSQL a **dos días hábiles** calculados desde calendario local aprobado más feriados (no se deducen feriados faltantes). Auditoría por cierre, no ranking ni ganadores automáticos. `cron` se documentó como script de activación restringida, **NO SE EJECUTÓ**.
+
+**Evidencia:** pruebas Node/Deno/PG17 ROLLBACK y CI del SHA exacto en [PR #837](https://github.com/ProtectorRudo/Cotironda/pull/837); antes de declarar verde, comprobar resultados tras último commit. Cero WhatsApps nuevos, cero originales reales abiertos, cero cron nuevo. Supabase piloto continúa con políticas V2 OFF y calendarios aprobados=0 al último control. La puesta en marcha y prueba completa continúan pendientes.
+
+**Próximo paso único:** corregir cualquier CI pendiente, auditar e instalar SQL/Edge/Next solo con `Publicalo` PILOTO, aprovisionar calendarios/feriados y secretos verificados, activar cron con guardas, comprobar ronda 1 arquitecto + 2 proveedores, originales TXT/PDF/Excel y análisis/cierre/final real. No pedir configuración del celular.
+
+
 ## RELEVO VIGENTE — 13/11/2026 · D016 análisis y cierre (SOLO CÓDIGO)
 
 **Lo desarrollado:** PR #837 agrega al login y originales D016 una ruta POST de análisis de cada oferta bajo cookie privada, reutilizando V2-04b y su validación de evidencias, con claim/finish en SQL por documento y SHA (3 intentos, lease de 90 segundos). La pantalla lo solicita **automáticamente al abrir la página**, máximo seis documentos por visita, sin pasos extras al comprador. Se agrega GET de informe final con SQL que exige `requests.state='closed'`, `closed_at>=closes_at`, `timing_mode='business_two_days'`, política activada y calendario/localidad/revisión aprobados. El informe determinista organiza lo que los proveedores respondieron y sus condiciones literalmente citadas, **sin inventar ranking, totales comparables o ganadores**.
