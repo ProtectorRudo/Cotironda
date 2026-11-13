@@ -34,6 +34,9 @@ function readySnapshot(){
  const s=copy(observed);
  s.supabase.auth_users=1;
  s.supabase.v2_original_share_policy_enabled=true;
+ s.supabase.v2_text_sql_contract={
+  catalog_text:true,original_text:true,audit_text_rpc:true
+ };
  s.supabase.rpcs=[
   'cotironda_piloto_v2_quoted_id_for_reference',
   'cotironda_piloto_v2_quoted_id_for_media_reference',
@@ -339,4 +342,76 @@ test('V2-15: Vercel project ID, team y carpeta son obligatorios también con Git
    'portal_next_unico','portal_root_correcto'
   ].includes(x.code)));
  }
+});
+
+test('V2-17: RPC presentes SIN cuerpo SQL de texto no permiten primer texto',()=>{
+ const baseline=readySnapshot();
+ for(const field of ['catalog_text','original_text','audit_text_rpc']){
+  const stale=copy(baseline);
+  stale.supabase.v2_text_sql_contract[field]=false;
+  const report=auditarPublicacionV2(stale,'primer_texto');
+  assert.equal(report.result,'BLOCKED',field);
+  const expected={
+   catalog_text:'catalogo_sql_texto',
+   original_text:'fuente_sql_texto',
+   audit_text_rpc:'rpc_texto_auditado'
+  }[field];
+  assert.ok(report.blockers.some(x=>x.code===expected),field);
+  assert.equal(report.can_publish,false);
+  assert.equal(auditarPublicacionV2(stale,'piloto_completo').result,
+   'BLOCKED');
+ }
+});
+
+test('V2-17: contrato SQL ausente o sin evidencia no se presume instalado',()=>{
+ const complete=readySnapshot();
+ delete complete.supabase.v2_text_sql_contract;
+ const report=auditarPublicacionV2(complete,'primer_texto');
+ assert.equal(report.result,'BLOCKED');
+ for(const id of ['catalogo_sql_texto','fuente_sql_texto','rpc_texto_auditado']){
+  assert.ok(report.blockers.some(x=>x.code===id),id);
+ }
+ // Un primer PDF sí es independiente del lector textual.
+ assert.equal(auditarPublicacionV2(complete,'primer_original').result,
+  'PREFLIGHT_PASS_REQUIRES_PUBLICALO');
+});
+
+test('V2-17: instantánea SOLO LECTURA del PILOTO presenta SQL antiguo',()=>{
+ const observedSql=JSON.parse(readFileSync(new URL(
+  '../../scripts/piloto/observaciones/v2-sql-text-live-20261113.json',
+  import.meta.url),'utf8'));
+ assert.equal(observedSql.supabase_project,'ilggkalaafhtiysyzlmg');
+ assert.equal(observedSql.postgres_version,'17.11');
+ assert.equal(observedSql.contract.responders_rpc,true);
+ assert.equal(observedSql.contract.original_source_rpc,true);
+ assert.equal(observedSql.contract.catalog_text,false);
+ assert.equal(observedSql.contract.original_text,false);
+ assert.equal(observedSql.contract.audit_text_rpc,false);
+ assert.equal(observedSql.auth_users,0);
+ assert.equal(observedSql.supplier_consents_v2,0);
+ assert.equal(observedSql.originals_share_enabled,false);
+ const fresh=readySnapshot();
+ fresh.supabase.v2_text_sql_contract={
+  catalog_text:observedSql.contract.catalog_text,
+  original_text:observedSql.contract.original_text,
+  audit_text_rpc:observedSql.contract.audit_text_rpc
+ };
+ const report=auditarPublicacionV2(fresh,'primer_texto');
+ assert.equal(report.result,'BLOCKED');
+ for(const code of ['catalogo_sql_texto','fuente_sql_texto','rpc_texto_auditado'])
+  assert.ok(report.blockers.some(b=>b.code===code),code);
+});
+
+test('V2-17: script inventario no puede escribir datos o ejecutar funciones',()=>{
+ const raw=readFileSync(new URL(
+  '../../supabase/piloto/v2_17_contrato_sql_texto_solo_lectura.sql',
+  import.meta.url),'utf8');
+ const sql=raw.split('\n').filter(line=>
+  !line.trimStart().startsWith('--')).join('\n');
+ assert.match(sql,/^\s*WITH\s+installed\s+AS\s*\(/u);
+ assert.match(sql,/pg_get_functiondef/u);
+ assert.match(sql,/to_regprocedure/u);
+ assert.match(sql,/^\s*SELECT\b/mu);
+ assert.doesNotMatch(sql,/\b(?:INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|TRUNCATE|GRANT|REVOKE|CALL|COPY|EXECUTE)\b/iu);
+ assert.equal((sql.match(/;\s*$/gu)||[]).length,1);
 });
