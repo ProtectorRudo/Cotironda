@@ -5,7 +5,7 @@
 import {createHash} from 'node:crypto';
 
 const PILOT='https://ilggkalaafhtiysyzlmg.supabase.co';
-const PHONE=/^\+[1-9][0-9]{8,15}$/u;
+const PHONE=/^\+[1-9][0-9]{7,14}$/u; // E.164: 8 a 15 dígitos, sin contar el +
 const BUYER=/^[a-z0-9_-]{3,100}$/u;
 const SHA=/^[a-f0-9]{40}$/u;
 const PROVIDER=/^[a-z][a-z0-9_-]{2,63}$/u;
