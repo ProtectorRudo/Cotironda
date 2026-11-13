@@ -12,17 +12,40 @@ const PROVIDER=/^[a-z][a-z0-9_-]{2,63}$/u;
 /** Estado públicamente observable de GoTrue. NO prueba entrega real SMS.
  * Bloquea creación de una cuenta inaccesible o auto-confirmada.
  */
-export function configuracionSmsInicialV2Lista(input:unknown):boolean{
- if(!input||typeof input!=='object'||Array.isArray(input))return false;
+/** Solo booleanos de configuración públicamente anunciada: nunca expone
+ * proveedor, teléfono o credenciales. false también cubre dato ausente.
+ */
+export type InspeccionSmsInicialV2=Readonly<{
+ signupClosed:boolean;
+ phoneEnabled:boolean;
+ autoConfirmDisabled:boolean;
+ smsProviderReady:boolean;
+}>;
+export function inspeccionarConfiguracionSmsInicialV2(
+ input:unknown
+):InspeccionSmsInicialV2{
+ const vacio=()=>Object.freeze({
+  signupClosed:false,phoneEnabled:false,
+  autoConfirmDisabled:false,smsProviderReady:false
+ });
+ if(!input||typeof input!=='object'||Array.isArray(input))return vacio();
  const s=input as Record<string,unknown>;
- if(!s.external||typeof s.external!=='object'||
-  Array.isArray(s.external))return false;
- const ext=s.external as Record<string,unknown>;
+ const ext=s.external&&typeof s.external==='object'&&
+  !Array.isArray(s.external)
+  ?s.external as Record<string,unknown>:null;
  const provider=s.sms_provider;
- return ext.phone===true&&s.disable_signup===true&&
-  s.phone_autoconfirm===false&&
-  typeof provider==='string'&&PROVIDER.test(provider)&&
-  !['none','disabled','unknown','test','fake','noop','mock'].includes(provider);
+ return Object.freeze({
+  signupClosed:s.disable_signup===true,
+  phoneEnabled:ext?.phone===true,
+  autoConfirmDisabled:s.phone_autoconfirm===false,
+  smsProviderReady:typeof provider==='string'&&PROVIDER.test(provider)&&
+   !['none','disabled','unknown','test','fake','noop','mock'].includes(provider)
+ });
+}
+export function configuracionSmsInicialV2Lista(input:unknown):boolean{
+ const d=inspeccionarConfiguracionSmsInicialV2(input);
+ return d.signupClosed&&d.phoneEnabled&&
+  d.autoConfirmDisabled&&d.smsProviderReady;
 }
 export type BootstrapBuyerPorts=Readonly<{
  countExistingAuthUsers:()=>Promise<number|null>;
