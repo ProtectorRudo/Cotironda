@@ -89,7 +89,7 @@ function fixture(){
   },
   finalizar:async q=>{
    state.finishCalls++;
-   assert.equal(q.sourceSha256,SHA);
+   assert.equal(q.sourceSha256,state.source.sha256);
    assert.equal(q.jobToken,state.job);
    state.stored=q;
    return state.valid;
