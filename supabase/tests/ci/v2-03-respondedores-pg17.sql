@@ -589,10 +589,7 @@ ALTER TABLE cotironda_piloto_privado.requests
   (timing_mode='legacy_calendar' AND
    round_days BETWEEN 3 AND 7 AND v2_calendar_revision IS NULL)
   OR (timing_mode='business_two_days' AND round_days=2 AND
-   v2_calendar_revision ~ '^[a-z0-9_-]{4,50}
-\ir ../fixtures/v2-07-buyer-auth-checks.sql
-ROLLBACK;
-)
+   v2_calendar_revision ~ '^[a-z0-9_-]{4,50}$')
  ) NOT VALID;
 ALTER TABLE cotironda_piloto_privado.requests
  ADD CONSTRAINT d016_real_business_close_check CHECK (
