@@ -54,6 +54,9 @@ export async function responderDiagnosticoSmsV2(
   serviceAccessible:estado.serviceAccessible,
   signupClosed:estado.signupClosed,
   phoneConfigured:estado.phoneConfigured,
+  phoneEnabled:estado.phoneEnabled,
+  autoConfirmDisabled:estado.autoConfirmDisabled,
+  smsProviderReady:estado.smsProviderReady,
   smsConfirmedByUser:false,
   writesPerformed:false
  });
