@@ -1,5 +1,14 @@
 # COTIRONDA V2 — PLAN MAESTRO Y CHECKLIST
 
+### 13/11/2026 — D016 / P0: resolución IA ambigua corregida prospectivamente en piloto
+
+- [x] **Publicada migración `20261113225548`** en Supabase PILOTO: helper privado + guard de doble lectura MVP291 para asociar fuente a ronda resuelta, no confiar en etiqueta histórica `ambiguous_round` cuando `resolved_request_id` + SHA + decisión final coinciden. SQL real: caso histórico **1/1 corroborado** sin inventar ronda ni modificar cotización. 7 rondas conservadas (1 preparada), **0 originales publicados**, flags negocio/originales/cierre OFF. [Acta](https://github.com/ProtectorRudo/Cotironda/blob/feat/d016-semantic-dispatch-proof-20261113/docs/PILOTO-D016-SEMANTIC-MVP291-PUBLICADO-20261113.md).
+- [x] [PR #842](https://github.com/ProtectorRudo/Cotironda/pull/842) DRAFT: CI SQL PostgreSQL 17 con **DOS rondas posibles**, falsa resolución, SHA, doble IA incompleta, reenvío, replay, baja, ACL, ROLLBACK; no despliega webhook ni producción.
+- [ ] No confundir `verified_reply_not_authorization` con autorización comercial: revisar texto/cesión Ley 25.326 y adaptar RPC originales + worker + sesión comprador con comprobación de revocación.
+- [ ] Integrar los overlays D016 con WhatsApp real **sin editar v76 histórica ni generar WhatsApps adicionales**, validar metadatos Whapi y completar E2E con arquitecto + dos proveedores, archivos originales, análisis por presupuesto e informe final.
+- [ ] Preview f985 con cuota Vercel y secretos privados server-only; reintento exacto ya programado, sin desviar proyecto ni contratar plan.
+
+
 ### 13/11/2026 — D016 / P0: recepción segura preparada; RPC privadas publicadas SIN activar
 
 - [x] **Migración real** Supabase piloto `20261113202332`: funciones privadas de recepción de respuesta y baja `NO COMPARTIR`, con identidad Whapi+proveedor+ronda, archivo SHA, revocación. Guard previa: siete rondas, una preparada, tres políticas OFF, ledger vacío, objetos ausentes. SQL posterior: **7 rondas intactas, 0 avisos, 0 respuestas, 0 revocaciones, anon/auth no ejecutan RPC**, negativos `denied` / `0`. [Acta](https://github.com/ProtectorRudo/Cotironda/blob/feat/d016-original-inbox-evidence-20261113/docs/PILOTO-D016-INBOX-ORIGINALES-PUBLICADO-20261113.md).
