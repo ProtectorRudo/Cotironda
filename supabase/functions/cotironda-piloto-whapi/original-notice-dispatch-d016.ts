@@ -31,10 +31,11 @@ export async function reservarAvisoOriginalEnDespachoD016(args:{
    new TextEncoder().encode(caption)));
   if(!HASH.test(hash))return null;
   const r=await args.rpc(
-   'cotironda_piloto_v2_d016_reserve_original_notice_private',{
+   'cotironda_piloto_v2_d016_reserve_original_notice_lease_private',{
     p_request_id:args.requestId,p_supplier_key:args.supplierKey,
     p_chat_hmac:args.chatHmac,p_notice_body_sha256:hash,
-    p_notice_version:AVISO_ORIGINALES_D016_VERSION
+    p_notice_version:AVISO_ORIGINALES_D016_VERSION,
+    p_lease_token:args.leaseToken
    });
   return r.error==null&&r.data===true?caption:null;
  }catch{return null}
