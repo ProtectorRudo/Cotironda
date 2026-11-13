@@ -349,7 +349,7 @@ BEGIN
  IF p_chat_hmac IS NULL OR p_chat_hmac !~ '^[a-f0-9]{64}$'
   OR p_event_hmac IS NULL OR p_event_hmac !~ '^[a-f0-9]{64}$'
   OR p_ticket_hmac IS NULL OR p_ticket_hmac !~ '^[a-f0-9]{64}$'
-  OR p_mode NOT IN ('auto','confirmed','recovery')
+  OR p_mode IS NULL OR p_mode NOT IN ('auto','confirmed','recovery')
   OR (p_mode='recovery' AND p_request_id IS NOT NULL)
   OR (p_mode IN ('auto','confirmed') AND p_request_id IS NULL)
  THEN RETURN jsonb_build_object('state','denied');END IF;
