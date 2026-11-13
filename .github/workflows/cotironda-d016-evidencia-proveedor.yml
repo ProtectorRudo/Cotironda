@@ -3,6 +3,10 @@ on:
   pull_request:
     paths:
       - 'src/server/v2-d016-aviso-original-proveedor.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/ai-central-dispatch-mvp223.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/original-notice-dispatch-d016.ts'
+      - 'scripts/piloto/v2-d016-original-notice-overlay.mjs'
+      - 'tests/unit/v2-d016-original-whapi-adapter.test.mjs'
       - 'supabase/piloto/v2_d016_original_reply_proof_CANDIDATE.sql'
       - 'supabase/tests/ci/v2-d016-original-proof-pg17.sql'
       - 'tests/unit/v2-d016-aviso-original-proveedor.test.mjs'
@@ -26,6 +30,19 @@ jobs:
           node-version: '22.16.0'
       - name: Verificar aviso en un solo mensaje y respuestas de proveedor
         run: node --experimental-strip-types --test tests/unit/v2-d016-aviso-original-proveedor.test.mjs
+      - name: Contrato D016 de despacho único, ID Whapi y flags OFF
+        run: node --experimental-strip-types --test tests/unit/v2-d016-original-whapi-adapter.test.mjs
+      - name: Deno 2 para tipado de candidato generado, sin desplegar webhook
+        uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb
+        with:
+          deno-version: v2.x
+      - name: Construir candidato D016 desde webhook v76 verificado (sin despliegue)
+        run: node scripts/piloto/v2-d016-original-notice-overlay.mjs --write-candidate
+      - name: Typecheck Deno del webhook Whapi V2 + evidencia
+        run: deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/index.v2-d016-original-candidate.ts
+      - name: Eliminar candidato generado sin tocar index.ts
+        if: always()
+        run: rm -f supabase/functions/cotironda-piloto-whapi/index.v2-d016-original-candidate.ts
   evidence-pg17:
     runs-on: ubuntu-latest
     timeout-minutes: 10
