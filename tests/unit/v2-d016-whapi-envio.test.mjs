@@ -100,7 +100,7 @@ test('D016 Whapi: baja, canal incorrecto, SHA, origen y flag OFF niegan sin POST
   {portalOrigin:'https://evil.vercel.app'},
   {portalOrigin:'http://'+PORTAL.slice(8)},
   {hmacKeyHex:'f'.repeat(63)},{chatHmac:'x'},
-  {recipient:'5551231234@s.whatsapp.net'}, // too few chars
+  {recipient:'1234@s.whatsapp.net'}, // too few chars
   {requestId:'not_uuid'},{mode:'recovery',requestId:ROUND},
   {mode:'auto',requestId:null}
  ];
