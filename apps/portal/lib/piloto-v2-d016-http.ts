@@ -13,6 +13,8 @@ import {proyectarRespuestasV2}
  from '../../../src/server/v2-03-catalogo-respondedores.ts';
 import {descargarConWhatsappD016}
  from '../../../src/server/v2-d016-descarga-privada.ts';
+import {leerTextoOriginalEdgeD016}
+ from '../../../src/server/v2-d016-texto-edge-client.ts';
 
 const PILOT='https://ilggkalaafhtiysyzlmg.supabase.co';
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/iu;
@@ -123,8 +125,8 @@ export async function listarPorWhatsappD016(
  }catch{return deny(503)}
 }
 
-/** Descarga privada de archivos (PDF/Excel/Word/imagen/CSV).
- * Texto WhatsApp cifrado no se descifra por este canal: no eludir Edge/JWT.
+/** Descarga privada de PDFs/Excel/Word/CSV y texto de proveedor.
+ * El texto SOLO se descifra en Edge D016, sin clave AES en Vercel.
  */
 export async function descargarOriginalPorWhatsappD016(
  req:Request,rondaId:string,documentoId:string,
@@ -151,6 +153,22 @@ export async function descargarOriginalPorWhatsappD016(
    if(error||!data||data.size<1||data.size>8388608)return null;
    const bytes=new Uint8Array(await data.arrayBuffer());
    return bytes.byteLength===data.size?bytes:null;
+  },
+  leerTexto:async(source,sesionHmac)=>leerTextoOriginalEdgeD016(
+   source,sesionHmac,{
+    COTIRONDA_PILOT_SUPABASE_URL:env.COTIRONDA_PILOT_SUPABASE_URL,
+    COTIRONDA_PILOT_SUPABASE_SECRET_KEY:env.COTIRONDA_PILOT_SUPABASE_SECRET_KEY,
+    COTIRONDA_D016_TEXT_ENABLED:env.COTIRONDA_D016_TEXT_ENABLED,
+    COTIRONDA_D016_TEXT_SHARED_SECRET:env.COTIRONDA_D016_TEXT_SHARED_SECRET
+   }),
+  registrarAuditoriaTexto:async({sesionHmac,rondaId,documentoId,sha256,byteCount})=>{
+   const {data,error}=await db.rpc(
+    'cotironda_piloto_v2_d016_record_text_download_private',{
+     p_request_id:rondaId,p_sesion_hmac:sesionHmac,
+     p_document_id:documentoId,p_source_sha256:sha256,
+     p_byte_count:byteCount
+    });
+   return !error&&data===true;
   },
   registrarAuditoria:async({sesionHmac,rondaId,documentoId,sha256,byteCount})=>{
    const {data,error}=await db.rpc(
