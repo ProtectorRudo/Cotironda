@@ -118,6 +118,8 @@ INSERT INTO cotironda_piloto_privado.v2_business_calendar(
  ('la plata',2027,'verif_2027','Fixture sintetica anual NO real',clock_timestamp());
 INSERT INTO cotironda_piloto_privado.v2_business_holidays(
  locality,day,calendar_year,description,evidence) VALUES
+ ('la plata','2026-11-09',2026,'Visita papal feriado nacional','DNU 1103/2026 articulo 2, BO 28-09-2026'),
+ ('la plata','2026-11-11',2026,'Visita papal feriado Provincia de Buenos Aires','DNU 1103/2026 articulo 4, BO 28-09-2026'),
  ('la plata','2026-11-16',2026,'Feriado ficticio caso de prueba','Fixture sintética'),
  ('la plata','2026-11-23',2026,'Día de la Soberanía Nacional','BCRA listado oficial 2026'),
  ('la plata','2026-12-08',2026,'Inmaculada Concepción','BCRA listado oficial 2026'),
@@ -131,6 +133,13 @@ DECLARE
  inserted uuid;
  original timestamptz;
 BEGIN
+ -- Feriados extraordinarios VERIFICADOS en DNU 1103/2026:
+ -- 9 noviembre nacional, 11 noviembre SOLO provincia Buenos Aires.
+ -- El martes 10 fue feriado en Córdoba/CABA, NO en La Plata.
+ expected:=cotironda_piloto_privado.v2_deadline(
+  '2026-11-06T12:00:00Z','la plata');
+ IF expected IS DISTINCT FROM '2026-11-12T21:00:00Z'::timestamptz
+ THEN RAISE EXCEPTION 'province_special_nov11_not_skipped %',expected;END IF;
  expected:=cotironda_piloto_privado.v2_deadline(
   '2026-11-12T12:00:00Z','La Plata');
  IF expected IS DISTINCT FROM '2026-11-17T21:00:00Z'::timestamptz
