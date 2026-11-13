@@ -79,13 +79,19 @@ BEGIN
  v_approved:=public.cotironda_piloto_ia_auto_release_mvp306(
   p_chat_hmac,p_source_hmac);
  IF v_approved->>'state' NOT IN ('approved','already_approved')
- OR v_approved->>'request_id' IS DISTINCT FROM v_request.id::text
  THEN RETURN jsonb_build_object('state','auto_release_not_authorized');END IF;
+ IF v_approved->>'request_id' IS DISTINCT FROM v_request.id::text
+ THEN RAISE EXCEPTION 'v2_24_auto_release_identity_inconsistent';END IF;
  -- MVP222 hace la ultima verificacion bajo locks de identidad, inventario,
  -- zona, ventana y cola idempotente antes de habilitar el despachador.
  v_published:=public.cotironda_piloto_ia_publish_mvp222(v_request.id);
  IF v_published->>'state' NOT IN ('ready_for_delivery','already_published')
- THEN RETURN jsonb_build_object('state','publication_not_ready');END IF;
+ THEN
+  -- La aprobación MVP306 YA insertó su fila. Revertirla junto a toda
+  -- la transacción evita un permiso semipublicado sin trabajos de envío.
+  -- La Edge lo marca CONCILIACION, nunca reintenta WhatsApp.
+  RAISE EXCEPTION 'v2_24_atomic_publication_failed';
+ END IF;
  RETURN jsonb_build_object('state',v_published->>'state',
   'request_id',v_request.id);
 END $v2_release$;
