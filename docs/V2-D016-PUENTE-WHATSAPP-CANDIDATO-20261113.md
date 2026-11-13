@@ -29,3 +29,18 @@
 - [ ] Preview protegido SSO, 1 comprador y 2 proveedores, archivos auténticos, informe individual/final y cierre calendario; publicación solo bajo orden **«Publicalo»** limitada a PILOTO.
 
 **Reporte de etapa:** creado en rama separada apilada sobre #836, *sin commit a la rama publicada*, sin despliegue, SMS, WhatsApp, usuario Auth, migración aplicada ni registro público habilitado. Continuidad canónica: [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794).
+
+## Incremento siguiente: sesión privada del servidor SIN EMAIL / SMS (13/11/2026)
+
+Se implementó un camino alternativo al magiclink/GoTrue que evita **incluso el alias de correo interno** y la administración de cuentas Auth para compradores:
+
+- `src/server/v2-d016-sesion-privada.ts`: después del POST del fragmento de WhatsApp, emite **una cookie `__Host-cotironda-v2`**, `Secure; HttpOnly; SameSite=Lax; Path=/`, duración máxima de 8 h. El navegador **no recibe JSON con sesión o token**. El secreto de la cookie es independiente del ticket de acceso y solo se guarda su HMAC SHA-256 en BD.
+- Se añadió al candidato SQL `v2_d016_browser_sessions` (RLS, solo service_role) y una RPC **`claim_session_private`** que **consume el ticket e inserta la sesión en UNA operación transaccional**; si falla la inserción, no se consume el ticket. Un segundo canje no crea sesión.
+- La RPC `session_context_private` revalida en cada lectura **ronda exacta, comprador, consentimiento, canal Whapi probado, contacto no duplicado, revocación y caducidad**. `logout_private` invalida inmediatamente la sesión.
+- `tests/unit/v2-d016-sesion-privada.test.mjs` y el fixture PostgreSQL 17 se ampliaron para probar cookie, origen, tokens alterados, ausencia de cookie en rechazo, doble canje, sesión cruzada, baja, logout, vencimiento y ACL.
+
+**Frontera aún pendiente:** las rutas de respuestas y descargas del portal usan JWT GoTrue y las RPC antiguas exigen `phone_confirmed_at`. Aún **NO aceptan la nueva cookie**, NO hay ruta Next activada ni se mostró presupuesto. **No saltar esos controles**: habrá que incorporar el contexto de sesión privada a las RPC de respondedores/originales mediante contratos nuevos o guard seguro, manteniendo en cada llamada los checks comerciales originales y la auditoría SHA.
+
+Se conserva `v2-d016-sesion-auth.ts` y `v2-d016-supabase-gotrue.ts` como alternativa probada con mocks; **no se deben activar ambos accesos simultáneamente ni enviar magiclinks a cuentas ficticias**. La vía preferida para el piloto ahora es sesión privada respaldada por PostgreSQL, **solo si la auditoría de autenticación/autorización por empresa supera PG17 y navegador**.
+
+**Estado:** candidato solo en PR #837, tests CI específicos y generales a verificar sobre el último SHA. NO despliegue, SQL aplicado, usuario Auth, correo, SMS ni WhatsApp real.
