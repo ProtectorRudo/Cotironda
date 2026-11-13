@@ -2,7 +2,7 @@
  * No usa service_role, no env privadas, no números ni mensajes WhatsApp.
  * Su éxito SOLO indica configuración SMS anunciada, nunca SMS entregado.
  */
-import {configuracionSmsInicialV2Lista}
+import {configuracionSmsInicialV2Lista,inspeccionarConfiguracionSmsInicialV2}
  from './v2-07-primer-comprador-auth.ts';
 
 const PILOT='https://ilggkalaafhtiysyzlmg.supabase.co';
@@ -13,15 +13,25 @@ export type ResultadoAuthPublicaV2=Readonly<{
  serviceAccessible:boolean;
  signupClosed:boolean;
  phoneConfigured:boolean;
+ phoneEnabled:boolean;
+ autoConfirmDisabled:boolean;
+ smsProviderReady:boolean;
  smsConfirmedByUser:false;
  writesPerformed:false;
 }>;
 function status(state:ResultadoAuthPublicaV2['state'],code:string,
- accessible=false,signupClosed=false,phoneConfigured=false
+ flags:Partial<ResultadoAuthPublicaV2>={}
 ):ResultadoAuthPublicaV2{
- return Object.freeze({state,code,serviceAccessible:accessible,
-  signupClosed,phoneConfigured,smsConfirmedByUser:false,
-  writesPerformed:false});
+ return Object.freeze({
+  state,code,
+  serviceAccessible:flags.serviceAccessible===true,
+  signupClosed:flags.signupClosed===true,
+  phoneConfigured:flags.phoneConfigured===true,
+  phoneEnabled:flags.phoneEnabled===true,
+  autoConfirmDisabled:flags.autoConfirmDisabled===true,
+  smsProviderReady:flags.smsProviderReady===true,
+  smsConfirmedByUser:false,writesPerformed:false
+ });
 }
 export async function comprobarAuthPublicaPilotoV2(
  url:string,publishableKey:string,fetchImpl:typeof fetch=fetch
@@ -49,13 +59,15 @@ export async function comprobarAuthPublicaPilotoV2(
   if(!cfg||typeof cfg!=='object'||Array.isArray(cfg))
    return status('BLOCKED','auth_settings_invalido');
   const s=cfg as Record<string,unknown>;
-  const signupClosed=s.disable_signup===true;
+  const checks=inspeccionarConfiguracionSmsInicialV2(cfg);
+  // La verificación compuesta de alta usa el mismo contrato V2-07.
+  // Estos campos solo identifican ajustes faltantes, NO prueban SMS.
   const phoneConfigured=configuracionSmsInicialV2Lista(cfg);
+  const flags={serviceAccessible:true,...checks,phoneConfigured};
   if(!phoneConfigured)
-   return status('BLOCKED','sms_o_registro_go_true_no_seguros',
-    true,signupClosed,false);
+   return status('BLOCKED','sms_o_registro_go_true_no_seguros',flags);
   return status('SETTINGS_READY_REQUIRES_REAL_SMS',
-   'configuracion_auth_publica_compatible',true,true,true);
+   'configuracion_auth_publica_compatible',flags);
  }catch{
   return status('BLOCKED','auth_settings_no_disponible');
  }
