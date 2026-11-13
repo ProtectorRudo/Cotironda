@@ -53,18 +53,9 @@ export async function despacharSolicitudCentralMvp223(args:{
  rpc:Rpc;
  authorizeChatHmac:(recipient:string,expectedHash:string)=>Promise<boolean>;
  createPdf:(snapshot:DocumentoMvp223)=>Uint8Array;
- sendWhapi:(recipient:string,pdf:Uint8Array,caption?:string)=>Promise<Readonly<{
+ sendWhapi:(recipient:string,pdf:Uint8Array)=>Promise<Readonly<{
   accepted:boolean;messageId:string|null
  }>>;
- // D016 P0 opcional: registro prospectivo de evidencia, NO autorización.
- // Pares de callbacks: si uno falta, bloqueo ANTES de reclamar una ronda.
- prepareOriginalNotice?:(context:Readonly<{
-  requestId:string;supplierKey:string;chatHmac:string;
-  leaseToken:string;recipient:string;
- }>)=>Promise<string|null>;
- confirmOriginalNotice?:(context:Readonly<{
-  requestId:string;supplierKey:string;messageId:string;
- }>)=>Promise<boolean>;
  maxJobs?:1|2;
  // MVP314: only the private batch worker may use the budget-guarded SQL claim.
  claimRpcName?:'cotironda_piloto_ia_claim_mvp314';
@@ -75,12 +66,7 @@ export async function despacharSolicitudCentralMvp223(args:{
  if(!args?.enabled)return result('inactivo',0,0,0);
  if(!UUID.test(args.requestId)||!args.recipients||
     typeof args.rpc!=='function'||typeof args.authorizeChatHmac!=='function'||
-    typeof args.createPdf!=='function'||typeof args.sendWhapi!=='function'||
-    Boolean(args.prepareOriginalNotice)!==Boolean(args.confirmOriginalNotice)||
-    (args.prepareOriginalNotice!==undefined&&
-     typeof args.prepareOriginalNotice!=='function')||
-    (args.confirmOriginalNotice!==undefined&&
-     typeof args.confirmOriginalNotice!=='function'))
+    typeof args.createPdf!=='function'||typeof args.sendWhapi!=='function')
   return result('requiere_conciliacion',0,0,0);
  let accepted=0,uncertain=0,claimed=0;
  const count=args.maxJobs??2;
@@ -114,7 +100,7 @@ export async function despacharSolicitudCentralMvp223(args:{
    if(fin.error!==null&&fin.error!==undefined||fin.data!==true)
     throw Error('finish_sql_not_confirmed');
   };
-  let valid=false,messageId:string|null=null,noticePrepared=false;
+  let valid=false,messageId:string|null=null;
   try{
    const lookup={requestId:args.requestId,supplierKey:supplier,
     leaseToken:lease,chatHmac:claim.chat_hmac as string};
@@ -137,22 +123,7 @@ export async function despacharSolicitudCentralMvp223(args:{
    // SQL lookup immediately before HTTP prevents stale authorization.
    if(args.resolveRecipient&&await args.resolveRecipient(lookup)!==recipient)
     throw Error('recipient_changed_before_send');
-   // D016: mismo documento y caption, una sola llamada Whapi. El
-   // helper privado debe registrar versión/SHA antes del POST remoto.
-   // Un error (o caption largo) BLOQUEA el envío y termina el lease
-   // incierto; nunca se omite el aviso ni se manda un segundo WhatsApp.
-   let caption:string|undefined;
-   if(args.prepareOriginalNotice){
-    const prepared=await args.prepareOriginalNotice({
-     requestId:args.requestId,supplierKey:supplier,
-     chatHmac:claim.chat_hmac as string,leaseToken:lease,recipient
-    });
-    if(typeof prepared!=='string'||!txt(prepared,1024))
-     throw Error('d016_notice_not_reserved');
-    noticePrepared=true;
-    caption=prepared;
-   }
-   const sent=await args.sendWhapi(recipient,pdf,caption);
+   const sent=await args.sendWhapi(recipient,pdf);
    // An HTTP 2xx or sent=true WITHOUT a verifiable Whapi ID cannot
    // support quoted supplier replies. Treat it as UNCERTAIN, never retry.
    messageId=typeof sent.messageId==='string'&&
@@ -161,18 +132,6 @@ export async function despacharSolicitudCentralMvp223(args:{
   }catch{/* Bloqueo, timeout o estado remoto incierto: NUNCA reintentar. */}
   try{await finalize(valid?'api_accepted':'uncertain',messageId)}
   catch{return result('requiere_conciliacion',claimed,accepted,uncertain)}
-  // Sólo después del COMMIT del despacho aceptado por MVP222 se
-  // vincula el ID Whapi al ledger D016. Si falla, no se reenvía.
-  if(valid&&noticePrepared){
-   let evidenceConfirmed=false;
-   try{
-    evidenceConfirmed=await args.confirmOriginalNotice!({
-     requestId:args.requestId,supplierKey:supplier,messageId:messageId!
-    });
-   }catch{/* respuesta remota incierta: revisión manual */}
-   if(!evidenceConfirmed)
-    return result('requiere_conciliacion',claimed,accepted,uncertain);
-  }
   if(valid)accepted++;else uncertain++;
  }
  return result('terminado',claimed,accepted,uncertain);
