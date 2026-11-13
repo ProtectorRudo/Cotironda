@@ -379,7 +379,7 @@ BEGIN
  IF v_buyer IS NULL THEN RETURN jsonb_build_object('state','denied');END IF;
  -- El número y el pedido NO se aceptan desde el navegador.
  -- Para recovery debe existir UNA SOLA ronda activa/autorizada.
- SELECT count(*),min(r.id) INTO v_count,v_request
+ SELECT count(*),(array_agg(r.id))[1] INTO v_count,v_request
  FROM cotironda_piloto_privado.requests r
  JOIN cotironda_piloto_privado.v2_original_share_policy policy
   ON policy.singleton=true AND policy.enabled=true
