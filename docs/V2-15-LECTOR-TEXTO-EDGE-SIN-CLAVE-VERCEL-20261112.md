@@ -47,3 +47,25 @@ Se incorporan:
 - [ ] Probar presupuesto real de texto con Auth comprador y consentimiento prospectivo; descarga y análisis, PDF/Excel y cierre de ronda de punta a punta.
 
 **Aprobación:** código y CI no autorizan despliegue. No declarar el circuito real funcionando hasta la prueba E2E.
+
+## Complemento de publicación segura — preflight actualizado
+
+El lector V2-15 agregó dependencias que el guard V2-06 previo no conocía.
+`scripts/piloto/v2-release-readiness.mjs` ahora ofrece **tres fases**:
+
+- `primer_original`: un archivo PDF/Excel con Auth comprador y permisos V2, sin exigir innecesariamente el lector textual.
+- `primer_texto`: además del anterior, exige que la RPC `cotironda_piloto_v2_record_text_download` esté instalada y la Edge textual figure `ACTIVE`, `verify_jwt=true`, secreto segregado sincronizado entre Supabase y Vercel, prueba real del gateway JWT y denegación de llamadas sin secreto, texto recibido con comprobación byte/SHA y **ninguna variable AES en Vercel**.
+- `piloto_completo`: mantiene plazos, reparto por catálogo, ambos proveedores y cierre; agrega todos los controles de texto anteriores.
+
+Los resultados de `primer_texto` y `piloto_completo` deben permanecer **BLOCKED** hasta obtener una observación EN VIVO de cada control. Los snapshots archivados antes de V2-15 no son evidencia de que la Edge nueva esté publicada. Nunca se incorporan valores de secretos al JSON.
+
+La vía anterior de Git sigue válida **solo si el proyecto DEV está conectado al repositorio correcto**. Existe una alternativa condicionada para **una futura Preview directa por SHA**: el preflight reconoce `deploy_source_type='github_sha_direct'` únicamente si se verifica desde el despliegue REAL el proyecto Vercel `prj_d13rTHxJADvP2K9PcrM0CJQD9Zok`, equipo `team_CE76WzHKVPy9e28LXIw2r3J4`, repositorio `ProtectorRudo/Cotironda`, directorio `apps/portal`, SHA exacto igual al aprobado, estado `READY` y objetivo `preview`. **Esto no demuestra que Vercel permita ese despliegue** ni autoriza ejecutarlo sin `Publicalo`. La cuota 402 previa y la ausencia de variables siguen siendo bloqueos reales.
+
+Comandos (cero conexiones/escrituras; lectura de snapshots no sensibles ya generados):
+
+```bash
+node scripts/piloto/v2-release-readiness.mjs scripts/piloto/observaciones/v2-readiness-piloto-postrelease-20261112.json primer_texto
+node scripts/piloto/v2-release-readiness.mjs scripts/piloto/observaciones/v2-readiness-piloto-postrelease-20261112.json piloto_completo
+```
+
+Por diseño ambos deben terminar `BLOCKED` sobre la observación histórica. Una nueva observación debe obtenerse mediante conectores en modo lectura y contrastarse con el entorno real; nunca inventar `preview_source_verified` ni `text_edge_gateway_jwt_verified`.
