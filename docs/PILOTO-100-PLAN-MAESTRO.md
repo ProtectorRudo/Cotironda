@@ -1,6 +1,6 @@
 # COTIRONDA V2 — PLAN MAESTRO Y CHECKLIST
 
-**Dirección V2 aprobada el 12/11/2026. PUBLICACIÓN PARCIAL en PILOTO verificada: 9 funciones SQL/4 tablas privadas + Edge PDF v1; política OFF. Portal NO desplegado (Vercel 402 y Git sin conectar), 0 Auth, 0 consentimientos V2, sin E2E.** [Registro del release](V2-RELEASE-PILOTO-PARCIAL-20261112.md).
+**ESTADO VIGENTE AL 13/11/2026:** V2 aprobada + [D016 acceso con enlace WhatsApp, sin SMS](V2-D016-ACCESO-WHATSAPP-SIN-SMS-20261113.md). Ya existe Preview Vercel SSO READY en SHA `06e1700` e infraestructura SQL V2 parcialmente instalada con políticas OFF; `auth.users=0`, 0 consentimientos V2 de originales y **sin E2E**. El código OTP SMS de PR #836 no implementa todavía D016. La falla histórica 402/Git del 12/11 está superada; la documentación inferior de ese día se conserva como antecedentes. [Registro inicial](V2-RELEASE-PILOTO-PARCIAL-20261112.md).
 
 **ORDEN OBLIGATORIO DE LECTURA EN TODAS LAS CONVERSACIONES:** [Contrato V2](COTIRONDA-V2-CONTRATO.md) → **este plan** → [Estado y única próxima tarea](PILOTO-100-ESTADO.md) → [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794). **Estas páginas son las VIGENTES**. [Plan histórico íntegro](historico/2026-11-12-plan-maestro-pre-v2.md) (81 KB), [estado histórico](historico/2026-11-12-estado-pre-v2.md) e [issue histórico](historico/2026-11-12-issue-794-pre-v2.md) conservan evidencia pero NO deben usarse como guía de producto.
 
