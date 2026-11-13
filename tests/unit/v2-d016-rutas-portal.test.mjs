@@ -14,9 +14,11 @@ test('D016: la pantalla de ingreso no muestra SMS ni credenciales en URL query',
  assert.match(page,/if\(process\.env\.VERCEL_ENV!=='preview'\)notFound\(\)/u);
  assert.match(page,/<AccesoWhatsappD016\/>/u);
  // Preview OFF no llama a las APIs ni renderiza el componente de canje.
- const onlyActive=page.slice(page.indexOf('return <main',page.indexOf('if(!acceso)')));
- assert.match(onlyActive,/<AccesoWhatsappD016\/>/u);
- assert.doesNotMatch(page.slice(page.indexOf('if(!acceso)'),page.indexOf('return <main',page.indexOf('if(!acceso)'))),/<AccesoWhatsappD016\/>/u);
+ const fallbackStart=page.indexOf('return <main',page.indexOf('if(!acceso)'));
+ const privateStart=page.lastIndexOf('return <main');
+ assert.ok(fallbackStart>=0&&privateStart>fallbackStart);
+ assert.doesNotMatch(page.slice(fallbackStart,privateStart),/<AccesoWhatsappD016\/>/u);
+ assert.match(page.slice(privateStart),/<AccesoWhatsappD016\/>/u);
  assert.match(client,/window\.location\.hash\.slice\(1\)/u);
  assert.match(client,/history\.replaceState/u);
  assert.match(client,/method:'POST'/u);
