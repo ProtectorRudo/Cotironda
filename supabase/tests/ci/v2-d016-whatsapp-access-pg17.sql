@@ -126,4 +126,87 @@ BEGIN
  THEN RAISE EXCEPTION 'ticket_acl_exposed';END IF;
  RAISE NOTICE 'V2_D016_PG17_ROLLBACK_PASS';
 END $check$;
+-- D016 sesión web propia: NO necesita auth.users/email/SMS ni nuevos JWT.
+DO $private_session$
+DECLARE got jsonb;before_count int;
+BEGIN
+ DELETE FROM cotironda_piloto_privado.participant_channels_mvp109
+ WHERE participant_key='buyer_b';
+ DELETE FROM cotironda_piloto_privado.participants WHERE key='buyer_b';
+ IF public.cotironda_piloto_v2_d016_issue_ticket_private(
+  repeat('7',64),'buyer_a','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+  repeat('1',64)) IS DISTINCT FROM true THEN
+  RAISE EXCEPTION 'session_ticket_not_issued';END IF;
+ IF public.cotironda_piloto_v2_d016_claim_session_private(
+  repeat('7',64),repeat('8',64)) IS DISTINCT FROM true THEN
+  RAISE EXCEPTION 'atomic_session_not_created';END IF;
+ got:=public.cotironda_piloto_v2_d016_session_context_private(
+  repeat('8',64),'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+ IF got->>'state'<>'authorized_buyer_whatsapp_session'
+ OR got->>'buyerKey'<>'buyer_a' THEN
+  RAISE EXCEPTION 'session_context_missing';END IF;
+ IF public.cotironda_piloto_v2_d016_session_context_private(
+  repeat('8',64),'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb') IS NOT NULL
+ THEN RAISE EXCEPTION 'session_cross_round';END IF;
+ IF public.cotironda_piloto_v2_d016_claim_session_private(
+  repeat('7',64),repeat('a',64)) IS DISTINCT FROM false
+ THEN RAISE EXCEPTION 'ticket_replayed_for_second_session';END IF;
+ SELECT count(*) INTO before_count
+ FROM cotironda_piloto_privado.v2_d016_browser_sessions;
+ IF before_count<>1 THEN RAISE EXCEPTION 'unexpected_session_count';END IF;
+
+ -- INSERT conflict must undo ticket claim so a retry can work.
+ PERFORM public.cotironda_piloto_v2_d016_issue_ticket_private(
+  repeat('9',64),'buyer_a','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+  repeat('1',64));
+ IF public.cotironda_piloto_v2_d016_claim_session_private(
+  repeat('9',64),repeat('8',64)) IS DISTINCT FROM false
+ THEN RAISE EXCEPTION 'duplicate_session_cookie_allowed';END IF;
+ IF public.cotironda_piloto_v2_d016_claim_session_private(
+  repeat('9',64),repeat('a',64)) IS DISTINCT FROM true
+ THEN RAISE EXCEPTION 'duplicate_rollback_consumed_ticket';END IF;
+
+ -- Baja del comprador: sesión existente deja de autorizar al instante.
+ UPDATE cotironda_piloto_privado.participants
+ SET opted_out_at=clock_timestamp() WHERE key='buyer_a';
+ IF public.cotironda_piloto_v2_d016_session_context_private(
+  repeat('a',64),'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
+ IS NOT NULL THEN RAISE EXCEPTION 'optout_session_alive';END IF;
+ UPDATE cotironda_piloto_privado.participants
+ SET opted_out_at=NULL WHERE key='buyer_a';
+
+ -- Logout obligatorio contra la misma huella de cookie.
+ IF public.cotironda_piloto_v2_d016_logout_private(repeat('a',64))
+ IS DISTINCT FROM true THEN RAISE EXCEPTION 'logout_not_revoked';END IF;
+ IF public.cotironda_piloto_v2_d016_session_context_private(
+  repeat('a',64),'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
+ IS NOT NULL THEN RAISE EXCEPTION 'logout_still_authorized';END IF;
+ IF public.cotironda_piloto_v2_d016_logout_private(repeat('a',64))
+ IS DISTINCT FROM false THEN RAISE EXCEPTION 'logout_replayed';END IF;
+
+ -- Vencimiento de sesión: no basta con presentar cookie guardada.
+ UPDATE cotironda_piloto_privado.v2_d016_browser_sessions
+ SET expires_at=clock_timestamp()-interval '1 second',
+     created_at=clock_timestamp()-interval '3 hours'
+ WHERE sesion_hmac=repeat('8',64);
+ IF public.cotironda_piloto_v2_d016_session_context_private(
+  repeat('8',64),'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
+ IS NOT NULL THEN RAISE EXCEPTION 'expired_session_alive';END IF;
+ IF public.cotironda_piloto_v2_d016_session_context_private(
+  repeat('f',64),'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
+ IS NOT NULL THEN RAISE EXCEPTION 'unknown_cookie_authorized';END IF;
+
+ IF has_table_privilege('anon',
+  'cotironda_piloto_privado.v2_d016_browser_sessions','SELECT')
+ OR has_table_privilege('authenticated',
+  'cotironda_piloto_privado.v2_d016_browser_sessions','SELECT')
+ OR has_function_privilege('anon',
+  'public.cotironda_piloto_v2_d016_claim_session_private(text,text)','EXECUTE')
+ OR has_function_privilege('authenticated',
+  'public.cotironda_piloto_v2_d016_session_context_private(text,uuid)','EXECUTE')
+ OR NOT has_function_privilege('service_role',
+  'public.cotironda_piloto_v2_d016_session_context_private(text,uuid)','EXECUTE')
+ THEN RAISE EXCEPTION 'web_session_acl_exposed';END IF;
+ RAISE NOTICE 'V2_D016_BROWSER_SESSION_PG17_PASS';
+END $private_session$;
 ROLLBACK;
