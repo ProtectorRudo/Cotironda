@@ -4,6 +4,16 @@
 
 **ORDEN OBLIGATORIO DE LECTURA EN TODAS LAS CONVERSACIONES:** [Contrato V2](COTIRONDA-V2-CONTRATO.md) → **este plan** → [Estado y única próxima tarea](PILOTO-100-ESTADO.md) → [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794). **Estas páginas son las VIGENTES**. [Plan histórico íntegro](historico/2026-11-12-plan-maestro-pre-v2.md) (81 KB), [estado histórico](historico/2026-11-12-estado-pre-v2.md) e [issue histórico](historico/2026-11-12-issue-794-pre-v2.md) conservan evidencia pero NO deben usarse como guía de producto.
 
+## Actualización del candidato D016 — sesión privada sin SMS, 13/11/2026
+
+- [x] Núcleo de enlace WhatsApp con token HMAC y canje único; PR #837 y PostgreSQL 17 de prueba.
+- [x] **Alternativa sin correo ni SMS en desarrollo**: cookie HttpOnly Secure SameSite=Lax, sesión privada persistida solo como HMAC en tabla RLS service_role; el canje de ticket y creación de sesión se hacen en una operación transaccional, revocable y con caducidad de 8 horas. Pruebas sintéticas HTTP/Node y PG17 de caducidad, logout, comprador/ronda ajena y permisos. **No instalada.**
+- [ ] **BLOQUEO SIGUIENTE**: conectar las rutas Next de respuestas y descargas a la nueva sesión privada y adaptar las RPC de respondedores/originales sin quitar aislamiento por empresa, consentimiento, origen y SHA. Verificar E2E real desde WhatsApp hasta navegador; no basta la cookie sola.
+- [ ] No activar la alternativa de Supabase `generateLink` con alias de correo junto con la sesión privada: mantener **un solo método de acceso aprobado** después de las pruebas de integración.
+- [ ] Solo bajo «Publicalo» se habilita Preview piloto y prueba de comprador real; Whapi v76/producción intactos.
+
+**Evidencia:** [PR #837](https://github.com/ProtectorRudo/Cotironda/pull/837), código en rama `feat/d016-whatsapp-link-safe-pilot-20261113`. 7/7 workflows SUCCESS en SHA `f860e997` para la versión con sesión/candidate SQL/Node; el HEAD documental posterior requiere revalidación. No anunciar piloto completo.
+
 ## Siguiente trabajo único: D016 WhatsApp → sesión privada (13/11/2026)
 
 **Dirección aprobada:** [D016 — acceso WhatsApp de un toque, sin SMS](V2-D016-ACCESO-WHATSAPP-SIN-SMS-20261113.md). Abandona como requisito del comprador las tareas antiguas «habilitar proveedor SMS / Twilio / configurar Phone / verificar SMS». **No** abandona verificación de identidad, sesiones válidas ni cierre seguro de registro GoTrue.
