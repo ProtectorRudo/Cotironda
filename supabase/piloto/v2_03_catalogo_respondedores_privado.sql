@@ -213,7 +213,7 @@ BEGIN
    )
    AND link.status='awaiting_semantic_review'
    AND link.source_sha256 ~ '^[a-f0-9]{64}$'
-   AND a.content_sha256 ~ '^[a-f0-9]{64}$'
+   AND (link.kind='text' OR a.content_sha256 ~ '^[a-f0-9]{64}$')
    AND source.received_at>=r.created_at
    AND source.received_at<=r.closes_at
    AND source.received_at<=v_now
