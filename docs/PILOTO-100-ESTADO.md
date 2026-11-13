@@ -3,6 +3,12 @@
 **Última actualización de documentación: 13/11/2026 (Argentina).**
 **ESTADO VIGENTE:** **D016 APROBADA** — ingreso del comprador por [enlace WhatsApp de un toque sin SMS](V2-D016-ACCESO-WHATSAPP-SIN-SMS-20261113.md), **NO IMPLEMENTADO**. Ya hay Vercel Preview SSO READY (`cotironda-portal-dev`, despliegue `dpl_9d7DghjFZpP9Lo8hW4JtouUPiZnh`, SHA `06e1700`). El código vigente del portal usa SMS OTP anterior; el PR #836 tiene 12/12 CI en `8fdf2d0`, SIN desplegar ese commit. Supabase PILOTO: `auth.users=0`, políticas V2 de originales y auto-release OFF, sin consentimientos V2 ni E2E. Whapi v76 histórico sigue intacto. **No exigir SMS/Twilio para el nuevo flujo.** Los párrafos sobre Vercel 402/Git desconectado que aparecen más abajo corresponden a cortes históricos del 12/11 y **no son bloqueos vigentes**. [Acta inicial](V2-RELEASE-PILOTO-PARCIAL-20261112.md).
 
+## D016 texto original por WhatsApp — 13/11/2026 (candidato, NO publicado)
+
+La misma descarga privada por cookie ahora soporta **originales PDF/Excel/Word/imagen/CSV y presupuestos escritos como texto de WhatsApp**. El texto cifrado AES-GCM se desencripta **solo en Supabase Edge D016** usando clave ya existente allí. Next nunca necesita AES: invoca Edge con dos secretos propios + HMAC de sesión calculado en servidor. Edge revalida sesión y fuente dos veces, SHA y UTF-8; Next repite controles y exige auditoría SQL `record_text_download_private` antes de liberar `.txt`. V2-15 Auth/JWT y el webhook v76 histórico permanecen intactos.
+
+Pruebas Node/Deno y PG17 ROLLBACK incorporadas al PR #837. **Estado sigue sin desplegar** y CI del HEAD documental debe verificarse antes de declarar PASS. No hay originales reales descargados ni SMS/WhatsApp enviados. Aún faltan WhatsApp real, análisis individual automático, cierre y piloto completo.
+
 ## Incremento D016 sender WhatsApp — 13/11/2026 (candidato, NO publicado)
 
 En [PR #837](https://github.com/ProtectorRudo/Cotironda/pull/837) se desarrollaron el emisor WebCrypto HMAC, el ledger `v2_d016_whapi_link_deliveries` privado y las RPC de preparación/finalización con cuota, idempotencia y rechazo de reintentos inciertos. El webhook histórico quedó **inmutable** y D016 se agrega mediante `scripts/piloto/v2-d016-whapi-overlay.mjs`, un candidato temporal para ejecutar pruebas Deno, nunca edición directa al `index.ts` histórico.
