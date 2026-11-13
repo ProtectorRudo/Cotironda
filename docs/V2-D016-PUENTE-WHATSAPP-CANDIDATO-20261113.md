@@ -44,3 +44,26 @@ Se implementó un camino alternativo al magiclink/GoTrue que evita **incluso el 
 Se conserva `v2-d016-sesion-auth.ts` y `v2-d016-supabase-gotrue.ts` como alternativa probada con mocks; **no se deben activar ambos accesos simultáneamente ni enviar magiclinks a cuentas ficticias**. La vía preferida para el piloto ahora es sesión privada respaldada por PostgreSQL, **solo si la auditoría de autenticación/autorización por empresa supera PG17 y navegador**.
 
 **Estado:** candidato solo en PR #837, tests CI específicos y generales a verificar sobre el último SHA. NO despliegue, SQL aplicado, usuario Auth, correo, SMS ni WhatsApp real.
+
+## Integración de portal y originales — incremento del 13/11/2026
+
+**NUEVO CÓDIGO en PR #837, candidato sin despliegue ni E2E:**
+
+- `apps/portal/app/piloto/v2/acceso`: ingreso de un toque con enlace de Whapi `#d016=<token>&ronda=<uuid>`. El navegador borra el fragmento con `history.replaceState`, efectúa POST same-origin de canje y redirige al pedido protegido. El GET de previsualización no consume. Manejo de reejecución de `useEffect` (React StrictMode) sin canjear dos veces.
+- `apps/portal/app/api/piloto/v2/acceso/canjear`: llama solo a `claim_session_private`, entrega cookie `__Host-cotironda-v2` protegida y sin JSON con secretos.
+- `apps/portal/app/piloto/v2/rondas/[rondaId]/whatsapp` y `.../respuestas-whatsapp`: lista únicamente comercios que respondieron y análisis guardados mediante la sesión privada, nunca JWT del teléfono; refresca en pestaña visible, no revela invitados. El botón de original envía cookie del mismo origen.
+- `apps/portal/app/api/piloto/v2/rondas/[rondaId]/originales-whatsapp/[documentoId]`: descarga aislada de PDF/Excel/Word/imagen/CSV. `src/server/v2-d016-descarga-privada.ts` valida cookie/empresa/ronda → fuente autorizada con proveedor y consentimiento → bytes privados exactos → tamaño y SHA256 → sesión y fuente nuevamente → auditoría SQL obligatoria **ANTES** de responder bytes. No Signed URL ni acceso a bucket público.
+- `apps/portal/app/api/piloto/v2/acceso/salir`: logout por POST same-origin con verificación de Origin/Sec-Fetch-Site, revocación SQL y borrado de cookie. La interfaz ofrece **Cerrar sesión**.
+- `supabase/piloto/v2_d016_respuestas_y_originales_CANDIDATE.sql`: tres RPC nuevas creadas a partir de los SQL V2 existentes, reusando sus joins de recepción, archivos SHA, anuncios y consentimientos prospectivos sin la vieja exigencia de SMS; cambia solo la puerta de identidad por `session_context_private`. Audit trail D016 propio sobre `session_hmac`, servicio exclusivamente `service_role`. **NO sustituye las RPC históricas**.
+- `supabase/tests/fixtures/v2-d016-response-checks.sql`: comparaciones PostgreSQL 17 contra mismo catálogo y fuente original de la ruta Auth histórica, denegación de ronda ajena y revocación, auditoría y RLS/ACL. Se ejecuta dentro de **ROLLBACK** sintético.
+- La ruta de ingreso SMS anterior se deshabilita cuando `COTIRONDA_D016_ENABLED=true` para evitar que ambos modos queden expuestos simultáneamente.
+
+**Bloqueos todavía pendientes, no ocultar:**
+
+1. El envío del enlace desde el webhook Whapi v76 **no está conectado en el entorno real**; el sender del núcleo es aún un puerto protegido que requiere integración y prueba de entrega, deduplicación y presupuesto.
+2. **Textos originales cifrados**: el lector Edge anterior exige JWT GoTrue y no debe recibir un token falso; la ruta D016 no descarga texto hasta tener lector compatible que revalide sesión y SHA. El comprador ve una nota clara, no un enlace que exponga la fuente.
+3. La IA de análisis individual se muestra cuando ya está lista en base; la generación o reintento automático por esta nueva sesión necesita integrar un trabajador autenticado. El informe final comparativo y cron de dos días hábiles siguen por validar.
+4. **Sin publicación ni prueba real comprador + 2 proveedores.** Los flags comerciales siguen OFF; los scripts SQL son candidatos; PR draft; no mensajes WhatsApp, SMS, email ni usuarios Auth.
+5. Verificar CI exacta del HEAD actualizado antes de declarar el avance aprobado. Un workflow que pasa no reemplaza navegador real ni auditoría de permisos.
+
+**Continuidad inmediata:** resolver fallos de CI, probar el portal íntegro en navegador/Preview y el sender Whapi, proteger lectura de texto y análisis; recién activar servicios con **«Publicalo»** limitado a PILOTO.
