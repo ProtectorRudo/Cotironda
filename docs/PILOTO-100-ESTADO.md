@@ -1,5 +1,16 @@
 # COTIRONDA V2 — ESTADO REAL Y RELEVO ENTRE CONVERSACIONES
 
+### RELEVO ACTUAL — 13/11/2026 · calendario legal 2026 en código (NO PUBLICADO)
+
+El cuello de botella priorizado es el calendario hábil de La Plata. Verificado **en Supabase SOLO LECTURA**: `cotironda_piloto_privado.v2_business_calendar` y `v2_business_holidays` están **vacíos**; ninguna aprobación `approved_at`. El D016 exige 2 días hábiles y cierre **18:00 Argentina**.
+
+En [PR #837](https://github.com/ProtectorRudo/Cotironda/pull/837) está el nuevo `v2_d016_calendario_la_plata_2026_CANDIDATE.sql`: **18 feriados 2026 con fuente oficial**, incluido el feriado especial PBA **11/11** y Soberanía **lunes 23/11**, con localidad `la plata`, versión `lp_v2_r1` y **`approved_at=NULL`**; excluye el **19/11 La Plata optativo comercial**, el día no laborable turístico **7/12** y otros días optativos. Pruebas sintéticas PostgreSQL17 ROLLBACK; verificar HEAD CI actualizado antes de declarar PASS.
+
+**No se creó ninguna fila ni se aprobaron feriados en el piloto.** Los datos del año **2027 tampoco están preparados ni aprobados**: no crear ni cerrar rondas que crucen año hasta aprobación de calendario correcto. La decisión de contar feriados optativos como hábiles es comercial y exige aprobación.
+
+Se mantienen los demás bloqueos (consentimientos V2 específicos para originales =0, políticas OFF, RPC D016 no instaladas, Edge/Preview no publicados, cron SQL OFF, worker GitHub OFF, sin E2E). **Ningún WhatsApp emitido, Vercel/Supabase reales intactos**. [Detalle y fuentes](https://github.com/ProtectorRudo/Cotironda/blob/feat/d016-whatsapp-link-safe-pilot-20261113/docs/V2-D016-CALENDARIO-LA-PLATA-2026-CANDIDATO.md). Próxima tarea: corregir cualquier CI, luego bajo **`Publicalo` PILOTO** instalar y auditar con calendario y consentimientos aprobados; ensayo real arquitecto + Ailín/Nahuel sin SMS.
+
+
 ### RELEVO MÁS RECIENTE — 13/11/2026 · Solución SIN pg_net para secretos
 
 **CI final verificada:** PR #837 HEAD `2991c20ec40f01f284fa70f6cedf9666354aef93`, **8/8 GitHub Actions SUCCESS** (scheduler Github, cierre SQL-only, pruebas PostgreSQL17 sintéticas, Deno y Next). Sin despliegue ni E2E. El repositorio es público: GitHub Actions runner estándar es gratuito según su documentación de 2026; la IA/API y las demoras de cron siguen sujetas a presupuesto/monitoreo.
