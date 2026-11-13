@@ -45,3 +45,8 @@ verify_jwt = true
 # Nuevos flags OFF, sin despliegue sin «Publicalo».
 # sb_secret_* NO es JWT, por eso el gateway no hace verificación GoTrue.
 verify_jwt = false
+
+[functions.cotironda-piloto-v2-worker-d016]
+# Cron -> Supabase Edge (no navegador). Dos secretos independientes
+# y RPC exclusivas de service_role; flags OFF hasta Publicalo PILOTO.
+verify_jwt = false
