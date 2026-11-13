@@ -86,7 +86,11 @@ BEGIN
   WHERE link.request_id=p_request_id
    AND link.kind IN ('document','image')
    AND link.status='awaiting_semantic_review'
-   AND link.association IN ('quoted_whapi_id','single_active_round')
+   -- El catálogo previo ya revalidó la prueba de aviso MVP238,
+   -- SHA del texto, proveedor, ronda y adjunto; la descarga jamás
+   -- amplía permisos fuera del identificador opaco autorizado.
+   AND link.association IN (
+    'quoted_whapi_id','single_active_round','prior_supplier_preamble')
    AND NOT EXISTS (
     SELECT 1 FROM cotironda_piloto_privado.ai_supplier_unresolved_mvp237 bad
     WHERE bad.message_hmac=link.message_hmac
