@@ -12,7 +12,7 @@ test('D016 preflight es un SELECT de solo lectura, sin cambios de permisos ni da
  assert.match(active,/^WITH\s+policies\s+AS\s*\(/u);
  assert.match(active,/SELECT jsonb_build_object\(/u);
  assert.match(active,/AS preflight\s+FROM policies p/u);
- assert.match(active,/CROSS JOIN transport_security t;$/u);
+ assert.match(active,/CROSS JOIN scheduler_transport t;$/u);
  assert.equal((active.match(/;/gu)??[]).length,1);
  assert.doesNotMatch(active,/\b(?:INSERT|UPDATE|DELETE|TRUNCATE|ALTER|CREATE|DROP|REVOKE|GRANT|CALL|EXECUTE|COPY|PERFORM|SET|RESET|DO)\b/iu);
  // to_regclass() sólo consulta existencia de la vista, sin leer ninguna clave.
@@ -27,9 +27,8 @@ test('D016 preflight exige aprobaciones prospectivas, no reactiva funciones',()=
   'v2_d016_final_status_private','requests_exact_duration_check',
   'business_two_days','18:00:00',
   'politica_negocio_off','originales_off','cierre_automatico_off',
-  'cola_pgnet_expone_headers_a_roles_cliente',
-  'anon_can_read_http_queue','authenticated_can_read_http_queue',
-  'has_schema_privilege','has_table_privilege'
+  'worker_pgnet_cron_antiguo_debe_desprogramarse',
+  'worker_pgnet_en_cron_db','workflow_github_worker_en_default_branch_y_secrets'
  ])assert.ok(active.includes(term),term);
 });
 test('D016 preflight no revela secretos, identidad ni detalles de proveedores',()=>{
