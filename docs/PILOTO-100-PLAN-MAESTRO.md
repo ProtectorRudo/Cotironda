@@ -1,5 +1,15 @@
 # COTIRONDA V2 — PLAN MAESTRO Y CHECKLIST
 
+### 13/11/2026 — D016: seguridad de originales publicada en PILOTO, negocio OFF
+
+- [x] Migración `20261113232051` publicada y confirmada en Supabase `cotironda-piloto`: dos RPC de listado/fuente exigen **autorización V2 previa por proveedor + aviso Whapi D016 + respuesta idéntica/ronda/hash + ausencia de baja**. Mantener auditorías de descarga y análisis validados por fuente. [Acta](https://github.com/ProtectorRudo/Cotironda/blob/fix/d016-original-download-requires-inbox-evidence-20261113/docs/PILOTO-D016-ORIGINALES-PRUEBA-DOBLE-PUBLICADO-20261113.md), [PR #844](https://github.com/ProtectorRudo/Cotironda/pull/844) DRAFT.
+- [x] SQL PG17 sintético con rollback aprobó: sin aviso, solo aviso, PDF acreditado, texto válido, SHA adulterado, consentimiento revocado, `NO COMPARTIR`, acceso público denegado. Siete checks generales verdes en código `602165d9`; consultar último HEAD tras documentación.
+- [x] SQL real posrelease: 7 rondas intactas/1 preparada, originales **0** publicados, 2/2 RPC protegidas, flags V2 OFF/OFF/OFF, sin mensajes/sesiones/cron.
+- [ ] **P0 legal/comercial:** tabla `v2_supplier_original_consents` tiene **0 constancias en el PILOTO**. Verificar autorización efectiva en términos contractuales y cesión de datos (Ley 25.326) antes de crear constancias válidas de forma prospectiva. Nunca atribuir consentimiento por el mero envío de cotización.
+- [ ] Configurar secretos `COTIRONDA_D016_HMAC_KEY_HEX` y `COTIRONDA_PILOT_SUPABASE_SECRET_KEY` únicamente en Vercel Preview con identidad verificable del proyecto; no inventar ni exponer claves.
+- [ ] Reintento programado exacto de UI f985 solo Preview protegido, no producción. Whapi D016 aún sólo candidato generado; probar sin alterar v76 histórico. E2E comprador arquitecto + Ailín/Nahuel: PDF/Excel/Word/texto, original, guía, informe y cierre correcto.
+
+
 ### 13/11/2026 — D016: acceso privado por WhatsApp limitado a nuevas rondas (PILOTO)
 
 - [x] **Migración real `20261113230828` publicada** en `cotironda-piloto`, SQL guard con PG17, 7 rondas (1 preparada), tickets y sesiones 0, políticas V2 OFF y ACL protegida. Las cinco RPC de emisión/consumo/sesión/consulta/preparación de enlace requieren negocio V2 activo y ronda creada después de activación; aun con cookie previa no entran rondas antiguas. [Acta](https://github.com/ProtectorRudo/Cotironda/blob/fix/d016-portal-sesion-prospectiva-20261113/docs/PILOTO-D016-SESION-PROSPECTIVA-PUBLICADO-20261113.md).
