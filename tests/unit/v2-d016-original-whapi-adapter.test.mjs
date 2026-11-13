@@ -33,7 +33,7 @@ const create=(opts={})=>{
    return {data:state.leases++===0?packet:{state:'empty'},error:null};
   if(name==='cotironda_piloto_ia_pdf_snapshot_mvp222')
    return {data:snapshot,error:null};
-  if(name==='cotironda_piloto_v2_d016_reserve_original_notice_private'){
+  if(name==='cotironda_piloto_v2_d016_reserve_original_notice_lease_private'){
    state.notices.push(p);
    return {data:state.reserve,error:null};
   }
@@ -85,10 +85,11 @@ test('D016: un PDF/WhatsApp, reserva antes, ack después del finish MVP222',asyn
  assert.ok(cap.startsWith(BASE));
  assert.ok(cap.endsWith(AVISO_ORIGINALES_D016));
  assert.equal(f.state.notices.length,1);
+ assert.equal(f.state.notices[0].p_lease_token,LEASE);
  assert.equal(f.state.notices[0].p_notice_body_sha256,sha(cap));
  assert.equal(f.state.notices[0].p_notice_version,AVISO_ORIGINALES_D016_VERSION);
  const ops=f.state.calls;
- assert.ok(ops.indexOf('cotironda_piloto_v2_d016_reserve_original_notice_private')<
+ assert.ok(ops.indexOf('cotironda_piloto_v2_d016_reserve_original_notice_lease_private')<
   ops.indexOf('cotironda_piloto_ia_finish_mvp222'));
  assert.ok(ops.indexOf('cotironda_piloto_ia_finish_mvp222')<
   ops.indexOf('cotironda_piloto_v2_d016_finish_original_notice_private'));
