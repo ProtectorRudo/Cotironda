@@ -1,5 +1,19 @@
 # COTIRONDA V2 — PLAN MAESTRO Y CHECKLIST
 
+### PUBLICACIÓN REAL D016 PILOTO — 13/11/2026 · PREVIEW READY / SQL Y EDGE INSTALADOS, AÚN INACTIVO COMERCIALMENTE
+
+**Autorización ejecutada: «Publicalo» SOLO PILOTO, NO producción.**
+
+- [x] **Vercel Preview** publicado por Git source en proyecto correcto `cotironda-portal-dev`, SHA `64b8573fde5321dabaef557d2bea40c7d80bc503`, Deployment `dpl_HnXQbGifbdAienC7fZQJfexQmEdW` estado **READY**, URL <https://cotironda-portal-anhy2cgft-protector-rudo-s-projects.vercel.app>, **SSO activado**. Sin merge del PR #837 ni producción.
+- [x] **Supabase PILOTO**: dos Edge nuevas `cotironda-piloto-v2-text-reader-d016` y `cotironda-piloto-v2-worker-d016` desplegadas **ACTIVE v1**, con doble autenticación servidor y flags D016 no activados. Webhook Whapi histórico **ACTIVE v76 intacto**.
+- [x] **SQL**: 7 migraciones D016 aplicadas al proyecto `ilggkalaafhtiysyzlmg`, 22 RPC D016 servicio privado, **0 ejecutables por `anon`/`authenticated`**, 5 tablas con RLS. Se verificaron migraciones registradas.
+- [x] **Calendario La Plata 2026** cargado como candidato: `lp_v2_r1`, 18 feriados, **`approved_at=NULL`**. Marcador Vault de identidad de proyecto PILOTO registrado, sin guardar nuevas API keys.
+- [x] Pruebas de denegación: sin ofertas para worker (devuelve `[]`), ronda inexistente rechazada. **0 crons D016**, 3 políticas V2 **OFF**, 0 proveedores con consentimiento V2 específico vigente. El proyecto no envió WhatsApps ni ejecutó IA real durante esta publicación.
+- [ ] **CRÍTICO — NO DECLARAR 100%:** completar consentimientos V2 de originales genuinos, aprobación comercial/calendario (y 2027), configuración privada de secretos/flags en Vercel Preview, Supabase Edge y GitHub Actions, seguridad del SSO y ensayo completo comprador + Ailín/Nahuel. Habilitar por fases SOLO cuando todas las reglas se cumplan.
+
+[ACTA DE PUBLICACIÓN VERIFICADA](docs/PILOTO-D016-PUBLICACION-REAL-20261113.md) · [PR #837](https://github.com/ProtectorRudo/Cotironda/pull/837). **Las secciones anteriores son histórico de PREPUBLICACIÓN y donde dicen «no instalado» quedaron superadas.**
+
+
 ### 13/11/2026 — Calendario legal La Plata 2026 (CANDIDATO SIN APROBAR)
 
 - [x] Auditado el **esquema real**: `v2_business_calendar` y `v2_business_holidays` existen, pero tienen **0 filas y 0 aprobaciones**. El esquema exige localidad minúscula, revisión, fuente y aprobación opcional; FK por localidad/año.
