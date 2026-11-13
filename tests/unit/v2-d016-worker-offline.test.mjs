@@ -84,7 +84,7 @@ function fixture(){
 }
 test('D016 offline: 1 oferta autenticada → fuente → IA → finish ready, sin comprador online',async()=>{
  const f=fixture();const res=await f.run();
- assert.equal(res.status,200);
+ assert.equal(res.status,200,JSON.stringify({receipt:await res.clone().json(),sourceCalls:f.state.readCount,claimCalls:f.state.claimCount,modelCalls:f.state.modelCount,finishCalls:f.state.finishCount}));
  const payload=await res.json();
  assert.deepEqual(payload,{state:'ready',checked:1,ready:1,review:0});
  assert.deepEqual([f.state.claimCount,f.state.modelCount,f.state.finishCount],[1,1,1]);
