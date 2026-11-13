@@ -6,8 +6,8 @@ import {bearerPiloto} from '../../../src/server/originales-piloto-http-runtime.t
 import {respuestasV2Habilitadas} from '../../../src/server/v2-03-respuestas-http.ts';
 import {descargarOriginalV2,type DescargaV2Ports}
  from '../../../src/server/v2-03b-descarga-originales.ts';
-import {descifrarTextoWhatsAppV2}
- from '../../../src/server/v2-14-texto-whatsapp-cifrado.ts';
+import {leerTextoOriginalPorEdgeV2}
+ from '../../../src/server/v2-15-texto-edge-client.ts';
 
 const URL_PILOT='https://ilggkalaafhtiysyzlmg.supabase.co';
 const BUCKET='cotironda-piloto-originals';
@@ -66,8 +66,12 @@ export async function responderDescargaV2(
    const bytes=new Uint8Array(await data.arrayBuffer());
    return bytes.length===data.size?bytes:null;
   },
-  readText:async source=>descifrarTextoWhatsAppV2(
-   source,env.COTIRONDA_PILOT_AES_HEX),
+  readText:async source=>leerTextoOriginalPorEdgeV2(source,jwt,{
+   COTIRONDA_PILOT_SUPABASE_URL:env.COTIRONDA_PILOT_SUPABASE_URL,
+   COTIRONDA_PILOT_V2_TEXT_ENABLED:env.COTIRONDA_PILOT_V2_TEXT_ENABLED,
+   COTIRONDA_PILOT_V2_TEXT_SHARED_SECRET:
+    env.COTIRONDA_PILOT_V2_TEXT_SHARED_SECRET
+  }),
   auditText:async q=>{
    const {data,error}=await privateClient.rpc(
     'cotironda_piloto_v2_record_text_download',{
