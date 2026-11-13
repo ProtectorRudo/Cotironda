@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {bootstrapPrimerCompradorV2,phoneWhatsappContactSHA}
+import {readFileSync} from 'node:fs';
+import {bootstrapPrimerCompradorV2,phoneWhatsappContactSHA,
+ configuracionSmsInicialV2Lista}
  from '../../src/server/v2-07-primer-comprador-auth.ts';
 const release='c'.repeat(40);
 const options=()=>({
@@ -11,10 +13,16 @@ const options=()=>({
  activeSourceSha:release,approvedSourceSha:release
 });
 const mock=()=>{
- const calls={count:0,verify:0,create:0};
- const state={users:0,allowed:true,already:false,confirmed:false};
+ const calls={count:0,verify:0,settings:0,create:0};
+ const state={users:0,allowed:true,already:false,confirmed:false,
+  authSettings:{
+   external:{phone:true},sms_provider:'twilio',
+   disable_signup:true,phone_autoconfirm:false
+  }
+ };
  const ports={
   countExistingAuthUsers:async()=>{calls.count++;return state.users},
+  readPublicAuthSettings:async()=>{calls.settings++;return state.authSettings},
   isVerifiedBuyerPhone:async(buyerKey,sha)=>{
    calls.verify++;
    assert.equal(buyerKey,'buyer_a');
@@ -42,7 +50,7 @@ test('V2-07: dry run only reads Auth and proof, no createUser',async()=>{
  assert.equal(output.state,'READY_DRY_RUN');
  assert.equal(output.userCreated,false);
  assert.equal(output.smsSent,false);
- assert.deepEqual(m.calls,{count:1,verify:1,create:0});
+ assert.deepEqual(m.calls,{count:1,verify:1,settings:1,create:0});
  assert.ok(!JSON.stringify(output).includes('5491123456789'));
  assert.ok(!JSON.stringify(output).includes('buyer_a'));
 });
@@ -58,7 +66,7 @@ test('V2-07: source SHA mismatch or production/registration guard blocks before 
   const m=mock();const out=await bootstrapPrimerCompradorV2(
    {...options(),...patch},m.ports);
   assert.equal(out.state,'BLOCKED');
-  assert.deepEqual(m.calls,{count:0,verify:0,create:0});
+  assert.deepEqual(m.calls,{count:0,verify:0,settings:0,create:0});
  }
 });
 test('V2-07: execute without PUBLICALO never touches Auth or channel',async()=>{
@@ -94,7 +102,7 @@ test('V2-07: successful approved candidate creates UNCONFIRMED buyer only',async
  assert.equal(r.userCreated,true);
  assert.equal(r.smsSent,false);
  assert.equal(r.secretsExposed,false);
- assert.deepEqual(m.calls,{count:2,verify:1,create:1});
+ assert.deepEqual(m.calls,{count:2,verify:1,settings:1,create:1});
 });
 test('V2-07: a competing user appears before create, abort',async()=>{
  const m=mock();
@@ -126,4 +134,61 @@ test('V2-07: auth offline or malformed count never creates an account',async()=>
  assert.equal(out.state,'BLOCKED');
  assert.equal(out.code,'servicio_auth_o_evidencia_no_disponible');
  assert.equal(m.calls.create,0);
+});
+
+test('V2-07: Auth SMS requiere teléfono habilitado, proveedor y signup cerrado',()=>{
+ const good={external:{phone:true},sms_provider:'twilio',
+  disable_signup:true,phone_autoconfirm:false};
+ assert.equal(configuracionSmsInicialV2Lista(good),true);
+ for(const invalid of [
+  null,{},[],{...good,external:{phone:false}},
+  {...good,external:null},
+  {...good,sms_provider:''},
+  {...good,sms_provider:'none'},
+  {...good,sms_provider:'noop'},
+  {...good,sms_provider:'mock'},
+  {...good,sms_provider:'../config'},
+  {...good,disable_signup:false},
+  {...good,phone_autoconfirm:true},
+  {...good,phone_autoconfirm:undefined}
+ ]){
+  assert.equal(configuracionSmsInicialV2Lista(invalid),false,
+   JSON.stringify(invalid));
+ }
+});
+
+test('V2-07: sin proveedor SMS real ni cierre de signup NO se crea comprador',async()=>{
+ const bad=[
+  {external:{phone:false},sms_provider:'twilio',
+   disable_signup:true,phone_autoconfirm:false},
+  {external:{phone:true},sms_provider:'',
+   disable_signup:true,phone_autoconfirm:false},
+  {external:{phone:true},sms_provider:'twilio',
+   disable_signup:false,phone_autoconfirm:false},
+  {external:{phone:true},sms_provider:'twilio',
+   disable_signup:true,phone_autoconfirm:true},
+  null
+ ];
+ for(const authSettings of bad){
+  const m=mock();m.state.authSettings=authSettings;
+  const out=await bootstrapPrimerCompradorV2({
+   ...options(),mode:'execute',
+   explicitApproval:'PUBLICALO_SOLO_COTIRONDA_PILOTO_AUTH_V2'
+  },m.ports);
+  assert.equal(out.state,'BLOCKED');
+  assert.equal(out.code,'proveedor_sms_o_signup_auth_no_configurados');
+  assert.deepEqual(m.calls,{count:1,verify:1,settings:1,create:0});
+ }
+});
+
+test('V2-07: CLI inspecciona solo settings públicas con publishable key',()=>{
+ const cli=readFileSync(new URL(
+  '../../apps/portal/scripts/v2-buyer-bootstrap.mjs',
+  import.meta.url),'utf8');
+ assert.match(cli,/PILOT\+'\/auth\/v1\/settings'/u);
+ assert.match(cli,/headers:\{apikey:publishable,accept:'application\/json'\}/u);
+ assert.match(cli,/publishable\.startsWith\('sb_publishable_'\)/u);
+ assert.match(cli,/signal:AbortSignal\.timeout\(6000\)/u);
+ assert.doesNotMatch(cli,/headers:\{apikey:secret/u);
+ assert.doesNotMatch(cli,/NEXT_PUBLIC_COTIRONDA_PILOT_SUPABASE_SECRET/u);
 });
