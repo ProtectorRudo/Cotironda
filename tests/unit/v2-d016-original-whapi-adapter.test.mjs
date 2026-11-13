@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
-import {despacharSolicitudCentralMvp223}
- from '../../supabase/functions/cotironda-piloto-whapi/ai-central-dispatch-mvp223.ts';
+import {despacharSolicitudCentralD016}
+ from '../../supabase/functions/cotironda-piloto-whapi/ai-central-dispatch-d016.ts';
 import {reservarAvisoOriginalEnDespachoD016,registrarResultadoOriginalD016}
  from '../../supabase/functions/cotironda-piloto-whapi/original-notice-dispatch-d016.ts';
 import {AVISO_ORIGINALES_D016,AVISO_ORIGINALES_D016_VERSION}
@@ -64,7 +64,7 @@ const create=(opts={})=>{
   return {accepted:state.send,
    messageId:opts.missingId?null:WHAPI};
  };
- const run=(override={})=>despacharSolicitudCentralMvp223({
+ const run=(override={})=>despacharSolicitudCentralD016({
   enabled:true,requestId:ROUND,recipients:{[SUPPLIER]:RECIPIENT},maxJobs:2,
   rpc,authorizeChatHmac:async(r,h)=>r===RECIPIENT&&h===CHAT,
   createPdf:()=>new Uint8Array(50),
