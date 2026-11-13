@@ -128,3 +128,79 @@ test('D016 descarga: flags OFF siempre niegan y no toca las RPC',async()=>{
  assert.equal(result.status,503);
  assert.equal(f.status.ctxCount,0);
 });
+
+const TXT=new TextEncoder().encode('Cotización WhatsApp: 15 bolsas de cemento x 50 kg. IVA no informado.');
+const TXT_SHA=createHash('sha256').update(TXT).digest('hex');
+const textSource=()=>({
+ state:'authorized_text_v2',requestId:ROUND,documentId:DOC,
+ buyerKey:'buyer_a',supplierKey:'supplier_a',messageHmac:HASH,
+ chatHmac:'7'.repeat(64),
+ nonceB64:'AAAAAAAAAAAAAAAA',ciphertextB64:'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
+ sha256:TXT_SHA,mime:'text/plain',
+ consentAt:1700000000000,invitedAt:1700000000001
+});
+function textFixture(){
+ const f=fixture();
+ f.status.source=textSource();
+ f.status.bytes=TXT;
+ f.status.textRead=0;
+ f.status.textAudit=0;
+ f.ports.leerTexto=async(src,sessionHmac)=>{
+  assert.deepEqual(src,f.status.source);
+  assert.equal(sessionHmac,digestSesionPrivadaD016(COOKIE,KEY));
+  f.status.textRead++;
+  return f.status.bytes;
+ };
+ f.ports.registrarAuditoriaTexto=async q=>{
+  f.status.textAudit++;
+  assert.deepEqual(q,{
+   sesionHmac:digestSesionPrivadaD016(COOKIE,KEY),
+   rondaId:ROUND,documentoId:DOC,sha256:TXT_SHA,
+   byteCount:TXT.length
+  });
+  return f.status.audit;
+ };
+ return f;
+}
+test('D016 texto WhatsApp descifrado en Edge: bytes exactos, doble permiso y auditoría TXT',async()=>{
+ const f=textFixture();const res=await f.run();
+ assert.equal(res.status,200);
+ assert.equal(res.headers.get('content-type'),'text/plain');
+ assert.match(res.headers.get('content-disposition'),/\.txt"/u);
+ assert.deepEqual(new Uint8Array(await res.arrayBuffer()),TXT);
+ assert.deepEqual([f.status.ctxCount,f.status.sourceCount,
+  f.status.textRead,f.status.textAudit,f.status.storageCount,
+  f.status.auditCount],[2,2,1,1,0,0]);
+});
+test('D016 texto: no hay acceso si Edge no está configurado o cambian permisos',async()=>{
+ const noEdge=fixture();noEdge.status.source=textSource();
+ assert.equal((await noEdge.run()).status,503);
+ for(const kind of ['revoked','changed','bad_sha','invalid_utf8','audit']){
+  const f=textFixture();
+  if(kind==='revoked')f.status.secondCtx={buyerKey:'buyer_b',requestId:ROUND};
+  if(kind==='changed')f.status.secondSource={...textSource(),
+   sha256:'f'.repeat(64)};
+  if(kind==='bad_sha')f.status.bytes=new TextEncoder().encode('ALTERED');
+  if(kind==='invalid_utf8')f.status.bytes=new Uint8Array(
+   TXT.map((v,i)=>i===9?255:v));
+  if(kind==='audit')f.status.audit=false;
+  const res=await f.run();
+  assert.notEqual(res.status,200,kind);
+  assert.equal(res.headers.get('content-disposition'),null);
+  assert.equal(f.status.storageCount,0);
+ }
+});
+test('D016 texto: fuente ajena o sobre inválido no llama al lector Edge',async()=>{
+ for(const patch of [
+  {buyerKey:'buyer_b'},{mime:'application/pdf'},
+  {chatHmac:'bad'}, {nonceB64:'bad'},
+  {documentId:'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'},
+  {consentAt:1700000000010,invitedAt:1700000000001}
+ ]){
+  const f=textFixture();
+  f.status.source={...textSource(),...patch};
+  const res=await f.run();
+  assert.notEqual(res.status,200,JSON.stringify(patch));
+  assert.equal(f.status.textRead,0);
+ }
+});
