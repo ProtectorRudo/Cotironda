@@ -24,6 +24,8 @@ on:
       - 'tests/unit/v2-d016-cron-guardias.test.mjs'
       - 'supabase/piloto/v2_d016_preflight_SOLO_LECTURA.sql'
       - 'tests/unit/v2-d016-preflight-solo-lectura.test.mjs'
+      - 'supabase/piloto/v2_d016_pgnet_acl_REVIEW_ONLY.sql'
+      - 'tests/unit/v2-d016-pgnet-acl-review.test.mjs'
       - 'supabase/piloto/v2_d016_worker_offline_CANDIDATE.sql'
       - 'supabase/functions/cotironda-piloto-v2-worker-d016/**'
       - 'tests/unit/v2-d016-worker-offline.test.mjs'
@@ -116,6 +118,8 @@ jobs:
         run: node --experimental-strip-types --test tests/unit/v2-d016-cron-guardias.test.mjs
       - name: D016 preflight read-only de políticas y funciones de PILOTO
         run: node --experimental-strip-types --test tests/unit/v2-d016-preflight-solo-lectura.test.mjs
+      - name: D016 cola pg_net no pública y mitigación sólo revisión
+        run: node --experimental-strip-types --test tests/unit/v2-d016-pgnet-acl-review.test.mjs
       - name: D016 descarga privada con doble revalidación, bytes y auditoría
         run: node --experimental-strip-types --test tests/unit/v2-d016-descarga-privada.test.mjs
       - name: D016 texto WhatsApp AES-GCM, SHA, sesiones y broker Next
