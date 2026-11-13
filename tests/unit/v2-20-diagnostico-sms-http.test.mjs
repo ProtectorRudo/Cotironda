@@ -55,6 +55,7 @@ test('V2-20: diagnóstico permite comprobar SMS ANTES de habilitar login u ofert
   state:'SETTINGS_READY_REQUIRES_REAL_SMS',
   code:'configuracion_auth_publica_compatible',
   serviceAccessible:true,signupClosed:true,phoneConfigured:true,
+  phoneEnabled:true,autoConfirmDisabled:true,smsProviderReady:true,
   smsConfirmedByUser:false,writesPerformed:false
  });
 });
@@ -148,4 +149,22 @@ test('V2-20: ruta Next exclusivamente GET, sin token, WhatsApp ni RPC',()=>{
  assert.match(mod,/VERCEL_ENV==='preview'/u);
  assert.match(mod,/VERCEL_GIT_COMMIT_SHA===release/u);
  assert.match(mod,/COTIRONDA_REGISTRATION_ENABLED==='false'/u);
+});
+
+test('V2-20: reporta bloqueo real de signup abierto sin atribuirlo falsamente al SMS',async()=>{
+ const net=adapter({...settings,disable_signup:false});
+ const response=await responderDiagnosticoSmsV2(new Request(path),env(),net.fetcher);
+ assert.equal(response.status,200);
+ const data=await response.json();
+ assert.equal(data.state,'BLOCKED');
+ assert.equal(data.signupClosed,false);
+ assert.equal(data.phoneEnabled,true);
+ assert.equal(data.autoConfirmDisabled,true);
+ assert.equal(data.smsProviderReady,true);
+ assert.equal(data.phoneConfigured,false);
+ assert.equal(data.smsConfirmedByUser,false);
+ assert.equal(data.writesPerformed,false);
+ assert.equal(net.calls(),1);
+ assert.ok(!JSON.stringify(data).includes('twilio'));
+ assert.ok(!JSON.stringify(data).includes(PUB));
 });
