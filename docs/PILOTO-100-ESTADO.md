@@ -1,5 +1,13 @@
 # COTIRONDA V2 — ESTADO REAL Y RELEVO ENTRE CONVERSACIONES
 
+### ESTADO MÁS RECIENTE — 13/11/2026 (posterior a acta D016)
+
+**Piloto publicado parcialmente pero NO habilitado comercialmente.** Calendario La Plata 2026 **AHORA APROBADO prospectivamente**, 18 fechas y 2 hábiles hasta las 18 AR; 2027 sigue ausente. Vercel Preview se redesplegó con cinco variables D016 NO secretas solo en target Preview, flags OFF; **nuevo deployment READY** `dpl_DZkYMAzzVbZitq4Dz1NwyYN7Yued`, URL <https://cotironda-portal-myz6huv21-protector-rudo-s-projects.vercel.app>; SSO intacto. El proyecto no está conectado a GitHub; por eso no se pueden usar variables por rama ni hay merge automático. Enlace de prueba privado temporal emitido, **no guardar su token**.
+
+**Diagnóstico SQL real:** quedan 4 gates funcionales: política negocio OFF, originales OFF, cierre OFF, 0 consentimientos ESPECÍFICOS V2 de originales. Los 2 proveedores SÍ están registrados con consentimiento general y WhatsApp verificado (no equiparar general con consentimiento al original). **La lógica exige `accepted_at <= invitations.created_at` y mensaje real en `whapi_inbox`**, por lo que no sirve dar consentimiento retroactivo o asumirlo por una respuesta posterior. Son requisitos independientes los secretos Supabase Edge/Vercel/GitHub, el overlay Whapi, acceso SSO para testers y el E2E. No hay 2026 V2 rounds, ni cron D016, ni IAM público para RPC D016; Whapi v76 sin cambios. No se enviaron mensajes.
+
+**Próximo camino corto:** integrar una aceptación clara y verificable sin registro nuevo, previa a la invitación, aprovechar canales Whapi actuales; provisionar secretos en cada proveedor; conectar Preview al acceso real y ensayar ronda. No habilitar los tres gates por impulso mientras no pueda culminar el circuito. Fuente: [acta de publicación REAL](docs/PILOTO-D016-PUBLICACION-REAL-20261113.md), [PR #837](https://github.com/ProtectorRudo/Cotironda/pull/837). Las secciones históricas que hablan de calendario sin aprobar fueron superadas.
+
 ### RELEVO FINAL ACTUAL — 13/11/2026 · Publicado en PILOTO, sin activación comercial
 
 **Sí se publicó:** Vercel Preview Cotironda V2 D016 **READY**, commit `64b8573fde5321dabaef557d2bea40c7d80bc503`, <https://cotironda-portal-anhy2cgft-protector-rudo-s-projects.vercel.app>, SSO protegido; proyecto `cotironda-portal-dev` correcto. Supabase `cotironda-piloto`: dos Edge D016 ACTIVE v1; **7 migraciones SQL instaladas** (22 RPC privadas servicio, 5 tablas RLS); calendario `la plata/2026/lp_v2_r1` **18 feriados instalados pero `approved_at=NULL`**. Whapi antiguo permanece ACTIVE v76. No se tocó producción ni se integró a `main`.
