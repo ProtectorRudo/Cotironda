@@ -2,6 +2,8 @@
 
 ### RELEVO MÁS RECIENTE — 13/11/2026 · Solución SIN pg_net para secretos
 
+**CI final verificada:** PR #837 HEAD `2991c20ec40f01f284fa70f6cedf9666354aef93`, **8/8 GitHub Actions SUCCESS** (scheduler Github, cierre SQL-only, pruebas PostgreSQL17 sintéticas, Deno y Next). Sin despliegue ni E2E. El repositorio es público: GitHub Actions runner estándar es gratuito según su documentación de 2026; la IA/API y las demoras de cron siguen sujetas a presupuesto/monitoreo.
+
 **Cotironda V2 D016 sigue CANDIDATO, PR #837 DRAFT, sin desplegar ni enviar WhatsApp.** Dejo la dirección definitiva de esta fase para nuevas conversaciones.
 
 **Corrección importante:** consulta de la [KB oficial Supabase](https://supabase.com/kb/troubleshooting/revoking-access-to-pg_net-objects-has-no-effect-0bbc16) actualizada 04/11/2026: el intento previo de revocar `SELECT` de `net.http_request_queue` no es compatible ni operativo desde `postgres`, y podría romper dependencias si se cambiara en el rol dueño. Los privilegios de `anon`/`authenticated` no implican lectura desde API pública (son roles NOLOGIN y `net` no se expone en Data API). El archivo ACL anterior es ahora un **stub que aborta**. NINGUNA ACL real modificada.
