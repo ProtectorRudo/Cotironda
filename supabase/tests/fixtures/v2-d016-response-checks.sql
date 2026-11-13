@@ -155,51 +155,13 @@ BEGIN
   'aaaaaaaa-1111-4111-8111-111111111111',session_hmac) IS NULL
  THEN RAISE EXCEPTION 'd016_analysis_projection_denied';END IF;
 
- -- La ronda solo puede mostrar un informe FINAL cuando realmente cerró
- -- con modo business_two_days y revisión aprobada del calendario local.
- UPDATE cotironda_piloto_privado.requests
- SET timing_mode='business_two_days',round_days=2,
-  v2_calendar_revision='lp_piloto_2026'
- WHERE id='aaaaaaaa-1111-4111-8111-111111111111';
- final_status:=public.cotironda_piloto_v2_d016_final_status_private(
-  'aaaaaaaa-1111-4111-8111-111111111111',session_hmac);
- IF final_status->>'state'<>'waiting_for_close'
- THEN RAISE EXCEPTION 'd016_premature_final_report:%',final_status;END IF;
- UPDATE cotironda_piloto_privado.v2_business_calendar
- SET approved_at=NULL WHERE revision='lp_piloto_2026';
+ -- Rondas históricas/sin V2 prospectivo jamás muestran un informe FINAL.
  IF public.cotironda_piloto_v2_d016_final_status_private(
   'aaaaaaaa-1111-4111-8111-111111111111',session_hmac) IS NOT NULL
- THEN RAISE EXCEPTION 'd016_unapproved_calendar_final';END IF;
- UPDATE cotironda_piloto_privado.v2_business_calendar
- SET approved_at=clock_timestamp()-interval '12 days'
- WHERE revision='lp_piloto_2026';
- UPDATE cotironda_piloto_privado.requests
- SET state='closed',closes_at=clock_timestamp()-interval '30 minutes',
-  closed_at=clock_timestamp()-interval '20 minutes'
- WHERE id='aaaaaaaa-1111-4111-8111-111111111111';
- final_status:=public.cotironda_piloto_v2_d016_final_status_private(
-  'aaaaaaaa-1111-4111-8111-111111111111',session_hmac);
- IF final_status->>'state'<>'closed_verified_business_two_days'
-  OR final_status->>'requestId'<>'aaaaaaaa-1111-4111-8111-111111111111'
-  OR (final_status->>'closedAtMs')::bigint<=0
- THEN RAISE EXCEPTION 'd016_final_not_authorized:%',final_status;END IF;
- IF public.cotironda_piloto_v2_d016_final_status_private(
-  'aaaaaaaa-1111-4111-8111-111111111111',repeat('b',64)) IS NOT NULL
- OR public.cotironda_piloto_v2_d016_final_status_private(
-  'bbbbbbbb-2222-4222-8222-222222222222',session_hmac) IS NOT NULL
- THEN RAISE EXCEPTION 'd016_final_cross_buyer';END IF;
- UPDATE cotironda_piloto_privado.v2_business_policy
- SET enabled=false WHERE singleton=true;
- IF public.cotironda_piloto_v2_d016_final_status_private(
-  'aaaaaaaa-1111-4111-8111-111111111111',session_hmac) IS NOT NULL
- THEN RAISE EXCEPTION 'd016_final_when_policy_off';END IF;
- UPDATE cotironda_piloto_privado.v2_business_policy
- SET enabled=true WHERE singleton=true;
+ THEN RAISE EXCEPTION 'd016_legacy_final_leaked';END IF;
  IF has_function_privilege('anon',
   'public.cotironda_piloto_v2_d016_final_status_private(uuid,text)','EXECUTE')
  OR has_function_privilege('authenticated',
-  'public.cotironda_piloto_v2_d016_final_status_private(uuid,text)','EXECUTE')
- OR NOT has_function_privilege('service_role',
   'public.cotironda_piloto_v2_d016_final_status_private(uuid,text)','EXECUTE')
  THEN RAISE EXCEPTION 'd016_final_acl_exposed';END IF;
 
