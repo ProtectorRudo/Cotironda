@@ -1,5 +1,15 @@
 # COTIRONDA V2 — PLAN MAESTRO Y CHECKLIST
 
+### 13/11/2026 — D016: acceso privado por WhatsApp limitado a nuevas rondas (PILOTO)
+
+- [x] **Migración real `20261113230828` publicada** en `cotironda-piloto`, SQL guard con PG17, 7 rondas (1 preparada), tickets y sesiones 0, políticas V2 OFF y ACL protegida. Las cinco RPC de emisión/consumo/sesión/consulta/preparación de enlace requieren negocio V2 activo y ronda creada después de activación; aun con cookie previa no entran rondas antiguas. [Acta](https://github.com/ProtectorRudo/Cotironda/blob/fix/d016-portal-sesion-prospectiva-20261113/docs/PILOTO-D016-SESION-PROSPECTIVA-PUBLICADO-20261113.md).
+- [x] [PR #843](https://github.com/ProtectorRudo/Cotironda/pull/843) DRAFT: fixture PostgreSQL 17 `BEGIN/ROLLBACK` con política OFF, histórica, ronda nueva, sesión cruzada, NULL y ACL. Node de sesión, Deno Whapi candidato y CI de acceso aprobadas en la ejecución específica del commit de pruebas; controlar último HEAD. **Sin SMS/email del comprador.**
+- [ ] **Credenciales Vercel Preview faltantes** (comprobados nombres con decrypt=false): `COTIRONDA_D016_HMAC_KEY_HEX` y `COTIRONDA_PILOT_SUPABASE_SECRET_KEY`; configurar solo backend y espejo seguro del HMAC en Edge PILOTO, jamás AES histórico, sin generar exposición en logs/GitHub.
+- [ ] Publicar pantalla corregida SHA f985 solo Preview protegido cuando Vercel permita reintento; no desactivar SSO ni mover entorno. Actualizar release SHA exacto sólo luego de despliegue READY autorizado.
+- [ ] Resolver fundamento jurídico del original, acceso a fuentes por ronda/empresa, integrar Whapi v76 mediante overlay con flags OFF y probar E2E real completo antes de habilitar negocio/originales/cierre.
+- [ ] No declarar piloto 100% ni permitir que una sesión/ticket sea equivalente a consentimiento legal de publicación de presupuestos.
+
+
 ### 13/11/2026 — D016 / P0: resolución IA ambigua corregida prospectivamente en piloto
 
 - [x] **Publicada migración `20261113225548`** en Supabase PILOTO: helper privado + guard de doble lectura MVP291 para asociar fuente a ronda resuelta, no confiar en etiqueta histórica `ambiguous_round` cuando `resolved_request_id` + SHA + decisión final coinciden. SQL real: caso histórico **1/1 corroborado** sin inventar ronda ni modificar cotización. 7 rondas conservadas (1 preparada), **0 originales publicados**, flags negocio/originales/cierre OFF. [Acta](https://github.com/ProtectorRudo/Cotironda/blob/feat/d016-semantic-dispatch-proof-20261113/docs/PILOTO-D016-SEMANTIC-MVP291-PUBLICADO-20261113.md).
