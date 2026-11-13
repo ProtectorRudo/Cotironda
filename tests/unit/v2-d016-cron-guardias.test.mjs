@@ -11,6 +11,11 @@ test('D016 cron: no se instala como migración; exige autorización y proyecto p
  assert.match(sql,/D016_NOT_PILOT_PROJECT/u);
  assert.match(sql,/D016_SQL_NOT_INSTALLED/u);
  assert.match(sql,/D016_CALENDAR_NOT_APPROVED/u);
+ assert.match(sql,/D016_PGNET_QUEUE_EXPOSED_TO_CLIENT_ROLES/u);
+ assert.match(sql,/has_schema_privilege\('anon','net','USAGE'\)/u);
+ assert.match(sql,/has_schema_privilege\('authenticated','net','USAGE'\)/u);
+ assert.match(sql,/has_table_privilege\('anon','net\.http_request_queue','SELECT'\)/u);
+ assert.match(sql,/has_table_privilege\('authenticated','net\.http_request_queue','SELECT'\)/u);
 });
 test('D016 cron: secretos sólo provienen de Vault decrypted_secret, nunca hardcodeados',()=>{
  assert.match(sql,/vault\.decrypted_secrets/u);
