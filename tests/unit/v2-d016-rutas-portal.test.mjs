@@ -26,6 +26,8 @@ test('D016: las APIs WhatsApp dependen de cookie y RPC exclusivamente privada',(
  assert.match(adapter,/cotironda_piloto_v2_d016_responders_with_analysis_private/u);
  assert.match(adapter,/cotironda_piloto_v2_d016_original_source_private/u);
  assert.match(adapter,/cotironda_piloto_v2_d016_record_download_private/u);
+ assert.match(adapter,/cotironda_piloto_v2_d016_record_text_download_private/u);
+ assert.match(adapter,/leerTextoOriginalEdgeD016/u);
  assert.match(adapter,/privateDb/u);
  assert.doesNotMatch(adapter,/createSignedUrl|createUser|signInWithOtp/u);
  assert.match(response,/listarPorWhatsappD016/u);
@@ -45,13 +47,16 @@ test('D016: archivos sólo por sesión privada, nunca por JWT de SMS',()=>{
  assert.match(core,/leerStorage/u);
  assert.match(core,/registrarAuditoria/u);
  assert.match(core,/createHash\('sha256'\)/u);
- assert.doesNotMatch(core,/'text\/plain'\s*:/u);
+ assert.match(core,/textSourceValid/u);
+ assert.match(core,/leerTexto/u);
+ assert.match(core,/registrarAuditoriaTexto/u);
  assert.match(client,/credentials:'same-origin'/u);
  assert.match(client,/respuestas-whatsapp/u);
  assert.match(client,/originales-whatsapp/u);
  assert.match(client,/api\/piloto\/v2\/acceso\/salir/u);
  assert.match(client,/Cerrar sesión/u);
  assert.match(client,/WhatsApp \(texto\)/u);
+ assert.match(client,/Descargar mensaje original/u);
  assert.doesNotMatch(client,/Bearer |getSession\(|auth\.signOut\(|sms/u);
 });
 test('D016 SQL: la ruta de WhatsApp preserva relaciones V2 originales y prohíbe anon',()=>{
@@ -63,7 +68,8 @@ test('D016 SQL: la ruta de WhatsApp preserva relaciones V2 originales y prohíbe
   'cotironda_piloto_v2_d016_session_context_private',
   'cotironda_piloto_v2_d016_original_source_private',
   'cotironda_piloto_v2_d016_record_download_private',
-  'v2_d016_original_download_audit'
+  'v2_d016_original_download_audit',
+  'cotironda_piloto_v2_d016_record_text_download_private'
  ])assert.ok(sql.includes(part),part);
  assert.match(sql,/REVOKE ALL ON FUNCTION/u);
  assert.match(sql,/GRANT EXECUTE ON FUNCTION/u);
