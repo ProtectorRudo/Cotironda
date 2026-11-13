@@ -9,6 +9,8 @@ import {canjearConSesionPrivadaD016,verificarAccesoSesionD016,
  from '../../../src/server/v2-d016-sesion-privada.ts';
 import {proyectarRespuestasV2}
  from '../../../src/server/v2-03-catalogo-respondedores.ts';
+import {descargarConWhatsappD016}
+ from '../../../src/server/v2-d016-descarga-privada.ts';
 
 const PILOT='https://ilggkalaafhtiysyzlmg.supabase.co';
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/iu;
@@ -117,4 +119,45 @@ export async function listarPorWhatsappD016(
   if(!after||after.buyerKey!==before.buyerKey)return deny();
   return new Response(JSON.stringify(catalog),{status:200,headers:HEADERS});
  }catch{return deny(503)}
+}
+
+/** Descarga privada de archivos (PDF/Excel/Word/imagen/CSV).
+ * Texto WhatsApp cifrado no se descifra por este canal: no eludir Edge/JWT.
+ */
+export async function descargarOriginalPorWhatsappD016(
+ req:Request,rondaId:string,documentoId:string,
+ env:Record<string,string|undefined>=process.env
+):Promise<Response>{
+ const gate=puertaWhatsappPortalD016(env);
+ const db=gate?privateDb(env):null;
+ if(!gate||!db)return deny(503);
+ return descargarConWhatsappD016(gate,req,rondaId,documentoId,{
+  verificarSesion:async({sesionHmac,rondaId})=>
+   sessionContext(db,sesionHmac,rondaId),
+  fuentePrivada:async({sesionHmac,rondaId,documentoId})=>{
+   const {data,error}=await db.rpc(
+    'cotironda_piloto_v2_d016_original_source_private',{
+     p_request_id:rondaId,p_sesion_hmac:sesionHmac,p_document_id:documentoId
+    });
+   if(error)throw Error('source_unavailable');
+   return data;
+  },
+  leerStorage:async({bucket,path})=>{
+   if(bucket!=='cotironda-piloto-originals'||!/^media\/[a-f0-9]{64}$/u.test(path))
+    return null;
+   const {data,error}=await db.storage.from(bucket).download(path);
+   if(error||!data||data.size<1||data.size>8388608)return null;
+   const bytes=new Uint8Array(await data.arrayBuffer());
+   return bytes.byteLength===data.size?bytes:null;
+  },
+  registrarAuditoria:async({sesionHmac,rondaId,documentoId,sha256,byteCount})=>{
+   const {data,error}=await db.rpc(
+    'cotironda_piloto_v2_d016_record_download_private',{
+     p_request_id:rondaId,p_sesion_hmac:sesionHmac,
+     p_document_id:documentoId,p_source_sha256:sha256,
+     p_byte_count:byteCount
+    });
+   return !error&&data===true;
+  }
+ });
 }
