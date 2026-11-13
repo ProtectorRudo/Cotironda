@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'src/server/v2-d016-aviso-original-proveedor.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/ai-central-dispatch-d016.ts'
       - 'supabase/functions/cotironda-piloto-whapi/ai-central-dispatch-mvp223.ts'
       - 'supabase/functions/cotironda-piloto-whapi/original-notice-dispatch-d016.ts'
       - 'scripts/piloto/v2-d016-original-notice-overlay.mjs'
