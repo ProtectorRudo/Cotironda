@@ -76,6 +76,33 @@ BEGIN
 
  -- Para cierre se usa UNA ronda sintética distinta, sin tocar los
  -- documentos del comprador ni falsificar una respuesta de proveedor.
+ -- Prueba extrema: viernes -> martes (dos hábiles), preserva hora.
+ IF public.cotironda_piloto_v2_d016_expected_close_private(
+  '2026-11-13 10:00:00-03'::timestamptz,
+  'La Plata','lp_piloto_2026') IS DISTINCT FROM
+  '2026-11-17 10:00:00-03'::timestamptz
+ THEN RAISE EXCEPTION 'd016_weekend_deadline_wrong';END IF;
+ -- Cruce de año: sin aprobación anticipada 2027 NO se calcula deadline.
+ IF public.cotironda_piloto_v2_d016_expected_close_private(
+  '2026-12-30 10:00:00-03'::timestamptz,
+  'La Plata','lp_piloto_2026') IS NOT NULL
+ THEN RAISE EXCEPTION 'd016_unapproved_next_year';END IF;
+ INSERT INTO cotironda_piloto_privado.v2_business_calendar(
+  locality,year,revision,approved_at
+ ) VALUES('La Plata',2027,'lp_piloto_2026',
+  '2026-01-01 00:00:00-03'::timestamptz);
+ -- Día feriado ficticio 2027-01-01: el segundo hábil pasa al lunes 4.
+ INSERT INTO cotironda_piloto_privado.v2_business_holidays(
+  locality,day,calendar_year,description,evidence
+ ) VALUES('La Plata','2027-01-01',2027,'Feriado CI', 'synthetic');
+ IF public.cotironda_piloto_v2_d016_expected_close_private(
+  '2026-12-30 10:00:00-03'::timestamptz,
+  'La Plata','lp_piloto_2026') IS DISTINCT FROM
+  '2027-01-04 10:00:00-03'::timestamptz
+ THEN RAISE EXCEPTION 'd016_cross_year_holiday_wrong';END IF;
+ DELETE FROM cotironda_piloto_privado.v2_business_holidays
+ WHERE day='2027-01-01' AND description='Feriado CI';
+
  v_created:=clock_timestamp()-interval '6 days';
  v_due:=public.cotironda_piloto_v2_d016_expected_close_private(
   v_created,'La Plata','lp_piloto_2026');
