@@ -36,8 +36,8 @@ export async function liberarPedidoAutomaticoV2D013(args:{
  // Un rechazo conocido de SQL no es permiso para reintentar la fuente.
  if(['invalid','disabled','calendar_not_installed','calendar_disabled',
   'source_not_eligible','v2_timing_invalid','deadline_not_verified',
-  'calendar_revision_invalid','auto_release_not_authorized',
-  'publication_not_ready'].includes(String(body.state)))
+  'calendar_revision_invalid','auto_release_not_authorized'
+ ].includes(String(body.state)))
   return result('no_elegible');
  return result('conciliacion_requerida');
 }
