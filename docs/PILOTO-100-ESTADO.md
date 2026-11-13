@@ -2,6 +2,10 @@
 
 ### Relevo de seguridad/prepublicación · 13/11/2026
 
+**Última verificación GitHub:** PR #837 HEAD `8946629e919ec4c2eae5a507cfea077ff6f0c1cc`, **8/8 SUCCESS** (incluye SQL read-only/ACL, PostgreSQL17 sintético, Edge Deno, Next.js y regresiones). Sin deploy ni mensajes reales.
+
+
+
 En el [PR #837](https://github.com/ProtectorRudo/Cotironda/pull/837)
 se agregó preflight SQL SOLO LECTURA, ejecutado en Supabase
 `cotironda-piloto`: **11 bloqueos de activación**. Cifras:
