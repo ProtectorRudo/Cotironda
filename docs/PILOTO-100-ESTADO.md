@@ -3,6 +3,14 @@
 **Última actualización de documentación: 13/11/2026 (Argentina).**
 **ESTADO VIGENTE:** **D016 APROBADA** — ingreso del comprador por [enlace WhatsApp de un toque sin SMS](V2-D016-ACCESO-WHATSAPP-SIN-SMS-20261113.md), **NO IMPLEMENTADO**. Ya hay Vercel Preview SSO READY (`cotironda-portal-dev`, despliegue `dpl_9d7DghjFZpP9Lo8hW4JtouUPiZnh`, SHA `06e1700`). El código vigente del portal usa SMS OTP anterior; el PR #836 tiene 12/12 CI en `8fdf2d0`, SIN desplegar ese commit. Supabase PILOTO: `auth.users=0`, políticas V2 de originales y auto-release OFF, sin consentimientos V2 ni E2E. Whapi v76 histórico sigue intacto. **No exigir SMS/Twilio para el nuevo flujo.** Los párrafos sobre Vercel 402/Git desconectado que aparecen más abajo corresponden a cortes históricos del 12/11 y **no son bloqueos vigentes**. [Acta inicial](V2-RELEASE-PILOTO-PARCIAL-20261112.md).
 
+## ACTUALIZACIÓN MÁS RECIENTE — PR #837 sesión privada sin email ni SMS
+
+**Estado: DESARROLLO + PRUEBAS SINTÉTICAS, NO PUBLICADO.** Se agregó `src/server/v2-d016-sesion-privada.ts` y tabla/RPC candidato `v2_d016_browser_sessions` en PostgreSQL: enlace WhatsApp de un uso y 10 min, canje y creación de cookie `__Host-cotironda-v2` HttpOnly/Secure/SameSite=Lax de 8 h, HMAC secreto server-only, renovación mediante nuevo enlace, revocación de sesión y revalidación comprador/ronda/canal con BD en cada acceso. A diferencia de la alternativa GoTrue, **no requiere correo ficticio, SMS ni `auth.users`**.
+
+Se probaron casos de consentimiento revocado, cookie duplicada, sesión vencida, canje repetido y ACL con Node y PG17 ROLLBACK en PR #837. SHA `f860e997` aprobó 7/7 workflows; verificar CI del HEAD más reciente.
+
+**PENDIENTE CRÍTICO:** las rutas existentes y RPC de originales/respuestas todavía requieren Supabase Auth telefónico; no se conectaron a esta nueva cookie. **Todavía NO hay login real del comprador ni ningún presupuesto visible**. Próxima tarea: integración de endpoint Next, sesión autorizada en RPC sin SMS, pruebas E2E. No se instalaron tablas ni se envió WhatsApp ni se desplegó código.
+
 ## RELEVO VIGENTE — 13/11/2026: decisión D016, sin SMS
 
 **No retomar OTP SMS como siguiente paso.** El propietario aprobó [D016: enlace privado enviado por WhatsApp, un toque y sesión segura](V2-D016-ACCESO-WHATSAPP-SIN-SMS-20261113.md). El comprador no debe registrarse ni introducir teléfono, OTP, correo o contraseña. No usar enlace de seguimiento legado para acceder a archivos.
