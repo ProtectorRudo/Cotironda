@@ -8,6 +8,8 @@ on:
       - 'tests/unit/v2-d016-sesion-auth.test.mjs'
       - 'src/server/v2-d016-supabase-gotrue.ts'
       - 'tests/unit/v2-d016-supabase-gotrue.test.mjs'
+      - 'src/server/v2-d016-sesion-privada.ts'
+      - 'tests/unit/v2-d016-sesion-privada.test.mjs'
       - 'supabase/piloto/v2_d016_whatsapp_link_tickets_CANDIDATE.sql'
       - 'supabase/tests/ci/v2-d016-whatsapp-access-pg17.sql'
       - 'docs/V2-D016-PUENTE-WHATSAPP-CANDIDATO-20261113.md'
@@ -53,6 +55,8 @@ jobs:
         run: node --experimental-strip-types --test tests/unit/v2-d016-sesion-auth.test.mjs
       - name: D016 Supabase real via ports admin generateLink + verifyOtp + getUser
         run: node --experimental-strip-types --test tests/unit/v2-d016-supabase-gotrue.test.mjs
+      - name: D016 cookie HttpOnly, sesión privada y revocación
+        run: node --experimental-strip-types --test tests/unit/v2-d016-sesion-privada.test.mjs
       - name: D016 PostgreSQL 17 canje atomico, revocacion y aislamiento
         run: |
           set -euo pipefail
