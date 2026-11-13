@@ -118,11 +118,10 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
      <small>Según el original: «{p.evidencia}»</small>
     </li>)}
    </ul>}
-   {q.formato==='WhatsApp (texto)'?
-    <p>El mensaje original está protegido. Su descarga estará habilitada
-     cuando se verifique la lectura segura del texto.</p>:
-    <button className="button" type="button" disabled={busy}
-     onClick={()=>void download(q.documentoId)}>Descargar original</button>}
+   <button className="button" type="button" disabled={busy}
+    onClick={()=>void download(q.documentoId)}>
+    {q.formato==='WhatsApp (texto)'?'Descargar mensaje original':'Descargar original'}
+   </button>
   </article>)}
  </section>;
 }
