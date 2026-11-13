@@ -218,7 +218,7 @@ CREATE TABLE cotironda_piloto_privado.participants(
 CREATE TABLE cotironda_piloto_privado.ai_shadow_requests_mvp221(
  request_id uuid PRIMARY KEY,status text NOT NULL
 );
-CREATE TABLE cotironda_piloto_privado.v2_25_rehearsal_calls(
+CREATE TABLE cotironda_piloto_privado.pilot_e2e_rehearsal_calls(
  name text NOT NULL,request_id uuid NOT NULL
 );
 INSERT INTO cotironda_piloto_privado.participants
@@ -241,7 +241,7 @@ BEGIN
  WHERE r.source_hmac=p_source_hmac AND r.buyer_key='buyer_ci'
   AND p_chat_hmac=repeat('a',64) AND r.state='draft';
  IF rid IS NULL THEN RETURN jsonb_build_object('state','not_authorized');END IF;
- INSERT INTO cotironda_piloto_privado.v2_25_rehearsal_calls(name,request_id)
+ INSERT INTO cotironda_piloto_privado.pilot_e2e_rehearsal_calls(name,request_id)
  VALUES('approved',rid);
  RETURN jsonb_build_object('state','approved','request_id',rid);
 END $mock306$;
@@ -249,7 +249,7 @@ CREATE FUNCTION public.cotironda_piloto_ia_publish_mvp222(p_request uuid)
  RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
 AS $mock222$
 BEGIN
- INSERT INTO cotironda_piloto_privado.v2_25_rehearsal_calls(name,request_id)
+ INSERT INTO cotironda_piloto_privado.pilot_e2e_rehearsal_calls(name,request_id)
  VALUES('published',p_request);
  UPDATE cotironda_piloto_privado.requests SET state='prepared'
  WHERE id=p_request AND state='draft';
@@ -265,42 +265,42 @@ BEGIN
   OR r.v2_calendar_revision IS NULL
   OR r.closes_at IS DISTINCT FROM
      cotironda_piloto_privado.v2_deadline(r.created_at,r.delivery_city)
- THEN RAISE EXCEPTION 'V2_25_REAL_CALENDAR_PREPARE_FAIL';END IF;
+ THEN RAISE EXCEPTION 'PILOT_E2E_REAL_CALENDAR_PREPARE_FAIL';END IF;
  -- La política V2-24 debe instalarse OFF, aunque la V2-05 esté ON.
  response:=public.cotironda_piloto_v2_auto_release_d013(repeat('a',64),repeat('b',64));
  IF response->>'state'<>'disabled'
- THEN RAISE EXCEPTION 'V2_25_RELEASE_NOT_OFF';END IF;
- IF (SELECT count(*) FROM cotironda_piloto_privado.v2_25_rehearsal_calls)<>0
- THEN RAISE EXCEPTION 'V2_25_EXTERNAL_CALL_BEFORE_ACTIVATION';END IF;
+ THEN RAISE EXCEPTION 'PILOT_E2E_RELEASE_NOT_OFF';END IF;
+ IF (SELECT count(*) FROM cotironda_piloto_privado.pilot_e2e_rehearsal_calls)<>0
+ THEN RAISE EXCEPTION 'PILOT_E2E_EXTERNAL_CALL_BEFORE_ACTIVATION';END IF;
  -- Ronda anterior NUNCA se autoriza aunque se active el gate V2.
  UPDATE cotironda_piloto_privado.v2_auto_release_policy
  SET enabled=true,activated_at=clock_timestamp()-interval '2 hours'
  WHERE singleton;
  SELECT id INTO legacy_id FROM cotironda_piloto_privado.requests
  WHERE timing_mode='legacy_calendar';
- IF legacy_id IS NULL THEN RAISE EXCEPTION 'V2_25_LEGACY_MISSING';END IF;
+ IF legacy_id IS NULL THEN RAISE EXCEPTION 'PILOT_E2E_LEGACY_MISSING';END IF;
  response:=public.cotironda_piloto_v2_auto_release_d013(
   repeat('a',64),repeat('c',64));
  IF response->>'state'<>'source_not_eligible'
- THEN RAISE EXCEPTION 'V2_25_LEGACY_RELEASE_ALLOWED';END IF;
+ THEN RAISE EXCEPTION 'PILOT_E2E_LEGACY_RELEASE_ALLOWED';END IF;
  response:=public.cotironda_piloto_v2_auto_release_d013(repeat('a',64),repeat('b',64));
  IF response->>'state'<>'ready_for_delivery'
  OR response->>'request_id' IS DISTINCT FROM r.id::text
- THEN RAISE EXCEPTION 'V2_25_REAL_CALENDAR_RELEASE_FAIL: %',response;END IF;
- IF (SELECT count(*) FROM cotironda_piloto_privado.v2_25_rehearsal_calls
+ THEN RAISE EXCEPTION 'PILOT_E2E_REAL_CALENDAR_RELEASE_FAIL: %',response;END IF;
+ IF (SELECT count(*) FROM cotironda_piloto_privado.pilot_e2e_rehearsal_calls
       WHERE request_id=r.id)<>2
- OR (SELECT count(*) FROM cotironda_piloto_privado.v2_25_rehearsal_calls
+ OR (SELECT count(*) FROM cotironda_piloto_privado.pilot_e2e_rehearsal_calls
       WHERE name='approved')<>1
- OR (SELECT count(*) FROM cotironda_piloto_privado.v2_25_rehearsal_calls
+ OR (SELECT count(*) FROM cotironda_piloto_privado.pilot_e2e_rehearsal_calls
       WHERE name='published')<>1
- THEN RAISE EXCEPTION 'V2_25_NOT_SINGLE_RELEASE';END IF;
+ THEN RAISE EXCEPTION 'PILOT_E2E_NOT_SINGLE_RELEASE';END IF;
  response:=public.cotironda_piloto_v2_auto_release_d013(repeat('a',64),repeat('b',64));
  IF response->>'state'<>'source_not_eligible'
- OR (SELECT count(*) FROM cotironda_piloto_privado.v2_25_rehearsal_calls)<>2
- THEN RAISE EXCEPTION 'V2_25_DUPLICATE_RELEASE';END IF;
+ OR (SELECT count(*) FROM cotironda_piloto_privado.pilot_e2e_rehearsal_calls)<>2
+ THEN RAISE EXCEPTION 'PILOT_E2E_DUPLICATE_RELEASE';END IF;
  IF EXISTS(SELECT 1 FROM cotironda_piloto_privado.requests
   WHERE id=legacy_id AND state<>'closed')
- THEN RAISE EXCEPTION 'V2_25_HISTORICAL_MODIFIED';END IF;
- RAISE NOTICE 'V2_25_REAL_CALENDAR_AND_RELEASE_PG17_PASS';
+ THEN RAISE EXCEPTION 'PILOT_E2E_HISTORICAL_MODIFIED';END IF;
+ RAISE NOTICE 'PILOT_E2E_REAL_CALENDAR_AND_RELEASE_PG17_PASS';
 END $combined_release$;
 ROLLBACK;
