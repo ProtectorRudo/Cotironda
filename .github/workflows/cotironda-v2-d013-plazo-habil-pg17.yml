@@ -20,6 +20,7 @@ on:
       - 'supabase/piloto/v2_21_d013_ruteo_v2_rpc_aislado_candidate.sql'
       - 'supabase/piloto/v2_05_plazo_dos_dias_habiles_candidate.sql'
       - 'supabase/piloto/v2_05_shadow_prepare_activar_modo_habil.sql'
+      - 'tests/unit/v2-22-calendario-rpc-aislada.test.mjs'
       - 'supabase/tests/fixtures/v2-d013-shadow-prepare-baseline.sql'
       - 'supabase/tests/ci/v2-05-plazo-habil-pg17.sql'
       - 'tests/unit/v2-d013-productos-sin-rubros.test.mjs'
@@ -69,6 +70,8 @@ jobs:
         run: node --experimental-strip-types --test tests/unit/v2-ia-central-calendario-automatico.test.mjs
       - name: IA Central orquesta fuente externa antes de matching de productos
         run: node --experimental-strip-types --test tests/unit/v2-ia-central-orquestador.test.mjs
+      - name: V2-22 reloj integrado SOLO en preparador aislado, legado intacto
+        run: node --experimental-strip-types --test tests/unit/v2-22-calendario-rpc-aislada.test.mjs
       - name: PG17 2 dias habiles calendario y rollback
         run: |
           set -euo pipefail
