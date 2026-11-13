@@ -99,8 +99,12 @@ export function auditarPublicacionV2(input,phase='primer_original'){
   edge.private_pdf_reader?.status==='ACTIVE'&&
   edge.private_pdf_reader?.verify_jwt===false&&
   edge.private_pdf_reader?.secret_configured_in_both_services===true);
- add('portal_next_unico','Proyecto Vercel Next.js específico',
-  ver.project==='cotironda-portal-dev'&&ver.framework==='nextjs');
+ add('portal_next_unico','Proyecto DEV Next.js con ID y equipo exactos',
+  ver.project==='cotironda-portal-dev'&&ver.framework==='nextjs'&&
+  ver.project_id==='prj_d13rTHxJADvP2K9PcrM0CJQD9Zok'&&
+  ver.team_id==='team_CE76WzHKVPy9e28LXIw2r3J4');
+ add('portal_root_correcto','Monorepo apunta al portal de V2, no main',
+  ver.root_directory==='apps/portal');
  // El proyecto DEV hoy no tiene Git vinculado. Un despliegue directo
  // desde SHA GitHub SOLO sirve después de verificar la URL real, commit,
  // repo, equipo, proyecto y root. No confundir capacidad API con deploy.
