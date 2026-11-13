@@ -17,6 +17,7 @@ on:
       - 'supabase/functions/cotironda-piloto-whapi/ai-central-buyer-v2-d013.ts'
       - 'scripts/piloto/v2-live76-candidate.mjs'
       - 'supabase/piloto/v2_d013_ruteo_productos_sin_filtro_rubro.sql'
+      - 'supabase/piloto/v2_21_d013_ruteo_v2_rpc_aislado_candidate.sql'
       - 'supabase/piloto/v2_05_plazo_dos_dias_habiles_candidate.sql'
       - 'supabase/piloto/v2_05_shadow_prepare_activar_modo_habil.sql'
       - 'supabase/tests/fixtures/v2-d013-shadow-prepare-baseline.sql'
