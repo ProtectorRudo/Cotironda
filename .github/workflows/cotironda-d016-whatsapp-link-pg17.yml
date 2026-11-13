@@ -15,6 +15,9 @@ on:
       - 'supabase/functions/cotironda-piloto-whapi/index.ts'
       - 'scripts/piloto/v2-d016-whapi-overlay.mjs'
       - 'src/server/v2-d016-descarga-privada.ts'
+      - 'src/server/v2-d016-analisis-automatica.ts'
+      - 'tests/unit/v2-d016-analisis-automatica.test.mjs'
+      - 'supabase/piloto/v2_d016_analisis_automatico_CANDIDATE.sql'
       - 'src/server/v2-d016-texto-edge-client.ts'
       - 'supabase/functions/cotironda-piloto-v2-text-reader-d016/**'
       - 'tests/unit/v2-d016-texto-edge.test.mjs'
@@ -89,6 +92,8 @@ jobs:
         run: node --experimental-strip-types --test tests/unit/v2-d016-supabase-gotrue.test.mjs
       - name: D016 cookie HttpOnly, sesión privada y revocación
         run: node --experimental-strip-types --test tests/unit/v2-d016-sesion-privada.test.mjs
+      - name: D016 análisis individual, lease y revocación sin SMS
+        run: node --experimental-strip-types --test tests/unit/v2-d016-analisis-automatica.test.mjs
       - name: D016 descarga privada con doble revalidación, bytes y auditoría
         run: node --experimental-strip-types --test tests/unit/v2-d016-descarga-privada.test.mjs
       - name: D016 texto WhatsApp AES-GCM, SHA, sesiones y broker Next
