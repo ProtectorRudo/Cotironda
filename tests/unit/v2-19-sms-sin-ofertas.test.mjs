@@ -112,6 +112,7 @@ test('V2-19: descarga no entrega bytes si cambia el usuario durante lectura',()=
  assert.match(flow,/if\(generation===authGeneration\.current\)\s*setError/u);
  assert.match(flow,/if\(generation===authGeneration\.current\)setBusy\(false\)/u);
  assert.match(ui,/setCatalog\(null\);setBusy\(false\)/u);
+ assert.match(ui,/setCatalog\(null\);setAuthenticated\(false\);setBusy\(false\)/u);
  assert.match(ui,/setCatalog\(null\);setAuthenticated\(false\);setError\(''\);setBusy\(false\)/u);
 });
 test('V2-19: campo comprador rechaza números E.164 de 16 dígitos',()=>{
