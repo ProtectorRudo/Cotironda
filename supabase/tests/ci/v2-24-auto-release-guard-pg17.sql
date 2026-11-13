@@ -40,6 +40,8 @@ CREATE TABLE cotironda_piloto_privado.v2_business_calendar(
  locality text,year int,revision text,approved_at timestamptz
 );
 CREATE TABLE cotironda_piloto_privado.mock_calls(name text);
+CREATE TABLE cotironda_piloto_privado.mock_control(mode text NOT NULL);
+INSERT INTO cotironda_piloto_privado.mock_control(mode) VALUES('ready');
 -- Sólo STUBS en este PG17 efímero, NO SQL real de Supabase.
 CREATE FUNCTION cotironda_piloto_privado.v2_deadline(timestamptz,text)
  RETURNS timestamptz LANGUAGE sql STABLE SET search_path TO ''
@@ -54,14 +56,19 @@ CREATE FUNCTION public.cotironda_piloto_ia_auto_release_mvp306(text,text)
  BEGIN
   INSERT INTO cotironda_piloto_privado.mock_calls(name) VALUES('approved');
   RETURN jsonb_build_object('state','approved',
-   'request_id','47c23e65-8985-48c4-85ca-e4a972938afb');
+   'request_id',CASE WHEN
+    (SELECT mode FROM cotironda_piloto_privado.mock_control)='wrong_id'
+    THEN '00000000-0000-4000-8000-000000000024'
+    ELSE '47c23e65-8985-48c4-85ca-e4a972938afb' END);
  END $m$;
 CREATE FUNCTION public.cotironda_piloto_ia_publish_mvp222(uuid)
  RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
  AS $m$
  BEGIN
   INSERT INTO cotironda_piloto_privado.mock_calls(name) VALUES('published');
-  RETURN jsonb_build_object('state','ready_for_delivery');
+  RETURN jsonb_build_object('state',CASE WHEN
+   (SELECT mode FROM cotironda_piloto_privado.mock_control)='reject'
+   THEN 'dispatch_disabled' ELSE 'ready_for_delivery' END);
  END $m$;
 \ir ../../piloto/v2_24_auto_release_calendar_guarded_candidate.sql
 DO $off$
@@ -145,6 +152,29 @@ BEGIN
  IF (SELECT count(*) FROM cotironda_piloto_privado.mock_calls)<>0
  THEN RAISE EXCEPTION 'v2_24_publisher_called_on_blocked_round';END IF;
 END $negative$;
+-- Los retornos internos no deben dejar un auto_approval parcial: revertir
+-- TODO en una subtransacción PL/pgSQL, incluso si hubo dos escrituras.
+DO $atomic$
+DECLARE v jsonb; m text;
+BEGIN
+ FOR m IN SELECT unnest(ARRAY['reject','wrong_id']) LOOP
+  UPDATE cotironda_piloto_privado.mock_control SET mode=m;
+  BEGIN
+   v:=public.cotironda_piloto_v2_auto_release_d013(
+    repeat('a',64),repeat('b',64));
+   RAISE EXCEPTION 'V2_24_BROKEN_ATOMICITY';
+  EXCEPTION WHEN OTHERS THEN
+   IF SQLERRM='V2_24_BROKEN_ATOMICITY' THEN RAISE;END IF;
+   IF (m='reject' AND SQLERRM<>'v2_24_atomic_publication_failed')
+   OR (m='wrong_id' AND SQLERRM<>'v2_24_auto_release_identity_inconsistent')
+   THEN RAISE EXCEPTION 'V2_24_UNEXPECTED_FAILURE_%: %',m,SQLERRM;END IF;
+  END;
+  IF (SELECT count(*) FROM cotironda_piloto_privado.mock_calls)<>0
+  THEN RAISE EXCEPTION 'V2_24_PARTIAL_APPROVAL_WAS_COMMITTED';END IF;
+ END LOOP;
+ UPDATE cotironda_piloto_privado.mock_control SET mode='ready';
+ RAISE NOTICE 'V2_24_ATOMIC_ROLLBACK_PG17_PASS';
+END $atomic$;
 DO $positive$
 DECLARE v jsonb;
 BEGIN
