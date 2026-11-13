@@ -1,5 +1,33 @@
 # COTIRONDA V2 — ESTADO REAL Y RELEVO ENTRE CONVERSACIONES
 
+### Relevo de seguridad/prepublicación · 13/11/2026
+
+En el [PR #837](https://github.com/ProtectorRudo/Cotironda/pull/837)
+se agregó preflight SQL SOLO LECTURA, ejecutado en Supabase
+`cotironda-piloto`: **11 bloqueos de activación**. Cifras:
+1 comprador WhatsApp autenticado; **0 proveedores con consentimiento
+específico V2 de compartir originales**; 0 calendarios aprobados; las
+3 políticas V2 están apagadas; funciones D016 NO instaladas.
+La infraestructura de cron/Vault está disponible, pero eso no autoriza
+activarla.
+
+**Nuevo bloqueo imprescindible:** `net.http_request_queue` tiene
+USAGE de esquema + SELECT para `anon` y `authenticated`, RLS OFF.
+Supabase documenta que allí se retienen temporalmente claves enviadas
+por `pg_net`. Se añadió una guarda que impide ejecutar el cron D016
+mientras ese permiso persista; corrección ACL mínima preparada como
+`v2_d016_pgnet_acl_REVIEW_ONLY.sql`, aún SIN ejecutar. No se enviaron
+nuevos secretos. Evaluar impacto en integraciones antiguas y autorizar
+separadamente, no revocar permisos en producción a ciegas.
+
+**Qué sigue**: validar CI del SHA exacto de PR #837; resolver ACL de
+cola y consentimientos prospectivos, aprobar calendario real de La Plata;
+luego bajo «Publicalo» PILOTO instalar SQL/Edge/Preview con flags apagados,
+conseguir prueba real de arquitecto/Ailín/Nahuel y verificar informe final.
+Nada de SMS, no reiniciar arquitectura, no usar V1. Detalles en
+[Prepublicación](https://github.com/ProtectorRudo/Cotironda/blob/feat/d016-whatsapp-link-safe-pilot-20261113/docs/V2-D016-PREPUBLICACION-PILOTO-20261113.md).
+
+
 ### Relevo prioritario · auditoría PILOTO 13/11/2026
 
 **D016 PR #837 continúa DRAFT, sin merge y SIN PUBLICAR.** Código del sender WhatsApp, sesiones, originales PDF/Excel/TXT, guías de IA, worker offline y cierre a dos días hábiles preparado; `cron` solo script `ACTIVATE_ONLY_AFTER_PUBLICALO.sql`. No hay ronda real V2 probada hasta fin. El código había pasado 8/8 antes de última revisión.
