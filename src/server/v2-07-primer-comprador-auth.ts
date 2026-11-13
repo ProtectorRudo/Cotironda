@@ -8,8 +8,26 @@ const PILOT='https://ilggkalaafhtiysyzlmg.supabase.co';
 const PHONE=/^\+[1-9][0-9]{8,15}$/u;
 const BUYER=/^[a-z0-9_-]{3,100}$/u;
 const SHA=/^[a-f0-9]{40}$/u;
+const PROVIDER=/^[a-z][a-z0-9_-]{2,63}$/u;
+/** Estado públicamente observable de GoTrue. NO prueba entrega real SMS.
+ * Bloquea creación de una cuenta inaccesible o auto-confirmada.
+ */
+export function configuracionSmsInicialV2Lista(input:unknown):boolean{
+ if(!input||typeof input!=='object'||Array.isArray(input))return false;
+ const s=input as Record<string,unknown>;
+ if(!s.external||typeof s.external!=='object'||
+  Array.isArray(s.external))return false;
+ const ext=s.external as Record<string,unknown>;
+ const provider=s.sms_provider;
+ return ext.phone===true&&s.disable_signup===true&&
+  s.phone_autoconfirm===false&&
+  typeof provider==='string'&&PROVIDER.test(provider)&&
+  !['none','disabled','unknown','test','fake','noop','mock'].includes(provider);
+}
 export type BootstrapBuyerPorts=Readonly<{
  countExistingAuthUsers:()=>Promise<number|null>;
+ /** GET público /auth/v1/settings: sin tokens de usuario ni mutaciones. */
+ readPublicAuthSettings:()=>Promise<unknown>;
  isVerifiedBuyerPhone:(buyerKey:string,phoneJidSHA:string)=>Promise<boolean>;
  createUnconfirmedUser:(e164:string)=>Promise<Readonly<{
   created:boolean;phoneConfirmed:boolean;
@@ -73,6 +91,11 @@ export async function bootstrapPrimerCompradorV2(
   const permitted=await ports.isVerifiedBuyerPhone(args.buyerKey,contactSHA);
   if(permitted!==true)
    return result('BLOCKED','comprador_o_canal_whatsapp_no_verificado');
+  // El frontend tiene shouldCreateUser:false, pero eso no configura
+  // el proveedor de SMS ni impide altas directas contra GoTrue.
+  // Nunca crear Auth antes de comprobar la configuración pública actual.
+  if(!configuracionSmsInicialV2Lista(await ports.readPublicAuthSettings()))
+   return result('BLOCKED','proveedor_sms_o_signup_auth_no_configurados');
   // Prevent stale preflight or a parallel operator from adding a second user.
   if(args.mode==='dry-run')return result('READY_DRY_RUN','preparado_sin_modificaciones');
   const again=await ports.countExistingAuthUsers();
