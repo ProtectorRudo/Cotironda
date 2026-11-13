@@ -44,3 +44,14 @@ Separa explícitamente **verificar al comprador** de **leer ofertas**:
 - La validación del teléfono **NO** revela presupuestos ni sustituye permisos de una ronda. La apertura comercial posterior necesita secret server, consentimiento V2 prospectivo y prueba E2E.
  
 **Nada de lo anterior se ejecutó en Supabase, Vercel o WhatsApp con esta orden `Avanza`**. GitHub seguirá siendo fuente de verdad; esta versión exige nueva publicación explícita.
+
+## Refuerzo de seguridad del comprador — 13/11/2026, SOLO CÓDIGO
+
+Se comprobó en el componente `respuestas-comprador.tsx` que una descarga comenzada con una sesión válida podía completar la conversión a `Blob` y el `anchor.click()` aun si la identidad Auth cambiaba durante la lectura asíncrona. El backend ya protege las descargas mediante JWT, sesión y permisos; el ajuste evita **entrega local tardía** por la interfaz tras logout/cambio de comprador.
+
+- Cada intento de descarga captura `authGeneration.current` y verifica que siga igual **después de obtener el token, después de recibir el response y después de leer el arrayBuffer**. Si cambió, no genera URL local ni descarga. Los errores de una sesión vieja no sustituyen el estado de la nueva.
+- La descarga usa `AbortSignal.timeout(20_000)`; un cambio de cuenta limpia el estado `busy`. La finalización de un refresh/descarga de identidad antigua no borra `busy` de la nueva.
+- La validación del teléfono para envío de SMS y alta inicial ahora acepta como máximo **15 dígitos E.164**, excluido `+` (`/\^\\\+[1-9]\\d\{7,14\}\$/u` como representación textual del patrón); se rechazan números de 16 dígitos antes de llamar a Supabase.
+- Nuevas pruebas en `v2-19-sms-sin-ofertas.test.mjs` y `v2-07-primer-comprador-auth.test.mjs`. Comprueban guardias de identidad y límite de longitud sin enviar SMS ni abrir ofertas.
+
+**Estado:** código y pruebas en la rama draft #836; falta CI del HEAD y `Publicalo` para Preview. Sin mutaciones en Supabase, ningún OTP enviado, sin actualización del webhook ni producción. **No resuelve la configuración GoTrue bloqueada** (signup público abierto / Phone no acreditado): debe corregirse externamente y validarse de nuevo antes del primer acceso real.
