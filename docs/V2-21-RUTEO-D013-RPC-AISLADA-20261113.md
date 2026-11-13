@@ -28,7 +28,7 @@ Audité en **solo lectura** el proyecto Supabase `cotironda-piloto`, `ilggkalaaf
 
 - **No cambiar `cotironda-piloto-whapi` v76** ni la SQL M221 histórica en esta fase. El trabajador V2 se desplegaría aparte y solo en un futuro `Publicalo`.
 - El parche anterior `v2_d013_ruteo_productos_sin_filtro_rubro.sql` permanece en repo por trazabilidad y compatibilidad de pruebas históricas; **NO debe instalarse en PILOTO si se adopta el aislamiento V2-21**.
-- **Pendiente de una siguiente etapa de desarrollo**: el parche del reloj `v2_05_shadow_prepare_activar_modo_habil.sql` también hace `CREATE OR REPLACE` sobre M221 histórico. Adaptarlo a **`cotironda_piloto_v2_shadow_prepare_d013`** con digest nuevo; evitar aplicar al legado. El calendario de dos días hábiles continúa con política OFF y no se activa en este cambio.
+- **Actualizado V2-22 (13/11):** el parche del reloj `v2_05_shadow_prepare_activar_modo_habil.sql` ya opera **únicamente** sobre `cotironda_piloto_v2_shadow_prepare_d013` (ver sección siguiente). M221 histórico mantiene huella invariable. El calendario todavía NO está instalado en el piloto y su política permanece OFF.
 - Los datos del proveedor y el comprador no cambian. **Ningún envío** ni promesa de stock o precios, ni sincronización automática de WhatsApp, ni migración SQL ejecutada.
 
 ## Próximo paso para acercarnos al circuito comercial
@@ -36,3 +36,20 @@ Audité en **solo lectura** el proyecto Supabase `cotironda-piloto`, `ilggkalaaf
 Con una próxima autorización **«Publicalo» para Supabase PILOTO**, revisar primero las pruebas PG17, el SHA exacto actual de la función histórica, permisos, rondas previas, backup y la política de calendario. Crear la RPC V2 aislada **sin cambiar M221**. Después seguir con el primer comprador SMS, los proveedores autorizados y el recorrido comercial nuevo. La publicación de una RPC no sustituye una ronda E2E con dos proveedores.
 
 **Criterio de aceptación operativo:** un producto solicitado con rubro editorial distinto al del catálogo real pasa solo si es técnicamente compatible, está efectivamente cargado para ese proveedor y su zona/canal están autorizados; un mero rubro coincidente sin línea de producto jamás habilita envío.
+
+## V2-22 — composición validada de D013 y calendario sin tocar M221
+
+**Estado:** desarrollado en PR #836, **no desplegado**. La corrección de V2-21 necesitaba una segunda adaptación: `supabase/piloto/v2_05_shadow_prepare_activar_modo_habil.sql` todavía apuntaba al nombre **histórico** de preparación M221. Quedó corregido:
+
+- El parche busca **dos** funciones distintas: M221 histórica y `cotironda_piloto_v2_shadow_prepare_d013` creada por V2-21. Si falta alguna, falla.
+- Exige huella SHA-256 **completa** de M221 `a2225bc790c82166a352559720673dca2bc17a97508eac0b9054411064c25cf9`.
+- Verifica el cuerpo V2 D013 contra el digest aprobado **normalizando únicamente el nombre de la función** al M221 de origen, sin ejecutar nada sobre M221. Su contenido resultante, con el nombre normalizado, debe ser exactamente `a54091b87a0eb57f0111749cd3151a2623b76f129130714b6830ae4a8943bc02`.
+- Inserta `timing_mode` **exclusivamente en la SQL de la RPC V2**, con modo `legacy_calendar` si la política está OFF y `business_two_days` si está ON, siempre que exista un calendario **aprobado** (el trigger de rondas impide inventar feriados). Rechaza las definiciones SQL que divergen, la falta de controles de catálogo/zona y modificaciones de ACL.
+- `supabase/tests/ci/v2-05-plazo-habil-pg17.sql` instala V2-21 + tablas de calendario + V2-22 **en una transacción sintética**, comprueba la inmutabilidad del digest M221, el ruteo V2 por producto y los dos modos de vencimiento (feriados, fines de semana, año nuevo, ciudad desconocida), y realiza `ROLLBACK`. **No vuelve a ejecutar el viejo parche que modificaba M221** ni siquiera durante CI.
+- `tests/unit/v2-22-calendario-rpc-aislada.test.mjs` impide volver a señalar la función histórica por accidente.
+
+**Validación GitHub:** al detectar que el nombre del clon cambia su propio hash, el primer CI detuvo el cambio (comportamiento seguro). Se corrigió el preflight **sin aflojar el digest del cuerpo**: normalización textual exclusiva del nombre. La repetición del ensayo PostgreSQL 17 resultó **SUCCESS**; el resto de controles está sujeto al SHA exacto de su commit.
+
+**Estado PILOTO verificado en solo lectura al terminar:** la función M221 conserva la SHA previa, `cotironda_piloto_v2_shadow_prepare_d013` aún no existe, tablas y política V2 de calendario **no instaladas**, `auth.users=0`, **7** rondas históricas intactas, originales V2 OFF. Ninguna migración de V2-22 aplicada, ni usuarios, SMS, WhatsApp, Vercel o Edge modificados.
+
+**Orden futuro sin romper legado:** con una nueva autorización `Publicalo` **solo para piloto**, instalación V2-21 aislada → migración de calendario V2-05 con política apagada → parche V2-22 a la RPC aislada → cargar/aprobar calendario real por localidad/año y verificar consentimiento → **solo en otra activación controlada** encender `v2_business_policy` y probar ronda nueva real. No activar calendario con feriados sintéticos ni confundir test PG17 con E2E.
