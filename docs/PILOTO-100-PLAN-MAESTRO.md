@@ -2,6 +2,8 @@
 
 ### ÚLTIMA DIRECCIÓN VERIFICADA — 13/11/2026 · IA por GitHub, cierre SQL
 
+**CI confirmada:** PR #837 HEAD `2991c20ec40f01f284fa70f6cedf9666354aef93` — **8/8 GitHub Actions SUCCESS**, incluidos nuevos tests de scheduler, cierre SQL-only, ACL retirada, Node/Deno, PG17/ROLLBACK y build Next. Esto NO valida E2E real. El repositorio es público y utiliza runner estándar `ubuntu-latest`: según GitHub (2026), sus minutos no se cobran; siguen existiendo límites y costos OpenAI/API.
+
 **La propuesta de revocar permisos de `pg_net` fue RETIRADA tras consultar la documentación oficial de Supabase (04/11/2026).** Esos grants provienen de `supabase_admin` y un `REVOKE` con `postgres` no los corrige; intentar suprimir grants `PUBLIC` podría afectar webhooks y workers. Además `anon`/`authenticated` son `NOLOGIN` y `net` no está expuesto por Data API por defecto. No anunciar una fuga pública de clientes basada solo en `has_table_privilege`.
 
 **Arquitectura D016 aprobada PARA DESARROLLO, NO PUBLICADA:**
