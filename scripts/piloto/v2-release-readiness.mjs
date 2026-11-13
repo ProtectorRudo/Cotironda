@@ -141,8 +141,15 @@ export function auditarPublicacionV2(input,phase='primer_original'){
  // TEXTO y el piloto completo sí: caso real y secreto exclusivamente Edge.
  if(phase==='primer_texto'||phase==='piloto_completo'){
   const text=instance(edge.private_text_reader);
+  const sqlText=instance(sup.v2_text_sql_contract);
+  // Un RPC antiguo con el mismo nombre NO acredita que lea WhatsApp texto.
+  // Verificar cuerpo SQL real mediante pg_get_functiondef(), sin revelar PII.
+  add('catalogo_sql_texto','El catálogo SQL instalado conoce la fuente textual',
+   sqlText.catalog_text===true);
+  add('fuente_sql_texto','La fuente privada SQL instalada permite authorized_text_v2',
+   sqlText.original_text===true);
   add('rpc_texto_auditado','Auditoría del original textual instalada en SQL',
-   has(sup.rpcs,REQUIRED_TEXT_RPC));
+   has(sup.rpcs,REQUIRED_TEXT_RPC)&&sqlText.audit_text_rpc===true);
   add('lector_texto_privado','Edge texto JWT comprador, doble permiso y secreto',
    text.status==='ACTIVE'&&text.verify_jwt===true&&
    text.secret_configured_in_both_services===true);
