@@ -10,6 +10,17 @@ on:
       - 'tests/unit/v2-d016-supabase-gotrue.test.mjs'
       - 'src/server/v2-d016-sesion-privada.ts'
       - 'tests/unit/v2-d016-sesion-privada.test.mjs'
+      - 'src/server/v2-d016-descarga-privada.ts'
+      - 'tests/unit/v2-d016-descarga-privada.test.mjs'
+      - 'tests/unit/v2-d016-rutas-portal.test.mjs'
+      - 'supabase/piloto/v2_d016_respuestas_y_originales_CANDIDATE.sql'
+      - 'supabase/tests/fixtures/v2-d016-response-checks.sql'
+      - 'supabase/tests/ci/v2-03-respondedores-pg17.sql'
+      - 'apps/portal/lib/piloto-v2-d016-http.ts'
+      - 'apps/portal/app/api/piloto/v2/acceso/**'
+      - 'apps/portal/app/api/piloto/v2/rondas/**'
+      - 'apps/portal/app/piloto/v2/acceso/**'
+      - 'apps/portal/app/piloto/v2/rondas/**'
       - 'supabase/piloto/v2_d016_whatsapp_link_tickets_CANDIDATE.sql'
       - 'supabase/tests/ci/v2-d016-whatsapp-access-pg17.sql'
       - 'docs/V2-D016-PUENTE-WHATSAPP-CANDIDATO-20261113.md'
@@ -57,6 +68,10 @@ jobs:
         run: node --experimental-strip-types --test tests/unit/v2-d016-supabase-gotrue.test.mjs
       - name: D016 cookie HttpOnly, sesión privada y revocación
         run: node --experimental-strip-types --test tests/unit/v2-d016-sesion-privada.test.mjs
+      - name: D016 descarga privada con doble revalidación, bytes y auditoría
+        run: node --experimental-strip-types --test tests/unit/v2-d016-descarga-privada.test.mjs
+      - name: D016 rutas Next sin teléfono ni Auth inventada
+        run: node --experimental-strip-types --test tests/unit/v2-d016-rutas-portal.test.mjs
       - name: D016 PostgreSQL 17 canje atomico, revocacion y aislamiento
         run: |
           set -euo pipefail
