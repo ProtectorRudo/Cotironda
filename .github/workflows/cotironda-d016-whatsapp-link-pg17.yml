@@ -71,7 +71,7 @@ jobs:
       - name: Generar candidato a partir de webhook v76 verificado
         run: node scripts/piloto/v2-d016-whapi-overlay.mjs --write-candidate
       - name: Deno typecheck del webhook V2-02 mas D016 sin desplegar
-        run: deno check supabase/functions/cotironda-piloto-whapi/index.v2-d016-candidate.ts
+        run: deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/index.v2-d016-candidate.ts
       - name: Eliminar candidato generado sin modificar index.ts
         if: always()
         run: rm -f supabase/functions/cotironda-piloto-whapi/index.v2-d016-candidate.ts
