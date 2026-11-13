@@ -8,9 +8,9 @@ Integrar el registro D016 de evidencia al envío existente `despacharSolicitudCe
 
 ## Implementación
 
-1. En `ai-central-dispatch-mvp223.ts` agregamos **dos callbacks opcionales** y emparejados: `prepareOriginalNotice` antes del HTTP Whapi, y `confirmOriginalNotice` después de que SQL `cotironda_piloto_ia_finish_mvp222` confirma el despacho con ID real. Con ambos ausentes el flujo existente permanece igual. Con uno ausente se aborta ANTES de reclamar.
+1. En la copia aislada `ai-central-dispatch-d016.ts` agregamos **dos callbacks opcionales** y emparejados: `prepareOriginalNotice` antes del HTTP Whapi, y `confirmOriginalNotice` después de que SQL `cotironda_piloto_ia_finish_mvp222` confirma el despacho con ID real. Con ambos ausentes el flujo existente permanece igual. Con uno ausente se aborta ANTES de reclamar.
 2. El adaptador `original-notice-dispatch-d016.ts` crea y valida el caption con `AVISO_ORIGINALES_D016_VERSION`, calcula el SHA-256 exacto y llama a las RPC privadas de reserva y confirmación ya instaladas en Supabase piloto.
-3. El script `v2-d016-original-notice-overlay.mjs` genera **solo en CI** una copia del webhook desde la huella v76 validada, V2-02 y D016 comprador. El código publicado original no se edita. El nuevo interruptor `COTIRONDA_PILOT_D016_ORIGINAL_NOTICE_ENABLED` arranca OFF. Si no hay reserva validada, no se emite el PDF. Si Whapi responde de manera incierta, el job se registra como incierto y no se asume consentimiento. Si la confirmación posterior falla, retorna conciliación y **no reenvía**.
+3. El script `v2-d016-original-notice-overlay.mjs` genera **solo en CI** una copia del webhook desde la huella v76 validada, V2-02 y D016 comprador. La generación sustituye únicamente en la copia temporal el import y la llamada al despachador, y conserva `ai-central-dispatch-mvp223.ts` exactamente como estaba en v76. El código publicado original no se edita. El nuevo interruptor `COTIRONDA_PILOT_D016_ORIGINAL_NOTICE_ENABLED` arranca OFF. Si no hay reserva validada, no se emite el PDF. Si Whapi responde de manera incierta, el job se registra como incierto y no se asume consentimiento. Si la confirmación posterior falla, retorna conciliación y **no reenvía**.
 4. El código de D016 devuelve **evidencia**, nunca consentimiento legal ni acceso a presupuestos: la leyenda `verified_reply_not_authorization` permanece sin permisos de descarga.
 
 ## Pruebas y compatibilidad
@@ -28,3 +28,7 @@ Integrar el registro D016 de evidencia al envío existente `despacharSolicitudCe
 - Configurar secretos privados, verificar webhook por SHA, probar E2E real con comprador y los dos proveedores, luego habilitar políticas/cron individualmente sólo en PILOTO.
 
 **Referencia:** [P0 #838](https://github.com/ProtectorRudo/Cotironda/issues/838), [plan maestro #794](https://github.com/ProtectorRudo/Cotironda/issues/794), [PR #839](https://github.com/ProtectorRudo/Cotironda/pull/839).
+
+## Corrección por el guard de integridad MVP332
+
+La primera ejecución de CI identificó correctamente un cambio de SHA en `ai-central-dispatch-mvp223.ts`, fichero bajo huella histórica protegida. Se **restauró el blob SHA original** (`e4ed4cc04a61f21ca243289c176f0b28608a105a`) y se movió el comportamiento V2 a `ai-central-dispatch-d016.ts` en una rama separada. El overlay generado ahora sustituye *sólo la referencia de import y la invocación dentro de su copia temporal*. No se modifica v76 instalada. El CI anterior que falló no debe presentarse como éxito; ejecutar de nuevo el tipo completo y tests sobre el nuevo HEAD.
