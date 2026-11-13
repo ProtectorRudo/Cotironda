@@ -5,7 +5,7 @@ import {spawnSync} from 'node:child_process';
 import {comprobarAuthPublicaPilotoV2}
  from '../../src/server/v2-18-auth-publica-preflight.ts';
 
-const URL='https://ilggkalaafhtiysyzlmg.supabase.co';
+const PILOT_URL='https://ilggkalaafhtiysyzlmg.supabase.co';
 const KEY='sb_publishable_'+'Q'.repeat(42);
 const good={
  external:{phone:true},disable_signup:true,
@@ -22,7 +22,7 @@ const fn=(body=good,status=200,ctype='application/json')=>{
 };
 test('V2-18: endpoint GET solo con clave publicable PILOTO y ningún secreto',async()=>{
  const mock=fn();
- const r=await comprobarAuthPublicaPilotoV2(URL,KEY,mock.fetchImpl);
+ const r=await comprobarAuthPublicaPilotoV2(PILOT_URL,KEY,mock.fetchImpl);
  assert.deepEqual(r,{
   state:'SETTINGS_READY_REQUIRES_REAL_SMS',
   code:'configuracion_auth_publica_compatible',
@@ -30,7 +30,7 @@ test('V2-18: endpoint GET solo con clave publicable PILOTO y ningún secreto',as
   smsConfirmedByUser:false,writesPerformed:false
  });
  assert.equal(mock.called.length,1);
- assert.equal(mock.called[0].url,URL+'/auth/v1/settings');
+ assert.equal(mock.called[0].url,PILOT_URL+'/auth/v1/settings');
  assert.equal(mock.called[0].init.method,'GET');
  assert.equal(mock.called[0].init.headers.apikey,KEY);
  assert.deepEqual(Object.keys(mock.called[0].init.headers).sort(),
@@ -42,13 +42,13 @@ test('V2-18: endpoint GET solo con clave publicable PILOTO y ningún secreto',as
  assert.ok(!JSON.stringify(r).includes(KEY));
 });
 
-test('V2-18: URL equivocada, secret key u otras keys se rechazan sin red',async()=>{
+test('V2-18: PILOT_URL equivocada, secret key u otras keys se rechazan sin red',async()=>{
  for(const [url,key] of [
   ['https://otro.supabase.co',KEY],
-  [URL,'sb_secret_'+'x'.repeat(50)],
-  [URL,'eyJfake'],
-  [URL,''],
-  [URL,'sb_publishable_foo'],
+  [PILOT_URL,'sb_secret_'+'x'.repeat(50)],
+  [PILOT_URL,'eyJfake'],
+  [PILOT_URL,''],
+  [PILOT_URL,'sb_publishable_foo'],
   ['',KEY]
  ]){
   const mock=fn();
@@ -71,7 +71,7 @@ test('V2-18: sin SMS, signup abierto o confirmación automática nunca se declar
   {external:{phone:true}}
  ]){
   const mock=fn(cfg);
-  const r=await comprobarAuthPublicaPilotoV2(URL,KEY,mock.fetchImpl);
+  const r=await comprobarAuthPublicaPilotoV2(PILOT_URL,KEY,mock.fetchImpl);
   assert.equal(r.state,'BLOCKED',JSON.stringify(cfg));
   assert.equal(r.code,'sms_o_registro_go_true_no_seguros');
   assert.equal(r.smsConfirmedByUser,false);
@@ -89,11 +89,11 @@ test('V2-18: red, HTTP, JSON, truncamiento o respuesta malformada fallan cerrado
   fn([]),
   fn({})
  ]){
-  const r=await comprobarAuthPublicaPilotoV2(URL,KEY,mock.fetchImpl);
+  const r=await comprobarAuthPublicaPilotoV2(PILOT_URL,KEY,mock.fetchImpl);
   assert.equal(r.state,'BLOCKED');
   assert.equal(r.writesPerformed,false);
  }
- const r=await comprobarAuthPublicaPilotoV2(URL,KEY,async()=>{throw Error('red unreachable')});
+ const r=await comprobarAuthPublicaPilotoV2(PILOT_URL,KEY,async()=>{throw Error('red unreachable')});
  assert.equal(r.state,'BLOCKED');
  assert.equal(r.code,'auth_settings_no_disponible');
 });
