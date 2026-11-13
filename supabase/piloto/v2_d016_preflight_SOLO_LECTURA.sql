@@ -57,6 +57,19 @@ WITH
    EXISTS(SELECT 1 FROM pg_extension WHERE extname='pg_net') pgnet_available,
    to_regclass('vault.decrypted_secrets') IS NOT NULL AS vault_available
  ),
+ transport_security AS (
+  SELECT
+   (
+    has_schema_privilege('anon','net','USAGE') AND
+    has_table_privilege('anon','net.http_request_queue','SELECT')
+   ) AS anon_can_read_http_queue,
+   (
+    has_schema_privilege('authenticated','net','USAGE') AND
+    has_table_privilege('authenticated','net.http_request_queue','SELECT')
+   ) AS authenticated_can_read_http_queue,
+   (SELECT relrowsecurity FROM pg_class
+     WHERE oid=to_regclass('net.http_request_queue')) AS queue_rls_enabled
+ ),
  contract AS (
   SELECT EXISTS (
    SELECT 1 FROM pg_constraint c
@@ -90,6 +103,10 @@ SELECT jsonb_build_object(
   'cron_disponible',d.cron_available,
   'pg_net_disponible',d.pgnet_available,
   'vault_disponible',d.vault_available,
+  'cola_pgnet_sin_lectura_publica',
+   NOT (COALESCE(t.anon_can_read_http_queue,false) OR
+        COALESCE(t.authenticated_can_read_http_queue,false)),
+  'cola_pgnet_rls_habilitada',COALESCE(t.queue_rls_enabled,false),
   'contrato_cierre_18_ar',k.deadline_at_18_verified
  ),
  'bloqueos_activacion',
@@ -109,7 +126,10 @@ SELECT jsonb_build_object(
   CASE WHEN NOT d.cron_available OR NOT d.pgnet_available OR NOT d.vault_available
    THEN 'extensiones_cron_net_vault_incompletas' END,
   CASE WHEN NOT k.deadline_at_18_verified
-   THEN 'restriccion_cierre_18_no_verificada' END
+   THEN 'restriccion_cierre_18_no_verificada' END,
+  CASE WHEN COALESCE(t.anon_can_read_http_queue,false) OR
+            COALESCE(t.authenticated_can_read_http_queue,false)
+   THEN 'cola_pgnet_expone_headers_a_roles_cliente' END
  ],NULL)),
  'sin_verificar_en_sql',jsonb_build_array(
   'identidad_de_proyecto_confirmada_por_conector',
@@ -126,4 +146,5 @@ FROM policies p
 CROSS JOIN calendar_status c
 CROSS JOIN consent_status a
 CROSS JOIN db_features d
-CROSS JOIN contract k;
+CROSS JOIN contract k
+CROSS JOIN transport_security t;
