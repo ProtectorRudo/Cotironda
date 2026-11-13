@@ -69,7 +69,8 @@ export function proyectarRespuestasV2(raw:unknown):CatalogoRespuestasV2|null{
      /(?:\+?\d[\s.-]?){8,}/u.test(it.supplierName)||
      it.supplierName.includes('@')||
      typeof it.mime!=='string'||!Object.hasOwn(FORMATS,it.mime)||
-     !['document','image'].includes(String(it.kind))||
+     !(['document','image'].includes(String(it.kind))||
+       (it.kind==='text'&&it.mime==='text/plain'))||
      typeof it.receivedAt!=='number'||!Number.isSafeInteger(it.receivedAt)||
      it.receivedAt<1577836800000||
      it.receivedAt>Date.now()+60_000)return null;
@@ -77,7 +78,8 @@ export function proyectarRespuestasV2(raw:unknown):CatalogoRespuestasV2|null{
   const points=safeAnalysis(it.analysis);
   res.push(Object.freeze({
    documentoId:it.documentId,comercio:it.supplierName,
-   formato:FORMATS[it.mime],recibidoMs:it.receivedAt,
+   formato:it.kind==='text'?'WhatsApp (texto)':FORMATS[it.mime],
+   recibidoMs:it.receivedAt,
    analisis:points.length?'Lo importante de este presupuesto':
     'Análisis en preparación',
    puntos:points
