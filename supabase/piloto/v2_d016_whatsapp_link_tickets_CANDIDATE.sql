@@ -147,3 +147,160 @@ GRANT EXECUTE ON FUNCTION public.cotironda_piloto_v2_d016_issue_ticket_private(
  text,text,uuid,text) TO service_role;
 GRANT EXECUTE ON FUNCTION public.cotironda_piloto_v2_d016_claim_ticket_private(
  text) TO service_role;
+
+-- Sesión del portal: NO usa campos de GoTrue phone_confirmed_at/email.
+-- El HMAC de la cookie jamás sale de esta tabla privada.
+CREATE TABLE cotironda_piloto_privado.v2_d016_browser_sessions (
+ sesion_hmac text PRIMARY KEY CHECK(sesion_hmac ~ '^[a-f0-9]{64}$'),
+ ticket_hmac text NOT NULL UNIQUE
+  REFERENCES cotironda_piloto_privado.v2_d016_access_tickets(ticket_hmac),
+ buyer_key text NOT NULL,request_id uuid NOT NULL,chat_hmac text NOT NULL
+  CHECK(chat_hmac ~ '^[a-f0-9]{64}$'),
+ created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+ expires_at timestamptz NOT NULL,
+ revoked_at timestamptz,
+ purpose text NOT NULL DEFAULT 'whatsapp_buyer_session'
+  CHECK (purpose='whatsapp_buyer_session'),
+ CHECK(expires_at>created_at
+  AND expires_at<=created_at+interval '8 hours')
+);
+ALTER TABLE cotironda_piloto_privado.v2_d016_browser_sessions
+ ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON cotironda_piloto_privado.v2_d016_browser_sessions
+ FROM PUBLIC,anon,authenticated;
+GRANT SELECT,INSERT,UPDATE ON cotironda_piloto_privado.v2_d016_browser_sessions
+ TO service_role;
+CREATE INDEX v2_d016_sessions_lookup
+ ON cotironda_piloto_privado.v2_d016_browser_sessions(request_id,buyer_key)
+ WHERE revoked_at IS NULL;
+
+-- Ticket + browser session en UNA operación transaccional y atómica.
+-- Si falla INSERT por conflicto/colisión, el UPDATE vuelve atrás.
+CREATE FUNCTION public.cotironda_piloto_v2_d016_claim_session_private(
+ p_ticket_hmac text,p_sesion_hmac text
+) RETURNS boolean
+LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
+AS $sess$
+DECLARE v_created text;v_now timestamptz:=clock_timestamp();
+BEGIN
+ IF p_ticket_hmac IS NULL OR p_ticket_hmac !~ '^[a-f0-9]{64}$'
+  OR p_sesion_hmac IS NULL OR p_sesion_hmac !~ '^[a-f0-9]{64}$'
+ THEN RETURN false;END IF;
+
+ WITH claimed AS (
+  UPDATE cotironda_piloto_privado.v2_d016_access_tickets t
+  SET consumed_at=v_now
+  WHERE t.ticket_hmac=p_ticket_hmac
+   AND t.consumed_at IS NULL AND t.revoked_at IS NULL
+   AND t.expires_at>v_now
+   AND t.purpose='whatsapp_buyer_login'
+   AND EXISTS (
+    SELECT 1 FROM cotironda_piloto_privado.requests r
+    JOIN cotironda_piloto_privado.participants buyer
+     ON buyer.key=r.buyer_key
+     AND buyer.participant_role='buyer'
+     AND buyer.chat_hmac=t.chat_hmac
+     AND buyer.consent_at IS NOT NULL
+     AND buyer.opted_out_at IS NULL
+    JOIN cotironda_piloto_privado.participant_channels_mvp109 channel
+     ON channel.participant_key=buyer.key
+     AND channel.chat_hmac=buyer.chat_hmac
+    JOIN cotironda_piloto_privado.whapi_inbox proof
+     ON proof.message_hmac=channel.authenticated_message_hmac
+     AND proof.chat_hmac=channel.chat_hmac
+     AND proof.participant_key=buyer.key
+    WHERE r.id=t.request_id AND r.buyer_key=t.buyer_key
+     AND r.state IN ('prepared','closed')
+     AND NOT EXISTS(
+      SELECT 1 FROM cotironda_piloto_privado.participant_channels_mvp109 x
+      JOIN cotironda_piloto_privado.participants other
+       ON other.key=x.participant_key
+      WHERE x.contact_sha256=channel.contact_sha256
+       AND x.participant_key<>buyer.key
+       AND other.participant_role='buyer'
+       AND other.opted_out_at IS NULL
+     )
+   )
+  RETURNING t.ticket_hmac,t.buyer_key,t.request_id,t.chat_hmac
+ )
+ INSERT INTO cotironda_piloto_privado.v2_d016_browser_sessions(
+  sesion_hmac,ticket_hmac,buyer_key,request_id,chat_hmac,
+  created_at,expires_at
+ )
+ SELECT p_sesion_hmac,c.ticket_hmac,c.buyer_key,c.request_id,
+  c.chat_hmac,v_now,v_now+interval '8 hours'
+ FROM claimed c
+ RETURNING sesion_hmac INTO v_created;
+ RETURN v_created IS NOT NULL;
+EXCEPTION WHEN unique_violation THEN RETURN false;
+END $sess$;
+
+-- Una cookie NO garantiza identidad; se revalida en CADA lectura.
+CREATE FUNCTION public.cotironda_piloto_v2_d016_session_context_private(
+ p_sesion_hmac text,p_request_id uuid
+) RETURNS jsonb
+LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO ''
+AS $context$
+DECLARE v_context jsonb;v_now timestamptz:=clock_timestamp();
+BEGIN
+ IF p_sesion_hmac IS NULL OR p_sesion_hmac !~ '^[a-f0-9]{64}$'
+  OR p_request_id IS NULL THEN RETURN NULL;END IF;
+ SELECT jsonb_build_object(
+  'state','authorized_buyer_whatsapp_session',
+  'buyerKey',s.buyer_key,'requestId',s.request_id::text
+ ) INTO v_context
+ FROM cotironda_piloto_privado.v2_d016_browser_sessions s
+ JOIN cotironda_piloto_privado.requests r
+  ON r.id=s.request_id AND r.buyer_key=s.buyer_key
+  AND r.state IN ('prepared','closed')
+ JOIN cotironda_piloto_privado.participants buyer
+  ON buyer.key=r.buyer_key AND buyer.participant_role='buyer'
+  AND buyer.chat_hmac=s.chat_hmac
+  AND buyer.consent_at IS NOT NULL AND buyer.opted_out_at IS NULL
+ JOIN cotironda_piloto_privado.participant_channels_mvp109 channel
+  ON channel.participant_key=buyer.key AND channel.chat_hmac=buyer.chat_hmac
+ JOIN cotironda_piloto_privado.whapi_inbox proof
+  ON proof.message_hmac=channel.authenticated_message_hmac
+  AND proof.participant_key=buyer.key AND proof.chat_hmac=buyer.chat_hmac
+ WHERE s.sesion_hmac=p_sesion_hmac AND s.request_id=p_request_id
+  AND s.revoked_at IS NULL AND s.expires_at>v_now
+  AND s.purpose='whatsapp_buyer_session'
+  AND NOT EXISTS(
+   SELECT 1 FROM cotironda_piloto_privado.participant_channels_mvp109 x
+   JOIN cotironda_piloto_privado.participants other
+    ON other.key=x.participant_key
+   WHERE x.contact_sha256=channel.contact_sha256
+    AND x.participant_key<>buyer.key
+    AND other.participant_role='buyer'
+    AND other.opted_out_at IS NULL
+  )
+ LIMIT 1;
+ RETURN v_context;
+END $context$;
+
+-- Logout explícito: invalidación inmediata en servidor.
+CREATE FUNCTION public.cotironda_piloto_v2_d016_logout_private(
+ p_sesion_hmac text
+) RETURNS boolean
+LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
+AS $logout$
+BEGIN
+ IF p_sesion_hmac IS NULL OR p_sesion_hmac !~ '^[a-f0-9]{64}$'
+ THEN RETURN false;END IF;
+ UPDATE cotironda_piloto_privado.v2_d016_browser_sessions
+ SET revoked_at=clock_timestamp()
+ WHERE sesion_hmac=p_sesion_hmac AND revoked_at IS NULL;
+ RETURN FOUND;
+END $logout$;
+REVOKE ALL ON FUNCTION public.cotironda_piloto_v2_d016_claim_session_private(
+ text,text) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.cotironda_piloto_v2_d016_session_context_private(
+ text,uuid) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.cotironda_piloto_v2_d016_logout_private(
+ text) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.cotironda_piloto_v2_d016_claim_session_private(
+ text,text) TO service_role;
+GRANT EXECUTE ON FUNCTION public.cotironda_piloto_v2_d016_session_context_private(
+ text,uuid) TO service_role;
+GRANT EXECUTE ON FUNCTION public.cotironda_piloto_v2_d016_logout_private(
+ text) TO service_role;
