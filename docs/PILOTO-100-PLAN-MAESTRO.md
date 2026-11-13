@@ -1,5 +1,15 @@
 # COTIRONDA V2 — PLAN MAESTRO Y CHECKLIST
 
+### 13/11/2026 — D016 / P0: recepción segura preparada; RPC privadas publicadas SIN activar
+
+- [x] **Migración real** Supabase piloto `20261113202332`: funciones privadas de recepción de respuesta y baja `NO COMPARTIR`, con identidad Whapi+proveedor+ronda, archivo SHA, revocación. Guard previa: siete rondas, una preparada, tres políticas OFF, ledger vacío, objetos ausentes. SQL posterior: **7 rondas intactas, 0 avisos, 0 respuestas, 0 revocaciones, anon/auth no ejecutan RPC**, negativos `denied` / `0`. [Acta](https://github.com/ProtectorRudo/Cotironda/blob/feat/d016-original-inbox-evidence-20261113/docs/PILOTO-D016-INBOX-ORIGINALES-PUBLICADO-20261113.md).
+- [x] [PR #841](https://github.com/ProtectorRudo/Cotironda/pull/841) DRAFT: módulo de recepción + comando exacto NO COMPARTIR + overlay de webhook generado sobre v76 inmutable; pruebas Node, SQL PG17 BEGIN/ROLLBACK, Deno del webhook candidato. `COTIRONDA_PILOT_D016_ORIGINAL_INBOX_ENABLED` OFF.
+- [ ] **Bloqueo P0:** acreditar cambios futuros de presupuesto (incluida correlación `semantic_unique_mvp291`) sin asignar una ronda equivocada; confirmar metadatos reales de reenviado y que el original esté guardado con SHA antes de marcar evidencia.
+- [ ] **Legales/permisos:** revisar consentimiento y cesión de datos personales, adaptar RPC/worker/descarga para requerir autorización por ronda y empresa y revocaciones. `verified_reply_not_authorization` **no concede lectura**.
+- [ ] Integrar webhook candidato en Preview separado y probar WhatsApp→pedido por catálogo de productos→dos presupuestos originales→portal privado/análisis por presupuesto→informe final. Desbloquear secretos, sesión sin SMS, Vercel cuota; sólo entonces evaluar encender flags en Supabase piloto.
+- [ ] **No tocar producción**, no crear autorizaciones retroactivas, no reenviar mensajes inciertos, no modificar Whapi v76 o módulo MVP223 protegido antes de verificar la huella.
+
+
 ### 13/11/2026 — D016: refuerzo lease publicado en piloto, WhatsApp comercial OFF
 
 - [x] Migración real Supabase PILOTO `20261113194958` aplicada con preflight de identidad PG17, 7 rondas/1 preparada, políticas OFF y ledger vacío.
