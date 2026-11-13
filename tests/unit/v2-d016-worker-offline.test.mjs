@@ -27,7 +27,7 @@ const request=(c={})=>new Request(URL+(c.query??''),{
 });
 const file=()=>({state:'authorized_original_v2',
  ...job(),buyerKey:'buyer_a',supplierKey:'supplier_a',
- messageHmac:MESSAGE,consentAt:1700000000000,invitedAt:1700000000001,
+ messageHmac:MESSAGE,sha256:SHA,consentAt:1700000000000,invitedAt:1700000000001,
  bucket:'cotironda-piloto-originals',path:'media/'+MESSAGE,byteCount:BYTES.length});
 const points=()=>[
  {categoria:'material',evidencia:'15 bolsas de cemento',
@@ -85,11 +85,12 @@ function fixture(){
 test('D016 offline: 1 oferta autenticada → fuente → IA → finish ready, sin comprador online',async()=>{
  const f=fixture();const res=await f.run();
  assert.equal(res.status,200);
- assert.deepEqual(await res.json(),{state:'ready',checked:1,ready:1,review:0});
+ const payload=await res.json();
+ assert.deepEqual(payload,{state:'ready',checked:1,ready:1,review:0});
  assert.deepEqual([f.state.claimCount,f.state.modelCount,f.state.finishCount],[1,1,1]);
  assert.equal(f.state.receipt.textSha256,SHA);
  assert.equal(f.state.receipt.points.length,2);
- assert.equal(JSON.stringify(await res.clone().json()).includes(TEXT),false);
+ assert.equal(JSON.stringify(payload).includes(TEXT),false);
 });
 test('D016 offline: sin trabajo, respuesta sin datos privados y costo cero',async()=>{
  const f=fixture();f.state.due=[];
