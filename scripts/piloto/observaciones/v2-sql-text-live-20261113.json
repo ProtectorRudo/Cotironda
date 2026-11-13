@@ -1,0 +1,16 @@
+{
+  "observed_at_utc": "2026-11-13T02:11:16.827Z",
+  "provenance": "Supabase cotironda-piloto: SELECT exclusivamente sobre pg_get_functiondef/to_regprocedure y conteos agregados. Sin datos personales, secretos ni mensajes. Observación puntual, no activación.",
+  "supabase_project": "ilggkalaafhtiysyzlmg",
+  "postgres_version": "17.11",
+  "contract": {
+    "responders_rpc": true,
+    "original_source_rpc": true,
+    "catalog_text": false,
+    "original_text": false,
+    "audit_text_rpc": false
+  },
+  "auth_users": 0,
+  "supplier_consents_v2": 0,
+  "originals_share_enabled": false
+}
