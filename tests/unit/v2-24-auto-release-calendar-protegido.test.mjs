@@ -48,7 +48,7 @@ test('V2-24: política, feriados, consentimiento, vigencia y timing incorrectos 
  for(const state of ['invalid','disabled','calendar_not_installed',
   'calendar_disabled','source_not_eligible','v2_timing_invalid',
   'deadline_not_verified','calendar_revision_invalid',
-  'auto_release_not_authorized','publication_not_ready']){
+  'auto_release_not_authorized']){
   const m=base();m.args.rpc=async(name,params)=>{
    m.calls.push({name,params});return {data:{state},error:null};
   };
@@ -64,6 +64,7 @@ test('V2-24: SQL desconocido, timeout, error o UUID inválido nunca son éxito',
   async()=>({data:{state:'ready_for_delivery',request_id:'bad'},error:null}),
   async()=>({data:{state:'ready_for_delivery',request_id:ID},error:'timeout'}),
   async()=>({data:{state:'unrecognized'},error:null}),
+  async()=>({data:{state:'publication_not_ready'},error:null}),
   async()=>({data:[],error:null})
  ]){
   const m=base();m.args.rpc=reply;
@@ -123,6 +124,8 @@ test('V2-24: ensayo PG17 incluye casos válidos e inválidos y rollback total',(
   'v2_24_legacy_calendar_allowed','v2_24_wrong_deadline_allowed',
   'v2_24_wrong_revision_allowed','v2_24_revoked_buyer_allowed',
   'v2_24_old_round_allowed','v2_24_duplicate_release',
+  'V2_24_ATOMIC_ROLLBACK_PG17_PASS',
+  'V2_24_PARTIAL_APPROVAL_WAS_COMMITTED',
   'V2_24_AUTO_RELEASE_GUARDED_PG17_PASS',
   'ROLLBACK;'])
  assert.ok(sql.includes(err),err);
