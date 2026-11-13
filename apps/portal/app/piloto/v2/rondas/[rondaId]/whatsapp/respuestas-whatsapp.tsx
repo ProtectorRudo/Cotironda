@@ -9,10 +9,12 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
  const [loading,setLoading]=useState(true);
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState('');
+ const [cerrada,setCerrada]=useState(false);
  const version=useRef(0);
  const running=useRef<number|null>(null);
  const url='/api/piloto/v2/rondas/'+encodeURIComponent(rondaId);
  const refresh=useCallback(async(silent=false)=>{
+  if(cerrada)return;
   const identity=version.current;
   if(running.current===identity)return;
   running.current=identity;
@@ -38,7 +40,7 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
    if(running.current===identity)running.current=null;
    if(identity===version.current){setLoading(false);if(!silent)setBusy(false)}
   }
- },[url]);
+ },[url,cerrada]);
  useEffect(()=>{
   void refresh();
   const timer=window.setInterval(()=>{
@@ -75,12 +77,29 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
     setError('No está disponible el original. Cotironda protege cada descarga y vuelve a comprobar los permisos.');
   }finally{if(identity===version.current)setBusy(false)}
  }
+ async function cerrarSesion(){
+  if(busy)return;
+  setBusy(true);setError('');
+  try{
+   const res=await fetch('/api/piloto/v2/acceso/salir',{
+    method:'POST',cache:'no-store',credentials:'same-origin',
+    signal:AbortSignal.timeout(15_000)
+   });
+   if(!res.ok)throw Error('logout_failed');
+   version.current++;
+   setCatalog(null);setCerrada(true);
+  }catch{setError('No pudimos cerrar tu sesión. Volvé a intentarlo.');}
+  finally{setBusy(false)}
+ }
+ if(cerrada)return <p role="status">Tu sesión está cerrada. Podés pedir otro enlace por WhatsApp.</p>;
  if(loading)return <p role="status">Comprobando tu pedido…</p>;
  if(error&&!catalog)return <p role="alert">{error}</p>;
  return <section aria-label="Cotizaciones recibidas">
   <div className="actions">
    <button className="button outline" type="button"
     disabled={busy} onClick={()=>void refresh()}>Actualizar</button>
+   <button className="button outline" type="button" disabled={busy}
+    onClick={()=>void cerrarSesion()}>Cerrar sesión</button>
   </div>
   {busy&&<p role="status">Verificando información…</p>}
   {error&&<p role="alert">{error}</p>}
