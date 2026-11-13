@@ -22,6 +22,7 @@ import {contrastarDocumentoCompradorMvp277} from './ai-central-buyer-binary-mvp2
 import {prepararDocumentoBinarioCompradorMvp278} from './ai-central-buyer-binary-broker-mvp278.ts';
 import {esRespuestaConfirmacionMvp279,emitirRevisionCompradorMvp279,confirmarPedidoCompradorMvp279} from './ai-central-buyer-review-mvp279.ts';
 import {notificarSeguimientoMvp289} from './buyer-tracking-confirmation-mvp289.ts';
+import {notificarAccesoWhatsappD016} from './buyer-whatsapp-entry-d016.ts';
 import {liberarPedidoAutomaticoMvp306} from './ai-central-buyer-auto-release-mvp306.ts';
 import {proveedorConRondaCentralMvp232} from './ai-central-supplier-route-mvp232.ts';
 import {esAvisoAdjuntoProveedorMvp238} from './ai-supplier-attachment-notice-mvp238.ts';
@@ -1766,6 +1767,46 @@ async function respond(req:Request):Promise<Response>{
  // all jobs and locks a single tracking token per request.
  for(const notice of buyerLinkRequests){
   if(!sec.outbound||Deno.env.get('COTIRONDA_PILOT_BUYER_TRACKING_ENABLED')==='false')continue;
+  // D016 reemplaza al aviso MVP289, no envía ambos en el mismo evento.
+  if(Deno.env.get('COTIRONDA_PILOT_D016_WHATSAPP_SEND_ENABLED')==='true'){
+   const access=await notificarAccesoWhatsappD016({
+    enabled:true,webhookAutenticado:true,compradorVerificado:true,
+    ...notice,
+    portalOrigin:Deno.env.get('COTIRONDA_PILOT_D016_PORTAL_ORIGIN')??'',
+    portalSha:Deno.env.get('COTIRONDA_PILOT_D016_PORTAL_RELEASE_SHA')??'',
+    approvedSha:Deno.env.get('COTIRONDA_PILOT_D016_APPROVED_RELEASE_SHA')??'',
+    hmacKeyHex:Deno.env.get('COTIRONDA_PILOT_D016_HMAC_KEY_HEX')??'',
+    rpc:async(name,params)=>{
+     const r=await db.rpc(name,params);
+     return {data:r.data,error:r.error};
+    },
+    authorizeChat:async(recipient,expectedChatHmac)=>{
+     if(recipient!==notice.recipient)return false;
+     const calculated=await hmac(sec.key,'cotironda|pilot|chat|'+sec.channel+
+      '|'+recipient);
+     return equalSecret(calculated,expectedChatHmac);
+    },
+    send:async(recipient,body)=>{
+     if(recipient!==notice.recipient)throw Error('d016_buyer_chat_changed');
+     const response=await fetch('https://gate.whapi.cloud/messages/text',{
+      method:'POST',headers:{Authorization:'Bearer '+sec.token,
+       'Content-Type':'application/json'},
+      body:JSON.stringify({to:recipient,body}),signal:AbortSignal.timeout(12000)
+     });
+     const payload=response.ok?await response.json().catch(()=>null):null;
+     const value=payload&&typeof payload==='object'?
+      payload as Record<string,unknown>:null;
+     const nested=value?.message&&typeof value.message==='object'?
+      value.message as Record<string,unknown>:null;
+     const id=value?.message_id??nested?.id??value?.id;
+     return {accepted:response.ok&&value?.sent===true,
+      messageId:typeof id==='string'?id:null};
+    }
+   });
+   if(access.estado==='conciliacion_requerida')
+    return json(503,'buyer_d016_link_reconciliation_required');
+   continue;
+  }
   const result=await notificarSeguimientoMvp289({
    enabled:true,buyerVerified:true,...notice,
    rpc:async(name,params)=>{
