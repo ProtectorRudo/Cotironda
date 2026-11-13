@@ -1,6 +1,6 @@
 # Cotironda V2-20 — diagnóstico de SMS desde Preview protegida
 
-**Fecha:** 13/11/2026 · **Estado:** solo desarrollo y CI, no publicado · PR #836.
+**Fecha:** 13/11/2026 · **Estado:** diagnóstico base publicado en Preview `06e1700`; ampliación por campo solo en rama (sin publicar) · PR #836.
 
 ## Objetivo operativo
 
@@ -63,4 +63,22 @@ Test `tests/unit/v2-20-diagnostico-sms-http.test.mjs`:
 3. Desplegar Preview desde SHA exacto y leer `/api/piloto/v2/diagnostico-sms` con acceso autorizado SSO. Si bloquea, corregir **el proveedor real de Supabase**; no intentar crear usuarios.
 4. Cuando informe configuración compatible, solo con alta autorizada del comprador real y SMS en funcionamiento, abrir la página OTP V2-19 con `AUTH_PAGE_ENABLED=true`. Completar `verifyOtp` con el código **real**. Sólo después tratar consentimientos V2 y presupuestos comerciales.
 
-**Estado al redactar:** código+tests en rama, sin despliegue ni modificaciones de Vercel/Supabase, sin crear cuentas y sin SMS/WhatsApp. La Preview anterior `b591ab7` sigue siendo la desplegada.
+**Estado confirmado en la primera publicación:** Preview protegida SSO ALL `dpl_9d7DghjFZpP9Lo8hW4JtouUPiZnh`, commit `06e1700` READY; cuatro migraciones V2 instaladas con políticas OFF. El endpoint base respondía detrás de SSO: `serviceAccessible=true`, `signupClosed=false`, `phoneConfigured=false`, `writesPerformed=false`. Es **configuración insegura/insuficiente**, no fallo de la Preview. `auth.users=0`; no se envió SMS.
+
+## Ampliación de diagnóstico por condición — SOLO DESARROLLO (13/11)
+
+Se mantienen todos los bloqueos, el mismo endpoint GET, SSO y ninguna escritura. Se agrega desglose **exclusivamente booleano**:
+
+- `signupClosed`: `disable_signup===true` en **Supabase GoTrue**, distinto del switch Vercel `COTIRONDA_REGISTRATION_ENABLED=false`.
+- `phoneEnabled`: `external.phone===true` (método Phone de Supabase Auth habilitado).
+- `autoConfirmDisabled`: `phone_autoconfirm===false` (la posesión del número debe demostrarse con OTP).
+- `smsProviderReady`: `sms_provider` anuncia un identificador de proveedor no vacío, no simulado ni inválido; **no** valida credenciales, saldo, entrega o cobertura Argentina.
+- `phoneConfigured`: agregado conservado por compatibilidad, **solo `true` cuando los cuatro anteriores son `true`**. Un `false` no debe interpretarse sin mirar los cuatro campos.
+
+La inspección por campo **reutiliza el criterio V2-07** del alta segura. Ausencia de un dato, error HTTP, JSON inválido y respuestas inesperadas fallan cerrados. No se devuelven teléfonos, OTP, nombres de proveedor, credenciales, payload GoTrue completo ni información personal. Test de regresión V2-07/V2-18/V2-20 para cada caso individual.
+
+**Pendiente:** el desglose nuevo requiere publicación de una Preview distinta **solo con «Publicalo»**. El despliegue vigente continúa entregando el formato anterior hasta entonces. La lectura real anterior solo confirma de manera independiente `signupClosed=false`; no permite afirmar todavía qué otras condiciones fallaron.
+
+**Próxima acción operativa:** cerrar registros públicos **dentro de Supabase Auth**, configurar Phone y un SMS provider real con `phone_autoconfirm=false`, respetando presupuestos/rate limits. Las herramientas Supabase actualmente disponibles aquí no tienen operación para editar configuración de Auth; no intentar UPDATE SQL sobre `auth.config` ni producir un SMS de prueba sin autorización. Repetir GET desde SSO y, si queda `SETTINGS_READY_REQUIRES_REAL_SMS`, hacer un OTP real con el primer comprador verificado en una publicación separada. Mantener `AUTH_PAGE_ENABLED`, originales, análisis, envío y cierre OFF.
+
+Fuentes: [GoTrue settings.go](https://github.com/supabase/auth/blob/master/internal/api/settings.go) y [Supabase Phone sign-in](https://supabase.com/docs/guides/auth/phone-login).
