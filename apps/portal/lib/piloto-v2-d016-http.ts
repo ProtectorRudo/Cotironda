@@ -15,6 +15,10 @@ import {descargarConWhatsappD016}
  from '../../../src/server/v2-d016-descarga-privada.ts';
 import {leerTextoOriginalEdgeD016}
  from '../../../src/server/v2-d016-texto-edge-client.ts';
+import {analizarOriginalWhatsAppD016}
+ from '../../../src/server/v2-d016-analisis-automatica.ts';
+import {leerPdfOriginalPorEdgeV2}
+ from '../../../src/server/v2-04c-pdf-edge-client.ts';
 
 const PILOT='https://ilggkalaafhtiysyzlmg.supabase.co';
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/iu;
@@ -213,4 +217,76 @@ export async function cerrarSesionPortalD016(
     '=; Max-Age=0; Path=/; Secure; HttpOnly; SameSite=Lax'
   }});
  }catch{return deny(503)}
+}
+
+/** D016: POST automático desde navegador del comprador autenticado,
+ * sin botones de IA; SQL limita a 3 intentos por SHA con lease de 90 s.
+ * No exponer modelos, fuentes ni secretos al navegador.
+ */
+export async function analizarOriginalWhatsAppPortalD016(
+ req:Request,rondaId:string,documentoId:string,
+ env:Record<string,string|undefined>=process.env
+):Promise<Response>{
+ const gate=puertaWhatsappPortalD016(env);
+ const db=gate?privateDb(env):null;
+ if(!gate||!db)return deny(503);
+ return analizarOriginalWhatsAppD016(gate,req,rondaId,documentoId,{
+  habilitado:env.COTIRONDA_D016_ANALYSIS_ENABLED==='true',
+  apiKey:env.COTIRONDA_PILOT_OPENAI_API_KEY??'',
+  pdfHabilitado:env.COTIRONDA_PILOT_V2_PDF_ENABLED==='true',
+  pdfSecret:env.COTIRONDA_PILOT_V2_PDF_SHARED_SECRET??''
+ },{
+  verificarSesion:async({sesionHmac,rondaId})=>
+   sessionContext(db,sesionHmac,rondaId),
+  fuente:async({sesionHmac,rondaId,documentoId})=>{
+   const {data,error}=await db.rpc(
+    'cotironda_piloto_v2_d016_original_source_private',{
+     p_request_id:rondaId,p_sesion_hmac:sesionHmac,
+     p_document_id:documentoId
+    });
+   if(error)throw Error('d016_analysis_source_failed');
+   return data;
+  },
+  reclamar:async({sesionHmac,rondaId,documentoId})=>{
+   const {data,error}=await db.rpc(
+    'cotironda_piloto_v2_d016_analysis_claim_private',{
+     p_request_id:rondaId,p_sesion_hmac:sesionHmac,
+     p_document_id:documentoId
+    });
+   if(error)throw Error('d016_analysis_claim_failed');
+   return data;
+  },
+  leerArchivo:async({bucket,path})=>{
+   if(bucket!=='cotironda-piloto-originals'||
+    !/^media\/[a-f0-9]{64}$/u.test(path))return null;
+   const {data,error}=await db.storage.from(bucket).download(path);
+   if(error||!data||data.size<40||data.size>8388608)return null;
+   const bytes=new Uint8Array(await data.arrayBuffer());
+   return bytes.length===data.size?bytes:null;
+  },
+  leerTexto:async(source,sesionHmac)=>leerTextoOriginalEdgeD016(
+   source,sesionHmac,{
+    COTIRONDA_PILOT_SUPABASE_URL:env.COTIRONDA_PILOT_SUPABASE_URL,
+    COTIRONDA_PILOT_SUPABASE_SECRET_KEY:env.COTIRONDA_PILOT_SUPABASE_SECRET_KEY,
+    COTIRONDA_D016_TEXT_ENABLED:env.COTIRONDA_D016_TEXT_ENABLED,
+    COTIRONDA_D016_TEXT_SHARED_SECRET:env.COTIRONDA_D016_TEXT_SHARED_SECRET
+   }),
+  leerPdf:async(bytes,sha)=>leerPdfOriginalPorEdgeV2(bytes,sha,{
+   COTIRONDA_PILOT_SUPABASE_URL:env.COTIRONDA_PILOT_SUPABASE_URL,
+   COTIRONDA_PILOT_V2_PDF_ENABLED:env.COTIRONDA_PILOT_V2_PDF_ENABLED,
+   COTIRONDA_PILOT_V2_PDF_SHARED_SECRET:
+    env.COTIRONDA_PILOT_V2_PDF_SHARED_SECRET
+  }),
+  finalizar:async({sesionHmac,rondaId,documentoId,jobToken,
+   sourceSha256,textSha256,points,status})=>{
+   const {data,error}=await db.rpc(
+    'cotironda_piloto_v2_d016_analysis_finish_private',{
+     p_request_id:rondaId,p_sesion_hmac:sesionHmac,
+     p_document_id:documentoId,p_job_token:jobToken,
+     p_source_sha256:sourceSha256,p_text_sha256:textSha256,
+     p_points:points,p_status:status
+    });
+   return !error&&data===true;
+  }
+ });
 }
