@@ -101,9 +101,24 @@ export function auditarPublicacionV2(input,phase='primer_original'){
   edge.private_pdf_reader?.secret_configured_in_both_services===true);
  add('portal_next_unico','Proyecto Vercel Next.js específico',
   ver.project==='cotironda-portal-dev'&&ver.framework==='nextjs');
- add('portal_git_correcto','Proyecto portal DEV vinculado al GitHub exacto',
-  ver.git_linked===true&&ver.git_org==='ProtectorRudo'&&
-  ver.git_repo==='Cotironda');
+ // El proyecto DEV hoy no tiene Git vinculado. Un despliegue directo
+ // desde SHA GitHub SOLO sirve después de verificar la URL real, commit,
+ // repo, equipo, proyecto y root. No confundir capacidad API con deploy.
+ const gitConectado=ver.git_linked===true&&
+  ver.git_org==='ProtectorRudo'&&ver.git_repo==='Cotironda';
+ const commitDirecto=ver.deploy_source_type==='github_sha_direct'&&
+  ver.preview_source_verified===true&&
+  ver.deployed_project_id==='prj_d13rTHxJADvP2K9PcrM0CJQD9Zok'&&
+  ver.deployed_team_id==='team_CE76WzHKVPy9e28LXIw2r3J4'&&
+  ver.source_repository==='ProtectorRudo/Cotironda'&&
+  ver.root_directory==='apps/portal'&&ver.target==='preview'&&
+  ver.preview_state==='READY'&&
+  typeof ver.source_commit_sha==='string'&&SHA40.test(ver.source_commit_sha)&&
+  ver.preview_sha===ver.source_commit_sha&&
+  ver.release_sha===ver.source_commit_sha;
+ add('portal_git_correcto',
+  'Proyecto DEV Git correcto o Preview directa desde SHA verificada',
+  gitConectado||commitDirecto);
  add('vercel_cuota','Vercel puede crear un Preview sin cuota agotada',
   ver.deployment_quota_available===true);
  add('portal_preview_protegida','Preview Vercel protegida',
