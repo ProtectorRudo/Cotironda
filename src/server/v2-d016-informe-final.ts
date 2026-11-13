@@ -8,6 +8,7 @@ import type {CatalogoRespuestasV2,PuntoVisibleV2}
 
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/iu;
 const AREAS=['iva','flete','forma_pago','plazo','disponibilidad'] as const;
+const CONTACT=/(?:\+?\d[\s().-]?){9,}|[\w.+-]+@[\w.-]+\.\w+|https?:\/\//iu;
 type Area=typeof AREAS[number];
 type Evidencia=Readonly<{
  categoria:string;evidencia:string;observacion:string;
@@ -63,7 +64,8 @@ export function componerInformeFinalD016(
    if(!evidence||typeof evidence.categoria!=='string'||
     typeof evidence.evidencia!=='string'||typeof evidence.observacion!=='string'||
     evidence.evidencia.length<6||evidence.evidencia.length>180||
-    evidence.observacion.length<12||evidence.observacion.length>240)
+    evidence.observacion.length<12||evidence.observacion.length>240||
+    CONTACT.test(evidence.evidencia)||CONTACT.test(evidence.observacion))
     return null;
    business.items.push({...evidence,documentoId:quote.documentoId});
    if((AREAS as readonly string[]).includes(evidence.categoria))
