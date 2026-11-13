@@ -13,6 +13,7 @@ on:
       - 'tests/unit/v2-d016-whapi-envio.test.mjs'
       - 'supabase/functions/cotironda-piloto-whapi/buyer-whatsapp-entry-d016.ts'
       - 'supabase/functions/cotironda-piloto-whapi/index.ts'
+      - 'scripts/piloto/v2-d016-whapi-overlay.mjs'
       - 'src/server/v2-d016-descarga-privada.ts'
       - 'tests/unit/v2-d016-descarga-privada.test.mjs'
       - 'tests/unit/v2-d016-rutas-portal.test.mjs'
@@ -63,6 +64,17 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '22.16.0'
+      - name: Instalar Deno 2 para chequear solo el candidato
+        uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb
+        with:
+          deno-version: v2.x
+      - name: Generar candidato a partir de webhook v76 verificado
+        run: node scripts/piloto/v2-d016-whapi-overlay.mjs --write-candidate
+      - name: Deno typecheck del webhook V2-02 mas D016 sin desplegar
+        run: deno check supabase/functions/cotironda-piloto-whapi/index.v2-d016-candidate.ts
+      - name: Eliminar candidato generado sin modificar index.ts
+        if: always()
+        run: rm -f supabase/functions/cotironda-piloto-whapi/index.v2-d016-candidate.ts
       - name: D016 HMAC y enlace temporal, bloqueos sin Auth falsificada
         run: node --experimental-strip-types --test tests/unit/v2-d016-enlace-whatsapp.test.mjs
       - name: D016 sesión GoTrue existente, identidad y cookie sin SMS
