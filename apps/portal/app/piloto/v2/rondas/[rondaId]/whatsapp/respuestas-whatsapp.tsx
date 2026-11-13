@@ -2,6 +2,8 @@
 /** Cotironda D016: sesión HttpOnly, no OTP ni JWT en JavaScript. */
 import {useCallback,useEffect,useRef,useState} from 'react';
 import type {CatalogoRespuestasV2} from '../../../../../../../../src/server/v2-03-catalogo-respondedores.ts';
+import type {InformeFinalD016}
+ from '../../../../../../../../src/server/v2-d016-informe-final.ts';
 import {nombreDescargaOriginalV2} from '../../../../../../lib/piloto-v2-nombre-descarga.ts';
 
 export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
@@ -15,6 +17,8 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
  const startedAnalyses=useRef(new Set<string>());
  const analysisRunning=useRef(false);
  const [analizando,setAnalizando]=useState(false);
+ const [informe,setInforme]=useState<InformeFinalD016|null>(null);
+ const informeRunning=useRef(false);
  const url='/api/piloto/v2/rondas/'+encodeURIComponent(rondaId);
  const refresh=useCallback(async(silent=false)=>{
   if(cerrada)return;
@@ -94,6 +98,32 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
   return ()=>{active=false};
  },[catalog,cerrada,url,refresh]);
 
+ // El informe FINAL solo llega si PostgreSQL confirma que terminó la
+ // ronda de dos días hábiles con calendario aprobado. No lo anticipamos.
+ useEffect(()=>{
+  if(cerrada||!catalog||informeRunning.current)return;
+  let active=true;
+  const identity=version.current;
+  informeRunning.current=true;
+  void (async()=>{
+   try{
+    const response=await fetch(url+'/informe-final-whatsapp',{
+     method:'GET',cache:'no-store',credentials:'same-origin',
+     signal:AbortSignal.timeout(15_000)
+    });
+    if(!active||identity!==version.current)return;
+    if(response.status===202){setInforme(null);return}
+    if(!response.ok){setInforme(null);return}
+    const data:InformeFinalD016=await response.json();
+    if(data.estado!=='informe_final_disponible'||
+     !Array.isArray(data.comparacion)||data.documentos<0)return;
+    setInforme(data);
+   }catch{if(active&&identity===version.current)setInforme(null)}
+   finally{informeRunning.current=false}
+  })();
+  return ()=>{active=false};
+ },[catalog,cerrada,url]);
+
  async function download(doc:string){
   if(busy||!catalog)return;
   const identity=version.current;
@@ -168,5 +198,29 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
     {q.formato==='WhatsApp (texto)'?'Descargar mensaje original':'Descargar original'}
    </button>
   </article>)}
+  {informe&&<section aria-label="Informe final de Cotironda"
+   className="notice" style={{marginTop:'2rem'}}>
+   <h2>Informe final de la ronda</h2>
+   <p>Ronda cerrada el {new Date(informe.cierreMs).toLocaleString('es-AR',{
+    timeZone:'America/Argentina/Buenos_Aires'
+   })}</p>
+   <p><strong>{informe.resumen}</strong></p>
+   {informe.comparacion.map(item=><div key={item.comercio}
+    style={{marginBlock:'1rem'}}>
+    <h3>{item.comercio}</h3>
+    <p>{item.documentos} documento(s), {item.analizados} con guía verificada.</p>
+    <p>Condiciones con evidencia citada:
+     {Object.entries(item.condiciones).filter(([,v])=>v==='citado_en_guia')
+      .map(([k])=>' '+k.replaceAll('_',' ')).join(',')||' ninguna identificada en la guía'}.
+    </p>
+    {item.evidencias.slice(0,4).map((p,i)=><p
+     key={p.documentoId+'-'+i}>
+     <strong>{p.categoria.replaceAll('_',' ')}:</strong> {p.observacion}
+     <small> Según el original: «{p.evidencia}»</small>
+    </p>)}
+   </div>)}
+   <ul>{informe.observaciones.map((p,i)=><li key={i}>{p}</li>)}</ul>
+   <p><small>{informe.mensaje}</small></p>
+  </section>}
  </section>;
 }
