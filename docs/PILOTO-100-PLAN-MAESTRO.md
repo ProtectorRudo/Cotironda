@@ -1,5 +1,17 @@
 # COTIRONDA V2 — PLAN MAESTRO Y CHECKLIST
 
+### 13/11/2026 — Publicación UI f985 detenida por cuota de Vercel
+
+- [x] Código UI de acceso Preview OFF corregido: pantalla informativa sin exponer datos ni invocar API; 404 se conserva para otros entornos/rutas privadas. Tests y **8/8 CI SUCCESS** en HEAD `f98527c9516478783bd7cf95433c58f5ca445937`.
+- [ ] **NUEVO BLOQUEO EXTERNO:** Vercel Hobby API de deployments devolvió **HTTP 402, `api-deployments-free-per-day`, cuota diaria >100**, con `retryAfter:86400`; **NO** se desplegó commit f985. Resolver plan/cuota en el equipo oficial, sin cambiar proyectos ni producción.
+- [x] Revalidado que deployment anterior `dpl_DZkYMAzzVbZitq4Dz1NwyYN7Yued` sigue READY y SSO ON, código `64b8573...`. Su login D016 sigue 404 porque está OFF. Share temporal generado para propietario, no registrar token en el repositorio.
+- [x] Definido bloqueo legal/técnico de originales en [Issue #838](https://github.com/ProtectorRudo/Cotironda/issues/838): consentimiento V2 verificable prospectivo (antes de invitación según SQL actual) sin registro adicional. 2 proveedores con consentimiento general NO equivale al consentimiento al original.
+- [ ] Configurar secretos servidor de Vercel/Supabase Edge/GitHub con controles de presupuesto y sin exponer tokens; usar identidad de proyecto piloto exacta, conservar Whapi v76; no activar políticas V2 hasta que exista flujo completo probando originales.
+- [ ] Al superar cuota: publicar SHA revisado, HTTP smoke privado, seguridad, canje WhatsApp, originales, análisis de IA y cierre 18 AR. Producción prohibida.
+
+**Acta:** [D016 publicación piloto](docs/PILOTO-D016-PUBLICACION-REAL-20261113.md) — calendario 2026 aprobado, infra SQL/Edge instalada; E2E pendiente.
+
+
 ### ACTUALIZACIÓN DE PUBLICACIÓN PILOTO — 13/11/2026 (estado actual)
 
 - [x] **Calendario oficial 2026 La Plata aprobado SIN retroactividad**: 18 fechas, `lp_v2_r1`, feriados optativos comerciales y turísticos cuentan hábiles. Comprobados deadlines viernes 13/11→martes 17/11, jueves 19/11→martes 24/11, siempre 18:00 AR. **2027 pendiente**, no inventar.
