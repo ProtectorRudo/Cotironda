@@ -4,6 +4,7 @@ DO $d016_resp$
 DECLARE
  old_catalog jsonb;new_catalog jsonb;old_source jsonb;new_source jsonb;
  old_text jsonb;new_text jsonb;text_doc uuid;
+ analysis_claim jsonb;analysis_points jsonb;with_analysis jsonb;
  doc uuid;session_hmac text:=repeat('a',64);
 BEGIN
  -- V2-14 revocó consentimiento al terminar; devolverlo en fixture
@@ -53,7 +54,56 @@ BEGIN
  OR new_source->>'supplierKey'<>old_source->>'supplierKey'
  THEN RAISE EXCEPTION 'd016_source_not_equivalent';END IF;
 
- IF public.cotironda_piloto_v2_d016_original_source_private(
+-- D016 analysis: no SMS, misma fuente SHA y consentimiento original.
+ DELETE FROM cotironda_piloto_privado.v2_original_analysis
+ WHERE request_id='aaaaaaaa-1111-4111-8111-111111111111'
+  AND document_id=doc;
+ IF public.cotironda_piloto_v2_d016_analysis_claim_private(
+   'aaaaaaaa-1111-4111-8111-111111111111',repeat('b',64),doc)
+ IS NOT NULL THEN RAISE EXCEPTION 'd016_analysis_claim_without_session';END IF;
+ IF public.cotironda_piloto_v2_d016_analysis_claim_private(
+   'bbbbbbbb-2222-4222-8222-222222222222',session_hmac,doc)
+ IS NOT NULL THEN RAISE EXCEPTION 'd016_analysis_claim_cross_round';END IF;
+ analysis_claim:=public.cotironda_piloto_v2_d016_analysis_claim_private(
+  'aaaaaaaa-1111-4111-8111-111111111111',session_hmac,doc);
+ IF analysis_claim->>'state'<>'analysis_claimed_v2'
+  OR analysis_claim->>'sourceSha256'<>new_source->>'sha256'
+ THEN RAISE EXCEPTION 'd016_analysis_claim_bad:%',analysis_claim;END IF;
+ IF public.cotironda_piloto_v2_d016_analysis_claim_private(
+  'aaaaaaaa-1111-4111-8111-111111111111',session_hmac,doc) IS NOT NULL
+ THEN RAISE EXCEPTION 'd016_analysis_double_cost';END IF;
+ analysis_points:=jsonb_build_array(
+  jsonb_build_object('categoria','material',
+   'evidencia','Cemento Portland 50 kg',
+   'observacion','La presentación requiere comprobar la equivalencia de bolsas.'),
+  jsonb_build_object('categoria','iva',
+   'evidencia','IVA no informado',
+   'observacion','La cotización no especifica el tratamiento del IVA.')
+ );
+ IF public.cotironda_piloto_v2_d016_analysis_finish_private(
+  'aaaaaaaa-1111-4111-8111-111111111111',session_hmac,doc,
+  gen_random_uuid(),new_source->>'sha256',
+  repeat('f',64),analysis_points,'ready') IS DISTINCT FROM false
+ THEN RAISE EXCEPTION 'd016_analysis_forged_job';END IF;
+ IF public.cotironda_piloto_v2_d016_analysis_finish_private(
+  'aaaaaaaa-1111-4111-8111-111111111111',session_hmac,doc,
+  (analysis_claim->>'jobToken')::uuid,new_source->>'sha256',
+  repeat('f',64),analysis_points,'ready') IS DISTINCT FROM true
+ THEN RAISE EXCEPTION 'd016_analysis_finish_failed';END IF;
+ IF public.cotironda_piloto_v2_d016_analysis_finish_private(
+  'aaaaaaaa-1111-4111-8111-111111111111',session_hmac,doc,
+  (analysis_claim->>'jobToken')::uuid,new_source->>'sha256',
+  repeat('f',64),analysis_points,'ready') IS DISTINCT FROM false
+ THEN RAISE EXCEPTION 'd016_analysis_double_finish';END IF;
+ with_analysis:=public.cotironda_piloto_v2_d016_responders_with_analysis_private(
+  'aaaaaaaa-1111-4111-8111-111111111111',session_hmac);
+ IF NOT EXISTS(
+  SELECT 1 FROM jsonb_array_elements(with_analysis->'originals') t(value)
+  WHERE t.value->>'documentId'=doc::text
+   AND t.value->'analysis'->>'state'='ready'
+   AND jsonb_array_length(t.value->'analysis'->'points')=2
+ ) THEN RAISE EXCEPTION 'd016_analysis_not_visible_to_buyer';END IF;
+  IF public.cotironda_piloto_v2_d016_original_source_private(
   'bbbbbbbb-2222-4222-8222-222222222222',session_hmac,doc)
  IS NOT NULL THEN RAISE EXCEPTION 'd016_cross_request_original';END IF;
  IF public.cotironda_piloto_v2_d016_record_download_private(
