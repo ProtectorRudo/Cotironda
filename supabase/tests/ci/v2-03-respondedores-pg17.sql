@@ -130,8 +130,6 @@ INSERT INTO cotironda_piloto_privado.ai_supplier_links_mvp225 VALUES
 
 -- Fixture V2-13: el aviso MVP238 antecede a un PDF almacenado.
 -- No se instala SQL en entornos reales; todo termina con ROLLBACK.
-ALTER TABLE cotironda_piloto_privado.whapi_inbox
- ADD COLUMN plaintext_sha256 text;
 CREATE TABLE cotironda_piloto_privado.ai_supplier_preambles_mvp238 (
  preamble_hmac text PRIMARY KEY,
  request_id uuid,supplier_key text,chat_hmac text,
