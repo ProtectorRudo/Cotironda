@@ -1,5 +1,16 @@
 # COTIRONDA V2 — PLAN MAESTRO Y CHECKLIST
 
+### ACTUALIZACIÓN DE PUBLICACIÓN PILOTO — 13/11/2026 (estado actual)
+
+- [x] **Calendario oficial 2026 La Plata aprobado SIN retroactividad**: 18 fechas, `lp_v2_r1`, feriados optativos comerciales y turísticos cuentan hábiles. Comprobados deadlines viernes 13/11→martes 17/11, jueves 19/11→martes 24/11, siempre 18:00 AR. **2027 pendiente**, no inventar.
+- [x] **Vercel Preview D016 redesplegado READY** SHA `64b8573...`, ID `dpl_DZkYMAzzVbZitq4Dz1NwyYN7Yued`, <https://cotironda-portal-myz6huv21-protector-rudo-s-projects.vercel.app>; cinco variables D016 solo PREVIEW (3 flags OFF), alias estable, SSO ON y acceso privado temporal preparado. Sin tocar producción.
+- [x] **SQL preflight** corrido de nuevo: todas las RPC D016 instaladas, calendario aprobado, comprador 1 y proveedores 2 con consentimiento general/Whapi verificado; **0 consentimientos específicos V2 de originales**, 3 políticas OFF, 0 cron D016, 0 rondas V2 y 0 RPC D016 públicas. **Quedan 4 bloqueos SQL**, más secretos/SSO/integración/E2E no comprobables con SQL.
+- [ ] Capturar prueba auténtica y prospectiva de permiso para compartir el presupuesto original **antes de invitar** (`accepted_at <= inv.created_at` y mensaje WhatsApp real) en el mismo flujo sin volver a registrar personas; NO fabricar registros retroactivos.
+- [ ] Aprovisionar claves protegidas sin exponerlas en la conversación: Vercel `COTIRONDA_PILOT_SUPABASE_SECRET_KEY`, claves HMAC/Edge/Whapi/GitHub; los conectores disponibles no administran secretos de Supabase Edge ni GitHub Actions. Integrar entrada de WhatsApp y conservar v76 hasta auditar huella.
+- [ ] Solo después habilitar las políticas V2 con `activated_at` prospectivo, activar cron cierre SQL y worker GitHub con presupuesto y probar WhatsApp+portal+originales+IA+informe final en ronda NUEVA.
+
+**Acta más reciente:** [publicación D016](docs/PILOTO-D016-PUBLICACION-REAL-20261113.md). No declarar piloto 100% ni enviar mensajes sin prueba.
+
 ### PUBLICACIÓN REAL D016 PILOTO — 13/11/2026 · PREVIEW READY / SQL Y EDGE INSTALADOS, AÚN INACTIVO COMERCIALMENTE
 
 **Autorización ejecutada: «Publicalo» SOLO PILOTO, NO producción.**
