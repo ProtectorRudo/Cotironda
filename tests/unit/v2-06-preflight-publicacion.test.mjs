@@ -277,3 +277,44 @@ test('V2-15: foto real postrelease NO puede aprobar sólo con esquema previo',()
   assert.ok(report.blockers.some(x=>x.code===code),code);
  }
 });
+
+test('V2-15: Preview SHA directa permite no vincular Git solo con identidad real',()=>{
+ const a=readySnapshot();
+ a.vercel.git_linked=false;
+ a.vercel.deploy_source_type='github_sha_direct';
+ a.vercel.preview_source_verified=true;
+ a.vercel.deployed_project_id='prj_d13rTHxJADvP2K9PcrM0CJQD9Zok';
+ a.vercel.deployed_team_id='team_CE76WzHKVPy9e28LXIw2r3J4';
+ a.vercel.source_repository='ProtectorRudo/Cotironda';
+ a.vercel.root_directory='apps/portal';
+ a.vercel.source_commit_sha=a.vercel.release_sha;
+ const report=auditarPublicacionV2(a,'primer_original');
+ assert.equal(report.result,'PREFLIGHT_PASS_REQUIRES_PUBLICALO');
+ assert.equal(report.can_publish,false);
+ for(const mutation of [
+  {deployed_project_id:'prj_wrong'},
+  {deployed_team_id:'team_wrong'},
+  {source_repository:'Atacante/Falso'},
+  {root_directory:''},
+  {source_commit_sha:'0'.repeat(40)},
+  {preview_source_verified:false},
+  {target:'production'},
+  {preview_state:'ERROR'}
+ ]){
+  const invalid=structuredClone(a);
+  Object.assign(invalid.vercel,mutation);
+  assert.ok(auditarPublicacionV2(invalid).blockers.some(x=>
+   x.code==='portal_git_correcto'),JSON.stringify(mutation));
+ }
+});
+
+test('V2-15: Github desconectado sin Preview SHA comprobada no pasa',()=>{
+ const a=readySnapshot();
+ a.vercel.git_linked=false;
+ a.vercel.deploy_source_type='github_sha_direct';
+ a.vercel.preview_source_verified=false;
+ const result=auditarPublicacionV2(a,'primer_original');
+ assert.equal(result.result,'BLOCKED');
+ assert.ok(result.blockers.some(x=>x.code==='portal_git_correcto'));
+ assert.equal(result.can_publish,false);
+});
