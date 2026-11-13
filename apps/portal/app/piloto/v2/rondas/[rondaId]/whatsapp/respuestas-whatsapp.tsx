@@ -80,7 +80,7 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
        encodeURIComponent(item.documentoId),{
        method:'POST',credentials:'same-origin',cache:'no-store',
        headers:{'accept':'application/json'},
-       signal:AbortSignal.timeout(25_000)
+       signal:AbortSignal.timeout(55_000)
       });
       if(answer.ok)changed=true;
       if(answer.status===401||answer.status===403||answer.status===404)
