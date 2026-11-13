@@ -181,3 +181,20 @@ export async function resolverTextoPrivadoD016(
   }});
  }catch{return no(503)}
 }
+
+/** Internal-only helper for the Supabase D016 worker (NEVER an HTTP route).
+ * A source is accepted ONLY after worker_source_private has separately
+ * verified buyer, supplier, consent, SHA and its exact round. The AES key
+ * never leaves Supabase Edge. */
+export async function descifrarFuenteWorkerD016(
+ raw:unknown,aesHex:string
+):Promise<Uint8Array|null>{
+ if(!object(raw)||raw.state!=='authorized_text_v2'||
+  typeof raw.requestId!=='string'||!UUID.test(raw.requestId)||
+  typeof raw.documentId!=='string'||!UUID.test(raw.documentId)||
+  typeof raw.buyerKey!=='string'||!BUYER.test(raw.buyerKey)||
+  !AES.test(aesHex)||/^0{64}$/u.test(aesHex))
+  return null;
+ const src=sourceOk(raw,raw.requestId,raw.documentId,raw.buyerKey);
+ return src?decrypt(src,aesHex):null;
+}
