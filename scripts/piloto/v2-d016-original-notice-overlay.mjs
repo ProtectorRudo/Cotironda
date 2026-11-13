@@ -20,6 +20,16 @@ function once(raw,needle,replacement,name){
 }
 export function generarWebhookOriginalD016(original){
  let out=generarWebhookD016(original);
+ // MVP223 original conserva SHA inmutable; sólo el candidato V2
+ // utiliza la copia aislada del transporte con callbacks opt-in.
+ out=once(out,
+  "import {despacharSolicitudCentralMvp223} from './ai-central-dispatch-mvp223.ts';",
+  "import {despacharSolicitudCentralD016} from './ai-central-dispatch-d016.ts';",
+  'dispatch-import');
+ out=once(out,
+  'const result=await despacharSolicitudCentralMvp223({',
+  'const result=await despacharSolicitudCentralD016({',
+  'dispatch-call');
  const imp="import {notificarAccesoWhatsappD016} from './buyer-whatsapp-entry-d016.ts';";
  out=once(out,imp,imp+
   "\nimport {reservarAvisoOriginalEnDespachoD016,registrarResultadoOriginalD016}"+
