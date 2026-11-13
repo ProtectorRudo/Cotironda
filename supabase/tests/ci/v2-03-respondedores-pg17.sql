@@ -443,7 +443,7 @@ BEGIN
  SELECT (value->>'documentId')::uuid INTO doc
  FROM jsonb_array_elements(got->'originals')
  WHERE value->>'kind'='text';
- IF doc IS NULL THEN RAISE EXCEPTION 'v2_14_text_id_absent';END IF;
+ IF doc IS NULL THEN RAISE EXCEPTION 'v2_14_text_id_absent:%',got;END IF;
  src:=public.cotironda_piloto_v2_original_source_private(
   'aaaaaaaa-1111-4111-8111-111111111111',
   '11111111-1111-4111-8111-111111111111',
