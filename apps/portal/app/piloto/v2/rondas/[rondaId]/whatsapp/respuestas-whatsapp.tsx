@@ -89,7 +89,9 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
     }
    }finally{
     analysisRunning.current=false;
-    if(active&&current===version.current){
+    // Una actualización periódica puede reemplazar el catálogo mientras
+    // el modelo trabaja. Limpiar el indicador aunque cambie el render.
+    if(current===version.current){
      setAnalizando(false);
      if(changed)void refresh(true);
     }
