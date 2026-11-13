@@ -152,7 +152,81 @@ BEGIN
    AND consent_msg.received_at=c.accepted_at
   WHERE link.request_id=p_request_id
    AND link.kind IN ('document','image')
-   AND link.association IN ('quoted_whapi_id','single_active_round')
+   -- Un archivo recibido después de un aviso verificable del mismo
+   -- proveedor también es respuesta. No alcanza el nombre del archivo
+   -- ni la proximidad temporal: exigir el vínculo MVP238 firmado, la
+   -- huella del texto original y una única ronda/proveedor ya asociados.
+   AND (
+    link.association IN ('quoted_whapi_id','single_active_round')
+    OR (
+     link.association='prior_supplier_preamble'
+     AND EXISTS (
+      SELECT 1
+      FROM cotironda_piloto_privado.ai_supplier_preambles_mvp238 preamble
+      JOIN cotironda_piloto_privado.whapi_inbox notice
+       ON notice.message_hmac=preamble.preamble_hmac
+       AND notice.chat_hmac=preamble.chat_hmac
+       AND notice.participant_key=preamble.supplier_key
+       AND notice.kind='text'
+       AND notice.request_id=preamble.request_id
+       AND notice.received_at=preamble.received_at
+       AND notice.plaintext_sha256=preamble.source_sha256
+      WHERE preamble.attachment_hmac=link.message_hmac
+       AND preamble.request_id=link.request_id
+       AND preamble.supplier_key=link.supplier_key
+       AND preamble.chat_hmac=source.chat_hmac
+       AND preamble.attached_at IS NOT NULL
+       AND preamble.attached_at>=source.received_at
+       AND preamble.received_at<source.received_at
+       AND preamble.received_at>=source.received_at-interval '24 hours'
+       AND preamble.source_sha256 ~ '^[a-f0-9]{64}
+   AND link.status='awaiting_semantic_review'
+   AND link.source_sha256 ~ '^[a-f0-9]{64}$'
+   AND a.content_sha256 ~ '^[a-f0-9]{64}$'
+   AND source.received_at>=r.created_at
+   AND source.received_at<=r.closes_at
+   AND source.received_at<=v_now
+   AND supplier.consent_at<=dispatch.finished_at
+   AND NOT EXISTS (
+    SELECT 1 FROM cotironda_piloto_privado.ai_supplier_unresolved_mvp237 bad
+    WHERE bad.message_hmac=link.message_hmac
+      AND bad.state IN ('ambiguous_round','media_context_conflict')
+   )
+  ORDER BY a.message_hmac
+ LOOP
+  v_total:=v_total+1;
+  IF v_total>100 THEN RETURN NULL; END IF;
+  -- Identificador opaco estable: NO expone HMAC, ruta ni contactos.
+  v_hex:=encode(extensions.digest(convert_to(
+   'cotironda-v2-original|'||p_request_id::text||'|'||v_rec.message_hmac,
+   'UTF8'),'sha256'),'hex');
+  v_doc:=(substr(v_hex,1,8)||'-'||substr(v_hex,9,4)||'-4'||
+   substr(v_hex,14,3)||'-a'||substr(v_hex,18,3)||'-'||
+   substr(v_hex,21,12))::uuid;
+  v_docs:=v_docs||jsonb_build_array(jsonb_build_object(
+   'documentId',v_doc::text,
+   'supplierName',btrim(v_rec.display_label),
+   'mime',v_rec.mime,'kind',v_rec.kind,
+   'receivedAt',(extract(epoch from v_rec.received_at)*1000)::bigint
+  ));
+ END LOOP;
+ RETURN jsonb_build_object(
+  'state','authorized_responders_v2','buyerKey',v_buyer,
+  'total',v_total,'originals',v_docs);
+END;
+$v2$;
+
+-- Funcion privilegiada visible en public SOLO por el servidor.
+REVOKE ALL ON FUNCTION
+ public.cotironda_piloto_v2_responders_private(uuid,uuid,uuid)
+ FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION
+ public.cotironda_piloto_v2_responders_private(uuid,uuid,uuid)
+ TO service_role;
+
+     )
+    )
+   )
    AND link.status='awaiting_semantic_review'
    AND link.source_sha256 ~ '^[a-f0-9]{64}$'
    AND a.content_sha256 ~ '^[a-f0-9]{64}$'
