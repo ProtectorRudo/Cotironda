@@ -4,6 +4,8 @@ on:
     paths:
       - 'src/server/v2-d016-enlace-whatsapp.ts'
       - 'tests/unit/v2-d016-enlace-whatsapp.test.mjs'
+      - 'src/server/v2-d016-sesion-auth.ts'
+      - 'tests/unit/v2-d016-sesion-auth.test.mjs'
       - 'supabase/piloto/v2_d016_whatsapp_link_tickets_CANDIDATE.sql'
       - 'supabase/tests/ci/v2-d016-whatsapp-access-pg17.sql'
       - 'docs/V2-D016-PUENTE-WHATSAPP-CANDIDATO-20261113.md'
@@ -45,6 +47,8 @@ jobs:
           node-version: '22.16.0'
       - name: D016 HMAC y enlace temporal, bloqueos sin Auth falsificada
         run: node --experimental-strip-types --test tests/unit/v2-d016-enlace-whatsapp.test.mjs
+      - name: D016 sesión GoTrue existente, identidad y cookie sin SMS
+        run: node --experimental-strip-types --test tests/unit/v2-d016-sesion-auth.test.mjs
       - name: D016 PostgreSQL 17 canje atomico, revocacion y aislamiento
         run: |
           set -euo pipefail
