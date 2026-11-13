@@ -24,10 +24,16 @@ BEGIN
   ON share.singleton=true AND share.enabled=true
   AND share.activated_at IS NOT NULL
   AND share.activated_at<=r.created_at
+ JOIN cotironda_piloto_privado.v2_auto_release_policy automatic
+  ON automatic.singleton=true AND automatic.enabled=true
+  AND automatic.activated_at IS NOT NULL
+  AND automatic.activated_at<=r.created_at
  WHERE r.id=p_request_id AND r.buyer_key=v_buyer
   AND r.state IN ('prepared','closed')
   AND r.timing_mode='business_two_days' AND r.round_days=2
   AND r.v2_calendar_revision IS NOT NULL
+  AND r.closes_at=public.cotironda_piloto_v2_d016_expected_close_private(
+   r.created_at,r.delivery_city,r.v2_calendar_revision)
   AND EXISTS (
    SELECT 1 FROM cotironda_piloto_privado.v2_business_calendar cal
    WHERE cal.revision=r.v2_calendar_revision
@@ -46,6 +52,14 @@ BEGIN
   )
  LIMIT 1;
  IF NOT FOUND THEN RETURN NULL;END IF;
+ -- Solo mostrar informe como final si el cierre fue ejecutado por
+ -- el scheduler D016 y quedó auditado con deadline/verificación exactos.
+ IF v_request.state='closed' AND NOT EXISTS(
+  SELECT 1 FROM cotironda_piloto_privado.v2_d016_closure_audit audit
+  WHERE audit.request_id=v_request.id
+   AND audit.expected_deadline=v_request.closes_at
+   AND audit.closed_at=v_request.closed_at
+ ) THEN RETURN NULL;END IF;
  IF v_request.state<>'closed' OR v_request.closed_at IS NULL OR
   v_request.closed_at<v_request.closes_at OR
   v_request.closed_at>clock_timestamp() OR
