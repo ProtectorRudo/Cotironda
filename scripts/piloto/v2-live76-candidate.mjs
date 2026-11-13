@@ -45,6 +45,10 @@ export function generarCandidatoV202DesdeLive76(index,supplier){
  // D013 is a V2 overlay ONLY; the deployed buyer pipeline stays untouched.
  candidate=matchOne(candidate,"from './ai-central-buyer-mvp226.ts';",
   "from './ai-central-buyer-v2-d013.ts';",'buyer-d013');
+ // La respuesta tardía con localidad NUNCA vuelve a la función M221
+ // histórica. V2 usa el mismo catálogo y guardias D013 en ambos caminos.
+ candidate=matchOne(candidate,"from './ai-central-zone-mvp233.ts';",
+  "from './ai-central-zone-v2-d013.ts';",'zone-d013');
  for(const marker of [
   'connectivityOnlyMvp333','processedInboundMvp333',
   'webhookSecretState','index.v2-live76-candidate.ts'
@@ -54,6 +58,9 @@ export function generarCandidatoV202DesdeLive76(index,supplier){
  }
  if(candidate.includes("from './supplier-auto-correlation-mvp291.ts'"))
   throw Error('live_v76_reverted_supplier_correlation');
+ if(candidate.includes("from './ai-central-zone-mvp233.ts'")||
+    candidate.includes("from './ai-central-buyer-mvp226.ts'"))
+  throw Error('v2_23_legacy_buyer_or_zone_import');
  return candidate;
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
