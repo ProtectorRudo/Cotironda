@@ -1,5 +1,22 @@
 # Cotironda V2 D016 — Acta de publicación REAL · 13/11/2026
 
+## ACTUALIZACIÓN POSTERIOR — 13/11/2026, 15:20 AR · publicación acotada y calendario aprobado
+
+**Esta sección sustituye las cifras anteriores que indicaban calendario sin aprobar.** El usuario volvió a autorizar «Avanza y publicalo (lo que debas hacer)», siempre SOLO PILOTO.
+
+- **Supabase `cotironda-piloto`: calendario `la plata/2026/lp_v2_r1` APROBADO prospectivamente**, 18 feriados oficiales verificados (9/11, 11/11 PBA y 23/11 Soberanía), con la política comercial de que feriados optativos del comercio y días turísticos no laborables cuentan hábiles; no se tocó ninguna ronda histórica. La RPC `v2_d016_expected_close_private` confirmó **viernes 13/11/2026 → martes 17/11/2026 a las 18:00 AR**, mismo resultado que `v2_deadline` del trigger real. 2027 aún no está aprobado y se bloquea al cruzar año.
+- **Preflight SOLO LECTURA ejecutado nuevamente:** RPC de ticket, sesión, worker, cierre e informe final existentes, check 18 AR y Vault verificados. Quedan **cuatro bloqueos SQL**: `politica_negocio_off`, `originales_off`, `cierre_automatico_off` y `menos_de_dos_proveedores_con_consentimiento_originales`. Los controles externos (credenciales de Edge/Vercel/GitHub, entrega WhatsApp, acceso SSO y E2E) siguen pendientes y no forman parte del número cuatro.
+- **Proveedores reales:** 2 con consentimiento GENERAL vigente y WhatsApp autenticado; **0 con consentimiento ESPECÍFICO de compartir originales V2**. El SQL D016 exige versión `cotironda-originales-v2`, un mensaje entrante auténtico `whapi_inbox` y `accepted_at <= invitations.created_at`. NO backfillear fechas, NO atribuir contenido de aceptación a mensajes anteriores. Es necesario resolver aceptación transparente de la regla V2 antes de invitar, aprovechando el WhatsApp existente y evitando un nuevo registro.
+- **Vercel proyecto correcto `cotironda-portal-dev`:** creadas cinco variables NO secretas y solo para PREVIEW: `COTIRONDA_D016_ENABLED=false`, `COTIRONDA_D016_TEXT_ENABLED=false`, `COTIRONDA_D016_ANALYSIS_ENABLED=false`, `COTIRONDA_D016_RELEASE_SHA` (SHA aprobado) y `COTIRONDA_D016_PORTAL_ORIGIN` apuntando al alias estable de la rama. Las variables no se pudieron limitar a una rama porque el proyecto NO está conectado a Git; únicamente se aplicaron al target `preview`, sin tocar `production`.
+- **Nuevo Preview desde SHA inmutable `64b8573fde5321dabaef557d2bea40c7d80bc503`:** deployment `dpl_DZkYMAzzVbZitq4Dz1NwyYN7Yued`, estado **READY**, URL <https://cotironda-portal-myz6huv21-protector-rudo-s-projects.vercel.app>, alias estable <https://cotironda-portal-dev-git-feat-c9bde9-protector-rudo-s-projects.vercel.app>. SSO conservado. Se creó un enlace privado temporal de acceso de Vercel (~23 horas) solo para la conversación con el propietario; **no se registra el token en GitHub ni documentación**.
+- **No disponibles todavía:** `COTIRONDA_PILOT_SUPABASE_SECRET_KEY` en Vercel Preview; HMAC y secretos compartidos D016 segregados en Edge/WhatsApp/GitHub. Los conectores actuales permiten gestionar envs de Vercel, pero no configurar secretos de Supabase Edge o GitHub Actions ni enlazar el proyecto Vercel existente a Git automáticamente. No inventar que la IA/offline y la sesión privada están operativas.
+- **Auditoría final:** 1 calendario aprobado, 18 feriados, 0 rondas `business_two_days`, 0 cron D016, 0 RPC D016 ejecutables por roles públicos y **tres políticas V2 OFF**. Se dejaron apagadas porque sin consentimiento/secretos la activación produciría rondas imposibles de completar.
+- **Ningún WhatsApp nuevo, modelo IA real, envío de presupuestos ni cambio en producción.** Whapi histórico v76 intacto. No se integró PR #837 ni se asignó dominio productivo.
+
+**Siguiente decisión técnica:** publicar la ruta que recaba y registra autorización original V2 ANTES de invitar, con prueba de WhatsApp y sin pasos extra; cargar secretos privados de forma segura en los respectivos proveedores, integrar overlay Whapi con huella verificada, activar primero gates prospectivos y probar **arquitecto → dos proveedores → originales/análisis → cierre**. Toda activación exige prueba negativa de no filtración.
+
+--- 
+
 **ENTORNO EXCLUSIVO: PILOTO. No producción.**
 **Estado: publicada infraestructura candidata con bloqueo comercial deliberado.
 NO es un E2E real ni un piloto 100% operativo.**
