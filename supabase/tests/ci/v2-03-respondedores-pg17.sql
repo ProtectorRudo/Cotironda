@@ -561,13 +561,22 @@ CREATE TABLE cotironda_piloto_privado.v2_business_policy(
  singleton boolean PRIMARY KEY,enabled boolean,activated_at timestamptz);
 CREATE TABLE cotironda_piloto_privado.v2_business_calendar(
  locality text,year integer,revision text,approved_at timestamptz);
+CREATE TABLE cotironda_piloto_privado.v2_business_holidays(
+ locality text,day date,calendar_year integer,description text,evidence text);
+CREATE TABLE cotironda_piloto_privado.v2_auto_release_policy(
+ singleton boolean PRIMARY KEY,enabled boolean,activated_at timestamptz);
 INSERT INTO cotironda_piloto_privado.v2_business_policy VALUES
- (true,true,now()-interval '12 days');
+ (true,true,now()-interval '16 days');
+INSERT INTO cotironda_piloto_privado.v2_auto_release_policy VALUES
+ (true,true,now()-interval '16 days');
 INSERT INTO cotironda_piloto_privado.v2_business_calendar VALUES
  ('La Plata',extract(year from now() AT TIME ZONE
   'America/Argentina/Buenos_Aires')::integer,'lp_piloto_2026',
-  now()-interval '12 days');
+  now()-interval '16 days');
+\ir ../../piloto/v2_d016_worker_offline_CANDIDATE.sql
+\ir ../../piloto/v2_d016_cierre_habil_CANDIDATE.sql
 \ir ../../piloto/v2_d016_informe_final_CANDIDATE.sql
 \ir ../fixtures/v2-d016-response-checks.sql
+\ir ../fixtures/v2-d016-offline-closure-checks.sql
 \ir ../fixtures/v2-07-buyer-auth-checks.sql
 ROLLBACK;
