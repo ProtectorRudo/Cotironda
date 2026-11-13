@@ -22,9 +22,11 @@ async function main(){
  const env=process.env;
  const url=env.COTIRONDA_PILOT_SUPABASE_URL??'';
  const secret=env.COTIRONDA_PILOT_SUPABASE_SECRET_KEY??'';
+ const publishable=env.COTIRONDA_PILOT_SUPABASE_PUBLISHABLE_KEY??'';
  const branch=env.COTIRONDA_AUTH_BOOTSTRAP_TARGET??'';
  if(url!==PILOT||!secret.startsWith('sb_secret_')||
-  secret.length<24||branch!=='preview'){
+  !publishable.startsWith('sb_publishable_')||
+  secret.length<24||publishable.length<24||branch!=='preview'){
   process.stdout.write(JSON.stringify({state:'BLOCKED',
    code:'servidor_piloto_o_credenciales_no_configurados',
    userCreated:false})+'\n');
@@ -48,6 +50,21 @@ async function main(){
    const {data,error}=await client.auth.admin.listUsers({page:1,perPage:2});
    if(error||!Array.isArray(data?.users))return null;
    return data.users.length;
+  },
+  readPublicAuthSettings:async()=>{
+   // Consultar únicamente configuración PÚBLICA de GoTrue. Nunca enviar
+   // service role ni teléfono ni OTP. Si falta SMS, el alta falla cerrada.
+   const r=await fetch(PILOT+'/auth/v1/settings',{
+    method:'GET',cache:'no-store',redirect:'error',
+    headers:{apikey:publishable,accept:'application/json'},
+    signal:AbortSignal.timeout(6000)
+   });
+   if(r.status!==200||
+    !r.headers.get('content-type')?.includes('application/json'))
+    return null;
+   const text=await r.text();
+   if(text.length>8192)return null;
+   try{return JSON.parse(text)}catch{return null}
   },
   isVerifiedBuyerPhone:async(buyerKey,sha)=>{
    const {data,error}=await client.rpc(
