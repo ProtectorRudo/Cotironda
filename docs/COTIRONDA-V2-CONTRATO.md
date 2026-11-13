@@ -4,6 +4,12 @@
 
 > **PRECEDENCIA OBLIGATORIA:** este documento reemplaza las decisiones funcionales anteriores en lo que contradigan Cotironda V2. Para ejecutar trabajo leer primero: **este contrato → [Plan maestro V2](PILOTO-100-PLAN-MAESTRO.md) → [Estado/relevo V2](PILOTO-100-ESTADO.md) → [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794)**. README y AGENTS deben apuntar aquí. La documentación en `docs/historico/`, PR anteriores y memorias de chat son evidencia histórica, **no instrucciones activas**. Toda duda se registra como decisión explícita, no se resuelve recuperando una regla vieja.
 
+## D016 — acceso del comprador con un toque desde WhatsApp (13/11/2026)
+
+**DECISIÓN VIGENTE Y APROBADA:** [D016 — WhatsApp sin SMS](V2-D016-ACCESO-WHATSAPP-SIN-SMS-20261113.md) sustituye **solo el flujo de login telefónico** anterior. El comprador recibe en su WhatsApp autenticado un enlace privado de uso único y corta vigencia; tocarlo crea una sesión real autorizada, sin pedir contraseña, correo ni código. Si vence, pide otro enlace por WhatsApp; no hay registro manual.
+
+La sesión **no** equivale a permiso sobre cualquier documento. El servidor revalida comprador, empresa, ronda, consentimientos y SHA por cada original. Se conserva el acceso solo a respondedores y los informes posteriores. El sistema actual con OTP SMS en la rama #836 y el código SQL que exige `phone_confirmed_at` **todavía no implementan D016**: deben adaptarse de modo seguro, probarse y publicarse por separado. No marcar teléfono como confirmado artificialmente. La configuración GoTrue aún requiere seguridad de registro cerrado antes de sesiones comerciales.
+
 ## 1. Qué vendemos (una oración)
 
 **Cotironda solicita cotizaciones de materiales de obra a comercios pertinentes, conserva y presenta sus presupuestos originales identificados, analiza cada respuesta para orientar al comprador y, al cerrar, entrega una comparación general con recomendaciones razonadas.**
