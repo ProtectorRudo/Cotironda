@@ -3,6 +3,12 @@
 **Última actualización de documentación: 13/11/2026 (Argentina).**
 **ESTADO VIGENTE:** **D016 APROBADA** — ingreso del comprador por [enlace WhatsApp de un toque sin SMS](V2-D016-ACCESO-WHATSAPP-SIN-SMS-20261113.md), **NO IMPLEMENTADO**. Ya hay Vercel Preview SSO READY (`cotironda-portal-dev`, despliegue `dpl_9d7DghjFZpP9Lo8hW4JtouUPiZnh`, SHA `06e1700`). El código vigente del portal usa SMS OTP anterior; el PR #836 tiene 12/12 CI en `8fdf2d0`, SIN desplegar ese commit. Supabase PILOTO: `auth.users=0`, políticas V2 de originales y auto-release OFF, sin consentimientos V2 ni E2E. Whapi v76 histórico sigue intacto. **No exigir SMS/Twilio para el nuevo flujo.** Los párrafos sobre Vercel 402/Git desconectado que aparecen más abajo corresponden a cortes históricos del 12/11 y **no son bloqueos vigentes**. [Acta inicial](V2-RELEASE-PILOTO-PARCIAL-20261112.md).
 
+## Incremento D016 sender WhatsApp — 13/11/2026 (candidato, NO publicado)
+
+En [PR #837](https://github.com/ProtectorRudo/Cotironda/pull/837) se desarrollaron el emisor WebCrypto HMAC, el ledger `v2_d016_whapi_link_deliveries` privado y las RPC de preparación/finalización con cuota, idempotencia y rechazo de reintentos inciertos. El webhook histórico quedó **inmutable** y D016 se agrega mediante `scripts/piloto/v2-d016-whapi-overlay.mjs`, un candidato temporal para ejecutar pruebas Deno, nunca edición directa al `index.ts` histórico.
+
+**Continúa faltando:** verificar CI exacto, publicar instalación SQL/Edge/Next con autorización explícita, enlazar números reales y abrir el circuito en Preview, leer texto original cifrado y análisis bajo sesión D016, ejecutar piloto real con arquitecto y Ailín/Nahuel y comprobar cierre a dos días hábiles. No se enviaron WhatsApps, ni se cambiaron secretos/políticas/datos reales por este incremento.
+
 ## ACTUALIZACIÓN MÁS RECIENTE — PR #837 sesión privada sin email ni SMS
 
 **Estado: DESARROLLO + PRUEBAS SINTÉTICAS, NO PUBLICADO.** Se agregó `src/server/v2-d016-sesion-privada.ts` y tabla/RPC candidato `v2_d016_browser_sessions` en PostgreSQL: enlace WhatsApp de un uso y 10 min, canje y creación de cookie `__Host-cotironda-v2` HttpOnly/Secure/SameSite=Lax de 8 h, HMAC secreto server-only, renovación mediante nuevo enlace, revocación de sesión y revalidación comprador/ronda/canal con BD en cada acceso. A diferencia de la alternativa GoTrue, **no requiere correo ficticio, SMS ni `auth.users`**.
