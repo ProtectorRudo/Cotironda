@@ -33,3 +33,14 @@ Consulta **SELECT** a `pg_get_functiondef()` y `to_regprocedure()` del proyecto 
 5. Probar ronda NUEVA Whapi: pedido clasificado por producto, texto/PDF/Excel vinculados, responder 0→1→2, original descargable, análisis individual y cierre general. No reinterpretar archivos históricos semánticos como nuevas respuestas.
 
 **No se instalaron SQL, no se activaron flags, no se crearon usuarios, no se enviaron WhatsApps y no se hizo despliegue Vercel en V2-17.** Solo verificación y preparación segura.
+
+## Bundle de reconciliación listo para auditoría, NO ejecutado
+
+Archivo: `supabase/piloto/v2_17_reconciliar_sql_texto_piloto_CANDIDATE.sql`. Contiene los **dos SQL originales exactos** incrustados para ejecutar una sola migración transaccional mediante `apply_migration` en un **futuro «Publicalo»**, nunca con `Avanza`. Antes de empezar compara la definición instalada de cada RPC contra las huellas MD5 observadas en Supabase PILOTO:
+
+- Catálogo `responders_private`: `1455d1e2ea29c3a1c651aa8a7836d9e0`
+- Origen `original_source_private`: `52f28cec1c3049d797834dbca01b0145`
+
+Esas huellas sirven **solo para detectar deriva accidental** y obligan a una nueva auditoría si cambia la base. La migración rechaza PostgreSQL diferente de 17, contrato textual ya instalado, o política de originales habilitada. Después verifica contrato texto en ambas RPC, auditoría `record_text_download` con permisos exclusivos de `service_role`, y política OFF. No contiene `DROP`, `COMMIT` o comandos psql dependientes de CLI; nunca cambia la Edge Whapi.
+
+**Antes de ejecutarla:** revisar backup/restauración y el historial de migraciones en Supabase; confirmar scope PILOTO y el SHA final; no usar producción. Hacer un ensayo PostgreSQL17/rollback del bundle, además de la suite PG17 de sus dos fuentes. Si las huellas del estado inicial no coinciden o el entorno difiere, **detenerse y reconciliar**, no alterar las huellas a ciegas. Este documento no autoriza activación de consentimientos ni del texto.
