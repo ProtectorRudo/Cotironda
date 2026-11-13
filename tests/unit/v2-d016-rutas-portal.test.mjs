@@ -7,6 +7,16 @@ test('D016: la pantalla de ingreso no muestra SMS ni credenciales en URL query',
  const client=src('apps/portal/app/piloto/v2/acceso/acceso-whatsapp-client.tsx');
  assert.match(page,/puertaWhatsappPortalD016\(process\.env\)/u);
  assert.match(page,/notFound\(\)/u);
+ assert.match(page,/if\(!acceso\)/u);
+ assert.match(page,/process\.env\.VERCEL_ENV!=='preview'/u);
+ assert.match(page,/Acceso por WhatsApp en preparación/u);
+ assert.match(page,/Los presupuestos originales no se muestran/u);
+ assert.match(page,/if\(process\.env\.VERCEL_ENV!=='preview'\)notFound\(\)/u);
+ assert.match(page,/<AccesoWhatsappD016\/>/u);
+ // Preview OFF no llama a las APIs ni renderiza el componente de canje.
+ const onlyActive=page.slice(page.indexOf('return <main',page.indexOf('if(!acceso)')));
+ assert.match(onlyActive,/<AccesoWhatsappD016\/>/u);
+ assert.doesNotMatch(page.slice(page.indexOf('if(!acceso)'),page.indexOf('return <main',page.indexOf('if(!acceso)'))),/<AccesoWhatsappD016\/>/u);
  assert.match(client,/window\.location\.hash\.slice\(1\)/u);
  assert.match(client,/history\.replaceState/u);
  assert.match(client,/method:'POST'/u);
