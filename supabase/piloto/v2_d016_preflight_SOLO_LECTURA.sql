@@ -57,18 +57,13 @@ WITH
    EXISTS(SELECT 1 FROM pg_extension WHERE extname='pg_net') pgnet_available,
    to_regclass('vault.decrypted_secrets') IS NOT NULL AS vault_available
  ),
- transport_security AS (
-  SELECT
-   (
-    has_schema_privilege('anon','net','USAGE') AND
-    has_table_privilege('anon','net.http_request_queue','SELECT')
-   ) AS anon_can_read_http_queue,
-   (
-    has_schema_privilege('authenticated','net','USAGE') AND
-    has_table_privilege('authenticated','net.http_request_queue','SELECT')
-   ) AS authenticated_can_read_http_queue,
-   (SELECT relrowsecurity FROM pg_class
-     WHERE oid=to_regclass('net.http_request_queue')) AS queue_rls_enabled
+ scheduler_transport AS (
+  -- El worker D016 debe salir por GitHub Actions HTTPS directo. Un job
+  -- anterior por pg_net es inseguro para secretos y se debe retirar.
+  SELECT EXISTS(
+   SELECT 1 FROM cron.job
+   WHERE jobname='cotironda-v2-d016-offline-worker-piloto'
+  ) AS worker_en_cron_db
  ),
  contract AS (
   SELECT EXISTS (
@@ -103,10 +98,8 @@ SELECT jsonb_build_object(
   'cron_disponible',d.cron_available,
   'pg_net_disponible',d.pgnet_available,
   'vault_disponible',d.vault_available,
-  'cola_pgnet_sin_lectura_publica',
-   NOT (COALESCE(t.anon_can_read_http_queue,false) OR
-        COALESCE(t.authenticated_can_read_http_queue,false)),
-  'cola_pgnet_rls_habilitada',COALESCE(t.queue_rls_enabled,false),
+  'worker_pgnet_en_cron_db',t.worker_en_cron_db,
+  'worker_externo_configurado','no_verificable_por_sql',
   'contrato_cierre_18_ar',k.deadline_at_18_verified
  ),
  'bloqueos_activacion',
@@ -123,19 +116,20 @@ SELECT jsonb_build_object(
   CASE WHEN NOT d.worker_installed THEN 'rpc_d016_worker_sin_instalar' END,
   CASE WHEN NOT d.scheduler_installed THEN 'rpc_d016_cierre_sin_instalar' END,
   CASE WHEN NOT d.final_report_installed THEN 'rpc_d016_informe_sin_instalar' END,
-  CASE WHEN NOT d.cron_available OR NOT d.pgnet_available OR NOT d.vault_available
-   THEN 'extensiones_cron_net_vault_incompletas' END,
+  CASE WHEN NOT d.cron_available OR NOT d.vault_available
+   THEN 'extensiones_cron_vault_incompletas' END,
   CASE WHEN NOT k.deadline_at_18_verified
    THEN 'restriccion_cierre_18_no_verificada' END,
-  CASE WHEN COALESCE(t.anon_can_read_http_queue,false) OR
-            COALESCE(t.authenticated_can_read_http_queue,false)
-   THEN 'cola_pgnet_expone_headers_a_roles_cliente' END
+  CASE WHEN t.worker_en_cron_db
+   THEN 'worker_pgnet_cron_antiguo_debe_desprogramarse' END
  ],NULL)),
  'sin_verificar_en_sql',jsonb_build_array(
   'identidad_de_proyecto_confirmada_por_conector',
   'feriados_oficiales_y_revision_2026_2027',
   'consentimiento_especifico_ailin_nahuel_y_ronda_nueva',
   'credenciales_en_vault_y_edge',
+  'workflow_github_worker_en_default_branch_y_secrets',
+  'cron_sql_cierre_sin_http_ni_apikey',
   'secretos_privados_y_preview_vercel',
   'proteccion_sso',
   'limites_y_costos_api',
@@ -147,4 +141,4 @@ CROSS JOIN calendar_status c
 CROSS JOIN consent_status a
 CROSS JOIN db_features d
 CROSS JOIN contract k
-CROSS JOIN transport_security t;
+CROSS JOIN scheduler_transport t;
