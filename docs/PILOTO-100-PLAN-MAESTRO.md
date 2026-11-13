@@ -4,6 +4,18 @@
 
 **ORDEN OBLIGATORIO DE LECTURA EN TODAS LAS CONVERSACIONES:** [Contrato V2](COTIRONDA-V2-CONTRATO.md) → **este plan** → [Estado y única próxima tarea](PILOTO-100-ESTADO.md) → [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794). **Estas páginas son las VIGENTES**. [Plan histórico íntegro](historico/2026-11-12-plan-maestro-pre-v2.md) (81 KB), [estado histórico](historico/2026-11-12-estado-pre-v2.md) e [issue histórico](historico/2026-11-12-issue-794-pre-v2.md) conservan evidencia pero NO deben usarse como guía de producto.
 
+## D016 — lectura del presupuesto ORIGINAL como texto WhatsApp (13/11/2026)
+
+- [x] PR #837: nueva lectura protegida `authorized_text_v2` por cookie D016, sin SMS/JWT del comprador. El texto se descarga en `.txt` desde el mismo endpoint de originales.
+- [x] El AES histórico **sigue en Supabase**. Se creó un lector Edge D016 con dos secretos de backend, HMAC de sesión privada, revalidación SQL por ronda/proveedor/consentimiento antes y después de descifrar, AAD y SHA256; no se expone clave en Vercel ni navegador.
+- [x] Auditoría SQL independiente `record_text_download_private` con longitud 5–4000 bytes y SHA de origen, servicio exclusivamente `service_role`; el cliente Next verifica UTF-8, bytes, permisos y segunda fuente.
+- [x] Pruebas sintéticas de AES-GCM real en Deno/Node, revocaciones, origen cruzado y PG17 ROLLBACK añadidas al workflow D016.
+- [ ] **Revisar GitHub Actions del HEAD después de registrar esta nota; todavía NO es una prueba WhatsApp–navegador real.**
+- [ ] Bajo «Publicalo» exclusivamente PILOTO: instalar candidato SQL, desplegar Edge D016 y Next Preview con claves independientes, flags OFF al instalar y activar solo tras autorización y auditoría; luego reproducir presupuesto de texto real de un proveedor con navegador del comprador.
+- [ ] Continúan el **análisis automático de cada original y el informe comparativo de cierre a dos días hábiles**, con calendario aprobado.
+
+**Evidencia:** [PR #837](https://github.com/ProtectorRudo/Cotironda/pull/837), [documentación técnica](https://github.com/ProtectorRudo/Cotironda/blob/feat/d016-whatsapp-link-safe-pilot-20261113/docs/V2-D016-PUENTE-WHATSAPP-CANDIDATO-20261113.md). Sin instalación ni WhatsApp real por este avance.
+
 ## Prioridad actual D016 — emisor de enlaces Whapi en candidato (13/11/2026)
 
 - [x] Desarrollado [PR #837](https://github.com/ProtectorRudo/Cotironda/pull/837) **adaptador de notificación**: genera token privado HMAC (10 minutos) con WebCrypto, lo asocia a la misma ronda del comprador y prepara envío de un enlace por su WhatsApp registrado. No utiliza SMS, email ni otro formulario.
