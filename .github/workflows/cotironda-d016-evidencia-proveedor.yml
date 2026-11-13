@@ -16,6 +16,9 @@ on:
       - 'tests/unit/v2-d016-original-inbox.test.mjs'
       - 'tests/unit/v2-d016-original-whapi-adapter.test.mjs'
       - 'supabase/piloto/v2_d016_original_reply_proof_CANDIDATE.sql'
+      - 'supabase/piloto/v2_d016_portal_original_evidence_gate_CANDIDATE.sql'
+      - 'supabase/tests/ci/v2-d016-original-evidence-download-pg17.sql'
+      - 'supabase/tests/fixtures/v2-d016-original-evidence-download-checks.sql'
       - 'supabase/piloto/v2_d016_original_notice_lease_guard_CANDIDATE.sql'
       - 'supabase/tests/ci/v2-d016-original-lease-guard-pg17.sql'
       - 'supabase/tests/ci/v2-d016-original-proof-pg17.sql'
@@ -96,6 +99,8 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/v2-d016-original-inbox-pg17.sql
       - name: Decisión IA doble corroborada, hash y baja de originales PG17
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/v2-d016-original-semantic-mvp291-pg17.sql
+      - name: Portal D016: originales solo con aviso y respuesta, baja bloquea PDF y texto
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/v2-d016-original-evidence-download-pg17.sql
       - name: Confirmar rollback completo y ausencia de datos
         run: |
           test "$(psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regnamespace('cotironda_piloto_privado') IS NULL")" = t
