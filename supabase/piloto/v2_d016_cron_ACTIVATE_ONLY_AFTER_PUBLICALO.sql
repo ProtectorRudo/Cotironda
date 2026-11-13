@@ -21,6 +21,21 @@ BEGIN
   WHERE name='cotironda_d016_pilot_project_ref'
    AND decrypted_secret='ilggkalaafhtiysyzlmg'
  ) THEN RAISE EXCEPTION 'D016_NOT_PILOT_PROJECT';END IF;
+ -- CRITICAL: pg_net queues temporarily contain outgoing HTTP headers.
+ -- In the audited PILOTO, anon/authenticated have schema USAGE and SELECT
+ -- on net.http_request_queue, with RLS OFF. DO NOT PLACE A SECRET IN THAT
+ -- QUEUE. Hard-stop before cron.schedule, even if Vault keys are present.
+ -- This gate requires a separately reviewed, safe mitigation of privileges;
+ -- NEVER revoke global grants automatically in this D016 script.
+ IF (
+   has_schema_privilege('anon','net','USAGE')
+   AND has_table_privilege('anon','net.http_request_queue','SELECT')
+ ) OR (
+   has_schema_privilege('authenticated','net','USAGE')
+   AND has_table_privilege('authenticated','net.http_request_queue','SELECT')
+ ) THEN
+  RAISE EXCEPTION 'D016_PGNET_QUEUE_EXPOSED_TO_CLIENT_ROLES';
+ END IF;
  IF to_regprocedure('public.cotironda_piloto_v2_d016_worker_due_private(integer)')
  IS NULL OR to_regprocedure('public.cotironda_piloto_v2_d016_close_due_private(integer)')
  IS NULL OR to_regclass('cotironda_piloto_privado.v2_d016_closure_audit') IS NULL
