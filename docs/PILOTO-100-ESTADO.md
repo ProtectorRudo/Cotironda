@@ -7,7 +7,7 @@
 
 La misma descarga privada por cookie ahora soporta **originales PDF/Excel/Word/imagen/CSV y presupuestos escritos como texto de WhatsApp**. El texto cifrado AES-GCM se desencripta **solo en Supabase Edge D016** usando clave ya existente allí. Next nunca necesita AES: invoca Edge con dos secretos propios + HMAC de sesión calculado en servidor. Edge revalida sesión y fuente dos veces, SHA y UTF-8; Next repite controles y exige auditoría SQL `record_text_download_private` antes de liberar `.txt`. V2-15 Auth/JWT y el webhook v76 histórico permanecen intactos.
 
-Pruebas Node/Deno y PG17 ROLLBACK incorporadas al PR #837. **Estado sigue sin desplegar** y CI del HEAD documental debe verificarse antes de declarar PASS. No hay originales reales descargados ni SMS/WhatsApp enviados. Aún faltan WhatsApp real, análisis individual automático, cierre y piloto completo.
+**8/8 GitHub Actions SUCCESS en el HEAD `533468fca0d5539e2e14aaa4318aea77740c6777` del PR #837**, incluyendo lector Edge Deno, AES-GCM sintético Node, pruebas PG17 ROLLBACK y build Next.js. **Estado sigue sin desplegar**; CI no equivale a prueba comercial E2E. No hay originales reales descargados ni SMS/WhatsApp enviados. Aún faltan WhatsApp real, análisis individual automático, cierre y piloto completo.
 
 ## Incremento D016 sender WhatsApp — 13/11/2026 (candidato, NO publicado)
 
