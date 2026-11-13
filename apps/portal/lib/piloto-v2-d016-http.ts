@@ -19,6 +19,8 @@ import {analizarOriginalWhatsAppD016}
  from '../../../src/server/v2-d016-analisis-automatica.ts';
 import {leerPdfOriginalPorEdgeV2}
  from '../../../src/server/v2-04c-pdf-edge-client.ts';
+import {componerInformeFinalD016}
+ from '../../../src/server/v2-d016-informe-final.ts';
 
 const PILOT='https://ilggkalaafhtiysyzlmg.supabase.co';
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/iu;
@@ -289,4 +291,51 @@ export async function analizarOriginalWhatsAppPortalD016(
    return !error&&data===true;
   }
  });
+}
+
+/** Estado final SOLO después de cierre comercial válido y calendario aprobado.
+ * La tabla de respondedores se vuelve a comprobar después del snapshot.
+ * Nunca se calcula "ganador" ni se suman totales heterogéneos.
+ */
+export async function responderInformeFinalWhatsappD016(
+ req:Request,rondaId:string,
+ env:Record<string,string|undefined>=process.env
+):Promise<Response>{
+ const gate=puertaWhatsappPortalD016(env);
+ const db=gate?privateDb(env):null;
+ if(!gate||!db)return deny(503);
+ if(req.method!=='GET')return deny(405);
+ if(!UUID.test(rondaId)||new URL(req.url).search!=='')return deny(400);
+ const cookie=cookieSesionD016(req);
+ const digest=cookie?digestSesionPrivadaD016(cookie,gate.claveHmacHex):null;
+ if(!digest)return deny();
+ try{
+  const before=await sessionContext(db,digest,rondaId);
+  if(!before)return deny();
+  const q={p_request_id:rondaId,p_sesion_hmac:digest};
+  const status=await db.rpc('cotironda_piloto_v2_d016_final_status_private',q);
+  if(status.error||!status.data)return deny(503);
+  const state=status.data as {state?:string};
+  if(state.state==='waiting_for_close')
+   return new Response(JSON.stringify({estado:'ronda_en_curso'}),{
+    status:202,headers:HEADERS
+   });
+  if(state.state!=='closed_verified_business_two_days')return deny();
+  const catalogRes=await db.rpc(
+   'cotironda_piloto_v2_d016_responders_with_analysis_private',q);
+  if(catalogRes.error||!catalogRes.data)return deny(503);
+  if((catalogRes.data as {buyerKey?:unknown}).buyerKey!==before.buyerKey)
+   return deny();
+  const catalog=proyectarRespuestasV2(catalogRes.data);
+  if(!catalog)return deny();
+  const after=await sessionContext(db,digest,rondaId);
+  const gateAgain=await db.rpc(
+   'cotironda_piloto_v2_d016_final_status_private',q);
+  if(!after||after.buyerKey!==before.buyerKey||gateAgain.error||
+   !gateAgain.data||(gateAgain.data as {state?:string}).state!==
+    'closed_verified_business_two_days')return deny();
+  const report=componerInformeFinalD016(gateAgain.data,catalog,Date.now());
+  if(!report)return deny();
+  return new Response(JSON.stringify(report),{status:200,headers:HEADERS});
+ }catch{return deny(503)}
 }
