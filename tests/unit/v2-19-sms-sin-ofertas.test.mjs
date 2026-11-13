@@ -94,3 +94,27 @@ test('V2-19: UI verificada no consulta, descarga, analiza ni hace polling con OF
  assert.match(ui,/shouldCreateUser:false/u);
  assert.doesNotMatch(ui,/phone_confirm:true|signUp\(/u);
 });
+
+test('V2-19: descarga no entrega bytes si cambia el usuario durante lectura',()=>{
+ const ui=source('apps/portal/app/piloto/v2/rondas/[rondaId]/respuestas-comprador.tsx');
+ const begin=ui.indexOf('async function download(documentId:string)');
+ const end=ui.indexOf('if(!client)return <p role="status">',begin);
+ assert.ok(begin>=0&&end>begin);
+ const flow=ui.slice(begin,end);
+ assert.match(flow,/const generation=authGeneration\.current/u);
+ const checkpoints=flow.match(/if\(generation!==authGeneration\.current\)return;/gu)??[];
+ assert.equal(checkpoints.length,3,'antes de fetch, tras fetch y tras arrayBuffer');
+ assert.ok(flow.indexOf('const data=await response.arrayBuffer()')<
+  flow.lastIndexOf('if(generation!==authGeneration.current)return;'));
+ assert.ok(flow.lastIndexOf('if(generation!==authGeneration.current)return;')<
+  flow.indexOf('URL.createObjectURL(blob)'));
+ assert.match(flow,/signal:AbortSignal\.timeout\(20_000\)/u);
+ assert.match(flow,/if\(generation===authGeneration\.current\)\s*setError/u);
+ assert.match(flow,/if\(generation===authGeneration\.current\)setBusy\(false\)/u);
+ assert.match(ui,/setCatalog\(null\);setBusy\(false\)/u);
+ assert.match(ui,/setCatalog\(null\);setAuthenticated\(false\);setError\(''\);setBusy\(false\)/u);
+});
+test('V2-19: campo comprador rechaza números E.164 de 16 dígitos',()=>{
+ const ui=source('apps/portal/app/piloto/v2/rondas/[rondaId]/respuestas-comprador.tsx');
+ assert.match(ui,/!\/\^\\\+\[1-9\]\\d\{7,14\}\$\/u\.test\(phone\.trim\(\)\)/u);
+});
