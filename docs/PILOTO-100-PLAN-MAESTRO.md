@@ -10,7 +10,7 @@
 - [x] El AES histórico **sigue en Supabase**. Se creó un lector Edge D016 con dos secretos de backend, HMAC de sesión privada, revalidación SQL por ronda/proveedor/consentimiento antes y después de descifrar, AAD y SHA256; no se expone clave en Vercel ni navegador.
 - [x] Auditoría SQL independiente `record_text_download_private` con longitud 5–4000 bytes y SHA de origen, servicio exclusivamente `service_role`; el cliente Next verifica UTF-8, bytes, permisos y segunda fuente.
 - [x] Pruebas sintéticas de AES-GCM real en Deno/Node, revocaciones, origen cruzado y PG17 ROLLBACK añadidas al workflow D016.
-- [ ] **Revisar GitHub Actions del HEAD después de registrar esta nota; todavía NO es una prueba WhatsApp–navegador real.**
+- [x] **8/8 GitHub Actions SUCCESS en PR #837, HEAD `533468fca0d5539e2e14aaa4318aea77740c6777`**, incluidos Deno lector Edge, AES-GCM sintético, Node/Next, PG17 con ROLLBACK, seguridad y regresiones globales. **No es una prueba WhatsApp–navegador real.**
 - [ ] Bajo «Publicalo» exclusivamente PILOTO: instalar candidato SQL, desplegar Edge D016 y Next Preview con claves independientes, flags OFF al instalar y activar solo tras autorización y auditoría; luego reproducir presupuesto de texto real de un proveedor con navegador del comprador.
 - [ ] Continúan el **análisis automático de cada original y el informe comparativo de cierre a dos días hábiles**, con calendario aprobado.
 
