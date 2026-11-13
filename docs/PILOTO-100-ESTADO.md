@@ -1,5 +1,18 @@
 # COTIRONDA V2 — ESTADO REAL Y RELEVO ENTRE CONVERSACIONES
 
+### RELEVO ACTUALIZADO · 13/11/2026 · deploy UI f985 BLOQUEADO POR CUOTA VERCEL
+
+**El último código del PR #837 es SHA `f98527c9516478783bd7cf95433c58f5ca445937`, CI 8/8 SUCCESS.** Cambia únicamente la pantalla pública `/piloto/v2/acceso` para que, en Preview con D016 apagado, muestre mensaje informativo en lugar de 404; producción sin gate y las rutas privadas siguen denegando. **NO PUBLICADO en Vercel.**
+
+Intento de despliegue `mcp__Vercel__create_deployment` del SHA f985 al proyecto exacto `cotironda-portal-dev` (solo Preview) **FALLÓ HTTP 402 `api-deployments-free-per-day` (más de 100, retryAfter 86400)**. **No insistir ni saltar la cuota con otro equipo/proyecto.** El último Preview realmente READY sigue en SHA `64b8573fde5321dabaef557d2bea40c7d80bc503`, deployment `dpl_DZkYMAzzVbZitq4Dz1NwyYN7Yued`, <https://cotironda-portal-myz6huv21-protector-rudo-s-projects.vercel.app>. En ese Preview, `/piloto/v2/acceso` responde 404 porque D016 permanece desactivado; el fix existe solo en GitHub. Un share link temporal privado para este Preview fue emitido al propietario (no almacenar token).
+
+En Supabase PILOTO el calendario de La Plata 2026 **está aprobado prospectivamente** y devuelve viernes 13/11 a martes 17/11, 18:00 AR. 18 feriados cargados, 0 rondas nuevas, 0 cron D016, 3 políticas OFF, 2 proveedores con consentimiento general y WhatsApp validado, **0 consentimientos específicos originales V2**. No crear autorizaciones retroactivas. El **Issue [#838](https://github.com/ProtectorRudo/Cotironda/issues/838)** define aceptación prospectiva dentro del pedido WhatsApp y respuesta, sin pasos extra; el SQL instalado hoy exige consentimiento ANTES de invitar y no se puede omitir esa validación.
+
+**Bloqueos adicionales fuera de GitHub/Vercel quota:** faltan secretos privados de servicio Supabase para Vercel Preview y flags/credenciales Edge y GitHub; conectores actuales no permiten configurar secretos Supabase Edge/GHA ni vincular el proyecto Vercel sin conexión Git. SSO protegido. Ningún proveedor contactado ni oferta original publicada. No tocar producción ni Whapi v76. [Acta](docs/PILOTO-D016-PUBLICACION-REAL-20261113.md).
+
+**Próxima acción permitida:** resolver cuota Vercel por propietario o nuevo ciclo, volver a publicar **SHA exacto que pase CI** solamente en `cotironda-portal-dev`, probar HTTP 200 de la pantalla informativa y negativas 403/404 de datos; después completar secretos/consentimiento/integración sin SMS y E2E real. No prometer entrega en segundo plano.
+
+
 ### ESTADO MÁS RECIENTE — 13/11/2026 (posterior a acta D016)
 
 **Piloto publicado parcialmente pero NO habilitado comercialmente.** Calendario La Plata 2026 **AHORA APROBADO prospectivamente**, 18 fechas y 2 hábiles hasta las 18 AR; 2027 sigue ausente. Vercel Preview se redesplegó con cinco variables D016 NO secretas solo en target Preview, flags OFF; **nuevo deployment READY** `dpl_DZkYMAzzVbZitq4Dz1NwyYN7Yued`, URL <https://cotironda-portal-myz6huv21-protector-rudo-s-projects.vercel.app>; SSO intacto. El proyecto no está conectado a GitHub; por eso no se pueden usar variables por rama ni hay merge automático. Enlace de prueba privado temporal emitido, **no guardar su token**.
