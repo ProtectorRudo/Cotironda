@@ -1,5 +1,20 @@
 # COTIRONDA V2 — PLAN MAESTRO Y CHECKLIST
 
+### Auditoría de prepublicación — 13/11/2026 · PRIORIDAD ACTUAL
+
+**PR #837 DRAFT, sin merge ni deploy.** [Preflight de publicación](https://github.com/ProtectorRudo/Cotironda/blob/feat/d016-whatsapp-link-safe-pilot-20261113/docs/V2-D016-PREPUBLICACION-PILOTO-20261113.md).
+
+- [x] Auditado **PostgreSQL real** `cotironda-piloto` (solo lectura): `requests` tiene un CHECK que exige **18:00 AR** para `business_two_days`. El candidato de cierre conservaba la hora de recepción y era incompatible. **Corregido a 18:00** en `v2_d016_cierre_habil_CANDIDATE.sql`.
+- [x] Endurecido fixture PostgreSQL17: reproduce el CHECK de plazo, el estado cerrado y claves de calendario. Las rondas históricas sintéticas no se transforman en V2 retrospectivamente; ajustadas únicamente las ofertas de prueba para llegar antes del vencimiento. Ensayos de viernes→martes, feriado, dos años y bloqueo de cierre por horario.
+- [x] Auditado Vercel `cotironda-portal-dev`: deployment previo READY SHA `06e1700...` protegido por SSO; **no** hay deploy del PR #837. Variables D016 faltantes para Preview; no se leyeron secretos.
+- [x] Confirmado Supabase sin cambios: políticas business/originals/auto-release **OFF**, `v2_business_calendar` calendarios aprobados **0**, y D016 SQL/worker/cierre aún no instalados. `pg_cron`, `pg_net` y Vault presentes. Función histórica Whapi v76 intacta.
+- [ ] **Último CI exacto del PR:** comprobar HEAD en GitHub, 8/8 requerido. No reutilizar 8/8 de versión anterior si un commit cambia pruebas o código.
+- [ ] **Puertas de publicación solo bajo «Publicalo» PILOTO:** validar consentimientos originales V2 y calendarios legales/locales, aprovisionar secretos de servidor/Edge/Vault sin exponerlos, snapshot y rollback, instalación SQL y funciones con flags OFF, Preview de SHA auditado, probar acceso protegido sin relajar SSO, recién activar de forma acotada con control de gastos.
+- [ ] Prueba **comercial real** de principio a fin, con un arquitecto + Ailín y Nahuel, WhatsApp, originales, IA offline, cierre efectivo e informe final. **NO decir terminado antes de ese E2E.**
+
+**Siguiente única prioridad:** cerrar CI del calendario 18:00 y resolver requisitos de prepublicación; no agregar etapas nuevas, SMS ni rankings antiguos.
+
+
 ### Relevo 13/11/2026 — D016 worker offline y cron hábil (CANDIDATO)
 
 - [x] Desarrollo de **worker Edge autónomo** sin sesión del arquitecto: `v2_d016_worker_offline_CANDIDATE.sql` + `cotironda-piloto-v2-worker-d016`, solo servicio interno con **dos secretos independientes**, permisos por comprador/empresa, canal WhatsApp verificado, proveedor consentido, archivo SHA y calendario V2 aprobado. Listado hasta 2 trabajos; ejecución máxima 1 oferta/tick; claim/finish SQL con lease 90s, hasta 3 intentos y revalidación antes de grabar. Reutiliza lectura PDF, Office y AES-GCM de Supabase; originales intactos.
