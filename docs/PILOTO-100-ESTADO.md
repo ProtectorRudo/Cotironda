@@ -1,5 +1,16 @@
 # COTIRONDA V2 — ESTADO REAL Y RELEVO ENTRE CONVERSACIONES
 
+### RELEVO MÁS RECIENTE · 13/11/2026 · LEDGER PRIVADO D016 P0 PUBLICADO EN PILOTO, CIRCUITO OFF
+
+**Publicado y verificado en Supabase PILOTO `ilggkalaafhtiysyzlmg`:** migración `20261113192638` `cotironda_d016_original_reply_evidence_off_pilot_20261113`; **tres tablas privadas con RLS y cinco RPC exclusivas `service_role`** para reservar aviso de originales antes del envío WhatsApp, verificar aceptación Whapi posterior, asociar respuesta auténtica al pedido/proveedor y procesar revocación. Prueba real SQL posterior: **7 rondas históricas** (1 preparada), **0 registros nuevos** de aviso/respuesta/revocación, políticas `v2_business_policy`, `v2_original_share_policy` y `v2_auto_release_policy` todas **OFF**, ACL `anon`/`authenticated` denegada 5/5, negativos RPC sin ronda devuelven FALSE y `denied`. Auditor de Supabase: RLS sin políticas sobre tablas privadas es intencional; alertas WARN previas no se resolvieron con este cambio.
+
+**Código y ensayos:** PR [#839](https://github.com/ProtectorRudo/Cotironda/pull/839) sigue DRAFT, sin merge. Workflow [43491444978](https://github.com/ProtectorRudo/Cotironda/actions/runs/43491444978) **Node SUCCESS + PostgreSQL 17 ROLLBACK SUCCESS**. [Acta exacta de publicación](https://github.com/ProtectorRudo/Cotironda/blob/fix/d016-evidencia-respuesta-original-20261113/docs/PILOTO-D016-ORIGINAL-LEDGER-PUBLICADO-20261113.md). El estado `verified_reply_not_authorization` **NO habilita mostrar archivos**: falta revisión de Ley 25.326 arts. 5 y 11, integración de reserva/ack/entrada Whapi v76 con revocación, modificar prospectivamente TODAS las RPC/worker D016 y E2E comprador + 2 proveedores. No se enviaron WhatsApps, ni IA, ni cierre nuevo, ni producción.
+
+**Vercel:** última Preview READY **todavía `64b8573`**, SSO ON, f985 no publicado por cuota HTTP 402. Reintento de **f985 exacto**, solo Preview protegido del proyecto `cotironda-portal-dev`, ya programado después del período de cuota: no publicar #839 ni producción por esa tarea. Las funciones y secretos privados de acceso siguen pendientes; piloto **NO 100%**.
+
+Este párrafo prevalece sobre cualquier estado histórico posterior que afirme que el ledger D016 no está instalado. **El original sigue privado porque la autorización comercial aún no está integrada.** [Plan maestro #794](https://github.com/ProtectorRudo/Cotironda/issues/794), [P0 #838](https://github.com/ProtectorRudo/Cotironda/issues/838).
+
+
 ### RELEVO ACTUALIZADO · 13/11/2026 · deploy UI f985 BLOQUEADO POR CUOTA VERCEL
 
 **El último código del PR #837 es SHA `f98527c9516478783bd7cf95433c58f5ca445937`, CI 8/8 SUCCESS.** Cambia únicamente la pantalla pública `/piloto/v2/acceso` para que, en Preview con D016 apagado, muestre mensaje informativo en lugar de 404; producción sin gate y las rutas privadas siguen denegando. **NO PUBLICADO en Vercel.**
