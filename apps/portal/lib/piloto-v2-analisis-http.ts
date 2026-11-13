@@ -8,6 +8,8 @@ import {analizarOriginalPorPedidoV2,type AnalysisPorts}
  from '../../../src/server/v2-04b-analisis-automatica-http.ts';
 import {leerPdfOriginalPorEdgeV2}
  from '../../../src/server/v2-04c-pdf-edge-client.ts';
+import {descifrarTextoWhatsAppV2}
+ from '../../../src/server/v2-14-texto-whatsapp-cifrado.ts';
 
 const PILOT='https://ilggkalaafhtiysyzlmg.supabase.co';
 const BUCKET='cotironda-piloto-originals';
@@ -67,6 +69,8 @@ export async function responderAnalisisAutomaticaV2(
    if(error)throw Error('v2_analysis_claim_unavailable');
    return data;
   },
+  readText:async source=>descifrarTextoWhatsAppV2(
+   source,env.COTIRONDA_PILOT_AES_HEX),
   readPdf:async(bytes,sha)=>leerPdfOriginalPorEdgeV2(bytes,sha,{
    COTIRONDA_PILOT_SUPABASE_URL:env.COTIRONDA_PILOT_SUPABASE_URL,
    COTIRONDA_PILOT_V2_PDF_ENABLED:env.COTIRONDA_PILOT_V2_PDF_ENABLED,
