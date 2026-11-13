@@ -177,6 +177,14 @@ test('D016: si la emisión o el envío queda incierto no reintenta WhatsApp',asy
  other.ports.registrarTicket=async()=>false;
  assert.equal(await other.issue(),'BLOCKED');
  assert.equal(other.state.sends,0);
+ const broken=fixture();
+ broken.ports.verificarCompradorYRonda=async()=>{throw Error('db_offline')};
+ assert.equal(await broken.issue(),'BLOCKED');
+ assert.equal(broken.state.sends,0);
+ const uncertain=fixture();
+ uncertain.ports.registrarTicket=async()=>{throw Error('db_timeout')};
+ assert.equal(await uncertain.issue(),'BLOCKED');
+ assert.equal(uncertain.state.sends,0);
 });
 test('D016: jamás se acepta un HMAC incorrecto como token ni HTTP con payload sensible',async()=>{
  assert.equal(hmacTicketD016('a'.repeat(43),'c'.repeat(63)),null);
