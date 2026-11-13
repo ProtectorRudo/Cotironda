@@ -53,3 +53,12 @@ La máquina de estados deliberadamente falla cerrado:
 - PostgreSQL 17 sintético con BEGIN/ROLLBACK y dos controles: validación de reserva/envío, respuesta, SHA, suplantación, reenvío, duplicados, ACL/RLS, baja y revocación; base limpia al terminar. Workflow GitHub dedicado.
 
 Este candidato todavía necesita auditoría de integridad del POST real, su orden de escritura y captación Whapi v76; además, verificación legal del mecanismo. Nunca habilitarlo sólo por haber pasado una CI sintética.
+
+
+## Revisión normativa preliminar (Argentina, 13/11/2026)
+
+La Ley 25.326 art. 5 exige consentimiento libre, expreso e informado, documentado por escrito o medio equiparable en los supuestos en que corresponda. Art. 11 establece requisitos específicos para la cesión de datos personales e identifica excepciones legales. La AAIP explica que la información debe detallar finalidad, destinatarios y responsable. **No está demostrado que enviar un presupuesto después del aviso configure por sí mismo un consentimiento expreso y documentado** para divulgar todos los datos personales que pudiera contener el original. Tampoco se debe presumir que toda oferta comercial requiere consentimiento adicional: revisar qué datos se comparten y si aplica una excepción contractual.
+
+Fuentes: https://www.argentina.gob.ar/normativa/nacional/ley-25326-64790/actualizacion ; https://www.argentina.gob.ar/aaip/datospersonales/derechos ; https://www.argentina.gob.ar/normativa/nacional/70368/actualizacion .
+
+**Criterio técnico permanente:** el estado verified_reply_not_authorization demuestra procedencia, NO consentimiento válido ni permiso de publicación. El paso de evidencia a autorización comercial debe ser explícito, trazable y revisado jurídicamente; no puede quedar oculto en la IA ni pasar a automático por defecto. Mantener facilidad de uso, integrando la comunicación y las condiciones claras en el intercambio o acuerdo comercial existente, sin obligar a editar un presupuesto.
