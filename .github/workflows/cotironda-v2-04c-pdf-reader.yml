@@ -3,6 +3,9 @@ on:
   pull_request:
     paths:
       - 'supabase/functions/cotironda-piloto-v2-pdf-reader/**'
+      - 'supabase/functions/cotironda-piloto-v2-text-reader/**'
+      - 'src/server/v2-15-texto-edge-client.ts'
+      - 'tests/unit/v2-15-texto-edge-seguro.test.mjs'
       - 'src/server/v2-04c-pdf-edge-client.ts'
       - 'src/server/v2-04b-texto-original-verificado.ts'
       - 'src/server/v2-04b-analisis-automatica-http.ts'
@@ -33,5 +36,7 @@ jobs:
           deno-version: v2.x
       - name: Validar modulo Edge independiente
         run: deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-v2-pdf-reader/index.ts
+      - name: Validar Edge V2-15 de texto cifrado y JWT
+        run: deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-v2-text-reader/index.ts
       - name: PDF real una pagina y negativo corrupto
         run: deno test --node-modules-dir=auto supabase/functions/cotironda-piloto-v2-pdf-reader/pdf-smoke.test.ts
