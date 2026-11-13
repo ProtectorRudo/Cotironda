@@ -1,7 +1,7 @@
 # COTIRONDA V2 — ESTADO REAL Y RELEVO ENTRE CONVERSACIONES
 
-**Última actualización de documentación: 12/11/2026 (Argentina).**
-**ESTADO VIGENTE:** **PUBLICACIÓN PARCIAL PILOTO**: 9 funciones SQL V2 y 4 tablas privadas instaladas, política de compartir originales **OFF**, Edge PDF privado v1 instalado, Whapi histórico v76 intacto. **Portal V2 NO desplegado por Vercel 402 y Git desconectado; sin comprador Auth, sin consentimientos V2 y sin E2E.** [Acta verificada](V2-RELEASE-PILOTO-PARCIAL-20261112.md). Las secciones anteriores con '0 RPC/SIN desplegar' documentan hechos históricos PREVIOS a esta publicación. Los datos de Supabase caducan; reconsultar cuando se necesite estado vivo.
+**Última actualización de documentación: 13/11/2026 (Argentina).**
+**ESTADO VIGENTE:** **D016 APROBADA** — ingreso del comprador por [enlace WhatsApp de un toque sin SMS](V2-D016-ACCESO-WHATSAPP-SIN-SMS-20261113.md), **NO IMPLEMENTADO**. Ya hay Vercel Preview SSO READY (`cotironda-portal-dev`, despliegue `dpl_9d7DghjFZpP9Lo8hW4JtouUPiZnh`, SHA `06e1700`). El código vigente del portal usa SMS OTP anterior; el PR #836 tiene 12/12 CI en `8fdf2d0`, SIN desplegar ese commit. Supabase PILOTO: `auth.users=0`, políticas V2 de originales y auto-release OFF, sin consentimientos V2 ni E2E. Whapi v76 histórico sigue intacto. **No exigir SMS/Twilio para el nuevo flujo.** Los párrafos sobre Vercel 402/Git desconectado que aparecen más abajo corresponden a cortes históricos del 12/11 y **no son bloqueos vigentes**. [Acta inicial](V2-RELEASE-PILOTO-PARCIAL-20261112.md).
 
 ## RELEVO VIGENTE — 13/11/2026: decisión D016, sin SMS
 
