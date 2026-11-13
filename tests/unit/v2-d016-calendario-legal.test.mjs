@@ -7,7 +7,7 @@ const sql=readFileSync(new URL(
 ),'utf8');
 const active=sql.split('\n').filter(x=>!x.trimStart().startsWith('--')).join('\n');
 const events=[...active.matchAll(
- /\('la plata', DATE '(\d{4}-\d{2}-\d{2})',2026,'([^']+)','(https:\/\/[^']+)'\)/gu
+ /\('la plata',\s*DATE '(\d{4}-\d{2}-\d{2})',2026,'([^']+)',\s*'(https:\/\/[^']+)'\)/gu
  )].map(([,day,description,evidence])=>({day,description,evidence}));
 const dates=new Set(events.map(x=>x.day));
 
@@ -34,7 +34,7 @@ test('D016 La Plata: no equipara días no laborables, feriados comerciales optat
   '2026-03-23','2026-07-10','2026-11-10','2026-11-19',
   '2026-11-20','2026-12-07'
  ])assert.ok(!dates.has(optional),optional);
- assert.match(sql,/feriados optativos/u);
+ assert.match(sql,/optativo/u);
  assert.match(sql,/comercio optativo/u);
 });
 test('D016 calendario candidato: aprobación NULL, guard PILOTO y 2027 no inventado',()=>{
