@@ -16,14 +16,16 @@ CREATE TABLE cotironda_piloto_privado.participants(
  consent_at timestamptz,opted_out_at timestamptz
 );
 CREATE TABLE cotironda_piloto_privado.requests(
- id uuid PRIMARY KEY,buyer_key text,state text
+ id uuid PRIMARY KEY,buyer_key text,state text,
+ created_at timestamptz NOT NULL DEFAULT (now()-interval '1 day')
 );
 CREATE TABLE cotironda_piloto_privado.participant_channels_mvp109(
  participant_key text,chat_hmac text,contact_sha256 text,
  authenticated_message_hmac text
 );
 CREATE TABLE cotironda_piloto_privado.whapi_inbox(
- message_hmac text PRIMARY KEY,chat_hmac text,participant_key text
+ message_hmac text PRIMARY KEY,chat_hmac text,participant_key text,
+ received_at timestamptz NOT NULL DEFAULT now()
 );
 INSERT INTO cotironda_piloto_privado.participants VALUES
  ('buyer_a','buyer',repeat('1',64),now()-interval '1 day',null),
@@ -36,6 +38,11 @@ INSERT INTO cotironda_piloto_privado.participant_channels_mvp109 VALUES
 INSERT INTO cotironda_piloto_privado.whapi_inbox VALUES
  (repeat('3',64),repeat('1',64),'buyer_a');
 
+CREATE TABLE cotironda_piloto_privado.v2_original_share_policy(
+ singleton boolean PRIMARY KEY,enabled boolean,activated_at timestamptz
+);
+INSERT INTO cotironda_piloto_privado.v2_original_share_policy VALUES
+ (true,true,now()-interval '2 days');
 \ir ../../piloto/v2_d016_whatsapp_link_tickets_CANDIDATE.sql
 
 DO $check$
@@ -209,4 +216,84 @@ BEGIN
  THEN RAISE EXCEPTION 'web_session_acl_exposed';END IF;
  RAISE NOTICE 'V2_D016_BROWSER_SESSION_PG17_PASS';
 END $private_session$;
+
+DO $check_whapi$
+DECLARE v jsonb;
+BEGIN
+ INSERT INTO cotironda_piloto_privado.whapi_inbox(
+  message_hmac,chat_hmac,participant_key
+ ) VALUES (repeat('a',64),repeat('1',64),'buyer_a'),
+ (repeat('b',64),repeat('1',64),'buyer_a'),
+ (repeat('c',64),repeat('1',64),'buyer_a'),
+ (repeat('d',64),repeat('1',64),'buyer_a');
+ UPDATE cotironda_piloto_privado.v2_original_share_policy SET enabled=false;
+ v:=public.cotironda_piloto_v2_d016_prepare_whapi_link_private(
+  repeat('1',64),repeat('a',64),
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','auto',repeat('4',64));
+ IF v->>'state'<>'denied' THEN RAISE EXCEPTION 'policy_off';END IF;
+ UPDATE cotironda_piloto_privado.v2_original_share_policy SET enabled=true;
+ v:=public.cotironda_piloto_v2_d016_prepare_whapi_link_private(
+  repeat('2',64),repeat('a',64),
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','auto',repeat('4',64));
+ IF v->>'state'<>'denied' THEN RAISE EXCEPTION 'supplier_link';END IF;
+ v:=public.cotironda_piloto_v2_d016_prepare_whapi_link_private(
+  repeat('1',64),repeat('a',64),
+  'cccccccc-cccc-4ccc-8ccc-cccccccccccc','auto',repeat('4',64));
+ IF v->>'state'<>'denied' THEN RAISE EXCEPTION 'wrong_round';END IF;
+ v:=public.cotironda_piloto_v2_d016_prepare_whapi_link_private(
+  repeat('1',64),repeat('a',64),
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','auto',repeat('4',64));
+ IF v->>'state'<>'issued'
+ OR v->>'request_id'<>'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+ THEN RAISE EXCEPTION 'issue_failed:%',v;END IF;
+ v:=public.cotironda_piloto_v2_d016_prepare_whapi_link_private(
+  repeat('1',64),repeat('a',64),
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','auto',repeat('5',64));
+ IF v->>'state'<>'duplicate' THEN RAISE EXCEPTION 'double_issue';END IF;
+ IF public.cotironda_piloto_v2_d016_finish_whapi_link_private(
+  repeat('4',64),'api_accepted','wamid.FAKE000001') IS DISTINCT FROM true
+ THEN RAISE EXCEPTION 'finish_failed';END IF;
+ IF public.cotironda_piloto_v2_d016_finish_whapi_link_private(
+  repeat('4',64),'api_accepted','wamid.FAKE000001') IS DISTINCT FROM false
+ THEN RAISE EXCEPTION 'double_finish';END IF;
+ v:=public.cotironda_piloto_v2_d016_prepare_whapi_link_private(
+  repeat('1',64),repeat('b',64),
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','auto',repeat('6',64));
+ IF v->>'state'<>'rate_limited' THEN
+  RAISE EXCEPTION 'rate_60_seconds:%',v;END IF;
+ UPDATE cotironda_piloto_privado.v2_d016_whapi_link_deliveries
+ SET created_at=clock_timestamp()-interval '2 minutes'
+ WHERE event_hmac=repeat('a',64);
+ v:=public.cotironda_piloto_v2_d016_prepare_whapi_link_private(
+  repeat('1',64),repeat('b',64),
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','auto',repeat('6',64));
+ IF v->>'state'<>'issued' THEN RAISE EXCEPTION 'new_event_failed:%',v;END IF;
+ IF public.cotironda_piloto_v2_d016_finish_whapi_link_private(
+  repeat('6',64),'uncertain',NULL) IS DISTINCT FROM true
+ THEN RAISE EXCEPTION 'uncertain_not_recorded';END IF;
+ IF public.cotironda_piloto_v2_d016_finish_whapi_link_private(
+  repeat('6',64),'api_accepted','wamid.FAKE000002') IS DISTINCT FROM false
+ THEN RAISE EXCEPTION 'uncertain_resend';END IF;
+ v:=public.cotironda_piloto_v2_d016_prepare_whapi_link_private(
+  repeat('1',64),repeat('c',64),NULL,'recovery',repeat('7',64));
+ IF v->>'state'<>'denied' THEN RAISE EXCEPTION 'ambiguous_recovery';END IF;
+ UPDATE cotironda_piloto_privado.participants
+ SET opted_out_at=clock_timestamp() WHERE key='buyer_a';
+ v:=public.cotironda_piloto_v2_d016_prepare_whapi_link_private(
+  repeat('1',64),repeat('d',64),
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','confirmed',repeat('8',64));
+ IF v->>'state'<>'denied' THEN RAISE EXCEPTION 'revoked_buyer';END IF;
+ IF has_table_privilege('anon',
+  'cotironda_piloto_privado.v2_d016_whapi_link_deliveries','SELECT')
+ OR has_table_privilege('authenticated',
+  'cotironda_piloto_privado.v2_d016_whapi_link_deliveries','SELECT')
+ OR has_function_privilege('anon',
+  'public.cotironda_piloto_v2_d016_prepare_whapi_link_private(text,text,uuid,text,text)','EXECUTE')
+ OR has_function_privilege('authenticated',
+  'public.cotironda_piloto_v2_d016_finish_whapi_link_private(text,text,text)','EXECUTE')
+ OR NOT has_function_privilege('service_role',
+  'public.cotironda_piloto_v2_d016_prepare_whapi_link_private(text,text,uuid,text,text)','EXECUTE')
+ THEN RAISE EXCEPTION 'link_acl_exposed';END IF;
+ RAISE NOTICE 'V2_D016_WHAPI_DELIVERY_PG17_PASS';
+END $check_whapi$;
 ROLLBACK;
