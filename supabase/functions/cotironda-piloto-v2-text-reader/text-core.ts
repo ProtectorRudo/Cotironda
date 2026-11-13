@@ -143,7 +143,8 @@ export async function resolverTextoPrivadoV2(
 ):Promise<Response>{
  if(req.method!=='POST')return deny(405);
  if(!config.enabled||config.url!==PILOT||
-  !KEY.test(config.sharedSecret)||!AES.test(config.aesHex)||
+  !KEY.test(config.sharedSecret)||new Set(config.sharedSecret).size<8||
+  !AES.test(config.aesHex)||
   /^0{64}$/u.test(config.aesHex)||
   config.sharedSecret===config.aesHex)return deny(503);
  if(new URL(req.url).search||
