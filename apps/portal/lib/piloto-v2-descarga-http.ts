@@ -6,6 +6,8 @@ import {bearerPiloto} from '../../../src/server/originales-piloto-http-runtime.t
 import {respuestasV2Habilitadas} from '../../../src/server/v2-03-respuestas-http.ts';
 import {descargarOriginalV2,type DescargaV2Ports}
  from '../../../src/server/v2-03b-descarga-originales.ts';
+import {descifrarTextoWhatsAppV2}
+ from '../../../src/server/v2-14-texto-whatsapp-cifrado.ts';
 
 const URL_PILOT='https://ilggkalaafhtiysyzlmg.supabase.co';
 const BUCKET='cotironda-piloto-originals';
@@ -63,6 +65,17 @@ export async function responderDescargaV2(
    if(error||!data||data.size<1||data.size>8388608)return null;
    const bytes=new Uint8Array(await data.arrayBuffer());
    return bytes.length===data.size?bytes:null;
+  },
+  readText:async source=>descifrarTextoWhatsAppV2(
+   source,env.COTIRONDA_PILOT_AES_HEX),
+  auditText:async q=>{
+   const {data,error}=await privateClient.rpc(
+    'cotironda_piloto_v2_record_text_download',{
+     p_request_id:q.rondaId,p_auth_user_id:q.usuarioId,
+     p_auth_session_id:q.sessionId,p_document_id:q.documentoId,
+     p_source_sha256:q.sha256,p_byte_count:q.byteCount
+    });
+   return !error&&data===true;
   },
   audit:async q=>{
    const {data,error}=await privateClient.rpc(
