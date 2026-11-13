@@ -103,10 +103,12 @@ export async function emitirEnlaceD016(
   if(registrado!==true)return 'BLOCKED';
   // El fragmento NO se envía al servidor por GET/previsualización.
   const enlace=g.origenPortal+'/piloto/v2/acceso#d016='+token;
-  const enviado=await p.enviarPorWhatsapp({chatHmac:i.chatHmac,enlace});
-  // Resultado incierto: NO reintentar automáticamente para evitar duplicados.
-  return enviado===true?'SENT':'DELIVERY_UNCERTAIN';
- }catch{return 'DELIVERY_UNCERTAIN'}
+  try{
+   const enviado=await p.enviarPorWhatsapp({chatHmac:i.chatHmac,enlace});
+   // Resultado incierto: NO reintentar automáticamente para evitar duplicados.
+   return enviado===true?'SENT':'DELIVERY_UNCERTAIN';
+  }catch{return 'DELIVERY_UNCERTAIN'}
+ }catch{return 'BLOCKED'}
 }
 /** Núcleo privado de canje. PRECONDICIÓN: usuario abrió el portal y ejecuta
  * POST same-origin con token extraído del fragmento, nunca GET de previsualización.
