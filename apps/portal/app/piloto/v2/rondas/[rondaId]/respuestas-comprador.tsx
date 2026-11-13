@@ -87,7 +87,7 @@ export function RespuestasCompradorV2({
    if(!access){
     authGeneration.current++;
     userIdActual.current=null;
-    setCatalog(null);setAuthenticated(false);
+    setCatalog(null);setAuthenticated(false);setBusy(false);
     return;
    }
    const response=await fetch(api+'/respuestas',{
