@@ -10,6 +10,9 @@ on:
       - 'tests/unit/v2-d016-supabase-gotrue.test.mjs'
       - 'src/server/v2-d016-sesion-privada.ts'
       - 'tests/unit/v2-d016-sesion-privada.test.mjs'
+      - 'tests/unit/v2-d016-whapi-envio.test.mjs'
+      - 'supabase/functions/cotironda-piloto-whapi/buyer-whatsapp-entry-d016.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/index.ts'
       - 'src/server/v2-d016-descarga-privada.ts'
       - 'tests/unit/v2-d016-descarga-privada.test.mjs'
       - 'tests/unit/v2-d016-rutas-portal.test.mjs'
@@ -72,6 +75,8 @@ jobs:
         run: node --experimental-strip-types --test tests/unit/v2-d016-descarga-privada.test.mjs
       - name: D016 rutas Next sin teléfono ni Auth inventada
         run: node --experimental-strip-types --test tests/unit/v2-d016-rutas-portal.test.mjs
+      - name: D016 WhatsApp firma HMAC, deduplicación y entrega incierta
+        run: node --experimental-strip-types --test tests/unit/v2-d016-whapi-envio.test.mjs
       - name: D016 PostgreSQL 17 canje atomico, revocacion y aislamiento
         run: |
           set -euo pipefail
