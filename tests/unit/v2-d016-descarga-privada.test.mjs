@@ -100,7 +100,7 @@ test('D016 descarga: cookie faltante, duplicada, ronda o documento ajeno no inic
 test('D016 descarga: fraude de fuente, MIME o SHA nunca libera archivo',async()=>{
  for(const patch of [
   {buyerKey:'buyer_b'}, {requestId:'bbbbbbbb-bbbb-4bbb-abbb-bbbbbbbbbbbb'},
-  {mime:'text/plain'}, {path:'media/'+'f'.repeat(64)},
+  {mime:'application/x-malware'}, {path:'media/'+'f'.repeat(64)},
   {sha256:'f'.repeat(64)}, {byteCount:PDF.length+1},
   {consentAt:1700000001000,invitedAt:1700000000001}
  ]){
