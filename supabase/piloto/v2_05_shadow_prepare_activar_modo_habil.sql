@@ -11,6 +11,10 @@ DECLARE
  v_legacy text;
  v_prev text;
  v_new text;
+ -- Reversión SOLO textual del nombre para comparar con el cuerpo D013
+ -- ya aprobado; nunca ejecuta ni renombra la función histórica.
+ v_v2_header text:='FUNCTION public.cotironda_piloto_v2_shadow_prepare_d013(';
+ v_historical_header text:='FUNCTION public.cotironda_piloto_ia_shadow_prepare_mvp221(';
  v_old text:=$insert_old$
  INSERT INTO cotironda_piloto_privado.requests(
   buyer_key,delivery_city,original_request,source_hmac,state)
@@ -41,7 +45,14 @@ BEGIN
  OR to_regprocedure('cotironda_piloto_privado.v2_deadline(timestamptz,text)') IS NULL
  THEN RAISE EXCEPTION 'V2 calendar migration missing';END IF;
  SELECT pg_get_functiondef(v_v2) INTO v_prev;
- IF encode(extensions.digest(convert_to(v_prev,'UTF8'),'sha256'),'hex')<>
+ -- El SHA D013 aprobado corresponde al cuerpo con nombre M221.
+ -- El clon V2 cambia solo el identificador de función: normalizar
+ -- ese prefijo UNA vez y verificar el digest de TODO el cuerpo.
+ IF (length(v_prev)-length(replace(v_prev,v_v2_header,'')))<>length(v_v2_header)
+ THEN RAISE EXCEPTION 'V2-22 private RPC signature not unique';END IF;
+ IF encode(extensions.digest(convert_to(
+    replace(v_prev,v_v2_header,v_historical_header),'UTF8'),
+    'sha256'),'hex')<>
    'a54091b87a0eb57f0111749cd3151a2623b76f129130714b6830ae4a8943bc02'
  THEN RAISE EXCEPTION 'V2-22 isolated D013 source differs from pinned baseline';END IF;
  IF length(v_prev)-length(replace(v_prev,v_old,''))<>length(v_old)
