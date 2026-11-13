@@ -11,7 +11,8 @@ const active=query.split('\n')
 test('D016 preflight es un SELECT de solo lectura, sin cambios de permisos ni datos',()=>{
  assert.match(active,/^WITH\s+policies\s+AS\s*\(/u);
  assert.match(active,/SELECT jsonb_build_object\(/u);
- assert.match(active,/AS preflight;$/u);
+ assert.match(active,/AS preflight\s+FROM policies p/u);
+ assert.match(active,/CROSS JOIN transport_security t;$/u);
  assert.equal((active.match(/;/gu)??[]).length,1);
  assert.doesNotMatch(active,/\b(?:INSERT|UPDATE|DELETE|TRUNCATE|ALTER|CREATE|DROP|REVOKE|GRANT|CALL|EXECUTE|COPY|PERFORM|SET|RESET|DO)\b/iu);
  assert.doesNotMatch(active,/vault\.decrypted_secrets|pg_read_file|pg_ls_dir|pg_read_binary_file/iu);
