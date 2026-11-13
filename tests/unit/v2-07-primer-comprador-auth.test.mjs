@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {bootstrapPrimerCompradorV2,phoneWhatsappContactSHA,
- configuracionSmsInicialV2Lista}
+ configuracionSmsInicialV2Lista,inspeccionarConfiguracionSmsInicialV2}
  from '../../src/server/v2-07-primer-comprador-auth.ts';
 const release='c'.repeat(40);
 const options=()=>({
@@ -191,4 +191,26 @@ test('V2-07: CLI inspecciona solo settings públicas con publishable key',()=>{
  assert.match(cli,/signal:AbortSignal\.timeout\(6000\)/u);
  assert.doesNotMatch(cli,/headers:\{apikey:secret/u);
  assert.doesNotMatch(cli,/NEXT_PUBLIC_COTIRONDA_PILOT_SUPABASE_SECRET/u);
+});
+
+test('V2-07: inspección por campo comparte el mismo criterio fail-closed del alta',()=>{
+ const base={external:{phone:true},sms_provider:'twilio',
+  disable_signup:true,phone_autoconfirm:false};
+ assert.deepEqual(inspeccionarConfiguracionSmsInicialV2(base),{
+  signupClosed:true,phoneEnabled:true,autoConfirmDisabled:true,smsProviderReady:true
+ });
+ for(const change of [
+  {disable_signup:false},{external:{phone:false}},
+  {phone_autoconfirm:true},{sms_provider:'mock'},{sms_provider:null}
+ ]){
+  const cfg={...base,...change};
+  const d=inspeccionarConfiguracionSmsInicialV2(cfg);
+  assert.equal(Object.values(d).every(Boolean),false);
+  assert.equal(configuracionSmsInicialV2Lista(cfg),false);
+  assert.ok(!JSON.stringify(d).includes('twilio'));
+ }
+ assert.deepEqual(inspeccionarConfiguracionSmsInicialV2(null),{
+  signupClosed:false,phoneEnabled:false,
+  autoConfirmDisabled:false,smsProviderReady:false
+ });
 });
