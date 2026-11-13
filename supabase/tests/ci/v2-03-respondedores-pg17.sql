@@ -120,6 +120,17 @@ INSERT INTO cotironda_piloto_privado.ai_supplier_links_mvp225 VALUES
  (repeat('f',64),'aaaaaaaa-1111-4111-8111-111111111111',
  'supplier_c',repeat('8',64),'document','awaiting_semantic_review','quoted_whapi_id');
 
+-- Fixture V2-13: el aviso MVP238 antecede a un PDF almacenado.
+-- No se instala SQL en entornos reales; todo termina con ROLLBACK.
+ALTER TABLE cotironda_piloto_privado.whapi_inbox
+ ADD COLUMN plaintext_sha256 text;
+CREATE TABLE cotironda_piloto_privado.ai_supplier_preambles_mvp238 (
+ preamble_hmac text PRIMARY KEY,
+ request_id uuid,supplier_key text,chat_hmac text,
+ source_sha256 text,received_at timestamptz,
+ attachment_hmac text,attached_at timestamptz
+);
+
 \ir ../../piloto/v2_03_catalogo_respondedores_privado.sql
 \ir ../../piloto/v2_03b_fuente_original_auditoria_privada.sql
 
@@ -251,6 +262,125 @@ BEGIN
   'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
  IF jsonb_array_length(got->'originals')<>1
  THEN RAISE EXCEPTION 'revocation_not_enforced:%',got;END IF;
+ -- V2-13: proveedor envió aviso identificado y después un PDF.
+ -- La asociación viene de MVP238, no de precio/nombre/fecha del archivo.
+ INSERT INTO cotironda_piloto_privado.participants VALUES
+ ('supplier_d','Casa de materiales Del Sur',repeat('5',64),
+  'supplier',now()-interval '7 days',null);
+ INSERT INTO cotironda_piloto_privado.invitations VALUES
+ ('aaaaaaaa-1111-4111-8111-111111111111','supplier_d',
+  'prepared',now()-interval '2 days');
+ INSERT INTO cotironda_piloto_privado.ai_dispatch_jobs_mvp222 VALUES
+ ('aaaaaaaa-1111-4111-8111-111111111111','supplier_d',
+  'api_accepted','wamid.DDDD1234',now()-interval '1 day');
+ INSERT INTO cotironda_piloto_privado.whapi_inbox
+ (message_hmac,chat_hmac,participant_key,request_id,kind,
+  received_at,plaintext_sha256) VALUES
+ (repeat('9',64),repeat('5',64),'supplier_d',
+  null,'text',now()-interval '4 days',repeat('c',64)),
+ (repeat('7',64),repeat('5',64),'supplier_d',
+  'aaaaaaaa-1111-4111-8111-111111111111',
+  'text',now()-interval '14 hours',repeat('4',64)),
+ (repeat('8',64),repeat('5',64),'supplier_d',
+  'aaaaaaaa-1111-4111-8111-111111111111',
+  'document',now()-interval '12 hours',repeat('5',64));
+ INSERT INTO cotironda_piloto_privado.media_archive_mvp095 VALUES
+ (repeat('8',64),'aaaaaaaa-1111-4111-8111-111111111111',
+  'supplier_d',repeat('5',64),'document','application/pdf',
+  repeat('6',64),'stored',now()-interval '11 hours',
+  'media/'||repeat('8',64),1337);
+ INSERT INTO cotironda_piloto_privado.ai_supplier_links_mvp225 VALUES
+ (repeat('8',64),'aaaaaaaa-1111-4111-8111-111111111111',
+  'supplier_d',repeat('6',64),'document',
+  'awaiting_semantic_review','prior_supplier_preamble');
+ INSERT INTO cotironda_piloto_privado.ai_supplier_preambles_mvp238 VALUES
+ (repeat('7',64),'aaaaaaaa-1111-4111-8111-111111111111',
+  'supplier_d',repeat('5',64),repeat('4',64),
+  now()-interval '14 hours',repeat('8',64),now()-interval '11 hours');
+
+ -- Ningún original sin consentimiento prospectivo debe filtrarse.
+ got:=public.cotironda_piloto_v2_responders_private(
+  'aaaaaaaa-1111-4111-8111-111111111111',
+  '11111111-1111-4111-8111-111111111111',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+ IF jsonb_array_length(got->'originals')<>1
+ THEN RAISE EXCEPTION 'v2_13_unconsented_preamble_visible:%',got;END IF;
+ INSERT INTO cotironda_piloto_privado.v2_supplier_original_consents VALUES
+ ('supplier_d',repeat('9',64),'cotironda-originales-v2',
+  now()-interval '4 days',null);
+ got:=public.cotironda_piloto_v2_responders_private(
+  'aaaaaaaa-1111-4111-8111-111111111111',
+  '11111111-1111-4111-8111-111111111111',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+ IF jsonb_array_length(got->'originals')<>2
+ THEN RAISE EXCEPTION 'v2_13_preamble_quote_missing:%',got;END IF;
+ SELECT (value->>'documentId')::uuid INTO doc
+ FROM jsonb_array_elements(got->'originals')
+ WHERE value->>'supplierName'='Casa de materiales Del Sur';
+ IF doc IS NULL THEN RAISE EXCEPTION 'v2_13_no_document_id';END IF;
+ source_record:=public.cotironda_piloto_v2_original_source_private(
+  'aaaaaaaa-1111-4111-8111-111111111111',
+  '11111111-1111-4111-8111-111111111111',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',doc);
+ IF source_record->>'sha256'<>repeat('6',64)
+ OR source_record->>'path'<>'media/'||repeat('8',64)
+ THEN RAISE EXCEPTION 'v2_13_original_not_exact:%',source_record;END IF;
+
+ -- Alterar sólo la huella del aviso rompe vínculo y descarga, fail closed.
+ UPDATE cotironda_piloto_privado.ai_supplier_preambles_mvp238
+ SET source_sha256=repeat('f',64) WHERE preamble_hmac=repeat('7',64);
+ got:=public.cotironda_piloto_v2_responders_private(
+  'aaaaaaaa-1111-4111-8111-111111111111',
+  '11111111-1111-4111-8111-111111111111',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+ IF jsonb_array_length(got->'originals')<>1
+ OR public.cotironda_piloto_v2_original_source_private(
+  'aaaaaaaa-1111-4111-8111-111111111111',
+  '11111111-1111-4111-8111-111111111111',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',doc) IS NOT NULL
+ THEN RAISE EXCEPTION 'v2_13_forged_notice_accepted';END IF;
+ UPDATE cotironda_piloto_privado.ai_supplier_preambles_mvp238
+ SET source_sha256=repeat('4',64) WHERE preamble_hmac=repeat('7',64);
+
+ -- Cualquier cambio de chat, tiempo o evidencia del aviso debe excluir.
+ UPDATE cotironda_piloto_privado.ai_supplier_preambles_mvp238
+ SET chat_hmac=repeat('3',64) WHERE preamble_hmac=repeat('7',64);
+ got:=public.cotironda_piloto_v2_responders_private(
+  'aaaaaaaa-1111-4111-8111-111111111111',
+  '11111111-1111-4111-8111-111111111111',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+ IF jsonb_array_length(got->'originals')<>1
+ THEN RAISE EXCEPTION 'v2_13_cross_chat_preamble_visible';END IF;
+ UPDATE cotironda_piloto_privado.ai_supplier_preambles_mvp238
+ SET chat_hmac=repeat('5',64),received_at=now()-interval '10 hours'
+ WHERE preamble_hmac=repeat('7',64);
+ got:=public.cotironda_piloto_v2_responders_private(
+  'aaaaaaaa-1111-4111-8111-111111111111',
+  '11111111-1111-4111-8111-111111111111',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+ IF jsonb_array_length(got->'originals')<>1
+ THEN RAISE EXCEPTION 'v2_13_future_preamble_visible';END IF;
+ UPDATE cotironda_piloto_privado.ai_supplier_preambles_mvp238
+ SET received_at=now()-interval '14 hours',attachment_hmac=null
+ WHERE preamble_hmac=repeat('7',64);
+ got:=public.cotironda_piloto_v2_responders_private(
+  'aaaaaaaa-1111-4111-8111-111111111111',
+  '11111111-1111-4111-8111-111111111111',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+ IF jsonb_array_length(got->'originals')<>1
+ THEN RAISE EXCEPTION 'v2_13_unpaired_file_visible';END IF;
+ UPDATE cotironda_piloto_privado.ai_supplier_preambles_mvp238
+ SET attachment_hmac=repeat('8',64) WHERE preamble_hmac=repeat('7',64);
+
+ UPDATE cotironda_piloto_privado.v2_supplier_original_consents
+ SET revoked_at=now() WHERE supplier_key='supplier_d';
+ IF public.cotironda_piloto_v2_original_source_private(
+  'aaaaaaaa-1111-4111-8111-111111111111',
+  '11111111-1111-4111-8111-111111111111',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',doc) IS NOT NULL
+ THEN RAISE EXCEPTION 'v2_13_consent_revoked_original_leaked';END IF;
+ RAISE NOTICE 'V2_13_PREAMBLE_DOCUMENT_PG17_PASS';
+
  -- Ningun cliente normal puede llamar a la RPC privada.
  IF has_function_privilege('anon',
   'public.cotironda_piloto_v2_responders_private(uuid,uuid,uuid)','EXECUTE')
