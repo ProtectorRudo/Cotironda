@@ -37,3 +37,16 @@ verify_jwt = false
 # actual en SQL. No usar service_role como bearer para este endpoint.
 # Esta definición NO despliega ni activa la función.
 verify_jwt = true
+
+[functions.cotironda-piloto-v2-text-reader-d016]
+# Exclusivamente servidor Next del PILOTO con apikey sb_secret_ y un segundo
+# secreto interno independiente: D016 sessionHmac + dos RPC revalidan el
+# comprador/ronda/consentimiento. Nunca acceso directo del navegador.
+# Nuevos flags OFF, sin despliegue sin «Publicalo».
+# sb_secret_* NO es JWT, por eso el gateway no hace verificación GoTrue.
+verify_jwt = false
+
+[functions.cotironda-piloto-v2-worker-d016]
+# Cron -> Supabase Edge (no navegador). Dos secretos independientes
+# y RPC exclusivas de service_role; flags OFF hasta Publicalo PILOTO.
+verify_jwt = false
