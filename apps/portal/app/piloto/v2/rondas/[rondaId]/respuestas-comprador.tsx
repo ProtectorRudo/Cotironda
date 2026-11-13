@@ -11,6 +11,8 @@ import {debeActualizarRespuestasV2,INTERVALO_ACTUALIZACION_RESPUESTAS_V2_MS}
 import {seleccionarAnalisisPendientesV2,registrarIntentosAnalisisV2,
  type IntentoAnalisisV2}
  from '../../../../../lib/piloto-v2-reintento-analisis.ts';
+import {solicitarSmsCompradorV2}
+ from '../../../../../../../src/server/v2-16-primer-sms-cotironda.ts';
 
 const PILOT='https://ilggkalaafhtiysyzlmg.supabase.co';
 export function RespuestasCompradorV2({rondaId}:{rondaId:string}){
@@ -179,10 +181,15 @@ export function RespuestasCompradorV2({rondaId}:{rondaId:string}){
   }
   setBusy(true);setError('');
   try{
-   const {error:sendError}=await client.auth.signInWithOtp({
-    phone:phone.trim(),options:{shouldCreateUser:false}
+   const autorizado=await solicitarSmsCompradorV2({
+    inicio:()=>client.auth.signInWithOtp({
+     phone:phone.trim(),options:{shouldCreateUser:false}
+    }),
+    confirmarAltaPendiente:()=>client.auth.resend({
+     type:'sms',phone:phone.trim()
+    })
    });
-   if(sendError)throw Error('otp_failed');
+   if(!autorizado)throw Error('otp_failed');
    setRequested(true);
   }catch{setError('No se pudo verificar tu acceso. Revisá tu número.')}
   finally{setBusy(false)}
