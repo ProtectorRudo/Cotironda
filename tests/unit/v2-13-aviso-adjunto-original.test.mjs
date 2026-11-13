@@ -28,7 +28,7 @@ test('V2-13: admite tercer vínculo solo cuando existe aviso de proveedor compro
  assert.match(catalog,/link\.association IN \('quoted_whapi_id','single_active_round'\)/u);
  assert.match(catalog,/link\.status='awaiting_semantic_review'/u);
  assert.match(catalog,/a\.content_sha256=link\.source_sha256/u);
- assert.match(catalog,/a\.storage_path='media\/\|\|a\.message_hmac/u);
+ assert.match(catalog,/a\.storage_path='media\/'\|\|a\.message_hmac/u);
  assert.match(catalog,/c\.revoked_at IS NULL/u);
  assert.match(catalog,/policy\.enabled=true/u);
  assert.match(catalog,/auth\.sessions s/u);
