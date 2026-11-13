@@ -7,7 +7,7 @@
 
 En [PR #837](https://github.com/ProtectorRudo/Cotironda/pull/837) se desarrollaron el emisor WebCrypto HMAC, el ledger `v2_d016_whapi_link_deliveries` privado y las RPC de preparación/finalización con cuota, idempotencia y rechazo de reintentos inciertos. El webhook histórico quedó **inmutable** y D016 se agrega mediante `scripts/piloto/v2-d016-whapi-overlay.mjs`, un candidato temporal para ejecutar pruebas Deno, nunca edición directa al `index.ts` histórico.
 
-**Continúa faltando:** verificar CI exacto, publicar instalación SQL/Edge/Next con autorización explícita, enlazar números reales y abrir el circuito en Preview, leer texto original cifrado y análisis bajo sesión D016, ejecutar piloto real con arquitecto y Ailín/Nahuel y comprobar cierre a dos días hábiles. No se enviaron WhatsApps, ni se cambiaron secretos/políticas/datos reales por este incremento.
+**CI verificada:** 8/8 GitHub Actions SUCCESS para PR #837 en SHA `695b330de5802d8a32b58ac6502c81893e2b74a2`, incluido Deno, PG17 con ROLLBACK, Next.js y unitarios. **Continúa faltando:** publicar instalación SQL/Edge/Next con autorización explícita, enlazar números reales y abrir el circuito en Preview, leer texto original cifrado y análisis bajo sesión D016, ejecutar piloto real con arquitecto y Ailín/Nahuel y comprobar cierre a dos días hábiles. No se enviaron WhatsApps, ni se cambiaron secretos/políticas/datos reales por este incremento.
 
 ## ACTUALIZACIÓN MÁS RECIENTE — PR #837 sesión privada sin email ni SMS
 
