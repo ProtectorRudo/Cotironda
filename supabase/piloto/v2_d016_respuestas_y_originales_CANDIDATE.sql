@@ -398,3 +398,51 @@ BEGIN
 END $listing$;
 REVOKE ALL ON FUNCTION public.cotironda_piloto_v2_d016_responders_with_analysis_private(uuid,text) FROM PUBLIC,anon,authenticated,service_role;
 GRANT EXECUTE ON FUNCTION public.cotironda_piloto_v2_d016_responders_with_analysis_private(uuid,text) TO service_role;
+
+-- Auditoría separada de GoTrue: cada descarga queda asociada al HMAC de sesión
+-- privada. Los originales NO se habilitan por este registro sin autorización.
+CREATE TABLE cotironda_piloto_privado.v2_d016_original_download_audit(
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+ request_id uuid NOT NULL REFERENCES cotironda_piloto_privado.requests(id),
+ document_id uuid NOT NULL,
+ session_hmac text NOT NULL REFERENCES
+  cotironda_piloto_privado.v2_d016_browser_sessions(sesion_hmac),
+ source_sha256 text NOT NULL CHECK(source_sha256 ~ '^[a-f0-9]{64}$'),
+ byte_count integer NOT NULL CHECK(byte_count BETWEEN 1 AND 8388608),
+ downloaded_at timestamptz NOT NULL DEFAULT clock_timestamp()
+);
+ALTER TABLE cotironda_piloto_privado.v2_d016_original_download_audit
+ ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON cotironda_piloto_privado.v2_d016_original_download_audit
+ FROM PUBLIC,anon,authenticated;
+-- Sólo la función privada escribe; no habilitar INSERT a usuarios web.
+CREATE FUNCTION public.cotironda_piloto_v2_d016_record_download_private(
+ p_request_id uuid,p_sesion_hmac text,p_document_id uuid,
+ p_source_sha256 text,p_byte_count integer
+) RETURNS boolean
+LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path TO ''
+AS $audit_d016$
+DECLARE v_source jsonb;
+BEGIN
+ IF p_request_id IS NULL OR p_document_id IS NULL OR p_sesion_hmac IS NULL
+ OR p_sesion_hmac !~ '^[a-f0-9]{64}$'
+ OR p_source_sha256 IS NULL OR p_source_sha256 !~ '^[a-f0-9]{64}$'
+ OR p_byte_count IS NULL OR p_byte_count NOT BETWEEN 1 AND 8388608
+ THEN RETURN false;END IF;
+ -- Segunda revisión de sesión VIVA, ronda, proveedor, consentimiento y SHA
+ -- después de leer bytes. No auditar ni liberar bytes si fue revocado.
+ v_source:=public.cotironda_piloto_v2_d016_original_source_private(
+  p_request_id,p_sesion_hmac,p_document_id);
+ IF v_source IS NULL OR v_source->>'state'<>'authorized_original_v2'
+ OR v_source->>'sha256'<>p_source_sha256
+ OR (v_source->>'byteCount')::integer<>p_byte_count
+ THEN RETURN false;END IF;
+ INSERT INTO cotironda_piloto_privado.v2_d016_original_download_audit(
+  request_id,document_id,session_hmac,source_sha256,byte_count
+ ) VALUES(p_request_id,p_document_id,p_sesion_hmac,p_source_sha256,p_byte_count);
+ RETURN true;
+END $audit_d016$;
+REVOKE ALL ON FUNCTION public.cotironda_piloto_v2_d016_record_download_private(
+ uuid,text,uuid,text,integer) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.cotironda_piloto_v2_d016_record_download_private(
+ uuid,text,uuid,text,integer) TO service_role;
