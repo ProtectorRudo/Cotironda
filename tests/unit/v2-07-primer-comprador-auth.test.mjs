@@ -43,6 +43,7 @@ test('V2-07: WhatsApp contact SHA matches existing V2-03 SQL exactly',()=>{
   createHash('sha256').update('5491123456789@s.whatsapp.net').digest('hex'));
  assert.equal(phoneWhatsappContactSHA('5491123456789'),null);
  assert.equal(phoneWhatsappContactSHA('+5400'),null);
+ assert.equal(phoneWhatsappContactSHA('+1234567890123456'),null);
 });
 test('V2-07: dry run only reads Auth and proof, no createUser',async()=>{
  const m=mock();
@@ -61,6 +62,7 @@ test('V2-07: source SHA mismatch or production/registration guard blocks before 
   {activeSourceSha:'a'.repeat(40)},
   {buyerKey:'buyer_b; DROP TABLE'},
   {phoneE164:'+0000'},
+  {phoneE164:'+1234567890123456'},
   {phoneE164:'\u202e+5491123456789'}
  ]){
   const m=mock();const out=await bootstrapPrimerCompradorV2(
