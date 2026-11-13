@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - 'src/server/v2-d016-aviso-original-proveedor.ts'
+      - 'supabase/piloto/v2_d016_original_reply_proof_CANDIDATE.sql'
+      - 'supabase/tests/ci/v2-d016-original-proof-pg17.sql'
       - 'tests/unit/v2-d016-aviso-original-proveedor.test.mjs'
       - 'docs/V2-D016-EVIDENCIA-RESPUESTA-ORIGINALES-20261113.md'
       - '.github/workflows/cotironda-d016-evidencia-proveedor.yml'
@@ -24,3 +26,36 @@ jobs:
           node-version: '22.16.0'
       - name: Verificar aviso en un solo mensaje y respuestas de proveedor
         run: node --experimental-strip-types --test tests/unit/v2-d016-aviso-original-proveedor.test.mjs
+  evidence-pg17:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: synthetic_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: synthetic_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - name: Checkout sin secrets ni tokens persistentes
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: SQL de pruebas PostgreSQL 17 con ROLLBACK
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/v2-d016-original-proof-pg17.sql
+      - name: Confirmar rollback completo y ausencia de datos
+        run: |
+          test "$(psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regnamespace('cotironda_piloto_privado') IS NULL")" = t
+          test "$(psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regprocedure('public.cotironda_piloto_v2_d016_observe_original_reply_private(uuid,text,text,text,boolean,boolean)') IS NULL")" = t
