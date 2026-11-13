@@ -2,6 +2,10 @@
 
 ### 13/11/2026 — Preflight V2 ejecutado y protección nueva para pg_net
 
+**PR #837 HEAD `8946629e919ec4c2eae5a507cfea077ff6f0c1cc`: 8/8 GitHub Actions SUCCESS verificadas.** Preflight ejecutado en SQL real sólo lectura; E2E y publicación todavía pendientes.
+
+
+
 **Se desarrolló y ejecutó (SOLO SELECT)**
 [`v2_d016_preflight_SOLO_LECTURA.sql`](https://github.com/ProtectorRudo/Cotironda/blob/feat/d016-whatsapp-link-safe-pilot-20261113/supabase/piloto/v2_d016_preflight_SOLO_LECTURA.sql)
 sobre el proyecto `cotironda-piloto`. Resultado REAL:
