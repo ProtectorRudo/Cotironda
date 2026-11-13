@@ -24,7 +24,10 @@ test('D016 preflight exige aprobaciones prospectivas, no reactiva funciones',()=
   'v2_d016_worker_due_private','v2_d016_close_due_private',
   'v2_d016_final_status_private','requests_exact_duration_check',
   'business_two_days','18:00:00',
-  'politica_negocio_off','originales_off','cierre_automatico_off'
+  'politica_negocio_off','originales_off','cierre_automatico_off',
+  'cola_pgnet_expone_headers_a_roles_cliente',
+  'anon_can_read_http_queue','authenticated_can_read_http_queue',
+  'has_schema_privilege','has_table_privilege'
  ])assert.ok(active.includes(term),term);
 });
 test('D016 preflight no revela secretos, identidad ni detalles de proveedores',()=>{
