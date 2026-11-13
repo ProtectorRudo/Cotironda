@@ -32,13 +32,22 @@ export type FuenteOriginalV2=Readonly<{
  mime:string;byteCount:number;sha256:string;
  consentAt:number;invitedAt:number;
 }>;
+export type FuenteTextoV2=Readonly<{
+ state:'authorized_text_v2';requestId:string;documentId:string;
+ buyerKey:string;supplierKey:string;messageHmac:string;chatHmac:string;
+ nonceB64:string;ciphertextB64:string;mime:'text/plain';sha256:string;
+ consentAt:number;invitedAt:number;
+}>;
 type Identity={userId:string;sessionId:string;expiresAt:number};
 export type DescargaV2Ports=Readonly<{
  getUser:(jwt:string)=>Promise<SupabaseUserPiloto|null>;
  source:(q:Readonly<{rondaId:string;documentoId:string;usuarioId:string;
   sessionId:string}>)=>Promise<unknown>;
  read:(bucket:string,path:string)=>Promise<Uint8Array|null>;
+ readText?:(source:FuenteTextoV2)=>Promise<Uint8Array|null>;
  audit:(q:Readonly<{rondaId:string;documentoId:string;usuarioId:string;
+  sessionId:string;sha256:string;byteCount:number}>)=>Promise<boolean>;
+ auditText?:(q:Readonly<{rondaId:string;documentoId:string;usuarioId:string;
   sessionId:string;sha256:string;byteCount:number}>)=>Promise<boolean>;
 }>;
 const obj=(x:unknown):x is Record<string,unknown>=>!!x&&
@@ -68,6 +77,25 @@ function sourceValid(raw:unknown,rondaId:string,documentoId:string):
   typeof raw.invitedAt!=='number'||!Number.isSafeInteger(raw.invitedAt)||
   raw.invitedAt<raw.consentAt)return null;
  return raw as FuenteOriginalV2;
+}
+function textSourceValid(raw:unknown,rondaId:string,documentoId:string):
+ FuenteTextoV2|null{
+ if(!obj(raw)||raw.state!=='authorized_text_v2'||
+  raw.requestId!==rondaId||raw.documentId!==documentoId||
+  typeof raw.buyerKey!=='string'||!UID.test(raw.buyerKey)||
+  typeof raw.supplierKey!=='string'||!UID.test(raw.supplierKey)||
+  typeof raw.messageHmac!=='string'||!HMAC.test(raw.messageHmac)||
+  typeof raw.chatHmac!=='string'||!HMAC.test(raw.chatHmac)||
+  raw.mime!=='text/plain'||
+  typeof raw.sha256!=='string'||!HMAC.test(raw.sha256)||
+  typeof raw.nonceB64!=='string'||raw.nonceB64.length!==16||
+  typeof raw.ciphertextB64!=='string'||
+  raw.ciphertextB64.length<24||raw.ciphertextB64.length>20000||
+  typeof raw.consentAt!=='number'||!Number.isSafeInteger(raw.consentAt)||
+  raw.consentAt<=0||typeof raw.invitedAt!=='number'||
+  !Number.isSafeInteger(raw.invitedAt)||
+  raw.invitedAt<raw.consentAt)return null;
+ return raw as FuenteTextoV2;
 }
 async function hex(bytes:Uint8Array):Promise<string>{
  const copy=new Uint8Array(bytes);
@@ -105,34 +133,49 @@ export async function descargarOriginalV2(
   const selector={
    rondaId,documentoId,usuarioId:buyer.userId,sessionId:buyer.sessionId
   };
-  const first=sourceValid(await ports.source(selector),rondaId,documentoId);
-  if(!first)return fail(404);
+  const firstRaw=await ports.source(selector);
+  const firstFile=sourceValid(firstRaw,rondaId,documentoId);
+  const firstText=textSourceValid(firstRaw,rondaId,documentoId);
+  if(!firstFile&&!firstText)return fail(404);
+  if(firstText&&(!ports.readText||!ports.auditText))return fail(503);
 
-  // Private Storage reads are bounded & hashed BEFORE bytes can leave server.
-  const raw=await ports.read(first.bucket,first.path);
-  if(!(raw instanceof Uint8Array)||raw.byteLength!==first.byteCount||
-    raw.byteLength<1||raw.byteLength>MAX)return fail(404);
+  // Archivo: leer Storage original. Texto: AES-GCM con AAD+SHA exactos
+  // desde fuente Whapi autorizada, sin generar un archivo ficticio en SQL.
+  const raw=firstText?await ports.readText!(firstText):
+   await ports.read(firstFile!.bucket,firstFile!.path);
+  const maxSize=firstText?4000:MAX;
+  const expectedSize=firstFile?.byteCount??null;
+  if(!(raw instanceof Uint8Array)||raw.byteLength<1||
+   raw.byteLength>maxSize||
+   (firstText&&raw.byteLength<5)||
+   (expectedSize!==null&&raw.byteLength!==expectedSize))return fail(404);
   const bytes=new Uint8Array(raw);
   const sha256=await hex(bytes);
-  if(sha256!==first.sha256)return fail(404);
+  if(sha256!==(firstText??firstFile)!.sha256)return fail(404);
 
-  // Recheck authentication, current consent and immutable evidence AFTER I/O.
+  // Después del descifrado/lectura, revalidar la misma sesión y la fuente
+  // autorizada: revocaciones durante I/O no deben dejar escapar contenido.
   const later=now();
   const again=await auth(jwt,ports,later);
   if(!again||again.userId!==buyer.userId||
    again.sessionId!==buyer.sessionId)return fail(404);
-  const second=sourceValid(await ports.source(selector),rondaId,documentoId);
-  if(!second||JSON.stringify(first)!==JSON.stringify(second))return fail(404);
+  const secondRaw=await ports.source(selector);
+  const second=firstText?textSourceValid(secondRaw,rondaId,documentoId):
+   sourceValid(secondRaw,rondaId,documentoId);
+  if(!second||JSON.stringify(firstText??firstFile)!==JSON.stringify(second))
+   return fail(404);
 
-  // Mandatory durable audit revalidates source and consents in SQL again.
-  const recorded=await ports.audit({...selector,sha256,byteCount:bytes.length});
+  // La auditoría es obligatoria ANTES de devolver cualquier byte.
+  const proof={...selector,sha256,byteCount:bytes.length};
+  const recorded=firstText?await ports.auditText!(proof):await ports.audit(proof);
   if(recorded!==true)return fail(503);
-  const suffix=FORMATS[first.mime];
+  const mime=firstText?'text/plain':firstFile!.mime;
+  const suffix=FORMATS[mime];
   const safeName='cotironda-original-'+documentoId.slice(0,8)+'.'+suffix;
   // Uint8Array copied into an ArrayBuffer owned by this response.
   const output=new Uint8Array(bytes.length);output.set(bytes);
   return new Response(output.buffer,{status:200,headers:{
-   ...BASE_HEADERS,'content-type':first.mime,
+   ...BASE_HEADERS,'content-type':mime,
    'content-length':String(bytes.length),
    'content-disposition':'attachment; filename="'+safeName+'"'
   }});
