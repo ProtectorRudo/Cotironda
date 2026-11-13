@@ -3,6 +3,19 @@
 **Última actualización de documentación: 12/11/2026 (Argentina).**
 **ESTADO VIGENTE:** **PUBLICACIÓN PARCIAL PILOTO**: 9 funciones SQL V2 y 4 tablas privadas instaladas, política de compartir originales **OFF**, Edge PDF privado v1 instalado, Whapi histórico v76 intacto. **Portal V2 NO desplegado por Vercel 402 y Git desconectado; sin comprador Auth, sin consentimientos V2 y sin E2E.** [Acta verificada](V2-RELEASE-PILOTO-PARCIAL-20261112.md). Las secciones anteriores con '0 RPC/SIN desplegar' documentan hechos históricos PREVIOS a esta publicación. Los datos de Supabase caducan; reconsultar cuando se necesite estado vivo.
 
+## RELEVO VIGENTE — 13/11/2026: decisión D016, sin SMS
+
+**No retomar OTP SMS como siguiente paso.** El propietario aprobó [D016: enlace privado enviado por WhatsApp, un toque y sesión segura](V2-D016-ACCESO-WHATSAPP-SIN-SMS-20261113.md). El comprador no debe registrarse ni introducir teléfono, OTP, correo o contraseña. No usar enlace de seguimiento legado para acceder a archivos.
+
+**Estado real observado hoy (no confundir con historial 12/11):**
+- Vercel Preview **`cotironda-portal-dev`** protegida por SSO, deployment `dpl_9d7DghjFZpP9Lo8hW4JtouUPiZnh` READY, SHA publicado `06e1700`, con diagnóstico SMS (histórico) que devolvió `BLOCKED`. No es sesión de comprador real.
+- GitHub PR #836 draft SHA `8fdf2d0e72a4a412b1bcc24f0ee150f6665b35da` con **12/12 checks SUCCESS** para el código SMS anterior. No publicado ni adaptado todavía a D016.
+- Supabase PG17 PILOTO: `auth.users=0`, políticas V2 de compartir originales/negocio/calendario y auto-release OFF, sin consentimientos V2 de originales ni calendario aprobado. Whapi v76 histórico intacto.
+- La RPC real `cotironda_piloto_v2_responders_private` exige `auth.users.phone_confirmed_at IS NOT NULL`, teléfono con huella igual al canal WhatsApp y sesión en `auth.sessions`; HTTP Next también exige teléfono confirmado. **No crear acceso con mero enlace público ni afirmar que D016 funciona.**
+- **Próxima tarea ÚNICA:** desarrollar y probar (sin deploy) **WhatsApp verificado → token efímero de uso único → sesión autenticada legítima** y actualizar los guards para usar prueba de canal fuerte sin falsificar `phone_confirmed_at`. Después pruebas de navegador/privacidad. Publicar solo bajo futura orden explícita `Publicalo` para PILOTO. Sin pedir al propietario configurar Twilio/Phone para login.
+
+Las secciones inferiores reflejan cortes históricos y **NO** reemplazan D016 ni la verificación viva de 13/11.
+
 ## ÚLTIMA AUDITORÍA POSTPUBLICACIÓN — PR #829 (12/11/2026)
 
 **No se desplegó nada nuevo con «Avanza».** [PR #829](https://github.com/ProtectorRudo/Cotironda/pull/829) documenta el estado ya instalado en Supabase y añade dos bloqueos al guard de publicación. **Comprobación real de identidad Whapi usando la RPC SQL instalada**: **1/1 compradores elegibles reconocidos de forma no ambigua**, y **0** huellas de teléfono incorrectas aceptadas. No hubo lectura ni impresión de números/IDs y **continúa auth.users=0**: falta verificación real de SMS y sesión.
