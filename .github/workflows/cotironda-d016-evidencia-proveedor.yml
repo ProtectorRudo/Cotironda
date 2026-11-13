@@ -7,6 +7,11 @@ on:
       - 'supabase/functions/cotironda-piloto-whapi/ai-central-dispatch-mvp223.ts'
       - 'supabase/functions/cotironda-piloto-whapi/original-notice-dispatch-d016.ts'
       - 'scripts/piloto/v2-d016-original-notice-overlay.mjs'
+      - 'scripts/piloto/v2-d016-original-inbox-overlay.mjs'
+      - 'supabase/functions/cotironda-piloto-whapi/original-reply-intake-d016.ts'
+      - 'supabase/piloto/v2_d016_original_whapi_inbox_CANDIDATE.sql'
+      - 'supabase/tests/ci/v2-d016-original-inbox-pg17.sql'
+      - 'tests/unit/v2-d016-original-inbox.test.mjs'
       - 'tests/unit/v2-d016-original-whapi-adapter.test.mjs'
       - 'supabase/piloto/v2_d016_original_reply_proof_CANDIDATE.sql'
       - 'supabase/piloto/v2_d016_original_notice_lease_guard_CANDIDATE.sql'
@@ -35,6 +40,8 @@ jobs:
         run: node --experimental-strip-types --test tests/unit/v2-d016-aviso-original-proveedor.test.mjs
       - name: Contrato D016 de despacho único, ID Whapi y flags OFF
         run: node --experimental-strip-types --test tests/unit/v2-d016-original-whapi-adapter.test.mjs
+      - name: Entrada D016 original y revocación, sin enviar mensajes
+        run: node --experimental-strip-types --test tests/unit/v2-d016-original-inbox.test.mjs
       - name: Deno 2 para tipado de candidato generado, sin desplegar webhook
         uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb
         with:
@@ -43,9 +50,15 @@ jobs:
         run: node scripts/piloto/v2-d016-original-notice-overlay.mjs --write-candidate
       - name: Typecheck Deno del webhook Whapi V2 + evidencia
         run: deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/index.v2-d016-original-candidate.ts
+      - name: Generar candidato con recepción D016, sin desplegar
+        run: node scripts/piloto/v2-d016-original-inbox-overlay.mjs --write-candidate
+      - name: Deno typecheck de salida + recepción Whapi
+        run: deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/index.v2-d016-inbox-candidate.ts
       - name: Eliminar candidato generado sin tocar index.ts
         if: always()
-        run: rm -f supabase/functions/cotironda-piloto-whapi/index.v2-d016-original-candidate.ts
+        run: |
+          rm -f supabase/functions/cotironda-piloto-whapi/index.v2-d016-original-candidate.ts
+          rm -f supabase/functions/cotironda-piloto-whapi/index.v2-d016-inbox-candidate.ts
   evidence-pg17:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -77,6 +90,8 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/v2-d016-original-proof-pg17.sql
       - name: Lease correcto, grants y rollback PostgreSQL17
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/v2-d016-original-lease-guard-pg17.sql
+      - name: Recepción real simulada, PDF y NO COMPARTIR con PG17
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/v2-d016-original-inbox-pg17.sql
       - name: Confirmar rollback completo y ausencia de datos
         run: |
           test "$(psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regnamespace('cotironda_piloto_privado') IS NULL")" = t
