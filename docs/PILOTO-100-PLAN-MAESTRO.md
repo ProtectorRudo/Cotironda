@@ -4,6 +4,18 @@
 
 **ORDEN OBLIGATORIO DE LECTURA EN TODAS LAS CONVERSACIONES:** [Contrato V2](COTIRONDA-V2-CONTRATO.md) → **este plan** → [Estado y única próxima tarea](PILOTO-100-ESTADO.md) → [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794). **Estas páginas son las VIGENTES**. [Plan histórico íntegro](historico/2026-11-12-plan-maestro-pre-v2.md) (81 KB), [estado histórico](historico/2026-11-12-estado-pre-v2.md) e [issue histórico](historico/2026-11-12-issue-794-pre-v2.md) conservan evidencia pero NO deben usarse como guía de producto.
 
+## Siguiente trabajo único: D016 WhatsApp → sesión privada (13/11/2026)
+
+**Dirección aprobada:** [D016 — acceso WhatsApp de un toque, sin SMS](V2-D016-ACCESO-WHATSAPP-SIN-SMS-20261113.md). Abandona como requisito del comprador las tareas antiguas «habilitar proveedor SMS / Twilio / configurar Phone / verificar SMS». **No** abandona verificación de identidad, sesiones válidas ni cierre seguro de registro GoTrue.
+
+- [x] Dirección funcional aprobada: enlace por el chat autenticado Whapi; sin formulario ni SMS.
+- [x] Auditoría inicial de dependencia técnica: HTTP V2 y RPC `responders_private` exigen `phone_confirmed_at`; un enlace no funciona por sí solo. Supabase Auth tiene `auth.users=0`.
+- [ ] Prueba de integración sin envío real: generación privada de link, canje único 10 min, anti-preview, concurrencia, token protegido y sesión Auth real emitida por GoTrue; sin suplantar verificación SMS. Evaluar `auth.admin.generateLink` y `verifyOtp`.
+- [ ] Adaptar en rama de desarrollo el vínculo WhatsApp verificado → sesión Auth → RPC privada conservando todas las autorizaciones por empresa/ronda/original, con PG17/Node/Next/Deno y regresiones.
+- [ ] Tras `Publicalo` explícito, despliegue solo PILOTO Preview, switches comerciales inicialmente OFF y prueba real completa: 1 arquitecto + 2 proveedores, originales, análisis y cierre 2 días hábiles.
+
+**Nota de estado:** la Preview `cotironda-portal-dev` ya fue publicada protegida por SSO en commit `06e1700` el 13/11/2026; ya no está bloqueada por el error histórico Vercel 402 o Git desconectado. El PR de código #836 con SMS histórico tiene 12/12 checks en SHA `8fdf2d0` pero **NO implementa D016**. Estado vivo y bloqueos remanentes: [Relevo](PILOTO-100-ESTADO.md) e [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794).
+
 ## Relevo PR #829 — pospublicación sin perder avances (12/11/2026)
 
 [PR #829](https://github.com/ProtectorRudo/Cotironda/pull/829) corrige un problema de trazabilidad: el primer snapshot predeploy todavía decía `0 RPC/0 tablas`. **NO actualizar ese histórico**: se agregó un snapshot **nuevo** `v2-readiness-piloto-postrelease-20261112.json` donde consta la publicación verificada **9 RPC nuevas/4 tablas RLS y Edge PDF v1**, con política OFF, sin comprador Auth ni consentimientos proveedor y Whapi v76 intacto. El guard de publicación pasa a exigir tanto **Git enlazado al proyecto DEV correcto** como **cuota Vercel disponible**, para no declarar listo un portal antiguo o en otro proyecto.
