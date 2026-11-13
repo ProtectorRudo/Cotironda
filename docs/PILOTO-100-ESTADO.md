@@ -1,36 +1,21 @@
 # COTIRONDA V2 — ESTADO REAL Y RELEVO ENTRE CONVERSACIONES
 
-### Relevo de seguridad/prepublicación · 13/11/2026
+### RELEVO MÁS RECIENTE — 13/11/2026 · Solución SIN pg_net para secretos
 
-**Última verificación GitHub:** PR #837 HEAD `8946629e919ec4c2eae5a507cfea077ff6f0c1cc`, **8/8 SUCCESS** (incluye SQL read-only/ACL, PostgreSQL17 sintético, Edge Deno, Next.js y regresiones). Sin deploy ni mensajes reales.
+**Cotironda V2 D016 sigue CANDIDATO, PR #837 DRAFT, sin desplegar ni enviar WhatsApp.** Dejo la dirección definitiva de esta fase para nuevas conversaciones.
 
+**Corrección importante:** consulta de la [KB oficial Supabase](https://supabase.com/kb/troubleshooting/revoking-access-to-pg_net-objects-has-no-effect-0bbc16) actualizada 04/11/2026: el intento previo de revocar `SELECT` de `net.http_request_queue` no es compatible ni operativo desde `postgres`, y podría romper dependencias si se cambiara en el rol dueño. Los privilegios de `anon`/`authenticated` no implican lectura desde API pública (son roles NOLOGIN y `net` no se expone en Data API). El archivo ACL anterior es ahora un **stub que aborta**. NINGUNA ACL real modificada.
 
+**Solución construida:**
+1. **SQL `pg_cron` local** cada 5 min únicamente cierra rondas con plazo de 2 días hábiles, **18:00 AR**, calendario aprobado y auditoría única. No envía HTTP ni secretos.
+2. **GitHub Actions externo** `.github/workflows/cotironda-d016-worker-piloto.yml` llama por HTTPS a Supabase Edge con **dos secretos alojados en GitHub**; 2 ejecuciones/hora, 1 oferta/tick, flag repo `COTIRONDA_D016_PILOTO_WORKER_ENABLED` OFF por defecto y ref de piloto exacta. Puede retrasarse; el portal analiza al abrirlo también. La tarea solo funciona desde rama default cuando se integre código autorizado.
+3. `v2_d016_preflight_SOLO_LECTURA.sql` ejecutado en Supabase real tras corrección: **10 bloqueos**, 1 comprador verificado por Whapi, 0 proveedores con consentimiento específico V2 de originales, 0 calendarios aprobados, 3 políticas apagadas, funciones D016 sin instalar, 0 cron worker antiguo detectado. Esto NO significa que no haya proveedores registrados en Cotironda.
 
-En el [PR #837](https://github.com/ProtectorRudo/Cotironda/pull/837)
-se agregó preflight SQL SOLO LECTURA, ejecutado en Supabase
-`cotironda-piloto`: **11 bloqueos de activación**. Cifras:
-1 comprador WhatsApp autenticado; **0 proveedores con consentimiento
-específico V2 de compartir originales**; 0 calendarios aprobados; las
-3 políticas V2 están apagadas; funciones D016 NO instaladas.
-La infraestructura de cron/Vault está disponible, pero eso no autoriza
-activarla.
+**Aún pendiente:** revisión CI 8/8 del último SHA, presupuesto de GitHub Actions/IA, instalación SQL+Edge+Preview y credenciales del servicio **solo con «Publicalo» PILOTO**, aprobado calendario legal, consentimientos prospectivos, SSO y prueba real WhatsApp arquitecto/Ailín/Nahuel. PR #837 sigue apilado en #836; producción, webhook Whapi histórico v76 y rondas reales sin modificar.
 
-**Nuevo bloqueo imprescindible:** `net.http_request_queue` tiene
-USAGE de esquema + SELECT para `anon` y `authenticated`, RLS OFF.
-Supabase documenta que allí se retienen temporalmente claves enviadas
-por `pg_net`. Se añadió una guarda que impide ejecutar el cron D016
-mientras ese permiso persista; corrección ACL mínima preparada como
-`v2_d016_pgnet_acl_REVIEW_ONLY.sql`, aún SIN ejecutar. No se enviaron
-nuevos secretos. Evaluar impacto en integraciones antiguas y autorizar
-separadamente, no revocar permisos en producción a ciegas.
+[Runbook técnico vigente](https://github.com/ProtectorRudo/Cotironda/blob/feat/d016-whatsapp-link-safe-pilot-20261113/docs/V2-D016-PREPUBLICACION-PILOTO-20261113.md).
 
-**Qué sigue**: validar CI del SHA exacto de PR #837; resolver ACL de
-cola y consentimientos prospectivos, aprobar calendario real de La Plata;
-luego bajo «Publicalo» PILOTO instalar SQL/Edge/Preview con flags apagados,
-conseguir prueba real de arquitecto/Ailín/Nahuel y verificar informe final.
-Nada de SMS, no reiniciar arquitectura, no usar V1. Detalles en
-[Prepublicación](https://github.com/ProtectorRudo/Cotironda/blob/feat/d016-whatsapp-link-safe-pilot-20261113/docs/V2-D016-PREPUBLICACION-PILOTO-20261113.md).
-
+> Todo bloque histórico posterior que mencione "11 bloqueos", mitigación `REVOKE` o `pg_net` para worker D016 está SUPERADO por este relevo.
 
 ### Relevo prioritario · auditoría PILOTO 13/11/2026
 
