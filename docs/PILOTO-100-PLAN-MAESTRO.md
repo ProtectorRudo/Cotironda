@@ -1,5 +1,37 @@
 # COTIRONDA V2 — PLAN MAESTRO Y CHECKLIST
 
+### 13/11/2026 — Preflight V2 ejecutado y protección nueva para pg_net
+
+**Se desarrolló y ejecutó (SOLO SELECT)**
+[`v2_d016_preflight_SOLO_LECTURA.sql`](https://github.com/ProtectorRudo/Cotironda/blob/feat/d016-whatsapp-link-safe-pilot-20261113/supabase/piloto/v2_d016_preflight_SOLO_LECTURA.sql)
+sobre el proyecto `cotironda-piloto`. Resultado REAL:
+**11 bloqueos**, 1 comprador con WhatsApp autenticado, **0 proveedores
+con consentimiento V2 registrado para compartir originales** (NO equivale
+a estar fuera de Cotironda), 0 calendarios aprobados, 3 políticas V2 OFF
+y 0 funciones D016 instaladas. Reglas DB de cierre 18:00 AR verificadas.
+
+**Bloqueo de seguridad adicional (prioridad alta):**
+la cola `net.http_request_queue` permite SELECT de `anon` y
+`authenticated` por ACL pública y no tiene RLS; el esquema es accesible
+para esos roles. No enviar la llave del worker por `pg_net` todavía.
+El script de cron D016 ahora aborta si los privilegios continúan así.
+Se preparó `v2_d016_pgnet_acl_REVIEW_ONLY.sql` para auditoría y futura
+aprobación; NO se aplicaron permisos, secretos ni cambios reales.
+
+- [x] Preflight reproducible con reportes sin PII/secrets y pruebas GitHub.
+- [x] Cron D016 bloqueado ante cola HTTP pública; mitigación separada,
+  mínima y **sin ejecución**.
+- [ ] Analizar impacto de ACL compartida `net` y aprobar resolución
+  segura antes de habilitar el cron; revisar seguridad después de upgrades.
+- [ ] Regularizar consentimiento prospectivo de originales de proveedores
+  concretos y calendario oficial 2026/2027; NO inferir consentimientos.
+- [ ] Instalar SQL/Edge/Next solo bajo `Publicalo` PILOTO, preparar
+  secretos privados, comprobar SSO/preview, WhatsApp y E2E real.
+
+**Fuente técnica:** [Prepublicación D016](https://github.com/ProtectorRudo/Cotironda/blob/feat/d016-whatsapp-link-safe-pilot-20261113/docs/V2-D016-PREPUBLICACION-PILOTO-20261113.md).
+**Estado:** PR #837 DRAFT, sin merge, sin deploy, sin mensajes.
+
+
 ### Auditoría de prepublicación — 13/11/2026 · PRIORIDAD ACTUAL
 
 **PR #837 DRAFT, sin merge ni deploy.** [Preflight de publicación](https://github.com/ProtectorRudo/Cotironda/blob/feat/d016-whatsapp-link-safe-pilot-20261113/docs/V2-D016-PREPUBLICACION-PILOTO-20261113.md).
