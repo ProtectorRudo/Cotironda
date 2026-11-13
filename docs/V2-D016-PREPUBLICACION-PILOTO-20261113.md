@@ -11,6 +11,58 @@
 - **Vercel:** proyecto correcto `cotironda-portal-dev`, ID `prj_d13rTHxJADvP2K9PcrM0CJQD9Zok`. El Preview READY previo apunta a commit `06e1700...`, NO a PR #837; SSO está habilitado para todos los despliegues. En la consulta de metadata Preview **no figuran variables con prefijo `COTIRONDA_D016_`**, ni la llave privada del lado servidor `COTIRONDA_PILOT_SUPABASE_SECRET_KEY`; no se consultaron ni imprimieron valores cifrados.
 - **WhatsApp:** no se enviaron mensajes reales, no se activó el sender D016 ni se alteró el webhook histórico.
 
+## Preflight automatizado y bloqueo de permisos pg_net — 13/11/2026
+
+**Se creó y ejecutó contra Supabase PILOTO, exclusivamente con SELECT,**
+`supabase/piloto/v2_d016_preflight_SOLO_LECTURA.sql`. No incluye nombres,
+números telefónicos, archivos, tokens, ni valores de Vault. CI valida
+estáticamente que este archivo no modifique permisos ni datos.
+
+Resultado de la base real (verificación 13/11/2026, sin cambios):
+- Compradores con consentimiento general y WhatsApp autenticado: **1**.
+- Proveedores con **consentimiento específico V2 para compartir originales**
+  vigente: **0**. Este contador no significa que no estén registrados,
+  que no puedan cotizar por WhatsApp o que hayan revocado su participación.
+- Políticas `v2_business_policy`, `v2_original_share_policy`,
+  `v2_auto_release_policy`: **todas OFF**.
+- Calendarios 2026/2027 de La Plata aprobados: **0**.
+- RPC D016 de token, sesión, worker, cierre e informe: **no instaladas**.
+- PostgreSQL respeta el CHECK de cierre a **18:00 AR**.
+- `pg_cron`, `pg_net` y Vault instalados.
+- **11 bloqueos de activación detectados en total.**
+
+**Hallazgo crítico: cola HTTP con permisos públicos.** En el proyecto
+`net.http_request_queue` tiene `relrowsecurity=false` y su ACL
+`=arwdDxtm/supabase_admin` concede acceso a `PUBLIC`;
+`anon` y `authenticated` tienen además USAGE del esquema `net`.
+La cola puede guardar temporalmente los encabezados HTTP con credenciales
+de `pg_net`, según la [documentación de Supabase](https://supabase.com/docs/guides/functions/schedule-functions).
+No se enviaron nuevas claves D016 por ese canal.
+
+El script `v2_d016_cron_ACTIVATE_ONLY_AFTER_PUBLICALO.sql` ahora
+**ABORTA** con `D016_PGNET_QUEUE_EXPOSED_TO_CLIENT_ROLES` si
+`anon` o `authenticated` conservan permiso de lectura de la cola.
+La consulta de preflight también devuelve
+`cola_pgnet_expone_headers_a_roles_cliente`.
+
+Se preparó únicamente para auditoría y futura aprobación el archivo
+`v2_d016_pgnet_acl_REVIEW_ONLY.sql`: propone revocar **SELECT**
+a `PUBLIC, anon, authenticated` manteniendo el derecho INSERT y
+sin cambiar permisos de USAGE del esquema. Incluye una comprobación
+previa del project ref de Vault y verificación posterior de privilegios.
+**NO se ejecutó ni se incluye en migraciones automáticas.** Antes de
+aprobarlo hay que evaluar impacto sobre todas las integraciones que
+usen `pg_net`, respaldar la ACL anterior y revisar la compatibilidad
+con las políticas de extensiones administradas por Supabase.
+
+**Próxima secuencia:** auditar alcance de ese permiso; mitigar sin
+afectar el webhook histórico; luego validar consentimiento prospectivo
+de originales V2 para los proveedores participantes, aprobar calendario
+oficial local, instalar candidatos D016 con flags apagados bajo
+`Publicalo`, probar seguridad, habilitar worker y cron por fases y
+realizar el E2E con arquitecto y dos proveedores. Ninguno de estos
+pasos se declara ejecutado por tener CI verde.
+
 ## Gate de publicación exclusivo PILOTO (checklist)
 
 - [ ] Aprobar el SHA exacto de PR #837 y su cadena de dependencias (#836); cotejar 8/8 CI y protección de Whapi v76; revisar archivos SQL por permisos y cambios.
