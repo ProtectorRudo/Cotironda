@@ -14,7 +14,9 @@ BEGIN
  SET activated_at=clock_timestamp()-interval '10 days' WHERE singleton=true;
  UPDATE cotironda_piloto_privado.requests
  SET timing_mode='business_two_days',round_days=2,
-  v2_calendar_revision='lp_piloto_2026'
+  v2_calendar_revision='lp_piloto_2026',
+  closes_at=public.cotironda_piloto_v2_d016_expected_close_private(
+   created_at,delivery_city,'lp_piloto_2026')
  WHERE id='aaaaaaaa-1111-4111-8111-111111111111';
 
  -- Compare worker with the exact source semantics (same 3 original docs).
@@ -80,7 +82,7 @@ BEGIN
  IF public.cotironda_piloto_v2_d016_expected_close_private(
   '2026-11-13 10:00:00-03'::timestamptz,
   'La Plata','lp_piloto_2026') IS DISTINCT FROM
-  '2026-11-17 10:00:00-03'::timestamptz
+  '2026-11-17 18:00:00-03'::timestamptz
  THEN RAISE EXCEPTION 'd016_weekend_deadline_wrong';END IF;
  -- Cruce de año: sin aprobación anticipada 2027 NO se calcula deadline.
  IF public.cotironda_piloto_v2_d016_expected_close_private(
@@ -89,16 +91,16 @@ BEGIN
  THEN RAISE EXCEPTION 'd016_unapproved_next_year';END IF;
  INSERT INTO cotironda_piloto_privado.v2_business_calendar(
   locality,year,revision,approved_at
- ) VALUES('La Plata',2027,'lp_piloto_2026',
+ ) VALUES('la plata',2027,'lp_piloto_2026',
   '2026-01-01 00:00:00-03'::timestamptz);
  -- Día feriado ficticio 2027-01-01: el segundo hábil pasa al lunes 4.
  INSERT INTO cotironda_piloto_privado.v2_business_holidays(
   locality,day,calendar_year,description,evidence
- ) VALUES('La Plata','2027-01-01',2027,'Feriado CI', 'synthetic');
+ ) VALUES('la plata','2027-01-01',2027,'Feriado CI', 'synthetic');
  IF public.cotironda_piloto_v2_d016_expected_close_private(
   '2026-12-30 10:00:00-03'::timestamptz,
   'La Plata','lp_piloto_2026') IS DISTINCT FROM
-  '2027-01-04 10:00:00-03'::timestamptz
+  '2027-01-04 18:00:00-03'::timestamptz
  THEN RAISE EXCEPTION 'd016_cross_year_holiday_wrong';END IF;
  DELETE FROM cotironda_piloto_privado.v2_business_holidays
  WHERE day='2027-01-01' AND description='Feriado CI';
@@ -127,7 +129,7 @@ BEGIN
  v_holiday:=(v_due AT TIME ZONE 'America/Argentina/Buenos_Aires')::date;
  INSERT INTO cotironda_piloto_privado.v2_business_holidays(
   locality,day,calendar_year,description,evidence
- ) VALUES('La Plata',v_holiday,extract(year from v_holiday)::integer,
+ ) VALUES('la plata',v_holiday,extract(year from v_holiday)::integer,
   'Feriado sintético', 'ci_fixture_no_real');
  v_final:=public.cotironda_piloto_v2_d016_close_due_private(5);
  IF (v_final->>'closed')::integer<>0
