@@ -1,5 +1,14 @@
 # COTIRONDA V2 — PLAN MAESTRO Y CHECKLIST
 
+### 13/11/2026 — D016: refuerzo lease publicado en piloto, WhatsApp comercial OFF
+
+- [x] Migración real Supabase PILOTO `20261113194958` aplicada con preflight de identidad PG17, 7 rondas/1 preparada, políticas OFF y ledger vacío.
+- [x] RPC de reserva nueva exige `state=leased` + `lease_token` exacto MVP222; permiso de la RPC antigua sin lease revocado al servidor. Verificado 0 avisos, 0 respuestas, 7 rondas conservadas, 3 flags OFF, 0 acceso público.
+- [x] PR [#840](https://github.com/ProtectorRudo/Cotironda/pull/840) DRAFT: webhook v76 y transporte MVP223 históricos INTACTOS, nuevo módulo de salida D016 en copia temporal, aviso en el mismo PDF y confirmación posterior al finish SQL, CI Node/PG17/Deno (consultar último SHA). [Acta](https://github.com/ProtectorRudo/Cotironda/blob/feat/d016-original-notice-whapi-adapter-20261113/docs/PILOTO-D016-LEASE-GUARD-PUBLICADO-20261113.md).
+- [ ] Completar observación real de respuestas Whapi, opt-out, adecuación legal, RPC/worker/descarga y acceso comprador sin SMS; revisión de seguridad y ensayo E2E antes de habilitar policies/cron.
+- [ ] Publicar exclusivamente UI f985 en Preview si se levanta la cuota Vercel (tarea única programada). PR #840 NO se publica vía ese reintento.
+
+
 ### 13/11/2026 — D016/P0 #838: ledger en Supabase piloto publicado de forma segura (NO circuito completo)
 
 - [x] **Migración piloto aplicada y verificada**: `20261113192638` `cotironda_d016_original_reply_evidence_off_pilot_20261113` exclusivamente `cotironda-piloto`, guard PG17 + siete rondas (una preparada) + tres políticas OFF, sin sobrescribir migraciones D016 previas. Acta: [release verificado](https://github.com/ProtectorRudo/Cotironda/blob/fix/d016-evidencia-respuesta-original-20261113/docs/PILOTO-D016-ORIGINAL-LEDGER-PUBLICADO-20261113.md).
