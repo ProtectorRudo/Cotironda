@@ -1,5 +1,18 @@
 # COTIRONDA V2 — PLAN MAESTRO Y CHECKLIST
 
+### 13/11/2026 — D016/P0 #838: ledger en Supabase piloto publicado de forma segura (NO circuito completo)
+
+- [x] **Migración piloto aplicada y verificada**: `20261113192638` `cotironda_d016_original_reply_evidence_off_pilot_20261113` exclusivamente `cotironda-piloto`, guard PG17 + siete rondas (una preparada) + tres políticas OFF, sin sobrescribir migraciones D016 previas. Acta: [release verificado](https://github.com/ProtectorRudo/Cotironda/blob/fix/d016-evidencia-respuesta-original-20261113/docs/PILOTO-D016-ORIGINAL-LEDGER-PUBLICADO-20261113.md).
+- [x] Creadas tres tablas RLS privadas, cinco RPC service_role; 0 avisos, 0 presupuestos, 0 revocaciones cargadas; sin acceso `anon`/`authenticated` a 5/5 RPC. 7 rondas históricas conservadas, flags negocio/originales/cierre OFF. SQL real niega reservas, respuestas y descargas inexistentes.
+- [x] Candidato [PR #839](https://github.com/ProtectorRudo/Cotironda/pull/839) con compositor aviso en mismo WhatsApp y validación preliminar; Node+PG17 ROLLBACK SUCCESS en workflow 43491444978. PR DRAFT sin merge, webhook Whapi v76 sin modificaciones.
+- [ ] **P0 legal y comercial**: la Ley 25.326 arts. 5/11 exige revisar fundamento de consentimiento, cesión y datos personales; la respuesta al pedido **no equivale automáticamente** a aceptación jurídica documentada. `verified_reply_not_authorization` NO es permiso para entregar PDF/Excel original.
+- [ ] Integrar realmente aviso+reserva+ID de salida Whapi+respuesta autenticada+revocación; adaptar de forma prospectiva las RPC de catálogo/descarga/worker existentes sin abrir rondas anteriores. Verificar envíos y duplicados en sandbox/Preview.
+- [ ] Resolver secretos server-only del piloto y seguridad de sesión WhatsApp sin SMS, luego E2E con comprador/Ailín/Nahuel; sólo con pruebas satisfactorias encender políticas y cron, uno a uno.
+- [ ] Vercel Preview de pantalla corregida f985 todavía BLOQUEADO por cuota Hobby 402; reintento exacto del commit f985 programado, no el PR #839. Prohibido mover proyecto, publicar en producción o contratar plan sin necesidad.
+
+**Estado operativo:** infraestructura segura parcialmente publicada; cero ronda V2 nueva, cero mensajes comerciales o presupuesto compartido por este cambio. Piloto 100% NO logrado.
+
+
 ### 13/11/2026 — Publicación UI f985 detenida por cuota de Vercel
 
 - [x] Código UI de acceso Preview OFF corregido: pantalla informativa sin exponer datos ni invocar API; 404 se conserva para otros entornos/rutas privadas. Tests y **8/8 CI SUCCESS** en HEAD `f98527c9516478783bd7cf95433c58f5ca445937`.
