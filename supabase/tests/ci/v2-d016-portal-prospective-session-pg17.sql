@@ -314,6 +314,10 @@ DECLARE
  cookie text:='2e'||repeat('b',62);
  got jsonb;
 BEGIN
+ -- El fixture histórico anterior termina intencionalmente con buyer opt-out.
+ -- Restablecemos SOLO este comprador SINTÉTICO dentro de BEGIN/ROLLBACK.
+ UPDATE cotironda_piloto_privado.participants SET opted_out_at=NULL
+ WHERE key='buyer_a';
  -- Acceso positivo sólo cuando política está encendida y fecha válida.
  IF public.cotironda_piloto_v2_d016_issue_ticket_private(
  tok,'buyer_a',old_r,repeat('1',64)) IS DISTINCT FROM true
