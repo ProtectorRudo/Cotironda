@@ -13,6 +13,7 @@ on:
       - 'src/server/v2-18-auth-publica-preflight.ts'
       - 'apps/portal/scripts/v2-auth-pilot-preflight.mjs'
       - 'tests/unit/v2-18-auth-publica-preflight.test.mjs'
+      - 'tests/unit/v2-19-sms-sin-ofertas.test.mjs'
       - 'tests/unit/v2-16-primer-sms-cotironda.test.mjs'
       - 'apps/portal/scripts/v2-buyer-bootstrap.mjs'
       - 'supabase/tests/fixtures/v2-04b-analysis-checks.sql'
@@ -107,6 +108,8 @@ jobs:
         run: node --experimental-strip-types --test tests/unit/v2-16-primer-sms-cotironda.test.mjs
       - name: Preflight real de Auth publica sin escritura ni SMS
         run: node --experimental-strip-types --test tests/unit/v2-18-auth-publica-preflight.test.mjs
+      - name: Ingreso SMS separado de presupuestos, todo privado OFF
+        run: node --experimental-strip-types --test tests/unit/v2-19-sms-sin-ofertas.test.mjs
       - name: PG17 aislamiento, autorizacion prospectiva y rollback
         run: |
           set -euo pipefail
