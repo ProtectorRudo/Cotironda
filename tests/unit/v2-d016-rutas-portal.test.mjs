@@ -41,7 +41,7 @@ test('D016: archivos sólo por sesión privada, nunca por JWT de SMS',()=>{
  assert.match(core,/leerStorage/u);
  assert.match(core,/registrarAuditoria/u);
  assert.match(core,/createHash\('sha256'\)/u);
- assert.match(core,/text\/plain/u);
+ assert.doesNotMatch(core,/'text\/plain'\s*:/u);
  assert.match(client,/credentials:'same-origin'/u);
  assert.match(client,/respuestas-whatsapp/u);
  assert.match(client,/originales-whatsapp/u);
