@@ -45,6 +45,26 @@ export function generarCandidatoV202DesdeLive76(index,supplier){
  // D013 is a V2 overlay ONLY; the deployed buyer pipeline stays untouched.
  candidate=matchOne(candidate,"from './ai-central-buyer-mvp226.ts';",
   "from './ai-central-buyer-v2-d013.ts';",'buyer-d013');
+ // La respuesta tardía con localidad NUNCA vuelve a la función M221
+ // histórica. V2 usa el mismo catálogo y guardias D013 en ambos caminos.
+ candidate=matchOne(candidate,"from './ai-central-zone-mvp233.ts';",
+  "from './ai-central-zone-v2-d013.ts';",'zone-d013');
+ // V2-24: en el candidato V2 la liberacion la autoriza UN SQL privado.
+ // No activar MVP306 legacy por accidente: todas las rondas V2 requieren
+ // timing_mode=business_two_days, calendario aprobado y consentimiento.
+ candidate=matchOne(candidate,
+  "import {liberarPedidoAutomaticoMvp306} from './ai-central-buyer-auto-release-mvp306.ts';",
+  "import {liberarPedidoAutomaticoV2D013} from './ai-central-buyer-auto-release-v2-d013.ts';",
+  'release-v2');
+ candidate=matchOne(candidate,
+  "const auto=await liberarPedidoAutomaticoMvp306({",
+  "const auto=await liberarPedidoAutomaticoV2D013({",
+  'release-v2-call');
+ candidate=matchOne(candidate,
+  "if(!centralConfigured||supplierKnown||centralSupplier||!allowBuyerRelease)",
+  "if(!centralConfigured||supplierKnown||centralSupplier||!allowBuyerRelease||"+
+  "Deno.env.get('COTIRONDA_PILOT_V2_AUTO_RELEASE_ENABLED')!=='true')",
+  'release-v2-edge-kill-switch');
  for(const marker of [
   'connectivityOnlyMvp333','processedInboundMvp333',
   'webhookSecretState','index.v2-live76-candidate.ts'
@@ -54,6 +74,15 @@ export function generarCandidatoV202DesdeLive76(index,supplier){
  }
  if(candidate.includes("from './supplier-auto-correlation-mvp291.ts'"))
   throw Error('live_v76_reverted_supplier_correlation');
+ if(candidate.includes("from './ai-central-zone-mvp233.ts'")||
+    candidate.includes("from './ai-central-buyer-mvp226.ts'"))
+  throw Error('v2_23_legacy_buyer_or_zone_import');
+ if(candidate.includes("from './ai-central-buyer-auto-release-mvp306.ts'")||
+    candidate.includes('const auto=await liberarPedidoAutomaticoMvp306({'))
+  throw Error('v2_24_legacy_release_import_or_call');
+ if(!candidate.includes("COTIRONDA_PILOT_V2_AUTO_RELEASE_ENABLED")||
+    !candidate.includes("const auto=await liberarPedidoAutomaticoV2D013({"))
+  throw Error('v2_24_private_release_gate_missing');
  return candidate;
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){

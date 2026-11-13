@@ -11,9 +11,13 @@ import {debeActualizarRespuestasV2,INTERVALO_ACTUALIZACION_RESPUESTAS_V2_MS}
 import {seleccionarAnalisisPendientesV2,registrarIntentosAnalisisV2,
  type IntentoAnalisisV2}
  from '../../../../../lib/piloto-v2-reintento-analisis.ts';
+import {solicitarSmsCompradorV2}
+ from '../../../../../../../src/server/v2-16-primer-sms-cotironda.ts';
 
 const PILOT='https://ilggkalaafhtiysyzlmg.supabase.co';
-export function RespuestasCompradorV2({rondaId}:{rondaId:string}){
+export function RespuestasCompradorV2({
+ rondaId,puedeConsultarRespuestas
+}:{rondaId:string;puedeConsultarRespuestas:boolean}){
  const client=useMemo(()=>{
   const url=process.env.NEXT_PUBLIC_COTIRONDA_PILOT_SUPABASE_URL;
   const key=process.env.NEXT_PUBLIC_COTIRONDA_PILOT_SUPABASE_PUBLISHABLE_KEY;
@@ -45,7 +49,7 @@ export function RespuestasCompradorV2({rondaId}:{rondaId:string}){
     authGeneration.current++;
     userIdActual.current=nextUserId;
     historialAnalisis.current.clear();
-    setCatalog(null);
+    setCatalog(null);setBusy(false);
     setSessionVersion(version=>version+1);
    }
    setAuthenticated(!!session?.access_token);
@@ -69,6 +73,9 @@ export function RespuestasCompradorV2({rondaId}:{rondaId:string}){
  },[client]);
 
  const refresh=useCallback(async (silencioso=false):Promise<void>=>{
+  // El SMS puede estar habilitado sin publicar fuentes de cotizaciones.
+  // No efectuar peticiones a APIs privadas hasta activar ese circuito.
+  if(!puedeConsultarRespuestas)return;
   // Nunca iniciar dos lecturas simultáneas ni conservar datos tras logout.
   if(refreshInFlight.current)return;
   refreshInFlight.current=true;
@@ -80,7 +87,7 @@ export function RespuestasCompradorV2({rondaId}:{rondaId:string}){
    if(!access){
     authGeneration.current++;
     userIdActual.current=null;
-    setCatalog(null);setAuthenticated(false);
+    setCatalog(null);setAuthenticated(false);setBusy(false);
     return;
    }
    const response=await fetch(api+'/respuestas',{
@@ -104,19 +111,19 @@ export function RespuestasCompradorV2({rondaId}:{rondaId:string}){
    }
   }finally{
    refreshInFlight.current=false;
-   if(!silencioso)setBusy(false);
+   if(!silencioso&&generation===authGeneration.current)setBusy(false);
   }
- },[api,token]);
+ },[api,token,puedeConsultarRespuestas]);
 
  useEffect(()=>{
-  if(authenticated)void refresh();
+  if(authenticated&&puedeConsultarRespuestas)void refresh();
   // New auth identity/sessionVersion also refreshes, never trusts local JWT.
- },[authenticated,sessionVersion,refresh]);
+ },[authenticated,sessionVersion,refresh,puedeConsultarRespuestas]);
 
  // Only a visible, authenticated buyer polls for NEW responders.
  // While hidden or signed out, no background requests/IA are started.
  useEffect(()=>{
-  if(!authenticated||!client)return;
+  if(!authenticated||!client||!puedeConsultarRespuestas)return;
   const sincronizar=()=>{
    if(debeActualizarRespuestasV2({
     autenticado:authenticated,
@@ -133,13 +140,14 @@ export function RespuestasCompradorV2({rondaId}:{rondaId:string}){
    document.removeEventListener('visibilitychange',sincronizar);
    window.removeEventListener('focus',sincronizar);
   };
- },[authenticated,client,busy,refresh]);
+ },[authenticated,client,busy,refresh,puedeConsultarRespuestas]);
 
  // Reintenta hasta tres veces por original, espaciado seis minutos:
  // SQL mantiene el verdadero máximo de claims y los permisos por empresa.
  // No añade mensajes WhatsApp ni ejecuta IA por el GET periódico.
  useEffect(()=>{
-  if(!authenticated||!catalog||document.visibilityState!=='visible')return;
+  if(!authenticated||!puedeConsultarRespuestas||
+     !catalog||document.visibilityState!=='visible')return;
   const ahoraMs=Date.now();
   const pendientes=seleccionarAnalisisPendientesV2(
    catalog.respuestas,historialAnalisis.current,ahoraMs);
@@ -163,26 +171,31 @@ export function RespuestasCompradorV2({rondaId}:{rondaId:string}){
     if(generation===authGeneration.current)await refresh(true);
    }catch{/* Nunca bloquea el original; habrá reintento espaciado. */}
   })();
- },[catalog,authenticated,api,token,refresh]);
+ },[catalog,authenticated,api,token,refresh,puedeConsultarRespuestas]);
 
  function cerrarSesion(){
   authGeneration.current++;
   userIdActual.current=null;
   historialAnalisis.current.clear();
-  setCatalog(null);setAuthenticated(false);setError('');
+  setCatalog(null);setAuthenticated(false);setError('');setBusy(false);
   void client?.auth.signOut();
  }
  async function sendOtp(){
   if(!client||busy)return;
-  if(!/^\+[1-9]\d{8,15}$/u.test(phone.trim())){
+  if(!/^\+[1-9]\d{7,14}$/u.test(phone.trim())){
    setError('Ingresá tu teléfono con código de país, por ejemplo +54…');return;
   }
   setBusy(true);setError('');
   try{
-   const {error:sendError}=await client.auth.signInWithOtp({
-    phone:phone.trim(),options:{shouldCreateUser:false}
+   const autorizado=await solicitarSmsCompradorV2({
+    inicio:()=>client.auth.signInWithOtp({
+     phone:phone.trim(),options:{shouldCreateUser:false}
+    }),
+    confirmarAltaPendiente:()=>client.auth.resend({
+     type:'sms',phone:phone.trim()
+    })
    });
-   if(sendError)throw Error('otp_failed');
+   if(!autorizado)throw Error('otp_failed');
    setRequested(true);
   }catch{setError('No se pudo verificar tu acceso. Revisá tu número.')}
   finally{setBusy(false)}
@@ -201,17 +214,23 @@ export function RespuestasCompradorV2({rondaId}:{rondaId:string}){
   finally{setBusy(false)}
  }
  async function download(documentId:string){
-  if(busy)return;
+  if(busy||!puedeConsultarRespuestas)return;
+  const generation=authGeneration.current;
   setBusy(true);setError('');
   try{
    const access=await token();
+   if(generation!==authGeneration.current)return;
    if(!access){setAuthenticated(false);throw Error('not_logged');}
    const response=await fetch(api+'/originales/'+encodeURIComponent(documentId),{
     method:'GET',cache:'no-store',credentials:'omit',
-    headers:{Authorization:'Bearer '+access}
+    headers:{Authorization:'Bearer '+access},
+    signal:AbortSignal.timeout(20_000)
    });
+   if(generation!==authGeneration.current)return;
    if(!response.ok)throw Error('download_denied');
    const data=await response.arrayBuffer();
+   // El usuario pudo cerrar sesión o cambiar de cuenta durante el I/O.
+   if(generation!==authGeneration.current)return;
    if(data.byteLength<1||data.byteLength>8388608)throw Error('invalid_bytes');
    const blob=new Blob([data],{type:response.headers.get('content-type')||
     'application/octet-stream'});
@@ -222,8 +241,12 @@ export function RespuestasCompradorV2({rondaId}:{rondaId:string}){
    anchor.style.display='none';
    document.body.appendChild(anchor);anchor.click();anchor.remove();
    window.setTimeout(()=>URL.revokeObjectURL(objectUrl),30000);
-  }catch{setError('El original no está disponible para descargar en este momento.')}
-  finally{setBusy(false)}
+  }catch{
+   if(generation===authGeneration.current)
+    setError('El original no está disponible para descargar en este momento.');
+  }finally{
+   if(generation===authGeneration.current)setBusy(false);
+  }
  }
  if(!client)return <p role="status">El ingreso privado todavía no está habilitado.</p>;
  if(loading)return <p role="status">Comprobando acceso…</p>;
@@ -249,19 +272,23 @@ export function RespuestasCompradorV2({rondaId}:{rondaId:string}){
 
  return <section aria-label="Cotizaciones de tu pedido">
   <div className="actions">
-   <button className="button outline" type="button" disabled={busy}
-    onClick={()=>void refresh()}>Actualizar respuestas</button>
+   {puedeConsultarRespuestas&&
+    <button className="button outline" type="button" disabled={busy}
+     onClick={()=>void refresh()}>Actualizar respuestas</button>}
    <button className="button outline" type="button" disabled={busy}
     onClick={cerrarSesion}>
     Cerrar sesión
    </button>
   </div>
-  <p>Las cotizaciones se actualizan automáticamente cada minuto mientras mirás esta página.</p>
+  {!puedeConsultarRespuestas?
+   <p role="status">Teléfono verificado. La consulta de presupuestos
+    todavía está deshabilitada en este entorno de prueba.</p>:
+   <p>Las cotizaciones se actualizan automáticamente cada minuto mientras mirás esta página.</p>}
   {busy&&<p role="status">Verificando información…</p>}
   {error&&<p role="alert">{error}</p>}
   {catalog?.respuestas.length===0&&
    <p role="status">Todavía no recibimos cotizaciones</p>}
-  {catalog?.respuestas.map(item=><article key={item.documentoId}
+  {puedeConsultarRespuestas&&catalog?.respuestas.map(item=><article key={item.documentoId}
    className="notice" style={{marginBlock:'1rem'}}>
    <h2>{item.comercio}</h2>
    <p>{item.formato} · Recibido el {new Date(item.recibidoMs).toLocaleString('es-AR',{

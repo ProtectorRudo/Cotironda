@@ -5,11 +5,52 @@
 import {createHash} from 'node:crypto';
 
 const PILOT='https://ilggkalaafhtiysyzlmg.supabase.co';
-const PHONE=/^\+[1-9][0-9]{8,15}$/u;
+const PHONE=/^\+[1-9][0-9]{7,14}$/u; // E.164: 8 a 15 dígitos, sin contar el +
 const BUYER=/^[a-z0-9_-]{3,100}$/u;
 const SHA=/^[a-f0-9]{40}$/u;
+const PROVIDER=/^[a-z][a-z0-9_-]{2,63}$/u;
+/** Estado públicamente observable de GoTrue. NO prueba entrega real SMS.
+ * Bloquea creación de una cuenta inaccesible o auto-confirmada.
+ */
+/** Solo booleanos de configuración públicamente anunciada: nunca expone
+ * proveedor, teléfono o credenciales. false también cubre dato ausente.
+ */
+export type InspeccionSmsInicialV2=Readonly<{
+ signupClosed:boolean;
+ phoneEnabled:boolean;
+ autoConfirmDisabled:boolean;
+ smsProviderReady:boolean;
+}>;
+export function inspeccionarConfiguracionSmsInicialV2(
+ input:unknown
+):InspeccionSmsInicialV2{
+ const vacio=()=>Object.freeze({
+  signupClosed:false,phoneEnabled:false,
+  autoConfirmDisabled:false,smsProviderReady:false
+ });
+ if(!input||typeof input!=='object'||Array.isArray(input))return vacio();
+ const s=input as Record<string,unknown>;
+ const ext=s.external&&typeof s.external==='object'&&
+  !Array.isArray(s.external)
+  ?s.external as Record<string,unknown>:null;
+ const provider=s.sms_provider;
+ return Object.freeze({
+  signupClosed:s.disable_signup===true,
+  phoneEnabled:ext?.phone===true,
+  autoConfirmDisabled:s.phone_autoconfirm===false,
+  smsProviderReady:typeof provider==='string'&&PROVIDER.test(provider)&&
+   !['none','disabled','unknown','test','fake','noop','mock'].includes(provider)
+ });
+}
+export function configuracionSmsInicialV2Lista(input:unknown):boolean{
+ const d=inspeccionarConfiguracionSmsInicialV2(input);
+ return d.signupClosed&&d.phoneEnabled&&
+  d.autoConfirmDisabled&&d.smsProviderReady;
+}
 export type BootstrapBuyerPorts=Readonly<{
  countExistingAuthUsers:()=>Promise<number|null>;
+ /** GET público /auth/v1/settings: sin tokens de usuario ni mutaciones. */
+ readPublicAuthSettings:()=>Promise<unknown>;
  isVerifiedBuyerPhone:(buyerKey:string,phoneJidSHA:string)=>Promise<boolean>;
  createUnconfirmedUser:(e164:string)=>Promise<Readonly<{
   created:boolean;phoneConfirmed:boolean;
@@ -73,6 +114,11 @@ export async function bootstrapPrimerCompradorV2(
   const permitted=await ports.isVerifiedBuyerPhone(args.buyerKey,contactSHA);
   if(permitted!==true)
    return result('BLOCKED','comprador_o_canal_whatsapp_no_verificado');
+  // El frontend tiene shouldCreateUser:false, pero eso no configura
+  // el proveedor de SMS ni impide altas directas contra GoTrue.
+  // Nunca crear Auth antes de comprobar la configuración pública actual.
+  if(!configuracionSmsInicialV2Lista(await ports.readPublicAuthSettings()))
+   return result('BLOCKED','proveedor_sms_o_signup_auth_no_configurados');
   // Prevent stale preflight or a parallel operator from adding a second user.
   if(args.mode==='dry-run')return result('READY_DRY_RUN','preparado_sin_modificaciones');
   const again=await ports.countExistingAuthUsers();

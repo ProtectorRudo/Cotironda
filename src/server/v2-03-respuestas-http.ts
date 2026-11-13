@@ -23,6 +23,24 @@ export type RespuestasPorts=Readonly<{
   rondaId:string;usuarioId:string;sessionId:string;
  }>)=>Promise<unknown>;
 }>;
+/**
+ * V2-19: habilitar SOLO el formulario Auth del comprador en PREVIEW SSO.
+ * Un OTP válido prueba el teléfono, NO habilita rondas, originales ni IA.
+ * La función de cotizaciones conserva su propia puerta cerrada.
+ */
+export function ingresoCompradorV2Habilitado(env:RespuestasEnv):boolean{
+ const sha=env.COTIRONDA_PILOT_V2_RESPONDERS_RELEASE_SHA;
+ return env.COTIRONDA_PILOT_V2_AUTH_PAGE_ENABLED==='true'&&
+  env.COTIRONDA_AUTH_PREVIEW_ENABLED==='true'&&
+  env.VERCEL_ENV==='preview'&&
+  env.COTIRONDA_REGISTRATION_ENABLED==='false'&&
+  env.NEXT_PUBLIC_COTIRONDA_PILOT_SUPABASE_URL===PILOT_URL&&
+  env.NEXT_PUBLIC_COTIRONDA_PILOT_SUPABASE_PUBLISHABLE_KEY
+   ?.startsWith('sb_publishable_')===true&&
+  typeof sha==='string'&&SHA.test(sha)&&
+  env.VERCEL_GIT_COMMIT_SHA===sha;
+}
+
 export function respuestasV2Habilitadas(env:RespuestasEnv):boolean{
  const sha=env.COTIRONDA_PILOT_V2_RESPONDERS_RELEASE_SHA;
  return env.COTIRONDA_PILOT_V2_RESPONDERS_ENABLED==='true'&&

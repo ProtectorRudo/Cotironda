@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {bootstrapPrimerCompradorV2,phoneWhatsappContactSHA}
+import {readFileSync} from 'node:fs';
+import {bootstrapPrimerCompradorV2,phoneWhatsappContactSHA,
+ configuracionSmsInicialV2Lista,inspeccionarConfiguracionSmsInicialV2}
  from '../../src/server/v2-07-primer-comprador-auth.ts';
 const release='c'.repeat(40);
 const options=()=>({
@@ -11,10 +13,16 @@ const options=()=>({
  activeSourceSha:release,approvedSourceSha:release
 });
 const mock=()=>{
- const calls={count:0,verify:0,create:0};
- const state={users:0,allowed:true,already:false,confirmed:false};
+ const calls={count:0,verify:0,settings:0,create:0};
+ const state={users:0,allowed:true,already:false,confirmed:false,
+  authSettings:{
+   external:{phone:true},sms_provider:'twilio',
+   disable_signup:true,phone_autoconfirm:false
+  }
+ };
  const ports={
   countExistingAuthUsers:async()=>{calls.count++;return state.users},
+  readPublicAuthSettings:async()=>{calls.settings++;return state.authSettings},
   isVerifiedBuyerPhone:async(buyerKey,sha)=>{
    calls.verify++;
    assert.equal(buyerKey,'buyer_a');
@@ -35,6 +43,7 @@ test('V2-07: WhatsApp contact SHA matches existing V2-03 SQL exactly',()=>{
   createHash('sha256').update('5491123456789@s.whatsapp.net').digest('hex'));
  assert.equal(phoneWhatsappContactSHA('5491123456789'),null);
  assert.equal(phoneWhatsappContactSHA('+5400'),null);
+ assert.equal(phoneWhatsappContactSHA('+1234567890123456'),null);
 });
 test('V2-07: dry run only reads Auth and proof, no createUser',async()=>{
  const m=mock();
@@ -42,7 +51,7 @@ test('V2-07: dry run only reads Auth and proof, no createUser',async()=>{
  assert.equal(output.state,'READY_DRY_RUN');
  assert.equal(output.userCreated,false);
  assert.equal(output.smsSent,false);
- assert.deepEqual(m.calls,{count:1,verify:1,create:0});
+ assert.deepEqual(m.calls,{count:1,verify:1,settings:1,create:0});
  assert.ok(!JSON.stringify(output).includes('5491123456789'));
  assert.ok(!JSON.stringify(output).includes('buyer_a'));
 });
@@ -53,12 +62,13 @@ test('V2-07: source SHA mismatch or production/registration guard blocks before 
   {activeSourceSha:'a'.repeat(40)},
   {buyerKey:'buyer_b; DROP TABLE'},
   {phoneE164:'+0000'},
+  {phoneE164:'+1234567890123456'},
   {phoneE164:'\u202e+5491123456789'}
  ]){
   const m=mock();const out=await bootstrapPrimerCompradorV2(
    {...options(),...patch},m.ports);
   assert.equal(out.state,'BLOCKED');
-  assert.deepEqual(m.calls,{count:0,verify:0,create:0});
+  assert.deepEqual(m.calls,{count:0,verify:0,settings:0,create:0});
  }
 });
 test('V2-07: execute without PUBLICALO never touches Auth or channel',async()=>{
@@ -94,7 +104,7 @@ test('V2-07: successful approved candidate creates UNCONFIRMED buyer only',async
  assert.equal(r.userCreated,true);
  assert.equal(r.smsSent,false);
  assert.equal(r.secretsExposed,false);
- assert.deepEqual(m.calls,{count:2,verify:1,create:1});
+ assert.deepEqual(m.calls,{count:2,verify:1,settings:1,create:1});
 });
 test('V2-07: a competing user appears before create, abort',async()=>{
  const m=mock();
@@ -126,4 +136,83 @@ test('V2-07: auth offline or malformed count never creates an account',async()=>
  assert.equal(out.state,'BLOCKED');
  assert.equal(out.code,'servicio_auth_o_evidencia_no_disponible');
  assert.equal(m.calls.create,0);
+});
+
+test('V2-07: Auth SMS requiere teléfono habilitado, proveedor y signup cerrado',()=>{
+ const good={external:{phone:true},sms_provider:'twilio',
+  disable_signup:true,phone_autoconfirm:false};
+ assert.equal(configuracionSmsInicialV2Lista(good),true);
+ for(const invalid of [
+  null,{},[],{...good,external:{phone:false}},
+  {...good,external:null},
+  {...good,sms_provider:''},
+  {...good,sms_provider:'none'},
+  {...good,sms_provider:'noop'},
+  {...good,sms_provider:'mock'},
+  {...good,sms_provider:'../config'},
+  {...good,disable_signup:false},
+  {...good,phone_autoconfirm:true},
+  {...good,phone_autoconfirm:undefined}
+ ]){
+  assert.equal(configuracionSmsInicialV2Lista(invalid),false,
+   JSON.stringify(invalid));
+ }
+});
+
+test('V2-07: sin proveedor SMS real ni cierre de signup NO se crea comprador',async()=>{
+ const bad=[
+  {external:{phone:false},sms_provider:'twilio',
+   disable_signup:true,phone_autoconfirm:false},
+  {external:{phone:true},sms_provider:'',
+   disable_signup:true,phone_autoconfirm:false},
+  {external:{phone:true},sms_provider:'twilio',
+   disable_signup:false,phone_autoconfirm:false},
+  {external:{phone:true},sms_provider:'twilio',
+   disable_signup:true,phone_autoconfirm:true},
+  null
+ ];
+ for(const authSettings of bad){
+  const m=mock();m.state.authSettings=authSettings;
+  const out=await bootstrapPrimerCompradorV2({
+   ...options(),mode:'execute',
+   explicitApproval:'PUBLICALO_SOLO_COTIRONDA_PILOTO_AUTH_V2'
+  },m.ports);
+  assert.equal(out.state,'BLOCKED');
+  assert.equal(out.code,'proveedor_sms_o_signup_auth_no_configurados');
+  assert.deepEqual(m.calls,{count:1,verify:1,settings:1,create:0});
+ }
+});
+
+test('V2-07: CLI inspecciona solo settings públicas con publishable key',()=>{
+ const cli=readFileSync(new URL(
+  '../../apps/portal/scripts/v2-buyer-bootstrap.mjs',
+  import.meta.url),'utf8');
+ assert.match(cli,/PILOT\+'\/auth\/v1\/settings'/u);
+ assert.match(cli,/headers:\{apikey:publishable,accept:'application\/json'\}/u);
+ assert.match(cli,/publishable\.startsWith\('sb_publishable_'\)/u);
+ assert.match(cli,/signal:AbortSignal\.timeout\(6000\)/u);
+ assert.doesNotMatch(cli,/headers:\{apikey:secret/u);
+ assert.doesNotMatch(cli,/NEXT_PUBLIC_COTIRONDA_PILOT_SUPABASE_SECRET/u);
+});
+
+test('V2-07: inspección por campo comparte el mismo criterio fail-closed del alta',()=>{
+ const base={external:{phone:true},sms_provider:'twilio',
+  disable_signup:true,phone_autoconfirm:false};
+ assert.deepEqual(inspeccionarConfiguracionSmsInicialV2(base),{
+  signupClosed:true,phoneEnabled:true,autoConfirmDisabled:true,smsProviderReady:true
+ });
+ for(const change of [
+  {disable_signup:false},{external:{phone:false}},
+  {phone_autoconfirm:true},{sms_provider:'mock'},{sms_provider:null}
+ ]){
+  const cfg={...base,...change};
+  const d=inspeccionarConfiguracionSmsInicialV2(cfg);
+  assert.equal(Object.values(d).every(Boolean),false);
+  assert.equal(configuracionSmsInicialV2Lista(cfg),false);
+  assert.ok(!JSON.stringify(d).includes('twilio'));
+ }
+ assert.deepEqual(inspeccionarConfiguracionSmsInicialV2(null),{
+  signupClosed:false,phoneEnabled:false,
+  autoConfirmDisabled:false,smsProviderReady:false
+ });
 });

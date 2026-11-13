@@ -30,3 +30,10 @@ verify_jwt = false
 # modern sb_secret_ and the opaque shared secret are NOT a JWT.
 # Feature flags remain OFF; this stanza alone does NOT deploy the function.
 verify_jwt = false
+
+[functions.cotironda-piloto-v2-text-reader]
+# Exclusivamente JWT REAL del comprador emitido por Auth Supabase.
+# Además exige secreto interno segregado y verifica sesión/consentimiento
+# actual en SQL. No usar service_role como bearer para este endpoint.
+# Esta definición NO despliega ni activa la función.
+verify_jwt = true

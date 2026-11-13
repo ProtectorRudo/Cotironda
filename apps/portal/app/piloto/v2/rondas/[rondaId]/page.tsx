@@ -1,5 +1,6 @@
 import {notFound} from 'next/navigation';
-import {respuestasV2Habilitadas} from '../../../../../../../src/server/v2-03-respuestas-http.ts';
+import {ingresoCompradorV2Habilitado,respuestasV2Habilitadas}
+ from '../../../../../../../src/server/v2-03-respuestas-http.ts';
 import {RespuestasCompradorV2} from './respuestas-comprador';
 
 export const runtime='nodejs';
@@ -12,13 +13,18 @@ export default async function PaginaRespuestasV2(
  {params}:{params:Promise<{rondaId:string}>}
 ){
  const {rondaId}=await params;
- if(!UUID.test(rondaId)||!respuestasV2Habilitadas(process.env))
+ if(!UUID.test(rondaId)||!ingresoCompradorV2Habilitado(process.env))
   notFound();
+ const habilitado=respuestasV2Habilitadas(process.env);
  return <main className="panel">
   <span className="eyebrow">COTIRONDA · SEGUIMIENTO PRIVADO</span>
-  <h1>Presupuestos recibidos</h1>
-  <p>Acá aparecen los negocios que respondieron a tu pedido,
-    con su documento original. El análisis se incorpora cuando está listo.</p>
-  <RespuestasCompradorV2 rondaId={rondaId}/>
+  <h1>{habilitado?'Presupuestos recibidos':'Ingreso seguro al piloto'}</h1>
+  {habilitado?
+   <p>Acá aparecen los negocios que respondieron a tu pedido, con sus
+    documentos originales y análisis de referencia.</p>:
+   <p>Verificá tu teléfono mediante SMS. Los presupuestos permanecen
+    privados y todavía no están habilitados en esta prueba.</p>}
+  <RespuestasCompradorV2 rondaId={rondaId}
+   puedeConsultarRespuestas={habilitado}/>
  </main>;
 }

@@ -15,10 +15,18 @@ on:
       - 'src/domain/ia-central/planificador-piloto-v2-d013.ts'
       - 'src/domain/ia-central/puente-sql-rondas-v2-d013.ts'
       - 'supabase/functions/cotironda-piloto-whapi/ai-central-buyer-v2-d013.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/ai-central-zone-v2-d013.ts'
+      - 'tests/unit/v2-23-continuacion-zona-ruteo-v2.test.mjs'
+      - 'supabase/functions/cotironda-piloto-whapi/ai-central-buyer-auto-release-v2-d013.ts'
+      - 'supabase/piloto/v2_24_auto_release_calendar_guarded_candidate.sql'
+      - 'supabase/tests/ci/v2-24-auto-release-guard-pg17.sql'
+      - 'tests/unit/v2-24-auto-release-calendar-protegido.test.mjs'
       - 'scripts/piloto/v2-live76-candidate.mjs'
       - 'supabase/piloto/v2_d013_ruteo_productos_sin_filtro_rubro.sql'
+      - 'supabase/piloto/v2_21_d013_ruteo_v2_rpc_aislado_candidate.sql'
       - 'supabase/piloto/v2_05_plazo_dos_dias_habiles_candidate.sql'
       - 'supabase/piloto/v2_05_shadow_prepare_activar_modo_habil.sql'
+      - 'tests/unit/v2-22-calendario-rpc-aislada.test.mjs'
       - 'supabase/tests/fixtures/v2-d013-shadow-prepare-baseline.sql'
       - 'supabase/tests/ci/v2-05-plazo-habil-pg17.sql'
       - 'tests/unit/v2-d013-productos-sin-rubros.test.mjs'
@@ -68,6 +76,17 @@ jobs:
         run: node --experimental-strip-types --test tests/unit/v2-ia-central-calendario-automatico.test.mjs
       - name: IA Central orquesta fuente externa antes de matching de productos
         run: node --experimental-strip-types --test tests/unit/v2-ia-central-orquestador.test.mjs
+      - name: V2-23 zona tardia con RPC V2 aislada y overlay v76 exacta
+        run: node --experimental-strip-types --test tests/unit/v2-23-continuacion-zona-ruteo-v2.test.mjs
+      - name: V2-22 reloj integrado SOLO en preparador aislado, legado intacto
+        run: node --experimental-strip-types --test tests/unit/v2-22-calendario-rpc-aislada.test.mjs
+      - name: V2-24 liberacion automatica con calendario y contacto privados
+        run: node --experimental-strip-types --test tests/unit/v2-24-auto-release-calendar-protegido.test.mjs
+      - name: PG17 V2-24 auto-release positivo y negativos con rollback
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/v2-24-auto-release-guard-pg17.sql
+          psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regnamespace('cotironda_piloto_privado') IS NULL" | grep -Fx 't'
       - name: PG17 2 dias habiles calendario y rollback
         run: |
           set -euo pipefail

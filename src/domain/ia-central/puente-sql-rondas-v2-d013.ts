@@ -133,7 +133,8 @@ export async function guardarRondaSombraMvp221(
  if(prepared?.estado!=='plan_sql_listo'||!prepared.params||
     typeof rpc!=='function')return error('plan_no_preparado');
  try{
-  const result=await rpc('cotironda_piloto_ia_shadow_prepare_mvp221',
+  // V2-21: solo RPC V2 aislada. Nunca modificar/ejecutar M221 histórico.
+  const result=await rpc('cotironda_piloto_v2_shadow_prepare_d013',
    prepared.params);
   if(result.error!==null&&result.error!==undefined)
    return error('sql_no_disponible');

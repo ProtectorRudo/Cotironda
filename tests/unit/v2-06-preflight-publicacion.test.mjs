@@ -34,6 +34,9 @@ function readySnapshot(){
  const s=copy(observed);
  s.supabase.auth_users=1;
  s.supabase.v2_original_share_policy_enabled=true;
+ s.supabase.v2_text_sql_contract={
+  catalog_text:true,original_text:true,audit_text_rpc:true
+ };
  s.supabase.rpcs=[
   'cotironda_piloto_v2_quoted_id_for_reference',
   'cotironda_piloto_v2_quoted_id_for_media_reference',
@@ -43,6 +46,7 @@ function readySnapshot(){
   'cotironda_piloto_v2_analysis_claim_private',
   'cotironda_piloto_v2_analysis_finish_private',
   'cotironda_piloto_v2_responders_with_analysis_private',
+  'cotironda_piloto_v2_record_text_download',
   'cotironda_piloto_ia_shadow_prepare_mvp221'
  ];
  s.supabase.tables=[
@@ -57,9 +61,15 @@ function readySnapshot(){
   deadline_real_verified:true,auto_close_worker_verified:true,
   product_catalog_routing_verified:true,
   two_distinct_supplier_files_verified:true,
-  whatsapp_e2e_verified:true,final_analysis_verified:true};
+  whatsapp_e2e_verified:true,final_analysis_verified:true,
+  text_edge_gateway_jwt_verified:true,
+  text_edge_unauthorized_denied:true,
+  text_whatsapp_original_verified:true,
+  text_whatsapp_byte_sha_verified:true};
  s.edge.private_pdf_reader={status:'ACTIVE',verify_jwt:false,
   secret_configured_in_both_services:true};
+ s.edge.private_text_reader={status:'ACTIVE',verify_jwt:true,
+  secret_configured_in_both_services:true,aes_only_in_supabase:true};
  s.vercel.preview_env_names=[
   'NEXT_PUBLIC_COTIRONDA_PILOT_SUPABASE_URL',
   'NEXT_PUBLIC_COTIRONDA_PILOT_SUPABASE_PUBLISHABLE_KEY',
@@ -72,8 +82,13 @@ function readySnapshot(){
   'COTIRONDA_PILOT_OPENAI_API_KEY',
   'COTIRONDA_PILOT_V2_PDF_ENABLED',
   'COTIRONDA_PILOT_V2_PDF_SHARED_SECRET',
+  'COTIRONDA_PILOT_V2_TEXT_ENABLED',
+  'COTIRONDA_PILOT_V2_TEXT_SHARED_SECRET',
   'COTIRONDA_REGISTRATION_ENABLED'
  ];
+ s.vercel.project_id='prj_d13rTHxJADvP2K9PcrM0CJQD9Zok';
+ s.vercel.team_id='team_CE76WzHKVPy9e28LXIw2r3J4';
+ s.vercel.root_directory='apps/portal';
  s.vercel.git_linked=true;
  s.vercel.git_org='ProtectorRudo';
  s.vercel.git_repo='Cotironda';
@@ -187,4 +202,216 @@ test('Preflight V2: sin evidencia de nombre REGISTRATION bloquea portal',()=>{
  assert.equal(report.result,'BLOCKED');
  assert.ok(report.blockers.some(x=>x.code==='variables_preview'));
  assert.equal(report.can_publish,false);
+});
+
+test('V2-15: primer texto exige Edge JWT autenticada sin bloquear primer PDF',()=>{
+ const a=readySnapshot();
+ delete a.edge.private_text_reader;
+ assert.equal(auditarPublicacionV2(a,'primer_original').result,
+  'PREFLIGHT_PASS_REQUIRES_PUBLICALO');
+ let report=auditarPublicacionV2(a,'primer_texto');
+ assert.equal(report.result,'BLOCKED');
+ assert.ok(report.blockers.some(x=>x.code==='lector_texto_privado'));
+ assert.equal(report.can_publish,false);
+ report=auditarPublicacionV2(a,'piloto_completo');
+ assert.equal(report.result,'BLOCKED');
+ assert.ok(report.blockers.some(x=>x.code==='lector_texto_privado'));
+});
+
+test('V2-15: falta de RPC textual, secreto o flag bloquea el texto real',()=>{
+ const a=readySnapshot();
+ a.supabase.rpcs=a.supabase.rpcs.filter(
+  x=>x!=='cotironda_piloto_v2_record_text_download');
+ assert.ok(auditarPublicacionV2(a,'primer_texto').blockers.some(
+  x=>x.code==='rpc_texto_auditado'));
+ a.supabase.rpcs.push('cotironda_piloto_v2_record_text_download');
+ for(const key of [
+  'COTIRONDA_PILOT_V2_TEXT_ENABLED',
+  'COTIRONDA_PILOT_V2_TEXT_SHARED_SECRET'
+ ]){
+  const b=copy(a);
+  b.vercel.preview_env_names=b.vercel.preview_env_names.filter(x=>x!==key);
+  assert.ok(auditarPublicacionV2(b,'primer_texto').blockers.some(
+   x=>x.code==='variables_texto_preview'),key);
+ }
+ a.edge.private_text_reader.secret_configured_in_both_services=false;
+ assert.ok(auditarPublicacionV2(a,'primer_texto').blockers.some(
+  x=>x.code==='lector_texto_privado'));
+});
+
+test('V2-15: AES Whapi o secreto de broker bajo NEXT_PUBLIC bloquea',()=>{
+ const a=readySnapshot();
+ a.vercel.preview_env_names.push('COTIRONDA_PILOT_AES_HEX');
+ assert.ok(auditarPublicacionV2(a,'primer_texto').blockers.some(
+  x=>x.code==='clave_whapi_solo_supabase'));
+ a.vercel.preview_env_names.pop();
+ a.vercel.preview_env_names.push('NEXT_PUBLIC_COTIRONDA_PILOT_V2_TEXT_SHARED_SECRET');
+ assert.ok(auditarPublicacionV2(a,'primer_texto').blockers.some(
+  x=>x.code==='variables_texto_preview'));
+ a.vercel.preview_env_names.pop();
+ a.edge.private_text_reader.aes_only_in_supabase=false;
+ assert.ok(auditarPublicacionV2(a,'primer_texto').blockers.some(
+  x=>x.code==='clave_whapi_solo_supabase'));
+});
+
+test('V2-15: el JWT real y un texto original probado siguen siendo obligatorios',()=>{
+ const a=readySnapshot();
+ a.edge.private_text_reader.verify_jwt=false;
+ assert.ok(auditarPublicacionV2(a,'primer_texto').blockers.some(
+  x=>x.code==='lector_texto_privado'));
+ a.edge.private_text_reader.verify_jwt=true;
+ a.proof.text_edge_gateway_jwt_verified=false;
+ assert.ok(auditarPublicacionV2(a,'primer_texto').blockers.some(
+  x=>x.code==='edge_jwt_comprador'));
+ a.proof.text_edge_gateway_jwt_verified=true;
+ a.proof.text_whatsapp_byte_sha_verified=false;
+ assert.ok(auditarPublicacionV2(a,'primer_texto').blockers.some(
+  x=>x.code==='texto_whatsapp_fiel'));
+ a.proof.text_whatsapp_byte_sha_verified=true;
+ const report=auditarPublicacionV2(a,'primer_texto');
+ assert.equal(report.result,'PREFLIGHT_PASS_REQUIRES_PUBLICALO');
+ assert.equal(report.can_publish,false);
+});
+
+test('V2-15: foto real postrelease NO puede aprobar sólo con esquema previo',()=>{
+ const report=auditarPublicacionV2(postrelease,'primer_texto');
+ assert.equal(report.result,'BLOCKED');
+ assert.equal(report.can_publish,false);
+ for(const code of ['rpc_texto_auditado','lector_texto_privado',
+  'clave_whapi_solo_supabase','variables_texto_preview',
+  'edge_jwt_comprador','texto_whatsapp_fiel']){
+  assert.ok(report.blockers.some(x=>x.code===code),code);
+ }
+});
+
+test('V2-15: Preview SHA directa permite no vincular Git solo con identidad real',()=>{
+ const a=readySnapshot();
+ a.vercel.git_linked=false;
+ a.vercel.deploy_source_type='github_sha_direct';
+ a.vercel.preview_source_verified=true;
+ a.vercel.deployed_project_id='prj_d13rTHxJADvP2K9PcrM0CJQD9Zok';
+ a.vercel.deployed_team_id='team_CE76WzHKVPy9e28LXIw2r3J4';
+ a.vercel.source_repository='ProtectorRudo/Cotironda';
+ a.vercel.root_directory='apps/portal';
+ a.vercel.source_commit_sha=a.vercel.release_sha;
+ const report=auditarPublicacionV2(a,'primer_original');
+ assert.equal(report.result,'PREFLIGHT_PASS_REQUIRES_PUBLICALO');
+ assert.equal(report.can_publish,false);
+ for(const mutation of [
+  {deployed_project_id:'prj_wrong'},
+  {deployed_team_id:'team_wrong'},
+  {source_repository:'Atacante/Falso'},
+  {root_directory:''},
+  {source_commit_sha:'0'.repeat(40)},
+  {preview_source_verified:false},
+  {target:'production'},
+  {preview_state:'ERROR'}
+ ]){
+  const invalid=structuredClone(a);
+  Object.assign(invalid.vercel,mutation);
+  assert.ok(auditarPublicacionV2(invalid).blockers.some(x=>
+   x.code==='portal_git_correcto'),JSON.stringify(mutation));
+ }
+});
+
+test('V2-15: Github desconectado sin Preview SHA comprobada no pasa',()=>{
+ const a=readySnapshot();
+ a.vercel.git_linked=false;
+ a.vercel.deploy_source_type='github_sha_direct';
+ a.vercel.preview_source_verified=false;
+ const result=auditarPublicacionV2(a,'primer_original');
+ assert.equal(result.result,'BLOCKED');
+ assert.ok(result.blockers.some(x=>x.code==='portal_git_correcto'));
+ assert.equal(result.can_publish,false);
+});
+
+test('V2-15: Vercel project ID, team y carpeta son obligatorios también con Git',()=>{
+ const sample=readySnapshot();
+ for(const mutation of [
+  {project_id:'prj_wrong'},
+  {team_id:'team_wrong'},
+  {root_directory:null},
+  {root_directory:''},
+  {root_directory:'apps/seguimiento'}
+ ]){
+  const bad=copy(sample);
+  Object.assign(bad.vercel,mutation);
+  const result=auditarPublicacionV2(bad);
+  assert.equal(result.result,'BLOCKED',JSON.stringify(mutation));
+  assert.ok(result.blockers.some(x=>[
+   'portal_next_unico','portal_root_correcto'
+  ].includes(x.code)));
+ }
+});
+
+test('V2-17: RPC presentes SIN cuerpo SQL de texto no permiten primer texto',()=>{
+ const baseline=readySnapshot();
+ for(const field of ['catalog_text','original_text','audit_text_rpc']){
+  const stale=copy(baseline);
+  stale.supabase.v2_text_sql_contract[field]=false;
+  const report=auditarPublicacionV2(stale,'primer_texto');
+  assert.equal(report.result,'BLOCKED',field);
+  const expected={
+   catalog_text:'catalogo_sql_texto',
+   original_text:'fuente_sql_texto',
+   audit_text_rpc:'rpc_texto_auditado'
+  }[field];
+  assert.ok(report.blockers.some(x=>x.code===expected),field);
+  assert.equal(report.can_publish,false);
+  assert.equal(auditarPublicacionV2(stale,'piloto_completo').result,
+   'BLOCKED');
+ }
+});
+
+test('V2-17: contrato SQL ausente o sin evidencia no se presume instalado',()=>{
+ const complete=readySnapshot();
+ delete complete.supabase.v2_text_sql_contract;
+ const report=auditarPublicacionV2(complete,'primer_texto');
+ assert.equal(report.result,'BLOCKED');
+ for(const id of ['catalogo_sql_texto','fuente_sql_texto','rpc_texto_auditado']){
+  assert.ok(report.blockers.some(x=>x.code===id),id);
+ }
+ // Un primer PDF sí es independiente del lector textual.
+ assert.equal(auditarPublicacionV2(complete,'primer_original').result,
+  'PREFLIGHT_PASS_REQUIRES_PUBLICALO');
+});
+
+test('V2-17: instantánea SOLO LECTURA del PILOTO presenta SQL antiguo',()=>{
+ const observedSql=JSON.parse(readFileSync(new URL(
+  '../../scripts/piloto/observaciones/v2-sql-text-live-20261113.json',
+  import.meta.url),'utf8'));
+ assert.equal(observedSql.supabase_project,'ilggkalaafhtiysyzlmg');
+ assert.equal(observedSql.postgres_version,'17.11');
+ assert.equal(observedSql.contract.responders_rpc,true);
+ assert.equal(observedSql.contract.original_source_rpc,true);
+ assert.equal(observedSql.contract.catalog_text,false);
+ assert.equal(observedSql.contract.original_text,false);
+ assert.equal(observedSql.contract.audit_text_rpc,false);
+ assert.equal(observedSql.auth_users,0);
+ assert.equal(observedSql.supplier_consents_v2,0);
+ assert.equal(observedSql.originals_share_enabled,false);
+ const fresh=readySnapshot();
+ fresh.supabase.v2_text_sql_contract={
+  catalog_text:observedSql.contract.catalog_text,
+  original_text:observedSql.contract.original_text,
+  audit_text_rpc:observedSql.contract.audit_text_rpc
+ };
+ const report=auditarPublicacionV2(fresh,'primer_texto');
+ assert.equal(report.result,'BLOCKED');
+ for(const code of ['catalogo_sql_texto','fuente_sql_texto','rpc_texto_auditado'])
+  assert.ok(report.blockers.some(b=>b.code===code),code);
+});
+
+test('V2-17: script inventario no puede escribir datos o ejecutar funciones',()=>{
+ const raw=readFileSync(new URL(
+  '../../supabase/piloto/v2_17_contrato_sql_texto_solo_lectura.sql',
+  import.meta.url),'utf8');
+ const sql=raw.split('\n').filter(line=>
+  !line.trimStart().startsWith('--')).join('\n');
+ assert.match(sql,/^\s*WITH\s+installed\s+AS\s*\(/u);
+ assert.match(sql,/pg_get_functiondef/u);
+ assert.match(sql,/to_regprocedure/u);
+ assert.match(sql,/^\s*SELECT\b/mu);
+ assert.doesNotMatch(sql,/\b(?:INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|TRUNCATE|GRANT|REVOKE|CALL|COPY|EXECUTE)\b/iu);
+ assert.equal((sql.match(/;\s*$/gu)||[]).length,1);
 });

@@ -49,3 +49,102 @@ node --experimental-strip-types scripts/v2-buyer-bootstrap.mjs --dry-run
 - [ ] Primer original auténtico descargado con JWT de esa sesión. Exigir consentimiento prospectivo proveedor V2 y vinculación fuerte del presupuesto; los documentos históricos asociados ambiguamente no cuentan.
 
 **Prioridad siguiente:** finalizar CI, preparar instalación apagada de RPC/Auth/portal y verificar un comprador real antes de perseguir más parsers. No considerar `READY_DRY_RUN` un alta efectuada.
+
+## Actualización de bloqueo de SMS antes de crear Auth — 12/11/2026
+
+**Motivo del cambio:** una cuenta creada administrativamente puede no tener acceso al
+portal si Supabase Auth no tiene el inicio telefónico y el proveedor de SMS
+configurados. El comando anterior sólo verificaba la identidad Whapi y el
+SHA, pero no esos ajustes operativos; `auth.users=0` continúa siendo el
+último dato verificado en el proyecto PILOTO.
+
+El script `apps/portal/scripts/v2-buyer-bootstrap.mjs`, tanto para
+`--dry-run` como `--execute`, consulta ahora **sólo**
+`GET https://ilggkalaafhtiysyzlmg.supabase.co/auth/v1/settings`
+con una clave **publicable** `sb_publishable_*`, sin teléfonos ni JWT en
+esa solicitud. El servicio V2-07 bloquea el alta salvo que el resultado
+indique `external.phone=true`, `sms_provider` no vacío ni simulado,
+`phone_autoconfirm=false` y `disable_signup=true`.
+Un estado desconocido, timeout o error HTTP produce `BLOCKED` sin crear
+usuario. La configuración no puede inferirse de la presencia de Whapi.
+
+**Nueva variable necesaria para el operador**, no para el navegador:
+`COTIRONDA_PILOT_SUPABASE_PUBLISHABLE_KEY`. La clave secreta sigue
+aislada sólo en servidor. Este cambio NO configura automáticamente un
+SMS provider ni altera ajustes Auth. Debe habilitarse en
+Supabase Dashboard → Authentication → Providers → Phone; registrar un
+proveedor de SMS real y desactivar el registro público en la configuración
+de Auth antes de una ejecución autorizada. Es un requisito distinto de
+`COTIRONDA_REGISTRATION_ENABLED=false` del portal.
+
+**Advertencia:** leer `/auth/v1/settings` confirma **configuración**, no
+entrega de SMS ni posesión del teléfono. La aceptación final sigue
+exigiendo un OTP REAL solicitado y verificado por el comprador consentido,
+sin registrar ni mostrar el código en GitHub o chat. No se intentó
+enviar ningún SMS ni crear usuarios en este incremento.
+
+Pruebas: nuevo caso de Auth deshabilitado, proveedor ausente, signup
+público abierto, auto-confirmación indebida y falta de settings. El CLI
+permanece limitado a `--dry-run` por defecto y `--execute` solamente
+bajo aprobación de publicación con SHA exacto; la publicación web sigue
+bloqueada por la cuota Vercel 402 del intento anterior.
+
+Fuentes: [Supabase: Phone sign-in](https://supabase.com/docs/guides/auth/phone-login)
+y [Supabase: JavaScript auth.admin.createUser](https://supabase.com/docs/reference/javascript/auth-admin-createuser).
+
+## V2-16 — corrección de primer SMS con Auth cerrado (12/11/2026)
+
+**Hallazgo funcional en la implementación pública de Supabase GoTrue:** una
+cuenta creada por `auth.admin.createUser({phone,phone_confirm:false})` es
+un usuario existente **sin confirmar**. El flujo `signInWithOtp` con
+`shouldCreateUser:false` reconoce que existe, pero el handler `SmsOtp`
+trata `!user.IsPhoneConfirmed()` como **alta pendiente** y llama a
+`Signup`. Con `disable_signup=true`, GoTrue devuelve
+`signup_disabled` y **no envía el OTP de acceso normal**. Esto significa
+que el plan V2-07, aun con SMS correctamente configurado, podía fallar
+en el primer ingreso.
+
+**Solución V2-16** sin paso nuevo para el arquitecto, y con signup cerrado:
+1. El operador crea la cuenta inicial **sin confirmar teléfono** tras
+   la validación Whapi y todos los gates de V2-07.
+2. El comprador pulsa el botón habitual `Enviar código de acceso`.
+   `client.auth.signInWithOtp({phone,options:{shouldCreateUser:false}})`
+   se intenta una sola vez.
+3. **Únicamente ante el código específico
+   `signup_disabled`**, Cotironda usa
+   `client.auth.resend({type:'sms',phone})`, que GoTrue implementa para
+   **usuarios ya existentes cuyo número todavía no está confirmado**,
+   sin crear cuentas ni alterar el bloqueo de registro.
+4. `client.auth.verifyOtp({type:'sms',phone,token})` confirma la
+   posesión del teléfono. El siguiente ingreso, ya confirmado, funciona
+   por el flujo `signInWithOtp` habitual.
+
+**Reglas de seguridad:** el fallback no se ejecuta ante fallas del
+proveedor, errores de red, OTP deshabilitado, límites por IP/número,
+credenciales inválidas ni otro estado. No se imprime el teléfono, OTP,
+identidad ni existencia de cuenta. `resend` devuelve respuesta inocua
+incluso para usuarios inexistentes; se mantiene el mismo mensaje
+genérico. Sigue prohibido `phone_confirm:true`, signup público o
+`shouldCreateUser:true`; las RPC de empresa y consentimientos siguen
+decidiendo qué original puede ver una sesión autenticada.
+
+**Evidencia pública técnica:**
+- [GoTrue `internal/api/otp.go`](https://github.com/supabase/auth/blob/master/internal/api/otp.go):
+  `isNewUser=!user.IsPhoneConfirmed()`, `Signup` para sin confirmar.
+- [GoTrue `internal/api/signup.go`](https://github.com/supabase/auth/blob/master/internal/api/signup.go):
+  `DisableSignup` rechaza `Signup`.
+- [GoTrue `internal/api/resend.go`](https://github.com/supabase/auth/blob/master/internal/api/resend.go):
+  `smsVerification` permite enviar código a un teléfono no confirmado.
+- [SDK `auth.resend`](https://supabase.com/docs/reference/javascript/auth-resend):
+  `{type:'sms',phone}` y
+  [`verifyOtp`](https://supabase.com/docs/guides/auth/phone-login).
+
+**Archivos:** `src/server/v2-16-primer-sms-cotironda.ts`,
+`apps/portal/app/piloto/v2/rondas/[rondaId]/respuestas-comprador.tsx`,
+`tests/unit/v2-16-primer-sms-cotironda.test.mjs` y workflow PG17.
+
+**Límite:** las pruebas unitarias, Deno y Next.js NO prueban entrega
+real de SMS. Sin una cuenta Auth creada, proveedor SMS configurado,
+comprador con acceso a ese teléfono y OTP real recibido, no se puede
+declarar el primer acceso conseguido. Esta corrección no despliega
+portal, no modifica Supabase Auth ni envía WhatsApp/SMS.
