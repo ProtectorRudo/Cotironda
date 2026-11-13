@@ -10,12 +10,12 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState('');
  const version=useRef(0);
- const running=useRef(false);
+ const running=useRef<number|null>(null);
  const url='/api/piloto/v2/rondas/'+encodeURIComponent(rondaId);
  const refresh=useCallback(async(silent=false)=>{
-  if(running.current)return;
-  running.current=true;
   const identity=version.current;
+  if(running.current===identity)return;
+  running.current=identity;
   if(!silent)setBusy(true);
   try{
    const res=await fetch(url+'/respuestas-whatsapp',{
@@ -35,14 +35,14 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
     setError('No pudimos verificar el acceso a este pedido. Si venció, pedí otro enlace por WhatsApp.');
    }
   }finally{
-   running.current=false;
+   if(running.current===identity)running.current=null;
    if(identity===version.current){setLoading(false);if(!silent)setBusy(false)}
   }
  },[url]);
  useEffect(()=>{
   void refresh();
   const timer=window.setInterval(()=>{
-   if(document.visibilityState==='visible'&&!running.current)
+   if(document.visibilityState==='visible'&&running.current!==version.current)
     void refresh(true);
   },60_000);
   return ()=>{version.current++;window.clearInterval(timer)};
