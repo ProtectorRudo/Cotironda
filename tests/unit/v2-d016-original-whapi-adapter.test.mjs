@@ -153,7 +153,7 @@ test('D016 callbacks incompletos bloquean antes de reclamar',async()=>{
 test('D016 adaptador niega sender no autorizado, hash inválido y flags OFF',async()=>{
  const f=create();
  for(const bad of [
-  {enabled:false},{supplierKey:'other'},{requestId:'bad'},
+  {enabled:false},{supplierKey:'bad!'},{requestId:'bad'},
   {chatHmac:'bad'},{recipient:'000'},{leaseToken:'bad'}
  ]){
   const x=await reservarAvisoOriginalEnDespachoD016({
@@ -163,6 +163,14 @@ test('D016 adaptador niega sender no autorizado, hash inválido y flags OFF',asy
   assert.equal(x,null);
  }
  assert.equal(f.state.notices.length,0);
+ // Un proveedor distinto pero sintácticamente válido lo bloquea SQL,
+ // nunca una lista fija en JS: Cotironda soporta negocios nuevos.
+ const wrong=await reservarAvisoOriginalEnDespachoD016({
+  enabled:true,requestId:ROUND,supplierKey:'other_supplier',chatHmac:CHAT,
+  recipient:RECIPIENT,leaseToken:LEASE,captionBase:BASE,
+  rpc:async()=>({data:false,error:null})
+ });
+ assert.equal(wrong,null);
  assert.equal(await registrarResultadoOriginalD016({
   enabled:false,requestId:ROUND,supplierKey:SUPPLIER,
   messageId:WHAPI,rpc:f.rpc}),false);
