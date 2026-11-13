@@ -1,5 +1,14 @@
 # COTIRONDA V2 — ESTADO REAL Y RELEVO ENTRE CONVERSACIONES
 
+### ÚLTIMO RELEVO · 13/11/2026 · RPC PRIVADAS DE RECEPCIÓN WHAPI D016 EN PILOTO
+
+**Nueva publicación real y verificada**: Supabase `cotironda-piloto`, migración **`20261113202332`** `cotironda_d016_original_inbox_evidence_off_pilot_20261113`. Dos RPC `service_role` para registrar **evidencia técnica** de respuesta auténtica asociada a ronda/proveedor por `whapi_inbox` + `ai_supplier_links` + ledger, y para procesar el comando exacto **NO COMPARTIR** por SHA del texto del remitente verificado. Control SQL real: **7 rondas históricas/1 preparada sin cambios**, avisos/respuestas/bajas nuevos **0/0/0**, políticas de negocio/originales/cierre **OFF/OFF/OFF**, funciones para anon/auth denegadas, llamadas inválidas denegadas. [Acta de la migración](https://github.com/ProtectorRudo/Cotironda/blob/feat/d016-original-inbox-evidence-20261113/docs/PILOTO-D016-INBOX-ORIGINALES-PUBLICADO-20261113.md).
+
+**[PR #841](https://github.com/ProtectorRudo/Cotironda/pull/841) DRAFT sin merge:** código de entrada + overlay de webhook V2 generado en CI sobre v76 intacto, interruptor `COTIRONDA_PILOT_D016_ORIGINAL_INBOX_ENABLED` OFF. Workflow Node/PG17 ROLLBACK/Deno del candidato OK. **NO desplegado Whapi ni enviado mensaje**. La respuesta devuelve `verified_reply_not_authorization`, nunca consentimiento legal ni permiso de descarga. Enlaces solo `quoted_whapi_id` o `single_active_round` hasta acreditar asociaciones semánticas; no inferir rondas. Faltan revisión Ley 25.326, activar recepción segura tras E2E, funciones prospectivas de originales, acceso privado comprador, secreto/SSO y pruebas reales; piloto NO completo.
+
+**Vercel UI f985** sigue en espera de cuota Hobby/Preview (reintento único programado 14/11), último deployment anterior READY código `64b8573`. No publicar #841 con esa tarea, ni producción.
+
+
 ### RELEVO ACTUAL · 13/11/2026 · D016 lease de aviso PUBLICADO en piloto, no comercial
 
 **Nuevo último hecho real:** migración Supabase `20261113194958` `cotironda_d016_original_notice_lease_guard_off_pilot_20261113` aplicada SOLO al proyecto `cotironda-piloto`. El módulo que reserva el aviso de originales ahora exige lease verdadero en estado `leased` de `ai_dispatch_jobs_mvp222`, misma ronda/proveedor/chat, invitación y política prospectiva. Se revocó a `service_role` el EXECUTE de la RPC de reserva antigua sin lease. Control SQL real: **7 rondas preservadas**, **1 histórica preparada**, 0 avisos, 0 respuestas, 3 políticas V2 OFF; nueva función accesible solo a `service_role`, negada a navegador; lease nulo devuelve FALSE. Sin mensajes, IA ni cron nuevos. [Acta verificada](https://github.com/ProtectorRudo/Cotironda/blob/feat/d016-original-notice-whapi-adapter-20261113/docs/PILOTO-D016-LEASE-GUARD-PUBLICADO-20261113.md).
