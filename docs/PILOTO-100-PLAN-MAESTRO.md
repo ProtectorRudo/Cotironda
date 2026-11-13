@@ -1,5 +1,17 @@
 # COTIRONDA V2 — PLAN MAESTRO Y CHECKLIST
 
+### 13/11/2026 — Calendario legal La Plata 2026 (CANDIDATO SIN APROBAR)
+
+- [x] Auditado el **esquema real**: `v2_business_calendar` y `v2_business_holidays` existen, pero tienen **0 filas y 0 aprobaciones**. El esquema exige localidad minúscula, revisión, fuente y aprobación opcional; FK por localidad/año.
+- [x] Verificadas normas oficiales de feriados 2026: Tribunal Fiscal de Apelación PBA, DNU 1103/2026, Resolución bonaerense 516/2026 y Resolución nacional 164/2025; **9/11 y 11/11** aplicables en PBA; **23/11** Soberanía trasladado; **19/11 La Plata optativo para comercio** y **7/12 no laborable turístico**, sin clasificarlos como feriados generales obligatorios.
+- [x] Preparado en [PR #837](https://github.com/ProtectorRudo/Cotironda/pull/837) el candidato `v2_d016_calendario_la_plata_2026_CANDIDATE.sql` con **18 fechas obligatorias, evidencias oficiales, revisión `lp_v2_r1`, `approved_at=NULL`**, bloqueo de proyecto no piloto y rechazo de datos históricos/duplicados. **No se aplicó a Supabase**.
+- [x] Pruebas nuevas Node + PostgreSQL 17 `v2-d016-calendario-legal-pg17.sql`, con transacción/ROLLBACK y cinco casos de plazo B2B hasta **18:00 AR**. Confirmar última CI exacta antes de declarar terminada la prueba.
+- [ ] **Decisión comercial previa a publicación:** aceptar explícitamente el tratamiento de feriados *optativos para comercio*, revisar cambios provinciales/municipales y aprobar legalmente calendario 2026 sin retrofechar. **2027 no está incluido ni aprobado**; rondas que crucen año deberán esperar el calendario compatible aprobado.
+- [ ] Continúan pendientes los otros bloqueos: consentimientos originales V2, políticas, instalación de RPC/Edge, flags/secretos privados, Preview protegido, Whapi E2E y cierre/informe real. Todo **SOLO con `Publicalo` PILOTO**.
+
+[Fuentes y criterios del calendario](https://github.com/ProtectorRudo/Cotironda/blob/feat/d016-whatsapp-link-safe-pilot-20261113/docs/V2-D016-CALENDARIO-LA-PLATA-2026-CANDIDATO.md). El resto de secciones describe avances históricos; esta es la política candidata vigente, sin aprobación tácita.
+
+
 ### ÚLTIMA DIRECCIÓN VERIFICADA — 13/11/2026 · IA por GitHub, cierre SQL
 
 **CI confirmada:** PR #837 HEAD `2991c20ec40f01f284fa70f6cedf9666354aef93` — **8/8 GitHub Actions SUCCESS**, incluidos nuevos tests de scheduler, cierre SQL-only, ACL retirada, Node/Deno, PG17/ROLLBACK y build Next. Esto NO valida E2E real. El repositorio es público y utiliza runner estándar `ubuntu-latest`: según GitHub (2026), sus minutos no se cobran; siguen existiendo límites y costos OpenAI/API.
