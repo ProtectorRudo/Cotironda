@@ -31,9 +31,17 @@ BEGIN
   'aaaaaaaa-1111-4111-8111-111111111111',v_doc);
  IF v_src IS NULL OR v_src->>'state'<>'authorized_original_v2'
  THEN RAISE EXCEPTION 'd016_worker_source_missing';END IF;
+ -- La prueba histórica dejó un análisis de texto EN PROCESO con lease
+ -- vigente, así que no debe duplicarse su costo. Simular vencimiento real.
+ UPDATE cotironda_piloto_privado.v2_original_analysis
+ SET status='review',points=NULL,text_sha256=NULL,
+  updated_at=clock_timestamp()-interval '10 minutes',
+  lease_until=clock_timestamp()-interval '9 minutes'
+ WHERE request_id='aaaaaaaa-1111-4111-8111-111111111111'
+  AND status='processing';
  v_job:=public.cotironda_piloto_v2_d016_worker_due_private(1);
  IF jsonb_typeof(v_job)<>'array' OR jsonb_array_length(v_job)<>1
- THEN RAISE EXCEPTION 'd016_worker_due_missing:%',v_job;END IF;
+ THEN RAISE EXCEPTION 'd016_worker_due_missing:% catalog=%',v_job,jsonb_array_length(v_catalog->'originals');END IF;
  v_doc:=(v_job->0->>'documentId')::uuid;
  v_src:=public.cotironda_piloto_v2_d016_worker_source_private(
   'aaaaaaaa-1111-4111-8111-111111111111',v_doc);
