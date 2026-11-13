@@ -31,10 +31,10 @@ function origenD016(s:string):boolean{
 function hex(input:Uint8Array):string{
  return Array.from(input,x=>x.toString(16).padStart(2,'0')).join('');
 }
-function hexKey(s:string):Uint8Array{
+function hexKey(s:string):ArrayBuffer{
  const bytes=new Uint8Array(32);
  for(let i=0;i<32;i++)bytes[i]=parseInt(s.slice(i*2,i*2+2),16);
- return bytes;
+ return bytes.buffer as ArrayBuffer;
 }
 async function hashTicket(token:string,keyHex:string):Promise<string>{
  const key=await crypto.subtle.importKey('raw',hexKey(keyHex),
