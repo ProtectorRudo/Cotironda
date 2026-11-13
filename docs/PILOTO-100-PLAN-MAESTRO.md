@@ -1,40 +1,21 @@
 # COTIRONDA V2 — PLAN MAESTRO Y CHECKLIST
 
-### 13/11/2026 — Preflight V2 ejecutado y protección nueva para pg_net
+### ÚLTIMA DIRECCIÓN VERIFICADA — 13/11/2026 · IA por GitHub, cierre SQL
 
-**PR #837 HEAD `8946629e919ec4c2eae5a507cfea077ff6f0c1cc`: 8/8 GitHub Actions SUCCESS verificadas.** Preflight ejecutado en SQL real sólo lectura; E2E y publicación todavía pendientes.
+**La propuesta de revocar permisos de `pg_net` fue RETIRADA tras consultar la documentación oficial de Supabase (04/11/2026).** Esos grants provienen de `supabase_admin` y un `REVOKE` con `postgres` no los corrige; intentar suprimir grants `PUBLIC` podría afectar webhooks y workers. Además `anon`/`authenticated` son `NOLOGIN` y `net` no está expuesto por Data API por defecto. No anunciar una fuga pública de clientes basada solo en `has_table_privilege`.
 
+**Arquitectura D016 aprobada PARA DESARROLLO, NO PUBLICADA:**
+- [x] **Cierre de ronda en SQL puro:** `v2_d016_cron_ACTIVATE_ONLY_AFTER_PUBLICALO.sql` programa únicamente `cotironda_piloto_v2_d016_close_due_private(5)` cada 5 minutos, sin secretos HTTP ni `pg_net`.
+- [x] **IA autónoma sin arquitecto conectado:** `.github/workflows/cotironda-d016-worker-piloto.yml` invoca Edge directamente por HTTPS con dos secretos privados de GitHub, flags OFF por defecto, cron 13/43 minutos UTC, 1 oferta máximo por ejecución y claim SQL. Los jobs de GitHub **solo corren desde la rama default tras merge autorizado**; pueden retrasarse u omitirse (no SLA).
+- [x] Script anterior de ACL `v2_d016_pgnet_acl_REVIEW_ONLY.sql` reemplazado por un **stub que siempre aborta**. No aplicar permisos sobre extensión administrada.
+- [x] `v2_d016_preflight_SOLO_LECTURA.sql` ejecutado de nuevo en **Supabase PILOTO**: **10 bloqueos reales**, 1 comprador WhatsApp verificado, 0 consentimientos específicos V2 de compartir originales, 0 calendarios aprobados, 3 políticas OFF y RPCs D016 sin instalar. No hay job antiguo D016 worker por `pg_net`. El preflight no presenta grants nativos como exposición web.
+- [x] Nuevos tests en CI para cron SQL-only, scheduler GitHub, secretos no registrados y ACL retirada. **Verificar 8/8 del último SHA**, sin dar por aprobadas compilaciones pendientes.
+- [ ] Criterios de publicación: consentimientos V2 originales, calendario local oficial para rondas nuevas, credenciales de Edge/GitHub/Vercel gestionadas en proveedores sin mostrarlas, presupuesto GitHub Actions/OpenAI, proteger SSO y verificación Whapi v76.
+- [ ] Bajo `Publicalo` **solo PILOTO**: merge del SHA auditado y dependencias, instalación SQL/Edge flags OFF, prueba Preview segura, scheduler SQL y worker GitHub habilitados por fases, auditoría y E2E arquitecto/Ailín/Nahuel por WhatsApp.
 
+[Runbook vigente](https://github.com/ProtectorRudo/Cotironda/blob/feat/d016-whatsapp-link-safe-pilot-20261113/docs/V2-D016-PREPUBLICACION-PILOTO-20261113.md) · [PR #837](https://github.com/ProtectorRudo/Cotironda/pull/837). **Nada desplegado, sin cron nuevo, sin mensajes.**
 
-**Se desarrolló y ejecutó (SOLO SELECT)**
-[`v2_d016_preflight_SOLO_LECTURA.sql`](https://github.com/ProtectorRudo/Cotironda/blob/feat/d016-whatsapp-link-safe-pilot-20261113/supabase/piloto/v2_d016_preflight_SOLO_LECTURA.sql)
-sobre el proyecto `cotironda-piloto`. Resultado REAL:
-**11 bloqueos**, 1 comprador con WhatsApp autenticado, **0 proveedores
-con consentimiento V2 registrado para compartir originales** (NO equivale
-a estar fuera de Cotironda), 0 calendarios aprobados, 3 políticas V2 OFF
-y 0 funciones D016 instaladas. Reglas DB de cierre 18:00 AR verificadas.
-
-**Bloqueo de seguridad adicional (prioridad alta):**
-la cola `net.http_request_queue` permite SELECT de `anon` y
-`authenticated` por ACL pública y no tiene RLS; el esquema es accesible
-para esos roles. No enviar la llave del worker por `pg_net` todavía.
-El script de cron D016 ahora aborta si los privilegios continúan así.
-Se preparó `v2_d016_pgnet_acl_REVIEW_ONLY.sql` para auditoría y futura
-aprobación; NO se aplicaron permisos, secretos ni cambios reales.
-
-- [x] Preflight reproducible con reportes sin PII/secrets y pruebas GitHub.
-- [x] Cron D016 bloqueado ante cola HTTP pública; mitigación separada,
-  mínima y **sin ejecución**.
-- [ ] Analizar impacto de ACL compartida `net` y aprobar resolución
-  segura antes de habilitar el cron; revisar seguridad después de upgrades.
-- [ ] Regularizar consentimiento prospectivo de originales de proveedores
-  concretos y calendario oficial 2026/2027; NO inferir consentimientos.
-- [ ] Instalar SQL/Edge/Next solo bajo `Publicalo` PILOTO, preparar
-  secretos privados, comprobar SSO/preview, WhatsApp y E2E real.
-
-**Fuente técnica:** [Prepublicación D016](https://github.com/ProtectorRudo/Cotironda/blob/feat/d016-whatsapp-link-safe-pilot-20261113/docs/V2-D016-PREPUBLICACION-PILOTO-20261113.md).
-**Estado:** PR #837 DRAFT, sin merge, sin deploy, sin mensajes.
-
+> Las secciones posteriores son HISTÓRICO de avances anteriores; donde hablen de worker via `pg_net` o corrección de ACL, prevalece esta decisión de cierre SQL + worker GitHub.
 
 ### Auditoría de prepublicación — 13/11/2026 · PRIORIDAD ACTUAL
 
@@ -55,7 +36,7 @@ aprobación; NO se aplicaron permisos, secretos ni cambios reales.
 
 - [x] Desarrollo de **worker Edge autónomo** sin sesión del arquitecto: `v2_d016_worker_offline_CANDIDATE.sql` + `cotironda-piloto-v2-worker-d016`, solo servicio interno con **dos secretos independientes**, permisos por comprador/empresa, canal WhatsApp verificado, proveedor consentido, archivo SHA y calendario V2 aprobado. Listado hasta 2 trabajos; ejecución máxima 1 oferta/tick; claim/finish SQL con lease 90s, hasta 3 intentos y revalidación antes de grabar. Reutiliza lectura PDF, Office y AES-GCM de Supabase; originales intactos.
 - [x] Desarrollo de **cierre de dos días hábiles de La Plata** según localidad/revisión/año aprobados, feriados en tabla, hora local Argentina, `FOR UPDATE SKIP LOCKED`, hasta 5 rondas por tick, rechazo de fechas manipuladas y audit trail único por ronda. El informe final exige ahora ese cierre auditado, no basta con cambiar `state`.
-- [x] Script de cron **separado y NO instalado** `v2_d016_cron_ACTIVATE_ONLY_AFTER_PUBLICALO.sql`: `pg_cron` y `pg_net` cada 5 minutos, Vault y comprobación de identidad del proyecto piloto. Nunca activar en producción.
+- [x] Script de cron **separado y NO instalado** `v2_d016_cron_ACTIVATE_ONLY_AFTER_PUBLICALO.sql`: `pg_cron` SQL-only de cierre y worker GitHub Actions directo (sin `pg_net`), Vault y comprobación de identidad del proyecto piloto. Nunca activar en producción.
 - [x] Casos de prueba sintéticos PG17: vencimiento de lease, costo duplicado, revocación, feriados, inicio viernes, cierre interanual, calendario no aprobado, política OFF, cierre exacto una vez y ACL; Deno typecheck y Node unitarios. Verificar GitHub Actions del SHA más reciente antes de declarar aprobado.
 - [ ] **NO INSTALADO en Supabase real**: faltan aprobación de calendarios/feriados por zona, consentimiento de originales, credenciales y `Publicalo` solo PILOTO, prueba cron real y ronda completa WhatsApp/arquitecto/proveedores. Mantener flags OFF y huellas históricas.
 - [ ] Confirmar gasto y disponibilidad de OpenAI API / Whapi con tráfico real controlado, y monitoreo/reintento ante fallas de cron. No publicar el worker automáticamente al hacer merge.
