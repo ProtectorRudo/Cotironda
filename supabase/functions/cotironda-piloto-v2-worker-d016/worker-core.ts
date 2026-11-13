@@ -119,9 +119,12 @@ export async function procesarTrabajoOfflineD016(
   if(due.length===0)return output(200,'idle',{checked:0,ready:0,review:0});
   job=jobOk(due[0]);
   if(!job)return output(503,'unavailable');
-  let src=sourceOk(await ports.source(job),job);
+  // El puerto recibe exclusivamente IDs, nunca el SHA ni el MIME como
+  // selector de autorización (la base los calcula de nuevo).
+  const scope={requestId:job.requestId,documentId:job.documentId};
+  let src=sourceOk(await ports.source(scope),job);
   if(!src)return output(200,'skipped',{checked:1,ready:0,review:0});
-  const claim=await ports.claim(job);
+  const claim=await ports.claim(scope);
   if(!obj(claim)||claim.state!=='analysis_claimed_v2'||
    claim.sourceSha256!==src.sha256||
    typeof claim.jobToken!=='string'||!UUID.test(claim.jobToken))
@@ -141,7 +144,7 @@ export async function procesarTrabajoOfflineD016(
     });
     if(verified){
      // No IA with stale source/consent, even if original bytes are valid.
-     const before=sourceOk(await ports.source(job),job);
+     const before=sourceOk(await ports.source(scope),job);
      if(!before||JSON.stringify(before)!==JSON.stringify(src))
       return output(200,'revoked',{checked:1,ready:0,review:0});
      textSha=verified.shaTexto;
@@ -159,7 +162,7 @@ export async function procesarTrabajoOfflineD016(
   const state: 'ready'|'review'=
    result?.estado==='analisis_disponible'?'ready':'review';
   const previous=src;
-  src=sourceOk(await ports.source(job),job);
+  src=sourceOk(await ports.source(scope),job);
   if(!src||JSON.stringify(src)!==JSON.stringify(previous))
    return output(200,'revoked',{checked:1,ready:0,review:0});
   const saved=await ports.finish({
