@@ -12,6 +12,9 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
  const [cerrada,setCerrada]=useState(false);
  const version=useRef(0);
  const running=useRef<number|null>(null);
+ const startedAnalyses=useRef(new Set<string>());
+ const analysisRunning=useRef(false);
+ const [analizando,setAnalizando]=useState(false);
  const url='/api/piloto/v2/rondas/'+encodeURIComponent(rondaId);
  const refresh=useCallback(async(silent=false)=>{
   if(cerrada)return;
@@ -49,6 +52,47 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
   },60_000);
   return ()=>{version.current++;window.clearInterval(timer)};
  },[refresh]);
+
+ // La guía se genera sin intervención: sólo al abrir una ronda válida.
+ // SQL impide cobros por reintentos: un job/SHA, lease 90 s, máximo tres
+ // intentos de modelo. Este portal limita a seis candidatos por visita.
+ useEffect(()=>{
+  if(cerrada||!catalog||analysisRunning.current)return;
+  const pending=catalog.respuestas.filter(q=>q.puntos.length===0&&
+   !startedAnalyses.current.has(q.documentoId)).slice(0,6);
+  if(pending.length===0)return;
+  let active=true;
+  analysisRunning.current=true;
+  const current=version.current;
+  setAnalizando(true);
+  void (async()=>{
+   let changed=false;
+   try{
+    for(const item of pending){
+     if(!active||current!==version.current)break;
+     startedAnalyses.current.add(item.documentoId);
+     try{
+      const answer=await fetch(url+'/analisis-whatsapp/'+
+       encodeURIComponent(item.documentoId),{
+       method:'POST',credentials:'same-origin',cache:'no-store',
+       headers:{'accept':'application/json'},
+       signal:AbortSignal.timeout(25_000)
+      });
+      if(answer.ok)changed=true;
+      if(answer.status===401||answer.status===403||answer.status===404)
+       break;
+     }catch{/* El original permanece accesible. */}
+    }
+   }finally{
+    analysisRunning.current=false;
+    if(active&&current===version.current){
+     setAnalizando(false);
+     if(changed)void refresh(true);
+    }
+   }
+  })();
+  return ()=>{active=false};
+ },[catalog,cerrada,url,refresh]);
 
  async function download(doc:string){
   if(busy||!catalog)return;
@@ -102,6 +146,7 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
     onClick={()=>void cerrarSesion()}>Cerrar sesión</button>
   </div>
   {busy&&<p role="status">Verificando información…</p>}
+  {analizando&&<p role="status">Preparando los análisis de los presupuestos recibidos…</p>}
   {error&&<p role="alert">{error}</p>}
   {catalog?.respuestas.length===0&&
    <p role="status">Todavía no recibimos cotizaciones</p>}
