@@ -49,3 +49,45 @@ node --experimental-strip-types scripts/v2-buyer-bootstrap.mjs --dry-run
 - [ ] Primer original auténtico descargado con JWT de esa sesión. Exigir consentimiento prospectivo proveedor V2 y vinculación fuerte del presupuesto; los documentos históricos asociados ambiguamente no cuentan.
 
 **Prioridad siguiente:** finalizar CI, preparar instalación apagada de RPC/Auth/portal y verificar un comprador real antes de perseguir más parsers. No considerar `READY_DRY_RUN` un alta efectuada.
+
+## Actualización de bloqueo de SMS antes de crear Auth — 12/11/2026
+
+**Motivo del cambio:** una cuenta creada administrativamente puede no tener acceso al
+portal si Supabase Auth no tiene el inicio telefónico y el proveedor de SMS
+configurados. El comando anterior sólo verificaba la identidad Whapi y el
+SHA, pero no esos ajustes operativos; `auth.users=0` continúa siendo el
+último dato verificado en el proyecto PILOTO.
+
+El script `apps/portal/scripts/v2-buyer-bootstrap.mjs`, tanto para
+`--dry-run` como `--execute`, consulta ahora **sólo**
+`GET https://ilggkalaafhtiysyzlmg.supabase.co/auth/v1/settings`
+con una clave **publicable** `sb_publishable_*`, sin teléfonos ni JWT en
+esa solicitud. El servicio V2-07 bloquea el alta salvo que el resultado
+indique `external.phone=true`, `sms_provider` no vacío ni simulado,
+`phone_autoconfirm=false` y `disable_signup=true`.
+Un estado desconocido, timeout o error HTTP produce `BLOCKED` sin crear
+usuario. La configuración no puede inferirse de la presencia de Whapi.
+
+**Nueva variable necesaria para el operador**, no para el navegador:
+`COTIRONDA_PILOT_SUPABASE_PUBLISHABLE_KEY`. La clave secreta sigue
+aislada sólo en servidor. Este cambio NO configura automáticamente un
+SMS provider ni altera ajustes Auth. Debe habilitarse en
+Supabase Dashboard → Authentication → Providers → Phone; registrar un
+proveedor de SMS real y desactivar el registro público en la configuración
+de Auth antes de una ejecución autorizada. Es un requisito distinto de
+`COTIRONDA_REGISTRATION_ENABLED=false` del portal.
+
+**Advertencia:** leer `/auth/v1/settings` confirma **configuración**, no
+entrega de SMS ni posesión del teléfono. La aceptación final sigue
+exigiendo un OTP REAL solicitado y verificado por el comprador consentido,
+sin registrar ni mostrar el código en GitHub o chat. No se intentó
+enviar ningún SMS ni crear usuarios en este incremento.
+
+Pruebas: nuevo caso de Auth deshabilitado, proveedor ausente, signup
+público abierto, auto-confirmación indebida y falta de settings. El CLI
+permanece limitado a `--dry-run` por defecto y `--execute` solamente
+bajo aprobación de publicación con SHA exacto; la publicación web sigue
+bloqueada por la cuota Vercel 402 del intento anterior.
+
+Fuentes: [Supabase: Phone sign-in](https://supabase.com/docs/guides/auth/phone-login)
+y [Supabase: JavaScript auth.admin.createUser](https://supabase.com/docs/reference/javascript/auth-admin-createuser).
