@@ -47,6 +47,7 @@ function fixture(){
    assert.equal(q.chatHmac,CHAT);
    assert.ok(q.enlace.startsWith(ORIGIN+'/piloto/v2/acceso#d016='));
    assert.ok(!q.enlace.includes('?'));
+   assert.ok(q.enlace.endsWith('&ronda='+ROUND));
    return true;
   },
   consumirTicketAtomico:async q=>{
@@ -60,7 +61,7 @@ function fixture(){
   }
  };
  const issue=()=>emitirEnlaceD016(gate(),buyer(),ports);
- const ticket=()=>state.seen.at(-1)?.enlace?.split('#d016=')[1];
+ const ticket=()=>state.seen.at(-1)?.enlace?.split('#d016=')[1]?.split('&ronda=')[0];
  const claim=(override={},body,method='POST')=>{
   const headers={
    origin:ORIGIN,'sec-fetch-site':'same-origin',
