@@ -4,7 +4,7 @@
 
 **D016 PR #837 continúa DRAFT, sin merge y SIN PUBLICAR.** Código del sender WhatsApp, sesiones, originales PDF/Excel/TXT, guías de IA, worker offline y cierre a dos días hábiles preparado; `cron` solo script `ACTIVATE_ONLY_AFTER_PUBLICALO.sql`. No hay ronda real V2 probada hasta fin. El código había pasado 8/8 antes de última revisión.
 
-**Hallazgo real:** PostgreSQL `requests` exige `closes_at` a **18:00 America/Argentina/Buenos_Aires**. El cálculo D016 conservaba la hora inicial, por lo que no habría cumplido ese CHECK. Corregido a 18:00, reforzadas pruebas PG17 con restricciones reales, feriados y fecha de cierre sin alterar Supabase. Consultar CI del HEAD final, no declarar verde por una corrida vieja.
+**Hallazgo real:** PostgreSQL `requests` exige `closes_at` a **18:00 America/Argentina/Buenos_Aires**. El cálculo D016 conservaba la hora inicial, por lo que no habría cumplido ese CHECK. Corregido a 18:00, reforzadas pruebas PG17 con restricciones reales, feriados y fecha de cierre sin alterar Supabase. **CI verificada 8/8 SUCCESS** en HEAD `d935b82962fccd12dcb3b7cefc82b417a20cc6ed` del PR #837 (Next, Deno, PG17 ROLLBACK, aislamiento y unitarios). **Esto no acredita despliegue ni funcionamiento comercial real.**
 
 **Inspección solo lectura:** Supabase proyecto `ilggkalaafhtiysyzlmg`, `v2_business_policy=false`, `v2_original_share_policy=false`, `v2_auto_release_policy=false`, **0 calendarios aprobados**, ninguna RPC D016 instalada; `pg_cron`, `pg_net` y Vault disponibles. Whapi Edge histórico v76 activo. En Vercel `cotironda-portal-dev`, Preview anterior SHA `06e1700...` READY con SSO para todos; no hay variables D016 Preview ni claves privadas D016 de servidor y **ningún despliegue #837**.
 
