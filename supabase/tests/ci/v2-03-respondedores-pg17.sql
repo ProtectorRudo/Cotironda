@@ -411,6 +411,10 @@ BEGIN
 END $test$;
 \ir ../../piloto/v2_04b_analisis_original_idempotente_privado.sql
 \ir ../fixtures/v2-04b-analysis-checks.sql
+-- El ensayo anterior revoca supplier_a deliberadamente. Restaurar SOLO
+-- dentro del BEGIN/ROLLBACK sintético antes de verificar cotizaciones V2-14.
+UPDATE cotironda_piloto_privado.v2_supplier_original_consents
+ SET revoked_at=NULL WHERE supplier_key='supplier_a';
 \ir ../../piloto/v2_07_buyer_auth_bootstrap_check_private.sql
 -- Pruebas adicionales V2-14: texto WhatsApp, con sobre cifrado SIMULADO.
 -- No se descifra nada en PostgreSQL ni se usa un proveedor real.
