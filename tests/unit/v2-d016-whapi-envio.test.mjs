@@ -156,7 +156,7 @@ test('D016 Whapi: overlay genera webhook aislado y conserva v76 inmutable',()=>{
   import.meta.url),'utf8');
  assert.doesNotMatch(old,/notificarAccesoWhatsappD016|COTIRONDA_PILOT_D016_WHATSAPP_SEND_ENABLED/u);
  const candidate=generarWebhookD016(old);
- assert.match(candidate,/buyer-whatsapp-entry-d016\\.ts/u);
+ assert.ok(candidate.includes("from './buyer-whatsapp-entry-d016.ts'"));
  assert.match(candidate,/COTIRONDA_PILOT_D016_WHATSAPP_SEND_ENABLED/u);
  assert.match(candidate,/notificarAccesoWhatsappD016/u);
  assert.match(candidate,/notificarSeguimientoMvp289/u);
