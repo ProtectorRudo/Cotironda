@@ -105,10 +105,27 @@ BEGIN
   JOIN cotironda_piloto_privado.v2_auto_release_policy a
    ON a.singleton=true AND a.enabled=true AND a.activated_at IS NOT NULL
    AND a.activated_at<=r.created_at
+  JOIN cotironda_piloto_privado.participants buyer
+   ON buyer.key=r.buyer_key AND buyer.participant_role='buyer'
+   AND buyer.consent_at IS NOT NULL AND buyer.consent_at<=r.created_at
+   AND buyer.opted_out_at IS NULL
+  JOIN cotironda_piloto_privado.participant_channels_mvp109 channel
+   ON channel.participant_key=buyer.key AND channel.chat_hmac=buyer.chat_hmac
+  JOIN cotironda_piloto_privado.whapi_inbox proof
+   ON proof.message_hmac=channel.authenticated_message_hmac
+   AND proof.participant_key=buyer.key AND proof.chat_hmac=buyer.chat_hmac
   WHERE r.state='prepared' AND r.timing_mode='business_two_days'
    AND r.round_days=2 AND r.v2_calendar_revision IS NOT NULL
    AND r.closes_at IS NOT NULL AND r.closes_at<=v_now
    AND r.closes_at>r.created_at
+   AND NOT EXISTS(
+    SELECT 1 FROM cotironda_piloto_privado.participant_channels_mvp109 x
+    JOIN cotironda_piloto_privado.participants other
+     ON other.key=x.participant_key
+    WHERE x.contact_sha256=channel.contact_sha256
+     AND x.participant_key<>buyer.key
+     AND other.participant_role='buyer' AND other.opted_out_at IS NULL
+   )
   ORDER BY r.closes_at,r.id
   FOR UPDATE OF r SKIP LOCKED LIMIT p_limit
  LOOP
