@@ -26,15 +26,13 @@ CREATE FUNCTION public.cotironda_piloto_v2_d016_expected_close_private(
 ) RETURNS timestamptz
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO ''
 AS $deadline$
-DECLARE v_day date;v_local_time time without time zone;
- v_start_year integer;v_count integer:=0;v_step integer;
+DECLARE v_day date;v_start_year integer;v_count integer:=0;v_step integer;
 BEGIN
  IF p_created_at IS NULL OR p_locality IS NULL OR
   length(btrim(p_locality)) NOT BETWEEN 3 AND 100 OR
   p_revision IS NULL OR length(btrim(p_revision)) NOT BETWEEN 3 AND 120
  THEN RETURN NULL;END IF;
  v_day=(p_created_at AT TIME ZONE 'America/Argentina/Buenos_Aires')::date;
- v_local_time=(p_created_at AT TIME ZONE 'America/Argentina/Buenos_Aires')::time;
  v_start_year=extract(year from v_day)::integer;
  -- Rechazar si el año de inicio no estaba aprobado ANTES del pedido.
  IF NOT EXISTS(
@@ -60,7 +58,9 @@ BEGIN
   ) THEN CONTINUE;END IF;
   v_count:=v_count+1;
   IF v_count=2 THEN
-   RETURN (v_day+v_local_time) AT TIME ZONE 'America/Argentina/Buenos_Aires';
+   -- El contrato real de requests exige SIEMPRE cierre a las 18:00 AR.
+   -- Jamás conservar la hora de ingreso del pedido.
+   RETURN (v_day+time '18:00:00') AT TIME ZONE 'America/Argentina/Buenos_Aires';
   END IF;
  END LOOP;
  RETURN NULL;
