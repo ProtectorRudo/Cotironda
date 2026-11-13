@@ -15,13 +15,16 @@ export default async function PaginaRespuestasV2(
  const {rondaId}=await params;
  if(!UUID.test(rondaId)||!ingresoCompradorV2Habilitado(process.env))
   notFound();
+ const habilitado=respuestasV2Habilitadas(process.env);
  return <main className="panel">
   <span className="eyebrow">COTIRONDA · SEGUIMIENTO PRIVADO</span>
-  <h1>Presupuestos recibidos</h1>
-  <p>Ingresá con tu teléfono autorizado para consultar el estado del pedido.
-    La identidad se verifica por SMS; no se muestran presupuestos
-    hasta que la función privada esté habilitada.</p>
+  <h1>{habilitado?'Presupuestos recibidos':'Ingreso seguro al piloto'}</h1>
+  {habilitado?
+   <p>Acá aparecen los negocios que respondieron a tu pedido, con sus
+    documentos originales y análisis de referencia.</p>:
+   <p>Verificá tu teléfono mediante SMS. Los presupuestos permanecen
+    privados y todavía no están habilitados en esta prueba.</p>}
   <RespuestasCompradorV2 rondaId={rondaId}
-   puedeConsultarRespuestas={respuestasV2Habilitadas(process.env)}/>
+   puedeConsultarRespuestas={habilitado}/>
  </main>;
 }
