@@ -1,5 +1,14 @@
 # COTIRONDA V2 — ESTADO REAL Y RELEVO ENTRE CONVERSACIONES
 
+## RELEVO VIGENTE — 13/11/2026 · D016 análisis y cierre (SOLO CÓDIGO)
+
+**Lo desarrollado:** PR #837 agrega al login y originales D016 una ruta POST de análisis de cada oferta bajo cookie privada, reutilizando V2-04b y su validación de evidencias, con claim/finish en SQL por documento y SHA (3 intentos, lease de 90 segundos). La pantalla lo solicita **automáticamente al abrir la página**, máximo seis documentos por visita, sin pasos extras al comprador. Se agrega GET de informe final con SQL que exige `requests.state='closed'`, `closed_at>=closes_at`, `timing_mode='business_two_days'`, política activada y calendario/localidad/revisión aprobados. El informe determinista organiza lo que los proveedores respondieron y sus condiciones literalmente citadas, **sin inventar ranking, totales comparables o ganadores**.
+
+**Limitaciones NO ocultar:** todo en PR candidato sin merge, sin migración aplicada ni publicación. No se implementó todavía IA autónoma al llegar cada oferta si el arquitecto nunca abre la página; no se instaló/verificó cron real de cierre de dos días hábiles ni se registraron consentimientos prospectivos V2 reales. Prueba end-to-end WhatsApp → PDF/Excel/TXT → guías → cierre → informe todavía NO hecha. GitHub Actions sintético no reemplaza esa comprobación.
+
+**Siguiente único camino:** terminar worker offline y cierre/cron con presupuesto y calendario, comprobar sin afectar Whapi v76 histórico; después autorizar bajo «Publicalo» solo PILOTO la instalación SQL, Edge y Preview, y ensayar un arquitecto + dos proveedores. **No indicar SMS, SMTP, Twilio ni registrar manualmente al comprador.** Ver [PR #837](https://github.com/ProtectorRudo/Cotironda/pull/837) y [guía D016](https://github.com/ProtectorRudo/Cotironda/blob/feat/d016-whatsapp-link-safe-pilot-20261113/docs/V2-D016-PUENTE-WHATSAPP-CANDIDATO-20261113.md).
+
+
 **Última actualización de documentación: 13/11/2026 (Argentina).**
 **ESTADO VIGENTE:** **D016 APROBADA** — ingreso del comprador por [enlace WhatsApp de un toque sin SMS](V2-D016-ACCESO-WHATSAPP-SIN-SMS-20261113.md), **NO IMPLEMENTADO**. Ya hay Vercel Preview SSO READY (`cotironda-portal-dev`, despliegue `dpl_9d7DghjFZpP9Lo8hW4JtouUPiZnh`, SHA `06e1700`). El código vigente del portal usa SMS OTP anterior; el PR #836 tiene 12/12 CI en `8fdf2d0`, SIN desplegar ese commit. Supabase PILOTO: `auth.users=0`, políticas V2 de originales y auto-release OFF, sin consentimientos V2 ni E2E. Whapi v76 histórico sigue intacto. **No exigir SMS/Twilio para el nuevo flujo.** Los párrafos sobre Vercel 402/Git desconectado que aparecen más abajo corresponden a cortes históricos del 12/11 y **no son bloqueos vigentes**. [Acta inicial](V2-RELEASE-PILOTO-PARCIAL-20261112.md).
 
