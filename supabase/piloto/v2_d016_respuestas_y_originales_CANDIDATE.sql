@@ -446,3 +446,34 @@ REVOKE ALL ON FUNCTION public.cotironda_piloto_v2_d016_record_download_private(
  uuid,text,uuid,text,integer) FROM PUBLIC,anon,authenticated,service_role;
 GRANT EXECUTE ON FUNCTION public.cotironda_piloto_v2_d016_record_download_private(
  uuid,text,uuid,text,integer) TO service_role;
+
+-- D016 texto WhatsApp descifrado SOLO en Edge; auditoría específica.
+-- Esta función nunca almacena texto ni AES: revalida consentimiento y
+-- sesión antes del INSERT; el servidor valida bytes UTF-8, SHA y longitud.
+CREATE FUNCTION public.cotironda_piloto_v2_d016_record_text_download_private(
+ p_request_id uuid,p_sesion_hmac text,p_document_id uuid,
+ p_source_sha256 text,p_byte_count integer
+) RETURNS boolean
+LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path TO ''
+AS $audit_text_d016$
+DECLARE v_source jsonb;
+BEGIN
+ IF p_request_id IS NULL OR p_document_id IS NULL
+ OR p_sesion_hmac IS NULL OR p_sesion_hmac !~ '^[a-f0-9]{64}$'
+ OR p_source_sha256 IS NULL OR p_source_sha256 !~ '^[a-f0-9]{64}$'
+ OR p_byte_count IS NULL OR p_byte_count NOT BETWEEN 5 AND 4000
+ THEN RETURN false;END IF;
+ v_source:=public.cotironda_piloto_v2_d016_original_source_private(
+  p_request_id,p_sesion_hmac,p_document_id);
+ IF v_source IS NULL OR v_source->>'state'<>'authorized_text_v2'
+ OR v_source->>'sha256'<>p_source_sha256
+ THEN RETURN false;END IF;
+ INSERT INTO cotironda_piloto_privado.v2_d016_original_download_audit(
+  request_id,document_id,session_hmac,source_sha256,byte_count
+ ) VALUES(p_request_id,p_document_id,p_sesion_hmac,p_source_sha256,p_byte_count);
+ RETURN true;
+END $audit_text_d016$;
+REVOKE ALL ON FUNCTION public.cotironda_piloto_v2_d016_record_text_download_private(
+ uuid,text,uuid,text,integer) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.cotironda_piloto_v2_d016_record_text_download_private(
+ uuid,text,uuid,text,integer) TO service_role;
