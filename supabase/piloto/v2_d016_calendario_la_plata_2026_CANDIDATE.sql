@@ -23,7 +23,8 @@
 -- approved_at <= requests.created_at si una ronda cruza el 01/01/2027.
 -- Datos históricos de 2026 no se reescriben. Nunca backdate approved_at.
 -- No se envían mensajes, ni se cambian políticas V2 ni crons.
-BEGIN;
+-- Ejecutar envuelto en transacción externamente tras autorización.
+-- CI lo importa dentro de BEGIN/ROLLBACK para que no escriba datos reales.
 DO $d016_lp_preflight$
 BEGIN
  IF NOT EXISTS(
@@ -105,6 +106,5 @@ BEGIN
   WHERE locality='la plata' AND year=2026 AND approved_at IS NOT NULL
  ) THEN RAISE EXCEPTION 'D016_LP_CANDIDATE_PREAPPROVED';END IF;
 END $d016_lp_verify$;
-COMMIT;
 -- Sigue SIN APROBAR. El APPROVED_AT sólo podrá fijarse luego de
 -- una segunda decisión comercial y auditoría bajo «Publicalo» PILOTO.
