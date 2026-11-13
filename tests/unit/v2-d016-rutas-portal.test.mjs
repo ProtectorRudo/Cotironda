@@ -28,6 +28,14 @@ test('D016: las APIs WhatsApp dependen de cookie y RPC exclusivamente privada',(
  assert.match(adapter,/cotironda_piloto_v2_d016_record_download_private/u);
  assert.match(adapter,/cotironda_piloto_v2_d016_record_text_download_private/u);
  assert.match(adapter,/leerTextoOriginalEdgeD016/u);
+ const auto=src('apps/portal/app/api/piloto/v2/rondas/[rondaId]/analisis-whatsapp/[documentoId]/route.ts');
+ const final=src('apps/portal/app/api/piloto/v2/rondas/[rondaId]/informe-final-whatsapp/route.ts');
+ assert.match(auto,/analizarOriginalWhatsAppPortalD016/u);
+ assert.match(final,/responderInformeFinalWhatsappD016/u);
+ assert.match(adapter,/cotironda_piloto_v2_d016_analysis_claim_private/u);
+ assert.match(adapter,/cotironda_piloto_v2_d016_analysis_finish_private/u);
+ assert.match(adapter,/cotironda_piloto_v2_d016_final_status_private/u);
+ assert.match(adapter,/componerInformeFinalD016/u);
  assert.match(adapter,/privateDb/u);
  assert.doesNotMatch(adapter,/createSignedUrl|createUser|signInWithOtp/u);
  assert.match(response,/listarPorWhatsappD016/u);
@@ -55,6 +63,11 @@ test('D016: archivos sólo por sesión privada, nunca por JWT de SMS',()=>{
  assert.match(client,/originales-whatsapp/u);
  assert.match(client,/api\/piloto\/v2\/acceso\/salir/u);
  assert.match(client,/Cerrar sesión/u);
+ assert.match(client,/analisis-whatsapp/u);
+ assert.match(client,/informe-final-whatsapp/u);
+ assert.match(client,/startedAnalyses/u);
+ assert.match(client,/Informe final de la ronda/u);
+ assert.match(client,/sin intervención/u);
  assert.match(client,/WhatsApp \(texto\)/u);
  assert.match(client,/Descargar mensaje original/u);
  assert.doesNotMatch(client,/Bearer |getSession\(|auth\.signOut\(|sms/u);
@@ -70,6 +83,7 @@ test('D016 SQL: la ruta de WhatsApp preserva relaciones V2 originales y prohíbe
   'cotironda_piloto_v2_d016_record_download_private',
   'v2_d016_original_download_audit',
   'cotironda_piloto_v2_d016_record_text_download_private'
+  // El cierre y el análisis son migraciones independientes con gates privados.
  ])assert.ok(sql.includes(part),part);
  assert.match(sql,/REVOKE ALL ON FUNCTION/u);
  assert.match(sql,/GRANT EXECUTE ON FUNCTION/u);
