@@ -56,22 +56,36 @@ BEGIN
  THEN RAISE EXCEPTION 'v2_21_clone_acl_failed';END IF;
  RAISE NOTICE 'V2_21_LEGACY_UNCHANGED_V2_CLONE_PRIVATE_PASS';
 END $isolation$;
--- Preexisting V2-05 fixture also rehearses older in-place D013 variant.
--- It remains CI-only; never run that legacy mutation in Supabase PILOTO.
--- Simulate the production change order; digest mismatch MUST abort early.
-\ir ../../piloto/v2_d013_ruteo_productos_sin_filtro_rubro.sql
+-- V2-22: the calendar MUST patch the isolated V2 RPC ONLY.
+-- The earlier in-place D013 patch is NEVER run even in this CI smoke.
 \ir ../../piloto/v2_05_plazo_dos_dias_habiles_candidate.sql
 \ir ../../piloto/v2_05_shadow_prepare_activar_modo_habil.sql
 DO $combined$
-DECLARE v_fn text;
+DECLARE
+ v_historical regprocedure:='public.cotironda_piloto_ia_shadow_prepare_mvp221(text,text,text,text,jsonb,jsonb)'::regprocedure;
+ v_v2 regprocedure:='public.cotironda_piloto_v2_shadow_prepare_d013(text,text,text,text,jsonb,jsonb)'::regprocedure;
+ v_old text;v_new text;
 BEGIN
- v_fn:=pg_get_functiondef(
-  'public.cotironda_piloto_ia_shadow_prepare_mvp221(text,text,text,text,jsonb,jsonb)'::regprocedure);
- IF position('v2_business_policy policy' IN v_fn)=0
- OR position('v_match->>''rubroCatalogo'' NOT IN' IN v_fn)=0
- OR position('timing_mode)' IN v_fn)=0
- THEN RAISE EXCEPTION 'combined V2 SQL patches did not compose';END IF;
- RAISE NOTICE 'D013_AND_V2_MODE_COMPOSED_PG17_PASS';
+ v_old:=pg_get_functiondef(v_historical);
+ v_new:=pg_get_functiondef(v_v2);
+ IF encode(extensions.digest(convert_to(v_old,'UTF8'),'sha256'),'hex')
+ <>'a2225bc790c82166a352559720673dca2bc17a97508eac0b9054411064c25cf9'
+ OR position('v_match->>''rubroCatalogo'' IS DISTINCT FROM' IN v_old)=0
+ OR position('v2_business_policy policy' IN v_old)>0
+ OR position('timing_mode)' IN v_old)>0
+ THEN RAISE EXCEPTION 'V2_22_LEGACY_MUTATED';END IF;
+ IF position('v2_business_policy policy' IN v_new)=0
+ OR position('v_match->>''rubroCatalogo'' NOT IN' IN v_new)=0
+ OR position('timing_mode)' IN v_new)=0
+ OR position('c.literal_description=v_original_catalogue' IN v_new)=0
+ OR position('c.participant_key=v_supplier' IN v_new)=0
+ OR position('lower(btrim(p.delivery_city))=lower(btrim(p_city))' IN v_new)=0
+ THEN RAISE EXCEPTION 'V2_22_COMBINED_CLOCK_AND_CATALOG_INVALID';END IF;
+ IF has_function_privilege('anon',v_v2,'EXECUTE')
+ OR has_function_privilege('authenticated',v_v2,'EXECUTE')
+ OR NOT has_function_privilege('service_role',v_v2,'EXECUTE')
+ THEN RAISE EXCEPTION 'V2_22_ACL_NOT_PRIVATE';END IF;
+ RAISE NOTICE 'V2_22_CALENDAR_D013_COMPOSED_IN_V2_RPC_ONLY_PASS';
 END $combined$;
 
 DO $check$
