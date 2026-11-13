@@ -412,7 +412,6 @@ END $test$;
 \ir ../../piloto/v2_04b_analisis_original_idempotente_privado.sql
 \ir ../fixtures/v2-04b-analysis-checks.sql
 \ir ../../piloto/v2_07_buyer_auth_bootstrap_check_private.sql
-\ir ../fixtures/v2-07-buyer-auth-checks.sql
 -- Pruebas adicionales V2-14: texto WhatsApp, con sobre cifrado SIMULADO.
 -- No se descifra nada en PostgreSQL ni se usa un proveedor real.
 DO $v214$
@@ -541,4 +540,7 @@ BEGIN
  THEN RAISE EXCEPTION 'v2_14_text_audit_acl_exposed';END IF;
  RAISE NOTICE 'V2_14_TEXT_ORIGINAL_PG17_PASS';
 END $v214$;
+-- El fixture V2-07 agrega un comprador con teléfono duplicado
+-- deliberadamente; ejecutar después para no invalidar la sesión V2-14.
+\ir ../fixtures/v2-07-buyer-auth-checks.sql
 ROLLBACK;
