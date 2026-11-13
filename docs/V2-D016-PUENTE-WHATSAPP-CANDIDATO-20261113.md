@@ -99,3 +99,25 @@ Se conserva `v2-d016-sesion-auth.ts` y `v2-d016-supabase-gotrue.ts` como alterna
 - El portal mantiene además `COTIRONDA_D016_ENABLED=true` y el pin de SHA Preview, con SQL instalado bajo autorización.
 
 **NO significa finalizado:** hasta `Publicalo` no se instalan tablas/RPC, no se despliega la nueva Edge ni se habilitan flags. Falta prueba real de texto de proveedor → apertura en celular de comprador. También quedan automatización del análisis individual y comparación al cierre, con calendario hábil aprobado. Nunca declarar acceso real ni funcionalidad publicada basándose únicamente en pruebas CI.
+
+## D016 — análisis individual y cierre comparativo (13/11/2026)
+
+**Alcance:** desarrollo candidato en PR #837, **sin merge ni publicación**. Reutiliza código V2-04b, no crea otra IA Central ni cambia las reglas de matching D013.
+
+### Análisis individual con sesión WhatsApp
+
+- `supabase/piloto/v2_d016_analisis_automatico_CANDIDATE.sql`: dos nuevas RPC privadas `d016_analysis_claim_private` y `d016_analysis_finish_private` se basan en V2-04b original. Revalidan `d016_original_source_private` y por lo tanto sesión, buyer, ronda, proveedor, consentimiento y SHA. `v2_original_analysis` conserva cuotas: un lease 90 segundos, hasta **3 intentos por documento+SHA**, y estado `review` si no puede confirmar la guía.
+- `src/server/v2-d016-analisis-automatica.ts`: exige POST same-origin y cookie D016; antes de invocar IA comprueba fuente y SHA exactos, extrae texto desde los lectores verificados ya existentes (TXT Edge D016, PDF Edge original, Office verificado) y revalida permisos antes/después de ejecutar el modelo. Reutiliza `analizarOriginalTextoConIAV2` con evidencias literales y advertencia de original prioritario. No inventa IVA/flete/precio ni revela contactos.
+- `apps/portal/app/api/piloto/v2/rondas/[rondaId]/analisis-whatsapp/[documentoId]`: puerto servidor de Supabase `service_role`, no expone claves ni permite llamadas directas del navegador a IA/SQL.
+- `respuestas-whatsapp.tsx`: intenta el análisis **sin botón adicional al abrir el portal**, secuencialmente y con tope de seis documentos por visita. La base previene gasto repetido; un análisis fallido no impide descargar el original. **Importante:** todavía NO es un trabajador autónomo con comprador offline. Para garantizar análisis incluso si el arquitecto no abre su enlace, falta un worker/evento autenticado separado y presupuestado.
+
+### Informe al cierre efectivo de dos días hábiles
+
+- `supabase/piloto/v2_d016_informe_final_CANDIDATE.sql`: `d016_final_status_private` (solo `service_role`) exige `timing_mode='business_two_days'`, `round_days=2`, cierre efectivo con `state='closed'`, `closed_at>=closes_at`, políticas `v2_business_policy` y `v2_original_share_policy` activas para la ronda, y calendarios localizados **aprobados** de inicio y cierre, de revisión coincidente. Sin calendario o cierre, **NUNCA** revela un informe final.
+- `src/server/v2-d016-informe-final.ts`: agregador determinista de las **guías verificadas y los originales autorizados**. Resume documentos, comercios que respondieron y citas verificadas por IVA, flete, pago, plazo y disponibilidad. Los ítems sin guía se informan como pendientes. **No suma presupuestos de distinta cobertura, no compara precios heterogéneos, no fuerza ganadores ni infiere que una condición falta por no aparecer en la guía.**
+- `/api/piloto/v2/rondas/[rondaId]/informe-final-whatsapp`: GET privado sin caché, confirma sesión, estado de cierre, fuente de catálogo y cierre nuevamente antes de construir informe. UI lo muestra solo tras cierre.
+- Pruebas sintéticas `tests/unit/v2-d016-informe-final.test.mjs` y fixtures PostgreSQL17 `v2-d016-response-checks.sql`: no informe temprano, calendario sin aprobación, fecha falsa, RLS/ACL, sesión ajena, revocación, conteo de ofertas y comparación sin ranking engañoso.
+
+### Precisión del estado
+
+Este incremento **NO ejecuta el cron**, no aprueba calendarios, no cambia `requests` reales, no genera análisis mientras el comprador no visita la pantalla, no instala RPC/Edge ni habilita flags. Aún faltan integración offline por evento/cola y cierre automático efectivo con calendario autorizado, además del E2E con un arquitecto + proveedores consentidos. Todas las pruebas CI se deben verificar sobre el SHA final, no inferirlas de versiones anteriores. «Avanza» no autoriza despliegue.
