@@ -39,6 +39,11 @@ const REQUIRED_PREVIEW_ENV=[
  'COTIRONDA_PILOT_V2_PDF_SHARED_SECRET',
  'COTIRONDA_REGISTRATION_ENABLED'
 ];
+const REQUIRED_TEXT_PREVIEW_ENV=[
+ 'COTIRONDA_PILOT_V2_TEXT_ENABLED',
+ 'COTIRONDA_PILOT_V2_TEXT_SHARED_SECRET'
+];
+const REQUIRED_TEXT_RPC='cotironda_piloto_v2_record_text_download';
 const REQUIRED_FULL_TABLES=['v2_business_policy',
  'v2_business_calendar','v2_business_holidays'];
 const FULL_RPCS=['cotironda_piloto_ia_shadow_prepare_mvp221'];
@@ -60,7 +65,7 @@ export function auditarPublicacionV2(input,phase='primer_original'){
  const proof=instance(data.proof);
  const stages=[];
  const add=(code,label,yes)=>stages.push(check(code,label,yes));
- if(!['primer_original','piloto_completo'].includes(phase))
+ if(!['primer_original','primer_texto','piloto_completo'].includes(phase))
   throw Error('fase_desconocida');
  add('observacion_con_fecha','Snapshot no anónimo fechado',
   date(data.observed_at));
@@ -113,6 +118,29 @@ export function auditarPublicacionV2(input,phase='primer_original'){
   ver.target==='preview');
  add('smoke_privacidad','Prueba real navegador de acceso/aislamiento autorizada',
   proof.buyer_browser_verified===true);
+ // Una primera oferta PDF no depende del lector textual. Para el primer
+ // TEXTO y el piloto completo sí: caso real y secreto exclusivamente Edge.
+ if(phase==='primer_texto'||phase==='piloto_completo'){
+  const text=instance(edge.private_text_reader);
+  add('rpc_texto_auditado','Auditoría del original textual instalada en SQL',
+   has(sup.rpcs,REQUIRED_TEXT_RPC));
+  add('lector_texto_privado','Edge texto JWT comprador, doble permiso y secreto',
+   text.status==='ACTIVE'&&text.verify_jwt===true&&
+   text.secret_configured_in_both_services===true);
+  add('clave_whapi_solo_supabase','AES Whapi permanece fuera de Vercel',
+   text.aes_only_in_supabase===true&&
+   !has(ver.preview_env_names,'COTIRONDA_PILOT_AES_HEX')&&
+   !has(ver.preview_env_names,'NEXT_PUBLIC_COTIRONDA_PILOT_AES_HEX'));
+  add('variables_texto_preview','Variables segregadas y no públicas para texto',
+   keys(ver.preview_env_names,REQUIRED_TEXT_PREVIEW_ENV)&&
+   !has(ver.preview_env_names,'NEXT_PUBLIC_COTIRONDA_PILOT_V2_TEXT_SHARED_SECRET'));
+  add('edge_jwt_comprador','Gateway JWT + llamada sin secreto rechazados EN VIVO',
+   proof.text_edge_gateway_jwt_verified===true&&
+   proof.text_edge_unauthorized_denied===true);
+  add('texto_whatsapp_fiel','Original textual real byte/SHA y permiso comprobados',
+   proof.text_whatsapp_original_verified===true&&
+   proof.text_whatsapp_byte_sha_verified===true);
+ }
  if(phase==='piloto_completo'){
   for(const name of REQUIRED_FULL_TABLES){
    add('full_table_'+name,'Tabla del reloj: '+name,has(sup.tables,name));
@@ -150,7 +178,7 @@ export function auditarPublicacionV2(input,phase='primer_original'){
 function cli(){
  const argv=process.argv.slice(2);
  if(argv.length<1||argv.length>2||argv.some(x=>x.startsWith('--')))
-  throw Error('uso: node scripts/piloto/v2-release-readiness.mjs <snapshot.json> [primer_original|piloto_completo]');
+  throw Error('uso: node scripts/piloto/v2-release-readiness.mjs <snapshot.json> [primer_original|primer_texto|piloto_completo]');
  const snapshot=JSON.parse(readFileSync(resolve(argv[0]),'utf8'));
  const report=auditarPublicacionV2(snapshot,argv[1]??'primer_original');
  const print={
