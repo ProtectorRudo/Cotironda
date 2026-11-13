@@ -152,7 +152,34 @@ BEGIN
    AND consent_msg.received_at=c.accepted_at
   WHERE link.request_id=p_request_id
    AND link.kind IN ('document','image')
-   AND link.association IN ('quoted_whapi_id','single_active_round')
+   -- Archivo admitido tras aviso ORIGINAL comprobado por MVP238.
+   -- No inferir rondas por nombre de archivo ni semejanza de productos.
+   AND (
+    link.association IN ('quoted_whapi_id','single_active_round')
+    OR (
+     link.association='prior_supplier_preamble'
+     AND EXISTS (
+      SELECT 1 FROM cotironda_piloto_privado.ai_supplier_preambles_mvp238 preamble
+      JOIN cotironda_piloto_privado.whapi_inbox notice
+       ON notice.message_hmac=preamble.preamble_hmac
+       AND notice.chat_hmac=preamble.chat_hmac
+       AND notice.participant_key=preamble.supplier_key
+       AND notice.kind='text'
+       AND notice.request_id=preamble.request_id
+       AND notice.received_at=preamble.received_at
+       AND notice.plaintext_sha256=preamble.source_sha256
+      WHERE preamble.attachment_hmac=link.message_hmac
+       AND preamble.request_id=link.request_id
+       AND preamble.supplier_key=link.supplier_key
+       AND preamble.chat_hmac=source.chat_hmac
+       AND preamble.attached_at IS NOT NULL
+       AND preamble.attached_at>=source.received_at
+       AND preamble.received_at<source.received_at
+       AND preamble.received_at>=source.received_at-interval '24 hours'
+       AND preamble.source_sha256 ~ '^[a-f0-9]{64}$'
+     )
+    )
+   )
    AND link.status='awaiting_semantic_review'
    AND link.source_sha256 ~ '^[a-f0-9]{64}$'
    AND a.content_sha256 ~ '^[a-f0-9]{64}$'
