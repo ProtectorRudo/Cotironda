@@ -52,6 +52,9 @@ on:
       - 'apps/portal/app/piloto/v2/acceso/**'
       - 'apps/portal/app/piloto/v2/rondas/**'
       - 'supabase/piloto/v2_d016_whatsapp_link_tickets_CANDIDATE.sql'
+      - 'supabase/piloto/v2_d016_portal_original_evidence_gate_CANDIDATE.sql'
+      - 'supabase/tests/ci/v2-d016-original-evidence-download-pg17.sql'
+      - 'supabase/tests/fixtures/v2-d016-original-evidence-download-checks.sql'
       - 'supabase/piloto/v2_d016_portal_prospective_session_guard_CANDIDATE.sql'
       - 'supabase/tests/ci/v2-d016-portal-prospective-session-pg17.sql'
       - 'supabase/tests/ci/v2-d016-whatsapp-access-pg17.sql'
@@ -146,5 +149,6 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/v2-d016-whatsapp-access-pg17.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/v2-d016-portal-prospective-session-pg17.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/v2-03-respondedores-pg17.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/v2-d016-original-evidence-download-pg17.sql
           psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regnamespace('cotironda_piloto_privado') IS NULL" | grep -Fx 't'
           psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regprocedure('public.cotironda_piloto_v2_d016_claim_ticket_private(text)') IS NULL" | grep -Fx 't'
