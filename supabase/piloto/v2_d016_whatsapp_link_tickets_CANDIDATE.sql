@@ -1,7 +1,6 @@
 -- D016 CANDIDATE SOLO DESARROLLO. NO ejecutar en PILOTO sin Publicalo.
 -- Canje de enlace WhatsApp en PostgreSQL 17: transacción única y ACL privadas.
 -- No crea Auth, no confirma teléfonos, no emite JWT ni da acceso a originales.
-BEGIN;
 CREATE TABLE cotironda_piloto_privado.v2_d016_access_tickets (
  ticket_hmac text PRIMARY KEY CHECK (ticket_hmac ~ '^[a-f0-9]{64}$'),
  buyer_key text NOT NULL,
@@ -148,4 +147,3 @@ GRANT EXECUTE ON FUNCTION public.cotironda_piloto_v2_d016_issue_ticket_private(
  text,text,uuid,text) TO service_role;
 GRANT EXECUTE ON FUNCTION public.cotironda_piloto_v2_d016_claim_ticket_private(
  text) TO service_role;
-COMMIT;
