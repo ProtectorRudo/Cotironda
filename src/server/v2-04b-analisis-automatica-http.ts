@@ -22,6 +22,7 @@ export type AnalysisPorts=Readonly<{
  claim:(q:Readonly<{rondaId:string;documentoId:string;usuarioId:string;
   sessionId:string}>)=>Promise<unknown>;
  read:(bucket:string,path:string)=>Promise<Uint8Array|null>;
+ readText?:(source:unknown)=>Promise<Uint8Array|null>;
  readPdf?:PdfSourceReaderV2;
  finish:(q:Readonly<{rondaId:string;documentoId:string;usuarioId:string;
   sessionId:string;jobToken:string;sourceSha256:string;
@@ -67,19 +68,27 @@ export async function analizarOriginalPorPedidoV2(
   const q={rondaId,documentoId,usuarioId:verified.userId,
    sessionId:verified.sessionId};
   const raw=await ports.source(q);
-  if(!obj(raw)||raw.state!=='authorized_original_v2'||
+  const esTexto=obj(raw)&&raw.state==='authorized_text_v2';
+  const esArchivo=obj(raw)&&raw.state==='authorized_original_v2';
+  if(!obj(raw)||(!esTexto&&!esArchivo)||
    raw.requestId!==rondaId||raw.documentId!==documentoId||
    typeof raw.messageHmac!=='string'||!SHA.test(raw.messageHmac)||
-   raw.path!=='media/'+raw.messageHmac||
-   raw.bucket!=='cotironda-piloto-originals'||
    typeof raw.sha256!=='string'||!SHA.test(raw.sha256)||
-   typeof raw.mime!=='string'||
-   !['text/plain','text/csv','application/pdf',
+   typeof raw.mime!=='string'||![
+    'text/plain','text/csv','application/pdf',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
    ].includes(raw.mime)||
-   typeof raw.byteCount!=='number'||raw.byteCount<40||
-   raw.byteCount>8388608)return json(202,'analisis_pendiente');
+   (esTexto&&(
+    raw.mime!=='text/plain'||!ports.readText||
+    typeof raw.chatHmac!=='string'||!SHA.test(raw.chatHmac)
+   ))||
+   (esArchivo&&(
+    raw.path!=='media/'+raw.messageHmac||
+    raw.bucket!=='cotironda-piloto-originals'||
+    typeof raw.byteCount!=='number'||raw.byteCount<40||
+    raw.byteCount>8388608
+   )))return json(202,'analisis_pendiente');
   // Do not waste claim attempts if the private PDF reader isn't ready.
   if(raw.mime==='application/pdf'&&
    (env.COTIRONDA_PILOT_V2_PDF_ENABLED!=='true'||!ports.readPdf||
@@ -96,8 +105,11 @@ export async function analizarOriginalPorPedidoV2(
   let sourceSha256=raw.sha256;
   let textSha256:string|null=null;
   try{
-   const rawBytes=await ports.read(raw.bucket,raw.path);
-   if(rawBytes&&rawBytes.byteLength===raw.byteCount){
+   const rawBytes=esTexto?await ports.readText!(raw):
+    await ports.read(raw.bucket,raw.path);
+   if(rawBytes&&(esTexto?
+      rawBytes.byteLength>=40&&rawBytes.byteLength<=4000:
+      rawBytes.byteLength===raw.byteCount)){
     const source=await obtenerTextoVerificadoV2({
      bytes:rawBytes,mime:raw.mime,shaBinario:raw.sha256,
      pdfReader:ports.readPdf
