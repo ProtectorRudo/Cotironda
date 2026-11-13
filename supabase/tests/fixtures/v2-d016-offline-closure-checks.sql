@@ -93,6 +93,12 @@ BEGIN
  UPDATE cotironda_piloto_privado.participants
  SET opted_out_at=NULL WHERE key='buyer_a';
 
+ -- La ronda del fixture de recepción ya se usó para probar el worker:
+ -- no debe contaminar el conteo del cierre. Queda CANCELADA únicamente
+ -- dentro del BEGIN/ROLLBACK sintético, no en Supabase PILOTO.
+ UPDATE cotironda_piloto_privado.requests SET state='cancelled'
+ WHERE id='aaaaaaaa-1111-4111-8111-111111111111';
+
  -- Para cierre se usa UNA ronda sintética distinta, sin tocar los
  -- documentos del comprador ni falsificar una respuesta de proveedor.
  -- Prueba extrema: viernes -> martes (dos hábiles), preserva hora.
