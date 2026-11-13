@@ -99,7 +99,8 @@ export async function procesarTrabajoOfflineD016(
  if(req.method!=='POST')return output(405,'unavailable');
  if(!gateValid(config))return output(503,'disabled');
  const url=new URL(req.url);
- if(url.pathname!=='/functions/v1/cotironda-piloto-v2-worker-d016'||
+ if(!['/functions/v1/cotironda-piloto-v2-worker-d016',
+       '/cotironda-piloto-v2-worker-d016'].includes(url.pathname)||
   url.search!==''||url.hash!==''||
   req.headers.has('cookie')||
   !await eqSecure(req.headers.get('apikey')??'',config.serviceKey)||
@@ -157,8 +158,10 @@ export async function procesarTrabajoOfflineD016(
   }catch{/* Error no bloquea original: reintentar sólo según cuota SQL. */}
   const state: 'ready'|'review'=
    result?.estado==='analisis_disponible'?'ready':'review';
+  const previous=src;
   src=sourceOk(await ports.source(job),job);
-  if(!src)return output(200,'revoked',{checked:1,ready:0,review:0});
+  if(!src||JSON.stringify(src)!==JSON.stringify(previous))
+   return output(200,'revoked',{checked:1,ready:0,review:0});
   const saved=await ports.finish({
    requestId:job.requestId,documentId:job.documentId,jobToken:token,
    sourceSha256:job.sourceSha256,
