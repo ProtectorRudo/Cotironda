@@ -10,7 +10,8 @@
 
 - [x] Dirección funcional aprobada: enlace por el chat autenticado Whapi; sin formulario ni SMS.
 - [x] Auditoría inicial de dependencia técnica: HTTP V2 y RPC `responders_private` exigen `phone_confirmed_at`; un enlace no funciona por sí solo. Supabase Auth tiene `auth.users=0`.
-- [ ] Prueba de integración sin envío real: generación privada de link, canje único 10 min, anti-preview, concurrencia, token protegido y sesión Auth real emitida por GoTrue; sin suplantar verificación SMS. Evaluar `auth.admin.generateLink` y `verifyOtp`.
+- [x] **Núcleo D016 en [PR #837](https://github.com/ProtectorRudo/Cotironda/pull/837):** token privado 256 bits y HMAC, enlace fragmento, 10 minutos, POST de canje único, rechazo de duplicados, rotación y tabla privada PostgreSQL 17. Tests específicos Node/PG17 ROLLBACK **SUCCESS**; no se envió Whapi ni instaló SQL.
+- [ ] **Sesión real todavía pendiente:** conectar el token reclamado a Auth auténtica sin SMS ni SMTP (evaluar `auth.admin.generateLink` / `verifyOtp` o sesión privada legítima), sin inventar `phone_confirmed_at`, sin crear usuarios anónimos públicos y sin entregar archivos con solo URL.
 - [ ] Adaptar en rama de desarrollo el vínculo WhatsApp verificado → sesión Auth → RPC privada conservando todas las autorizaciones por empresa/ronda/original, con PG17/Node/Next/Deno y regresiones.
 - [ ] Tras `Publicalo` explícito, despliegue solo PILOTO Preview, switches comerciales inicialmente OFF y prueba real completa: 1 arquitecto + 2 proveedores, originales, análisis y cierre 2 días hábiles.
 
