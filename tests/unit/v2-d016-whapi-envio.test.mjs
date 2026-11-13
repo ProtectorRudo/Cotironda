@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHmac} from 'node:crypto';
 import {readFileSync} from 'node:fs';
+import {generarWebhookD016} from '../../scripts/piloto/v2-d016-whapi-overlay.mjs';
 import {notificarAccesoWhatsappD016}
  from '../../supabase/functions/cotironda-piloto-whapi/buyer-whatsapp-entry-d016.ts';
 
@@ -150,13 +151,18 @@ test('D016 Whapi: DB error before reservar no dispara envío; tras reservar conc
  assert.equal((await b.run()).estado,'no_elegible');
  assert.equal(b.state.sent.length,1);
 });
-test('D016 Whapi: integración webhook exclusiva, flag apagado conserva MVP289',()=>{
- const s=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/index.ts',
+test('D016 Whapi: overlay genera webhook aislado y conserva v76 inmutable',()=>{
+ const old=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/index.ts',
   import.meta.url),'utf8');
- assert.match(s,/buyer-whatsapp-entry-d016\.ts/u);
- assert.match(s,/COTIRONDA_PILOT_D016_WHATSAPP_SEND_ENABLED/u);
- assert.match(s,/notificarAccesoWhatsappD016/u);
- assert.match(s,/notificarSeguimientoMvp289/u);
- assert.match(s,/buyerLinkRequests/u);
- assert.match(s,/buyer_d016_link_reconciliation_required/u);
+ assert.doesNotMatch(old,/notificarAccesoWhatsappD016|COTIRONDA_PILOT_D016_WHATSAPP_SEND_ENABLED/u);
+ const candidate=generarWebhookD016(old);
+ assert.match(candidate,/buyer-whatsapp-entry-d016\\.ts/u);
+ assert.match(candidate,/COTIRONDA_PILOT_D016_WHATSAPP_SEND_ENABLED/u);
+ assert.match(candidate,/notificarAccesoWhatsappD016/u);
+ assert.match(candidate,/notificarSeguimientoMvp289/u);
+ assert.match(candidate,/buyerLinkRequests/u);
+ assert.match(candidate,/buyer_d016_link_reconciliation_required/u);
+ assert.match(candidate,/COTIRONDA_PILOT_V2_REFERENCE_LINK_ENABLED/u);
+ assert.notEqual(candidate,old);
+ assert.throws(()=>generarWebhookD016(candidate),/d016_overlay_base_invalid/u);
 });
