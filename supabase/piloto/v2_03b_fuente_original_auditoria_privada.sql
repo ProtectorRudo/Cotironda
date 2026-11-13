@@ -128,6 +128,66 @@ BEGIN
    );
   END IF;
  END LOOP;
+ -- Los mensajes de texto NO están en Storage: su original fiel permanece
+ -- cifrado AES-GCM en whapi_inbox. Sólo devolver el sobre al servidor
+ -- que comprobó el catálogo, la sesión Auth y el consentimiento vigente.
+ IF v_found=0 AND v_entry->>'kind'='text' AND v_entry->>'mime'='text/plain' THEN
+  FOR v_source IN
+   SELECT m.message_hmac,m.chat_hmac,m.nonce_b64,m.ciphertext_b64,
+    m.plaintext_sha256,m.received_at,
+    link.supplier_key,c.accepted_at,inv.created_at invited_at
+   FROM cotironda_piloto_privado.ai_supplier_links_mvp225 link
+   JOIN cotironda_piloto_privado.whapi_inbox m
+    ON m.message_hmac=link.message_hmac
+    AND m.request_id=link.request_id
+    AND m.participant_key=link.supplier_key
+    AND m.kind='text'
+    AND m.plaintext_sha256=link.source_sha256
+    AND m.processing_state='needs_review'
+   JOIN cotironda_piloto_privado.v2_supplier_original_consents c
+    ON c.supplier_key=link.supplier_key
+    AND c.version='cotironda-originales-v2'
+    AND c.revoked_at IS NULL
+   JOIN cotironda_piloto_privado.invitations inv
+    ON inv.request_id=link.request_id AND inv.supplier_key=link.supplier_key
+    AND inv.state='prepared' AND c.accepted_at<=inv.created_at
+   WHERE link.request_id=p_request_id
+    AND link.kind='text'
+    AND link.status='awaiting_semantic_review'
+    AND m.nonce_b64 ~ '^[A-Za-z0-9+/]{16}$'
+    AND length(m.ciphertext_b64) BETWEEN 24 AND 20000
+    AND m.plaintext_sha256 ~ '^[a-f0-9]{64}$'
+  LOOP
+   v_hex:=encode(extensions.digest(convert_to(
+    'cotironda-v2-original|'||p_request_id::text||'|'||v_source.message_hmac,
+    'UTF8'),'sha256'),'hex');
+   v_doc:=(substr(v_hex,1,8)||'-'||substr(v_hex,9,4)||'-4'||
+    substr(v_hex,14,3)||'-a'||substr(v_hex,18,3)||'-'||
+    substr(v_hex,21,12))::uuid;
+   IF v_doc=p_document_id
+    AND (v_entry->>'receivedAt')::bigint=
+      (extract(epoch FROM v_source.received_at)*1000)::bigint
+   THEN
+    v_found:=v_found+1;
+    IF v_found>1 THEN RETURN NULL;END IF;
+    v_catalog:=jsonb_build_object(
+     'state','authorized_text_v2',
+     'requestId',p_request_id::text,
+     'documentId',p_document_id::text,
+     'buyerKey',v_catalog->>'buyerKey',
+     'supplierKey',v_source.supplier_key,
+     'messageHmac',v_source.message_hmac,
+     'chatHmac',v_source.chat_hmac,
+     'nonceB64',v_source.nonce_b64,
+     'ciphertextB64',v_source.ciphertext_b64,
+     'mime','text/plain',
+     'sha256',v_source.plaintext_sha256,
+     'consentAt',(extract(epoch FROM v_source.accepted_at)*1000)::bigint,
+     'invitedAt',(extract(epoch FROM v_source.invited_at)*1000)::bigint
+    );
+   END IF;
+  END LOOP;
+ END IF;
  IF v_found<>1 THEN RETURN NULL;END IF;
  RETURN v_catalog;
 END;
@@ -175,4 +235,39 @@ REVOKE ALL ON FUNCTION
  FROM PUBLIC,anon,authenticated,service_role;
 GRANT EXECUTE ON FUNCTION
  public.cotironda_piloto_v2_record_download(uuid,uuid,uuid,uuid,text,integer)
+ TO service_role;
+
+-- Sólo el servidor que descifró, validó SHA y comprobó permisos puede
+-- auditar el texto. No se expone el texto en PostgreSQL ni en URLs.
+CREATE OR REPLACE FUNCTION public.cotironda_piloto_v2_record_text_download(
+ p_request_id uuid,p_auth_user_id uuid,p_auth_session_id uuid,
+ p_document_id uuid,p_source_sha256 text,p_byte_count integer
+) RETURNS boolean
+LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path TO ''
+AS $audit_text$
+DECLARE v_source jsonb;
+BEGIN
+ IF p_request_id IS NULL OR p_auth_user_id IS NULL
+ OR p_auth_session_id IS NULL OR p_document_id IS NULL
+ OR p_source_sha256 IS NULL OR p_source_sha256 !~ '^[a-f0-9]{64}$'
+ OR p_byte_count IS NULL OR p_byte_count NOT BETWEEN 5 AND 4000
+ THEN RETURN false;END IF;
+ v_source:=public.cotironda_piloto_v2_original_source_private(
+  p_request_id,p_auth_user_id,p_auth_session_id,p_document_id);
+ IF v_source IS NULL OR v_source->>'state'<>'authorized_text_v2'
+ OR v_source->>'sha256'<>p_source_sha256
+ THEN RETURN false;END IF;
+ INSERT INTO cotironda_piloto_privado.v2_original_download_audit(
+  request_id,document_id,auth_user_id,auth_session_id,
+  source_sha256,byte_count)
+ VALUES(p_request_id,p_document_id,p_auth_user_id,p_auth_session_id,
+  p_source_sha256,p_byte_count);
+ RETURN true;
+END;
+$audit_text$;
+REVOKE ALL ON FUNCTION
+ public.cotironda_piloto_v2_record_text_download(uuid,uuid,uuid,uuid,text,integer)
+ FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION
+ public.cotironda_piloto_v2_record_text_download(uuid,uuid,uuid,uuid,text,integer)
  TO service_role;

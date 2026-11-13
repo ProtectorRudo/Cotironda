@@ -38,7 +38,7 @@ DECLARE v_source jsonb; v_token uuid; v_sha text;
 BEGIN
  v_source:=public.cotironda_piloto_v2_original_source_private(
   p_request_id,p_auth_user_id,p_auth_session_id,p_document_id);
- IF v_source IS NULL OR v_source->>'state'<>'authorized_original_v2'
+ IF v_source IS NULL OR v_source->>'state' NOT IN('authorized_original_v2','authorized_text_v2')
  THEN RETURN NULL;END IF;
  v_sha:=v_source->>'sha256';
  INSERT INTO cotironda_piloto_privado.v2_original_analysis(
@@ -91,7 +91,7 @@ BEGIN
  THEN RETURN false;END IF;
  v_src:=public.cotironda_piloto_v2_original_source_private(
   p_request_id,p_auth_user_id,p_auth_session_id,p_document_id);
- IF v_src IS NULL OR v_src->>'state'<>'authorized_original_v2'
+ IF v_src IS NULL OR v_src->>'state' NOT IN('authorized_original_v2','authorized_text_v2')
  OR v_src->>'sha256'<>p_source_sha256 THEN RETURN false;END IF;
  IF p_status='ready' THEN
   IF p_text_sha256 IS NULL OR p_text_sha256 !~ '^[a-f0-9]{64}$'
@@ -148,7 +148,7 @@ BEGIN
   v_source:=public.cotironda_piloto_v2_original_source_private(
    p_request_id,p_auth_user_id,p_auth_session_id,
    (v_entry->>'documentId')::uuid);
-  IF v_source IS NULL OR v_source->>'state'<>'authorized_original_v2'
+  IF v_source IS NULL OR v_source->>'state' NOT IN('authorized_original_v2','authorized_text_v2')
   THEN RETURN NULL;END IF;
   SELECT status,original_sha256,points,text_sha256
    INTO v_summary

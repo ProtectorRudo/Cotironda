@@ -34,7 +34,9 @@ CREATE TABLE cotironda_piloto_privado.participant_channels_mvp109 (
 );
 CREATE TABLE cotironda_piloto_privado.whapi_inbox (
  message_hmac text PRIMARY KEY,chat_hmac text,participant_key text,
- request_id uuid,kind text,received_at timestamptz
+ request_id uuid,kind text,received_at timestamptz,
+ nonce_b64 text,ciphertext_b64 text,plaintext_sha256 text,
+ processing_state text
 );
 CREATE TABLE cotironda_piloto_privado.ai_supplier_links_mvp225 (
  message_hmac text,request_id uuid,supplier_key text,
@@ -42,6 +44,12 @@ CREATE TABLE cotironda_piloto_privado.ai_supplier_links_mvp225 (
 );
 CREATE TABLE cotironda_piloto_privado.ai_supplier_unresolved_mvp237 (
  message_hmac text,state text
+);
+-- MVP291 ya existe en PILOTO. Tabla mínima para validar la procedencia
+-- de una correlación semántica, sin crear las estructuras de producción.
+CREATE TABLE cotironda_piloto_privado.ai_supplier_auto_correlation_mvp291(
+ source_hmac text,supplier_key text,source_sha256 text,state text,
+ selected_request_id uuid,finished_at timestamptz
 );
 CREATE TABLE cotironda_piloto_privado.media_archive_mvp095 (
  message_hmac text,request_id uuid,participant_key text,
@@ -122,8 +130,6 @@ INSERT INTO cotironda_piloto_privado.ai_supplier_links_mvp225 VALUES
 
 -- Fixture V2-13: el aviso MVP238 antecede a un PDF almacenado.
 -- No se instala SQL en entornos reales; todo termina con ROLLBACK.
-ALTER TABLE cotironda_piloto_privado.whapi_inbox
- ADD COLUMN plaintext_sha256 text;
 CREATE TABLE cotironda_piloto_privado.ai_supplier_preambles_mvp238 (
  preamble_hmac text PRIMARY KEY,
  request_id uuid,supplier_key text,chat_hmac text,
@@ -405,6 +411,140 @@ BEGIN
 END $test$;
 \ir ../../piloto/v2_04b_analisis_original_idempotente_privado.sql
 \ir ../fixtures/v2-04b-analysis-checks.sql
+-- El ensayo anterior revoca supplier_a deliberadamente. Restaurar SOLO
+-- dentro del BEGIN/ROLLBACK sintético antes de verificar cotizaciones V2-14.
+UPDATE cotironda_piloto_privado.v2_supplier_original_consents
+ SET revoked_at=NULL WHERE supplier_key='supplier_a';
 \ir ../../piloto/v2_07_buyer_auth_bootstrap_check_private.sql
+-- Pruebas adicionales V2-14: texto WhatsApp, con sobre cifrado SIMULADO.
+-- No se descifra nada en PostgreSQL ni se usa un proveedor real.
+DO $v214$
+DECLARE got jsonb;src jsonb;doc uuid; token jsonb; count_audit integer;
+BEGIN
+ INSERT INTO cotironda_piloto_privado.whapi_inbox(
+  message_hmac,chat_hmac,participant_key,request_id,kind,
+  received_at,nonce_b64,ciphertext_b64,plaintext_sha256,processing_state
+ ) VALUES(
+  repeat('0',64),repeat('2',64),'supplier_a',
+  'aaaaaaaa-1111-4111-8111-111111111111','text',
+  now()-interval '6 hours',repeat('A',16),repeat('B',64),
+  repeat('6',64),'needs_review'
+ );
+ INSERT INTO cotironda_piloto_privado.ai_supplier_links_mvp225
+ VALUES(repeat('0',64),'aaaaaaaa-1111-4111-8111-111111111111',
+  'supplier_a',repeat('6',64),'text',
+  'awaiting_semantic_review','quoted_whapi_id');
+ got:=public.cotironda_piloto_v2_responders_private(
+  'aaaaaaaa-1111-4111-8111-111111111111',
+  '11111111-1111-4111-8111-111111111111',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+ IF jsonb_array_length(got->'originals')<>2
+ OR got::text LIKE '%ciphertextB64%'
+ OR got::text LIKE '%nonceB64%'
+ OR got::text LIKE '%chatHmac%'
+ THEN RAISE EXCEPTION 'v2_14_text_catalog_invalid:%',got;END IF;
+ SELECT (value->>'documentId')::uuid INTO doc
+ FROM jsonb_array_elements(got->'originals')
+ WHERE value->>'kind'='text';
+ IF doc IS NULL THEN RAISE EXCEPTION 'v2_14_text_id_absent:%',got;END IF;
+ src:=public.cotironda_piloto_v2_original_source_private(
+  'aaaaaaaa-1111-4111-8111-111111111111',
+  '11111111-1111-4111-8111-111111111111',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',doc);
+ IF src->>'state'<>'authorized_text_v2'
+ OR src->>'sha256'<>repeat('6',64)
+ OR src->>'nonceB64'<>repeat('A',16)
+ OR src->>'ciphertextB64'<>repeat('B',64)
+ THEN RAISE EXCEPTION 'v2_14_text_source_invalid:%',src;END IF;
+ IF public.cotironda_piloto_v2_record_text_download(
+  'aaaaaaaa-1111-4111-8111-111111111111',
+  '11111111-1111-4111-8111-111111111111',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',doc,
+  repeat('0',64),120) IS DISTINCT FROM false
+ THEN RAISE EXCEPTION 'v2_14_wrong_text_sha_audited';END IF;
+ IF public.cotironda_piloto_v2_record_text_download(
+  'aaaaaaaa-1111-4111-8111-111111111111',
+  '11111111-1111-4111-8111-111111111111',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',doc,
+  repeat('6',64),120) IS DISTINCT FROM true
+ THEN RAISE EXCEPTION 'v2_14_text_audit_refused';END IF;
+
+ -- Claims SQL de la guía aceptan texto sólo por este mismo origen.
+ token:=public.cotironda_piloto_v2_analysis_claim_private(
+  'aaaaaaaa-1111-4111-8111-111111111111',
+  '11111111-1111-4111-8111-111111111111',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',doc);
+ IF token->>'state'<>'analysis_claimed_v2'
+ OR token->>'sourceSha256'<>repeat('6',64)
+ THEN RAISE EXCEPTION 'v2_14_text_analysis_claim_failed:%',token;END IF;
+
+ -- Correlación por IA NO basta: exige decisión de ambas lecturas
+ -- previamente asentada y una sola solicitud seleccionada.
+ INSERT INTO cotironda_piloto_privado.whapi_inbox(
+  message_hmac,chat_hmac,participant_key,request_id,kind,
+  received_at,nonce_b64,ciphertext_b64,plaintext_sha256,processing_state
+ ) VALUES(
+  repeat('1',64),repeat('2',64),'supplier_a',
+  'aaaaaaaa-1111-4111-8111-111111111111','text',
+  now()-interval '5 hours',repeat('A',16),repeat('B',64),
+  repeat('7',64),'needs_review'
+ );
+ INSERT INTO cotironda_piloto_privado.ai_supplier_links_mvp225
+ VALUES(repeat('1',64),'aaaaaaaa-1111-4111-8111-111111111111',
+  'supplier_a',repeat('7',64),'text',
+  'awaiting_semantic_review','semantic_unique_mvp291');
+ got:=public.cotironda_piloto_v2_responders_private(
+  'aaaaaaaa-1111-4111-8111-111111111111',
+  '11111111-1111-4111-8111-111111111111',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+ IF jsonb_array_length(got->'originals')<>2
+ THEN RAISE EXCEPTION 'v2_14_semantic_unproven_visible';END IF;
+ INSERT INTO cotironda_piloto_privado.ai_supplier_auto_correlation_mvp291
+ VALUES(repeat('1',64),'supplier_a',repeat('7',64),'linked',
+  'aaaaaaaa-1111-4111-8111-111111111111',now());
+ got:=public.cotironda_piloto_v2_responders_private(
+  'aaaaaaaa-1111-4111-8111-111111111111',
+  '11111111-1111-4111-8111-111111111111',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+ IF jsonb_array_length(got->'originals')<>3
+ THEN RAISE EXCEPTION 'v2_14_semantic_proven_hidden';END IF;
+ UPDATE cotironda_piloto_privado.ai_supplier_auto_correlation_mvp291
+ SET state='review' WHERE source_hmac=repeat('1',64);
+ got:=public.cotironda_piloto_v2_responders_private(
+  'aaaaaaaa-1111-4111-8111-111111111111',
+  '11111111-1111-4111-8111-111111111111',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+ IF jsonb_array_length(got->'originals')<>2
+ THEN RAISE EXCEPTION 'v2_14_semantic_review_exposed';END IF;
+
+ -- Revocación y suplantación de comprador invalidan la fuente textual.
+ UPDATE cotironda_piloto_privado.v2_supplier_original_consents
+ SET revoked_at=now() WHERE supplier_key='supplier_a';
+ IF public.cotironda_piloto_v2_original_source_private(
+  'aaaaaaaa-1111-4111-8111-111111111111',
+  '11111111-1111-4111-8111-111111111111',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',doc) IS NOT NULL
+ OR public.cotironda_piloto_v2_record_text_download(
+  'aaaaaaaa-1111-4111-8111-111111111111',
+  '11111111-1111-4111-8111-111111111111',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',doc,
+  repeat('6',64),120) IS DISTINCT FROM false
+ THEN RAISE EXCEPTION 'v2_14_text_revocation_leaked';END IF;
+ IF public.cotironda_piloto_v2_original_source_private(
+  'aaaaaaaa-1111-4111-8111-111111111111',
+  '22222222-2222-4222-8222-222222222222',
+  'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',doc) IS NOT NULL
+ THEN RAISE EXCEPTION 'v2_14_cross_buyer_text_leaked';END IF;
+ IF has_function_privilege('anon',
+  'public.cotironda_piloto_v2_record_text_download(uuid,uuid,uuid,uuid,text,integer)','EXECUTE')
+ OR has_function_privilege('authenticated',
+  'public.cotironda_piloto_v2_record_text_download(uuid,uuid,uuid,uuid,text,integer)','EXECUTE')
+ OR NOT has_function_privilege('service_role',
+  'public.cotironda_piloto_v2_record_text_download(uuid,uuid,uuid,uuid,text,integer)','EXECUTE')
+ THEN RAISE EXCEPTION 'v2_14_text_audit_acl_exposed';END IF;
+ RAISE NOTICE 'V2_14_TEXT_ORIGINAL_PG17_PASS';
+END $v214$;
+-- El fixture V2-07 agrega un comprador con teléfono duplicado
+-- deliberadamente; ejecutar después para no invalidar la sesión V2-14.
 \ir ../fixtures/v2-07-buyer-auth-checks.sql
 ROLLBACK;

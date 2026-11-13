@@ -96,15 +96,20 @@ BEGIN
  IF v_buyer IS NULL THEN RETURN NULL; END IF;
 
  FOR v_rec IN
-  SELECT DISTINCT ON (a.message_hmac)
-   a.message_hmac,a.content_sha256,a.mime,a.kind,
-   supplier.display_label,source.received_at
+  SELECT DISTINCT ON (link.message_hmac)
+   link.message_hmac,
+   CASE WHEN link.kind='text' THEN source.plaintext_sha256
+        ELSE a.content_sha256 END AS content_sha256,
+   CASE WHEN link.kind='text' THEN 'text/plain' ELSE a.mime END AS mime,
+   link.kind,supplier.display_label,source.received_at
   FROM cotironda_piloto_privado.ai_supplier_links_mvp225 link
   JOIN cotironda_piloto_privado.requests r
    ON r.id=link.request_id AND r.buyer_key=v_buyer
    AND r.state IN ('prepared','closed')
-  JOIN cotironda_piloto_privado.media_archive_mvp095 a
+  LEFT JOIN cotironda_piloto_privado.media_archive_mvp095 a
    ON a.message_hmac=link.message_hmac
+   AND link.kind IN ('document','image')
+   AND a.kind=link.kind
    AND a.request_id=link.request_id
    AND a.participant_key=link.supplier_key
    AND a.content_sha256=link.source_sha256
@@ -117,11 +122,11 @@ BEGIN
      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
      'application/msword','application/vnd.ms-excel','text/plain','text/csv')
   JOIN cotironda_piloto_privado.whapi_inbox source
-   ON source.message_hmac=a.message_hmac
+   ON source.message_hmac=link.message_hmac
    AND source.request_id=link.request_id
    AND source.participant_key=link.supplier_key
-   AND source.chat_hmac=a.chat_hmac
-   AND source.kind=a.kind
+   AND source.kind=link.kind
+   AND (link.kind='text' OR source.chat_hmac=a.chat_hmac)
   JOIN cotironda_piloto_privado.participants supplier
    ON supplier.key=link.supplier_key
    AND supplier.chat_hmac=source.chat_hmac
@@ -151,38 +156,64 @@ BEGIN
    AND consent_msg.kind='text'
    AND consent_msg.received_at=c.accepted_at
   WHERE link.request_id=p_request_id
-   AND link.kind IN ('document','image')
-   -- Archivo admitido tras aviso ORIGINAL comprobado por MVP238.
-   -- No inferir rondas por nombre de archivo ni semejanza de productos.
    AND (
-    link.association IN ('quoted_whapi_id','single_active_round')
-    OR (
-     link.association='prior_supplier_preamble'
-     AND EXISTS (
-      SELECT 1 FROM cotironda_piloto_privado.ai_supplier_preambles_mvp238 preamble
-      JOIN cotironda_piloto_privado.whapi_inbox notice
-       ON notice.message_hmac=preamble.preamble_hmac
-       AND notice.chat_hmac=preamble.chat_hmac
-       AND notice.participant_key=preamble.supplier_key
-       AND notice.kind='text'
-       AND notice.request_id=preamble.request_id
-       AND notice.received_at=preamble.received_at
-       AND notice.plaintext_sha256=preamble.source_sha256
-      WHERE preamble.attachment_hmac=link.message_hmac
-       AND preamble.request_id=link.request_id
-       AND preamble.supplier_key=link.supplier_key
-       AND preamble.chat_hmac=source.chat_hmac
-       AND preamble.attached_at IS NOT NULL
-       AND preamble.attached_at>=source.received_at
-       AND preamble.received_at<source.received_at
-       AND preamble.received_at>=source.received_at-interval '24 hours'
-       AND preamble.source_sha256 ~ '^[a-f0-9]{64}$'
+    (link.kind IN ('document','image')
+     AND a.message_hmac IS NOT NULL
+     AND (
+      link.association IN ('quoted_whapi_id','single_active_round')
+      OR (
+       link.association='prior_supplier_preamble'
+       AND EXISTS (
+        SELECT 1 FROM cotironda_piloto_privado.ai_supplier_preambles_mvp238 preamble
+        JOIN cotironda_piloto_privado.whapi_inbox notice
+         ON notice.message_hmac=preamble.preamble_hmac
+         AND notice.chat_hmac=preamble.chat_hmac
+         AND notice.participant_key=preamble.supplier_key
+         AND notice.kind='text'
+         AND notice.request_id=preamble.request_id
+         AND notice.received_at=preamble.received_at
+         AND notice.plaintext_sha256=preamble.source_sha256
+        WHERE preamble.attachment_hmac=link.message_hmac
+         AND preamble.request_id=link.request_id
+         AND preamble.supplier_key=link.supplier_key
+         AND preamble.chat_hmac=source.chat_hmac
+         AND preamble.attached_at IS NOT NULL
+         AND preamble.attached_at>=source.received_at
+         AND preamble.received_at<source.received_at
+         AND preamble.received_at>=source.received_at-interval '24 hours'
+         AND preamble.source_sha256 ~ '^[a-f0-9]{64}$'
+       )
+      )
+     )
+    )
+    OR
+    (link.kind='text'
+     AND a.message_hmac IS NULL
+     AND source.kind='text'
+     AND source.plaintext_sha256=link.source_sha256
+     AND source.plaintext_sha256 ~ '^[a-f0-9]{64}$'
+     AND source.nonce_b64 ~ '^[A-Za-z0-9+/]{16}$'
+     AND length(source.ciphertext_b64) BETWEEN 24 AND 20000
+     AND source.processing_state='needs_review'
+     AND (
+      link.association IN ('quoted_whapi_id','single_active_round')
+      OR
+      (link.association='semantic_unique_mvp291'
+       AND EXISTS(
+        SELECT 1 FROM cotironda_piloto_privado.ai_supplier_auto_correlation_mvp291 decision
+        WHERE decision.source_hmac=link.message_hmac
+         AND decision.supplier_key=link.supplier_key
+         AND decision.source_sha256=link.source_sha256
+         AND decision.state='linked'
+         AND decision.selected_request_id=link.request_id
+         AND decision.finished_at IS NOT NULL
+      ))
      )
     )
    )
    AND link.status='awaiting_semantic_review'
    AND link.source_sha256 ~ '^[a-f0-9]{64}$'
-   AND a.content_sha256 ~ '^[a-f0-9]{64}$'
+   AND (link.kind='text' OR a.content_sha256 ~ '^[a-f0-9]{64}$')
    AND source.received_at>=r.created_at
    AND source.received_at<=r.closes_at
    AND source.received_at<=v_now
@@ -192,7 +223,7 @@ BEGIN
     WHERE bad.message_hmac=link.message_hmac
       AND bad.state IN ('ambiguous_round','media_context_conflict')
    )
-  ORDER BY a.message_hmac
+  ORDER BY link.message_hmac
  LOOP
   v_total:=v_total+1;
   IF v_total>100 THEN RETURN NULL; END IF;
