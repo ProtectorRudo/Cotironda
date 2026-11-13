@@ -43,6 +43,7 @@ function readySnapshot(){
   'cotironda_piloto_v2_analysis_claim_private',
   'cotironda_piloto_v2_analysis_finish_private',
   'cotironda_piloto_v2_responders_with_analysis_private',
+  'cotironda_piloto_v2_record_text_download',
   'cotironda_piloto_ia_shadow_prepare_mvp221'
  ];
  s.supabase.tables=[
@@ -57,9 +58,15 @@ function readySnapshot(){
   deadline_real_verified:true,auto_close_worker_verified:true,
   product_catalog_routing_verified:true,
   two_distinct_supplier_files_verified:true,
-  whatsapp_e2e_verified:true,final_analysis_verified:true};
+  whatsapp_e2e_verified:true,final_analysis_verified:true,
+  text_edge_gateway_jwt_verified:true,
+  text_edge_unauthorized_denied:true,
+  text_whatsapp_original_verified:true,
+  text_whatsapp_byte_sha_verified:true};
  s.edge.private_pdf_reader={status:'ACTIVE',verify_jwt:false,
   secret_configured_in_both_services:true};
+ s.edge.private_text_reader={status:'ACTIVE',verify_jwt:true,
+  secret_configured_in_both_services:true,aes_only_in_supabase:true};
  s.vercel.preview_env_names=[
   'NEXT_PUBLIC_COTIRONDA_PILOT_SUPABASE_URL',
   'NEXT_PUBLIC_COTIRONDA_PILOT_SUPABASE_PUBLISHABLE_KEY',
@@ -72,6 +79,8 @@ function readySnapshot(){
   'COTIRONDA_PILOT_OPENAI_API_KEY',
   'COTIRONDA_PILOT_V2_PDF_ENABLED',
   'COTIRONDA_PILOT_V2_PDF_SHARED_SECRET',
+  'COTIRONDA_PILOT_V2_TEXT_ENABLED',
+  'COTIRONDA_PILOT_V2_TEXT_SHARED_SECRET',
   'COTIRONDA_REGISTRATION_ENABLED'
  ];
  s.vercel.git_linked=true;
@@ -187,4 +196,84 @@ test('Preflight V2: sin evidencia de nombre REGISTRATION bloquea portal',()=>{
  assert.equal(report.result,'BLOCKED');
  assert.ok(report.blockers.some(x=>x.code==='variables_preview'));
  assert.equal(report.can_publish,false);
+});
+
+test('V2-15: primer texto exige Edge JWT autenticada sin bloquear primer PDF',()=>{
+ const a=readySnapshot();
+ delete a.edge.private_text_reader;
+ assert.equal(auditarPublicacionV2(a,'primer_original').result,
+  'PREFLIGHT_PASS_REQUIRES_PUBLICALO');
+ let report=auditarPublicacionV2(a,'primer_texto');
+ assert.equal(report.result,'BLOCKED');
+ assert.ok(report.blockers.some(x=>x.code==='lector_texto_privado'));
+ assert.equal(report.can_publish,false);
+ report=auditarPublicacionV2(a,'piloto_completo');
+ assert.equal(report.result,'BLOCKED');
+ assert.ok(report.blockers.some(x=>x.code==='lector_texto_privado'));
+});
+
+test('V2-15: falta de RPC textual, secreto o flag bloquea el texto real',()=>{
+ const a=readySnapshot();
+ a.supabase.rpcs=a.supabase.rpcs.filter(
+  x=>x!=='cotironda_piloto_v2_record_text_download');
+ assert.ok(auditarPublicacionV2(a,'primer_texto').blockers.some(
+  x=>x.code==='rpc_texto_auditado'));
+ a.supabase.rpcs.push('cotironda_piloto_v2_record_text_download');
+ for(const key of [
+  'COTIRONDA_PILOT_V2_TEXT_ENABLED',
+  'COTIRONDA_PILOT_V2_TEXT_SHARED_SECRET'
+ ]){
+  const b=copy(a);
+  b.vercel.preview_env_names=b.vercel.preview_env_names.filter(x=>x!==key);
+  assert.ok(auditarPublicacionV2(b,'primer_texto').blockers.some(
+   x=>x.code==='variables_texto_preview'),key);
+ }
+ a.edge.private_text_reader.secret_configured_in_both_services=false;
+ assert.ok(auditarPublicacionV2(a,'primer_texto').blockers.some(
+  x=>x.code==='lector_texto_privado'));
+});
+
+test('V2-15: AES Whapi o secreto de broker bajo NEXT_PUBLIC bloquea',()=>{
+ const a=readySnapshot();
+ a.vercel.preview_env_names.push('COTIRONDA_PILOT_AES_HEX');
+ assert.ok(auditarPublicacionV2(a,'primer_texto').blockers.some(
+  x=>x.code==='clave_whapi_solo_supabase'));
+ a.vercel.preview_env_names.pop();
+ a.vercel.preview_env_names.push('NEXT_PUBLIC_COTIRONDA_PILOT_V2_TEXT_SHARED_SECRET');
+ assert.ok(auditarPublicacionV2(a,'primer_texto').blockers.some(
+  x=>x.code==='variables_texto_preview'));
+ a.vercel.preview_env_names.pop();
+ a.edge.private_text_reader.aes_only_in_supabase=false;
+ assert.ok(auditarPublicacionV2(a,'primer_texto').blockers.some(
+  x=>x.code==='clave_whapi_solo_supabase'));
+});
+
+test('V2-15: el JWT real y un texto original probado siguen siendo obligatorios',()=>{
+ const a=readySnapshot();
+ a.edge.private_text_reader.verify_jwt=false;
+ assert.ok(auditarPublicacionV2(a,'primer_texto').blockers.some(
+  x=>x.code==='lector_texto_privado'));
+ a.edge.private_text_reader.verify_jwt=true;
+ a.proof.text_edge_gateway_jwt_verified=false;
+ assert.ok(auditarPublicacionV2(a,'primer_texto').blockers.some(
+  x=>x.code==='edge_jwt_comprador'));
+ a.proof.text_edge_gateway_jwt_verified=true;
+ a.proof.text_whatsapp_byte_sha_verified=false;
+ assert.ok(auditarPublicacionV2(a,'primer_texto').blockers.some(
+  x=>x.code==='texto_whatsapp_fiel'));
+ a.proof.text_whatsapp_byte_sha_verified=true;
+ const report=auditarPublicacionV2(a,'primer_texto');
+ assert.equal(report.result,'PREFLIGHT_PASS_REQUIRES_PUBLICALO');
+ assert.equal(report.can_publish,false);
+});
+
+test('V2-15: foto real postrelease NO puede aprobar sólo con esquema previo',()=>{
+ const report=auditarPublicacionV2(postrelease,'primer_texto');
+ assert.equal(report.result,'BLOCKED');
+ assert.equal(report.can_publish,false);
+ for(const code of ['rpc_texto_auditado','lector_texto_privado',
+  'clave_whapi_solo_supabase','variables_texto_preview',
+  'edge_jwt_comprador','texto_whatsapp_fiel']){
+  assert.ok(report.blockers.some(x=>x.code===code),code);
+ }
 });
