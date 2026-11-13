@@ -1,5 +1,5 @@
 import {responderDiagnosticoSmsV2}
- from '../../../../../../src/server/v2-20-diagnostico-sms-http.ts';
+ from '../../../../../../../src/server/v2-20-diagnostico-sms-http.ts';
 
 export const runtime='nodejs';
 export const dynamic='force-dynamic';
