@@ -550,6 +550,24 @@ END $v214$;
 \ir ../../piloto/v2_d016_whatsapp_link_tickets_CANDIDATE.sql
 \ir ../../piloto/v2_d016_respuestas_y_originales_CANDIDATE.sql
 \ir ../../piloto/v2_d016_analisis_automatico_CANDIDATE.sql
+-- Estado calendario de dos días hábiles sintético; nunca modifica PILOTO.
+ALTER TABLE cotironda_piloto_privado.requests
+ ADD COLUMN timing_mode text NOT NULL DEFAULT 'legacy_calendar',
+ ADD COLUMN round_days smallint NOT NULL DEFAULT 5,
+ ADD COLUMN v2_calendar_revision text,
+ ADD COLUMN delivery_city text NOT NULL DEFAULT 'La Plata',
+ ADD COLUMN closed_at timestamptz;
+CREATE TABLE cotironda_piloto_privado.v2_business_policy(
+ singleton boolean PRIMARY KEY,enabled boolean,activated_at timestamptz);
+CREATE TABLE cotironda_piloto_privado.v2_business_calendar(
+ locality text,year integer,revision text,approved_at timestamptz);
+INSERT INTO cotironda_piloto_privado.v2_business_policy VALUES
+ (true,true,now()-interval '12 days');
+INSERT INTO cotironda_piloto_privado.v2_business_calendar VALUES
+ ('La Plata',extract(year from now() AT TIME ZONE
+  'America/Argentina/Buenos_Aires')::integer,'lp_piloto_2026',
+  now()-interval '12 days');
+\ir ../../piloto/v2_d016_informe_final_CANDIDATE.sql
 \ir ../fixtures/v2-d016-response-checks.sql
 \ir ../fixtures/v2-07-buyer-auth-checks.sql
 ROLLBACK;
