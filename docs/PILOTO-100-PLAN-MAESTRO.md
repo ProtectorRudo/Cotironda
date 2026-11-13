@@ -9,7 +9,7 @@
 - [x] Desarrollado [PR #837](https://github.com/ProtectorRudo/Cotironda/pull/837) **adaptador de notificación**: genera token privado HMAC (10 minutos) con WebCrypto, lo asocia a la misma ronda del comprador y prepara envío de un enlace por su WhatsApp registrado. No utiliza SMS, email ni otro formulario.
 - [x] Desarrollada **reserva SQL única por mensaje entrante**, con comprador y canal acreditados, consentimiento, activación prospectiva V2, ronda correcta, un evento = como máximo un POST Whapi, protección de cuotas (60 s / 6 por 24 h) y estado de entrega incierta sin reenvío automático.
 - [x] Protegido `index.ts` histórico: se genera **overlay candidato** D016 sobre V2-02; el webhook legado mantiene intacta su huella MVP332/333/335. Un feature flag nuevo impide mandar D016 y MVP289 juntos.
-- [ ] **Verificar CI exacto** con Node, Deno typecheck de candidato y PG17 ROLLBACK; validar contratos de Whapi y de privacidad antes de deploy.
+- [x] **CI exacto 8/8 SUCCESS** en HEAD `695b330de5802d8a32b58ac6502c81893e2b74a2` del PR #837: Node, Deno typecheck de webhook candidato, PG17 ROLLBACK, PostgREST, tipos y build Next.js. **No implica E2E real**.
 - [ ] **Pendiente para piloto real:** aplicar SQL y desplegar candidate únicamente con orden «Publicalo» para PILOTO, switches OFF al instalar y encendido gradual autorizado. Después prueba real con WhatsApp de arquitecto + proveedores, texto cifrado y análisis/cierre final.
 
 **No publicado, no hay WhatsApp enviado ni sesión de comprador real.** Continuación técnica: [documento de PR #837](https://github.com/ProtectorRudo/Cotironda/blob/feat/d016-whatsapp-link-safe-pilot-20261113/docs/V2-D016-PUENTE-WHATSAPP-CANDIDATO-20261113.md).
