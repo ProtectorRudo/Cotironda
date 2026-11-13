@@ -74,8 +74,10 @@ export async function verificarMagiclinkRealD016(
   const proof=await client.auth.getUser(session.access_token);
   if(proof.error||proof.data?.user?.id!==userId)return null;
   const claims=claimsDeJwtValidado(session.access_token,userId,nowMs);
-  if(!claims||!Number.isSafeInteger(session.expires_at)||
-   session.expires_at*1000!==claims.expiresMs)return null;
+  const expiresAt=session.expires_at;
+  if(!claims||typeof expiresAt!=='number'||
+   !Number.isSafeInteger(expiresAt)||
+   expiresAt*1000!==claims.expiresMs)return null;
   return Object.freeze({
    userId,sessionId:claims.sessionId,
    accessToken:session.access_token,
