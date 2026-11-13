@@ -15,7 +15,8 @@ test('D016 preflight es un SELECT de solo lectura, sin cambios de permisos ni da
  assert.match(active,/CROSS JOIN transport_security t;$/u);
  assert.equal((active.match(/;/gu)??[]).length,1);
  assert.doesNotMatch(active,/\b(?:INSERT|UPDATE|DELETE|TRUNCATE|ALTER|CREATE|DROP|REVOKE|GRANT|CALL|EXECUTE|COPY|PERFORM|SET|RESET|DO)\b/iu);
- assert.doesNotMatch(active,/vault\.decrypted_secrets|pg_read_file|pg_ls_dir|pg_read_binary_file/iu);
+ // to_regclass() sólo consulta existencia de la vista, sin leer ninguna clave.
+ assert.doesNotMatch(active,/\b(?:FROM|JOIN)\s+vault\.decrypted_secrets\b|pg_read_file|pg_ls_dir|pg_read_binary_file/iu);
 });
 test('D016 preflight exige aprobaciones prospectivas, no reactiva funciones',()=>{
  for(const term of [
