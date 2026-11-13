@@ -10,6 +10,8 @@ on:
       - 'scripts/piloto/v2-d016-original-inbox-overlay.mjs'
       - 'supabase/functions/cotironda-piloto-whapi/original-reply-intake-d016.ts'
       - 'supabase/piloto/v2_d016_original_whapi_inbox_CANDIDATE.sql'
+      - 'supabase/piloto/v2_d016_original_semantic_mvp291_proof_CANDIDATE.sql'
+      - 'supabase/tests/ci/v2-d016-original-semantic-mvp291-pg17.sql'
       - 'supabase/tests/ci/v2-d016-original-inbox-pg17.sql'
       - 'tests/unit/v2-d016-original-inbox.test.mjs'
       - 'tests/unit/v2-d016-original-whapi-adapter.test.mjs'
@@ -92,6 +94,8 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/v2-d016-original-lease-guard-pg17.sql
       - name: Recepción real simulada, PDF y NO COMPARTIR con PG17
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/v2-d016-original-inbox-pg17.sql
+      - name: Decisión IA doble corroborada, hash y baja de originales PG17
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/v2-d016-original-semantic-mvp291-pg17.sql
       - name: Confirmar rollback completo y ausencia de datos
         run: |
           test "$(psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regnamespace('cotironda_piloto_privado') IS NULL")" = t
