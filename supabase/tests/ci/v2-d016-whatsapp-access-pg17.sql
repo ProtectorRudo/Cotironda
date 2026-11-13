@@ -84,7 +84,7 @@ BEGIN
   repeat('1',64));
  UPDATE cotironda_piloto_privado.v2_d016_access_tickets
  SET expires_at=clock_timestamp()-interval '1 second',
-     created_at=clock_timestamp()-interval '10 minutes 1 second'
+     created_at=clock_timestamp()-interval '9 minutes'
  WHERE ticket_hmac=repeat('e',64);
  IF public.cotironda_piloto_v2_d016_claim_ticket_private(repeat('e',64))
  IS NOT NULL THEN RAISE EXCEPTION 'expired_ticket_accepted';END IF;
