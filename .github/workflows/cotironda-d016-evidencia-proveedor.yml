@@ -9,6 +9,8 @@ on:
       - 'scripts/piloto/v2-d016-original-notice-overlay.mjs'
       - 'tests/unit/v2-d016-original-whapi-adapter.test.mjs'
       - 'supabase/piloto/v2_d016_original_reply_proof_CANDIDATE.sql'
+      - 'supabase/piloto/v2_d016_original_notice_lease_guard_CANDIDATE.sql'
+      - 'supabase/tests/ci/v2-d016-original-lease-guard-pg17.sql'
       - 'supabase/tests/ci/v2-d016-original-proof-pg17.sql'
       - 'tests/unit/v2-d016-aviso-original-proveedor.test.mjs'
       - 'docs/V2-D016-EVIDENCIA-RESPUESTA-ORIGINALES-20261113.md'
@@ -73,6 +75,8 @@ jobs:
           persist-credentials: false
       - name: SQL de pruebas PostgreSQL 17 con ROLLBACK
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/v2-d016-original-proof-pg17.sql
+      - name: Lease correcto, grants y rollback PostgreSQL17
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/v2-d016-original-lease-guard-pg17.sql
       - name: Confirmar rollback completo y ausencia de datos
         run: |
           test "$(psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regnamespace('cotironda_piloto_privado') IS NULL")" = t
