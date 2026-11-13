@@ -7,6 +7,8 @@ import {puertaD016Lista,type PuertaD016}
 import {canjearConSesionPrivadaD016,verificarAccesoSesionD016,
  cookieSesionD016,digestSesionPrivadaD016}
  from '../../../src/server/v2-d016-sesion-privada.ts';
+import {D016_SESSION_COOKIE}
+ from '../../../src/server/v2-d016-sesion-privada.ts';
 import {proyectarRespuestasV2}
  from '../../../src/server/v2-03-catalogo-respondedores.ts';
 import {descargarConWhatsappD016}
@@ -160,4 +162,37 @@ export async function descargarOriginalPorWhatsappD016(
    return !error&&data===true;
   }
  });
+}
+
+/** Logout D016: invalida la sesión en PostgreSQL ANTES de borrar cookie.
+ * Con CSRF bloqueado por Origin y Sec-Fetch-Site, sin parámetros de comprador.
+ */
+export async function cerrarSesionPortalD016(
+ req:Request,env:Record<string,string|undefined>=process.env
+):Promise<Response>{
+ const gate=puertaWhatsappPortalD016(env);
+ const db=gate?privateDb(env):null;
+ if(!gate||!db)return deny(503);
+ if(req.method!=='POST')return deny(405);
+ const url=new URL(req.url);
+ if(url.origin!==gate.origenPortal||
+  url.pathname!=='/api/piloto/v2/acceso/salir'||
+  url.search!==''||url.hash!==''||
+  req.headers.get('origin')!==gate.origenPortal||
+  req.headers.get('sec-fetch-site')!=='same-origin')
+  return deny(403);
+ const cookie=cookieSesionD016(req);
+ const digest=cookie?digestSesionPrivadaD016(cookie,gate.claveHmacHex):null;
+ if(!digest)return deny(404);
+ try{
+  const {data,error}=await db.rpc('cotironda_piloto_v2_d016_logout_private',{
+   p_sesion_hmac:digest
+  });
+  if(error||data!==true)return deny(404);
+  return new Response(JSON.stringify({state:'SIGNED_OUT'}),{status:200,headers:{
+   ...HEADERS,
+   'set-cookie':D016_SESSION_COOKIE+
+    '=; Max-Age=0; Path=/; Secure; HttpOnly; SameSite=Lax'
+  }});
+ }catch{return deny(503)}
 }
