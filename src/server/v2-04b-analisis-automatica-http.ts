@@ -106,7 +106,8 @@ export async function analizarOriginalPorPedidoV2(
   let textSha256:string|null=null;
   try{
    const rawBytes=esTexto?await ports.readText!(raw):
-    await ports.read(raw.bucket,raw.path);
+    (typeof raw.bucket==='string'&&typeof raw.path==='string'?
+     await ports.read(raw.bucket,raw.path):null);
    if(rawBytes&&(esTexto?
       rawBytes.byteLength>=40&&rawBytes.byteLength<=4000:
       rawBytes.byteLength===raw.byteCount)){
