@@ -6,6 +6,8 @@ BEGIN
  THEN CREATE ROLE anon NOLOGIN; END IF;
  IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='authenticated')
  THEN CREATE ROLE authenticated NOLOGIN; END IF;
+ IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='service_role')
+ THEN CREATE ROLE service_role NOLOGIN; END IF;
 END $roles$;
 CREATE SCHEMA cotironda_piloto_privado;
 CREATE SCHEMA extensions;
@@ -30,6 +32,32 @@ INSERT INTO cotironda_piloto_privado.requests(
 
 -- Install exact baseline function in this disposable PG17 transaction.
 \ir ../fixtures/v2-d013-shadow-prepare-baseline.sql
+-- V2-21 MUST fork to its own RPC without modifying historical M221.
+\ir ../../piloto/v2_21_d013_ruteo_v2_rpc_aislado_candidate.sql
+DO $isolation$
+DECLARE
+ v_old regprocedure:='public.cotironda_piloto_ia_shadow_prepare_mvp221(text,text,text,text,jsonb,jsonb)'::regprocedure;
+ v_new regprocedure:='public.cotironda_piloto_v2_shadow_prepare_d013(text,text,text,text,jsonb,jsonb)'::regprocedure;
+ v_src text;
+BEGIN
+ IF encode(extensions.digest(convert_to(pg_get_functiondef(v_old),'UTF8'),'sha256'),'hex')
+ <> 'a2225bc790c82166a352559720673dca2bc17a97508eac0b9054411064c25cf9'
+ THEN RAISE EXCEPTION 'v2_21_historical_function_modified';END IF;
+ v_src:=pg_get_functiondef(v_new);
+ IF position('v_match->>''rubroCatalogo'' NOT IN' IN v_src)=0
+ OR position('v_match->>''rubroCatalogo'' IS DISTINCT FROM' IN v_src)>0
+ OR position('c.literal_description=v_original_catalogue' IN v_src)=0
+ OR position('c.participant_key=v_supplier' IN v_src)=0
+ OR position('lower(btrim(p.delivery_city))=lower(btrim(p_city))' IN v_src)=0
+ THEN RAISE EXCEPTION 'v2_21_clone_contract_invalid';END IF;
+ IF has_function_privilege('anon',v_new,'EXECUTE')
+ OR has_function_privilege('authenticated',v_new,'EXECUTE')
+ OR NOT has_function_privilege('service_role',v_new,'EXECUTE')
+ THEN RAISE EXCEPTION 'v2_21_clone_acl_failed';END IF;
+ RAISE NOTICE 'V2_21_LEGACY_UNCHANGED_V2_CLONE_PRIVATE_PASS';
+END $isolation$;
+-- Preexisting V2-05 fixture also rehearses older in-place D013 variant.
+-- It remains CI-only; never run that legacy mutation in Supabase PILOTO.
 -- Simulate the production change order; digest mismatch MUST abort early.
 \ir ../../piloto/v2_d013_ruteo_productos_sin_filtro_rubro.sql
 \ir ../../piloto/v2_05_plazo_dos_dias_habiles_candidate.sql
