@@ -546,5 +546,9 @@ BEGIN
 END $v214$;
 -- El fixture V2-07 agrega un comprador con teléfono duplicado
 -- deliberadamente; ejecutar después para no invalidar la sesión V2-14.
+-- D016 candidato independiente: misma fuente original, nuevos controles cookie.
+\ir ../../piloto/v2_d016_whatsapp_link_tickets_CANDIDATE.sql
+\ir ../../piloto/v2_d016_respuestas_y_originales_CANDIDATE.sql
+\ir ../fixtures/v2-d016-response-checks.sql
 \ir ../fixtures/v2-07-buyer-auth-checks.sql
 ROLLBACK;
