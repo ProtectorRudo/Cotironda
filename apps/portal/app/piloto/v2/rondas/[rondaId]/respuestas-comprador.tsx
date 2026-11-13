@@ -49,7 +49,7 @@ export function RespuestasCompradorV2({
     authGeneration.current++;
     userIdActual.current=nextUserId;
     historialAnalisis.current.clear();
-    setCatalog(null);
+    setCatalog(null);setBusy(false);
     setSessionVersion(version=>version+1);
    }
    setAuthenticated(!!session?.access_token);
@@ -111,7 +111,7 @@ export function RespuestasCompradorV2({
    }
   }finally{
    refreshInFlight.current=false;
-   if(!silencioso)setBusy(false);
+   if(!silencioso&&generation===authGeneration.current)setBusy(false);
   }
  },[api,token,puedeConsultarRespuestas]);
 
@@ -177,12 +177,12 @@ export function RespuestasCompradorV2({
   authGeneration.current++;
   userIdActual.current=null;
   historialAnalisis.current.clear();
-  setCatalog(null);setAuthenticated(false);setError('');
+  setCatalog(null);setAuthenticated(false);setError('');setBusy(false);
   void client?.auth.signOut();
  }
  async function sendOtp(){
   if(!client||busy)return;
-  if(!/^\+[1-9]\d{8,15}$/u.test(phone.trim())){
+  if(!/^\+[1-9]\d{7,14}$/u.test(phone.trim())){
    setError('Ingresá tu teléfono con código de país, por ejemplo +54…');return;
   }
   setBusy(true);setError('');
@@ -215,16 +215,22 @@ export function RespuestasCompradorV2({
  }
  async function download(documentId:string){
   if(busy||!puedeConsultarRespuestas)return;
+  const generation=authGeneration.current;
   setBusy(true);setError('');
   try{
    const access=await token();
+   if(generation!==authGeneration.current)return;
    if(!access){setAuthenticated(false);throw Error('not_logged');}
    const response=await fetch(api+'/originales/'+encodeURIComponent(documentId),{
     method:'GET',cache:'no-store',credentials:'omit',
-    headers:{Authorization:'Bearer '+access}
+    headers:{Authorization:'Bearer '+access},
+    signal:AbortSignal.timeout(20_000)
    });
+   if(generation!==authGeneration.current)return;
    if(!response.ok)throw Error('download_denied');
    const data=await response.arrayBuffer();
+   // El usuario pudo cerrar sesión o cambiar de cuenta durante el I/O.
+   if(generation!==authGeneration.current)return;
    if(data.byteLength<1||data.byteLength>8388608)throw Error('invalid_bytes');
    const blob=new Blob([data],{type:response.headers.get('content-type')||
     'application/octet-stream'});
@@ -235,8 +241,12 @@ export function RespuestasCompradorV2({
    anchor.style.display='none';
    document.body.appendChild(anchor);anchor.click();anchor.remove();
    window.setTimeout(()=>URL.revokeObjectURL(objectUrl),30000);
-  }catch{setError('El original no está disponible para descargar en este momento.')}
-  finally{setBusy(false)}
+  }catch{
+   if(generation===authGeneration.current)
+    setError('El original no está disponible para descargar en este momento.');
+  }finally{
+   if(generation===authGeneration.current)setBusy(false);
+  }
  }
  if(!client)return <p role="status">El ingreso privado todavía no está habilitado.</p>;
  if(loading)return <p role="status">Comprobando acceso…</p>;
