@@ -1,5 +1,24 @@
 # Cotironda V2 — Estado REAL del piloto
 
+## DECISIÓN OPERATIVA ANTI-BUCLE — 14/11/2026
+
+**DIRECTIVA PRIORITARIA AUTORIZADA: REUTILIZAR EL PILOTO REAL, NO RECONSTRUIRLO.** El propietario dio luz verde y pidió registrar esta decisión para que las próximas conversaciones no regresen al inicio. Esta directiva prevalece sobre notas de implementación antiguas que incentiven nuevos módulos, PR o rediseños.
+
+**EVIDENCIA REVALIDADA DIRECTAMENTE EN SUPABASE PILOTO 14/11 ~11:15 ART (SOLO LECTURA):** 7 rondas históricas (5 cerradas), 4 tokens de seguimiento vigentes, 2 rondas con `can_open=true` y **2 presupuestos visibles en cada una**, 0 archivos pendientes en el seguimiento; 4 cotizaciones PDF/archivos del proveedor preservadas en registro de medios. El motor de seguimiento V1 funciona a nivel RPC. La vista real en navegador y una ronda nueva completa **NO** están verificadas; no fingir que lo están. Edge Whapi LIVE sigue v76. Vercel conserva Preview(s) `READY`, pero **NO** la corrección de acceso D016 SHA exacta `f98527c9516478783bd7cf95433c58f5ca445937` (0 deployments). ÚNICO retry ya agendado 14/11 17:07 ART por cuota 402, no duplicar. V2 negocio, auto-release, originales OFF; 0 consentimientos V2 originales, 0 enlaces D016.
+
+**ORDEN DE EJECUCIÓN INALTERABLE:**
+1. **Reutilizar** recepción por WhatsApp, vinculación de proveedores, archivos originales, seguimiento privado y proyección de dos ofertas ya existentes; no desarrollar clones ni volver a instalar el piloto.
+2. **Primero** comprobar portal anterior utilizable con el comprador, conservando privacidad; publicar **solo** la UI D016 exacta aprobada en Preview cuando Vercel permita cuota. No cambiar proyecto, plan de pago o producción para forzar la publicación.
+3. Validar enlace privado sin SMS y HMAC realmente compartida entre Edge y portal; si falla, corregir causa mínima en PR actual. Los 10/10 controles CI no son prueba E2E.
+4. Completar una vez el texto de consentimiento informado para originales (responsable/retención/privacidad reales y aprobación) y registrar aceptación revocable de ambos proveedores; cotizar **no** equivale a autorizar originales.
+5. Ejecutar **UNA ronda nueva real**: comprador por WhatsApp → catálogo por producto/localidad → pedidos a dos proveedores → dos originales autorizados → portal con solo respondientes → análisis útil → cierre a 2 días hábiles. Solo entonces marcar PILOTO 100 %.
+
+**REGLA ANTI-CÍRCULOS:** antes de cada turno consultar este estado, [Plan maestro](PILOTO-100-PLAN-MAESTRO.md), GitHub, Supabase y Vercel; **elegir una sola tarea bloqueante**, probarla en entorno real y registrar resultado `HECHO / PROBADO / PENDIENTE`. Congelados: nuevas etapas IA, rankings, ganadores, pagos, diseño y PR redundantes. No sobreescribir ni reabrir rondas históricas; no activar mensajes comerciales, compartir originales ni publicar producción sin los controles/permisos. Si un control depende de Vercel/consentimiento, no crear trabajo paralelo que nos aleje de la primera ronda.
+
+**PR activos a conservar:** [#837 UI D016](https://github.com/ProtectorRudo/Cotironda/pull/837) y [#853 candidato Whapi D013+D016](https://github.com/ProtectorRudo/Cotironda/pull/853). **ÚNICA PRÓXIMA ACCIÓN operativa:** verificar ejecución/restricción del reintento Preview f985 (17:07 ART), después probar acceso del comprador en esa Preview; no desplegar Edge comercial todavía.
+
+
+
 **Relevamiento:** 14/11/2026. **No terminado.** Este documento es el relevo corto, no un registro acumulativo. Ante otra conversación, confirmar fuentes activas antes de continuar.
 
 **Último control real — 14/11/2026 06:30 ART.** **Vercel** rechazó publicación EXACTA f985 del Preview `cotironda-portal-dev` con HTTP **402** (`api-deployments-free-per-day`, reintento recomendado 86.400 segundos). **NO hubo deployment**, no cambiar de proyecto ni aumentar plan; existe UN reintento ya programado 14/11 17:07 ART que debe comprobar cuota/estado antes de actuar. **Supabase**: 7 rondas, pero cron heredado `cotironda_piloto_close_due_5min` cerró la única `prepared` a las **06:25 ART** del 14/11: ahora **5 cerradas, 2 borradores, 0 preparadas**. V2 negocio/originales/cierre/términos continúan **OFF**; 0 consentimientos originales, 0 avisos; 0 mensajes nuevos en `whapi_outbox` (último envío histórico 03/11), 0 `finalist_whapi_outbox_mvp110`. Hay 1 comprador y 2 proveedores WhatsApp consentidos, **106 productos en catálogos de 2 proveedores**: 86 `curated_family`, 20 `pending_review`; **0 proveedores con `catalogue_confirmed_at`**. Antes de una nueva ronda validar matching por producto y la disponibilidad real del catálogo, sin dar por confirmadas esas 106 líneas. La variable privada de Supabase ya figura en Vercel Preview y la HMAC también; aún falta probar autenticación real.
