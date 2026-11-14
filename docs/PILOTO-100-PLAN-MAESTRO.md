@@ -4,6 +4,8 @@
 
 **Relevo verificado 14/11 06:30 ART:** Vercel Preview SHA f985 respondió HTTP 402 cuota diaria; NO publicada. Mantener reintento único 17:07 ART, no otro proyecto ni gastos. Cron histórico cerró la última ronda `prepared` a las 06:25 ART: 7 rondas = 5 cerradas, 2 borradores, cero preparadas. WhatsApp histórico sin nuevos mensajes enviados; 0 finales/revelaciones por outbox. Comprador y dos proveedores en WhatsApp; 106 líneas de catálogo, 86 curadas, 20 pendientes, 0 catálogos con confirmación registrada. Clave `sb_secret_` de Supabase sigue faltando y requiere panel privado, no simularla. Mantener todas las políticas V2 OFF.
 
+- [x] **Cierre V1 aislado del piloto V2:** migración Supabase PILOTO `20261114093622` detuvo **solo job1** de `cotironda_piloto_close_due_5min`, no lo borró y dejó jobs3/4 activos. Prueba PostgreSQL 17 con rollback real y poscontrol: 7 rondas conservadas (5 cerradas, 2 borradores), negocio/originales/cierre/términos OFF, 0 consentimientos. [Acta](PILOTO-V2-CRON-V1-SUSPENDIDO-20261114.md), [PR #852](https://github.com/ProtectorRudo/Cotironda/pull/852). No encender cron antiguo para cerrar V2.
+
 ## Checklist de desbloqueo (en orden)
 
 - [x] **Dirección V2 decidida y documentada:** por catálogo y zona, original fiel, proveedor identificado al responder, guía individual, cierre 2 días hábiles e informe general. No rankings/ganadores automáticos V1.
