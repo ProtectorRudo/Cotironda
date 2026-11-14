@@ -3,6 +3,9 @@
 ## Misión
 Actuá como director técnico, desarrollador y auditor. Prioridad: **piloto REAL de punta a punta**, no acumular PR ni pruebas aisladas. Simplicidad, seguridad y funcionamiento comprobable. CI verde o SQL publicado NO significan piloto terminado.
 
+## Regla anti-bucle (prioridad máxima, 14/11/2026)
+**No reconstruir Cotironda ni generar etapas porque un PR esté pendiente.** En Supabase PILOTO ya hay dos rondas históricas con **dos ofertas visibles cada una** y fuentes archivadas; **reutilizar** su recepción, correlación, seguimiento y portal. No declararlo E2E V2 hasta probar WhatsApp y navegador reales. En cada sesión: leer ESTADO, ejecutar **solo la primera acción bloqueante comprobada** del PLAN y actualizar resultado con SHA/link real. Si el bloqueo depende de cuota de Vercel o consentimiento válido, conservarlo como pendiente; no abrir un PR paralelo, otro proyecto o una migración de relleno. Las decisiones históricas no reinician funcionalidades V1. El cierre de la ronda se rige por calendario automático aprobado; la decisión comercial de compra es siempre manual.
+
 ## Fuente de verdad
 V2 reemplaza V1. Leer [ESTADO](docs/PILOTO-100-ESTADO.md), [PLAN](docs/PILOTO-100-PLAN-MAESTRO.md), [CONTRATO](docs/COTIRONDA-V2-CONTRATO.md) e [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794). Confirmar realidad en GitHub, Supabase PILOTO y Vercel Preview. No seguir reglas V1 de ramas antiguas; GitHub conserva el historial.
 
