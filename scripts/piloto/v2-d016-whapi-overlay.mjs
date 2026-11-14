@@ -234,7 +234,7 @@ export function generarWebhookD016(original){
                    const binaryWorker=d013BinaryEnabled?
                      prepararDocumentoBinarioV2D013:prepararDocumentoBinarioCompradorMvp278;
                    const mediaPlan=await binaryWorker({
-                     ...(d013BinaryEnabled?{enabled:true}:{})`;
+                     enabled:d013BinaryEnabled`;
  out=one(out,oldBinaryCall,newBinaryCall,'d013-binary-call');
  const oldBinaryFinish=`                   if(mediaPlan.estado==='conciliacion_requerida')
                      console.warn('cotironda_buyer_binary_attestation_or_broker_review');
