@@ -1,5 +1,15 @@
 # COTIRONDA V2 — PLAN MAESTRO Y CHECKLIST
 
+### 13/11/2026 — D016: un solo «NO COMPARTIR» anula originales globalmente
+
+- [x] **Migración real `20261114015943` publicada** SOLO en Supabase `cotironda-piloto`. SQL `v2_d016_global_original_optout_CANDIDATE.sql`: RPC de baja verifica mensaje textual Whapi por SHA y chat del proveedor, audita una baja global, revoca `v2_supplier_original_consents.revoked_at` aun sin rondas, mantiene la baja de avisos previos e impide reconsentimiento retroactivo con trigger. Proveedor puede seguir cotizando y no debe confirmar cada presupuesto. [Acta](https://github.com/ProtectorRudo/Cotironda/blob/fix/d016-no-compartir-revocacion-global-20261113/docs/PILOTO-D016-BAJA-GLOBAL-PUBLICADO-20261113.md).
+- [x] [PR #845](https://github.com/ProtectorRudo/Cotironda/pull/845) DRAFT + tests PG17 **SUCCESS**, [run 43543664303](https://github.com/ProtectorRudo/Cotironda/actions/runs/43543664303): con/sin aviso, revocación de consentimiento general, doble mensaje, texto/otro remitente, recuperaciones retroactivas bloqueadas y reconsentimiento posterior válido. No merge, no webhook real.
+- [x] Poscontrol DB: siete rondas históricas/1 preparada intactas; originales/consentimientos/avisos/bajas reales **0**, negocios/originales/cierre OFF, RLS protegida, servicio exclusivamente autorizado para RPC.
+- [ ] **Alta de proveedores sin fricción:** consentimiento de cesión de originales una sola vez (informado, expreso, auditable, revisión legal Ley 25.326) integrado al registro o contrato; **NO confundir proveedor genéricamente registrado con autorización de compartir documentos**. No autorizar rondas históricas retroactivas.
+- [ ] Credenciales privadas de Vercel Preview `cotironda-portal-dev` sin imprimir ni inventar valores; UI f985 en reintento exclusivo ya programado. Edge Whapi D016 candidato OFF y E2E auténtico 1 comprador + 2 proveedores (pedido por producto/catálogo→respuestas originales→análisis breve→cierre).
+- [ ] No encender flags/comercio/cierre ni afirmar piloto 100% antes de pruebas reales y autorización jurídica.
+
+
 ### 13/11/2026 — D016: seguridad de originales publicada en PILOTO, negocio OFF
 
 - [x] Migración `20261113232051` publicada y confirmada en Supabase `cotironda-piloto`: dos RPC de listado/fuente exigen **autorización V2 previa por proveedor + aviso Whapi D016 + respuesta idéntica/ronda/hash + ausencia de baja**. Mantener auditorías de descarga y análisis validados por fuente. [Acta](https://github.com/ProtectorRudo/Cotironda/blob/fix/d016-original-download-requires-inbox-evidence-20261113/docs/PILOTO-D016-ORIGINALES-PRUEBA-DOBLE-PUBLICADO-20261113.md), [PR #844](https://github.com/ProtectorRudo/Cotironda/pull/844) DRAFT.
