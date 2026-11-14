@@ -1,5 +1,16 @@
 # COTIRONDA V2 — PLAN MAESTRO Y CHECKLIST
 
+### 13/11/2026 — Consentimiento V2 único por proveedor en el alta, instalado OFF
+
+- [x] **Migración real `20261114022538`** en Supabase `cotironda-piloto`: términos versionados y SHA de cuerpo legal sin aprobar (kill switch OFF), ledger privado/RLS de mensaje de alta enviado, dos RPC exclusivamente server-only para registrar envío aceptado por Whapi y **aceptación expresa única** desde chat auténtico `ACEPTO COTIRONDA ORIGINALES V2`. No activa ninguna política; ninguna ronda antigua recibió consentimiento retroactivo.
+- [x] **PG17 sintético** [run 43546080912](https://github.com/ProtectorRudo/Cotironda/actions/runs/43546080912) SUCCESS: política OFF, aviso ausente, SHA erróneo, otra persona/chat, mensaje previo al aviso, duplicados, baja global, nueva aceptación posterior, ACL y ROLLBACK. [PR #846](https://github.com/ProtectorRudo/Cotironda/pull/846) DRAFT, [acta](https://github.com/ProtectorRudo/Cotironda/blob/feat/d016-alta-unica-consentimiento-originales-20261113/docs/PILOTO-D016-ALTA-UNICA-ORIGINALES-PUBLICADO-20261113.md).
+- [x] **Poscontrol REAL:** 7 rondas intactas/1 preparada; 0 consentimientos y 0 entregas de términos, 0 sesiones y bajas; términos legales OFF y sin SHA/fecha de aprobación; flags negocio/originales/cierre OFF, roles públicos negados.
+- [ ] Aprobar jurídicamente texto completo de condiciones V2 (Ley 25.326, autorización informada y revocación) y almacenar SHA/versionado con referencia de aprobación. No inferir consentimiento de registro previo ni de haber enviado una cotización.
+- [ ] Integrar las RPC de alta con el mismo WhatsApp de bienvenida para proveedores nuevos, registrar ID real de API Whapi y una aceptación **solo una vez**, sin confirmaciones por cotización, sin tocar webhook histórico v76 sin pruebas.
+- [ ] Provisionar en servidor Vercel Preview `cotironda-portal-dev` las dos credenciales privadas faltantes y resolver acceso protegido SSO al arquitecto; reintento exacto de UI f985 programado, no duplicar ni publicar producción.
+- [ ] Prueba integral real: comprador arquitecto y dos proveedores consentidos (Ailín y Nahuel), correlación catálogo→presupuestos originales→análisis→informe final. No declarar piloto 100 % sin comprobar navegación y WhatsApp reales.
+
+
 ### 13/11/2026 — D016: un solo «NO COMPARTIR» anula originales globalmente
 
 - [x] **Migración real `20261114015943` publicada** SOLO en Supabase `cotironda-piloto`. SQL `v2_d016_global_original_optout_CANDIDATE.sql`: RPC de baja verifica mensaje textual Whapi por SHA y chat del proveedor, audita una baja global, revoca `v2_supplier_original_consents.revoked_at` aun sin rondas, mantiene la baja de avisos previos e impide reconsentimiento retroactivo con trigger. Proveedor puede seguir cotizando y no debe confirmar cada presupuesto. [Acta](https://github.com/ProtectorRudo/Cotironda/blob/fix/d016-no-compartir-revocacion-global-20261113/docs/PILOTO-D016-BAJA-GLOBAL-PUBLICADO-20261113.md).
