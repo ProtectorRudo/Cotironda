@@ -9,7 +9,9 @@
 **Control 14/11 ~07:16 ART:** intervención del titular completada y presencia de secret verificada en Vercel. Continuar en Bloqueo 2, único reintento f985; NO intentar saltar cuota ni generar otra credencial.
 
 - [x] **Diagnóstico P0 D016 solo lectura:** preflight SQL real confirmó 5 RPC instaladas, calendario La Plata 2026 aprobado, comprador verificado 1, 0 consentimientos de originales, políticas OFF. No volver a crear RPC ya existentes.
-- [ ] **Puente Whapi desde fuente real:** Edge piloto v76 tiene **16 diferencias** respecto a índice de PR #837. [PR #853](https://github.com/ProtectorRudo/Cotironda/pull/853) prepara candidato generable SOLO desde SHA256 live `349831d3be81d0da95ba0cc3b699256521e35d4b7c0f1923e3dc2a6a714d0c7d`; CI pendiente al redactar. NUNCA publicar un reemplazo directo desde rama GitHub vieja. Para futura activación: 61 módulos live + 2 módulos de overlay, pruebas finales, HMAC Edge coordinada y mismas reglas de consentimiento; flag D016 WhatsApp OFF hasta entonces.
+- [ ] **Puente Whapi desde fuente real:** Edge piloto v76 tiene **16 diferencias** respecto a índice de PR #837. [PR #853](https://github.com/ProtectorRudo/Cotironda/pull/853) prepara candidato generable SOLO desde SHA256 live `349831d3be81d0da95ba0cc3b699256521e35d4b7c0f1923e3dc2a6a714d0c7d`; CI 7/7 SUCCESS. NUNCA publicar un reemplazo directo desde rama GitHub vieja. Para futura activación: 61 módulos live + 2 módulos de overlay, pruebas finales, HMAC Edge coordinada y mismas reglas de consentimiento; flag D016 WhatsApp OFF hasta entonces.
+
+**Pruebas de la rama D016 live-v76:** PR [#853](https://github.com/ProtectorRudo/Cotironda/pull/853) `b6f3a48fda7e2824b93ffb0189fe5879d50da74b`, 7 workflows GitHub **SUCCESS**, incluido Node D016 y build Next.js. Es **CANDIDATO**, no publicación de Whapi: el Edge sigue v76 sin D016, faltan HMAC coordinada en Edge, original consent y ensayos reales.
 
 ## Checklist de desbloqueo (en orden)
 
