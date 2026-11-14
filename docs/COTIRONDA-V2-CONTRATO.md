@@ -1,6 +1,6 @@
 # COTIRONDA V2 — CONTRATO CANÓNICO DEL PRODUCTO
 
-**Decisión del propietario: 12/11/2026. Estado: APROBADA COMO DIRECCIÓN DE PRODUCTO, NO IMPLEMENTADA NI DESPLEGADA.**
+**Decisión del propietario: 12/11/2026. Estado: APROBADA; implementación PARCIAL en Supabase piloto, circuito V2 NO verificado de punta a punta.** Para el estado operativo comprobado, la primera fuente es [PILOTO-100-ESTADO.md](PILOTO-100-ESTADO.md); este contrato establece reglas de negocio, no estado de despliegue.
 
 > **PRECEDENCIA OBLIGATORIA:** este documento reemplaza las decisiones funcionales anteriores en lo que contradigan Cotironda V2. Para ejecutar trabajo leer primero: **este contrato → [Plan maestro V2](PILOTO-100-PLAN-MAESTRO.md) → [Estado/relevo V2](PILOTO-100-ESTADO.md) → [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794)**. README y AGENTS deben apuntar aquí. La documentación en `docs/historico/`, PR anteriores y memorias de chat son evidencia histórica, **no instrucciones activas**. Toda duda se registra como decisión explícita, no se resuelve recuperando una regla vieja.
 
