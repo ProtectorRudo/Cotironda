@@ -138,9 +138,11 @@ export function generarWebhookD016(original){
 // Ejemplo: node scripts/piloto/v2-d016-whapi-overlay.mjs --live-v76-source /ruta/privada/index.ts --write-live-v76-candidate
 if(process.argv[1]&&resolve(process.argv[1])===THIS){
  try{
-  inspeccionarWebhookMvp332(ROOT);
   const sourceIndex=process.argv.indexOf('--live-v76-source');
   const live=sourceIndex>=0;
+  // El inspector histórico MVP332 valida el checkout GH anterior, NO el
+  // snapshot LIVE v76, cuya validación es el manifiesto íntegro 61/61.
+  if(!live)inspeccionarWebhookMvp332(ROOT);
   if(process.argv.includes('--write-live-v76-candidate')&&!live)
    throw Error('d016_live_v76_source_required');
   if(live&&process.argv.includes('--write-candidate'))
