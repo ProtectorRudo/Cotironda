@@ -1,5 +1,13 @@
 # Registro de cambios Cotironda
 
+## [PILOTO PUBLICADO] — 14/11/2026 — Pausa segura del cron cierre V1
+
+- Supabase `cotironda-piloto` migración **`20261114093622`**: `cotironda_v2_pause_legacy_close_cron_only_pilot_20261114`. Suspendió exclusivamente `cron.job` job1 `cotironda_piloto_close_due_5min` heredado de V1, mediante `cron.alter_job(...active=>false)` sin borrarlo. Conserva cron job3/4.
+- Preflight exige PG17, job exacto, 7 rondas (5 cerradas, 2 borradores, 0 preparadas) y todas las políticas V2 OFF. Simulación SQL en transacción `BEGIN/ROLLBACK` real comprobada y posterior migración `success=true`; poscontrol: job1 OFF, jobs3/4 ON; 7 rondas sin cambios y cero consentimientos.
+- [PR #852](https://github.com/ProtectorRudo/Cotironda/pull/852) · [Acta](docs/PILOTO-V2-CRON-V1-SUSPENDIDO-20261114.md). Rollback separado `REVIEW_ONLY` necesita autorización explícita; no volver a activar cierre V1 para V2.
+- Ningún WhatsApp, acceso privado, Vercel ni producción modificados. Piloto E2E no completado; Preview f985 402 por cuota y clave `sb_secret_` Supabase todavía ausente.
+
+
 ## [Sin publicar] — 14/11/2026 — Relevo corto y foco piloto real
 
 - AGENTS.md queda en **3.421 caracteres**, menos de 3.500. V2 vigente, prioridad WhatsApp y ronda comercial real, no versiones anteriores.
