@@ -6,6 +6,11 @@ import {autorizarPropuestasCatalogoV2}
 import {armarPreparacionSombraMvp221,guardarRondaSombraMvp221}
  from '../../src/domain/ia-central/puente-sql-rondas-v2-d013.ts';
 
+import {procesarCompradorCentralMvp226 as publicarCompradorV2}
+ from '../../supabase/functions/cotironda-piloto-whapi/ai-central-buyer-v2-d013.ts';
+import {continuarZonaCentralMvp233 as continuarLocalidadV2}
+ from '../../supabase/functions/cotironda-piloto-whapi/ai-central-zone-v2-d013.ts';
+
 const original='100 bolsas cemento Loma Negra 50 kg, entregar en La Plata';
 const span='100 bolsas cemento Loma Negra 50 kg';
 const pedido={
@@ -132,4 +137,114 @@ test('V2-21: candidato SQL verifica source hash, aislamiento y ACL',()=>{
  assert.match(sql,/v_header text:='FUNCTION public\.cotironda_piloto_ia_shadow_prepare_mvp221\('/u);
  assert.doesNotMatch(sql,/\bDROP\s+(?:TABLE|FUNCTION|SCHEMA)\b/iu);
  assert.doesNotMatch(sql,/\bTRUNCATE\b/iu);
+});
+
+// Prueba integrada de los workers V2 con RPC inyectadas (nunca WhatsApp real).
+// El único camino a publicación debe ser v2_auto_release_d013; la función
+// histórica MVP222 exige confirmación V1 y NO es compatible con V2.
+test('D013: solicitud por texto invoca auto-release V2 atómico, sin MVP222',async()=>{
+ const route=autorizarPropuestasCatalogoV2(pedido,proveedores,propuesta);
+ const plan={estado:'plan_validado_sin_envio',whatsappEnviado:false,
+  baseModificada:false,pedido,ruteo:route,catalogos:proveedores};
+ const round='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',calls=[];
+ const rpc=async(name,params)=>{
+  calls.push({name,params});
+  const data=name==='cotironda_piloto_ia_reserve_buyer_mvp226'?
+   {state:'reserved'}:
+   name==='cotironda_piloto_v2_shadow_prepare_d013'?
+    {state:'shadow_staged',items_staged:1,matches_staged:1,
+     invitations_sent:0,outbox_sent:0}:
+   name==='cotironda_piloto_ia_lookup_round_mvp226'?
+    {state:'linked',request_id:round}:
+   name==='cotironda_piloto_v2_auto_release_d013'?
+    {state:'ready_for_delivery',request_id:round}:
+   name==='cotironda_piloto_ia_finish_buyer_mvp226'?
+    {state:'finished'}:null;
+  assert.ok(data,'RPC inesperada '+name);
+  return {data,error:null};
+ };
+ const result=await publicarCompradorV2({
+  habilitado:true,publicar:true,autenticadoPorWebhook:true,
+  chatHmac:'a'.repeat(64),messageHmac:'b'.repeat(64),
+  sourceSha256:'c'.repeat(64),fuente:original,
+  model:'gpt-6-luna',apiKey:'sk-test-local-no-requests',
+  planificar:async()=>plan,rpc
+ });
+ assert.equal(result.estado,'ronda_publicada');
+ assert.equal(result.requestId,round);
+ assert.equal(result.whatsappEnviado,false);
+ assert.deepEqual(calls.filter(x=>x.name==='cotironda_piloto_v2_auto_release_d013')
+  .map(x=>x.params),[{p_chat_hmac:'a'.repeat(64),p_source_hmac:'b'.repeat(64)}]);
+ assert.ok(!calls.some(x=>x.name==='cotironda_piloto_ia_publish_mvp222'));
+});
+
+test('D013: política de auto-release OFF conserva ronda en sombra, sin WhatsApp',async()=>{
+ const route=autorizarPropuestasCatalogoV2(pedido,proveedores,propuesta);
+ const plan={estado:'plan_validado_sin_envio',whatsappEnviado:false,
+  baseModificada:false,pedido,ruteo:route,catalogos:proveedores};
+ const round='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+ const calls=[];
+ const rpc=async(name)=>{
+  calls.push(name);
+  const data=name==='cotironda_piloto_ia_reserve_buyer_mvp226'?{state:'reserved'}:
+   name==='cotironda_piloto_v2_shadow_prepare_d013'?
+    {state:'shadow_staged',items_staged:1,matches_staged:1,
+     invitations_sent:0,outbox_sent:0}:
+   name==='cotironda_piloto_ia_lookup_round_mvp226'?
+    {state:'linked',request_id:round}:
+   name==='cotironda_piloto_v2_auto_release_d013'?{state:'disabled'}:
+   name==='cotironda_piloto_ia_finish_buyer_mvp226'?{state:'finished'}:null;
+  assert.ok(data,name);return {data,error:null};
+ };
+ const result=await publicarCompradorV2({
+  habilitado:true,publicar:true,autenticadoPorWebhook:true,
+  chatHmac:'a'.repeat(64),messageHmac:'b'.repeat(64),
+  sourceSha256:'c'.repeat(64),fuente:original,
+  model:'gpt-6-luna',apiKey:'sk-test-local-no-requests',
+  planificar:async()=>plan,rpc
+ });
+ assert.equal(result.estado,'ronda_en_sombra');
+ assert.equal(result.seguimientoHabilitado,false);
+ assert.ok(calls.includes('cotironda_piloto_v2_auto_release_d013'));
+ assert.ok(!calls.includes('cotironda_piloto_ia_publish_mvp222'));
+});
+
+test('D013: localidad reanuda mismo original y publica SOLO vía RPC V2',async()=>{
+ const text='100 bolsas cemento Loma Negra 50 kg';
+ const span=text;
+ const zoned={...pedido,articulos:[{...pedido.articulos[0],
+  evidencia:span,inicio:0,fin:span.length}]};
+ const route=autorizarPropuestasCatalogoV2(zoned,proveedores,propuesta);
+ const plan={estado:'plan_validado_sin_envio',whatsappEnviado:false,
+  baseModificada:false,pedido:zoned,ruteo:route,catalogos:proveedores};
+ const round='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',calls=[];
+ const rpc=async(name,params)=>{
+  calls.push({name,params});
+  const data=name==='cotironda_piloto_v2_shadow_prepare_d013'?
+    {state:'shadow_staged',items_staged:1,matches_staged:1,
+     invitations_sent:0,outbox_sent:0}:
+   name==='cotironda_piloto_ia_lookup_round_mvp226'?
+    {state:'linked',request_id:round}:
+   name==='cotironda_piloto_v2_auto_release_d013'?
+    {state:'ready_for_delivery',request_id:round}:
+   name==='cotironda_piloto_ia_finish_buyer_mvp226'?
+    {state:'finished'}:null;
+  assert.ok(data,'RPC inesperada '+name);
+  return {data,error:null};
+ };
+ const result=await continuarLocalidadV2({
+  autenticadoPorWebhook:true,chatHmac:'a'.repeat(64),
+  sourceHmac:'b'.repeat(64),originalSha256:'c'.repeat(64),
+  ciudadConfirmada:'La Plata',nonce:'nonce',ciphertext:'encrypted',
+  apiKey:'sk-test-local-no-requests',model:'gpt-6-luna',
+  publicar:true,decrypt:async()=>text,shaText:async()=> 'c'.repeat(64),
+  rpc,planificar:async()=>plan
+ });
+ assert.equal(result.estado,'ronda_publicada');
+ assert.equal(result.requestId,round);
+ assert.deepEqual(calls.filter(x=>x.name==='cotironda_piloto_v2_auto_release_d013')
+  .map(x=>x.params),[{p_chat_hmac:'a'.repeat(64),p_source_hmac:'b'.repeat(64)}]);
+ const staging=calls.find(x=>x.name==='cotironda_piloto_v2_shadow_prepare_d013');
+ assert.equal(staging?.params.p_original_text,text);
+ assert.ok(!calls.some(x=>x.name==='cotironda_piloto_ia_publish_mvp222'));
 });
