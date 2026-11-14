@@ -113,6 +113,12 @@ export function verificarCorrespondenciaTecnicaD013(
  if(!pedido||typeof pedido.descripcion!=='string'||
   typeof pedido.evidencia!=='string'||typeof catalogo!=='string'||
   !catalogo.trim()||catalogo.length>250)return refuse('fuentes_invalidas');
+ // Una categoría administrativa sirve para clasificar o pedir precios,
+ // pero NO demuestra que exista un producto concreto en el catálogo.
+ // Caso real del piloto: «Arena/Piedra sin subtipo (categoría de cotización)».
+ // Eliminar esta falso positivo evita invitar por categoría en vez de SKU.
+ if(/\bcategoria de cotizacion\b/u.test(fold(catalogo)))
+  return refuse('entrada_de_catalogo_no_es_producto');
  const demand=[pedido.descripcion,pedido.evidencia,pedido.presentacion??'',
   pedido.aclaracion??''].join(' ');
  const supplied=fold(catalogo);

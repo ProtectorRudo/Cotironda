@@ -66,6 +66,60 @@ test('D013: no invitamos por rubro, nombre no declarado, zona o consentimiento',
  const noMatches=autorizarPropuestasCatalogoV2(pedido,proveedores,[]);
  assert.equal(noMatches.propuestas.length,0);
 });
+test('D013: las categorias de cotizacion del catalogo real NO acreditan producto',()=>{
+ const arena='bolsones de arena';
+ const solicitada={...pedido,articulos:[{
+  ...pedido.articulos[0],descripcion:arena,evidencia:arena,
+  cantidad:'2',unidad:'bag',presentacion:null,aclaracion:null
+ }]};
+ const supplier={...proveedores[0],articulos:[
+  {numero:52,descripcion:'Arena sin subtipo especificado (categoría de cotización)',rubro:'obra_gruesa'}
+ ]};
+ const proposed=[{proveedor:supplier.clave,correspondencias:[{
+  indicePedido:0,numeroCatalogo:52,tipo:'producto_declarado',
+  explicacion:'Solo categoria administrativa, NO producto físico'}]}];
+ const rejected=autorizarPropuestasCatalogoV2(solicitada,[supplier],proposed);
+ assert.equal(rejected.estado,'requiere_revision');
+ assert.equal(rejected.propuestas.length,0);
+ assert.equal(rejected.revisionTecnica[0]?.motivo,'entrada_de_catalogo_no_es_producto');
+ assert.equal(rejected.whatsappEnviado,false);
+ const piedra='bolsones de piedra';
+ const rock={...solicitada,articulos:[{
+  ...solicitada.articulos[0],descripcion:piedra,evidencia:piedra
+ }]};
+ const category={...supplier,articulos:[{
+  numero:53,descripcion:'Piedra sin subtipo especificado (categoría de cotización)',
+  rubro:'obra_gruesa'
+ }]};
+ const invalid=autorizarPropuestasCatalogoV2(rock,[category],[{
+  proveedor:category.clave,correspondencias:[{
+   indicePedido:0,numeroCatalogo:53,tipo:'producto_declarado',
+   explicacion:'Otra categoria administrativa'
+  }]
+ }]);
+ assert.equal(invalid.propuestas.length,0);
+ assert.equal(invalid.revisionTecnica[0]?.motivo,'entrada_de_catalogo_no_es_producto');
+});
+
+test('D013: el guard NO bloquea material concreto del mismo catalogo',()=>{
+ const span='bolsón de arena fina 1 m3';
+ const wanted={...pedido,articulos:[{
+  ...pedido.articulos[0],descripcion:span,evidencia:span,
+  cantidad:'2',unidad:'bag',presentacion:null,aclaracion:null
+ }]};
+ const concrete={...proveedores[0],articulos:[{
+  numero:20,descripcion:'Bolsón de arena fina 1 m3',rubro:'obra_gruesa'
+ }]};
+ const proposal=[{proveedor:concrete.clave,correspondencias:[{
+  indicePedido:0,numeroCatalogo:20,tipo:'producto_declarado',
+  explicacion:'Bolsón arena fina 1 m3 expresamente declarado'
+ }]}];
+ const allowed=autorizarPropuestasCatalogoV2(wanted,[concrete],proposal);
+ assert.equal(allowed.estado,'ruteo_valido_para_preparacion');
+ assert.equal(allowed.propuestas.length,1);
+ assert.equal(allowed.whatsappEnviado,false);
+});
+
 test('D013: puente SQL conserva cita exacta aun con rubros diferentes',()=>{
  const result=autorizarPropuestasCatalogoV2(pedido,proveedores,propuesta);
  const plan={
