@@ -264,7 +264,7 @@ test('D013 binarios: publicar solo despues de atestacion independiente MVP278',a
    assert.equal(args.habilitado,true);
    assert.equal(args.broker instanceof Function,true);
    // El wrapper solicita SOMBRA, nunca publicación desde MVP278.
-   assert.equal(args.webhookAutenticado,true);
+   assert.equal(args.autenticadoPorWebhook,true);
    return {estado:'ronda_en_sombra',originalAutorizado:true,
     rondaPublicada:false,whatsappEnviado:false};
   },
