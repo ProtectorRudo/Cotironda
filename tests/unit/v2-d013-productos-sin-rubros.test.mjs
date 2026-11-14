@@ -270,6 +270,10 @@ test('D013 binarios: publicar solo despues de atestacion independiente MVP278',a
   },
   rpc:async(name,params)=>{
    names.push(name);
+   if(name==='cotironda_piloto_ia_lookup_round_mvp226'){
+    assert.deepEqual(params,{p_chat_hmac:'a'.repeat(64),p_message_hmac:'b'.repeat(64)});
+    return {error:null,data:{state:'linked',request_id:release}};
+   }
    assert.equal(name,'cotironda_piloto_v2_auto_release_d013');
    assert.deepEqual(params,{
     p_chat_hmac:'a'.repeat(64),p_source_hmac:'b'.repeat(64)
@@ -282,24 +286,49 @@ test('D013 binarios: publicar solo despues de atestacion independiente MVP278',a
  assert.equal(yes.requestId,release);
  assert.equal(yes.originalVerificado,true);
  assert.equal(yes.whatsappEnviado,false);
- assert.deepEqual(names,['cotironda_piloto_v2_auto_release_d013']);
+ assert.deepEqual(names,['cotironda_piloto_ia_lookup_round_mvp226',
+  'cotironda_piloto_v2_auto_release_d013']);
  for(const state of ['disabled','originals_disabled','calendar_disabled']){
   let n=0;
   const no=await prepararDocumentoBinarioV2D013({
-   ...base,rpc:async()=>{n++;return {error:null,data:{state}}}
+   ...base,rpc:async name=>{n++;return {error:null,data:
+    name==='cotironda_piloto_ia_lookup_round_mvp226'?
+     {state:'linked',request_id:release}:{state}
+   }}
   });
   assert.equal(no.estado,'ronda_en_sombra');
   assert.equal(no.requestId,null);
-  assert.equal(n,1);
+  assert.equal(n,2);
  }
  let uncertain=0;
  const wrong=await prepararDocumentoBinarioV2D013({
-  ...base,rpc:async()=>{uncertain++;return {error:null,data:{
-   state:'ready_for_delivery',request_id:'not-uuid'
-  }}}
+  ...base,rpc:async name=>{uncertain++;return {error:null,data:
+   name==='cotironda_piloto_ia_lookup_round_mvp226'?
+    {state:'linked',request_id:release}:
+    {state:'ready_for_delivery',request_id:'not-uuid'}
+  }}
  });
  assert.equal(wrong.estado,'conciliacion_requerida');
- assert.equal(uncertain,1);
+ assert.equal(uncertain,2);
+ const other='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+ const mismatch=await prepararDocumentoBinarioV2D013({
+  ...base,rpc:async name=>({error:null,data:
+   name==='cotironda_piloto_ia_lookup_round_mvp226'?
+    {state:'linked',request_id:release}:
+    {state:'ready_for_delivery',request_id:other}
+  })
+ });
+ assert.equal(mismatch.estado,'conciliacion_requerida');
+ assert.equal(mismatch.requestId,null);
+ let published=0;
+ const noLink=await prepararDocumentoBinarioV2D013({
+  ...base,rpc:async name=>{
+   if(name==='cotironda_piloto_v2_auto_release_d013')published++;
+   return {error:null,data:{state:'ambiguous'}};
+  }
+ });
+ assert.equal(noLink.estado,'conciliacion_requerida');
+ assert.equal(published,0);
 });
 
 test('D013 binarios: no publicar ante original no verificado, gate OFF o reintento',async()=>{
