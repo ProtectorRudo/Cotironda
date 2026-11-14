@@ -221,7 +221,7 @@ export function generarWebhookD016(original){
  const v2BinaryImport=oldBinaryImport+
   "\nimport {prepararDocumentoBinarioV2D013} from './ai-central-buyer-binary-v2-d013.ts';";
  out=one(out,oldBinaryImport,v2BinaryImport,'d013-binary-import');
- const oldBinaryCall=`                   const mediaPlan=await prepararDocumentoBinarioCompradorMvp278({`;
+ const oldBinaryCall=`                  const mediaPlan=await prepararDocumentoBinarioCompradorMvp278({`;
  const newBinaryCall=`                   const d013BinaryEnabled=habilitarPublicacionD013ConAccesoD016({
                      outbound:sec.outbound,
                      matchingEnabled:Deno.env.get('COTIRONDA_PILOT_V2_D013_PRODUCT_MATCHING_ENABLED')==='true',
@@ -236,11 +236,11 @@ export function generarWebhookD016(original){
                    const mediaPlan=await binaryWorker({
                      enabled:d013BinaryEnabled`;
  out=one(out,oldBinaryCall,newBinaryCall,'d013-binary-call');
- const oldBinaryFinish=`                   if(mediaPlan.estado==='conciliacion_requerida')
-                     console.warn('cotironda_buyer_binary_attestation_or_broker_review');
-                   if(mediaPlan.estado==='ronda_en_sombra'&&
-                      !await emitirRevisionUnificada(messageHash))
-                     return json(503,'buyer_review_delivery_reconciliation_required');`;
+ const oldBinaryFinish=`                  if(mediaPlan.estado==='conciliacion_requerida')
+                    console.warn('cotironda_buyer_binary_attestation_or_broker_review');
+                  if(mediaPlan.estado==='ronda_en_sombra'&&
+                     !await emitirRevisionUnificada(messageHash))
+                    return json(503,'buyer_review_delivery_reconciliation_required');`;
  const newBinaryFinish=`                   if(mediaPlan.estado==='conciliacion_requerida')
                      console.warn('cotironda_buyer_binary_attestation_or_broker_review');
                    if(mediaPlan.estado==='ronda_publicada'){
