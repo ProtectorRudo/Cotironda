@@ -1,5 +1,14 @@
 # Registro de cambios Cotironda
 
+## [Sin publicar] — 14/11/2026 — Relevo corto y foco piloto real
+
+- AGENTS.md queda en **3.421 caracteres**, menos de 3.500. V2 vigente, prioridad WhatsApp y ronda comercial real, no versiones anteriores.
+- Estado compacto: 86.729 a 4.239 caracteres; un solo bloqueo real: credencial sb_secret de Supabase ausente en Vercel Preview, con HMAC ya creada; flags V2 apagados.
+- Plan maestro: 90.751 a 4.794 caracteres; seis bloqueos en secuencia, prueba E2E de comprador y dos proveedores, sin mejoras secundarias.
+- Historial anterior preservado completo en Git SHA 7ea6863deb38415a518d5c80788d5210a9fca75e. Ramas anteriores pueden contener instrucciones V1 no vigentes.
+- Solo documentación de la rama V2; cero cambios en WhatsApp, Vercel, Supabase o producción. Piloto NO terminado.
+
+
 ## [Sin publicar] — 12/11/2026 — D013 / catálogos por producto y equivalencias
 
 - **Decisión DOCUMENTADA, sin código ni despliegue:** distribución por coincidencia de productos concretos del catálogo propio de cada proveedor, nunca por rubro/nicho. La IA comprende sinónimos, nombres comerciales (Ceresita/hidrófugo compatible), marcas flexibles y presentaciones (cemento 50/25 kg normalizado en masa), sin falsear equivalencias técnicas.
