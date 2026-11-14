@@ -255,7 +255,7 @@ test('D013: localidad reanuda mismo original y publica SOLO vía RPC V2',async()
 test('D013 binarios: publicar solo despues de atestacion independiente MVP278',async()=>{
  const names=[],release='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
  const base={
-  enabled:true,webhookAutenticado:true,compradorAutorizado:true,
+  enabled:true,autenticadoPorWebhook:true,compradorAutorizado:true,
   chatHmac:'a'.repeat(64),messageHmac:'b'.repeat(64),
   original:{mime:'application/pdf',sha256:'c'.repeat(64),
    bytes:new Uint8Array([37,80,68,70])},
@@ -305,7 +305,7 @@ test('D013 binarios: publicar solo despues de atestacion independiente MVP278',a
 test('D013 binarios: no publicar ante original no verificado, gate OFF o reintento',async()=>{
  const h='a'.repeat(64);
  const base={
-  enabled:true,webhookAutenticado:true,compradorAutorizado:true,
+  enabled:true,autenticadoPorWebhook:true,compradorAutorizado:true,
   chatHmac:h,messageHmac:'b'.repeat(64),
   original:{mime:'application/pdf',sha256:'c'.repeat(64),bytes:new Uint8Array(4)},
   primera:null,segunda:null,apiKey:'local-test',model:'gpt-6-luna',
