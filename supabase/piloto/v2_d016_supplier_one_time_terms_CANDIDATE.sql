@@ -88,6 +88,12 @@ BEGIN
   SELECT 1 FROM cotironda_piloto_privado.v2_d016_supplier_terms_notices n
   WHERE n.supplier_key=p_supplier_key
   AND n.reserved_at>=v_now-interval '24 hours'
+  -- Una baja explícita posterior al último aviso permite una NUEVA
+  -- aceptación con texto vigente sin quedar bloqueado 24 horas.
+  AND NOT EXISTS(
+   SELECT 1 FROM cotironda_piloto_privado.v2_d016_supplier_original_optout_events o
+   WHERE o.supplier_key=p_supplier_key AND o.received_at>n.reserved_at
+  )
  ) THEN RETURN NULL;END IF;
 
  INSERT INTO cotironda_piloto_privado.v2_d016_supplier_terms_notices(
