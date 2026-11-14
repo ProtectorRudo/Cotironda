@@ -131,6 +131,15 @@ export function generarWebhookD016(original){
   }
   const result=await notificarSeguimientoMvp289({`;
  out=one(out,start,overlay,'send');
+ // SEGUIMIENTO COTI: el comando recovery también debe respetar el gate D016
+ // independiente. Si D016 OFF, se mantiene la compuerta original MVP289.
+ const legacyRecovery=`       trial.buyer===true&&!supplierKnown&&!centralSupplier&&sec.outbound&&
+       pilotEnvNotDenied('COTIRONDA_PILOT_BUYER_TRACKING_ENABLED'))`;
+ const d016Recovery=`       trial.buyer===true&&!supplierKnown&&!centralSupplier&&
+       permitirAvisoD016(sec.outbound,
+        Deno.env.get('COTIRONDA_PILOT_D016_WHATSAPP_SEND_ENABLED')==='true',
+        Deno.env.get('COTIRONDA_PILOT_BUYER_TRACKING_ENABLED')))`;
+ out=one(out,legacyRecovery,d016Recovery,'recovery');
  if(!out.includes('COTIRONDA_PILOT_V2_REFERENCE_LINK_ENABLED')||
   !out.includes('buyer_d016_link_reconciliation_required'))
   throw Error('d016_overlay_incomplete');
