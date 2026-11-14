@@ -158,10 +158,7 @@ export function generarWebhookD016(original){
       habilitado:true,publicar:d013Enabled, // D013 sin confirmacion; SQL sigue gateado`;
  out=one(out,legacyBuyerCall,d013BuyerCall,'d013-buyer-call');
  const legacyBuyerBlock=`    if(result.estado==='ronda_publicada')
-       return json(503,'buyer_review_bypassed_by_text_broker');`;
- // La fuente live v76 usa 6 espacios para return (el index GitHub también).
- const actualBuyerBlock=`    if(result.estado==='ronda_publicada')
-       return json(503,'buyer_review_bypassed_by_text_broker');`;
+      return json(503,'buyer_review_bypassed_by_text_broker');`;
  const candidateBuyerBlock=`    if(result.estado==='ronda_publicada'){
       if(!d013Enabled||!result.requestId)
         return json(503,'buyer_review_bypassed_by_text_broker');
