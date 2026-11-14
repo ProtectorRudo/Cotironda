@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {createHmac} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {generarWebhookD016} from '../../scripts/piloto/v2-d016-whapi-overlay.mjs';
-import {notificarAccesoWhatsappD016,permitirAvisoD016,permitirRecuperacionD016}
+import {notificarAccesoWhatsappD016,permitirAvisoD016,permitirRecuperacionD016,
+ habilitarPublicacionD013ConAccesoD016}
  from '../../supabase/functions/cotironda-piloto-whapi/buyer-whatsapp-entry-d016.ts';
 
 const PORTAL='https://cotironda-portal-9sl89v1ho-protector-rudo-s-projects.vercel.app';
@@ -223,6 +224,29 @@ test('D016: SEGUIMIENTO COTI recupera acceso con tracking legado apagado',()=>{
  assert.equal(permitirRecuperacionD016(true,false,'false'),false);
 });
 
+test('D013: no publica sin D016 y release Preview privado verificable',()=>{
+ const base={
+  outbound:true,matchingEnabled:true,linkSendEnabled:true,
+  portalOrigin:PORTAL,portalSha:SHA,approvedSha:SHA,hmacKeyHex:KEY
+ };
+ assert.equal(habilitarPublicacionD013ConAccesoD016(base),true);
+ for(const update of [
+  {outbound:false},{matchingEnabled:false},{linkSendEnabled:false},
+  {portalOrigin:'https://evil.example.com'},
+  {portalOrigin:'http://cotironda-portal-x-protector-rudo-s-projects.vercel.app'},
+  {portalOrigin:PORTAL+'/'},
+  {portalSha:'bad'},{approvedSha:'f'.repeat(40)},
+  {hmacKeyHex:''},{hmacKeyHex:'x'.repeat(64)}
+ ]){
+  assert.equal(habilitarPublicacionD013ConAccesoD016({...base,...update}),false,
+   JSON.stringify(update));
+ }
+ // Nunca basta activar D013 a solas: el enlace de comprador debe funcionar.
+ assert.equal(habilitarPublicacionD013ConAccesoD016({
+  ...base,matchingEnabled:true,linkSendEnabled:false
+ }),false);
+});
+
 test('D013+ D016: candidato Whapi usa catalogo por producto SOLO con flag V2',()=>{
  const original=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/index.ts',
   import.meta.url),'utf8');
@@ -231,7 +255,9 @@ test('D013+ D016: candidato Whapi usa catalogo por producto SOLO con flag V2',()
  const candidate=generarWebhookD016(original);
  assert.match(candidate,/from '\.\/ai-central-buyer-mvp226\.ts';/u);
  assert.match(candidate,/from '\.\/ai-central-buyer-v2-d013\.ts';/u);
- assert.match(candidate,/const d013Enabled=Deno\.env\.get\('COTIRONDA_PILOT_V2_D013_PRODUCT_MATCHING_ENABLED'\)==='true'/u);
+ assert.match(candidate,/const d013Enabled=habilitarPublicacionD013ConAccesoD016\(\{/u);
+ assert.match(candidate,/matchingEnabled:Deno\.env\.get\('COTIRONDA_PILOT_V2_D013_PRODUCT_MATCHING_ENABLED'\)==='true'/u);
+ assert.match(candidate,/linkSendEnabled:Deno\.env\.get\('COTIRONDA_PILOT_D016_WHATSAPP_SEND_ENABLED'\)==='true'/u);
  assert.match(candidate,/const buyerWorker=d013Enabled\?\s*procesarCompradorCentralV2D013:procesarCompradorCentralMvp226/u);
  assert.match(candidate,/habilitado:true,publicar:d013Enabled/u);
  assert.match(candidate,/if\(!d013Enabled\|\|!result\.requestId\)/u);
