@@ -79,14 +79,18 @@ export function generarWebhookD016(original){
   throw Error('d016_overlay_base_invalid');
  let out=generarWebhookV202(original);
  const imp="import {notificarSeguimientoMvp289} from './buyer-tracking-confirmation-mvp289.ts';";
- out=one(out,imp,imp+"\nimport {notificarAccesoWhatsappD016} from './buyer-whatsapp-entry-d016.ts';",'import');
+ out=one(out,imp,imp+"\nimport {notificarAccesoWhatsappD016,permitirAvisoD016} from './buyer-whatsapp-entry-d016.ts';",'import');
  const start=` for(const notice of buyerLinkRequests){
   if(!sec.outbound||Deno.env.get('COTIRONDA_PILOT_BUYER_TRACKING_ENABLED')==='false')continue;
   const result=await notificarSeguimientoMvp289({`;
  const overlay=` for(const notice of buyerLinkRequests){
-  if(!sec.outbound||Deno.env.get('COTIRONDA_PILOT_BUYER_TRACKING_ENABLED')==='false')continue;
+  const d016Enabled=Deno.env.get('COTIRONDA_PILOT_D016_WHATSAPP_SEND_ENABLED')==='true';
+  // MVP289 y D016 tienen interruptores separados: el OFF legado
+  // no bloquea el enlace V2 autorizado. Outbound OFF siempre bloquea ambos.
+  if(!permitirAvisoD016(sec.outbound,d016Enabled,
+    Deno.env.get('COTIRONDA_PILOT_BUYER_TRACKING_ENABLED')))continue;
   // D016 sustituye MVP289 para este evento: jamás DOS WhatsApps.
-  if(Deno.env.get('COTIRONDA_PILOT_D016_WHATSAPP_SEND_ENABLED')==='true'){
+  if(d016Enabled){
    const access=await notificarAccesoWhatsappD016({
     enabled:true,webhookAutenticado:true,compradorVerificado:true,
     ...notice,
