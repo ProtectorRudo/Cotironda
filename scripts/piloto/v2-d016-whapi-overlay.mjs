@@ -74,6 +74,46 @@ function one(s,old,neu,tag){
   throw Error('d016_overlay_anchor_invalid:'+tag);
  return s.slice(0,i)+neu+s.slice(i+old.length);
 }
+/** Acopla la aceptación/baja de originales al webhook que YA archiva WhatsApp.
+ * SQL es la única autoridad: exige proveedor, mensaje autenticado exacto,
+ * texto legal aprobado + aviso previo real; jamás infiere permiso de una cotización.
+ * Funciona igual sobre el candidato v76/v77 o el Edge D013+D016 v78 activo.
+ */
+export function conectarConsentimientoOriginalesD016(original){
+ if(typeof original!=='string'||
+  original.includes('cotironda_piloto_v2_d016_register_terms_acceptance_private')||
+  !original.includes("cotironda_piloto_receive_whapi_v1"))
+  throw Error('d016_supplier_original_terms_invalid_source');
+ const anchor=`  }
+  if(webLinkCode){
+    // A replay cannot create a second link or trigger a false quote.`;
+ const revised=`  }
+  // D016: archivar el mensaje autenticado PRIMERO, luego interpretar permisos.
+  // Sólo estos textos son controles, NUNCA se trata de un presupuesto.
+  // La RPC comprueba proveedor + fuente íntegra + términos y aviso previo.
+  // No enviamos confirmaciones ni documentos desde este bloque.
+  if(row.type==='text'&&(
+    body==='ACEPTO COTIRONDA ORIGINALES V2'||
+    /^(?:NO COMPARTIR|No compartir|no compartir)\\.?$/u.test(body))){
+    if(!['duplicate','unrecognized_contact'].includes(outcome(out.data))){
+      const acepta=body==='ACEPTO COTIRONDA ORIGINALES V2';
+      const permiso=await db.rpc(acepta?
+        'cotironda_piloto_v2_d016_register_terms_acceptance_private':
+        'cotironda_piloto_v2_d016_revoke_by_whapi_text_private',{
+          p_message_hmac:messageHash,p_chat_hmac:chatHash
+        });
+      if(permiso.error||
+         (acepta&&!['recorded','unchanged','denied'].includes(permiso.data))||
+         (!acepta&&(!Number.isSafeInteger(permiso.data)||permiso.data<0)))
+        return json(503,'d016_original_permission_reconciliation_required');
+    }
+    continue;
+  }
+  if(webLinkCode){
+    // A replay cannot create a second link or trigger a false quote.`;
+ return one(original,anchor,revised,'original-consent-after-inbox');
+}
+
 export function generarWebhookD016(original){
  if(typeof original!=='string'||original.includes('notificarAccesoWhatsappD016'))
   throw Error('d016_overlay_base_invalid');
@@ -259,7 +299,7 @@ export function generarWebhookD016(original){
  if(!out.includes('COTIRONDA_PILOT_V2_REFERENCE_LINK_ENABLED')||
   !out.includes('buyer_d016_link_reconciliation_required'))
   throw Error('d016_overlay_incomplete');
- return out;
+ return conectarConsentimientoOriginalesD016(out);
 }
 // Modo de publicación futura: genera el candidato SOBRE LA FUENTE REAL v76,
 // no sobre el index.ts GitHub; nunca despliega. El operador debe haber comprobado

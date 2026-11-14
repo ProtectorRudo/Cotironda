@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHmac} from 'node:crypto';
 import {readFileSync} from 'node:fs';
-import {generarWebhookD016} from '../../scripts/piloto/v2-d016-whapi-overlay.mjs';
+import {generarWebhookD016,conectarConsentimientoOriginalesD016} from '../../scripts/piloto/v2-d016-whapi-overlay.mjs';
 import {notificarAccesoWhatsappD016,permitirAvisoD016,permitirRecuperacionD016,
  habilitarPublicacionD013ConAccesoD016}
  from '../../supabase/functions/cotironda-piloto-whapi/buyer-whatsapp-entry-d016.ts';
@@ -328,4 +328,32 @@ test('D016 Whapi: overlay genera webhook aislado y conserva v76 inmutable',()=>{
  assert.match(candidate,/COTIRONDA_PILOT_V2_REFERENCE_LINK_ENABLED/u);
  assert.notEqual(candidate,old);
  assert.throws(()=>generarWebhookD016(candidate),/d016_overlay_base_invalid/u);
+});
+
+test('D016 originales: consentimiento y baja se procesan sólo DESPUÉS del inbox autenticado',()=>{
+ const old=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/index.ts',
+  import.meta.url),'utf8');
+ const candidate=generarWebhookD016(old);
+ const posStore=candidate.indexOf("const out=await db.rpc('cotironda_piloto_receive_whapi_v1'");
+ const posConsent=candidate.indexOf("'cotironda_piloto_v2_d016_register_terms_acceptance_private'");
+ const posRecovery=candidate.indexOf('  if(webLinkCode){',posStore);
+ assert.ok(posStore>=0&&posConsent>posStore&&posRecovery>posConsent);
+ assert.match(candidate,/body==='ACEPTO COTIRONDA ORIGINALES V2'/u);
+ assert.match(candidate,/\^\(\?:NO COMPARTIR\|No compartir\|no compartir\)/u);
+ assert.match(candidate,/cotironda_piloto_v2_d016_revoke_by_whapi_text_private/u);
+ assert.match(candidate,/p_message_hmac:messageHash,p_chat_hmac:chatHash/u);
+ assert.match(candidate,/\['duplicate','unrecognized_contact'\]\.includes\(outcome\(out\.data\)\)/u);
+ assert.match(candidate,/continue;\s*}\s*if\(webLinkCode\)/u);
+ assert.doesNotMatch(old,/cotironda_piloto_v2_d016_register_terms_acceptance_private/u);
+ // La repetición no ejecuta un segundo permiso ni vuelve a modificar el código.
+ assert.throws(()=>conectarConsentimientoOriginalesD016(candidate),
+  /d016_supplier_original_terms_invalid_source/u);
+});
+
+test('D016 originales: no se añade el comando si la base no es la misma',()=>{
+ assert.throws(()=>conectarConsentimientoOriginalesD016(''),
+  /d016_supplier_original_terms_invalid_source/u);
+ assert.throws(()=>conectarConsentimientoOriginalesD016(
+  "cotironda_piloto_receive_whapi_v1"),
+  /anchor_invalid:original-consent-after-inbox/u);
 });
