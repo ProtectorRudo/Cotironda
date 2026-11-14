@@ -4,6 +4,7 @@
  *
  * node scripts/piloto/v2-d016-whapi-overlay.mjs --write-candidate
  */
+import {createHash} from 'node:crypto';
 import {readFileSync,writeFileSync} from 'node:fs';
 import {resolve,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -14,6 +15,20 @@ const THIS=fileURLToPath(import.meta.url);
 const ROOT=resolve(dirname(THIS),'../..');
 const ENTRY='supabase/functions/cotironda-piloto-whapi/index.ts';
 const CANDIDATE='supabase/functions/cotironda-piloto-whapi/index.v2-d016-candidate.ts';
+// Huella del index.ts REAL Supabase Edge v76: obtenida con get_edge_function
+// el 14/11/2026; 61 archivos, bundle ezbr SHA 656cb24bd1cbfdbb0de6d87a9acae17ad911c13b6e404667029dd4d0b55b822e.
+// El index.ts de la rama GitHub NO es igual al de v76 (16 bloques de deriva).
+export const D016_LIVE_V76_INDEX_SHA256='349831d3be81d0da95ba0cc3b699256521e35d4b7c0f1923e3dc2a6a714d0c7d';
+const LIVE_CANDIDATE='supabase/functions/cotironda-piloto-whapi/index.v2-d016-live-v76-candidate.ts';
+export function verificarBaseWhapiV76(source){
+ if(typeof source!=='string'||
+  createHash('sha256').update(source,'utf8').digest('hex')!==D016_LIVE_V76_INDEX_SHA256)
+  throw Error('d016_live_v76_input_sha_mismatch');
+ if(!source.includes("import {notificarSeguimientoMvp289} from './buyer-tracking-confirmation-mvp289.ts';")||
+    !source.includes('buyerLinkRequests')||source.includes('notificarAccesoWhatsappD016'))
+  throw Error('d016_live_v76_source_guard_invalid');
+ return true;
+}
 function one(s,old,neu,tag){
  const i=s.indexOf(old);
  if(i<0||s.indexOf(old,i+old.length)!==-1)
@@ -78,15 +93,35 @@ export function generarWebhookD016(original){
   throw Error('d016_overlay_incomplete');
  return out;
 }
+// Modo de publicación futura: genera el candidato SOBRE LA FUENTE REAL v76,
+// no sobre el index.ts GitHub; nunca despliega. El operador debe haber comprobado
+// por separado la versión v76 + bundle SHA/61 módulos en Supabase piloto.
+// Ejemplo: node scripts/piloto/v2-d016-whapi-overlay.mjs --live-v76-source /ruta/privada/index.ts --write-live-v76-candidate
 if(process.argv[1]&&resolve(process.argv[1])===THIS){
  try{
   inspeccionarWebhookMvp332(ROOT);
-  const input=readFileSync(resolve(ROOT,ENTRY),'utf8');
+  const sourceIndex=process.argv.indexOf('--live-v76-source');
+  const live=sourceIndex>=0;
+  if(process.argv.includes('--write-live-v76-candidate')&&!live)
+   throw Error('d016_live_v76_source_required');
+  if(live&&process.argv.includes('--write-candidate'))
+   throw Error('d016_live_v76_wrong_candidate_output');
+  const name=live?process.argv[sourceIndex+1]:ENTRY;
+  if(typeof name!=='string'||!name.trim()||name.startsWith('--'))
+   throw Error('d016_live_v76_source_path_missing');
+  const input=readFileSync(resolve(ROOT,name),'utf8');
+  if(live)verificarBaseWhapiV76(input);
   const result=generarWebhookD016(input);
-  if(process.argv.includes('--write-candidate')){
+  if(live){
+   if(process.argv.includes('--write-live-v76-candidate')){
+    writeFileSync(resolve(ROOT,LIVE_CANDIDATE),result,'utf8');
+    process.stdout.write('D016_LIVE_V76_CANDIDATE_GENERATED_NO_DEPLOY\\n');
+   }else process.stdout.write('D016_LIVE_V76_OVERLAY_VALIDATED_NO_WRITE\\n');
+  }else if(process.argv.includes('--write-candidate')){
+   // Compatibilidad CI historica: fuente GitHub de desarrollo, NO publicar en v76.
    writeFileSync(resolve(ROOT,CANDIDATE),result,'utf8');
-   process.stdout.write('V2_D016_CANDIDATE_GENERATED_NO_DEPLOY\n');
-  }else process.stdout.write('V2_D016_OVERLAY_VALIDATED_NO_WRITE\n');
+   process.stdout.write('V2_D016_CANDIDATE_GENERATED_NO_DEPLOY\\n');
+  }else process.stdout.write('V2_D016_OVERLAY_VALIDATED_NO_WRITE\\n');
  }catch(err){
   process.stderr.write(String(err?.message??'d016_overlay_invalid')+'\n');
   process.exitCode=1;
