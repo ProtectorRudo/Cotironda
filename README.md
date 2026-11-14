@@ -1,12 +1,12 @@
 # Cotironda V2 — Cotizaciones inteligentes de materiales de obra
 
-**Dirección comercial vigente desde 12/11/2026.** La nueva experiencia está **documentada**, no desplegada ni comprobada de punta a punta. El repositorio incluye código y pruebas anteriores; `main` no equivale al PILOTO real.
+**Dirección comercial vigente desde 12/11/2026.** La dirección V2 está **parcialmente instalada en el piloto**, pero el circuito nuevo **no está verificado de punta a punta**. Conservar y reutilizar los mecanismos anteriores ya probados; no confundir PR o CI con publicación real. El repositorio incluye código y pruebas anteriores; `main` no equivale al PILOTO real.
 
 > **PARA CUALQUIER CONVERSACIÓN/AGENTE:** seguir exclusivamente [Contrato V2](docs/COTIRONDA-V2-CONTRATO.md) → [Plan maestro y checklist V2](docs/PILOTO-100-PLAN-MAESTRO.md) → [Estado y única próxima tarea](docs/PILOTO-100-ESTADO.md) → [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794). **Reglas antiguas y PR abiertos no tienen prioridad sobre V2.**
 
 ## Qué hacemos
 
-Un arquitecto envía una lista de materiales. Cotironda la interpreta, la separa por rubros y consulta a comercios según **catálogo y zona** por WhatsApp. Cada negocio responde libremente enviando texto o archivos; Cotironda conserva el **original intacto**, lo asocia al pedido y lo muestra al comprador con **el nombre del negocio y un análisis comercial breve y útil**. Cuando se cumplen **dos días hábiles**, produce un análisis comparativo general con recomendaciones argumentadas.
+Un arquitecto envía una lista de materiales. Cotironda la interpreta, identifica productos y consulta a comercios **exclusivamente por coincidencia técnica con cada producto de su catálogo y localidad de entrega** (el rubro es solo una etiqueta) por WhatsApp. Cada negocio responde libremente enviando texto o archivos; Cotironda conserva el **original intacto**, lo asocia al pedido y lo muestra al comprador con **el nombre del negocio y un análisis comercial breve y útil**. Cuando se cumplen **dos días hábiles**, produce un análisis comparativo general con recomendaciones argumentadas.
 
 **Durante la ronda solo aparecen los negocios que respondieron.** Ni invitados pendientes, ni cuántos faltan, ni ranking de ganadores, ni anonimato. El original verificado y autorizado no espera a que la IA termine de comentar. La IA no inventa precios ni condiciones. Si un mensaje es ambiguo, se revisa sin adjudicarlo a una ronda por simple coincidencia temporal.
 
