@@ -1,5 +1,8 @@
 # 07 — Seguridad, privacidad y autorizaciones
 
+> **AVISO V2 — 12/11/2026: DOCUMENTO TÉCNICO HEREDADO, NO DIRECTRIZ ACTIVA.** La identidad del comercio que RESPONDIÓ es visible al comprador destinatario desde la recepción autorizada, no solo tras adjudicación. La privacidad sigue siendo obligatoria; no mostrar invitados pendientes ni compartir archivos públicamente. Las reglas vigentes están en [Contrato V2](COTIRONDA-V2-CONTRATO.md), [Plan V2](PILOTO-100-PLAN-MAESTRO.md) y [Estado V2](PILOTO-100-ESTADO.md). Si contradice V2, **NO aplicar lo viejo**.
+
+
 ## Amenazas
 Acceso cruzado entre empresas; filtración de identidad/contacto antes de adjudicación; documentos expuestos por URL; webhook duplicado o falso; manipulación de ofertas vía mensajes; prompt injection en adjuntos; secretos en frontend o GitHub público.
 

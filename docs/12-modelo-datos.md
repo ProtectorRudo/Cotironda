@@ -1,5 +1,8 @@
 # 12 — Modelo de datos conceptual (sin migraciones aún)
 
+> **AVISO V2 — 12/11/2026: DOCUMENTO TÉCNICO HEREDADO, NO DIRECTRIZ ACTIVA.** Modelo conceptual HISTÓRICO, no esquema real. En V2 el comprador solo ve cotizaciones de comercios que respondieron; no incluir ganadores/anonimato como entidades de negocio obligatorias. Las reglas vigentes están en [Contrato V2](COTIRONDA-V2-CONTRATO.md), [Plan V2](PILOTO-100-PLAN-MAESTRO.md) y [Estado V2](PILOTO-100-ESTADO.md). Si contradice V2, **NO aplicar lo viejo**.
+
+
 ## Entidades previstas
 - Empresas: organizations, users, organization_members, roles.
 - Proveedores: supplier_profiles, supplier_categories, supplier_products, supplier_delivery_areas.

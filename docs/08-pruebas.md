@@ -1,5 +1,8 @@
 # 08 — Pruebas, aceptación y escenarios críticos
 
+> **AVISO V2 — 12/11/2026: DOCUMENTO TÉCNICO HEREDADO, NO DIRECTRIZ ACTIVA.** Los escenarios de ranking no son criterios de lanzamiento V2 y el estado 'Etapa 00 sin código' ya no describe el piloto. La prueba vigente es 1 arquitecto + 2 comercios + originales/IA/cierre reales. Las reglas vigentes están en [Contrato V2](COTIRONDA-V2-CONTRATO.md), [Plan V2](PILOTO-100-PLAN-MAESTRO.md) y [Estado V2](PILOTO-100-ESTADO.md). Si contradice V2, **NO aplicar lo viejo**.
+
+
 ## Política
 Criterios de aceptación observables por Issue; casos habituales, extremos y regresión. Ningún «probado» sin ejecución y evidencia. En la Etapa 00 sólo se validan documentos; aún no existen tests ejecutables de producto.
 
