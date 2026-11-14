@@ -79,7 +79,7 @@ export function generarWebhookD016(original){
   throw Error('d016_overlay_base_invalid');
  let out=generarWebhookV202(original);
  const imp="import {notificarSeguimientoMvp289} from './buyer-tracking-confirmation-mvp289.ts';";
- out=one(out,imp,imp+"\nimport {notificarAccesoWhatsappD016,permitirAvisoD016} from './buyer-whatsapp-entry-d016.ts';",'import');
+ out=one(out,imp,imp+"\nimport {notificarAccesoWhatsappD016,permitirAvisoD016,permitirRecuperacionD016} from './buyer-whatsapp-entry-d016.ts';",'import');
  const start=` for(const notice of buyerLinkRequests){
   if(!sec.outbound||Deno.env.get('COTIRONDA_PILOT_BUYER_TRACKING_ENABLED')==='false')continue;
   const result=await notificarSeguimientoMvp289({`;
@@ -136,7 +136,7 @@ export function generarWebhookD016(original){
  const legacyRecovery=`       trial.buyer===true&&!supplierKnown&&!centralSupplier&&sec.outbound&&
        pilotEnvNotDenied('COTIRONDA_PILOT_BUYER_TRACKING_ENABLED'))`;
  const d016Recovery=`       trial.buyer===true&&!supplierKnown&&!centralSupplier&&
-       permitirAvisoD016(sec.outbound,
+       permitirRecuperacionD016(sec.outbound,
         Deno.env.get('COTIRONDA_PILOT_D016_WHATSAPP_SEND_ENABLED')==='true',
         Deno.env.get('COTIRONDA_PILOT_BUYER_TRACKING_ENABLED')))`;
  out=one(out,legacyRecovery,d016Recovery,'recovery');
