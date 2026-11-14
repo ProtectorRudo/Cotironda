@@ -46,6 +46,21 @@ function origenD016(s:string):boolean{
    u.hostname.endsWith('-protector-rudo-s-projects.vercel.app');
  }catch{return false}
 }
+/** D013 nunca debe publicar una ronda que el comprador no pueda abrir.
+ * Es una barrera ANTES del SQL de publicación, no solo antes del WhatsApp.
+ * D016 debe estar habilitado con el origen Preview y HMAC del mismo release.
+ * Rechaza configuraciones incompletas o inválidas; no hace operaciones de red.
+ */
+export function habilitarPublicacionD013ConAccesoD016(args:{
+ outbound:boolean;matchingEnabled:boolean;linkSendEnabled:boolean;
+ portalOrigin:string;portalSha:string;approvedSha:string;hmacKeyHex:string;
+}):boolean{
+ return args?.outbound===true&&args.matchingEnabled===true&&
+  args.linkSendEnabled===true&&
+  origenD016(args.portalOrigin)&&SHA.test(args.portalSha)&&
+  args.portalSha===args.approvedSha&&HASH.test(args.hmacKeyHex);
+}
+
 function hex(input:Uint8Array):string{
  return Array.from(input,x=>x.toString(16).padStart(2,'0')).join('');
 }
