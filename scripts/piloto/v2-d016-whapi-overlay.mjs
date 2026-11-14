@@ -175,6 +175,43 @@ export function generarWebhookD016(original){
        chatHmac:chatHash,eventHmac:messageHash,recipient:row.chat_id});
     }`;
  out=one(out,legacyBuyerBlock,candidateBuyerBlock,'d013-buyer-release');
+ // D013 localidad: la respuesta del comprador conserva la fuente original
+ // enlazada por SQL. El V2-23 existente reutiliza producto/zona y el puente D013.
+ // El MVP233 original queda intacto cuando D013 no tiene D016 listo.
+ const oldZoneImport=
+  "import {continuarZonaCentralMvp233} from './ai-central-zone-mvp233.ts';";
+ const newZoneImport=oldZoneImport+
+  "\nimport {continuarZonaCentralMvp233 as continuarZonaCentralV2D013} from './ai-central-zone-v2-d013.ts';";
+ out=one(out,oldZoneImport,newZoneImport,'d013-zone-import');
+ const oldZoneCall=`        const resumed=await continuarZonaCentralMvp233({`;
+ const newZoneCall=`        const d013ZoneEnabled=habilitarPublicacionD013ConAccesoD016({
+          outbound:sec.outbound,
+          matchingEnabled:Deno.env.get('COTIRONDA_PILOT_V2_D013_PRODUCT_MATCHING_ENABLED')==='true',
+          linkSendEnabled:Deno.env.get('COTIRONDA_PILOT_D016_WHATSAPP_SEND_ENABLED')==='true',
+          portalOrigin:Deno.env.get('COTIRONDA_PILOT_D016_PORTAL_ORIGIN')??'',
+          portalSha:Deno.env.get('COTIRONDA_PILOT_D016_PORTAL_RELEASE_SHA')??'',
+          approvedSha:Deno.env.get('COTIRONDA_PILOT_D016_APPROVED_RELEASE_SHA')??'',
+          hmacKeyHex:Deno.env.get('COTIRONDA_PILOT_D016_HMAC_KEY_HEX')??''
+        });
+        const zoneWorker=d013ZoneEnabled?
+          continuarZonaCentralV2D013:continuarZonaCentralMvp233;
+        const resumed=await zoneWorker({`;
+ out=one(out,oldZoneCall,newZoneCall,'d013-zone-call');
+ out=one(out,
+  'model,publicar:false, // MVP280: no dispatch before review',
+  'model,publicar:d013ZoneEnabled, // D013 solo si acceso privado D016 completo',
+  'd013-zone-publish');
+ const oldZoneRelease=`        if(resumed.estado==='ronda_publicada')
+          return json(503,'buyer_review_bypassed_by_zone_continuation');`;
+ const newZoneRelease=`        if(resumed.estado==='ronda_publicada'){
+          if(!d013ZoneEnabled||!resumed.requestId)
+            return json(503,'buyer_review_bypassed_by_zone_continuation');
+          trialDispatchChats.add(chatHash);
+          // El evento reciente es la respuesta de localidad autenticada.
+          buyerLinkRequests.push({mode:'auto',requestId:resumed.requestId,
+           chatHmac:chatHash,eventHmac:messageHash,recipient:row.chat_id});
+        }`;
+ out=one(out,oldZoneRelease,newZoneRelease,'d013-zone-release');
  if(!out.includes('COTIRONDA_PILOT_V2_REFERENCE_LINK_ENABLED')||
   !out.includes('buyer_d016_link_reconciliation_required'))
   throw Error('d016_overlay_incomplete');
