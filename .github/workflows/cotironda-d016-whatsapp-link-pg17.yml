@@ -16,6 +16,8 @@ on:
       - 'supabase/functions/cotironda-piloto-whapi/index.ts'
       - 'scripts/piloto/v2-d016-whapi-overlay.mjs'
       - 'scripts/piloto/v2-d016-whapi-live-v76-bundle-manifest.json'
+      - 'scripts/piloto/v2-d016-whapi-v76-two-file-patch.json'
+      - 'scripts/piloto/v2-d016-rebuild-live-v76.mjs'
       - 'src/server/v2-d016-descarga-privada.ts'
       - 'src/server/v2-d016-analisis-automatica.ts'
       - 'src/server/v2-d016-informe-final.ts'
@@ -149,3 +151,16 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/v2-03-respondedores-pg17.sql
           psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regnamespace('cotironda_piloto_privado') IS NULL" | grep -Fx 't'
           psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regprocedure('public.cotironda_piloto_v2_d016_claim_ticket_private(text)') IS NULL" | grep -Fx 't'
+      - name: Verificar parches exactos del LIVE v76 SIN mutar el checkout
+        run: node scripts/piloto/v2-d016-rebuild-live-v76.mjs --verify
+      - name: Reconstruir LIVE v76 SOLO en checkout CI (59 intactos + 2 parches)
+        run: node scripts/piloto/v2-d016-rebuild-live-v76.mjs --apply-to-checkout
+      - name: Generar candidato D016 desde 61 fuentes LIVE verificadas
+        run: node scripts/piloto/v2-d016-whapi-overlay.mjs --live-v76-source supabase/functions/cotironda-piloto-whapi/index.ts --write-live-v76-candidate
+      - name: Deno typecheck de paquete D016 con LIVE v76 + dos nuevos módulos
+        run: deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/index.v2-d016-live-v76-candidate.ts
+      - name: Limpieza del checkout efímero; NUNCA alterar Edge ni publicar
+        if: always()
+        run: |
+          rm -f supabase/functions/cotironda-piloto-whapi/index.v2-d016-live-v76-candidate.ts
+          git restore -- supabase/functions/cotironda-piloto-whapi/index.ts supabase/functions/cotironda-piloto-whapi/supplier-auto-correlation-mvp336.ts
