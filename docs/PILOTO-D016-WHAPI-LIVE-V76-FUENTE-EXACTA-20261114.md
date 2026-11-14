@@ -41,3 +41,16 @@ En rama separada sobre **SHA exacto f98527c... sin editar PR #837**:
 **No desplegar Webhook v76 con este PR.** Primero: publicar UI **f985** en Preview SSO (Vercel HTTP402, reintento único autorizado 14/11 17:07 ART), verificar secret server-side y sesión, conservar la reconstrucción **ya probada por Deno del bundle live v76 + dos módulos** (revalidar hashes ante cualquier versión Edge nueva), y ejecutar pruebas reales de envío sin duplicados con bandera OFF; coordinar HMAC D016 segura en el gestor de secretos de Edge y la misma del portal. El envío D016 debe quedar OFF hasta consentimiento/prospectividad, referencia de ronda, idempotencia y prueba con comprador; no duplicar MVP289. Proveedores todavía tienen **0 consentimientos específicos de originales**, no publicar documentos ni contacto. Nunca tocar producción.
 
 Ver [Estado](https://github.com/ProtectorRudo/Cotironda/blob/docs/cotironda-v2-unica-direccion-20261112/docs/PILOTO-100-ESTADO.md) y [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794).
+
+## Corrección de compuertas D016 / MVP289 (14/11, sin despliegue)
+
+Revisión del candidato identificó una dependencia accidental: el bucle que envía el enlace nuevo D016 estaba condicionado por `COTIRONDA_PILOT_BUYER_TRACKING_ENABLED` (MVP289). Con ese valor `false`, aun activando de forma expresa `COTIRONDA_PILOT_D016_WHATSAPP_SEND_ENABLED=true`, el comprador no recibía el acceso D016.
+
+Cambio mínimo en el **mismo PR #853**, sin tocar la función Edge instalada:
+
+- `permitirAvisoD016(outbound,d016Enabled,legacyTrackingValue)` conserva **outbound OFF = ningún envío**, deja la condición MVP289 **idéntica cuando D016 está OFF**, y permite D016 autorizado independientemente del flag legado.
+- El candidato generado evalúa una sola vez la bandera D016 y usa **una única rama de despacho** por evento: nunca enviar a la vez el enlace heredado y el nuevo.
+- Prueba Node de **9 combinaciones** y verificación de que el webhook generado usa la nueva puerta; se conservan pruebas de deduplicación SQL, emisión incierta y autorización de chat.
+- Commits: `fd8ccca2` (helper), `94f28af3` (overlay), `931e9832` (prueba). [CI dedicado D016](https://github.com/ProtectorRudo/Cotironda/actions/runs/43590259417) **SUCCESS** sobre `931e9832`.
+
+No se activó la bandera D016, no se desplegó Edge ni Vercel y no se enviaron mensajes. **No elimina** bloqueos de Preview f985, credenciales compartidas Edge/portal, sesión real, consentimiento ni E2E. Mantener PR #853 como DRAFT.
