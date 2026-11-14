@@ -15,6 +15,7 @@ on:
       - 'supabase/functions/cotironda-piloto-whapi/buyer-whatsapp-entry-d016.ts'
       - 'supabase/functions/cotironda-piloto-whapi/index.ts'
       - 'scripts/piloto/v2-d016-whapi-overlay.mjs'
+      - 'scripts/piloto/v2-d016-whapi-live-v76-bundle-manifest.json'
       - 'src/server/v2-d016-descarga-privada.ts'
       - 'src/server/v2-d016-analisis-automatica.ts'
       - 'src/server/v2-d016-informe-final.ts'
