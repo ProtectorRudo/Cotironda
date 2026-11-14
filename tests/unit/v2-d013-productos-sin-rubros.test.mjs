@@ -1,4 +1,7 @@
 import test from 'node:test';
+import {prepararDocumentoBinarioV2D013}
+ from '../../supabase/functions/cotironda-piloto-whapi/ai-central-buyer-binary-v2-d013.ts';
+
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {autorizarPropuestasCatalogoV2}
@@ -247,4 +250,85 @@ test('D013: localidad reanuda mismo original y publica SOLO vía RPC V2',async()
  const staging=calls.find(x=>x.name==='cotironda_piloto_v2_shadow_prepare_d013');
  assert.equal(staging?.params.p_original_text,text);
  assert.ok(!calls.some(x=>x.name==='cotironda_piloto_ia_publish_mvp222'));
+});
+
+test('D013 binarios: publicar solo despues de atestacion independiente MVP278',async()=>{
+ const names=[],release='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+ const base={
+  enabled:true,webhookAutenticado:true,compradorAutorizado:true,
+  chatHmac:'a'.repeat(64),messageHmac:'b'.repeat(64),
+  original:{mime:'application/pdf',sha256:'c'.repeat(64),
+   bytes:new Uint8Array([37,80,68,70])},
+  primera:null,segunda:null,apiKey:'local-test-no-network',model:'gpt-6-luna',
+  preparar:async args=>{
+   assert.equal(args.habilitado,true);
+   assert.equal(args.broker instanceof Function,true);
+   // El wrapper solicita SOMBRA, nunca publicación desde MVP278.
+   assert.equal(args.webhookAutenticado,true);
+   return {estado:'ronda_en_sombra',originalAutorizado:true,
+    rondaPublicada:false,whatsappEnviado:false};
+  },
+  rpc:async(name,params)=>{
+   names.push(name);
+   assert.equal(name,'cotironda_piloto_v2_auto_release_d013');
+   assert.deepEqual(params,{
+    p_chat_hmac:'a'.repeat(64),p_source_hmac:'b'.repeat(64)
+   });
+   return {error:null,data:{state:'ready_for_delivery',request_id:release}};
+  }
+ };
+ const yes=await prepararDocumentoBinarioV2D013(base);
+ assert.equal(yes.estado,'ronda_publicada');
+ assert.equal(yes.requestId,release);
+ assert.equal(yes.originalVerificado,true);
+ assert.equal(yes.whatsappEnviado,false);
+ assert.deepEqual(names,['cotironda_piloto_v2_auto_release_d013']);
+ for(const state of ['disabled','originals_disabled','calendar_disabled']){
+  let n=0;
+  const no=await prepararDocumentoBinarioV2D013({
+   ...base,rpc:async()=>{n++;return {error:null,data:{state}}}
+  });
+  assert.equal(no.estado,'ronda_en_sombra');
+  assert.equal(no.requestId,null);
+  assert.equal(n,1);
+ }
+ let uncertain=0;
+ const wrong=await prepararDocumentoBinarioV2D013({
+  ...base,rpc:async()=>{uncertain++;return {error:null,data:{
+   state:'ready_for_delivery',request_id:'not-uuid'
+  }}}
+ });
+ assert.equal(wrong.estado,'conciliacion_requerida');
+ assert.equal(uncertain,1);
+});
+
+test('D013 binarios: no publicar ante original no verificado, gate OFF o reintento',async()=>{
+ const h='a'.repeat(64);
+ const base={
+  enabled:true,webhookAutenticado:true,compradorAutorizado:true,
+  chatHmac:h,messageHmac:'b'.repeat(64),
+  original:{mime:'application/pdf',sha256:'c'.repeat(64),bytes:new Uint8Array(4)},
+  primera:null,segunda:null,apiKey:'local-test',model:'gpt-6-luna',
+  preparar:async()=>({estado:'requiere_revision',originalAutorizado:false,
+   rondaPublicada:false,whatsappEnviado:false}),
+  rpc:async()=>{throw Error('should never call SQL')},
+ };
+ const refused=await prepararDocumentoBinarioV2D013(base);
+ assert.equal(refused.estado,'requiere_revision');
+ assert.equal(refused.requestId,null);
+ const blocked=await prepararDocumentoBinarioV2D013({
+  ...base,preparar:async()=>{throw Error('should not check source')},
+  enabled:false
+ });
+ assert.equal(blocked.estado,'apagado');
+ const fake=await prepararDocumentoBinarioV2D013({
+  ...base,preparar:async()=>({estado:'ronda_en_sombra',
+   originalAutorizado:false,rondaPublicada:false,whatsappEnviado:false})
+ });
+ assert.equal(fake.estado,'conciliacion_requerida');
+ const ambiguous=await prepararDocumentoBinarioV2D013({
+  ...base,preparar:async()=>({estado:'conciliacion_requerida',
+   originalAutorizado:true,rondaPublicada:false,whatsappEnviado:false})
+ });
+ assert.equal(ambiguous.estado,'conciliacion_requerida');
 });
