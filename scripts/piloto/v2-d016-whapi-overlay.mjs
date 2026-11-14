@@ -140,6 +140,36 @@ export function generarWebhookD016(original){
         Deno.env.get('COTIRONDA_PILOT_D016_WHATSAPP_SEND_ENABLED')==='true',
         Deno.env.get('COTIRONDA_PILOT_BUYER_TRACKING_ENABLED')))`;
  out=one(out,legacyRecovery,d016Recovery,'recovery');
+ // D013: reutiliza motor PRODUCTO+zona y verificador técnico YA probados.
+ // Compone solo el candidato OFFLINE. D013 OFF mantiene íntegro el buyer
+ // histórico; D013 ON elimina confirmación innecesaria y entrega la ronda
+ // preparada al mismo despachador privado SQL con sus gates y leases.
+ const originalBuyerImport=
+  "import {procesarCompradorCentralMvp226} from './ai-central-buyer-mvp226.ts';";
+ const d013BuyerImport=originalBuyerImport+
+  "\nimport {procesarCompradorCentralMvp226 as procesarCompradorCentralV2D013} from './ai-central-buyer-v2-d013.ts';";
+ out=one(out,originalBuyerImport,d013BuyerImport,'d013-import');
+ const legacyBuyerCall=`    const result=await procesarCompradorCentralMvp226({
+      habilitado:true,publicar:false, // MVP280: buyer must approve`;
+ const d013BuyerCall=`    const d013Enabled=Deno.env.get('COTIRONDA_PILOT_V2_D013_PRODUCT_MATCHING_ENABLED')==='true';
+    const buyerWorker=d013Enabled?
+      procesarCompradorCentralV2D013:procesarCompradorCentralMvp226;
+    const result=await buyerWorker({
+      habilitado:true,publicar:d013Enabled, // D013 sin confirmacion; SQL sigue gateado`;
+ out=one(out,legacyBuyerCall,d013BuyerCall,'d013-buyer-call');
+ const legacyBuyerBlock=`    if(result.estado==='ronda_publicada')
+       return json(503,'buyer_review_bypassed_by_text_broker');`;
+ // La fuente live v76 usa 6 espacios para return (el index GitHub también).
+ const actualBuyerBlock=`    if(result.estado==='ronda_publicada')
+       return json(503,'buyer_review_bypassed_by_text_broker');`;
+ const candidateBuyerBlock=`    if(result.estado==='ronda_publicada'){
+      if(!d013Enabled||!result.requestId)
+        return json(503,'buyer_review_bypassed_by_text_broker');
+      trialDispatchChats.add(chatHash);
+      buyerLinkRequests.push({mode:'auto',requestId:result.requestId,
+       chatHmac:chatHash,eventHmac:messageHash,recipient:row.chat_id});
+    }`;
+ out=one(out,legacyBuyerBlock,candidateBuyerBlock,'d013-buyer-release');
  if(!out.includes('COTIRONDA_PILOT_V2_REFERENCE_LINK_ENABLED')||
   !out.includes('buyer_d016_link_reconciliation_required'))
   throw Error('d016_overlay_incomplete');
