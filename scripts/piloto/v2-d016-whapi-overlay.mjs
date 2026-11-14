@@ -212,6 +212,50 @@ export function generarWebhookD016(original){
            chatHmac:chatHash,eventHmac:messageHash,recipient:row.chat_id});
         }`;
  out=one(out,oldZoneRelease,newZoneRelease,'d013-zone-release');
+
+ // D013 archivo original PDF/DOCX/XLSX: V2-only compone sobre el
+ // verificador independiente MVP278 SIN modificar ni reemplazar el histórico.
+ // Se publica únicamente si coinciden todos los gates D013+D016.
+ const oldBinaryImport=
+  "import {prepararDocumentoBinarioCompradorMvp278} from './ai-central-buyer-binary-broker-mvp278.ts';";
+ const v2BinaryImport=oldBinaryImport+
+  "\nimport {prepararDocumentoBinarioV2D013} from './ai-central-buyer-binary-v2-d013.ts';";
+ out=one(out,oldBinaryImport,v2BinaryImport,'d013-binary-import');
+ const oldBinaryCall=`                   const mediaPlan=await prepararDocumentoBinarioCompradorMvp278({`;
+ const newBinaryCall=`                   const d013BinaryEnabled=habilitarPublicacionD013ConAccesoD016({
+                     outbound:sec.outbound,
+                     matchingEnabled:Deno.env.get('COTIRONDA_PILOT_V2_D013_PRODUCT_MATCHING_ENABLED')==='true',
+                     linkSendEnabled:Deno.env.get('COTIRONDA_PILOT_D016_WHATSAPP_SEND_ENABLED')==='true',
+                     portalOrigin:Deno.env.get('COTIRONDA_PILOT_D016_PORTAL_ORIGIN')??'',
+                     portalSha:Deno.env.get('COTIRONDA_PILOT_D016_PORTAL_RELEASE_SHA')??'',
+                     approvedSha:Deno.env.get('COTIRONDA_PILOT_D016_APPROVED_RELEASE_SHA')??'',
+                     hmacKeyHex:Deno.env.get('COTIRONDA_PILOT_D016_HMAC_KEY_HEX')??''
+                   });
+                   const binaryWorker=d013BinaryEnabled?
+                     prepararDocumentoBinarioV2D013:prepararDocumentoBinarioCompradorMvp278;
+                   const mediaPlan=await binaryWorker({
+                     ...(d013BinaryEnabled?{enabled:true}:{})`;
+ out=one(out,oldBinaryCall,newBinaryCall,'d013-binary-call');
+ const oldBinaryFinish=`                   if(mediaPlan.estado==='conciliacion_requerida')
+                     console.warn('cotironda_buyer_binary_attestation_or_broker_review');
+                   if(mediaPlan.estado==='ronda_en_sombra'&&
+                      !await emitirRevisionUnificada(messageHash))
+                     return json(503,'buyer_review_delivery_reconciliation_required');`;
+ const newBinaryFinish=`                   if(mediaPlan.estado==='conciliacion_requerida')
+                     console.warn('cotironda_buyer_binary_attestation_or_broker_review');
+                   if(mediaPlan.estado==='ronda_publicada'){
+                     if(!d013BinaryEnabled||!mediaPlan.requestId)
+                       return json(503,'d013_binary_release_reconciliation_required');
+                     trialDispatchChats.add(chatHash);
+                     buyerLinkRequests.push({mode:'auto',requestId:mediaPlan.requestId,
+                       chatHmac:chatHash,eventHmac:messageHash,recipient:row.chat_id});
+                   }
+                   // Nunca pedir confirmación de ronda V2; el legado sigue
+                   // intacto mientras no se active D013 con acceso privado.
+                   if(mediaPlan.estado==='ronda_en_sombra'&&!d013BinaryEnabled&&
+                      !await emitirRevisionUnificada(messageHash))
+                     return json(503,'buyer_review_delivery_reconciliation_required');`;
+ out=one(out,oldBinaryFinish,newBinaryFinish,'d013-binary-release');
  if(!out.includes('COTIRONDA_PILOT_V2_REFERENCE_LINK_ENABLED')||
   !out.includes('buyer_d016_link_reconciliation_required'))
   throw Error('d016_overlay_incomplete');
