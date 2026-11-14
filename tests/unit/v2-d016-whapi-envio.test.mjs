@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {createHmac} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {generarWebhookD016} from '../../scripts/piloto/v2-d016-whapi-overlay.mjs';
-import {notificarAccesoWhatsappD016}
+import {notificarAccesoWhatsappD016,permitirAvisoD016}
  from '../../supabase/functions/cotironda-piloto-whapi/buyer-whatsapp-entry-d016.ts';
 
 const PORTAL='https://cotironda-portal-9sl89v1ho-protector-rudo-s-projects.vercel.app';
@@ -151,6 +151,32 @@ test('D016 Whapi: DB error before reservar no dispara envío; tras reservar conc
  assert.equal((await b.run()).estado,'no_elegible');
  assert.equal(b.state.sent.length,1);
 });
+test('D016: el flag legado OFF no impide enlace V2; outbound OFF nunca envía',()=>{
+ const matrix=[
+  [false,false,undefined,false],
+  [false,true,undefined,false],
+  [false,true,'false',false],
+  [true,false,'false',false],
+  [true,false,'true',true],
+  [true,false,undefined,true],
+  [true,true,'false',true],
+  [true,true,undefined,true],
+  [true,true,'true',true]
+ ];
+ for(const [outbound,d016,legacy,expected] of matrix){
+  assert.equal(permitirAvisoD016(outbound,d016,legacy),expected,
+   JSON.stringify({outbound,d016,legacy}));
+ }
+ const old=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/index.ts',
+  import.meta.url),'utf8');
+ const candidate=generarWebhookD016(old);
+ assert.match(candidate,/permitirAvisoD016\(sec\.outbound,d016Enabled,/u);
+ assert.match(candidate,/const d016Enabled=Deno\.env\.get\('COTIRONDA_PILOT_D016_WHATSAPP_SEND_ENABLED'\)==='true'/u);
+ assert.match(candidate,/if\(d016Enabled\)\{/u);
+ assert.doesNotMatch(candidate,
+  /if\(!sec\.outbound\|\|Deno\.env\.get\('COTIRONDA_PILOT_BUYER_TRACKING_ENABLED'\)==='false'\)continue;/u);
+});
+
 test('D016 Whapi: overlay genera webhook aislado y conserva v76 inmutable',()=>{
  const old=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/index.ts',
   import.meta.url),'utf8');
