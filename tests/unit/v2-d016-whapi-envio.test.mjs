@@ -296,6 +296,24 @@ test('D013+ D016: candidato Whapi usa catalogo por producto SOLO con flag V2',()
  assert.match(router,/verificarCorrespondenciaTecnicaD013/u);
 });
 
+test('D013+D016: PDF Word y Excel corroborados usan V2 privado, nunca MVP278 publico',()=>{
+ const original=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/index.ts',import.meta.url),'utf8');
+ const candidate=generarWebhookD016(original);
+ assert.match(candidate,/from '\.\/ai-central-buyer-binary-v2-d013\.ts'/u);
+ assert.match(candidate,/const d013BinaryEnabled=habilitarPublicacionD013ConAccesoD016\(\{/u);
+ assert.match(candidate,/const binaryWorker=d013BinaryEnabled\?\s*prepararDocumentoBinarioV2D013:prepararDocumentoBinarioCompradorMvp278/u);
+ assert.match(candidate,/enabled:d013BinaryEnabled/u);
+ assert.match(candidate,/if\(!d013BinaryEnabled\|\|!mediaPlan\.requestId\)/u);
+ assert.match(candidate,/buyerLinkRequests\.push\(\{mode:'auto',requestId:mediaPlan\.requestId/u);
+ assert.match(candidate,/mediaPlan\.estado==='ronda_en_sombra'&&!d013BinaryEnabled/u);
+ assert.doesNotMatch(original,/prepararDocumentoBinarioV2D013/u);
+ const binary=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/ai-central-buyer-binary-v2-d013.ts',import.meta.url),'utf8');
+ assert.match(binary,/prepararDocumentoBinarioCompradorMvp278/u);
+ assert.match(binary,/cotironda_piloto_v2_auto_release_d013/u);
+ assert.doesNotMatch(binary,/cotironda_piloto_ia_publish_mvp222/u);
+ assert.match(binary,/procesarCompradorV2D013/u);
+});
+
 test('D016 Whapi: overlay genera webhook aislado y conserva v76 inmutable',()=>{
  const old=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/index.ts',
   import.meta.url),'utf8');
