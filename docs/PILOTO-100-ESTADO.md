@@ -1,5 +1,14 @@
 # COTIRONDA V2 — ESTADO REAL Y RELEVO ENTRE CONVERSACIONES
 
+### RELEVO MÁS RECIENTE · 13/11/2026 (migración UTC 14/11 02:50) · ALTA ÚNICA UNIFICADA
+
+**FUENTE DE VERDAD:** la **única** alta de consentimiento de originales V2 es [PR #846](https://github.com/ProtectorRudo/Cotironda/pull/846), migración SQL `20261114022538` en Supabase `cotironda-piloto`. Sus objetos canónicos son `v2_d016_supplier_terms_policy` (OFF, términos no aprobados), `v2_d016_supplier_terms_deliveries`, `record_terms_delivery_private`, `register_terms_acceptance_private`. **#847 estaba duplicado** (migración `20261114024509`): quedó **CERRADO, SIN MERGE**, y sus 2 tablas vacías + 3 RPC se retiraron con migración real `20261114025045`, [PR #848](https://github.com/ProtectorRudo/Cotironda/pull/848) DRAFT. Preflight PG17, 7 rondas/1 preparada, flags OFF y 0 filas; SQL de limpieza sin CASCADE. [Acta y poscontrol](https://github.com/ProtectorRudo/Cotironda/blob/fix/d016-unificar-alta-unica-quitar-duplicado-20261113/docs/PILOTO-D016-ALTA-UNICA-UNIFICADA-PUBLICADA-20261113.md). GitHub D016 [run 43548383967](https://github.com/ProtectorRudo/Cotironda/actions/runs/43548383967) PASS, `D016_SINGLE_SUPPLIER_SIGNUP_CLEANUP_PG17_PASS`, ROLLBACK.
+
+**ESTADO REAL:** 7 rondas históricas intactas (1 preparada), **0 consentimientos y 0 avisos de alta**, política de términos #846 OFF, negocio/originales/cierre OFF/OFF/OFF; no WhatsApp, portal Vercel ni producción modificados. El arquitecto sigue sin acceso real porque faltan secretos privados servidor (HMAC D016 y credencial Supabase) en Preview y UI f985 sigue con reintento de cuota ya programado; NO duplicar reintento.
+
+**P0 PRÓXIMO (NO repetir alta):** revisar y fortalecer **la única RPC #846** para que una aceptación después de `NO COMPARTIR` exija un **nuevo aviso de términos enviado después de la baja**, no basta con un texto nuevo usando un aviso anterior. Revisar el texto de términos jurídicamente según Ley 25.326, no inventar aprobaciones; integrar bienvenida WhatsApp y consent **una vez al alta**, sin confirmaciones por presupuesto, y hacer E2E comprador + Ailín/Nahuel. **Piloto NO 100 %.**
+
+
 ### ÚLTIMO RELEVO · 13/11/2026 AR (migración UTC 14/11 02:25) · ALTA ÚNICA DE ORIGINALES DESACTIVADA
 
 **Publicación REAL segura:** Supabase `cotironda-piloto`, migración **`20261114022538`** `cotironda_d016_one_time_supplier_original_terms_off_pilot_20261113`. Se instaló estructura de **aceptación informada una sola vez por proveedor** al registrarse: política de texto legal versionado `OFF` sin texto ni SHA aprobado, constancia privada de mensaje de alta enviado (mismo chat/ID Whapi/versión/hash), RPC server-only de envío y de aceptación explícita exacta `ACEPTO COTIRONDA ORIGINALES V2` desde el WhatsApp verificado **después** del aviso. No presume permiso por cotizar o por estar registrado. La baja global `NO COMPARTIR` sigue prevaleciendo y no impide cotizar.
