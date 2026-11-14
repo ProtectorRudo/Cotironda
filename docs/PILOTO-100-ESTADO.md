@@ -6,6 +6,8 @@
 
 
 
+**PUBLICADO 14/11/2026 — P0 cerrado:** migración PILOTO `20261114093622` suspendió **solo** el cron legado V1 `cotironda_piloto_close_due_5min` (job1 `active=false`), evitando futuros cierres por reglas antiguas. Dry-run `BEGIN/ROLLBACK` real exitoso, luego migración `success=true`; postcontrol jobs3/4 siguen `active=true`; 7 rondas = 5 cerradas, 2 borradores, 0 preparadas; 0 consentimientos, cuatro flags V2 OFF. **No Whapi, no Vercel, no producción**. Fuente: [acta](PILOTO-V2-CRON-V1-SUSPENDIDO-20261114.md), [PR #852](https://github.com/ProtectorRudo/Cotironda/pull/852). La acción prioritaria ahora sigue siendo configurar clave privada de Supabase en Preview, y validar UI f985 cuando permita cuota. No reactivar cron legado por rutina.
+
 ## ÚNICA PRÓXIMA ACCIÓN
 **Desbloquear la credencial privada de Supabase para el portal Preview:** la variable de Vercel `COTIRONDA_PILOT_SUPABASE_SECRET_KEY` está **AUSENTE**. Debe contener una clave `sb_secret_...` del proyecto **`cotironda-piloto`** y configurarse exclusivamente en servidor, entorno **Preview**, sin compartir valor por chat/GitHub. El conector Supabase actual solo entrega publishable keys: NO simularla con una pública ni imprimir secretos. Es la única intervención externa indispensable para avanzar con acceso real; la persona titular puede hacerlo desde paneles seguros de Supabase/Vercel.
 
