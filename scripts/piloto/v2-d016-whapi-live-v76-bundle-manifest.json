@@ -1,0 +1,257 @@
+{
+  "kind": "cotironda_d016_live_whapi_v76_bundle_fingerprint",
+  "project_ref": "ilggkalaafhtiysyzlmg",
+  "function_slug": "cotironda-piloto-whapi",
+  "edge_version": 76,
+  "verify_jwt": false,
+  "ezbr_sha256": "656cb24bd1cbfdbb0de6d87a9acae17ad911c13b6e404667029dd4d0b55b822e",
+  "file_count": 61,
+  "confirmed_by": "Supabase get_edge_function 2026-11-14; each content hashed as UTF8 SHA256",
+  "deployment_authorized": false,
+  "files": [
+    {
+      "path": "src/domain/enlace-seguimiento-piloto-mvp212.ts",
+      "sha256": "e2cada259c5b52a9c2b1e652f623084e1046528a3ece644123102f10b5d912c9"
+    },
+    {
+      "path": "src/domain/ia-central/calificador-cotizaciones-mvp225.ts",
+      "sha256": "fb140508e3f3cfdc0aa32d75ccf4790ef2fbc8cf1c6230f97d60063a2bfac32c"
+    },
+    {
+      "path": "src/domain/ia-central/catalogo-supabase-mvp220.ts",
+      "sha256": "e5268be1813421f82f1c6e2af7909a6e08b8ec5b9ad7e75d2e625b2c98a3cb07"
+    },
+    {
+      "path": "src/domain/ia-central/cliente-openai-v1.ts",
+      "sha256": "25aa5c64194993b80d99ce346c81f9f26bc678a6c88eedc4818f7b77b281252e"
+    },
+    {
+      "path": "src/domain/ia-central/contrato-v1.ts",
+      "sha256": "3c6b4c93cba4094244f8b6214cfdeff3ee71245c239f421e8c18020e790fa073"
+    },
+    {
+      "path": "src/domain/ia-central/diagnostico-fuente-mvp297.ts",
+      "sha256": "20e4c322fa0715a7bae6968d5a50530efb0de91019177c25691c52752981b955"
+    },
+    {
+      "path": "src/domain/ia-central/diagnostico-presentaciones-mvp243.ts",
+      "sha256": "732ad4c039af1deab17c25f33be5966e805469d0881cb006edc2fde16a091cc3"
+    },
+    {
+      "path": "src/domain/ia-central/evidencia-condiciones-mvp242.ts",
+      "sha256": "03b6492e73c88010fea22a4e2564260271d9c6d9a398820cd8aacec89a345994"
+    },
+    {
+      "path": "src/domain/ia-central/evidencia-moneda-mvp241.ts",
+      "sha256": "725002eaaa971a67be2d5b9b18d2ef5df964147906f2c3d41dc2436651abd0f5"
+    },
+    {
+      "path": "src/domain/ia-central/fidelidad-importes-fuente-mvp244.ts",
+      "sha256": "49dd88d00867a75e279a694f89d036a6fd4a265403dff5e6fb5e65c9280e016e"
+    },
+    {
+      "path": "src/domain/ia-central/fidelidad-pedido-mvp288.ts",
+      "sha256": "4e62e43567eb1eb4eeb98f3dfdc2af71edac59f02af18b5d3fe869802b372fb9"
+    },
+    {
+      "path": "src/domain/ia-central/lector-presupuesto-proveedor-mvp225.ts",
+      "sha256": "1be1b6a38e1021bd750dd6962acb21b8478992534ab9030175af169b2f43d247"
+    },
+    {
+      "path": "src/domain/ia-central/planificador-piloto-mvp220.ts",
+      "sha256": "f485843b3c97bcbf2c1b124250e4c1216b15d18bb25b7d56289e6cd9060ec591"
+    },
+    {
+      "path": "src/domain/ia-central/puente-sql-rondas-mvp221.ts",
+      "sha256": "53cde39adea9fbef8ada910463a186229428ecb88cd9a1dc96fc892184dff1a2"
+    },
+    {
+      "path": "src/domain/ia-central/ruteador-catalogos-v2.ts",
+      "sha256": "f95557c323fdd460736a0ffd51f7d0e1e2a902e82ac2c35c818981a2fa55e2c6"
+    },
+    {
+      "path": "src/domain/rubros-comprador-mvp216.ts",
+      "sha256": "a0171ecb374d409be5eb8b21f3a9430238ba6d8ee1231a5b5de5c519a297c183"
+    },
+    {
+      "path": "supabase/functions/_shared/aviso-proveedores-cierre-mvp305.ts",
+      "sha256": "3a48e5ea6a15c281b1b2be622e9eb20b425ca9cc73caf5c1e7fcc57e4785ad56"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/ai-central-buyer-auto-release-mvp306.ts",
+      "sha256": "a8387bb26e2f1e27e94d7d42a71e14aa31de5e97dbbccadbc48654d3681447c5"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/ai-central-buyer-binary-broker-mvp278.ts",
+      "sha256": "3ba888ba1018155ddbf00d3b9219f507de14647e3a5cf3c991d8e1931b98faf9"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/ai-central-buyer-binary-mvp277.ts",
+      "sha256": "3c5061d4f5736661555e4f781aa76c5282c8476c75a50528da24288eb3a772e4"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/ai-central-buyer-document-mvp275.ts",
+      "sha256": "ad2741cacf5f266611b76fab2bbbec578319d97a78bfa7968087281c3b6bf611"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/ai-central-buyer-media-mvp276.ts",
+      "sha256": "3269f35895fa413630f5c9be37f382c1b5e8c8f5a0cf993541fb8cc0209fa24d"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/ai-central-buyer-mvp226.ts",
+      "sha256": "361a09a37942b6f637de0fd159a4323863a1656ea285eac87ef7efed280adc7c"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/ai-central-buyer-review-mvp279.ts",
+      "sha256": "f52f91fa61ee5c946f94a324d73ad02ab0dcc005d0f1323aa483e60bdc4826f4"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/ai-central-city-mvp234.ts",
+      "sha256": "99d3f6fab3d227054e61624e4934e397846bc1b44611efca174799a34a08ee87"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/ai-central-dispatch-mvp223.ts",
+      "sha256": "81b97cf9d989fab4409d2399cdc4b62041960c287c6c4419c717c8e0e48d4389"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/ai-central-document-mvp245.ts",
+      "sha256": "560d4c20ac708abc126a6ef79016bc1c9397689f09cdd674687133f1da2c2530"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/ai-central-memory-mvp260.ts",
+      "sha256": "5527c2adae55bca8af8932859207d2653958b2502e5b0a394709a2adbcea2498"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/ai-central-review-notice-mvp286.ts",
+      "sha256": "ffec3744a9c7f5137175239926a2ce9494aa8e23eb071dead43ca107030fef1b"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/ai-central-supplier-mvp227.ts",
+      "sha256": "659d563b1d365d247f9f69d5b6a101db1f2f1518d660882f253099514f688319"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/ai-central-supplier-route-mvp232.ts",
+      "sha256": "1acdc3e445633b7eab2be1d84f323fb40372c42e457a274056cd631594309d1f"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/ai-central-usage-mvp264.ts",
+      "sha256": "e3c6041bb8e334172f64c31ac90d67e110061a039aaa89d8c051b46d8f4ac2cf"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/ai-central-zone-mvp233.ts",
+      "sha256": "34f3a50309d9fe06cfb5776477e960322a7bfbe07e4bed1e979ed38b338bbfc2"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/ai-contract.ts",
+      "sha256": "39a2343f5a0c32e2b6deb45d77f89a0ba331a6bbf2359d04739fb33bc6abd76e"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/ai-evidence.ts",
+      "sha256": "38c386f5cf42ed8340bdb7e895454d4ddea476260aa585eca9737964a6d67a78"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/ai-interpreter.ts",
+      "sha256": "f5af5128c5d1aa6865f240694016900422d0a10e0f186ab6ed5ac29a4a7f30b4"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/ai-supplier-attachment-notice-mvp238.ts",
+      "sha256": "0da362f113ef52961911d52855e3abbe41b6ab964df3f60e1feb37e5ec78cb47"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/ai-supplier-clarification-mvp239.ts",
+      "sha256": "3e7e35595f96448559e2b88d92fdd70bf537d40933e1c959657e566364172d72"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/business-ai-policy.ts",
+      "sha256": "f76f12fe5d4ebcb5e7b4b682295f7b88967eddb73563e16de82ad6942b7bc81b"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/buyer-tracking-confirmation-mvp289.ts",
+      "sha256": "7dd30fd7543fc87c48d0c3d2a1bcbc8784038a36676c761d43ad814117386061"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/core.ts",
+      "sha256": "cdf6c7c1cded4737a4cf301f39d2185a165b2a30a22e93e2648693fcee97a6b3"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/delivery-status.ts",
+      "sha256": "108d98ccda143cc89bcc9fab29727404d6230023322db7bba266991ea3d2b479"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/document-ai-draft.ts",
+      "sha256": "1933d6bb22ef3342f12a8149ae8a0e56332f944c94694bb1fd53768ccf0942d5"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/document-clarification.ts",
+      "sha256": "713ec6158d6488dc90d51d52b91e6fe26c14e04b04f69428eca40928281899c2"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/dynamic-recipient-mvp313.ts",
+      "sha256": "8a44d9c27c907c37fde35b3d2be79e27b2ff31dbf6cd3548d41bfd7bad4bf387"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/index.ts",
+      "sha256": "349831d3be81d0da95ba0cc3b699256521e35d4b7c0f1923e3dc2a6a714d0c7d"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/media-intake.ts",
+      "sha256": "9d5416fd0ed9d0910d3f1ee1b82da485a8c1d3ca20dc9eea0390f067319950a6"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/private-document-recovery.ts",
+      "sha256": "79992395bc8c4e80301c541847ddb4724f7bf799f4388efe0e0ec49589380346"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/request-pdf.ts",
+      "sha256": "c810461535b3c1a72b7ea50114b1447ab54eda0ff42e3b5cf0919a845ede388f"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/supplier-auto-correlation-mvp336.ts",
+      "sha256": "d400cf8e2e9fd6d4d648ff38b6cbaf7fde0694e534805fbdf1e27006e4b37d34"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/supplier-deferred-ack.ts",
+      "sha256": "ccb8310e703d088620de2ccf4a40213a71297194139b41800f0c684da67e139d"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/supplier-ocr-google-mvp252.ts",
+      "sha256": "d501071ec02a933b6354fc63e435c8a980c796a5f7c1a99b5a45afae08bfb4e4"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/supplier-role-hint.ts",
+      "sha256": "a270118d26777a80195932e9d4ec6ca5545c864b9252ca2bfe33368b7ce08601"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/supplier-source-image-mvp251.ts",
+      "sha256": "4309c8b424926994414e9e41fe5a3c4133b787b9fa8360eca12c3c321423b6ca"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/supplier-source-office.ts",
+      "sha256": "537cb7f809459dd49d2b7f1de0dc452dc54e3794acd3372b9d6990fb7c6caed5"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/supplier-source-pdf-general.ts",
+      "sha256": "a678bae6e725abe1fa90cc47555ea4b48250a2e3a2844bdbbca5ec080b991c01"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/supplier-source-pdf.ts",
+      "sha256": "9f37497c244fe5a042bcad4ddffde47f83a6bcccf1dc8983b6548b4c810f5b1c"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/supplier-source-text.ts",
+      "sha256": "b29536850262af8e7e0a1dfc9bf735d56e323911a988961eef79cf3c4ca1891c"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/supplier-text-materials-mvp292.ts",
+      "sha256": "4d4c7f209ad4749942ee287e2b26fab3cbc14d5f470004c0224931a4e6a5e129"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/supplier-visual-ocr-audit-mvp252.ts",
+      "sha256": "00fd8494388f52dcaff1e6f48a5f7836b569d18d1e5b5e7f785bc7d088efffe6"
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/whapi-media-archive.ts",
+      "sha256": "5b0f462755045ba59f41148d00a96625595fb845bf9b9be9e2f718ea37c0b94b"
+    }
+  ]
+}
