@@ -1,5 +1,19 @@
 # Cotironda V2 — Plan maestro operativo, piloto 100 %
 
+## DECISIÓN OPERATIVA ANTI-BUCLE — NO VOLVER A EMPEZAR
+
+**APROBADO POR EL PROPIETARIO EL 14/11/2026. Fuente de verdad: GitHub `ProtectorRudo/Cotironda`, este plan y [Estado real](PILOTO-100-ESTADO.md).** No reescribir arquitectura ni lanzar nuevas etapas o PR mientras el circuito comercial ya disponible permita completar el piloto. La base tiene dos rondas históricas con dos ofertas visibles y cero pendientes, 4 tokens de seguimiento vigentes, Edge Whapi v76 intacto y portal Preview(s) `READY`. Se reutiliza todo esto: no confundir **V2 sin ranking/ganadores automáticos** con rehacer recepción, proveedores, originales y portal.
+
+**ORDEN BLOQUEANTE ÚNICO (no trabajar fuera de él salvo defecto de seguridad):**
+- [ ] **A. Preview y acceso real:** esperar/verificar UNA publicación del SHA aprobado `f98527c9516478783bd7cf95433c58f5ca445937` en `cotironda-portal-dev` (retry Vercel ya programado 14/11 17:07 ART; no duplicar 402 ni usar otro proyecto). Navegador del comprador sin SMS; comprobar sesión, URL y aislamiento. Si falla, parche mínimo de PR #837.
+- [ ] **B. Conectar lo existente:** integrar HMAC custodiada Edge ↔ portal, conservando el bundle LIVE Whapi v76 (61 módulos) y usando [PR #853](https://github.com/ProtectorRudo/Cotironda/pull/853), no desplegar un index histórico incompleto. Flags OFF hasta controles efectivos; verificar no duplicados de mensajes y rondas.
+- [ ] **C. Permisos una vez:** aprobación de texto legal completo de originales y responsable/contacto/plazo reales; registrar consentimientos revocables de Ailín y Nahuel SIN inventarlos, SIN permisos retroactivos, SIN formularios por presupuesto. Originales solo visibles al comprador autorizado.
+- [ ] **D. UNA prueba E2E nueva:** arquitecto envía pedido WhatsApp, IA identifica catálogo por producto y localidad, envía a dos proveedores consentidos; reciben y responden; originales íntegros asociados a su ronda, portal de respondientes y análisis individual/general, cierre manual asistido tras 2 días hábiles. Sin rankings en vivo, ganadores ni adjudicación automática.
+- [ ] **E. Veredicto PILOTO 100 %:** SOLO marcar completado con pruebas reales en WhatsApp, base, navegador, permisos y cierre, sin operador manual. PR/test/build aislados no son veredicto comercial.
+
+**POLÍTICA DE CONTINUIDAD:** cada nueva conversación empieza por [ESTADO REAL](PILOTO-100-ESTADO.md) y este checklist, verifica PR/Edge/Preview/SQL y ejecuta **solamente el primer ítem pendiente con bloqueo real**. Actualiza el resultado `HECHO / PROBADO / PENDIENTE`, commit y link. Prohibido abrir nuevos roadmaps, rehacer módulos estables, multiplicar PR, reactivar cron V1, publicar producción, saltar consentimiento o introducir pagos/rankings/extras. La documentación se actualiza *después* de operar, nunca como sustituto de la prueba.
+
+
 **Regla:** completar solo el circuito comercial, no generar otro roadmap ni PR redundantes. El [Estado actual](PILOTO-100-ESTADO.md) contiene **UN** bloqueo próximo y datos verificables. [Contrato V2](COTIRONDA-V2-CONTRATO.md) es la fuente de reglas, [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794) coordina el avance.
 
 **Relevo verificado 14/11 06:30 ART:** Vercel Preview SHA f985 respondió HTTP 402 cuota diaria; NO publicada. Mantener reintento único 17:07 ART, no otro proyecto ni gastos. Cron histórico cerró la última ronda `prepared` a las 06:25 ART: 7 rondas = 5 cerradas, 2 borradores, cero preparadas. WhatsApp histórico sin nuevos mensajes enviados; 0 finales/revelaciones por outbox. Comprador y dos proveedores en WhatsApp; 106 líneas de catálogo, 86 curadas, 20 pendientes, 0 catálogos con confirmación registrada. Variable privada de Supabase ahora presente en Vercel Preview (tipo Sensitive); valor/autenticación NO verificados todavía. Mantener todas las políticas V2 OFF.
