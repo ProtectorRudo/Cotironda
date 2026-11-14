@@ -1,5 +1,13 @@
 # Cotironda V2 — Estado REAL del piloto
 
+**PUBLICADO Y COMPROBADO 14/11/2026 ~12:25 ART — puente D013+D016 en Supabase PILOTO:** se publicó sobre el webhook existente `cotironda-piloto-whapi` el paquete derivado de [PR #853](https://github.com/ProtectorRudo/Cotironda/pull/853), commit `fefc3857d399891a24f932a48d8ffd832b70dc62`, **10/10 CI**. La función pasó de **v77** (huella previa idéntica a v76: `656cb24bd1cbfdbb0de6d87a9acae17ad911c13b6e404667029dd4d0b55b822e`) a **v78 ACTIVE**, huella `9110183dfd3863b2822e710632419c628dad7fab45e29995857b0362c4ef79d4`. Se conservaron **61 módulos previos** byte a byte (salvo `index.ts` transformado con el overlay puro y anclas verificadas) y se incorporaron **9 dependencias**: **70/70 archivos instalados**, índice publicado idéntico al candidato, sin imports relativos faltantes, `verify_jwt=false` heredado por autenticación Whapi propia. **NO se abrió otro webhook, no hubo reemplazo por fuente histórica vieja.** Reversión, si hiciera falta: restaurar la fuente exacta de los 61 archivos v77 preservados en Supabase/auditoría, sin tocar datos.
+
+**POSTCONTROL REAL:** 7 rondas conservadas; **0** tickets, sesiones o notificaciones D016; **0** consentimientos de originales; `v2_business_policy`, `v2_original_share_policy` y `v2_auto_release_policy` continúan **OFF**. Outbox histórico: **0** envíos tras el despliegue, último envío registrado 03/11. Logs Edge revisados sin mensajes que contengan «error» o «exception» en ventana posterior, NO es E2E ni garantía global. El propietario informó que configuró la HMAC en secretos Edge; **la igualdad de la HMAC de Supabase con la de Vercel aún no se pudo verificar desde las herramientas**; no copiar la clave al chat ni exponerla. La Preview D016 anterior sigue READY y con `COTIRONDA_D016_ENABLED=false`.
+
+**PRÓXIMO BLOQUEO ÚNICO:** comprobar HMAC operativa y sesión real de comprador por WhatsApp contra una ronda nueva autorizada y políticas de negocio activadas de forma segura; **no** habilitar mensajes ni originales sin consentimiento informado revocable real de proveedores y garantías de privacidad. El código del puente ya está PUBLICADO; **el E2E no está completado**. Se debe retomar desde este estado, no desde notas históricas anteriores sobre webhook v76 o Preview por cuota.
+
+
+
 ## DECISIÓN OPERATIVA ANTI-BUCLE — 14/11/2026
 
 **DIRECTIVA PRIORITARIA AUTORIZADA: REUTILIZAR EL PILOTO REAL, NO RECONSTRUIRLO.** El propietario dio luz verde y pidió registrar esta decisión para que las próximas conversaciones no regresen al inicio. Esta directiva prevalece sobre notas de implementación antiguas que incentiven nuevos módulos, PR o rediseños.
