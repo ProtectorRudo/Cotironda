@@ -177,6 +177,26 @@ test('D016: el flag legado OFF no impide enlace V2; outbound OFF nunca envía',(
   /if\(!sec\.outbound\|\|Deno\.env\.get\('COTIRONDA_PILOT_BUYER_TRACKING_ENABLED'\)==='false'\)continue;/u);
 });
 
+test('D016: SEGUIMIENTO COTI recupera acceso con tracking legado apagado',()=>{
+ const old=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/index.ts',
+  import.meta.url),'utf8');
+ assert.match(old,/if\(buyerLinkCommand\)\{/u);
+ assert.match(old,/pilotEnvNotDenied\('COTIRONDA_PILOT_BUYER_TRACKING_ENABLED'\)/u);
+ const candidate=generarWebhookD016(old);
+ const cmd=candidate.match(/if\(buyerLinkCommand\)\{([\s\S]*?)\n   \}/u)?.[1];
+ assert.ok(cmd,'command SEGUIMIENTO COTI must still exist');
+ assert.match(cmd,/permitirAvisoD016\(sec\.outbound,/u);
+ assert.match(cmd,/COTIRONDA_PILOT_D016_WHATSAPP_SEND_ENABLED/u);
+ assert.match(cmd,/buyerLinkRequests\.push\(\{mode:'recovery'/u);
+ assert.doesNotMatch(cmd,/pilotEnvNotDenied\('COTIRONDA_PILOT_BUYER_TRACKING_ENABLED'\)/u);
+ // No abrir envíos si el interruptor global está apagado.
+ assert.equal(permitirAvisoD016(false,true,'false'),false);
+ // D016 activo permite la recuperación, sin reactivar el seguimiento antiguo.
+ assert.equal(permitirAvisoD016(true,true,'false'),true);
+ // D016 apagado conserva el bloqueo legado.
+ assert.equal(permitirAvisoD016(true,false,'false'),false);
+});
+
 test('D016 Whapi: overlay genera webhook aislado y conserva v76 inmutable',()=>{
  const old=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/index.ts',
   import.meta.url),'utf8');
