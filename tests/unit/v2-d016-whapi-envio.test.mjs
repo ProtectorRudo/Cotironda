@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {createHmac} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {generarWebhookD016} from '../../scripts/piloto/v2-d016-whapi-overlay.mjs';
-import {notificarAccesoWhatsappD016,permitirAvisoD016}
+import {notificarAccesoWhatsappD016,permitirAvisoD016,permitirRecuperacionD016}
  from '../../supabase/functions/cotironda-piloto-whapi/buyer-whatsapp-entry-d016.ts';
 
 const PORTAL='https://cotironda-portal-9sl89v1ho-protector-rudo-s-projects.vercel.app';
@@ -177,6 +177,32 @@ test('D016: el flag legado OFF no impide enlace V2; outbound OFF nunca envía',(
   /if\(!sec\.outbound\|\|Deno\.env\.get\('COTIRONDA_PILOT_BUYER_TRACKING_ENABLED'\)==='false'\)continue;/u);
 });
 
+test('D016 OFF conserva las dos semánticas distintas del tracking legado',()=>{
+ const cases=[
+  {value:undefined,normal:true,recovery:true},
+  {value:'true',normal:true,recovery:true},
+  {value:'false',normal:false,recovery:false},
+  {value:'',normal:true,recovery:false},
+  {value:'0',normal:true,recovery:false},
+  {value:'off',normal:true,recovery:false},
+  {value:'FALSE',normal:true,recovery:false}
+ ];
+ for(const {value,normal,recovery} of cases){
+  assert.equal(permitirAvisoD016(true,false,value),normal,
+   'MVP289 envío '+String(value));
+  assert.equal(permitirRecuperacionD016(true,false,value),recovery,
+   'MVP289 recuperación '+String(value));
+  assert.equal(permitirAvisoD016(true,true,value),true,
+   'D016 envío '+String(value));
+  assert.equal(permitirRecuperacionD016(true,true,value),true,
+   'D016 recuperación '+String(value));
+  assert.equal(permitirAvisoD016(false,true,value),false,
+   'Outbound OFF envío '+String(value));
+  assert.equal(permitirRecuperacionD016(false,true,value),false,
+   'Outbound OFF recuperación '+String(value));
+ }
+});
+
 test('D016: SEGUIMIENTO COTI recupera acceso con tracking legado apagado',()=>{
  const old=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/index.ts',
   import.meta.url),'utf8');
@@ -185,16 +211,16 @@ test('D016: SEGUIMIENTO COTI recupera acceso con tracking legado apagado',()=>{
  const candidate=generarWebhookD016(old);
  const cmd=candidate.match(/if\(buyerLinkCommand\)\{([\s\S]*?)\n   \}/u)?.[1];
  assert.ok(cmd,'command SEGUIMIENTO COTI must still exist');
- assert.match(cmd,/permitirAvisoD016\(sec\.outbound,/u);
+ assert.match(cmd,/permitirRecuperacionD016\(sec\.outbound,/u);
  assert.match(cmd,/COTIRONDA_PILOT_D016_WHATSAPP_SEND_ENABLED/u);
  assert.match(cmd,/buyerLinkRequests\.push\(\{mode:'recovery'/u);
  assert.doesNotMatch(cmd,/pilotEnvNotDenied\('COTIRONDA_PILOT_BUYER_TRACKING_ENABLED'\)/u);
  // No abrir envíos si el interruptor global está apagado.
- assert.equal(permitirAvisoD016(false,true,'false'),false);
+ assert.equal(permitirRecuperacionD016(false,true,'false'),false);
  // D016 activo permite la recuperación, sin reactivar el seguimiento antiguo.
- assert.equal(permitirAvisoD016(true,true,'false'),true);
+ assert.equal(permitirRecuperacionD016(true,true,'false'),true);
  // D016 apagado conserva el bloqueo legado.
- assert.equal(permitirAvisoD016(true,false,'false'),false);
+ assert.equal(permitirRecuperacionD016(true,false,'false'),false);
 });
 
 test('D016 Whapi: overlay genera webhook aislado y conserva v76 inmutable',()=>{
