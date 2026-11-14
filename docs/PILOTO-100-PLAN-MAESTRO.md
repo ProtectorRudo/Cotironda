@@ -13,6 +13,9 @@
 
 **Prueba vigente D016 live v76:** PR [#853](https://github.com/ProtectorRudo/Cotironda/pull/853), commit `1ecc78689e489f2feb2c86d14eb0d063066e72bc`, **7/7 workflows GitHub SUCCESS**; manifiesto de SHA-256 de **61 archivos reales activos**, y nuevo rechazo automático si alguno difiere o falta. Candidato OFFLINE, sin desplegar Edge ni modificar f985/Whapi. **NO fusionar #853 en #837 antes de publicar el SHA UI autorizado.** Después se necesita construir/chequear paquete completo live y coordinar HMAC Edge, consentimientos y pruebas comerciales reales.
 
+- [x] **Integración D016, alcance estático:** 61 módulos de Supabase Edge v76 + 2 nuevos: dependencias relativas **63/63 resueltas**, comprobadas sobre código activo y candidatos. NO confundir con Deno-check del bundle final ni funcionalidad real; Edge v76 intacta, PR #853 DRAFT.
+- [x] **Texto de alta de proveedor D016 preparado, NO aprobado:** [borrador en PR #846](https://github.com/ProtectorRudo/Cotironda/blob/feat/d016-alta-unica-consentimiento-originales-20261113/docs/PILOTO-D016-TEXTO-ALTA-ORIGINALES-BORRADOR-20261114.md). Contiene información al proveedor, aceptación exacta única y revocación. **Bloqueo real antes de enviar:** completar responsable legal, domicilio, canal de privacidad y retención, revisión de terceros/datos personales y aprobación del texto íntegro versionado; **cero avisos y consentimientos reales**.
+
 ## Checklist de desbloqueo (en orden)
 
 - [x] **Dirección V2 decidida y documentada:** por catálogo y zona, original fiel, proveedor identificado al responder, guía individual, cierre 2 días hábiles e informe general. No rankings/ganadores automáticos V1.
