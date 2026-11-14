@@ -1,5 +1,16 @@
 # COTIRONDA V2 — ESTADO REAL Y RELEVO ENTRE CONVERSACIONES
 
+### ÚLTIMO RELEVO · 13/11/2026 AR (migración UTC 14/11 01:59) · BAJA GLOBAL PUBLICADA EN PILOTO
+
+**Hecho verificado:** Supabase `cotironda-piloto`, migración `20261114015943` `cotironda_d016_global_original_optout_off_pilot_20261113`. Corrige un riesgo P0: antes **«NO COMPARTIR» solo revocaba originales en rondas con aviso**, pero NO la autorización única de un proveedor, por lo que podía reaparecer en una nueva ronda. Ahora revoca el consentimiento general `v2_supplier_original_consents` incluso sin aviso ni ronda, registra prueba WhatsApp en tabla privada, rechaza reconsentimientos anteriores mediante trigger y anula avisos previos. **No cancela participación ni cotizaciones del proveedor.**
+
+**Postrelease SQL REAL:** 7 rondas históricas intactas/1 preparada, consentimientos originales **0**, avisos/respuestas/bajas y eventos nuevos **0/0/0/0**. Negocio/originales/cierre **OFF/OFF/OFF**. Trigger instalado, RLS habilitada, `anon`/`authenticated` sin acceso, RPC `service_role` sí, nulos sin efectos. [Acta verificada](https://github.com/ProtectorRudo/Cotironda/blob/fix/d016-no-compartir-revocacion-global-20261113/docs/PILOTO-D016-BAJA-GLOBAL-PUBLICADO-20261113.md).
+
+**CI**: [GitHub D016 run 43543664303](https://github.com/ProtectorRudo/Cotironda/actions/runs/43543664303) SUCCESS, marca exacta `D016_GLOBAL_OPT_OUT_PG17_PASS`, PostgreSQL 17 BEGIN/ROLLBACK con/sin ronda, otro chat, replay y nuevo consentimiento posterior. [PR #845](https://github.com/ProtectorRudo/Cotironda/pull/845) DRAFT, sin merge ni publicación del webhook v76/portal/producción. El acceso de comprador sigue bloqueado por HMAC + Supabase secret de Vercel Preview ausentes y reintento UI f985 ya programado; **no duplicar ese reintento**.
+
+**Próximo P0 efectivo:** formalizar una aceptación informada **una sola vez por proveedor en su alta** (artículos 5/6/11 de Ley 25.326, revisión jurídica); la base tiene 0 consentimientos, no crearlos por inferencia. Integrar Whapi V2 candidato con flags OFF hasta prueba E2E comprador + dos proveedores y Preview privado. Sin SMS ni confirmaciones por presupuesto. **PILOTO NO 100%.**
+
+
 ### RELEVO MÁS RECIENTE · 13/11/2026 · BLOQUEO DE ORIGINALES SIN EVIDENCIA CERRADO EN PILOTO
 
 **PUBLICACIÓN REAL**: migración Supabase `20261113232051` `cotironda_d016_portal_original_evidence_download_guard_off_pilot_20261113` aplicada y posverificada SOLO en `cotironda-piloto`. Las RPC `v2_d016_responders_private` y `v2_d016_original_source_private` exigen consentimiento V2 antiguo documentado **y** evidencia D016 de aviso anterior + respuesta auténtica del mismo proveedor/ronda/mensaje/hash, sin revocación `NO COMPARTIR`. La evidencia técnica NO es por sí misma consentimiento legal; no se creó ninguna constancia. [Acta y pruebas](https://github.com/ProtectorRudo/Cotironda/blob/fix/d016-original-download-requires-inbox-evidence-20261113/docs/PILOTO-D016-ORIGINALES-PRUEBA-DOBLE-PUBLICADO-20261113.md).
