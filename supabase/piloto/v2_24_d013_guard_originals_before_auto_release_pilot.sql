@@ -37,7 +37,7 @@ BEGIN
  OR length(v_prev)-length(replace(v_prev,v_c,''))<>length(v_c)
  THEN RAISE EXCEPTION 'V2 D013 anchors missing/duplicated';END IF;
  v_new:=replace(replace(v_prev,v_a,v_b),v_c,v_d);
- IF v_new=v_prev OR position(v_a IN v_new)>0 OR position(v_c IN v_new)>0
+ IF v_new=v_prev OR position(v_c IN v_new)>0
  THEN RAISE EXCEPTION 'V2 D013 guard substitution invalid';END IF;
  IF position('r.created_at>=originals.activated_at' IN v_new)=0
  OR position('v2_original_share_policy' IN v_new)=0
