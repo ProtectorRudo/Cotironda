@@ -12,7 +12,7 @@
 
 ## Resolución vigente D012
 
-Cotironda se reorienta como **servicio de solicitud, organización y análisis inteligente de cotizaciones reales de materiales de obra**. IA procesa el pedido y lo distribuye por catálogo/rubro/zona; el proveedor responde libremente por WhatsApp; original intacto asociado a su ronda, nombre del comercio visible y comentario individual útil **desde que se recibe**, solo para proveedores que respondieron. Sin mostrar negocios invitados o pendientes. **A dos días hábiles** se produce análisis comparativo general y recomendaciones justificadas. La decisión de compra queda en el comprador.
+Cotironda se reorienta como **servicio de solicitud, organización y análisis inteligente de cotizaciones reales de materiales de obra**. IA procesa el pedido y lo distribuye por **coincidencia de producto del catálogo individual y localidad de entrega**, nunca solo por rubro; el proveedor responde libremente por WhatsApp; original intacto asociado a su ronda, nombre del comercio visible y comentario individual útil **desde que se recibe**, solo para proveedores que respondieron. Sin mostrar negocios invitados o pendientes. **A dos días hábiles** se produce análisis comparativo general y recomendaciones justificadas. La decisión de compra queda en el comprador.
 
 **Se reemplazan expresamente:** D004 (confirmación rutinaria de cada solicitud), D006 (anonimato/revelación por adjudicación), D009 como criterio de límite obligatorio de dos proveedores/ganadores y la propuesta P002 de plazos anteriores. D007 se conserva **solo** en el principio de cálculo justo y equivalencias reales; su ranking de ganadores queda suspendido. La experiencia normal debe ser automática; no se suprimen verificaciones de identidad, permisos ni trazabilidad.
 
