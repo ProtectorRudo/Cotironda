@@ -1,5 +1,15 @@
 # COTIRONDA V2 — PLAN MAESTRO Y CHECKLIST
 
+### 14/11/2026 — D016: reaceptación con aviso nuevo publicada (P0 cerrado en SQL)
+
+- [x] **Migración Supabase PILOTO `20261114053740`** publica guard sobre la ÚNICA RPC de aceptación de originales [#846](https://github.com/ProtectorRudo/Cotironda/pull/846): la baja `NO COMPARTIR` invalida avisos de términos ANTERIORES; una reaceptación válida exige **otro aviso Whapi auténtico posterior**. Sin nuevas tablas ni otro alta, firma y ACL idénticas, [PR #849](https://github.com/ProtectorRudo/Cotironda/pull/849) DRAFT, [acta](https://github.com/ProtectorRudo/Cotironda/blob/fix/d016-reconsent-aviso-nuevo-post-baja-20261114/docs/PILOTO-D016-REACEPTACION-AVISO-NUEVO-PUBLICADO-20261114.md).
+- [x] [PG17 run 43562301684](https://github.com/ProtectorRudo/Cotironda/actions/runs/43562301684) **SUCCESS**: aviso viejo denegado, nuevo aprobado, segunda baja vuelve a negar, tercera entrega permite reaceptar, ACL, replay, ROLLBACK; 7/7 controles generales verdes en SHA `5b70fb2`.
+- [x] Postcontrol DB: 7 rondas/1 preparada, 0 consentimientos/avisos/sesiones/bajas, alta duplicada #847 ausente, 4 políticas OFF; Whapi v76, Vercel Preview y producción intactos.
+- [ ] P0 restante: **credenciales privadas exclusivamente servidor** `COTIRONDA_D016_HMAC_KEY_HEX`, `COTIRONDA_PILOT_SUPABASE_SECRET_KEY` en proyecto correcto Vercel Preview; no derivar ni compartir secretos, alinear HMAC con webhook Whapi, probar solo canales consentidos.
+- [ ] P0 legal: revisar y aprobar un único texto de condiciones para originales con consentimiento informado/documentado UNA VEZ al incorporar proveedor (Ley 25.326). No activar términos ni escribir consentimientos retroactivos.
+- [ ] Probar UI f985 en Preview protegida al levantarse cuota: existe reintento único ya programado; no duplicarlo. E2E comprador arquitecto + Ailín/Nahuel por WhatsApp, catálogo por producto, dos presupuestos originales, análisis breve, informe final y protección de datos, **antes** de habilitar negocio/originales/cierre.
+
+
 ### 13/11/2026 — Decisión definitiva: UN SOLO ALTA DE ORIGINALES V2
 
 - [x] Canonización: **PR #846** es el ÚNICO contrato de alta informada de originales; su migración `20261114022538` ya estaba en `cotironda-piloto`. Términos legales **OFF, sin SHA/texto aprobado ni proveedores aceptados**.
