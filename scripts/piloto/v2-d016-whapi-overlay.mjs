@@ -5,8 +5,8 @@
  * node scripts/piloto/v2-d016-whapi-overlay.mjs --write-candidate
  */
 import {createHash} from 'node:crypto';
-import {readFileSync,writeFileSync} from 'node:fs';
-import {resolve,dirname} from 'node:path';
+import {readFileSync,writeFileSync,realpathSync} from 'node:fs';
+import {resolve,dirname,sep} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {generarWebhookV202} from './v2-02-whapi-overlay.mjs';
 import {inspeccionarWebhookMvp332} from './mvp332-whapi-bundle-readonly.mjs';
@@ -20,6 +20,45 @@ const CANDIDATE='supabase/functions/cotironda-piloto-whapi/index.v2-d016-candida
 // El index.ts de la rama GitHub NO es igual al de v76 (16 bloques de deriva).
 export const D016_LIVE_V76_INDEX_SHA256='349831d3be81d0da95ba0cc3b699256521e35d4b7c0f1923e3dc2a6a714d0c7d';
 const LIVE_CANDIDATE='supabase/functions/cotironda-piloto-whapi/index.v2-d016-live-v76-candidate.ts';
+const LIVE_MANIFEST='scripts/piloto/v2-d016-whapi-live-v76-bundle-manifest.json';
+const LIVE_BUNDLE='656cb24bd1cbfdbb0de6d87a9acae17ad911c13b6e404667029dd4d0b55b822e';
+export function verificarBundleWhapiV76(snapshotRoot){
+ // Exige el bundle completo, NO solo index.ts. Conserva 61 módulos
+ // del Edge ACTIVO y rechaza contenidos mezclados desde ramas antiguas.
+ if(typeof snapshotRoot!=='string'||snapshotRoot.trim()==='')
+  throw Error('d016_live_v76_snapshot_root_required');
+ const root=realpathSync(snapshotRoot);
+ const manifest=JSON.parse(readFileSync(resolve(ROOT,LIVE_MANIFEST),'utf8'));
+ if(manifest.kind!=='cotironda_d016_live_whapi_v76_bundle_fingerprint'||
+    manifest.project_ref!=='ilggkalaafhtiysyzlmg'||
+    manifest.function_slug!=='cotironda-piloto-whapi'||
+    manifest.edge_version!==76||
+    manifest.verify_jwt!==false||
+    manifest.ezbr_sha256!==LIVE_BUNDLE||
+    manifest.file_count!==61||
+    manifest.deployment_authorized!==false||
+    !Array.isArray(manifest.files)||manifest.files.length!==61)
+  throw Error('d016_live_v76_manifest_invalid');
+ const seen=new Set();
+ for(const entry of manifest.files){
+  if(!entry||typeof entry.path!=='string'||
+     !/^(?:src\/domain\/|supabase\/functions\/)[A-Za-z0-9_./-]+\.ts$/u.test(entry.path)||
+     entry.path.includes('..')||seen.has(entry.path)||
+     typeof entry.sha256!=='string'||!/^[a-f0-9]{64}$/u.test(entry.sha256))
+   throw Error('d016_live_v76_manifest_entry_invalid');
+  seen.add(entry.path);
+  const file=realpathSync(resolve(root,entry.path));
+  if(!file.startsWith(root+sep))
+   throw Error('d016_live_v76_snapshot_path_escape');
+  const actual=createHash('sha256').update(readFileSync(file)).digest('hex');
+  if(actual!==entry.sha256)
+   throw Error('d016_live_v76_bundle_hash_mismatch:'+entry.path);
+ }
+ if(!seen.has(ENTRY))
+  throw Error('d016_live_v76_entry_missing');
+ return Object.freeze({version:76,files:seen.size,verified:true,
+  bundleSha256:LIVE_BUNDLE});
+}
 export function verificarBaseWhapiV76(source){
  if(typeof source!=='string'||
   createHash('sha256').update(source,'utf8').digest('hex')!==D016_LIVE_V76_INDEX_SHA256)
@@ -110,7 +149,17 @@ if(process.argv[1]&&resolve(process.argv[1])===THIS){
   if(typeof name!=='string'||!name.trim()||name.startsWith('--'))
    throw Error('d016_live_v76_source_path_missing');
   const input=readFileSync(resolve(ROOT,name),'utf8');
-  if(live)verificarBaseWhapiV76(input);
+  if(live){
+   verificarBaseWhapiV76(input);
+   // --live-v76-source exige índice dentro de un snapshot de 61 módulos.
+   // Una ruta arbitraria a un index.ts no garantiza imports equivalentes.
+   const absolute=realpathSync(resolve(ROOT,name));
+   const suffix=sep+ENTRY.split('/').join(sep);
+   if(!absolute.endsWith(suffix))throw Error('d016_live_v76_snapshot_index_path_invalid');
+   const snapshotRoot=absolute.slice(0,-suffix.length);
+   const bundle=verificarBundleWhapiV76(snapshotRoot);
+   if(bundle.files!==61||bundle.version!==76)throw Error('d016_live_v76_bundle_incomplete');
+  }
   const result=generarWebhookD016(input);
   if(live){
    if(process.argv.includes('--write-live-v76-candidate')){
