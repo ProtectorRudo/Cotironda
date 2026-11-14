@@ -55,6 +55,8 @@ on:
       - 'supabase/piloto/v2_d016_global_original_optout_CANDIDATE.sql'
       - 'supabase/piloto/v2_d016_supplier_one_time_consent_CANDIDATE.sql'
       - 'supabase/piloto/v2_d016_drop_duplicate_signup_only_CANDIDATE.sql'
+      - 'supabase/piloto/v2_d016_signup_reconsent_fresh_notice_CANDIDATE.sql'
+      - 'supabase/tests/ci/v2-d016-fresh-notice-reconsent-pg17.sql'
       - 'supabase/tests/ci/v2-d016-drop-duplicate-signup-pg17.sql'
       - 'supabase/tests/ci/v2-d016-one-time-supplier-consent-pg17.sql'
       - 'supabase/tests/ci/v2-d016-global-original-optout-pg17.sql'
@@ -159,5 +161,6 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/v2-d016-global-original-optout-pg17.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/v2-d016-one-time-supplier-consent-pg17.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/v2-d016-drop-duplicate-signup-pg17.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/v2-d016-fresh-notice-reconsent-pg17.sql
           psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regnamespace('cotironda_piloto_privado') IS NULL" | grep -Fx 't'
           psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regprocedure('public.cotironda_piloto_v2_d016_claim_ticket_private(text)') IS NULL" | grep -Fx 't'
