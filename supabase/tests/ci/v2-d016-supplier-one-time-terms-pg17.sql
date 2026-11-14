@@ -128,42 +128,42 @@ BEGIN
  VALUES
  (repeat('9',64),NULL,'supplier_c',repeat('6',64),'text',
  acceptance_hash,clock_timestamp()-interval '1 minute'),
- (repeat('a',64),NULL,'supplier_c',repeat('6',64),'text',
+ (repeat('2',64),NULL,'supplier_c',repeat('6',64),'text',
  acceptance_hash,clock_timestamp()),
- (repeat('b',64),NULL,'supplier_c',repeat('6',64),'text',
+ (repeat('3',64),NULL,'supplier_c',repeat('6',64),'text',
  repeat('8',64),clock_timestamp()),
- (repeat('c',64),'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+ (repeat('4',64),'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
  'supplier_c',repeat('6',64),'text',acceptance_hash,clock_timestamp());
  IF public.cotironda_piloto_v2_d016_accept_signup_terms_private(
  repeat('9',64),repeat('6',64),'wamid.ONBOARD0001',false) IS DISTINCT FROM false
  OR public.cotironda_piloto_v2_d016_accept_signup_terms_private(
- repeat('a',64),repeat('7',64),'wamid.ONBOARD0001',false) IS DISTINCT FROM false
+ repeat('2',64),repeat('7',64),'wamid.ONBOARD0001',false) IS DISTINCT FROM false
  OR public.cotironda_piloto_v2_d016_accept_signup_terms_private(
- repeat('a',64),repeat('6',64),'wamid.WRONG0001',false) IS DISTINCT FROM false
+ repeat('2',64),repeat('6',64),'wamid.WRONG0001',false) IS DISTINCT FROM false
  OR public.cotironda_piloto_v2_d016_accept_signup_terms_private(
- repeat('a',64),repeat('6',64),'wamid.ONBOARD0001',true) IS DISTINCT FROM false
+ repeat('2',64),repeat('6',64),'wamid.ONBOARD0001',true) IS DISTINCT FROM false
  OR public.cotironda_piloto_v2_d016_accept_signup_terms_private(
- repeat('b',64),repeat('6',64),'wamid.ONBOARD0001',false) IS DISTINCT FROM false
+ repeat('3',64),repeat('6',64),'wamid.ONBOARD0001',false) IS DISTINCT FROM false
  OR public.cotironda_piloto_v2_d016_accept_signup_terms_private(
- repeat('c',64),repeat('6',64),'wamid.ONBOARD0001',false) IS DISTINCT FROM false
+ repeat('4',64),repeat('6',64),'wamid.ONBOARD0001',false) IS DISTINCT FROM false
  THEN RAISE EXCEPTION 'ACCEPTANCE_PROOF_BYPASS';END IF;
  IF public.cotironda_piloto_v2_d016_accept_signup_terms_private(
- repeat('a',64),repeat('6',64),'wamid.ONBOARD0001',false) IS DISTINCT FROM true
+ repeat('2',64),repeat('6',64),'wamid.ONBOARD0001',false) IS DISTINCT FROM true
  THEN RAISE EXCEPTION 'VALID_ACCEPTANCE_DENIED';END IF;
  IF public.cotironda_piloto_v2_d016_accept_signup_terms_private(
- repeat('a',64),repeat('6',64),'wamid.ONBOARD0001',false) IS DISTINCT FROM false
+ repeat('2',64),repeat('6',64),'wamid.ONBOARD0001',false) IS DISTINCT FROM false
  THEN RAISE EXCEPTION 'ACCEPTANCE_REPLAY';END IF;
  IF NOT EXISTS(SELECT 1 FROM cotironda_piloto_privado.v2_supplier_original_consents c
  JOIN cotironda_piloto_privado.whapi_inbox m ON m.message_hmac=c.consent_message_hmac
  WHERE c.supplier_key='supplier_c' AND c.accepted_at=m.received_at
- AND c.revoked_at IS NULL AND c.consent_message_hmac=repeat('a',64))
+ AND c.revoked_at IS NULL AND c.consent_message_hmac=repeat('2',64))
  THEN RAISE EXCEPTION 'ACCEPTANCE_NOT_ANCHORED';END IF;
 
  -- Baja global: no impedir futuras cotizaciones ni reactivar aviso viejo.
  INSERT INTO cotironda_piloto_privado.whapi_inbox
  (message_hmac,request_id,participant_key,chat_hmac,kind,plaintext_sha256,received_at)
- VALUES(repeat('d',64),NULL,'supplier_c',repeat('6',64),'text',optout_hash,clock_timestamp());
- n:=public.cotironda_piloto_v2_d016_revoke_by_whapi_text_private(repeat('d',64),repeat('6',64));
+ VALUES(repeat('5',64),NULL,'supplier_c',repeat('6',64),'text',optout_hash,clock_timestamp());
+ n:=public.cotironda_piloto_v2_d016_revoke_by_whapi_text_private(repeat('5',64),repeat('6',64));
  IF n<>2 THEN RAISE EXCEPTION 'GLOBAL_OPT_OUT_FAILED:%',n;END IF;
  IF NOT EXISTS(SELECT 1 FROM cotironda_piloto_privado.v2_supplier_original_consents
  WHERE supplier_key='supplier_c' AND revoked_at IS NOT NULL)
@@ -172,7 +172,7 @@ BEGIN
  WHERE key='supplier_c' AND opted_out_at IS NOT NULL)
  THEN RAISE EXCEPTION 'SUPPLIER_COMMERCIAL_ACCESS_REVOKED';END IF;
  IF public.cotironda_piloto_v2_d016_accept_signup_terms_private(
- repeat('a',64),repeat('6',64),'wamid.ONBOARD0001',false) IS DISTINCT FROM false
+ repeat('2',64),repeat('6',64),'wamid.ONBOARD0001',false) IS DISTINCT FROM false
  THEN RAISE EXCEPTION 'OLD_NOTICE_RESURRECTED';END IF;
  BEGIN
  UPDATE cotironda_piloto_privado.v2_supplier_original_consents
@@ -189,14 +189,14 @@ BEGIN
  THEN RAISE EXCEPTION 'RECONSENT_NOTICE_ACK_FAILED';END IF;
  INSERT INTO cotironda_piloto_privado.whapi_inbox
  (message_hmac,request_id,participant_key,chat_hmac,kind,plaintext_sha256,received_at)
- VALUES(repeat('e',64),NULL,'supplier_c',repeat('6',64),'text',
+ VALUES(repeat('6',64),NULL,'supplier_c',repeat('6',64),'text',
  acceptance_hash,clock_timestamp());
  IF public.cotironda_piloto_v2_d016_accept_signup_terms_private(
- repeat('e',64),repeat('6',64),'wamid.ONBOARD0002',false) IS DISTINCT FROM true
+ repeat('6',64),repeat('6',64),'wamid.ONBOARD0002',false) IS DISTINCT FROM true
  THEN RAISE EXCEPTION 'VALID_NEW_ACCEPTANCE_FAILED';END IF;
  IF NOT EXISTS(SELECT 1 FROM cotironda_piloto_privado.v2_supplier_original_consents
  WHERE supplier_key='supplier_c' AND revoked_at IS NULL
- AND consent_message_hmac=repeat('e',64))
+ AND consent_message_hmac=repeat('6',64))
  THEN RAISE EXCEPTION 'NEW_ACCEPTANCE_NOT_SAVED';END IF;
 
  IF has_table_privilege('anon',
