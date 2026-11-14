@@ -223,6 +223,32 @@ test('D016: SEGUIMIENTO COTI recupera acceso con tracking legado apagado',()=>{
  assert.equal(permitirRecuperacionD016(true,false,'false'),false);
 });
 
+test('D013+ D016: candidato Whapi usa catalogo por producto SOLO con flag V2',()=>{
+ const original=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/index.ts',
+  import.meta.url),'utf8');
+ assert.doesNotMatch(original,/COTIRONDA_PILOT_V2_D013_PRODUCT_MATCHING_ENABLED/u);
+ assert.match(original,/procesarCompradorCentralMvp226/u);
+ const candidate=generarWebhookD016(original);
+ assert.match(candidate,/from '\.\/ai-central-buyer-mvp226\.ts';/u);
+ assert.match(candidate,/from '\.\/ai-central-buyer-v2-d013\.ts';/u);
+ assert.match(candidate,/const d013Enabled=Deno\.env\.get\('COTIRONDA_PILOT_V2_D013_PRODUCT_MATCHING_ENABLED'\)==='true'/u);
+ assert.match(candidate,/const buyerWorker=d013Enabled\?\s*procesarCompradorCentralV2D013:procesarCompradorCentralMvp226/u);
+ assert.match(candidate,/habilitado:true,publicar:d013Enabled/u);
+ assert.match(candidate,/if\(!d013Enabled\|\|!result\.requestId\)/u);
+ assert.match(candidate,/trialDispatchChats\.add\(chatHash\)/u);
+ assert.match(candidate,/buyerLinkRequests\.push\(\{mode:'auto',requestId:result\.requestId,/u);
+ assert.match(candidate,/buyer_review_bypassed_by_text_broker/u);
+ // La fuente viva no cambia y el deploy del candidato sigue desautorizado.
+ assert.doesNotMatch(original,/ai-central-buyer-v2-d013/u);
+ const module=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/ai-central-buyer-v2-d013.ts',
+  import.meta.url),'utf8');
+ assert.match(module,/planificador-piloto-v2-d013/u);
+ const router=readFileSync(new URL('../../src/domain/ia-central/ruteador-catalogos-v2-d013.ts',
+  import.meta.url),'utf8');
+ assert.doesNotMatch(router,/source\.rubro!==requested\.rubro/u);
+ assert.match(router,/verificarCorrespondenciaTecnicaD013/u);
+});
+
 test('D016 Whapi: overlay genera webhook aislado y conserva v76 inmutable',()=>{
  const old=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/index.ts',
   import.meta.url),'utf8');
