@@ -247,6 +247,27 @@ test('D013: no publica sin D016 y release Preview privado verificable',()=>{
  }),false);
 });
 
+test('D013+D016: localidad reanuda la MISMA ronda con V2, nunca rubro V1',()=>{
+ const old=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/index.ts',
+  import.meta.url),'utf8');
+ assert.doesNotMatch(old,/continuarZonaCentralV2D013|d013ZoneEnabled/u);
+ const candidate=generarWebhookD016(old);
+ assert.match(candidate,/from '\.\/ai-central-zone-v2-d013\.ts'/u);
+ assert.match(candidate,/continuarZonaCentralMvp233 as continuarZonaCentralV2D013/u);
+ assert.match(candidate,/const d013ZoneEnabled=habilitarPublicacionD013ConAccesoD016\(\{/u);
+ assert.match(candidate,/const zoneWorker=d013ZoneEnabled\?\s*continuarZonaCentralV2D013:continuarZonaCentralMvp233/u);
+ assert.match(candidate,/model,publicar:d013ZoneEnabled/u);
+ assert.match(candidate,/if\(!d013ZoneEnabled\|\|!resumed\.requestId\)/u);
+ assert.match(candidate,/buyerLinkRequests\.push\(\{mode:'auto',requestId:resumed\.requestId,\s*chatHmac:chatHash,eventHmac:messageHash/u);
+ const zona=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/ai-central-zone-v2-d013.ts',
+  import.meta.url),'utf8');
+ assert.match(zona,/planificador-piloto-v2-d013\.ts/u);
+ assert.match(zona,/puente-sql-rondas-v2-d013\.ts/u);
+ assert.match(zona,/sourceHmac:args\.sourceHmac/u);
+ assert.match(zona,/args\.shaText\(original\)!==args\.originalSha256/u);
+ assert.doesNotMatch(zona,/puente-sql-rondas-mvp221\.ts|planificador-piloto-mvp220\.ts/u);
+});
+
 test('D013+ D016: candidato Whapi usa catalogo por producto SOLO con flag V2',()=>{
  const original=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/index.ts',
   import.meta.url),'utf8');
