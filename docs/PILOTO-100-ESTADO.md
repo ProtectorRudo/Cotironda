@@ -1,5 +1,16 @@
 # COTIRONDA V2 — ESTADO REAL Y RELEVO ENTRE CONVERSACIONES
 
+### RELEVO ACTUAL · 14/11/2026 05:53 AR · HMAC D016 PRIVADA CREADA EN VERCEL PREVIEW
+
+**Cambio REAL publicado exclusivamente en Vercel Preview:** se creó `COTIRONDA_D016_HMAC_KEY_HEX` en proyecto **`cotironda-portal-dev`** (ID `prj_d13rTHxJADvP2K9PcrM0CJQD9Zok`), tipo **`encrypted`**, target **`preview`** solamente. Se generó con 32 bytes aleatorios criptográficos de PostgreSQL `extensions.gen_random_bytes(32)`; se transmitió a Vercel con herramientas privadas sin imprimir el valor, sin insertarlo en GitHub ni mandarlo al navegador. Poscontrol Vercel confirmó presencia, tipo y target. **No generarlo de nuevo**: en la integración WhatsApp Edge se debe usar la **misma clave** para tickets/cookies, con coordinación segura; una segunda clave diferente invalidaría acceso. No publicar ni copiar el valor a texto.
+
+**Verificación puntual de flags de Vercel Preview:** `COTIRONDA_D016_ENABLED=false`, `COTIRONDA_D016_TEXT_ENABLED=false`, `COTIRONDA_D016_ANALYSIS_ENABLED=false`, SHA autorizado `COTIRONDA_D016_RELEASE_SHA=f98527c9516478783bd7cf95433c58f5ca445937`, por lo que NO hay acceso a originales activado. La variable `COTIRONDA_PILOT_SUPABASE_SECRET_KEY` (`sb_secret_...`) **sigue AUSENTE**. El conector Supabase disponible NO expone acción para crear/recuperar la credencial privada; **no fingir ni sustituir por publishable**. Antes de probar UI, alinear el `COTIRONDA_D016_PORTAL_ORIGIN` con el despliegue Preview efectivamente seleccionado (actualmente URL de alias de rama, no deducir que sirve a la futura SHA); SSO sigue protegida.
+
+**Vercel:** último despliegue verificable `READY` sigue siendo `dpl_DZkYMAzzVbZitq4Dz1NwyYN7Yued`, SHA `64b8573...` (NO f985). Existe un reintento automático ÚNICO para **14/11 a las 17:07 AR** de **exclusivamente f985 / Preview**; NO duplicar despliegue ni tocar producción. La variable nueva aplicará a deployments futuros de Preview; no cambia el ya desplegado.
+
+**Restante P0:** credencial `COTIRONDA_PILOT_SUPABASE_SECRET_KEY` generada/añadida por titular en superficie segura si no existe conector autorizado; coordinar misma HMAC con Edge, verificar origen de Preview; homologar texto legal informado para aceptación única de proveedores (consentimientos reales 0, cuatro flags V2 OFF); probar una ronda nueva WhatsApp→original→análisis→portal y cierre con comprador y dos proveedores. No configurar celular ni pedir SMS. **PILOTO AÚN NO 100%.**
+
+
 ### ÚLTIMO RELEVO · 14/11/2026 · REACEPTACIÓN TRAS NO COMPARTIR PROTEGIDA EN PILOTO
 
 **PUBLICADO y verificado SQL real:** migración Supabase PILOTO `20261114053740` `cotironda_d016_reconsent_requires_fresh_whapi_terms_notice_off_pilot_20261114` ([PR #849](https://github.com/ProtectorRudo/Cotironda/pull/849) DRAFT). Corrigió la función del **único alta canónica #846** para que, después de `NO COMPARTIR`, una nueva aceptación NO pueda recuperar el permiso con un aviso anterior a esa baja. Debe existir un **NUEVO aviso Whapi de términos aprobados posterior al opt-out**, del mismo proveedor y chat. Ni la cotización ni el silencio otorgan consentimiento. [Acta real](https://github.com/ProtectorRudo/Cotironda/blob/fix/d016-reconsent-aviso-nuevo-post-baja-20261114/docs/PILOTO-D016-REACEPTACION-AVISO-NUEVO-PUBLICADO-20261114.md).
