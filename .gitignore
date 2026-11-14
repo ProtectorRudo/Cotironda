@@ -22,3 +22,5 @@ private/
 tmp/
 *.log
 .DS_Store
+# D016: candidatos generados localmente (nunca subir a Git)
+supabase/functions/cotironda-piloto-whapi/index.v2-d016-live-v76-candidate.ts
