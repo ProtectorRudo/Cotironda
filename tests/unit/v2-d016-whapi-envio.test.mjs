@@ -343,7 +343,8 @@ test('D016 originales: consentimiento y baja se procesan sólo DESPUÉS del inbo
  assert.match(candidate,/cotironda_piloto_v2_d016_revoke_by_whapi_text_private/u);
  assert.match(candidate,/p_message_hmac:messageHash,p_chat_hmac:chatHash/u);
  assert.match(candidate,/\['duplicate','unrecognized_contact'\]\.includes\(outcome\(out\.data\)\)/u);
- assert.match(candidate,/continue;\s*}\s*if\(webLinkCode\)/u);
+ assert.ok(candidate.slice(posConsent,posRecovery).includes('continue;'));
+ assert.equal((candidate.match(/cotironda_piloto_v2_d016_register_terms_acceptance_private/gu)??[]).length,1);
  assert.doesNotMatch(old,/cotironda_piloto_v2_d016_register_terms_acceptance_private/u);
  // La repetición no ejecuta un segundo permiso ni vuelve a modificar el código.
  assert.throws(()=>conectarConsentimientoOriginalesD016(candidate),
