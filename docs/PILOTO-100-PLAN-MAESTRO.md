@@ -1,5 +1,15 @@
 # COTIRONDA V2 — PLAN MAESTRO Y CHECKLIST
 
+### 13/11/2026 — Decisión definitiva: UN SOLO ALTA DE ORIGINALES V2
+
+- [x] Canonización: **PR #846** es el ÚNICO contrato de alta informada de originales; su migración `20261114022538` ya estaba en `cotironda-piloto`. Términos legales **OFF, sin SHA/texto aprobado ni proveedores aceptados**.
+- [x] Detectada segunda alternativa innecesaria #847; **CERRADO sin merge**. Migración de limpieza `20261114025045` aplicada con preflight estricto; retiradas sólo 2 tablas vacías y 3 RPC del duplicado, conservando los 4 objetos #846. [PR #848](https://github.com/ProtectorRudo/Cotironda/pull/848), [acta](https://github.com/ProtectorRudo/Cotironda/blob/fix/d016-unificar-alta-unica-quitar-duplicado-20261113/docs/PILOTO-D016-ALTA-UNICA-UNIFICADA-PUBLICADA-20261113.md), [PG17 43548383967 PASS](https://github.com/ProtectorRudo/Cotironda/actions/runs/43548383967).
+- [x] Poscontrol real: 7 rondas intactas/1 preparada, consentimiento y avisos 0, términos OFF, negocio/originales/cierre OFF; sin Whapi, Vercel ni producción desplegados.
+- [ ] **Antes de aprobar términos/encender políticas**, fortalecer `register_terms_acceptance_private` #846: tras `NO COMPARTIR`, una nueva aceptación debe quedar ligada a un aviso genuinamente posterior a la última baja global del proveedor (no reusar aviso viejo). Mantener identidad, chat, SHA, servicio-only y antifraude; PG17 con replay y reaceptación.
+- [ ] Revisar y aprobar texto contractual/términos de compartir originales (Ley 25.326), configurar política canónica solo al estar listo; no pedir confirmación por cada presupuesto y no inventar consentimiento de proveedores existentes.
+- [ ] Completar secretos server-only HMAC y Supabase en Vercel Preview `cotironda-portal-dev`; **no usar** UI antigua como piloto terminado. UI f985 tiene reintento exclusivo de Preview programado. Edge Whapi v76 y E2E comprador + dos proveedores pendientes, flags OFF hasta verificaciones.
+
+
 ### 13/11/2026 — Consentimiento V2 único por proveedor en el alta, instalado OFF
 
 - [x] **Migración real `20261114022538`** en Supabase `cotironda-piloto`: términos versionados y SHA de cuerpo legal sin aprobar (kill switch OFF), ledger privado/RLS de mensaje de alta enviado, dos RPC exclusivamente server-only para registrar envío aceptado por Whapi y **aceptación expresa única** desde chat auténtico `ACEPTO COTIRONDA ORIGINALES V2`. No activa ninguna política; ninguna ronda antigua recibió consentimiento retroactivo.
