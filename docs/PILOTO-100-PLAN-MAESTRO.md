@@ -1,5 +1,15 @@
 # COTIRONDA V2 — PLAN MAESTRO Y CHECKLIST
 
+### 14/11/2026 (05:53 AR) — Configuración real del acceso del arquitecto
+
+- [x] **HMAC server-only D016 creada en Vercel Preview**: `COTIRONDA_D016_HMAC_KEY_HEX` de 32 bytes aleatorios, cifrada, destino **preview solamente**, proyecto comprobado `cotironda-portal-dev`. Se verificó existencia/tipo/entorno; nunca imprimir ni agregar a repositorio. **No rotarla ni crear otra diferente para Edge**: deben coincidir en autenticación de enlace WhatsApp.
+- [x] Comprobados flags D016 Preview **OFF** (portal, lectura texto, análisis), SHA aprobado f985 exacto, SSO protegida; deploy actual READY es SHA anterior 64b857 y **no** se debe presentar como f985.
+- [ ] **Bloqueo real:** `COTIRONDA_PILOT_SUPABASE_SECRET_KEY` sigue ausente; solo `sb_secret_` de Supabase proyecto piloto, a colocar server-side directamente en Vercel Preview por mecanismo autorizado y seguro. Jamás inventar key ni pegar en GitHub/frontend/chat. Conector Supabase actual no gestiona private API keys. No pasar a SMS para simular acceso.
+- [ ] Coordinar la **misma HMAC** privada con el componente Supabase Edge/Whapi D016, sin publicar/mostrar el secreto; validar el origen `COTIRONDA_D016_PORTAL_ORIGIN` contra la URL Preview **realmente desplegada** después del reintento f985.
+- [ ] **Un solo reintento existente** de f985 hoy 14/11 17:07 AR en Vercel Preview; no duplicar. Confirmar READY + commit exacto, no producción ni Whapi v76.
+- [ ] Completar legal de originales (consentimiento prospectivo, sin confirmaciones por presupuesto) y E2E real comprador+2 proveedores, mantener políticas OFF hasta validación.
+
+
 ### 14/11/2026 — D016: reaceptación con aviso nuevo publicada (P0 cerrado en SQL)
 
 - [x] **Migración Supabase PILOTO `20261114053740`** publica guard sobre la ÚNICA RPC de aceptación de originales [#846](https://github.com/ProtectorRudo/Cotironda/pull/846): la baja `NO COMPARTIR` invalida avisos de términos ANTERIORES; una reaceptación válida exige **otro aviso Whapi auténtico posterior**. Sin nuevas tablas ni otro alta, firma y ACL idénticas, [PR #849](https://github.com/ProtectorRudo/Cotironda/pull/849) DRAFT, [acta](https://github.com/ProtectorRudo/Cotironda/blob/fix/d016-reconsent-aviso-nuevo-post-baja-20261114/docs/PILOTO-D016-REACEPTACION-AVISO-NUEVO-PUBLICADO-20261114.md).
