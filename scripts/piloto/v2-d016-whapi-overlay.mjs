@@ -79,7 +79,7 @@ export function generarWebhookD016(original){
   throw Error('d016_overlay_base_invalid');
  let out=generarWebhookV202(original);
  const imp="import {notificarSeguimientoMvp289} from './buyer-tracking-confirmation-mvp289.ts';";
- out=one(out,imp,imp+"\nimport {notificarAccesoWhatsappD016,permitirAvisoD016,permitirRecuperacionD016} from './buyer-whatsapp-entry-d016.ts';",'import');
+ out=one(out,imp,imp+"\nimport {notificarAccesoWhatsappD016,permitirAvisoD016,permitirRecuperacionD016,habilitarPublicacionD013ConAccesoD016} from './buyer-whatsapp-entry-d016.ts';",'import');
  const start=` for(const notice of buyerLinkRequests){
   if(!sec.outbound||Deno.env.get('COTIRONDA_PILOT_BUYER_TRACKING_ENABLED')==='false')continue;
   const result=await notificarSeguimientoMvp289({`;
@@ -151,7 +151,15 @@ export function generarWebhookD016(original){
  out=one(out,originalBuyerImport,d013BuyerImport,'d013-import');
  const legacyBuyerCall=`    const result=await procesarCompradorCentralMvp226({
       habilitado:true,publicar:false, // MVP280: buyer must approve`;
- const d013BuyerCall=`    const d013Enabled=Deno.env.get('COTIRONDA_PILOT_V2_D013_PRODUCT_MATCHING_ENABLED')==='true';
+ const d013BuyerCall=`    const d013Enabled=habilitarPublicacionD013ConAccesoD016({
+      outbound:sec.outbound,
+      matchingEnabled:Deno.env.get('COTIRONDA_PILOT_V2_D013_PRODUCT_MATCHING_ENABLED')==='true',
+      linkSendEnabled:Deno.env.get('COTIRONDA_PILOT_D016_WHATSAPP_SEND_ENABLED')==='true',
+      portalOrigin:Deno.env.get('COTIRONDA_PILOT_D016_PORTAL_ORIGIN')??'',
+      portalSha:Deno.env.get('COTIRONDA_PILOT_D016_PORTAL_RELEASE_SHA')??'',
+      approvedSha:Deno.env.get('COTIRONDA_PILOT_D016_APPROVED_RELEASE_SHA')??'',
+      hmacKeyHex:Deno.env.get('COTIRONDA_PILOT_D016_HMAC_KEY_HEX')??''
+    });
     const buyerWorker=d013Enabled?
       procesarCompradorCentralV2D013:procesarCompradorCentralMvp226;
     const result=await buyerWorker({
