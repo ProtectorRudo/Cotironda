@@ -27,7 +27,7 @@ const result=(estado:State,codigo:string,id:string|null=null,
  estado,codigo,requestId:id,originalVerificado:verified,whatsappEnviado:false
 });
 export async function prepararDocumentoBinarioV2D013(args:{
- enabled:boolean;webhookAutenticado:boolean;compradorAutorizado:boolean;
+ enabled:boolean;autenticadoPorWebhook:boolean;compradorAutorizado:boolean;
  chatHmac:string;messageHmac:string;
  original:DownloadedMedia;primera:DocumentDraft|null;
  segunda:DocumentDraft|null;apiKey:string;model:Model;
@@ -35,7 +35,7 @@ export async function prepararDocumentoBinarioV2D013(args:{
  preparar?:typeof prepararDocumentoBinarioCompradorMvp278;
 }):Promise<ResultadoDocumentoBinarioV2D013>{
  if(args?.enabled!==true)return result('apagado','gate_off');
- if(!args.webhookAutenticado||!args.compradorAutorizado||
+ if(!args.autenticadoPorWebhook||!args.compradorAutorizado||
     !H.test(args.chatHmac)||!H.test(args.messageHmac)||
     !args.original||typeof args.rpc!=='function')
   return result('no_autorizado','identity_invalid');
@@ -50,9 +50,10 @@ export async function prepararDocumentoBinarioV2D013(args:{
    broker:async params=>{
     // MVP278 solamente solicita sombra. No promover desde el callback:
     // primera se archiva la atestación SQL del original completo.
-    if(params.publicar!==false||params.planificar!==undefined)
+    const {planificar:legacyPlanner,...sourceParams}=params;
+    if(params.publicar!==false||legacyPlanner!==undefined)
      throw Error('v2_binary_broker_contract_invalid');
-    return procesarCompradorV2D013({...params,publicar:false});
+    return procesarCompradorV2D013({...sourceParams,publicar:false});
    }
   });
  }catch{return result('conciliacion_requerida','binary_broker_uncertain')}
