@@ -263,7 +263,7 @@ test('D013+D016: localidad reanuda la MISMA ronda con V2, nunca rubro V1',()=>{
   import.meta.url),'utf8');
  assert.match(zona,/planificador-piloto-v2-d013\.ts/u);
  assert.match(zona,/puente-sql-rondas-v2-d013\.ts/u);
- assert.match(zona,/sourceHmac:args\.sourceHmac/u);
+ assert.match(zona,/p_source_hmac:args\.sourceHmac/u);
  assert.match(zona,/args\.shaText\(original\)!==args\.originalSha256/u);
  assert.doesNotMatch(zona,/puente-sql-rondas-mvp221\.ts|planificador-piloto-mvp220\.ts/u);
 });
