@@ -69,8 +69,23 @@ export async function prepararDocumentoBinarioV2D013(args:{
     staged.whatsappEnviado!==false)
   return result('conciliacion_requerida','binary_staging_not_confirmed');
 
- // El original ya fue contrastado por lector independiente, atestado por SQL
- // y guardado en sombra. La publicación V2 hace una sola transacción.
+ // El original ya fue contrastado y atestado. Antes de publicar,
+ // conciliar la MISMA fuente/chat con la ronda en sombra: no usar un UUID
+ // devuelto por una RPC para entregar un link de otro documento/comprador.
+ let linkedId:string;
+ try{
+  const linked=await args.rpc('cotironda_piloto_ia_lookup_round_mvp226',{
+   p_chat_hmac:args.chatHmac,p_message_hmac:args.messageHmac
+  });
+  if(linked.error!==null&&linked.error!==undefined||
+     !linked.data||typeof linked.data!=='object'||
+     Array.isArray(linked.data))throw Error('binary_lookup_invalid');
+  const body=linked.data as Record<string,unknown>;
+  if(body.state!=='linked'||typeof body.request_id!=='string'||
+     !U.test(body.request_id))throw Error('binary_lookup_unlinked');
+  linkedId=body.request_id;
+ }catch{return result('conciliacion_requerida','binary_source_round_unlinked',null,true)}
+ // La publicación V2 hace una sola transacción, sin fallback V1 ni reintento.
  let release;
  try{
   release=await args.rpc('cotironda_piloto_v2_auto_release_d013',{
@@ -83,7 +98,8 @@ export async function prepararDocumentoBinarioV2D013(args:{
   return result('conciliacion_requerida','v2_release_uncertain',null,true);
  const data=release.data as Record<string,unknown>;
  if(['ready_for_delivery','already_published'].includes(String(data.state))){
-  if(typeof data.request_id!=='string'||!U.test(data.request_id))
+  if(typeof data.request_id!=='string'||!U.test(data.request_id)||
+     data.request_id!==linkedId)
    return result('conciliacion_requerida','wrong_publication_request',null,true);
   return result('ronda_publicada','v2_atomic_release',data.request_id,true);
  }
