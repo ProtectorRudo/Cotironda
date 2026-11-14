@@ -18,6 +18,18 @@ const ID=/^[A-Za-z0-9._:-]{8,160}$/u;
 const SHA=/^[a-f0-9]{40}$/u;
 const enc=new TextEncoder();
 
+/** Guardia de despacho D016 independiente del seguimiento heredado.
+ * Si D016 está apagado, conserva EXACTAMENTE el comportamiento MVP289:
+ * solo el valor literal "false" desactiva el seguimiento antiguo.
+ * Ningún aviso sale si outbound está bloqueado.
+ */
+export function permitirAvisoD016(
+ outbound:boolean,d016Enabled:boolean,legacyTrackingValue:string|undefined
+):boolean{
+ return outbound===true&&(d016Enabled===true||legacyTrackingValue!=='false');
+}
+
+
 function origenD016(s:string):boolean{
  try{
   const u=new URL(s);
