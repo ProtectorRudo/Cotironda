@@ -1,10 +1,18 @@
 import test from 'node:test';
+import {prepararDocumentoBinarioV2D013}
+ from '../../supabase/functions/cotironda-piloto-whapi/ai-central-buyer-binary-v2-d013.ts';
+
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {autorizarPropuestasCatalogoV2}
  from '../../src/domain/ia-central/ruteador-catalogos-v2-d013.ts';
 import {armarPreparacionSombraMvp221,guardarRondaSombraMvp221}
  from '../../src/domain/ia-central/puente-sql-rondas-v2-d013.ts';
+
+import {procesarCompradorCentralMvp226 as publicarCompradorV2}
+ from '../../supabase/functions/cotironda-piloto-whapi/ai-central-buyer-v2-d013.ts';
+import {continuarZonaCentralMvp233 as continuarLocalidadV2}
+ from '../../supabase/functions/cotironda-piloto-whapi/ai-central-zone-v2-d013.ts';
 
 const original='100 bolsas cemento Loma Negra 50 kg, entregar en La Plata';
 const span='100 bolsas cemento Loma Negra 50 kg';
@@ -132,4 +140,224 @@ test('V2-21: candidato SQL verifica source hash, aislamiento y ACL',()=>{
  assert.match(sql,/v_header text:='FUNCTION public\.cotironda_piloto_ia_shadow_prepare_mvp221\('/u);
  assert.doesNotMatch(sql,/\bDROP\s+(?:TABLE|FUNCTION|SCHEMA)\b/iu);
  assert.doesNotMatch(sql,/\bTRUNCATE\b/iu);
+});
+
+// Prueba integrada de los workers V2 con RPC inyectadas (nunca WhatsApp real).
+// El único camino a publicación debe ser v2_auto_release_d013; la función
+// histórica MVP222 exige confirmación V1 y NO es compatible con V2.
+test('D013: solicitud por texto invoca auto-release V2 atómico, sin MVP222',async()=>{
+ const route=autorizarPropuestasCatalogoV2(pedido,proveedores,propuesta);
+ const plan={estado:'plan_validado_sin_envio',whatsappEnviado:false,
+  baseModificada:false,pedido,ruteo:route,catalogos:proveedores};
+ const round='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',calls=[];
+ const rpc=async(name,params)=>{
+  calls.push({name,params});
+  const data=name==='cotironda_piloto_ia_reserve_buyer_mvp226'?
+   {state:'reserved'}:
+   name==='cotironda_piloto_v2_shadow_prepare_d013'?
+    {state:'shadow_staged',items_staged:1,matches_staged:1,
+     invitations_sent:0,outbox_sent:0}:
+   name==='cotironda_piloto_ia_lookup_round_mvp226'?
+    {state:'linked',request_id:round}:
+   name==='cotironda_piloto_v2_auto_release_d013'?
+    {state:'ready_for_delivery',request_id:round}:
+   name==='cotironda_piloto_ia_finish_buyer_mvp226'?
+    {state:'finished'}:null;
+  assert.ok(data,'RPC inesperada '+name);
+  return {data,error:null};
+ };
+ const result=await publicarCompradorV2({
+  habilitado:true,publicar:true,autenticadoPorWebhook:true,
+  chatHmac:'a'.repeat(64),messageHmac:'b'.repeat(64),
+  sourceSha256:'c'.repeat(64),fuente:original,
+  model:'gpt-6-luna',apiKey:'sk-test-local-no-requests',
+  planificar:async()=>plan,rpc
+ });
+ assert.equal(result.estado,'ronda_publicada');
+ assert.equal(result.requestId,round);
+ assert.equal(result.whatsappEnviado,false);
+ assert.deepEqual(calls.filter(x=>x.name==='cotironda_piloto_v2_auto_release_d013')
+  .map(x=>x.params),[{p_chat_hmac:'a'.repeat(64),p_source_hmac:'b'.repeat(64)}]);
+ assert.ok(!calls.some(x=>x.name==='cotironda_piloto_ia_publish_mvp222'));
+});
+
+test('D013: política de auto-release OFF conserva ronda en sombra, sin WhatsApp',async()=>{
+ const route=autorizarPropuestasCatalogoV2(pedido,proveedores,propuesta);
+ const plan={estado:'plan_validado_sin_envio',whatsappEnviado:false,
+  baseModificada:false,pedido,ruteo:route,catalogos:proveedores};
+ const round='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+ const calls=[];
+ const rpc=async(name)=>{
+  calls.push(name);
+  const data=name==='cotironda_piloto_ia_reserve_buyer_mvp226'?{state:'reserved'}:
+   name==='cotironda_piloto_v2_shadow_prepare_d013'?
+    {state:'shadow_staged',items_staged:1,matches_staged:1,
+     invitations_sent:0,outbox_sent:0}:
+   name==='cotironda_piloto_ia_lookup_round_mvp226'?
+    {state:'linked',request_id:round}:
+   name==='cotironda_piloto_v2_auto_release_d013'?{state:'disabled'}:
+   name==='cotironda_piloto_ia_finish_buyer_mvp226'?{state:'finished'}:null;
+  assert.ok(data,name);return {data,error:null};
+ };
+ const result=await publicarCompradorV2({
+  habilitado:true,publicar:true,autenticadoPorWebhook:true,
+  chatHmac:'a'.repeat(64),messageHmac:'b'.repeat(64),
+  sourceSha256:'c'.repeat(64),fuente:original,
+  model:'gpt-6-luna',apiKey:'sk-test-local-no-requests',
+  planificar:async()=>plan,rpc
+ });
+ assert.equal(result.estado,'ronda_en_sombra');
+ assert.equal(result.seguimientoHabilitado,false);
+ assert.ok(calls.includes('cotironda_piloto_v2_auto_release_d013'));
+ assert.ok(!calls.includes('cotironda_piloto_ia_publish_mvp222'));
+});
+
+test('D013: localidad reanuda mismo original y publica SOLO vía RPC V2',async()=>{
+ const text='100 bolsas cemento Loma Negra 50 kg';
+ const span=text;
+ const zoned={...pedido,articulos:[{...pedido.articulos[0],
+  evidencia:span,inicio:0,fin:span.length}]};
+ const route=autorizarPropuestasCatalogoV2(zoned,proveedores,propuesta);
+ const plan={estado:'plan_validado_sin_envio',whatsappEnviado:false,
+  baseModificada:false,pedido:zoned,ruteo:route,catalogos:proveedores};
+ const round='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',calls=[];
+ const rpc=async(name,params)=>{
+  calls.push({name,params});
+  const data=name==='cotironda_piloto_v2_shadow_prepare_d013'?
+    {state:'shadow_staged',items_staged:1,matches_staged:1,
+     invitations_sent:0,outbox_sent:0}:
+   name==='cotironda_piloto_ia_lookup_round_mvp226'?
+    {state:'linked',request_id:round}:
+   name==='cotironda_piloto_v2_auto_release_d013'?
+    {state:'ready_for_delivery',request_id:round}:
+   name==='cotironda_piloto_ia_finish_buyer_mvp226'?
+    {state:'finished'}:null;
+  assert.ok(data,'RPC inesperada '+name);
+  return {data,error:null};
+ };
+ const result=await continuarLocalidadV2({
+  autenticadoPorWebhook:true,chatHmac:'a'.repeat(64),
+  sourceHmac:'b'.repeat(64),originalSha256:'c'.repeat(64),
+  ciudadConfirmada:'La Plata',nonce:'nonce',ciphertext:'encrypted',
+  apiKey:'sk-test-local-no-requests',model:'gpt-6-luna',
+  publicar:true,decrypt:async()=>text,shaText:async()=> 'c'.repeat(64),
+  rpc,planificar:async()=>plan
+ });
+ assert.equal(result.estado,'ronda_publicada');
+ assert.equal(result.requestId,round);
+ assert.deepEqual(calls.filter(x=>x.name==='cotironda_piloto_v2_auto_release_d013')
+  .map(x=>x.params),[{p_chat_hmac:'a'.repeat(64),p_source_hmac:'b'.repeat(64)}]);
+ const staging=calls.find(x=>x.name==='cotironda_piloto_v2_shadow_prepare_d013');
+ assert.equal(staging?.params.p_original_text,text);
+ assert.ok(!calls.some(x=>x.name==='cotironda_piloto_ia_publish_mvp222'));
+});
+
+test('D013 binarios: publicar solo despues de atestacion independiente MVP278',async()=>{
+ const names=[],release='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+ const base={
+  enabled:true,autenticadoPorWebhook:true,compradorAutorizado:true,
+  chatHmac:'a'.repeat(64),messageHmac:'b'.repeat(64),
+  original:{mime:'application/pdf',sha256:'c'.repeat(64),
+   bytes:new Uint8Array([37,80,68,70])},
+  primera:null,segunda:null,apiKey:'local-test-no-network',model:'gpt-6-luna',
+  preparar:async args=>{
+   assert.equal(args.habilitado,true);
+   assert.equal(args.broker instanceof Function,true);
+   // El wrapper solicita SOMBRA, nunca publicación desde MVP278.
+   assert.equal(args.autenticadoPorWebhook,true);
+   return {estado:'ronda_en_sombra',originalAutorizado:true,
+    rondaPublicada:false,whatsappEnviado:false};
+  },
+  rpc:async(name,params)=>{
+   names.push(name);
+   if(name==='cotironda_piloto_ia_lookup_round_mvp226'){
+    assert.deepEqual(params,{p_chat_hmac:'a'.repeat(64),p_message_hmac:'b'.repeat(64)});
+    return {error:null,data:{state:'linked',request_id:release}};
+   }
+   assert.equal(name,'cotironda_piloto_v2_auto_release_d013');
+   assert.deepEqual(params,{
+    p_chat_hmac:'a'.repeat(64),p_source_hmac:'b'.repeat(64)
+   });
+   return {error:null,data:{state:'ready_for_delivery',request_id:release}};
+  }
+ };
+ const yes=await prepararDocumentoBinarioV2D013(base);
+ assert.equal(yes.estado,'ronda_publicada');
+ assert.equal(yes.requestId,release);
+ assert.equal(yes.originalVerificado,true);
+ assert.equal(yes.whatsappEnviado,false);
+ assert.deepEqual(names,['cotironda_piloto_ia_lookup_round_mvp226',
+  'cotironda_piloto_v2_auto_release_d013']);
+ for(const state of ['disabled','originals_disabled','calendar_disabled']){
+  let n=0;
+  const no=await prepararDocumentoBinarioV2D013({
+   ...base,rpc:async name=>{n++;return {error:null,data:
+    name==='cotironda_piloto_ia_lookup_round_mvp226'?
+     {state:'linked',request_id:release}:{state}
+   }}
+  });
+  assert.equal(no.estado,'ronda_en_sombra');
+  assert.equal(no.requestId,null);
+  assert.equal(n,2);
+ }
+ let uncertain=0;
+ const wrong=await prepararDocumentoBinarioV2D013({
+  ...base,rpc:async name=>{uncertain++;return {error:null,data:
+   name==='cotironda_piloto_ia_lookup_round_mvp226'?
+    {state:'linked',request_id:release}:
+    {state:'ready_for_delivery',request_id:'not-uuid'}
+  }}
+ });
+ assert.equal(wrong.estado,'conciliacion_requerida');
+ assert.equal(uncertain,2);
+ const other='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+ const mismatch=await prepararDocumentoBinarioV2D013({
+  ...base,rpc:async name=>({error:null,data:
+   name==='cotironda_piloto_ia_lookup_round_mvp226'?
+    {state:'linked',request_id:release}:
+    {state:'ready_for_delivery',request_id:other}
+  })
+ });
+ assert.equal(mismatch.estado,'conciliacion_requerida');
+ assert.equal(mismatch.requestId,null);
+ let published=0;
+ const noLink=await prepararDocumentoBinarioV2D013({
+  ...base,rpc:async name=>{
+   if(name==='cotironda_piloto_v2_auto_release_d013')published++;
+   return {error:null,data:{state:'ambiguous'}};
+  }
+ });
+ assert.equal(noLink.estado,'conciliacion_requerida');
+ assert.equal(published,0);
+});
+
+test('D013 binarios: no publicar ante original no verificado, gate OFF o reintento',async()=>{
+ const h='a'.repeat(64);
+ const base={
+  enabled:true,autenticadoPorWebhook:true,compradorAutorizado:true,
+  chatHmac:h,messageHmac:'b'.repeat(64),
+  original:{mime:'application/pdf',sha256:'c'.repeat(64),bytes:new Uint8Array(4)},
+  primera:null,segunda:null,apiKey:'local-test',model:'gpt-6-luna',
+  preparar:async()=>({estado:'requiere_revision',originalAutorizado:false,
+   rondaPublicada:false,whatsappEnviado:false}),
+  rpc:async()=>{throw Error('should never call SQL')},
+ };
+ const refused=await prepararDocumentoBinarioV2D013(base);
+ assert.equal(refused.estado,'requiere_revision');
+ assert.equal(refused.requestId,null);
+ const blocked=await prepararDocumentoBinarioV2D013({
+  ...base,preparar:async()=>{throw Error('should not check source')},
+  enabled:false
+ });
+ assert.equal(blocked.estado,'apagado');
+ const fake=await prepararDocumentoBinarioV2D013({
+  ...base,preparar:async()=>({estado:'ronda_en_sombra',
+   originalAutorizado:false,rondaPublicada:false,whatsappEnviado:false})
+ });
+ assert.equal(fake.estado,'conciliacion_requerida');
+ const ambiguous=await prepararDocumentoBinarioV2D013({
+  ...base,preparar:async()=>({estado:'conciliacion_requerida',
+   originalAutorizado:true,rondaPublicada:false,whatsappEnviado:false})
+ });
+ assert.equal(ambiguous.estado,'conciliacion_requerida');
 });

@@ -142,9 +142,15 @@ export async function procesarCompradorCentralMvp226(
    await finish('staged');
    return done('ronda_en_sombra','publish_flag_disabled',requestId);
   }
-  const publication=await call(db,'cotironda_piloto_ia_publish_mvp222',{
-   p_request:requestId
+  const publication=await call(db,'cotironda_piloto_v2_auto_release_d013',{
+   p_chat_hmac:args.chatHmac,p_source_hmac:args.messageHmac
   });
+  // V2 atomic release verifies calendar, source, supplier and no repeated
+  // buyer confirmation. Never fall back to MVP222 on refusal.
+  if(publication.state==='ready_for_delivery'||publication.state==='already_published'){
+   if(publication.request_id!==requestId)
+    throw Error('v2_release_wrong_request');
+  }
   if(publication.state==='dispatch_disabled'||publication.state==='transport_disabled'){
    await finish('staged');
    return done('ronda_en_sombra','sql_dispatch_disabled',requestId);

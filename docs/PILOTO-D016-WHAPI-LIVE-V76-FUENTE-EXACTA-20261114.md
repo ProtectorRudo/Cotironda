@@ -1,0 +1,84 @@
+# Cotironda D016 — Puente WhatsApp: baseline REAL v76, sin reemplazo inseguro
+
+**Fecha de control:** 14/11/2026. **Alcance:** GitHub candidato offline; **NO** se publicó webhook ni se envió WhatsApp.
+
+## Hallazgo bloqueante real
+
+Supabase `cotironda-piloto` sirve actualmente Edge `cotironda-piloto-whapi` **versión 76**, `verify_jwt=false`, **61 módulos**. El archivo `index.ts` realmente desplegado **NO coincide byte a byte** con `index.ts` de la rama GitHub [PR #837](https://github.com/ProtectorRudo/Cotironda/pull/837).
+
+- Fuente exacta activa: 97.198 caracteres; **SHA-256 del index.ts** `349831d3be81d0da95ba0cc3b699256521e35d4b7c0f1923e3dc2a6a714d0c7d`.
+- Huella `ezbr_sha256` del bundle activo: `656cb24bd1cbfdbb0de6d87a9acae17ad911c13b6e404667029dd4d0b55b822e`.
+- Archivo GitHub: 97.505 caracteres; **16 bloques diferentes** al compararlo línea por línea. Afectan import de correlación de proveedores (`mvp336` frente a `mvp291`), diagnóstico de webhook, comando de prueba de conectividad y compuerta de liberación de pedido. **No reemplazar el webhook por un candidato generado desde la rama GitHub**: podría revertir comportamientos de V1 que siguen atendiendo mensajes.
+- El generador `scripts/piloto/v2-d016-whapi-overlay.mjs` original se ejecutaba sobre GitHub con un manifest histórico v70/MVP332, aunque su CI decía `v76 verificado`. El hecho de pasar pruebas no implica que sea el snapshot v76.
+
+## Corrección acotada
+
+En rama separada sobre **SHA exacto f98527c... sin editar PR #837**:
+
+1. Se añade `verificarBaseWhapiV76`: exige **SHA256 exacto del index.ts real v76** y presencia de anclas D016, fail-closed por cualquier deriva.
+2. Nuevo modo opcional `--live-v76-source /ruta/privada/index.ts --write-live-v76-candidate`. Genera archivo **local no versionado** `index.v2-d016-live-v76-candidate.ts`, no despliega. El modo anterior de CI queda separado y rotulado explícitamente como **fuente GitHub, NO activa**.
+3. El candidato live exige módulo `referencia-pedido-v2.ts` y `buyer-whatsapp-entry-d016.ts` adicionales a la **misma colección de 61 fuentes actualmente desplegadas**; no mezclar otros 61 ficheros de ramas antiguas.
+4. Tests Node negativos para fuente vieja, fuente truncada, falta de origen y mezcla de modos; CI D016 los ejecuta. Positivo de identidad: se volvió a consultar el Edge activo y la huella de fuente calculada coincide con el pin; siete anclas de edición necesarias se hallaron **únicas** en el archivo real.
+5. Ningún cambio a `supabase/functions/cotironda-piloto-whapi/index.ts`, ni Supabase Edge v76 ni Vercel UI f985. No HMAC en GitHub, no copiar secrets a PG o navegador.
+
+## Mejora comprobable: pin del bundle completo v76
+
+- Se recuperaron **los 61 contenidos exactos** de la función Supabase Edge v76 mediante lectura autorizada, sin desplegar ni acceder a secretos. Se calculó SHA-256 por archivo y se guardaron **solo 61 nombres/rutas y 61 huellas** en `scripts/piloto/v2-d016-whapi-live-v76-bundle-manifest.json` (no se copiaron contenidos reales al repositorio). Se comprobaron `edge_version=76`, proyecto y `ezbr_sha256` del bundle activo, así como SHA del índice.
+- El generador `verificarBundleWhapiV76(snapshotRoot)` ahora exige **los 61 archivos exactos** del snapshot local antes de crear un candidato D016. No basta con tener un `index.ts` correcto mezclado con importaciones de otra rama. Rechaza ruta que escapa de la carpeta, archivos ausentes/alterados, repetidos, diferencias de SHA o manifest diferente. El modo anterior de pruebas sintéticas sigue, **pero está identificado como NO LIVE**.
+- El comando `--live-v76-source /ruta/snapshot/supabase/functions/cotironda-piloto-whapi/index.ts --write-live-v76-candidate` verifica primero SHA de índice y luego SHA **de cada archivo** contra el manifiesto. Si no está el snapshot completo, **falla de forma cerrada**. La copia generada nunca se despliega automáticamente.
+- CI añade pruebas de 61 paths únicos, hash de índice, tolerancia cero a la fuente GitHub vieja, negativa de snapshot ausente y ausencia de candidatos escritos tras un rechazo. Esto es un paso para reproducir un paquete seguro, **no** sustituye las pruebas Deno de todo el bundle final ni la verificación real de mensaje WhatsApp.
+
+## Prueba nueva sobre fuentes realmente activas (14/11)
+
+**HALLAZGO:** comparación byte a byte de **los 61 archivos** del Edge v76 activo con la rama D016: **59 idénticos**, **solo 2 divergentes**: `index.ts` (16 bloques) y `supplier-auto-correlation-mvp336.ts` (3 bloques). No se modifica ninguno de los otros 59.
+
+**CAMBIO mínimo:** `scripts/piloto/v2-d016-whapi-v76-two-file-patch.json` guarda solo las diferencias de líneas entre la rama y el snapshot real de esos 2 archivos. `scripts/piloto/v2-d016-rebuild-live-v76.mjs` reconstruye el checkout efímero de GitHub Actions únicamente si el SHA256 de **todos los 61 archivos** coincide con el manifiesto derivado de Supabase Edge; falla por archivo faltante, diferencia de contenido, hunk alterado, proyecto/bundle inesperado o ejecución de escritura fuera de GitHub Actions. No conecta a red ni cambia Whapi. Tras la validación, el generador D016 usa **la fuente de v76 realmente instalada** y agrega sus dos módulos, no la variante antigua de GitHub. El workflow limpia los archivos temporales.
+
+**PRUEBA D016 GH Actions:** reconstrucción 59 + 2, `verificarBundleWhapiV76` 61/61, generación de candidato D016 sobre v76 y **`deno check` del candidato real con 63 dependencias**: **SUCCESS** en [run 43588912163](https://github.com/ProtectorRudo/Cotironda/actions/runs/43588912163), HEAD `c75b82cebc5716fcda225b68d991799cc794dfa1`. Este éxito es prueba de compilación y estructura real, **NO** demuestra entrega de mensajes, autenticación HTTP, sesión del navegador, consentimiento ni E2E. No desplegar el webhook sobre producción ni piloto por este cambio.
+
+## Pendiente para publicación COMERCIAL
+
+**No desplegar Webhook v76 con este PR.** Primero: publicar UI **f985** en Preview SSO (Vercel HTTP402, reintento único autorizado 14/11 17:07 ART), verificar secret server-side y sesión, conservar la reconstrucción **ya probada por Deno del bundle live v76 + dos módulos** (revalidar hashes ante cualquier versión Edge nueva), y ejecutar pruebas reales de envío sin duplicados con bandera OFF; coordinar HMAC D016 segura en el gestor de secretos de Edge y la misma del portal. El envío D016 debe quedar OFF hasta consentimiento/prospectividad, referencia de ronda, idempotencia y prueba con comprador; no duplicar MVP289. Proveedores todavía tienen **0 consentimientos específicos de originales**, no publicar documentos ni contacto. Nunca tocar producción.
+
+Ver [Estado](https://github.com/ProtectorRudo/Cotironda/blob/docs/cotironda-v2-unica-direccion-20261112/docs/PILOTO-100-ESTADO.md) y [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794).
+
+## Corrección de compuertas D016 / MVP289 (14/11, sin despliegue)
+
+Revisión del candidato identificó una dependencia accidental: el bucle que envía el enlace nuevo D016 estaba condicionado por `COTIRONDA_PILOT_BUYER_TRACKING_ENABLED` (MVP289). Con ese valor `false`, aun activando de forma expresa `COTIRONDA_PILOT_D016_WHATSAPP_SEND_ENABLED=true`, el comprador no recibía el acceso D016.
+
+Cambio mínimo en el **mismo PR #853**, sin tocar la función Edge instalada:
+
+- `permitirAvisoD016(outbound,d016Enabled,legacyTrackingValue)` conserva **outbound OFF = ningún envío**, deja la condición MVP289 **idéntica cuando D016 está OFF**, y permite D016 autorizado independientemente del flag legado.
+- El candidato generado evalúa una sola vez la bandera D016 y usa **una única rama de despacho** por evento: nunca enviar a la vez el enlace heredado y el nuevo.
+- Prueba Node de **9 combinaciones** y verificación de que el webhook generado usa la nueva puerta; se conservan pruebas de deduplicación SQL, emisión incierta y autorización de chat.
+- Commits: `fd8ccca2` (helper), `94f28af3` (overlay), `931e9832` (prueba). [CI dedicado D016](https://github.com/ProtectorRudo/Cotironda/actions/runs/43590259417) **SUCCESS** sobre `931e9832`.
+
+No se activó la bandera D016, no se desplegó Edge ni Vercel y no se enviaron mensajes. **No elimina** bloqueos de Preview f985, credenciales compartidas Edge/portal, sesión real, consentimiento ni E2E. Mantener PR #853 como DRAFT.
+
+## Seguimiento recuperable con D016 activo y MVP289 apagado (14/11/2026)
+
+**Segundo bloqueo funcional detectado contra el Edge REAL v76 (consulta solo lectura):** la rama `if(buyerLinkCommand)` que procesa el texto `SEGUIMIENTO COTI` conserva el guard `sec.outbound && pilotEnvNotDenied('COTIRONDA_PILOT_BUYER_TRACKING_ENABLED')`. Por eso el primer arreglo de la puerta de envío no bastaba: con MVP289 desactivado el evento de recuperación nunca llegaba a `buyerLinkRequests`, aunque el nuevo D016 estuviera habilitado.
+
+**Corrección mínima, en el mismo PR #853, todavía candidato:** el generador `v2-d016-whapi-overlay.mjs` transforma de manera fail-closed y con ancla única esa condición de la rama recovery para usar `permitirAvisoD016`. La política queda explícita: outbound OFF nunca envía; con D016 OFF se respeta exactamente el gate MVP289; con D016 ON el comando recovery no depende del flag antiguo. Si no coincide el texto fuente v76 exacto, el generador aborta. No se modifica `index.ts` activo.
+
+**Prueba específica:** `tests/unit/v2-d016-whapi-envio.test.mjs` verifica la ruta `buyerLinkCommand`, las tres combinaciones críticas y el no retorno a la condición antigua. [D016 workflow](https://github.com/ProtectorRudo/Cotironda/actions/runs/43591062587) **SUCCESS** sobre commit `fcf5735e`; [Deno del paquete Whapi](https://github.com/ProtectorRudo/Cotironda/actions/runs/43591062589) también **SUCCESS**. La verificación de todo el PR sigue dependiente de cada check del HEAD posterior.
+
+**Sin publicación:** Vercel f985 sin despliegue; Supabase Whapi v76 intacta, 0 envíos nuevos, políticas y consentimiento de originales OFF/pendientes. No equivale a prueba de recuperación WhatsApp real. No fusionar ni desplegar hasta Preview correcta, HMAC compartida, autorización y prueba del circuito.
+
+## D013 integrado en el candidato D016 sin alterar Whapi v76 (14/11/2026)
+
+**Causa:** el `index.ts` activo de Supabase Edge v76 aún invoca `ai-central-buyer-mvp226.ts`, cuyo ruteador histórico rechaza un artículo si `source.rubro!==requested.rubro`. Cotironda V2 prohíbe ese filtro por rubro: la coincidencia debe ser entre productos reales del catálogo y localidad, con comprobación de equivalencias técnicas.
+
+**Solución mínima en el PR #853, sin duplicar D013:** se confirmó que este PR ya contiene los **mismos blobs** de `ruteador-catalogos-v2-d013.ts`, `verificador-evidencia-tecnica-v2-d013.ts`, `planificador-piloto-v2-d013.ts`, `puente-sql-rondas-v2-d013.ts` y `ai-central-buyer-v2-d013.ts` desarrollados en los PR #821/#822. **No se copiaron ni editaron**. `scripts/piloto/v2-d016-whapi-overlay.mjs` compone en su candidato un import adicional del comprador V2 y selecciona el worker SOLO cuando `COTIRONDA_PILOT_V2_D013_PRODUCT_MATCHING_ENABLED==='true'`. Con D013 OFF invoca el worker V1 original y mantiene `publicar:false`. Con D013 ON pasa `publicar:true` al worker V2, y si SQL confirma una `ronda_publicada` la entrega al mismo despachador por evento y al aviso de comprador con idempotencia. Nunca se envía por el generador ni por el test.
+
+**Barrera antes de publicar:** la migración `supabase/piloto/v2_d013_ruteo_productos_sin_filtro_rubro.sql` y los contratos SQL de V2 deben verificarse en el proyecto real y aprobarse de forma controlada antes de encender el nuevo flag. No alcanza con tener el módulo de producto en la compilación: el SQL de preparación y los permisos también deben respetarlo. No tocar rondas históricas ni publicar Edge v76 sin verificación de bundle exacto, consentimiento prospectivo y rollback. Este avance NO sustituye la publicación de la interfaz f985 en Vercel Preview.
+
+**Prueba agregada:** `tests/unit/v2-d016-whapi-envio.test.mjs` verifica la composición D013+D016, ambos imports, el flag apagado por defecto, la liberación de ronda sin confirmación extra solo para D013 y el ruteador por catálogo que no contiene filtro de igualdad de rubro. El control técnico anterior de D013 y la compilación Deno deben seguir pasando; **CI del commit `452bfd48` en ejecución al documentar**. Nada desplegado, cero WhatsApp enviados en esta operación.
+
+### Publicación controlada SOLO de SQL D013 en Supabase piloto — 14/11/2026
+
+**PUBLICADO / VERIFICADO:** migración `20261114121926`, nombre `cotironda_v2_d013_ruteo_producto_sin_filtro_rubro_piloto_20261114`, tomada sin modificar del archivo existente `supabase/piloto/v2_d013_ruteo_productos_sin_filtro_rubro.sql` (PR #821, incluido en #853). **Único efecto:** se quita el requisito de igualdad de etiquetas `rubroCatalogo` del contrato de preparación `public.cotironda_piloto_ia_shadow_prepare_mvp221`; se mantienen validaciones literales de catálogo, proveedor, localidad y demás guardias ya existentes. No se crean rondas, se envían mensajes ni se otorgan permisos.
+
+**Pruebas de base real:** SHA función previo `a2225bc790c82166a352559720673dca2bc17a97508eac0b9054411064c25cf9`. Dry-run BEGIN→aplicación→ROLLBACK: salida esperada `a54091b87a0eb57f0111749cd3151a2623b76f129130714b6830ae4a8943bc02` y función previa restaurada. Se añadió `supabase/piloto/v2_d013_ruteo_productos_rollback_guarded.sql` al PR #853: reversión permitida SOLO si coincide el SHA exacto post-migración, reponiendo SHA previo, probada dentro de la misma transacción con ROLLBACK. El SHA previo y los permisos quedaron intactos tras ensayos. `apply_migration` sobre **solo** `cotironda-piloto` devolvió `success:true`; lectura posterior confirmó SHA nuevo exacto, filtro de igualdad ausente, prueba de descripción literal y vínculo proveedor presentes, `anon` y `authenticated` sin `EXECUTE`, 7 rondas históricas, consentimiento de originales 0, política de compartir originales false, 0 entregas D016, cron V1 OFF. El bundle Whapi LIVE sigue v76 SHA `656cb24bd1cbfdbb0de6d87a9acae17ad911c13b6e404667029dd4d0b55b822e`.
+
+**Límites:** con D013 flag del Edge OFF, el webhook v76 continúa usando ruteador histórico y no hay prueba real de coincidencia multirrubro. El nuevo código D013+D016 en PR #853 se mantiene CANDIDATO SIN DESPLEGAR; la UI f985 continúa a la espera de Preview, autorización de originales y E2E. No habilitar `COTIRONDA_PILOT_V2_D013_PRODUCT_MATCHING_ENABLED` antes de revisar los gates de despacho/consentimiento y probar el bundle preciso. El CI del [PR #853](https://github.com/ProtectorRudo/Cotironda/pull/853) completó **8/8 SUCCESS** en commit documental `b924ed91`; el nuevo registro documental no equivale a CI del nuevo HEAD hasta que vuelva a aprobar.

@@ -18,6 +18,24 @@ const ID=/^[A-Za-z0-9._:-]{8,160}$/u;
 const SHA=/^[a-f0-9]{40}$/u;
 const enc=new TextEncoder();
 
+/** MVP289 utilizaba DOS políticas diferentes para el mismo flag:
+ * envio normal: solo "false" lo apaga;
+ * recuperacion SEGUIMIENTO COTI: solo undefined o "true" lo autorizan.
+ * D016 tiene su propio gate y jamás se salta el OFF general de outbound.
+ */
+export function permitirAvisoD016(
+ outbound:boolean,d016Enabled:boolean,legacyTrackingValue:string|undefined
+):boolean{
+ return outbound===true&&(d016Enabled===true||legacyTrackingValue!=='false');
+}
+export function permitirRecuperacionD016(
+ outbound:boolean,d016Enabled:boolean,legacyTrackingValue:string|undefined
+):boolean{
+ return outbound===true&&(d016Enabled===true||
+  legacyTrackingValue===undefined||legacyTrackingValue==='true');
+}
+
+
 function origenD016(s:string):boolean{
  try{
   const u=new URL(s);
@@ -28,6 +46,21 @@ function origenD016(s:string):boolean{
    u.hostname.endsWith('-protector-rudo-s-projects.vercel.app');
  }catch{return false}
 }
+/** D013 nunca debe publicar una ronda que el comprador no pueda abrir.
+ * Es una barrera ANTES del SQL de publicación, no solo antes del WhatsApp.
+ * D016 debe estar habilitado con el origen Preview y HMAC del mismo release.
+ * Rechaza configuraciones incompletas o inválidas; no hace operaciones de red.
+ */
+export function habilitarPublicacionD013ConAccesoD016(args:{
+ outbound:boolean;matchingEnabled:boolean;linkSendEnabled:boolean;
+ portalOrigin:string;portalSha:string;approvedSha:string;hmacKeyHex:string;
+}):boolean{
+ return args?.outbound===true&&args.matchingEnabled===true&&
+  args.linkSendEnabled===true&&
+  origenD016(args.portalOrigin)&&SHA.test(args.portalSha)&&
+  args.portalSha===args.approvedSha&&HASH.test(args.hmacKeyHex);
+}
+
 function hex(input:Uint8Array):string{
  return Array.from(input,x=>x.toString(16).padStart(2,'0')).join('');
 }

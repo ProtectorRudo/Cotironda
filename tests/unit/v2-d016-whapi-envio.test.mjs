@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {createHmac} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {generarWebhookD016} from '../../scripts/piloto/v2-d016-whapi-overlay.mjs';
-import {notificarAccesoWhatsappD016}
+import {notificarAccesoWhatsappD016,permitirAvisoD016,permitirRecuperacionD016,
+ habilitarPublicacionD013ConAccesoD016}
  from '../../supabase/functions/cotironda-piloto-whapi/buyer-whatsapp-entry-d016.ts';
 
 const PORTAL='https://cotironda-portal-9sl89v1ho-protector-rudo-s-projects.vercel.app';
@@ -151,6 +152,168 @@ test('D016 Whapi: DB error before reservar no dispara envío; tras reservar conc
  assert.equal((await b.run()).estado,'no_elegible');
  assert.equal(b.state.sent.length,1);
 });
+test('D016: el flag legado OFF no impide enlace V2; outbound OFF nunca envía',()=>{
+ const matrix=[
+  [false,false,undefined,false],
+  [false,true,undefined,false],
+  [false,true,'false',false],
+  [true,false,'false',false],
+  [true,false,'true',true],
+  [true,false,undefined,true],
+  [true,true,'false',true],
+  [true,true,undefined,true],
+  [true,true,'true',true]
+ ];
+ for(const [outbound,d016,legacy,expected] of matrix){
+  assert.equal(permitirAvisoD016(outbound,d016,legacy),expected,
+   JSON.stringify({outbound,d016,legacy}));
+ }
+ const old=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/index.ts',
+  import.meta.url),'utf8');
+ const candidate=generarWebhookD016(old);
+ assert.match(candidate,/permitirAvisoD016\(sec\.outbound,d016Enabled,/u);
+ assert.match(candidate,/const d016Enabled=Deno\.env\.get\('COTIRONDA_PILOT_D016_WHATSAPP_SEND_ENABLED'\)==='true'/u);
+ assert.match(candidate,/if\(d016Enabled\)\{/u);
+ assert.doesNotMatch(candidate,
+  /if\(!sec\.outbound\|\|Deno\.env\.get\('COTIRONDA_PILOT_BUYER_TRACKING_ENABLED'\)==='false'\)continue;/u);
+});
+
+test('D016 OFF conserva las dos semánticas distintas del tracking legado',()=>{
+ const cases=[
+  {value:undefined,normal:true,recovery:true},
+  {value:'true',normal:true,recovery:true},
+  {value:'false',normal:false,recovery:false},
+  {value:'',normal:true,recovery:false},
+  {value:'0',normal:true,recovery:false},
+  {value:'off',normal:true,recovery:false},
+  {value:'FALSE',normal:true,recovery:false}
+ ];
+ for(const {value,normal,recovery} of cases){
+  assert.equal(permitirAvisoD016(true,false,value),normal,
+   'MVP289 envío '+String(value));
+  assert.equal(permitirRecuperacionD016(true,false,value),recovery,
+   'MVP289 recuperación '+String(value));
+  assert.equal(permitirAvisoD016(true,true,value),true,
+   'D016 envío '+String(value));
+  assert.equal(permitirRecuperacionD016(true,true,value),true,
+   'D016 recuperación '+String(value));
+  assert.equal(permitirAvisoD016(false,true,value),false,
+   'Outbound OFF envío '+String(value));
+  assert.equal(permitirRecuperacionD016(false,true,value),false,
+   'Outbound OFF recuperación '+String(value));
+ }
+});
+
+test('D016: SEGUIMIENTO COTI recupera acceso con tracking legado apagado',()=>{
+ const old=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/index.ts',
+  import.meta.url),'utf8');
+ assert.match(old,/if\(buyerLinkCommand\)\{/u);
+ assert.match(old,/pilotEnvNotDenied\('COTIRONDA_PILOT_BUYER_TRACKING_ENABLED'\)/u);
+ const candidate=generarWebhookD016(old);
+ const cmd=candidate.match(/if\(buyerLinkCommand\)\{([\s\S]*?)\n   \}/u)?.[1];
+ assert.ok(cmd,'command SEGUIMIENTO COTI must still exist');
+ assert.match(cmd,/permitirRecuperacionD016\(sec\.outbound,/u);
+ assert.match(cmd,/COTIRONDA_PILOT_D016_WHATSAPP_SEND_ENABLED/u);
+ assert.match(cmd,/buyerLinkRequests\.push\(\{mode:'recovery'/u);
+ assert.doesNotMatch(cmd,/pilotEnvNotDenied\('COTIRONDA_PILOT_BUYER_TRACKING_ENABLED'\)/u);
+ // No abrir envíos si el interruptor global está apagado.
+ assert.equal(permitirRecuperacionD016(false,true,'false'),false);
+ // D016 activo permite la recuperación, sin reactivar el seguimiento antiguo.
+ assert.equal(permitirRecuperacionD016(true,true,'false'),true);
+ // D016 apagado conserva el bloqueo legado.
+ assert.equal(permitirRecuperacionD016(true,false,'false'),false);
+});
+
+test('D013: no publica sin D016 y release Preview privado verificable',()=>{
+ const base={
+  outbound:true,matchingEnabled:true,linkSendEnabled:true,
+  portalOrigin:PORTAL,portalSha:SHA,approvedSha:SHA,hmacKeyHex:KEY
+ };
+ assert.equal(habilitarPublicacionD013ConAccesoD016(base),true);
+ for(const update of [
+  {outbound:false},{matchingEnabled:false},{linkSendEnabled:false},
+  {portalOrigin:'https://evil.example.com'},
+  {portalOrigin:'http://cotironda-portal-x-protector-rudo-s-projects.vercel.app'},
+  {portalOrigin:PORTAL+'/'},
+  {portalSha:'bad'},{approvedSha:'f'.repeat(40)},
+  {hmacKeyHex:''},{hmacKeyHex:'x'.repeat(64)}
+ ]){
+  assert.equal(habilitarPublicacionD013ConAccesoD016({...base,...update}),false,
+   JSON.stringify(update));
+ }
+ // Nunca basta activar D013 a solas: el enlace de comprador debe funcionar.
+ assert.equal(habilitarPublicacionD013ConAccesoD016({
+  ...base,matchingEnabled:true,linkSendEnabled:false
+ }),false);
+});
+
+test('D013+D016: localidad reanuda la MISMA ronda con V2, nunca rubro V1',()=>{
+ const old=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/index.ts',
+  import.meta.url),'utf8');
+ assert.doesNotMatch(old,/continuarZonaCentralV2D013|d013ZoneEnabled/u);
+ const candidate=generarWebhookD016(old);
+ assert.match(candidate,/from '\.\/ai-central-zone-v2-d013\.ts'/u);
+ assert.match(candidate,/continuarZonaCentralMvp233 as continuarZonaCentralV2D013/u);
+ assert.match(candidate,/const d013ZoneEnabled=habilitarPublicacionD013ConAccesoD016\(\{/u);
+ assert.match(candidate,/const zoneWorker=d013ZoneEnabled\?\s*continuarZonaCentralV2D013:continuarZonaCentralMvp233/u);
+ assert.match(candidate,/model,publicar:d013ZoneEnabled/u);
+ assert.match(candidate,/if\(!d013ZoneEnabled\|\|!resumed\.requestId\)/u);
+ assert.match(candidate,/buyerLinkRequests\.push\(\{mode:'auto',requestId:resumed\.requestId,\s*chatHmac:chatHash,eventHmac:messageHash/u);
+ const zona=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/ai-central-zone-v2-d013.ts',
+  import.meta.url),'utf8');
+ assert.match(zona,/planificador-piloto-v2-d013\.ts/u);
+ assert.match(zona,/puente-sql-rondas-v2-d013\.ts/u);
+ assert.match(zona,/p_source_hmac:args\.sourceHmac/u);
+ assert.match(zona,/args\.shaText\(original\)!==args\.originalSha256/u);
+ assert.doesNotMatch(zona,/puente-sql-rondas-mvp221\.ts|planificador-piloto-mvp220\.ts/u);
+});
+
+test('D013+ D016: candidato Whapi usa catalogo por producto SOLO con flag V2',()=>{
+ const original=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/index.ts',
+  import.meta.url),'utf8');
+ assert.doesNotMatch(original,/COTIRONDA_PILOT_V2_D013_PRODUCT_MATCHING_ENABLED/u);
+ assert.match(original,/procesarCompradorCentralMvp226/u);
+ const candidate=generarWebhookD016(original);
+ assert.match(candidate,/from '\.\/ai-central-buyer-mvp226\.ts';/u);
+ assert.match(candidate,/from '\.\/ai-central-buyer-v2-d013\.ts';/u);
+ assert.match(candidate,/const d013Enabled=habilitarPublicacionD013ConAccesoD016\(\{/u);
+ assert.match(candidate,/matchingEnabled:Deno\.env\.get\('COTIRONDA_PILOT_V2_D013_PRODUCT_MATCHING_ENABLED'\)==='true'/u);
+ assert.match(candidate,/linkSendEnabled:Deno\.env\.get\('COTIRONDA_PILOT_D016_WHATSAPP_SEND_ENABLED'\)==='true'/u);
+ assert.match(candidate,/const buyerWorker=d013Enabled\?\s*procesarCompradorCentralV2D013:procesarCompradorCentralMvp226/u);
+ assert.match(candidate,/habilitado:true,publicar:d013Enabled/u);
+ assert.match(candidate,/if\(!d013Enabled\|\|!result\.requestId\)/u);
+ assert.match(candidate,/trialDispatchChats\.add\(chatHash\)/u);
+ assert.match(candidate,/buyerLinkRequests\.push\(\{mode:'auto',requestId:result\.requestId,/u);
+ assert.match(candidate,/buyer_review_bypassed_by_text_broker/u);
+ // La fuente viva no cambia y el deploy del candidato sigue desautorizado.
+ assert.doesNotMatch(original,/ai-central-buyer-v2-d013/u);
+ const module=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/ai-central-buyer-v2-d013.ts',
+  import.meta.url),'utf8');
+ assert.match(module,/planificador-piloto-v2-d013/u);
+ const router=readFileSync(new URL('../../src/domain/ia-central/ruteador-catalogos-v2-d013.ts',
+  import.meta.url),'utf8');
+ assert.doesNotMatch(router,/source\.rubro!==requested\.rubro/u);
+ assert.match(router,/verificarCorrespondenciaTecnicaD013/u);
+});
+
+test('D013+D016: PDF Word y Excel corroborados usan V2 privado, nunca MVP278 publico',()=>{
+ const original=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/index.ts',import.meta.url),'utf8');
+ const candidate=generarWebhookD016(original);
+ assert.match(candidate,/from '\.\/ai-central-buyer-binary-v2-d013\.ts'/u);
+ assert.match(candidate,/const d013BinaryEnabled=habilitarPublicacionD013ConAccesoD016\(\{/u);
+ assert.match(candidate,/const binaryWorker=d013BinaryEnabled\?\s*prepararDocumentoBinarioV2D013:prepararDocumentoBinarioCompradorMvp278/u);
+ assert.match(candidate,/enabled:d013BinaryEnabled/u);
+ assert.match(candidate,/if\(!d013BinaryEnabled\|\|!mediaPlan\.requestId\)/u);
+ assert.match(candidate,/buyerLinkRequests\.push\(\{mode:'auto',requestId:mediaPlan\.requestId/u);
+ assert.match(candidate,/mediaPlan\.estado==='ronda_en_sombra'&&!d013BinaryEnabled/u);
+ assert.doesNotMatch(original,/prepararDocumentoBinarioV2D013/u);
+ const binary=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/ai-central-buyer-binary-v2-d013.ts',import.meta.url),'utf8');
+ assert.match(binary,/prepararDocumentoBinarioCompradorMvp278/u);
+ assert.match(binary,/cotironda_piloto_v2_auto_release_d013/u);
+ assert.doesNotMatch(binary,/cotironda_piloto_ia_publish_mvp222/u);
+ assert.match(binary,/procesarCompradorV2D013/u);
+});
+
 test('D016 Whapi: overlay genera webhook aislado y conserva v76 inmutable',()=>{
  const old=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/index.ts',
   import.meta.url),'utf8');
