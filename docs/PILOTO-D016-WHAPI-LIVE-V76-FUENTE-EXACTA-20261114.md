@@ -54,3 +54,13 @@ Cambio mínimo en el **mismo PR #853**, sin tocar la función Edge instalada:
 - Commits: `fd8ccca2` (helper), `94f28af3` (overlay), `931e9832` (prueba). [CI dedicado D016](https://github.com/ProtectorRudo/Cotironda/actions/runs/43590259417) **SUCCESS** sobre `931e9832`.
 
 No se activó la bandera D016, no se desplegó Edge ni Vercel y no se enviaron mensajes. **No elimina** bloqueos de Preview f985, credenciales compartidas Edge/portal, sesión real, consentimiento ni E2E. Mantener PR #853 como DRAFT.
+
+## Seguimiento recuperable con D016 activo y MVP289 apagado (14/11/2026)
+
+**Segundo bloqueo funcional detectado contra el Edge REAL v76 (consulta solo lectura):** la rama `if(buyerLinkCommand)` que procesa el texto `SEGUIMIENTO COTI` conserva el guard `sec.outbound && pilotEnvNotDenied('COTIRONDA_PILOT_BUYER_TRACKING_ENABLED')`. Por eso el primer arreglo de la puerta de envío no bastaba: con MVP289 desactivado el evento de recuperación nunca llegaba a `buyerLinkRequests`, aunque el nuevo D016 estuviera habilitado.
+
+**Corrección mínima, en el mismo PR #853, todavía candidato:** el generador `v2-d016-whapi-overlay.mjs` transforma de manera fail-closed y con ancla única esa condición de la rama recovery para usar `permitirAvisoD016`. La política queda explícita: outbound OFF nunca envía; con D016 OFF se respeta exactamente el gate MVP289; con D016 ON el comando recovery no depende del flag antiguo. Si no coincide el texto fuente v76 exacto, el generador aborta. No se modifica `index.ts` activo.
+
+**Prueba específica:** `tests/unit/v2-d016-whapi-envio.test.mjs` verifica la ruta `buyerLinkCommand`, las tres combinaciones críticas y el no retorno a la condición antigua. [D016 workflow](https://github.com/ProtectorRudo/Cotironda/actions/runs/43591062587) **SUCCESS** sobre commit `fcf5735e`; [Deno del paquete Whapi](https://github.com/ProtectorRudo/Cotironda/actions/runs/43591062589) también **SUCCESS**. La verificación de todo el PR sigue dependiente de cada check del HEAD posterior.
+
+**Sin publicación:** Vercel f985 sin despliegue; Supabase Whapi v76 intacta, 0 envíos nuevos, políticas y consentimiento de originales OFF/pendientes. No equivale a prueba de recuperación WhatsApp real. No fusionar ni desplegar hasta Preview correcta, HMAC compartida, autorización y prueba del circuito.
