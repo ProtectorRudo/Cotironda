@@ -76,12 +76,7 @@ Deno.serve(async(req:Request)=>{
  const u=new URL(req.url);
  if(u.search||u.hash||!u.pathname.endsWith('/cotironda-piloto-v2-reemitir-acceso'))
   return response('blocked',404);
- const secret=Deno.env.get('COTIRONDA_PILOT_D016_REISSUE_SHARED_SECRET')??'';
- if(secret.length<40||
-  !same(req.headers.get('authorization')??'','Bearer '+secret))
-  return response('blocked',403);
- if(Deno.env.get('COTIRONDA_PILOT_D016_REISSUE_ENABLED')!=='true'||
-  Deno.env.get('COTIRONDA_PILOT_WHAPI_OUTBOUND_ENABLED')!=='true'||
+ if(Deno.env.get('COTIRONDA_PILOT_WHAPI_OUTBOUND_ENABLED')!=='true'||
   Deno.env.get('COTIRONDA_PILOT_D016_WHATSAPP_SEND_ENABLED')!=='true')
   return response('unavailable',503);
  const portal=Deno.env.get('COTIRONDA_PILOT_D016_PORTAL_ORIGIN')??'';
@@ -108,6 +103,19 @@ Deno.serve(async(req:Request)=>{
   typeof input.requestId!=='string'||!UUID.test(input.requestId)||
   typeof input.sessionHmac!=='string'||!HASH.test(input.sessionHmac))
   return response('blocked',400);
+ // Portal y Edge ya comparten el HMAC de D016. Autenticación con
+ // firma de solicitud de vida corta, dominio criptográfico separado.
+ const signedTime=req.headers.get('x-cotironda-time')??'';
+ const receivedSign=req.headers.get('x-cotironda-signature')??'';
+ const signatureKey=keyFromHex(Deno.env.get('COTIRONDA_PILOT_D016_HMAC_KEY_HEX')??'');
+ if(!/^[0-9]{13}$/u.test(signedTime)||!HASH.test(receivedSign)||!signatureKey||
+  Math.abs(Date.now()-Number(signedTime))>90_000)
+  return response('blocked',403);
+ const signedKey=await crypto.subtle.importKey('raw',new Uint8Array(signatureKey).buffer,
+  {name:'HMAC',hash:'SHA-256'},false,['sign']);
+ const expectedSign=await hmac(signedKey,
+  'cotironda/d016/reissue/v1\\n'+signedTime+'\\n'+body);
+ if(!same(receivedSign,expectedSign))return response('blocked',403);
  const admin=roleKey(),hmacHex=Deno.env.get('COTIRONDA_PILOT_D016_HMAC_KEY_HEX')??'';
  const idHex=Deno.env.get('COTIRONDA_PILOT_ID_HMAC_HEX')??'';
  const aesHex=Deno.env.get('COTIRONDA_PILOT_AES_HEX')??'';
