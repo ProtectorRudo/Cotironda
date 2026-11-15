@@ -12,7 +12,7 @@ import {auditStoredSupplierQuote} from './supplier-evidence.ts';
 import {auditStoredSourceFactsMvp163} from './source-facts.ts';
 import {auditarOriginalEconomicoMvp168} from './source-economics-mvp168.ts';
 import {guardScheduledRecovery} from './scheduled-auth.ts';
-import {dispatchPendingPilotSupplierPdfs} from './whapi-dispatch.ts';
+import {dispatchPendingPilotSupplierPdfs,dispatchPendingVerifiedV2SupplierPdfs} from './whapi-dispatch.ts';
 import {invokeAutoRecoveryMvp293} from './auto-recovery-tick-mvp293.ts';
 const REF='ilggkalaafhtiysyzlmg';
 const root='https://'+REF+'.supabase.co';
@@ -70,6 +70,39 @@ Deno.serve(async(req)=>{
      });
     }catch{
      return new Response(JSON.stringify({state:'supplier_dispatch_unavailable'}),{
+      status:503,headers:{'content-type':'application/json','cache-control':'no-store'}
+     });
+    }
+   }
+   // Opt-in V2: reuse this SAME Vault-authenticated cron.
+   // Unlike V1, the selector requires one prepared V2 round with buyer
+   // auto-approval, supplier contact permission and verified product routes.
+   // No original-share policy is enabled by this worker.
+   if(Deno.env.get('COTIRONDA_PILOT_V2_D013_SCHEDULED_DISPATCH_ENABLED')==='true'){
+    try{
+     const delivery=await dispatchPendingVerifiedV2SupplierPdfs({
+      enabled:Deno.env.get('COTIRONDA_PILOT_WHAPI_OUTBOUND_ENABLED')==='true',
+      dynamicRecipientsEnabled:
+       Deno.env.get('COTIRONDA_PILOT_DYNAMIC_RECIPIENT_MVP313_ENABLED')==='true',
+      hmacHex:Deno.env.get('COTIRONDA_PILOT_ID_HMAC_HEX')??'',
+      aesHex:Deno.env.get('COTIRONDA_PILOT_AES_HEX')??'',
+      channel:Deno.env.get('COTIRONDA_PILOT_WHAPI_CHANNEL')??'',
+      token:Deno.env.get('COTIRONDA_PILOT_WHAPI_TOKEN')??'',
+      includeReference:Deno.env.get('COTIRONDA_PILOT_V2_REFERENCE_LINK_ENABLED')==='true'
+     },{
+      rpc:async(name,params)=>{
+       const {data,error}=await db.rpc(name,params??{});
+       return {data,error};
+      },
+      post:(url,init)=>fetch(url,init)
+     });
+     if(delivery.state==='reconciliation'){
+      return new Response(JSON.stringify({state:'v2_dispatch_reconciliation_required'}),{
+       status:503,headers:{'content-type':'application/json','cache-control':'no-store'}
+      });
+     }
+    }catch{
+     return new Response(JSON.stringify({state:'v2_dispatch_unavailable'}),{
       status:503,headers:{'content-type':'application/json','cache-control':'no-store'}
      });
     }
