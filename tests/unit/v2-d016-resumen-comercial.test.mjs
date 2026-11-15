@@ -61,7 +61,7 @@ test('D016 cantidades ambiguas y rubros distintos no se cuentan',()=>{
  const wrong={...input,quotedItems:[
   {...input.quotedItems[0],quantity:'a confirmar'},
   {...input.quotedItems[1],ambiguity:'se requiere revisión'},
-  {...input.quotedItems[2],description:'Arena fina - bolsón 1 m³'}
+  {...input.quotedItems[2],description:'Pintura látex interior - lata de 20 litros'}
  ]};
  assert.equal(resumirOfertaComercialV2(wrong,points).cobertura?.identificados,0);
 });
