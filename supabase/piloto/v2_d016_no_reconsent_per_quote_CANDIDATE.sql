@@ -14,7 +14,7 @@ BEGIN
  IF md5(v_before)<>'993744679c3ac20eba9a7ae845580e79'
  THEN RAISE EXCEPTION 'v2_responders_source_drift';END IF;
  v_start:=strpos(v_before,'    -- Segundo comprobante independiente.');
- v_end:=strpos(v_before,'    AND link.source_sha256');
+ v_end:=v_start-1+strpos(substr(v_before,v_start),'    AND link.source_sha256');
  IF v_start<1 OR v_end<=v_start
  THEN RAISE EXCEPTION 'v2_responders_evidence_boundaries_changed';END IF;
  v_sql:=substr(v_before,1,v_start-1)
@@ -32,7 +32,7 @@ BEGIN
  IF md5(v_after)<>'b0e49ded293ebd2c45904c34b1d5d3e8'
  THEN RAISE EXCEPTION 'v2_source_function_drift';END IF;
  v_start:=strpos(v_after,'  -- La fuente puede haber quedado revocada');
- v_end:=strpos(v_after,'  RETURN v_catalog;',v_start);
+ v_end:=v_start-1+strpos(substr(v_after,v_start),'  RETURN v_catalog;');
  IF v_start<1 OR v_end<=v_start
  THEN RAISE EXCEPTION 'v2_source_evidence_boundaries_changed';END IF;
  v_sql:=substr(v_after,1,v_start-1)
