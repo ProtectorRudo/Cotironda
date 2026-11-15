@@ -115,6 +115,10 @@ test('V2 scheduled delivery reuses verified lease + SHA + AES-GCM recipient and 
    assert.equal(body.to,recipient);
    assert.match(body.media,/^data:application\/pdf;name=Solicitud-Cotironda\.pdf;base64,/);
    assert.match(body.caption,/Cotironda pedido:/);
+   assert.match(body.caption,/solo los comercios que respondan/);
+   const pdfText=Buffer.from(body.media.split(',')[1],'base64').toString('latin1');
+   assert.match(pdfText,/Solo comercios que respondan/);
+   assert.doesNotMatch(pdfText,/TODOS los proveedores invitados/);
    return {ok:true,json:async()=>({sent:true,message_id:'wamid.SYNTHETIC12345'})};
   }
  });
