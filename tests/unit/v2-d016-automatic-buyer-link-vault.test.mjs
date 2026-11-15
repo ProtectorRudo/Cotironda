@@ -111,6 +111,8 @@ test('auto sends D016 private one-time URL after authenticated dispatch exactly 
   assert.match(deliveredBody,/\/piloto\/v2\/acceso#d016=/);
   assert.match(deliveredBody,/ronda=665759f0-251b-4a2b-afb4-d763612366f7/);
   assert.doesNotMatch(deliveredBody,/https:\/\/.*\/originales/);
+  assert.doesNotMatch(deliveredBody,/SEGUIMIENTO COTI/);
+  assert.match(deliveredBody,/sin enviar nada más/);
   return {ok:true,json:async()=>({
    sent:true,message_id:'wamid.SYNTHETIC12345'
   })};
