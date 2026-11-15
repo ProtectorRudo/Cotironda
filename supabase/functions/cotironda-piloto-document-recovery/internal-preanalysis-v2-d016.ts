@@ -6,7 +6,8 @@
  * Datos del original únicamente en RPC service_role + Storage privada + IA.
  */
 import {procesarTrabajoOfflineD016} from '../cotironda-piloto-v2-worker-d016/worker-core.ts';
-import {leerPdfOriginalPorEdgeV2} from '../../../src/server/v2-04c-pdf-edge-client.ts';
+import {readPdfPositioned} from '../cotironda-piloto-whapi/supplier-source-pdf-general.ts';
+import {createHash} from 'node:crypto';
 
 type Trabajo=Readonly<{
   url:string;apiKey:string;aesHex:string;
@@ -58,11 +59,26 @@ export async function runPrivatePreanalysisVaultD016(
    readStorage:async({bucket,path})=>
     bucket==='cotironda-piloto-originals'&&PRIVATE_PATH.test(path)
      ?x.readPrivate(path):null,
-   pdfReader:(bytes,sha)=>leerPdfOriginalPorEdgeV2(bytes,sha,{
-    COTIRONDA_PILOT_SUPABASE_URL:x.url,
-    COTIRONDA_PILOT_V2_PDF_ENABLED:x.pdfEnabled,
-    COTIRONDA_PILOT_V2_PDF_SHARED_SECRET:x.pdfSecret
-   })
+   // Same positioned PDF.js reader already used by Cotironda.
+   // The private cron already holds the verified original bytes; no HTTP
+   // hop or second shared secret. Match the existing PDF reader's bounds.
+   pdfReader:async(bytes,sha)=>{
+    if(bytes.length<120||bytes.length>8388608||
+      !HEX64.test(sha)||
+      createHash('sha256').update(bytes).digest('hex')!==sha)return null;
+    try{
+     const parsed=await readPdfPositioned(bytes);
+     if(parsed.scanned||parsed.pages<1||parsed.pages>12||
+       parsed.rows.length<1||parsed.rows.length>300||
+       parsed.rows.some(row=>row.page<1||row.page>parsed.pages||
+        typeof row.text!=='string'||row.text.length>2000))return null;
+     const text=parsed.rows.map(row=>row.text.trim()).filter(Boolean).join('\n');
+     if(text.length<40||text.length>24000||
+      /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/u.test(text))return null;
+     return {text,sourceSha256:sha,
+      textSha256:createHash('sha256').update(text,'utf8').digest('hex')};
+    }catch{return null}
+   }
   });
   if(result.status!==200)return 'unavailable';
   const payload=await result.json() as {state?:string};
