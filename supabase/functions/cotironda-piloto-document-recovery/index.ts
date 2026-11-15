@@ -110,9 +110,10 @@ Deno.serve(async(req)=>{
    }
    // Auto D016 buyer link on the SAME Vault-authenticated cron, after
    // supplier dispatch. No new buyer command/event, no second cron.
-   // Disabled unless the existing D016 + Whapi outbound flags are ON.
-   if(Deno.env.get('COTIRONDA_PILOT_D016_WHATSAPP_SEND_ENABLED')==='true'&&
-      Deno.env.get('COTIRONDA_PILOT_WHAPI_OUTBOUND_ENABLED')==='true'){
+   // Approved AUTO V2 pilot: the D016 inbound-send flag can remain OFF.
+   // SQL verifies the original buyer event and two accepted supplier sends;
+   // Whapi outbound remains mandatory and no originals are opened.
+   if(Deno.env.get('COTIRONDA_PILOT_WHAPI_OUTBOUND_ENABLED')==='true'){
     try{
      const link=await sendAutomaticBuyerLinkD016({
       enabled:true,
