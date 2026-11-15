@@ -32,8 +32,11 @@ export type FuenteTextoVerificadaV2=Readonly<{
  tipo:'whatsapp_text'|'texto_extraido_de_original';
  originalAutenticado:true;
  proveedorAutenticado:true;
- consentimientoOriginalVerificado:true;
- compradorAutorizado:true;
+ // Enviar el original al comprador requiere su permiso único vigente.
+ // Analizarlo INTERNAMENTE no autoriza a publicarlo.
+ consentimientoOriginalVerificado:boolean;
+ compradorAutorizado:boolean;
+ procesamientoInternoPrivado?:true;
  fuente:string;
 }>;
 type Model='gpt-6-luna'|'gpt-6.1-sol';
@@ -146,7 +149,10 @@ export async function analizarOriginalTextoConIAV2(args:{
  const sha=typeof f?.sha256==='string'?f.sha256:'';
  if(!f||!UUID.test(doc)||!SHA.test(sha)||
   f.originalAutenticado!==true||f.proveedorAutenticado!==true||
-  f.consentimientoOriginalVerificado!==true||f.compradorAutorizado!==true||
+  !((f.consentimientoOriginalVerificado===true&&f.compradorAutorizado===true)||
+    (f.procesamientoInternoPrivado===true&&
+     f.consentimientoOriginalVerificado===false&&
+     f.compradorAutorizado===false))||
   !['whatsapp_text','texto_extraido_de_original'].includes(f.tipo)||
   typeof f.fuente!=='string'||f.fuente.length<40||
   f.fuente.length>24000)
