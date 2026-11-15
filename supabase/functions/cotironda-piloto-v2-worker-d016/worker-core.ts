@@ -1,6 +1,6 @@
 /** Cotironda V2 D016 background analyzer. Edge ONLY; no browser session.
  * Every SQL call and original is independently gated by buyer WhatsApp proof,
- * supplier consent, pilot V2 policies and approved calendar. Max ONE offer/tick.
+ * supplier enrollment, pilot V2 policies and approved calendar. Max ONE offer/tick.
  * No PII, ciphertext, price list, AI response or API keys in HTTP/log output.
  */
 import {obtenerTextoVerificadoV2,type PdfSourceReaderV2}
@@ -73,8 +73,8 @@ function sourceOk(raw:unknown,j:Job):Source|null{
   typeof raw.buyerKey!=='string'||raw.buyerKey.length<3||
   typeof raw.supplierKey!=='string'||raw.supplierKey.length<3||
   typeof raw.messageHmac!=='string'||!HMAC.test(raw.messageHmac)||
-  typeof raw.consentAt!=='number'||raw.consentAt<=0||
-  typeof raw.invitedAt!=='number'||raw.invitedAt<raw.consentAt)return null;
+  typeof raw.enrolledAt!=='number'||raw.enrolledAt<=0||
+  typeof raw.invitedAt!=='number'||raw.invitedAt<raw.enrolledAt)return null;
  if(raw.state==='authorized_text_v2'){
   if(raw.mime!=='text/plain'||typeof raw.chatHmac!=='string'||
    !HMAC.test(raw.chatHmac))return null;
@@ -143,7 +143,7 @@ export async function procesarTrabajoOfflineD016(
      bytes,mime:src.mime,shaBinario:src.sha256,pdfReader:ports.pdfReader
     });
     if(verified){
-     // No IA with stale source/consent, even if original bytes are valid.
+     // No IA with stale source/enrollment, even if original bytes are valid.
      const before=sourceOk(await ports.source(scope),job);
      if(!before||JSON.stringify(before)!==JSON.stringify(src))
       return output(200,'revoked',{checked:1,ready:0,review:0});
@@ -152,7 +152,8 @@ export async function procesarTrabajoOfflineD016(
       fuente:{documentoId:job.documentId,sha256:verified.shaTexto,
        tipo:'texto_extraido_de_original',fuente:verified.fuente,
        originalAutenticado:true,proveedorAutenticado:true,
-       consentimientoOriginalVerificado:true,compradorAutorizado:true
+       consentimientoOriginalVerificado:false,compradorAutorizado:false,
+       procesamientoInternoPrivado:true
       },
       apiKey:config.apiKey,model:'gpt-6-luna'
      });
