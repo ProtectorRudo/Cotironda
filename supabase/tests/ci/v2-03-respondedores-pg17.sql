@@ -574,6 +574,8 @@ INSERT INTO cotironda_piloto_privado.v2_business_calendar VALUES
   'America/Argentina/Buenos_Aires')::integer,'lp_piloto_2026',
   now()-interval '16 days');
 \ir ../../piloto/v2_d016_worker_offline_CANDIDATE.sql
+-- Preanálisis interno sin permiso de divulgación: solo service_role.
+\ir ../../piloto/v2_d016_worker_internal_preanalysis_CANDIDATE.sql
 \ir ../../piloto/v2_d016_cierre_habil_CANDIDATE.sql
 \ir ../../piloto/v2_d016_informe_final_CANDIDATE.sql
 \ir ../fixtures/v2-d016-response-checks.sql
