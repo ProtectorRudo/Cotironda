@@ -33,7 +33,9 @@ export function AccesoWhatsappD016(){
     if(!response.ok||!data||typeof data!=='object'||
        (data as Record<string,unknown>).state!=='SESSION_CREATED')
      throw Error('denied');
-    window.location.replace('/piloto/v2/rondas/'+encodeURIComponent(ronda)+'/whatsapp');
+    // El enlace sigue validando su ronda original en SQL, pero el destino
+    // comercial es el perfil estable con todo el historial del comprador.
+    window.location.replace('/piloto/v2/mi-cotironda');
    }catch{
     if(mounted.current)setMessage('Este enlace venció o no pudo verificarse. Pedí uno nuevo por WhatsApp.');
    }
