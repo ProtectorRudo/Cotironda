@@ -26,6 +26,28 @@ CREATE TABLE cotironda_piloto_privado.v2_d016_owner_original_attestations(
 ALTER TABLE cotironda_piloto_privado.v2_d016_owner_original_attestations ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON cotironda_piloto_privado.v2_d016_owner_original_attestations FROM PUBLIC,anon,authenticated;
 GRANT SELECT,UPDATE ON cotironda_piloto_privado.v2_d016_owner_original_attestations TO service_role;
+-- Constancia inmutable: solo se puede revocar una vez; no borrar, editar ni rehabilitar.
+CREATE FUNCTION cotironda_piloto_privado.v2_d016_owner_attestation_immutable_private()
+RETURNS trigger LANGUAGE plpgsql SET search_path TO '' AS $immutable$
+BEGIN
+ IF TG_OP='DELETE' THEN RAISE EXCEPTION 'owner_consent_attestation_cannot_delete'; END IF;
+ IF TG_OP='UPDATE' THEN
+  IF OLD.revoked_at IS NOT NULL OR NEW.revoked_at IS NULL
+   OR NEW.revoked_at<OLD.recorded_at
+   OR ROW(NEW.supplier_key,NEW.request_id,NEW.attested_by,NEW.evidence_kind,
+          NEW.consent_scope,NEW.declaration_sha256,NEW.recorded_at)
+      IS DISTINCT FROM
+      ROW(OLD.supplier_key,OLD.request_id,OLD.attested_by,OLD.evidence_kind,
+          OLD.consent_scope,OLD.declaration_sha256,OLD.recorded_at)
+  THEN RAISE EXCEPTION 'owner_consent_attestation_immutable'; END IF;
+ END IF;
+ RETURN NEW;
+END $immutable$;
+REVOKE ALL ON FUNCTION cotironda_piloto_privado.v2_d016_owner_attestation_immutable_private()
+ FROM PUBLIC,anon,authenticated;
+CREATE TRIGGER v2_d016_owner_attestation_immutable
+ BEFORE UPDATE OR DELETE ON cotironda_piloto_privado.v2_d016_owner_original_attestations
+ FOR EACH ROW EXECUTE FUNCTION cotironda_piloto_privado.v2_d016_owner_attestation_immutable_private();
 CREATE FUNCTION cotironda_piloto_privado.v2_d016_effective_original_consent_private(
  p_supplier_key text,p_request_id uuid,p_chat_hmac text,p_invited_at timestamptz
 ) RETURNS timestamptz LANGUAGE sql STABLE SET search_path TO '' AS $effective$
