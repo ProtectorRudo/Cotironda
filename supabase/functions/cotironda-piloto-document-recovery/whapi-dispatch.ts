@@ -152,6 +152,33 @@ const V2_UNITS:Readonly<Record<string,string>>={
 };
 const v2Object=(x:unknown):x is Record<string,unknown>=>
  x!==null&&typeof x==='object'&&!Array.isArray(x);
+
+/** SQL numeric(12,3): 10.000 represents TEN, not ten thousand.
+ * Preserve the exact supplier-item wording when it already states quantity.
+ */
+export function lineaSolicitudTextoV2(item:Readonly<{
+ description:string;quantity:string;unit:string
+}>):string{
+ const unit=V2_UNITS[item.unit];
+ if(!unit||!/^([1-9]\d*|0)(?:\.\d{1,3})?$/u.test(item.quantity)||
+    Number(item.quantity)<=0||Number(item.quantity)>1000000)
+  throw Error('v2_unrecognized_quantity_or_unit');
+ const quantity=item.quantity.replace(/\.0+$/u,'')
+  .replace(/(\.\d*?[1-9])0+$/u,'$1');
+ const description=item.description.trim();
+ const bagPrefix=description.match(
+  /^(\d+(?:[.,]\d{1,3})?)\s+(bolsas?|bolsones?|bols[oó]n(?:es)?)\b/iu
+ );
+ if(bagPrefix&&item.unit==='bag'){
+  if(Number(bagPrefix[1].replace(',','.'))!==Number(item.quantity))
+   throw Error('v2_description_quantity_mismatch');
+  return '- '+description;
+ }
+ const unitText=item.unit==='bag'&&quantity==='1'?'bolsa':
+  item.unit==='unit'&&quantity==='1'?'unidad':unit;
+ return '- '+quantity.replace('.',',')+' '+unitText+' · '+description;
+}
+
 export async function dispatchPendingVerifiedV2SupplierTexts(
  config:Readonly<{
   enabled:boolean;dynamicRecipientsEnabled:boolean;
@@ -229,11 +256,7 @@ export async function dispatchPendingVerifiedV2SupplierTexts(
    }).format(new Date(snapshot.deadlineIso));
    const ref=config.includeReference?etiquetaReferenciaPedidoV2(requestId):null;
    if(!ref)throw Error('buyer_round_reference_unavailable');
-   const lines=snapshot.items.map(item=>{
-    const unit=V2_UNITS[item.unit];
-    if(!unit)throw Error('supplier_unit_unrecognized');
-    return '- '+item.quantity+' '+unit+' · '+item.description;
-   });
+   const lines=snapshot.items.map(lineaSolicitudTextoV2);
    const note=snapshot.deliveryNote?
     '\nEntrega solicitada: '+snapshot.deliveryNote:'';
    if(note&&V2_SENSITIVE.test(note))throw Error('private_delivery_note');
