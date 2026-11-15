@@ -75,6 +75,7 @@ test('V2 scheduled text delivery reuses verified lease + SHA + AES-GCM recipient
  };
  const calls=[];
  let claims=0,posts=0,finishes=0;
+ let lastUrl='',lastBody=null;
  const rpc=async(name,params)=>{
   calls.push(name);
   if(name==='cotironda_piloto_v2_d013_scheduled_dispatch_due_private')
@@ -100,7 +101,8 @@ test('V2 scheduled text delivery reuses verified lease + SHA + AES-GCM recipient
    finishes++;
    assert.equal(params.p_request,requestId);
    assert.equal(params.p_supplier,supplier);
-   assert.equal(params.p_state,'api_accepted');
+   assert.equal(params.p_state,'api_accepted',
+    JSON.stringify({posts,claims,calls,lastUrl,lastBody}));
    assert.equal(params.p_message_id,'wamid.SYNTHETIC12345');
    return {data:true,error:null};
   }
@@ -110,21 +112,21 @@ test('V2 scheduled text delivery reuses verified lease + SHA + AES-GCM recipient
   rpc,
   post:async(url,init)=>{
    posts++;
-   assert.equal(url,'https://gate.whapi.cloud/messages/text');
-   const body=JSON.parse(init.body);
-   assert.equal(body.to,recipient);
-   assert.match(body.body,/Cotironda pedido: 665759F0/);
-   assert.match(body.body,/10 bolsas · Cemento CPC 50 kg/);
-   assert.match(body.body,/1 bolsas · Bolsón arena fina 1 m3/);
-   assert.match(body.body,/17\/11\/2026/);
-   assert.match(body.body,/solo los comercios que respondan/);
-   assert.doesNotMatch(body.body,/TODOS los proveedores invitados/);
-   assert.equal(body.media,undefined);
+   lastUrl=url;
+   lastBody=JSON.parse(init.body);
    return {ok:true,json:async()=>({sent:true,message_id:'wamid.SYNTHETIC12345'})};
-  }
- });
+  } });
  assert.deepEqual(result,{state:'processed',claimed:1,accepted:1,uncertain:0});
  assert.equal(posts,1);
+ assert.equal(lastUrl,'https://gate.whapi.cloud/messages/text');
+ assert.equal(lastBody.to,recipient);
+ assert.match(lastBody.body,/Cotironda pedido: 665759F0/);
+ assert.match(lastBody.body,/10 bolsas · Cemento CPC 50 kg/);
+ assert.match(lastBody.body,/1 bolsas · Bolsón arena fina 1 m3/);
+ assert.match(lastBody.body,/17\\/11\\/2026/);
+ assert.match(lastBody.body,/solo los comercios que respondan/);
+ assert.doesNotMatch(lastBody.body,/TODOS los proveedores invitados/);
+ assert.equal(lastBody.media,undefined);
  assert.equal(finishes,1);
  assert.equal(claims,2);
  assert.equal(calls.filter(x=>x==='cotironda_piloto_ia_recipient_packet_mvp313').length,2);
