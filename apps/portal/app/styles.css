@@ -93,3 +93,74 @@
  .coti-dashboard-actions{width:100%}
  .coti-buyer-portal .coti-dashboard-actions button{flex:1}
 }
+
+/* D017 MI COTIRONDA: dashboard histórico, sin afectar tarjetas de presupuesto. */
+.coti-profile-shell{width:min(910px,calc(100% - 34px));margin:38px auto 95px;min-height:58vh}
+.coti-profile-heading{margin-bottom:27px}
+.coti-profile-heading h1{font-size:clamp(29px,5.1vw,44px);letter-spacing:-.05em;
+ line-height:1.09;color:#f3fbfb;margin:8px 0 9px}
+.coti-profile-heading p{max-width:620px;color:#9fb9c4;font-size:14px;line-height:1.6;margin:0}
+.coti-profile-welcome{display:flex;align-items:center;justify-content:space-between;gap:18px;
+ padding:25px;border:1px solid #2b5159;border-radius:19px;
+ background:linear-gradient(105deg,#18433e 0%,#172f42 78%);margin-bottom:16px}
+.coti-profile-welcome h2{font-size:clamp(19px,3.2vw,24px);
+ color:#f4fafb;line-height:1.2;letter-spacing:-.028em;margin:9px 0}
+.coti-profile-welcome p{font-size:13px;color:#b0c9cb;line-height:1.55;margin:0}
+.coti-profile-welcome .button{white-space:nowrap}
+.coti-profile-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:32px}
+.coti-profile-stats>div{border:1px solid #2b4756;border-radius:14px;
+ background:#132a3a;padding:17px;display:flex;flex-direction:column;gap:8px}
+.coti-profile-stats span{font-size:12px;color:#9fb8c5;font-weight:650}
+.coti-profile-stats strong{font-weight:800;font-size:30px;line-height:1.12;color:#ebf8f8}
+.coti-history-group{margin:24px 0}
+.coti-history-title{display:flex;align-items:baseline;justify-content:space-between;
+ flex-wrap:wrap;gap:8px 12px;margin-bottom:13px}
+.coti-history-title h2{font-size:18px;letter-spacing:-.02em;color:#eaf6f6;margin:0}
+.coti-history-title>span{font-size:12px;color:#95b0bc}
+.coti-history-item{display:flex;align-items:center;gap:15px;border:1px solid #294858;
+ border-radius:15px;background:#132938;padding:17px;margin:9px 0;
+ transition:background-color .15s,border-color .15s;min-width:0}
+.coti-history-item:hover,.coti-history-item:focus-visible{background:#1a3845;
+ border-color:#55caae;outline:none}
+.coti-history-date-icon{flex:none;width:57px;height:57px;border-radius:12px;
+ background:#193f3f;border:1px solid #2d645d;display:flex;flex-direction:column;
+ justify-content:center;align-items:center;gap:1px}
+.coti-history-date-icon>span{font-size:22px;font-weight:800;color:#71e9cb;line-height:1}
+.coti-history-date-icon>small{font-size:11px;color:#c3ddd7;text-transform:uppercase}
+.coti-history-details{min-width:0;flex:1}
+.coti-history-mainline{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.coti-history-mainline>strong{font-size:15px;line-height:1.4;color:#eff9fa;font-weight:750}
+.coti-history-state{padding:3px 8px;border-radius:7px;font-size:10px;
+ font-weight:800;line-height:1.5}
+.coti-history-state.active{background:#164439;color:#67efbf}
+.coti-history-state.closed{background:#2d3a4c;color:#c8d8e3}
+.coti-history-state.draft{background:#443b2c;color:#ebd1a0}
+.coti-history-details p{font-size:12px;margin:4px 0 6px;color:#a7beca;line-height:1.45}
+.coti-history-documents{color:#7ee1c7;font-size:12px;line-height:1.45}
+.coti-history-chevron{flex:none;font-size:30px;color:#72c4b4;font-weight:300;
+ line-height:1}
+.coti-profile-privacy{color:#829eae;font-size:12px;line-height:1.6;margin:24px 0}
+.coti-profile-message{background:#172f3d;border:1px solid #31515d;
+ padding:25px;border-radius:16px;color:#cadce0;font-size:14px;line-height:1.6}
+.coti-profile-message h2{font-size:18px;color:#eff9fa;margin:0 0 10px}
+.coti-profile-message p{margin:4px 0 12px}
+.coti-profile-message a{color:#6be9c4;text-decoration:underline}
+.coti-back-link{display:inline-flex;align-items:center;margin:3px 0 26px;
+ font-size:13px;font-weight:700;color:#75e3c6;min-height:30px}
+.coti-back-link:hover{text-decoration:underline}
+.coti-profile-shell .coti-buyer-dashboard .coti-dashboard-top{margin-top:0}
+@media(max-width:650px){
+ .coti-profile-shell{width:calc(100% - 26px);margin:26px auto 70px}
+ .coti-profile-welcome{padding:18px;align-items:flex-start;flex-direction:column}
+ .coti-profile-welcome button{width:100%}
+ .coti-profile-stats{gap:7px;margin-bottom:26px}
+ .coti-profile-stats>div{padding:13px 10px}
+ .coti-profile-stats span{font-size:10px;line-height:1.35}
+ .coti-profile-stats strong{font-size:26px}
+ .coti-history-item{padding:12px;gap:10px}
+ .coti-history-date-icon{width:46px;height:49px}
+ .coti-history-date-icon>span{font-size:20px}
+ .coti-history-mainline>strong{font-size:13px}
+ .coti-history-details p,.coti-history-documents{font-size:11px}
+ .coti-history-chevron{font-size:24px}
+}
