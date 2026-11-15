@@ -123,7 +123,7 @@ test('V2 scheduled text delivery reuses verified lease + SHA + AES-GCM recipient
  assert.match(lastBody.body,/Cotironda pedido: 665759F0/);
  assert.match(lastBody.body,/10 bolsas · Cemento CPC 50 kg/);
  assert.match(lastBody.body,/1 bolsas · Bolsón arena fina 1 m3/);
- assert.match(lastBody.body,/17\\/11\\/2026/);
+ assert.ok(lastBody.body.includes('17/11/2026'));
  assert.match(lastBody.body,/solo los comercios que respondan/);
  assert.doesNotMatch(lastBody.body,/TODOS los proveedores invitados/);
  assert.equal(lastBody.media,undefined);
