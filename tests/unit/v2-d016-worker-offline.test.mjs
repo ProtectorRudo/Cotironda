@@ -25,7 +25,7 @@ const request=(c={})=>new Request(URL+(c.query??''),{
  ...(c.cookie?{'cookie':c.cookie}:{})},
  body:c.method==='GET'?undefined:c.body??'{}'
 });
-const file=()=>({state:'authorized_original_v2',
+const file=()=>({state:'internal_original_v2',
  ...job(),buyerKey:'buyer_a',supplierKey:'supplier_a',
  messageHmac:MESSAGE,sha256:SHA,enrolledAt:1700000000000,invitedAt:1700000000001,
  bucket:'cotironda-piloto-originals',path:'media/'+MESSAGE,byteCount:BYTES.length});
