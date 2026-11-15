@@ -1,3 +1,4 @@
+import {createHmac} from 'node:crypto';
 /** D016: adaptador Node/Next aislado, SIN SMS ni sesiones GoTrue falsas.
  * No se habilita sin Preview+SHA+secreto exactos ni RPC privada.
  */
@@ -397,8 +398,6 @@ export async function enviarNuevoAccesoWhatsappD016(
   req.headers.get('x-cotironda-reissue')!=='1')
   return deny(403);
  if((await req.text().catch(()=>'')).length!==0)return deny(400);
- const secret=env.COTIRONDA_D016_REISSUE_SHARED_SECRET??'';
- if(secret.length<40)return deny(503);
  const db=privateDb(env);
  const rawCookie=cookieSesionD016(req);
  const digest=rawCookie?digestSesionPrivadaD016(rawCookie,gate.claveHmacHex):null;
@@ -419,12 +418,16 @@ export async function enviarNuevoAccesoWhatsappD016(
   const again=after.error?null:proyectarHistorialPrivadoD017(after.data);
   if(!again||!again.cotizaciones.some(r=>
     r.rondaId===selected.rondaId&&r.ofertasDisponibles))return deny();
+  const body=JSON.stringify({requestId:selected.rondaId,
+   sessionHmac:digest,operationId:crypto.randomUUID()});
+  const sentAt=String(Date.now());
+  const signature=createHmac('sha256',Buffer.from(gate.claveHmacHex,'hex'))
+   .update('cotironda/d016/reissue/v1\\n'+sentAt+'\\n'+body,'utf8')
+   .digest('hex');
   const reply=await fetch(PILOT+'/functions/v1/cotironda-piloto-v2-reemitir-acceso',{
-   method:'POST',headers:{authorization:'Bearer '+secret,
-    'content-type':'application/json'},
-   body:JSON.stringify({requestId:selected.rondaId,
-    sessionHmac:digest,operationId:crypto.randomUUID()}),
-   cache:'no-store',signal:AbortSignal.timeout(18000)
+   method:'POST',headers:{'content-type':'application/json',
+    'x-cotironda-time':sentAt,'x-cotironda-signature':signature},
+   body,cache:'no-store',signal:AbortSignal.timeout(18000)
   });
   if(!reply.ok)return deny(reply.status===403?429:503);
   const state:unknown=await reply.json().catch(()=>null);
