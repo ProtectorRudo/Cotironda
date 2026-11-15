@@ -546,5 +546,75 @@ BEGIN
 END $v214$;
 -- El fixture V2-07 agrega un comprador con teléfono duplicado
 -- deliberadamente; ejecutar después para no invalidar la sesión V2-14.
+-- D016 candidato independiente: misma fuente original, nuevos controles cookie.
+\ir ../../piloto/v2_d016_whatsapp_link_tickets_CANDIDATE.sql
+\ir ../../piloto/v2_d016_respuestas_y_originales_CANDIDATE.sql
+\ir ../../piloto/v2_d016_analisis_automatico_CANDIDATE.sql
+-- Estado calendario de dos días hábiles sintético; nunca modifica PILOTO.
+ALTER TABLE cotironda_piloto_privado.requests
+ ADD COLUMN timing_mode text NOT NULL DEFAULT 'legacy_calendar',
+ ADD COLUMN round_days smallint NOT NULL DEFAULT 5,
+ ADD COLUMN v2_calendar_revision text,
+ ADD COLUMN delivery_city text NOT NULL DEFAULT 'La Plata',
+ ADD COLUMN closed_at timestamptz;
+CREATE TABLE cotironda_piloto_privado.v2_business_policy(
+ singleton boolean PRIMARY KEY,enabled boolean,activated_at timestamptz);
+CREATE TABLE cotironda_piloto_privado.v2_business_calendar(
+ locality text,year integer,revision text,approved_at timestamptz);
+CREATE TABLE cotironda_piloto_privado.v2_business_holidays(
+ locality text,day date,calendar_year integer,description text,evidence text);
+CREATE TABLE cotironda_piloto_privado.v2_auto_release_policy(
+ singleton boolean PRIMARY KEY,enabled boolean,activated_at timestamptz);
+INSERT INTO cotironda_piloto_privado.v2_business_policy VALUES
+ (true,true,now()-interval '16 days');
+INSERT INTO cotironda_piloto_privado.v2_auto_release_policy VALUES
+ (true,true,now()-interval '16 days');
+INSERT INTO cotironda_piloto_privado.v2_business_calendar VALUES
+ ('la plata',extract(year from now() AT TIME ZONE
+  'America/Argentina/Buenos_Aires')::integer,'lp_piloto_2026',
+  now()-interval '16 days');
+\ir ../../piloto/v2_d016_worker_offline_CANDIDATE.sql
+\ir ../../piloto/v2_d016_cierre_habil_CANDIDATE.sql
+\ir ../../piloto/v2_d016_informe_final_CANDIDATE.sql
+\ir ../fixtures/v2-d016-response-checks.sql
+-- Replica aquí las restricciones efectivas del piloto 2026: las pruebas
+-- antiguas no las conocían y permitían falsos cierres a las 10:00.
+-- Las rondas ya incluidas son históricas sintéticas: NOT VALID evita
+-- reescribirlas; cada UPDATE/INSERT a partir de aquí sí está sujeto a CHECK.
+ALTER TABLE cotironda_piloto_privado.requests
+ ADD COLUMN original_request text NOT NULL
+ DEFAULT 'Synthetic request fixture for D016 pilot tests';
+ALTER TABLE cotironda_piloto_privado.requests
+ ADD CONSTRAINT d016_real_timing_check CHECK (
+  (timing_mode='legacy_calendar' AND
+   round_days BETWEEN 3 AND 7 AND v2_calendar_revision IS NULL)
+  OR (timing_mode='business_two_days' AND round_days=2 AND
+   v2_calendar_revision ~ '^[a-z0-9_-]{4,50}$')
+ ) NOT VALID;
+ALTER TABLE cotironda_piloto_privado.requests
+ ADD CONSTRAINT d016_real_business_close_check CHECK (
+  (timing_mode='legacy_calendar' AND
+   extract(epoch from (closes_at-created_at))=round_days*86400)
+  OR (timing_mode='business_two_days' AND closes_at>created_at AND
+   (closes_at AT TIME ZONE 'America/Argentina/Buenos_Aires')::time=time '18:00'
+   AND closes_at-created_at<interval '36 days')
+ ) NOT VALID;
+ALTER TABLE cotironda_piloto_privado.requests
+ ADD CONSTRAINT d016_real_closed_state_check CHECK (
+  (state='closed' AND closed_at IS NOT NULL AND closed_at>=closes_at)
+  OR (state<>'closed' AND closed_at IS NULL)
+ ) NOT VALID;
+ALTER TABLE cotironda_piloto_privado.v2_business_calendar
+ ADD COLUMN source_note text NOT NULL DEFAULT
+ 'Synthetic CI calendar, never activate real holidays';
+ALTER TABLE cotironda_piloto_privado.v2_business_calendar
+ ADD CONSTRAINT d016_real_locality_check
+ CHECK (locality=lower(btrim(locality))) NOT VALID;
+ALTER TABLE cotironda_piloto_privado.v2_business_calendar
+ ADD PRIMARY KEY(locality,year);
+ALTER TABLE cotironda_piloto_privado.v2_business_holidays
+ ADD CONSTRAINT d016_calendar_holiday_fk FOREIGN KEY(locality,calendar_year)
+ REFERENCES cotironda_piloto_privado.v2_business_calendar(locality,year);
+\ir ../fixtures/v2-d016-offline-closure-checks.sql
 \ir ../fixtures/v2-07-buyer-auth-checks.sql
 ROLLBACK;

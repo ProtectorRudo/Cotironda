@@ -1,0 +1,57 @@
+# Cotironda V2 D016 — ANÁLISIS OFFLINE PILOTO (APAGADO POR DEFECTO)
+# NO SE EJECUTA desde este PR: GitHub schedule sólo usa rama default.
+# Activar exclusivamente tras «Publicalo» PILOTO, merge auditado,
+# Edge/SQL con permisos y presupuesto aprobados.
+# Servicio directo HTTPS -> Edge: NO usa pg_net ni expone secrets en SQL.
+# 13 y 43 UTC: dos veces/hora y fuera del minuto 0 (schedules pueden tardar).
+# ~48 ejecuciones/día, sujeto a cuotas de GitHub Actions del repositorio.
+name: Cotironda PILOTO D016 - IA offline protegida
+on:
+  schedule:
+    - cron: '13,43 * * * *'
+  workflow_dispatch:
+permissions: {}
+concurrency:
+  group: cotironda-d016-worker-piloto
+  cancel-in-progress: false
+jobs:
+  worker:
+    # Variables y secretos faltantes => NO hay llamadas ni cobros de IA.
+    if: >-
+      ${{ github.repository == 'ProtectorRudo/Cotironda' &&
+          vars.COTIRONDA_D016_PILOTO_WORKER_ENABLED == 'true' &&
+          vars.COTIRONDA_D016_PILOT_REF == 'ilggkalaafhtiysyzlmg' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Comprobar piloto y llamar UNA vez al worker interno por HTTPS
+        shell: bash
+        env:
+          SERVICE_KEY: ${{ secrets.COTIRONDA_D016_WORKER_SERVICE_KEY }}
+          WORKER_SECRET: ${{ secrets.COTIRONDA_D016_WORKER_SHARED_SECRET }}
+        run: |
+          set -euo pipefail
+          set +x
+          if [[ "${SERVICE_KEY}" != sb_secret_* || ${#SERVICE_KEY} -lt 32 ]]; then
+            echo "D016 sin service key válida; no se invoca ningún endpoint"
+            exit 1
+          fi
+          if [[ ${#WORKER_SECRET} -lt 40 || "${WORKER_SECRET}" == "${SERVICE_KEY}" ]]; then
+            echo "D016 sin segundo secreto independiente; no se invoca ningún endpoint"
+            exit 1
+          fi
+          endpoint='https://ilggkalaafhtiysyzlmg.supabase.co/functions/v1/cotironda-piloto-v2-worker-d016'
+          # Sin --location, no redirects; el cuerpo de respuesta se descarta.
+          # No loguear headers, credenciales, request JSON ni resultado IA.
+          status=$(curl --silent --show-error --request POST --proto '=https' \
+            --tlsv1.2 --max-time 65 --retry 0 --output /dev/null \
+            --write-out '%{http_code}' \
+            --header 'content-type: application/json' \
+            --header "apikey: ${SERVICE_KEY}" \
+            --header "x-cotironda-d016-worker-internal: ${WORKER_SECRET}" \
+            --data '{}' "${endpoint}")
+          if [[ "${status}" != '200' ]]; then
+            echo "D016 worker PILOTO no disponible: HTTP ${status}"
+            exit 1
+          fi
+          echo 'D016 llamada interna completada (sin publicar datos ni presupuestos)'

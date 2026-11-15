@@ -7,6 +7,12 @@ on:
       - 'supabase/piloto/v2_04b_analisis_original_idempotente_privado.sql'
       - 'supabase/piloto/v2_07_buyer_auth_bootstrap_check_private.sql'
       - 'supabase/tests/fixtures/v2-07-buyer-auth-checks.sql'
+      - 'src/server/v2-d016-enlace-whatsapp.ts'
+      - 'tests/unit/v2-d016-enlace-whatsapp.test.mjs'
+      - 'supabase/piloto/v2_d016_whatsapp_link_tickets_CANDIDATE.sql'
+      - 'supabase/tests/ci/v2-d016-whatsapp-access-pg17.sql'
+      - 'docs/V2-D016-PUENTE-WHATSAPP-CANDIDATO-20261113.md'
+      - '.github/workflows/cotironda-d016-whatsapp-link-pg17.yml'
       - 'src/server/v2-07-primer-comprador-auth.ts'
       - 'tests/unit/v2-07-primer-comprador-auth.test.mjs'
       - 'src/server/v2-16-primer-sms-cotironda.ts'
@@ -115,6 +121,14 @@ jobs:
         run: node --experimental-strip-types --test tests/unit/v2-19-sms-sin-ofertas.test.mjs
       - name: Diagnostico SMS de solo lectura con SSO Preview y SHA
         run: node --experimental-strip-types --test tests/unit/v2-20-diagnostico-sms-http.test.mjs
+      - name: D016 WhatsApp token seguro sin SMS, fake JWT ni formulario
+        run: node --experimental-strip-types --test tests/unit/v2-d016-enlace-whatsapp.test.mjs
+      - name: D016 PG17 ticket TTL, canje único y rollback
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/v2-d016-whatsapp-access-pg17.sql
+          psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regnamespace('cotironda_piloto_privado') IS NULL" | grep -Fx 't'
+          psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regprocedure('public.cotironda_piloto_v2_d016_claim_ticket_private(text)') IS NULL" | grep -Fx 't'
       - name: PG17 aislamiento, autorizacion prospectiva y rollback
         run: |
           set -euo pipefail

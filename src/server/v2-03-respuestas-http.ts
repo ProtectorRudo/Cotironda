@@ -31,6 +31,7 @@ export type RespuestasPorts=Readonly<{
 export function ingresoCompradorV2Habilitado(env:RespuestasEnv):boolean{
  const sha=env.COTIRONDA_PILOT_V2_RESPONDERS_RELEASE_SHA;
  return env.COTIRONDA_PILOT_V2_AUTH_PAGE_ENABLED==='true'&&
+  env.COTIRONDA_D016_ENABLED!=='true'&&
   env.COTIRONDA_AUTH_PREVIEW_ENABLED==='true'&&
   env.VERCEL_ENV==='preview'&&
   env.COTIRONDA_REGISTRATION_ENABLED==='false'&&
@@ -44,6 +45,7 @@ export function ingresoCompradorV2Habilitado(env:RespuestasEnv):boolean{
 export function respuestasV2Habilitadas(env:RespuestasEnv):boolean{
  const sha=env.COTIRONDA_PILOT_V2_RESPONDERS_RELEASE_SHA;
  return env.COTIRONDA_PILOT_V2_RESPONDERS_ENABLED==='true'&&
+  env.COTIRONDA_D016_ENABLED!=='true'&&
   env.VERCEL_ENV==='preview'&&env.COTIRONDA_REGISTRATION_ENABLED==='false'&&
   env.COTIRONDA_PILOT_SUPABASE_URL===PILOT_URL&&
   env.COTIRONDA_PILOT_SUPABASE_PUBLISHABLE_KEY?.startsWith('sb_publishable_')===true&&

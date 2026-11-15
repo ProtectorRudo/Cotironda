@@ -1,0 +1,147 @@
+name: Cotironda D016 - ingreso WhatsApp seguro sin SMS
+on:
+  pull_request:
+    paths:
+      - 'src/server/v2-d016-enlace-whatsapp.ts'
+      - 'tests/unit/v2-d016-enlace-whatsapp.test.mjs'
+      - 'src/server/v2-d016-sesion-auth.ts'
+      - 'tests/unit/v2-d016-sesion-auth.test.mjs'
+      - 'src/server/v2-d016-supabase-gotrue.ts'
+      - 'tests/unit/v2-d016-supabase-gotrue.test.mjs'
+      - 'src/server/v2-d016-sesion-privada.ts'
+      - 'tests/unit/v2-d016-sesion-privada.test.mjs'
+      - 'tests/unit/v2-d016-whapi-envio.test.mjs'
+      - 'supabase/functions/cotironda-piloto-whapi/buyer-whatsapp-entry-d016.ts'
+      - 'supabase/functions/cotironda-piloto-whapi/index.ts'
+      - 'scripts/piloto/v2-d016-whapi-overlay.mjs'
+      - 'src/server/v2-d016-descarga-privada.ts'
+      - 'src/server/v2-d016-analisis-automatica.ts'
+      - 'src/server/v2-d016-informe-final.ts'
+      - 'tests/unit/v2-d016-informe-final.test.mjs'
+      - 'supabase/piloto/v2_d016_informe_final_CANDIDATE.sql'
+      - 'supabase/piloto/v2_d016_cierre_habil_CANDIDATE.sql'
+      - 'supabase/piloto/v2_d016_cron_ACTIVATE_ONLY_AFTER_PUBLICALO.sql'
+      - 'tests/unit/v2-d016-cron-guardias.test.mjs'
+      - 'supabase/piloto/v2_d016_preflight_SOLO_LECTURA.sql'
+      - 'tests/unit/v2-d016-preflight-solo-lectura.test.mjs'
+      - 'supabase/piloto/v2_d016_pgnet_acl_REVIEW_ONLY.sql'
+      - 'tests/unit/v2-d016-pgnet-acl-review.test.mjs'
+      - '.github/workflows/cotironda-d016-worker-piloto.yml'
+      - 'tests/unit/v2-d016-worker-scheduler.test.mjs'
+      - 'supabase/piloto/v2_d016_calendario_la_plata_2026_CANDIDATE.sql'
+      - 'tests/unit/v2-d016-calendario-legal.test.mjs'
+      - 'supabase/tests/ci/v2-d016-calendario-legal-pg17.sql'
+      - 'supabase/piloto/v2_d016_worker_offline_CANDIDATE.sql'
+      - 'supabase/functions/cotironda-piloto-v2-worker-d016/**'
+      - 'tests/unit/v2-d016-worker-offline.test.mjs'
+      - 'supabase/tests/fixtures/v2-d016-offline-closure-checks.sql'
+      - 'tests/unit/v2-d016-analisis-automatica.test.mjs'
+      - 'supabase/piloto/v2_d016_analisis_automatico_CANDIDATE.sql'
+      - 'src/server/v2-d016-texto-edge-client.ts'
+      - 'supabase/functions/cotironda-piloto-v2-text-reader-d016/**'
+      - 'tests/unit/v2-d016-texto-edge.test.mjs'
+      - 'supabase/config.toml'
+      - 'tests/unit/v2-d016-descarga-privada.test.mjs'
+      - 'tests/unit/v2-d016-rutas-portal.test.mjs'
+      - 'supabase/piloto/v2_d016_respuestas_y_originales_CANDIDATE.sql'
+      - 'supabase/tests/fixtures/v2-d016-response-checks.sql'
+      - 'supabase/tests/ci/v2-03-respondedores-pg17.sql'
+      - 'apps/portal/lib/piloto-v2-d016-http.ts'
+      - 'apps/portal/app/api/piloto/v2/acceso/**'
+      - 'apps/portal/app/api/piloto/v2/rondas/**'
+      - 'apps/portal/app/piloto/v2/acceso/**'
+      - 'apps/portal/app/piloto/v2/rondas/**'
+      - 'supabase/piloto/v2_d016_whatsapp_link_tickets_CANDIDATE.sql'
+      - 'supabase/tests/ci/v2-d016-whatsapp-access-pg17.sql'
+      - 'docs/V2-D016-PUENTE-WHATSAPP-CANDIDATO-20261113.md'
+      - '.github/workflows/cotironda-d016-whatsapp-link-pg17.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  d016-offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: synthetic_only
+          POSTGRES_DB: cotironda_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cotironda_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: synthetic_only
+      PGDATABASE: cotironda_ci
+    steps:
+      - name: Checkout sin secretos ni tokens persistidos
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Node 22.16
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22.16.0'
+      - name: Instalar Deno 2 para chequear solo el candidato
+        uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb
+        with:
+          deno-version: v2.x
+      - name: Generar candidato a partir de webhook v76 verificado
+        run: node scripts/piloto/v2-d016-whapi-overlay.mjs --write-candidate
+      - name: Deno typecheck del webhook V2-02 mas D016 sin desplegar
+        run: deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/index.v2-d016-candidate.ts
+      - name: Deno typecheck del lector de texto D016 (no requiere JWT inventado)
+        run: deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-v2-text-reader-d016/index.ts
+      - name: Deno typecheck del worker IA offline protegido
+        run: deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-v2-worker-d016/index.ts
+      - name: Eliminar candidato generado sin modificar index.ts
+        if: always()
+        run: rm -f supabase/functions/cotironda-piloto-whapi/index.v2-d016-candidate.ts
+      - name: D016 HMAC y enlace temporal, bloqueos sin Auth falsificada
+        run: node --experimental-strip-types --test tests/unit/v2-d016-enlace-whatsapp.test.mjs
+      - name: D016 sesión GoTrue existente, identidad y cookie sin SMS
+        run: node --experimental-strip-types --test tests/unit/v2-d016-sesion-auth.test.mjs
+      - name: D016 Supabase real via ports admin generateLink + verifyOtp + getUser
+        run: node --experimental-strip-types --test tests/unit/v2-d016-supabase-gotrue.test.mjs
+      - name: D016 cookie HttpOnly, sesión privada y revocación
+        run: node --experimental-strip-types --test tests/unit/v2-d016-sesion-privada.test.mjs
+      - name: D016 análisis individual, lease y revocación sin SMS
+        run: node --experimental-strip-types --test tests/unit/v2-d016-analisis-automatica.test.mjs
+      - name: D016 informe de cierre determinista, sin precio total engañoso
+        run: node --experimental-strip-types --test tests/unit/v2-d016-informe-final.test.mjs
+      - name: D016 worker IA offline, permisos y costos sin sesión comprador
+        run: node --experimental-strip-types --test tests/unit/v2-d016-worker-offline.test.mjs
+      - name: D016 preflight cron y secretos Vault (solo estático)
+        run: node --experimental-strip-types --test tests/unit/v2-d016-cron-guardias.test.mjs
+      - name: D016 preflight read-only de políticas y funciones de PILOTO
+        run: node --experimental-strip-types --test tests/unit/v2-d016-preflight-solo-lectura.test.mjs
+      - name: D016 pg_net grants nativos y ACL incompatibles RETIRADOS
+        run: node --experimental-strip-types --test tests/unit/v2-d016-pgnet-acl-review.test.mjs
+      - name: D016 worker por GitHub Actions sin pg_net y sin pasos de comprador
+        run: node --experimental-strip-types --test tests/unit/v2-d016-worker-scheduler.test.mjs
+      - name: D016 2026 La Plata fuentes oficiales y feriados optativos
+        run: node --experimental-strip-types --test tests/unit/v2-d016-calendario-legal.test.mjs
+      - name: D016 descarga privada con doble revalidación, bytes y auditoría
+        run: node --experimental-strip-types --test tests/unit/v2-d016-descarga-privada.test.mjs
+      - name: D016 texto WhatsApp AES-GCM, SHA, sesiones y broker Next
+        run: node --experimental-strip-types --test tests/unit/v2-d016-texto-edge.test.mjs
+      - name: D016 rutas Next sin teléfono ni Auth inventada
+        run: node --experimental-strip-types --test tests/unit/v2-d016-rutas-portal.test.mjs
+      - name: D016 WhatsApp firma HMAC, deduplicación y entrega incierta
+        run: node --experimental-strip-types --test tests/unit/v2-d016-whapi-envio.test.mjs
+      - name: D016 PostgreSQL 17 canje atomico, revocacion y aislamiento
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/v2-d016-calendario-legal-pg17.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/v2-d016-whatsapp-access-pg17.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/v2-03-respondedores-pg17.sql
+          psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regnamespace('cotironda_piloto_privado') IS NULL" | grep -Fx 't'
+          psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regprocedure('public.cotironda_piloto_v2_d016_claim_ticket_private(text)') IS NULL" | grep -Fx 't'
