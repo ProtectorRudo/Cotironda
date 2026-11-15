@@ -18,7 +18,33 @@ export function AccesoWhatsappD016(){
   const ticket=values.get('d016');
   const ronda=values.get('ronda');
   if(values.size!==2||!ticket||!TOKEN.test(ticket)||!ronda||!UUID.test(ronda)){
-   setMessage('El enlace no está disponible. Pedí otro por el WhatsApp de Cotironda.');
+   // Un enlace usado borra el fragmento del historial por privacidad.
+   // Si el comprador recarga esa pestaña, el fragmento ya no existe.
+   // No exigirle otro WhatsApp: comprobar la sesión HttpOnly vigente
+   // en el MISMO origen y redirigir al escritorio autorizado.
+   void (async()=>{
+    try{
+     const response=await fetch('/api/piloto/v2/mi-cotironda',{
+      method:'GET',cache:'no-store',credentials:'same-origin',
+      signal:AbortSignal.timeout(10_000)
+     });
+     if(!mounted.current)return;
+     if(response.ok){
+      const raw:unknown=await response.json();
+      if(raw&&typeof raw==='object'&&!Array.isArray(raw)&&
+       (raw as Record<string,unknown>).estado==='historial_autorizado'&&
+       Array.isArray((raw as Record<string,unknown>).cotizaciones)){
+       window.location.replace('/piloto/v2/mi-cotironda');
+       return;
+      }
+     }
+    }catch{
+     // No conceder acceso si hay falla de red o sesión inválida.
+    }
+    if(mounted.current)setMessage(
+     'No encontramos una sesión activa en este navegador. Abrí el enlace original desde el WhatsApp de Cotironda.'
+    );
+   })();
    return;
   }
   void (async()=>{
