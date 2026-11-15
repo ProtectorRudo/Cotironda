@@ -2,7 +2,7 @@
  * Se ejecuta SOLO después de webhook autenticado y persistencia del evento.
  * Una reserva SQL por evento = máximo un POST Whapi. Nunca reintentar
  * automáticamente ante entrega incierta; el comprador pide un enlace nuevo.
- * No crea sesión ni toca originales: el navegador redime el ticket una vez.
+ * No crea sesión ni toca originales: el navegador abre una sesión privada renovable de 14 días.
  */
 type Rpc=(name:string,args:Record<string,unknown>)=>Promise<{data:unknown;error:unknown}>;
 type Send=(recipient:string,body:string)=>Promise<{accepted:boolean;messageId:string|null}>;
@@ -125,10 +125,8 @@ export async function notificarAccesoWhatsappD016(args:{
   '&ronda='+row.request_id;
  const body='Cotironda ✅ Consultá los presupuestos recibidos para tu pedido.\n\n'+
   'Abrí este enlace privado para ingresar sin contraseña ni código:\n'+url+
-  '\n\nEl enlace vence en 10 minutos y es de un solo uso. '+
-  (args.mode==='auto'
-   ?'Cuando lo abras podrás seguir las propuestas sin enviar nada más. '
-   :'Si vence, escribí SEGUIMIENTO COTI por este mismo WhatsApp. ')+
+  '\n\nEste enlace funciona durante 14 días y podés abrirlo las veces que necesites. '+
+  'No tenés que enviar ninguna palabra para consultar las propuestas. '+
   'No compartas el enlace.';
  let accepted=false,messageId:string|null=null;
  try{
