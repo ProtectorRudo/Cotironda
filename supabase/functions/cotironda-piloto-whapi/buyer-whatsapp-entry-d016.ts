@@ -126,7 +126,9 @@ export async function notificarAccesoWhatsappD016(args:{
  const body='Cotironda ✅ Consultá los presupuestos recibidos para tu pedido.\n\n'+
   'Abrí este enlace privado para ingresar sin contraseña ni código:\n'+url+
   '\n\nEl enlace vence en 10 minutos y es de un solo uso. '+
-  'Si vence, escribí SEGUIMIENTO COTI por este mismo WhatsApp. '+
+  (args.mode==='auto'
+   ?'Cuando lo abras podrás seguir las propuestas sin enviar nada más. '
+   :'Si vence, escribí SEGUIMIENTO COTI por este mismo WhatsApp. ')+
   'No compartas el enlace.';
  let accepted=false,messageId:string|null=null;
  try{
