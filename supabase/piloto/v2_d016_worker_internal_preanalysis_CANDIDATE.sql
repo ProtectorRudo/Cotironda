@@ -214,7 +214,7 @@ BEGIN
   ));
  END LOOP;
  RETURN jsonb_build_object(
-  'state','authorized_responders_v2','buyerKey',v_buyer,
+  'state','internal_responders_v2','buyerKey',v_buyer,
   'total',v_total,'originals',v_docs);
 END;
 $v2$;
@@ -244,7 +244,7 @@ BEGIN
  -- V2 prospective informed consent, dispatch, MVP225, source and SHA.
  v_catalog:=public.cotironda_piloto_v2_d016_worker_catalog_private(
   p_request_id);
- IF v_catalog IS NULL OR v_catalog->>'state'<>'authorized_responders_v2'
+ IF v_catalog IS NULL OR v_catalog->>'state'<>'internal_responders_v2'
  OR jsonb_typeof(v_catalog->'originals')<>'array'
  THEN RETURN NULL;END IF;
  SELECT entry INTO v_entry
@@ -314,7 +314,7 @@ BEGIN
    IF v_found>1 THEN RETURN NULL;END IF;
    -- Source-only evidence: NEVER return to browser; only the Node server.
    v_catalog:=jsonb_build_object(
-    'state','authorized_original_v2',
+    'state','internal_original_v2',
     'requestId',p_request_id::text,
     'documentId',p_document_id::text,
     'buyerKey',v_catalog->>'buyerKey',
@@ -373,7 +373,7 @@ BEGIN
     v_found:=v_found+1;
     IF v_found>1 THEN RETURN NULL;END IF;
     v_catalog:=jsonb_build_object(
-     'state','authorized_text_v2',
+     'state','internal_text_v2',
      'requestId',p_request_id::text,
      'documentId',p_document_id::text,
      'buyerKey',v_catalog->>'buyerKey',
@@ -408,7 +408,7 @@ DECLARE v_source jsonb; v_token uuid; v_sha text;
 BEGIN
  v_source:=public.cotironda_piloto_v2_d016_worker_source_private(
   p_request_id,p_document_id);
- IF v_source IS NULL OR v_source->>'state' NOT IN('authorized_original_v2','authorized_text_v2')
+ IF v_source IS NULL OR v_source->>'state' NOT IN('internal_original_v2','internal_text_v2')
  THEN RETURN NULL;END IF;
  v_sha:=v_source->>'sha256';
  INSERT INTO cotironda_piloto_privado.v2_original_analysis(
@@ -456,7 +456,7 @@ BEGIN
  THEN RETURN false;END IF;
  v_src:=public.cotironda_piloto_v2_d016_worker_source_private(
   p_request_id,p_document_id);
- IF v_src IS NULL OR v_src->>'state' NOT IN('authorized_original_v2','authorized_text_v2')
+ IF v_src IS NULL OR v_src->>'state' NOT IN('internal_original_v2','internal_text_v2')
  OR v_src->>'sha256'<>p_source_sha256 THEN RETURN false;END IF;
  IF p_status='ready' THEN
   IF p_text_sha256 IS NULL OR p_text_sha256 !~ '^[a-f0-9]{64}$'
@@ -512,13 +512,13 @@ BEGIN
   ORDER BY r.created_at DESC,r.id LIMIT 20
  LOOP
   v_cat:=public.cotironda_piloto_v2_d016_worker_catalog_private(v_rec.id);
-  IF v_cat IS NULL OR v_cat->>'state'<>'authorized_responders_v2'
+  IF v_cat IS NULL OR v_cat->>'state'<>'internal_responders_v2'
    OR jsonb_typeof(v_cat->'originals')<>'array' THEN CONTINUE;END IF;
   FOR v_doc IN SELECT value FROM jsonb_array_elements(v_cat->'originals') LOOP
    v_src:=public.cotironda_piloto_v2_d016_worker_source_private(
     v_rec.id,(v_doc->>'documentId')::uuid);
    IF v_src IS NULL OR v_src->>'state' NOT IN
-    ('authorized_original_v2','authorized_text_v2') THEN CONTINUE;END IF;
+    ('internal_original_v2','internal_text_v2') THEN CONTINUE;END IF;
    IF EXISTS(
     SELECT 1 FROM cotironda_piloto_privado.v2_original_analysis a
     WHERE a.request_id=v_rec.id
