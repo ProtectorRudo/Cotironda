@@ -73,7 +73,9 @@ test('D016 Whapi: token hash igual a Node, URL fragmento no query y sin secretos
  assert.equal(f.state.sent[0].to,RECIPIENT);
  const body=f.state.sent[0].body;
  assert.doesNotMatch(body,/SEGUIMIENTO COTI/u);
- assert.match(body,/sin enviar nada más/u);
+ assert.match(body,/funciona durante 14 días/u);
+ assert.match(body,/No tenés que enviar ninguna palabra/u);
+ assert.doesNotMatch(body,/vence en 10 minutos|un solo uso/u);
  const link=body.match(/https:\/\/\S+/u)?.[0];
  assert.ok(link?.startsWith(PORTAL+'/piloto/v2/acceso#d016='));
  assert.ok(!link.includes('?'));
