@@ -22,15 +22,19 @@ BEGIN
  -- El fixture histórico recibió ofertas a T-12h para una ronda
  -- tradicional de 4 días. Con el contrato real de DOS hábiles a 18:00,
  -- esas ofertas caerían FUERA DE PLAZO. Ajustar solo el fixture:
- -- despacho a T-2h y llegada a T-1h, AMBOS previos al vencimiento.
+ -- despacho a T-2h y llegada a T-1h, PERO nunca en el futuro.
+ -- En domingo, una ronda creada el jueves aún vence lunes: una fecha
+ -- derivada de cierre puede ser futura y la fuente exigiría received_at<=now.
  -- Nunca relajar el filtro temporal del catálogo en producción.
  UPDATE cotironda_piloto_privado.ai_dispatch_jobs_mvp222 dispatch
- SET finished_at=r.closes_at-interval '2 hours'
+ SET finished_at=LEAST(r.closes_at-interval '2 hours',
+                       clock_timestamp()-interval '2 hours')
  FROM cotironda_piloto_privado.requests r
  WHERE dispatch.request_id=r.id
   AND r.id='aaaaaaaa-1111-4111-8111-111111111111';
  UPDATE cotironda_piloto_privado.whapi_inbox msg
- SET received_at=r.closes_at-interval '1 hour'
+ SET received_at=LEAST(r.closes_at-interval '1 hour',
+                      clock_timestamp()-interval '1 hour')
  FROM cotironda_piloto_privado.requests r
  WHERE msg.request_id=r.id
   AND r.id='aaaaaaaa-1111-4111-8111-111111111111'
