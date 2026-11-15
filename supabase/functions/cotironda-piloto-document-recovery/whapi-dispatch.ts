@@ -140,6 +140,7 @@ export type V2ScheduledResult=Readonly<{
  state:'off'|'disabled'|'empty'|'processed'|'rate_limited'|'reconciliation';
  claimed:number;accepted:number;uncertain:number;
 }>;
+const CAPTION_PEDIDO_COTIRONDA_V2='Cotironda: nueva solicitud de materiales. Cotizá respondiendo por este WhatsApp, sin formularios. El comprador verá solo los comercios que respondan. El presupuesto original identificado se comparte únicamente si autorizaste hacerlo; podés revocar ese permiso.';
 export async function dispatchPendingVerifiedV2SupplierPdfs(
  config:Readonly<{
   enabled:boolean;dynamicRecipientsEnabled:boolean;
@@ -190,7 +191,9 @@ export async function dispatchPendingVerifiedV2SupplierPdfs(
    hmacKey,aesKey,channel:config.channel
   },async(name,params)=>rpc(name,params)),
   authorizeChatHmac:auth,
-  createPdf:generarSolicitudPdfMvp091,
+  createPdf:(snapshot)=>generarSolicitudPdfMvp091({
+   ...snapshot,noticeMode:'v2_responders'
+  }),
   sendWhapi:async(recipient,pdf)=>{
    const ref=config.includeReference?
     etiquetaReferenciaPedidoV2(requestId):null;
@@ -203,7 +206,7 @@ export async function dispatchPendingVerifiedV2SupplierPdfs(
      media:'data:application/pdf;name=Solicitud-Cotironda.pdf;base64,'+b64(pdf),
      mime_type:'application/pdf',
      filename:'Solicitud-Cotironda.pdf',
-     caption:CAPTION_PEDIDO_COTIRONDA_MVP305+(ref?'\n'+ref:'')
+     caption:CAPTION_PEDIDO_COTIRONDA_V2+(ref?'\n'+ref:'')
     }),
     signal:AbortSignal.timeout(12000)
    });
