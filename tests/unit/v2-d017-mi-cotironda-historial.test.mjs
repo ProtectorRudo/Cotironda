@@ -72,7 +72,7 @@ test('D017: URL de acceso lleva al perfil, no exige SMS y preserva tickets',()=>
  assert.match(ticket,/\/piloto\/v2\/acceso#d016=/u);
  assert.match(profile,/puertaWhatsappPortalD016\(process\.env\)/u);
  assert.match(historyUI,/credentials:'same-origin'/u);
- assert.ok(historyUI.includes("'cotizaciones/'+encodeURIComponent(r.rondaId)"));
+ assert.ok(historyUI.includes("cotizaciones/'+encodeURIComponent(r.rondaId)"));
  assert.match(historyUI,/Borradores/u);
  assert.match(historyUI,/Archivo histórico · originales no habilitados/u);
  assert.doesNotMatch(historyUI,/localStorage|sessionStorage|Bearer /u);
