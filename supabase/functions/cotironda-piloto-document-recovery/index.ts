@@ -13,6 +13,7 @@ import {auditStoredSourceFactsMvp163} from './source-facts.ts';
 import {auditarOriginalEconomicoMvp168} from './source-economics-mvp168.ts';
 import {guardScheduledRecovery} from './scheduled-auth.ts';
 import {dispatchPendingPilotSupplierPdfs,dispatchPendingVerifiedV2SupplierTexts} from './whapi-dispatch.ts';
+import {sendAutomaticBuyerLinkD016} from './buyer-auto-link-d016.ts';
 import {invokeAutoRecoveryMvp293} from './auto-recovery-tick-mvp293.ts';
 const REF='ilggkalaafhtiysyzlmg';
 const root='https://'+REF+'.supabase.co';
@@ -105,6 +106,42 @@ Deno.serve(async(req)=>{
      return new Response(JSON.stringify({state:'v2_dispatch_unavailable'}),{
       status:503,headers:{'content-type':'application/json','cache-control':'no-store'}
      });
+    }
+   }
+   // Auto D016 buyer link on the SAME Vault-authenticated cron, after
+   // supplier dispatch. No new buyer command/event, no second cron.
+   // Disabled unless the existing D016 + Whapi outbound flags are ON.
+   if(Deno.env.get('COTIRONDA_PILOT_D016_WHATSAPP_SEND_ENABLED')==='true'&&
+      Deno.env.get('COTIRONDA_PILOT_WHAPI_OUTBOUND_ENABLED')==='true'){
+    try{
+     const link=await sendAutomaticBuyerLinkD016({
+      enabled:true,
+      channel:Deno.env.get('COTIRONDA_PILOT_WHAPI_CHANNEL')??'',
+      identityHmacHex:Deno.env.get('COTIRONDA_PILOT_ID_HMAC_HEX')??'',
+      aesHex:Deno.env.get('COTIRONDA_PILOT_AES_HEX')??'',
+      linkHmacHex:Deno.env.get('COTIRONDA_PILOT_D016_HMAC_KEY_HEX')??'',
+      portalOrigin:Deno.env.get('COTIRONDA_PILOT_D016_PORTAL_ORIGIN')??'',
+      portalSha:Deno.env.get('COTIRONDA_PILOT_D016_PORTAL_RELEASE_SHA')??'',
+      approvedSha:Deno.env.get('COTIRONDA_PILOT_D016_APPROVED_RELEASE_SHA')??'',
+      whapiToken:Deno.env.get('COTIRONDA_PILOT_WHAPI_TOKEN')??''
+     },{
+      rpc:async(name,args)=>{
+       const {data,error}=await db.rpc(name,args??{});
+       return {data,error};
+      },
+      post:(url,init)=>fetch(url,init)
+     });
+     if(link.state==='reconciliation'||link.state==='uncertain'){
+      return new Response(JSON.stringify({
+       state:'buyer_d016_auto_link_reconciliation_required'
+      }),{status:503,headers:{
+       'content-type':'application/json','cache-control':'no-store'
+      }});
+     }
+    }catch{
+     return new Response(JSON.stringify({state:'buyer_d016_auto_link_unavailable'}),{
+      status:503,headers:{'content-type':'application/json','cache-control':'no-store'
+     }});
     }
    }
    const baseline=await runRecoveryService(req,{
