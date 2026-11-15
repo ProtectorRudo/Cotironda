@@ -13,10 +13,10 @@ export default async function PedidoWhatsappD016(
  const {rondaId}=await params;
  if(!UUID.test(rondaId)||!puertaWhatsappPortalD016(process.env))
   notFound();
- return <main className="panel">
+ return <main className="panel coti-buyer-portal">
   <span className="eyebrow">COTIRONDA · SEGUIMIENTO PRIVADO</span>
-  <h1>Presupuestos recibidos</h1>
-  <p>Acá aparecen únicamente los comercios que respondieron a tu pedido.</p>
+  <h1>Tus presupuestos</h1>
+  <p className="coti-page-desc">Compará cada oferta con claridad. Solo ves comercios que respondieron; sus archivos originales siguen disponibles.</p>
   <RespuestasWhatsappD016 rondaId={rondaId}/>
  </main>;
 }
