@@ -97,14 +97,14 @@ BEGIN
   SELECT r.id,r.created_at,r.state,r.delivery_city,
    (SELECT count(*)::integer FROM cotironda_piloto_privado.request_lines ln
      WHERE ln.request_id=r.id) line_count,
-   EXISTS(
+   r.state IN ('prepared','closed') AND EXISTS(
     SELECT 1 FROM cotironda_piloto_privado.v2_business_policy bp
     WHERE bp.singleton=true AND bp.enabled=true
      AND bp.activated_at IS NOT NULL AND r.created_at>=bp.activated_at
    ) can_open
   FROM cotironda_piloto_privado.requests r
   WHERE r.buyer_key=v_buyer
-   AND r.state IN ('prepared','closed')
+   AND r.state IN ('prepared','closed','draft')
   ORDER BY r.created_at DESC,r.id DESC LIMIT 100
  ) x;
 
