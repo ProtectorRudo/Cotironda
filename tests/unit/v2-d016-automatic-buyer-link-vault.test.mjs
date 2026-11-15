@@ -79,7 +79,7 @@ test('buyer packet must be authentic; no buyer number from external input',async
   post:async()=>{throw Error('no HTTP on mismatch')}
  }),/contact_envelope_invalid/);
 });
-test('auto sends D016 private one-time URL after authenticated dispatch exactly once',async()=>{
+test('auto sends D016 private 14-day URL after authenticated dispatch exactly once',async()=>{
  const packet=await authenticatedPacket();
  let posts=0,prepared=0,finished=0,deliveredBody='';
  const rpc=async(name,params)=>{
@@ -112,7 +112,8 @@ test('auto sends D016 private one-time URL after authenticated dispatch exactly 
   assert.match(deliveredBody,/ronda=665759f0-251b-4a2b-afb4-d763612366f7/);
   assert.doesNotMatch(deliveredBody,/https:\/\/.*\/originales/);
   assert.doesNotMatch(deliveredBody,/SEGUIMIENTO COTI/);
-  assert.match(deliveredBody,/sin enviar nada más/);
+  assert.match(deliveredBody,/funciona durante 14 días/);
+   assert.match(deliveredBody,/No tenés que enviar ninguna palabra/);
   return {ok:true,json:async()=>({
    sent:true,message_id:'wamid.SYNTHETIC12345'
   })};
