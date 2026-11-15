@@ -139,8 +139,13 @@ Deno.serve(async(req)=>{
        'content-type':'application/json','cache-control':'no-store'
       }});
      }
-    }catch{
-     return new Response(JSON.stringify({state:'buyer_d016_auto_link_unavailable'}),{
+    }catch(err){
+     // Report only a fixed error CATEGORY. Never expose secrets or recipient.
+     const state=err instanceof Error&&
+      err.message==='d016_auto_link_secure_configuration_unavailable'?
+       'buyer_d016_missing_secure_configuration':
+       'buyer_d016_auto_link_unavailable';
+     return new Response(JSON.stringify({state}),{
       status:503,headers:{'content-type':'application/json','cache-control':'no-store'
      }});
     }
