@@ -132,6 +132,7 @@ export async function procesarTrabajoOfflineD016(
   token=claim.jobToken;
   let result:ResultadoAnalisisV2|null=null;
   let textSha:string|null=null;
+  let diagnostic='original_bytes_unavailable';
   try{
    const bytes=src.state==='internal_text_v2'?
     await descifrarFuenteWorkerD016(src,config.aesHex):
@@ -139,10 +140,12 @@ export async function procesarTrabajoOfflineD016(
    if(bytes instanceof Uint8Array&&
     bytes.length<=(src.state==='internal_text_v2'?4000:8388608)&&
     (src.state==='internal_text_v2'||bytes.length===src.byteCount)){
+    diagnostic='original_text_unverified';
     const verified=await obtenerTextoVerificadoV2({
      bytes,mime:src.mime,shaBinario:src.sha256,pdfReader:ports.pdfReader
     });
     if(verified){
+     diagnostic='ai_result_pending';
      // No IA with stale source/enrollment, even if original bytes are valid.
      const before=sourceOk(await ports.source(scope),job);
      if(!before||JSON.stringify(before)!==JSON.stringify(src))
@@ -157,9 +160,14 @@ export async function procesarTrabajoOfflineD016(
       },
       apiKey:config.apiKey,model:'gpt-6-luna'
      });
+     diagnostic=result.estado==='analisis_disponible'?'success':
+      (/^[a-z_]{3,64}$/u.test(result.codigo)?result.codigo:'ai_review');
     }
    }
-  }catch{/* Error no bloquea original: reintentar sólo según cuota SQL. */}
+  }catch{diagnostic='unexpected_private_processing_error'}
+  // Diagnostic only fixed codes; never log source, prices or contacts.
+  if(result?.estado!=='analisis_disponible')
+   console.info('cotironda_v2_private_analysis_review',diagnostic);
   const state: 'ready'|'review'=
    result?.estado==='analisis_disponible'?'ready':'review';
   const previous=src;
