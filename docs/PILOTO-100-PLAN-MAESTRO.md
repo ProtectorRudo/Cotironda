@@ -1,5 +1,7 @@
 # Cotironda V2 — Plan maestro operativo, piloto 100 %
 
+**CI FINAL CANDIDATO 40b02a5: 5/5 SUCCESS** en GitHub: unitarios (run 43731983338), typecheck Deno (43731983439), D013 PG17 (43731983325), D016 PG17 (43731983426) y autenticación recovery (43731983531). Prueba real independiente SQL con `BEGIN/ROLLBACK` también pasó para la ronda original Ailín. **No hay despliegue de estos cambios ni IA real ejecutada todavía.** [Código validado](https://github.com/ProtectorRudo/Cotironda/commit/40b02a5c3e9bbd8866f05c5aee9c6d268d7df855).
+
 ## 15/11/2026 · RESPUESTA AILÍN: ORIGEN ÍNTEGRO E IA PRIVADA, SIN AUTORIZACIONES POR COTIZACIÓN — CANDIDATO NO PUBLICADO
 
 **HECHO EN PILOTO (LECTURA REAL):** `665759f0-251b-4a2b-afb4-d763612366f7` tiene el PDF original de Ailín (**71.072 bytes**, SHA256 y ruta privada; `stored` con fecha/proveedor/ronda, 3 ítems, total literal). El archivo entró y quedó asociado por WhatsApp sin formulario. El arquitecto ya canjeó su enlace D016: **una sesión activa**. La oferta **NO está aún publicada ni analizada**: `supplier_media_quotes_mvp098='awaiting_fidelity_check'`, `ai_supplier_links_mvp225='awaiting_semantic_review'`, `v2_original_analysis=0`; Nahuel todavía no tiene oferta nueva. **0 permisos V2 de divulgar originales**, 0 permisos históricos, 0 términos de alta acreditados, 0 mensajes del aviso D016, `v2_original_share_policy=OFF`. El contrato V2 exige autorización informada **una vez al alta, revocable**; **cotizar o estar registrado NO la sustituye**. Nunca crearla con SQL ficticio ni suponerla por instrucción del titular.
