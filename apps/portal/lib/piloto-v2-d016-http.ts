@@ -11,6 +11,8 @@ import {D016_SESSION_COOKIE}
  from '../../../src/server/v2-d016-sesion-privada.ts';
 import {proyectarRespuestasV2}
  from '../../../src/server/v2-03-catalogo-respondedores.ts';
+import {proyectarHistorialPrivadoD017}
+ from '../../../src/server/v2-d017-historial-comprador.ts';
 import {descargarConWhatsappD016}
  from '../../../src/server/v2-d016-descarga-privada.ts';
 import {leerTextoOriginalEdgeD016}
@@ -337,5 +339,40 @@ export async function responderInformeFinalWhatsappD016(
   const report=componerInformeFinalD016(gateAgain.data,catalog,Date.now());
   if(!report)return deny();
   return new Response(JSON.stringify(report),{status:200,headers:HEADERS});
+ }catch{return deny(503)}
+}
+
+
+/** D017: índice de TODAS las solicitudes del comprador de la sesión D016.
+ * No acepta buyerKey/phone/customerId desde cliente ni muestra invitados.
+ * El detalle de cada presupuesto usa el mismo control D016 que ya funciona.
+ */
+export async function listarHistorialWhatsappD017(
+ req:Request,env:Record<string,string|undefined>=process.env
+):Promise<Response>{
+ const gate=puertaWhatsappPortalD016(env);
+ const db=gate?privateDb(env):null;
+ if(!gate||!db)return deny(503);
+ if(req.method!=='GET')return deny(405);
+ const url=new URL(req.url);
+ if(url.origin!==gate.origenPortal||
+  url.pathname!=='/api/piloto/v2/mi-cotironda'||
+  url.search!==''||url.hash!=='')return deny(400);
+ const cookie=cookieSesionD016(req);
+ const digest=cookie?digestSesionPrivadaD016(cookie,gate.claveHmacHex):null;
+ if(!digest)return deny();
+ try{
+  const first=await db.rpc('cotironda_piloto_v2_d017_buyer_history_private',{
+   p_sesion_hmac:digest
+  });
+  if(first.error)return deny(503);
+  const history=proyectarHistorialPrivadoD017(first.data);
+  if(!history)return deny();
+  // Segundo control: logout/revocación no deja publicar una vista cacheada.
+  const after=await db.rpc('cotironda_piloto_v2_d017_buyer_history_private',{
+   p_sesion_hmac:digest
+  });
+  if(after.error||!proyectarHistorialPrivadoD017(after.data))return deny();
+  return new Response(JSON.stringify(history),{status:200,headers:HEADERS});
  }catch{return deny(503)}
 }
