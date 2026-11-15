@@ -92,7 +92,7 @@ Deno.serve(async(req:Request)=>{
  if(!req.headers.get('content-type')?.startsWith('application/json'))
   return response('blocked',415);
  const length=req.headers.get('content-length');
- if(length&&(!/^\\d{1,4}$/u.test(length)||Number(length)>320))
+ if(length&&(!/^[0-9]{1,4}$/u.test(length)||Number(length)>320))
   return response('blocked',413);
  const body=await req.text().catch(()=>'');
  if(body.length>320)return response('blocked',413);
