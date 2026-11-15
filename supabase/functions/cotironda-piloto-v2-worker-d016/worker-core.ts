@@ -25,7 +25,7 @@ const HEADER={
  'cross-origin-resource-policy':'same-origin'
 } as const;
 type Source=Record<string,unknown> & {
- state:'authorized_original_v2'|'authorized_text_v2';
+ state:'internal_original_v2'|'internal_text_v2';
  requestId:string;documentId:string;buyerKey:string;supplierKey:string;
  sha256:string;mime:string;
 };
@@ -66,7 +66,7 @@ function gateValid(c:WorkerD016Config){
   HMAC.test(c.aesHex)&&!/^0{64}$/u.test(c.aesHex);
 }
 function sourceOk(raw:unknown,j:Job):Source|null{
- if(!obj(raw)||!['authorized_original_v2','authorized_text_v2'].includes(
+ if(!obj(raw)||!['internal_original_v2','internal_text_v2'].includes(
   String(raw.state))||
   raw.requestId!==j.requestId||raw.documentId!==j.documentId||
   raw.sha256!==j.sourceSha256||raw.mime!==j.mime||
@@ -75,7 +75,7 @@ function sourceOk(raw:unknown,j:Job):Source|null{
   typeof raw.messageHmac!=='string'||!HMAC.test(raw.messageHmac)||
   typeof raw.enrolledAt!=='number'||raw.enrolledAt<=0||
   typeof raw.invitedAt!=='number'||raw.invitedAt<raw.enrolledAt)return null;
- if(raw.state==='authorized_text_v2'){
+ if(raw.state==='internal_text_v2'){
   if(raw.mime!=='text/plain'||typeof raw.chatHmac!=='string'||
    !HMAC.test(raw.chatHmac))return null;
  }else if(raw.bucket!=='cotironda-piloto-originals'||
@@ -133,12 +133,12 @@ export async function procesarTrabajoOfflineD016(
   let result:ResultadoAnalisisV2|null=null;
   let textSha:string|null=null;
   try{
-   const bytes=src.state==='authorized_text_v2'?
+   const bytes=src.state==='internal_text_v2'?
     await descifrarFuenteWorkerD016(src,config.aesHex):
     await ports.readStorage({bucket:src.bucket as string,path:src.path as string});
    if(bytes instanceof Uint8Array&&
-    bytes.length<=(src.state==='authorized_text_v2'?4000:8388608)&&
-    (src.state==='authorized_text_v2'||bytes.length===src.byteCount)){
+    bytes.length<=(src.state==='internal_text_v2'?4000:8388608)&&
+    (src.state==='internal_text_v2'||bytes.length===src.byteCount)){
     const verified=await obtenerTextoVerificadoV2({
      bytes,mime:src.mime,shaBinario:src.sha256,pdfReader:ports.pdfReader
     });
