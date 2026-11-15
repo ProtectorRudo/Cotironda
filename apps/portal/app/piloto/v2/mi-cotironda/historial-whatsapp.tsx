@@ -42,6 +42,7 @@ export function HistorialWhatsappD017(){
  const [data,setData]=useState<HistorialCompradorD017|null>(null);
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState('');
+ const [reissue,setReissue]=useState<'idle'|'sending'|'accepted'|'error'>('idle');
  const refresh=useCallback(async()=>{
   setLoading(true);setError('');
   try{
@@ -57,6 +58,20 @@ export function HistorialWhatsappD017(){
    setError('No pudimos abrir tu historial privado. Si tu sesión venció, ingresá de nuevo con el enlace que recibís por WhatsApp.');
   }finally{setLoading(false)}
  },[]);
+ async function sendNewAccess(){
+  if(reissue==='sending')return;
+  setReissue('sending');
+  try{
+   const result=await fetch('/api/piloto/v2/mi-cotironda/enviar-acceso',{
+    method:'POST',credentials:'same-origin',cache:'no-store',
+    headers:{'x-cotironda-reissue':'1'},
+    signal:AbortSignal.timeout(20000)
+   });
+   const body:unknown=await result.json().catch(()=>null);
+   setReissue(result.ok&&body&&typeof body==='object'&&
+     (body as Record<string,unknown>).state==='sent'?'accepted':'error');
+  }catch{setReissue('error')}
+ }
  useEffect(()=>{void refresh()},[refresh]);
  if(loading)return <p role="status" className="coti-profile-message">Verificando tu historial privado…</p>;
  if(error)return <div role="alert" className="coti-profile-message">
@@ -73,7 +88,15 @@ export function HistorialWhatsappD017(){
     <h2>{data.nombre}</h2>
     <p>Consultá cada pedido y los presupuestos de los comercios que respondieron.</p>
    </div>
-   <button type="button" className="button outline" onClick={()=>void refresh()}>Actualizar</button>
+   <div>
+    <button type="button" className="button outline" onClick={()=>void refresh()}>Actualizar</button>
+    <button type="button" className="button outline"
+     disabled={reissue==='sending'} onClick={()=>void sendNewAccess()}>
+     {reissue==='sending'?'Enviando acceso…':'Enviar acceso a mi WhatsApp'}
+    </button>
+    {reissue==='accepted'&&<p role="status">WhatsApp aceptó el envío del nuevo enlace privado al número verificado de esta cuenta.</p>}
+    {reissue==='error'&&<p role="alert">No se pudo confirmar el envío. No se reenviará automáticamente para evitar duplicados.</p>}
+   </div>
   </div>
   <div className="coti-profile-stats">
    <div><span>Cotizaciones</span><strong>{sent.length}</strong></div>
