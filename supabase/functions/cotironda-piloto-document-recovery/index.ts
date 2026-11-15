@@ -141,10 +141,19 @@ Deno.serve(async(req)=>{
      }
     }catch(err){
      // Report only a fixed error CATEGORY. Never expose secrets or recipient.
-     const state=err instanceof Error&&
-      err.message==='d016_auto_link_secure_configuration_unavailable'?
-       'buyer_d016_missing_secure_configuration':
-       'buyer_d016_auto_link_unavailable';
+     let state='buyer_d016_auto_link_unavailable';
+     if(err instanceof Error&&err.message==='d016_auto_link_secure_configuration_unavailable'){
+      const hash=Deno.env.get('COTIRONDA_PILOT_D016_HMAC_KEY_HEX')??'';
+      const origin=Deno.env.get('COTIRONDA_PILOT_D016_PORTAL_ORIGIN')??'';
+      const release=Deno.env.get('COTIRONDA_PILOT_D016_PORTAL_RELEASE_SHA')??'';
+      const approved=Deno.env.get('COTIRONDA_PILOT_D016_APPROVED_RELEASE_SHA')??'';
+      state=!/^[a-f0-9]{64}$/u.test(hash)?'buyer_d016_hmac_not_configured':
+       !/^https:\/\/cotironda-portal-[a-z0-9-]+-protector-rudo-s-projects\.vercel\.app$/u.test(origin)?
+        'buyer_d016_origin_not_configured':
+       !/^[a-f0-9]{40}$/u.test(release)?'buyer_d016_release_sha_not_configured':
+       release!==approved?'buyer_d016_approved_release_mismatch':
+        'buyer_d016_other_secure_configuration';
+     }
      return new Response(JSON.stringify({state}),{
       status:503,headers:{'content-type':'application/json','cache-control':'no-store'
      }});
