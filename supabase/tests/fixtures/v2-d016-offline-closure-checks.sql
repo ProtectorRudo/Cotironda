@@ -39,7 +39,7 @@ BEGIN
  -- Compare worker with the exact source semantics (same 3 original docs).
  v_catalog:=public.cotironda_piloto_v2_d016_worker_catalog_private(
   'aaaaaaaa-1111-4111-8111-111111111111');
- IF v_catalog IS NULL OR v_catalog->>'state'<>'authorized_responders_v2'
+ IF v_catalog IS NULL OR v_catalog->>'state'<>'internal_responders_v2'
   OR jsonb_array_length(v_catalog->'originals')<1
  THEN RAISE EXCEPTION 'd016_worker_catalog_denied';END IF;
  SELECT (x->>'documentId')::uuid INTO v_doc
@@ -48,7 +48,7 @@ BEGIN
  IF v_doc IS NULL THEN RAISE EXCEPTION 'd016_worker_no_pdf';END IF;
  v_src:=public.cotironda_piloto_v2_d016_worker_source_private(
   'aaaaaaaa-1111-4111-8111-111111111111',v_doc);
- IF v_src IS NULL OR v_src->>'state'<>'authorized_original_v2'
+ IF v_src IS NULL OR v_src->>'state'<>'internal_original_v2'
  THEN RAISE EXCEPTION 'd016_worker_source_missing';END IF;
  -- La prueba histórica dejó un análisis de texto EN PROCESO con lease
  -- vigente, así que no debe duplicarse su costo. Simular vencimiento real.
