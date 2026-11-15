@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {dispatchPendingVerifiedV2SupplierTexts} from
+import {dispatchPendingVerifiedV2SupplierTexts,lineaSolicitudTextoV2} from
  '../../supabase/functions/cotironda-piloto-document-recovery/whapi-dispatch.ts';
 
 const NO_SEND=()=>{
@@ -15,6 +15,23 @@ const base={
 const H=(buf)=>Array.from(new Uint8Array(buf)).map(x=>x.toString(16).padStart(2,'0')).join('');
 const bytes=(hex)=>Uint8Array.from(hex.match(/.{2}/g),x=>parseInt(x,16));
 
+test('V2 quantity from actual SQL numeric(12,3) is not thousands',()=>{
+ assert.equal(lineaSolicitudTextoV2({
+  description:'10 bolsas de cemento CPC de 50 kg',quantity:'10.000',unit:'bag'
+ }),'- 10 bolsas de cemento CPC de 50 kg');
+ assert.equal(lineaSolicitudTextoV2({
+  description:'1 bolsón de arena fina de 1 m³',quantity:'1.000',unit:'bag'
+ }),'- 1 bolsón de arena fina de 1 m³');
+ assert.equal(lineaSolicitudTextoV2({
+  description:'Bolsón de piedra partida 1 m³',quantity:'1.000',unit:'bag'
+ }),'- 1 bolsa · Bolsón de piedra partida 1 m³');
+ assert.equal(lineaSolicitudTextoV2({
+  description:'Arena gruesa',quantity:'2.500',unit:'m3'
+ }),'- 2,5 m3 · Arena gruesa');
+ assert.throws(()=>lineaSolicitudTextoV2({
+  description:'12 bolsas de cemento',quantity:'10.000',unit:'bag'
+ }),/v2_description_quantity_mismatch/);
+});
 test('V2 worker stays inert unless its own opt-in gate is true',async()=>{
  let queries=0;
  const result=await dispatchPendingVerifiedV2SupplierTexts(
@@ -93,9 +110,9 @@ test('V2 scheduled text delivery reuses verified lease + SHA + AES-GCM recipient
    return {data:{
     requestId,city:'La Plata',deadlineIso:'2026-11-17T21:00:00Z',
     deliveryNote:null,items:[
-     {description:'Cemento CPC 50 kg',quantity:'10',unit:'bag'},
-     {description:'Bolsón arena fina 1 m3',quantity:'1',unit:'bag'},
-     {description:'Bolsón piedra partida 1 m3',quantity:'1',unit:'bag'}
+     {description:'10 bolsas de cemento CPC de 50 kg',quantity:'10.000',unit:'bag'},
+     {description:'1 bolsón de arena fina de 1 m³',quantity:'1.000',unit:'bag'},
+     {description:'1 bolsón de piedra partida de 1 m³',quantity:'1.000',unit:'bag'}
     ]},error:null};
   if(name==='cotironda_piloto_ia_finish_mvp222'){
    finishes++;
@@ -121,12 +138,13 @@ test('V2 scheduled text delivery reuses verified lease + SHA + AES-GCM recipient
  assert.equal(lastUrl,'https://gate.whapi.cloud/messages/text');
  assert.equal(lastBody.to,recipient);
  assert.match(lastBody.body,/Cotironda pedido: 665759F0/);
- assert.match(lastBody.body,/10 bolsas · Cemento CPC 50 kg/);
- assert.match(lastBody.body,/1 bolsas · Bolsón arena fina 1 m3/);
+ assert.ok(lastBody.body.includes('10 bolsas de cemento CPC de 50 kg'));
+ assert.ok(lastBody.body.includes('1 bolsón de arena fina de 1 m³'));
  assert.ok(lastBody.body.includes('17/11/2026'));
  assert.match(lastBody.body,/solo los comercios que respondan/);
  assert.doesNotMatch(lastBody.body,/TODOS los proveedores invitados/);
  assert.equal(lastBody.media,undefined);
+ assert.doesNotMatch(lastBody.body,/10[.]000 bolsas|1[.]000 bolsas|10 bolsas.*10 bolsas/u);
  assert.equal(finishes,1);
  assert.equal(claims,2);
  assert.equal(calls.filter(x=>x==='cotironda_piloto_ia_recipient_packet_mvp313').length,2);
