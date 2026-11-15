@@ -61,7 +61,7 @@ async function decryptContact(
   const iv=Uint8Array.from(atob(nonce),x=>x.charCodeAt(0));
   const bytes=Uint8Array.from(atob(ciphertext),x=>x.charCodeAt(0));
   if(iv.length!==12||bytes.length<17||bytes.length>10000)return null;
-  const key=await crypto.subtle.importKey('raw',raw,'AES-GCM',false,['decrypt']);
+  const key=await crypto.subtle.importKey('raw',new Uint8Array(raw).buffer,'AES-GCM',false,['decrypt']);
   const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv,
    additionalData:encoder.encode(chatHmac+'|cotironda-contact-v1'),
    tagLength:128},key,bytes);
@@ -91,6 +91,9 @@ Deno.serve(async(req:Request)=>{
   return response('unavailable',503);
  if(!req.headers.get('content-type')?.startsWith('application/json'))
   return response('blocked',415);
+ const length=req.headers.get('content-length');
+ if(length&&(!/^\\d{1,4}$/u.test(length)||Number(length)>320))
+  return response('blocked',413);
  const body=await req.text().catch(()=>'');
  if(body.length>320)return response('blocked',413);
  let input:Record<string,unknown>;
@@ -120,7 +123,7 @@ Deno.serve(async(req:Request)=>{
  const raw=crypto.getRandomValues(new Uint8Array(32));
  const token=btoa(String.fromCharCode(...raw)).replace(/\+/gu,'-')
   .replace(/\//gu,'_').replace(/=+$/u,'');
- const key=await crypto.subtle.importKey('raw',hmacRaw,
+ const key=await crypto.subtle.importKey('raw',new Uint8Array(hmacRaw).buffer,
   {name:'HMAC',hash:'SHA-256'},false,['sign']);
  const ticketHmac=await hmac(key,'cotironda/d016/acceso/v1/'+token);
  const {data,error}=await db.rpc('cotironda_piloto_v2_d016_reissue_from_session_private',{
@@ -137,7 +140,7 @@ Deno.serve(async(req:Request)=>{
   const recipient=await decryptContact(aesHex,row.nonceB64??'',
    row.ciphertextB64??'',row.chatHmac!);
   if(!recipient)throw Error('invalid_contact');
-  const verifyKey=await crypto.subtle.importKey('raw',idRaw,
+  const verifyKey=await crypto.subtle.importKey('raw',new Uint8Array(idRaw).buffer,
    {name:'HMAC',hash:'SHA-256'},false,['sign']);
   const expected=await hmac(verifyKey,'cotironda|pilot|chat|'+channel+'|'+recipient);
   const contactSha=hex(await crypto.subtle.digest('SHA-256',encoder.encode(recipient)));
