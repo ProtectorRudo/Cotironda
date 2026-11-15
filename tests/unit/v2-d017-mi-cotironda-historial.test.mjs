@@ -69,6 +69,15 @@ test('D017: URL de acceso lleva al perfil, no exige SMS y preserva tickets',()=>
  const historyUI=source('apps/portal/app/piloto/v2/mi-cotironda/historial-whatsapp.tsx');
  assert.match(entry,/window\.location\.replace\('\/piloto\/v2\/mi-cotironda'\)/u);
  assert.match(entry,/window\.history\.replaceState/u);
+ // Al reabrir /acceso sin fragmento se consulta SOLO la cookie HttpOnly.
+ // No se inventa sesión, no se redirige sin validación de la RPC privada.
+ assert.ok(entry.includes("fetch('/api/piloto/v2/mi-cotironda'"));
+ assert.ok(entry.includes("credentials:'same-origin'"));
+ assert.ok(entry.includes("response.ok"));
+ assert.ok(entry.includes("historial_autorizado"));
+ assert.ok(entry.includes("Array.isArray((raw as Record<string,unknown>).cotizaciones)"));
+ assert.ok(entry.includes("Abrí el enlace original desde el WhatsApp de Cotironda"));
+ assert.doesNotMatch(entry,/localStorage|sessionStorage|document\.cookie|signInWithOtp/u);
  assert.match(ticket,/\/piloto\/v2\/acceso#d016=/u);
  assert.match(profile,/puertaWhatsappPortalD016\(process\.env\)/u);
  assert.match(historyUI,/credentials:'same-origin'/u);
