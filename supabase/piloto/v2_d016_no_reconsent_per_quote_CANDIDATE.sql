@@ -1,0 +1,82 @@
+-- COTIRONDA V2. CANDIDATE ONLY: no per-quote authorization or extra notice.
+-- Publishes original only with a verified one-time, prior, unrevoked supplier
+-- consent from authenticated WhatsApp and the existing V2 original policy ON.
+-- Never interprets simply quoting or registration as authorization.
+-- The original remains the source of truth; AI fidelity checks do not block
+-- storage or read of the intact original once sharing is authorized.
+-- This only removes the duplicate D016 reply-notice evidence requirement.
+DO $patch$
+DECLARE v_sql text;v_before text;v_after text;
+ v_old_catalog text:=$oldcat$
+    -- Segundo comprobante independiente. No autoriza por sí mismo: se
+    -- requiere TAMBIÉN consentimiento V2 anterior a invitación.
+    AND EXISTS (
+     SELECT 1 FROM cotironda_piloto_privado.v2_d016_original_reply_evidence evidence
+     WHERE evidence.message_hmac=link.message_hmac
+      AND evidence.request_id=link.request_id
+      AND evidence.supplier_key=link.supplier_key
+      AND evidence.source_sha256=link.source_sha256
+      AND public.cotironda_piloto_v2_d016_original_evidence_status_private(
+       link.request_id,link.supplier_key,link.message_hmac
+      )='verified_reply_not_authorization'
+    )
+$oldcat$;
+ v_old_source text:=$oldsrc$
+  -- La fuente puede haber quedado revocada después de generar el catálogo.
+  -- Validación final: evidencia D016 del MISMO mensaje/proveedor/sha.
+  -- Nunca interpretar evidencia como autorización; la fuente anterior
+  -- ya exigió consentimiento expreso, sesión, empresa, invitación y SHA.
+  IF NOT EXISTS (
+   SELECT 1 FROM cotironda_piloto_privado.v2_d016_original_reply_evidence evidence
+   WHERE evidence.message_hmac=v_catalog->>'messageHmac'
+    AND evidence.request_id=p_request_id
+    AND evidence.supplier_key=v_catalog->>'supplierKey'
+    AND evidence.source_sha256=v_catalog->>'sha256'
+    AND public.cotironda_piloto_v2_d016_original_evidence_status_private(
+     evidence.request_id,evidence.supplier_key,evidence.message_hmac
+    )='verified_reply_not_authorization'
+  ) THEN RETURN NULL;END IF;
+$oldsrc$;
+BEGIN
+ SELECT pg_get_functiondef(p.oid) INTO STRICT v_before
+ FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+ WHERE n.nspname='public' AND p.proname='cotironda_piloto_v2_d016_responders_private';
+ IF md5(v_before)<>'993744679c3ac20eba9a7ae845580e79'
+ OR strpos(v_before,v_old_catalog)=0
+ OR length(v_before)-length(replace(v_before,v_old_catalog,''))<>length(v_old_catalog)
+ THEN RAISE EXCEPTION 'v2_responders_source_drift';END IF;
+ v_sql:=replace(v_before,v_old_catalog,
+  E'    -- Respuesta legítima: no requiere otro aviso ni permiso por ronda.\\n'
+  ||E'    -- La autorización ÚNICA anterior y revocable se verifica arriba.\\n');
+ IF strpos(v_sql,'JOIN cotironda_piloto_privado.v2_supplier_original_consents c')=0
+ OR strpos(v_sql,'AND c.revoked_at IS NULL')=0
+ OR strpos(v_sql,'AND c.accepted_at<=inv.created_at')=0
+ OR strpos(v_sql,'AND a.content_sha256=link.source_sha256')=0
+ THEN RAISE EXCEPTION 'v2_responders_critical_guards_missing';END IF;
+ EXECUTE v_sql;
+ SELECT pg_get_functiondef(p.oid) INTO STRICT v_after
+ FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+ WHERE n.nspname='public' AND p.proname='cotironda_piloto_v2_d016_original_source_private';
+ IF md5(v_after)<>'b0e49ded293ebd2c45904c34b1d5d3e8'
+ OR strpos(v_after,v_old_source)=0
+ OR length(v_after)-length(replace(v_after,v_old_source,''))<>length(v_old_source)
+ THEN RAISE EXCEPTION 'v2_source_function_drift';END IF;
+ v_sql:=replace(v_after,v_old_source,
+  E'  -- El catálogo y las consultas por fuente exigen consentimiento vigente.\\n'
+  ||E'  -- Ya no depende de un aviso/confirmación por cada respuesta.\\n');
+ IF strpos(v_sql,'v2_supplier_original_consents c')=0
+ OR strpos(v_sql,'c.revoked_at IS NULL')=0
+ OR strpos(v_sql,'c.accepted_at<=inv.created_at')=0
+ OR strpos(v_sql,'a.content_sha256=link.source_sha256')=0
+ THEN RAISE EXCEPTION 'v2_original_source_critical_guards_missing';END IF;
+ EXECUTE v_sql;
+ IF has_function_privilege('anon',
+  'public.cotironda_piloto_v2_d016_responders_private(uuid,text)','EXECUTE')
+ OR has_function_privilege('authenticated',
+  'public.cotironda_piloto_v2_d016_responders_private(uuid,text)','EXECUTE')
+ OR has_function_privilege('anon',
+  'public.cotironda_piloto_v2_d016_original_source_private(uuid,text,uuid)','EXECUTE')
+ OR has_function_privilege('authenticated',
+  'public.cotironda_piloto_v2_d016_original_source_private(uuid,text,uuid)','EXECUTE')
+ THEN RAISE EXCEPTION 'v2_security_rpc_acl_regression';END IF;
+END $patch$;
