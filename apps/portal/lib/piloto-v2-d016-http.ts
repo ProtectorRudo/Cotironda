@@ -376,3 +376,62 @@ export async function listarHistorialWhatsappD017(
   return new Response(JSON.stringify(history),{status:200,headers:HEADERS});
  }catch{return deny(503)}
 }
+
+/** Recuperación de la sesión D016 desde Mi Cotironda.
+ * El navegador NO elige chat, teléfono, empresa ni ronda. Solo envía un
+ * POST same-origin con cookie HttpOnly; el Edge resuelve el WhatsApp cifrado.
+ * Aislado y deshabilitado hasta Publicalo (doble flag portal + Edge).
+ */
+export async function enviarNuevoAccesoWhatsappD016(
+ req:Request,env:Record<string,string|undefined>=process.env
+):Promise<Response>{
+ const gate=puertaWhatsappPortalD016(env);
+ if(!gate||env.COTIRONDA_D016_REISSUE_ENABLED!=='true')
+  return deny(503);
+ const url=new URL(req.url);
+ if(req.method!=='POST'||url.origin!==gate.origenPortal||
+  url.pathname!=='/api/piloto/v2/mi-cotironda/enviar-acceso'||
+  url.search!==''||url.hash!==''||
+  req.headers.get('origin')!==gate.origenPortal||
+  req.headers.get('sec-fetch-site')!=='same-origin'||
+  req.headers.get('x-cotironda-reissue')!=='1')
+  return deny(403);
+ if((await req.text().catch(()=>'')).length!==0)return deny(400);
+ const secret=env.COTIRONDA_D016_REISSUE_SHARED_SECRET??'';
+ if(secret.length<40)return deny(503);
+ const db=privateDb(env);
+ const rawCookie=cookieSesionD016(req);
+ const digest=rawCookie?digestSesionPrivadaD016(rawCookie,gate.claveHmacHex):null;
+ if(!db||!digest)return deny();
+ try{
+  const first=await db.rpc('cotironda_piloto_v2_d017_buyer_history_private',{
+   p_sesion_hmac:digest
+  });
+  if(first.error)return deny(503);
+  const history=proyectarHistorialPrivadoD017(first.data);
+  if(!history)return deny();
+  // Elegir SIEMPRE una ronda V2 autorizada del comprador autenticado.
+  const selected=history.cotizaciones.find(r=>r.ofertasDisponibles);
+  if(!selected)return deny(403);
+  const after=await db.rpc('cotironda_piloto_v2_d017_buyer_history_private',{
+   p_sesion_hmac:digest
+  });
+  const again=after.error?null:proyectarHistorialPrivadoD017(after.data);
+  if(!again||!again.cotizaciones.some(r=>
+    r.rondaId===selected.rondaId&&r.ofertasDisponibles))return deny();
+  const reply=await fetch(PILOT+'/functions/v1/cotironda-piloto-v2-reemitir-acceso',{
+   method:'POST',headers:{authorization:'Bearer '+secret,
+    'content-type':'application/json'},
+   body:JSON.stringify({requestId:selected.rondaId,
+    sessionHmac:digest,operationId:crypto.randomUUID()}),
+   cache:'no-store',signal:AbortSignal.timeout(18000)
+  });
+  if(!reply.ok)return deny(reply.status===403?429:503);
+  const state:unknown=await reply.json().catch(()=>null);
+  if(!state||typeof state!=='object'||
+   (state as Record<string,unknown>).state!=='api_accepted')return deny(503);
+  return new Response(JSON.stringify({state:'sent'}),{
+   status:200,headers:HEADERS
+  });
+ }catch{return deny(503)}
+}
