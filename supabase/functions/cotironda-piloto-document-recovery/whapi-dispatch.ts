@@ -6,6 +6,9 @@
  */
 import {generarSolicitudPdfMvp091} from '../cotironda-piloto-whapi/request-pdf.ts';
 import {CAPTION_PEDIDO_COTIRONDA_MVP305} from '../_shared/aviso-proveedores-cierre-mvp305.ts';
+import {despacharSolicitudCentralMvp223} from '../cotironda-piloto-whapi/ai-central-dispatch-mvp223.ts';
+import {resolverDestinatarioMvp313} from '../cotironda-piloto-whapi/dynamic-recipient-mvp313.ts';
+import {etiquetaReferenciaPedidoV2} from '../cotironda-piloto-whapi/referencia-pedido-v2.ts';
 
 type RpcResult={data:unknown;error:unknown};
 export type Rpc=(name:string,params?:Record<string,unknown>)=>Promise<RpcResult>;
@@ -124,4 +127,97 @@ export async function dispatchPendingPilotSupplierPdfs(
   await finish(accepted?'api_accepted':'uncertain',id);
  }
  return result;
+}
+
+
+/** V2 D013: reusable, one-round-per-tick scheduled central dispatch.
+ * Invoked ONLY after the existing Vault-authenticated recovery cron.
+ * Does NOT select suppliers from their rubro: SQL's approved per-product
+ * shadow snapshot and fresh lease determine exactly who receives which PDF.
+ * This does not change supplier-original visibility or consent.
+ */
+export type V2ScheduledResult=Readonly<{
+ state:'off'|'disabled'|'empty'|'processed'|'rate_limited'|'reconciliation';
+ claimed:number;accepted:number;uncertain:number;
+}>;
+export async function dispatchPendingVerifiedV2SupplierPdfs(
+ config:Readonly<{
+  enabled:boolean;dynamicRecipientsEnabled:boolean;
+  hmacHex:string;aesHex:string;channel:string;token:string;
+  includeReference:boolean;
+ }>,io:IO
+):Promise<V2ScheduledResult>{
+ const result=(state:V2ScheduledResult['state'],
+  claimed=0,accepted=0,uncertain=0):V2ScheduledResult=>
+  ({state,claimed,accepted,uncertain});
+ if(!config.enabled)return result('off');
+ if(!config.dynamicRecipientsEnabled)return result('disabled');
+ if(!HEX.test(config.hmacHex)||!HEX.test(config.aesHex)||
+    config.hmacHex===config.aesHex||!ID.test(config.channel)||
+    config.token.length<16||config.token.length>300)fail();
+ const peek=await io.rpc(
+  'cotironda_piloto_v2_d013_scheduled_dispatch_due_private');
+ if(peek.error||!peek.data||typeof peek.data!=='object'||
+    Array.isArray(peek.data))throw Error('v2_scheduled_selector_unavailable');
+ const scope=peek.data as Record<string,unknown>;
+ if(scope.state==='disabled')return result('disabled');
+ if(scope.state==='empty')return result('empty');
+ const requestId=scope.request_id;
+ if(scope.state!=='ready'||typeof requestId!=='string'||
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(requestId))
+  throw Error('v2_scheduled_selector_invalid');
+ const decode=(hex:string):Uint8Array=>
+  Uint8Array.from(hex.match(/.{2}/gu)!,v=>parseInt(v,16));
+ const hmacBytes=decode(config.hmacHex);
+ const aesBytes=decode(config.aesHex);
+ const hmacKey=await crypto.subtle.importKey('raw',hmacBytes.buffer,
+  {name:'HMAC',hash:'SHA-256'},false,['sign']);
+ const aesKey=await crypto.subtle.importKey('raw',aesBytes.buffer,
+  'AES-GCM',false,['decrypt']);
+ const auth=async(recipient:string,expected:string)=>{
+  const computed=toHex(await crypto.subtle.sign('HMAC',hmacKey,
+   ENCODER.encode('cotironda|pilot|chat|'+config.channel+
+    '|'+recipient+'@s.whatsapp.net')));
+  return equalSecret(computed,expected);
+ };
+ const rpc:Rpc=async(name,params)=>io.rpc(name,params);
+ const sent=await despacharSolicitudCentralMvp223({
+  enabled:true,requestId,recipients:{},maxJobs:2,
+  rpc:async(name,params)=>rpc(name,params),
+  resolveRecipient:async(lease)=>resolverDestinatarioMvp313(lease,{
+   hmacKey,aesKey,channel:config.channel
+  },async(name,params)=>rpc(name,params)),
+  authorizeChatHmac:auth,
+  createPdf:generarSolicitudPdfMvp091,
+  sendWhapi:async(recipient,pdf)=>{
+   const ref=config.includeReference?
+    etiquetaReferenciaPedidoV2(requestId):null;
+   const response=await io.post('https://gate.whapi.cloud/messages/document',{
+    method:'POST',
+    headers:{Authorization:'Bearer '+config.token,
+     'Content-Type':'application/json'},
+    body:JSON.stringify({
+     to:recipient,
+     media:'data:application/pdf;name=Solicitud-Cotironda.pdf;base64,'+b64(pdf),
+     mime_type:'application/pdf',
+     filename:'Solicitud-Cotironda.pdf',
+     caption:CAPTION_PEDIDO_COTIRONDA_MVP305+(ref?'\n'+ref:'')
+    }),
+    signal:AbortSignal.timeout(12000)
+   });
+   const payload=response.ok?await response.json().catch(()=>null):null;
+   const value=payload&&typeof payload==='object'?
+     payload as Record<string,unknown>:null;
+   const nested=value?.message&&typeof value.message==='object'?
+     value.message as Record<string,unknown>:null;
+   const id=value?.message_id??nested?.id??value?.id;
+   return {accepted:response.ok&&value?.sent===true,
+    messageId:typeof id==='string'?id:null};
+  }
+ });
+ if(sent.estado==='requiere_conciliacion')
+  return result('reconciliation',sent.reclamados,
+   sent.apiAceptados,sent.inciertos);
+ return result(sent.estado==='limite_diario'?'rate_limited':'processed',
+  sent.reclamados,sent.apiAceptados,sent.inciertos);
 }
