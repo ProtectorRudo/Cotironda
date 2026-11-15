@@ -4,7 +4,7 @@
  */
 import {createHmac,randomBytes} from 'node:crypto';
 
-export const V2_D016_TTL_MS=10*60*1000;
+export const V2_D016_TTL_MS=14*24*60*60*1000;
 const PILOT='https://ilggkalaafhtiysyzlmg.supabase.co';
 const TOKEN=/^[A-Za-z0-9_-]{43}$/u; // randomBytes(32).toString('base64url')
 const KEY=/^[a-f0-9]{64}$/u;
