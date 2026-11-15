@@ -113,7 +113,7 @@ test('V2 scheduled text delivery reuses verified lease + SHA + AES-GCM recipient
    assert.equal(url,'https://gate.whapi.cloud/messages/text');
    const body=JSON.parse(init.body);
    assert.equal(body.to,recipient);
-   assert.match(body.body,/Cotironda pedido: 665759f0/);
+   assert.match(body.body,/Cotironda pedido: 665759F0/);
    assert.match(body.body,/10 bolsas · Cemento CPC 50 kg/);
    assert.match(body.body,/1 bolsas · Bolsón arena fina 1 m3/);
    assert.match(body.body,/17\/11\/2026/);
