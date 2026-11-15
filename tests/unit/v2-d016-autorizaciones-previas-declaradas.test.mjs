@@ -45,6 +45,7 @@ test('D016: constancia privada, inmutable y revocable',()=>{
  assert.match(sql,/REVOKE ALL ON FUNCTION cotironda_piloto_privado\.v2_d016_effective_original_consent_private/u);
  assert.match(sql,/CREATE TRIGGER v2_d016_owner_attestation_immutable/u);
  assert.match(sql,/OLD\.revoked_at IS NOT NULL OR NEW\.revoked_at IS NULL/u);
- assert.match(sql,/SET revoked_at=clock_timestamp\(\)/u);
+ assert.match(sql,/revoked_at timestamptz/u);
+ assert.match(sql,/AND att.revoked_at IS NULL/u);
  assert.doesNotMatch(sql,/GRANT (?:ALL|SELECT) ON cotironda_piloto_privado\.v2_d016_owner_original_attestations TO (?:PUBLIC|anon|authenticated)/u);
 });
