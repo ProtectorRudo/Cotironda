@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {dispatchPendingVerifiedV2SupplierPdfs} from
+import {dispatchPendingVerifiedV2SupplierTexts} from
  '../../supabase/functions/cotironda-piloto-document-recovery/whapi-dispatch.ts';
 
 const NO_SEND=()=>{
@@ -17,13 +17,13 @@ const bytes=(hex)=>Uint8Array.from(hex.match(/.{2}/g),x=>parseInt(x,16));
 
 test('V2 worker stays inert unless its own opt-in gate is true',async()=>{
  let queries=0;
- const result=await dispatchPendingVerifiedV2SupplierPdfs(
+ const result=await dispatchPendingVerifiedV2SupplierTexts(
   {...base,enabled:false},{rpc:async()=>{queries++;throw Error('called');},post:NO_SEND});
  assert.equal(result.state,'off');
  assert.equal(queries,0);
 });
 test('V2 worker never falls back to legacy static recipient numbers',async()=>{
- const result=await dispatchPendingVerifiedV2SupplierPdfs(
+ const result=await dispatchPendingVerifiedV2SupplierTexts(
   {...base,dynamicRecipientsEnabled:false},{rpc:async()=>{throw Error('called');},
    post:NO_SEND});
  assert.equal(result.state,'disabled');
@@ -31,7 +31,7 @@ test('V2 worker never falls back to legacy static recipient numbers',async()=>{
 test('V2 disabled/empty SQL policy cannot send any WhatsApp',async()=>{
  for(const state of ['disabled','empty']){
   let calls=0;
-  const result=await dispatchPendingVerifiedV2SupplierPdfs(
+  const result=await dispatchPendingVerifiedV2SupplierTexts(
    base,{rpc:async()=>{calls++;return {data:{state},error:null};},post:NO_SEND});
   assert.equal(result.state,state);
   assert.equal(calls,1);
@@ -39,7 +39,7 @@ test('V2 disabled/empty SQL policy cannot send any WhatsApp',async()=>{
 });
 test('V2 selector may never choose an unverified UUID',async()=>{
  await assert.rejects(
-  dispatchPendingVerifiedV2SupplierPdfs(base,{
+  dispatchPendingVerifiedV2SupplierTexts(base,{
    rpc:async()=>({data:{state:'ready',request_id:'invalid'},error:null}),
    post:NO_SEND
   }),
@@ -47,7 +47,7 @@ test('V2 selector may never choose an unverified UUID',async()=>{
  );
 });
 
-test('V2 scheduled delivery reuses verified lease + SHA + AES-GCM recipient and finishes once',async()=>{
+test('V2 scheduled text delivery reuses verified lease + SHA + AES-GCM recipient and finishes once',async()=>{
  const requestId='665759f0-251b-4a2b-afb4-d763612366f7';
  const supplier='corralon_ailin';
  const lease='77777777-7777-4777-8777-777777777777';
@@ -106,19 +106,20 @@ test('V2 scheduled delivery reuses verified lease + SHA + AES-GCM recipient and 
   }
   throw Error('unexpected RPC '+name);
  };
- const result=await dispatchPendingVerifiedV2SupplierPdfs(base,{
+ const result=await dispatchPendingVerifiedV2SupplierTexts(base,{
   rpc,
   post:async(url,init)=>{
    posts++;
-   assert.equal(url,'https://gate.whapi.cloud/messages/document');
+   assert.equal(url,'https://gate.whapi.cloud/messages/text');
    const body=JSON.parse(init.body);
    assert.equal(body.to,recipient);
-   assert.match(body.media,/^data:application\/pdf;name=Solicitud-Cotironda\.pdf;base64,/);
-   assert.match(body.caption,/Cotironda pedido:/);
-   assert.match(body.caption,/solo los comercios que respondan/);
-   const pdfText=Buffer.from(body.media.split(',')[1],'base64').toString('latin1');
-   assert.match(pdfText,/Solo comercios que respondan/);
-   assert.doesNotMatch(pdfText,/TODOS los proveedores invitados/);
+   assert.match(body.body,/Cotironda pedido: 665759f0/);
+   assert.match(body.body,/10 bolsas · Cemento CPC 50 kg/);
+   assert.match(body.body,/1 bolsas · Bolsón arena fina 1 m3/);
+   assert.match(body.body,/17\/11\/2026/);
+   assert.match(body.body,/solo los comercios que respondan/);
+   assert.doesNotMatch(body.body,/TODOS los proveedores invitados/);
+   assert.equal(body.media,undefined);
    return {ok:true,json:async()=>({sent:true,message_id:'wamid.SYNTHETIC12345'})};
   }
  });
