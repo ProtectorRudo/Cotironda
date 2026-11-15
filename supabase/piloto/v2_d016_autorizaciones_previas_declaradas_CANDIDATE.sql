@@ -70,8 +70,17 @@ SELECT CASE WHEN EXISTS (
   WHERE c.supplier_key=p_supplier_key AND c.version='cotironda-originales-v2'
    AND c.revoked_at IS NULL AND c.accepted_at>=bp.activated_at
    AND c.accepted_at<=p_invited_at LIMIT 1),
- (SELECT att.recorded_at FROM cotironda_piloto_privado.v2_d016_owner_original_attestations att
+ -- La ratificación del responsable se registra HOY; no se retrodata.
+ -- El campo consentAt del portal usa la fecha REAL del alta general del proveedor
+ -- (participants.consent_at), anterior a la invitación. La autorización expresa
+ -- de compartir originales se acredita por la constancia owner, separada e inmutable.
+ -- Nunca se presenta el alta general como un WhatsApp de aceptación V2.
+ (SELECT p.consent_at FROM cotironda_piloto_privado.v2_d016_owner_original_attestations att
+  JOIN cotironda_piloto_privado.participants p ON p.key=att.supplier_key
   WHERE att.supplier_key=p_supplier_key AND att.request_id=p_request_id
+   AND p.chat_hmac=p_chat_hmac AND p.participant_role='supplier'
+   AND p.consent_at IS NOT NULL AND p.consent_at<=p_invited_at
+   AND p.opted_out_at IS NULL
    AND att.revoked_at IS NULL AND att.consent_scope='comprador_original_identificado_y_analisis_v2'
    AND att.recorded_at<=clock_timestamp() LIMIT 1)
 ) ELSE NULL END
