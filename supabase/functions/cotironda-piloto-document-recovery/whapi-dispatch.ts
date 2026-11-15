@@ -168,8 +168,10 @@ export async function dispatchPendingVerifiedV2SupplierPdfs(
   throw Error('v2_scheduled_selector_invalid');
  const decode=(hex:string):Uint8Array=>
   Uint8Array.from(hex.match(/.{2}/gu)!,v=>parseInt(v,16));
- const hmacBytes=decode(config.hmacHex);
- const aesBytes=decode(config.aesHex);
+ const hmacBytes=new Uint8Array(32);
+ hmacBytes.set(decode(config.hmacHex));
+ const aesBytes=new Uint8Array(32);
+ aesBytes.set(decode(config.aesHex));
  const hmacKey=await crypto.subtle.importKey('raw',hmacBytes.buffer,
   {name:'HMAC',hash:'SHA-256'},false,['sign']);
  const aesKey=await crypto.subtle.importKey('raw',aesBytes.buffer,
