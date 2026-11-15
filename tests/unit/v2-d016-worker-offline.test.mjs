@@ -27,7 +27,7 @@ const request=(c={})=>new Request(URL+(c.query??''),{
 });
 const file=()=>({state:'authorized_original_v2',
  ...job(),buyerKey:'buyer_a',supplierKey:'supplier_a',
- messageHmac:MESSAGE,sha256:SHA,consentAt:1700000000000,invitedAt:1700000000001,
+ messageHmac:MESSAGE,sha256:SHA,enrolledAt:1700000000000,invitedAt:1700000000001,
  bucket:'cotironda-piloto-originals',path:'media/'+MESSAGE,byteCount:BYTES.length});
 const points=()=>[
  {categoria:'material',evidencia:'15 bolsas de cemento',
@@ -66,8 +66,9 @@ function fixture(){
   analyze:async data=>{
    state.modelCount++;
    assert.equal(data.fuente.fuente,TEXT);
-   assert.equal(data.fuente.compradorAutorizado,true);
-   assert.equal(data.fuente.consentimientoOriginalVerificado,true);
+   assert.equal(data.fuente.compradorAutorizado,false);
+    assert.equal(data.fuente.procesamientoInternoPrivado,true);
+   assert.equal(data.fuente.consentimientoOriginalVerificado,false);
    assert.equal(data.fuente.sha256,SHA);
    if(state.modelFail)throw Error('simulate_model_timeout');
    return report();
@@ -129,7 +130,7 @@ test('D016 offline: sin flags, secreto, apikey, cookie o cuerpo inválido jamás
 test('D016 offline: fuente adulterada o ilegible no consulta a la IA',async()=>{
  const bad=[{...file(),buyerKey:''},{...file(),path:'media/'+'f'.repeat(64)},
   {...file(),sha256:'f'.repeat(64)},
-  {...file(),consentAt:1700000000002,invitedAt:1700000000001}];
+  {...file(),enrolledAt:1700000000002,invitedAt:1700000000001}];
  for(const x of bad){const f=fixture();f.state.source=x;
   const res=await f.run();assert.equal((await res.json()).state,'skipped');
   assert.equal(f.state.claimCount,0);assert.equal(f.state.modelCount,0);
