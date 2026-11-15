@@ -12,7 +12,7 @@ import {auditStoredSupplierQuote} from './supplier-evidence.ts';
 import {auditStoredSourceFactsMvp163} from './source-facts.ts';
 import {auditarOriginalEconomicoMvp168} from './source-economics-mvp168.ts';
 import {guardScheduledRecovery} from './scheduled-auth.ts';
-import {dispatchPendingPilotSupplierPdfs,dispatchPendingVerifiedV2SupplierPdfs} from './whapi-dispatch.ts';
+import {dispatchPendingPilotSupplierPdfs,dispatchPendingVerifiedV2SupplierTexts} from './whapi-dispatch.ts';
 import {invokeAutoRecoveryMvp293} from './auto-recovery-tick-mvp293.ts';
 const REF='ilggkalaafhtiysyzlmg';
 const root='https://'+REF+'.supabase.co';
@@ -80,7 +80,7 @@ Deno.serve(async(req)=>{
    // No original-share policy is enabled by this worker.
    if(Deno.env.get('COTIRONDA_PILOT_V2_D013_SCHEDULED_DISPATCH_ENABLED')==='true'){
     try{
-     const delivery=await dispatchPendingVerifiedV2SupplierPdfs({
+     const delivery=await dispatchPendingVerifiedV2SupplierTexts({
       enabled:Deno.env.get('COTIRONDA_PILOT_WHAPI_OUTBOUND_ENABLED')==='true',
       dynamicRecipientsEnabled:
        Deno.env.get('COTIRONDA_PILOT_DYNAMIC_RECIPIENT_MVP313_ENABLED')==='true',
