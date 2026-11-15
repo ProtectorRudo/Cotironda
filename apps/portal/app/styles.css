@@ -1,1 +1,95 @@
 :root{color-scheme:dark;font-family:ui-sans-serif,system-ui,Arial;background:#0b1724;color:#e9f2f3}*{box-sizing:border-box}body{margin:0}a{color:inherit;text-decoration:none}.top{border-bottom:1px solid #263e4a}.wrap{width:min(1080px,calc(100% - 38px));margin:auto}.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:76px}.logo{font-size:21px;letter-spacing:.07em;font-weight:900}.logo span,h1 span{color:#44d9b5}.status,.eyebrow{font-size:11px;color:#6ee6c9;font-weight:800;letter-spacing:.12em}.hero{padding-top:110px;padding-bottom:120px}.hero h1{font-size:clamp(38px,6vw,68px);letter-spacing:-.05em;line-height:1.1}.hero p{max-width:710px;color:#a9bcc9;line-height:1.8}.actions{display:flex;gap:12px;flex-wrap:wrap;margin:32px 0}.button,button{border:0;cursor:pointer;display:inline-block;border-radius:11px;background:#43dbb7;color:#0a2922;font-weight:800;padding:13px 19px;font-size:14px}.button:disabled,button:disabled{opacity:.5;cursor:not-allowed}.outline{color:#e8f3f4;border:1px solid #41616e;background:transparent}.notice{background:#112638;border:1px solid #284555;padding:18px;border-radius:12px;color:#bed1d9;max-width:690px;font-size:13px}.panel{width:min(560px,calc(100% - 32px));margin:65px auto 110px;padding:30px;background:#132839;border:1px solid #315061;border-radius:20px}.panel h1{font-size:28px;letter-spacing:-.03em}.panel p{color:#aac1ca;line-height:1.6}label{display:block;margin-top:20px;margin-bottom:6px;color:#d4e3e6;font-size:13px;font-weight:700}input,select{padding:13px 14px;background:#0a1c29;border:1px solid #3b5868;color:white;width:100%;border-radius:9px;font:inherit;font-size:14px}input:focus,select:focus{outline:2px solid #45d9ba}.panel button{width:100%;margin-top:23px}.inline-actions{display:flex;gap:12px}.inline-actions button{flex:1}.feedback{margin-top:18px;padding:12px;border-radius:9px;background:#1d3443;color:#e3f5ee;line-height:1.5;font-size:13px}.muted{font-size:12px;color:#a6bbc7}.foot{text-align:center;padding:32px 15px;font-size:12px;color:#8aa1ad;border-top:1px solid #273e4b}@media(max-width:630px){.top .wrap{min-height:67px}.status{font-size:9px;letter-spacing:0}.panel{padding:22px}.hero{padding:72px 0}}
+
+
+/* D016: la vista del comprador es un tablero COMERCIAL, no un informe técnico.
+   Estilos aislados: no alteran el alta ni el resto del portal. */
+.coti-buyer-portal.panel{width:min(900px,calc(100% - 28px));margin:36px auto 84px;
+ padding:0;background:transparent;border:0;border-radius:0}
+.coti-buyer-portal>.eyebrow{display:inline-block;margin-bottom:8px}
+.coti-buyer-portal>h1{font-size:clamp(30px,5.5vw,42px);line-height:1.14;
+ letter-spacing:-.045em;margin:3px 0 8px;color:#f2f9fa}
+.coti-buyer-portal>.coti-page-desc{font-size:14px;margin:0 0 25px;
+ color:#9cb4c1;line-height:1.55}
+.coti-buyer-dashboard{min-width:0}
+.coti-dashboard-top{display:flex;align-items:center;justify-content:space-between;
+ gap:16px;flex-wrap:wrap;margin:12px 0 18px}
+.coti-eyebrow{font-size:10px;letter-spacing:.13em;font-weight:800;color:#42dbb6}
+.coti-dashboard-subtitle{margin:5px 0 0!important;font-size:14px;line-height:1.4}
+.coti-dashboard-actions{display:flex;gap:9px;flex-wrap:wrap}
+.coti-buyer-portal .coti-dashboard-actions button{width:auto!important;margin:0!important;
+ padding:9px 13px;border-radius:10px;font-size:12px}
+.coti-offer{border:1px solid #294759;border-radius:22px;background:#132838;
+ box-shadow:0 22px 55px #020b1345;overflow:hidden;padding:26px;
+ margin:0 0 18px;color:#e3f0f1}
+.coti-offer-header{display:flex;align-items:center;gap:14px;padding-bottom:20px;
+ border-bottom:1px solid #2b4554}
+.coti-supplier-icon{display:grid;place-items:center;flex:none;width:47px;height:47px;
+ border:1px solid #296959;border-radius:14px;background:#163f3b;
+ color:#58e3c3;font-size:22px;font-weight:850}
+.coti-offer-identity{min-width:0;flex:1}
+.coti-offer-identity h2{color:#f5fbfb;font-weight:760;font-size:clamp(18px,3vw,22px);
+ line-height:1.2;letter-spacing:-.03em;margin:4px 0}
+.coti-offer-identity p{font-size:12px;margin:0;color:#a8bec8}
+.coti-doc-tag{border:1px solid #355565;color:#c7dadf;align-self:flex-start;
+ border-radius:8px;padding:6px 10px;font-size:11px;font-weight:800}
+.coti-metrics{display:grid;grid-template-columns:minmax(0,1.18fr) minmax(0,1fr);
+ gap:13px;margin:22px 0}
+.coti-total-panel,.coti-coverage-panel{min-width:0;border:1px solid #2b4855;
+ border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:9px}
+.coti-total-panel{background:linear-gradient(140deg,#144b44,#163b42 70%,#183a45)}
+.coti-coverage-panel{background:#182e3f}
+.coti-metric-label{font-size:12px;color:#b6c9cf;font-weight:750}
+.coti-total-value{color:#76efcc;font-size:clamp(26px,5vw,38px);font-weight:820;
+ letter-spacing:-.05em;line-height:1.12;overflow-wrap:anywhere}
+.coti-coverage-value{color:#f0f9f9;font-size:clamp(28px,4.5vw,38px);font-weight:800;line-height:1.1}
+.coti-coverage-value span{font-size:18px;font-weight:600;color:#adc2cb}
+.coti-coverage-unknown{color:#f1e9cc;font-size:19px;line-height:1.3}
+.coti-total-panel small,.coti-coverage-panel small{color:#b6cbd0;font-size:11px;
+ line-height:1.45}
+.coti-offer-section{padding:2px 0 4px}
+.coti-offer-section h3{font-size:15px;color:#eef7f7;margin:4px 0 14px}
+.coti-condition-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.coti-condition{border:1px solid #2c4856;border-radius:12px;background:#172d3e;
+ padding:13px 12px;min-height:78px;display:flex;flex-direction:column;gap:8px}
+.coti-condition span{font-size:11px;color:#92afbd}
+.coti-condition strong{color:#e4f0f2;font-size:12px;font-weight:750;
+ line-height:1.38;overflow-wrap:anywhere}
+.coti-review-notice{margin:18px 0 4px;background:#2a2b28;border:1px solid #736144;
+ border-radius:12px;padding:13px 16px}
+.coti-review-notice strong{color:#ffe9ae;font-size:13px}
+.coti-review-notice p,.coti-review-notice li,
+.coti-review-notice small{color:#ead7b5;font-size:12px;line-height:1.55}
+.coti-review-notice ul{margin:8px 0;padding-left:20px}
+.coti-minor-note{color:#b9cbd2;font-size:12px;margin:16px 0}
+.coti-analysis-details{border-top:1px solid #2b4554;
+ border-bottom:1px solid #2b4554;margin:22px 0 20px;padding:5px 0}
+.coti-analysis-details summary{display:flex;align-items:center;justify-content:space-between;
+ gap:15px;cursor:pointer;font-size:13px;font-weight:720;color:#d9ebea;
+ list-style:none;padding:13px 2px}
+.coti-analysis-details summary::-webkit-details-marker{display:none}
+.coti-analysis-details summary:focus-visible{outline:2px solid #43dbb7;outline-offset:3px}
+.coti-analysis-details summary:after{content:"+";font-size:20px;color:#55dbba}
+.coti-analysis-details[open] summary:after{content:"−"}
+.coti-details-count{background:#27463e;color:#6bedc4;border-radius:20px;
+ padding:3px 9px;font-size:11px;margin-left:auto}
+.coti-evidence-list{margin:0 0 12px;padding:0 0 0 18px}
+.coti-evidence-list li{padding:7px 0 10px;font-size:13px;line-height:1.5}
+.coti-evidence-list p{color:#e0eced;margin:0 0 5px}
+.coti-evidence-list small{color:#9eb7c0;font-size:11px}
+.coti-buyer-portal .coti-download{width:100%;margin:0;padding:16px 22px;
+ border-radius:12px;font-size:15px;box-shadow:0 8px 22px #0bd29a21}
+.coti-footer-note{text-align:center;font-size:11px!important;margin:13px 0 0!important;
+ color:#849eac!important}
+.coti-empty{border:1px dashed #41606d;border-radius:14px;padding:24px;color:#aac1ca}
+@media(max-width:650px){
+ .coti-buyer-portal.panel{width:calc(100% - 24px);margin:25px auto 70px}
+ .coti-offer{padding:17px;border-radius:18px}
+ .coti-offer-header{gap:10px}
+ .coti-supplier-icon{width:41px;height:41px;font-size:19px}
+ .coti-metrics{grid-template-columns:1fr}
+ .coti-total-panel,.coti-coverage-panel{padding:17px}
+ .coti-condition-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .coti-dashboard-top{align-items:flex-start}
+ .coti-dashboard-actions{width:100%}
+ .coti-buyer-portal .coti-dashboard-actions button{flex:1}
+}
