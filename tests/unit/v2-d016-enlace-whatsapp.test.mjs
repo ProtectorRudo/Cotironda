@@ -10,6 +10,9 @@ const KEY='b'.repeat(64);
 const CHAT='c'.repeat(64);
 const ROUND='123e4567-e89b-42d3-a456-426614174000';
 const NOW=1800000000000;
+test('D016: cada enlace emitido tiene 14 días de vigencia',()=>{
+ assert.equal(V2_D016_TTL_MS,14*24*60*60*1000);
+});
 const gate=()=>({
  habilitada:true,entorno:'preview',proyectoUrl:'https://ilggkalaafhtiysyzlmg.supabase.co',
  shaDesplegado:SHA,shaAprobado:SHA,origenPortal:ORIGIN,claveHmacHex:KEY
