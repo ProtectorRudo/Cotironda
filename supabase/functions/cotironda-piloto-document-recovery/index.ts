@@ -14,6 +14,7 @@ import {auditarOriginalEconomicoMvp168} from './source-economics-mvp168.ts';
 import {guardScheduledRecovery} from './scheduled-auth.ts';
 import {dispatchPendingPilotSupplierPdfs,dispatchPendingVerifiedV2SupplierTexts} from './whapi-dispatch.ts';
 import {sendAutomaticBuyerLinkD016} from './buyer-auto-link-d016.ts';
+import {runPrivatePreanalysisVaultD016} from './internal-preanalysis-v2-d016.ts';
 import {invokeAutoRecoveryMvp293} from './auto-recovery-tick-mvp293.ts';
 const REF='ilggkalaafhtiysyzlmg';
 const root='https://'+REF+'.supabase.co';
@@ -274,6 +275,28 @@ Deno.serve(async(req)=>{
    // The legacy Vault-checked task remains authoritative and unaltered.
    // Reuse this SAME approved internal cron; do not expose the MVP292
    // secret to pg_cron or add a second recurring job.
+   // V2: analyze stored original privately after this SAME Vault cron guard.
+   // No disclosure of original bytes to buyer; no other cron or confirmation.
+   try{
+    const state=await runPrivatePreanalysisVaultD016({
+     url:s.url,apiKey:s.apiKey,
+     aesHex:Deno.env.get('COTIRONDA_PILOT_AES_HEX')??'',
+     pdfEnabled:Deno.env.get('COTIRONDA_PILOT_V2_PDF_ENABLED')??'false',
+     pdfSecret:Deno.env.get('COTIRONDA_PILOT_V2_PDF_SHARED_SECRET')??'',
+     rpc:async(name,params)=>{
+      const {data,error}=await db.rpc(name,params);
+      if(error)throw Error('v2_private_analysis_database_unavailable');
+      return data;
+     },
+     readPrivate:async(path)=>{
+      const {data,error}=await db.storage.from('cotironda-piloto-originals')
+       .download(path);
+      if(error||!data||data.size<1||data.size>8388608)return null;
+      return new Uint8Array(await data.arrayBuffer());
+     }
+    });
+    if(state!=='idle'&&state!=='off')console.info('cotironda_v2_preanalysis',state);
+   }catch{console.info('cotironda_v2_preanalysis','unavailable')}
    const tick=await invokeAutoRecoveryMvp293({
     enabled:Deno.env.get('COTIRONDA_PILOT_AUTO_CORRELATION_MVP291_ENABLED')==='true'&&
       Deno.env.get('COTIRONDA_PILOT_AUTO_RECOVERY_MVP292_ENABLED')==='true',
