@@ -2,6 +2,9 @@
  * Ningun nombre, invitacion, precio, ruta, hash o token se toma del navegador.
  * El origen es la RPC privada, invocada DESPUES de verificar getUser+JWT.
  */
+import {resumirOfertaComercialV2,type ResumenComercialV2}
+ from './v2-d016-resumen-comercial.ts';
+
 export type PuntoVisibleV2=Readonly<{
  categoria:string;evidencia:string;observacion:string;
 }>;
@@ -9,6 +12,7 @@ export type RespuestaV2=Readonly<{
  documentoId:string;comercio:string;formato:string;recibidoMs:number;
  analisis:string;
  puntos:readonly PuntoVisibleV2[];
+ resumen:ResumenComercialV2;
 }>;
 export type CatalogoRespuestasV2=Readonly<{
  estado:'cotizaciones_recibidas';
@@ -82,7 +86,8 @@ export function proyectarRespuestasV2(raw:unknown):CatalogoRespuestasV2|null{
    recibidoMs:it.receivedAt,
    analisis:points.length?'Lo importante de este presupuesto':
     'Análisis en preparación',
-   puntos:points
+   puntos:points,
+   resumen:resumirOfertaComercialV2(it.commercial,points)
   }));
  }
  return Object.freeze({
