@@ -170,35 +170,107 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
  if(cerrada)return <p role="status">Tu sesión está cerrada. Podés pedir otro enlace por WhatsApp.</p>;
  if(loading)return <p role="status">Comprobando tu pedido…</p>;
  if(error&&!catalog)return <p role="alert">{error}</p>;
- return <section aria-label="Cotizaciones recibidas">
-  <div className="actions">
-   <button className="button outline" type="button"
-    disabled={busy} onClick={()=>void refresh()}>Actualizar</button>
-   <button className="button outline" type="button" disabled={busy}
-    onClick={()=>void cerrarSesion()}>Cerrar sesión</button>
+ return <section className="coti-buyer-dashboard" aria-label="Cotizaciones recibidas">
+  <div className="coti-dashboard-top">
+   <div>
+    <span className="coti-eyebrow">SEGUIMIENTO DE TU PEDIDO</span>
+    <p className="coti-dashboard-subtitle">
+     {catalog?.respuestas.length===1?'1 comercio respondió':
+      (catalog?.respuestas.length??0)+' comercios respondieron'}
+    </p>
+   </div>
+   <div className="coti-dashboard-actions">
+    <button className="button outline" type="button" disabled={busy}
+     onClick={()=>void refresh()}>Actualizar</button>
+    <button className="button outline" type="button" disabled={busy}
+     onClick={()=>void cerrarSesion()}>Cerrar sesión</button>
+   </div>
   </div>
   {busy&&<p role="status">Verificando información…</p>}
   {analizando&&<p role="status">Preparando los análisis de los presupuestos recibidos…</p>}
   {error&&<p role="alert">{error}</p>}
   {catalog?.respuestas.length===0&&
-   <p role="status">Todavía no recibimos cotizaciones</p>}
-  {catalog?.respuestas.map(q=><article key={q.documentoId}
-   className="notice" style={{marginBlock:'1rem'}}>
-   <h2>{q.comercio}</h2>
-   <p>{q.formato} · Recibido el {new Date(q.recibidoMs).toLocaleString('es-AR',{
-    timeZone:'America/Argentina/Buenos_Aires'
-   })}</p>
-   <p><strong>{q.analisis}</strong></p>
-   {q.puntos.length>0&&<ul aria-label="Claves del presupuesto">
-    {q.puntos.map((p,i)=><li key={q.documentoId+'-'+i}>
-     <p>{p.observacion}</p>
-     <small>Según el original: «{p.evidencia}»</small>
-    </li>)}
-   </ul>}
-   <button className="button" type="button" disabled={busy}
+   <p className="coti-empty" role="status">Todavía no recibimos cotizaciones. Acá vas a ver cada comercio cuando responda.</p>}
+  {catalog?.respuestas.map(q=><article className="coti-offer" key={q.documentoId}>
+   <header className="coti-offer-header">
+    <span className="coti-supplier-icon" aria-hidden="true">C</span>
+    <div className="coti-offer-identity">
+     <span className="coti-eyebrow">PRESUPUESTO RECIBIDO</span>
+     <h2>{q.comercio}</h2>
+     <p>{q.formato} · {new Date(q.recibidoMs).toLocaleDateString('es-AR',{
+      day:'2-digit',month:'short',year:'numeric',
+      timeZone:'America/Argentina/Buenos_Aires'
+     })}</p>
+    </div>
+    <span className="coti-doc-tag">{q.formato}</span>
+   </header>
+   <div className="coti-metrics">
+    <div className="coti-total-panel">
+     <span className="coti-metric-label">Total declarado</span>
+     <strong className="coti-total-value">{q.resumen.totalDeclarado??'No informado'}</strong>
+     <small>Según la oferta extraída. El PDF original prevalece.</small>
+    </div>
+    <div className="coti-coverage-panel">
+     <span className="coti-metric-label">Artículos identificados</span>
+     {q.resumen.cobertura?
+      <>
+       <strong className="coti-coverage-value">
+        {q.resumen.cobertura.identificados}<span> de {q.resumen.cobertura.solicitados}</span>
+       </strong>
+       <small>Coincidencia por producto, cantidad y presentación</small>
+      </>:
+      <>
+       <strong className="coti-coverage-unknown">Por verificar</strong>
+       <small>Aún no hay cotejo de renglones confiable</small>
+      </>}
+    </div>
+   </div>
+   <div className="coti-offer-section">
+    <h3>Condiciones de la oferta</h3>
+    <div className="coti-condition-grid">
+     {([
+      ['IVA',q.resumen.condiciones.iva],
+      ['Flete',q.resumen.condiciones.flete],
+      ['Forma de pago',q.resumen.condiciones.pago],
+      ['Entrega',q.resumen.condiciones.entrega]
+     ] as const).map(([label,value])=>
+      <div className="coti-condition" key={label}>
+       <span>{label}</span><strong>{value}</strong>
+      </div>)}
+    </div>
+   </div>
+   {q.resumen.cobertura&&q.resumen.cobertura.porVerificar.length>0&&
+    <div className="coti-review-notice">
+     <strong>Artículos para revisar</strong>
+     <p>No encontramos una coincidencia segura para:</p>
+     <ul>{q.resumen.cobertura.porVerificar.map((name,i)=>
+      <li key={i}>{name}</li>)}</ul>
+     <small>Esto no demuestra que el comercio no los haya cotizado. Revisá el original.</small>
+    </div>}
+   {q.resumen.cobertura&&q.resumen.cobertura.adicionales>0&&
+    <p className="coti-minor-note">
+     {q.resumen.cobertura.adicionales} renglón(es) extra o sin equivalencia
+     comprobada con el pedido. Revisá el PDF.
+    </p>}
+   <details className="coti-analysis-details">
+    <summary>
+     <span>Observaciones y evidencias del análisis</span>
+     <span className="coti-details-count">{q.puntos.length||'Pendiente'}</span>
+    </summary>
+    {q.puntos.length>0?
+     <ul className="coti-evidence-list">
+      {q.puntos.map((p,i)=><li key={q.documentoId+'-'+i}>
+       <p>{p.observacion}</p>
+       <small>Fuente original: «{p.evidencia}»</small>
+      </li>)}
+     </ul>:
+     <p>{q.analisis}</p>}
+   </details>
+   <button className="button coti-download" type="button" disabled={busy}
     onClick={()=>void download(q.documentoId)}>
     {q.formato==='WhatsApp (texto)'?'Descargar mensaje original':'Descargar original'}
    </button>
+   <p className="coti-footer-note">La decisión de compra es tuya. Cotironda no adjudica automáticamente.</p>
   </article>)}
   {informe&&<section aria-label="Informe final de Cotironda"
    className="notice" style={{marginTop:'2rem'}}>
