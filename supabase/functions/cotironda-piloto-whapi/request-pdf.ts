@@ -6,14 +6,11 @@
  */
 import {lineaComercialLegibleMvp288} from '../../../src/domain/ia-central/fidelidad-pedido-mvp288.ts';
 import {PIE_PDF_PROVEEDORES_MVP305} from '../_shared/aviso-proveedores-cierre-mvp305.ts';
-// V2: do not promise to reveal invited nonresponders.
-export const PIE_PDF_PROVEEDORES_V2='Solo comercios que respondan. Originales solo con autorización vigente.';
 export type ItemSolicitudMvp091=Readonly<{
  description:string;quantity:string;unit:string;
 }>;
 export type SolicitudPdfMvp091=Readonly<{
  requestId:string;city:string;deadlineIso:string;deliveryNote?:string|null;
- noticeMode?:'v2_responders';
  items:readonly ItemSolicitudMvp091[];
 }>;
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/iu;
@@ -75,8 +72,7 @@ function box(cmds:string[],x:number,y:number,w:number,h:number,rgb:string){
 export function generarSolicitudPdfMvp091(input:SolicitudPdfMvp091):Uint8Array{
  if(!input||typeof input!=='object'||!UUID.test(input.requestId)||
   !textOk(input.city,70)||CONTACT.test(input.city)||!Array.isArray(input.items)||
-  input.items.length<1||input.items.length>25||
-   (input.noticeMode!==undefined&&input.noticeMode!=='v2_responders'))fail();
+  input.items.length<1||input.items.length>25)fail();
  const lines=input.items.map((it,i)=>{
   if(!it||!textOk(it.description,75)||CONTACT.test(it.description)||
     typeof it.unit!=='string'||!Object.hasOwn(UNITS,it.unit))fail();
@@ -132,8 +128,7 @@ export function generarSolicitudPdfMvp091(input:SolicitudPdfMvp091):Uint8Array{
   }
   drawText(cmds,48,62,'Respondé por WhatsApp con tu presupuesto.',
    9,false,'0.40 0.46 0.55');
-  drawText(cmds,48,43,input.noticeMode==='v2_responders'?
-    PIE_PDF_PROVEEDORES_V2:PIE_PDF_PROVEEDORES_MVP305,
+  drawText(cmds,48,43,PIE_PDF_PROVEEDORES_MVP305,
    8,false,'0.40 0.46 0.55');
   drawText(cmds,492,43,'Pág. '+(page+1)+'/'+pageCount,8,false,
    '0.40 0.46 0.55');
