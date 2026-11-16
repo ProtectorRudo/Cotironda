@@ -50,6 +50,8 @@ on:
       - 'supabase/config.toml'
       - 'tests/unit/v2-d016-descarga-privada.test.mjs'
       - 'tests/unit/v2-d016-rutas-portal.test.mjs'
+      - 'supabase/piloto/v2_d016_onboarding_unico_originales_prospectivo_CANDIDATE.sql'
+      - 'tests/unit/v2-d016-alta-unica-v2-segura.test.mjs'
       - 'supabase/piloto/v2_d016_respuestas_y_originales_CANDIDATE.sql'
       - 'supabase/tests/fixtures/v2-d016-response-checks.sql'
       - 'supabase/tests/ci/v2-03-respondedores-pg17.sql'
@@ -148,6 +150,8 @@ jobs:
         run: node --experimental-strip-types --test tests/unit/v2-d016-texto-edge.test.mjs
       - name: D016 rutas Next sin teléfono ni Auth inventada
         run: node --experimental-strip-types --test tests/unit/v2-d016-rutas-portal.test.mjs
+      - name: D016 alta prospectiva única V2 y prohibición de confirmaciones por cotización
+        run: node --experimental-strip-types --test tests/unit/v2-d016-alta-unica-v2-segura.test.mjs
       - name: D016 verificar huella base REAL v76 y bloquear fuente GitHub divergente
         run: node --test tests/unit/v2-d016-live-v76-base.test.mjs
       - name: D016 WhatsApp firma HMAC, deduplicación y entrega incierta
