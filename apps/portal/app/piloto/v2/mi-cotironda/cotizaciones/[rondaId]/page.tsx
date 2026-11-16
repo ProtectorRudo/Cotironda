@@ -12,8 +12,8 @@ export default async function CotizacionDeMiHistorial(
 ){
  const {rondaId}=await params;
  if(!UUID.test(rondaId)||!puertaWhatsappPortalD016(process.env))notFound();
- return <main className="coti-profile-shell">
-  <a className="coti-back-link" href="/piloto/v2/mi-cotironda">← Volver a mis cotizaciones</a>
+ return <main className="coti-profile-shell coti-clean">
+  <a className="coti-back-link" href="/piloto/v2/mi-cotironda">← Mis cotizaciones</a>
   <DetalleHistoricoD017 rondaId={rondaId}/>
  </main>;
 }
