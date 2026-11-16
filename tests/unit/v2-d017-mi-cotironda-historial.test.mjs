@@ -125,6 +125,13 @@ test('D016: recuperación sin cookie no toma identidad del navegador y falla cer
  assert.ok(route.includes("solicitarAccesoPilotoSinSesionD016"));
  assert.ok(ui.includes("Recibir un nuevo enlace por WhatsApp"));
  assert.ok(edge.includes("pilotUnique"));
+ assert.ok(edge.includes("configUnavailable('outbound_disabled')"));
+ assert.ok(edge.includes("configUnavailable('link_send_disabled')"));
+ assert.ok(edge.includes("configUnavailable('portal_origin_mismatch')"));
+ assert.ok(edge.includes("configUnavailable('release_guard_not_ready')"));
+ assert.ok(edge.includes("configUnavailable('runtime_secrets_unavailable')"));
+ assert.match(edge,/console\.warn\('cotironda_d016_reissue_config_gate',reason\)/u);
+
  assert.ok(edge.includes("cotironda_piloto_v2_d016_reissue_unique_pilot_private"));
  for(const text of [
   "v_eligible<>1",
