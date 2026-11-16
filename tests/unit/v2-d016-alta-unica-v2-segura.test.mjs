@@ -12,9 +12,9 @@ const d016=src('apps/portal/lib/piloto-v2-d016-http.ts');
 test('Alta V2: una sola aceptación de términos explícitos y prospectivos',()=>{
  assert.match(sql,/v_version smallint:=2/u);
  assert.match(sql,/presupuesto ORIGINAL íntegro e identificado/u);
- assert.match(sql,/exclusivamente al comprador destinatario/u);
+ assert.match(sql,/EXCLUSIVAMENTE al comprador destinatario/u);
  assert.match(sql,/próximas rondas sin pedir confirmación por presupuesto/u);
- assert.match(sql,/no se pueden ampliar silenciosamente a permisos/u.test(sql)?/no se pueden ampliar silenciosamente a permisos/u:/NO convierte registros antiguos en permisos nuevos/u);
+ assert.match(sql,/NO convierte registros antiguos en permisos nuevos/u);
  assert.match(sql,/enrollment_policies_mvp308_version_check CHECK \(version IN \(1,2\)\)/u);
  assert.match(sql,/enrollment_terms_proof_mvp308_policy_version_check CHECK \(policy_version IN \(1,2\)\)/u);
  assert.match(sql,/role,version,policy_text/u);
