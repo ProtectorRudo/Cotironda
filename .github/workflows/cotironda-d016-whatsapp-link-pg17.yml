@@ -60,6 +60,8 @@ on:
       - 'apps/portal/app/piloto/v2/rondas/**'
       - 'supabase/piloto/v2_d016_whatsapp_link_tickets_CANDIDATE.sql'
       - 'supabase/tests/ci/v2-d016-whatsapp-access-pg17.sql'
+      - 'supabase/piloto/v2_d016_reuse_owner_consent_same_buyer_CANDIDATE.sql'
+      - 'supabase/tests/ci/v2-d016-consent-reuse-same-buyer-pg17.sql'
       - 'docs/V2-D016-PUENTE-WHATSAPP-CANDIDATO-20261113.md'
       - '.github/workflows/cotironda-d016-whatsapp-link-pg17.yml'
   workflow_dispatch:
@@ -155,6 +157,7 @@ jobs:
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/v2-d016-calendario-legal-pg17.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/v2-d016-whatsapp-access-pg17.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/v2-d016-consent-reuse-same-buyer-pg17.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/v2-03-respondedores-pg17.sql
           psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regnamespace('cotironda_piloto_privado') IS NULL" | grep -Fx 't'
           psql -X -A -t -v ON_ERROR_STOP=1 -c "SELECT to_regprocedure('public.cotironda_piloto_v2_d016_claim_ticket_private(text)') IS NULL" | grep -Fx 't'
