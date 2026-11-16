@@ -98,10 +98,16 @@ Deno.serve(async(req:Request)=>{
    return response('blocked',400);
   input=value as Record<string,unknown>;
  }catch{return response('blocked',400)}
- if(Object.keys(input).sort().join(',')!=='operationId,requestId,sessionHmac'||
-  typeof input.operationId!=='string'||!UUID.test(input.operationId)||
-  typeof input.requestId!=='string'||!UUID.test(input.requestId)||
-  typeof input.sessionHmac!=='string'||!HASH.test(input.sessionHmac))
+ // Modo sin cookie: no recibe ID de comprador, teléfono ni ronda.
+ // SOLO válido mientras la base posea un único comprador con canal verificado.
+ const pilotUnique=Object.keys(input).sort().join(',')==='mode,operationId'&&
+  input.mode==='pilot_unique';
+ const authenticated=Object.keys(input).sort().join(',')===
+  'operationId,requestId,sessionHmac';
+ if(typeof input.operationId!=='string'||!UUID.test(input.operationId)||
+  (!pilotUnique&&!authenticated)||
+  (authenticated&&(typeof input.requestId!=='string'||!UUID.test(input.requestId)||
+    typeof input.sessionHmac!=='string'||!HASH.test(input.sessionHmac))))
   return response('blocked',400);
  // Portal y Edge ya comparten el HMAC de D016. Autenticación con
  // firma de solicitud de vida corta, dominio criptográfico separado.
@@ -134,16 +140,21 @@ Deno.serve(async(req:Request)=>{
  const key=await crypto.subtle.importKey('raw',new Uint8Array(hmacRaw).buffer,
   {name:'HMAC',hash:'SHA-256'},false,['sign']);
  const ticketHmac=await hmac(key,'cotironda/d016/acceso/v1/'+token);
- const {data,error}=await db.rpc('cotironda_piloto_v2_d016_reissue_from_session_private',{
-  p_operation_id:input.operationId,p_request_id:input.requestId,
-  p_sesion_hmac:input.sessionHmac,p_ticket_hmac:ticketHmac
- });
+ const {data,error}=pilotUnique
+  ?await db.rpc('cotironda_piloto_v2_d016_reissue_unique_pilot_private',{
+   p_operation_id:input.operationId,p_ticket_hmac:ticketHmac
+  })
+  :await db.rpc('cotironda_piloto_v2_d016_reissue_from_session_private',{
+   p_operation_id:input.operationId,p_request_id:input.requestId,
+   p_sesion_hmac:input.sessionHmac,p_ticket_hmac:ticketHmac
+  });
  if(error||!data||typeof data!=='object')return response('unavailable',503);
  const row=data as Packet;
  if(row.state!=='issued')return response('blocked',403);
  let accepted=false,messageId:string|null=null;
  try{
-  if(row.requestId!==input.requestId||!HASH.test(row.chatHmac??'')||
+  if((!pilotUnique&&row.requestId!==input.requestId)||!UUID.test(row.requestId??'')||
+   !HASH.test(row.chatHmac??'')||
    !HASH.test(row.contactSha256??''))throw Error('invalid_packet');
   const recipient=await decryptContact(aesHex,row.nonceB64??'',
    row.ciphertextB64??'',row.chatHmac!);
