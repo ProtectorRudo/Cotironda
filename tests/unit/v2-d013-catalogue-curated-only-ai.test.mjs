@@ -1,9 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {categorizarCatalogosConIAMvp220,validarSnapshotCatalogosMvp220}
+import {categorizarCatalogosConIAMvp220,validarSnapshotCatalogosMvp220,
+ rubroDesdeFamiliaCuradaD013}
  from '../../src/domain/ia-central/catalogo-supabase-mvp220.ts';
-import {rubroFamiliaCuradaMvp216}
- from '../../src/domain/rubros-comprador-mvp216.ts';
 
 const seller=(key,curated=43,pending=10)=>({
  clave:key,localidad:'La Plata',catalogoConfirmado:false,
@@ -85,9 +84,9 @@ test('D013: 0 llamadas de IA si todas las familias son curadas',async()=>{
 });
 
 test('D013: clasificación conservadora de familias curadas ajenas a mapas',()=>{
- assert.equal(rubroFamiliaCuradaMvp216('cemento_gris_obra'),'obra_gruesa');
- assert.equal(rubroFamiliaCuradaMvp216('alambre_recocido'),'ferreteria');
- assert.equal(rubroFamiliaCuradaMvp216('membrana_asfaltica'),'otros');
+ assert.equal(rubroDesdeFamiliaCuradaD013('cemento_gris_obra'),'obra_gruesa');
+ assert.equal(rubroDesdeFamiliaCuradaD013('alambre_recocido'),'ferreteria');
+ assert.equal(rubroDesdeFamiliaCuradaD013('membrana_asfaltica'),'otros');
 });
 
 test('D013: rechaza una descripción alterada, aunque el número y rubro sean válidos',async()=>{
