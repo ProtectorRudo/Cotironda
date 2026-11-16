@@ -137,7 +137,9 @@ export function validarClasificacionCatalogosMvp220(
   'catalogo_sin_confirmar':'catalogo_apto',
   motivo:snapshot.proveedoresSinConfirmar>0?
    'falta_confirmacion_de_al_menos_un_catalogo':'catalogo_completo_con_fuente',
-  proveedores:suppliers,sinConfirmar:snapshot.pro/** La RPC ya filtró empresas y zonas. Este módulo nunca selecciona por rubro:
+  proveedores:suppliers,sinConfirmar:snapshot.proveedoresSinConfirmar};
+}
+/** La RPC ya filtró empresas y zonas. Este módulo nunca selecciona por rubro:
  * las coincidencias se siguen validando POR PRODUCTO en el ruteador D013.
  * La IA solo clasifica las descripciones SIN familia acreditada.
  */
