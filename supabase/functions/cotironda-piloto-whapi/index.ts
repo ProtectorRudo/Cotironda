@@ -385,7 +385,7 @@ async function respond(req:Request):Promise<Response>{
   // condiciones según rol (buyer/supplier) antes de enviar el código.
   // El número del arquitecto nunca es autorizado para divulgación.
   const altaConContacto=row.type==='text'
-    ?/^COTI ALTA ([a-f0-9]{32}) CONTACTOS SI ORIGINALES SI$/u.exec(body):null;
+    ?/^COTI ALTA ([a-f0-9]{32}) CONTACTOS SI$/u.exec(body):null;
   const altaCompradorConTerminos=row.type==='text'
     ?/^COTI ALTA ([a-f0-9]{32}) ACEPTO$/u.exec(body):null;
   if(altaConContacto||altaCompradorConTerminos){
