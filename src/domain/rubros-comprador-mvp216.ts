@@ -32,14 +32,21 @@ const catalogoObra=new Set([
 ]);
 const catalogoFijaciones=new Set(['alambre_galvanizado',
  'alambre_recocido','clavos_punta_paris']);
+/** Categorías ya respaldadas por la familia CURADA del catálogo.
+ * Para una familia no mapeada, 'otros' es una etiqueta conservadora:
+ * NO es una coincidencia técnica, permiso, disponibilidad ni stock.
+ * El llamador solo puede reutilizarla si recognition_state='curated_family'.
+ */
+export function rubroFamiliaCuradaMvp216(familia:string):RubroMvp216{
+ if(catalogoObra.has(familia))return 'obra_gruesa';
+ if(catalogoFijaciones.has(familia))return 'ferreteria';
+ return 'otros';
+}
 function rubroFuente(v:Item):RubroMvp216{
  // Etiqueta IA persistida por el backend, si existe, no inferencia textual.
  if(typeof v.rubro==='string'&&Object.hasOwn(RUBROS_MVP216,v.rubro))
   return v.rubro as RubroMvp216;
- // Compatibilidad con los catálogos LEGACY ya acreditados del piloto.
- if(catalogoObra.has(v.familia))return 'obra_gruesa';
- if(catalogoFijaciones.has(v.familia))return 'ferreteria';
- return 'otros'; // No inventar una clasificación para familias desconocidas.
+ return rubroFamiliaCuradaMvp216(v.familia);
 }
 export function resumirRubrosCompradorMvp216(
  status:unknown,privateInput:unknown,itemPrices:unknown
