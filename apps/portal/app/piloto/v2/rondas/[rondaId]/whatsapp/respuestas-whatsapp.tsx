@@ -5,6 +5,9 @@ import type {CatalogoRespuestasV2} from '../../../../../../../../src/server/v2-0
 import type {InformeFinalD016}
  from '../../../../../../../../src/server/v2-d016-informe-final.ts';
 import {nombreDescargaOriginalV2} from '../../../../../../lib/piloto-v2-nombre-descarga.ts';
+import {seleccionarAnalisisPendientesV2,registrarIntentosAnalisisV2,
+ type IntentoAnalisisV2}
+ from '../../../../../../lib/piloto-v2-reintento-analisis.ts';
 
 export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
  const [catalog,setCatalog]=useState<CatalogoRespuestasV2|null>(null);
@@ -14,7 +17,9 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
  const [cerrada,setCerrada]=useState(false);
  const version=useRef(0);
  const running=useRef<number|null>(null);
- const startedAnalyses=useRef(new Set<string>());
+ // MISMA recuperación V2-12 usada por el portal con JWT:
+ // hasta tres intentos por original, mínimo seis minutos entre intentos.
+ const historialAnalisis=useRef(new Map<string,IntentoAnalisisV2>());
  const analysisRunning=useRef(false);
  const [analizando,setAnalizando]=useState(false);
  const [informe,setInforme]=useState<InformeFinalD016|null>(null);
@@ -57,47 +62,48 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
   return ()=>{version.current++;window.clearInterval(timer)};
  },[refresh]);
 
- // La guía se genera sin intervención: sólo al abrir una ronda válida.
- // SQL impide cobros por reintentos: un job/SHA, lease 90 s, máximo tres
- // intentos de modelo. Este portal limita a seis candidatos por visita.
+ // Guía automática para CUALQUIER ronda o proveedor D016.
+ // Una respuesta HTTP 202/no disponible se reintenta con la MISMA política
+ // V2-12 que ya funciona en el portal autenticado por JWT. Sin WhatsApp,
+ // sin nuevos permisos ni pasos para el cliente/proveedor.
+ // La base decide el límite real (3/SHA, lease y revalidación de sesión).
  useEffect(()=>{
-  if(cerrada||!catalog||analysisRunning.current)return;
-  const pending=catalog.respuestas.filter(q=>q.puntos.length===0&&
-   !startedAnalyses.current.has(q.documentoId)).slice(0,6);
+  if(cerrada||!catalog||analysisRunning.current||
+     document.visibilityState!=='visible')return;
+  const ahoraMs=Date.now();
+  const pending=seleccionarAnalisisPendientesV2(
+   catalog.respuestas,historialAnalisis.current,ahoraMs);
   if(pending.length===0)return;
-  let active=true;
+  // Registrar ANTES de iniciar: el polling nunca duplica ejecuciones.
+  registrarIntentosAnalisisV2(historialAnalisis.current,pending,ahoraMs);
   analysisRunning.current=true;
   const current=version.current;
   setAnalizando(true);
   void (async()=>{
    let changed=false;
    try{
-    for(const item of pending){
-     if(!active||current!==version.current)break;
-     startedAnalyses.current.add(item.documentoId);
+    for(const documentoId of pending){
+     if(current!==version.current||document.visibilityState!=='visible')break;
      try{
       const answer=await fetch(url+'/analisis-whatsapp/'+
-       encodeURIComponent(item.documentoId),{
+       encodeURIComponent(documentoId),{
        method:'POST',credentials:'same-origin',cache:'no-store',
        headers:{'accept':'application/json'},
        signal:AbortSignal.timeout(55_000)
       });
-      if(answer.ok)changed=true;
-      if(answer.status===401||answer.status===403||answer.status===404)
-       break;
-     }catch{/* El original permanece accesible. */}
+      // HTTP 202 NO indica que la IA terminó: no marcarlo como resuelto.
+      if(answer.status===200)changed=true;
+      if([401,403,404].includes(answer.status))break;
+     }catch{/* La fuente original no se borra ni se bloquea. */}
     }
    }finally{
     analysisRunning.current=false;
-    // Una actualización periódica puede reemplazar el catálogo mientras
-    // el modelo trabaja. Limpiar el indicador aunque cambie el render.
     if(current===version.current){
      setAnalizando(false);
      if(changed)void refresh(true);
     }
    }
   })();
-  return ()=>{active=false};
  },[catalog,cerrada,url,refresh]);
 
  // El informe FINAL solo llega si PostgreSQL confirma que terminó la
@@ -163,6 +169,7 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
    });
    if(!res.ok)throw Error('logout_failed');
    version.current++;
+   historialAnalisis.current.clear();
    setCatalog(null);setCerrada(true);
   }catch{setError('No pudimos cerrar tu sesión. Volvé a intentarlo.');}
   finally{setBusy(false)}
