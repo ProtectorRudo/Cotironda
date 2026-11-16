@@ -30,7 +30,8 @@ async function abrirTextoArchivado(aesHex:string,row:Record<string,unknown>):Pro
    String(row.chat_hmac)+'|'+String(row.message_hmac)+'|text');
   const bytes=await crypto.subtle.decrypt(
    {name:'AES-GCM',iv:iv.buffer as ArrayBuffer,
-    additionalData:aad.buffer as ArrayBuffer,tagLength:128},key,data);
+    additionalData:aad.buffer as ArrayBuffer,tagLength:128},key,
+   data.buffer as ArrayBuffer);
   const original=new TextDecoder('utf-8',{fatal:true}).decode(bytes);
   if(original.length<10||original.length>4000)return null;
   const digest=await crypto.subtle.digest('SHA-256',
