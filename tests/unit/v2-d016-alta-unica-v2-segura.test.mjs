@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {overlayAltaUnicaWhapiV86,WHAPI_LIVE_V86_BUNDLE_SHA,
+ WHAPI_LIVE_V86_FILES,WHAPI_LIVE_V86_INDEX_LENGTH}
+ from '../../scripts/piloto/v2-d016-alta-unica-whapi-v86-overlay.mjs';
 
 const src=path=>readFileSync(new URL('../../'+path,import.meta.url),'utf8');
 const sql=src('supabase/piloto/v2_d016_onboarding_unico_originales_prospectivo_CANDIDATE.sql');
@@ -13,7 +16,7 @@ const webhook=src('supabase/functions/cotironda-piloto-whapi/index.ts');
 test('Alta V2: una sola aceptación de términos explícitos y prospectivos',()=>{
  assert.match(sql,/v_version smallint:=2/u);
  assert.match(sql,/CONTACTOS SI ORIGINALES SI/u);
- assert.match(webhook,/\^COTI ALTA \(\[a-f0-9\]\{32\}\) CONTACTOS SI ORIGINALES SI\$/u);
+ assert.match(webhook,/\^COTI ALTA \(\[a-f0-9\]\{32\}\) CONTACTOS SI\$/u);
  assert.match(sql,/presupuesto ORIGINAL íntegro e identificado/u);
  assert.match(sql,/EXCLUSIVAMENTE al comprador destinatario/u);
  assert.match(sql,/próximas rondas sin pedir confirmación por presupuesto/u);
@@ -59,4 +62,25 @@ test('La pantalla WhatsApp reutiliza reintento seguro y no pide confirmaciones p
  assert.match(d016,/cotironda_piloto_v2_d016_responders_with_analysis_private/u);
  assert.match(commercial,/totalDeclarado/u);
  assert.match(commercial,/cobertura/u);
+});
+
+test('Overlay del webhook v86 conserva paquete LIVE y cambia SOLO alta prospectiva',()=>{
+ const old='?/^COTI ALTA ([a-f0-9]{32}) CONTACTOS SI$/u.exec(body):null;';
+ const newer='?/^COTI ALTA ([a-f0-9]{32}) CONTACTOS SI ORIGINALES SI$/u.exec(body):null;';
+ const required="db.rpc('cotironda_piloto_enroll_terms_mvp308'";
+ const ack="if(!['enrolled_with_terms','already_enrolled']";
+ const anchor=[old,required,ack].join('\n');
+ const source=anchor+'x'.repeat(WHAPI_LIVE_V86_INDEX_LENGTH-anchor.length);
+ const ctx={source,bundleSha:WHAPI_LIVE_V86_BUNDLE_SHA,
+  files:WHAPI_LIVE_V86_FILES,version:86};
+ const patched=overlayAltaUnicaWhapiV86(ctx);
+ assert.equal(patched,source.replace(old,newer));
+ assert.equal(patched.split(newer).length,2);
+ for(const changes of [
+  {bundleSha:'f'.repeat(64)},
+  {files:70},{version:85},{source:'not-live'},
+  {source:source.replace(old,'no matching phrase').padEnd(WHAPI_LIVE_V86_INDEX_LENGTH,'x')}
+ ]){
+  assert.throws(()=>overlayAltaUnicaWhapiV86({...ctx,...changes}));
+ }
 });
