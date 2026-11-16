@@ -10,8 +10,8 @@
  * NO introducir fetch Whapi en este archivo.
  */
 import {interpretarConIaCentralV1} from './cliente-openai-v1.ts';
-import {categorizarCatalogosConIAMvp220,
- validarSnapshotCatalogosMvp220} from './catalogo-supabase-mvp220.ts';
+import {validarSnapshotCatalogosMvp220} from './catalogo-supabase-mvp220.ts';
+import {categorizarCatalogosCuradosD013} from './catalogo-curado-v2-d013.ts';
 import {proponerRuteoCatalogoConIAV2} from './ruteador-catalogos-v2-d013.ts';
 import type {PropuestaPedido} from './contrato-v1.ts';
 import type {ResultadoCatalogoV2} from './ruteador-catalogos-v2-d013.ts';
@@ -78,7 +78,7 @@ export async function planificarMensajeAutenticadoMvp220(args:{
   return deny('rechazado','catalogo_rpc_no_conciliado');
  if(catalog.proveedores.length===0)
   return deny('rechazado','sin_catalogos_consentidos');
- const classified=await categorizarCatalogosConIAMvp220({
+ const classified=await categorizarCatalogosCuradosD013({
   snapshot:catalog,apiKey:args.apiKey,
   model:args.model,fetchImpl:args.fetchImpl
  });
