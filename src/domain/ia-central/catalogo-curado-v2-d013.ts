@@ -9,6 +9,7 @@ import {
 } from './catalogo-supabase-mvp220.ts';
 const obj=(v:unknown):v is Record<string,unknown>=>
  v!==null&&typeof v==='object'&&!Array.isArray(v);
+const RUBROS=Object.keys(RUBROS_MVP216);
 
 /** D013: espejo conservador SOLO de etiquetas para familias curadas MVP216.
  * El módulo histórico tiene SHA inmóvil; se conserva como fuente de contraste.
