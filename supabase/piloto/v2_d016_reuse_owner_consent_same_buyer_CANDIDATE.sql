@@ -1,11 +1,8 @@
--- COTIRONDA V2 D016 — CANDIDATO, NO PUBLICAR SIN «PUBLICALO».
--- Corrección mínima de alcance temporal de la constancia OWNER existente.
--- Sólo mismo comprador, mismos proveedores, nuevos pedidos posteriores
--- y consentimiento documentado/íntegro, vigente y revocable.
--- NO crea permisos, NO rellena tablas de consentimientos, NO envía nada.
--- No retrotrae el consentimiento a rondas previas ni a nuevos compradores.
--- La rama de aceptación directa por WhatsApp continúa INTACTA.
--- Ejecutar como migración aislada en cotironda-piloto sólo con autorización.
+-- COTIRONDA V2 D016 CANDIDATO. NO PUBLICAR SIN «PUBLICALO».
+-- Reutiliza constancia de consentimiento UNA vez para futuras rondas
+-- del MISMO comprador y proveedor; se verifica prueba firmada y revocaciones.
+-- No crea consentimientos, no comparte originales, no invita proveedores.
+-- Preserva rama de consentimiento directo y no habilita rondas anteriores.
 CREATE OR REPLACE FUNCTION cotironda_piloto_privado.v2_d016_effective_original_consent_private(p_supplier_key text, p_request_id uuid, p_chat_hmac text, p_invited_at timestamp with time zone)
  RETURNS timestamp with time zone
  LANGUAGE sql
@@ -36,10 +33,9 @@ SELECT CASE WHEN EXISTS (
  -- (participants.consent_at), anterior a la invitación. La autorización expresa
  -- de compartir originales se acredita por la constancia owner, separada e inmutable.
  -- Nunca se presenta el alta general como un WhatsApp de aceptación V2.
- -- D016 V2: constancia firmada del responsable (MISMO comprador)
- -- Reutilizable solamente para rondas POSTERIORES al consentimiento.
- -- No inventa WhatsApp nuevo, no retrodata ni crea otra constancia.
- -- Una constancia para otro comprador NO habilita originales a este.
+ -- Autoriza ÚNICAMENTE al mismo comprador que recibió la constancia
+ -- posterior al alta, en rondas futuras. Sin extender a otros compradores.
+ -- La aceptación directa por mensaje Whapi se conserva sin cambios.
  (SELECT p.consent_at FROM cotironda_piloto_privado.v2_d016_owner_original_attestations att
   JOIN cotironda_piloto_privado.participants p ON p.key=att.supplier_key
   JOIN cotironda_piloto_privado.requests att_round ON att_round.id=att.request_id
@@ -55,15 +51,7 @@ SELECT CASE WHEN EXISTS (
     AND att.recorded_at<=p_invited_at
     AND att.attested_by='responsable_cotironda'
     AND att.evidence_kind='declaracion_responsable_en_conversacion'
-    AND att.declaration_sha256 ~ '^[a-f0-9]{64}
-   AND p.chat_hmac=p_chat_hmac AND p.participant_role='supplier'
-   AND p.consent_at IS NOT NULL AND p.consent_at<=p_invited_at
-   AND p.opted_out_at IS NULL
-   AND att.revoked_at IS NULL AND att.consent_scope='comprador_original_identificado_y_analisis_v2'
-   AND att.recorded_at<=clock_timestamp() LIMIT 1)
-) ELSE NULL END
-$function$
-
+    AND att.declaration_sha256 ~ '^[a-f0-9]{64}$'
     AND NOT EXISTS(
       SELECT 1 FROM cotironda_piloto_privado.v2_d016_original_notice_revocations rev
       WHERE rev.supplier_key=p_supplier_key
