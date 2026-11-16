@@ -50,10 +50,21 @@ const obj=(v:unknown):v is Record<string,unknown>=>
 function fail(motivo:string):ResultadoCatalogoV2{
  return {estado:'requiere_revision',motivo,propuestas:[],cobertura:[],revisionTecnica:[],whatsappEnviado:false};
 }
-function zonaIgual(a:string,b:string):boolean{
+/** D013: canon territorial explícito; nunca descartar provincias arbitrarias.
+ * La RPC de catálogos tiene los mismos alias exactos de La Plata.
+ * El texto original de localidad permanece intacto en el pedido.
+ */
+export function zonaIgual(a:string,b:string):boolean{
  const fold=(s:string)=>s.normalize('NFD').replace(/[\u0300-\u036f]/gu,'')
   .trim().toLocaleLowerCase('es-AR').replace(/\s+/gu,' ');
- return fold(a)===fold(b);
+ const alias=new Set([
+  'la plata, buenos aires',
+  'la plata, buenos aires, argentina',
+  'la plata, provincia de buenos aires',
+  'la plata, provincia de buenos aires, argentina'
+ ]);
+ const canonical=(s:string)=>alias.has(s)?'la plata':s;
+ return canonical(fold(a))===canonical(fold(b));
 }
 /** Catálogo textual: no se exige que descripción cotizada coincida
  * literalmente con la del proveedor. Eso lo decide IA usando contexto.
