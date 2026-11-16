@@ -62,7 +62,7 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
   return ()=>{version.current++;window.clearInterval(timer)};
  },[refresh]);
 
- // Guía automática para CUALQUIER ronda o proveedor D016.
+ // Guía automática sin intervención del comprador/proveedor, para CUALQUIER ronda D016.
  // Una respuesta HTTP 202/no disponible se reintenta con la MISMA política
  // V2-12 que ya funciona en el portal autenticado por JWT. Sin WhatsApp,
  // sin nuevos permisos ni pasos para el cliente/proveedor.
