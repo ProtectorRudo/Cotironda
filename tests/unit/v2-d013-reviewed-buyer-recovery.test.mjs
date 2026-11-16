@@ -100,6 +100,12 @@ test('D013: staging exitoso es solo borrador, sin invitaciones ni mensajes',asyn
    if(name==='cotironda_piloto_v2_d013_review_source_private')
     return {data:candidate,error:null};
    if(name==='cotironda_piloto_v2_d013_recovery_stage_private'){
+    assert.equal(params.p_chat_hmac,chat);
+    assert.equal(Object.hasOwn(params,'p_buyer_chat_hmac'),false,
+     'PostgREST wrapper never accepts legacy parameter name');
+    assert.deepEqual(Object.keys(params).sort(),[
+     'p_chat_hmac','p_message_hmac','p_source_sha256','p_original_text',
+     'p_city','p_items','p_destinos'].sort());
     assert.equal(params.p_message_hmac,message);
     assert.equal(params.p_original_text,original);
     assert.equal(params.p_city,'La Plata');
