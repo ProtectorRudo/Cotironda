@@ -143,7 +143,7 @@ BEGIN
   p_message_hmac,p_plaintext_sha256);
  RETURN jsonb_build_object('state','enrolled_with_terms',
   'role',p_role,'policy_version',v_version);
-END $function$
+END $function$;
 
 -- No GRANT ni cambio de ACL. Los términos V1 y consentimientos históricos
 -- se conservan; su alcance NO se amplía retroactivamente.
