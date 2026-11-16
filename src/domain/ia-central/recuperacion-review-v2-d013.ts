@@ -98,9 +98,14 @@ export async function recuperarBuyerReviewD013(args:{
   const expectedItems=prepared.params.p_items.length;
   const expectedMatches=prepared.params.p_destinos.reduce(
    (n,x)=>n+x.correspondencias.length,0);
+  // Esta RPC privada exige p_chat_hmac; el puente D013 de preparación
+  // general utiliza p_buyer_chat_hmac. PostgREST coteja nombres exactos:
+  // nunca enviar campos extra ni renombrar la RPC histórica.
+  const {p_buyer_chat_hmac,...stageParams}=prepared.params;
   const staged=await args.rpc(
    'cotironda_piloto_v2_d013_recovery_stage_private',{
-    ...prepared.params,p_source_sha256:raw.source_sha256
+    ...stageParams,p_chat_hmac:p_buyer_chat_hmac,
+    p_source_sha256:raw.source_sha256
    });
   if(staged.error!=null||!obj(staged.data)||
    staged.data.state!=='staged'||!UUID.test(String(staged.data.request_id))||
