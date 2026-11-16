@@ -43,6 +43,7 @@ export function HistorialWhatsappD017(){
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState('');
  const [reissue,setReissue]=useState<'idle'|'sending'|'accepted'|'error'>('idle');
+ const [recovery,setRecovery]=useState<'idle'|'sending'|'submitted'|'error'>('idle');
  const refresh=useCallback(async()=>{
   setLoading(true);setError('');
   try{
@@ -72,10 +73,31 @@ export function HistorialWhatsappD017(){
      (body as Record<string,unknown>).state==='sent'?'accepted':'error');
   }catch{setReissue('error')}
  }
+ async function recoverWithoutSession(){
+  if(recovery!=='idle'&&recovery!=='error')return;
+  setRecovery('sending');
+  try{
+   const res=await fetch('/api/piloto/v2/acceso/recuperar',{
+    method:'POST',credentials:'same-origin',cache:'no-store',
+    headers:{'x-cotironda-reissue':'1'},
+    signal:AbortSignal.timeout(20_000)
+   });
+   setRecovery(res.status===202?'submitted':'error');
+  }catch{setRecovery('error')}
+ }
  useEffect(()=>{void refresh()},[refresh]);
  if(loading)return <p role="status" className="coti-profile-message">Verificando tu historial privado…</p>;
  if(error)return <div role="alert" className="coti-profile-message">
-  <p>{error}</p><a href="/piloto/v2/acceso">Volver al acceso de WhatsApp</a>
+  <p>Este navegador todavía no tiene una sesión privada para tu historial.</p>
+  <p>Podés pedir que Cotironda envíe un acceso nuevo al WhatsApp ya verificado del comprador, sin registrarte de nuevo.</p>
+  <button type="button" className="button outline"
+   disabled={recovery==='sending'||recovery==='submitted'}
+   onClick={()=>void recoverWithoutSession()}>
+   {recovery==='sending'?'Solicitando acceso…':'Recibir un nuevo enlace por WhatsApp'}
+  </button>
+  {recovery==='submitted'&&<p role="status">Solicitud procesada. Si la cuenta piloto está habilitada, el nuevo enlace llegará exclusivamente al WhatsApp registrado. Revisá ese chat.</p>}
+  {recovery==='error'&&<p role="status">No se pudo procesar ahora. No enviaremos mensajes repetidos automáticamente.</p>}
+  <p><a href="/piloto/v2/acceso">Volver al acceso de WhatsApp</a></p>
  </div>;
  if(!data)return null;
  const sent=data.cotizaciones.filter(r=>r.estado!=='draft');
