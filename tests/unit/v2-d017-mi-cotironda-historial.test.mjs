@@ -76,7 +76,11 @@ test('D017: URL de acceso lleva al perfil, no exige SMS y preserva tickets',()=>
  assert.ok(entry.includes("response.ok"));
  assert.ok(entry.includes("historial_autorizado"));
  assert.ok(entry.includes("Array.isArray((raw as Record<string,unknown>).cotizaciones)"));
- assert.ok(entry.includes("Abrí el enlace original desde el WhatsApp de Cotironda"));
+ // Si falta cookie, NO se concede acceso: se ofrece reemisión segura al
+ // WhatsApp registrado sin aceptar identidad o teléfono del navegador.
+ assert.ok(entry.includes("Este navegador todavía no tiene una sesión privada activa."));
+ assert.ok(entry.includes("'/api/piloto/v2/acceso/recuperar'"));
+ assert.ok(entry.includes("setCanRecover(true)"));
  assert.doesNotMatch(entry,/localStorage|sessionStorage|document\.cookie|signInWithOtp/u);
  assert.match(ticket,/\/piloto\/v2\/acceso#d016=/u);
  assert.match(profile,/puertaWhatsappPortalD016\(process\.env\)/u);
@@ -102,5 +106,37 @@ test('D017: todas las APIs continúan bajo sesión servidor y verificación por 
  assert.match(detail,/ronda\.ofertasDisponibles/u);
  assert.match(detail,/cotización histórica|Cotización histórica/u);
  assert.match(old,/mis cotizaciones/i);
+ assert.doesNotMatch(adapter,/signInWithOtp|createSignedUrl/u);
+});
+
+test('D016: recuperación sin cookie no toma identidad del navegador y falla cerrado con 2 compradores',()=>{
+ const adapter=source('apps/portal/lib/piloto-v2-d016-http.ts');
+ const edge=source('supabase/functions/cotironda-piloto-v2-reemitir-acceso/index.ts');
+ const route=source('apps/portal/app/api/piloto/v2/acceso/recuperar/route.ts');
+ const sql=source('supabase/piloto/v2_d016_recovery_unique_buyer_CANDIDATE.sql');
+ const ui=source('apps/portal/app/piloto/v2/mi-cotironda/historial-whatsapp.tsx');
+ for(const text of [
+  "mode:'pilot_unique'","req.headers.get('origin')!==gate.origenPortal",
+  "req.headers.get('sec-fetch-site')!=='same-origin'",
+  "req.headers.get('x-cotironda-reissue')!=='1'",
+  "'cotironda/d016/reissue/v1",
+  "status:202"
+ ])assert.ok(adapter.includes(text),text);
+ assert.ok(route.includes("solicitarAccesoPilotoSinSesionD016"));
+ assert.ok(ui.includes("Recibir un nuevo enlace por WhatsApp"));
+ assert.ok(edge.includes("pilotUnique"));
+ assert.ok(edge.includes("cotironda_piloto_v2_d016_reissue_unique_pilot_private"));
+ for(const text of [
+  "v_eligible<>1",
+  "AND b.opted_out_at IS NULL",
+  "AND ch.nonce_b64 IS NOT NULL",
+  "t.created_at>v_now-interval '30 days'",
+  "v_now-interval '10 minutes'",
+  ">=2 THEN RETURN jsonb_build_object('state','rate_limited')",
+  "cotironda_piloto_v2_d016_issue_ticket_private",
+  "cotironda_piloto_privado.v2_d016_session_reissues",
+  "FROM PUBLIC,anon,authenticated"
+ ])assert.ok(sql.includes(text),text);
+ assert.doesNotMatch(sql,/GRANT\\s+EXECUTE\\s+ON\\s+FUNCTION\\s+\\S+\\s+TO\\s+(?:PUBLIC|anon|authenticated)/iu);
  assert.doesNotMatch(adapter,/signInWithOtp|createSignedUrl/u);
 });
