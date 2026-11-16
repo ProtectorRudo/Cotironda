@@ -36,10 +36,9 @@ export function DetalleHistoricoD017({rondaId}:{rondaId:string}){
   timeZone:'America/Argentina/Buenos_Aires'
  });
  return <section aria-label={'Cotización del '+date}>
-  <header className="coti-profile-heading">
-   <span className="coti-eyebrow">MI COTIRONDA · DETALLE DE COTIZACIÓN</span>
+  <header className="coti-profile-heading coti-clean-detail-heading">
    <h1>Cotización del {date}</h1>
-   <p>{ronda.localidad||'Localidad no informada'} · {ronda.articulos} artículos solicitados</p>
+   <p>{ronda.localidad||'Localidad no informada'} · {ronda.articulos} {ronda.articulos===1?'material':'materiales'}</p>
   </header>
   {ronda.ofertasDisponibles?
    <RespuestasWhatsappD016 rondaId={ronda.rondaId}/>:
