@@ -60,7 +60,10 @@ export function origenValidoD016(s:string):boolean{
    u.port===''&&u.search===''&&u.hash===''&&u.pathname==='/'&&
    u.origin===s&&
    (u.hostname.endsWith('.vercel.app')||
-    u.hostname==='piloto.cotironda.com.ar');
+    u.hostname==='piloto.cotironda.com.ar'||
+    // Subdominio único y exacto. Sin wildcard para otras subzonas.
+    // La puerta sigue cerrada fuera de Preview y sin SHA/HMAC habilitados.
+    u.hostname==='app.cotironda.com');
  }catch{return false}
 }
 export function puertaD016Lista(g:PuertaD016):boolean{
