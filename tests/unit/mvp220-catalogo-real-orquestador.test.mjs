@@ -38,6 +38,17 @@ function classification(raw){
   p.articulos.map(x=>({numero:x.numero,descripcionFuente:x.descripcion,
    rubro:'obra_gruesa'}))}))};
 }
+/** D013: la IA clasifica solo descripciones sin familia curada.
+ * El formato completo antiguo sigue vigente en validarClasificacionCatalogos.
+ */
+function clasificacionPendiente(raw){
+ const descriptions=new Set();
+ for(const p of raw.proveedores)for(const row of p.articulos)
+  if(row.revisionAnterior==='pending_review')descriptions.add(row.descripcion);
+ return {lineas:[...descriptions].map((descripcionFuente,i)=>({
+  numero:i+1,descripcionFuente,rubro:'obra_gruesa'
+ }))};
+}
 function responder(...values){
  const bodies=[];let call=0;
  const fetchImpl=async(_url,req)=>{
@@ -90,7 +101,7 @@ test('MVP220: una propuesta de categoría incompleta nunca se aprueba',()=>{
 });
 test('MVP220: IA categoriza 2 catálogos, pero solo confirma el que estaba confirmado en SQL',async()=>{
  const raw=real(),snapshot=validarSnapshotCatalogosMvp220(raw);
- const {fetchImpl,bodies}=responder(classification(raw));
+ const {fetchImpl,bodies}=responder(clasificacionPendiente(raw));
  const r=await categorizarCatalogosConIAMvp220({snapshot,
   apiKey:'sk-'+'a'.repeat(24),model:'gpt-6-luna',fetchImpl});
  assert.equal(r.estado,'catalogo_sin_confirmar');
@@ -105,7 +116,7 @@ test('MVP220: orquesta mensaje → catálogo real → rubros → proveedor sin e
  const proposal={propuestas:[{proveedor:'corralon_ailin',correspondencias:[
   {indicePedido:0,numeroCatalogo:1,tipo:'producto_declarado',explicacion:'Cemento comercial'},
   {indicePedido:1,numeroCatalogo:3,tipo:'alternativa_razonable',explicacion:'Bolsón de arena'}]}]};
- const {fetchImpl,bodies}=responder(first,second,classification(raw),proposal);
+ const {fetchImpl,bodies}=responder(first,second,clasificacionPendiente(raw),proposal);
  const rpcCalls=[];
  const result=await planificarMensajeAutenticadoMvp220({
   chatHmac:'a'.repeat(64),messageHmac:'b'.repeat(64),
@@ -132,7 +143,7 @@ test('MVP224: catálogo registrado sin confirmar permite INVITAR a cotizar, sin 
    {indicePedido:1,numeroCatalogo:3,tipo:'alternativa_razonable',
     explicacion:'Bolsón registrado'}]
  }]};
- const {fetchImpl,bodies}=responder(first,second,classification(raw),matching);
+ const {fetchImpl,bodies}=responder(first,second,clasificacionPendiente(raw),matching);
  const r=await planificarMensajeAutenticadoMvp220({
   chatHmac:'a'.repeat(64),messageHmac:'b'.repeat(64),
   textoOriginal:origen,autenticadoPorWebhook:true,
