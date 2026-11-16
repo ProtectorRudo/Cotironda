@@ -14,27 +14,28 @@ function label(state:RondaHistorialD017['estado']){
  return state==='closed'?'Cerrada':state==='prepared'?'En curso':'Borrador';
 }
 function Row({r}:{r:RondaHistorialD017}){
- return <a className="coti-history-item"
-  href={'/piloto/v2/mi-cotironda/cotizaciones/'+encodeURIComponent(r.rondaId)}>
+ const dia=new Date(r.fechaMs);
+ const ofertas=r.ofertasDisponibles&&r.originales>0;
+ return <a className={'coti-history-item '+(r.estado==='prepared'?'coti-history-active':'')}
+  href={'/piloto/v2/mi-cotironda/cotizaciones/'+encodeURIComponent(r.rondaId)}
+  aria-label={'Cotización del '+date(r.fechaMs)+', '+label(r.estado)+
+   (ofertas?', '+r.originales+' presupuestos recibidos':'')}>
   <div className="coti-history-date-icon" aria-hidden="true">
-   <span>{new Date(r.fechaMs).toLocaleDateString('es-AR',{day:'2-digit',timeZone:'America/Argentina/Buenos_Aires'})}</span>
-   <small>{new Date(r.fechaMs).toLocaleDateString('es-AR',{month:'short',timeZone:'America/Argentina/Buenos_Aires'})}</small>
+   <span>{dia.toLocaleDateString('es-AR',{day:'2-digit',timeZone:'America/Argentina/Buenos_Aires'})}</span>
+   <small>{dia.toLocaleDateString('es-AR',{month:'short',timeZone:'America/Argentina/Buenos_Aires'})}</small>
   </div>
   <div className="coti-history-details">
    <div className="coti-history-mainline">
-    <strong>Cotización del {date(r.fechaMs)}</strong>
-    <span className={'coti-history-state '+(r.estado==='closed'?'closed':r.estado==='draft'?'draft':'active')}>
-     {label(r.estado)}
-    </span>
+    <strong>{date(r.fechaMs)}</strong>
    </div>
-   <p>{r.localidad||'Localidad no informada'} · {r.articulos} {r.articulos===1?'artículo solicitado':'artículos solicitados'}</p>
-   <span className="coti-history-documents">
-    {r.ofertasDisponibles?
-     r.originales+' '+(r.originales===1?'presupuesto disponible':'presupuestos disponibles'):
-     r.estado==='draft'?'Sin enviar a proveedores':
-     'Archivo histórico · originales no habilitados'}
-   </span>
+   <p>{r.localidad||'Localidad no informada'} · {r.articulos} {r.articulos===1?'material':'materiales'}</p>
+   {ofertas&&<span className="coti-history-documents">
+    {r.originales} {r.originales===1?'presupuesto recibido':'presupuestos recibidos'}
+   </span>}
+   {r.estado==='draft'&&<span className="coti-history-documents">Sin enviar a proveedores</span>}
+   {r.estado==='closed'&&!ofertas&&<span className="coti-history-archive">Archivo histórico · originales no habilitados</span>}
   </div>
+  <span className={'coti-history-state '+(r.estado==='closed'?'closed':r.estado==='draft'?'draft':'active')}>{label(r.estado)}</span>
   <span className="coti-history-chevron" aria-hidden="true">›</span>
  </a>;
 }
@@ -102,40 +103,36 @@ export function HistorialWhatsappD017(){
  if(!data)return null;
  const sent=data.cotizaciones.filter(r=>r.estado!=='draft');
  const drafts=data.cotizaciones.filter(r=>r.estado==='draft');
- const active=sent.filter(r=>r.estado==='prepared').length;
- const originals=sent.reduce((sum,r)=>sum+r.originales,0);
- return <section aria-label="Historial de cotizaciones">
-  <div className="coti-profile-welcome">
-   <div><span className="coti-eyebrow">BIENVENIDO A TU PORTAL</span>
-    <h2>{data.nombre}</h2>
-    <p>Consultá cada pedido y los presupuestos de los comercios que respondieron.</p>
-   </div>
-   <div>
-    <button type="button" className="button outline" onClick={()=>void refresh()}>Actualizar</button>
-    <button type="button" className="button outline"
-     disabled={reissue==='sending'} onClick={()=>void sendNewAccess()}>
-     {reissue==='sending'?'Enviando acceso…':'Enviar acceso a mi WhatsApp'}
-    </button>
-    {reissue==='accepted'&&<p role="status">WhatsApp aceptó el envío del nuevo enlace privado al número verificado de esta cuenta.</p>}
-    {reissue==='error'&&<p role="alert">No se pudo confirmar el envío. No se reenviará automáticamente para evitar duplicados.</p>}
-   </div>
+ const active=sent.filter(r=>r.estado==='prepared');
+ const history=sent.filter(r=>r.estado!=='prepared');
+ return <section className="coti-clean-history" aria-label="Historial de cotizaciones">
+  <div className="coti-clean-profilebar">
+   <span>{data.nombre}</span>
+   <details className="coti-clean-account-tools">
+    <summary aria-label="Opciones de acceso">Opciones</summary>
+    <div className="coti-clean-account-menu">
+     <button type="button" onClick={()=>void refresh()}>Actualizar historial</button>
+     <button type="button" disabled={reissue==='sending'} onClick={()=>void sendNewAccess()}>
+      {reissue==='sending'?'Enviando…':'Enviar acceso a mi WhatsApp'}
+     </button>
+     {reissue==='accepted'&&<p role="status">Acceso enviado al WhatsApp registrado.</p>}
+     {reissue==='error'&&<p role="alert">No se pudo confirmar el envío.</p>}
+    </div>
+   </details>
   </div>
-  <div className="coti-profile-stats">
-   <div><span>Cotizaciones</span><strong>{sent.length}</strong></div>
-   <div><span>En curso</span><strong>{active}</strong></div>
-   <div><span>Presupuestos disponibles</span><strong>{originals}</strong></div>
-  </div>
-  <section className="coti-history-group" aria-label="Tus cotizaciones">
-   <div className="coti-history-title"><h2>Mis cotizaciones</h2>
-    <span>Más recientes primero</span></div>
-   {sent.length?sent.map(r=><Row key={r.rondaId} r={r}/>):
-    <div className="coti-profile-message">Todavía no tenés cotizaciones enviadas.</div>}
-  </section>
-  {drafts.length>0&&<section className="coti-history-group" aria-label="Borradores históricos">
-   <div className="coti-history-title"><h2>Borradores</h2>
-    <span>No enviados a proveedores</span></div>
-   {drafts.map(r=><Row key={r.rondaId} r={r}/>)}
+  {active.length>0&&<section className="coti-history-group" aria-label="Cotizaciones en curso">
+   <div className="coti-history-title"><h2>En curso</h2></div>
+   {active.map(r=><Row key={r.rondaId} r={r}/>)}
   </section>}
-  <p className="coti-profile-privacy">Tu historial se conserva aunque venza el enlace de acceso. Cada presupuesto original requiere autorización vigente.</p>
+  <section className="coti-history-group" aria-label="Tus cotizaciones anteriores">
+   <div className="coti-history-title"><h2>Historial</h2></div>
+   {history.length?history.map(r=><Row key={r.rondaId} r={r}/>):
+    <p className="coti-clean-muted">No hay cotizaciones anteriores.</p>}
+  </section>
+  {drafts.length>0&&<details className="coti-clean-drafts">
+   <summary>Borradores ({drafts.length})</summary>
+   {drafts.map(r=><Row key={r.rondaId} r={r}/>)}
+  </details>}
+  <p className="coti-profile-privacy">Tu historial permanece disponible al renovar el acceso privado.</p>
  </section>;
 }
