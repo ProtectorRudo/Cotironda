@@ -118,11 +118,15 @@ test('D016 dashboard mantiene la descarga real, análisis original y claridad co
  const ui=readFileSync(new URL(
   '../../apps/portal/app/piloto/v2/rondas/[rondaId]/whatsapp/respuestas-whatsapp.tsx',
   import.meta.url),'utf8');
- for(const phrase of ['Total declarado','Artículos identificados','Condiciones de la oferta',
+ // Diseño minimalista: información esencial a la vista y evidencia en detalle.
+ for(const phrase of [
+  'coti-clean-bid-price','coti-clean-coverage','Condiciones de la oferta',
   'q.resumen.totalDeclarado','q.resumen.cobertura',
-  'Observaciones y evidencias del análisis','Descargar original',
-  'informe-final-whatsapp','credentials:','cerrarSesion']){
-  assert.ok(ui.includes(phrase),phrase);
- }
- assert.ok(ui.includes('<details className="coti-analysis-details">'));
+  'Ver análisis completo','Descargar original','originales-whatsapp',
+  'informe-final-whatsapp','credentials:', 'cerrarSesion',
+  'aria-expanded={expanded}','coti-clean-bid-expanded'
+ ])assert.ok(ui.includes(phrase),phrase);
+ assert.ok(ui.includes('<details className="coti-clean-evidence">'));
+ assert.ok(ui.includes('PDF original'));
+ assert.ok(!ui.includes("['Entrega',q.resumen.condiciones.entrega]"));
 });
