@@ -9,6 +9,23 @@ import {descripcionOriginalVerificableMvp288} from './fidelidad-pedido-mvp288.ts
 import type {ProveedorCatalogoV2} from './ruteador-catalogos-v2.ts';
 const HASH=/^[a-f0-9]{64}$/u;
 const KEY=/^[a-z][a-z0-9_]{2,63}$/u;
+/** Canonicaliza SOLO alias explícitos que la RPC de catálogos D013 ya admite.
+ * El original queda intacto en p_original_text; no afecta Córdoba, Berisso
+ * ni otras localidades. SQL de preparación/publicación usa ciudad canónica.
+ */
+const LA_PLATA_D013=new Set([
+ 'la plata',
+ 'la plata, buenos aires',
+ 'la plata, buenos aires, argentina',
+ 'la plata, provincia de buenos aires',
+ 'la plata, provincia de buenos aires, argentina'
+]);
+export function localidadOperativaD013(ciudad:string):string{
+ const literal=ciudad.trim();
+ const normalized=literal.normalize('NFD').replace(/[\u0300-\u036f]/gu,'')
+  .toLowerCase().replace(/\s+/gu,' ');
+ return LA_PLATA_D013.has(normalized)?'La Plata':literal;
+}
 type Params=Readonly<{
  p_buyer_chat_hmac:string;p_message_hmac:string;
  p_original_text:string;p_city:string;
@@ -115,7 +132,7 @@ export function armarPreparacionSombraMvp221(args:{
    p_buyer_chat_hmac:args.chatHmac,
    p_message_hmac:args.messageHmac,
    p_original_text:args.textoOriginal,
-   p_city:pedido.zona_entrega,
+   p_city:localidadOperativaD013(pedido.zona_entrega),
    p_items:fullItems,p_destinos:destinations
   }};
 }
