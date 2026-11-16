@@ -172,6 +172,8 @@ type PendienteRubro=Readonly<{numero:number;descripcionFuente:string}>;
 type EntradaRubro=Readonly<{
  proveedor:string;lineas:{numero:number;descripcionFuente:string;rubro:RubroMvp216}[]
 }>;
+type PlanLinea=Readonly<{numero:number;descripcionFuente:string} &
+ ({rubro:RubroMvp216}|{pendiente:number})>;
 function falloCatalogo(motivo:string):ResultadoContextoMvp220{
  return {estado:'catalogo_invalido',motivo,proveedores:[],sinConfirmar:0};
 }
@@ -264,9 +266,9 @@ export async function categorizarCatalogosConIAMvp220(args:{
  // de familia ni suponer una validación que el proveedor no dio.
  // Deduplicación semántica acotada: mismo texto fuente exacto.
  const pending=new Map<string,PendienteRubro>();
- const plan=snapshot.proveedores.map(p=>({
+ const plan: {proveedor:string;lineas:PlanLinea[]}[]=snapshot.proveedores.map((p:CatalogoRealMvp220)=>({
   proveedor:p.clave,
-  lineas:p.articulos.map(row=>{
+  lineas:p.articulos.map((row:CatalogoRealMvp220['articulos'][number]):PlanLinea=>{
    if(row.revisionAnterior==='curated_family'&&row.familiaAnterior)
     return {numero:row.numero,descripcionFuente:row.descripcion,
      rubro:rubroFamiliaCuradaMvp216(row.familiaAnterior)};
@@ -294,7 +296,7 @@ export async function categorizarCatalogosConIAMvp220(args:{
  }
  const proposals:EntradaRubro[]=plan.map(p=>({
   proveedor:p.proveedor,
-  lineas:p.lineas.map(row=>{
+  lineas:p.lineas.map((row:PlanLinea)=>{
    const rubro='pendiente' in row?rubros.get(row.pendiente):row.rubro;
    if(!rubro)throw Error('catalogo_clasificacion_incompleta');
    return {numero:row.numero,descripcionFuente:row.descripcionFuente,rubro};
