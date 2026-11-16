@@ -52,6 +52,7 @@ on:
       - 'tests/unit/v2-d016-rutas-portal.test.mjs'
       - 'supabase/piloto/v2_d016_onboarding_unico_originales_prospectivo_CANDIDATE.sql'
       - 'tests/unit/v2-d016-alta-unica-v2-segura.test.mjs'
+      - 'scripts/piloto/v2-d016-alta-unica-whapi-v86-overlay.mjs'
       - 'supabase/piloto/v2_d016_respuestas_y_originales_CANDIDATE.sql'
       - 'supabase/tests/fixtures/v2-d016-response-checks.sql'
       - 'supabase/tests/ci/v2-03-respondedores-pg17.sql'
