@@ -8,9 +8,12 @@ const consent=src('supabase/piloto/v2_d016_reuse_owner_consent_same_buyer_CANDID
 const uix=src('apps/portal/app/piloto/v2/rondas/[rondaId]/whatsapp/respuestas-whatsapp.tsx');
 const commercial=src('src/server/v2-d016-resumen-comercial.ts');
 const d016=src('apps/portal/lib/piloto-v2-d016-http.ts');
+const webhook=src('supabase/functions/cotironda-piloto-whapi/index.ts');
 
 test('Alta V2: una sola aceptación de términos explícitos y prospectivos',()=>{
  assert.match(sql,/v_version smallint:=2/u);
+ assert.match(sql,/CONTACTOS SI ORIGINALES SI/u);
+ assert.match(webhook,/\^COTI ALTA \(\[a-f0-9\]\{32\}\) CONTACTOS SI ORIGINALES SI\$/u);
  assert.match(sql,/presupuesto ORIGINAL íntegro e identificado/u);
  assert.match(sql,/EXCLUSIVAMENTE al comprador destinatario/u);
  assert.match(sql,/próximas rondas sin pedir confirmación por presupuesto/u);
@@ -31,6 +34,8 @@ test('Alta V2: consentimiento original sólo en rama proveedor con WhatsApp orig
  assert.match(sql,/m\.participant_key=v_participant/u);
  assert.match(sql,/m\.plaintext_sha256=v_expected/u);
  assert.match(sql,/m\.received_at/u);
+ assert.match(sql,/v_contact_version smallint:=1/u);
+ assert.match(sql,/consent_policy_version' IS DISTINCT FROM '2'/u);
  assert.match(sql,/mvp308_v2_original_enrollment_evidence_missing/u);
  assert.match(sql,/enrollment_terms_proof_mvp308/u);
  assert.doesNotMatch(sql,/INSERT INTO cotironda_piloto_privado\.v2_d016_owner_original_attestations/u);
