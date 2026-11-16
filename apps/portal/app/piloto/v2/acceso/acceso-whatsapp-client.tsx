@@ -7,6 +7,21 @@ export function AccesoWhatsappD016(){
  const started=useRef(false);
  const mounted=useRef(false);
  const [message,setMessage]=useState('Verificando tu enlace privado…');
+ const [canRecover,setCanRecover]=useState(false);
+ const [recovery,setRecovery]=useState<'idle'|'sending'|'submitted'|'error'>('idle');
+ async function recover(){
+  if(recovery==='sending'||recovery==='submitted')return;
+  setRecovery('sending');
+  try{
+   const r=await fetch('/api/piloto/v2/acceso/recuperar',{
+    method:'POST',credentials:'same-origin',cache:'no-store',
+    headers:{'x-cotironda-reissue':'1'},
+    signal:AbortSignal.timeout(20_000)
+   });
+   setRecovery(r.status===202?'submitted':'error');
+  }catch{setRecovery('error')}
+ }
+
  useEffect(()=>{
   mounted.current=true;
   if(started.current)return ()=>{mounted.current=false};
@@ -41,9 +56,10 @@ export function AccesoWhatsappD016(){
     }catch{
      // No conceder acceso si hay falla de red o sesión inválida.
     }
-    if(mounted.current)setMessage(
-     'No encontramos una sesión activa en este navegador. Abrí el enlace original desde el WhatsApp de Cotironda.'
-    );
+    if(mounted.current){
+     setMessage('Este navegador todavía no tiene una sesión privada activa.');
+     setCanRecover(true);
+    }
    })();
    return;
   }
@@ -63,10 +79,24 @@ export function AccesoWhatsappD016(){
     // comercial es el perfil estable con todo el historial del comprador.
     window.location.replace('/piloto/v2/mi-cotironda');
    }catch{
-    if(mounted.current)setMessage('Este enlace venció o no pudo verificarse. Pedí uno nuevo por WhatsApp.');
+    if(mounted.current){
+     setMessage('Este enlace venció o ya fue utilizado.');
+     setCanRecover(true);
+    }
    }
   })();
   return ()=>{mounted.current=false};
  },[]);
- return <p role="status" aria-live="polite">{message}</p>;
+ return <div>
+  <p role="status" aria-live="polite">{message}</p>
+  {canRecover&&<>
+   <p>Podés recibir otro enlace privado en el WhatsApp verificado del comprador, sin SMS ni enviar palabras especiales.</p>
+   <button type="button" disabled={recovery==='sending'||recovery==='submitted'}
+    onClick={()=>void recover()}>
+    {recovery==='sending'?'Solicitando acceso…':'Enviar nuevo enlace por WhatsApp'}
+   </button>
+   {recovery==='submitted'&&<p role="status">Solicitud procesada. Si la cuenta piloto está habilitada, llegará al chat registrado.</p>}
+   {recovery==='error'&&<p role="alert">No se pudo solicitar en este momento. No se harán reenvíos automáticos.</p>}
+  </>}
+ </div>;
 }
