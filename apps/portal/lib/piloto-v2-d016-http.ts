@@ -438,3 +438,45 @@ export async function enviarNuevoAccesoWhatsappD016(
   });
  }catch{return deny(503)}
 }
+
+/** D016: ÚNICO comprador del piloto, SIN cookie y SIN elección de destinatario.
+ * Seguro ante múltiples compradores: la RPC deniega cualquier caso ambiguo.
+ * El POST anónimo solo puede pedir entregar al WhatsApp YA verificado, nunca
+ * revela el teléfono ni obtiene sesión, presupuestos o buyerKey.
+ * Habilitación limitada a Preview; release sigue sujeto al gate D016.
+ */
+export async function solicitarAccesoPilotoSinSesionD016(
+ req:Request,env:Record<string,string|undefined>=process.env
+):Promise<Response>{
+ const gate=puertaWhatsappPortalD016(env);
+ if(!gate||env.COTIRONDA_D016_REISSUE_ENABLED!=='true')
+  return deny(503);
+ const u=new URL(req.url);
+ if(req.method!=='POST'||u.origin!==gate.origenPortal||
+  u.pathname!=='/api/piloto/v2/acceso/recuperar'||
+  u.search!==''||u.hash!==''||
+  req.headers.get('origin')!==gate.origenPortal||
+  req.headers.get('sec-fetch-site')!=='same-origin'||
+  req.headers.get('x-cotironda-reissue')!=='1')
+  return deny(403);
+ if((await req.text().catch(()=>'')).length!==0)return deny(400);
+ try{
+  // Sin campos del usuario, y HMAC del servidor sobre el cuerpo exacto.
+  const body=JSON.stringify({mode:'pilot_unique',operationId:crypto.randomUUID()});
+  const sentAt=String(Date.now());
+  const signature=createHmac('sha256',Buffer.from(gate.claveHmacHex,'hex'))
+   .update('cotironda/d016/reissue/v1\\n'+sentAt+'\\n'+body,'utf8')
+   .digest('hex');
+  const r=await fetch(PILOT+'/functions/v1/cotironda-piloto-v2-reemitir-acceso',{
+   method:'POST',headers:{'content-type':'application/json',
+    'x-cotironda-time':sentAt,'x-cotironda-signature':signature},
+   body,cache:'no-store',signal:AbortSignal.timeout(18_000)
+  });
+  if(r.status===503)return deny(503);
+  // Respuesta genérica sin confirmar existencia de comprador o número.
+  // Estado de envío auditable solo internamente en Supabase.
+  return new Response(JSON.stringify({state:'request_processed'}),{
+   status:202,headers:HEADERS
+  });
+ }catch{return deny(503)}
+}
