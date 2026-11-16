@@ -472,7 +472,9 @@ export async function solicitarAccesoPilotoSinSesionD016(
     'x-cotironda-time':sentAt,'x-cotironda-signature':signature},
    body,cache:'no-store',signal:AbortSignal.timeout(18_000)
   });
-  if(r.status===503)return deny(503);
+  // Denegación de elegibilidad o cuota devuelve respuesta opaca;
+  // fallas reales 5xx NO deben aparentar una solicitud tramitada.
+  if(!r.ok&&r.status!==403&&r.status!==429)return deny(503);
   // Respuesta genérica sin confirmar existencia de comprador o número.
   // Estado de envío auditable solo internamente en Supabase.
   return new Response(JSON.stringify({state:'request_processed'}),{
