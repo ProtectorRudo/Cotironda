@@ -4,7 +4,7 @@
  * Las etiquetas de rubro son una decisión SEMÁNTICA, no un diccionario
  * de productos o un chequeo por palabras.
  */
-import {RUBROS_MVP216,rubroFamiliaCuradaMvp216,type RubroMvp216} from '../rubros-comprador-mvp216.ts';
+import {RUBROS_MVP216,type RubroMvp216} from '../rubros-comprador-mvp216.ts';
 import type {ProveedorCatalogoV2,LineaCatalogoV2} from './ruteador-catalogos-v2.ts';
 const KEY=/^[a-z][a-z0-9_]{2,63}$/u;
 const FAMILIA=/^[a-z][a-z0-9_]{2,49}$/u;
@@ -139,6 +139,24 @@ export function validarClasificacionCatalogosMvp220(
    'falta_confirmacion_de_al_menos_un_catalogo':'catalogo_completo_con_fuente',
   proveedores:suppliers,sinConfirmar:snapshot.proveedoresSinConfirmar};
 }
+/** D013: espejo conservador SOLO de etiquetas para familias curadas MVP216.
+ * El módulo histórico tiene SHA inmóvil; se conserva como fuente de contraste.
+ * No inferir familia a partir del texto, ni autorizar stock o proveedor por rubro.
+ */
+const d013Obra=new Set([
+ 'cemento_gris_obra','arena_generica','arena_fina','arena_gruesa',
+ 'piedra_generica','piedra_partida','cal_aerea','cal_hidraulica',
+ 'ladrillo_comun','ladrillo_hueco','bloque_hormigon','cascote_relleno',
+ 'hierro_adn','malla_electrosoldada','tosca_relleno','vigueta_pretensada',
+ 'yeso_obra','revoque_fino','revoque_grueso','hidrofugo'
+]);
+const d013Fijaciones=new Set(['alambre_galvanizado',
+ 'alambre_recocido','clavos_punta_paris']);
+export function rubroDesdeFamiliaCuradaD013(familia:string):RubroMvp216{
+ if(d013Obra.has(familia))return 'obra_gruesa';
+ if(d013Fijaciones.has(familia))return 'ferreteria';
+ return 'otros';
+}
 /** La RPC ya filtró empresas y zonas. Este módulo nunca selecciona por rubro:
  * las coincidencias se siguen validando POR PRODUCTO en el ruteador D013.
  * La IA solo clasifica las descripciones SIN familia acreditada.
@@ -271,7 +289,7 @@ export async function categorizarCatalogosConIAMvp220(args:{
   lineas:p.articulos.map((row:CatalogoRealMvp220['articulos'][number]):PlanLinea=>{
    if(row.revisionAnterior==='curated_family'&&row.familiaAnterior)
     return {numero:row.numero,descripcionFuente:row.descripcion,
-     rubro:rubroFamiliaCuradaMvp216(row.familiaAnterior)};
+     rubro:rubroDesdeFamiliaCuradaD013(row.familiaAnterior)};
    const key=row.descripcion;
    let item=pending.get(key);
    if(!item){
