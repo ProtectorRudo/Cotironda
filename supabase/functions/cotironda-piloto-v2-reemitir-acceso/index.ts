@@ -17,6 +17,15 @@ function response(state:string,status:number){
   'referrer-policy':'no-referrer','x-content-type-options':'nosniff'
  }});
 }
+/** Diagnóstico exclusivamente interno: etiquetas constantes, nunca loguear
+ * HMAC, destinatarios, URL con ticket, campos del request ni secretos. */
+function configUnavailable(reason:
+ 'outbound_disabled'|'link_send_disabled'|'portal_origin_mismatch'|
+ 'release_guard_not_ready'|'runtime_secrets_unavailable'|
+ 'rpc_unavailable'|'audit_unavailable'){
+ console.warn('cotironda_d016_reissue_config_gate',reason);
+ return response('unavailable',503);
+}
 function same(a:string,b:string):boolean{
  const x=encoder.encode(a),y=encoder.encode(b);
  let diff=x.length^y.length;
@@ -76,14 +85,17 @@ Deno.serve(async(req:Request)=>{
  const u=new URL(req.url);
  if(u.search||u.hash||!u.pathname.endsWith('/cotironda-piloto-v2-reemitir-acceso'))
   return response('blocked',404);
- if(Deno.env.get('COTIRONDA_PILOT_WHAPI_OUTBOUND_ENABLED')!=='true'||
-  Deno.env.get('COTIRONDA_PILOT_D016_WHATSAPP_SEND_ENABLED')!=='true')
-  return response('unavailable',503);
+ if(Deno.env.get('COTIRONDA_PILOT_WHAPI_OUTBOUND_ENABLED')!=='true')
+  return configUnavailable('outbound_disabled');
+ if(Deno.env.get('COTIRONDA_PILOT_D016_WHATSAPP_SEND_ENABLED')!=='true')
+  return configUnavailable('link_send_disabled');
  const portal=Deno.env.get('COTIRONDA_PILOT_D016_PORTAL_ORIGIN')??'';
  const deployed=Deno.env.get('COTIRONDA_PILOT_D016_PORTAL_RELEASE_SHA')??'';
  const approved=Deno.env.get('COTIRONDA_PILOT_D016_APPROVED_RELEASE_SHA')??'';
- if(!originAllowed(portal)||!SHA.test(deployed)||deployed!==approved)
-  return response('unavailable',503);
+ if(!originAllowed(portal))
+  return configUnavailable('portal_origin_mismatch');
+ if(!SHA.test(deployed)||deployed!==approved)
+  return configUnavailable('release_guard_not_ready');
  if(!req.headers.get('content-type')?.startsWith('application/json'))
   return response('blocked',415);
  const length=req.headers.get('content-length');
@@ -130,7 +142,7 @@ Deno.serve(async(req:Request)=>{
  const hmacRaw=keyFromHex(hmacHex),idRaw=keyFromHex(idHex);
  if(admin.length<20||!hmacRaw||!idRaw||!keyFromHex(aesHex)||
   !/^[A-Za-z0-9_-]{4,64}$/u.test(channel)||tokenWhapi.length<16)
-  return response('unavailable',503);
+  return configUnavailable('runtime_secrets_unavailable');
  let db:ReturnType<typeof createClient>;
  try{db=createClient(PILOT,admin,{auth:{autoRefreshToken:false,persistSession:false}})}
  catch{return response('unavailable',503)}
@@ -148,7 +160,7 @@ Deno.serve(async(req:Request)=>{
    p_operation_id:input.operationId,p_request_id:input.requestId,
    p_sesion_hmac:input.sessionHmac,p_ticket_hmac:ticketHmac
   });
- if(error||!data||typeof data!=='object')return response('unavailable',503);
+ if(error||!data||typeof data!=='object')return configUnavailable('rpc_unavailable');
  const row=data as Packet;
  if(row.state!=='issued')return response('blocked',403);
  let accepted=false,messageId:string|null=null;
@@ -188,6 +200,6 @@ Deno.serve(async(req:Request)=>{
   p_operation_id:input.operationId,p_ticket_hmac:ticketHmac,
   p_state:accepted?'api_accepted':'uncertain',p_message_id:messageId
  });
- if(finished.error||finished.data!==true)return response('unavailable',503);
+ if(finished.error||finished.data!==true)return configUnavailable('audit_unavailable');
  return response(accepted?'api_accepted':'uncertain',accepted?200:503);
 });
