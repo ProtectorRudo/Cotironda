@@ -146,3 +146,31 @@ test('D016 sesión: no filtra token en errores ni declara sesión si BD falla',a
  assert.equal(digestSesionPrivadaD016('a'.repeat(43),KEY)?.length,64);
  assert.equal(digestSesionPrivadaD016('x',KEY),null);
 });
+
+
+test('D016 subdominio app mantiene cookie __Host y aislamiento de origen',async()=>{
+ const origin='https://app.cotironda.com';
+ const g={...gate(),origenPortal:origin};
+ const f=fixture();
+ const request=(where,from)=>new Request(where+'/api/piloto/v2/acceso/canjear',{
+  method:'POST',
+  headers:{origin:from,'sec-fetch-site':'same-origin',
+   'content-type':'application/json'},
+  body:JSON.stringify({ticket:TOKEN})
+ });
+ for(const [target,from] of [[ORIGIN,ORIGIN],[origin,ORIGIN]]){
+  const rejected=await canjearConSesionPrivadaD016(g,request(target,from),f.ports);
+  assert.equal(rejected.status,403);
+  assert.equal(rejected.headers.has('set-cookie'),false);
+ }
+ assert.equal(f.state.claimCalls,0);
+ const ok=await canjearConSesionPrivadaD016(g,request(origin,origin),f.ports);
+ assert.equal(ok.status,200);
+ const cookie=ok.headers.get('set-cookie');
+ assert.match(cookie,/^__Host-cotironda-v2=/u);
+ assert.match(cookie,/; Secure; HttpOnly; SameSite=Lax/u);
+ assert.doesNotMatch(cookie,/Domain=/u);
+ assert.equal(f.state.claimCalls,1);
+ assert.equal((await canjearConSesionPrivadaD016({...g,entorno:'production'},
+  request(origin,origin),f.ports)).status,403);
+});
