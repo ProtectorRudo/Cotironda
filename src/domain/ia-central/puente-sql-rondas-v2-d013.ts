@@ -4,6 +4,8 @@
  * No inserta invitaciones ni activa Whapi: sólo llama una RPC privada.
  * La RPC REVALIDA contra HMAC del mensaje archivado y catálogo vigente.
  */
+import {unidadCompradaCanonicaV2D013,unidadDimensionadaV2D013}
+ from './magnitudes-universales-v2-d013.ts';
 import type {PlanMvp220} from './planificador-piloto-mvp220.ts';
 import {descripcionOriginalVerificableMvp288} from './fidelidad-pedido-mvp288.ts';
 import type {ProveedorCatalogoV2} from './ruteador-catalogos-v2.ts';
@@ -26,6 +28,42 @@ export function localidadOperativaD013(ciudad:string):string{
   .toLowerCase().replace(/\s+/gu,' ');
  return LA_PLATA_D013.has(normalized)?'La Plata':literal;
 }
+/** Adaptar el lector libre al esquema V2 ya publicado, SIN inventar
+ * envases ni convertir peso a volumen. El texto original se almacena
+ * íntegro y la descripción siempre conserva la presentación literal.
+ */
+export function cantidadUnidadSqlV2D013(
+ cantidad:string,unidad:string
+):Readonly<{cantidad:string;unidad:string}>|null{
+ if(typeof cantidad!=='string'||! /^(?:0|[1-9]\d{0,5})(?:\.\d{1,3})?$/u.test(cantidad)||
+    !(Number(cantidad)>0)||typeof unidad!=='string'||unidad.length>80)
+  return null;
+ const canonical=unidadCompradaCanonicaV2D013(unidad);
+ // El catálogo SQL conserva "bolsón" dentro de la descripción original.
+ // Ambos son conteos de envases, no un volumen asumido.
+ if(canonical==='bigbag')return {cantidad,unidad:'bag'};
+ if(canonical==='bucket')return {cantidad,unidad:'unit'};
+ const supported=new Set(['unit','bag','box','kg','g','l','ml',
+  'm','m2','m3','roll','pack']);
+ if(supported.has(canonical))return {cantidad,unidad:canonical};
+ const measure=unidadDimensionadaV2D013(unidad);
+ if(!measure)return null;
+ const target=measure.dimension==='longitud'?'m':
+  measure.dimension==='superficie'?'m2':
+  measure.dimension==='volumen_aridos'?'m3':
+  measure.dimension==='volumen_liquidos'?'l':'kg';
+ const [entero,decimal='']=cantidad.split('.');
+ const mil=BigInt(entero)*1000n+BigInt(decimal.padEnd(3,'0'));
+ const converted=mil*measure.factor;
+ if(converted%1000000000n!==0n)return null;
+ const quotient=converted/1000000000n;
+ if(quotient<=0n||quotient>1000000000n)return null;
+ const base=quotient/1000n,frac=quotient%1000n;
+ const normalized=frac===0n?base.toString():
+  base.toString()+'.'+frac.toString().padStart(3,'0').replace(/0+$/u,'');
+ return {cantidad:normalized,unidad:target};
+}
+
 type Params=Readonly<{
  p_buyer_chat_hmac:string;p_message_hmac:string;
  p_original_text:string;p_city:string;
@@ -76,17 +114,22 @@ export function armarPreparacionSombraMvp221(args:{
   args.plan.catalogos.map(s=>[s.clave,s] as const)
  );
  if(bySupplier.size!==args.plan.catalogos.length)return no('proveedores_duplicados');
- const items=pedido.articulos.map((item,i)=>({
-  descripcion:descripcionOriginalVerificableMvp288(args.textoOriginal,item,
-   pedido.articulos[i+1]?.inicio),
-  cantidad:item.cantidad,unidad:item.unidad,
-  evidencia:item.evidencia,rubro:item.rubro
- }));
+ const items=pedido.articulos.map((item,i)=>{
+  const representada=cantidadUnidadSqlV2D013(item.cantidad,item.unidad);
+  return {
+   descripcion:descripcionOriginalVerificableMvp288(args.textoOriginal,item,
+    pedido.articulos[i+1]?.inicio),
+   cantidad:representada?.cantidad??null,unidad:representada?.unidad??null,
+   evidencia:item.evidencia,rubro:item.rubro
+  };
+ });
  // Never discard a 50 kg presentation, a bolsón, a brand or a dimension
  // by silently storing an abbreviated LLM description. The proof literal
  // must be complete and fit the supplier PDF's exact 75-char contract.
  if(items.some(x=>x.descripcion===null))
   return no('presentacion_fuente_no_representable');
+ if(items.some(x=>x.cantidad===null||x.unidad===null))
+  return no('cantidad_unidad_no_representable_en_sql');
  const fullItems=items as ReadonlyArray<{
   descripcion:string;cantidad:string;unidad:string;
   evidencia:string;rubro:string
