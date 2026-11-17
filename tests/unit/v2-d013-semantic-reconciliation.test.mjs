@@ -110,7 +110,7 @@ test('D013: ningún tamaño se puede hacer pasar por cantidad de unidades',()=>{
    'rechazado','especificación no es cantidad índice '+indice);
  }
 });
-test('D013: no permitir que segunda lectura cite un dígito de la presentación',()=>{
+test('D013: cantidad validada permite paráfrasis; presentación nunca cambia compra',()=>{
  const source='dos baldes de 25 litros para la obra en La Plata';
  const p={...first,articulos:[{
   ...first.articulos[2],evidencia:'dos baldes de 25 litros',
@@ -122,8 +122,14 @@ test('D013: no permitir que segunda lectura cite un dígito de la presentación'
   evidencia:'baldes de 25 litros',cantidad:'2',unidad:'unit',
   rubro:'ferreteria',citaCantidad:'2'
  }]};
+ // El lector 2 normaliza "dos" a "2", pero la fuente primaria respalda
+ // exactamente dos baldes: la redacción distinta no impide preparar.
  assert.equal(evaluarLecturasSemanticasV2D013(source,p,q).estado,
-  'requiere_aclaracion');
+  'listo_para_preparar');
+ const falseAmount={...q,articulos:[{...q.articulos[0],
+  cantidad:'25',citaCantidad:'25'}]};
+ assert.equal(evaluarLecturasSemanticasV2D013(source,p,falseAmount).estado,
+  'requiere_aclaracion','25 litros no son 25 baldes');
 });
 
 
@@ -195,7 +201,7 @@ test('D013: un segundo lector que cambia cantidad, unidad o artículo no pasa',(
   [3,{unidad:'kg'}],
   [2,{unidad:'m3'}],
   [0,{unidad:'m2'}],
-  [1,{cantidad:'3',citaCantidad:'tres'}],
+  [2,{cantidad:'3',citaCantidad:'tres'}],
   [3,{evidencia:'cemento inventado'}],
   [3,{citaCantidad:'varios'}]
  ]){
@@ -209,7 +215,7 @@ test('D013: convierte magnitudes físicas exactas entre lecturas sin alterar el 
  const src='100 cm de cable para La Plata';
  const evidence='100 cm de cable';
  const a={intencion:'cotizar',zona_entrega:'La Plata',dudas:[],articulos:[{
-  evidencia,inicio:0,fin:evidence.length,descripcion:'cable',
+  evidencia:evidence,inicio:0,fin:evidence.length,descripcion:'cable',
   cantidad:'100',unidad:'cm',rubro:'electricidad',
   presentacion:null,aclaracion:null,citaCantidad:'100',
   citaProducto:'cable',citaPresentacion:null
