@@ -128,6 +128,32 @@ export function activarMedicionCompradorV2D013(live){
   throw Error('d013_meter_publication_guard_lost');
  return out;
 }
+/** V2: comprador adjunto = una sola IA + fuente binaria independiente.
+ * El proveedor conserva las dos lecturas económicas ya operativas.
+ * Siempre exige gate SQL/D016 para liberación o WhatsApp.
+ */
+export function lecturaUnicaAdjuntoCompradorV2D013(live){
+ if(typeof live!=='string'||live.length<100000||
+    !live.includes('const verifiedSupplier=')||
+    !live.includes('const binaryWorker=d013BinaryEnabled?')||
+    !live.includes('cotironda_piloto_ia_attest_binary_mvp278'))
+  throw Error('v2_buyer_binary_runtime_source_invalid');
+ const oldRead="            const readings=await Promise.allSettled([\n              proposeDocumentAI({...args,perspective:'primary'}),\n              proposeDocumentAI({...args,perspective:'corroboration'})\n            ]);";
+ const newRead="            // Dos análisis económicos para el PROVEEDOR, solamente.\n            // Comprador: UNA IA y atestación del original binario independiente.\n            const readings=await Promise.allSettled(verifiedSupplier?[\n              proposeDocumentAI({...args,perspective:'primary'}),\n              proposeDocumentAI({...args,perspective:'corroboration'})\n            ]:[\n              proposeDocumentAI({...args,perspective:'primary'})\n            ]);";
+ let out=one(live,oldRead,newRead,'v2-buyer-binary-single-read');
+ const oldWorker="                   const binaryWorker=d013BinaryEnabled?\n                     prepararDocumentoBinarioV2D013:prepararDocumentoBinarioCompradorMvp278;";
+ const newWorker="                   // V2 comprador siempre, con gate SQL/D016 intacto.\n                   // Deshabilitado significa no ejecutar, nunca fallback V1.\n                   const binaryWorker=prepararDocumentoBinarioV2D013;";
+ out=one(out,oldWorker,newWorker,'v2-buyer-binary-no-legacy-fallback');
+ if(!out.includes('enabled:d013BinaryEnabled')||
+    !out.includes('const buyerWorker=procesarCompradorCentralV2D013;')||
+    !out.includes('const zoneWorker=continuarZonaCentralV2D013;')||
+    !out.includes('const binaryWorker=prepararDocumentoBinarioV2D013;')||
+    !out.includes('const verifiedSupplier=')||
+    !out.includes("proposeDocumentAI({...args,perspective:'corroboration'})"))
+  throw Error('v2_buyer_binary_security_gates_lost');
+ return out;
+}
+
 /** Acopla la aceptación/baja de originales al webhook que YA archiva WhatsApp.
  * SQL es la única autoridad: exige proveedor, mensaje autenticado exacto,
  * texto legal aprobado + aviso previo real; jamás infiere permiso de una cotización.
@@ -353,7 +379,8 @@ export function generarWebhookD016(original){
  if(!out.includes('COTIRONDA_PILOT_V2_REFERENCE_LINK_ENABLED')||
   !out.includes('buyer_d016_link_reconciliation_required'))
   throw Error('d016_overlay_incomplete');
- return conectarConsentimientoOriginalesD016(out);
+ return lecturaUnicaAdjuntoCompradorV2D013(
+  conectarConsentimientoOriginalesD016(out));
 }
 // Modo de publicación futura: genera el candidato SOBRE LA FUENTE REAL v76,
 // no sobre el index.ts GitHub; nunca despliega. El operador debe haber comprobado
