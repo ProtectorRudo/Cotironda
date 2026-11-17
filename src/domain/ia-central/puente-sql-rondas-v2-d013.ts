@@ -7,7 +7,42 @@
 import {unidadCompradaCanonicaV2D013,unidadDimensionadaV2D013}
  from './magnitudes-universales-v2-d013.ts';
 import type {PlanMvp220} from './planificador-piloto-mvp220.ts';
-import {descripcionOriginalVerificableMvp288} from './fidelidad-pedido-mvp288.ts';
+/** Proyección de una cita YA validada por los dos lectores V2 a la tabla SQL.
+ * Nunca es fuente de verdad: el pedido íntegro sigue en p_original_text.
+ * Los límites de PDF/WinAnsi (75 caracteres) son de PRESENTACIÓN, no del
+ * contrato comercial; SQL admite hasta 500 caracteres UTF-8 por renglón.
+ * No permitir teléfonos/URLs/correos en descripciones destinadas a proveedores.
+ */
+const CONTACTO_COMERCIAL_D013=/(?:https?:\/\/|www\.|[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}|(?:\+?\d[\s.-]?){9,}|\b(?:whatsapp|tel[eé]fono|celular|cuit|cuil|correo|email|raz[oó]n social)\b)/iu;
+const CONTROL_COMERCIAL_D013=/[\u0000-\u001f\u007f]/u;
+export function descripcionFuenteV2D013(
+ fuente:string,item:{descripcion:string;evidencia:string;inicio:number;fin:number},
+ siguienteInicio?:number
+):string|null{
+ if(typeof fuente!=='string'||!item||typeof item.descripcion!=='string'||
+    item.descripcion.trim().length<3||typeof item.evidencia!=='string'||
+    item.evidencia.length<2||item.evidencia.length>1500||
+    !Number.isSafeInteger(item.inicio)||!Number.isSafeInteger(item.fin)||
+    item.inicio<0||item.fin<=item.inicio||item.fin>fuente.length||
+    fuente.slice(item.inicio,item.fin)!==item.evidencia)return null;
+ const hasta=siguienteInicio??fuente.length;
+ if(!Number.isSafeInteger(hasta)||hasta<item.fin||hasta>fuente.length)return null;
+ // El modelo puede citar el punto final y la IA sigue teniendo razón.
+ // Conservar la cita literal antes de limpiar puntuación de presentación.
+ const resto=fuente.slice(item.fin,hasta);
+ const limite=resto.search(/[\r\n]|(?:\s+|[,;]\s*)(?:entrega\s+(?:en|a)\s+|obra\s+en\s+|para\s+entregar\s+en\s+)/iu);
+ const complemento=limite<0?resto:resto.slice(0,limite);
+ let original=(item.evidencia+complemento).replace(/\s+/gu,' ').trim()
+  .replace(/^[*•-]\s*/u,'').replace(/[.;,]\s*$/u,'').trim();
+ // Cantidad ya corroborada en su campo: retirar SOLO numerales explícitos
+ // del comienzo, jamás medidas ni especificaciones en el medio.
+ original=original.replace(/^(?:[1-9]\d{0,5}(?:[.,]\d{1,3})?)\s+/u,'').trim();
+ if(original.length<3||original.length>500||
+    CONTROL_COMERCIAL_D013.test(original)||CONTACTO_COMERCIAL_D013.test(original))
+  return null;
+ return original;
+}
+
 import type {ProveedorCatalogoV2} from './ruteador-catalogos-v2.ts';
 const HASH=/^[a-f0-9]{64}$/u;
 const KEY=/^[a-z][a-z0-9_]{2,63}$/u;
@@ -117,15 +152,14 @@ export function armarPreparacionSombraMvp221(args:{
  const items=pedido.articulos.map((item,i)=>{
   const representada=cantidadUnidadSqlV2D013(item.cantidad,item.unidad);
   return {
-   descripcion:descripcionOriginalVerificableMvp288(args.textoOriginal,item,
+   descripcion:descripcionFuenteV2D013(args.textoOriginal,item,
     pedido.articulos[i+1]?.inicio),
    cantidad:representada?.cantidad??null,unidad:representada?.unidad??null,
    evidencia:item.evidencia,rubro:item.rubro
   };
  });
- // Never discard a 50 kg presentation, a bolsón, a brand or a dimension
- // by silently storing an abbreviated LLM description. The proof literal
- // must be complete and fit the supplier PDF's exact 75-char contract.
+ // Conservar todas las especificaciones originales; el límite SQL es 500.
+ // La renderización PDF ocurre DESPUÉS y no decide si el pedido es válido.
  if(items.some(x=>x.descripcion===null))
   return no('presentacion_fuente_no_representable');
  if(items.some(x=>x.cantidad===null||x.unidad===null))
