@@ -22,7 +22,7 @@ svg{display:block}
 }
 .hero-wrap:before{content:"";position:absolute;width:580px;height:470px;right:-380px;top:190px;
  background:radial-gradient(circle,#1889f9a0 0%,transparent 66%);pointer-events:none}
-.header{position:relative;z-index:5}
+.header{position:relative;z-index:5;background:#06183b;color:#fff}
 .header-inner{min-height:86px;display:flex;align-items:center;justify-content:space-between;gap:32px}
 .brand{display:inline-flex;align-items:center;gap:10px;color:#fff;font-weight:850;font-size:27px;letter-spacing:-.055em;white-space:nowrap}
 .brand img{display:block;width:45px;height:49px;object-fit:contain;flex:none}

@@ -52,3 +52,10 @@ test('La portada conserva el seguimiento histórico y mantiene privados los pres
  const logo=readFileSync(new URL('../cotironda-isotipo.svg',import.meta.url),'utf8');
  assert.equal((logo.match(/<path /gu)??[]).length,3);
 });
+
+test('La navegación está fuera del contenido principal y la home conserva una sola región main',()=>{
+ assert.equal((html.match(/<main\b/gu)??[]).length,1);
+ assert.ok(html.indexOf('</header>') < html.indexOf('<main id="contenido">'));
+ assert.ok(html.indexOf('<main id="contenido">') < html.indexOf('<div class="hero-wrap">'));
+ assert.ok(html.indexOf('</main>') > html.indexOf('class="steps-strip"'));
+});
