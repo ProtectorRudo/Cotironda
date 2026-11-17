@@ -163,7 +163,7 @@ function tipoMonto(monto:string|null,puntos:readonly Punto[]):ResumenComercialV2
   const evidence=normal(p.evidencia);
   const pairs=evidence.matchAll(/\b(sub\s*total|total)\b\s*(?:de\s+)?[:=\-]?\s*(?:\$|ars|usd|us\$)?\s*(\d[\d., ]{0,25})/gu);
   for(const match of pairs){
-   if(match[2].trim().replace(/\D/gu)!==cifra)continue;
+   if(match[2].trim().replace(/\D/gu,'')!==cifra)continue;
    return match[1].replace(/\s/gu,'')==='subtotal'?
     'Subtotal informado':'Total informado';
   }
