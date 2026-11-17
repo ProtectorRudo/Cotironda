@@ -1,4 +1,5 @@
-import {unidadCompradaCanonicaV2D013,unidadDimensionadaV2D013} from './magnitudes-universales-v2-d013.ts';
+import {unidadCompradaCanonicaV2D013,unidadDimensionadaV2D013,
+ leerMagnitudesV2D013,mismaPresentacionFisicaV2D013} from './magnitudes-universales-v2-d013.ts';
 /** D013: conciliador semántico V2 sin alterar el contrato histórico pinneado.
  * El rubro es una etiqueta; cantidad, unidad y origen literal son prueba.
  */
@@ -248,3 +249,136 @@ export function evaluarLecturasSemanticasV2D013(
  });
 }
 
+
+
+/** D013 V2 — contrato ACTIVO para el comprador: una sola IA Central.
+ * La fuente real (cita literal) decide los valores económicos y las unidades.
+ * No requiere corroboración por un segundo modelo ni citas redundantes
+ * de producto/presentación: la descripción utilizada en ruteo se deriva
+ * del tramo ORIGINAL, no de una marca inventada por la respuesta de IA.
+ * El conciliador doble de este archivo queda solo como compatibilidad
+ * para sus pruebas históricas y NO se invoca en el webhook V2.
+ */
+const citacionesCantidadD013=(fuente:string,cita:string):number[]=>{
+ const found:number[]=[];
+ if(!cita||cita.length>120)return found;
+ const alfanum=/[\p{L}\p{N}]/u;
+ let pos=fuente.indexOf(cita);
+ while(pos>=0){
+  const pre=pos===0?'':fuente[pos-1];
+  const post=pos+cita.length===fuente.length?'':fuente[pos+cita.length];
+  if(!alfanum.test(pre)&&!alfanum.test(post))found.push(pos);
+  pos=fuente.indexOf(cita,pos+1);
+ }
+ return found;
+};
+/** Verifica una cantidad comercial SIN léxico de productos.
+ * No confunde "10 bolsas de 25 kg" con 25 bolsas ni "1 m³" con
+ * 1 bolsón; se acepta al menos una cita de cantidad válida aun cuando
+ * la presentación repita el MISMO numeral.
+ */
+export function cantidadAcreditadaLecturaUnicaD013(
+ evidencia:string,cantidadNormalizada:string,unidad:string,
+ citaCantidad:unknown
+):boolean{
+ if(!texto(evidencia,1500)||!cantidad(cantidadNormalizada)||
+    !texto(unidad,80)||typeof citaCantidad!=='string'||
+    numeroNaturalV2D013(citaCantidad)!==Number(cantidadNormalizada))
+  return false;
+ const ubicaciones=citacionesCantidadD013(evidencia,citaCantidad);
+ if(ubicaciones.length===0)return false;
+ const magnitudes=leerMagnitudesV2D013(evidencia);
+ if(magnitudes===null)return false;
+ const unidadComprada=unidadCompradaCanonicaV2D013(unidad);
+ const unidadFisica=unidadDimensionadaV2D013(unidad);
+ return ubicaciones.some(pos=>{
+  const medida=magnitudes.find(m=>m.inicio===pos);
+  if(!unidadFisica){
+   // Un envase/unit no puede usar el peso de presentación como cantidad.
+   return medida===undefined;
+  }
+  if(medida)return medida.unidad===unidadComprada;
+  // Admitir unidad física escrita con palabras después del cuantificador.
+  const resto=evidencia.slice(pos+citaCantidad.length).trim();
+  const palabras=resto.split(/\s+/u);
+  return [3,2,1].some(n=>{
+   const candidata=unidadDimensionadaV2D013(palabras.slice(0,n).join(' '));
+   return candidata?.canonica===unidadComprada;
+  });
+ });
+}
+const foldZonaUnicaD013=(s:string):string=>s.normalize('NFD')
+ .replace(/[\u0300-\u036f]/gu,'').toLowerCase()
+ .replace(/[.,]+/gu,' ').replace(/\s+/gu,' ').trim();
+/** No atribuir una localidad inventada por el modelo al comprador.
+ * Una indicación "La Plata, Buenos Aires" es admisible si La Plata
+ * aparece literalmente como ciudad; nunca transformar Berisso en La Plata.
+ */
+function zonaAcreditadaUnicaD013(fuente:string,zona:string):boolean{
+ const real=foldZonaUnicaD013(fuente);
+ const name=foldZonaUnicaD013(zona.split(',')[0]??'');
+ if(name.length<3)return false;
+ return (' '+real+' ').includes(' '+name+' ');
+}
+export function evaluarLecturaCentralUnicaD013(
+ original:unknown,primera:unknown
+):ResultadoLectura{
+ if(!texto(original,12000)||!obj(primera))
+  return rejection('entrada_invalida');
+ if(!['cotizar','consulta','saludo','otro'].includes(String(primera.intencion))||
+    !Array.isArray(primera.articulos)||primera.articulos.length>200||
+    !Array.isArray(primera.dudas)||primera.dudas.length>20)
+  return rejection('esquema_invalido');
+ if(primera.intencion!=='cotizar')
+  return Object.freeze({estado:'no_es_pedido',motivo:'intencion_no_comercial',pedido:null});
+ if(primera.articulos.length<1)return rejection('sin_articulos');
+ if(!(primera.zona_entrega===null||texto(primera.zona_entrega,120)))
+  return rejection('campos_inseguros');
+ const accepted:PropuestaArticulo[]=[];
+ const intervals:{inicio:number;fin:number}[]=[];
+ for(const raw of primera.articulos){
+  if(!obj(raw))return rejection('articulo_sin_evidencia_verificable');
+  const {inicio,fin,evidencia}=raw;
+  if(typeof inicio!=='number'||typeof fin!=='number'||
+     !Number.isSafeInteger(inicio)||!Number.isSafeInteger(fin)||
+     inicio<0||fin<=inicio||fin>original.length||
+     !texto(evidencia,1500)||original.slice(inicio,fin)!==evidencia||
+     !texto(raw.descripcion,500)||!cantidad(raw.cantidad)||
+     !texto(raw.unidad,80)||!rubro(raw.rubro)||
+     !(raw.aclaracion===null||texto(raw.aclaracion,250)))
+   return rejection('articulo_sin_evidencia_verificable');
+  if(intervals.some(x=>inicio<x.fin&&fin>x.inicio))
+   return rejection('evidencias_superpuestas');
+  if(!cantidadAcreditadaLecturaUnicaD013(evidencia,
+     raw.cantidad as string,raw.unidad as string,raw.citaCantidad))
+   return rejection('cantidad_sin_respaldo_en_fuente');
+  // La presentación libre de IA es opcional; sólo conservar si su
+  // cita existe y demuestra la MISMA magnitud en el texto original.
+  const cita=raw.citaPresentacion;
+  const presentacion=typeof raw.presentacion==='string'&&
+   typeof cita==='string'&&
+   citacionesCantidadD013(evidencia,cita).length>0&&
+   mismaPresentacionFisicaV2D013(raw.presentacion,cita)
+    ?raw.presentacion:null;
+  intervals.push({inicio,fin});
+  accepted.push(Object.freeze({
+   evidencia,inicio,fin,
+   // Ruteo/SQL trabajan con el tramo original, nunca una marca inventada.
+   descripcion:evidencia.trim(),
+   cantidad:raw.cantidad as string,unidad:raw.unidad as string,
+   rubro:raw.rubro as RubroMvp216,presentacion,
+   aclaracion:raw.aclaracion as string|null
+  }));
+ }
+ if(primera.zona_entrega===null||
+    !zonaAcreditadaUnicaD013(original,primera.zona_entrega as string))
+  return Object.freeze({estado:'requiere_aclaracion',
+   motivo:'zona_de_entrega_faltante',pedido:null});
+ return Object.freeze({
+  estado:'listo_para_preparar',motivo:'ia_central_unica_con_fuente',
+  pedido:Object.freeze({intencion:'cotizar',zona_entrega:primera.zona_entrega as string,
+   articulos:Object.freeze(accepted),
+   articulosEnRevision:Object.freeze([] as number[]),
+   dudas:Object.freeze([] as string[])})
+ });
+}
