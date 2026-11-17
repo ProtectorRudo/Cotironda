@@ -136,7 +136,7 @@ export function lecturaUnicaAdjuntoCompradorV2D013(live){
  if(typeof live!=='string'||live.length<100000||
     !live.includes('const verifiedSupplier=')||
     !live.includes('const binaryWorker=d013BinaryEnabled?')||
-    !live.includes('cotironda_piloto_ia_attest_binary_mvp278'))
+    !live.includes('const mediaPlan=await binaryWorker({'))
   throw Error('v2_buyer_binary_runtime_source_invalid');
  const oldRead="            const readings=await Promise.allSettled([\n              proposeDocumentAI({...args,perspective:'primary'}),\n              proposeDocumentAI({...args,perspective:'corroboration'})\n            ]);";
  const newRead="            // Dos análisis económicos para el PROVEEDOR, solamente.\n            // Comprador: UNA IA y atestación del original binario independiente.\n            const readings=await Promise.allSettled(verifiedSupplier?[\n              proposeDocumentAI({...args,perspective:'primary'}),\n              proposeDocumentAI({...args,perspective:'corroboration'})\n            ]:[\n              proposeDocumentAI({...args,perspective:'primary'})\n            ]);";
