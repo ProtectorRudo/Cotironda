@@ -229,3 +229,83 @@ test('V2: categoría genérica no contradice marca o subtipo; la segunda IA deci
  assert.equal(explicit.estado,'revision_interna');
  assert.equal(explicit.motivo,'tipo_o_aplicacion_tecnica_diferente');
 });
+
+
+test('V2: proveedor recibe consulta por producto plausible sin afirmar equivalencia',async()=>{
+ const plausible={verificaciones:verdict.verificaciones.map((v,i)=>({
+  ...v,decision:i===0?'consulta_relacionada':'equivalente'
+ }))};
+ const {fetchImpl}=mockApi(proposal,plausible);
+ const result=await proponerRuteoCatalogoConIAV2({
+  pedido,proveedores:catalog,apiKey:'sk-'+'a'.repeat(24),
+  model:'gpt-6-luna',fetchImpl
+ });
+ assert.equal(result.estado,'ruteo_valido_para_preparacion',result.motivo);
+ assert.deepEqual(result.propuestas.map(x=>[x.proveedor,x.correspondencias.length]),
+  [['corralon_ailin',2],['corralon_nahuel',1]]);
+ const inquiry=result.propuestas[0].correspondencias.find(c=>c.indicePedido===0);
+ assert.equal(inquiry.numeroCatalogo,1);
+ assert.equal(inquiry.tipo,'alternativa_razonable');
+ assert.match(inquiry.explicacion,/^CONSULTA SIN EQUIVALENCIA CONFIRMADA\./u);
+ assert.equal(pedido.articulos[0].evidencia,'2 envases Ceresita líquida 1 L');
+ assert.equal(result.whatsappEnviado,false);
+});
+
+test('V2: incertidumbre sin vínculo declarado NO habilita consulta ni proveedor',async()=>{
+ for(const decision of ['incierto','incompatible']){
+  const opinion={verificaciones:verdict.verificaciones.map(v=>({
+   ...v,decision:v.indicePedido===0?decision:'equivalente'
+  }))};
+  const {fetchImpl}=mockApi(proposal,opinion);
+  const result=await proponerRuteoCatalogoConIAV2({
+   pedido,proveedores:catalog,apiKey:'sk-'+'a'.repeat(24),
+   model:'gpt-6-luna',fetchImpl
+  });
+  const items=result.propuestas.flatMap(x=>
+   x.correspondencias.map(c=>c.indicePedido));
+  assert.deepEqual(items,[1,1],decision+' no permite Ceresita sin relación');
+  assert.equal(result.cobertura[0].proveedoresAutorizados,0);
+  assert.equal(result.whatsappEnviado,false);
+ }
+});
+
+test('V2: consulta no permite incompatibilidad comprobada de cable',async()=>{
+ const b={...pedido,articulos:[quote('3 metros cable 2.5 mm2','3','m')]};
+ const f=[supplier('ferreteria_123',[
+  {numero:1,descripcion:'Cable unipolar 4 mm2',rubro:'electricidad'}
+ ])];
+ const proposed={propuestas:[{proveedor:'ferreteria_123',correspondencias:[{
+  indicePedido:0,numeroCatalogo:1,tipo:'alternativa_razonable',
+  explicacion:'Posible consulta de cable'
+ }]}]};
+ const {fetchImpl,bodies}=mockApi(proposed,{verificaciones:[{
+  proveedor:'ferreteria_123',indicePedido:0,numeroCatalogo:1,
+  decision:'consulta_relacionada'
+ }]});
+ const result=await proponerRuteoCatalogoConIAV2({
+  pedido:b,proveedores:f,apiKey:'sk-'+'a'.repeat(24),
+  model:'gpt-6-luna',fetchImpl
+ });
+ assert.equal(result.estado,'requiere_revision');
+ assert.deepEqual(result.propuestas,[]);
+ assert.equal(result.revisionTecnica[0].motivo,'seccion_cable_no_equivalente');
+ assert.equal(bodies.length,1,'conflicto duro no consume ni acepta segundo juicio');
+});
+
+test('V2: la consulta siempre requiere segundo lector y SKU concreto',()=>{
+ const single=proposal.propuestas.slice(0,1);
+ const id='corralon_ailin:0:1';
+ const denied=autorizarPropuestasCatalogoV2(pedido,catalog,single,
+  new Set(),true);
+ assert.deepEqual(denied.propuestas[0]?.correspondencias.map(x=>x.indicePedido),
+  []);
+ const consult=autorizarPropuestasCatalogoV2(pedido,catalog,single,
+  new Set(),true,new Set([id]));
+ assert.deepEqual(consult.propuestas[0].correspondencias.map(x=>x.indicePedido),[0]);
+ const falseSku=structuredClone(single);
+ falseSku[0].correspondencias[0].numeroCatalogo=999;
+ const blocked=autorizarPropuestasCatalogoV2(pedido,catalog,falseSku,
+  new Set(),true,new Set(['corralon_ailin:0:999']));
+ assert.deepEqual(blocked.propuestas,[]);
+ assert.equal(blocked.motivo,'producto_no_declarado_en_catalogo');
+});
