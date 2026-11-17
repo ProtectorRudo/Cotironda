@@ -10,7 +10,7 @@ export type PruebaTecnicaD013=Readonly<{
  estado:'evidencia_suficiente'|'revision_interna';
  motivo:string;
  conversion:Readonly<{
-  unidad:'kg'|'l';
+  unidad:'kg'|'l'|'m3';
   cantidadSolicitadaBase:string;
   presentacionSolicitada:string;
   presentacionCatalogo:string;
@@ -18,7 +18,7 @@ export type PruebaTecnicaD013=Readonly<{
  }> | null;
 }>;
 
-type Kind='kg'|'l';
+type Kind='kg'|'l'|'m3';
 type Pack=Readonly<{kind:Kind;amount:bigint;size:string}>;
 const SEPARADOR=/[\s.,;:()\[\]{}«»"“”/\-]+/u;
 const STOP=new Set([
@@ -48,13 +48,15 @@ function size(s:string):Pack|null{
  const medidas=leerMagnitudesV2D013(s);
  if(medidas===null)return null;
  const fisicas=medidas.filter(m=>
-  m.dimension==='masa'||m.dimension==='volumen_liquidos');
+  m.dimension==='masa'||m.dimension==='volumen_liquidos'||
+  m.dimension==='volumen_aridos');
  // Una sola presentación comercial acreditada, no elegir un número
  // conveniente entre varios. Valores a milésimas de kg o de litro.
  if(fisicas.length!==1||fisicas[0].valorBase%1000000n!==0n)return null;
  const dato=fisicas[0];
  const amount=dato.valorBase/1000000n;
- return amount>0n?{kind:dato.dimension==='masa'?'kg':'l',
+ return amount>0n?{kind:dato.dimension==='masa'?'kg':
+  dato.dimension==='volumen_aridos'?'m3':'l',
   amount,size:dato.literal.trim()}:null;
 }
 function parseAmount(s:string):bigint|null{
@@ -166,7 +168,7 @@ export function verificarCorrespondenciaTecnicaD013(
  const palabrasCoincidentes=[...buyerWords].some(x=>sellerWords.has(x));
 
  let conversion:PruebaTecnicaD013['conversion']=null;
- if(['bag','unit','pack','box'].includes(pedido.unidad)){
+ if(['bag','unit','pack','box','bucket'].includes(pedido.unidad)){
   const want=size(pedido.descripcion)||size(pedido.presentacion??'')||
    size(pedido.evidencia),have=size(catalogo),q=parseAmount(pedido.cantidad);
   if(want&&have){
