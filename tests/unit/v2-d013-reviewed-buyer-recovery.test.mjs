@@ -151,3 +151,16 @@ test('D013: SQL candidato deniega público, preserva review y no publica',()=>{
  assert.doesNotMatch(sql,/cotironda_piloto_v2_auto_release_d013\s*\(/iu);
  assert.doesNotMatch(sql,/cotironda_piloto_ia_publish_mvp222\s*\(/iu);
 });
+
+test('D013: SQL candidato recupera desacuerdo semántico sin tocar WhatsApp',()=>{
+ const sql=readFileSync(new URL(
+  '../../supabase/piloto/v2_d013_recover_semantic_discrepancy_CANDIDATE.sql',
+  import.meta.url),'utf8');
+ assert.match(sql,/lecturas_discrepan_en_articulo/u);
+ assert.match(sql,/ia_error_de_lectura/u);
+ assert.match(sql,/v_source\.failure_code/u);
+ assert.match(sql,/cotironda_d016_pilot_project_ref/u);
+ assert.match(sql,/v2_d013_review_recovery_receipts/u);
+ assert.match(sql,/FOR UPDATE OF m/u);
+ assert.doesNotMatch(sql,/cotironda_piloto_ia_publish_mvp222|cron\.schedule|whapi_outbox|http_post/iu);
+});
