@@ -41,7 +41,7 @@ test('V2: cientos de combinaciones numéricas y medidas se separan',()=>{
  const sizes=[4,10,25,50,100];
  for(const [word,quantity] of numbers)for(const size of sizes){
   const evidence=word+' elementos de construcción de '+size+' kg';
-  const item={evidencia,cantidad:String(quantity),unidad:'unit',
+  const item={evidencia:evidence,cantidad:String(quantity),unidad:'unit',
    presentacion:size+' kg',citaCantidad:word,
    citaProducto:'elementos de construcción',
    citaPresentacion:size+' kg'};
