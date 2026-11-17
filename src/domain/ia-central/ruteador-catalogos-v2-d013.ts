@@ -144,9 +144,13 @@ export function autorizarPropuestasCatalogoV2(
    const soft=new Set(['sin_identidad_material_comprobable',
     'prestacion_tecnica_sin_acreditar',
     'presentacion_alternativa_sin_acreditar']);
-   const consultiva=exigirSegundaLectura&&
+   // Una IA Central propone un SKU real. Consulta plausible sin
+   // afirmar stock/equivalencia, pero nunca contra conflicto técnico duro.
+   const consultaCentral=!exigirSegundaLectura&&
+    tipo==='alternativa_razonable'&&soft.has(proof.motivo);
+   const consultiva=consultaCentral||(exigirSegundaLectura&&
     consultasRelacionadas.has(token)&&!identidadesCorroboradas.has(token)&&
-    (proof.estado==='evidencia_suficiente'||soft.has(proof.motivo));
+    (proof.estado==='evidencia_suficiente'||soft.has(proof.motivo)));
    if(proof.estado!=='evidencia_suficiente'&&!consultiva){
     pending.push({proveedor:supplierKey,indicePedido:idx,
      numeroCatalogo:lineNo,motivo:proof.motivo});
@@ -224,7 +228,7 @@ const instructions=[
  'Si el SKU declarado es razonablemente relacionado con lo solicitado,',
  'incluilo como alternativa_razonable para CONSULTARLE al proveedor,',
  'aunque no puedas confirmar que sea idéntico o que lo tenga en stock.',
- 'La segunda IA distinguirá equivalencia y mera consulta comercial.',
+ 'La IA Central distingue equivalencia de consulta comercial.',
  'Sin relación concreta entre material y SKU, dejalo sin proveedor.',
  'No completes ningún dato desconocido ni uses tiendas no incluidas.',
  'Devolvé únicamente JSON; no envíes ni confirmes ningún WhatsApp.'
@@ -446,7 +450,8 @@ export async function proponerRuteoCatalogoConIAV2(args:{
  const input={pedido:{
   zona:pedido.zona_entrega,
   articulos:pedido.articulos.map((x:PropuestaPedido['articulos'][number],i:number)=>({
-   indicePedido:i,descripcion:x.descripcion,cantidad:x.cantidad,
+   indicePedido:i,descripcion:x.descripcion,evidencia:x.evidencia,
+   cantidad:x.cantidad,
    unidad:x.unidad,presentacion:x.presentacion,rubro:x.rubro
   }))
  },proveedores:eligible.map((p:ProveedorCatalogoV2)=>({
@@ -461,7 +466,8 @@ export async function proponerRuteoCatalogoConIAV2(args:{
    method:'POST',
    headers:{Authorization:'Bearer '+args.apiKey,'Content-Type':'application/json'},
    body:JSON.stringify({
-    model:args.model,store:false,tools:[],max_output_tokens:5500,
+    model:args.model,store:false,tools:[],max_output_tokens:10500,
+    reasoning:{effort:'high'},
     input:[
      {role:'system',content:[{type:'input_text',text:instructions}]},
      {role:'user',content:[{type:'input_text',
@@ -470,7 +476,7 @@ export async function proponerRuteoCatalogoConIAV2(args:{
     text:{format:{type:'json_schema',name:'cotironda_ruteo_catalogos_v2',
      strict:true,schema}}
    }),
-   signal:AbortSignal.timeout(18000)
+   signal:AbortSignal.timeout(55000)
   });
   if(!response.ok)return fail('ia_ruteo_no_disponible');
   const length=Number(response.headers.get('content-length')??0);
@@ -479,18 +485,9 @@ export async function proponerRuteoCatalogoConIAV2(args:{
   if(body.length>50000)return fail('salida_excesiva');
   const candidates=parse(JSON.parse(body));
   const first=autorizarPropuestasCatalogoV2(pedido,proveedores,candidates);
-  const pairs=encontrarParesD013(pedido,proveedores,
-   first.revisionTecnica,candidates);
-  if(pairs===null||pairs.length===0)return first;
-  const checked=await corroborarSemanticaD013({
-   pares:pairs,apiKey:args.apiKey,model:args.model,
-   fetchImpl:args.fetchImpl??fetch
-  });
-  // Ninguna coincidencia, ni siquiera la literal, se envía sin segunda IA.
-  // Una consulta requiere el juicio explícito consulta_relacionada,
-  // nunca un timeout, omisión, respuesta 'incierto' ni un rubro compartido.
-  return autorizarPropuestasCatalogoV2(pedido,proveedores,candidates,
-   checked.equivalentes,true,checked.consultas);
+  // La propuesta única pasa SOLO guardias objetivos: catalogo declarado,
+  // localidad, empresa y contradicciones técnicas. Ninguna segunda IA.
+  return first;
  }catch{return fail('respuesta_ia_invalida')}
 }
 
