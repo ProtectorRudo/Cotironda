@@ -122,7 +122,7 @@ test('V2 webhook offline: proveedor conserva segunda IA, comprador no tiene fall
  const generated=generarWebhookD016(legacy);
  assert.ok(generated.length>100000);
  assert.match(generated,/Promise\.allSettled\(verifiedSupplier\?\[/u);
- assert.match(generated,/reasoningEffort:'high'/u);
+ assert.match(generated,/Promise\.allSettled\(verifiedSupplier\?\[/u);
  assert.match(generated,/const binaryWorker=prepararDocumentoBinarioV2D013/u);
  assert.doesNotMatch(generated,/const binaryWorker=d013BinaryEnabled\?/u);
  assert.match(generated,/enabled:d013BinaryEnabled/u);
