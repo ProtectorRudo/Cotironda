@@ -119,15 +119,15 @@ export function evaluarLecturasSemanticasV2D013(
      start<0||end<=start||end>origen.length||
      origen.slice(start,end)!==ev||
      !texto(entry.descripcion,500)||!cantidad(entry.cantidad)||
+     !texto(entry.unidad,80)||!rubro(entry.rubro)||
+     !(entry.presentacion===null||texto(entry.presentacion,200))||
+     !(entry.aclaracion===null||texto(entry.aclaracion,250))||
      !probarAtributosV2D013({
       evidencia:ev,cantidad:entry.cantidad,unidad:entry.unidad,
       presentacion:entry.presentacion,citaCantidad:entry.citaCantidad,
       citaProducto:entry.citaProducto,
       citaPresentacion:entry.citaPresentacion
-     })||
-     !texto(entry.unidad,80)||!rubro(entry.rubro)||
-     !(entry.presentacion===null||texto(entry.presentacion,200))||
-     !(entry.aclaracion===null||texto(entry.aclaracion,250)))
+     }))
    return rejection('articulo_sin_evidencia_verificable');
   if(intervals.some(x=>start<x.fin&&end>x.inicio))
    return rejection('evidencias_superpuestas');
@@ -154,8 +154,8 @@ export function evaluarLecturasSemanticasV2D013(
     citaVerificadaDelMismoItem(origen,a,b.evidencia,accepted)&&
     cantidad(b.cantidad)&&Number(b.cantidad)===Number(a.cantidad)&&
     typeof b.citaCantidad==='string'&&
+    b.citaCantidad===(a as PropuestaArticulo & {citaCantidad:string}).citaCantidad&&
     numeroNaturalV2D013(b.citaCantidad)===Number(a.cantidad)&&
-    a.evidencia.includes(b.citaCantidad)&&
     texto(b.unidad,80)&&unidadEquivalente(a.unidad,b.unidad,a.evidencia);
   });
   if(posibles.length!==1)

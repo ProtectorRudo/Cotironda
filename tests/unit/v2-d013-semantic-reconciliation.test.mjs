@@ -75,3 +75,53 @@ test('D013: se conecta solo al planner V2, no altera el lector histórico',()=>{
  assert.match(planner,/cliente-openai-v2-d013/u);
  assert.doesNotMatch(planner,/cliente-openai-v1\.ts/u);
 });
+
+test('D013: mensaje REAL con cantidades escritas y medidas numéricas no se rechaza',async()=>{
+ const source='Hola! Cómo andan? Necesito precios para una obra acá en La Plata.\n\n'+
+ 'Precisaría unas 10 bolsas de cemento de 25 kilos, un bolsón de arena fina, '+
+ 'tres baldes de albañil de 10 litros y dos rollos de membrana aluminizada de 4 mm.\n\n'+
+ 'Me pasan cotización? Gracias!';
+ const entries=['10 bolsas de cemento de 25 kilos','un bolsón de arena fina',
+  'tres baldes de albañil de 10 litros',
+  'dos rollos de membrana aluminizada de 4 mm'];
+ const qty=['10','un','tres','dos'];
+ const a={...first,articulos:entries.map((e,i)=>({...first.articulos[i],
+  evidencia:e,inicio:source.indexOf(e),fin:source.indexOf(e)+e.length,
+  citaCantidad:qty[i]}))};
+ const b={...second,articulos:second.articulos.map((e,i)=>({
+  ...e,citaCantidad:['dos','tres','un','10'][i]
+ }))};
+ const result=await interpretarConIaCentralV2D013({
+  fuente:source,apiKey:'sk-'+'a'.repeat(24),
+  model:'gpt-6-luna',fetchImpl:fake(a,b)
+ });
+ assert.equal(result.estado,'listo_para_preparar',result.motivo);
+ assert.deepEqual(result.pedido.articulos.map(x=>x.cantidad),['10','1','3','2']);
+});
+test('D013: ningún tamaño se puede hacer pasar por cantidad de unidades',()=>{
+ const quoted={...first,articulos:first.articulos.map(x=>({...x}))};
+ for(const [indice,clase,cantidadNueva] of [
+  [0,'25','25'],[2,'10','10'],[3,'4','4']
+ ]){
+  const changed=structuredClone(quoted);
+  changed.articulos[indice].cantidad=cantidadNueva;
+  changed.articulos[indice].citaCantidad=clase;
+  assert.equal(evaluarLecturasSemanticasV2D013(original,changed,second).estado,
+   'rechazado','especificación no es cantidad índice '+indice);
+ }
+});
+test('D013: no permitir que segunda lectura cite un dígito de la presentación',()=>{
+ const source='dos baldes de 25 litros para la obra en La Plata';
+ const p={...first,articulos:[{
+  ...first.articulos[2],evidencia:'dos baldes de 25 litros',
+  inicio:0,fin:23,descripcion:'balde 25 L',cantidad:'2',
+  citaCantidad:'dos',citaProducto:'baldes',
+  citaPresentacion:'25 litros',presentacion:'25 L'
+ }]};
+ const q={...second,articulos:[{
+  evidencia:'baldes de 25 litros',cantidad:'2',unidad:'unit',
+  rubro:'ferreteria',citaCantidad:'2'
+ }]};
+ assert.equal(evaluarLecturasSemanticasV2D013(source,p,q).estado,
+  'requiere_aclaracion');
+});
