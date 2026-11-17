@@ -60,7 +60,8 @@ test('D018 ingreso azul conserva gate, sesión privada y sin SMS',()=>{
  assert.match(login,/if\(process\.env\.VERCEL_ENV!=='preview'\)notFound\(\)/u);
  assert.match(login,/<AccesoWhatsappD016\/>/u);
  assert.match(uiCss,/\.coti-access-clean\.panel/u);
- assert.match(uiCss,/#0866ff/iu);
+ assert.match(uiCss,/body:has\(\.coti-clean\) \.top\{background:#06183b/u);
+ assert.match(uiCss,/#1758b5/iu);
  assert.match(entry,/credentials:'same-origin'/u);
  assert.match(entry,/window\.history\.replaceState/u);
  assert.doesNotMatch(entry,/signInWithOtp|localStorage|sms/u);
