@@ -52,7 +52,8 @@ export async function prepararDocumentoBinarioV2D013(args:{
    // de originales: no se reescribe ni burla la atestación SQL.
    contrastar:async source=>contrastarDocumentoCompradorV2UnicaD013({
     habilitado:source.habilitado,original:source.original,
-    primera:source.primera
+    primera:source.primera,
+    lectorPdf:source.lectorPdf,lectorOffice:source.lectorOffice
    }),
    broker:async params=>{
     // MVP278 solamente solicita sombra. No promover desde el callback:
