@@ -42,8 +42,9 @@ function origenD016(s:string):boolean{
   return u.protocol==='https:'&&u.origin===s&&u.username===''&&
    u.password===''&&u.port===''&&u.pathname==='/'&&
    u.search===''&&u.hash===''&&
-   u.hostname.startsWith('cotironda-portal-')&&
-   u.hostname.endsWith('-protector-rudo-s-projects.vercel.app');
+   (u.hostname==='app.cotironda.com'||
+    (u.hostname.startsWith('cotironda-portal-')&&
+     u.hostname.endsWith('-protector-rudo-s-projects.vercel.app')));
  }catch{return false}
 }
 /** D013 nunca debe publicar una ronda que el comprador no pueda abrir.
