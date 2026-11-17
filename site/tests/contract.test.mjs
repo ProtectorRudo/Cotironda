@@ -1,34 +1,37 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import vm from 'node:vm';
-const html = readFileSync(new URL('../index.html',import.meta.url),'utf8');
-const js = readFileSync(new URL('../app.js',import.meta.url),'utf8');
-test('la demo identifica claramente que no es producto comercial',()=>{
-  assert.match(html,/VISTA PRELIMINAR/);
-  assert.match(html,/datos ficticios/);
-  assert.match(html,/No admite licitaciones/);
+import {readFileSync} from 'node:fs';
+
+const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+const css=readFileSync(new URL('../styles.css',import.meta.url),'utf8');
+
+test('portada pública V2 identifica el piloto sin inventar cotizaciones ni montos',()=>{
+ assert.match(html,/Piloto comercial en curso/u);
+ assert.match(html,/VISTA ILUSTRATIVA/u);
+ assert.match(html,/Pedís materiales/u);
+ assert.match(html,/Los importes y documentos reales solo se muestran con acceso privado/u);
+ assert.doesNotMatch(html,/VISTA PRELIMINAR|ETAPA 01|No admite licitaciones|datos ficticios|\$\s*\d/u);
+ assert.doesNotMatch(html,/Ganador|adjudicar|ranking en vivo|hasta dos proveedores/u);
 });
-test('no solicita datos reales ni integra servicios no implementados',()=>{
-  assert.doesNotMatch(html,/<form\b/i);
-  assert.doesNotMatch(html,/api\.whapi|supabase\.co|mercadopago\.com/);
-  assert.match(html,/WhatsApp automático, licitaciones reales y cobros todavía no están habilitados/);
+test('no permite publicar presupuestos privados o datos de compradores en la portada',()=>{
+ assert.doesNotMatch(html,/<form\b|<input\b|<script\b/iu);
+ assert.doesNotMatch(html,/api\.whapi|supabase\.co|mercadopago\.com/iu);
+ assert.doesNotMatch(html,/#d016=|\?token=|Authorization: Bearer|localStorage/iu);
+ assert.match(html,/Por WhatsApp, como texto, imagen, PDF o Excel/u);
 });
-test('archivos estaticos correctamente referenciados',()=>{
-  assert.match(html,/href="\.\/styles\.css"/);
-  assert.match(html,/src="\.\/app\.js"/);
+test('acceso único por dominio exacto a portal privado, no por proxy',()=>{
+ const urls=[...html.matchAll(/href="(https:[^"]+)"/gu)].map(x=>x[1]);
+ assert.ok(urls.length>=2);
+ assert.deepEqual([...new Set(urls)],['https://app.cotironda.com/piloto/v2/acceso']);
+ assert.match(html,/href="\.\/styles\.css"/u);
+ assert.doesNotMatch(html,/src="\.\/app\.js"/u);
+ assert.doesNotMatch(html,/href="\/api\//u);
 });
-test('comparador simula costos completos sin confundir ofertas parciales',()=>{
-  const registry=new Map();
-  for(const key of ['single','combined','result-type','materials','shipping','total','summary']){
-    registry.set(key,{textContent:'',setAttribute(name,value){this[name]=value},addEventListener(type,fn){this.click=fn}});
-  }
-  const document={getElementById(key){const el=registry.get(key);if(!el) throw new Error('missing '+key);return el;}};
-  vm.runInNewContext(js,{document,Intl, Object});
-  assert.match(registry.get('total').textContent,/1\.340\.000/);
-  assert.equal(registry.get('single')['aria-pressed'],'true');
-  registry.get('combined').click();
-  assert.match(registry.get('total').textContent,/1\.350\.000/);
-  assert.equal(registry.get('combined')['aria-pressed'],'true');
-  assert.match(registry.get('summary').textContent,/flete/);
+test('diseño azul accesible y adaptativo para celular',()=>{
+ assert.match(html,/<meta name="viewport" content="width=device-width, initial-scale=1">/u);
+ assert.match(html,/<a class="skip" href="#contenido">/u);
+ assert.match(css,/#0866ff/iu);
+ assert.match(css,/a:focus-visible/u);
+ assert.match(css,/@media\(max-width:700px\)/u);
+ assert.match(css, /prefers-reduced-motion/u);
 });
