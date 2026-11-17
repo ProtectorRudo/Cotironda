@@ -361,3 +361,35 @@ test('D016 originales: no se añade el comando si la base no es la misma',()=>{
   "cotironda_piloto_receive_whapi_v1"),
   /anchor_invalid:original-consent-after-inbox/u);
 });
+
+
+test('D016 Whapi: enlace a app.cotironda.com exacto conserva SQL, HMAC y evita dominios hermanos',async()=>{
+ const own='https://app.cotironda.com';
+ const permitted=make();
+ const response=await permitted.run({portalOrigin:own});
+ assert.equal(response.estado,'api_aceptada');
+ assert.equal(permitted.state.sent.length,1);
+ const sent=permitted.state.sent[0].body;
+ assert.match(sent,/https:\/\/app\.cotironda\.com\/piloto\/v2\/acceso#d016=/u);
+ assert.ok(!sent.includes('?ticket='));
+ assert.equal(permitted.state.prepares.length,1);
+ assert.equal(permitted.state.finishes.length,1);
+ assert.equal(habilitarPublicacionD013ConAccesoD016({
+  outbound:true,matchingEnabled:true,linkSendEnabled:true,
+  portalOrigin:own,portalSha:SHA,approvedSha:SHA,hmacKeyHex:KEY
+ }),true);
+ for(const invalid of [
+  'https://www.cotironda.com',
+  'https://cotironda.com',
+  'http://app.cotironda.com',
+  'https://app.cotironda.com/',
+  'https://app.cotironda.com.evil.test',
+  'https://xapp.cotironda.com'
+ ]){
+  const f=make();
+  const out=await f.run({portalOrigin:invalid});
+  assert.equal(out.estado,'no_autorizado',invalid);
+  assert.equal(f.state.prepares.length,0,invalid);
+  assert.equal(f.state.sent.length,0,invalid);
+ }
+});
