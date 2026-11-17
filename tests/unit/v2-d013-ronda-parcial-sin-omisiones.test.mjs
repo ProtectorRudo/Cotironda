@@ -181,9 +181,9 @@ test('V2: adaptador SQL preserva unidades comerciales y convierte escalas exacta
   ['1000','mm','1','m'],
   ['4','mm','0.004','m'],
   ['100','cm2','0.01','m2'],
-  ['1000000','cm3','1','m3'],
+  ['100000','cm3','0.1','m3'],
   ['1','tn','1000','kg'],
-  ['500','mg','0.5','kg']
+  ['1000','mg','0.001','kg']
  ];
  for(const [qty,unit,wantQty,wantUnit] of examples){
   const result=cantidadUnidadSqlV2D013(qty,unit);
