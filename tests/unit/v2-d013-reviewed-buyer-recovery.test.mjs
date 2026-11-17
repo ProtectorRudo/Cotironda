@@ -145,7 +145,7 @@ test('D013: SQL candidato deniega público, preserva review y no publica',()=>{
  assert.match(sql,/TO service_role;/u);
  assert.match(sql,/a\.state='review'/u);
  assert.match(sql,/a\.failure_code='ia_error_de_lectura'/u);
- assert.match(sql,/EXECUTE replace\(v_read,v_old,v_new\)/u);
+ assert.match(sql,/FOR UPDATE OF m/u);
  assert.match(sql,/cotironda_piloto_v2_shadow_prepare_d013/u);
  assert.doesNotMatch(sql,/UPDATE\s+cotironda_piloto_privado\.ai_central_attempts_mvp226/iu);
  assert.doesNotMatch(sql,/cotironda_piloto_v2_auto_release_d013\s*\(/iu);
@@ -161,6 +161,6 @@ test('D013: SQL candidato recupera desacuerdo semántico sin tocar WhatsApp',()=
  assert.match(sql,/v_source\.failure_code/u);
  assert.match(sql,/cotironda_d016_pilot_project_ref/u);
  assert.match(sql,/v2_d013_review_recovery_receipts/u);
- assert.match(sql,/FOR UPDATE OF m/u);
+ assert.match(sql,/EXECUTE replace\(v_read,v_old,v_new\)/u);
  assert.doesNotMatch(sql,/cotironda_piloto_ia_publish_mvp222|cron\.schedule|whapi_outbox|http_post/iu);
 });
