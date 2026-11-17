@@ -103,6 +103,31 @@ export function desacoplarMotorV2D013DePublicacion(live){
   throw Error('d013_live_publication_gates_lost');
  return out;
 }
+/** D013: la IA del COMPRADOR usa siempre el medidor privado de tokens.
+ * No toca los 3 flujos existentes del proveedor ni el flag de publicación.
+ * Una activación parcial dejaría gastos no auditados, por eso falla cerrado.
+ * Entrada: fuente REAL Whapi v93 previamente cotejada con su bundle.
+ */
+export function activarMedicionCompradorV2D013(live){
+ if(typeof live!=='string'||live.length<100000||
+    !live.includes('const buyerWorker=procesarCompradorCentralV2D013;')||
+    !live.includes('habilitado:true,publicar:d013Enabled')||
+    !live.includes('const zoneWorker=continuarZonaCentralV2D013;'))
+   throw Error('d013_meter_source_not_v93');
+ const original=`      model,
+      usageTraceEnabled:Deno.env.get('COTIRONDA_PILOT_AI_USAGE_TRACE_ENABLED')==='true',
+      rpc:async(name,params)=>{`;
+ const traced=`      model,
+      usageTraceEnabled:true,
+      rpc:async(name,params)=>{`;
+ const out=one(live,original,traced,'buyer-usage-meter');
+ if(!out.includes('habilitado:true,publicar:d013Enabled')||
+    !out.includes('model,publicar:d013ZoneEnabled')||
+    !out.includes('const buyerWorker=procesarCompradorCentralV2D013;')||
+    !out.includes('const zoneWorker=continuarZonaCentralV2D013;'))
+  throw Error('d013_meter_publication_guard_lost');
+ return out;
+}
 /** Acopla la aceptación/baja de originales al webhook que YA archiva WhatsApp.
  * SQL es la única autoridad: exige proveedor, mensaje autenticado exacto,
  * texto legal aprobado + aviso previo real; jamás infiere permiso de una cotización.
