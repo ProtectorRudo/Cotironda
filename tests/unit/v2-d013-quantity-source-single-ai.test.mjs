@@ -77,9 +77,12 @@ test('D013 lectura central: usa la cantidad original y no necesita segundo model
  const invented=evaluarLecturaCentralUnicaD013(original,{
   ...primera,articulos:[{...primera.articulos[0],cantidad:'50',unidad:'bag',
    citaCantidad:'50'}]});
- assert.equal(invented.estado,'rechazado');
- assert.equal(invented.motivo,'cantidad_sin_respaldo_en_fuente');
- assert.equal(invented.pedido,null);
+ // La IA citó erróneamente la PRESENTACIÓN como cantidad.
+ // El original demuestra exactamente diez bolsas: corregir usando fuente.
+ assert.equal(invented.estado,'listo_para_preparar',invented.motivo);
+ assert.equal(invented.pedido.articulos[0].cantidad,'10');
+ assert.equal(invented.pedido.articulos[0].unidad,'bag');
+ assert.equal(invented.pedido.articulos[0].descripcion,evidencia);
 });
 
 test('D013 IA única: un cambio de localidad o tramo sigue sin poder inventarse',()=>{
@@ -98,4 +101,54 @@ test('D013 IA única: un cambio de localidad o tramo sigue sin poder inventarse'
   {...base,zona_entrega:'Rosario'}).estado,'requiere_aclaracion');
  assert.equal(evaluarLecturaCentralUnicaD013(original,
   {...base,articulos:[{...item,inicio:inicio+1}]}).estado,'rechazado');
+});
+
+
+test('D013: confusión real de presentación queda corregida solo con envase único',()=>{
+ const samples=[
+  {e:'10 bolsas de cemento CPC de 50 kg',cantidad:'50',unidad:'kg',cita:'50',expected:'10',u:'bag'},
+  {e:'1 bolsón de arena fina de 1 m³',cantidad:'1',unidad:'m3',cita:'1',expected:'1',u:'bigbag'},
+  {e:'dos baldes de pintura de 4 litros',cantidad:'4',unidad:'l',cita:'4',expected:'2',u:'bucket'},
+  {e:'4 cajas de tornillos 8 mm',cantidad:'8',unidad:'mm',cita:'8',expected:'4',u:'box'},
+  {e:'media docena bolsas de cal 25 kg',cantidad:'25',unidad:'kg',cita:'25',expected:'6',u:'bag'}
+ ];
+ for(const s of samples){
+  const original='Necesito '+s.e+'. Envío a La Plata.';
+  const inicio=original.indexOf(s.e);
+  const parsed={intencion:'cotizar',zona_entrega:'La Plata',dudas:[],articulos:[{
+   inicio,fin:inicio+s.e.length,evidencia:s.e,descripcion:s.e,
+   cantidad:s.cantidad,unidad:s.unidad,citaCantidad:s.cita,rubro:'obra_gruesa',
+   presentacion:null,citaPresentacion:null,aclaracion:null
+  }]};
+  const result=evaluarLecturaCentralUnicaD013(original,parsed);
+  assert.equal(result.estado,'listo_para_preparar',s.e+' '+result.motivo);
+  assert.equal(result.pedido.articulos[0].cantidad,s.expected);
+  assert.equal(result.pedido.articulos[0].unidad,s.u);
+  assert.equal(result.pedido.articulos[0].descripcion,s.e);
+ }
+});
+
+test('D013: ambiguos sin una sola compra NO se reparan con números inferidos',()=>{
+ const samples=[
+  {e:'3 bolsas de cemento y 2 baldes de pintura',cantidad:'99',unidad:'bag',cita:'99'},
+  {e:'cemento de 50 kg',cantidad:'2',unidad:'bag',cita:'2'},
+  {e:'pintura blanca 4 litros',cantidad:'3',unidad:'bucket',cita:'3'},
+  {e:'quiero cemento, algunas bolsas',cantidad:'5',unidad:'bag',cita:'5'},
+  {e:'1 bolsa de cemento y un bolsón de arena',cantidad:'99',unidad:'bag',cita:'99'}
+ ];
+ for(const s of samples){
+  const original=s.e+'. Localidad: La Plata.';
+  const parsed={intencion:'cotizar',zona_entrega:'La Plata',dudas:[],articulos:[{
+   inicio:0,fin:s.e.length,evidencia:s.e,descripcion:s.e,
+   cantidad:s.cantidad,unidad:s.unidad,citaCantidad:s.cita,rubro:'obra_gruesa',
+   presentacion:null,citaPresentacion:null,aclaracion:null
+  }]};
+  const codes=[];
+  const result=evaluarLecturaCentralUnicaD013(original,parsed,c=>codes.push(c));
+  assert.equal(result.estado,'rechazado',s.e);
+  assert.equal(result.motivo,'cantidad_sin_respaldo_en_fuente');
+  assert.equal(codes.length,1);
+  assert.match(codes[0],/^source_quantity_/u);
+  assert.doesNotMatch(codes[0],/cemento|pintura|La Plata|99/u);
+ }
 });
