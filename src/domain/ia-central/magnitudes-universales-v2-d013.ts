@@ -71,7 +71,7 @@ export function unidadDimensionadaV2D013(text:string):Unidad|null{
  if(original==='mL')return u('volumen_liquidos','ml',1000000n);
  return null;
 }
-const REGEX=/(?<![\p{L}\p{N}])(\d{1,3}(?:\.\d{3})+(?:,\d{1,6})?|\d{1,6}(?:[.,]\d{1,6})?)\s*(metros?\s+(?:lineales?|cuadrados?|cubicos?)|mts?\.?\s+(?:lineales?|lin\.?)|milimetros?\s+(?:cuadrados?|cubicos?)|centimetros?\s+(?:cuadrados?|cubicos?)|kilogramos?|miligramos?|mililitros?|mililiters?|centilitros?|decilitros?|kilometros?|milimetros?|centimetros?|toneladas?|litros?|gramos?|kilos?|mts?\.?|m\s*\.\s*l\.?|mm[²³23]?|cm[²³23]?|m[²³23]?|km|kg|mg|grs?|tns?|lts?|mL|ml|cc|cl|dl|g|l)(?![\p{L}\p{N}²³])/giu;
+const REGEX=/(?<![\p{L}\p{N}])(\d{1,3}(?:\.\d{3})+(?:,\d{1,6})?|\d{1,6}(?:[.,]\d{1,6})?)\s*(metros?\s+(?:lineales?|cuadrados?|cubicos?)|mts?\.?\s+(?:lineales?|lin\.?)|milimetros?\s+(?:cuadrados?|cubicos?)|centimetros?\s+(?:cuadrados?|cubicos?)|kilogramos?|miligramos?|mililitros?|mililiters?|centilitros?|decilitros?|kilometros?|milimetros?|centimetros?|toneladas?|litros?|gramos?|kilos?|metros?|mts?\.?|m\s*\.\s*l\.?|mm[²³23]?|cm[²³23]?|m[²³23]?|km|kg|mg|grs?|tns?|lts?|mL|ml|cc|cl|dl|g|l)(?![\p{L}\p{N}²³])/giu;
 /** null = escritura ambigua/no verificable, [] = ninguna magnitud física. */
 export function leerMagnitudesV2D013(text:string):readonly MagnitudD013[]|null{
  if(typeof text!=='string'||text.length>1500)return null;
