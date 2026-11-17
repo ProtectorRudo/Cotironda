@@ -60,6 +60,6 @@ test('MVP125: portada pública distingue piloto del acceso privado, sin formular
  const homepage=file('index.html');
  assert.match(homepage,/VISTA ILUSTRATIVA/u);
  assert.match(homepage,/Piloto comercial en curso/u);
- assert.match(homepage,/https:\/\/app\.cotironda\.com\/piloto\/v2\/acceso/u);
+ assert.match(homepage,/https:\/\/cotironda-portal-dev-git-feat-c9bde9-protector-rudo-s-projects\.vercel\.app\/piloto\/v2\/acceso/u);
  assert.doesNotMatch(homepage,/<form\b|<input\b|#d016=|access_token/iu);
 });

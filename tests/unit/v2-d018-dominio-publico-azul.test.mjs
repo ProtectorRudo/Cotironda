@@ -26,7 +26,7 @@ test('V2 dominio: nueva home comercial marino y azul, sin presupuestos privados 
  assert.match(home,/cotironda-isotipo\.svg/u);
  assert.match(home,/href="#empezar"/u);
  assert.doesNotMatch(home,/Corralón Nahuel|Corralón Ailín|293\.991|355\.400/iu);
- assert.match(styles,/@media\(max-width:700px\)/u);
+ assert.match(styles,/@media\(max-width:650px\)/u);
  assert.match(styles,/:focus-visible/u);
  assert.match(styles, /prefers-reduced-motion/u);
 });
