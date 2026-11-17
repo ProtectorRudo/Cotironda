@@ -18,6 +18,14 @@ export type DiagnosticoRecuperacionD013=
  |'ai_credentials_rejected'|'ai_rate_limited'|'ai_request_rejected'
  |'ai_upstream_unavailable'|'ai_timeout'|'ai_invalid_response'
  |'ai_evidence_mismatch'|'ai_interpretation_rejected'
+ |'source_input_invalid'|'source_schema_invalid'|'source_not_a_quote'
+ |'source_without_items'|'source_unsafe_fields'
+ |'source_second_reader_invalid'|'source_item_evidence_invalid'
+ |'source_overlapping_evidence'
+ |'source_readings_disagree'|'source_missing_items'
+ |'source_second_reader_unanchored'|'source_no_confirmed_item'
+ |'source_missing_city'|'source_invalid_review_indices'
+ |'source_invalid_partial_indices'
  |'plan_clarification_required'|'catalog_rpc_error'|'catalog_no_suppliers'
  |'catalog_invalid'|'catalog_no_destinations'
  |'plan_other_rejected'|'bridge_source_invalid'|'bridge_units_invalid'
@@ -44,13 +52,35 @@ const PLAN_DIAGNOSTICOS_D013:Readonly<Record<string,DiagnosticoRecuperacionD013>
  'modelo_no_disponible_o_salida_invalida':'ai_invalid_response',
  'citas_no_corresponden_al_original':'ai_evidence_mismatch',
  'origen_no_autorizado':'ai_interpretation_rejected',
+ // Todos los rechazos literales del contrato V2 (sin enviar material falso).
+ 'entrada_invalida':'source_input_invalid',
+ 'esquema_invalido':'source_schema_invalid',
+ 'intencion_no_comercial':'source_not_a_quote',
+ 'sin_articulos':'source_without_items',
+ 'campos_inseguros':'source_unsafe_fields',
+ 'segunda_lectura_invalida':'source_second_reader_invalid',
+ 'articulo_sin_evidencia_verificable':'source_item_evidence_invalid',
+ 'evidencias_superpuestas':'source_overlapping_evidence',
+ 'lecturas_incompletas_o_divergentes':'source_readings_disagree',
+ 'posibles_articulos_no_representados':'source_missing_items',
+ 'segundo_lector_identifica_articulo_sin_fuente':'source_second_reader_unanchored',
+ 'ningun_articulo_conciliado':'source_no_confirmed_item',
+ 'zona_de_entrega_faltante':'source_missing_city',
+ 'falta_localidad':'source_missing_city',
+ 'indices_revision_no_verificables':'source_invalid_review_indices',
+ 'indice_parcial_no_verificable':'source_invalid_partial_indices',
+ 'ningun_articulo_con_fuente_conciliada':'source_no_confirmed_item',
  'catalogo_rpc_indisponible':'catalog_rpc_error',
  'catalogo_rpc_no_conciliado':'catalog_invalid',
  'sin_catalogos_consentidos':'catalog_no_suppliers',
  'ningun_proveedor_para_la_lista':'catalog_no_destinations'
 };
-function diagnosticoPlanD013(motivo:string):DiagnosticoRecuperacionD013{
- return Object.hasOwn(PLAN_DIAGNOSTICOS_D013,motivo)
+/** Sólo devuelve valores compilados; motivos arbitrarios jamás llegan a logs.
+ * Incluye los rechazos de contrato, interpretación y planificador presentes.
+ */
+export function diagnosticoPlanD013(motivo:unknown):DiagnosticoRecuperacionD013{
+ return typeof motivo==='string'&&
+   Object.hasOwn(PLAN_DIAGNOSTICOS_D013,motivo)
   ?PLAN_DIAGNOSTICOS_D013[motivo]:'plan_other_rejected';
 }
 const obj=(v:unknown):v is Record<string,unknown>=>
@@ -139,9 +169,13 @@ export async function recuperarBuyerReviewD013(args:{
    apiKey:args.apiKey,model:args.model,
    rpc:async(n,p)=>args.rpc(n,p)
   });
-  if(plan.estado!=='plan_validado_sin_envio')
-   return review(plan.estado==='requiere_aclaracion'
-    ?'plan_clarification_required':diagnosticoPlanD013(plan.motivo));
+  if(plan.estado!=='plan_validado_sin_envio'){
+   // También discriminar la aclaración: no confundir una zona ausente con
+   // falta de evidencia de materiales, sin revelar el mensaje al operador.
+   const mapped=diagnosticoPlanD013(plan.motivo);
+   return review(plan.estado==='requiere_aclaracion'&&
+    mapped==='plan_other_rejected'?'plan_clarification_required':mapped);
+  }
   const prepared=(args.preparar??armarPreparacionSombraMvp221)({
    chatHmac:String(raw.chat_hmac),messageHmac:String(raw.message_hmac),
    textoOriginal:original,autenticadoPorWebhook:true,plan
