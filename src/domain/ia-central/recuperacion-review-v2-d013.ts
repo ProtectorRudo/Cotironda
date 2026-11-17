@@ -9,6 +9,50 @@ const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]
 type Rpc=(name:string,params:Readonly<Record<string,unknown>>)=>
  Promise<{data:unknown;error:unknown}>;
 type Model='gpt-6-luna'|'gpt-6.1-sol';
+/** Taxonomía fija. Estos códigos JAMÁS incluyen contenido de pedido,
+ * identidad comercial, HMAC, credenciales, respuestas ni errores externos. */
+export type DiagnosticoRecuperacionD013=
+ |'rpc_not_configured'|'source_lookup_error'|'source_lookup_exception'
+ |'source_not_found'|'source_ambiguous'|'source_invalid_reply'
+ |'source_integrity_failed'|'ai_credentials_invalid'
+ |'ai_credentials_rejected'|'ai_rate_limited'|'ai_request_rejected'
+ |'ai_upstream_unavailable'|'ai_timeout'|'ai_invalid_response'
+ |'ai_evidence_mismatch'|'ai_interpretation_rejected'
+ |'plan_clarification_required'|'catalog_rpc_error'|'catalog_no_suppliers'
+ |'catalog_invalid'|'catalog_no_destinations'
+ |'plan_other_rejected'|'bridge_source_invalid'|'bridge_units_invalid'
+ |'bridge_destination_invalid'|'bridge_other_rejected'
+ |'stage_rpc_error'|'stage_result_invalid'|'stage_denied'
+ |'stage_inconsistent'|'recovery_exception';
+const PLAN_DIAGNOSTICOS_D013:Readonly<Record<string,DiagnosticoRecuperacionD013>>={
+ 'entrada_o_credenciales_invalidas':'ai_credentials_invalid',
+ 'ai_credentials_rejected':'ai_credentials_rejected',
+ 'ai_rate_limited':'ai_rate_limited',
+ 'ai_request_rejected':'ai_request_rejected',
+ 'ai_timeout':'ai_timeout',
+ 'ai_upstream_unavailable':'ai_upstream_unavailable',
+ 'ai_upstream_failure':'ai_upstream_unavailable',
+ 'ai_upstream_rejected':'ai_upstream_unavailable',
+ 'ai_response_too_large':'ai_invalid_response',
+ 'response_shape':'ai_invalid_response',
+ 'response_not_completed':'ai_invalid_response',
+ 'response_no_message':'ai_invalid_response',
+ 'response_bad_text':'ai_invalid_response',
+ 'response_bad_json':'ai_invalid_response',
+ 'ai_response_read_failed':'ai_invalid_response',
+ 'bad_first':'ai_invalid_response',
+ 'modelo_no_disponible_o_salida_invalida':'ai_invalid_response',
+ 'citas_no_corresponden_al_original':'ai_evidence_mismatch',
+ 'origen_no_autorizado':'ai_interpretation_rejected',
+ 'catalogo_rpc_indisponible':'catalog_rpc_error',
+ 'catalogo_rpc_no_conciliado':'catalog_invalid',
+ 'sin_catalogos_consentidos':'catalog_no_suppliers',
+ 'ningun_proveedor_para_la_lista':'catalog_no_destinations'
+};
+function diagnosticoPlanD013(motivo:string):DiagnosticoRecuperacionD013{
+ return Object.hasOwn(PLAN_DIAGNOSTICOS_D013,motivo)
+  ?PLAN_DIAGNOSTICOS_D013[motivo]:'plan_other_rejected';
+}
 const obj=(v:unknown):v is Record<string,unknown>=>
  v!==null&&typeof v==='object'&&!Array.isArray(v);
 const decode=(s:string):Uint8Array=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
@@ -56,28 +100,36 @@ const result=(estado:ResultadoRecuperacionD013['estado'],
 export async function recuperarBuyerReviewD013(args:{
  ejecutar:boolean;habilitado:boolean;apiKey:string;
  aesKeyHex:string;model:Model;rpc:Rpc;
+ onDiagnostic?:(code:DiagnosticoRecuperacionD013)=>void;
  planificar?:typeof planificarMensajeAutenticadoMvp220;
  preparar?:typeof armarPreparacionSombraMvp221;
 }):Promise<ResultadoRecuperacionD013>{
  if(args?.habilitado!==true)return result('disabled');
- if(typeof args.rpc!=='function'||!HEX.test(args.aesKeyHex))
+ const review=(code:DiagnosticoRecuperacionD013):ResultadoRecuperacionD013=>{
+  // La observabilidad es secundaria: si falla, no desbloquea una acción.
+  try{args.onDiagnostic?.(code)}catch{/* No filtrar errores de callback */}
   return result('needs_operator_review');
+ };
+ if(typeof args.rpc!=='function'||!HEX.test(args.aesKeyHex))
+  return review('rpc_not_configured');
  let raw:unknown;
  try{
   const response=await args.rpc(
    'cotironda_piloto_v2_d013_review_source_private',{});
-  if(response.error!=null)return result('needs_operator_review');
+  if(response.error!=null)return review('source_lookup_error');
   raw=response.data;
- }catch{return result('needs_operator_review')}
+ }catch{return review('source_lookup_exception')}
  if(!obj(raw)||raw.state!=='ready'){
-  return result(obj(raw)&&raw.state==='empty'?'no_candidate':'needs_operator_review');
+  if(obj(raw)&&raw.state==='empty')return result('no_candidate');
+  return review(obj(raw)&&raw.state==='ambiguous'
+   ?'source_ambiguous':'source_invalid_reply');
  }
  const original=await abrirTextoArchivado(args.aesKeyHex,raw);
- if(!original)return result('needs_operator_review');
+ if(!original)return review('source_integrity_failed');
  if(args.ejecutar!==true)return result('source_verified');
- if(typeof args.apiKey!=='string'||args.apiKey.length<20||
+ if(typeof args.apiKey!=='string'||!/^sk-[A-Za-z0-9_-]{16,}$/u.test(args.apiKey)||
   !['gpt-6-luna','gpt-6.1-sol'].includes(args.model))
-  return result('needs_operator_review');
+  return review('ai_credentials_invalid');
  try{
   // Identidad autenticada por el webhook en el inbox original y nuevamente
   // verificada por la RPC; nunca se crea ni reinyecta un evento artificial.
@@ -88,13 +140,19 @@ export async function recuperarBuyerReviewD013(args:{
    rpc:async(n,p)=>args.rpc(n,p)
   });
   if(plan.estado!=='plan_validado_sin_envio')
-   return result('needs_operator_review');
+   return review(plan.estado==='requiere_aclaracion'
+    ?'plan_clarification_required':diagnosticoPlanD013(plan.motivo));
   const prepared=(args.preparar??armarPreparacionSombraMvp221)({
    chatHmac:String(raw.chat_hmac),messageHmac:String(raw.message_hmac),
    textoOriginal:original,autenticadoPorWebhook:true,plan
   });
   if(prepared.estado!=='plan_sql_listo'||!prepared.params)
-   return result('needs_operator_review');
+   return review(prepared.motivo==='presentacion_fuente_no_representable'
+    ?'bridge_source_invalid':
+     prepared.motivo==='cantidad_unidad_no_representable_en_sql'
+    ?'bridge_units_invalid':
+     prepared.motivo==='sin_destinos'?'bridge_destination_invalid':
+    'bridge_other_rejected');
   const expectedItems=prepared.params.p_items.length;
   const expectedMatches=prepared.params.p_destinos.reduce(
    (n,x)=>n+x.correspondencias.length,0);
@@ -107,16 +165,18 @@ export async function recuperarBuyerReviewD013(args:{
     ...stageParams,p_chat_hmac:p_buyer_chat_hmac,
     p_source_sha256:raw.source_sha256
    });
-  if(staged.error!=null||!obj(staged.data)||
-   staged.data.state!=='staged'||!UUID.test(String(staged.data.request_id))||
-   staged.data.items_staged!==expectedItems||
-   staged.data.matches_staged!==expectedMatches||
-   staged.data.invitations_sent!==0||staged.data.outbox_sent!==0)
-   return result('needs_operator_review');
+  if(staged.error!=null)return review('stage_rpc_error');
+  if(!obj(staged.data))return review('stage_result_invalid');
+  if(staged.data.state!=='staged')return review('stage_denied');
+  if(!UUID.test(String(staged.data.request_id))||
+     staged.data.items_staged!==expectedItems||
+     staged.data.matches_staged!==expectedMatches||
+     staged.data.invitations_sent!==0||staged.data.outbox_sent!==0)
+   return review('stage_inconsistent');
   return result('staged_no_send',String(staged.data.request_id));
  }catch{
   // Tras red incierta no se reintenta automáticamente. Conciliación por
   // inbox.source_hmac y sidecar append-only; nunca enviar ni repetir.
-  return result('needs_operator_review');
+  return review('recovery_exception');
  }
 }
