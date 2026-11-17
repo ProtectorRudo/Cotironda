@@ -34,9 +34,11 @@ const proposal={propuestas:[
   {indicePedido:1,numeroCatalogo:2,tipo:'producto_declarado',
    explicacion:'Mismo cemento 25 kg'}]}
 ]};
-const verdict={verificaciones:[{
- proveedor:'corralon_ailin',indicePedido:0,numeroCatalogo:1,decision:'equivalente'
-}]};
+const verdict={verificaciones:[
+ {proveedor:'corralon_ailin',indicePedido:0,numeroCatalogo:1,decision:'equivalente'},
+ {proveedor:'corralon_ailin',indicePedido:1,numeroCatalogo:2,decision:'equivalente'},
+ {proveedor:'corralon_nahuel',indicePedido:1,numeroCatalogo:2,decision:'equivalente'}
+]};
 const mockApi=(...payloads)=>{
  const bodies=[];
  const fetchImpl=async(_url,req)=>{
@@ -89,8 +91,8 @@ test('V2: segundo lector inseguro, omitido o incierto NO habilita coincidencias'
   const res=await proponerRuteoCatalogoConIAV2({
    pedido,proveedores:catalog,apiKey:'sk-'+'a'.repeat(24),
    model:'gpt-6-luna',fetchImpl});
-  assert.deepEqual(res.propuestas.map(x=>[x.proveedor,x.correspondencias.length]),
-   [['corralon_ailin',1],['corralon_nahuel',1]]);
+  assert.deepEqual(res.propuestas,[]);
+  assert.equal(res.estado,'requiere_revision');
   assert.equal(res.whatsappEnviado,false);
  }
 });
@@ -135,7 +137,11 @@ test('V2: lote con cuatro artículos se distribuye 4/2 según catálogo, no rubr
    explicacion:'Producto declarado en catálogo'
   }))
  }))};
- const {fetchImpl}=mockApi(proposals);
+ const confirmed={verificaciones:proposals.propuestas.flatMap(p=>
+  p.correspondencias.map(c=>({proveedor:p.proveedor,
+   indicePedido:c.indicePedido,numeroCatalogo:c.numeroCatalogo,
+   decision:'equivalente'})))};
+ const {fetchImpl}=mockApi(proposals,confirmed);
  const res=await proponerRuteoCatalogoConIAV2({
   pedido:request,proveedores:shops,model:'gpt-6-luna',
   apiKey:'sk-'+'a'.repeat(24),fetchImpl
@@ -156,4 +162,40 @@ test('V2: no convierte propuestas a negocios no autorizados',async()=>{
  assert.equal(res.estado,'requiere_revision');
  assert.deepEqual(res.propuestas,[]);
  assert.equal(bodies.length,1);
+});
+
+test('V2: compartir vocabulario no habilita tornillo técnicamente distinto',async()=>{
+ const pedidoTornillos={...pedido,articulos:[quote(
+  '10 tornillos para madera 5 mm','10','unit')]};
+ const negocio=[supplier('ferreteria_123',[
+  {numero:1,descripcion:'Tornillos para chapa 5 mm',rubro:'ferreteria'}
+ ])];
+ const proposed={propuestas:[{proveedor:'ferreteria_123',correspondencias:[{
+  indicePedido:0,numeroCatalogo:1,tipo:'producto_declarado',
+  explicacion:'Ambos tornillos, pero para usos distintos'
+ }]}]};
+ const first=autorizarPropuestasCatalogoV2(pedidoTornillos,negocio,
+  proposed.propuestas);
+ assert.equal(first.propuestas.length,1,
+  'sin verificación independiente el token compartido daba falso positivo');
+ const {fetchImpl,bodies}=mockApi(proposed,{verificaciones:[{
+  proveedor:'ferreteria_123',indicePedido:0,
+  numeroCatalogo:1,decision:'incompatible'
+ }]});
+ const res=await proponerRuteoCatalogoConIAV2({
+  pedido:pedidoTornillos,proveedores:negocio,
+  apiKey:'sk-'+'a'.repeat(24),model:'gpt-6-luna',fetchImpl});
+ assert.equal(bodies.length,2);
+ assert.equal(res.estado,'requiere_revision');
+ assert.deepEqual(res.propuestas,[]);
+ assert.equal(res.whatsappEnviado,false);
+});
+test('V2: sin respuesta del segundo lector no hay asignación comercial',async()=>{
+ const {fetchImpl,bodies}=mockApi(proposal);
+ const res=await proponerRuteoCatalogoConIAV2({
+  pedido,proveedores:catalog,apiKey:'sk-'+'a'.repeat(24),
+  model:'gpt-6-luna',fetchImpl});
+ assert.equal(bodies.length,2);
+ assert.deepEqual(res.propuestas,[]);
+ assert.equal(res.estado,'requiere_revision');
 });
