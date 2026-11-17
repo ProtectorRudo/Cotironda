@@ -297,8 +297,7 @@ test('V2: la consulta siempre requiere segundo lector y SKU concreto',()=>{
  const id='corralon_ailin:0:1';
  const denied=autorizarPropuestasCatalogoV2(pedido,catalog,single,
   new Set(),true);
- assert.deepEqual(denied.propuestas[0]?.correspondencias.map(x=>x.indicePedido),
-  []);
+ assert.deepEqual(denied.propuestas,[]);
  const consult=autorizarPropuestasCatalogoV2(pedido,catalog,single,
   new Set(),true,new Set([id]));
  assert.deepEqual(consult.propuestas[0].correspondencias.map(x=>x.indicePedido),[0]);
