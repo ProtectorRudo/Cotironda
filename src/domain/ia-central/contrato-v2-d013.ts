@@ -417,6 +417,61 @@ export function envaseUnicoAcreditadoD013(evidencia:string):
  }
  return hallados.length===1?hallados[0]:null;
 }
+/** Última recuperación determinista: una única magnitud COMPRADA puede
+ * extraerse de la fuente incluso si la IA citó mal el número o la unidad.
+ * No se deducen envases, stock ni equivalencias. Por seguridad solo
+ * admite magnitudes al COMIENZO del ítem (o tras un verbo de pedido), y
+ * descarta tamaños de envases, espesores, dos magnitudes y "ml" ambiguo.
+ * Una medida suelta DESPUÉS del producto podría ser presentación/SKU.
+ */
+export function cantidadFisicaUnicaAcreditadaD013(
+ evidencia:string
+):{cantidad:string;unidad:string}|null{
+ if(!texto(evidencia,1500))return null;
+ const original=evidencia.trim().replace(/^[-*•]\s*/u,'');
+ const source=original.replace(
+  /^(?:necesito|quiero|pido|cotizar|preciso)\s+/iu,'');
+ // "2 rollos de 25 m" acredita rollos, NO 25 m comprados.
+ if(/(?<![\p{L}\p{N}])(?:bolsas?|bolson(?:es)?|big\s?bags?|baldes?|rollos?|cajas?|paquetes?|packs?|unidades?)\b/iu.test(source))
+  return null;
+ const medidas=leerMagnitudesV2D013(source);
+ if(medidas===null||medidas.length>1)return null;
+ const admitir=(literal:string,unidad:string)=>{
+  const n=numeroNaturalV2D013(literal);
+  const valor=n===null?null:String(n);
+  // No transformar una medida de calibre/espesor en una compra.
+  if(['mm','cm','mm2','cm2','mm3','cm3'].includes(unidad)||
+    valor===null||!cantidad(valor))return null;
+  return {cantidad:valor,unidad};
+ };
+ if(medidas.length===1){
+  const m=medidas[0];
+  if(source.slice(0,m.inicio).trim()!=='')return null;
+  const number=/^(\d{1,3}(?:\.\d{3})+(?:,\d{1,3})?|\d{1,6}(?:[.,]\d{1,3})?)/u
+   .exec(m.literal);
+  return number?admitir(number[1],m.unidad):null;
+ }
+ // "tres metros lineales de cable": numeral escrito en palabras.
+ // Las palabras se analizan con la gramática existente, jamás con IA 2.
+ const palabras=[...source.matchAll(/[\p{L}]+/gu)];
+ if(palabras.length<2||palabras[0].index!==0)return null;
+ const opciones:{cantidad:string;unidad:string}[]=[];
+ for(let n=1;n<=5&&n<palabras.length;n++){
+  const fin=palabras[n-1].index+palabras[n-1][0].length;
+  const literal=source.slice(0,fin);
+  if(!/^[\p{L}\s]+$/u.test(literal))break;
+  const resto=source.slice(fin).trimStart();
+  const tokens=resto.split(/\s+/u);
+  for(let k=1;k<=3&&k<=tokens.length;k++){
+   const unidad=unidadDimensionadaV2D013(tokens.slice(0,k).join(' '));
+   if(!unidad)continue;
+   const valor=admitir(literal,unidad.canonica);
+   if(valor)opciones.push(valor);
+  }
+ }
+ const unicas=[...new Map(opciones.map(x=>[x.cantidad+':'+x.unidad,x])).values()];
+ return unicas.length===1?unicas[0]:null;
+}
 /** No incluye cantidades, unidades ni contenido del mensaje en observabilidad. */
 export type DiagnosticoCantidadD013=
  'source_quantity_unreadable_magnitude'|
@@ -539,7 +594,8 @@ export function evaluarLecturaCentralUnicaD013(
   let unidadFinal=raw.unidad as string;
   if(!cantidadAcreditadaLecturaUnicaD013(evidencia,
       cantidadFinal,unidadFinal,raw.citaCantidad)){
-   const fuente=envaseUnicoAcreditadoD013(evidencia);
+   const fuente=envaseUnicoAcreditadoD013(evidencia)??
+    cantidadFisicaUnicaAcreditadaD013(evidencia);
    if(!fuente){
     try{onQuantityDiagnostic?.(diagnosticarCantidadD013(
      evidencia,cantidadFinal,unidadFinal,raw.citaCantidad))}
