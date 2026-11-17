@@ -332,6 +332,9 @@ function envaseExplicitoD013(evidencia:string,fin:number):string|null{
  * La evidencia del artículo es una única cita, nunca otro renglón.
  */
 function esPresentacionDeEnvaseD013(evidencia:string,pos:number):boolean{
+ // También reconocer cuantificadores compuestos («media docena de bolsas»)
+ // sin limitar el idioma a unos pocos números de una palabra.
+ if(envaseUnicoAcreditadoD013(evidencia.slice(0,pos))!==null)return true;
  const antes=evidencia.slice(0,pos).normalize('NFD')
   .replace(/[\u0300-\u036f]/gu,'').toLocaleLowerCase('es-AR');
  return /(?<![\p{L}\p{N}])(?:\d{1,6}(?:[.,]\d{1,3})?|un|una|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez)\s*(?:bolsas?|bolson(?:es)?|rollos?|baldes?|cajas?|paquetes?|packs?|unidades?)\b/u.test(antes);
