@@ -306,3 +306,25 @@ body:has(.coti-clean) .status,body:has(.coti-clean) .foot{display:none}
 @media(prefers-reduced-motion:reduce){
  .coti-clean .coti-history-item{transition:none}
 }
+
+
+/* D018: pantalla de acceso por WhatsApp dentro del mismo sistema visual privado. */
+.coti-access-clean.panel{
+ width:min(530px,calc(100% - 30px));margin:55px auto 100px;
+ padding:31px;background:#fff;border:1px solid #e1e8f3;
+ border-radius:18px;box-shadow:0 10px 35px #23426a12;color:#20334c
+}
+.coti-access-clean .eyebrow{color:#0866ff;font-size:10px;letter-spacing:.10em}
+.coti-access-clean.panel h1{color:#132947;font-size:clamp(26px,5vw,35px);
+ letter-spacing:-.04em;line-height:1.2;margin:10px 0}
+.coti-access-clean.panel p{color:#697a91;font-size:13px;line-height:1.65}
+.coti-access-clean.panel button,.coti-access-clean.panel .button{
+ background:#0866ff;color:#fff;border-radius:10px;font-size:13px;
+ min-height:43px;max-width:100%
+}
+.coti-access-clean.panel .feedback{background:#edf5ff;color:#315b99;
+ border:1px solid #d9e7ff}
+.coti-access-clean.panel a{color:#075ccc}
+@media(max-width:560px){
+ .coti-access-clean.panel{padding:22px 18px;margin:30px auto 65px}
+}
