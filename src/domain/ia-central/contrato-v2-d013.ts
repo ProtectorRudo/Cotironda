@@ -336,7 +336,7 @@ function cantidadPorUnidadExplicitaD013(
  evidencia:string,cantidadNormalizada:string,unidad:string
 ):boolean{
  const cantidadObjetivo=Number(cantidadNormalizada);
- const numeros=/(?<![\p{L}\p{N}])(?:\d{1,3}(?:\.\d{3})+(?:,\d{1,3})?|\d{1,6}(?:[.,]\d{1,3})?)/gu;
+ const numeros=/(?<![\p{L}\p{N}.,])(?:\d{1,3}(?:\.\d{3})+(?:,\d{1,3})?|\d{1,6}(?:[.,]\d{1,3})?)(?![\d.,])/gu;
  for(const m of evidencia.matchAll(numeros)){
   if(numeroNaturalV2D013(m[0])===cantidadObjetivo&&
      unidadAdyacenteACompraD013(evidencia,m.index+m[0].length,unidad))
@@ -387,7 +387,16 @@ export function cantidadAcreditadaLecturaUnicaD013(
     return contenedor===null||contenedor===unidadComprada||
      (unidadComprada==='unit'&&contenedor!=='unit');
    }
-   if(medida)return medida.unidad===unidadComprada;
+   if(medida){
+    // «15» en «15,5 L» comparte inicio, pero NO es la cantidad 15 L.
+    // Igualdad exacta de magnitud (milésimos) y dimensión, sin redondear.
+    const [entero,fraccion='']=cantidadNormalizada.split('.');
+    const milli=BigInt(entero)*1000n+
+     BigInt(fraccion.padEnd(3,'0'));
+    const base=milli*unidadFisica.factor;
+    return medida.unidad===unidadComprada&&
+     base%1000n===0n&&medida.valorBase===base/1000n;
+   }
    return unidadAdyacenteACompraD013(
     evidencia,pos+citaCantidad.length,unidad);
   }))return true;
