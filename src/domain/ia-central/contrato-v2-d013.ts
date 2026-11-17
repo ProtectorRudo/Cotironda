@@ -478,7 +478,11 @@ export type DiagnosticoCantidadD013=
  'source_quantity_ai_citation_unparseable'|
  'source_quantity_ai_citation_missing'|
  'source_quantity_ai_unit_conflict'|
- 'source_quantity_purchase_not_explicit';
+ 'source_quantity_purchase_not_explicit'|
+ 'source_quantity_evidence_container_unclear'|
+ 'source_quantity_evidence_multiple_physical'|
+ 'source_quantity_evidence_nonleading_measure'|
+ 'source_quantity_evidence_no_measure';
 export function diagnosticarCantidadD013(
  evidencia:string,cantidadNormalizada:string,unidad:string,
  citaCantidad:unknown
@@ -495,6 +499,21 @@ export function diagnosticarCantidadD013(
      citacionesCantidadD013(evidencia,citaCantidad)[0]+citaCantidad.length))
   return 'source_quantity_ai_unit_conflict';
  return 'source_quantity_purchase_not_explicit';
+}
+/** Segunda señal PRIVADA, siempre código fijo; no incluye cantidades,
+ * materiales ni frases del comprador. Permite distinguir en el próximo
+ * rechazo si la evidencia del artículo está completa o no.
+ */
+export function diagnosticarFuenteCompraD013(
+ evidencia:string
+):DiagnosticoCantidadD013{
+ const medidas=leerMagnitudesV2D013(evidencia);
+ if(medidas===null)return 'source_quantity_unreadable_magnitude';
+ if(/(?<![\p{L}\p{N}])(?:bolsas?|bolson(?:es)?|big\s?bags?|baldes?|rollos?|cajas?|paquetes?|packs?|unidades?)\b/iu.test(evidencia))
+  return 'source_quantity_evidence_container_unclear';
+ if(medidas.length>1)return 'source_quantity_evidence_multiple_physical';
+ if(medidas.length===1)return 'source_quantity_evidence_nonleading_measure';
+ return 'source_quantity_evidence_no_measure';
 }
 /** Valida una cantidad comercial UNA SOLA VEZ sobre el original.
  * La cita IA ayuda a ubicar el cuantificador; si su grafía es distinta,
@@ -597,9 +616,11 @@ export function evaluarLecturaCentralUnicaD013(
    const fuente=envaseUnicoAcreditadoD013(evidencia)??
     cantidadFisicaUnicaAcreditadaD013(evidencia);
    if(!fuente){
-    try{onQuantityDiagnostic?.(diagnosticarCantidadD013(
-     evidencia,cantidadFinal,unidadFinal,raw.citaCantidad))}
-    catch{/* Observabilidad opcional, nunca modifica la aprobación */}
+    try{
+     onQuantityDiagnostic?.(diagnosticarCantidadD013(
+      evidencia,cantidadFinal,unidadFinal,raw.citaCantidad));
+     onQuantityDiagnostic?.(diagnosticarFuenteCompraD013(evidencia));
+    }catch{/* Observabilidad opcional, nunca modifica la aprobación */}
     return rejection('cantidad_sin_respaldo_en_fuente');
    }
    cantidadFinal=fuente.cantidad;
