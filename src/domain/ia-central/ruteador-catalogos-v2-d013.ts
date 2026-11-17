@@ -5,7 +5,7 @@
  * Ninguna llamada transmite WhatsApp, crea ronda, confirma stock ni precio.
  * Un broker distinto valida identidad, zona, rubro y el catálogo real.
  */
-import type {PropuestaPedido} from './contrato-v1.ts';
+import type {PropuestaPedido,PropuestaArticulo} from './contrato-v1.ts';
 import {verificarCorrespondenciaTecnicaD013} from './verificador-evidencia-tecnica-v2-d013.ts';
 import type {RubroMvp216} from '../rubros-comprador-mvp216.ts';
 import {RUBROS_MVP216} from '../rubros-comprador-mvp216.ts';
