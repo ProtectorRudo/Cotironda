@@ -5,6 +5,8 @@ import type {CatalogoRespuestasV2} from '../../../../../../../../src/server/v2-0
 import type {InformeFinalD016}
  from '../../../../../../../../src/server/v2-d016-informe-final.ts';
 import {nombreDescargaOriginalV2} from '../../../../../../lib/piloto-v2-nombre-descarga.ts';
+import {cantidadSolicitadaVisibleD020,descripcionMaterialVisibleD020}
+ from '../../../../../../lib/piloto-v2-materiales-visibles.ts';
 import {seleccionarAnalisisPendientesV2,registrarIntentosAnalisisV2,
  type IntentoAnalisisV2}
  from '../../../../../../lib/piloto-v2-reintento-analisis.ts';
@@ -214,7 +216,13 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
   </div>
   {pedidoConsistente&&solicitados.length>0&&<details className="coti-request-list">
    <summary>Ver los {solicitados.length} materiales solicitados</summary>
-   <ol>{solicitados.map(item=><li key={item.line}>{item.description}</li>)}</ol>
+   <ul className="coti-request-lines">{solicitados.map(item=><li key={item.line}>
+    <strong className="coti-request-quantity"
+     aria-label={'Cantidad solicitada: '+cantidadSolicitadaVisibleD020(item.quantity)}>
+     {cantidadSolicitadaVisibleD020(item.quantity)}
+    </strong>
+    <span className="coti-request-description">{descripcionMaterialVisibleD020(item.description,item.quantity)}</span>
+   </li>)}</ul>
   </details>}
   {!pedidoConsistente&&<p className="coti-clean-muted">La lista de materiales requiere revisión del original antes de mostrarla.</p>}
   {busy&&<p role="status" className="coti-clean-muted">Verificando información…</p>}
@@ -296,13 +304,11 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
       <div><dt>Pago</dt><dd>{conditions.pago}</dd></div>
      </dl>
      {puntosUtiles.length>0?<details className="coti-clean-evidence">
-      <summary>Ver evidencia del presupuesto ({puntosUtiles.length})</summary>
+      <summary>Más observaciones ({puntosUtiles.length})</summary>
       <ul>{puntosUtiles.map((p,i)=><li key={q.documentoId+'-evidencia-'+i}>
        <p>{p.observacion}</p>
-       <small>Fuente original: «{p.evidencia}»</small>
       </li>)}</ul>
      </details>:<p className="coti-clean-muted">{q.analisis}</p>}
-     <small className="coti-clean-source-note">Los datos proceden del documento recibido. El original prevalece.</small>
     </div>}
    </article>;
   })}
@@ -324,9 +330,9 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
      </div>)}
      {item.ofertas.length===0&&<p>Sin documentación comercial verificable.</p>}
      {item.evidencias.length>0&&<details className="coti-clean-evidence">
-      <summary>Consultar evidencia</summary>
+      <summary>Más observaciones</summary>
       <ul>{item.evidencias.map((p,i)=><li key={p.documentoId+'-'+i}>
-       <p>{p.observacion}</p><small>«{p.evidencia}»</small>
+       <p>{p.observacion}</p>
       </li>)}</ul>
      </details>}
     </article>)}

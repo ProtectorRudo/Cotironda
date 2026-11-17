@@ -169,7 +169,7 @@
 /* COTIRONDA CLEAN BLUE V2: sólo vistas del comprador con sesión privada.
    Sin cambios a alta, WhatsApp, original, rutas o API. Mobile first. */
 body:has(.coti-clean){background:#f5f7fc;color:#14253e}
-body:has(.coti-clean) .top{background:#0866ff;border:0;box-shadow:0 2px 14px #052f8012}
+body:has(.coti-clean) .top{background:#06183b;border-bottom:1px solid #163262;box-shadow:0 2px 14px #04112d18}
 body:has(.coti-clean) .top .wrap{min-height:66px;max-width:760px}
 body:has(.coti-clean) .logo{color:#fff;font-size:21px;letter-spacing:-.04em}
 body:has(.coti-clean) .logo span{color:#fff}
@@ -182,7 +182,7 @@ body:has(.coti-clean) .status,body:has(.coti-clean) .foot{display:none}
  color:#122443;font-size:clamp(24px,4.2vw,32px);letter-spacing:-.035em;
  line-height:1.22;margin:0 0 8px;font-weight:800}
 .coti-clean .coti-profile-heading p{color:#62748b;font-size:13px;margin:0;line-height:1.4}
-.coti-clean .coti-back-link{color:#085bcf;margin:0 0 20px;font-weight:750}
+.coti-clean .coti-back-link{color:#1555a9;margin:0 0 20px;font-weight:750}
 .coti-clean .coti-clean-profilebar{display:flex;align-items:center;justify-content:space-between;
  gap:12px;min-height:42px;padding-bottom:9px;color:#718095;font-size:12px}
 .coti-clean .coti-clean-profilebar>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -208,14 +208,14 @@ body:has(.coti-clean) .status,body:has(.coti-clean) .foot{display:none}
  box-shadow:0 2px 7px #2039580b;min-height:74px;color:#14253e}
 .coti-clean .coti-history-item.coti-history-active{background:#eff5ff;border-color:#92b9ff}
 .coti-clean .coti-history-item:hover,.coti-clean .coti-history-item:focus-visible{
- background:#f3f7ff;border-color:#0866ff;outline-offset:2px}
+ background:#f3f7ff;border-color:#1758b5;outline-offset:2px}
 .coti-clean .coti-history-date-icon{background:#eaf2ff;border:0;
  border-radius:10px;width:49px;height:49px}
-.coti-clean .coti-history-date-icon>span{color:#095bd7;font-size:20px}
+.coti-clean .coti-history-date-icon>span{color:#155bb5;font-size:20px}
 .coti-clean .coti-history-date-icon>small{color:#4876b5;font-size:10px}
 .coti-clean .coti-history-mainline>strong{color:#152940;font-size:14px;line-height:1.3}
 .coti-clean .coti-history-details p{color:#65778e;margin:3px 0;font-size:12px}
-.coti-clean .coti-history-documents{color:#075fe3;font-size:12px;font-weight:750}
+.coti-clean .coti-history-documents{color:#155bb5;font-size:12px;font-weight:750}
 .coti-clean .coti-history-archive{color:#8997a7;font-size:11px}
 .coti-clean .coti-history-state{border-radius:99px;font-size:10px;white-space:nowrap;
  font-weight:750;padding:5px 8px}
@@ -231,8 +231,8 @@ body:has(.coti-clean) .status,body:has(.coti-clean) .foot{display:none}
  color:#718199;font-size:12px;line-height:1.5}
 .coti-clean .coti-profile-message{background:#fff;border:1px solid #dce6f2;
  color:#18324d;border-radius:14px;padding:18px;font-size:13px}
-.coti-clean .coti-profile-message a{color:#0866ff}
-.coti-clean .coti-profile-message .button{background:#0866ff;color:#fff}
+.coti-clean .coti-profile-message a{color:#1758b5}
+.coti-clean .coti-profile-message .button{background:#1758b5;color:#fff}
 .coti-clean .coti-clean-bids-heading{display:flex;align-items:center;justify-content:space-between;
  gap:12px;margin:16px 0 17px}
 .coti-clean .coti-clean-bids-heading h2{font-size:16px;font-weight:800;
@@ -242,12 +242,12 @@ body:has(.coti-clean) .status,body:has(.coti-clean) .foot{display:none}
  margin-bottom:13px;color:#172b44}
 .coti-clean .coti-clean-bid-primary{display:flex;align-items:center;gap:13px}
 .coti-clean .coti-clean-supplier-avatar{display:grid;place-items:center;
- background:#dfedff;color:#0758c7;border-radius:12px;width:46px;height:46px;
+ background:#dfedff;color:#1555a9;border-radius:12px;width:46px;height:46px;
  font-size:22px;font-weight:850;flex:none}
 .coti-clean .coti-clean-bid-identity{min-width:0}
 .coti-clean .coti-clean-bid-identity h3{color:#152940;font-weight:750;font-size:15px;
  margin:0 0 5px;line-height:1.3;overflow-wrap:anywhere}
-.coti-clean .coti-clean-bid-price{color:#075bcc;font-size:clamp(23px,4.5vw,31px);
+.coti-clean .coti-clean-bid-price{color:#1555a9;font-size:clamp(23px,4.5vw,31px);
  font-weight:850;line-height:1.12;letter-spacing:-.035em;overflow-wrap:anywhere}
 .coti-clean .coti-clean-coverage{display:inline-flex;align-items:center;gap:8px;
  border-radius:9px;color:#17754c;background:#eaf8ef;font-weight:700;
@@ -257,8 +257,8 @@ body:has(.coti-clean) .status,body:has(.coti-clean) .foot{display:none}
 .coti-clean .coti-clean-bid-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 .coti-clean .coti-clean-bid-actions button{min-width:0;width:100%;min-height:42px;
  border-radius:10px;padding:10px 9px;font-size:12px;font-weight:780}
-.coti-clean .coti-clean-detail-button{background:#0866ff;color:#fff;border:1px solid #0866ff}
-.coti-clean .coti-clean-pdf-button{background:#fff;color:#075bd0;border:1px solid #0866ff}
+.coti-clean .coti-clean-detail-button{background:#1758b5;color:#fff;border:1px solid #1758b5}
+.coti-clean .coti-clean-pdf-button{background:#fff;color:#1555a9;border:1px solid #1758b5}
 .coti-clean .coti-clean-bid-expanded{border-top:1px solid #e7eef5;
  margin-top:16px;padding-top:16px}
 .coti-clean .coti-clean-bid-expanded h4{font-size:13px;color:#253e59;margin:0 0 12px}
@@ -275,7 +275,7 @@ body:has(.coti-clean) .status,body:has(.coti-clean) .foot{display:none}
 .coti-clean .coti-clean-alert ul{padding-left:16px}
 .coti-clean .coti-clean-evidence{margin-top:14px;border-top:1px solid #e7eef5;
  padding-top:12px;font-size:12px}
-.coti-clean .coti-clean-evidence summary{cursor:pointer;color:#075bd1;font-weight:750;
+.coti-clean .coti-clean-evidence summary{cursor:pointer;color:#1555a9;font-weight:750;
  list-style:none;padding:5px 0}
 .coti-clean .coti-clean-evidence summary::-webkit-details-marker{display:none}
 .coti-clean .coti-clean-evidence ul{padding-left:18px}
@@ -287,7 +287,7 @@ body:has(.coti-clean) .status,body:has(.coti-clean) .foot{display:none}
 .coti-clean .coti-clean-error{color:#8f2e2e;background:#fff4f4}
 .coti-clean .coti-clean-final{border:1px solid #cddcf0;background:#fff;
  border-radius:13px;padding:14px 17px;margin-top:20px;font-size:13px}
-.coti-clean .coti-clean-final>summary{color:#075bd1;font-weight:800;cursor:pointer}
+.coti-clean .coti-clean-final>summary{color:#1555a9;font-weight:800;cursor:pointer}
 .coti-clean .coti-clean-final p,.coti-clean .coti-clean-final li{line-height:1.5}
 @media(max-width:560px){
  .coti-clean.coti-profile-shell{margin:22px auto 55px}
@@ -314,12 +314,12 @@ body:has(.coti-clean) .status,body:has(.coti-clean) .foot{display:none}
  padding:31px;background:#fff;border:1px solid #e1e8f3;
  border-radius:18px;box-shadow:0 10px 35px #23426a12;color:#20334c
 }
-.coti-access-clean .eyebrow{color:#0866ff;font-size:10px;letter-spacing:.10em}
+.coti-access-clean .eyebrow{color:#1758b5;font-size:10px;letter-spacing:.10em}
 .coti-access-clean.panel h1{color:#132947;font-size:clamp(26px,5vw,35px);
  letter-spacing:-.04em;line-height:1.2;margin:10px 0}
 .coti-access-clean.panel p{color:#697a91;font-size:13px;line-height:1.65}
 .coti-access-clean.panel button,.coti-access-clean.panel .button{
- background:#0866ff;color:#fff;border-radius:10px;font-size:13px;
+ background:#1758b5;color:#fff;border-radius:10px;font-size:13px;
  min-height:43px;max-width:100%
 }
 .coti-access-clean.panel .feedback{background:#edf5ff;color:#315b99;
@@ -342,7 +342,7 @@ body:has(.coti-clean) .logo{font-size:18px}
 .coti-clean .coti-history-group{margin:15px 0 20px}
 .coti-clean .coti-history-item{min-height:56px;padding:9px 11px;gap:10px;margin:6px 0}
 .coti-clean .coti-history-item.coti-history-active{
- background:#eef5ff;border:1.5px solid #78a9ff;box-shadow:0 3px 13px #075bd114}
+ background:#eef5ff;border:1.5px solid #78a9ff;box-shadow:0 3px 13px #1555a914}
 .coti-clean .coti-history-item.coti-history-active .coti-history-documents{
  color:#074cb9;font-weight:850}
 .coti-clean .coti-history-date-icon{height:39px;width:39px;border-radius:8px}
@@ -382,7 +382,7 @@ body:has(.coti-clean) .logo{font-size:18px}
 .coti-clean .coti-request-list{margin:0 0 13px;background:#fff;
  border:1px solid #dce7f4;border-radius:11px;padding:0 12px;color:#18385b}
 .coti-clean .coti-request-list summary{cursor:pointer;list-style:none;
- font-size:12px;font-weight:750;color:#0866ff;padding:12px 0}
+ font-size:12px;font-weight:750;color:#1758b5;padding:12px 0}
 .coti-clean .coti-request-list summary::-webkit-details-marker{display:none}
 .coti-clean .coti-request-list ol{margin:0 0 12px;padding-left:20px}
 .coti-clean .coti-request-list li{font-size:12px;line-height:1.5;margin:5px 0}
@@ -395,7 +395,7 @@ body:has(.coti-clean) .logo{font-size:18px}
 .coti-clean .coti-final-offer{border-top:1px solid #e5edf7;padding:9px 0}
 .coti-clean .coti-final-offer p{font-size:12px;margin:6px 0;line-height:1.45}
 .coti-clean .coti-final-offer small{display:block;color:#708198}
-.coti-clean .coti-final-amount{font-size:20px;font-weight:850;color:#095ed7}
+.coti-clean .coti-final-amount{font-size:20px;font-weight:850;color:#155bb5}
 .coti-clean .coti-final-decision{font-weight:700;font-size:12px;color:#173b6d!important}
 .coti-clean .coti-screen-reader{position:absolute;width:1px;height:1px;overflow:hidden;
  clip:rect(0,0,0,0);white-space:nowrap}
@@ -449,4 +449,43 @@ body:has(.coti-clean) .logo{font-size:18px}
 .coti-clean .coti-final-guidance li{font-size:12px;line-height:1.5;margin-bottom:7px}
 @media(max-width:460px){
  .coti-clean .coti-final-material li{grid-template-columns:minmax(0,1fr);gap:2px}
+}
+
+/* D020 identidad aportada por el propietario (logotipo C original vectorizado).
+ * Azul marino como soporte; azul real de la marca sólo como acento sereno. */
+.coti-private-brand{display:none}
+body:has(.coti-clean) .coti-legacy-brand{display:none}
+body:has(.coti-clean) a.logo.coti-private-brand{
+ display:inline-flex;align-items:center;gap:10px;
+ color:#fff;font-weight:850;font-size:23px;letter-spacing:-.045em;line-height:1
+}
+body:has(.coti-clean) a.logo.coti-private-brand img{
+ width:36px;height:39px;display:block;object-fit:contain;flex:none
+}
+body:has(.coti-clean) a.logo.coti-private-brand span{color:#fff}
+body:has(.coti-clean) .top .wrap{min-height:62px}
+body:has(.coti-clean) .logo:focus-visible{outline:2px solid #9dbff7;outline-offset:4px}
+.coti-clean .coti-request-lines{
+ list-style:none;margin:0 0 12px;padding:0;display:grid;gap:0
+}
+.coti-clean .coti-request-lines li{
+ display:grid;grid-template-columns:minmax(35px,max-content) minmax(0,1fr);
+ gap:11px;align-items:center;padding:10px 0;
+ border-top:1px solid #e6edf6;min-width:0
+}
+.coti-clean .coti-request-lines li:first-child{border-top:0}
+.coti-clean .coti-request-quantity{
+ display:inline-flex;justify-content:center;align-items:center;
+ min-width:35px;padding:6px 9px;border-radius:9px;
+ background:#e8f0fb;color:#154d99;font-size:13px;font-weight:850;
+ font-variant-numeric:tabular-nums
+}
+.coti-clean .coti-request-description{color:#1b3557;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+.coti-clean .coti-clean-detail-button:hover{background:#124a98;border-color:#124a98}
+.coti-clean .coti-clean-pdf-button:hover{background:#edf3fb}
+.coti-clean .coti-clean-bid-actions button:focus-visible{outline-color:#9cbbeb}
+@media(max-width:560px){
+ body:has(.coti-clean) a.logo.coti-private-brand{font-size:21px}
+ body:has(.coti-clean) a.logo.coti-private-brand img{width:32px;height:35px}
+ body:has(.coti-clean) .top .wrap{min-height:58px}
 }

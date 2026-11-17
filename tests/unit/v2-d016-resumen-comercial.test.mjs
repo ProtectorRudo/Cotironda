@@ -136,7 +136,7 @@ test('D016 dashboard mantiene la descarga real, análisis original y claridad co
  for(const phrase of [
   'coti-clean-bid-price','coti-clean-coverage','Condiciones de la oferta',
   'q.resumen.totalDeclarado','q.resumen.cobertura',
-  'Ver evidencia del presupuesto','Descargar original','originales-whatsapp',
+  'Más observaciones','Descargar original','originales-whatsapp',
   'informe-final-whatsapp','credentials:', 'cerrarSesion',
   'aria-expanded={expanded}','coti-clean-bid-expanded'
  ])assert.ok(ui.includes(phrase),phrase);

@@ -13,7 +13,8 @@ const direct=read('apps/portal/app/piloto/v2/rondas/[rondaId]/whatsapp/page.tsx'
 test('Cotironda Clean: identidad azul sólo dentro del portal privado',()=>{
  assert.match(css,/COTIRONDA CLEAN BLUE V2/u);
  assert.match(css,/body:has\(\.coti-clean\)\.?.*\{/u);
- assert.match(css,/#0866ff/iu);
+ assert.match(css,/body:has\(\.coti-clean\) \.top\{background:#06183b/u);
+ assert.match(css,/#1758b5/iu);
  assert.match(css,/@media\(max-width:560px\)/u);
  assert.match(home,/coti-profile-shell coti-clean/u);
  assert.match(detail,/coti-clean-detail-heading/u);
@@ -42,7 +43,9 @@ test('Propuestas: precio y estado visibles, condiciones y evidencia sólo a pedi
  assert.match(bids,/\{expanded&&<div className="coti-clean-bid-expanded"/u);
  assert.match(bids,/Ver análisis/u);
  assert.match(bids,/PDF original/u);
- assert.match(bids,/Ver evidencia del presupuesto/u);
+ assert.match(bids,/Más observaciones/u);
+ assert.doesNotMatch(bids,/Fuente original\s*:/u);
+ assert.doesNotMatch(bids,/«\{p\.evidencia\}»/u);
  assert.doesNotMatch(bids,/\['Entrega',q\.resumen\.condiciones\.entrega\]/u);
  assert.match(bids,/cover\.identificados/u);
  assert.match(bids,/cover\.porVerificar/u);
