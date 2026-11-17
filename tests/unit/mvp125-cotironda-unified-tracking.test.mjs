@@ -56,9 +56,10 @@ test('MVP125: anonymity is preserved even if backend returns unapproved offers',
  assert.match(script,/setInterval\(/u);
 });
 
-test('MVP125: domain homepage stays unchanged and contains no login or form pretending to work',()=>{
+test('MVP125: portada pública distingue piloto del acceso privado, sin formularios ni tokens',()=>{
  const homepage=file('index.html');
- assert.match(homepage,/VISTA PRELIMINAR/u);
- assert.match(homepage,/No admite licitaciones/u);
- assert.doesNotMatch(homepage,/<form\b/iu);
+ assert.match(homepage,/VISTA ILUSTRATIVA/u);
+ assert.match(homepage,/Piloto comercial en curso/u);
+ assert.match(homepage,/https:\/\/app\.cotironda\.com\/piloto\/v2\/acceso/u);
+ assert.doesNotMatch(homepage,/<form\b|<input\b|#d016=|access_token/iu);
 });
