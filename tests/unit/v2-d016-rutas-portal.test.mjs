@@ -87,7 +87,7 @@ test('D016: archivos sólo por sesión privada, nunca por JWT de SMS',()=>{
  assert.match(client,/Comparación final/u);
  assert.match(client,/sin intervención/u);
  assert.match(client,/WhatsApp \(texto\)/u);
- assert.match(client,/Descargar mensaje original/u);
+ assert.match(client,/Mensaje original/u);
  assert.doesNotMatch(client,/Bearer |getSession\(|auth\.signOut\(|sms/u);
 });
 test('D016 SQL: la ruta de WhatsApp preserva relaciones V2 originales y prohíbe anon',()=>{
