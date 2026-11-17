@@ -67,7 +67,7 @@ const round='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const plan={estado:'plan_validado_sin_envio',motivo:'ruteo_semantico_valido',
  whatsappEnviado:false,baseModificada:false,
  pedido:{intencion:'cotizar',zona_entrega:'La Plata',dudas:[],articulos:[{
-  evidencia,inicio:0,fin:evidence.length,
+  evidencia:evidence,inicio:0,fin:evidence.length,
   descripcion:'Cemento de obra 25 kg',cantidad:'10',unidad:'bag',
   rubro:'obra_gruesa',presentacion:'25 kg',aclaracion:null
  }]},
