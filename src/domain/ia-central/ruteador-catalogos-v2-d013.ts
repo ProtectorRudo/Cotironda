@@ -77,7 +77,8 @@ export function autorizarPropuestasCatalogoV2(
  pedido:PropuestaPedido,
  proveedores:readonly ProveedorCatalogoV2[],
  propuestas:unknown,
- identidadesCorroboradas:ReadonlySet<string>=new Set()
+ identidadesCorroboradas:ReadonlySet<string>=new Set(),
+ exigirSegundaLectura=false
 ):ResultadoCatalogoV2{
  if(!pedido||!Array.isArray(pedido.articulos)||
     pedido.articulos.length<1||pedido.articulos.length>200||
@@ -139,7 +140,12 @@ export function autorizarPropuestasCatalogoV2(
    if(proof.estado!=='evidencia_suficiente'){
     pending.push({proveedor:supplierKey,indicePedido:idx,
      numeroCatalogo:lineNo,motivo:proof.motivo});
-    continue; // Never block another independently verified product or supplier.
+    continue; // Nunca permitir conflictos técnicos, ni con dos modelos.
+   }
+   if(exigirSegundaLectura&&!identidadesCorroboradas.has(token)){
+    pending.push({proveedor:supplierKey,indicePedido:idx,
+     numeroCatalogo:lineNo,motivo:'identidad_semantica_no_corroborrada'});
+    continue;
    }
    covered[idx]++;
    matches.push({
@@ -330,25 +336,46 @@ async function corroborarSemanticaD013(args:{
  }
  return approved;
 }
+/** Solicita al segundo lector TODO par técnicamente posible, incluso
+ * cuando comparte vocabulario: "balde de pintura" no es "balde albañil".
+ * Excluye conflictos duros ya rechazados por la primera validación.
+ */
 function encontrarParesD013(
  pedido:PropuestaPedido,proveedores:readonly ProveedorCatalogoV2[],
- pendientes:readonly ResultadoCatalogoV2['revisionTecnica'][number][]
+ pendientes:readonly ResultadoCatalogoV2['revisionTecnica'][number][],
+ candidatos:unknown
 ):ParSemanticoD013[]|null{
+ if(!Array.isArray(candidatos))return null;
  const allowed=new Map(proveedores.map(p=>[p.clave,p]));
+ const semantic=new Set(['sin_identidad_material_comprobable',
+  'prestacion_tecnica_sin_acreditar']);
+ const hard=new Set(pendientes.filter(p=>!semantic.has(p.motivo)).map(
+  x=>[x.proveedor,x.indicePedido,x.numeroCatalogo].join(':')));
  const pairs:ParSemanticoD013[]=[];
- for(const pending of pendientes){
-  if(!['sin_identidad_material_comprobable',
-        'prestacion_tecnica_sin_acreditar'].includes(pending.motivo))continue;
-  const supplier=allowed.get(pending.proveedor);
-  const article=pedido.articulos[pending.indicePedido];
-  const line=supplier?.articulos.find(x=>x.numero===pending.numeroCatalogo);
-  if(!supplier||!article||!line)return null;
-  pairs.push({proveedor:pending.proveedor,indicePedido:pending.indicePedido,
-   numeroCatalogo:pending.numeroCatalogo,solicitado:article,
-   catalogo:line.descripcion});
+ const seen=new Set<string>();
+ for(const group of candidatos){
+  if(!obj(group)||typeof group.proveedor!=='string'||
+     !Array.isArray(group.correspondencias))return null;
+  const supplier=allowed.get(group.proveedor);
+  if(!supplier)return null;
+  for(const item of group.correspondencias){
+   if(!obj(item)||!Number.isSafeInteger(item.indicePedido)||
+      !Number.isSafeInteger(item.numeroCatalogo))return null;
+   const token=[group.proveedor,item.indicePedido,item.numeroCatalogo].join(':');
+   if(seen.has(token))return null;
+   seen.add(token);
+   const requested=pedido.articulos[item.indicePedido];
+   const source=supplier.articulos.find(x=>x.numero===item.numeroCatalogo);
+   if(!requested||!source)return null;
+   if(hard.has(token))continue;
+   pairs.push({proveedor:group.proveedor,indicePedido:item.indicePedido,
+    numeroCatalogo:item.numeroCatalogo,solicitado:requested,
+    catalogo:source.descripcion});
+  }
  }
  return pairs;
 }
+
 /** Solo proveedores previamente autorizados; el motor NUNCA obtiene números
  * de teléfono, tokens de seguimiento ni los usa como destino de mensajes.
  * Llamador debe gestionar reserva de cuota e idempotencia por ronda.
@@ -407,15 +434,16 @@ export async function proponerRuteoCatalogoConIAV2(args:{
   if(body.length>50000)return fail('salida_excesiva');
   const candidates=parse(JSON.parse(body));
   const first=autorizarPropuestasCatalogoV2(pedido,proveedores,candidates);
-  const pairs=encontrarParesD013(pedido,proveedores,first.revisionTecnica);
+  const pairs=encontrarParesD013(pedido,proveedores,
+   first.revisionTecnica,candidates);
   if(pairs===null||pairs.length===0)return first;
   const checked=await corroborarSemanticaD013({
    pares:pairs,apiKey:args.apiKey,model:args.model,
    fetchImpl:args.fetchImpl??fetch
   });
-  if(checked.size===0)return first;
-  // Revalidar TODO el lote: coincidencia a catálogo, zona, integridad,
-  // incompatibilidades y conversiones siguen siendo obligatorias.
-  return autorizarPropuestasCatalogoV2(pedido,proveedores,candidates,checked);
+  // Ninguna coincidencia, ni siquiera la literal, se envía sin corroboración
+  // independiente en el circuito real V2. Falla de API => revisión.
+  return autorizarPropuestasCatalogoV2(pedido,proveedores,candidates,
+   checked,true);
  }catch{return fail('respuesta_ia_invalida')}
 }
