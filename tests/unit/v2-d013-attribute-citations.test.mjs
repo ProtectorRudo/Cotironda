@@ -9,7 +9,7 @@ test('V2: cantidades naturales independientes de los nombres de materiales',()=>
   ['veintitrés',23],['treinta y dos',32],['ciento veinte',120],
   ['doscientos treinta y uno',231],['mil ciento veinte',1120],
   ['una docena',12],['media docena',6],['un par',2],
-  ['tres pares',6],['veinticinco',25],['1,5',1.5]
+  ['tres pares',6],['veinticinco',25],['1,5',1.5],['1.500',1500]
  ]){
   assert.equal(numeroNaturalV2D013(phrase),amount,phrase);
  }
@@ -60,4 +60,19 @@ test('V2: no inventa origen, marca, ni especificación ajena',()=>{
  assert.equal(probarAtributosV2D013({...item,citaProducto:'Loma Negra'}),false);
  assert.equal(probarAtributosV2D013({...item,citaPresentacion:'50 kg'}),false);
  assert.equal(probarAtributosV2D013({...item,citaCantidad:'25'}),false);
+});
+
+test('V2: no confundir magnitud con cantidad cuando presentación fue omitida',()=>{
+ const cited={evidencia:'tres baldes de albañil de 10 litros',
+  cantidad:'10',unidad:'unit',presentacion:null,
+  citaCantidad:'10',citaProducto:'baldes de albañil',citaPresentacion:null};
+ assert.equal(probarAtributosV2D013(cited),false);
+ const weight={evidencia:'25 kilos de clavos',cantidad:'25',
+  unidad:'kg',presentacion:null,citaCantidad:'25',
+  citaProducto:'clavos',citaPresentacion:null};
+ assert.equal(probarAtributosV2D013(weight),true);
+ const ask={evidencia:'dos rollos de membrana aluminizada 4 mm',
+  cantidad:'4',unidad:'roll',presentacion:null,citaCantidad:'4',
+  citaProducto:'membrana aluminizada',citaPresentacion:null};
+ assert.equal(probarAtributosV2D013(ask),false);
 });

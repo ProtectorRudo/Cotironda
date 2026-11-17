@@ -48,6 +48,10 @@ function belowThousand(s:string):number|null{
 export function numeroNaturalV2D013(literal:string):number|null{
  if(typeof literal!=='string'||!literal.trim()||literal.length>120)return null;
  const t=fold(literal);
+ if(/^\d{1,3}(?:\.\d{3})+$/u.test(t)){
+  const thousands=Number(t.replace(/\./gu,''));
+  return thousands>0&&thousands<=1000000?thousands:null;
+ }
  if(/^\d{1,6}(?:[.,]\d{1,3})?$/u.test(t)){
   const n=Number(t.replace(',','.'));return n>0&&n<=1000000?n:null;
  }
@@ -94,7 +98,7 @@ export function probarAtributosV2D013(a:{
  evidencia:string;cantidad:string;unidad:string;presentacion:string|null;
  citaCantidad:unknown;citaProducto:unknown;citaPresentacion:unknown;
 }):boolean{
- const {evidencia,cantidad,presentacion,citaCantidad,citaProducto,citaPresentacion}=a;
+ const {evidencia,cantidad,presentacion,citaCantidad,citaProducto,citaPresentacion,unidad}=a;
  if(typeof evidencia!=='string'||typeof citaCantidad!=='string'||
    typeof citaProducto!=='string'||!citaCantidad.trim()||
    citaProducto.trim().length<2||citaCantidad.length>120||citaProducto.length>250)
@@ -102,6 +106,17 @@ export function probarAtributosV2D013(a:{
  if(numeroNaturalV2D013(citaCantidad)!==Number(cantidad))return false;
  const quantities=citations(evidencia,citaCantidad);
  if(!quantities.length||!citations(evidencia,citaProducto).length)return false;
+ // Un número seguido de peso, volumen o dimensión describe una magnitud,
+ // no necesariamente cantidad de envases. Rechazar cuando la unidad
+ // comprada NO es física, incluso si el modelo omitió la presentación.
+ const physicalUnits=new Set(['kg','kilo','kilos','kilogramo','kilogramos',
+  'l','lt','lts','litro','litros','m','metro','metros','m2','m²',
+  'm3','m³','mm','cm']);
+ if(!physicalUnits.has(fold(unidad))){
+  const measureAfter=/^\s*(?:kg|kilos?|kilogramos?|lts?|litros?|mm|cm|m²|m³|m2|m3|metros?)(?![\p{L}\p{N}])/iu;
+  if(quantities.every(q=>measureAfter.test(
+    evidencia.slice(q+citaCantidad.length))))return false;
+ }
  if(presentacion===null)return citaPresentacion===null;
  if(typeof citaPresentacion!=='string'||!citaPresentacion.trim()||
    citaPresentacion.length>120)return false;
