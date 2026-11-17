@@ -175,6 +175,15 @@ export function evaluarLecturasSemanticasV2D013(
    estado:'requiere_aclaracion',motivo:'lecturas_incompletas_o_divergentes',
    pedido:null
   });
+ // Si el segundo lector afirma que faltan artículos AUN habiendo listado
+ // tantos como el primero, hay indicio de ítem nunca registrado en el
+ // pedido. No autorizar un pedido que podría ocultar ese producto.
+ if(segunda.integridad==='faltan_articulos'&&
+    segunda.articulos.length>=accepted.length)
+  return Object.freeze({
+   estado:'requiere_aclaracion',motivo:'posibles_articulos_no_representados',
+   pedido:null
+  });
  // No perder un artículo original porque el verificador lo omita, altere
  // cantidad, mezcle un renglón o lo considere ambiguo.
  // Lo dejamos en el pedido, pero SIN enviarlo hasta corroborarlo.
