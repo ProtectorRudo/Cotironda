@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {cantidadAcreditadaLecturaUnicaD013,
+ cantidadFisicaUnicaAcreditadaD013,
  evaluarLecturaCentralUnicaD013} from
  '../../src/domain/ia-central/contrato-v2-d013.ts';
 
@@ -150,5 +151,55 @@ test('D013: ambiguos sin una sola compra NO se reparan con números inferidos',(
   assert.equal(codes.length,1);
   assert.match(codes[0],/^source_quantity_/u);
   assert.doesNotMatch(codes[0],/cemento|pintura|La Plata|99/u);
+ }
+});
+
+test('D013: magnitud de compra única recuperada del ORIGINAL sin usar cita IA',()=>{
+ const samples=[
+  ['2,5 m³ de arena', '2.5','m3'],
+  ['4 L de pintura látex','4','l'],
+  ['10 metros lineales de cable','10','m'],
+  ['Tres metros lineales de cable','3','m'],
+  ['1.000 litros de agua','1000','l'],
+  ['15 kg de cal','15','kg'],
+  ['2 m² de aislante','2','m2'],
+  ['necesito 3 metros cúbicos de arena','3','m3'],
+  ['- 15,5 litros de imprimación','15.5','l'],
+  ['cotizar 2 toneladas de áridos','2','t']
+ ];
+ for(const [e,q,u] of samples){
+  const parsed=cantidadFisicaUnicaAcreditadaD013(e);
+  assert.deepEqual(parsed,{cantidad:q,unidad:u},e);
+  const original='Hola, necesito '+e+'. Entregar en La Plata.';
+  const inicio=original.indexOf(e);
+  const lectura={intencion:'cotizar',zona_entrega:'La Plata',dudas:[],
+   articulos:[{inicio,fin:inicio+e.length,evidencia:e,
+    descripcion:e,rubro:'obra_gruesa',presentacion:null,
+    citaPresentacion:null,aclaracion:null,
+    cantidad:'999',unidad:'bag',citaCantidad:'cien bolsas'}]};
+  const aprobado=evaluarLecturaCentralUnicaD013(original,lectura);
+  assert.equal(aprobado.estado,'listo_para_preparar',e);
+  assert.equal(aprobado.pedido.articulos[0].cantidad,q,e);
+  assert.equal(aprobado.pedido.articulos[0].unidad,u,e);
+  assert.equal(aprobado.pedido.articulos[0].descripcion,e,e);
+ }
+});
+test('D013: una medida que parece PRESENTACION nunca repara cantidad inventada',()=>{
+ const negativos=[
+  'cemento CPC de 50 kg',
+  'cable en rollo de 20 metros',
+  '2 rollos de membrana de 25 m',
+  '1 bolsón de arena de 1 m³',
+  '4 mm de chapa calibre grueso',
+  '10 cm de tubo de PVC',
+  'membrana de 4 L',
+  '2 m³ de arena y 5 L de pintura',
+  '20 ml de pintura',
+  'bolsa de arena 20 kg',
+  'caño de 3 metros',
+  'tres milímetros de chapa'
+ ];
+ for(const e of negativos){
+  assert.equal(cantidadFisicaUnicaAcreditadaD013(e),null,e);
  }
 });
