@@ -4,7 +4,7 @@ import {evaluarLecturasSemanticasV2D013}
  from '../../src/domain/ia-central/contrato-v2-d013.ts';
 import {planificarMensajeAutenticadoMvp220}
  from '../../src/domain/ia-central/planificador-piloto-v2-d013.ts';
-import {armarPreparacionSombraMvp221}
+import {armarPreparacionSombraMvp221,cantidadUnidadSqlV2D013}
  from '../../src/domain/ia-central/puente-sql-rondas-v2-d013.ts';
 
 const original='Hola, necesito cotizar para una obra en La Plata.\n'+
@@ -162,7 +162,35 @@ test('V2 E2E sintético: pedido 4, ruteo 3, SQL conserva los 4 y los índices re
  assert.equal(bridge.params.p_items.length,4);
  assert.equal(bridge.params.p_original_text,original);
  assert.equal(bridge.params.p_items[2].evidencia,spans[2]);
+ assert.equal(bridge.params.p_items[1].unidad,'bag');
+ assert.equal(bridge.params.p_items[2].unidad,'unit');
+ assert.equal(bridge.params.p_items[1].cantidad,'1');
+ assert.equal(bridge.params.p_items[2].cantidad,'3');
  assert.deepEqual(bridge.params.p_destinos[0].correspondencias.map(x=>x.indicePedido),
   [0,1,3]);
  assert.ok(!bridge.params.p_destinos[0].correspondencias.some(x=>x.indicePedido===2));
+});
+
+test('V2: adaptador SQL preserva unidades comerciales y convierte escalas exactas',()=>{
+ const examples=[
+  ['1','bigbag','1','bag'],
+  ['3','bucket','3','unit'],
+  ['10','bolsas','10','bag'],
+  ['2','rollos','2','roll'],
+  ['100','cm','1','m'],
+  ['1000','mm','1','m'],
+  ['4','mm','0.004','m'],
+  ['100','cm2','0.01','m2'],
+  ['1000000','cm3','1','m3'],
+  ['1','tn','1000','kg'],
+  ['500','mg','0.5','kg']
+ ];
+ for(const [qty,unit,wantQty,wantUnit] of examples){
+  const result=cantidadUnidadSqlV2D013(qty,unit);
+  assert.deepEqual(result,{cantidad:wantQty,unidad:wantUnit},qty+' '+unit);
+ }
+ for(const [qty,unit] of [
+  ['0.5','mm'],['1','cm2'],['1','cm3'],['-1','kg'],
+  ['1','desconocido'],['1000000','tn']
+ ])assert.equal(cantidadUnidadSqlV2D013(qty,unit),null,qty+' '+unit);
 });
