@@ -306,7 +306,8 @@ test('D013+D016: PDF Word y Excel corroborados usan V2 privado, nunca MVP278 pub
  const candidate=generarWebhookD016(original);
  assert.match(candidate,/from '\.\/ai-central-buyer-binary-v2-d013\.ts'/u);
  assert.match(candidate,/const d013BinaryEnabled=habilitarPublicacionD013ConAccesoD016\(\{/u);
- assert.match(candidate,/const binaryWorker=d013BinaryEnabled\?\s*prepararDocumentoBinarioV2D013:prepararDocumentoBinarioCompradorMvp278/u);
+  assert.match(candidate,/const binaryWorker=prepararDocumentoBinarioV2D013/u);
+  assert.doesNotMatch(candidate,/const binaryWorker=d013BinaryEnabled/u);
  assert.match(candidate,/enabled:d013BinaryEnabled/u);
  assert.match(candidate,/if\(!d013BinaryEnabled\|\|!mediaPlan\.requestId\)/u);
  assert.match(candidate,/buyerLinkRequests\.push\(\{mode:'auto',requestId:mediaPlan\.requestId/u);
