@@ -359,18 +359,20 @@ function encontrarParesD013(
   const supplier=allowed.get(group.proveedor);
   if(!supplier)return null;
   for(const item of group.correspondencias){
-   if(!obj(item)||!Number.isSafeInteger(item.indicePedido)||
+   if(!obj(item)||typeof item.indicePedido!=='number'||
+      !Number.isSafeInteger(item.indicePedido)||
+      typeof item.numeroCatalogo!=='number'||
       !Number.isSafeInteger(item.numeroCatalogo))return null;
-   const token=[group.proveedor,item.indicePedido,item.numeroCatalogo].join(':');
+   const indicePedido=item.indicePedido,numeroCatalogo=item.numeroCatalogo;
+   const token=[group.proveedor,indicePedido,numeroCatalogo].join(':');
    if(seen.has(token))return null;
    seen.add(token);
-   const requested=pedido.articulos[item.indicePedido];
-   const source=supplier.articulos.find(x=>x.numero===item.numeroCatalogo);
+   const requested=pedido.articulos[indicePedido];
+   const source=supplier.articulos.find(x=>x.numero===numeroCatalogo);
    if(!requested||!source)return null;
    if(hard.has(token))continue;
-   pairs.push({proveedor:group.proveedor,indicePedido:item.indicePedido,
-    numeroCatalogo:item.numeroCatalogo,solicitado:requested,
-    catalogo:source.descripcion});
+   pairs.push({proveedor:group.proveedor,indicePedido,
+    numeroCatalogo,solicitado:requested,catalogo:source.descripcion});
   }
  }
  return pairs;
