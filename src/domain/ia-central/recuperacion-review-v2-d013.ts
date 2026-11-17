@@ -23,6 +23,11 @@ export type DiagnosticoRecuperacionD013=
  |'source_second_reader_invalid'|'source_item_evidence_invalid'
  |'source_quantity_not_evidenced'|'source_overlapping_evidence'
  |'source_readings_disagree'|'source_missing_items'
+ |'source_quantity_unreadable_magnitude'
+ |'source_quantity_ai_citation_unparseable'
+ |'source_quantity_ai_citation_missing'
+ |'source_quantity_ai_unit_conflict'
+ |'source_quantity_purchase_not_explicit'
  |'source_second_reader_unanchored'|'source_no_confirmed_item'
  |'source_missing_city'|'source_invalid_review_indices'
  |'source_invalid_partial_indices'
@@ -168,7 +173,10 @@ export async function recuperarBuyerReviewD013(args:{
    chatHmac:String(raw.chat_hmac),messageHmac:String(raw.message_hmac),
    textoOriginal:original,autenticadoPorWebhook:true,
    apiKey:args.apiKey,model:args.model,
-   rpc:async(n,p)=>args.rpc(n,p)
+   rpc:async(n,p)=>args.rpc(n,p),
+   onQuantityDiagnostic:code=>{
+    try{args.onDiagnostic?.(code)}catch{/* No interferir */}
+   }
   });
   if(plan.estado!=='plan_validado_sin_envio'){
    // También discriminar la aclaración: no confundir una zona ausente con
