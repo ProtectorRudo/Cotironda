@@ -194,3 +194,12 @@ test('V2: adaptador SQL preserva unidades comerciales y convierte escalas exacta
   ['1','desconocido'],['1000000','tn']
  ])assert.equal(cantidadUnidadSqlV2D013(qty,unit),null,qty+' '+unit);
 });
+
+test('V2: indicio de un artículo extra no representado exige revisión',()=>{
+ const warning={integridad:'faltan_articulos',zona_entrega:'La Plata',
+  articulos:[secondary(0),secondary(1),secondary(2),secondary(3)]};
+ const r=evaluarLecturasSemanticasV2D013(original,first,warning);
+ assert.equal(r.estado,'requiere_aclaracion');
+ assert.equal(r.motivo,'posibles_articulos_no_representados');
+ assert.equal(r.pedido,null);
+});
