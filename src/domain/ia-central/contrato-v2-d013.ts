@@ -1,4 +1,4 @@
-import {unidadCompradaCanonicaV2D013} from './magnitudes-universales-v2-d013.ts';
+import {unidadCompradaCanonicaV2D013,unidadDimensionadaV2D013} from './magnitudes-universales-v2-d013.ts';
 /** D013: conciliador semántico V2 sin alterar el contrato histórico pinneado.
  * El rubro es una etiqueta; cantidad, unidad y origen literal son prueba.
  */
@@ -45,28 +45,65 @@ function unidadEquivalente(a:string,b:string,evidencia:string):boolean{
  return envases.some(p=>p.patron.test(e)&&
   ((x===p.unidad&&y==='unit')||(x==='unit'&&y===p.unidad)));
 }
-/** El segundo lector puede citar un subtramo que incluya únicamente
- * la presentación ("25 kilos"), no la cantidad ("10 bolsas").
- * Ambos números quedan corroborados por el primer tramo literal completo
- * y por la cantidad independiente del segundo lector.
- * Impedir que la cita secundaria cruce a otro artículo.
+/** El modelo aporta la semántica; la fuente original acredita el dato.
+ * Una segunda cita puede ser un subtramo de producto y usar "3" por "tres":
+ * eso NO modifica el cuantificador del primer lector, ya validado contra
+ * el original. La cita secundaria debe anclarse a UN SOLO artículo real,
+ * solapando su producto, y nunca tocar otro renglón del pedido.
  */
 function citaVerificadaDelMismoItem(origen:string,
  primera:PropuestaArticulo,segunda:unknown,
  articulos:readonly PropuestaArticulo[]):boolean{
  if(!texto(segunda,1500))return false;
+ const producto=(primera as PropuestaArticulo & {citaProducto?:unknown}).citaProducto;
+ if(!texto(producto,250))return false;
+ const starts:number[]=[];
+ let at=primera.evidencia.indexOf(producto);
+ while(at>=0){
+  starts.push(primera.inicio+at);
+  at=primera.evidencia.indexOf(producto,at+1);
+ }
+ if(starts.length===0)return false;
  let pos=origen.indexOf(segunda);
- let citaPropia=false;
+ let anclada=false;
  while(pos>=0){
   const fin=pos+segunda.length;
-  // Una subcita repetida en OTRA línea no identifica el producto:
-  // aunque coincida la cantidad, el origen queda ambiguo.
-  if(articulos.some(x=>x!==primera&&pos<x.fin&&fin>x.inicio))
-   return false;
-  if(pos<primera.fin&&fin>primera.inicio)citaPropia=true;
+  const tocados=articulos.filter(x=>pos<x.fin&&fin>x.inicio);
+  // Rechazar citas genéricas repetidas en otro artículo o citas
+  // que cruzan dos artículos; no adjudicar un "cemento" arbitrario.
+  if(tocados.some(x=>x!==primera)||tocados.length>1)return false;
+  if(tocados.length===1&&starts.some(inicio=>{
+   const solapado=origen.slice(Math.max(pos,inicio),
+    Math.min(fin,inicio+producto.length));
+   return [...solapado.matchAll(/[\p{L}\p{N}]/gu)].length>=3;
+  }))anclada=true;
   pos=origen.indexOf(segunda,pos+1);
  }
- return citaPropia;
+ return anclada;
+}
+/** La cantidad de cada lector tiene que coincidir con su PROPIA cita.
+ * Se comparan valores y dimensiones, no la misma grafía de la cita.
+ * Nunca equiparar bolsas con kilos, metros con unidades ni kg con L.
+ * Conservar siempre cantidad+unidad del primer lector (origen).
+ */
+function cantidadYUnidadCorroboradas(
+ a:PropuestaArticulo,b:Record<string,unknown>
+):boolean{
+ if(!cantidad(b.cantidad)||!texto(b.citaCantidad,120)||
+    !texto(b.unidad,80)||numeroNaturalV2D013(b.citaCantidad)!==Number(b.cantidad))
+  return false;
+ if(unidadEquivalente(a.unidad,b.unidad,a.evidencia))
+  return Number(a.cantidad)===Number(b.cantidad);
+ const x=unidadDimensionadaV2D013(a.unidad);
+ const y=unidadDimensionadaV2D013(b.unidad);
+ if(!x||!y||x.dimension!==y.dimension)return false;
+ const milli=(v:string):bigint|null=>{
+  if(!/^(?:0|[1-9]\d{0,5})(?:\.\d{1,3})?$/u.test(v))return null;
+  const [entero,fraccion='']=v.split('.');
+  return BigInt(entero)*1000n+BigInt(fraccion.padEnd(3,'0'));
+ };
+ const qa=milli(a.cantidad),qb=milli(b.cantidad);
+ return qa!==null&&qb!==null&&qa*x.factor===qb*y.factor;
 }
 function mismaLocalidadLeida(a:string|null,b:string|null):boolean{
  if(a===null||b===null)return a===b;
@@ -139,11 +176,7 @@ export function evaluarLecturasSemanticasV2D013(
    const b=itemsSegunda[i];
    return obj(b)&&rubro(b.rubro)&&
     citaVerificadaDelMismoItem(origen,a,b.evidencia,accepted)&&
-    cantidad(b.cantidad)&&Number(b.cantidad)===Number(a.cantidad)&&
-    typeof b.citaCantidad==='string'&&
-    b.citaCantidad===(a as PropuestaArticulo & {citaCantidad:string}).citaCantidad&&
-    numeroNaturalV2D013(b.citaCantidad)===Number(a.cantidad)&&
-    texto(b.unidad,80)&&unidadEquivalente(a.unidad,b.unidad,a.evidencia);
+    cantidadYUnidadCorroboradas(a,b);
   });
   if(posibles.length!==1)
    return Object.freeze({
