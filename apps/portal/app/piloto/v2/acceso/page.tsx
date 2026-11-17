@@ -14,7 +14,7 @@ export default function AccesoDesdeWhatsappD016(){
  const acceso=puertaWhatsappPortalD016(process.env);
  if(!acceso){
   if(process.env.VERCEL_ENV!=='preview')notFound();
-  return <main className="panel">
+  return <main className="panel coti-clean coti-access-clean">
    <span className="eyebrow">COTIRONDA · PILOTO V2</span>
    <h1>Acceso por WhatsApp en preparación</h1>
    <p>El portal de pruebas está publicado. La consulta privada de presupuestos
@@ -23,9 +23,9 @@ export default function AccesoDesdeWhatsappD016(){
     y las autorizaciones correspondientes.</p>
   </main>;
  }
- return <main className="panel">
+ return <main className="panel coti-clean coti-access-clean">
   <span className="eyebrow">COTIRONDA · ACCESO PRIVADO</span>
-  <h1>Tu pedido de materiales</h1>
+  <h1>Mi Cotironda</h1>\n  <p>Ingresá a tus cotizaciones con el enlace privado de WhatsApp.</p>
   <AccesoWhatsappD016/>
  </main>;
 }
