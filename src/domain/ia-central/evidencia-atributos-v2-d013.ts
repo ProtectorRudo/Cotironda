@@ -1,5 +1,5 @@
 import {leerMagnitudesV2D013,mismaPresentacionFisicaV2D013,
- unidadDimensionadaV2D013} from './magnitudes-universales-v2-d013.ts';
+ unidadDimensionadaV2D013,unidadCompradaCanonicaV2D013} from './magnitudes-universales-v2-d013.ts';
 /** Cotironda V2: citas por atributo, nunca vocabulario de materiales.
  * Un parser aritmético controla cantidades; la IA reconoce los productos.
  * No usa redes, ni datos de compradores, ni escrituras ni autorización.
@@ -111,13 +111,33 @@ export function probarAtributosV2D013(a:{
  // Un número seguido de peso, volumen o dimensión describe una magnitud,
  // no necesariamente cantidad de envases. Rechazar cuando la unidad
  // comprada NO es física, incluso si el modelo omitió la presentación.
- const compraFisica=unidadDimensionadaV2D013(unidad)!==null;
- if(!compraFisica){
-  const magnitudes=leerMagnitudesV2D013(evidencia);
-  // Ambigüedad explícita (por ejemplo "ml") no habilita envases.
-  if(magnitudes===null)return false;
-  if(quantities.every(q=>magnitudes.some(m=>m.inicio===q)))
-   return false;
+ const magnitudes=leerMagnitudesV2D013(evidencia);
+ // Una unidad ambigua en la fuente (ml=metro lineal o mililitros)
+ // jamás puede autorizar el ítem por coincidencia de cifras.
+ if(magnitudes===null)return false;
+ const unidadComprada=unidadCompradaCanonicaV2D013(unidad);
+ const unidadFisica=unidadDimensionadaV2D013(unidad);
+ const medidasEnCantidad=quantities.map(q=>
+  magnitudes.find(m=>m.inicio===q));
+ if(unidadFisica||unidadComprada==='ml'){
+  // El número adquirido tiene que estar unido a su unidad física exacta;
+  // no se permite convertir cantidades ni usar una especificación técnica.
+  for(let i=0;i<quantities.length;i++){
+   const medida=medidasEnCantidad[i];
+   if(medida){
+    if(medida.unidad!==unidadComprada)return false;
+   }else{
+    const resto=evidencia.slice(quantities[i]+citaCantidad.length).trim();
+    const words=resto.split(/\s+/u);
+    const after=[3,2,1].map(n=>
+     unidadDimensionadaV2D013(words.slice(0,n).join(' ')))
+     .find(Boolean);
+    if(!after||after.canonica!==unidadComprada)return false;
+   }
+  }
+ }else if(medidasEnCantidad.every(Boolean)){
+  // La IA no puede contar envases citando solo el volumen/peso del envase.
+  return false;
  }
  if(presentacion===null)return citaPresentacion===null;
  if(typeof citaPresentacion!=='string'||!citaPresentacion.trim()||
