@@ -36,7 +36,7 @@ export function unidadDimensionadaV2D013(text:string):Unidad|null{
  const original=text.trim();
  const t=fold(original).replace(/[²]/gu,'2').replace(/[³]/gu,'3')
   .replace(/\s*\.\s*/gu,'.');
- if(/^(?:m\.l\.?|metros?\s+lineales?|mts?\.?\s+lineales?|mts?\.?)$/u.test(t))
+ if(/^(?:m\.l\.?|metros?\s+lineales?|mts?\.?\s+(?:lineales?|lin\.?)|mts?\.?)$/u.test(t))
   return u('longitud','m',B);
  if(/^(?:metros?\s+cuadrados?|m2)$/u.test(t))
   return u('superficie','m2',B);
@@ -71,7 +71,7 @@ export function unidadDimensionadaV2D013(text:string):Unidad|null{
  if(original==='mL')return u('volumen_liquidos','ml',1000000n);
  return null;
 }
-const REGEX=/(?<![\p{L}\p{N}])(\d{1,3}(?:\.\d{3})+(?:,\d{1,6})?|\d{1,6}(?:[.,]\d{1,6})?)\s*(metros?\s+(?:lineales?|cuadrados?|cubicos?)|mts?\.?\s+lineales?|milimetros?\s+(?:cuadrados?|cubicos?)|centimetros?\s+(?:cuadrados?|cubicos?)|kilogramos?|miligramos?|mililitros?|mililiters?|centilitros?|decilitros?|kilometros?|milimetros?|centimetros?|toneladas?|litros?|gramos?|kilos?|mts?\.?|m\s*\.\s*l\.?|mm[²³23]?|cm[²³23]?|m[²³23]?|km|kg|mg|grs?|tns?|lts?|mL|ml|cc|cl|dl|g|l)(?![\p{L}\p{N}²³])/giu;
+const REGEX=/(?<![\p{L}\p{N}])(\d{1,3}(?:\.\d{3})+(?:,\d{1,6})?|\d{1,6}(?:[.,]\d{1,6})?)\s*(metros?\s+(?:lineales?|cuadrados?|cubicos?)|mts?\.?\s+(?:lineales?|lin\.?)|milimetros?\s+(?:cuadrados?|cubicos?)|centimetros?\s+(?:cuadrados?|cubicos?)|kilogramos?|miligramos?|mililitros?|mililiters?|centilitros?|decilitros?|kilometros?|milimetros?|centimetros?|toneladas?|litros?|gramos?|kilos?|mts?\.?|m\s*\.\s*l\.?|mm[²³23]?|cm[²³23]?|m[²³23]?|km|kg|mg|grs?|tns?|lts?|mL|ml|cc|cl|dl|g|l)(?![\p{L}\p{N}²³])/giu;
 /** null = escritura ambigua/no verificable, [] = ninguna magnitud física. */
 export function leerMagnitudesV2D013(text:string):readonly MagnitudD013[]|null{
  if(typeof text!=='string'||text.length>1500)return null;
@@ -101,7 +101,18 @@ export function mismaPresentacionFisicaV2D013(
  const signature=(v:readonly MagnitudD013[])=>
   v.map(x=>x.dimension+':'+x.valorBase.toString()).sort();
  const x=signature(a),y=signature(b);
- return x.every((entry,i)=>entry===y[i]);
+ if(!x.every((entry,i)=>entry===y[i]))return false;
+ // No esconder otros números dentro de la presentación: por ejemplo
+ // «2 bolsas de 25 kg» no es «1 bolsa de 25 kg».
+ const extras=(s:string,parsed:readonly MagnitudD013[])=>{
+  const input=s.normalize('NFD').replace(/[\u0300-\u036f]/gu,'');
+  const array=[...input];
+  for(const m of parsed)for(let i=m.inicio;i<m.fin;i++)array[i]=' ';
+  return [...array.join('').matchAll(/(?<![\p{L}\p{N}])\d+(?:[.,]\d+)*(?![\p{L}\p{N}])/gu)]
+   .map(m=>m[0].replace(',','.')).sort();
+ };
+ return JSON.stringify(extras(normalizada,a))===
+  JSON.stringify(extras(original,b));
 }
 /** Une sinónimos de unidades de compra en lectores independientes SIN
  * convertir la cantidad de envases en litros/peso y sin asumir que bolsa
