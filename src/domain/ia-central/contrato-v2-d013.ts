@@ -472,6 +472,70 @@ export function cantidadFisicaUnicaAcreditadaD013(
  const unicas=[...new Map(opciones.map(x=>[x.cantidad+':'+x.unidad,x])).values()];
  return unicas.length===1?unicas[0]:null;
 }
+/** Recupera unidades comerciales sin catálogo de sustantivos.
+ * La cantidad tiene que encabezar ESTE artículo y tener un sustantivo
+ * inmediatamente posterior: «12 placas», «cinco perfiles», «3 tornillos».
+ * Sólo se permite unidad genérica 'unit': ni inferir volumen/peso ni
+ * convertir una presentación de producto en cantidad comprada.
+ *
+ * Las magnitudes físicas y envases se manejan en validadores anteriores.
+ * Es una recuperación restringida para una cita IA DEFECTUOSA, no un
+ * lector paralelo de artículos, y no acepta listas de dos productos.
+ */
+export function cantidadUnidadesLibresAcreditadaD013(
+ evidencia:string
+):{cantidad:string;unidad:'unit'}|null{
+ if(!texto(evidencia,1500))return null;
+ let source=evidencia.trim().replace(/^[-*•]\s*/u,'');
+ source=source.replace(
+  /^(?:necesito|quiero|pido|cotizar|preciso)\s+/iu,'');
+ const magnitudes=leerMagnitudesV2D013(source);
+ if(magnitudes===null||magnitudes.length>1)return null;
+ // Si hay envases conocidos, no convertirlos en piezas sin prueba.
+ if(/(?<![\p{L}\p{N}])(?:bolsas?|bolson(?:es)?|big\s?bags?|baldes?|rollos?|cajas?|paquetes?|packs?|unidades?)\b/iu.test(source))
+  return null;
+ const candidatos:{cantidad:string;fin:number}[]=[];
+ const numero=/^(\d{1,3}(?:\.\d{3})+(?:,\d{1,3})?|\d{1,6}(?:[.,]\d{1,3})?)(?![\d.,/×xX\p{L}])\s+/u
+  .exec(source);
+ if(numero){
+  const valor=numeroNaturalV2D013(numero[1]);
+  if(valor!==null&&Number.isInteger(valor)&&cantidad(String(valor)))
+   candidatos.push({cantidad:String(valor),fin:numero[0].length});
+ }else{
+  const palabras=[...source.matchAll(/[\p{L}]+/gu)];
+  if(palabras.length<2||palabras[0].index!==0)return null;
+  for(let n=1;n<=6&&n<palabras.length;n++){
+   const fin=palabras[n-1].index+palabras[n-1][0].length;
+   const literal=source.slice(0,fin);
+   if(!/^[\p{L}\s]+$/u.test(literal))break;
+   if(!/^\s+[\p{L}]/u.test(source.slice(fin)))continue;
+   const valor=numeroNaturalV2D013(literal);
+   if(valor!==null&&Number.isInteger(valor)&&cantidad(String(valor)))
+    candidatos.push({cantidad:String(valor),fin:fin+
+     (/^\s+/u.exec(source.slice(fin))?.[0].length??0)});
+  }
+ }
+ const validos:{cantidad:string;unidad:'unit'}[]=[];
+ for(const item of candidatos){
+  const resto=source.slice(item.fin);
+  const nombre=/^([\p{L}]{2,})(?![\p{L}\p{N}])/u.exec(resto);
+  if(!nombre)continue;
+  // "10 kg", "4 litros", "15 ml", "5 m²" son cantidades físicas
+  // o grafías ambiguas, jamás diez piezas de un supuesto "kg".
+  const palabras=resto.split(/\s+/u);
+  if(palabras.slice(0,3).some((_,i)=>i<3&&
+    unidadDimensionadaV2D013(palabras.slice(0,i+1).join(' ')))continue;
+  if(/^(?:ml|de|del|y|o|por|con|sin|para)\b/iu.test(resto))continue;
+  if(magnitudes.some(m=>m.inicio===0))continue;
+  // Otra cantidad comercial separada por "y", coma o punto y coma
+  // podría representar un SEGUNDO artículo; no mezclar renglones.
+  if(/(?:\s+y\s+|[,;]\s*)(?:\d{1,6}|un|una|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez)\s+[\p{L}]/iu.test(resto))
+   continue;
+  validos.push({cantidad:item.cantidad,unidad:'unit'});
+ }
+ const unicos=[...new Map(validos.map(x=>[x.cantidad,x])).values()];
+ return unicos.length===1?unicos[0]:null;
+}
 /** No incluye cantidades, unidades ni contenido del mensaje en observabilidad. */
 export type DiagnosticoCantidadD013=
  'source_quantity_unreadable_magnitude'|
@@ -614,7 +678,8 @@ export function evaluarLecturaCentralUnicaD013(
   if(!cantidadAcreditadaLecturaUnicaD013(evidencia,
       cantidadFinal,unidadFinal,raw.citaCantidad)){
    const fuente=envaseUnicoAcreditadoD013(evidencia)??
-    cantidadFisicaUnicaAcreditadaD013(evidencia);
+    cantidadFisicaUnicaAcreditadaD013(evidencia)??
+    cantidadUnidadesLibresAcreditadaD013(evidencia);
    if(!fuente){
     try{
      onQuantityDiagnostic?.(diagnosticarCantidadD013(
