@@ -320,7 +320,8 @@ function unidadAdyacenteACompraD013(
  * No permitir «1 bolsón» como «1 bolsa», ni «2 cajas» como «2 baldes».
  */
 function envaseExplicitoD013(evidencia:string,fin:number):string|null{
- const despues=evidencia.slice(fin).replace(/^\s+/u,'');
+ const despues=evidencia.slice(fin).replace(/^\s+/u,'')
+  .replace(/^de\s+/iu,'');
  const m=/^([\p{L}]+)(?![\p{L}\p{N}])/u.exec(despues);
  if(!m)return null;
  const unidad=unidadCompradaCanonicaV2D013(m[1]);
