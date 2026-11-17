@@ -57,6 +57,8 @@ Deno.serve(async req=>{
      ejecutar:execute,habilitado:true,
      aesKeyHex:config.aes,apiKey:execute?config.ai:'',
      model:config.model,
+     // Solo codigos de enum fijo; nunca texto, identidad, HMAC ni secretos.
+     onDiagnostic:code=>console.warn('cotironda_d013_recovery_'+code),
      rpc:async(name,params)=>{
       if(!RPC_ALLOWED.has(name))
        return {data:null,error:'rpc_not_allowed'};
