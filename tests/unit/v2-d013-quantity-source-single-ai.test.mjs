@@ -38,6 +38,8 @@ test('D013 IA única: no usar peso, volumen, dimensiones ni SKU como conteo',()=
   ['10 bolsas de cemento 50 kg','12','bag','12'],
   ['2 bolsones de arena de 1 m³','1','bigbag','1'],
   ['1 m³ de arena fina','1','bigbag','1'],
+  ['1 bolsón de arena','1','bag','1'],
+  ['2 cajas de tornillos','2','bucket','2'],
   ['4 L de pintura','4','kg','4'],
   ['2 m³ de arena','2','litros','2'],
   ['2 rollos de cable de 25 metros','25','roll','25'],
