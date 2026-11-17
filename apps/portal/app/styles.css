@@ -328,3 +328,91 @@ body:has(.coti-clean) .status,body:has(.coti-clean) .foot{display:none}
 @media(max-width:560px){
  .coti-access-clean.panel{padding:22px 18px;margin:30px auto 65px}
 }
+
+/* D019 refinamiento comercial: sobre el portal que ya descarga originales. */
+html:has(.coti-clean){background:#f5f7fc;color-scheme:light;min-height:100%}
+body:has(.coti-clean){background:#f5f7fc;min-height:100dvh}
+body:has(.coti-clean) .top .wrap{min-height:52px}
+body:has(.coti-clean) .logo{font-size:18px}
+.coti-clean.coti-profile-shell{margin:21px auto 48px;min-height:unset}
+.coti-clean.coti-buyer-portal.panel{margin:22px auto 48px}
+.coti-clean .coti-profile-heading{margin-bottom:14px}
+.coti-clean .coti-profile-heading h1{font-size:clamp(23px,3.9vw,29px);line-height:1.15}
+.coti-clean .coti-profile-heading p{font-size:12px}
+.coti-clean .coti-history-group{margin:15px 0 20px}
+.coti-clean .coti-history-item{min-height:56px;padding:9px 11px;gap:10px;margin:6px 0}
+.coti-clean .coti-history-item.coti-history-active{
+ background:#eef5ff;border:1.5px solid #78a9ff;box-shadow:0 3px 13px #075bd114}
+.coti-clean .coti-history-item.coti-history-active .coti-history-documents{
+ color:#074cb9;font-weight:850}
+.coti-clean .coti-history-date-icon{height:39px;width:39px;border-radius:8px}
+.coti-clean .coti-history-date-icon>span{font-size:17px}
+.coti-clean .coti-history-date-icon>small{font-size:9px}
+.coti-clean .coti-history-mainline>strong{font-size:12px}
+.coti-clean .coti-history-details p{font-size:11px;margin:2px 0}
+.coti-clean .coti-history-documents{font-size:11px}
+.coti-clean .coti-history-state{font-size:9px;padding:4px 7px}
+.coti-clean .coti-history-chevron{font-size:20px}
+.coti-clean .coti-history-archive{font-size:11px;color:#7a879a;line-height:1.5;margin:12px 2px}
+.coti-clean .coti-clean-profilebar{min-height:30px}
+.coti-clean .coti-clean-bids-heading{margin:12px 0 10px}
+.coti-clean .coti-clean-bids-heading h2{font-size:15px}
+.coti-clean .coti-clean-bid{padding:14px;margin-bottom:10px;border-radius:13px}
+.coti-clean .coti-clean-bid-primary{gap:10px}
+.coti-clean .coti-clean-supplier-avatar{height:39px;width:39px;font-size:19px;border-radius:10px}
+.coti-clean .coti-clean-bid-identity h3{font-size:14px;margin-bottom:3px}
+.coti-clean .coti-clean-bid-price{display:block;font-size:clamp(22px,4vw,27px);line-height:1.15}
+.coti-clean .coti-clean-amount-kind{display:block;font-size:11px;color:#75869b;margin-top:4px}
+.coti-clean .coti-clean-coverage{font-size:11px;margin:9px 0 11px;padding:5px 8px}
+.coti-clean .coti-clean-bid-actions{gap:8px}
+.coti-clean .coti-clean-bid-actions button{
+ min-height:38px;padding:8px 6px;font-size:12px;border-radius:9px}
+.coti-clean .coti-clean-bid-expanded{margin-top:13px;padding-top:13px}
+.coti-clean .coti-clean-bid-expanded h4{margin-bottom:9px}
+.coti-clean .coti-clean-insights{padding-left:17px;margin:0 0 12px}
+.coti-clean .coti-clean-insights li{margin:7px 0;line-height:1.45;font-size:12px}
+.coti-clean .coti-terms-heading{margin-top:12px!important}
+.coti-clean .coti-clean-terms{gap:5px}
+.coti-clean .coti-clean-terms>div{background:#f8fbff;border:1px solid #e6edf7;
+ border-radius:7px;padding:7px}
+.coti-clean .coti-clean-terms dt{font-size:10px;margin-bottom:3px}
+.coti-clean .coti-clean-terms dd{font-size:11px;font-weight:720}
+.coti-clean .coti-clean-evidence{margin-top:12px}
+.coti-clean .coti-clean-evidence summary{font-size:11px}
+.coti-clean .coti-request-list{margin:0 0 13px;background:#fff;
+ border:1px solid #dce7f4;border-radius:11px;padding:0 12px;color:#18385b}
+.coti-clean .coti-request-list summary{cursor:pointer;list-style:none;
+ font-size:12px;font-weight:750;color:#0866ff;padding:12px 0}
+.coti-clean .coti-request-list summary::-webkit-details-marker{display:none}
+.coti-clean .coti-request-list ol{margin:0 0 12px;padding-left:20px}
+.coti-clean .coti-request-list li{font-size:12px;line-height:1.5;margin:5px 0}
+.coti-clean .coti-clean-final{margin-top:24px;padding:16px}
+.coti-clean .coti-clean-final h2{font-size:19px;color:#142b4c;margin:0 0 9px}
+.coti-clean .coti-clean-final>p{color:#4b617c;line-height:1.55;margin:8px 0 16px}
+.coti-clean .coti-final-list{display:grid;gap:10px}
+.coti-clean .coti-final-supplier{border:1px solid #dce7f5;border-radius:10px;padding:12px;background:#fbfdff}
+.coti-clean .coti-final-supplier h3{font-size:14px;color:#163c6c;margin:0 0 10px}
+.coti-clean .coti-final-offer{border-top:1px solid #e5edf7;padding:9px 0}
+.coti-clean .coti-final-offer p{font-size:12px;margin:6px 0;line-height:1.45}
+.coti-clean .coti-final-offer small{display:block;color:#708198}
+.coti-clean .coti-final-amount{font-size:20px;font-weight:850;color:#095ed7}
+.coti-clean .coti-final-decision{font-weight:700;font-size:12px;color:#173b6d!important}
+.coti-clean .coti-screen-reader{position:absolute;width:1px;height:1px;overflow:hidden;
+ clip:rect(0,0,0,0);white-space:nowrap}
+.coti-clean .coti-skeleton-stack{display:grid;gap:12px;padding-top:10px}
+.coti-clean .coti-skeleton-row,.coti-clean .coti-skeleton-line{
+ border-radius:12px;background:linear-gradient(100deg,#e8eef7 0%,#f8fbff 50%,#e8eef7 100%);
+ background-size:200% 100%;animation:coti-skeleton-wave 1.7s ease-in-out infinite}
+.coti-clean .coti-skeleton-row{height:88px;border:1px solid #e4ebf5}
+.coti-clean .coti-skeleton-line{height:22px;width:70%}
+.coti-clean .coti-skeleton-line.short{width:42%}
+@keyframes coti-skeleton-wave{0%{background-position:100% 0}100%{background-position:-100% 0}}
+@media(max-width:560px){
+ .coti-clean.coti-profile-shell{margin:18px auto 35px}
+ .coti-clean .coti-history-item{padding:8px}
+ .coti-clean .coti-clean-bid{padding:12px}
+ .coti-clean .coti-clean-bid-price{font-size:24px}
+}
+@media(prefers-reduced-motion:reduce){
+ .coti-clean .coti-skeleton-row,.coti-clean .coti-skeleton-line{animation:none}
+}

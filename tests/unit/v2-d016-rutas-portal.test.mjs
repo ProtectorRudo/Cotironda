@@ -84,7 +84,7 @@ test('D016: archivos sólo por sesión privada, nunca por JWT de SMS',()=>{
  assert.match(client,/if\(answer\.status===200\)changed=true/u);
  assert.match(client,/historialAnalisis.current.clear\(\)/u);
  assert.doesNotMatch(client,/startedAnalyses/u);
- assert.match(client,/Informe final de la ronda/u);
+ assert.match(client,/Comparación final/u);
  assert.match(client,/sin intervención/u);
  assert.match(client,/WhatsApp \(texto\)/u);
  assert.match(client,/Descargar mensaje original/u);

@@ -1,4 +1,5 @@
 import {notFound} from 'next/navigation';
+import Link from 'next/link';
 import {puertaWhatsappPortalD016} from '@/lib/piloto-v2-d016-http';
 import {DetalleHistoricoD017} from './detalle-historico';
 
@@ -13,7 +14,7 @@ export default async function CotizacionDeMiHistorial(
  const {rondaId}=await params;
  if(!UUID.test(rondaId)||!puertaWhatsappPortalD016(process.env))notFound();
  return <main className="coti-profile-shell coti-clean">
-  <a className="coti-back-link" href="/piloto/v2/mi-cotironda">← Mis cotizaciones</a>
+  <Link className="coti-back-link" href="/piloto/v2/mi-cotironda" scroll={false}>← Mis cotizaciones</Link>
   <DetalleHistoricoD017 rondaId={rondaId}/>
  </main>;
 }

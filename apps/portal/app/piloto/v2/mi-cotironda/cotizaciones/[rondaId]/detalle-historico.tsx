@@ -29,15 +29,18 @@ export function DetalleHistoricoD017({rondaId}:{rondaId:string}){
   })();
   return ()=>{active=false};
  },[rondaId]);
- if(loading)return <p role="status" className="coti-profile-message">Abriendo tu cotización…</p>;
+ if(loading)return <div role="status" aria-label="Abriendo tu cotización" className="coti-skeleton-stack">
+  <div className="coti-skeleton-line"/><div className="coti-skeleton-line short"/>
+  <div className="coti-skeleton-row"/><div className="coti-skeleton-row"/>
+ </div>;
  if(error||!ronda)return <p role="alert" className="coti-profile-message">{error||'Cotización no disponible.'}</p>;
  const date=new Date(ronda.fechaMs).toLocaleDateString('es-AR',{
-  day:'numeric',month:'long',year:'numeric',
+  day:'2-digit',month:'2-digit',year:'numeric',
   timeZone:'America/Argentina/Buenos_Aires'
  });
  return <section aria-label={'Cotización del '+date}>
   <header className="coti-profile-heading coti-clean-detail-heading">
-   <h1>Cotización del {date}</h1>
+   <h1>Pedido del {date}</h1>
    <p>{ronda.localidad||'Localidad no informada'} · {ronda.articulos} {ronda.articulos===1?'material':'materiales'}</p>
   </header>
   {ronda.ofertasDisponibles?

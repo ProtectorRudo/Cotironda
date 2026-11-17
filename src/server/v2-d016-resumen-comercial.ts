@@ -11,6 +11,8 @@ export type CoberturaCompraV2=Readonly<{
 }>;
 export type ResumenComercialV2=Readonly<{
  totalDeclarado:string|null;
+ tipoImporte:'Subtotal informado'|'Total informado'|'Importe informado'|'Importe no informado';
+ solicitado:readonly LineaCompraV2[];
  cobertura:CoberturaCompraV2|null;
  condiciones:Readonly<{
   iva:string;flete:string;pago:string;entrega:string;
@@ -94,16 +96,18 @@ function parseLines(v:unknown,ambiguous:boolean):readonly LineaCompraV2[]|null{
  return out;
 }
 function comercial(raw:unknown):Readonly<{
- totalDeclarado:string|null;cobertura:CoberturaCompraV2|null;
+ totalDeclarado:string|null;solicitado:readonly LineaCompraV2[];
+ cobertura:CoberturaCompraV2|null;
 }>{
- if(!object(raw))return {totalDeclarado:null,cobertura:null};
+ if(!object(raw))return {totalDeclarado:null,solicitado:[],cobertura:null};
  const total=typeof raw.totalLiteral==='string'&&
   raw.totalLiteral.length<45&&RECORD.test(raw.totalLiteral.trim())?
   raw.totalLiteral.trim():null;
  const requested=parseLines(raw.requestItems,false);
  const offered=parseLines(raw.quotedItems,true);
+ const solicitado=Object.freeze(requested??[]);
  if(!requested||!offered||!requested.length||!offered.length)
-  return {totalDeclarado:total,cobertura:null};
+  return {totalDeclarado:total,solicitado,cobertura:null};
  const matched=new Set<number>();
  let identified=0;
  const still:string[]=[];
@@ -114,7 +118,7 @@ function comercial(raw:unknown):Readonly<{
   matched.add(i);identified++;
  }
  return {
-  totalDeclarado:total,
+  totalDeclarado:total,solicitado,
   cobertura:Object.freeze({
    identificados:identified,solicitados:requested.length,
    porVerificar:Object.freeze(still.slice(0,6)),
@@ -122,29 +126,47 @@ function comercial(raw:unknown):Readonly<{
   })
  };
 }
+/** Nunca llamamos «total» a un subtotal ni calculamos montos sin el original. */
+function tipoMonto(monto:string|null,puntos:readonly Punto[]):ResumenComercialV2['tipoImporte']{
+ if(!monto)return 'Importe no informado';
+ const cifra=monto.replace(/\D/gu,'');
+ for(const p of puntos){
+  if(p.categoria!=='precio')continue;
+  const matches=p.evidencia.match(/\$\s*[\d., ]+|(?:ARS|USD|US\$)\s*[\d., ]+/giu)??[];
+  if(!matches.some(x=>x.replace(/\D/gu,'')===cifra))continue;
+  const evidence=normal(p.evidencia);
+  if(/\bsubtotal\b/u.test(evidence))return 'Subtotal informado';
+  if(/\btotal\b/u.test(evidence))return 'Total informado';
+ }
+ return 'Importe informado';
+}
 function cond(puntos:readonly Punto[]):ResumenComercialV2['condiciones']{
  const evidence=(cat:string)=>normal(puntos.find(p=>p.categoria===cat)?.evidencia??'');
- const iva=evidence('iva'),flete=evidence('flete'),plazo=evidence('plazo');
- const pago=evidence('forma_pago')||plazo;
- let i='No verificado';
+ const iva=evidence('iva'),flete=evidence('flete'),pago=evidence('forma_pago');
+ let i=iva?'No verificado':'No informado';
  if(/iva[^.\n;]*no (?:esta )?incluido/u.test(iva))i='No incluido';
  else if(/iva[^.\n;]*incluido/u.test(iva))i='Incluido';
  else if(/iva[^.\n;]*no informad/u.test(iva))i='No informado';
- let f='No verificado';
+ let f=flete?'No verificado':'No informado';
  if(/flete[^.\n;]*no incluido/u.test(flete))
   f=/importe a cotizar/u.test(flete)?'No incluido · a cotizar':'No incluido';
  else if(/flete[^.\n;]*incluido/u.test(flete))f='Incluido';
  else if(/flete[^.\n;]*no informad/u.test(flete))f='No informado';
- const pay=/forma de pago[^.\n;]*no informad/u.test(pago)||
-  /forma de pago y plazo de entrega[^.\n;]*no informad/u.test(pago)?
-  'No informado':'No verificado';
- const delivery=/plazo(?: de entrega)?[^.\n;]*no informad/u.test(plazo)?
-  'No informado':'No verificado';
- return Object.freeze({iva:i,flete:f,pago:pay,entrega:delivery});
+ let pay=pago?'No verificado':'No informado';
+ if(/\bcontado\s+(?:en\s+)?efectivo\b|\befectivo\s+al\s+contado\b/u.test(pago))
+  pay='Contado en efectivo';
+ else if(/\btransferencia\s+(?:bancaria)?\b/u.test(pago))
+  pay='Transferencia bancaria';
+ else if(/\bcontado\b/u.test(pago))pay='Contado';
+ else if(/\bno informad/u.test(pago))pay='No informado';
+ // Se conserva por compatibilidad con la proyección previa, pero NUNCA se
+ // presenta el plazo de entrega en el portal o en el comparativo comercial.
+ return Object.freeze({iva:i,flete:f,pago:pay,entrega:'No informado'});
 }
 export function resumirOfertaComercialV2(
  raw:unknown,puntos:readonly Punto[]
 ):ResumenComercialV2{
  const metadata=comercial(raw);
- return Object.freeze({...metadata,condiciones:cond(puntos)});
+ return Object.freeze({...metadata,tipoImporte:tipoMonto(metadata.totalDeclarado,puntos),
+  condiciones:cond(puntos)});
 }

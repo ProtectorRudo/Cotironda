@@ -86,8 +86,8 @@ test('D017: URL de acceso lleva al perfil, no exige SMS y preserva tickets',()=>
  assert.match(profile,/puertaWhatsappPortalD016\(process\.env\)/u);
  assert.match(historyUI,/credentials:'same-origin'/u);
  assert.ok(historyUI.includes("cotizaciones/'+encodeURIComponent(r.rondaId)"));
- assert.match(historyUI,/Borradores/u);
- assert.match(historyUI,/Archivo histórico · originales no habilitados/u);
+ assert.doesNotMatch(historyUI,/<summary>Borradores/u);
+ assert.match(historyUI,/En algunas cotizaciones anteriores/u);
  assert.doesNotMatch(historyUI,/localStorage|sessionStorage|Bearer /u);
 });
 test('D017: todas las APIs continúan bajo sesión servidor y verificación por ronda',()=>{

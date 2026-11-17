@@ -75,3 +75,30 @@ test('D016 informe: rechaza ID duplicado y observaciones malformadas',()=>{
  corrupted.respuestas[0].puntos[0].evidencia='x';
  assert.equal(componerInformeFinalD016(state(),corrupted,NOW),null);
 });
+
+test('D019: el informe compara por comercio sin ordenar ganadores ni inventar importes',()=>{
+ const cat=data();
+ cat.respuestas[0].resumen={
+  totalDeclarado:'$293.991,23',tipoImporte:'Subtotal informado',
+  cobertura:{identificados:1,solicitados:3,porVerificar:['Cemento CPC 50 kg'],adicionales:0},
+  condiciones:{pago:'Contado en efectivo',iva:'No informado',flete:'No informado',entrega:'No informado'}
+ };
+ cat.respuestas[2].resumen={
+  totalDeclarado:'$355.400',tipoImporte:'Importe informado',
+  cobertura:{identificados:3,solicitados:3,porVerificar:[],adicionales:0},
+  condiciones:{pago:'No informado',iva:'No informado',flete:'No informado',entrega:'No informado'}
+ };
+ cat.respuestas[0].puntos.push(punto('plazo','Plazo de entrega 0 días',
+  'El plazo de entrega indicado es 0 días.'));
+ const report=componerInformeFinalD016(state(),cat,NOW);
+ assert.ok(report);
+ const norte=report.comparacion.find(x=>x.comercio==='Corralón Norte');
+ assert.equal(norte.ofertas.length,2);
+ assert.equal(norte.ofertas[0].tipoImporte,'Subtotal informado');
+ assert.equal(norte.ofertas[0].pago,'Contado en efectivo');
+ assert.equal(norte.ofertas[0].cobertura.identificados,1);
+ assert.ok(!norte.evidencias.some(x=>x.categoria==='plazo'));
+ assert.deepEqual(report.comparacion.map(x=>x.comercio),['Corralón Norte','Pinturería Sur']);
+ assert.ok(!JSON.stringify(report).includes('"ganador":'));
+ assert.ok(!JSON.stringify(report).includes('"adjudicado":'));
+});

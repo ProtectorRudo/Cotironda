@@ -72,7 +72,7 @@ test('D016 no duplica artículos: una oferta no cubre dos líneas repetidas',()=
  assert.equal(r.cobertura?.identificados,1);
  assert.equal(r.cobertura?.solicitados,2);
  assert.equal(r.totalDeclarado,null);
- assert.equal(r.condiciones.iva,'No verificado');
+ assert.equal(r.condiciones.iva,'No informado');
 });
 test('D016 sin extracción no se inventa monto, cantidad ni IVA',()=>{
  for(const raw of [null,undefined,{},{
@@ -81,7 +81,7 @@ test('D016 sin extracción no se inventa monto, cantidad ni IVA',()=>{
   const r=resumirOfertaComercialV2(raw,[]);
   assert.equal(r.totalDeclarado,null);
   assert.equal(r.cobertura,null);
-  assert.equal(r.condiciones.flete,'No verificado');
+  assert.equal(r.condiciones.flete,'No informado');
  }
 });
 test('D016 ignora cifras malformadas, contactos y cantidades de origen ambiguo',()=>{
@@ -98,6 +98,20 @@ test('D016 documentos adicionales no se declaran faltantes del pedido',()=>{
  const r=resumirOfertaComercialV2(quote,points);
  assert.equal(r.cobertura?.identificados,3);
  assert.equal(r.cobertura?.adicionales,1);
+});
+test('D019 pago informado y subtotal: no se contradice la evidencia',()=>{
+ const r=resumirOfertaComercialV2({...input,totalLiteral:'$293.991,23'},[
+  {categoria:'precio',evidencia:'Subtotal $293.991,23',observacion:'El presupuesto indica un subtotal de $293.991,23.'},
+  {categoria:'forma_pago',evidencia:'Condición de pago : 1. Contado Efectivo',observacion:'La condición es contado en efectivo.'}
+ ]);
+ assert.equal(r.tipoImporte,'Subtotal informado');
+ assert.equal(r.condiciones.pago,'Contado en efectivo');
+ assert.equal(r.condiciones.iva,'No informado');
+ assert.equal(r.condiciones.flete,'No informado');
+ assert.equal(r.solicitado.length,3);
+ const other=resumirOfertaComercialV2(input,[]);
+ assert.equal(other.tipoImporte,'Importe informado');
+ assert.equal(other.condiciones.pago,'No informado');
 });
 test('D016 SQL comercial solo consulta el documento identificado por SHA y sesión privada',()=>{
  const sql=readFileSync(new URL(
@@ -122,7 +136,7 @@ test('D016 dashboard mantiene la descarga real, análisis original y claridad co
  for(const phrase of [
   'coti-clean-bid-price','coti-clean-coverage','Condiciones de la oferta',
   'q.resumen.totalDeclarado','q.resumen.cobertura',
-  'Ver análisis completo','Descargar original','originales-whatsapp',
+  'Ver evidencia del presupuesto','Descargar original','originales-whatsapp',
   'informe-final-whatsapp','credentials:', 'cerrarSesion',
   'aria-expanded={expanded}','coti-clean-bid-expanded'
  ])assert.ok(ui.includes(phrase),phrase);

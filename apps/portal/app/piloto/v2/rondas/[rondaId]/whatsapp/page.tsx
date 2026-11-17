@@ -1,4 +1,5 @@
 import {notFound} from 'next/navigation';
+import Link from 'next/link';
 import {puertaWhatsappPortalD016} from '@/lib/piloto-v2-d016-http';
 import {RespuestasWhatsappD016} from './respuestas-whatsapp';
 
@@ -14,9 +15,9 @@ export default async function PedidoWhatsappD016(
  if(!UUID.test(rondaId)||!puertaWhatsappPortalD016(process.env))
   notFound();
  return <main className="panel coti-buyer-portal coti-clean">
-  <a className="coti-back-link" href="/piloto/v2/mi-cotironda">
+  <Link className="coti-back-link" href="/piloto/v2/mi-cotironda" scroll={false}>
    ← Mis cotizaciones
-  </a>
+  </Link>
   <h1>Presupuestos recibidos</h1>
   <RespuestasWhatsappD016 rondaId={rondaId}/>
  </main>;

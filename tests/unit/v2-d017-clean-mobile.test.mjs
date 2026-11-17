@@ -21,17 +21,18 @@ test('Cotironda Clean: identidad azul sólo dentro del portal privado',()=>{
  assert.match(home,/puertaWhatsappPortalD016\(process\.env\)/u);
  assert.match(direct,/puertaWhatsappPortalD016\(process\.env\)/u);
 });
-test('Historial: cotizaciones reales primero, borradores colapsables y sin tarjetas grandes',()=>{
+test('Historial: cotizaciones reales primero, borradores internos invisibles',()=>{
  assert.match(history,/coti-clean-history/u);
  assert.match(history,/active=sent\.filter/u);
  assert.match(history,/history=sent\.filter/u);
- assert.match(history,/coti-clean-drafts/u);
- assert.match(history,/Borradores/u);
+ assert.doesNotMatch(history,/coti-clean-drafts|<summary>Borradores/u);
+ assert.match(history,/ultimaPosicionHistorial/u);
+ assert.match(history,/Portal privado/u);
  assert.doesNotMatch(history,/coti-profile-stats/u);
  assert.doesNotMatch(history,/coti-profile-welcome/u);
  assert.match(history,/credentials:'same-origin'/u);
  assert.match(history,/Recibir un nuevo enlace por WhatsApp/u);
- assert.match(history,/Archivo histórico · originales no habilitados/u);
+ assert.match(history,/En algunas cotizaciones anteriores/u);
  assert.doesNotMatch(history,/localStorage|sessionStorage|Bearer /u);
 });
 test('Propuestas: precio y estado visibles, condiciones y evidencia sólo a pedido',()=>{
@@ -39,13 +40,17 @@ test('Propuestas: precio y estado visibles, condiciones y evidencia sólo a pedi
  assert.match(bids,/coti-clean-coverage/u);
  assert.match(bids,/aria-expanded=\{expanded\}/u);
  assert.match(bids,/\{expanded&&<div className="coti-clean-bid-expanded"/u);
- assert.match(bids,/Ver detalle/u);
+ assert.match(bids,/Ver análisis/u);
  assert.match(bids,/PDF original/u);
- assert.match(bids,/Ver análisis completo/u);
+ assert.match(bids,/Ver evidencia del presupuesto/u);
  assert.doesNotMatch(bids,/\['Entrega',q\.resumen\.condiciones\.entrega\]/u);
  assert.match(bids,/cover\.identificados/u);
  assert.match(bids,/cover\.porVerificar/u);
- assert.match(bids,/informe&&<details/u);
+ assert.match(bids,/solicitados\.length/u);
+ assert.match(bids,/coti-clean-insights/u);
+ assert.match(bids,/coti-clean-amount-kind/u);
+ assert.doesNotMatch(bids,/\{p\.observacion\}.*0 días/u);
+ assert.match(bids,/informe&&<section/u);
 });
 test('No cambian acciones, autorización de descargas ni regeneración IA',()=>{
  assert.match(bids,/credentials:'same-origin'/u);

@@ -7,15 +7,23 @@ import type {CatalogoRespuestasV2,PuntoVisibleV2}
  from './v2-03-catalogo-respondedores.ts';
 
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/iu;
-const AREAS=['iva','flete','forma_pago','plazo','disponibilidad'] as const;
+const AREAS=['iva','flete','forma_pago','disponibilidad'] as const;
 const CONTACT=/(?:\+?\d[\s().-]?){9,}|[\w.+-]+@[\w.-]+\.\w+|https?:\/\//iu;
 type Area=typeof AREAS[number];
 type Evidencia=Readonly<{
  categoria:string;evidencia:string;observacion:string;
  documentoId:string;
 }>;
+type DetalleOferta=Readonly<{
+ documentoId:string;
+ importe:string|null;
+ tipoImporte:string;
+ cobertura:Readonly<{identificados:number;solicitados:number;porVerificar:readonly string[]}>|null;
+ pago:string;iva:string;flete:string;
+}>;
 type ResumenComercio=Readonly<{
  comercio:string;documentos:number;analizados:number;
+ ofertas:readonly DetalleOferta[];
  evidencias:readonly Evidencia[];
  condiciones:Readonly<Record<Area,'citado_en_guia'|'no_identificado_en_guia'>>;
 }>;
@@ -41,7 +49,7 @@ export function componerInformeFinalD016(
   !Array.isArray(catalog.respuestas)||catalog.respuestas.length>100)
   return null;
  const byBusiness=new Map<string,{docs:number;analizados:number;
-  items:Evidencia[];areas:Set<Area>}>();
+  items:Evidencia[];areas:Set<Area>;ofertas:DetalleOferta[]}>();
  const seen=new Set<string>();
  let analysed=0;
  for(const quote of catalog.respuestas){
@@ -53,10 +61,23 @@ export function componerInformeFinalD016(
   seen.add(quote.documentoId);
   let business=byBusiness.get(quote.comercio);
   if(!business){
-   business={docs:0,analizados:0,items:[],areas:new Set()};
+   business={docs:0,analizados:0,items:[],areas:new Set(),ofertas:[]};
    byBusiness.set(quote.comercio,business);
   }
   business.docs++;
+  const cv=quote.resumen?.cobertura;
+  business.ofertas.push(Object.freeze({
+   documentoId:quote.documentoId,
+   importe:quote.resumen?.totalDeclarado??null,
+   tipoImporte:quote.resumen?.tipoImporte??'Importe no informado',
+   cobertura:cv?Object.freeze({
+    identificados:cv.identificados,solicitados:cv.solicitados,
+    porVerificar:Object.freeze([...cv.porVerificar])
+   }):null,
+   pago:quote.resumen?.condiciones.pago??'No informado',
+   iva:quote.resumen?.condiciones.iva??'No informado',
+   flete:quote.resumen?.condiciones.flete??'No informado'
+  }));
   if(quote.puntos.length>0){
    analysed++;business.analizados++;
   }
@@ -67,6 +88,9 @@ export function componerInformeFinalD016(
     evidence.observacion.length<12||evidence.observacion.length>240||
     CONTACT.test(evidence.evidencia)||CONTACT.test(evidence.observacion))
     return null;
+   // Plazos de entrega quedan íntegros en el PDF original, no en el informe.
+   if(evidence.categoria==='plazo'||/plazo de entrega|0 dias/i.test(evidence.observacion))
+    continue;
    business.items.push({...evidence,documentoId:quote.documentoId});
    if((AREAS as readonly string[]).includes(evidence.categoria))
     business.areas.add(evidence.categoria as Area);
@@ -80,6 +104,7 @@ export function componerInformeFinalD016(
     'citado_en_guia':'no_identificado_en_guia';
   return Object.freeze({
    comercio,documentos:info.docs,analizados:info.analizados,
+   ofertas:Object.freeze(info.ofertas),
    evidencias:Object.freeze(info.items.slice(0,12).map(v=>Object.freeze(v))),
    condiciones:Object.freeze(condiciones)
   });
