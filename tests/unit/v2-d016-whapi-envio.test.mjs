@@ -258,7 +258,8 @@ test('D013+D016: localidad reanuda la MISMA ronda con V2, nunca rubro V1',()=>{
  assert.match(candidate,/from '\.\/ai-central-zone-v2-d013\.ts'/u);
  assert.match(candidate,/continuarZonaCentralMvp233 as continuarZonaCentralV2D013/u);
  assert.match(candidate,/const d013ZoneEnabled=habilitarPublicacionD013ConAccesoD016\(\{/u);
- assert.match(candidate,/const zoneWorker=d013ZoneEnabled\?\s*continuarZonaCentralV2D013:continuarZonaCentralMvp233/u);
+ assert.match(candidate,/const zoneWorker=continuarZonaCentralV2D013;/u);
+ assert.doesNotMatch(candidate,/const zoneWorker=d013ZoneEnabled\?/u);
  assert.match(candidate,/model,publicar:d013ZoneEnabled/u);
  assert.match(candidate,/if\(!d013ZoneEnabled\|\|!resumed\.requestId\)/u);
  assert.match(candidate,/buyerLinkRequests\.push\(\{mode:'auto',requestId:resumed\.requestId,\s*chatHmac:chatHash,eventHmac:messageHash/u);
@@ -271,7 +272,7 @@ test('D013+D016: localidad reanuda la MISMA ronda con V2, nunca rubro V1',()=>{
  assert.doesNotMatch(zona,/puente-sql-rondas-mvp221\.ts|planificador-piloto-mvp220\.ts/u);
 });
 
-test('D013+ D016: candidato Whapi usa catalogo por producto SOLO con flag V2',()=>{
+test('D013+D016: lector siempre V2; publicación sólo con permisos completos',()=>{
  const original=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/index.ts',
   import.meta.url),'utf8');
  assert.doesNotMatch(original,/COTIRONDA_PILOT_V2_D013_PRODUCT_MATCHING_ENABLED/u);
@@ -282,7 +283,8 @@ test('D013+ D016: candidato Whapi usa catalogo por producto SOLO con flag V2',()
  assert.match(candidate,/const d013Enabled=habilitarPublicacionD013ConAccesoD016\(\{/u);
  assert.match(candidate,/matchingEnabled:Deno\.env\.get\('COTIRONDA_PILOT_V2_D013_PRODUCT_MATCHING_ENABLED'\)==='true'/u);
  assert.match(candidate,/linkSendEnabled:Deno\.env\.get\('COTIRONDA_PILOT_D016_WHATSAPP_SEND_ENABLED'\)==='true'/u);
- assert.match(candidate,/const buyerWorker=d013Enabled\?\s*procesarCompradorCentralV2D013:procesarCompradorCentralMvp226/u);
+ assert.match(candidate,/const buyerWorker=procesarCompradorCentralV2D013;/u);
+ assert.doesNotMatch(candidate,/const buyerWorker=d013Enabled\?/u);
  assert.match(candidate,/habilitado:true,publicar:d013Enabled/u);
  assert.match(candidate,/if\(!d013Enabled\|\|!result\.requestId\)/u);
  assert.match(candidate,/trialDispatchChats\.add\(chatHash\)/u);
