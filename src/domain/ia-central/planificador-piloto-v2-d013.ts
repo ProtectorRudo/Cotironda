@@ -10,6 +10,7 @@
  * NO introducir fetch Whapi en este archivo.
  */
 import {interpretarConIaCentralV2D013} from './cliente-openai-v2-d013.ts';
+import type {DiagnosticoCantidadD013} from './contrato-v2-d013.ts';
 import {validarSnapshotCatalogosMvp220} from './catalogo-supabase-mvp220.ts';
 import {categorizarCatalogosCuradosD013} from './catalogo-curado-v2-d013.ts';
 import {proponerRuteoCatalogoConIAV2} from './ruteador-catalogos-v2-d013.ts';
@@ -44,6 +45,7 @@ export async function planificarMensajeAutenticadoMvp220(args:{
  autenticadoPorWebhook:boolean;
  apiKey:string;model:Modelo;
  rpc:Rpc;fetchImpl?:typeof fetch;
+ onQuantityDiagnostic?:(code:DiagnosticoCantidadD013)=>void;
 }):Promise<PlanMvp220>{
  if(!args||args.autenticadoPorWebhook!==true||
     !KEY.test(args.chatHmac)||!KEY.test(args.messageHmac)||
@@ -55,7 +57,8 @@ export async function planificarMensajeAutenticadoMvp220(args:{
  // es autorización real; el RPC verifica identidad nuevamente.
  const interpreted=await interpretarConIaCentralV2D013({
   fuente:args.textoOriginal,apiKey:args.apiKey,
-  model:args.model,fetchImpl:args.fetchImpl
+  model:args.model,fetchImpl:args.fetchImpl,
+  onQuantityDiagnostic:args.onQuantityDiagnostic
  });
  if(interpreted.estado==='requiere_aclaracion')
   return deny('requiere_aclaracion',interpreted.motivo);
