@@ -277,7 +277,7 @@ function parsearSemanticaD013(raw:unknown,esperados:readonly ParSemanticoD013[])
  try{answer=JSON.parse(messages[0].content[0].text)}catch{return null}
  if(!obj(answer)||Object.keys(answer).length!==1||
     !Array.isArray(answer.verificaciones)||
-    answer.verificaciones.length!==esperados.length)return null;
+    answer.verificaciones.length>esperados.length)return null;
  const expected=new Set(esperados.map(x=>
   [x.proveedor,x.indicePedido,x.numeroCatalogo].join(':')));
  const seen=new Set<string>(),approved=new Set<string>();
@@ -325,14 +325,14 @@ async function corroborarSemanticaD013(args:{
     }),
     signal:AbortSignal.timeout(18000)
    });
-   if(!response.ok)return new Set();
-   if(Number(response.headers.get('content-length')??0)>22000)return new Set();
+   if(!response.ok)continue;
+   if(Number(response.headers.get('content-length')??0)>22000)continue;
    const body=await response.text();
-   if(body.length>22000)return new Set();
+   if(body.length>22000)continue;
    const valid=parsearSemanticaD013(JSON.parse(body),chunk);
-   if(valid===null)return new Set();
+   if(valid===null)continue;
    for(const token of valid)approved.add(token);
-  }catch{return new Set()}
+  }catch{continue}
  }
  return approved;
 }

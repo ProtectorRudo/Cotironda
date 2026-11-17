@@ -96,6 +96,19 @@ test('V2: segundo lector inseguro, omitido o incierto NO habilita coincidencias'
   assert.equal(res.whatsappEnviado,false);
  }
 });
+test('V2: verificador parcial conserva exclusivamente los artículos comprobados',async()=>{
+ const partial={verificaciones:verdict.verificaciones.slice(0,2)};
+ const {fetchImpl}=mockApi(proposal,partial);
+ const res=await proponerRuteoCatalogoConIAV2({
+  pedido,proveedores:catalog,apiKey:'sk-'+'a'.repeat(24),
+  model:'gpt-6-luna',fetchImpl});
+ assert.deepEqual(res.propuestas.map(x=>[x.proveedor,
+  x.correspondencias.map(m=>m.indicePedido)]),[
+  ['corralon_ailin',[0,1]]
+ ]);
+ assert.deepEqual(res.cobertura.map(x=>x.proveedoresAutorizados),[1,1]);
+ assert.equal(res.whatsappEnviado,false);
+});
 test('V2: conflicto de sección, presentación o marca excluyente NO puede salvarse con IA',()=>{
  const buyer=quote('3 metros cable 2.5 mm2','3','m');
  const c=verificarCorrespondenciaTecnicaD013(buyer,'Cable unipolar 4 mm2',
