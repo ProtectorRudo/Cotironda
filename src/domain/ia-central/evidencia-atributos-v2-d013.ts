@@ -125,7 +125,19 @@ export function probarAtributosV2D013(a:{
     !quantities.some(q=>measures.some(m=>
      q+citaCantidad.length<=m||m+citaPresentacion.length<=q)))
   return false;
- const nums=(s:string)=>s.match(/\d+(?:[.,]\d+)*/gu)?.map(x=>Number(x.replace(',','.')))??[];
+ // El exponente de m²/m³ (o m2/m3) no es una cantidad comprada.
+ // La IA puede normalizar «1 m³» como «1 m3»: son la misma presentación.
+ // No permitir que esa normalización convierta superficie en volumen.
+ const dimension=/(?<![\\p{L}])(?:mm|cm|m)\\s*([23²³])(?![\\p{L}\\p{N}])/giu;
+ const firma=(s:string)=>[...s.matchAll(dimension)].map(m=>m[0]
+  .replace(/\\s+/gu,'').toLocaleLowerCase('es-AR')
+  .replace(/2$/u,'²').replace(/3$/u,'³'));
+ const presentada=firma(presentacion),citada=firma(citaPresentacion);
+ if(presentada.length>0&&citada.length>0&&
+    (presentada.length!==citada.length||
+     presentada.some((d,i)=>d!==citada[i])))return false;
+ const nums=(s:string)=>s.replace(dimension,m=>m.replace(/[23]$/u,''))
+  .match(/\\d+(?:[.,]\\d+)*/gu)?.map(x=>Number(x.replace(',','.')))??[];
  const quoted=nums(citaPresentacion);
  return nums(presentacion).every(x=>quoted.includes(x));
 }
