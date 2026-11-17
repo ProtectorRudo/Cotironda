@@ -63,8 +63,8 @@ test('V2: 31 artículos se procesan en dos lotes y conservan TODOS los índices'
  assert.equal(result.cobertura.length,31);
  assert.ok(result.cobertura.every(x=>x.proveedoresAutorizados===1));
  assert.equal(mock.calls.filter(x=>x.name==='cotironda_ruteo_catalogos_v2').length,2);
- assert.equal(mock.calls.filter(x=>x.name==='cotironda_corrobora_pares_v2_d013').length,3);
- // El verificador independiente subdivide 20 artículos en grupos de 15.
+ assert.equal(mock.calls.filter(x=>x.name==='cotironda_corrobora_pares_v2_d013').length,0);
+ // El ruteo único conserva 31 índices sin segunda IA ni omisiones.
  assert.equal(result.whatsappEnviado,false);
 });
 test('V2: catálogo de 151 líneas considera las últimas sin omitir ni inventar productos',async()=>{
