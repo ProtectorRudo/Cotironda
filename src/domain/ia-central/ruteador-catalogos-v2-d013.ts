@@ -392,10 +392,17 @@ export async function proponerRuteoCatalogoConIAV2(args:{
   return fail('credencial_o_modelo_invalido');
  // Reject oversize entirely; never silently drop lines from an architect's job.
  if(!pedido||!Array.isArray(pedido.articulos)||
-    !Array.isArray(proveedores)||pedido.articulos.length>30||
+    pedido.articulos.length<1||pedido.articulos.length>200||
+    !Array.isArray(proveedores)||proveedores.length<1||
     proveedores.length>25||
-    proveedores.some((p:ProveedorCatalogoV2)=>!p||!Array.isArray(p.articulos)||p.articulos.length>150))
-  return fail('ruteo_excede_presupuesto_por_lote');
+    proveedores.some((p:ProveedorCatalogoV2)=>!p||
+      !Array.isArray(p.articulos)||p.articulos.length>500))
+  return fail('ruteo_entrada_no_representable');
+ // Mantener la capacidad del RPC real, pero nunca pedirle al modelo
+ // un catálogo enorme a la vez ni descartar artículos silenciosamente.
+ if(pedido.articulos.length>30||
+    proveedores.some((p:ProveedorCatalogoV2)=>p.articulos.length>150))
+  return ruteoConLotesSemanticosV2D013(args);
  const eligible=proveedores.filter((p:ProveedorCatalogoV2)=>
   p.consentido&&p.activo&&
   p.localidades.some((z:string)=>zonaIgual(z,pedido.zona_entrega??'')));
@@ -448,4 +455,101 @@ export async function proponerRuteoCatalogoConIAV2(args:{
   return autorizarPropuestasCatalogoV2(pedido,proveedores,candidates,
    checked,true);
  }catch{return fail('respuesta_ia_invalida')}
+}
+
+/** Comparar lote por lote sin perder índices, evidencias ni catálogo real.
+ * Límite de presupuesto: antes de lanzar llamadas verificar costo total.
+ * Una llamada fallida aborta TODO el plan; nunca despachar un prefijo.
+ * Los conflictos entre diferentes SKU del mismo proveedor/artículo
+ * se mantienen como revisión interna, no se decide un SKU arbitrario.
+ */
+const MAX_LOTES=40,ITEMS_PER_LOTE=20,CATALOG_PER_LOTE=100;
+type LoteD013=Readonly<{
+ offset:number;pedido:PropuestaPedido;proveedor:ProveedorCatalogoV2
+}>;
+async function ruteoConLotesSemanticosV2D013(args:{
+ pedido:PropuestaPedido;proveedores:readonly ProveedorCatalogoV2[];
+ apiKey:string;model:'gpt-6-luna'|'gpt-6.1-sol';fetchImpl?:typeof fetch
+}):Promise<ResultadoCatalogoV2>{
+ const {pedido,proveedores}=args;
+ const baseline=autorizarPropuestasCatalogoV2(pedido,proveedores,[]);
+ if(baseline.cobertura.length!==pedido.articulos.length)
+  return fail('catalogos_o_pedido_invalidos');
+ const eligible=proveedores.filter(p=>p.consentido&&p.activo&&
+  p.localidades.some(z=>zonaIgual(z,pedido.zona_entrega??'')));
+ if(eligible.length===0)return fail('sin_proveedores_autorizados');
+ const work:LoteD013[]=[];
+ for(const supplier of eligible){
+  for(let offset=0;offset<pedido.articulos.length;offset+=ITEMS_PER_LOTE){
+   for(let cat=0;cat<supplier.articulos.length;cat+=CATALOG_PER_LOTE){
+    work.push({
+     offset,pedido:{...pedido,articulos:pedido.articulos.slice(offset,offset+ITEMS_PER_LOTE)},
+     proveedor:{...supplier,articulos:supplier.articulos.slice(cat,cat+CATALOG_PER_LOTE)}
+    });
+   }
+  }
+ }
+ if(work.length>MAX_LOTES)return fail('ruteo_por_lotes_excede_presupuesto_controlado');
+ const selected=new Map<string,Map<number,CorrespondenciaV2[]>>();
+ const revision:ResultadoCatalogoV2['revisionTecnica'][number][]=[];
+ // Ejecutar en grupos pequeños. Fallo en cualquier grupo: abortar
+ // aunque ya existan coincidencias locales en memoria.
+ for(let start=0;start<work.length;start+=4){
+  const group=work.slice(start,start+4);
+  const results=await Promise.all(group.map(async task=>
+   proponerRuteoCatalogoConIAV2({
+    ...args,pedido:task.pedido,proveedores:[task.proveedor]
+   })));
+  for(let i=0;i<group.length;i++){
+   const task=group[i],result=results[i];
+   if(result.propuestas.length===0&&result.revisionTecnica.length===0&&
+      !['productos_en_catalogo_y_zona_comprobados',
+        'equivalencias_no_demostradas_en_revision_interna'].includes(result.motivo))
+    return fail('lote_individual_no_verificable');
+   for(const p of result.propuestas){
+    if(p.proveedor!==task.proveedor.clave)return fail('lote_proveedor_no_verificable');
+    const perItem=selected.get(p.proveedor)??new Map<number,CorrespondenciaV2[]>();
+    for(const match of p.correspondencias){
+     const idx=task.offset+match.indicePedido;
+     if(idx>=pedido.articulos.length)return fail('lote_indice_no_verificable');
+     perItem.set(idx,[...(perItem.get(idx)??[]),
+      {...match,indicePedido:idx}]);
+    }
+    selected.set(p.proveedor,perItem);
+   }
+   for(const review of result.revisionTecnica){
+    revision.push({...review,indicePedido:task.offset+review.indicePedido});
+   }
+  }
+ }
+ const output:PropuestaProveedorV2[]=[];
+ const coverage=Array.from({length:pedido.articulos.length},()=>0);
+ for(const supplier of eligible){
+  const perItem=selected.get(supplier.clave);
+  if(!perItem)continue;
+  const verified:CorrespondenciaV2[]=[];
+  for(const [idx,variants] of perItem){
+   const distinct=new Set(variants.map(x=>x.numeroCatalogo));
+   if(distinct.size!==1){
+    revision.push({proveedor:supplier.clave,indicePedido:idx,
+     numeroCatalogo:0,motivo:'multiples_productos_distintos_para_un_articulo'});
+    continue;
+   }
+   verified.push(variants[0]);coverage[idx]++;
+  }
+  if(verified.length)output.push({
+   proveedor:supplier.clave,
+   correspondencias:verified.sort((a,b)=>a.indicePedido-b.indicePedido)
+  });
+ }
+ return {
+  estado:output.length?'ruteo_valido_para_preparacion':'requiere_revision',
+  motivo:revision.length?
+   'equivalencias_no_demostradas_en_revision_interna':
+   'productos_en_catalogo_y_zona_comprobados',
+  propuestas:output,cobertura:coverage.map((n,i)=>({
+   indicePedido:i,proveedoresAutorizados:n
+  })),
+  revisionTecnica:revision,whatsappEnviado:false
+ };
 }
