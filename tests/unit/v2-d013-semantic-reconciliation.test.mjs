@@ -15,13 +15,16 @@ const first={intencion:'cotizar',zona_entrega:'La Plata',dudas:[],
   evidencia,inicio:original.indexOf(evidencia),fin:original.indexOf(evidencia)+evidencia.length,
   descripcion:['cemento 25 kg','arena fina en bolsón','balde albañil 10 L','membrana 4 mm'][i],
   cantidad:['10','1','3','2'][i],unidad:['bag','unit','unit','roll'][i],
-  rubro:i===3?'pintura':'obra_gruesa',presentacion:['25 kg',null,'10 L','4 mm'][i],aclaracion:null
+  rubro:i===3?'pintura':'obra_gruesa',presentacion:['25 kg',null,'10 L','4 mm'][i],aclaracion:null,
+  citaCantidad:['10','un','3','2'][i],
+  citaProducto:['cemento','arena fina','baldes de albañil','membrana aluminizada'][i],
+  citaPresentacion:['25 kilos',null,'10 litros','4 mm'][i]
  }))};
 const second={integridad:'completa',zona_entrega:' LA plata ',articulos:[
- {evidencia:'rollos de membrana aluminizada de 4 mm',cantidad:'2',unidad:'unidades',rubro:'obra_gruesa'},
- {evidencia:'baldes de albañil de 10 litros',cantidad:'3',unidad:'baldes',rubro:'ferreteria'},
- {evidencia:'arena fina',cantidad:'1',unidad:'bolson',rubro:'obra_gruesa'},
- {evidencia:'cemento de 25 kilos',cantidad:'10',unidad:'bolsas',rubro:'obra_gruesa'}
+ {evidencia:'rollos de membrana aluminizada de 4 mm',cantidad:'2',unidad:'unidades',rubro:'obra_gruesa',citaCantidad:'2'},
+ {evidencia:'baldes de albañil de 10 litros',cantidad:'3',unidad:'baldes',rubro:'ferreteria',citaCantidad:'3'},
+ {evidencia:'arena fina',cantidad:'1',unidad:'bolson',rubro:'obra_gruesa',citaCantidad:'un'},
+ {evidencia:'cemento de 25 kilos',cantidad:'10',unidad:'bolsas',rubro:'obra_gruesa',citaCantidad:'10'}
 ]};
 function fake(...data){return async(_url,req)=>{
  const body=JSON.parse(req.body);
@@ -58,10 +61,11 @@ test('D013: dos citas iguales usadas para artículos distintos son ambiguas',()=
  const es=['10 bolsas cemento CPC','20 bolsas cemento CPC'];
  const a={...first,articulos:es.map((evidencia,i)=>({...first.articulos[0],
   evidencia,inicio:source.indexOf(evidencia),fin:source.indexOf(evidencia)+evidencia.length,
-  cantidad:i?'20':'10'}))};
+  cantidad:i?'20':'10',citaCantidad:i?'20':'10',
+  presentacion:null,citaPresentacion:null}))};
  const b={...second,articulos:[
-  {evidencia:'cemento CPC',cantidad:'10',unidad:'bag',rubro:'obra_gruesa'},
-  {evidencia:'cemento CPC',cantidad:'20',unidad:'bag',rubro:'obra_gruesa'}
+  {evidencia:'cemento CPC',cantidad:'10',unidad:'bag',rubro:'obra_gruesa',citaCantidad:'10'},
+  {evidencia:'cemento CPC',cantidad:'20',unidad:'bag',rubro:'obra_gruesa',citaCantidad:'20'}
  ]};
  assert.equal(evaluarLecturasSemanticasV2D013(source,a,b).estado,'requiere_aclaracion');
 });

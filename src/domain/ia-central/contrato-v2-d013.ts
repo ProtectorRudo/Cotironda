@@ -5,6 +5,7 @@ import {RUBROS_MVP216,type RubroMvp216} from '../rubros-comprador-mvp216.ts';
 import type {PropuestaArticulo,PropuestaPedido,ResultadoLectura} from './contrato-v1.ts';
 export type {PropuestaArticulo,PropuestaPedido,ResultadoLectura} from './contrato-v1.ts';
 export {localizarEvidenciasV1} from './contrato-v1.ts';
+import {probarAtributosV2D013,numeroNaturalV2D013} from './evidencia-atributos-v2-d013.ts';
 const decimal=/^(?:0|[1-9]\d{0,5})(?:\.\d{1,3})?$/u;
 const texto=(v:unknown,max:number):v is string=>typeof v==='string'&&
  v.trim().length>0&&v.length<=max&&
@@ -16,20 +17,6 @@ const rubro=(v:unknown):v is RubroMvp216=>
 function cantidad(v:unknown):v is string{
  return typeof v==='string'&&decimal.test(v)&&
  Number.isFinite(Number(v))&&Number(v)>0&&Number(v)<=1000000;
-}
-/** Verifica cifras evidentes sin conocer una sola palabra del producto.
- * «tres» (cantidad escrita con palabras) requiere doble lector semántico. */
-function cantidadRespaldada(evidencia:string,cant:string):boolean{
- const numbers=evidencia.match(/\d+(?:[.,]\d{1,3})*/gu)??[];
- if(numbers.length===0)return true;
- const requested=Number(cant);
- return numbers.some(raw=>{
-  const variants=new Set<number>();
-  variants.add(Number(raw.replace(',','.')));
-  if(/^\d{1,3}(?:\.\d{3})+$/u.test(raw))
-   variants.add(Number(raw.replace(/\./gu,'')));
-  return variants.has(requested);
- });
 }
 /** MVP287: dos modelos pueden citar subtramos distintos del MISMO ítem.
  * La cita secundaria se busca en el ORIGINAL y debe solaparse con la
@@ -132,7 +119,12 @@ export function evaluarLecturasSemanticasV2D013(
      start<0||end<=start||end>origen.length||
      origen.slice(start,end)!==ev||
      !texto(entry.descripcion,500)||!cantidad(entry.cantidad)||
-     !cantidadRespaldada(ev,entry.cantidad)||
+     !probarAtributosV2D013({
+      evidencia:ev,cantidad:entry.cantidad,unidad:entry.unidad,
+      presentacion:entry.presentacion,citaCantidad:entry.citaCantidad,
+      citaProducto:entry.citaProducto,
+      citaPresentacion:entry.citaPresentacion
+     })||
      !texto(entry.unidad,80)||!rubro(entry.rubro)||
      !(entry.presentacion===null||texto(entry.presentacion,200))||
      !(entry.aclaracion===null||texto(entry.aclaracion,250)))
@@ -161,6 +153,9 @@ export function evaluarLecturasSemanticasV2D013(
    return obj(b)&&rubro(b.rubro)&&
     citaVerificadaDelMismoItem(origen,a,b.evidencia,accepted)&&
     cantidad(b.cantidad)&&Number(b.cantidad)===Number(a.cantidad)&&
+    typeof b.citaCantidad==='string'&&
+    numeroNaturalV2D013(b.citaCantidad)===Number(a.cantidad)&&
+    a.evidencia.includes(b.citaCantidad)&&
     texto(b.unidad,80)&&unidadEquivalente(a.unidad,b.unidad,a.evidencia);
   });
   if(posibles.length!==1)

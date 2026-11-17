@@ -19,9 +19,10 @@ const firstSchema={
   articulos:{type:'array',items:{type:'object',additionalProperties:false,
    properties:{evidencia:string,descripcion:string,cantidad:string,
     unidad:string,rubro:{type:'string',enum:rubros},
-    presentacion:nullable,aclaracion:nullable},
+    presentacion:nullable,aclaracion:nullable,
+     citaCantidad:string,citaProducto:string,citaPresentacion:nullable},
    required:['evidencia','descripcion','cantidad','unidad','rubro',
-    'presentacion','aclaracion']}},
+    'presentacion','aclaracion','citaCantidad','citaProducto','citaPresentacion']}},
   dudas:{type:'array',items:string}
  },
  required:['intencion','zona_entrega','articulos','dudas']
@@ -33,8 +34,8 @@ const secondSchema={
   zona_entrega:nullable,
   articulos:{type:'array',items:{type:'object',additionalProperties:false,
    properties:{evidencia:string,cantidad:string,unidad:string,
-    rubro:{type:'string',enum:rubros}},
-   required:['evidencia','cantidad','unidad','rubro']}}
+    rubro:{type:'string',enum:rubros},citaCantidad:string},
+   required:['evidencia','cantidad','unidad','rubro','citaCantidad']}}
  },
  required:['integridad','zona_entrega','articulos']
 };
@@ -51,6 +52,13 @@ const common=[
  '3 baldes de 10 litros = 3 baldes, NO 10 litros pedidos.',
  'La evidencia debe ser una cita COPIADA LITERALMENTE del mensaje recibido;',
  'conservá faltas de ortografía tal cual. No devuelvas índices de caracteres.',
+ 'citaCantidad es SOLO el cuantificador LITERAL exacto: 10, tres, una,',
+ 'un par, media docena, treinta y dos; no incluyas el sustantivo.',
+ 'No confundas el peso, volumen, espesor ni medida con cantidad de unidades.',
+ 'citaProducto es la expresión literal del producto en el MISMO renglón.',
+ 'citaPresentacion es la expresión literal de su presentación o null.',
+ 'Si presentacion no es null, citaPresentacion tampoco puede ser null.',
+ 'Nunca uses la misma cifra para cantidad y presentación.',
  'Si inicia con CORREGIR COTI y un código hexadecimal, el código es sólo',
  'una referencia al pedido que se corrige, NO un material ni una cantidad.',
  'Interpretá el pedido completo que aparece después de los dos puntos.',
@@ -67,6 +75,7 @@ const readerInstructions=[
  'Unidad normalizada como bag, m3, kg, unit, m, m2, l, roll, pack, box',
  'u otro nombre corto de unidad si no hay correspondencia segura.',
  'La descripcion puede corregir errores, pero evidencia debe copiarse EXACTA.',
+ 'Copiá citas independientes de cantidad, producto y presentación.',
  'Para rubro elegí uno de: '+rubros.join(', ')+'.',
  'Si el pedido es claro, no preguntes por color, marca ni granulometría ausentes.',
  'Si falta zona de entrega, devolvé null. No confundas saludo con material.'
@@ -80,6 +89,7 @@ const verifierInstructions=[
  'No conviertas el número de envases a kg, litros ni m³; ante duda real, integridad=dudosa.',
  'Si el texto está incompleto, integridad=faltan_articulos o dudosa.',
  'No inventes subtipo de producto. No reescribas la evidencia literal.',
+ 'citaCantidad: solo el cuantificador LITERAL exacto, no el tamaño del envase.',
  'Rubro permitido: '+rubros.join(', ')+'.'
 ].join('\n');
 function extractJson(raw:unknown):unknown{
