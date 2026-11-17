@@ -206,7 +206,7 @@ test('D013: distingue rechazo IA, falta de catalogo y aclaracion sin PII',async(
   planificar:async()=>({estado:'requiere_aclaracion',motivo:'falta_localidad'})
  });
  assert.equal(response.estado,'needs_operator_review');
- assert.deepEqual(seen,['plan_clarification_required']);
+ assert.deepEqual(seen,['source_missing_city']);
 });
 
 test('D013: puente inválido informa presentación/unidades sin intentar SQL',async()=>{
