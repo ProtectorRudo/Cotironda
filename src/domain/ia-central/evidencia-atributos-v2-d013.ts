@@ -1,3 +1,5 @@
+import {leerMagnitudesV2D013,mismaPresentacionFisicaV2D013,
+ unidadDimensionadaV2D013} from './magnitudes-universales-v2-d013.ts';
 /** Cotironda V2: citas por atributo, nunca vocabulario de materiales.
  * Un parser aritmético controla cantidades; la IA reconoce los productos.
  * No usa redes, ni datos de compradores, ni escrituras ni autorización.
@@ -109,13 +111,13 @@ export function probarAtributosV2D013(a:{
  // Un número seguido de peso, volumen o dimensión describe una magnitud,
  // no necesariamente cantidad de envases. Rechazar cuando la unidad
  // comprada NO es física, incluso si el modelo omitió la presentación.
- const physicalUnits=new Set(['kg','kilo','kilos','kilogramo','kilogramos',
-  'l','lt','lts','litro','litros','m','metro','metros','m2','m²',
-  'm3','m³','mm','cm']);
- if(!physicalUnits.has(fold(unidad))){
-  const measureAfter=/^\s*(?:kg|kilos?|kilogramos?|lts?|litros?|mm|cm|m²|m³|m2|m3|metros?)(?![\p{L}\p{N}])/iu;
-  if(quantities.every(q=>measureAfter.test(
-    evidencia.slice(q+citaCantidad.length))))return false;
+ const compraFisica=unidadDimensionadaV2D013(unidad)!==null;
+ if(!compraFisica){
+  const magnitudes=leerMagnitudesV2D013(evidencia);
+  // Ambigüedad explícita (por ejemplo "ml") no habilita envases.
+  if(magnitudes===null)return false;
+  if(quantities.every(q=>magnitudes.some(m=>m.inicio===q)))
+   return false;
  }
  if(presentacion===null)return citaPresentacion===null;
  if(typeof citaPresentacion!=='string'||!citaPresentacion.trim()||
@@ -128,16 +130,5 @@ export function probarAtributosV2D013(a:{
  // El exponente de m²/m³ (o m2/m3) no es una cantidad comprada.
  // La IA puede normalizar «1 m³» como «1 m3»: son la misma presentación.
  // No permitir que esa normalización convierta superficie en volumen.
- const dimension=/(?<![\p{L}])(?:mm|cm|m)\s*([23²³])(?![\p{L}\p{N}])/giu;
- const firma=(s:string)=>[...s.matchAll(dimension)].map(m=>m[0]
-  .replace(/\s+/gu,'').toLocaleLowerCase('es-AR')
-  .replace(/2$/u,'²').replace(/3$/u,'³'));
- const presentada=firma(presentacion),citada=firma(citaPresentacion);
- if(presentada.length>0&&citada.length>0&&
-    (presentada.length!==citada.length||
-     presentada.some((d,i)=>d!==citada[i])))return false;
- const nums=(s:string)=>s.replace(dimension,m=>m.replace(/[23]$/u,''))
-  .match(/\d+(?:[.,]\d+)*/gu)?.map(x=>Number(x.replace(',','.')))??[];
- const quoted=nums(citaPresentacion);
- return nums(presentacion).every(x=>quoted.includes(x));
+ return mismaPresentacionFisicaV2D013(presentacion,citaPresentacion);
 }
