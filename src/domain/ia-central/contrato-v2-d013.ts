@@ -524,7 +524,7 @@ export function cantidadUnidadesLibresAcreditadaD013(
   // o grafías ambiguas, jamás diez piezas de un supuesto "kg".
   const palabras=resto.split(/\s+/u);
   if(palabras.slice(0,3).some((_,i)=>i<3&&
-    unidadDimensionadaV2D013(palabras.slice(0,i+1).join(' ')))continue;
+    unidadDimensionadaV2D013(palabras.slice(0,i+1).join(' '))))continue;
   if(/^(?:ml|de|del|y|o|por|con|sin|para)\b/iu.test(resto))continue;
   if(magnitudes.some(m=>m.inicio===0))continue;
   // Otra cantidad comercial separada por "y", coma o punto y coma
