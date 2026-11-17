@@ -110,7 +110,7 @@ test('D013: confusión real de presentación queda corregida solo con envase ún
   {e:'1 bolsón de arena fina de 1 m³',cantidad:'1',unidad:'m3',cita:'1',expected:'1',u:'bigbag'},
   {e:'dos baldes de pintura de 4 litros',cantidad:'4',unidad:'l',cita:'4',expected:'2',u:'bucket'},
   {e:'4 cajas de tornillos 8 mm',cantidad:'8',unidad:'mm',cita:'8',expected:'4',u:'box'},
-  {e:'media docena bolsas de cal 25 kg',cantidad:'25',unidad:'kg',cita:'25',expected:'6',u:'bag'}
+  {e:'media docena de bolsas de cal 25 kg',cantidad:'25',unidad:'kg',cita:'25',expected:'6',u:'bag'}
  ];
  for(const s of samples){
   const original='Necesito '+s.e+'. Envío a La Plata.';
