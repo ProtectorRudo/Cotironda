@@ -32,6 +32,19 @@ export function codigoRevisionSemanticaMvp286(reason:unknown):string{
  return typeof reason==='string'&&SAFE_REVIEW_CODES.has(reason)
   &&/^[a-z_]{3,64}$/u.test(reason)?reason:'semantic_review_required';
 }
+// Motivos exclusivamente estáticos del puente, sin descripción/cita/contacto.
+// No persistir respuestas de IA ni texto del comprador como failure_code.
+const SAFE_BRIDGE_CODES=new Set([
+ 'origen_o_plan_no_verificado','ciudad_o_items_invalidos',
+ 'proveedores_duplicados','presentacion_fuente_no_representable',
+ 'cantidad_unidad_no_representable_en_sql',
+ 'destinatario_duplicado_o_invalido','catalogo_no_confirmado',
+ 'indice_de_pedido_invalido','catalogo_sin_evidencia','sin_destinos'
+]);
+export function codigoRevisionPuenteV2D013(reason:unknown):string{
+ return typeof reason==='string'&&SAFE_BRIDGE_CODES.has(reason)
+  &&/^[a-z_]{3,64}$/u.test(reason)?reason:'plan_not_verifiable';
+}
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 type RpcResponse={data:unknown;error:unknown};
 type Rpc=(name:string,params:Record<string,unknown>)=>Promise<RpcResponse>;
@@ -124,8 +137,9 @@ export async function procesarCompradorCentralMvp226(
    textoOriginal:args.fuente,autenticadoPorWebhook:true,plan:p
   });
   if(prepared.estado!=='plan_sql_listo'){
-   await finish('review','plan_not_verifiable');
-   return done('requiere_revision','plan_not_verifiable');
+   const reason=codigoRevisionPuenteV2D013(prepared.motivo);
+   await finish('review',reason);
+   return done('requiere_revision',reason);
   }
   const written=await guardarRondaSombraMvp221(prepared,
    async(name,params)=>db(name,params));
