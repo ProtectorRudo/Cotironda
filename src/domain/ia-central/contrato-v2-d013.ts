@@ -529,7 +529,7 @@ export function cantidadUnidadesLibresAcreditadaD013(
   if(magnitudes.some(m=>m.inicio===0))continue;
   // Otra cantidad comercial separada por "y", coma o punto y coma
   // podría representar un SEGUNDO artículo; no mezclar renglones.
-  if(/(?:\s+y\s+|[,;]\s*)(?:\d{1,6}|un|una|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez)\s+[\p{L}]/iu.test(resto))
+  if(/(?:\s+y\s+|(?<!\d)[,;]\s*)(?:\d{1,6}|un|una|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez)\s+[\p{L}]/iu.test(resto))
    continue;
   validos.push({cantidad:item.cantidad,unidad:'unit'});
  }
