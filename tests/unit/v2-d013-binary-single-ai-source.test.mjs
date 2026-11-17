@@ -121,8 +121,8 @@ test('V2 webhook offline: proveedor conserva segunda IA, comprador no tiene fall
   '../../supabase/functions/cotironda-piloto-whapi/index.ts',import.meta.url),'utf8');
  const generated=generarWebhookD016(legacy);
  assert.ok(generated.length>100000);
- assert.match(generated,/Promise\.allSettled\(verifiedSupplier\?\[/u);
- assert.match(generated,/Promise\.allSettled\(verifiedSupplier\?\[/u);
+ assert.match(generated,/buyer_second_model_skipped/u);
+ assert.match(generated,/buyer_second_model_skipped/u);
  assert.match(generated,/const binaryWorker=prepararDocumentoBinarioV2D013/u);
  assert.doesNotMatch(generated,/const binaryWorker=d013BinaryEnabled\?/u);
  assert.match(generated,/enabled:d013BinaryEnabled/u);
