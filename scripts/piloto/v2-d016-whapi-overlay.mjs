@@ -74,6 +74,35 @@ function one(s,old,neu,tag){
   throw Error('d016_overlay_anchor_invalid:'+tag);
  return s.slice(0,i)+neu+s.slice(i+old.length);
 }
+
+/** D013: parche mínimo para el index.ts REAL del Edge piloto v91.
+ * El index.ts histórico GitHub está SHA-pinneado y NO representa el runtime.
+ * Esta transformación falla si se altera la estructura del piloto en vivo.
+ * El llamador debe verificar previamente proyecto, versión, bundle y 75 archivos.
+ * Nunca cambia los gates D016 que autorizan publicar/enviar WhatsApps.
+ */
+export function desacoplarMotorV2D013DePublicacion(live){
+ if(typeof live!=='string'||live.length<100000||
+    !live.includes("const d013Enabled=habilitarPublicacionD013ConAccesoD016({")||
+    !live.includes("const d013ZoneEnabled=habilitarPublicacionD013ConAccesoD016({")||
+    !live.includes('habilitado:true,publicar:d013Enabled')||
+    !live.includes('model,publicar:d013ZoneEnabled')||
+    !live.includes('procesarCompradorCentralV2D013')||
+    !live.includes('continuarZonaCentralV2D013'))
+  throw Error('d013_live_selector_preflight_failed');
+ let out=one(live,`    // Piloto: el intérprete V2 nunca depende del permiso de publicar.
+    const buyerWorker=procesarCompradorCentralV2D013;`,`    // Piloto: el intérprete V2 nunca depende del permiso de publicar.
+    const buyerWorker=procesarCompradorCentralV2D013;`,'buyer-select-v2');
+ out=one(out,`        // La localidad continúa siempre por V2. Sólo publicar usa D016.
+        const zoneWorker=continuarZonaCentralV2D013;`,`        // La localidad continúa siempre por V2. Sólo publicar usa D016.
+        const zoneWorker=continuarZonaCentralV2D013;`,'zone-select-v2');
+ if(!out.includes('const d013Enabled=habilitarPublicacionD013ConAccesoD016({')||
+    !out.includes('const d013ZoneEnabled=habilitarPublicacionD013ConAccesoD016({')||
+    !out.includes('habilitado:true,publicar:d013Enabled')||
+    !out.includes('model,publicar:d013ZoneEnabled'))
+  throw Error('d013_live_publication_gates_lost');
+ return out;
+}
 /** Acopla la aceptación/baja de originales al webhook que YA archiva WhatsApp.
  * SQL es la única autoridad: exige proveedor, mensaje autenticado exacto,
  * texto legal aprobado + aviso previo real; jamás infiere permiso de una cotización.
