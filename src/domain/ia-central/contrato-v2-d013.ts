@@ -123,8 +123,8 @@ export function evaluarLecturasSemanticasV2D013(
      !(entry.presentacion===null||texto(entry.presentacion,200))||
      !(entry.aclaracion===null||texto(entry.aclaracion,250))||
      !probarAtributosV2D013({
-      evidencia:ev,cantidad:entry.cantidad,unidad:entry.unidad,
-      presentacion:entry.presentacion,citaCantidad:entry.citaCantidad,
+      evidencia:ev,cantidad:entry.cantidad,unidad:entry.unidad as string,
+      presentacion:entry.presentacion as string|null,citaCantidad:entry.citaCantidad,
       citaProducto:entry.citaProducto,
       citaPresentacion:entry.citaPresentacion
      }))
