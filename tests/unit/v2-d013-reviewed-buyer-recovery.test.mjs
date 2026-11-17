@@ -343,7 +343,7 @@ test('D013: nunca se cambia la validación comercial ni el original por instrume
  assert.match(source,/source_no_confirmed_item/u);
  assert.match(source,/source_second_reader_invalid/u);
  assert.match(source,/plan_other_rejected/u);
- assert.match(source,/return result\('needs_operator_review'\)/u);
+ assert.match(source,/return review\('recovery_exception'\)/u);
  const worker=readFileSync(new URL(
   '../../supabase/functions/cotironda-piloto-v2-review-recovery-d013/index.ts',
   import.meta.url),'utf8');
