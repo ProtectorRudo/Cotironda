@@ -114,45 +114,49 @@ function response(value){
   }]
  }]}),{status:200,headers:{'content-type':'application/json'}});
 }
-test('V2 E2E sintético: pedido 4, ruteo 3, SQL conserva los 4 y los índices reales',async()=>{
+test('V2 E2E sintético: UNA IA lee 4, ruteo por SKU entrega 3 y SQL conserva original',async()=>{
  const calls=[],rpcCalls=[];
- const answers=[first,second,proposed,verdict];
+ const matching={propuestas:[{proveedor:'corralon_ailin',correspondencias:[
+  {indicePedido:0,numeroCatalogo:1,tipo:'producto_declarado',
+   explicacion:'Cemento declarado'},
+  {indicePedido:1,numeroCatalogo:2,tipo:'producto_declarado',
+   explicacion:'Arena fina declarada'},
+  {indicePedido:3,numeroCatalogo:3,tipo:'producto_declarado',
+   explicacion:'Membrana declarada'}
+ ]}]};
+ const answers=[first,matching];
  const fetchImpl=async(_url,req)=>{
   const body=JSON.parse(req.body);
   assert.equal(body.store,false);
   assert.deepEqual(body.tools,[]);
   calls.push(body.text.format.name);
   if(body.text.format.name==='cotironda_ruteo_catalogos_v2'){
-   const payload=JSON.parse(body.input[1].content[0].text.split('\n').slice(1).join('\n'));
-   assert.deepEqual(payload.pedido.articulos.map(x=>x.descripcion),
-    [descriptions[0],descriptions[1],descriptions[3]]);
-   assert.deepEqual(payload.pedido.articulos.map(x=>x.indicePedido),[0,1,2]);
+   const input=JSON.parse(body.input[1].content[0].text.split('\n').slice(1).join('\n'));
+   assert.deepEqual(input.pedido.articulos.map(x=>x.descripcion),spans);
+   assert.deepEqual(input.pedido.articulos.map(x=>x.indicePedido),[0,1,2,3]);
   }
+  assert.ok(answers.length,'no segunda llamada permitida');
   return response(answers.shift());
  };
  const plan=await planificarMensajeAutenticadoMvp220({
   chatHmac:'a'.repeat(64),messageHmac:'b'.repeat(64),
   autenticadoPorWebhook:true,textoOriginal:original,
   apiKey:'sk-'+'a'.repeat(24),model:'gpt-6-luna',
-  fetchImpl,rpc:async(name)=>{
+  fetchImpl,rpc:async name=>{
    rpcCalls.push(name);return {data:snapshot,error:null};
   }
  });
  assert.equal(plan.estado,'plan_validado_sin_envio',plan.motivo);
- assert.equal(plan.motivo,'ruteo_parcial_con_articulos_visibles_sin_destino');
  assert.equal(plan.pedido.articulos.length,4);
- assert.deepEqual(plan.pedido.articulosEnRevision,[2]);
+ assert.deepEqual(plan.pedido.articulosEnRevision,[]);
  assert.deepEqual(plan.ruteo.cobertura.map(x=>x.proveedoresAutorizados),[1,1,0,1]);
- assert.deepEqual(plan.ruteo.propuestas[0].correspondencias.map(x=>x.indicePedido),
-  [0,1,3]);
+ assert.deepEqual(plan.ruteo.propuestas[0].correspondencias.map(x=>x.indicePedido),[0,1,3]);
  assert.equal(plan.whatsappEnviado,false);
  assert.equal(plan.baseModificada,false);
  assert.deepEqual(rpcCalls,['cotironda_piloto_ia_catalogo_mvp220']);
  assert.deepEqual(calls,[
   'cotironda_ai_central_lector_v2_d013',
-  'cotironda_ai_central_revision_v2_d013',
-  'cotironda_ruteo_catalogos_v2',
-  'cotironda_corrobora_pares_v2_d013'
+  'cotironda_ruteo_catalogos_v2'
  ]);
  const bridge=armarPreparacionSombraMvp221({
   chatHmac:'a'.repeat(64),messageHmac:'b'.repeat(64),
@@ -166,8 +170,7 @@ test('V2 E2E sintético: pedido 4, ruteo 3, SQL conserva los 4 y los índices re
  assert.equal(bridge.params.p_items[2].unidad,'unit');
  assert.equal(bridge.params.p_items[1].cantidad,'1');
  assert.equal(bridge.params.p_items[2].cantidad,'3');
- assert.deepEqual(bridge.params.p_destinos[0].correspondencias.map(x=>x.indicePedido),
-  [0,1,3]);
+ assert.deepEqual(bridge.params.p_destinos[0].correspondencias.map(x=>x.indicePedido),[0,1,3]);
  assert.ok(!bridge.params.p_destinos[0].correspondencias.some(x=>x.indicePedido===2));
 });
 
