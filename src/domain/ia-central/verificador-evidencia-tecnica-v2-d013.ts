@@ -108,7 +108,9 @@ function materialGroup(text:string):string|null{
  return null;
 }
 export function verificarCorrespondenciaTecnicaD013(
- pedido:PropuestaArticulo,catalogo:string,tipo:'producto_declarado'|'alternativa_razonable'
+ pedido:PropuestaArticulo,catalogo:string,tipo:'producto_declarado'|'alternativa_razonable',
+ /** Solo autorización interna tras segunda verificación IA independiente. */
+ identidadCorroborada=false
 ):PruebaTecnicaD013{
  if(!pedido||typeof pedido.descripcion!=='string'||
   typeof pedido.evidencia!=='string'||typeof catalogo!=='string'||
@@ -129,8 +131,10 @@ export function verificarCorrespondenciaTecnicaD013(
  const wantedGroup=materialGroup(demand),offeredGroup=materialGroup(catalogo);
  if(wantedGroup&&offeredGroup&&wantedGroup!==offeredGroup)
   return refuse('tipo_o_aplicacion_tecnica_diferente');
- if(wantedGroup&&!offeredGroup||!wantedGroup&&offeredGroup)
-  return refuse('prestacion_tecnica_sin_acreditar');
+ // Si solo un texto explicita la categoría, no inventar rechazo definitivo:
+ // otra lectura independiente debe comprobar identidad. Los conflictos
+ // explícitos entre categorías siguen siendo rechazados arriba.
+ const grupoIncompleto=Boolean(wantedGroup)!==Boolean(offeredGroup);
 
  const wantedCable=cableSize(pedido.descripcion)||cableSize(pedido.evidencia),
   offeredCable=cableSize(catalogo);
@@ -142,12 +146,12 @@ export function verificarCorrespondenciaTecnicaD013(
  if(wantThickness&&wantThickness!==haveThickness)
   return refuse('dimension_tecnica_no_equivalente');
 
- // The AI's narrative is NEVER accepted as proof of a missing product;
- // product identity must have evidence in BOTH original description strings.
+ // La coincidencia literal es un atajo seguro, NO una obligación de
+ // vocabulario. Si faltan palabras comunes, una segunda lectura IA
+ // contrastará DOS descripciones originales, con decisión fail-closed.
  const buyerWords=normalizedWords(pedido.descripcion+' '+pedido.evidencia);
  const sellerWords=normalizedWords(catalogo);
- if(![...buyerWords].some(x=>sellerWords.has(x)))
-  return refuse('sin_identidad_material_comprobable');
+ const palabrasCoincidentes=[...buyerWords].some(x=>sellerWords.has(x));
 
  let conversion:PruebaTecnicaD013['conversion']=null;
  if(['bag','unit','pack','box'].includes(pedido.unidad)){
@@ -171,5 +175,11 @@ export function verificarCorrespondenciaTecnicaD013(
    return refuse('presentacion_alternativa_sin_acreditar');
   }
  }
- return pass('identidad_material_y_restricciones_comprobadas',conversion);
+ if(grupoIncompleto&&!identidadCorroborada)
+  return refuse('prestacion_tecnica_sin_acreditar');
+ if(!palabrasCoincidentes&&!identidadCorroborada)
+  return refuse('sin_identidad_material_comprobable');
+ return pass(identidadCorroborada?
+  'identidad_conciliada_por_lecturas_independientes':
+  'identidad_material_y_restricciones_comprobadas',conversion);
 }
