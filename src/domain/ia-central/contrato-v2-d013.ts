@@ -3,6 +3,7 @@
  */
 import {RUBROS_MVP216,type RubroMvp216} from '../rubros-comprador-mvp216.ts';
 import type {PropuestaArticulo,PropuestaPedido,ResultadoLectura} from './contrato-v1.ts';
+export type {PropuestaArticulo,PropuestaPedido,ResultadoLectura} from './contrato-v1.ts';
 export {localizarEvidenciasV1} from './contrato-v1.ts';
 const decimal=/^(?:0|[1-9]\d{0,5})(?:\.\d{1,3})?$/u;
 const texto=(v:unknown,max:number):v is string=>typeof v==='string'&&
