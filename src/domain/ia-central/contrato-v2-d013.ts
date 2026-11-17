@@ -3,8 +3,18 @@ import {unidadCompradaCanonicaV2D013,unidadDimensionadaV2D013} from './magnitude
  * El rubro es una etiqueta; cantidad, unidad y origen literal son prueba.
  */
 import {RUBROS_MVP216,type RubroMvp216} from '../rubros-comprador-mvp216.ts';
-import type {PropuestaArticulo,PropuestaPedido,ResultadoLectura} from './contrato-v1.ts';
-export type {PropuestaArticulo,PropuestaPedido,ResultadoLectura} from './contrato-v1.ts';
+import type {PropuestaArticulo,PropuestaPedido,ResultadoLectura as ResultadoLecturaBase} from './contrato-v1.ts';
+export type {PropuestaArticulo,PropuestaPedido} from './contrato-v1.ts';
+/** Todos los materiales interpretados quedan en el pedido, incluso los que
+ * no se deben distribuir por falta de corroboración de la segunda lectura.
+ * Índices siempre relativos al pedido ORIGINAL: nunca renumerar en SQL.
+ */
+export type PedidoConRevisionV2D013=PropuestaPedido&Readonly<{
+ articulosEnRevision?:readonly number[];
+}>;
+export type ResultadoLectura=Omit<ResultadoLecturaBase,'pedido'>&Readonly<{
+ pedido:PedidoConRevisionV2D013|null;
+}>;
 export {localizarEvidenciasV1} from './contrato-v1.ts';
 import {probarAtributosV2D013,numeroNaturalV2D013} from './evidencia-atributos-v2-d013.ts';
 const decimal=/^(?:0|[1-9]\d{0,5})(?:\.\d{1,3})?$/u;
@@ -158,36 +168,57 @@ export function evaluarLecturasSemanticasV2D013(
   intervals.push({inicio:start,fin:end});
   accepted.push(entry as unknown as PropuestaArticulo);
  }
- if(segunda.integridad!=='completa'||
-    !mismaLocalidadLeida(primera.zona_entrega,segunda.zona_entrega)||
-    segunda.articulos.length!==accepted.length||primera.dudas.length>0)
+ // La zona no es un atributo de producto: una divergencia real de localidad
+ // sigue frenando el envío comercial de TODA la ronda.
+ if(!mismaLocalidadLeida(primera.zona_entrega,segunda.zona_entrega))
   return Object.freeze({
    estado:'requiere_aclaracion',motivo:'lecturas_incompletas_o_divergentes',
    pedido:null
   });
- // El rubro es una etiqueta comercial, no un criterio técnico.
- // Emparejar las lecturas por citas ancladas en el ORIGINAL, aunque
- // el verificador cambie el orden. Exigir asignación única y completa:
- // dos menciones indistinguibles siguen requiriendo revisión.
+ // No perder un artículo original porque el verificador lo omita, altere
+ // cantidad, mezcle un renglón o lo considere ambiguo.
+ // Lo dejamos en el pedido, pero SIN enviarlo hasta corroborarlo.
  const itemsSegunda=segunda.articulos as unknown[];
  const sinUsar=new Set(itemsSegunda.map((_:unknown,i:number)=>i));
- for(const a of accepted){
+ const enRevision=new Set<number>();
+ for(let indice=0;indice<accepted.length;indice++){
+  const articulo=accepted[indice];
   const posibles=[...sinUsar].filter(i=>{
    const b=itemsSegunda[i];
    return obj(b)&&rubro(b.rubro)&&
-    citaVerificadaDelMismoItem(origen,a,b.evidencia,accepted)&&
-    cantidadYUnidadCorroboradas(a,b);
+    citaVerificadaDelMismoItem(origen,articulo,b.evidencia,accepted)&&
+    cantidadYUnidadCorroboradas(articulo,b);
   });
-  if(posibles.length!==1)
-   return Object.freeze({
-    estado:'requiere_aclaracion',motivo:'lecturas_discrepan_en_articulo',
-    pedido:null
-   });
+  if(posibles.length!==1){
+   enRevision.add(indice);
+   continue;
+  }
   sinUsar.delete(posibles[0]);
  }
- if(sinUsar.size!==0)
+ // Una segunda lectura con artículo EXTRA no anclable a ningún renglón
+ // primario indica que el primer lector pudo omitir un material: nunca
+ // cerrar ese pedido como si estuviera completo.
+ for(const idx of sinUsar){
+  const b=itemsSegunda[idx];
+  if(!obj(b)||!texto(b.evidencia,1500))
+   return rejection('segunda_lectura_invalida');
+  const dueños=accepted.map((a,i)=>
+   citaVerificadaDelMismoItem(origen,a,b.evidencia,accepted)?i:-1)
+   .filter(i=>i>=0);
+  if(dueños.length!==1)
+   return Object.freeze({
+    estado:'requiere_aclaracion',
+    motivo:'segundo_lector_identifica_articulo_sin_fuente',
+    pedido:null
+   });
+  enRevision.add(dueños[0]);
+ }
+ // 'faltan_articulos' / 'dudosa' en una segunda lectura no son errores
+ // globales si una parte sí fue corroborada, pero ninguna línea se borra.
+ // Primer lector no aporta evidencia verificable => sigue fallando cerrado.
+ if(enRevision.size===accepted.length)
   return Object.freeze({
-   estado:'requiere_aclaracion',motivo:'lecturas_discrepan_en_articulo',
+   estado:'requiere_aclaracion',motivo:'ningun_articulo_conciliado',
    pedido:null
   });
  if(primera.zona_entrega===null)
@@ -196,10 +227,13 @@ export function evaluarLecturasSemanticasV2D013(
    pedido:null
   });
  return Object.freeze({
-  estado:'listo_para_preparar',motivo:'doble_lectura_con_fuente',
+  estado:'listo_para_preparar',
+  motivo:enRevision.size>0?'articulos_en_revision_sin_bloquear_ronda':
+   'doble_lectura_con_fuente',
   pedido:Object.freeze({
    intencion:'cotizar' as const,zona_entrega:primera.zona_entrega as string,
    articulos:Object.freeze(accepted),
+   articulosEnRevision:Object.freeze([...enRevision].sort((a,b)=>a-b)),
    dudas:Object.freeze([] as string[])
   })
  });
