@@ -371,6 +371,72 @@ function cantidadPorUnidadExplicitaD013(
  }
  return false;
 }
+/** Si el lector confundió una PRESENTACIÓN con una cantidad comprada,
+ * el original puede corregirlo sin otra IA ni conversiones de envases.
+ * Solo se acepta EXACTAMENTE un cuantificador unido a un envase concreto
+ * dentro de la evidencia del artículo. No se usa vocabulario de materiales.
+ */
+export function envaseUnicoAcreditadoD013(evidencia:string):
+ {cantidad:string;unidad:string}|null{
+ if(!texto(evidencia,1500)||leerMagnitudesV2D013(evidencia)===null)return null;
+ const hallados:{cantidad:string;unidad:string}[]=[];
+ const registrar=(literal:string,fin:number)=>{
+  const valor=numeroNaturalV2D013(literal);
+  const unidad=envaseExplicitoD013(evidencia,fin);
+  if(valor===null||unidad===null||!cantidad(String(valor)))return;
+  hallados.push({cantidad:String(valor),unidad});
+ };
+ const digitos=/(?<![\p{L}\p{N}.,])(?:\d{1,3}(?:\.\d{3})+(?:,\d{1,3})?|\d{1,6}(?:[.,]\d{1,3})?)(?![\d.,])/gu;
+ for(const m of evidencia.matchAll(digitos))
+  registrar(m[0],m.index+m[0].length);
+ const palabras=[...evidencia.matchAll(/[\p{L}]+/gu)];
+ for(let i=0;i<palabras.length;i++){
+  // Solo expresiones numéricas COMPLETAS, sin contar subfragmentos.
+  const candidatos:{literal:string;fin:number}[]=[];
+  for(let n=1;n<=5&&i+n<=palabras.length;n++){
+   const tramo=palabras.slice(i,i+n);
+   const desde=tramo[0].index;
+   const hasta=tramo[tramo.length-1].index+tramo[tramo.length-1][0].length;
+   const literal=evidencia.slice(desde,hasta);
+   if(!/^[\p{L}\s]+$/u.test(literal))break;
+   if(numeroNaturalV2D013(literal)!==null)
+    candidatos.push({literal,fin:hasta});
+  }
+  for(const candidato of candidatos){
+   if(envaseExplicitoD013(evidencia,candidato.fin)!==null){
+    // «media docena» vale 6; «docena» no se procesa otra vez.
+    registrar(candidato.literal,candidato.fin);
+    i+=candidato.literal.split(/\s+/u).length-1;
+    break;
+   }
+  }
+ }
+ return hallados.length===1?hallados[0]:null;
+}
+/** No incluye cantidades, unidades ni contenido del mensaje en observabilidad. */
+export type DiagnosticoCantidadD013=
+ 'source_quantity_unreadable_magnitude'|
+ 'source_quantity_ai_citation_unparseable'|
+ 'source_quantity_ai_citation_missing'|
+ 'source_quantity_ai_unit_conflict'|
+ 'source_quantity_purchase_not_explicit';
+export function diagnosticarCantidadD013(
+ evidencia:string,cantidadNormalizada:string,unidad:string,
+ citaCantidad:unknown
+):DiagnosticoCantidadD013{
+ if(leerMagnitudesV2D013(evidencia)===null)
+  return 'source_quantity_unreadable_magnitude';
+ if(typeof citaCantidad!=='string'||
+    numeroNaturalV2D013(citaCantidad)!==Number(cantidadNormalizada))
+  return 'source_quantity_ai_citation_unparseable';
+ if(citacionesCantidadD013(evidencia,citaCantidad).length===0)
+  return 'source_quantity_ai_citation_missing';
+ if(unidadDimensionadaV2D013(unidad)||
+    envaseExplicitoD013(evidencia,
+     citacionesCantidadD013(evidencia,citaCantidad)[0]+citaCantidad.length))
+  return 'source_quantity_ai_unit_conflict';
+ return 'source_quantity_purchase_not_explicit';
+}
 /** Valida una cantidad comercial UNA SOLA VEZ sobre el original.
  * La cita IA ayuda a ubicar el cuantificador; si su grafía es distinta,
  * una cantidad explícita con su unidad puede acreditarse sin una segunda IA.
@@ -433,7 +499,8 @@ function zonaAcreditadaUnicaD013(fuente:string,zona:string):boolean{
  return (' '+real+' ').includes(' '+name+' ');
 }
 export function evaluarLecturaCentralUnicaD013(
- original:unknown,primera:unknown
+ original:unknown,primera:unknown,
+ onQuantityDiagnostic?:(code:DiagnosticoCantidadD013)=>void
 ):ResultadoLectura{
  if(!texto(original,12000)||!obj(primera))
   return rejection('entrada_invalida');
@@ -461,9 +528,23 @@ export function evaluarLecturaCentralUnicaD013(
    return rejection('articulo_sin_evidencia_verificable');
   if(intervals.some(x=>inicio<x.fin&&fin>x.inicio))
    return rejection('evidencias_superpuestas');
+  // La IA puede confundir «10 bolsas de 50 kg» con 50 kg. Nunca
+  // permitir la cantidad inventada: usar la compra escrita en el original
+  // si —y solo si— existe exactamente UN envase cuantificado.
+  let cantidadFinal=raw.cantidad as string;
+  let unidadFinal=raw.unidad as string;
   if(!cantidadAcreditadaLecturaUnicaD013(evidencia,
-     raw.cantidad as string,raw.unidad as string,raw.citaCantidad))
-   return rejection('cantidad_sin_respaldo_en_fuente');
+      cantidadFinal,unidadFinal,raw.citaCantidad)){
+   const fuente=envaseUnicoAcreditadoD013(evidencia);
+   if(!fuente){
+    try{onQuantityDiagnostic?.(diagnosticarCantidadD013(
+     evidencia,cantidadFinal,unidadFinal,raw.citaCantidad))}
+    catch{/* Observabilidad opcional, nunca modifica la aprobación */}
+    return rejection('cantidad_sin_respaldo_en_fuente');
+   }
+   cantidadFinal=fuente.cantidad;
+   unidadFinal=fuente.unidad;
+  }
   // La presentación libre de IA es opcional; sólo conservar si su
   // cita existe y demuestra la MISMA magnitud en el texto original.
   const cita=raw.citaPresentacion;
@@ -477,7 +558,7 @@ export function evaluarLecturaCentralUnicaD013(
    evidencia,inicio,fin,
    // Ruteo/SQL trabajan con el tramo original, nunca una marca inventada.
    descripcion:evidencia.trim(),
-   cantidad:raw.cantidad as string,unidad:raw.unidad as string,
+   cantidad:cantidadFinal,unidad:unidadFinal,
    rubro:raw.rubro as RubroMvp216,presentacion,
    aclaracion:raw.aclaracion as string|null
   }));
