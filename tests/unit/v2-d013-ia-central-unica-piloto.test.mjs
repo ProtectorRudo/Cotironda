@@ -72,7 +72,7 @@ test('V2: cantidades verdaderas, presentaciones repetidas y sin vocabulario de p
   assert.equal(cantidadAcreditadaLecturaUnicaD013(e,q,u,c),expected,e);
  }
 });
-test('V2: no transforma una especificación técnica en cantidad ni inventa ciudad',()=>{
+test('V2: corrige la especificación a cantidad del original, sin inventar ciudad',()=>{
  const invalid=structuredClone(first);
  invalid.articulos[0].cantidad='50';
  invalid.articulos[0].citaCantidad='50';
@@ -80,8 +80,12 @@ test('V2: no transforma una especificación técnica en cantidad ni inventa ciud
   inicio:source.indexOf(x.evidencia),fin:source.indexOf(x.evidencia)+x.evidencia.length
  }));
  const wrong=evaluarLecturaCentralUnicaD013(source,invalid);
- assert.equal(wrong.estado,'rechazado');
- assert.equal(wrong.motivo,'cantidad_sin_respaldo_en_fuente');
+ // La IA confundió 50 kg (presentación) con cantidad: la fuente acredita
+ // exactamente 10 bolsas, sin inventar precio, producto ni unidad.
+ assert.equal(wrong.estado,'listo_para_preparar');
+ assert.equal(wrong.pedido.articulos[0].cantidad,'10');
+ assert.equal(wrong.pedido.articulos[0].unidad,'bag');
+ assert.equal(wrong.pedido.articulos[0].evidencia,spans[0]);
  const invented=structuredClone(invalid);
  invented.articulos[0].cantidad='10';
  invented.articulos[0].citaCantidad='10';
