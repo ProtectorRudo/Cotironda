@@ -174,7 +174,6 @@ export async function proposeDocumentAI(args:{
  enabled:boolean;fetchImpl?:typeof fetch;
  perspective?:'primary'|'corroboration';
  verifiedSupplier?:boolean;
- reasoningEffort?:'high';
 }):Promise<DocumentDraft>{
  if(!args?.enabled)throw Error('doc_ai_disabled');
  if(typeof args.apiKey!=='string'||!/^sk-[A-Za-z0-9_-]{16,}$/u.test(args.apiKey))
@@ -190,9 +189,7 @@ export async function proposeDocumentAI(args:{
     ?{type:'input_file',filename:safeDocumentFilename(args.manifest.mime),file_data:data,detail:'high'}
     :{type:'input_file',filename:safeDocumentFilename(args.manifest.mime),file_data:data};
  const body={model:DOCUMENT_MODEL,store:false,tools:[],
-  // Alto sólo en interpretación de comprador V2. Proveedor no cambia.
-  max_output_tokens:args.reasoningEffort==='high'?12000:MAX_OUTPUT,
-  ...(args.reasoningEffort==='high'?{reasoning:{effort:'high' as const}}:{}),
+  max_output_tokens:MAX_OUTPUT,
   input:[
    {role:'system',content:[{type:'input_text',text:intro}]},
    {role:'user',content:[filePart,
@@ -210,8 +207,7 @@ export async function proposeDocumentAI(args:{
  try{response=await (args.fetchImpl??fetch)(URL,{
   method:'POST',headers:{Authorization:'Bearer '+args.apiKey,
     'Content-Type':'application/json'},
-  body:JSON.stringify(body),signal:AbortSignal.timeout(
-   args.reasoningEffort==='high'?55000:40000)
+  body:JSON.stringify(body),signal:AbortSignal.timeout(40000)
  })}catch(e){
   // Abort/timeout are distinct from transport outages; never log the error.
   throw Error(e instanceof Error&&(e.name==='TimeoutError'||e.name==='AbortError')
