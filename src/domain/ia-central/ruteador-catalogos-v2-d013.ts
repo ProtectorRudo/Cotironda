@@ -78,7 +78,8 @@ export function autorizarPropuestasCatalogoV2(
  proveedores:readonly ProveedorCatalogoV2[],
  propuestas:unknown,
  identidadesCorroboradas:ReadonlySet<string>=new Set(),
- exigirSegundaLectura=false
+ exigirSegundaLectura=false,
+ consultasRelacionadas:ReadonlySet<string>=new Set()
 ):ResultadoCatalogoV2{
  if(!pedido||!Array.isArray(pedido.articulos)||
     pedido.articulos.length<1||pedido.articulos.length>200||
@@ -137,12 +138,21 @@ export function autorizarPropuestasCatalogoV2(
     tipo as 'producto_declarado'|'alternativa_razonable',
     identidadesCorroboradas.has(token));
    seen.add(idx);
-   if(proof.estado!=='evidencia_suficiente'){
+   // Consulta comercial sólo si la segunda IA confirmó que hay RELACIÓN
+   // comercial con este SKU real, pero no confirmó identidad exacta.
+   // Nunca convertir una contradicción técnica comprobada en consulta.
+   const soft=new Set(['sin_identidad_material_comprobable',
+    'prestacion_tecnica_sin_acreditar',
+    'presentacion_alternativa_sin_acreditar']);
+   const consultiva=exigirSegundaLectura&&
+    consultasRelacionadas.has(token)&&!identidadesCorroboradas.has(token)&&
+    (proof.estado==='evidencia_suficiente'||soft.has(proof.motivo));
+   if(proof.estado!=='evidencia_suficiente'&&!consultiva){
     pending.push({proveedor:supplierKey,indicePedido:idx,
      numeroCatalogo:lineNo,motivo:proof.motivo});
-    continue; // Nunca permitir conflictos técnicos, ni con dos modelos.
+    continue; // Conflictos técnicos siguen prohibidos.
    }
-   if(exigirSegundaLectura&&!identidadesCorroboradas.has(token)){
+   if(exigirSegundaLectura&&!identidadesCorroboradas.has(token)&&!consultiva){
     pending.push({proveedor:supplierKey,indicePedido:idx,
      numeroCatalogo:lineNo,motivo:'identidad_semantica_no_corroborrada'});
     continue;
@@ -151,8 +161,12 @@ export function autorizarPropuestasCatalogoV2(
    matches.push({
     indicePedido:idx,
     numeroCatalogo:lineNo,
-    tipo:tipo as CorrespondenciaV2['tipo'],
-    explicacion
+    // El contrato SQL existente sólo admite alternativa_razonable:
+    // la explicación ACLARA que esto no afirma equivalencia ni stock.
+    tipo:consultiva?'alternativa_razonable':tipo as CorrespondenciaV2['tipo'],
+    explicacion:consultiva?
+     'CONSULTA SIN EQUIVALENCIA CONFIRMADA. '+explicacion.slice(0,184):
+     explicacion
    });
   }
   assigned.add(supplier.clave);
@@ -241,7 +255,7 @@ const semanticaSchema={
    proveedor:{type:'string'},
    indicePedido:{type:'integer'},
    numeroCatalogo:{type:'integer'},
-   decision:{type:'string',enum:['equivalente','incompatible','incierto']}
+   decision:{type:'string',enum:['equivalente','consulta_relacionada','incompatible','incierto']}
   },
   required:['proveedor','indicePedido','numeroCatalogo','decision']
  }}},
@@ -254,6 +268,12 @@ const semanticaInstrucciones=[
  'Sinónimos, apodos, marcas y errores de ortografía pueden referirse al mismo producto.',
  'Responde equivalente solo si ambos textos sustentan LA MISMA función material y',
  'las variantes críticas son compatibles. Si la evidencia es insuficiente, incierto.',
+ 'Usá consulta_relacionada SOLO cuando el producto figura en el catálogo,',
+ 'es razonablemente pertinente a la solicitud y el proveedor puede responder',
+ 'si lo vende, pero no podés confirmar una equivalencia técnica exacta.',
+ 'Esto es una CONSULTA, no una afirmación de equivalencia, stock o presentación.',
+ 'Si no hay relación concreta con el catálogo, respondé incompatible.',
+ 'Si ni siquiera podés decidir si están relacionados, respondé incierto.',
  'Jamás confundas cemento Portland con albañilería, arena fina con gruesa,',
  'pintura interior con exterior, cable con otra sección o producto de categoría general.',
  'No infieras marcas excluyentes, stock, precios, cantidades, IVA ni flete.',
@@ -264,8 +284,12 @@ type ParSemanticoD013=Readonly<{
  proveedor:string;indicePedido:number;numeroCatalogo:number;
  solicitado:PropuestaArticulo;catalogo:string
 }>;
+type JuicioComercialD013=Readonly<{
+ equivalentes:ReadonlySet<string>;
+ consultas:ReadonlySet<string>;
+}>;
 function parsearSemanticaD013(raw:unknown,esperados:readonly ParSemanticoD013[]):
- ReadonlySet<string>|null{
+ JuicioComercialD013|null{
  if(!obj(raw)||raw.status!=='completed'||!Array.isArray(raw.output))return null;
  const messages=raw.output.filter(x=>obj(x)&&x.type==='message'&&x.role==='assistant');
  if(messages.length!==1||!Array.isArray(messages[0].content)||
@@ -280,25 +304,28 @@ function parsearSemanticaD013(raw:unknown,esperados:readonly ParSemanticoD013[])
     answer.verificaciones.length>esperados.length)return null;
  const expected=new Set(esperados.map(x=>
   [x.proveedor,x.indicePedido,x.numeroCatalogo].join(':')));
- const seen=new Set<string>(),approved=new Set<string>();
+ const seen=new Set<string>(),approved=new Set<string>(),
+  consultations=new Set<string>();
  for(const row of answer.verificaciones){
   if(!obj(row)||typeof row.proveedor!=='string'||
      !Number.isSafeInteger(row.indicePedido)||
      !Number.isSafeInteger(row.numeroCatalogo)||
-     !['equivalente','incompatible','incierto'].includes(String(row.decision)))
+     !['equivalente','consulta_relacionada','incompatible','incierto'].includes(
+      String(row.decision)))
    return null;
   const id=[row.proveedor,row.indicePedido,row.numeroCatalogo].join(':');
   if(!expected.has(id)||seen.has(id))return null;
   seen.add(id);
   if(row.decision==='equivalente')approved.add(id);
+  if(row.decision==='consulta_relacionada')consultations.add(id);
  }
- return approved;
+ return {equivalentes:approved,consultas:consultations};
 }
 async function corroborarSemanticaD013(args:{
  pares:readonly ParSemanticoD013[];
  apiKey:string;model:string;fetchImpl:typeof fetch
-}):Promise<ReadonlySet<string>>{
- const approved=new Set<string>();
+}):Promise<JuicioComercialD013>{
+ const approved=new Set<string>(),consultations=new Set<string>();
  for(let start=0;start<args.pares.length;start+=LECTURA_MAX){
   const chunk=args.pares.slice(start,start+LECTURA_MAX);
   let response:Response;
@@ -331,10 +358,11 @@ async function corroborarSemanticaD013(args:{
    if(body.length>22000)continue;
    const valid=parsearSemanticaD013(JSON.parse(body),chunk);
    if(valid===null)continue;
-   for(const token of valid)approved.add(token);
+   for(const token of valid.equivalentes)approved.add(token);
+   for(const token of valid.consultas)consultations.add(token);
   }catch{continue}
  }
- return approved;
+ return {equivalentes:approved,consultas:consultations};
 }
 /** Solicita al segundo lector TODO par técnicamente posible, incluso
  * cuando comparte vocabulario: "balde de pintura" no es "balde albañil".
@@ -348,7 +376,8 @@ function encontrarParesD013(
  if(!Array.isArray(candidatos))return null;
  const allowed=new Map(proveedores.map(p=>[p.clave,p]));
  const semantic=new Set(['sin_identidad_material_comprobable',
-  'prestacion_tecnica_sin_acreditar']);
+  'prestacion_tecnica_sin_acreditar',
+  'presentacion_alternativa_sin_acreditar']);
  const hard=new Set(pendientes.filter(p=>!semantic.has(p.motivo)).map(
   x=>[x.proveedor,x.indicePedido,x.numeroCatalogo].join(':')));
  const pairs:ParSemanticoD013[]=[];
@@ -450,10 +479,11 @@ export async function proponerRuteoCatalogoConIAV2(args:{
    pares:pairs,apiKey:args.apiKey,model:args.model,
    fetchImpl:args.fetchImpl??fetch
   });
-  // Ninguna coincidencia, ni siquiera la literal, se envía sin corroboración
-  // independiente en el circuito real V2. Falla de API => revisión.
+  // Ninguna coincidencia, ni siquiera la literal, se envía sin segunda IA.
+  // Una consulta requiere el juicio explícito consulta_relacionada,
+  // nunca un timeout, omisión, respuesta 'incierto' ni un rubro compartido.
   return autorizarPropuestasCatalogoV2(pedido,proveedores,candidates,
-   checked,true);
+   checked.equivalentes,true,checked.consultas);
  }catch{return fail('respuesta_ia_invalida')}
 }
 
