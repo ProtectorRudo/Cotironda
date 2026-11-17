@@ -25,19 +25,42 @@ test('MVP287: acepta citas de distinto largo si coinciden material, cantidad y o
  assert.equal(r.pedido.articulos[1].cantidad,'3');
  assert.equal(r.pedido.zona_entrega,'La Plata');
 });
-test('MVP287: rechaza cantidad inventada, repetición cruzada o cita sin números',()=>{
+test('MVP287: rechaza cantidades inventadas, citas cruzadas y falsificadas',()=>{
  for(const item of [
   {...second.articulos[0],cantidad:'50'},
   {...second.articulos[0],evidencia:'3 bolsones de arena'},
-  {...second.articulos[0],evidencia:'cemento CPC'},
-  {...second.articulos[0],evidencia:'20 bolsas de cemento CPC inventadas'},
-  {...second.articulos[0],rubro:'pintura'}
+  {...second.articulos[0],evidencia:'20 bolsas de cemento CPC inventadas'}
  ]){
   const s=structuredClone(second);s.articulos[0]=item;
   assert.equal(evaluarLecturasSemanticasV1(source,first,s).estado,
    'requiere_aclaracion');
  }
 });
+test('MVP287: subcita sin cifra, rubro distinto y orden inverso son válidos',()=>{
+ const s=structuredClone(second);
+ s.articulos[0].evidencia='cemento CPC';
+ s.articulos[0].rubro='pintura';
+ s.articulos.reverse();
+ s.zona_entrega=' la PLATA ';
+ assert.equal(evaluarLecturasSemanticasV1(source,first,s).estado,
+  'listo_para_preparar');
+});
+test('MVP287: dos artículos con la misma subcita no se mezclan',()=>{
+ const original='10 bolsas cemento CPC y 20 bolsas cemento CPC. Entrega La Plata.';
+ const e=['10 bolsas cemento CPC','20 bolsas cemento CPC'];
+ const primaria={...first,articulos:e.map((evidencia,i)=>({
+  ...first.articulos[0],evidencia,inicio:original.indexOf(evidencia),
+  fin:original.indexOf(evidencia)+evidencia.length,
+  cantidad:i===0?'10':'20'
+ }))};
+ const secundaria={...second,articulos:[
+  {evidencia:'cemento CPC',cantidad:'10',unidad:'bag',rubro:'obra_gruesa'},
+  {evidencia:'cemento CPC',cantidad:'20',unidad:'bag',rubro:'obra_gruesa'}
+ ]};
+ assert.equal(evaluarLecturasSemanticasV1(original,primaria,secundaria).estado,
+  'requiere_aclaracion');
+});
+
 test('MVP287: nunca iguala bultos con metros cúbicos o kilos, ni mezcla artículos',()=>{
  for(const unidad of ['m3','kg','l','m2']){
   const s=structuredClone(second);

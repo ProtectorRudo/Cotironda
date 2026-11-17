@@ -68,6 +68,10 @@ function unidadCanonica(v:string):string{
   return 'bag';
  if(['unit','unidad','unidades','unid','u','un'].includes(t))
   return 'unit';
+ if(['roll','rollo','rollos'].includes(t))return 'roll';
+ if(['balde','baldes','bucket'].includes(t))return 'bucket';
+ if(['box','caja','cajas'].includes(t))return 'box';
+ if(['pack','packs','paquete','paquetes'].includes(t))return 'pack';
  if(['m3','m³','metro cubico','metros cubicos'].includes(t))return 'm3';
  if(['kg','kilo','kilos','kilogramo','kilogramos'].includes(t))return 'kg';
  if(['l','lt','lts','litro','litros'].includes(t))return 'l';
@@ -78,27 +82,46 @@ function unidadCanonica(v:string):string{
 function unidadEquivalente(a:string,b:string,evidencia:string):boolean{
  const x=unidadCanonica(a),y=unidadCanonica(b);
  if(x===y)return true;
- // Una bolsa/bolsón identificada expresamente se cuenta por piezas.
- // Nunca convertir ese conteo en m³/kg ni asumir su capacidad.
- const paquete=/\b(?:bolsas?|bolson(?:es)?|big\s?bags?)\b/iu.test(
-  evidencia.normalize('NFD').replace(/[\u0300-\u036f]/gu,''));
- return paquete&&
-  ((x==='bag'&&y==='unit')||(x==='unit'&&y==='bag'));
+ // Contar envases no equivale a convertir su peso/volumen. Aceptar
+ // "2 rollos" == "2 unidades" SOLO si la fuente menciona ese envase.
+ const e=evidencia.normalize('NFD').replace(/[\u0300-\u036f]/gu,'')
+  .toLocaleLowerCase('es-AR');
+ const envases=[
+  {unidad:'bag',patron:/\b(?:bolsas?|bolson(?:es)?|big\s?bags?)\b/u},
+  {unidad:'roll',patron:/\brollos?\b/u},
+  {unidad:'bucket',patron:/\bbaldes?\b/u},
+  {unidad:'box',patron:/\bcajas?\b/u},
+  {unidad:'pack',patron:/\b(?:packs?|paquetes?)\b/u}
+ ];
+ return envases.some(p=>p.patron.test(e)&&
+  ((x===p.unidad&&y==='unit')||(x==='unit'&&y===p.unidad)));
 }
+/** El segundo lector puede citar un subtramo que incluya únicamente
+ * la presentación ("25 kilos"), no la cantidad ("10 bolsas").
+ * Ambos números quedan corroborados por el primer tramo literal completo
+ * y por la cantidad independiente del segundo lector.
+ * Impedir que la cita secundaria cruce a otro artículo.
+ */
 function citaVerificadaDelMismoItem(origen:string,
- primera:PropuestaArticulo,segunda:unknown):boolean{
+ primera:PropuestaArticulo,segunda:unknown,
+ articulos:readonly PropuestaArticulo[]):boolean{
  if(!texto(segunda,1500))return false;
- // El segundo lector también debe mostrar la cantidad numérica presente
- // en la cita original; no basta con citar genéricamente el nombre.
- if(/\d/u.test(primera.evidencia)&&!/\d/u.test(segunda))return false;
- if(!cantidadRespaldada(segunda,primera.cantidad))return false;
  let pos=origen.indexOf(segunda);
  while(pos>=0){
-  const end=pos+segunda.length;
-  if(pos<primera.fin&&end>primera.inicio)return true;
+  const fin=pos+segunda.length;
+  if(pos<primera.fin&&fin>primera.inicio&&
+     !articulos.some(x=>x!==primera&&pos<x.fin&&fin>x.inicio))
+   return true;
   pos=origen.indexOf(segunda,pos+1);
  }
  return false;
+}
+function mismaLocalidadLeida(a:string|null,b:string|null):boolean{
+ if(a===null||b===null)return a===b;
+ const fold=(s:string)=>s.normalize('NFD').replace(/[\u0300-\u036f]/gu,'')
+  .trim().toLocaleLowerCase('es-AR').replace(/[.,]+/gu,' ')
+  .replace(/\s+/gu,' ');
+ return fold(a)===fold(b);
 }
 const rejection=(motivo:string):ResultadoLectura=>
  Object.freeze({estado:'rechazado',motivo,pedido:null});
@@ -177,24 +200,37 @@ export function evaluarLecturasSemanticasV1(
   accepted.push(entry as unknown as PropuestaArticulo);
  }
  if(segunda.integridad!=='completa'||
-    segunda.zona_entrega!==primera.zona_entrega||
+    !mismaLocalidadLeida(primera.zona_entrega,segunda.zona_entrega)||
     segunda.articulos.length!==accepted.length||primera.dudas.length>0)
   return Object.freeze({
    estado:'requiere_aclaracion',motivo:'lecturas_incompletas_o_divergentes',
    pedido:null
   });
- for(let i=0;i<accepted.length;i++){
-  const a=accepted[i],b=segunda.articulos[i];
-  if(!obj(b)||
-     !citaVerificadaDelMismoItem(origen,a,b.evidencia)||
-     !cantidad(b.cantidad)||Number(b.cantidad)!==Number(a.cantidad)||
-     !texto(b.unidad,80)||!unidadEquivalente(a.unidad,b.unidad,a.evidencia)||
-     b.rubro!==a.rubro)
+ // El rubro es una etiqueta comercial, no un criterio técnico.
+ // Emparejar las lecturas por citas ancladas en el ORIGINAL, aunque
+ // el verificador cambie el orden. Exigir asignación única y completa:
+ // dos menciones indistinguibles siguen requiriendo revisión.
+ const sinUsar=new Set(segunda.articulos.map((_:unknown,i:number)=>i));
+ for(const a of accepted){
+  const posibles=[...sinUsar].filter(i=>{
+   const b=segunda.articulos[i];
+   return obj(b)&&rubro(b.rubro)&&
+    citaVerificadaDelMismoItem(origen,a,b.evidencia,accepted)&&
+    cantidad(b.cantidad)&&Number(b.cantidad)===Number(a.cantidad)&&
+    texto(b.unidad,80)&&unidadEquivalente(a.unidad,b.unidad,a.evidencia);
+  });
+  if(posibles.length!==1)
    return Object.freeze({
     estado:'requiere_aclaracion',motivo:'lecturas_discrepan_en_articulo',
     pedido:null
    });
+  sinUsar.delete(posibles[0]);
  }
+ if(sinUsar.size!==0)
+  return Object.freeze({
+   estado:'requiere_aclaracion',motivo:'lecturas_discrepan_en_articulo',
+   pedido:null
+  });
  if(primera.zona_entrega===null)
   return Object.freeze({
    estado:'requiere_aclaracion',motivo:'zona_de_entrega_faltante',

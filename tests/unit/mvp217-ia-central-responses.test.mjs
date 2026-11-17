@@ -88,3 +88,52 @@ test('IA Central: error HTTP o API Key mala sin acciones externas',async()=>{
   apiKey:'',model:'gpt-6-luna',fetchImpl:transport});
  assert.equal(missing.estado,'rechazado');assert.equal(calls,1);
 });
+
+test('IA Central: WhatsApp natural, cemento de 25 kg, baldes y rollos',async()=>{
+ const text='Hola! Buen día, cómo va? Necesito que me coticen unas cositas para una obra en La Plata.\n\n'+
+  'Serían 10 bolsas de cemento de 25 kilos, un bolsón de arena fina, '+
+  '3 baldes de albañil de 10 litros y también 2 rollos de membrana aluminizada de 4 mm.\n\n'+
+  'Cuando tengan precios me avisan. Gracias!';
+ const spans=['10 bolsas de cemento de 25 kilos','un bolsón de arena fina',
+  '3 baldes de albañil de 10 litros','2 rollos de membrana aluminizada de 4 mm'];
+ const base={intencion:'cotizar',zona_entrega:'La Plata',dudas:[],articulos:
+  spans.map((evidencia,i)=>({
+   evidencia,descripcion:['cemento 25 kg','arena fina en bolsón',
+    'balde albañil 10 L','membrana aluminizada 4 mm'][i],
+   cantidad:['10','1','3','2'][i],unidad:['bag','unit','unit','roll'][i],
+   rubro:i===3?'pintura':'obra_gruesa',
+   presentacion:['25 kg',null,'10 L','4 mm'][i],aclaracion:null
+  }))};
+ const verifier={integridad:'completa',zona_entrega:' LA plata ',articulos:[
+  {evidencia:'rollos de membrana aluminizada de 4 mm',
+   cantidad:'2',unidad:'unidades',rubro:'obra_gruesa'},
+  {evidencia:'baldes de albañil de 10 litros',
+   cantidad:'3',unidad:'baldes',rubro:'ferreteria'},
+  {evidencia:'arena fina',cantidad:'1',unidad:'bolson',rubro:'obra_gruesa'},
+  {evidencia:'cemento de 25 kilos',
+   cantidad:'10',unidad:'bolsas',rubro:'obra_gruesa'}
+ ]};
+ const {fn}=responses(base,verifier);
+ const result=await interpretarConIaCentralV1({fuente:text,
+  apiKey:'sk-'+'a'.repeat(24),model:'gpt-6-luna',fetchImpl:fn});
+ assert.equal(result.estado,'listo_para_preparar',result.motivo);
+ assert.deepEqual(result.pedido.articulos.map(x=>x.cantidad),['10','1','3','2']);
+ assert.equal(result.pedido.articulos[0].presentacion,'25 kg');
+ assert.equal(result.pedido.articulos[3].presentacion,'4 mm');
+});
+test('IA Central: lector secundario no puede convertir 25 kg en 25 bolsas',async()=>{
+ const text='Necesito 10 bolsas de cemento de 25 kg en La Plata';
+ const span='10 bolsas de cemento de 25 kg';
+ const base={intencion:'cotizar',zona_entrega:'La Plata',dudas:[],articulos:[{
+  evidencia:span,descripcion:'cemento 25 kg',cantidad:'10',unidad:'bag',
+  rubro:'obra_gruesa',presentacion:'25 kg',aclaracion:null
+ }]};
+ const second={integridad:'completa',zona_entrega:'La Plata',articulos:[{
+  evidencia:'cemento de 25 kg',cantidad:'25',unidad:'bag',rubro:'obra_gruesa'
+ }]};
+ const {fn}=responses(base,second);
+ const result=await interpretarConIaCentralV1({fuente:text,
+  apiKey:'sk-'+'a'.repeat(24),model:'gpt-6-luna',fetchImpl:fn});
+ assert.equal(result.estado,'requiere_aclaracion');
+ assert.equal(result.motivo,'lecturas_discrepan_en_articulo');
+});
