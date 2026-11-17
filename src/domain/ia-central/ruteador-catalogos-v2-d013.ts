@@ -272,7 +272,7 @@ const semanticaInstrucciones=[
  'Sinónimos, apodos, marcas y errores de ortografía pueden referirse al mismo producto.',
  'Responde equivalente solo si ambos textos sustentan LA MISMA función material y',
  'las variantes críticas son compatibles.',
- 'Usá consulta_relacionada SOLO cuando el producto figura en el catálogo,
+ 'Usá consulta_relacionada SOLO cuando el producto figura en el catálogo,',
  'es razonablemente pertinente a la solicitud y el proveedor puede responder',
  'si lo vende, pero no podés confirmar una equivalencia técnica exacta.',
  'Esto es una CONSULTA, no una afirmación de equivalencia, stock o presentación.',
