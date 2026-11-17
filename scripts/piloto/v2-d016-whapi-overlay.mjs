@@ -139,11 +139,15 @@ export function lecturaUnicaAdjuntoCompradorV2D013(live){
     !live.includes('const mediaPlan=await binaryWorker({'))
   throw Error('v2_buyer_binary_runtime_source_invalid');
  const oldRead="            const readings=await Promise.allSettled([\n              proposeDocumentAI({...args,perspective:'primary'}),\n              proposeDocumentAI({...args,perspective:'corroboration'})\n            ]);";
- const newRead="            // Dos análisis económicos para el PROVEEDOR, solamente.\n            // Comprador: UNA IA y atestación del original binario independiente.\n            const readings=await Promise.allSettled(verifiedSupplier?[\n              proposeDocumentAI({...args,perspective:'primary'}),\n              proposeDocumentAI({...args,perspective:'corroboration'})\n            ]:[\n              proposeDocumentAI({...args,perspective:'primary'})\n            ]);";
+ const newRead="            // Proveedor: dos lecturas económicas. Comprador: sólo UNA IA.\n            // Mantener índice 1 tipado como resultado rechazado SIN llamada IA.\n            const readings=await Promise.allSettled([\n              proposeDocumentAI({...args,perspective:'primary'}),\n              verifiedSupplier?proposeDocumentAI({...args,perspective:'corroboration'}):\n                Promise.reject(new Error('buyer_second_model_skipped'))\n            ]);";
  let out=one(live,oldRead,newRead,'v2-buyer-binary-single-read');
  const oldWorker="                   const binaryWorker=d013BinaryEnabled?\n                     prepararDocumentoBinarioV2D013:prepararDocumentoBinarioCompradorMvp278;";
  const newWorker="                   // V2 comprador siempre, con gate SQL/D016 intacto.\n                   // Deshabilitado significa no ejecutar, nunca fallback V1.\n                   const binaryWorker=prepararDocumentoBinarioV2D013;";
  out=one(out,oldWorker,newWorker,'v2-buyer-binary-no-legacy-fallback');
+ out=one(out,
+  "                     enabled:d013BinaryEnabled,\n                    habilitado:true,autenticadoPorWebhook:true,",
+  "                     enabled:d013BinaryEnabled,\n                    autenticadoPorWebhook:true,",
+  'v2-buyer-binary-no-old-enabled-arg');
  if(!out.includes('enabled:d013BinaryEnabled')||
     !out.includes('const buyerWorker=procesarCompradorCentralV2D013;')||
     !out.includes('const zoneWorker=continuarZonaCentralV2D013;')||
