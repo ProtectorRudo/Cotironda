@@ -1,78 +1,155 @@
 <!doctype html>
 <html lang="es-AR">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0866ff">
-  <meta name="description" content="Cotironda: pedí materiales por WhatsApp y consultá los presupuestos de los comercios que te respondieron, en un solo lugar.">
-  <title>Cotironda | Materiales y presupuestos, sin vueltas</title>
-  <link rel="stylesheet" href="./styles.css">
+ <meta charset="utf-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1">
+ <meta name="theme-color" content="#06183b">
+ <meta name="description" content="Cotironda: la nueva forma de cotizar materiales. Pedí por WhatsApp, recibí presupuestos originales de comercios y compará propuestas en un portal privado.">
+ <meta property="og:type" content="website">
+ <meta property="og:title" content="Cotironda · La nueva forma de cotizar">
+ <meta property="og:description" content="Pedí materiales por WhatsApp y compará presupuestos reales en un solo lugar.">
+ <meta property="og:url" content="https://www.cotironda.com/">
+ <meta name="color-scheme" content="light">
+ <title>Cotironda | La nueva forma de cotizar</title>
+ <link rel="icon" type="image/svg+xml" href="./cotironda-isotipo.svg">
+ <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-  <a class="skip" href="#contenido">Ir al contenido</a>
+ <a class="skip" href="#contenido">Ir al contenido</a>
+ <div class="hero-wrap">
   <header class="header">
-    <div class="container header-inner">
-      <a class="brand" href="/" aria-label="Cotironda, inicio"><span class="brand-mark" aria-hidden="true">C</span><span>Cotironda</span></a>
-      <a class="header-access" href="https://app.cotironda.com/piloto/v2/acceso">Mi Cotironda <span aria-hidden="true">↗</span></a>
-    </div>
+   <div class="container header-inner">
+    <a class="brand" href="/" aria-label="Cotironda, inicio">
+     <img src="./cotironda-isotipo.svg" width="43" height="47" alt="" decoding="async">
+     <span>Cotironda</span>
+    </a>
+    <nav class="navigation" aria-label="Navegación principal">
+     <a href="#como-funciona">Cómo funciona</a>
+     <a href="#compradores">Para compradores</a>
+     <a href="#proveedores">Para proveedores</a>
+    </nav>
+    <a class="button button-nav" href="https://cotironda-portal-dev-git-feat-c9bde9-protector-rudo-s-projects.vercel.app/piloto/v2/acceso">Mi Cotironda <span aria-hidden="true">↗</span></a>
+   </div>
   </header>
-
   <main id="contenido">
-    <section class="hero container" aria-labelledby="hero-title">
-      <div class="hero-copy">
-        <span class="eyebrow">MATERIALES DE OBRA · POR WHATSAPP</span>
-        <h1 id="hero-title">Pedís materiales.<br><span>Recibís propuestas.</span></h1>
-        <p>Una sola conversación por WhatsApp. Los comercios cotizan y vos consultás sus presupuestos en un lugar simple y privado.</p>
-        <div class="hero-actions">
-          <a class="button-primary" href="https://app.cotironda.com/piloto/v2/acceso">Entrar a Mi Cotironda <span aria-hidden="true">↗</span></a>
-          <a class="button-secondary" href="#como-funciona">Cómo funciona</a>
+   <section class="hero container" aria-labelledby="hero-title">
+    <div class="hero-copy">
+     <span class="eyebrow eyebrow-light"><span class="eyebrow-line" aria-hidden="true"></span> MATERIALES DE OBRA · POR WHATSAPP</span>
+     <h1 id="hero-title">La nueva forma<br>de <span>cotizar.</span></h1>
+     <p class="hero-lead">Pedí materiales por WhatsApp y compará presupuestos reales en un solo lugar.</p>
+     <div class="hero-actions">
+      <a class="button button-primary" href="#empezar"><span class="button-icon" aria-hidden="true">
+       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.4 8.4 0 0 1-8.7 8.4 8.3 8.3 0 0 1-3.5-.9L3 21l2-5.5a8.3 8.3 0 0 1-1-4A8.5 8.5 0 0 1 12.5 3 8.5 8.5 0 0 1 21 11.5Z"/><path d="M9 9c.3 2 2.5 4.3 4.9 5.2.6.2 1 .1 1.5-.3"/></svg>
+      </span> Solicitar cotización</a>
+      <a class="button button-outline" href="https://cotironda-portal-dev-git-feat-c9bde9-protector-rudo-s-projects.vercel.app/piloto/v2/acceso">
+       <svg class="button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 21v-2.2a7 7 0 0 1 14 0V21"/></svg>
+       Ingresar a Mi Cotironda
+      </a>
+     </div>
+     <p class="hero-note">Sin planillas. Sin llamados. Sin vueltas.</p>
+    </div>
+    <div class="hero-visual" role="img" aria-label="Vista ilustrativa: el comprador envía materiales por WhatsApp y consulta las respuestas en su portal privado. No muestra ofertas reales.">
+     <div class="hero-halo" aria-hidden="true"></div>
+     <div class="laptop" aria-hidden="true">
+      <div class="laptop-frame">
+       <div class="laptop-display">
+        <div class="laptop-top"><span class="laptop-brand"><span class="mini-brand-c">C</span> Cotironda</span><span class="laptop-dots">•••</span></div>
+        <div class="app-layout">
+         <div class="app-sidebar"><span class="current">Mis cotizaciones</span><span>Pedidos</span><span>Mi cuenta</span></div>
+         <div class="app-content"><small>MI COTIRONDA · VISTA ILUSTRATIVA</small>
+          <h3>Pedido de materiales</h3><p>La Plata · 3 materiales</p>
+          <strong>2 presupuestos recibidos</strong>
+          <div class="offer-preview"><span class="offer-avatar">A</span><span><b>Comercio participante A</b><small>Presupuesto recibido</small></span><span class="offer-button">Ver análisis</span></div>
+          <div class="offer-preview"><span class="offer-avatar">B</span><span><b>Comercio participante B</b><small>Presupuesto recibido</small></span><span class="offer-button">Ver análisis</span></div>
+          <div class="laptop-hint">✓ Originales y análisis disponibles</div>
+         </div>
         </div>
-        <p class="access-note">Acceso para compradores que participan del piloto. Sin SMS ni formularios.</p>
+       </div>
       </div>
-      <aside class="preview" aria-label="Ejemplo visual de la pantalla de presupuestos">
-        <div class="preview-top">
-          <span class="preview-brand">Mi Cotironda</span>
-          <span class="preview-example">VISTA ILUSTRATIVA</span>
-        </div>
-        <div class="preview-content">
-          <p class="preview-kicker">Cotización en curso</p>
-          <h2>Presupuestos recibidos</h2>
-          <div class="preview-offer">
-            <div class="preview-offer-title"><span class="preview-avatar" aria-hidden="true">C</span><strong>Comercio participante</strong></div>
-            <span class="preview-pill">Propuesta recibida</span>
-            <span class="preview-action">Ver presupuesto <span aria-hidden="true">›</span></span>
-          </div>
-          <div class="preview-offer">
-            <div class="preview-offer-title"><span class="preview-avatar" aria-hidden="true">C</span><strong>Otro comercio</strong></div>
-            <span class="preview-pill">Propuesta recibida</span>
-            <span class="preview-action">Ver presupuesto <span aria-hidden="true">›</span></span>
-          </div>
-          <small>Los importes y documentos reales solo se muestran con acceso privado.</small>
-        </div>
-      </aside>
-    </section>
+      <div class="laptop-base"></div>
+     </div>
+     <div class="phone" aria-hidden="true">
+      <div class="phone-camera"></div>
+      <div class="phone-screen">
+       <div class="chat-header"><span class="chat-back">‹</span><span class="chat-avatar">C</span><span><b>Cotironda</b><small>WhatsApp</small></span><span class="chat-more">⋮</span></div>
+       <div class="chat-messages">
+        <div class="chat-bubble mine">Hola, necesito cotizar:<br><br>• 10 bolsas de cemento<br>• 1 bolsón de arena fina<br>• 1 bolsón de piedra partida <small>10:21 ✓✓</small></div>
+        <div class="chat-bubble theirs"><span class="chat-symbol">C</span> ¡Listo! Estamos gestionando tu pedido y te avisamos cuando recibamos propuestas.<small>10:22</small></div>
+       </div>
+       <div class="chat-input"><span>Mensaje</span><b>●</b></div>
+      </div>
+     </div>
+     <span class="hero-illustrative">Demostración visual del funcionamiento</span>
+    </div>
+   </section>
+   <div class="hero-wave" aria-hidden="true"></div>
+  </div>
 
-    <section class="steps-section" id="como-funciona" aria-labelledby="steps-title">
-      <div class="container">
-        <div class="section-heading">
-          <span class="eyebrow">ASÍ DE SIMPLE</span>
-          <h2 id="steps-title">Tres pasos. Cero vueltas.</h2>
-        </div>
-        <div class="steps">
-          <article class="step"><span class="step-number">01</span><h3>Mandás tu lista</h3><p>Por WhatsApp, como texto, imagen, PDF o Excel.</p></article>
-          <article class="step"><span class="step-number">02</span><h3>Los comercios responden</h3><p>Reciben los materiales que trabajan y cotizan libremente.</p></article>
-          <article class="step"><span class="step-number">03</span><h3>Vos decidís</h3><p>Revisás cada presupuesto original y su análisis.</p></article>
-        </div>
-      </div>
-    </section>
-    <section class="closing container">
-      <h2>Todo más claro. Todo en Cotironda.</h2>
-      <p>El contacto para solicitar y cotizar materiales sigue siendo WhatsApp.</p>
-      <a class="button-primary" href="https://app.cotironda.com/piloto/v2/acceso">Mi Cotironda <span aria-hidden="true">↗</span></a>
-    </section>
-  </main>
-  <footer class="footer">
-    <div class="container"><span><strong>Cotironda</strong> · Argentina</span><span>Piloto comercial en curso</span></div>
-  </footer>
+  <section class="steps-strip" aria-label="Cotizar en tres pasos">
+   <div class="container steps-strip-inner">
+    <div class="step-quick">
+     <span class="quick-icon" aria-hidden="true"><svg viewBox="0 0 54 54" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M30 3 10 29h15l-3 22 22-30H29L30 3Z"/></svg></span>
+     <div><h2>Solicitá</h2><p>Enviás tu pedido por WhatsApp.</p></div>
+    </div>
+    <div class="step-quick">
+     <span class="quick-icon" aria-hidden="true"><svg viewBox="0 0 54 54" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"><path d="M27 5v43M12 13h30M7 48h40M15 13l-9 21h18L15 13ZM39 13l-9 21h18L39 13Z"/></svg></span>
+     <div><h2>Compará</h2><p>Revisás múltiples ofertas.</p></div>
+    </div>
+    <div class="step-quick">
+     <span class="quick-icon" aria-hidden="true"><svg viewBox="0 0 54 54" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="27" cy="27" r="22"/><path d="m15 28 8 8 17-18"/></svg></span>
+     <div><h2>Elegí</h2><p>Tomás la decisión de compra.</p></div>
+    </div>
+   </div>
+  </section>
+
+  <section class="content-section container" id="como-funciona" aria-labelledby="how-title">
+   <div class="section-heading"><span>TODO MÁS SIMPLE</span><h2 id="how-title">Cómo funciona</h2><p>Una sola solicitud por WhatsApp. Sin aprender otro sistema.</p></div>
+   <div class="four-grid">
+    <article class="feature-card"><span class="feature-icon green" aria-hidden="true">01</span><h3>Enviás tu pedido</h3><p>Escribís o compartís tu lista de materiales por WhatsApp, incluso en PDF, foto o Excel.</p></article>
+    <article class="feature-card"><span class="feature-icon" aria-hidden="true">02</span><h3>Cotironda lo interpreta</h3><p>Organizamos los materiales y buscamos comercios compatibles con cada producto y localidad.</p></article>
+    <article class="feature-card"><span class="feature-icon" aria-hidden="true">03</span><h3>Los proveedores responden</h3><p>Cada comercio cotiza libremente por WhatsApp y conservamos sus presupuestos originales.</p></article>
+    <article class="feature-card"><span class="feature-icon" aria-hidden="true">04</span><h3>Ves todo en tu portal</h3><p>Consultás las respuestas, los originales y un análisis comercial de cada oferta.</p></article>
+   </div>
+  </section>
+
+  <section class="audience container" aria-label="Para quién es Cotironda">
+   <article class="audience-buyer" id="compradores">
+    <span class="audience-icon" aria-hidden="true"><svg viewBox="0 0 54 54" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M7 37h40v7H7zM10 37v-5c0-12 7-19 17-19s17 7 17 19v5M22 14V9h10v5M27 9v24" stroke-linejoin="round"/></svg></span>
+    <div><span class="audience-label">PARA COMPRADORES</span><h2>Ideal para arquitectos, constructoras y compradores de materiales.</h2></div>
+   </article>
+   <article class="audience-supplier" id="proveedores">
+    <span class="audience-icon" aria-hidden="true"><svg viewBox="0 0 54 54" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"><path d="M10 23h34v24H10zM7 14h40l-4 10H11L7 14ZM17 34h12v13H17zM11 24c0 4 6 4 8 0 2 4 6 4 8 0 2 4 6 4 8 0 2 4 6 4 8 0"/></svg></span>
+    <div><span class="audience-label">PARA PROVEEDORES</span><h2>Los comercios cotizan por WhatsApp, sin aprender un sistema nuevo.</h2></div>
+   </article>
+  </section>
+
+  <section class="content-section container benefits-section" aria-labelledby="benefits-title">
+   <div class="section-heading"><span>POR QUÉ COTIRONDA</span><h2 id="benefits-title">Todo más claro. Todo en un lugar.</h2></div>
+   <div class="four-grid benefits-grid">
+    <article class="feature-card benefit"><span class="benefit-icon" aria-hidden="true"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M10 4h15l8 8v24H10zM25 4v9h8M15 19h13M15 25h13M15 31h9"/></svg></span><h3>Presupuestos originales</h3><p>Ves los documentos enviados por cada comercio, sin modificaciones.</p></article>
+    <article class="feature-card benefit"><span class="benefit-icon" aria-hidden="true"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M7 34V21h6v13M17 34V14h6v20M27 34V7h6v27"/></svg></span><h3>Comparación clara</h3><p>Revisás materiales y condiciones, sin elegir ganadores automáticamente.</p></article>
+    <article class="feature-card benefit"><span class="benefit-icon" aria-hidden="true"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M20 4 34 10v11c0 9-6 13-14 16C12 34 6 30 6 21V10L20 4Z"/><path d="m13 20 5 5 10-11"/></svg></span><h3>Privacidad y control</h3><p>El acceso a tus pedidos y presupuestos es privado y protegido.</p></article>
+    <article class="feature-card benefit"><span class="benefit-icon" aria-hidden="true"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M35 19A15 15 0 0 1 12 32l-8 2 2-8a15 15 0 1 1 29-7Z"/><path d="M15 14c1 6 5 9 11 11"/></svg></span><h3>Todo por WhatsApp</h3><p>Pedís y cotizás desde una conversación, sin instalar otra aplicación.</p></article>
+   </div>
+  </section>
+
+  <section class="cta" id="empezar" aria-labelledby="cta-title">
+   <div class="container cta-content">
+    <span class="eyebrow eyebrow-light">PILOTO COMERCIAL</span>
+    <h2 id="cta-title">Empezá a cotizar mejor.</h2>
+    <p>¿Ya participás en Cotironda? Enviá tu lista al chat oficial de WhatsApp que recibiste al registrarte. Desde el portal privado podés consultar tus cotizaciones y presupuestos.</p>
+    <div class="cta-actions">
+     <a class="button button-primary" href="https://cotironda-portal-dev-git-feat-c9bde9-protector-rudo-s-projects.vercel.app/piloto/v2/acceso">Ingresar a Mi Cotironda <span aria-hidden="true">↗</span></a>
+     <a class="button button-outline" href="#como-funciona">Ver cómo funciona</a>
+    </div>
+    <small>Estamos incorporando participantes al piloto de forma gradual. Este sitio no solicita datos personales ni recibe pedidos por formulario.</small>
+   </div>
+  </section>
+ </main>
+ <footer class="footer"><div class="container footer-content">
+  <div class="footer-brand"><a class="brand" href="/"><img src="./cotironda-isotipo.svg" width="34" height="38" alt=""><span>Cotironda</span></a><span>La nueva forma de <strong>cotizar.</strong></span></div>
+  <nav aria-label="Enlaces del pie de página"><a href="#como-funciona">Cómo funciona</a><a href="#compradores">Compradores</a><a href="#proveedores">Proveedores</a><a href="https://cotironda-portal-dev-git-feat-c9bde9-protector-rudo-s-projects.vercel.app/piloto/v2/acceso">Mi Cotironda</a></nav>
+  <p>© 2026 Cotironda · Argentina · Sitio público informativo.</p>
+ </div></footer>
 </body>
 </html>
