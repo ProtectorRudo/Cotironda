@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {recuperarBuyerReviewD013} from
+import {recuperarBuyerReviewD013,diagnosticoPlanD013} from
  '../../src/domain/ia-central/recuperacion-review-v2-d013.ts';
 import {localidadOperativaD013} from
  '../../src/domain/ia-central/puente-sql-rondas-v2-d013.ts';
@@ -270,4 +270,82 @@ test('D013: telemetría defectuosa no cambia acciones, excepciones ocultas',asyn
   import.meta.url),'utf8');
  assert.match(worker,/onDiagnostic:code=>console\.warn\('cotironda_d013_recovery_'\+code\)/u);
  assert.doesNotMatch(worker,/console\.warn\([^\n]*(?:raw\.|plaintext|contact|source_sha256|apiKey)/u);
+});
+
+test('D013: el diagnóstico cubre TODO rechazo literal de lectura original y su segunda IA',()=>{
+ const mod=readFileSync(new URL(
+  '../../src/domain/ia-central/contrato-v2-d013.ts',import.meta.url),'utf8');
+ const reasons=[
+  ...Array.from(mod.matchAll(/rejection\('([^']+)'\)/gu),x=>x[1]),
+  ...Array.from(mod.matchAll(/motivo:'([^']+)'/gu),x=>x[1])
+ ];
+ assert.ok(reasons.length>=12,'controlar inventario de validaciones');
+ for(const reason of reasons){
+  assert.notEqual(diagnosticoPlanD013(reason),'plan_other_rejected',
+    'un motivo legítimo quedó oculto: '+reason);
+  assert.match(diagnosticoPlanD013(reason),/^(?:source_|ai_)/u);
+ }
+ assert.equal(diagnosticoPlanD013('motivo_usuario_inyectado_con_contactos'),
+  'plan_other_rejected');
+ assert.equal(diagnosticoPlanD013(null),'plan_other_rejected');
+ assert.equal(diagnosticoPlanD013('__proto__'),'plan_other_rejected');
+});
+
+test('D013: zona y diferencias de lecturas distinguen fallos sin contactar proveedores',async()=>{
+ const candidate=await example();
+ for(const [motivo,want] of [
+  ['zona_de_entrega_faltante','source_missing_city'],
+  ['lecturas_incompletas_o_divergentes','source_readings_disagree'],
+  ['posibles_articulos_no_representados','source_missing_items'],
+  ['segundo_lector_identifica_articulo_sin_fuente','source_second_reader_unanchored'],
+  ['ningun_articulo_conciliado','source_no_confirmed_item']
+ ]){
+  const seen=[],calls=[];
+  const result=await recuperarBuyerReviewD013({...config,ejecutar:true,
+   onDiagnostic:v=>seen.push(v),
+   rpc:async name=>{calls.push(name);return {data:candidate,error:null}},
+   planificar:async()=>({estado:'requiere_aclaracion',motivo})
+  });
+  assert.equal(result.estado,'needs_operator_review');
+  assert.equal(result.outboundSent,false);
+  assert.deepEqual(seen,[want]);
+  assert.deepEqual(calls,['cotironda_piloto_v2_d013_review_source_private']);
+ }
+});
+
+test('D013: primera lectura sin prueba y fuentes superpuestas se diferencian',async()=>{
+ const candidate=await example();
+ for(const [motivo,want] of [
+  ['articulo_sin_evidencia_verificable','source_item_evidence_invalid'],
+  ['evidencias_superpuestas','source_overlapping_evidence'],
+  ['segunda_lectura_invalida','source_second_reader_invalid'],
+  ['esquema_invalido','source_schema_invalid'],
+  ['campos_inseguros','source_unsafe_fields'],
+  ['sin_articulos','source_without_items'],
+  ['intencion_no_comercial','source_not_a_quote']
+ ]){
+  const seen=[];
+  const result=await recuperarBuyerReviewD013({...config,ejecutar:true,
+   onDiagnostic:code=>seen.push(code),
+   rpc:async()=>({data:candidate,error:null}),
+   planificar:async()=>({estado:'rechazado',motivo})
+  });
+  assert.equal(result.estado,'needs_operator_review');
+  assert.deepEqual(seen,[want]);
+ }
+});
+
+test('D013: nunca se cambia la validación comercial ni el original por instrumentar errores',()=>{
+ const source=readFileSync(new URL(
+  '../../src/domain/ia-central/recuperacion-review-v2-d013.ts',
+  import.meta.url),'utf8');
+ assert.match(source,/source_item_evidence_invalid/u);
+ assert.match(source,/source_no_confirmed_item/u);
+ assert.match(source,/source_second_reader_invalid/u);
+ assert.match(source,/plan_other_rejected/u);
+ assert.match(source,/return result\('needs_operator_review'\)/u);
+ const worker=readFileSync(new URL(
+  '../../supabase/functions/cotironda-piloto-v2-review-recovery-d013/index.ts',
+  import.meta.url),'utf8');
+ assert.doesNotMatch(worker,/http_post|whapi_outbox|dispatchPending/u);
 });
