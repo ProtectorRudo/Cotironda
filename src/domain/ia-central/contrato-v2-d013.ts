@@ -259,56 +259,127 @@ export function evaluarLecturasSemanticasV2D013(
  * El conciliador doble de este archivo queda solo como compatibilidad
  * para sus pruebas históricas y NO se invoca en el webhook V2.
  */
+/** Localiza citas sin depender de mayúsculas ni tildes, preservando offsets
+ * UTF-16 exactos del ORIGINAL (la IA no puede alterar el documento).
+ * Las coincidencias siguen exigiendo límites de palabra.
+ */
 const citacionesCantidadD013=(fuente:string,cita:string):number[]=>{
+ if(!cita||cita.length>120||!fuente)return [];
+ const fold=(s:string)=>s.normalize('NFD').replace(/[\u0300-\u036f]/gu,'')
+  .toLocaleLowerCase('es-AR');
+ const chars:string[]=[],offsets:number[]=[];
+ for(let i=0;i<fuente.length;){
+  const ch=String.fromCodePoint(fuente.codePointAt(i)!);
+  const out=fold(ch);
+  for(let j=0;j<out.length;j++)offsets.push(i);
+  chars.push(out);i+=ch.length;
+ }
+ offsets.push(fuente.length);
+ const textoNormal=chars.join(''),citaNormal=fold(cita);
+ if(!citaNormal)return [];
  const found:number[]=[];
- if(!cita||cita.length>120)return found;
  const alfanum=/[\p{L}\p{N}]/u;
- let pos=fuente.indexOf(cita);
+ let pos=textoNormal.indexOf(citaNormal);
  while(pos>=0){
-  const pre=pos===0?'':fuente[pos-1];
-  const post=pos+cita.length===fuente.length?'':fuente[pos+cita.length];
-  if(!alfanum.test(pre)&&!alfanum.test(post))found.push(pos);
-  pos=fuente.indexOf(cita,pos+1);
+  const inicio=offsets[pos],fin=offsets[pos+citaNormal.length];
+  const pre=inicio===0?'':fuente.slice(0,inicio).slice(-1);
+  const post=fin===fuente.length?'':fuente.slice(fin,fin+1);
+  if(!alfanum.test(pre)&&!alfanum.test(post))found.push(inicio);
+  pos=textoNormal.indexOf(citaNormal,pos+1);
  }
  return found;
 };
-/** Verifica una cantidad comercial SIN léxico de productos.
- * No confunde "10 bolsas de 25 kg" con 25 bolsas ni "1 m³" con
- * 1 bolsón; se acepta al menos una cita de cantidad válida aun cuando
- * la presentación repita el MISMO numeral.
+/** Prueba SOLO una magnitud explícita de compra a continuación del numeral.
+ * Acepta «10bolsas», «diez bolsas», «2 m³», «3 mts. lineales»,
+ * pero NO toma los 25 kg de una bolsa como 25 bolsas.
+ */
+function unidadAdyacenteACompraD013(
+ evidencia:string,fin:number,unidad:string
+):boolean{
+ const comprada=unidadCompradaCanonicaV2D013(unidad);
+ const resto=evidencia.slice(fin).replace(/^[\s:.,-]+/u,'')
+  .replace(/^de\s+/iu,'');
+ const palabras=resto.split(/\s+/u);
+ for(const n of [3,2,1]){
+  const candidata=palabras.slice(0,n).join(' ').replace(/[.,;:]+$/u,'');
+  const fisica=unidadDimensionadaV2D013(candidata);
+  if(fisica?.canonica===comprada)return true;
+  // Nunca validar «ml» minúscula: puede ser metro lineal o mililitro.
+  if(candidata.toLowerCase()==='ml')continue;
+  const envase=unidadCompradaCanonicaV2D013(candidata);
+  if(envase===comprada&&
+     ['bag','bigbag','bucket','roll','box','pack','unit'].includes(envase))
+   return true;
+  if(comprada==='unit'&&
+     ['bag','bigbag','bucket','roll','box','pack'].includes(envase))
+   return true;
+ }
+ return false;
+}
+/** Recuperación SIN una segunda IA: cuando la cita del modelo se escribió
+ * distinto al original, la cantidad sólo se acepta si el propio tramo del
+ * original prueba el mismo número pegado a una unidad de COMPRA reconocida.
+ * Nunca extrae números de otras líneas ni de una presentación técnica.
+ */
+function cantidadPorUnidadExplicitaD013(
+ evidencia:string,cantidadNormalizada:string,unidad:string
+):boolean{
+ const cantidadObjetivo=Number(cantidadNormalizada);
+ const numeros=/(?<![\p{L}\p{N}])(?:\d{1,3}(?:\.\d{3})+(?:,\d{1,3})?|\d{1,6}(?:[.,]\d{1,3})?)/gu;
+ for(const m of evidencia.matchAll(numeros)){
+  if(numeroNaturalV2D013(m[0])===cantidadObjetivo&&
+     unidadAdyacenteACompraD013(evidencia,m.index+m[0].length,unidad))
+   return true;
+ }
+ const palabras=[...evidencia.matchAll(/[\p{L}]+/gu)];
+ for(let i=0;i<palabras.length;i++){
+  // La gramática existente es la única fuente de cantidades con palabras.
+  for(let n=1;n<=5&&i+n<=palabras.length;n++){
+   const trozo=palabras.slice(i,i+n);
+   const fragmento=evidencia.slice(trozo[0].index,
+    trozo[trozo.length-1].index+trozo[trozo.length-1][0].length);
+   if(!/^[\p{L}\s]+$/u.test(fragmento))break;
+   const valor=numeroNaturalV2D013(fragmento);
+   if(valor!==cantidadObjetivo)continue;
+   const fin=trozo[trozo.length-1].index+trozo[trozo.length-1][0].length;
+   if(unidadAdyacenteACompraD013(evidencia,fin,unidad))return true;
+  }
+ }
+ return false;
+}
+/** Valida una cantidad comercial UNA SOLA VEZ sobre el original.
+ * La cita IA ayuda a ubicar el cuantificador; si su grafía es distinta,
+ * una cantidad explícita con su unidad puede acreditarse sin una segunda IA.
+ * No hay conversión implícita de envases a kg/L ni cantidades inventadas.
  */
 export function cantidadAcreditadaLecturaUnicaD013(
  evidencia:string,cantidadNormalizada:string,unidad:string,
  citaCantidad:unknown
 ):boolean{
  if(!texto(evidencia,1500)||!cantidad(cantidadNormalizada)||
-    !texto(unidad,80)||typeof citaCantidad!=='string'||
-    numeroNaturalV2D013(citaCantidad)!==Number(cantidadNormalizada))
-  return false;
- const ubicaciones=citacionesCantidadD013(evidencia,citaCantidad);
- if(ubicaciones.length===0)return false;
+    !texto(unidad,80))return false;
  const magnitudes=leerMagnitudesV2D013(evidencia);
  if(magnitudes===null)return false;
  const unidadComprada=unidadCompradaCanonicaV2D013(unidad);
  const unidadFisica=unidadDimensionadaV2D013(unidad);
- return ubicaciones.some(pos=>{
-  const medida=magnitudes.find(m=>m.inicio===pos);
-  if(!unidadFisica){
-   // "ml" es ambiguo sólo cuando el original usa la sigla minúscula.
-   // "mililitros"/"mL" literales sí acreditan volumen comprado.
-   if(unidadComprada==='ml'&&medida?.unidad==='ml')return true;
-   // Un envase/unit no puede usar el peso de presentación como cantidad.
-   return medida===undefined;
-  }
-  if(medida)return medida.unidad===unidadComprada;
-  // Admitir unidad física escrita con palabras después del cuantificador.
-  const resto=evidencia.slice(pos+citaCantidad.length).trim();
-  const palabras=resto.split(/\s+/u);
-  return [3,2,1].some(n=>{
-   const candidata=unidadDimensionadaV2D013(palabras.slice(0,n).join(' '));
-   return candidata?.canonica===unidadComprada;
-  });
- });
+ if(typeof citaCantidad==='string'&&
+    numeroNaturalV2D013(citaCantidad)===Number(cantidadNormalizada)){
+  const ubicaciones=citacionesCantidadD013(evidencia,citaCantidad);
+  if(ubicaciones.some(pos=>{
+   const medida=magnitudes.find(m=>m.inicio===pos);
+   if(!unidadFisica){
+    if(unidadComprada==='ml')return medida?.unidad==='ml';
+    // Una especificación en kg, litros o m³ nunca cuenta envases.
+    return medida===undefined;
+   }
+   if(medida)return medida.unidad===unidadComprada;
+   return unidadAdyacenteACompraD013(
+    evidencia,pos+citaCantidad.length,unidad);
+  }))return true;
+ }
+ // Independiente del texto de la cita: sólo cuantificadores con unidad
+ // explícita, inequívoca y localizada dentro de ESTE artículo.
+ return cantidadPorUnidadExplicitaD013(evidencia,cantidadNormalizada,unidad);
 }
 const foldZonaUnicaD013=(s:string):string=>s.normalize('NFD')
  .replace(/[\u0300-\u036f]/gu,'').toLowerCase()
