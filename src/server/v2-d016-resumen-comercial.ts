@@ -158,11 +158,15 @@ function tipoMonto(monto:string|null,puntos:readonly Punto[]):ResumenComercialV2
  const cifra=monto.replace(/\D/gu,'');
  for(const p of puntos){
   if(p.categoria!=='precio')continue;
-  const matches=p.evidencia.match(/\$\s*[\d., ]+|(?:ARS|USD|US\$)\s*[\d., ]+|\b\d{1,3}(?:[.]\d{3})+(?:,\d{2})?|\b\d+(?:,\d{2})/giu)??[];
-  if(!matches.some(x=>x.replace(/\D/gu,'')===cifra))continue;
+  // La etiqueta y el importe deben aparecer juntos. Una evidencia que
+  // menciona ambos (SUBTOTAL y TOTAL) NO permite atribuirlos por separado.
   const evidence=normal(p.evidencia);
-  if(/\bsubtotal\b/u.test(evidence))return 'Subtotal informado';
-  if(/\btotal\b/u.test(evidence))return 'Total informado';
+  const pairs=evidence.matchAll(/\b(sub\s*total|total)\b\s*(?:de\s+)?[:=\-]?\s*(?:\$|ars|usd|us\$)?\s*(\d[\d., ]{0,25})/gu);
+  for(const match of pairs){
+   if(match[2].trim().replace(/\D/gu)!==cifra)continue;
+   return match[1].replace(/\s/gu,'')==='subtotal'?
+    'Subtotal informado':'Total informado';
+  }
  }
  return 'Importe informado';
 }

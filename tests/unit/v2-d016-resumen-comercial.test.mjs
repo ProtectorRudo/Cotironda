@@ -206,3 +206,15 @@ test('D019 alternativa ambigua de dos proveedores nunca se asigna a un artículo
  assert.equal(val.cobertura?.detalle[0].estado,'por_verificar');
  assert.equal(val.cobertura?.detalle[0].cotizado,null);
 });
+
+test('D019: dos importes en una misma evidencia conservan su etiqueta exacta',()=>{
+ const evidence=[{categoria:'precio',
+  evidencia:'Subtotal: $293.991,23; Total: $355.400,00',
+  observacion:'El documento informa subtotal y total por separado.'}];
+ const a=resumirOfertaComercialV2({...input,totalLiteral:'$293.991,23'},evidence);
+ const b=resumirOfertaComercialV2({...input,totalLiteral:'$355.400,00'},evidence);
+ assert.equal(a.tipoImporte,'Subtotal informado');
+ assert.equal(b.tipoImporte,'Total informado');
+ const no=resumirOfertaComercialV2({...input,totalLiteral:'$700.000,00'},evidence);
+ assert.equal(no.tipoImporte,'Importe informado');
+});
