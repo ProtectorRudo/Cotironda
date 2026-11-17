@@ -21,6 +21,14 @@ type DetalleOferta=Readonly<{
  cobertura:Readonly<{identificados:number;solicitados:number;porVerificar:readonly string[]}>|null;
  pago:string;iva:string;flete:string;
 }>;
+export type ComparacionMaterialFinalV2=Readonly<{
+ linea:number;material:string;
+ comercios:readonly Readonly<{
+  comercio:string;
+  estado:'coincidencia_automatica'|'por_verificar'|'sin_datos';
+  cotizado:string|null;
+ }>[];
+}>;
 type ResumenComercio=Readonly<{
  comercio:string;documentos:number;analizados:number;
  ofertas:readonly DetalleOferta[];
@@ -33,6 +41,7 @@ export type InformeFinalD016=Readonly<{
  analizados:number;sinAnalisis:number;
  resumen:string;observaciones:readonly string[];
  recomendaciones:readonly string[];
+ materiales:readonly ComparacionMaterialFinalV2[];
  comparacion:readonly ResumenComercio[];
  mensaje:string;
 }>;
@@ -110,6 +119,36 @@ export function componerInformeFinalD016(
    condiciones:Object.freeze(condiciones)
   });
  });
+ // Matriz sólo al cierre SQL. Nunca combinamos listas de pedido discrepantes:
+ // un parser incompleto no autoriza atribuir artículos a otra ronda.
+ const withRequest=catalog.respuestas.filter(q=>q.resumen?.solicitado?.length);
+ const requested=withRequest[0]?.resumen?.solicitado??[];
+ const matchingRequest=withRequest.every(q=>{
+  const r=q.resumen.solicitado;
+  return r.length===requested.length&&r.every((item,i)=>
+   item.line===requested[i].line&&
+   item.description===requested[i].description&&
+   item.quantity===requested[i].quantity&&item.unit===requested[i].unit);
+ });
+ const materiales:ComparacionMaterialFinalV2[]=[];
+ if(matchingRequest&&requested.length>0){
+  for(const req of requested){
+   const comercios=sorted.map(([comercio])=>{
+    const docs=catalog.respuestas.filter(q=>q.comercio===comercio);
+    const lines=docs.flatMap(q=>q.resumen?.cobertura?.detalle??[])
+     .filter(row=>row.linea===req.line&&row.solicitado===req.description);
+    const confirmed=lines.find(row=>row.estado==='coincidencia_automatica');
+    return Object.freeze({
+     comercio,
+     estado:confirmed?'coincidencia_automatica' as const:
+      lines.length?'por_verificar' as const:'sin_datos' as const,
+     cotizado:confirmed?.cotizado??null
+    });
+   });
+   materiales.push(Object.freeze({linea:req.line,material:req.description,
+    comercios:Object.freeze(comercios)}));
+  }
+ }
  const total=catalog.respuestas.length;
  const note=[
   'Compará solamente artículos equivalentes en unidades, cantidades, presentación y especificaciones.',
@@ -117,6 +156,10 @@ export function componerInformeFinalD016(
   'No se ordenan ofertas por precio total, ni se declaran ganadores: los originales prevalecen.'
  ];
  const recomendaciones:string[]=[];
+ if(!matchingRequest&&withRequest.length>1)
+  recomendaciones.push('Las listas de materiales extraídas no coinciden: verificá los originales antes de comparar por artículo.');
+ if(materiales.some(row=>row.comercios.some(c=>c.estado!=='coincidencia_automatica')))
+  recomendaciones.push('La comparación por material señala correspondencias automáticas, no faltantes de stock ni equivalencias certificadas.');
  if(comparison.some(c=>c.ofertas.some(o=>!o.cobertura||
   o.cobertura.identificados<o.cobertura.solicitados||
   o.cobertura.porVerificar.length>0)))
@@ -135,6 +178,7 @@ export function componerInformeFinalD016(
   sinAnalisis:total-analysed,resumen,
   observaciones:Object.freeze(note),
   recomendaciones:Object.freeze(recomendaciones),
+  materiales:Object.freeze(materiales),
   comparacion:Object.freeze(comparison),
   mensaje:'Informe de cierre orientativo. Se mantienen disponibles los originales sujetos a consentimiento.'
  });

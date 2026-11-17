@@ -176,7 +176,14 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
   finally{setBusy(false)}
  }
  // Solo presentamos datos comerciales de la fuente privada ya autorizada.
- const solicitados=catalog?.respuestas.find(q=>q.resumen.solicitado.length>0)?.resumen.solicitado??[];
+ const solicitudes=catalog?.respuestas.filter(q=>q.resumen.solicitado.length>0)??[];
+ const solicitados=solicitudes[0]?.resumen.solicitado??[];
+ const pedidoConsistente=solicitudes.every(q=>{
+  const lines=q.resumen.solicitado;
+  return lines.length===solicitados.length&&lines.every((item,i)=>
+   item.line===solicitados[i].line&&item.description===solicitados[i].description&&
+   item.quantity===solicitados[i].quantity&&item.unit===solicitados[i].unit);
+ });
  const letraProveedor=(name:string)=>{
   const n=name.replace(/^(?:corral[oó]n|ferreter[ií]a|pinturer[ií]a|distribuidora|casa de materiales)\s+/iu,'')
    .trim();
@@ -205,10 +212,11 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
     </div>
    </details>
   </div>
-  {solicitados.length>0&&<details className="coti-request-list">
+  {pedidoConsistente&&solicitados.length>0&&<details className="coti-request-list">
    <summary>Ver los {solicitados.length} materiales solicitados</summary>
    <ol>{solicitados.map(item=><li key={item.line}>{item.description}</li>)}</ol>
   </details>}
+  {!pedidoConsistente&&<p className="coti-clean-muted">La lista de materiales requiere revisión del original antes de mostrarla.</p>}
   {busy&&<p role="status" className="coti-clean-muted">Verificando información…</p>}
   {analizando&&<p role="status" className="coti-clean-muted">Preparando el análisis…</p>}
   {error&&<p role="alert" className="coti-clean-error">{error}</p>}
@@ -235,9 +243,9 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
     </div>
     <div className={'coti-clean-coverage'+(needsReview?' caution':'')}>
      <span aria-hidden="true">{needsReview?'!':'✓'}</span>
-     <span>{!cover?'Equivalencias por verificar':
-      needsReview?cover.identificados+' de '+cover.solicitados+' materiales coincidentes · revisar':
-      cover.identificados+' de '+cover.solicitados+' materiales coincidentes'}</span>
+     <span>{!cover?'Cobertura pendiente de verificar':
+      needsReview?cover.identificados+' de '+cover.solicitados+' coincidencias automáticas · revisar':
+      cover.identificados+' de '+cover.solicitados+' coincidencias automáticas'}</span>
     </div>
     <div className="coti-clean-bid-actions">
      <button className="coti-clean-detail-button" type="button"
@@ -255,9 +263,9 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
      <h4>Lo importante de este presupuesto</h4>
      <ul className="coti-clean-insights">
       <li><strong>Materiales:</strong> {cover?
-       cover.identificados+' de '+cover.solicitados+' coincidencias técnicas verificables.':
-       'No se pudo verificar la cobertura técnica.'}
-       {needsReview?' Hay diferencias o equivalencias pendientes de revisión.':''}</li>
+       cover.identificados+' de '+cover.solicitados+' coincidencias automáticas de cantidad y descripción.':
+       'No se pudo confirmar la cobertura técnica.'}
+       {' '}La compatibilidad final se decide contrastando los originales.</li>
       {notasTecnicas.slice(0,2).map((p,i)=><li key={q.documentoId+'-nota-'+i}>
        {p.observacion}</li>)}
       <li><strong>Importe:</strong> {q.resumen.totalDeclarado?
@@ -266,6 +274,15 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
        {q.resumen.tipoImporte!=='Total informado'&&q.resumen.totalDeclarado?
         ' No se presupone que sea el total final.':''}</li>
      </ul>
+     {cover?.detalle?.length>0&&<div className="coti-clean-material-detail">
+      <h4>Materiales del pedido frente al presupuesto</h4>
+      <ul>{cover.detalle.map(item=><li key={item.linea}>
+       <strong>{item.solicitado}</strong>
+       {item.estado==='coincidencia_automatica'?
+        <p><span className="coti-material-state">Coincidencia automática</span> {item.cotizado}. Revisar especificaciones en el original.</p>:
+        <p><span className="coti-material-state caution">Por verificar</span> {item.motivo} No significa que el comercio no lo tenga.</p>}
+      </li>)}</ul>
+     </div>}
      {cover&&cover.porVerificar.length>0&&<div className="coti-clean-alert">
       <strong>Materiales sin equivalencia confirmada</strong>
       <ul>{cover.porVerificar.map((x,i)=><li key={i}>{x}</li>)}</ul>
@@ -299,7 +316,7 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
       <strong className="coti-final-amount">{oferta.importe??'No informado'}</strong>
       <small>{oferta.tipoImporte}</small>
       <p><strong>Materiales:</strong> {oferta.cobertura?
-       oferta.cobertura.identificados+' de '+oferta.cobertura.solicitados+' coincidencias verificables':
+       oferta.cobertura.identificados+' de '+oferta.cobertura.solicitados+' coincidencias automáticas (no certificadas)':
        'Cobertura por verificar'}</p>
       {oferta.cobertura&&oferta.cobertura.porVerificar.length>0&&
        <p>Por verificar: {oferta.cobertura.porVerificar.join('; ')}</p>}
@@ -314,6 +331,20 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
      </details>}
     </article>)}
    </div>
+   {informe.materiales?.length>0&&<div className="coti-final-materials">
+    <h3>Comparación por material solicitado</h3>
+    {informe.materiales.map(material=><article key={material.linea} className="coti-final-material">
+     <h4>{material.material}</h4>
+     <ul>{material.comercios.map(item=><li key={item.comercio}>
+      <strong>{nombreProveedor(item.comercio)}</strong>
+      <span>{item.estado==='coincidencia_automatica'?
+       'Coincidencia automática · '+item.cotizado:
+       item.estado==='por_verificar'?'Equivalencia pendiente de verificar':
+       'Sin datos suficientes para cotejar'}</span>
+     </li>)}</ul>
+    </article>)}
+    <p className="coti-clean-muted">Una coincidencia automática no garantiza disponibilidad, calidad ni equivalencia técnica certificada.</p>
+   </div>}
    {informe.recomendaciones.length>0&&<div className="coti-final-guidance">
     <h3>Qué revisar antes de decidir</h3>
     <ul>{informe.recomendaciones.map((p,i)=><li key={i}>{p}</li>)}</ul>

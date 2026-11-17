@@ -144,3 +144,55 @@ test('D016 dashboard mantiene la descarga real, análisis original y claridad co
  assert.ok(ui.includes('PDF original'));
  assert.ok(!ui.includes("['Entrega',q.resumen.condiciones.entrega]"));
 });
+
+test('D019: explica qué se pidió y qué se cotizó, sin transformar 25 kg en 50 kg',()=>{
+ const changed={...input,quotedItems:[{
+  ...input.quotedItems[0],description:'Cemento CPC - bolsa 25 kg',quantity:'10'
+ },...input.quotedItems.slice(1)]};
+ const v=resumirOfertaComercialV2(changed,[]);
+ assert.equal(v.cobertura?.identificados,2);
+ assert.equal(v.cobertura?.detalle.length,3);
+ assert.deepEqual(v.cobertura?.detalle.map(x=>x.estado),[
+  'por_verificar','coincidencia_automatica','coincidencia_automatica'
+ ]);
+ assert.equal(v.cobertura?.detalle[0].cotizado,null);
+ assert.equal(v.solicitado[0].description,input.requestItems[0].description);
+ assert.equal(v.cobertura?.porVerificar.length,1);
+});
+test('D019: 20 bolsas de 25 kg se describe como coincidencia automática, no como stock',()=>{
+ const data={...input,quotedItems:[{
+  ...input.quotedItems[0],description:'Cemento CPC - bolsa 25 kg',
+  quantity:'20'
+ },...input.quotedItems.slice(1)]};
+ const v=resumirOfertaComercialV2(data,[]);
+ assert.equal(v.cobertura?.identificados,3);
+ assert.equal(v.cobertura?.detalle[0].estado,'coincidencia_automatica');
+ assert.match(v.cobertura?.detalle[0].motivo,/revisar el original/u);
+ assert.doesNotMatch(JSON.stringify(v),/stock disponible/u);
+});
+test('D019: la condición de pago puede estar en cita combinada sin deducir plazos',()=>{
+ const value=resumirOfertaComercialV2(input,[{
+  categoria:'plazo',
+  evidencia:'Forma de pago y plazo: contado en efectivo.',
+  observacion:'Se cita forma de pago; plazo sin confirmar.'
+ }]);
+ assert.equal(value.condiciones.pago,'Contado en efectivo');
+ assert.equal(value.condiciones.entrega,'No informado');
+ const neg=resumirOfertaComercialV2(input,[{
+  categoria:'forma_pago',evidencia:'No acepta contado en efectivo.',
+  observacion:'Se requiere otra forma de pago.'
+ }]);
+ assert.notEqual(neg.condiciones.pago,'Contado en efectivo');
+});
+test('D019: subtotal sin símbolo de moneda se identifica solo por importe exacto en evidencia',()=>{
+ const val=resumirOfertaComercialV2({...input,totalLiteral:'$293.991,23'},[{
+  categoria:'precio',evidencia:'Subtotal 293.991,23',
+  observacion:'El subtotal de la oferta aparece citado.'
+ }]);
+ assert.equal(val.tipoImporte,'Subtotal informado');
+ const noSource=resumirOfertaComercialV2({...input,totalLiteral:'$293.991,23'},[{
+  categoria:'precio',evidencia:'Subtotal 123.000,00',
+  observacion:'Otro subtotal, no el importe destacado.'
+ }]);
+ assert.equal(noSource.tipoImporte,'Importe informado');
+});

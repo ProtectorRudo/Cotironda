@@ -62,3 +62,15 @@ test('No cambian acciones, autorización de descargas ni regeneración IA',()=>{
  assert.match(bids,/informe-final-whatsapp/u);
  assert.doesNotMatch(bids,/sms|signInWithOtp|createSignedUrl/u);
 });
+
+test('D019: comprobación comercial por material sólo tras cierre y evidencia privada',()=>{
+ assert.match(bids,/pedidoConsistente/u);
+ assert.match(bids,/cover\.detalle/u);
+ assert.match(bids,/coti-clean-material-detail/u);
+ assert.match(bids,/informe\.materiales/u);
+ assert.match(bids,/Coincidencia automática/u);
+ assert.match(bids,/No significa que el comercio no lo tenga/u);
+ assert.match(bids,/informe&&<section/u);
+ assert.doesNotMatch(bids,/\['Entrega',q\.resumen\.condiciones\.entrega\]/u);
+ assert.match(css,/coti-final-materials/u);
+});

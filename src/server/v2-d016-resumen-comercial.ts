@@ -5,9 +5,15 @@
 export type LineaCompraV2=Readonly<{
  line:number;description:string;quantity:string;unit:string;
 }>;
+export type CoincidenciaMaterialV2=Readonly<{
+ linea:number;solicitado:string;cotizado:string|null;
+ estado:'coincidencia_automatica'|'por_verificar';
+ motivo:string;
+}>;
 export type CoberturaCompraV2=Readonly<{
  identificados:number;solicitados:number;
  porVerificar:readonly string[];adicionales:number;
+ detalle:readonly CoincidenciaMaterialV2[];
 }>;
 export type ResumenComercialV2=Readonly<{
  totalDeclarado:string|null;
@@ -111,18 +117,31 @@ function comercial(raw:unknown):Readonly<{
  const matched=new Set<number>();
  let identified=0;
  const still:string[]=[];
+ const detalle:CoincidenciaMaterialV2[]=[];
  for(const req of requested){
   const i=offered.findIndex((quote,index)=>
    !matched.has(index)&&sameProducts(req,quote));
-  if(i<0){still.push(req.description);continue}
+  if(i<0){
+   still.push(req.description);
+   // Una línea ambigua puede existir en el original, pero no se confirma.
+   detalle.push(Object.freeze({linea:req.line,solicitado:req.description,
+    cotizado:null,estado:'por_verificar',
+    motivo:'No se confirmó correspondencia de producto, cantidad y presentación.'}));
+   continue;
+  }
+  const quote=offered[i];
   matched.add(i);identified++;
+  detalle.push(Object.freeze({linea:req.line,solicitado:req.description,
+   cotizado:quote.description,estado:'coincidencia_automatica',
+   motivo:'Coinciden automáticamente descripción y cantidad nominal; revisar el original para especificaciones adicionales.'}));
  }
  return {
   totalDeclarado:total,solicitado,
   cobertura:Object.freeze({
    identificados:identified,solicitados:requested.length,
    porVerificar:Object.freeze(still.slice(0,6)),
-   adicionales:offered.length-matched.size
+   adicionales:offered.length-matched.size,
+   detalle:Object.freeze(detalle)
   })
  };
 }
@@ -132,7 +151,7 @@ function tipoMonto(monto:string|null,puntos:readonly Punto[]):ResumenComercialV2
  const cifra=monto.replace(/\D/gu,'');
  for(const p of puntos){
   if(p.categoria!=='precio')continue;
-  const matches=p.evidencia.match(/\$\s*[\d., ]+|(?:ARS|USD|US\$)\s*[\d., ]+/giu)??[];
+  const matches=p.evidencia.match(/\$\s*[\d., ]+|(?:ARS|USD|US\$)\s*[\d., ]+|\b\d{1,3}(?:[.]\d{3})+(?:,\d{2})?|\b\d+(?:,\d{2})/giu)??[];
   if(!matches.some(x=>x.replace(/\D/gu,'')===cifra))continue;
   const evidence=normal(p.evidencia);
   if(/\bsubtotal\b/u.test(evidence))return 'Subtotal informado';
@@ -142,7 +161,13 @@ function tipoMonto(monto:string|null,puntos:readonly Punto[]):ResumenComercialV2
 }
 function cond(puntos:readonly Punto[]):ResumenComercialV2['condiciones']{
  const evidence=(cat:string)=>normal(puntos.find(p=>p.categoria===cat)?.evidencia??'');
- const iva=evidence('iva'),flete=evidence('flete'),pago=evidence('forma_pago');
+ const iva=evidence('iva'),flete=evidence('flete');
+ const directo=evidence('forma_pago');
+ // Algunos originales combinan «forma de pago y plazo» en una misma cita.
+ // Se lee SOLO la frase monetaria explícita; nunca se infiere del plazo.
+ const combinado=normal(puntos.find(p=>p.categoria==='plazo'&&
+  /\bcontado\b|\btransferencia\b|\bforma de pago\b/iu.test(p.evidencia))?.evidencia??'');
+ const pago=directo||combinado;
  let i=iva?'No verificado':'No informado';
  if(/iva[^.\n;]*no (?:esta )?incluido/u.test(iva))i='No incluido';
  else if(/iva[^.\n;]*incluido/u.test(iva))i='Incluido';
@@ -153,7 +178,8 @@ function cond(puntos:readonly Punto[]):ResumenComercialV2['condiciones']{
  else if(/flete[^.\n;]*incluido/u.test(flete))f='Incluido';
  else if(/flete[^.\n;]*no informad/u.test(flete))f='No informado';
  let pay=pago?'No verificado':'No informado';
- if(/\bcontado\s+(?:en\s+)?efectivo\b|\befectivo\s+al\s+contado\b/u.test(pago))
+ if(!/\bno\s+(?:se\s+)?(?:acepta|admite|incluye)\s+(?:pago\s+)?(?:contado|efectivo)\b/u.test(pago)&&
+  /\bcontado\s+(?:en\s+)?efectivo\b|\befectivo\s+al\s+contado\b/u.test(pago))
   pay='Contado en efectivo';
  else if(/\btransferencia\s+(?:bancaria)?\b/u.test(pago))
   pay='Transferencia bancaria';

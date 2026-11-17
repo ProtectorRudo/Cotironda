@@ -104,3 +104,48 @@ test('D019: el informe compara por comercio sin ordenar ganadores ni inventar im
  assert.ok(!JSON.stringify(report).includes('"ganador":'));
  assert.ok(!JSON.stringify(report).includes('"adjudicado":'));
 });
+
+test('D019: matriz final coteja cada renglón sin inventar faltantes ni stock',()=>{
+ const cat=data();
+ const requested=[
+  {line:1,description:'Cemento CPC 50 kg',quantity:'10.000',unit:'bolsas'},
+  {line:2,description:'Arena fina 1 m3',quantity:'1.000',unit:'bolsón'}
+ ];
+ const coverage=(details,found)=>({
+  identificados:found,solicitados:2,
+  porVerificar:found===2?[]:['Cemento CPC 50 kg'],adicionales:0,
+  detalle:details
+ });
+ cat.respuestas[0].resumen={
+  solicitado:requested,totalDeclarado:'$350.000',tipoImporte:'Total informado',
+  condiciones:{iva:'No informado',flete:'No informado',pago:'Contado',entrega:'No informado'},
+  cobertura:coverage([
+   {linea:1,solicitado:requested[0].description,cotizado:'Cemento CPC 50 kg',
+    estado:'coincidencia_automatica',motivo:'Cantidad nominal coincidente'},
+   {linea:2,solicitado:requested[1].description,cotizado:'Arena fina 1 m3',
+    estado:'coincidencia_automatica',motivo:'Cantidad nominal coincidente'}
+  ],2)
+ };
+ cat.respuestas[2].resumen={
+  solicitado:requested,totalDeclarado:'$300.000',tipoImporte:'Subtotal informado',
+  condiciones:{iva:'No informado',flete:'No informado',pago:'No informado',entrega:'No informado'},
+  cobertura:coverage([
+   {linea:1,solicitado:requested[0].description,cotizado:null,
+    estado:'por_verificar',motivo:'No se confirmó correspondencia'},
+   {linea:2,solicitado:requested[1].description,cotizado:'Arena fina 1 m3',
+    estado:'coincidencia_automatica',motivo:'Cantidad nominal coincidente'}
+  ],1)
+ };
+ const output=componerInformeFinalD016(state(),cat,NOW);
+ assert.equal(output.materiales.length,2);
+ assert.equal(output.materiales[0].material,requested[0].description);
+ assert.deepEqual(output.materiales[0].comercios.map(x=>x.estado),
+  ['coincidencia_automatica','por_verificar']);
+ assert.equal(output.materiales[0].comercios[1].cotizado,null);
+ assert.match(output.recomendaciones.join(' '),/no faltantes de stock/u);
+ assert.equal(componerInformeFinalD016({...state(),state:'waiting_for_close'},cat,NOW),null);
+ cat.respuestas[2].resumen.solicitado=[{...requested[0],description:'Cemento distinto'},requested[1]];
+ const drift=componerInformeFinalD016(state(),cat,NOW);
+ assert.equal(drift.materiales.length,0);
+ assert.match(drift.recomendaciones.join(' '),/no coinciden/u);
+});

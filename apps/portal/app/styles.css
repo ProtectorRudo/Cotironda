@@ -416,3 +416,37 @@ body:has(.coti-clean) .logo{font-size:18px}
 @media(prefers-reduced-motion:reduce){
  .coti-clean .coti-skeleton-row,.coti-clean .coti-skeleton-line{animation:none}
 }
+
+/* D019 material por material: lectura comercial sobria, adaptable y accesible. */
+.coti-clean .coti-clean-material-detail{margin:12px 0;padding:11px 12px;
+ background:#f8fbff;border:1px solid #e1eaf6;border-radius:10px}
+.coti-clean .coti-clean-material-detail h4{margin:0 0 10px;font-size:12px}
+.coti-clean .coti-clean-material-detail ul{padding:0;margin:0;list-style:none}
+.coti-clean .coti-clean-material-detail li{padding:9px 0;border-top:1px solid #e5edf8;
+ font-size:12px;line-height:1.5}
+.coti-clean .coti-clean-material-detail li:first-child{border-top:0}
+.coti-clean .coti-clean-material-detail li>strong{display:block;color:#142b4d}
+.coti-clean .coti-clean-material-detail li p{color:#536881;margin:5px 0}
+.coti-clean .coti-material-state{display:inline-flex;align-items:center;margin-right:4px;
+ border-radius:6px;background:#ebf3ff;color:#1257ba;font-weight:750;padding:2px 6px;
+ font-size:10px}
+.coti-clean .coti-material-state.caution{color:#876014;background:#fff1d7}
+.coti-clean .coti-final-materials{margin:18px 0}
+.coti-clean .coti-final-materials>h3{font-size:15px;color:#163c66;margin:0 0 12px}
+.coti-clean .coti-final-material{border:1px solid #e1eaf6;background:#fbfdff;
+ border-radius:10px;padding:12px;margin:9px 0}
+.coti-clean .coti-final-material h4{margin:0 0 10px;font-size:12px;
+ line-height:1.5;color:#17365a}
+.coti-clean .coti-final-material ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.coti-clean .coti-final-material li{display:grid;grid-template-columns:minmax(90px, .8fr) minmax(0, 2fr);
+ gap:10px;font-size:11px;line-height:1.5;border-top:1px solid #eaf0f7;padding-top:8px}
+.coti-clean .coti-final-material li strong{color:#17437a;overflow-wrap:anywhere}
+.coti-clean .coti-final-material li span{color:#536984;overflow-wrap:anywhere}
+.coti-clean .coti-final-guidance{padding:12px;background:#f4f8ff;border:1px solid #deebff;
+ border-radius:10px;margin:13px 0;color:#244366}
+.coti-clean .coti-final-guidance h3{font-size:13px;margin:0 0 8px}
+.coti-clean .coti-final-guidance ul{padding-left:18px;margin:0}
+.coti-clean .coti-final-guidance li{font-size:12px;line-height:1.5;margin-bottom:7px}
+@media(max-width:460px){
+ .coti-clean .coti-final-material li{grid-template-columns:minmax(0,1fr);gap:2px}
+}
