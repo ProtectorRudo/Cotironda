@@ -21,7 +21,7 @@ export type DiagnosticoRecuperacionD013=
  |'source_input_invalid'|'source_schema_invalid'|'source_not_a_quote'
  |'source_without_items'|'source_unsafe_fields'
  |'source_second_reader_invalid'|'source_item_evidence_invalid'
- |'source_overlapping_evidence'
+ |'source_quantity_not_evidenced'|'source_overlapping_evidence'
  |'source_readings_disagree'|'source_missing_items'
  |'source_second_reader_unanchored'|'source_no_confirmed_item'
  |'source_missing_city'|'source_invalid_review_indices'
@@ -60,6 +60,7 @@ const PLAN_DIAGNOSTICOS_D013:Readonly<Record<string,DiagnosticoRecuperacionD013>
  'campos_inseguros':'source_unsafe_fields',
  'segunda_lectura_invalida':'source_second_reader_invalid',
  'articulo_sin_evidencia_verificable':'source_item_evidence_invalid',
+ 'cantidad_sin_respaldo_en_fuente':'source_quantity_not_evidenced',
  'evidencias_superpuestas':'source_overlapping_evidence',
  'lecturas_incompletas_o_divergentes':'source_readings_disagree',
  'posibles_articulos_no_representados':'source_missing_items',
