@@ -294,6 +294,9 @@ export function cantidadAcreditadaLecturaUnicaD013(
  return ubicaciones.some(pos=>{
   const medida=magnitudes.find(m=>m.inicio===pos);
   if(!unidadFisica){
+   // "ml" es ambiguo sólo cuando el original usa la sigla minúscula.
+   // "mililitros"/"mL" literales sí acreditan volumen comprado.
+   if(unidadComprada==='ml'&&medida?.unidad==='ml')return true;
    // Un envase/unit no puede usar el peso de presentación como cantidad.
    return medida===undefined;
   }
@@ -309,7 +312,7 @@ export function cantidadAcreditadaLecturaUnicaD013(
 }
 const foldZonaUnicaD013=(s:string):string=>s.normalize('NFD')
  .replace(/[\u0300-\u036f]/gu,'').toLowerCase()
- .replace(/[.,]+/gu,' ').replace(/\s+/gu,' ').trim();
+ .replace(/[^\p{L}\p{N}]+/gu,' ').replace(/\s+/gu,' ').trim();
 /** No atribuir una localidad inventada por el modelo al comprador.
  * Una indicación "La Plata, Buenos Aires" es admisible si La Plata
  * aparece literalmente como ciudad; nunca transformar Berisso en La Plata.
