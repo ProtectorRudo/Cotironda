@@ -316,6 +316,17 @@ function unidadAdyacenteACompraD013(
  }
  return false;
 }
+/** La cantidad literal puede estar al lado de un envase técnico concreto.
+ * No permitir «1 bolsón» como «1 bolsa», ni «2 cajas» como «2 baldes».
+ */
+function envaseExplicitoD013(evidencia:string,fin:number):string|null{
+ const despues=evidencia.slice(fin).replace(/^\s+/u,'');
+ const m=/^([\p{L}]+)(?![\p{L}\p{N}])/u.exec(despues);
+ if(!m)return null;
+ const unidad=unidadCompradaCanonicaV2D013(m[1]);
+ return ['bag','bigbag','bucket','roll','box','pack','unit'].includes(unidad)
+  ?unidad:null;
+}
 /** Recuperación SIN una segunda IA: cuando la cita del modelo se escribió
  * distinto al original, la cantidad sólo se acepta si el propio tramo del
  * original prueba el mismo número pegado a una unidad de COMPRA reconocida.
@@ -370,7 +381,11 @@ export function cantidadAcreditadaLecturaUnicaD013(
    if(!unidadFisica){
     if(unidadComprada==='ml')return medida?.unidad==='ml';
     // Una especificación en kg, litros o m³ nunca cuenta envases.
-    return medida===undefined;
+    if(medida!==undefined)return false;
+    const contenedor=envaseExplicitoD013(
+     evidencia,pos+citaCantidad.length);
+    return contenedor===null||contenedor===unidadComprada||
+     (unidadComprada==='unit'&&contenedor!=='unit');
    }
    if(medida)return medida.unidad===unidadComprada;
    return unidadAdyacenteACompraD013(
