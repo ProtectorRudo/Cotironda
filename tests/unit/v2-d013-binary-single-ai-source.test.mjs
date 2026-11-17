@@ -127,5 +127,7 @@ test('V2 webhook offline: proveedor conserva segunda IA, comprador no tiene fall
  assert.doesNotMatch(generated,/const binaryWorker=d013BinaryEnabled\?/u);
  assert.match(generated,/enabled:d013BinaryEnabled/u);
  assert.match(generated,/proposeDocumentAI\(\{\.\.\.args,perspective:'corroboration'\}\)/u);
- assert.match(generated,/cotironda_piloto_ia_attest_binary_mvp278/u);
+ // La atestación SQL pertenece al broker importado, no al index generado.
+ const broker=readFileSync(new URL('../../supabase/functions/cotironda-piloto-whapi/ai-central-buyer-binary-broker-mvp278.ts',import.meta.url),'utf8');
+ assert.match(broker,/cotironda_piloto_ia_attest_binary_mvp278/u);
 });
