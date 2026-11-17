@@ -164,3 +164,110 @@ test('D013: SQL candidato recupera desacuerdo semántico sin tocar WhatsApp',()=
  assert.match(sql,/EXECUTE replace\(v_read,v_old,v_new\)/u);
  assert.doesNotMatch(sql,/cotironda_piloto_ia_publish_mvp222|cron\.schedule|whapi_outbox|http_post/iu);
 });
+
+test('D013: diagnóstico de credenciales inválidas se emite ANTES de gastar IA',async()=>{
+ const source=await example(),seen=[],calls=[];
+ const result=await recuperarBuyerReviewD013({
+  ...config,apiKey:'',ejecutar:true,onDiagnostic:c=>seen.push(c),
+  rpc:async name=>{calls.push(name);return {data:source,error:null}},
+  planificar:async()=>{throw Error('no debe ejecutar OpenAI')}
+ });
+ assert.equal(result.estado,'needs_operator_review');
+ assert.equal(result.outboundSent,false);
+ assert.deepEqual(seen,['ai_credentials_invalid']);
+ assert.deepEqual(calls,['cotironda_piloto_v2_d013_review_source_private']);
+});
+
+test('D013: distingue rechazo IA, falta de catalogo y aclaracion sin PII',async()=>{
+ const source=await example();
+ const cases=[
+  ['ai_credentials_rejected','ai_credentials_rejected'],
+  ['citas_no_corresponden_al_original','ai_evidence_mismatch'],
+  ['sin_catalogos_consentidos','catalog_no_suppliers'],
+  ['catalogo_rpc_indisponible','catalog_rpc_error'],
+  ['texto_privado_con_un_telefono_y_secretos','plan_other_rejected']
+ ];
+ for(const [motivo,want] of cases){
+  const seen=[],calls=[];
+  const response=await recuperarBuyerReviewD013({
+   ...config,ejecutar:true,onDiagnostic:c=>seen.push(c),
+   rpc:async name=>{calls.push(name);return {data:source,error:null}},
+   planificar:async()=>({estado:'rechazado',motivo})
+  });
+  assert.equal(response.estado,'needs_operator_review');
+  assert.deepEqual(seen,[want]);
+  assert.ok(seen.every(c=>!c.includes('texto_privado')));
+  assert.deepEqual(calls,['cotironda_piloto_v2_d013_review_source_private']);
+ }
+ const seen=[];
+ const response=await recuperarBuyerReviewD013({
+  ...config,ejecutar:true,onDiagnostic:c=>seen.push(c),
+  rpc:async()=>({data:source,error:null}),
+  planificar:async()=>({estado:'requiere_aclaracion',motivo:'falta_localidad'})
+ });
+ assert.equal(response.estado,'needs_operator_review');
+ assert.deepEqual(seen,['plan_clarification_required']);
+});
+
+test('D013: puente inválido informa presentación/unidades sin intentar SQL',async()=>{
+ const source=await example();
+ const cases=[
+  ['presentacion_fuente_no_representable','bridge_source_invalid'],
+  ['cantidad_unidad_no_representable_en_sql','bridge_units_invalid'],
+  ['sin_destinos','bridge_destination_invalid'],
+  ['otro motivo potencialmente sensible','bridge_other_rejected']
+ ];
+ for(const [motivo,want] of cases){
+  const seen=[],calls=[];
+  const response=await recuperarBuyerReviewD013({
+   ...config,ejecutar:true,onDiagnostic:c=>seen.push(c),
+   rpc:async name=>{calls.push(name);return {data:source,error:null}},
+   preparar:()=>({estado:'plan_no_verificable',motivo,params:null})
+  });
+  assert.equal(response.estado,'needs_operator_review');
+  assert.deepEqual(seen,[want]);
+  assert.deepEqual(calls,['cotironda_piloto_v2_d013_review_source_private']);
+ }
+});
+
+test('D013: diferencia error RPC stage, rechazo SQL e inconsistencia sin publicar',async()=>{
+ const source=await example();
+ const cases=[
+  [{data:null,error:{message:'secret_error'}},'stage_rpc_error'],
+  [{data:{state:'not_eligible'},error:null},'stage_denied'],
+  [{data:{state:'staged',request_id:'123e4567-e89b-42d3-a456-426614174000',
+   items_staged:1,matches_staged:1,invitations_sent:0,outbox_sent:1},
+   error:null},'stage_inconsistent']
+ ];
+ for(const [stage,want] of cases){
+  const seen=[],calls=[];
+  const response=await recuperarBuyerReviewD013({
+   ...config,ejecutar:true,onDiagnostic:c=>seen.push(c),
+   rpc:async name=>{calls.push(name);return name===
+    'cotironda_piloto_v2_d013_review_source_private'
+     ?{data:source,error:null}:stage}
+  });
+  assert.equal(response.estado,'needs_operator_review');
+  assert.deepEqual(seen,[want]);
+  assert.deepEqual(calls,[
+   'cotironda_piloto_v2_d013_review_source_private',
+   'cotironda_piloto_v2_d013_recovery_stage_private'
+  ]);
+ }
+});
+
+test('D013: telemetría defectuosa no cambia acciones, excepciones ocultas',async()=>{
+ const source=await example();
+ const result=await recuperarBuyerReviewD013({
+  ...config,ejecutar:true,onDiagnostic:()=>{throw Error('confidencial')},
+  rpc:async name=>({data:source,error:null}),
+  planificar:async()=>{throw Error('contiene secreto del comprador')}
+ });
+ assert.equal(result.estado,'needs_operator_review');
+ assert.equal(result.outboundSent,false);
+ const worker=readFileSync(new URL(
+  '../../supabase/functions/cotironda-piloto-v2-review-recovery-d013/index.ts',
+  import.meta.url),'utf8');
+ assert.match(worker,/onDiagnostic:code=>console\.warn\('cotironda_d013_recovery_'\+code\)/u);
+ assert.doesNotMatch(worker,/console\.warn\([^\n]*(?:raw\.|plaintext|contact|source_sha256|apiKey)/u);
+});
