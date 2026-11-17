@@ -107,14 +107,17 @@ function citaVerificadaDelMismoItem(origen:string,
  articulos:readonly PropuestaArticulo[]):boolean{
  if(!texto(segunda,1500))return false;
  let pos=origen.indexOf(segunda);
+ let citaPropia=false;
  while(pos>=0){
   const fin=pos+segunda.length;
-  if(pos<primera.fin&&fin>primera.inicio&&
-     !articulos.some(x=>x!==primera&&pos<x.fin&&fin>x.inicio))
-   return true;
+  // Una subcita repetida en OTRA línea no identifica el producto:
+  // aunque coincida la cantidad, el origen queda ambiguo.
+  if(articulos.some(x=>x!==primera&&pos<x.fin&&fin>x.inicio))
+   return false;
+  if(pos<primera.fin&&fin>primera.inicio)citaPropia=true;
   pos=origen.indexOf(segunda,pos+1);
  }
- return false;
+ return citaPropia;
 }
 function mismaLocalidadLeida(a:string|null,b:string|null):boolean{
  if(a===null||b===null)return a===b;
