@@ -129,12 +129,15 @@ export function verificarCorrespondenciaTecnicaD013(
   return refuse('marca_excluyente_no_acreditada');
 
  const wantedGroup=materialGroup(demand),offeredGroup=materialGroup(catalogo);
- if(wantedGroup&&offeredGroup&&wantedGroup!==offeredGroup)
+ const categoriaGenerica=(g:string|null)=>g===null||
+  /_(?:tipo|uso)_desconocido$/u.test(g);
+ // Sólo una CONTRADICCIÓN técnica explícita es negativa definitiva.
+ // "cemento" frente a "cemento Portland" NO es una contradicción:
+ // una segunda IA debe decidir si hay respaldo suficiente.
+ if(wantedGroup&&offeredGroup&&wantedGroup!==offeredGroup&&
+    !categoriaGenerica(wantedGroup)&&!categoriaGenerica(offeredGroup))
   return refuse('tipo_o_aplicacion_tecnica_diferente');
- // Si solo un texto explicita la categoría, no inventar rechazo definitivo:
- // otra lectura independiente debe comprobar identidad. Los conflictos
- // explícitos entre categorías siguen siendo rechazados arriba.
- const grupoIncompleto=Boolean(wantedGroup)!==Boolean(offeredGroup);
+ const grupoIncompleto=wantedGroup!==offeredGroup;
 
  const wantedCable=cableSize(pedido.descripcion)||cableSize(pedido.evidencia),
   offeredCable=cableSize(catalogo);
