@@ -9,7 +9,7 @@
  * La fase de preparación económica/WhatsApp será otra transacción SQL.
  * NO introducir fetch Whapi en este archivo.
  */
-import {interpretarConIaCentralV1} from './cliente-openai-v1.ts';
+import {interpretarConIaCentralV2D013} from './cliente-openai-v2-d013.ts';
 import {validarSnapshotCatalogosMvp220} from './catalogo-supabase-mvp220.ts';
 import {categorizarCatalogosCuradosD013} from './catalogo-curado-v2-d013.ts';
 import {proponerRuteoCatalogoConIAV2} from './ruteador-catalogos-v2-d013.ts';
@@ -53,7 +53,7 @@ export async function planificarMensajeAutenticadoMvp220(args:{
  // IMPORTANT: el webhook real aplica identidad/HMAC, persiste la fuente
  // y reserva su cuota ANTES de habilitar este worker. El booleano no
  // es autorización real; el RPC verifica identidad nuevamente.
- const interpreted=await interpretarConIaCentralV1({
+ const interpreted=await interpretarConIaCentralV2D013({
   fuente:args.textoOriginal,apiKey:args.apiKey,
   model:args.model,fetchImpl:args.fetchImpl
  });
