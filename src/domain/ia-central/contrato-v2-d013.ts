@@ -327,6 +327,15 @@ function envaseExplicitoD013(evidencia:string,fin:number):string|null{
  return ['bag','bigbag','bucket','roll','box','pack','unit'].includes(unidad)
   ?unidad:null;
 }
+/** Una magnitud que especifica el tamaño/peso de un envase solicitado
+ * no pasa a ser cantidad comprada por la IA (10 bolsas de 25 kg != 25 kg).
+ * La evidencia del artículo es una única cita, nunca otro renglón.
+ */
+function esPresentacionDeEnvaseD013(evidencia:string,pos:number):boolean{
+ const antes=evidencia.slice(0,pos).normalize('NFD')
+  .replace(/[\u0300-\u036f]/gu,'').toLocaleLowerCase('es-AR');
+ return /(?<![\p{L}\p{N}])(?:\d{1,6}(?:[.,]\d{1,3})?|un|una|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez)\s*(?:bolsas?|bolson(?:es)?|rollos?|baldes?|cajas?|paquetes?|packs?|unidades?)\b/u.test(antes);
+}
 /** Recuperación SIN una segunda IA: cuando la cita del modelo se escribió
  * distinto al original, la cantidad sólo se acepta si el propio tramo del
  * original prueba el mismo número pegado a una unidad de COMPRA reconocida.
@@ -339,6 +348,8 @@ function cantidadPorUnidadExplicitaD013(
  const numeros=/(?<![\p{L}\p{N}.,])(?:\d{1,3}(?:\.\d{3})+(?:,\d{1,3})?|\d{1,6}(?:[.,]\d{1,3})?)(?![\d.,])/gu;
  for(const m of evidencia.matchAll(numeros)){
   if(numeroNaturalV2D013(m[0])===cantidadObjetivo&&
+     !(unidadDimensionadaV2D013(unidad)&&
+       esPresentacionDeEnvaseD013(evidencia,m.index))&&
      unidadAdyacenteACompraD013(evidencia,m.index+m[0].length,unidad))
    return true;
  }
@@ -353,6 +364,8 @@ function cantidadPorUnidadExplicitaD013(
    const valor=numeroNaturalV2D013(fragmento);
    if(valor!==cantidadObjetivo)continue;
    const fin=trozo[trozo.length-1].index+trozo[trozo.length-1][0].length;
+   if(unidadDimensionadaV2D013(unidad)&&
+      esPresentacionDeEnvaseD013(evidencia,trozo[0].index))continue;
    if(unidadAdyacenteACompraD013(evidencia,fin,unidad))return true;
   }
  }
@@ -388,6 +401,7 @@ export function cantidadAcreditadaLecturaUnicaD013(
      (unidadComprada==='unit'&&contenedor!=='unit');
    }
    if(medida){
+    if(esPresentacionDeEnvaseD013(evidencia,pos))return false;
     // «15» en «15,5 L» comparte inicio, pero NO es la cantidad 15 L.
     // Igualdad exacta de magnitud (milésimos) y dimensión, sin redondear.
     const [entero,fraccion='']=cantidadNormalizada.split('.');
