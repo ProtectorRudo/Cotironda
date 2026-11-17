@@ -1,3 +1,4 @@
+import {unidadCompradaCanonicaV2D013} from './magnitudes-universales-v2-d013.ts';
 /** D013: conciliador semántico V2 sin alterar el contrato histórico pinneado.
  * El rubro es una etiqueta; cantidad, unidad y origen literal son prueba.
  */
@@ -23,24 +24,7 @@ function cantidad(v:unknown):v is string{
  * primaria, demostrar la MISMA cantidad y no tomarla de otro artículo.
  * No igualar unidades de volumen con bultos: eso cambia el presupuesto.
  */
-function unidadCanonica(v:string):string{
- const t=v.trim().normalize('NFD').replace(/[\u0300-\u036f]/gu,'')
-  .toLocaleLowerCase('es-AR');
- if(['bag','bolsa','bolsas','bolson','bolsones','bigbag','big bag'].includes(t))
-  return 'bag';
- if(['unit','unidad','unidades','unid','u','un'].includes(t))
-  return 'unit';
- if(['roll','rollo','rollos'].includes(t))return 'roll';
- if(['balde','baldes','bucket'].includes(t))return 'bucket';
- if(['box','caja','cajas'].includes(t))return 'box';
- if(['pack','packs','paquete','paquetes'].includes(t))return 'pack';
- if(['m3','m³','metro cubico','metros cubicos'].includes(t))return 'm3';
- if(['kg','kilo','kilos','kilogramo','kilogramos'].includes(t))return 'kg';
- if(['l','lt','lts','litro','litros'].includes(t))return 'l';
- if(['m','metro','metros'].includes(t))return 'm';
- if(['m2','m²','metro cuadrado','metros cuadrados'].includes(t))return 'm2';
- return t;
-}
+function unidadCanonica(v:string):string{return unidadCompradaCanonicaV2D013(v)}
 function unidadEquivalente(a:string,b:string,evidencia:string):boolean{
  const x=unidadCanonica(a),y=unidadCanonica(b);
  if(x===y)return true;
@@ -49,12 +33,15 @@ function unidadEquivalente(a:string,b:string,evidencia:string):boolean{
  const e=evidencia.normalize('NFD').replace(/[\u0300-\u036f]/gu,'')
   .toLocaleLowerCase('es-AR');
  const envases=[
-  {unidad:'bag',patron:/\b(?:bolsas?|bolson(?:es)?|big\s?bags?)\b/u},
+  {unidad:'bag',patron:/\bbolsas?\b/u},
+  {unidad:'bigbag',patron:/\b(?:bolson(?:es)?|big\s?bags?)\b/u},
   {unidad:'roll',patron:/\brollos?\b/u},
   {unidad:'bucket',patron:/\bbaldes?\b/u},
   {unidad:'box',patron:/\bcajas?\b/u},
   {unidad:'pack',patron:/\b(?:packs?|paquetes?)\b/u}
  ];
+ if(x==='bag'&&y==='bigbag'||x==='bigbag'&&y==='bag')
+  return /\b(?:bolson(?:es)?|big\s?bags?)\b/u.test(e);
  return envases.some(p=>p.patron.test(e)&&
   ((x===p.unidad&&y==='unit')||(x==='unit'&&y===p.unidad)));
 }
