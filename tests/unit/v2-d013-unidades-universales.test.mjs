@@ -97,3 +97,21 @@ test('D013: conversión de envases en catálogo con gramos/kilos y mL/L',()=>{
   'Impermeabilizante 500 g','alternativa_razonable',true);
  assert.equal(wrong.motivo,'base_de_medida_incompatible');
 });
+
+test('D013: volumen de áridos es base propia, conversión entera sin stock inferido',()=>{
+ const a=verificarCorrespondenciaTecnicaD013(
+  item('2 bolsones de arena fina de 1 m³','2'),
+  'Bolsón de arena fina de 0,5 m3','alternativa_razonable',true);
+ assert.equal(a.estado,'evidencia_suficiente',a.motivo);
+ assert.equal(a.conversion?.unidad,'m3');
+ assert.equal(a.conversion?.envasesEquivalentes,'4');
+ const b=verificarCorrespondenciaTecnicaD013(
+  item('1 bolsón de arena fina de 1 m³','1'),
+  'Bolsón de arena fina 0,75 m3','alternativa_razonable',true);
+ assert.equal(b.estado,'revision_interna');
+ assert.equal(b.motivo,'conversion_de_envases_no_entera');
+ const incompatible=verificarCorrespondenciaTecnicaD013(
+  item('1 bolsón de arena fina de 1 m³','1'),
+  'Bolsón de arena fina 1000 L','alternativa_razonable',true);
+ assert.equal(incompatible.motivo,'base_de_medida_incompatible');
+});
