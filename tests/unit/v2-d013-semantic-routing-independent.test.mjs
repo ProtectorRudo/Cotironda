@@ -1,0 +1,159 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {proponerRuteoCatalogoConIAV2,autorizarPropuestasCatalogoV2}
+ from '../../src/domain/ia-central/ruteador-catalogos-v2-d013.ts';
+import {verificarCorrespondenciaTecnicaD013}
+ from '../../src/domain/ia-central/verificador-evidencia-tecnica-v2-d013.ts';
+
+const quote=(text,n='2',unit='unit')=>({
+ evidencia:text,inicio:0,fin:text.length,descripcion:text,
+ cantidad:n,unidad:unit,rubro:'obra_gruesa',presentacion:null,aclaracion:null
+});
+const source=[
+ quote('2 envases Ceresita líquida 1 L'),
+ quote('10 bolsas cemento de obra 25 kg','10','bag')
+];
+const pedido={intencion:'cotizar',zona_entrega:'La Plata',dudas:[],articulos:source};
+const supplier=(key,lines)=>({
+ clave:key,consentido:true,activo:true,localidades:['La Plata'],articulos:lines
+});
+const catalog=[
+ supplier('corralon_ailin',[
+  {numero:1,descripcion:'Hidrofugante para mortero 1 L',rubro:'ferreteria'},
+  {numero:2,descripcion:'Cemento de obra 25 kg',rubro:'obra_gruesa'}]),
+ supplier('corralon_nahuel',[
+  {numero:2,descripcion:'Cemento de obra 25 kg',rubro:'obra_gruesa'}])
+];
+const proposal={propuestas:[
+ {proveedor:'corralon_ailin',correspondencias:[
+  {indicePedido:0,numeroCatalogo:1,tipo:'producto_declarado',
+   explicacion:'Hidrofugante para mezcla'},
+  {indicePedido:1,numeroCatalogo:2,tipo:'producto_declarado',
+   explicacion:'Mismo cemento 25 kg'}]},
+ {proveedor:'corralon_nahuel',correspondencias:[
+  {indicePedido:1,numeroCatalogo:2,tipo:'producto_declarado',
+   explicacion:'Mismo cemento 25 kg'}]}
+]};
+const verdict={verificaciones:[{
+ proveedor:'corralon_ailin',indicePedido:0,numeroCatalogo:1,decision:'equivalente'
+}]};
+const mockApi=(...payloads)=>{
+ const bodies=[];
+ const fetchImpl=async(_url,req)=>{
+  const p=JSON.parse(req.body);
+  assert.equal(p.store,false);assert.deepEqual(p.tools,[]);
+  bodies.push(p);
+  return new Response(JSON.stringify({
+   status:'completed',output:[{type:'message',role:'assistant',content:[
+    {type:'output_text',text:JSON.stringify(payloads.shift())}
+   ]}]
+  }),{status:200,headers:{'content-type':'application/json'}});
+ };
+ return {fetchImpl,bodies};
+};
+test('V2: el bloqueo léxico pide prueba y no autoriza envíos por sí solo',()=>{
+ const r=verificarCorrespondenciaTecnicaD013(source[0],
+  'Hidrofugante para mortero 1 L','producto_declarado');
+ assert.equal(r.estado,'revision_interna');
+ assert.equal(r.motivo,'sin_identidad_material_comprobable');
+ const first=autorizarPropuestasCatalogoV2(pedido,catalog,proposal.propuestas);
+ assert.deepEqual(first.propuestas.map(x=>[x.proveedor,x.correspondencias.length]),
+  [['corralon_ailin',1],['corralon_nahuel',1]]);
+ assert.equal(first.revisionTecnica[0].motivo,'sin_identidad_material_comprobable');
+});
+test('V2: IA independiente valida sinónimos y mantiene routing 2/1',async()=>{
+ const {fetchImpl,bodies}=mockApi(proposal,verdict);
+ const result=await proponerRuteoCatalogoConIAV2({
+  pedido,proveedores:catalog,apiKey:'sk-'+'a'.repeat(24),
+  model:'gpt-6-luna',fetchImpl});
+ assert.equal(bodies.length,2);
+ assert.equal(bodies[0].text.format.name,'cotironda_ruteo_catalogos_v2');
+ assert.equal(bodies[1].text.format.name,'cotironda_corrobora_pares_v2_d013');
+ assert.equal(result.estado,'ruteo_valido_para_preparacion');
+ assert.deepEqual(result.propuestas.map(x=>[x.proveedor,x.correspondencias.length]),
+  [['corralon_ailin',2],['corralon_nahuel',1]]);
+ assert.deepEqual(result.cobertura.map(x=>x.proveedoresAutorizados),[1,2]);
+ assert.equal(result.whatsappEnviado,false);
+ assert.doesNotMatch(JSON.stringify(bodies),/telefonos|access_token|whapi_id/i);
+});
+test('V2: segundo lector inseguro, omitido o incierto NO habilita coincidencias',async()=>{
+ for(const answer of [
+  {verificaciones:[]},
+  {verificaciones:[{...verdict.verificaciones[0],decision:'incierto'}]},
+  {verificaciones:[{...verdict.verificaciones[0],numeroCatalogo:999,
+   decision:'equivalente'}]},
+  {verificaciones:[{...verdict.verificaciones[0]},
+   {...verdict.verificaciones[0]}]}
+ ]){
+  const {fetchImpl}=mockApi(proposal,answer);
+  const res=await proponerRuteoCatalogoConIAV2({
+   pedido,proveedores:catalog,apiKey:'sk-'+'a'.repeat(24),
+   model:'gpt-6-luna',fetchImpl});
+  assert.deepEqual(res.propuestas.map(x=>[x.proveedor,x.correspondencias.length]),
+   [['corralon_ailin',1],['corralon_nahuel',1]]);
+  assert.equal(res.whatsappEnviado,false);
+ }
+});
+test('V2: conflicto de sección, presentación o marca excluyente NO puede salvarse con IA',()=>{
+ const buyer=quote('3 metros cable 2.5 mm2','3','m');
+ const c=verificarCorrespondenciaTecnicaD013(buyer,'Cable unipolar 4 mm2',
+  'alternativa_razonable',true);
+ assert.equal(c.motivo,'seccion_cable_no_equivalente');
+ const a=verificarCorrespondenciaTecnicaD013(
+  {...source[1],descripcion:'Cemento marca excluyente Loma Negra 25 kg',
+   aclaracion:'solo marca Loma Negra'},
+  'Cemento marca otra 25 kg','alternativa_razonable',true);
+ assert.equal(a.motivo,'marca_excluyente_no_acreditada');
+ const wrong=verificarCorrespondenciaTecnicaD013(
+  {...source[1],descripcion:'Cemento Portland 25 kg'},
+  'Cemento de albañilería 25 kg','alternativa_razonable',true);
+ assert.equal(wrong.motivo,'tipo_o_aplicacion_tecnica_diferente');
+});
+test('V2: lote con cuatro artículos se distribuye 4/2 según catálogo, no rubro',async()=>{
+ const articles=[
+  quote('10 bolsas de cemento de 25 kg','10','bag'),
+  quote('1 bolsón de arena fina','1','unit'),
+  quote('3 baldes de albañil de 10 litros','3','unit'),
+  quote('2 rollos de membrana aluminizada 4 mm','2','roll')
+ ];
+ const request={...pedido,articulos:articles};
+ const shops=[
+  supplier('corralon_ailin',[
+   {numero:3,descripcion:'Cemento de obra 25 kg',rubro:'ferreteria'},
+   {numero:20,descripcion:'Bolsón de arena fina 1 m3',rubro:'obra_gruesa'},
+   {numero:50,descripcion:'Balde de albañil 10 litros',rubro:'otros'},
+   {numero:45,descripcion:'Membrana asfáltica aluminizada 4 mm',rubro:'pintura'}
+  ]),
+  supplier('corralon_nahuel',[
+   {numero:3,descripcion:'Cemento de obra 25 kg',rubro:'obra_gruesa'},
+   {numero:20,descripcion:'Bolsón de arena fina 1 m3',rubro:'obra_gruesa'}
+  ])
+ ];
+ const proposals={propuestas:shops.map((p,i)=>({
+  proveedor:p.clave,correspondencias:p.articulos.map((x,j)=>({
+   indicePedido:j,numeroCatalogo:x.numero,tipo:'producto_declarado',
+   explicacion:'Producto declarado en catálogo'
+  }))
+ }))};
+ const {fetchImpl}=mockApi(proposals);
+ const res=await proponerRuteoCatalogoConIAV2({
+  pedido:request,proveedores:shops,model:'gpt-6-luna',
+  apiKey:'sk-'+'a'.repeat(24),fetchImpl
+ });
+ assert.deepEqual(res.propuestas.map(x=>[x.proveedor,
+  x.correspondencias.map(c=>c.indicePedido)]),[
+  ['corralon_ailin',[0,1,2,3]],['corralon_nahuel',[0,1]]
+ ]);
+ assert.equal(res.whatsappEnviado,false);
+});
+test('V2: no convierte propuestas a negocios no autorizados',async()=>{
+ const proposals={propuestas:[{proveedor:'corralon_nahuel',
+  correspondencias:[{indicePedido:0,numeroCatalogo:1,
+   tipo:'producto_declarado',explicacion:'No declarado'}]}]};
+ const {fetchImpl,bodies}=mockApi(proposals);
+ const res=await proponerRuteoCatalogoConIAV2({pedido,proveedores:catalog,
+  model:'gpt-6-luna',apiKey:'sk-'+'a'.repeat(24),fetchImpl});
+ assert.equal(res.estado,'requiere_revision');
+ assert.deepEqual(res.propuestas,[]);
+ assert.equal(bodies.length,1);
+});
