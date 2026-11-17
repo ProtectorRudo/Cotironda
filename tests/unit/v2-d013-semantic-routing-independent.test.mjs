@@ -212,3 +212,20 @@ test('V2: sin respuesta del segundo lector no hay asignación comercial',async()
  assert.deepEqual(res.propuestas,[]);
  assert.equal(res.estado,'requiere_revision');
 });
+
+test('V2: categoría genérica no contradice marca o subtipo; la segunda IA decide',()=>{
+ const generic={...source[1],descripcion:'Cemento de obra 25 kg',
+  evidencia:'10 bolsas de cemento 25 kg',presentacion:'25 kg'};
+ const normal=verificarCorrespondenciaTecnicaD013(
+  generic,'Cemento Portland 25 kg','producto_declarado');
+ assert.equal(normal.estado,'revision_interna');
+ assert.equal(normal.motivo,'prestacion_tecnica_sin_acreditar');
+ const confirmed=verificarCorrespondenciaTecnicaD013(
+  generic,'Cemento Portland 25 kg','producto_declarado',true);
+ assert.equal(confirmed.estado,'evidencia_suficiente');
+ const explicit=verificarCorrespondenciaTecnicaD013(
+  {...generic,descripcion:'Cemento Portland 25 kg'},
+  'Cemento albañilería 25 kg','producto_declarado',true);
+ assert.equal(explicit.estado,'revision_interna');
+ assert.equal(explicit.motivo,'tipo_o_aplicacion_tecnica_diferente');
+});
