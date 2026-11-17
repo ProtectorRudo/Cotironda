@@ -1,13 +1,14 @@
-/** Cotironda V2 D013: PDF/DOCX/XLSX ya corroborados -> preparación
- * original verificable -> liberación atómica privada V2, SIN MVP280.
- * Reutiliza MVP277/278 inmutables. Nunca envía WhatsApp ni publica si
- * falla la lectura, HMAC, custodia, política o autorización de la fuente.
- * SOLO apto para documentos con localidad explícita en el original.
+/** Cotironda V2 D013: una IA de comprador + atestación independiente
+ * de bytes PDF/Word/Excel, conservando el broker SQL MVP278 inmutable.
+ * Nunca publica ni envía si fallan SHA, filas, HMAC, políticas o autorización.
+ * SOLO documentos cuya localidad está acreditada por el original.
  */
 import type {DownloadedMedia} from './whapi-media-archive.ts';
 import type {DocumentDraft} from './document-ai-draft.ts';
 import {prepararDocumentoBinarioCompradorMvp278}
  from './ai-central-buyer-binary-broker-mvp278.ts';
+import {contrastarDocumentoCompradorV2UnicaD013}
+ from './ai-central-buyer-source-v2-d013.ts';
 import {procesarCompradorCentralMvp226 as procesarCompradorV2D013}
  from './ai-central-buyer-v2-d013.ts';
 
@@ -45,8 +46,14 @@ export async function prepararDocumentoBinarioV2D013(args:{
    habilitado:true,autenticadoPorWebhook:true,
    compradorAutorizado:true,chatHmac:args.chatHmac,
    messageHmac:args.messageHmac,original:args.original,
-   primera:args.primera,segunda:args.segunda,
+   primera:args.primera,segunda:null,
    apiKey:args.apiKey,model:args.model,rpc:args.rpc,
+   // El segundo modelo se sustituye por verificación independiente
+   // de originales: no se reescribe ni burla la atestación SQL.
+   contrastar:async source=>contrastarDocumentoCompradorV2UnicaD013({
+    habilitado:source.habilitado,original:source.original,
+    primera:source.primera
+   }),
    broker:async params=>{
     // MVP278 solamente solicita sombra. No promover desde el callback:
     // primera se archiva la atestación SQL del original completo.
