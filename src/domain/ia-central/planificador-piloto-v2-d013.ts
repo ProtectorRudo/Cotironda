@@ -109,7 +109,7 @@ export async function planificarMensajeAutenticadoMvp220(args:{
  // Recuperar los índices del pedido COMPLETO en todas las asignaciones.
  // Los materiales en revisión quedan persistidos en el pedido, con
  // cobertura 0, sin figurar en ningún envío o coincidencia técnica.
- const cobertura:ResultadoCatalogoV2['cobertura']=pedido.articulos.map(
+ const cobertura=pedido.articulos.map(
   (_,indicePedido)=>({indicePedido,proveedoresAutorizados:0})
  );
  for(const fila of routePartial.cobertura){
