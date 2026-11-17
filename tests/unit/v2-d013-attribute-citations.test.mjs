@@ -76,3 +76,30 @@ test('V2: no confundir magnitud con cantidad cuando presentación fue omitida',(
   citaProducto:'membrana aluminizada',citaPresentacion:null};
  assert.equal(probarAtributosV2D013(ask),false);
 });
+
+test('V2: m³ y m3 son una unidad, no cantidades inventadas (WhatsApp auténtico)',()=>{
+ const item={evidencia:'un bolsón de arena fina de 1 m³',
+  cantidad:'1',unidad:'bag',presentacion:'1 m3',
+  citaCantidad:'un',citaProducto:'bolsón de arena fina',
+  citaPresentacion:'1 m³'};
+ assert.equal(probarAtributosV2D013(item),true);
+ assert.equal(probarAtributosV2D013({...item,presentacion:'1m3'}),true);
+ for(const presentacion of ['1 m2','2 m3','10 m3','1 cm3']){
+  assert.equal(probarAtributosV2D013({...item,presentacion}),false,presentacion);
+ }
+ assert.equal(probarAtributosV2D013({...item,cantidad:'3'}),false);
+ assert.equal(probarAtributosV2D013({...item,citaCantidad:'1'}),false);
+});
+test('V2: normalizaciones m²/mm² no mezclan área, sección y espesor',()=>{
+ const item={evidencia:'dos rollos de membrana de 2 m²',
+  cantidad:'2',unidad:'roll',presentacion:'2 m2',
+  citaCantidad:'dos',citaProducto:'rollos de membrana',
+  citaPresentacion:'2 m²'};
+ assert.equal(probarAtributosV2D013(item),true);
+ assert.equal(probarAtributosV2D013({...item,presentacion:'2 m3'}),false);
+ const cable={...item,evidencia:'dos tramos de cable de 2 mm²',
+  presentacion:'2 mm2',citaProducto:'tramos de cable',
+  citaPresentacion:'2 mm²'};
+ assert.equal(probarAtributosV2D013(cable),true);
+ assert.equal(probarAtributosV2D013({...cable,presentacion:'2 mm3'}),false);
+});
