@@ -148,9 +148,10 @@ test('D013: ambiguos sin una sola compra NO se reparan con números inferidos',(
   const result=evaluarLecturaCentralUnicaD013(original,parsed,c=>codes.push(c));
   assert.equal(result.estado,'rechazado',s.e);
   assert.equal(result.motivo,'cantidad_sin_respaldo_en_fuente');
-  assert.equal(codes.length,1);
+  assert.equal(codes.length,2);
   assert.match(codes[0],/^source_quantity_/u);
-  assert.doesNotMatch(codes[0],/cemento|pintura|La Plata|99/u);
+  assert.match(codes[1],/^source_quantity_evidence_/u);
+  assert.doesNotMatch(codes.join(','),/cemento|pintura|La Plata|99/u);
  }
 });
 
