@@ -90,11 +90,11 @@ export function desacoplarMotorV2D013DePublicacion(live){
     !live.includes('procesarCompradorCentralV2D013')||
     !live.includes('continuarZonaCentralV2D013'))
   throw Error('d013_live_selector_preflight_failed');
- let out=one(live,`    // Piloto: el intérprete V2 nunca depende del permiso de publicar.
-    const buyerWorker=procesarCompradorCentralV2D013;`,`    // Piloto: el intérprete V2 nunca depende del permiso de publicar.
+ let out=one(live,`    const buyerWorker=d013Enabled?
+      procesarCompradorCentralV2D013:procesarCompradorCentralMvp226;`,`    // Piloto: el intérprete V2 nunca depende del permiso de publicar.
     const buyerWorker=procesarCompradorCentralV2D013;`,'buyer-select-v2');
- out=one(out,`        // La localidad continúa siempre por V2. Sólo publicar usa D016.
-        const zoneWorker=continuarZonaCentralV2D013;`,`        // La localidad continúa siempre por V2. Sólo publicar usa D016.
+ out=one(out,`        const zoneWorker=d013ZoneEnabled?
+          continuarZonaCentralV2D013:continuarZonaCentralMvp233;`,`        // La localidad continúa siempre por V2. Sólo publicar usa D016.
         const zoneWorker=continuarZonaCentralV2D013;`,'zone-select-v2');
  if(!out.includes('const d013Enabled=habilitarPublicacionD013ConAccesoD016({')||
     !out.includes('const d013ZoneEnabled=habilitarPublicacionD013ConAccesoD016({')||
@@ -229,8 +229,8 @@ export function generarWebhookD016(original){
       approvedSha:Deno.env.get('COTIRONDA_PILOT_D016_APPROVED_RELEASE_SHA')??'',
       hmacKeyHex:Deno.env.get('COTIRONDA_PILOT_D016_HMAC_KEY_HEX')??''
     });
-    const buyerWorker=d013Enabled?
-      procesarCompradorCentralV2D013:procesarCompradorCentralMvp226;
+    // Piloto: el intérprete V2 nunca depende del permiso de publicar.
+    const buyerWorker=procesarCompradorCentralV2D013;
     const result=await buyerWorker({
       habilitado:true,publicar:d013Enabled, // D013 sin confirmacion; SQL sigue gateado`;
  out=one(out,legacyBuyerCall,d013BuyerCall,'d013-buyer-call');
@@ -246,7 +246,7 @@ export function generarWebhookD016(original){
  out=one(out,legacyBuyerBlock,candidateBuyerBlock,'d013-buyer-release');
  // D013 localidad: la respuesta del comprador conserva la fuente original
  // enlazada por SQL. El V2-23 existente reutiliza producto/zona y el puente D013.
- // El MVP233 original queda intacto cuando D013 no tiene D016 listo.
+ // La continuación usa V2 independientemente de que D016 autorice publicar.
  const oldZoneImport=
   "import {continuarZonaCentralMvp233} from './ai-central-zone-mvp233.ts';";
  const newZoneImport=oldZoneImport+
@@ -262,8 +262,8 @@ export function generarWebhookD016(original){
           approvedSha:Deno.env.get('COTIRONDA_PILOT_D016_APPROVED_RELEASE_SHA')??'',
           hmacKeyHex:Deno.env.get('COTIRONDA_PILOT_D016_HMAC_KEY_HEX')??''
         });
-        const zoneWorker=d013ZoneEnabled?
-          continuarZonaCentralV2D013:continuarZonaCentralMvp233;
+        // La localidad continúa siempre por V2. Sólo publicar usa D016.
+        const zoneWorker=continuarZonaCentralV2D013;
         const resumed=await zoneWorker({`;
  out=one(out,oldZoneCall,newZoneCall,'d013-zone-call');
  out=one(out,
