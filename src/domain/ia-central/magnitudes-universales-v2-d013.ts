@@ -35,7 +35,8 @@ export function unidadDimensionadaV2D013(text:string):Unidad|null{
  if(typeof text!=='string'||text.length>100)return null;
  const original=text.trim();
  const t=fold(original).replace(/[²]/gu,'2').replace(/[³]/gu,'3')
-  .replace(/\s*\.\s*/gu,'.');
+  // Conservar el espacio de «mts. lineales»: no volverlo «mts.lineales».
+ .replace(/\s+\./gu,'.').replace(/m\.\s+l/gu,'m.l');
  if(/^(?:m\.l\.?|metros?\s+lineales?|mts?\.?\s+(?:lineales?|lin\.?)|mts?\.?)$/u.test(t))
   return u('longitud','m',B);
  if(/^(?:metros?\s+cuadrados?|m2)$/u.test(t))
