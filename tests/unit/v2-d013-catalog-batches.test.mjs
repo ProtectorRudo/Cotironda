@@ -63,7 +63,8 @@ test('V2: 31 artículos se procesan en dos lotes y conservan TODOS los índices'
  assert.equal(result.cobertura.length,31);
  assert.ok(result.cobertura.every(x=>x.proveedoresAutorizados===1));
  assert.equal(mock.calls.filter(x=>x.name==='cotironda_ruteo_catalogos_v2').length,2);
- assert.equal(mock.calls.filter(x=>x.name==='cotironda_corrobora_pares_v2_d013').length,2);
+ assert.equal(mock.calls.filter(x=>x.name==='cotironda_corrobora_pares_v2_d013').length,3);
+ // El verificador independiente subdivide 20 artículos en grupos de 15.
  assert.equal(result.whatsappEnviado,false);
 });
 test('V2: catálogo de 151 líneas considera las últimas sin omitir ni inventar productos',async()=>{
@@ -94,7 +95,7 @@ test('V2: dos SKU en diferentes lotes para el mismo artículo no se eligen al az
  assert.equal(result.whatsappEnviado,false);
 });
 test('V2: fallo de un lote NO permite publicar su prefijo previamente aceptado',async()=>{
- const mock=ai(3);
+ const mock=ai(2); // falla la propuesta IA de un lote entero
  const result=await proponerRuteoCatalogoConIAV2({
   pedido:request(31),proveedores:[supplier('corralon_ailin',[good])],
   apiKey:key,model:'gpt-6-luna',fetchImpl:mock.fetchImpl
