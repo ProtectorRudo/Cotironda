@@ -4,7 +4,7 @@
  */
 import {RUBROS_MVP216} from '../rubros-comprador-mvp216.ts';
 import {evaluarLecturaCentralUnicaD013,localizarEvidenciasV1,
- type ResultadoLectura} from './contrato-v2-d013.ts';
+ type ResultadoLectura,type DiagnosticoCantidadD013} from './contrato-v2-d013.ts';
 
 const API='https://api.openai.com/v1/responses';
 const MODEL_ALLOWED=new Set(['gpt-6-luna','gpt-6.1-sol']);
@@ -141,6 +141,7 @@ async function ask(args:{
 export async function interpretarConIaCentralV2D013(args:{
  fuente:string;apiKey:string;model:'gpt-6-luna'|'gpt-6.1-sol';
  fetchImpl?:typeof fetch;
+ onQuantityDiagnostic?:(code:DiagnosticoCantidadD013)=>void;
 }):Promise<ResultadoLectura>{
  if(typeof args?.fuente!=='string'||args.fuente.length<1||
     args.fuente.length>12000||
@@ -154,12 +155,14 @@ export async function interpretarConIaCentralV2D013(args:{
    throw Error('bad_first');
   const first=reader as Record<string,unknown>;
   if(first.intencion!=='cotizar')
-   return evaluarLecturaCentralUnicaD013(args.fuente,first);
+   return evaluarLecturaCentralUnicaD013(args.fuente,first,
+    args.onQuantityDiagnostic);
   // Los offsets se derivan del ORIGINAL, nunca de una inferencia del modelo.
   const withEvidence=localizarEvidenciasV1(args.fuente,first);
   if(!withEvidence)
    return {estado:'rechazado',motivo:'citas_no_corresponden_al_original',pedido:null};
-  return evaluarLecturaCentralUnicaD013(args.fuente,withEvidence);
+  return evaluarLecturaCentralUnicaD013(args.fuente,withEvidence,
+   args.onQuantityDiagnostic);
  }catch(e){
   // The application reports only a closed set of non-sensitive failure
   // codes so SQL can distinguish 401, rate limits, malformed schema,
