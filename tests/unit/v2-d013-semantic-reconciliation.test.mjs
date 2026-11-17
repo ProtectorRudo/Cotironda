@@ -125,3 +125,107 @@ test('D013: no permitir que segunda lectura cite un dígito de la presentación'
  assert.equal(evaluarLecturasSemanticasV2D013(source,p,q).estado,
   'requiere_aclaracion');
 });
+
+
+test('D013: segunda IA puede expresar diez y dos sin repetir la cita literal',()=>{
+ const ver=structuredClone(second);
+ // La cantidad está probada por la primera lectura y respaldada en el
+ // original; el segundo lector no tiene que repetir la misma grafía.
+ ver.articulos[0].citaCantidad='dos';
+ ver.articulos[2].citaCantidad='uno';
+ ver.articulos[3].citaCantidad='diez';
+ const result=evaluarLecturasSemanticasV2D013(original,first,ver);
+ assert.equal(result.estado,'listo_para_preparar',result.motivo);
+ assert.deepEqual(result.pedido.articulos.map(x=>x.cantidad),['10','1','3','2']);
+});
+test('D013: WhatsApp auténtico de cuatro materiales, lectura semántica flexible',async()=>{
+ const source='Hola, necesito cotizar para una obra en La Plata:\n\n'+
+ '- 10 bolsas de cemento de 25 kilos.\n'+
+ '- 1 bolsón de arena fina de 1 m³.\n'+
+ '- 3 baldes de albañil de 10 litros.\n'+
+ '- 2 rollos de membrana aluminizada de 4 mm.\n\nGracias.';
+ const raws=[
+  '10 bolsas de cemento de 25 kilos','1 bolsón de arena fina de 1 m³',
+  '3 baldes de albañil de 10 litros',
+  '2 rollos de membrana aluminizada de 4 mm'
+ ];
+ const a={intencion:'cotizar',zona_entrega:'La Plata',dudas:[],
+  articulos:raws.map((evidencia,i)=>({
+   evidencia,descripcion:[
+    'Cemento 25 kg','Bolsón arena fina 1 m³',
+    'Baldes de albañil 10 L','Membrana aluminizada 4 mm'
+   ][i],
+   cantidad:['10','1','3','2'][i],
+   unidad:['bag','bigbag','bucket','roll'][i],
+   rubro:'obra_gruesa',presentacion:['25 kg','1 m3','10 L','4 mm'][i],
+   aclaracion:null,citaCantidad:['10','1','3','2'][i],
+   citaProducto:['cemento','arena fina','baldes de albañil',
+    'membrana aluminizada'][i],
+   citaPresentacion:['25 kilos','1 m³','10 litros','4 mm'][i]
+  }))
+ };
+ const b={integridad:'completa',zona_entrega:' la plata ',articulos:[
+  {evidencia:'membrana aluminizada de 4 mm',cantidad:'2',unidad:'unidades',
+   rubro:'pintura',citaCantidad:'dos'},
+  {evidencia:'arena fina de 1 m³',cantidad:'1',unidad:'unidad',
+   rubro:'obra_gruesa',citaCantidad:'uno'},
+  {evidencia:'cemento de 25 kilos',cantidad:'10',unidad:'bolsas',
+   rubro:'ferreteria',citaCantidad:'diez'},
+  {evidencia:'baldes de albañil de 10 litros',cantidad:'3',unidad:'unidades',
+   rubro:'ferreteria',citaCantidad:'tres'}
+ ]};
+ const result=await interpretarConIaCentralV2D013({
+  fuente:source,apiKey:'sk-'+'a'.repeat(24),
+  model:'gpt-6-luna',fetchImpl:fake(a,b)
+ });
+ assert.equal(result.estado,'listo_para_preparar',result.motivo);
+ assert.deepEqual(result.pedido.articulos.map(x=>x.cantidad),['10','1','3','2']);
+ assert.deepEqual(result.pedido.articulos.map(x=>x.presentacion),
+  ['25 kg','1 m3','10 L','4 mm']);
+});
+test('D013: una cita solo de presentación no valida identidad del material',()=>{
+ const modified=structuredClone(second);
+ modified.articulos[3].evidencia='25 kilos';
+ assert.equal(evaluarLecturasSemanticasV2D013(original,first,modified).estado,
+  'requiere_aclaracion');
+});
+test('D013: un segundo lector que cambia cantidad, unidad o artículo no pasa',()=>{
+ for(const [idx,changes] of [
+  [3,{cantidad:'25',citaCantidad:'veinticinco'}],
+  [3,{unidad:'kg'}],
+  [2,{unidad:'m3'}],
+  [0,{unidad:'m2'}],
+  [1,{cantidad:'3',citaCantidad:'tres'}],
+  [3,{evidencia:'cemento inventado'}],
+  [3,{citaCantidad:'varios'}]
+ ]){
+  const ver=structuredClone(second);
+  Object.assign(ver.articulos[idx],changes);
+  assert.equal(evaluarLecturasSemanticasV2D013(original,first,ver).estado,
+   'requiere_aclaracion',JSON.stringify([idx,changes]));
+ }
+});
+test('D013: convierte magnitudes físicas exactas entre lecturas sin alterar el pedido',()=>{
+ const src='100 cm de cable para La Plata';
+ const evidence='100 cm de cable';
+ const a={intencion:'cotizar',zona_entrega:'La Plata',dudas:[],articulos:[{
+  evidencia,inicio:0,fin:evidence.length,descripcion:'cable',
+  cantidad:'100',unidad:'cm',rubro:'electricidad',
+  presentacion:null,aclaracion:null,citaCantidad:'100',
+  citaProducto:'cable',citaPresentacion:null
+ }]};
+ const b={integridad:'completa',zona_entrega:'la plata',articulos:[{
+  evidencia:'cable',cantidad:'1',unidad:'metro',
+  rubro:'ferreteria',citaCantidad:'uno'
+ }]};
+ const good=evaluarLecturasSemanticasV2D013(src,a,b);
+ assert.equal(good.estado,'listo_para_preparar',good.motivo);
+ assert.equal(good.pedido.articulos[0].cantidad,'100');
+ assert.equal(good.pedido.articulos[0].unidad,'cm');
+ for(const changes of [{unidad:'l'},{cantidad:'2',citaCantidad:'dos'},
+  {unidad:'m2'}]){
+  const wrong=structuredClone(b);Object.assign(wrong.articulos[0],changes);
+  assert.equal(evaluarLecturasSemanticasV2D013(src,a,wrong).estado,
+   'requiere_aclaracion',JSON.stringify(changes));
+ }
+});
