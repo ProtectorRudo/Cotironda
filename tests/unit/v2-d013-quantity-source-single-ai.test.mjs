@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {cantidadAcreditadaLecturaUnicaD013,
  cantidadFisicaUnicaAcreditadaD013,
+ cantidadUnidadesLibresAcreditadaD013,
  evaluarLecturaCentralUnicaD013} from
  '../../src/domain/ia-central/contrato-v2-d013.ts';
 
@@ -203,4 +204,82 @@ test('D013: una medida que parece PRESENTACION nunca repara cantidad inventada',
  for(const e of negativos){
   assert.equal(cantidadFisicaUnicaAcreditadaD013(e),null,e);
  }
+});
+
+
+test('D013: cantidad libre basada en articulo original, sin lista de SKUs',()=>{
+ const samples=[
+  ['12 placas de yeso 12,5 mm','12'],
+  ['cinco perfiles galvanizados','5'],
+  ['3 tornillos autoperforantes','3'],
+  ['25 tarugos de 6 mm','25'],
+  ['- 8 varillas roscadas','8'],
+  ['una chapa trapezoidal','1'],
+  ['veinticinco ladrillos refractarios','25'],
+  ['100 caños de PVC','100'],
+  ['3 perfiles de 2 metros','3'],
+  ['Necesito 4 puertas interiores','4'],
+  ['10 placas de 1,20 x 2,40','10'],
+  ['7 fijaciones especiales','7']
+ ];
+ for(const [e,cantidad] of samples){
+  const v=cantidadUnidadesLibresAcreditadaD013(e);
+  assert.deepEqual(v,{cantidad,unidad:'unit'},e);
+  const texto='Pedido: '+e+'. Entrega en La Plata.';
+  const inicio=texto.indexOf(e);
+  const lectura={intencion:'cotizar',zona_entrega:'La Plata',dudas:[],
+   articulos:[{inicio,fin:inicio+e.length,evidencia:e,
+    descripcion:'producto que la IA podría inventar',cantidad:'999',
+    unidad:'kg',citaCantidad:'una cita incorrecta',
+    rubro:'obra_gruesa',presentacion:null,citaPresentacion:null,
+    aclaracion:null}]};
+  const r=evaluarLecturaCentralUnicaD013(texto,lectura);
+  assert.equal(r.estado,'listo_para_preparar',e+': '+r.motivo);
+  assert.equal(r.pedido.articulos[0].cantidad,cantidad,e);
+  assert.equal(r.pedido.articulos[0].unidad,'unit',e);
+  assert.equal(r.pedido.articulos[0].descripcion,e,e);
+ }
+});
+
+test('D013: numero con presentacion o dos productos no se vuelve unidad inventada',()=>{
+ const samples=[
+  'cemento de 50 kg',
+  '25 kg de cemento',
+  '2 m³ de arena',
+  '4 litros de pintura',
+  '20 mm chapa',
+  '5 m de cable',
+  '20 ml de solvente',
+  '3 cm de tornillo',
+  '2 cajas de tornillos de 10 mm',
+  '2 bolsones de arena',
+  '3 rollos de 20 m',
+  '15,5 placas de yeso',
+  '10x20 placas',
+  '25/50 hierro',
+  '4,5 L de látex',
+  'tres tornillos y dos chapas',
+  '3 perfiles y 2 puertas',
+  '4 placas, 3 clavos',
+  'cemento 4 bolsas'
+ ];
+ for(const e of samples)
+  assert.equal(cantidadUnidadesLibresAcreditadaD013(e),null,e);
+});
+
+test('D013: cita IA rota sin compra literal queda rechazada, sin filtrar contenido',()=>{
+ const e='Necesito cemento Portland, algunas bolsas';
+ const original=e+'. Localidad: La Plata';
+ const salida={intencion:'cotizar',zona_entrega:'La Plata',dudas:[],
+  articulos:[{inicio:0,fin:e.length,evidencia:e,
+   descripcion:e,cantidad:'99',unidad:'unit',citaCantidad:'99',
+   rubro:'obra_gruesa',presentacion:null,citaPresentacion:null,
+   aclaracion:null}]};
+ const codes=[];
+ const r=evaluarLecturaCentralUnicaD013(original,salida,c=>codes.push(c));
+ assert.equal(r.estado,'rechazado');
+ assert.equal(r.motivo,'cantidad_sin_respaldo_en_fuente');
+ assert.ok(codes.length>=1);
+ assert.ok(codes.every(c=>/^source_quantity_/u.test(c)));
+ assert.ok(codes.every(c=>!c.includes('Portland')));
 });
