@@ -272,13 +272,16 @@ test('D013: telemetría defectuosa no cambia acciones, excepciones ocultas',asyn
  assert.doesNotMatch(worker,/console\.warn\([^\n]*(?:raw\.|plaintext|contact|source_sha256|apiKey)/u);
 });
 
-test('D013: el diagnóstico cubre TODO rechazo literal de lectura original y su segunda IA',()=>{
+test('D013: diagnóstico cubre rechazos de lectura histórica y central única',()=>{
  const mod=readFileSync(new URL(
   '../../src/domain/ia-central/contrato-v2-d013.ts',import.meta.url),'utf8');
  const reasons=[
   ...Array.from(mod.matchAll(/rejection\('([^']+)'\)/gu),x=>x[1]),
   ...Array.from(mod.matchAll(/motivo:'([^']+)'/gu),x=>x[1])
- ];
+ ].filter(reason=>reason!=='ia_central_unica_con_fuente'&&
+   reason!=='doble_lectura_con_fuente'&&
+   reason!=='articulos_en_revision_sin_bloquear_ronda');
+ // Éxito no es un error: nunca enviar código de fracaso por un pedido válido.
  assert.ok(reasons.length>=12,'controlar inventario de validaciones');
  for(const reason of reasons){
   assert.notEqual(diagnosticoPlanD013(reason),'plan_other_rejected',
