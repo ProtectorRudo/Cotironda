@@ -47,3 +47,21 @@ test('V2 dominio: nueva URL no habilita producción ni abre un wildcard',()=>{
  assert.equal(puertaD016Lista({...base,shaAprobado:'e'.repeat(40)}),false);
  assert.match(src,/u\.hostname==='app\.cotironda\.com'/u);
 });
+
+
+test('D018 ingreso azul conserva gate, sesión privada y sin SMS',()=>{
+ const login=read('apps/portal/app/piloto/v2/acceso/page.tsx');
+ const uiCss=read('apps/portal/app/styles.css');
+ const entry=read('apps/portal/app/piloto/v2/acceso/acceso-whatsapp-client.tsx');
+ assert.match(login,/panel coti-clean coti-access-clean/u);
+ assert.match(login,/Mi Cotironda/u);
+ assert.match(login,/puertaWhatsappPortalD016\(process\.env\)/u);
+ assert.match(login,/if\(!acceso\)/u);
+ assert.match(login,/if\(process\.env\.VERCEL_ENV!=='preview'\)notFound\(\)/u);
+ assert.match(login,/<AccesoWhatsappD016\/>/u);
+ assert.match(uiCss,/\.coti-access-clean\.panel/u);
+ assert.match(uiCss,/#0866ff/iu);
+ assert.match(entry,/credentials:'same-origin'/u);
+ assert.match(entry,/window\.history\.replaceState/u);
+ assert.doesNotMatch(entry,/signInWithOtp|localStorage|sms/u);
+});
