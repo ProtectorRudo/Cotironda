@@ -1,15 +1,12 @@
-/** D013 V2 — clasifica sólo pendientes, reusa categorías curadas del piloto.
- * El catálogo MVP220 histórico es fuente de validación e integridad.
- * NUNCA editar los archivos SHA-pinned de MVP220/MVP216.
+/** D013 V2 — catálogo original sin segunda IA de clasificación.
+ * Reutiliza categorías curadas solamente como etiquetas; SKU y zona mandan.
+ * NUNCA editar los archivos históricos SHA-pinned de MVP220/MVP216.
  */
 import type {RubroMvp216} from '../rubros-comprador-mvp216.ts';
 import {
  validarClasificacionCatalogosMvp220,
  type CatalogoRealMvp220,type SnapshotRealMvp220,type ResultadoContextoMvp220
 } from './catalogo-supabase-mvp220.ts';
-const obj=(v:unknown):v is Record<string,unknown>=>
- v!==null&&typeof v==='object'&&!Array.isArray(v);
-const RUBROS=Object.keys(RUBROS_MVP216);
 
 /** D013: espejo conservador SOLO de etiquetas para familias curadas MVP216.
  * El módulo histórico tiene SHA inmóvil; se conserva como fuente de contraste.
@@ -29,10 +26,6 @@ export function rubroDesdeFamiliaCuradaD013(familia:string):RubroMvp216{
  if(d013Fijaciones.has(familia))return 'ferreteria';
  return 'otros';
 }
-/** La RPC ya filtró empresas y zonas. Este módulo nunca selecciona por rubro:
- * las coincidencias se siguen validando POR PRODUCTO en el ruteador D013.
- * La IA solo clasifica las descripciones SIN familia acreditada.
- */
 
 /** V2 ACTIVO: el catálogo es fuente, NO otra tarea para una IA.
  * Los productos con familia curada conservan su etiqueta; los pendientes
