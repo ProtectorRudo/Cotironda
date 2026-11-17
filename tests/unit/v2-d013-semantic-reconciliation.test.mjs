@@ -40,20 +40,30 @@ test('D013: mensaje natural acepta 4 ítems con envases, rubros y orden diferent
  assert.deepEqual(out.pedido.articulos.map(x=>x.cantidad),['10','1','3','2']);
  assert.equal(out.pedido.articulos[0].presentacion,'25 kg');
 });
-test('D013: no transformar los 25 kg de presentación en 25 bolsas',()=>{
+test('D013: los 25 kg no se convierten en 25 bolsas ni bloquean el resto',()=>{
  const changed=structuredClone(second);changed.articulos[3].cantidad='25';
- assert.equal(evaluarLecturasSemanticasV2D013(original,first,changed).estado,'requiere_aclaracion');
+ const out=evaluarLecturasSemanticasV2D013(original,first,changed);
+ assert.equal(out.estado,'listo_para_preparar',out.motivo);
+ assert.equal(out.pedido.articulos[0].cantidad,'10');
+ assert.deepEqual(out.pedido.articulosEnRevision,[0]);
+ assert.equal(out.pedido.articulos.length,4);
 });
 test('D013: no confundir envases con magnitudes ni cruzar citas',()=>{
  for(const unidad of ['kg','m3','l','m2']){
   const changed=structuredClone(second);changed.articulos[0].unidad=unidad;
-  assert.equal(evaluarLecturasSemanticasV2D013(original,first,changed).estado,
-   'requiere_aclaracion',unidad);
+  const out=evaluarLecturasSemanticasV2D013(original,first,changed);
+  assert.equal(out.estado,'listo_para_preparar',unidad);
+  assert.deepEqual(out.pedido.articulosEnRevision,[3],unidad);
  }
  for(const evidence of ['cemento inventado','arena fina']){
   const changed=structuredClone(second);changed.articulos[3].evidencia=evidence;
-  assert.equal(evaluarLecturasSemanticasV2D013(original,first,changed).estado,
-   'requiere_aclaracion',evidence);
+  const out=evaluarLecturasSemanticasV2D013(original,first,changed);
+  if(evidence==='cemento inventado')
+   assert.equal(out.estado,'requiere_aclaracion',evidence);
+  else{
+   assert.equal(out.estado,'listo_para_preparar',out.motivo);
+   assert.deepEqual(out.pedido.articulosEnRevision,[0,1]);
+  }
  }
 });
 test('D013: dos citas iguales usadas para artículos distintos son ambiguas',()=>{
@@ -207,8 +217,15 @@ test('D013: un segundo lector que cambia cantidad, unidad o artículo no pasa',(
  ]){
   const ver=structuredClone(second);
   Object.assign(ver.articulos[idx],changes);
-  assert.equal(evaluarLecturasSemanticasV2D013(original,first,ver).estado,
-   'requiere_aclaracion',JSON.stringify([idx,changes]));
+  const out=evaluarLecturasSemanticasV2D013(original,first,ver);
+  if(changes.evidencia==='cemento inventado')
+   assert.equal(out.estado,'requiere_aclaracion',JSON.stringify([idx,changes]));
+  else{
+   assert.equal(out.estado,'listo_para_preparar',JSON.stringify([idx,changes]));
+   assert.ok(out.pedido.articulosEnRevision.includes([3,2,1,0][idx]),
+    JSON.stringify([idx,changes]));
+   assert.equal(out.pedido.articulos.length,4);
+  }
  }
 });
 test('D013: convierte magnitudes físicas exactas entre lecturas sin alterar el pedido',()=>{
