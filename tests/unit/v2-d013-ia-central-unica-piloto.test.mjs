@@ -167,7 +167,7 @@ test('V2: ningún comprador pasa por la doble lectura, V1 aislado del selector v
  const client=read('../../src/domain/ia-central/cliente-openai-v2-d013.ts');
  const router=read('../../src/domain/ia-central/ruteador-catalogos-v2-d013.ts');
  const catalog=read('../../src/domain/ia-central/catalogo-curado-v2-d013.ts');
- const live=read('../../supabase/functions/cotironda-piloto-whapi/index.ts');
+ const live=read('../../scripts/piloto/v2-d016-whapi-overlay.mjs');
  const active=router.slice(router.indexOf('export async function proponerRuteoCatalogoConIAV2'),
   router.indexOf('const MAX_LOTES='));
  assert.doesNotMatch(client,/verifierInstructions|secondSchema|purpose:'verifier'/u);
