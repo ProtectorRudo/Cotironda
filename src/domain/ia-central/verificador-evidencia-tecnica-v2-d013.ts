@@ -1,3 +1,4 @@
+import {leerMagnitudesV2D013} from './magnitudes-universales-v2-d013.ts';
 /** V2 D013: deterministic second gate for product-level semantic proposals.
  * This guard NEVER makes up functional equivalence, stock, price or taxes.
  * A false positive leads to internal review, not a WhatsApp request.
@@ -44,17 +45,17 @@ function normalizedWords(s:string):Set<string>{
  return new Set(tokens);
 }
 function size(s:string):Pack|null{
- const all=[...fold(s).matchAll(/(?:^|\s)(\d{1,5}(?:[.,]\d{1,3})?)\s*(kg|g|litros?|l|lt|lts|ml)(?=\s|$|[.,;])/gu)];
- if(all.length!==1)return null;
- const [,number,unit]=all[0];
- const n=BigInt(number.replace(',','.').split('.')[0]) * 1000n+
-  BigInt((number.replace(',','.').split('.')[1]??'').padEnd(3,'0'));
- if(n<=0n)return null;
- const type=/^(?:kg|g)$/u.test(unit)?'kg':'l';
- const per=/^(?:g|ml)$/u.test(unit)?1n:1000n;
- const scaled=n*per/1000n;
- if(scaled<=0n||n*per%1000n!==0n)return null;
- return {kind:type,amount:scaled,size:number+' '+unit};
+ const medidas=leerMagnitudesV2D013(s);
+ if(medidas===null)return null;
+ const fisicas=medidas.filter(m=>
+  m.dimension==='masa'||m.dimension==='volumen_liquidos');
+ // Una sola presentación comercial acreditada, no elegir un número
+ // conveniente entre varios. Valores a milésimas de kg o de litro.
+ if(fisicas.length!==1||fisicas[0].valorBase%1000000n!==0n)return null;
+ const dato=fisicas[0];
+ const amount=dato.valorBase/1000000n;
+ return amount>0n?{kind:dato.dimension==='masa'?'kg':'l',
+  amount,size:dato.literal.trim()}:null;
 }
 function parseAmount(s:string):bigint|null{
  if(!/^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$/u.test(s))return null;
@@ -71,16 +72,24 @@ function mandatoryPhrase(request:string):string|null{
  return marked?.[1]??null;
 }
 function cableSize(text:string):string|null{
- const items=[...fold(text).matchAll(/\b(\d{1,3}(?:[.,]\d{1,2})?)\s*mm\s*(?:2|²)(?=\W|$)/gu)];
- if(items.length!==1)return null;
- return String(Number(items[0][1].replace(',','.')));
+ const values=leerMagnitudesV2D013(text);
+ if(values===null)return null;
+ const sections=values.filter(m=>m.dimension==='superficie'&&
+  (m.unidad==='mm2'||m.unidad==='cm2'));
+ if(sections.length!==1)return null;
+ // Valor exacto en m², no comparar grafías (2,5 mm² = 0,025 cm²).
+ return sections[0].valorBase.toString();
 }
-/** Numeric thickness / dimensions (mm) are mandatory technical attributes.
- * This is intentionally a NEGATIVE guard, not universal equivalence logic. */
+/** Espesor/dimensión técnica convertida a longitud base exacta.
+ * No confundir sección de cable (área) ni metros comprados con espesor.
+ */
 function thicknessMillimeters(text:string):string|null{
- const all=[...fold(text).matchAll(/\b(\d{1,4}(?:[.,]\d{1,2})?)\s*mm(?!\s*(?:2|²))(?=\W|$)/gu)];
- if(all.length!==1)return null;
- return String(Number(all[0][1].replace(',','.')));
+ const values=leerMagnitudesV2D013(text);
+ if(values===null)return null;
+ const thickness=values.filter(m=>m.dimension==='longitud'&&
+  (m.unidad==='mm'||m.unidad==='cm'));
+ if(thickness.length!==1)return null;
+ return thickness[0].valorBase.toString();
 }
 function materialGroup(text:string):string|null{
  const s=fold(text);
