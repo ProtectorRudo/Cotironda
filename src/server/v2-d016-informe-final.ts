@@ -32,6 +32,7 @@ export type InformeFinalD016=Readonly<{
  cierreMs:number;documentos:number;comercios:number;
  analizados:number;sinAnalisis:number;
  resumen:string;observaciones:readonly string[];
+ recomendaciones:readonly string[];
  comparacion:readonly ResumenComercio[];
  mensaje:string;
 }>;
@@ -115,6 +116,16 @@ export function componerInformeFinalD016(
   'La ausencia de una mención en la guía NO demuestra que esa condición falte en el original.',
   'No se ordenan ofertas por precio total, ni se declaran ganadores: los originales prevalecen.'
  ];
+ const recomendaciones:string[]=[];
+ if(comparison.some(c=>c.ofertas.some(o=>!o.cobertura||
+  o.cobertura.identificados<o.cobertura.solicitados||
+  o.cobertura.porVerificar.length>0)))
+  recomendaciones.push('Revisá los materiales y presentaciones sin equivalencia técnica confirmada antes de comparar presupuestos.');
+ if(comparison.some(c=>c.ofertas.some(o=>o.importe&&o.tipoImporte!=='Total informado')))
+  recomendaciones.push('Hay importes que no están confirmados como total final. No los compares como precios completos.');
+ if(comparison.some(c=>c.ofertas.some(o=>
+  [o.pago,o.iva,o.flete].some(x=>x==='No informado'||x==='No verificado'))))
+  recomendaciones.push('Consultá las condiciones no informadas o sin verificar en cada PDF; no se consideran incluidas por defecto.');
  const resumen=total===0?'La ronda cerró sin presupuestos habilitados para mostrar.':
   `Se recibieron ${total} documentos de ${sorted.length} comercios identificados por nombre. `+
   `${analysed} tienen guía verificada y ${total-analysed} requieren lectura directa del original.`;
@@ -123,6 +134,7 @@ export function componerInformeFinalD016(
   documentos:total,comercios:sorted.length,analizados:analysed,
   sinAnalisis:total-analysed,resumen,
   observaciones:Object.freeze(note),
+  recomendaciones:Object.freeze(recomendaciones),
   comparacion:Object.freeze(comparison),
   mensaje:'Informe de cierre orientativo. Se mantienen disponibles los originales sujetos a consentimiento.'
  });

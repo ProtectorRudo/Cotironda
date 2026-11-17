@@ -97,6 +97,8 @@ test('D019: el informe compara por comercio sin ordenar ganadores ni inventar im
  assert.equal(norte.ofertas[0].tipoImporte,'Subtotal informado');
  assert.equal(norte.ofertas[0].pago,'Contado en efectivo');
  assert.equal(norte.ofertas[0].cobertura.identificados,1);
+ assert.ok(report.recomendaciones.some(x=>/equivalencia técnica/u.test(x)));
+ assert.ok(report.recomendaciones.some(x=>/total final/u.test(x)));
  assert.ok(!norte.evidencias.some(x=>x.categoria==='plazo'));
  assert.deepEqual(report.comparacion.map(x=>x.comercio),['Corralón Norte','Pinturería Sur']);
  assert.ok(!JSON.stringify(report).includes('"ganador":'));

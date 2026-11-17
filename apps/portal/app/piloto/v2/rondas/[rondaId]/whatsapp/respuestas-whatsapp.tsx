@@ -314,6 +314,10 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
      </details>}
     </article>)}
    </div>
+   {informe.recomendaciones.length>0&&<div className="coti-final-guidance">
+    <h3>Qué revisar antes de decidir</h3>
+    <ul>{informe.recomendaciones.map((p,i)=><li key={i}>{p}</li>)}</ul>
+   </div>}
    <p className="coti-final-decision">Compará únicamente productos equivalentes. La elección del comercio es tuya; Cotironda no adjudica automáticamente.</p>
    <small>{informe.mensaje}</small>
   </section>}
