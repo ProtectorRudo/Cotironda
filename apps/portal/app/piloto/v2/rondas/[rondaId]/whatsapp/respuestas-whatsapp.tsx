@@ -274,13 +274,13 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
        {q.resumen.tipoImporte!=='Total informado'&&q.resumen.totalDeclarado?
         ' No se presupone que sea el total final.':''}</li>
      </ul>
-     {cover?.detalle?.length>0&&<div className="coti-clean-material-detail">
+     {cover&&cover.detalle.length>0&&<div className="coti-clean-material-detail">
       <h4>Materiales del pedido frente al presupuesto</h4>
       <ul>{cover.detalle.map(item=><li key={item.linea}>
        <strong>{item.solicitado}</strong>
        {item.estado==='coincidencia_automatica'?
         <p><span className="coti-material-state">Coincidencia automática</span> {item.cotizado}. Revisar especificaciones en el original.</p>:
-        <p><span className="coti-material-state caution">Por verificar</span> {item.motivo} No significa que el comercio no lo tenga.</p>}
+        <p><span className="coti-material-state caution">Por verificar</span> {item.motivo} {item.cotizado?'El original menciona: '+item.cotizado+'. ':''}No significa que el comercio no lo tenga.</p>}
       </li>)}</ul>
      </div>}
      {cover&&cover.porVerificar.length>0&&<div className="coti-clean-alert">
@@ -339,7 +339,7 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
       <strong>{nombreProveedor(item.comercio)}</strong>
       <span>{item.estado==='coincidencia_automatica'?
        'Coincidencia automática · '+item.cotizado:
-       item.estado==='por_verificar'?'Equivalencia pendiente de verificar':
+       item.estado==='por_verificar'?'Equivalencia pendiente de verificar'+(item.cotizado?' · '+item.cotizado:''):
        'Sin datos suficientes para cotejar'}</span>
      </li>)}</ul>
     </article>)}

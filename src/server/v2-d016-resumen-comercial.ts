@@ -123,10 +123,17 @@ function comercial(raw:unknown):Readonly<{
    !matched.has(index)&&sameProducts(req,quote));
   if(i<0){
    still.push(req.description);
-   // Una línea ambigua puede existir en el original, pero no se confirma.
+   // Una alternativa parecida NO es equivalencia. Se presenta únicamente
+   // si hay una sola descripción candidata no vinculada a otra línea.
+   const key=tokens(req.description);
+   const candidates=offered.filter((quote,index)=>!matched.has(index)&&
+    key.length>=2&&key.every(term=>tokens(quote.description).includes(term)));
+   const alternative=candidates.length===1?candidates[0]:null;
    detalle.push(Object.freeze({linea:req.line,solicitado:req.description,
-    cotizado:null,estado:'por_verificar',
-    motivo:'No se confirmó correspondencia de producto, cantidad y presentación.'}));
+    cotizado:alternative?.description??null,estado:'por_verificar',
+    motivo:alternative?
+     'El original contiene una presentación relacionada, pero no se confirmó la equivalencia de cantidad o especificaciones.':
+     'No se confirmó correspondencia de producto, cantidad y presentación.'}));
    continue;
   }
   const quote=offered[i];

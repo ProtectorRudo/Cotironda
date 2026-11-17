@@ -5,6 +5,7 @@
  */
 import type {CatalogoRespuestasV2,PuntoVisibleV2}
  from './v2-03-catalogo-respondedores.ts';
+import type {LineaCompraV2} from './v2-d016-resumen-comercial.ts';
 
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/iu;
 const AREAS=['iva','flete','forma_pago','disponibilidad'] as const;
@@ -122,10 +123,10 @@ export function componerInformeFinalD016(
  // Matriz sólo al cierre SQL. Nunca combinamos listas de pedido discrepantes:
  // un parser incompleto no autoriza atribuir artículos a otra ronda.
  const withRequest=catalog.respuestas.filter(q=>q.resumen?.solicitado?.length);
- const requested=withRequest[0]?.resumen?.solicitado??[];
+ const requested:readonly LineaCompraV2[]=withRequest[0]?.resumen?.solicitado??[];
  const matchingRequest=withRequest.every(q=>{
-  const r=q.resumen.solicitado;
-  return r.length===requested.length&&r.every((item,i)=>
+  const r:readonly LineaCompraV2[]=q.resumen.solicitado;
+  return r.length===requested.length&&r.every((item:LineaCompraV2,i:number)=>
    item.line===requested[i].line&&
    item.description===requested[i].description&&
    item.quantity===requested[i].quantity&&item.unit===requested[i].unit);
@@ -138,11 +139,12 @@ export function componerInformeFinalD016(
     const lines=docs.flatMap(q=>q.resumen?.cobertura?.detalle??[])
      .filter(row=>row.linea===req.line&&row.solicitado===req.description);
     const confirmed=lines.find(row=>row.estado==='coincidencia_automatica');
+    const alternative=lines.find(row=>row.estado==='por_verificar'&&row.cotizado);
     return Object.freeze({
      comercio,
      estado:confirmed?'coincidencia_automatica' as const:
       lines.length?'por_verificar' as const:'sin_datos' as const,
-     cotizado:confirmed?.cotizado??null
+     cotizado:confirmed?.cotizado??alternative?.cotizado??null
     });
    });
    materiales.push(Object.freeze({linea:req.line,material:req.description,

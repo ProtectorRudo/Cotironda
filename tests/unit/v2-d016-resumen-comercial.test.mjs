@@ -155,7 +155,7 @@ test('D019: explica qué se pidió y qué se cotizó, sin transformar 25 kg en 5
  assert.deepEqual(v.cobertura?.detalle.map(x=>x.estado),[
   'por_verificar','coincidencia_automatica','coincidencia_automatica'
  ]);
- assert.equal(v.cobertura?.detalle[0].cotizado,null);
+ assert.equal(v.cobertura?.detalle[0].cotizado,'Cemento CPC - bolsa 25 kg');
  assert.equal(v.solicitado[0].description,input.requestItems[0].description);
  assert.equal(v.cobertura?.porVerificar.length,1);
 });
@@ -195,4 +195,14 @@ test('D019: subtotal sin símbolo de moneda se identifica solo por importe exact
   observacion:'Otro subtotal, no el importe destacado.'
  }]);
  assert.equal(noSource.tipoImporte,'Importe informado');
+});
+
+test('D019 alternativa ambigua de dos proveedores nunca se asigna a un artículo',()=>{
+ const val=resumirOfertaComercialV2({...input,quotedItems:[
+  {...input.quotedItems[0],description:'Cemento CPC 25 kg',quantity:'10'},
+  {...input.quotedItems[0],line:4,description:'Cemento CPC 40 kg',quantity:'10'}
+ ]},[]);
+ assert.equal(val.cobertura?.identificados,0);
+ assert.equal(val.cobertura?.detalle[0].estado,'por_verificar');
+ assert.equal(val.cobertura?.detalle[0].cotizado,null);
 });
