@@ -15,8 +15,15 @@ export type CoberturaCompraV2=Readonly<{
  porVerificar:readonly string[];adicionales:number;
  detalle:readonly CoincidenciaMaterialV2[];
 }>;
+export type DetalleCotizadoV2=Readonly<{
+ descripcion:string;cantidad:string;precioUnitario:string|null;
+ subtotal:string|null;
+}>;
 export type ResumenComercialV2=Readonly<{
  totalDeclarado:string|null;
+ articulosCotizados:number|null;articulosEnviados:number|null;
+ detalleCotizado:readonly DetalleCotizadoV2[];
+ descuento:string|null;
  tipoImporte:'Subtotal informado'|'Total informado'|'Importe informado'|'Importe no informado';
  solicitado:readonly LineaCompraV2[];
  cobertura:CoberturaCompraV2|null;
@@ -27,6 +34,7 @@ export type ResumenComercialV2=Readonly<{
 type Punto=Readonly<{categoria:string;evidencia:string;observacion:string}>;
 const RECORD=/^\$\s*\d[\d., ]{0,25}$|^(?:ARS|US\$|USD)\s*\d[\d., ]{0,25}$/u;
 const CONTACT=/(?:\+?\d[\s().-]?){9,}|[\w.+-]+@[\w.-]+\.\w+|https?:\/\//iu;
+const DISCOUNT=/(?:\bdscto\.?|\bdescuento)\s*(?:de\s*)?:?\s*(\d{1,2}(?:[.,]\d{1,2})?)\s*%/iu;
 const IGNORED=new Set(['de','del','la','el','los','las','y','en','a','un','una',
  'para','por','kg','kgs','g','l','litro','litros','m3','metros','metro','cubico',
  'cubicos','bolsa','bolsas','bolson','bolsones','big','bag','unidad','unidades',
@@ -104,21 +112,55 @@ function parseLines(v:unknown,ambiguous:boolean):readonly LineaCompraV2[]|null{
 function comercial(raw:unknown):Readonly<{
  totalDeclarado:string|null;solicitado:readonly LineaCompraV2[];
  cobertura:CoberturaCompraV2|null;
+ articulosCotizados:number|null;articulosEnviados:number|null;
+ detalleCotizado:readonly DetalleCotizadoV2[];descuento:string|null;
+ termsLiteral:string|null;
 }>{
- if(!object(raw))return {totalDeclarado:null,solicitado:[],cobertura:null};
+ const empty={totalDeclarado:null,solicitado:[],cobertura:null,
+  articulosCotizados:null,articulosEnviados:null,detalleCotizado:[],
+  descuento:null,termsLiteral:null};
+ if(!object(raw))return empty;
  const total=typeof raw.totalLiteral==='string'&&
   raw.totalLiteral.length<45&&RECORD.test(raw.totalLiteral.trim())?
   raw.totalLiteral.trim():null;
  const requested=parseLines(raw.requestItems,false);
+ // El comprador ve el pedido COMPLETO; el análisis individual considera
+ // sólo las líneas EFECTIVAMENTE enviadas a este comercio.
+ const assigned=raw.assignedItems===undefined?requested:
+  parseLines(raw.assignedItems,false);
  const offered=parseLines(raw.quotedItems,true);
  const solicitado=Object.freeze(requested??[]);
- if(!requested||!offered||!requested.length||!offered.length)
-  return {totalDeclarado:total,solicitado,cobertura:null};
+ const quotedDetails:DetalleCotizadoV2[]=[];
+ const descuentos:string[]=[];
+ if(Array.isArray(raw.quotedItems)&&raw.quotedItems.length<=100){
+  for(const item of raw.quotedItems){
+   if(!object(item)||!safe(item.description)||
+    typeof item.quantity!=='string'||item.quantity.length>30)continue;
+   const money=(x:unknown)=>typeof x==='string'&&
+    x.length<45&&RECORD.test(x.trim())?x.trim():null;
+   quotedDetails.push(Object.freeze({descripcion:item.description,
+    cantidad:item.quantity,precioUnitario:money(item.unitPrice),
+    subtotal:money(item.lineTotal)}));
+   const discount=item.description.match(DISCOUNT)?.[1];
+   if(discount)descuentos.push(discount.replace('.',','));
+  }
+ }
+ const descuento=descuentos.length>0&&descuentos.length===quotedDetails.length&&
+  descuentos.every(x=>x===descuentos[0])?
+  descuentos[0]+' % en todos los artículos':null;
+ const termsLiteral=typeof raw.termsLiteral==='string'&&
+  raw.termsLiteral.length<=1000&&safe(raw.termsLiteral,1000)?
+  raw.termsLiteral:null;
+ const extra={articulosCotizados:offered?.length??null,
+  articulosEnviados:assigned?.length??null,
+  detalleCotizado:Object.freeze(quotedDetails),descuento,termsLiteral};
+ if(!requested||!assigned||!offered||!assigned.length||!offered.length)
+  return {totalDeclarado:total,solicitado,cobertura:null,...extra};
  const matched=new Set<number>();
  let identified=0;
  const still:string[]=[];
  const detalle:CoincidenciaMaterialV2[]=[];
- for(const req of requested){
+ for(const req of assigned){
   const i=offered.findIndex((quote,index)=>
    !matched.has(index)&&sameProducts(req,quote));
   if(i<0){
@@ -143,9 +185,9 @@ function comercial(raw:unknown):Readonly<{
    motivo:'Coinciden automáticamente descripción y cantidad nominal; revisar el original para especificaciones adicionales.'}));
  }
  return {
-  totalDeclarado:total,solicitado,
+  totalDeclarado:total,solicitado,...extra,
   cobertura:Object.freeze({
-   identificados:identified,solicitados:requested.length,
+   identificados:identified,solicitados:assigned.length,
    porVerificar:Object.freeze(still.slice(0,6)),
    adicionales:offered.length-matched.size,
    detalle:Object.freeze(detalle)
@@ -170,15 +212,18 @@ function tipoMonto(monto:string|null,puntos:readonly Punto[]):ResumenComercialV2
  }
  return 'Importe informado';
 }
-function cond(puntos:readonly Punto[]):ResumenComercialV2['condiciones']{
+function cond(puntos:readonly Punto[],conditionsText:string|null):ResumenComercialV2['condiciones']{
  const evidence=(cat:string)=>normal(puntos.find(p=>p.categoria===cat)?.evidencia??'');
+ // La extracción comercial original sirve de fuente si el análisis de IA
+ // todavía no existe. Nunca inferir IVA, descuento, pago o flete ausentes.
+ const terms=normal(conditionsText??'');
  const iva=evidence('iva'),flete=evidence('flete');
  const directo=evidence('forma_pago');
  // Algunos originales combinan «forma de pago y plazo» en una misma cita.
  // Se lee SOLO la frase monetaria explícita; nunca se infiere del plazo.
  const combinado=normal(puntos.find(p=>p.categoria==='plazo'&&
   /\bcontado\b|\btransferencia\b|\bforma de pago\b/iu.test(p.evidencia))?.evidencia??'');
- const pago=directo||combinado;
+ const pago=directo||combinado||terms;
  let i=iva?'No verificado':'No informado';
  if(/iva[^.\n;]*no (?:esta )?incluido/u.test(iva))i='No incluido';
  else if(/iva[^.\n;]*incluido/u.test(iva))i='Incluido';
@@ -188,6 +233,9 @@ function cond(puntos:readonly Punto[]):ResumenComercialV2['condiciones']{
   f=/importe a cotizar/u.test(flete)?'No incluido · a cotizar':'No incluido';
  else if(/flete[^.\n;]*incluido/u.test(flete))f='Incluido';
  else if(/flete[^.\n;]*no informad/u.test(flete))f='No informado';
+ if(f==='No informado'&&/\bflete\s+a\s+convenir\b/u.test(terms))f='A convenir';
+ else if(f==='No informado'&&/\bflete\s+no\s+incluido\b/u.test(terms))f='No incluido';
+ else if(f==='No informado'&&/\bflete\s+incluido\b/u.test(terms))f='Incluido';
  let pay=pago?'No verificado':'No informado';
  if(!/\bno\s+(?:se\s+)?(?:acepta|admite|incluye)\s+(?:pago\s+)?(?:contado|efectivo)\b/u.test(pago)&&
   /\bcontado\s+(?:en\s+)?efectivo\b|\befectivo\s+al\s+contado\b/u.test(pago))
@@ -205,5 +253,5 @@ export function resumirOfertaComercialV2(
 ):ResumenComercialV2{
  const metadata=comercial(raw);
  return Object.freeze({...metadata,tipoImporte:tipoMonto(metadata.totalDeclarado,puntos),
-  condiciones:cond(puntos)});
+  condiciones:cond(puntos,metadata.termsLiteral)});
 }
