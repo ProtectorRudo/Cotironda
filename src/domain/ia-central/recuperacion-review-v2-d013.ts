@@ -77,6 +77,7 @@ const PLAN_DIAGNOSTICOS_D013:Readonly<Record<string,DiagnosticoRecuperacionD013>
  'posibles_articulos_no_representados':'source_missing_items',
  'segundo_lector_identifica_articulo_sin_fuente':'source_second_reader_unanchored',
  'ningun_articulo_conciliado':'source_no_confirmed_item',
+ 'ia_central_solicita_aclaracion':'plan_clarification_required',
  'zona_de_entrega_faltante':'source_missing_city',
  'falta_localidad':'source_missing_city',
  'indices_revision_no_verificables':'source_invalid_review_indices',
