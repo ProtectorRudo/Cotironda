@@ -4,6 +4,8 @@
  */
 import {planificarMensajeAutenticadoMvp220} from './planificador-piloto-v2-d013.ts';
 import {armarPreparacionSombraMvp221} from './puente-sql-rondas-v2-d013.ts';
+import {diagnosticarLecturaPrivadaD013,
+ type DiagnosticoLecturaPrivadaD013} from './cliente-openai-v2-d013.ts';
 const HEX=/^[a-f0-9]{64}$/u;
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/iu;
 type Rpc=(name:string,params:Readonly<Record<string,unknown>>)=>
@@ -226,4 +228,48 @@ export async function recuperarBuyerReviewD013(args:{
   // inbox.source_hmac y sidecar append-only; nunca enviar ni repetir.
   return review('recovery_exception');
  }
+}
+
+
+/** Sesión privada de diagnóstico D013. Solo SELECT RPC + AES-GCM íntegro
+ * + una lectura IA Central; NO se invoca prepare, stage, ruteo ni outbox.
+ * El informe nunca incluye cifras, frases, productos ni identificadores.
+ */
+export type ResultadoDiagnosticoBuyerD013=Readonly<{
+ estado:'deshabilitado'|'fuente_no_disponible'|'fuente_no_verificada'|
+ 'modelo_no_disponible'|'diagnostico_seguro';
+ diagnostico:DiagnosticoLecturaPrivadaD013|null;
+ outboundSent:false;
+}>;
+export async function diagnosticarBuyerReviewD013(args:{
+ habilitado:boolean;aesKeyHex:string;apiKey:string;model:Model;rpc:Rpc;
+ leer?:typeof diagnosticarLecturaPrivadaD013;
+}):Promise<ResultadoDiagnosticoBuyerD013>{
+ const result=(estado:ResultadoDiagnosticoBuyerD013['estado'],
+  diagnostico:DiagnosticoLecturaPrivadaD013|null=null)=>
+  Object.freeze({estado,diagnostico,outboundSent:false as const});
+ if(args?.habilitado!==true)return result('deshabilitado');
+ if(typeof args.rpc!=='function'||!HEX.test(args.aesKeyHex))
+  return result('fuente_no_disponible');
+ let raw:unknown;
+ try{
+  const response=await args.rpc(
+   'cotironda_piloto_v2_d013_review_source_private',{});
+  if(response.error!=null)return result('fuente_no_disponible');
+  raw=response.data;
+ }catch{return result('fuente_no_disponible')}
+ if(!obj(raw)||raw.state!=='ready')
+  return result('fuente_no_disponible');
+ const original=await abrirTextoArchivado(args.aesKeyHex,raw);
+ if(!original)return result('fuente_no_verificada');
+ if(typeof args.apiKey!=='string'||
+    !/^sk-[A-Za-z0-9_-]{16,}$/u.test(args.apiKey)||
+    !['gpt-6-luna','gpt-6.1-sol'].includes(args.model))
+  return result('modelo_no_disponible');
+ try{
+  const diagnostic=await (args.leer??diagnosticarLecturaPrivadaD013)({
+   fuente:original,apiKey:args.apiKey,model:args.model
+  });
+  return result('diagnostico_seguro',diagnostic);
+ }catch{return result('modelo_no_disponible')}
 }
