@@ -38,7 +38,7 @@ test('D013: mensaje natural acepta 4 ítems con envases, rubros y orden diferent
   model:'gpt-6-luna',fetchImpl:fake(first,second)});
  assert.equal(out.estado,'listo_para_preparar',out.motivo);
  assert.deepEqual(out.pedido.articulos.map(x=>x.cantidad),['10','1','3','2']);
- assert.equal(out.pedido.articulos[0].presentacion,'25 kg');
+ assert.equal(out.pedido.articulos[0].presentacion,'25 kilos');
 });
 test('D013: los 25 kg no se convierten en 25 bolsas ni bloquean el resto',()=>{
  const changed=structuredClone(second);changed.articulos[3].cantidad='25';
@@ -197,7 +197,7 @@ test('D013: WhatsApp auténtico de cuatro materiales, lectura semántica flexibl
  assert.equal(result.estado,'listo_para_preparar',result.motivo);
  assert.deepEqual(result.pedido.articulos.map(x=>x.cantidad),['10','1','3','2']);
  assert.deepEqual(result.pedido.articulos.map(x=>x.presentacion),
-  ['25 kg','1 m3','10 L','4 mm']);
+  ['25 kilos','1 m³','10 litros','4 mm']);
 });
 test('D013: una cita solo de presentación no valida identidad del material',()=>{
  const modified=structuredClone(second);
