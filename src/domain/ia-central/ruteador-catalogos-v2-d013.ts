@@ -6,7 +6,6 @@
  * Un broker distinto valida identidad, zona, rubro y el catálogo real.
  */
 import type {PropuestaPedido} from './contrato-v1.ts';
-import {verificarCorrespondenciaTecnicaD013} from './verificador-evidencia-tecnica-v2-d013.ts';
 import type {RubroMvp216} from '../rubros-comprador-mvp216.ts';
 import {RUBROS_MVP216} from '../rubros-comprador-mvp216.ts';
 
@@ -133,44 +132,21 @@ export function autorizarPropuestasCatalogoV2(
    const requested=pedido.articulos[idx];
    if(!source||!requested)
     return fail('producto_no_declarado_en_catalogo');
-   const token=[supplierKey,idx,lineNo].join(':');
-   const proof=verificarCorrespondenciaTecnicaD013(requested,source.descripcion,
-    tipo as 'producto_declarado'|'alternativa_razonable',
-    identidadesCorroboradas.has(token));
+   // V2: una sola IA Central determina el vínculo técnico. El broker
+   // SOLO comprueba identidad consentida, localidad y el SKU concreto
+   // existente en el catálogo del proveedor. No relee productos con
+   // diccionarios de materiales, dimensiones ni heurísticas.
    seen.add(idx);
-   // Consulta comercial sólo si la segunda IA confirmó que hay RELACIÓN
-   // comercial con este SKU real, pero no confirmó identidad exacta.
-   // Nunca convertir una contradicción técnica comprobada en consulta.
-   const soft=new Set(['sin_identidad_material_comprobable',
-    'prestacion_tecnica_sin_acreditar',
-    'presentacion_alternativa_sin_acreditar']);
-   // Una IA Central propone un SKU real. Consulta plausible sin
-   // afirmar stock/equivalencia, pero nunca contra conflicto técnico duro.
-   const consultaCentral=!exigirSegundaLectura&&
-    tipo==='alternativa_razonable'&&soft.has(proof.motivo);
-   const consultiva=consultaCentral||(exigirSegundaLectura&&
-    consultasRelacionadas.has(token)&&!identidadesCorroboradas.has(token)&&
-    (proof.estado==='evidencia_suficiente'||soft.has(proof.motivo)));
-   if(proof.estado!=='evidencia_suficiente'&&!consultiva){
-    pending.push({proveedor:supplierKey,indicePedido:idx,
-     numeroCatalogo:lineNo,motivo:proof.motivo});
-    continue; // Conflictos técnicos siguen prohibidos.
-   }
-   if(exigirSegundaLectura&&!identidadesCorroboradas.has(token)&&!consultiva){
-    pending.push({proveedor:supplierKey,indicePedido:idx,
-     numeroCatalogo:lineNo,motivo:'identidad_semantica_no_corroborrada'});
-    continue;
-   }
    covered[idx]++;
    matches.push({
-    indicePedido:idx,
-    numeroCatalogo:lineNo,
-    // El contrato SQL existente sólo admite alternativa_razonable:
-    // la explicación ACLARA que esto no afirma equivalencia ni stock.
-    tipo:consultiva?'alternativa_razonable':tipo as CorrespondenciaV2['tipo'],
-    explicacion:consultiva?
-     'CONSULTA SIN EQUIVALENCIA CONFIRMADA. '+explicacion.slice(0,184):
-     explicacion
+    indicePedido:idx,numeroCatalogo:lineNo,
+    tipo:tipo as CorrespondenciaV2['tipo'],
+    // La alternativa es una CONSULTA al proveedor, jamás promesa de
+    // equivalencia, existencia física ni disponibilidad.
+    explicacion:tipo==='alternativa_razonable'
+     ?'CONSULTA DE COMPATIBILIDAD SIN STOCK CONFIRMADO. '+
+       explicacion.slice(0,169)
+     :explicacion
    });
   }
   assigned.add(supplier.clave);
