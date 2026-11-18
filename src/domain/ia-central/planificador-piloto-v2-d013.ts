@@ -14,6 +14,8 @@ import type {DiagnosticoCantidadD013} from './contrato-v2-d013.ts';
 import {validarSnapshotCatalogosMvp220} from './catalogo-supabase-mvp220.ts';
 import {categorizarCatalogosCuradosD013} from './catalogo-curado-v2-d013.ts';
 import {proponerRuteoCatalogoConIAV2} from './ruteador-catalogos-v2-d013.ts';
+import type {PropuestaPedido} from './contrato-v1.ts';
+import type {ResultadoCatalogoV2} from './ruteador-catalogos-v2-d013.ts';
 import type {ProveedorCatalogoV2} from './ruteador-catalogos-v2-d013.ts';
 
 type Rpc= (name:string,params:Readonly<Record<string,string>>)=>
