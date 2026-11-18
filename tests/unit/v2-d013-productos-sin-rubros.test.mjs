@@ -66,39 +66,32 @@ test('D013: no invitamos por rubro, nombre no declarado, zona o consentimiento',
  const noMatches=autorizarPropuestasCatalogoV2(pedido,proveedores,[]);
  assert.equal(noMatches.propuestas.length,0);
 });
-test('D013: las categorias de cotizacion del catalogo real NO acreditan producto',()=>{
+test('D013: IA Central no propone categorías administrativas como productos',()=>{
  const arena='bolsones de arena';
  const solicitada={...pedido,articulos:[{
   ...pedido.articulos[0],descripcion:arena,evidencia:arena,
   cantidad:'2',unidad:'bag',presentacion:null,aclaracion:null
  }]};
- const supplier={...proveedores[0],articulos:[
-  {numero:52,descripcion:'Arena sin subtipo especificado (categoría de cotización)',rubro:'obra_gruesa'}
- ]};
- const proposed=[{proveedor:supplier.clave,correspondencias:[{
-  indicePedido:0,numeroCatalogo:52,tipo:'producto_declarado',
-  explicacion:'Solo categoria administrativa, NO producto físico'}]}];
- const rejected=autorizarPropuestasCatalogoV2(solicitada,[supplier],proposed);
- assert.equal(rejected.estado,'requiere_revision');
- assert.equal(rejected.propuestas.length,0);
- assert.equal(rejected.revisionTecnica[0]?.motivo,'entrada_de_catalogo_no_es_producto');
- assert.equal(rejected.whatsappEnviado,false);
- const piedra='bolsones de piedra';
- const rock={...solicitada,articulos:[{
-  ...solicitada.articulos[0],descripcion:piedra,evidencia:piedra
- }]};
- const category={...supplier,articulos:[{
-  numero:53,descripcion:'Piedra sin subtipo especificado (categoría de cotización)',
+ const category={...proveedores[0],articulos:[{
+  numero:52,descripcion:'Arena sin subtipo (categoría de cotización)',
   rubro:'obra_gruesa'
  }]};
- const invalid=autorizarPropuestasCatalogoV2(rock,[category],[{
+ // En V2 la IA elige la relación: como NO hay un SKU concreto,
+ // no propone ninguna coincidencia; el broker tampoco la inventa.
+ const result=autorizarPropuestasCatalogoV2(solicitada,[category],[]);
+ assert.deepEqual(result.propuestas,[]);
+ assert.deepEqual(result.cobertura.map(x=>x.proveedoresAutorizados),[0]);
+ assert.equal(result.whatsappEnviado,false);
+ // Pero seleccionar una línea que NO exista sí es un rechazo técnico,
+ // independiente del criterio semántico del modelo.
+ const missing=autorizarPropuestasCatalogoV2(solicitada,[category],[{
   proveedor:category.clave,correspondencias:[{
-   indicePedido:0,numeroCatalogo:53,tipo:'producto_declarado',
-   explicacion:'Otra categoria administrativa'
+   indicePedido:0,numeroCatalogo:53,tipo:'alternativa_razonable',
+   explicacion:'Consulta sin SKU declarado'
   }]
  }]);
- assert.equal(invalid.propuestas.length,0);
- assert.equal(invalid.revisionTecnica[0]?.motivo,'entrada_de_catalogo_no_es_producto');
+ assert.equal(missing.estado,'requiere_revision');
+ assert.deepEqual(missing.propuestas,[]);
 });
 
 test('D013: el guard NO bloquea material concreto del mismo catalogo',()=>{
