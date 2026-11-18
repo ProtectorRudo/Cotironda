@@ -36,6 +36,6 @@ test('El gate está anclado a v101 y v21 y no permite despliegue automático',()
   assert.match(v.sha256,/^[a-f0-9]{64}$/u);
   assert.match(v.bundle,/^[a-f0-9]{64}$/u);
  }
- const source=String.raw\`const x='never';\`;
+ const source="const x='never';";
  assert.doesNotMatch(source,/deploy_edge_function/u);
 });
