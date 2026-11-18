@@ -235,6 +235,7 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
    const needsReview=!cover||cover.identificados<cover.solicitados||
     cover.porVerificar.length>0||cover.adicionales>0;
    const expanded=expandedDoc===q.documentoId;
+   const diferencias=cover?.detalle.filter(item=>item.estado==='por_verificar')??[];
    // Mostrar valor comercial y diferencias técnicas, sin transcribir los importes
    // por renglón del PDF ni repetir observaciones de precio, flete o pago.
    const notasTecnicas=q.puntos.filter(p=>
@@ -277,9 +278,12 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
     </div>
     {expanded&&<div className="coti-clean-bid-expanded" id={'detalle-'+q.documentoId}>
      <h4>Lo importante de este presupuesto</h4>
-     {cover&&cover.porVerificar.length>0&&<div className="coti-clean-alert">
+     {diferencias.length>0&&<div className="coti-clean-alert">
       <strong>Equivalencias técnicas por comprobar</strong>
-      <ul>{cover.porVerificar.map((material,i)=><li key={i}>{material}</li>)}</ul>
+      <ul>{diferencias.slice(0,3).map(item=><li key={item.linea}>
+       {item.solicitado}
+       {item.cotizado?' · El original menciona: '+item.cotizado:''}
+      </li>)}</ul>
      </div>}
      {cover&&cover.adicionales>0&&
       <p className="coti-clean-muted">
