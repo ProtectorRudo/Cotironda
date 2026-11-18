@@ -353,6 +353,9 @@ export async function correlacionAutomaticaMvp291(args:{
  // A single internal retry of a prior insufficient-evidence decision. SQL
  // requires a leased private recovery source and records the prior verdict.
  retryReviewedOnce?:boolean;
+ // New immutable SQL lease: only a single additional evaluation after V2
+ // previously failed to distinguish requests (never a retry loop).
+ retryQuantityAfterReview?:boolean;
  compare?:typeof modelRead;
 }):Promise<ResultMvp291>{
  if(!args?.enabled)return result('disabled','flag_off');
@@ -361,6 +364,8 @@ export async function correlacionAutomaticaMvp291(args:{
    typeof args.rpc!=='function')
   return result('not_eligible','invalid_context');
  const isText=args.textQuote!==undefined||args.textSha256!==undefined;
+ if(args.retryQuantityAfterReview&&(args.retryReviewedOnce||!isText))
+  return result('not_eligible','invalid_quantity_review_context');
  if(isText&&(!HEX.test(args.textSha256??'')||!Array.isArray(args.textQuote)||
     args.textQuote.length<1||args.textQuote.length>25||
     !args.textQuote.every(goodLine)))
@@ -383,10 +388,12 @@ export async function correlacionAutomaticaMvp291(args:{
   }
   // A single privately leased review for an archived supplier TEXT. The
   // old document recovery continues using its independent MVP336 RPC.
-  const prepareRpc=args.retryReviewedOnce?
-   (isText?'cotironda_piloto_auto_correlation_retry_text_prepare_v2':
-    'cotironda_piloto_auto_correlation_retry_prepare_mvp336'):
-   'cotironda_piloto_auto_correlation_prepare_mvp291';
+  const prepareRpc=args.retryQuantityAfterReview?
+   'cotironda_piloto_auto_correlation_retry_quantity_prepare_v2':
+   args.retryReviewedOnce?
+    (isText?'cotironda_piloto_auto_correlation_retry_text_prepare_v2':
+     'cotironda_piloto_auto_correlation_retry_prepare_mvp336'):
+    'cotironda_piloto_auto_correlation_prepare_mvp291';
   const prepared=await db(prepareRpc,{
    p_source_hmac:args.sourceHmac,p_chat_hmac:args.chatHmac
   });

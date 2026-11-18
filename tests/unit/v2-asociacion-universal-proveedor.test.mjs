@@ -332,3 +332,43 @@ test('No confundir bolsa pequeña con bolsón sólo porque el número coincide',
  assert.equal(corroborarCantidadMvp291(line(1,'arena','2','bolsones'),
    line(1,'bolsones de arena','2','bag')),'strong');
 });
+
+test('La revisión adicional de cantidad usa un RPC nuevo y un único lease',async()=>{
+ const snap={quote:pairwiseOffer(),options:pairwiseRequests()};
+ const called=[];let reads=0;
+ const rpc=async(name,args)=>{
+  called.push(name);
+  if(name==='cotironda_piloto_stage_supplier_text_mvp292')
+   return {data:{state:'already_staged'},error:null};
+  if(name==='cotironda_piloto_auto_correlation_retry_quantity_prepare_v2')
+   return {data:{state:'reserved',source_sha256:hash,
+     quote:snap.quote,candidates:snap.options},error:null};
+  if(name==='cotironda_piloto_auto_correlation_bind_mvp291'){
+   assert.equal(args.p_request,a);
+   return {data:{state:'linked_private'},error:null};
+  }
+  throw Error('unexpected rpc '+name);
+ };
+ const result=await correlacionAutomaticaMvp291({
+  enabled:true,webhookAuthenticated:true,sourceHmac:hash,chatHmac:chat,
+  apiKey:'k'.repeat(24),model:'gpt-6-luna',
+  textQuote:snap.quote,textSha256:hash,retryQuantityAfterReview:true,rpc,
+  compare:async()=>{reads++;return proposal(null,completePairs())}
+ });
+ assert.equal(result.state,'linked_private');
+ assert.equal(reads,1);
+ assert.equal(result.outboundMessages,0);
+ assert.deepEqual(called.filter(n=>n.includes('retry_quantity_prepare_v2')),
+  ['cotironda_piloto_auto_correlation_retry_quantity_prepare_v2']);
+ assert.equal(called.filter(n=>n.includes('_bind_')).length,1);
+});
+test('No permite reintento de cantidades duplicado ni sin texto corroborado',async()=>{
+ const rpc=async()=>{throw Error('should not reach database')};
+ const base={enabled:true,webhookAuthenticated:true,
+  sourceHmac:hash,chatHmac:chat,apiKey:'k'.repeat(24),
+  model:'gpt-6-luna',rpc,retryQuantityAfterReview:true};
+ assert.equal((await correlacionAutomaticaMvp291({
+  ...base,retryReviewedOnce:true,textSha256:hash,textQuote:pairwiseOffer()
+ })).state,'not_eligible');
+ assert.equal((await correlacionAutomaticaMvp291(base)).state,'not_eligible');
+});
