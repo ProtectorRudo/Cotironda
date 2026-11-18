@@ -97,6 +97,10 @@ BEGIN
  new_source:=replace(old_source,source_association_before,source_association_after);
 
  IF new_catalog=old_catalog OR new_source=old_source
+ OR encode(extensions.digest(convert_to(new_catalog,'UTF8'),'sha256'),'hex')
+    <> '72bf82d597beb16872b7e893d7562b5419180df715050ffd05d7221ad36808cd'
+ OR encode(extensions.digest(convert_to(new_source,'UTF8'),'sha256'),'hex')
+    <> '21e52c8b1fa968e561573bc103c365c8ac668bd957fe556e1f6fbee48da746c9'
  OR new_catalog NOT LIKE '%v2_d016_effective_original_consent_private%'
  OR new_catalog NOT LIKE '%v2_d016_session_context_private%'
  OR new_source NOT LIKE '%v2_d016_effective_original_consent_private%'
@@ -107,6 +111,16 @@ BEGIN
 
  EXECUTE new_catalog;
  EXECUTE new_source;
+
+ IF encode(extensions.digest(convert_to(pg_get_functiondef(
+    'public.cotironda_piloto_v2_d016_responders_private(uuid,text)'::regprocedure),
+    'UTF8'),'sha256'),'hex')
+    <> '72bf82d597beb16872b7e893d7562b5419180df715050ffd05d7221ad36808cd'
+ OR encode(extensions.digest(convert_to(pg_get_functiondef(
+    'public.cotironda_piloto_v2_d016_original_source_private(uuid,text,uuid)'::regprocedure),
+    'UTF8'),'sha256'),'hex')
+    <> '21e52c8b1fa968e561573bc103c365c8ac668bd957fe556e1f6fbee48da746c9'
+ THEN RAISE EXCEPTION 'v2_portal_post_source_mismatch';END IF;
 
  IF has_function_privilege('anon',
    'public.cotironda_piloto_v2_d016_responders_private(uuid,text)','EXECUTE')
