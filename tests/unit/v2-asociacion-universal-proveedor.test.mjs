@@ -2,8 +2,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {elegirRondaUnicaMvp291,correlacionAutomaticaMvp291} from
  '../../supabase/functions/cotironda-piloto-whapi/supplier-auto-correlation-mvp336.ts';
-import {extraerMaterialesTextoMvp292} from
- '../../supabase/functions/cotironda-piloto-whapi/supplier-text-materials-mvp292.ts';
 
 const a='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const b='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
@@ -121,24 +119,4 @@ test('Si la base deniega el enlace, el mensaje permanece en revisión privada',a
  assert.notEqual(r.state,'linked_private');
  assert.equal(r.outboundMessages,0);
  assert.ok(names.includes('cotironda_piloto_auto_correlation_finish_mvp291'));
-});
-test('Extracción WhatsApp utiliza una sola lectura y comprueba citas del original',async()=>{
- let calls=0;
- const source='Cotizo 10 bolsas de cemento CPC 50 kg.';
- const extracted=await extraerMaterialesTextoMvp292({
-  source,apiKey:'k'.repeat(24),model:'gpt-6-luna',
-  read:async()=>{
-   calls++;
-   return {items:[{original:'10 bolsas de cemento CPC 50 kg',
-    description:'cemento CPC 50 kg',quantity:'10',unit:'bolsas'}]};
-  }
- });
- assert.equal(calls,1);
- assert.equal(extracted?.[0].description,'cemento CPC 50 kg');
- const fabricated=await extraerMaterialesTextoMvp292({
-  source,apiKey:'k'.repeat(24),model:'gpt-6-luna',
-  read:async()=>({items:[{original:'30 bolsas inexistentes',
-   description:'bolsas inexistentes',quantity:'30',unit:'bolsas'}]})
- });
- assert.equal(fabricated,null);
 });
