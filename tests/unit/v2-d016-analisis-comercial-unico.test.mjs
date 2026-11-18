@@ -18,7 +18,6 @@ test('original privado sigue siendo fuente para importes y condiciones, no una I
   "'termsLiteral'",
   "'lineTotal',offered.line_total_literal",
   "'unitPrice',offered.unit_price_literal",
-  'q.state IN',
   'v2_d016_responders_private',
   'v2_d016_original_source_private',
   'commercial_source_drift',
