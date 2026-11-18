@@ -16,6 +16,7 @@ const BASE_SHA256='3df77172138e27689123080335e65f2da111a14caac0b2a8034978435371f
 const EXTRA_GIT_SHA='e94b1aad254389efda09c7e544bf62e12a7b5c42'; // MVP336 original
 const EXTRA_GIT_SHA_MVP351='eb522a681eb53e2cf6ef62a7bf497114ebcdaf65'; // reviewed branch
 const EXTRA_GIT_SHA_MVP352='b5ea8c2b64ba7fe07409943b9c810d7a6e270b84'; // semantic hints only
+const EXTRA_GIT_SHA_V2_RECENT='edc09812deb71728604e2348a633d6d0f2f8c248'; // same buyer last resort
 const oldImport="from './supplier-auto-correlation-mvp291.ts';";
 const newImport="from './supplier-auto-correlation-mvp336.ts';";
 const sha256=s=>createHash('sha256').update(s,'utf8').digest('hex');
@@ -37,11 +38,15 @@ export function prepararMvp336Overlay({root=ROOT,source}={}){
  const exactCorrelatorHash=gitBlob(extra);
  // Versioned allowlist: old pinned module remains valid; new reviewed
  // MVP351 module adds closed-round non-binding guard, never arbitrary code.
- if(![EXTRA_GIT_SHA,EXTRA_GIT_SHA_MVP351,EXTRA_GIT_SHA_MVP352].includes(exactCorrelatorHash)||
+ if(![EXTRA_GIT_SHA,EXTRA_GIT_SHA_MVP351,EXTRA_GIT_SHA_MVP352,EXTRA_GIT_SHA_V2_RECENT].includes(exactCorrelatorHash)||
     !extra.includes('elegirRondaUnicaMvp291')||
     !extra.includes('retryReviewedOnce')||
     !extra.includes('cantidadLiteralSinUnidadMvp336(')||
-    (exactCorrelatorHash===EXTRA_GIT_SHA_MVP352&&!extra.includes('pistasMaterialesMvp352(input.quote)')))
+    ([EXTRA_GIT_SHA_MVP352,EXTRA_GIT_SHA_V2_RECENT].includes(exactCorrelatorHash)&&
+     !extra.includes('pistasMaterialesMvp352(input.quote)'))||
+    (exactCorrelatorHash===EXTRA_GIT_SHA_V2_RECENT&&
+     (!extra.includes('recent_identical_same_buyer_v2')||
+      !extra.includes('cotironda_piloto_auto_correlation_bind_latest_same_buyer_v2'))))
   throw Error('mvp336_new_correlator_not_pinned');
  const worker=readFileSync(resolve(root,
   'supabase/functions/cotironda-piloto-whapi/supplier-auto-recovery-worker-mvp292.ts'),'utf8');
@@ -60,7 +65,7 @@ export function prepararMvp336Overlay({root=ROOT,source}={}){
   baseline_index_sha256:BASE_SHA256,index_sha256:sha256(patched),
   added_file:EXTRA,added_file_git_sha:exactCorrelatorHash,
   file_count:62,
-  dependency_added_file:exactCorrelatorHash===EXTRA_GIT_SHA_MVP352?
+  dependency_added_file:[EXTRA_GIT_SHA_MVP352,EXTRA_GIT_SHA_V2_RECENT].includes(exactCorrelatorHash)?
    'supabase/functions/cotironda-piloto-whapi/supplier-material-identity-hint-mvp352.ts':null,
   original_manifest_preserved:true,
   source_changed_on_disk:false,db_mutated:false,
