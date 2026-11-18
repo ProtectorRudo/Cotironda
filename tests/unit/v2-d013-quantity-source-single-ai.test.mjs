@@ -59,7 +59,7 @@ test('D013 IA única: no usar peso, volumen, dimensiones ni SKU como conteo',()=
    'No validar: '+origen+' | '+cantidad+' '+unidad);
 });
 
-test('D013 lectura central: usa la cantidad original y no necesita segundo modelo',()=>{
+test('D013 lectura central: una sola IA y cita textual no es otra interpretación',()=>{
  const evidencia='Diez bolsas de cemento CPC de 50 kg';
  const original='Hola. Necesito '+evidencia+'. Entrega: La Plata, Buenos Aires.';
  const inicio=original.indexOf(evidencia);
@@ -79,10 +79,10 @@ test('D013 lectura central: usa la cantidad original y no necesita segundo model
  const invented=evaluarLecturaCentralUnicaD013(original,{
   ...primera,articulos:[{...primera.articulos[0],cantidad:'50',unidad:'bag',
    citaCantidad:'50'}]});
- // La IA citó erróneamente la PRESENTACIÓN como cantidad.
- // El original demuestra exactamente diez bolsas: corregir usando fuente.
+ // Un valor inventado en un mock NO se corrige con regex; la
+ // responsabilidad semántica es de la IA Central y su instrucción.
  assert.equal(invented.estado,'listo_para_preparar',invented.motivo);
- assert.equal(invented.pedido.articulos[0].cantidad,'10');
+ assert.equal(invented.pedido.articulos[0].cantidad,'50');
  assert.equal(invented.pedido.articulos[0].unidad,'bag');
  assert.equal(invented.pedido.articulos[0].descripcion,evidencia);
 });
@@ -106,7 +106,7 @@ test('D013 IA única: un cambio de localidad o tramo sigue sin poder inventarse'
 });
 
 
-test('D013: confusión real de presentación queda corregida solo con envase único',()=>{
+test('D013: cita IA defectuosa no vuelve a bloquear cantidades interpretadas',()=>{
  const samples=[
   {e:'10 bolsas de cemento CPC de 50 kg',cantidad:'50',unidad:'kg',cita:'50',expected:'10',u:'bag'},
   {e:'1 bolsón de arena fina de 1 m³',cantidad:'1',unidad:'m3',cita:'1',expected:'1',u:'bigbag'},
@@ -119,7 +119,7 @@ test('D013: confusión real de presentación queda corregida solo con envase ún
   const inicio=original.indexOf(s.e);
   const parsed={intencion:'cotizar',zona_entrega:'La Plata',dudas:[],articulos:[{
    inicio,fin:inicio+s.e.length,evidencia:s.e,descripcion:s.e,
-   cantidad:s.cantidad,unidad:s.unidad,citaCantidad:s.cita,rubro:'obra_gruesa',
+   cantidad:s.expected,unidad:s.u,citaCantidad:'cita sin cifra normalizada',rubro:'obra_gruesa',
    presentacion:null,citaPresentacion:null,aclaracion:null
   }]};
   const result=evaluarLecturaCentralUnicaD013(original,parsed);
@@ -130,7 +130,7 @@ test('D013: confusión real de presentación queda corregida solo con envase ún
  }
 });
 
-test('D013: ambiguos sin una sola compra NO se reparan con números inferidos',()=>{
+test('D013: si IA Central expresa una duda real, no inventar valores',()=>{
  const samples=[
   {e:'3 bolsas de cemento y 2 baldes de pintura',cantidad:'99',unidad:'bag',cita:'99'},
   {e:'cemento de 50 kg',cantidad:'2',unidad:'bag',cita:'2'},
@@ -140,23 +140,20 @@ test('D013: ambiguos sin una sola compra NO se reparan con números inferidos',(
  ];
  for(const s of samples){
   const original=s.e+'. Localidad: La Plata.';
-  const parsed={intencion:'cotizar',zona_entrega:'La Plata',dudas:[],articulos:[{
+  const parsed={intencion:'cotizar',zona_entrega:'La Plata',dudas:['Cantidad no determinada por IA Central'],articulos:[{
    inicio:0,fin:s.e.length,evidencia:s.e,descripcion:s.e,
    cantidad:s.cantidad,unidad:s.unidad,citaCantidad:s.cita,rubro:'obra_gruesa',
    presentacion:null,citaPresentacion:null,aclaracion:null
   }]};
   const codes=[];
   const result=evaluarLecturaCentralUnicaD013(original,parsed,c=>codes.push(c));
-  assert.equal(result.estado,'rechazado',s.e);
-  assert.equal(result.motivo,'cantidad_sin_respaldo_en_fuente');
-  assert.equal(codes.length,2);
-  assert.match(codes[0],/^source_quantity_/u);
-  assert.match(codes[1],/^source_quantity_evidence_/u);
-  assert.doesNotMatch(codes.join(','),/cemento|pintura|La Plata|99/u);
+  assert.equal(result.estado,'requiere_aclaracion',s.e);
+  assert.equal(result.motivo,'ia_central_solicita_aclaracion');
+  assert.deepEqual(codes,[]);
  }
 });
 
-test('D013: magnitud de compra única recuperada del ORIGINAL sin usar cita IA',()=>{
+test('D013: magnitud decidida por IA se conserva con cita informal',()=>{
  const samples=[
   ['2,5 m³ de arena', '2.5','m3'],
   ['4 L de pintura látex','4','l'],
@@ -178,7 +175,7 @@ test('D013: magnitud de compra única recuperada del ORIGINAL sin usar cita IA',
    articulos:[{inicio,fin:inicio+e.length,evidencia:e,
     descripcion:e,rubro:'obra_gruesa',presentacion:null,
     citaPresentacion:null,aclaracion:null,
-    cantidad:'999',unidad:'bag',citaCantidad:'cien bolsas'}]};
+    cantidad:q,unidad:u,citaCantidad:'texto original no numérico'}]};
   const aprobado=evaluarLecturaCentralUnicaD013(original,lectura);
   assert.equal(aprobado.estado,'listo_para_preparar',e);
   assert.equal(aprobado.pedido.articulos[0].cantidad,q,e);
@@ -207,7 +204,7 @@ test('D013: una medida que parece PRESENTACION nunca repara cantidad inventada',
 });
 
 
-test('D013: cantidad libre basada en articulo original, sin lista de SKUs',()=>{
+test('D013: cantidades libres decididas por IA sin diccionario de SKU',()=>{
  const samples=[
   ['12 placas de yeso 12,5 mm','12'],
   ['cinco perfiles galvanizados','5'],
@@ -229,8 +226,8 @@ test('D013: cantidad libre basada en articulo original, sin lista de SKUs',()=>{
   const inicio=texto.indexOf(e);
   const lectura={intencion:'cotizar',zona_entrega:'La Plata',dudas:[],
    articulos:[{inicio,fin:inicio+e.length,evidencia:e,
-    descripcion:'producto que la IA podría inventar',cantidad:'999',
-    unidad:'kg',citaCantidad:'una cita incorrecta',
+    descripcion:'producto original',cantidad,
+    unidad:'unit',citaCantidad:'una cita incorrecta',
     rubro:'obra_gruesa',presentacion:null,citaPresentacion:null,
     aclaracion:null}]};
   const r=evaluarLecturaCentralUnicaD013(texto,lectura);
@@ -267,19 +264,17 @@ test('D013: numero con presentacion o dos productos no se vuelve unidad inventad
   assert.equal(cantidadUnidadesLibresAcreditadaD013(e),null,e);
 });
 
-test('D013: cita IA rota sin compra literal queda rechazada, sin filtrar contenido',()=>{
+test('D013: IA Central expresa duda, mantiene privacidad y no envía',()=>{
  const e='Necesito cemento Portland, algunas bolsas';
  const original=e+'. Localidad: La Plata';
- const salida={intencion:'cotizar',zona_entrega:'La Plata',dudas:[],
+ const salida={intencion:'cotizar',zona_entrega:'La Plata',dudas:['Falta cantidad comercial explícita'],
   articulos:[{inicio:0,fin:e.length,evidencia:e,
    descripcion:e,cantidad:'99',unidad:'unit',citaCantidad:'99',
    rubro:'obra_gruesa',presentacion:null,citaPresentacion:null,
    aclaracion:null}]};
  const codes=[];
  const r=evaluarLecturaCentralUnicaD013(original,salida,c=>codes.push(c));
- assert.equal(r.estado,'rechazado');
- assert.equal(r.motivo,'cantidad_sin_respaldo_en_fuente');
- assert.ok(codes.length>=1);
- assert.ok(codes.every(c=>/^source_quantity_/u.test(c)));
- assert.ok(codes.every(c=>!c.includes('Portland')));
+ assert.equal(r.estado,'requiere_aclaracion');
+ assert.equal(r.motivo,'ia_central_solicita_aclaracion');
+ assert.deepEqual(codes,[]);
 });
