@@ -14,8 +14,6 @@ import type {DiagnosticoCantidadD013} from './contrato-v2-d013.ts';
 import {validarSnapshotCatalogosMvp220} from './catalogo-supabase-mvp220.ts';
 import {categorizarCatalogosCuradosD013} from './catalogo-curado-v2-d013.ts';
 import {proponerRuteoCatalogoConIAV2} from './ruteador-catalogos-v2-d013.ts';
-import type {PropuestaPedido} from './contrato-v1.ts';
-import type {ResultadoCatalogoV2} from './ruteador-catalogos-v2-d013.ts';
 import type {ProveedorCatalogoV2} from './ruteador-catalogos-v2-d013.ts';
 
 type Rpc= (name:string,params:Readonly<Record<string,string>>)=>
@@ -87,61 +85,21 @@ export async function planificarMensajeAutenticadoMvp220(args:{
  });
  if(classified.estado==='catalogo_invalido')
   return deny('rechazado',classified.motivo);
- // El conciliador conserva TODOS los artículos de la primera lectura,
- // incluidos los que el segundo lector dejó en revisión. Sólo los índices
- // respaldados pueden entrar al ruteador. No renumerar en la ronda SQL.
- const enRevision=pedido.articulosEnRevision??[];
- const enRevisionUnicos=new Set(enRevision);
- if(enRevision.some(i=>!Number.isSafeInteger(i)||i<0||
-   i>=pedido.articulos.length)||enRevisionUnicos.size!==enRevision.length)
-  return deny('rechazado','indices_revision_no_verificables');
- const originales=pedido.articulos.map((_,i)=>i).filter(i=>!enRevisionUnicos.has(i));
- if(originales.length===0)
-  return deny('requiere_aclaracion','ningun_articulo_con_fuente_conciliada');
- const pedidoParaRuteo:PropuestaPedido={
-  ...pedido,articulos:originales.map(i=>pedido.articulos[i])
- };
- const routePartial=await proponerRuteoCatalogoConIAV2({
-  pedido:pedidoParaRuteo,proveedores:classified.proveedores,
+ // En V2 la ÚNICA IA Central decide todos los ítems; nunca fragmentar
+ // el pedido según supuestas diferencias entre lectores. El catálogo
+ // aporta productos concretos y permisos, NO una nueva lectura del texto.
+ const route=await proponerRuteoCatalogoConIAV2({
+  pedido,proveedores:classified.proveedores,
   apiKey:args.apiKey,model:args.model,fetchImpl:args.fetchImpl
  });
- if(routePartial.estado!=='ruteo_valido_para_preparacion')
-  return deny('rechazado',routePartial.motivo);
- if(routePartial.propuestas.length===0)
+ if(route.estado!=='ruteo_valido_para_preparacion')
+  return deny('rechazado',route.motivo);
+ if(route.propuestas.length===0)
   return deny('requiere_aclaracion','ningun_proveedor_para_la_lista');
- // Recuperar los índices del pedido COMPLETO en todas las asignaciones.
- // Los materiales en revisión quedan persistidos en el pedido, con
- // cobertura 0, sin figurar en ningún envío o coincidencia técnica.
- const cobertura=pedido.articulos.map(
-  (_,indicePedido)=>({indicePedido,proveedoresAutorizados:0})
- );
- for(const fila of routePartial.cobertura){
-  const indicePedido=originales[fila.indicePedido];
-  if(indicePedido===undefined)
-   return deny('rechazado','indice_parcial_no_verificable');
-  cobertura[indicePedido]={indicePedido,
-   proveedoresAutorizados:fila.proveedoresAutorizados};
- }
- const route:ResultadoCatalogoV2={
-  ...routePartial,cobertura,
-  propuestas:routePartial.propuestas.map(p=>({
-   ...p,correspondencias:p.correspondencias.map(c=>({
-    ...c,indicePedido:originales[c.indicePedido]
-   }))
-  })),
-  revisionTecnica:routePartial.revisionTecnica.map(x=>({
-   ...x,indicePedido:originales[x.indicePedido]
-  }))
- };
- if(route.propuestas.some(p=>p.correspondencias.some(x=>
-   !Number.isSafeInteger(x.indicePedido)||
-   enRevisionUnicos.has(x.indicePedido)))||
-   route.revisionTecnica.some(x=>!Number.isSafeInteger(x.indicePedido)))
-  return deny('rechazado','indice_parcial_no_verificable');
+
  return {
   estado:'plan_validado_sin_envio',
-  motivo:enRevision.length>0?'ruteo_parcial_con_articulos_visibles_sin_destino':
-   classified.estado==='catalogo_sin_confirmar'?
+  motivo:classified.estado==='catalogo_sin_confirmar'?
    'ruteo_sobre_catalogos_registrados_sin_confirmacion_formal':'ruteo_semantico_valido',
   pedido,ruteo:route,catalogos:classified.proveedores,whatsappEnviado:false,baseModificada:false
  };
