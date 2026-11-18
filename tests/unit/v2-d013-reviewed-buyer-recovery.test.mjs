@@ -76,7 +76,8 @@ test('D013: source SHA incorrecta falla cerrado sin plan ni SQL de ronda',async(
 });
 test('D013: origen cifrado manipulado no se reinyecta',async()=>{
  const candidate=await example();
- candidate.ciphertext_b64=candidate.ciphertext_b64.replace(/^./u,'A');
+ candidate.ciphertext_b64=(candidate.ciphertext_b64.startsWith('A')?'B':'A')+
+  candidate.ciphertext_b64.slice(1);
  let calls=0;
  const result=await recuperarBuyerReviewD013({...config,ejecutar:true,
   rpc:async()=>{calls++;return {data:candidate,error:null}}});
