@@ -218,3 +218,78 @@ test('D019: dos importes en una misma evidencia conservan su etiqueta exacta',()
  const no=resumirOfertaComercialV2({...input,totalLiteral:'$700.000,00'},evidence);
  assert.equal(no.tipoImporte,'Importe informado');
 });
+
+
+test('V2 real: cinco renglones comprador, tres enviados a Ailín y tres cotizados',()=>{
+ const request=[...input.requestItems,
+  {line:4,description:'15 perfiles montantes 70 mm',quantity:'15',unit:'unit'},
+  {line:5,description:'8 placas de yeso de 12,5 mm',quantity:'8',unit:'unit'}];
+ const raw={totalLiteral:'$351.155,11',requestItems:request,
+  assignedItems:input.requestItems,
+  quotedItems:[
+   {line:1,description:'cemento avellaneda x 25 kg; Dscto. 22.4%',
+    quantity:'20,00',unit:'',unitPrice:'$9.798,58',
+    lineTotal:'$152.074,00',ambiguity:null},
+   {line:2,description:'BIG BAG de Arena; Dscto. 22.4%',
+    quantity:'2,00',unit:'',unitPrice:'$73.664,80',
+    lineTotal:'$114.327,76',ambiguity:null},
+   {line:3,description:'BIG BAG de Piedra; Dscto. 22.4%',
+    quantity:'1,00',unit:'',unitPrice:'$109.218,23',
+    lineTotal:'$84.753,35',ambiguity:null}
+  ],
+  termsLiteral:'Condición de pago : 1. Contado Efectivo; FLETE A CONVENIR; Plazo de entrega : 0 DIAS'
+ };
+ const result=resumirOfertaComercialV2(raw,[]);
+ assert.equal(result.solicitado.length,5);
+ assert.equal(result.cobertura?.solicitados,3);
+ assert.equal(result.articulosEnviados,3);
+ assert.equal(result.articulosCotizados,3);
+ assert.equal(result.totalDeclarado,'$351.155,11');
+ assert.equal(result.condiciones.iva,'No informado');
+ assert.equal(result.condiciones.flete,'A convenir');
+ assert.equal(result.condiciones.pago,'Contado en efectivo');
+ assert.equal(result.descuento,'22,4 % en todos los artículos');
+ assert.deepEqual(result.detalleCotizado.map(x=>x.subtotal),
+  ['$152.074,00','$114.327,76','$84.753,35']);
+ assert.notEqual(result.cobertura?.identificados,3,
+  'no inventar equivalencia técnica entre marcas y tamaños');
+});
+test('V2 no deduce condiciones omitidas ni permite que datos de contacto se filtren',()=>{
+ const actual={...input,assignedItems:input.requestItems,
+  termsLiteral:'Teléfono: 221 555 8888; Pago en efectivo; FLETE A CONVENIR',
+  quotedItems:[{...input.quotedItems[0],unitPrice:'$9.000',
+   lineTotal:'$90.000'}]};
+ const result=resumirOfertaComercialV2(actual,[]);
+ assert.equal(result.condiciones.pago,'No informado');
+ assert.equal(result.condiciones.flete,'No informado');
+ assert.equal(result.condiciones.iva,'No informado');
+ assert.equal(result.articulosCotizados,1);
+ assert.equal(result.detalleCotizado[0].subtotal,'$90.000');
+});
+test('V2 SQL de proyección conserva original SHA, invitación real y ACL',()=>{
+ const sql=readFileSync(new URL(
+  '../../supabase/piloto/v2_d016_comercial_completo_por_proveedor_CANDIDATE.sql',
+  import.meta.url),'utf8');
+ for(const x of [
+  'invitation_lines_mvp099',
+  "assigned.supplier_key=v_source->>'supplierKey'",
+  "'assignedItems'",
+  "'termsLiteral'",
+  "'lineTotal',offered.line_total_literal",
+  "'unitPrice',offered.unit_price_literal",
+  'a.content_sha256=q.source_sha256',
+  "a.storage_path='media/'||a.message_hmac",
+  'v2_d016_original_source_private',
+  'commercial_postcheck_failed',
+  'analysis_finish_postcheck_failed',
+  'NOT BETWEEN 2 AND 8',
+  'has_function_privilege'
+ ])assert.ok(sql.includes(x),x);
+ assert.doesNotMatch(sql,/GRANT\s+(?:ALL|EXECUTE)\s+ON/iu);
+ assert.doesNotMatch(sql,/net\.http|whapi\.cloud|messages\/document/iu);
+ const rollback=readFileSync(new URL(
+  '../../supabase/piloto/v2_d016_comercial_completo_por_proveedor_ROLLBACK_ONLY.sql',
+  import.meta.url),'utf8');
+ assert.ok(rollback.includes('commercial_rollback_drift'));
+ assert.ok(rollback.includes('analysis_rollback_drift'));
+});
