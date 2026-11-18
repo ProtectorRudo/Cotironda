@@ -7,22 +7,22 @@ const rollback=readFileSync(new URL(
  '../../supabase/piloto/v2_d013_publicacion_parcial_ROLLBACK_ONLY.sql',import.meta.url),'utf8');
 const count=(text,pattern)=>(text.match(pattern)||[]).length;
 test('D013 publicación parcial modifica sólo ambas guardias de cobertura V2',()=>{
- assert.equal(count(migration,/new_approve:=replace\\(/gu),1);
- assert.equal(count(migration,/new_publish:=replace\\(/gu),1);
+ assert.equal(count(migration,/new_approve:=replace\(/gu),1);
+ assert.equal(count(migration,/new_publish:=replace\(/gu),1);
  assert.equal(count(migration,/timing_mode IS NOT DISTINCT FROM 'business_two_days'/gu),2);
  assert.equal(count(migration,/round_days IS NOT DISTINCT FROM 2/gu),2);
  assert.equal(count(migration,/v2_calendar_revision IS NOT NULL/gu),2);
- assert.match(migration,/EXISTS\\(SELECT 1 FROM cotironda_piloto_privado\\.request_lines l/u);
- assert.match(migration,/NOT EXISTS\\(/u);
+ assert.match(migration,/EXISTS\(SELECT 1 FROM cotironda_piloto_privado\.request_lines l/u);
+ assert.match(migration,/NOT EXISTS\(/u);
  assert.match(migration,/ai_shadow_destinos_mvp221/u);
  assert.match(migration,/v2_partial_source_drifted/u);
  assert.match(migration,/v2_partial_anchors_not_unique/u);
  assert.match(migration,/v2_partial_postcheck_failed/u);
  for(const s of [migration,rollback]){
-  assert.doesNotMatch(s,/\\b(?:DROP|GRANT|TRUNCATE|DELETE|ALTER\\s+TABLE)\\b\\s+(?:TABLE|FUNCTION|ON|FROM|cotironda_)/iu);
-  assert.doesNotMatch(s,/\\b(?:pg_net|whapi_outbox|messages\\.create)\\b/iu);
-  assert.match(s,/has_function_privilege\\('anon'/u);
-  assert.match(s,/has_function_privilege\\('authenticated'/u);
+  assert.doesNotMatch(s,/\b(?:DROP|GRANT|TRUNCATE|DELETE|ALTER\s+TABLE)\b\s+(?:TABLE|FUNCTION|ON|FROM|cotironda_)/iu);
+  assert.doesNotMatch(s,/\b(?:pg_net|whapi_outbox|messages\.create)\b/iu);
+  assert.match(s,/has_function_privilege\('anon'/u);
+  assert.match(s,/has_function_privilege\('authenticated'/u);
  }
 });
 test('D013 la reversión está anclada a los SHA del candidato, no a V1',()=>{
