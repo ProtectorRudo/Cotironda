@@ -240,6 +240,9 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
    const notasTecnicas=puntosUtiles.filter(p=>
     ['material','presentacion','cobertura','disponibilidad'].includes(p.categoria));
    const conditions=q.resumen.condiciones;
+   const cotizados=q.resumen.articulosCotizados;
+   const enviados=q.resumen.articulosEnviados;
+   const conteoConfiable=cotizados!==null&&enviados!==null;
    return <article className="coti-clean-bid" key={q.documentoId}>
     <div className="coti-clean-bid-primary">
      <span className="coti-clean-supplier-avatar" aria-hidden="true">{letraProveedor(q.comercio)}</span>
@@ -251,9 +254,9 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
     </div>
     <div className={'coti-clean-coverage'+(needsReview?' caution':'')}>
      <span aria-hidden="true">{needsReview?'!':'✓'}</span>
-     <span>{!cover?'Cobertura pendiente de verificar':
-      needsReview?cover.identificados+' de '+cover.solicitados+' coincidencias automáticas · revisar':
-      cover.identificados+' de '+cover.solicitados+' coincidencias automáticas'}</span>
+     <span>{conteoConfiable?
+      cotizados+' artículos cotizados · '+enviados+' solicitados a este negocio':
+      'Artículos en revisión · consultar el original'}</span>
     </div>
     <div className="coti-clean-bid-actions">
      <button className="coti-clean-detail-button" type="button"
@@ -270,11 +273,11 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
     {expanded&&<div className="coti-clean-bid-expanded" id={'detalle-'+q.documentoId}>
      <h4>Lo importante de este presupuesto</h4>
      <ul className="coti-clean-insights">
-      <li><strong>Materiales:</strong> {cover?
-       cover.identificados+' de '+cover.solicitados+' coincidencias automáticas de cantidad y descripción.':
-       'No se pudo confirmar la cobertura técnica.'}
-       {' '}La compatibilidad final se decide contrastando los originales.</li>
-      {notasTecnicas.slice(0,2).map((p,i)=><li key={q.documentoId+'-nota-'+i}>
+      <li><strong>Materiales:</strong> {conteoConfiable?
+       'El negocio recibió '+enviados+' artículos del pedido y respondió con '+cotizados+' artículos.':
+       'Se recibió un presupuesto; los artículos extraídos requieren revisión.'}
+       {' '}Esto no implica que todas las especificaciones técnicas coincidan.</li>
+      {notasTecnicas.slice(0,3).map((p,i)=><li key={q.documentoId+'-nota-'+i}>
        {p.observacion}</li>)}
       <li><strong>Importe:</strong> {q.resumen.totalDeclarado?
        q.resumen.tipoImporte.toLowerCase()+' de '+q.resumen.totalDeclarado+'.':
@@ -297,12 +300,23 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
      </div>}
      {cover&&cover.adicionales>0&&
       <p className="coti-clean-muted">{cover.adicionales} artículo(s) adicional(es) o sin equivalencia confirmada en el presupuesto. Verificá el PDF.</p>}
+     {q.resumen.detalleCotizado.length>0&&<div className="coti-clean-material-detail">
+      <h4>Artículos e importes extraídos del presupuesto</h4>
+      <ul>{q.resumen.detalleCotizado.map((item,i)=><li key={q.documentoId+'-cotizado-'+i}>
+       <strong>{item.descripcion}</strong>
+       <p>Cantidad: {item.cantidad}{item.subtotal?
+        ' · Subtotal informado: '+item.subtotal:''}{item.precioUnitario?
+        ' · Precio unitario informado: '+item.precioUnitario:''}</p>
+      </li>)}</ul>
+      <p className="coti-clean-muted">Importes transcritos del documento; consultar el original para confirmar descuentos y condiciones.</p>
+     </div>}
      <h4 className="coti-terms-heading">Condiciones de la oferta</h4>
      <dl className="coti-clean-terms">
       <div><dt>IVA</dt><dd>{conditions.iva}</dd></div>
       <div><dt>Flete</dt><dd>{conditions.flete}</dd></div>
       <div><dt>Pago</dt><dd>{conditions.pago}</dd></div>
      </dl>
+     {q.resumen.descuento&&<p className="coti-clean-muted"><strong>Descuento indicado:</strong> {q.resumen.descuento}.</p>}
      {puntosUtiles.length>0?<details className="coti-clean-evidence">
       <summary>Más observaciones ({puntosUtiles.length})</summary>
       <ul>{puntosUtiles.map((p,i)=><li key={q.documentoId+'-evidencia-'+i}>
