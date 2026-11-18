@@ -35,7 +35,7 @@ const bogus={intencion:'cotizar',zona_entrega:'La Plata',dudas:[],
 
 test('D013 diagnosis no serializa nombre, teléfono, material, cita o número real',()=>{
  const result=resumirCantidadPrivadaD013(full,{
-  inicio:start,fin:start+evidence.length,evidencia,
+  inicio:start,fin:start+evidence.length,evidencia:evidence,
   citaCantidad:bogus.articulos[0].citaCantidad,cantidad:'99'
  },0);
  assert.ok(result);
@@ -48,7 +48,7 @@ test('D013 diagnosis no serializa nombre, teléfono, material, cita o número re
   assert.ok(!serial.includes(privateValue),privateValue);
  assert.ok(result.estructuraTramo.every(s=>s==='palabra_oculta'));
  assert.equal(resumirCantidadPrivadaD013(full,{
-  inicio:start+1,fin:start+evidence.length,evidencia,
+  inicio:start+1,fin:start+evidence.length,evidencia:evidence,
   citaCantidad:'99',cantidad:'99'
  },0),null);
 });
