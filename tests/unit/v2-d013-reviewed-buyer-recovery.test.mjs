@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {recuperarBuyerReviewD013,diagnosticoPlanD013} from
+import {recuperarBuyerReviewD013,diagnosticarBuyerReviewD013,
+ diagnosticoPlanD013} from
  '../../src/domain/ia-central/recuperacion-review-v2-d013.ts';
 import {localidadOperativaD013} from
  '../../src/domain/ia-central/puente-sql-rondas-v2-d013.ts';
@@ -352,4 +353,43 @@ test('D013: nunca se cambia la validación comercial ni el original por instrume
   '../../supabase/functions/cotironda-piloto-v2-review-recovery-d013/index.ts',
   import.meta.url),'utf8');
  assert.doesNotMatch(worker,/http_post|whapi_outbox|dispatchPending/u);
+});
+
+
+test('D013: diagnóstico AES genuino solo lee fuente, jamás stage ni catálogo',async()=>{
+ const candidate=await example();
+ const calls=[];let interpreted=0;
+ const result=await diagnosticarBuyerReviewD013({
+  ...config,rpc:async(name)=>{
+   calls.push(name);
+   assert.equal(name,'cotironda_piloto_v2_d013_review_source_private');
+   return {data:candidate,error:null};
+  },
+  leer:async args=>{
+   interpreted++;
+   assert.equal(args.fuente,original);
+   assert.equal(args.model,config.model);
+   return {estado:'cantidad_inacreditable',detalle:null};
+  }
+ });
+ assert.equal(result.estado,'diagnostico_seguro');
+ assert.equal(result.outboundSent,false);
+ assert.equal(result.diagnostico.estado,'cantidad_inacreditable');
+ assert.equal(interpreted,1);
+ assert.deepEqual(calls,['cotironda_piloto_v2_d013_review_source_private']);
+});
+test('D013: diagnóstico no consulta IA con fuente AES alterada',async()=>{
+ const candidate=await example();
+ candidate.source_sha256='f'.repeat(64);
+ let reads=0;
+ const result=await diagnosticarBuyerReviewD013({
+  ...config,rpc:async name=>{
+   assert.equal(name,'cotironda_piloto_v2_d013_review_source_private');
+   return {data:candidate,error:null};
+  },
+  leer:async()=>{reads++;throw Error('forbidden')}
+ });
+ assert.equal(result.estado,'fuente_no_verificada');
+ assert.equal(reads,0);
+ assert.equal(result.outboundSent,false);
 });
