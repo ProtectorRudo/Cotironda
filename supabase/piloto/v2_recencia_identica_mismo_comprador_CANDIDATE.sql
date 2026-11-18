@@ -58,7 +58,8 @@ BEGIN
  -- Exactamente las rondas que este comercio tenía acreditadas y ABIERTAS
  -- al llegar el mensaje. No usar rondas nuevas, cerradas ni otros comercios.
  FOR v_round IN
-  SELECT r.id,r.buyer_key,r.created_at
+  SELECT r.id,r.buyer_key,r.created_at,r.timing_mode,r.round_days,
+    r.v2_calendar_revision
   FROM cotironda_piloto_privado.requests r
   JOIN cotironda_piloto_privado.invitations i
     ON i.request_id=r.id AND i.supplier_key=v_source.participant_key
@@ -67,8 +68,6 @@ BEGIN
     ON buyer.key=r.buyer_key AND buyer.participant_role='buyer'
     AND buyer.consent_at IS NOT NULL AND buyer.opted_out_at IS NULL
   WHERE r.state='prepared'
-    AND r.timing_mode='business_two_days' AND r.round_days=2
-    AND r.v2_calendar_revision IS NOT NULL
     AND r.created_at<=v_source.received_at
     AND r.closes_at>v_source.received_at AND r.closes_at>clock_timestamp()
     AND (EXISTS (
@@ -85,6 +84,11 @@ BEGIN
  LOOP
   v_count:=v_count+1;
   IF v_count>8 THEN RETURN jsonb_build_object('state','too_many_candidates'); END IF;
+  -- No ignorar una ronda V1 o sin calendario en la misma competencia.
+  IF v_round.timing_mode IS DISTINCT FROM 'business_two_days'
+    OR v_round.round_days IS DISTINCT FROM 2
+    OR v_round.v2_calendar_revision IS NULL
+  THEN RETURN jsonb_build_object('state','legacy_candidate_present'); END IF;
   -- Firma del pedido ENTERO: no confundir pedidos iguales para este corralón
   -- si contienen otros rubros diferentes.
   SELECT jsonb_agg(jsonb_build_array(
