@@ -27,7 +27,7 @@ const full='Comprador: Florencia Pérez 1133445566.\n'+
 const evidence='Cemento blanco de marca confidencial sin cantidad';
 const start=full.indexOf(evidence);
 const bogus={intencion:'cotizar',zona_entrega:'La Plata',dudas:[],
- articulos:[{evidencia,descripcion:evidence,cantidad:'99',
+ articulos:[{evidencia:evidence,descripcion:evidence,cantidad:'99',
   unidad:'unit',rubro:'obra_gruesa',presentacion:null,
   aclaracion:null,citaCantidad:'noventa y nueve pedidos',
   citaProducto:'Cemento blanco',citaPresentacion:null}]
