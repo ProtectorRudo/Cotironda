@@ -82,15 +82,17 @@ test('V2-04: modificación fuente o SHA bloquea análisis y conserva original',a
  assert.equal(r.estado,'analisis_pendiente');
  assert.equal(r.codigo,'huella_textual_incorrecta');
 });
-test('V2-04: IA que inventa una cita no puede publicarla',async()=>{
+test('V2-04: descarta la cita inventada y conserva las dos verificables',async()=>{
  const corrupted=structuredClone(answer);
  const payload=JSON.parse(corrupted.output[0].content[0].text);
  payload.puntos[1].evidencia='Flete gratis e IVA incluido';
  corrupted.output[0].content[0].text=JSON.stringify(payload);
  const r=await go({},fake(corrupted));
- assert.equal(r.estado,'analisis_pendiente');
- assert.equal(r.codigo,'evidencias_ia_no_comprobadas');
- assert.deepEqual(r.puntos,[]);
+ assert.equal(r.estado,'analisis_disponible');
+ assert.equal(r.codigo,'evidencias_parciales_comprobadas');
+ assert.equal(r.puntos.length,2);
+ assert.ok(r.puntos.every(p=>original.includes(p.evidencia)));
+ assert.ok(r.puntos.every(p=>!p.evidencia.includes('Flete gratis')));
 });
 test('V2-04: datos privados en observación no se muestran',async()=>{
  for(const bad of ['Comunicate a 221 555 2222 para pagar.',
@@ -101,7 +103,10 @@ test('V2-04: datos privados en observación no se muestran',async()=>{
   payload.puntos[0].observacion=bad;
   corrupted.output[0].content[0].text=JSON.stringify(payload);
   const r=await go({},fake(corrupted));
-  assert.equal(r.estado,'analisis_pendiente');
+  assert.equal(r.estado,'analisis_disponible');
+  assert.equal(r.puntos.length,2);
+  assert.ok(!JSON.stringify(r.puntos).includes(bad));
+  assert.equal(r.whatsappEnviado,false);
  }
 });
 test('V2-04: cifras o IVA/flete inventados en una observación no pasan',async()=>{
@@ -116,7 +121,9 @@ test('V2-04: cifras o IVA/flete inventados en una observación no pasan',async()
   doc.puntos[0].observacion=wrong;
   altered.output[0].content[0].text=JSON.stringify(doc);
   const r=await go({},fake(altered));
-  assert.equal(r.estado,'analisis_pendiente',wrong);
+  assert.equal(r.estado,'analisis_disponible',wrong);
+  assert.equal(r.puntos.length,2);
+  assert.ok(!JSON.stringify(r.puntos).includes(wrong));
  }
 });
 test('V2-04: no acepta rankings o ganadores engañosos',async()=>{
@@ -125,7 +132,9 @@ test('V2-04: no acepta rankings o ganadores engañosos',async()=>{
  payload.puntos[0].observacion='Es la mejor oferta del mercado, recomendamos adjudicar.';
  corrupted.output[0].content[0].text=JSON.stringify(payload);
  const r=await go({},fake(corrupted));
- assert.equal(r.estado,'analisis_pendiente');
+ assert.equal(r.estado,'analisis_disponible');
+ assert.equal(r.puntos.length,2);
+ assert.ok(!JSON.stringify(r.puntos).includes('mejor oferta'));
 });
 test('V2-04: error HTTP, timeout o formato invalido NO bloquean original',async()=>{
  const unreachable=async()=>new Response('Not available',{status:503});
