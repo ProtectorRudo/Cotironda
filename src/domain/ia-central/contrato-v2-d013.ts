@@ -670,35 +670,18 @@ export function evaluarLecturaCentralUnicaD013(
    return rejection('articulo_sin_evidencia_verificable');
   if(intervals.some(x=>inicio<x.fin&&fin>x.inicio))
    return rejection('evidencias_superpuestas');
-  // La IA puede confundir «10 bolsas de 50 kg» con 50 kg. Nunca
-  // permitir la cantidad inventada: usar la compra escrita en el original
-  // si —y solo si— existe exactamente UN envase cuantificado.
-  let cantidadFinal=raw.cantidad as string;
-  let unidadFinal=raw.unidad as string;
-  if(!cantidadAcreditadaLecturaUnicaD013(evidencia,
-      cantidadFinal,unidadFinal,raw.citaCantidad)){
-   const fuente=envaseUnicoAcreditadoD013(evidencia)??
-    cantidadFisicaUnicaAcreditadaD013(evidencia)??
-    cantidadUnidadesLibresAcreditadaD013(evidencia);
-   if(!fuente){
-    try{
-     onQuantityDiagnostic?.(diagnosticarCantidadD013(
-      evidencia,cantidadFinal,unidadFinal,raw.citaCantidad));
-     onQuantityDiagnostic?.(diagnosticarFuenteCompraD013(evidencia));
-    }catch{/* Observabilidad opcional, nunca modifica la aprobación */}
-    return rejection('cantidad_sin_respaldo_en_fuente');
-   }
-   cantidadFinal=fuente.cantidad;
-   unidadFinal=fuente.unidad;
-  }
-  // La presentación libre de IA es opcional; sólo conservar si su
-  // cita existe y demuestra la MISMA magnitud en el texto original.
+  // CONTRATO V2 ACTIVO: la IA Central es la ÚNICA intérprete de
+  // cantidades, unidades y lenguaje del comprador. Este paso valida
+  // tipos, límites e integridad del tramo original; jamás reinterpreta
+  // una cantidad con regex, otra IA o equivalencias de envases.
+  // Las citas del modelo son referencias, NO requisitos para aprobar.
+  const cantidadFinal=raw.cantidad as string;
+  const unidadFinal=raw.unidad as string;
+  // Una presentación comercial sólo se conserva COPIADA de la fuente.
+  // No mostrar la reformulación del modelo como si fuera el original.
   const cita=raw.citaPresentacion;
-  const presentacion=typeof raw.presentacion==='string'&&
-   typeof cita==='string'&&
-   citacionesCantidadD013(evidencia,cita).length>0&&
-   mismaPresentacionFisicaV2D013(raw.presentacion,cita)
-    ?raw.presentacion:null;
+  const presentacion=typeof cita==='string'&&
+   texto(cita,200)&&evidencia.includes(cita)?cita:null;
   intervals.push({inicio,fin});
   accepted.push(Object.freeze({
    evidencia,inicio,fin,
