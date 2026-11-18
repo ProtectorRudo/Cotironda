@@ -105,7 +105,7 @@ test('D013 diagnose exige release autorizada y no invoca recuperador',async()=>{
      citaDentroTramo:false,numeroModeloTipo:'entero',
      estructuraTramo:['numero_entero','palabra_oculta'],truncado:false,
      rawSource:'NO DEBE SALIR',buyerPhone:'NO DEBE SALIR'},
-    privateKey:'NO DEBE SALIR'}}};
+    privateKey:'NO DEBE SALIR'}}}
  };
  const forbidden=await ejecutarRecuperacionVaultD013(
   request('diagnose'),args);
