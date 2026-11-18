@@ -298,7 +298,7 @@ test('D013+D016: lector siempre V2; publicación sólo con permisos completos',(
  const router=readFileSync(new URL('../../src/domain/ia-central/ruteador-catalogos-v2-d013.ts',
   import.meta.url),'utf8');
  assert.doesNotMatch(router,/source\.rubro!==requested\.rubro/u);
- assert.match(router,/verificarCorrespondenciaTecnicaD013/u);
+ assert.doesNotMatch(router,/verificarCorrespondenciaTecnicaD013/u);
 });
 
 test('D013+D016: PDF Word y Excel corroborados usan V2 privado, nunca MVP278 publico',()=>{
