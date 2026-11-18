@@ -53,7 +53,7 @@ test('D013 diagnosis no serializa nombre, teléfono, material, cita o número re
  },0),null);
 });
 
-test('D013 diagnostica una sola IA, sin llamar a SQL ni enviar el pedido',async()=>{
+test('D013 diagnóstico opcional no agrega lector de cantidad en flujo comercial',async()=>{
  let called=0;
  const result=await diagnosticarLecturaPrivadaD013({
   fuente:full,apiKey:fakeApiKey,model:'gpt-6-luna',
@@ -65,9 +65,8 @@ test('D013 diagnostica una sola IA, sin llamar a SQL ni enviar el pedido',async(
   }
  });
  assert.equal(called,1);
- assert.equal(result.estado,'cantidad_inacreditable');
- assert.equal(result.detalle.indiceArticulo,0);
- assert.equal(result.detalle.indiceLinea,1);
+ assert.equal(result.estado,'sin_fallo_cantidad');
+ assert.equal(result.detalle,null);
  assert.ok(!JSON.stringify(result).includes('Cemento'));
  assert.ok(!JSON.stringify(result).includes('Florencia'));
  assert.ok(!JSON.stringify(result).includes('1133445566'));
