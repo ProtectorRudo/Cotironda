@@ -147,9 +147,13 @@ test('D016 dashboard mantiene la descarga real, análisis original y claridad co
  assert.doesNotMatch(ui,/Artículos e importes extraídos del presupuesto/u);
  assert.doesNotMatch(ui,/q\.resumen\.detalleCotizado\.map\(/u);
  assert.doesNotMatch(ui,/item\.precioUnitario|item\.subtotal/u);
- assert.doesNotMatch(ui,/Más observaciones|puntosUtiles/u);
- assert.doesNotMatch(ui,/q\.resumen\.totalDeclarado\?/u);
- assert.match(ui,/notasTecnicas\.slice\(0,3\)/u);
+ const details=ui.slice(ui.indexOf('<h4>Lo importante de este presupuesto</h4>'),
+  ui.indexOf('</div>}\n   </article>'));
+ assert.ok(details.length>0);
+ assert.doesNotMatch(details,/Más observaciones|puntosUtiles/u);
+ assert.doesNotMatch(details,/q\.resumen\.totalDeclarado/u);
+ assert.equal((ui.match(/q\.resumen\.totalDeclarado/gu)??[]).length,1);
+ assert.match(details,/notasTecnicas\.slice\(0,3\)/u);
 });
 
 test('D019: explica qué se pidió y qué se cotizó, sin transformar 25 kg en 50 kg',()=>{
