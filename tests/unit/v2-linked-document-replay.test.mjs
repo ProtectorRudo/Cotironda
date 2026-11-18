@@ -1,89 +1,122 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {procesarArchivoVinculadoV2} from
  '../../supabase/functions/cotironda-piloto-whapi/supplier-linked-document-replay-v2.ts';
 
 const h=(char)=>char.repeat(64);
-const candidate={state:'eligible',source_hmac:h('a'),chat_hmac:h('b')};
-const base=({rpc,replay,enabled=true,trustedInternalWorker=true}={})=>({
+const source=h('a'),chat=h('b');
+const bytes=new TextEncoder().encode('%PDF-1.4\nCotironda prueba privada de integridad.');
+const original=new Blob([bytes]);
+const sha=createHash('sha256').update(bytes).digest('hex');
+const selected={state:'eligible',source_hmac:source,chat_hmac:chat};
+const claim={state:'reserved',sha256:sha,size_bytes:bytes.length,draft:{
+ kind:'supplier_quote',status:'review_required',lines:[{original_description:'Arena',quantity:'2'}]
+}};
+const responses=(opts={})=>{
+ const calls=[];
+ return {
+  calls,
+  rpc:async(name,params)=>{
+   calls.push({name,params});
+   if(name==='cotironda_piloto_next_linked_supplier_document_v2')
+    return {data:opts.selection??selected,error:null};
+   if(name==='cotironda_piloto_reserve_archive_replay_mvp292')
+    return {data:opts.claim??claim,error:null};
+   if(name==='cotironda_piloto_finish_archive_replay_mvp292')
+    return {data:opts.finish??{state:'recorded'},error:null};
+   throw Error('unexpected RPC '+name);
+  }
+ };
+};
+const base=({rpc,download,enabled=true,trustedInternalWorker=true}={})=>({
  enabled,trustedInternalWorker,apiKey:'x'.repeat(30),
  model:'gpt-6-luna',documentSemanticEnabled:true,
- rpc:rpc??(async()=>({data:candidate,error:null})),
- download:async()=>({data:null,error:null}),
- replay
+ rpc:rpc??responses().rpc,
+ download:download??(async()=>({data:original,error:null}))
 });
-test('no lee fuente ni llama RPC sin credenciales internas válidas',async()=>{
+test('sin autenticación interna no lee fuente ni ejecuta RPC',async()=>{
  let called=0;
- const result=await procesarArchivoVinculadoV2(base({enabled:false,rpc:async()=>{called++;return {data:candidate,error:null}}}));
- assert.equal(result.state,'disabled');assert.equal(called,0);
- assert.equal((await procesarArchivoVinculadoV2(base({trustedInternalWorker:false}))).state,'disabled');
+ const rpc=async()=>{called++;return {data:selected,error:null}};
+ assert.equal((await procesarArchivoVinculadoV2(base({enabled:false,rpc}))).state,'disabled');
+ assert.equal((await procesarArchivoVinculadoV2(base({trustedInternalWorker:false,rpc}))).state,'disabled');
+ assert.equal(called,0);
 });
-test('no vuelve a procesar si la base indica cola vacía',async()=>{
- let repeats=0;
- const r=await procesarArchivoVinculadoV2(base({
-  rpc:async()=>({data:{state:'empty'},error:null}),
-  replay:async()=>{repeats++;return {state:'published_private',reason:'',outboundMessages:0}}
+test('cola vacía nunca lee PDF ni pide otro modelo',async()=>{
+ const r=responses({selection:{state:'empty'}});
+ let downloads=0;
+ const x=await procesarArchivoVinculadoV2(base({
+  rpc:r.rpc,download:async()=>{downloads++;return {data:original,error:null}}
  }));
- assert.deepEqual(r,{state:'empty',processed:0,outboundMessages:0});
- assert.equal(repeats,0);
+ assert.deepEqual(x,{state:'empty',processed:0,outboundMessages:0});
+ assert.equal(downloads,0);assert.equal(r.calls.length,1);
 });
-test('rechaza cualquier fuente sin HMACs verificables',async()=>{
- let replayed=0;
- const r=await procesarArchivoVinculadoV2(base({
-  rpc:async()=>({data:{state:'eligible',source_hmac:h('a'),chat_hmac:'invalid'},error:null}),
-  replay:async()=>{replayed++;return {state:'published_private',reason:'',outboundMessages:0}}
+test('HMAC inválido no crea lease ni accede al original',async()=>{
+ const r=responses({selection:{state:'eligible',source_hmac:source,chat_hmac:'invalid'}});
+ const x=await procesarArchivoVinculadoV2(base({rpc:r.rpc}));
+ assert.equal(x.state,'reconciliation_required');assert.equal(r.calls.length,1);
+});
+test('única lectura IA archivada, SHA verificado, lease/finish una sola vez',async()=>{
+ const r=responses();
+ const x=await procesarArchivoVinculadoV2(base({rpc:r.rpc}));
+ assert.deepEqual(x,{state:'original_private',processed:1,outboundMessages:0});
+ assert.deepEqual(r.calls.map(v=>v.name),[
+  'cotironda_piloto_next_linked_supplier_document_v2',
+  'cotironda_piloto_reserve_archive_replay_mvp292',
+  'cotironda_piloto_finish_archive_replay_mvp292'
+ ]);
+ assert.equal(r.calls.at(-1).params.p_state,'review');
+ assert.equal(r.calls.at(-1).params.p_reason,'original_sha_verified_analysis_pending');
+ assert.equal(r.calls[1].params.p_chat_hmac,chat);
+});
+test('SHA cambiado, no se acredita un original y queda revisión privada',async()=>{
+ const r=responses();
+ const corrupted=new Blob([new TextEncoder().encode('X'.repeat(bytes.length))]);
+ const x=await procesarArchivoVinculadoV2(base({
+  rpc:r.rpc,download:async()=>({data:corrupted,error:null})
  }));
- assert.equal(r.state,'reconciliation_required');assert.equal(replayed,0);
+ assert.equal(x.state,'review_private');
+ assert.equal(r.calls.at(-1).params.p_state,'uncertain');
+ assert.equal(r.calls.at(-1).params.p_reason,'source_integrity_review');
 });
-test('se limita a llamar UNA VEZ al reprocesador con fuente ya asociada',async()=>{
- let replayed=0;let given;
- const r=await procesarArchivoVinculadoV2(base({
-  replay:async args=>{
-   replayed++;given=args;
-   return {state:'published_private',reason:'independent_revised_source_verified',outboundMessages:0}
-  }
+test('original faltante no publica ni repite lectura',async()=>{
+ const r=responses();
+ const x=await procesarArchivoVinculadoV2(base({
+  rpc:r.rpc,download:async()=>({data:null,error:'not found'})
  }));
- assert.deepEqual(r,{state:'published_private',processed:1,outboundMessages:0});
- assert.equal(replayed,1);
- assert.equal(given.sourceHmac,candidate.source_hmac);
- assert.equal(given.chatHmac,candidate.chat_hmac);
- assert.equal(given.trustedInternalWorker,true);
- assert.equal(given.documentSemanticEnabled,true);
+ assert.equal(x.state,'review_private');
+ assert.equal(r.calls.at(-1).params.p_state,'uncertain');
 });
-test('lecturas no concordantes, cálculos o fuente no verificada quedan privadas',async()=>{
- for(const kind of ['review_required','not_eligible','disabled']){
-  const result=await procesarArchivoVinculadoV2(base({
-   replay:async()=>({state:kind,reason:'source_or_amounts_unverified',outboundMessages:0})
-  }));
-  assert.equal(result.state,'review_private');
-  assert.equal(result.outboundMessages,0);
- }
+test('claim reservado por otro worker no duplica ni consume',async()=>{
+ const r=responses({claim:{state:'already_reserved'}});
+ const x=await procesarArchivoVinculadoV2(base({rpc:r.rpc}));
+ assert.equal(x.state,'review_private');assert.equal(x.processed,0);
+ assert.equal(r.calls.length,2);
 });
-test('incertidumbre del RPC o de la auditoría no se declara éxito',async()=>{
- for(const rpc of [
-  async()=>({data:null,error:'denied'}),
-  async()=>{throw Error('network');},
-  async()=>({data:{state:'not_expected'},error:null})
- ]){
-  const r=await procesarArchivoVinculadoV2(base({rpc}));
-  assert.equal(r.state,'reconciliation_required');
- }
- const x=await procesarArchivoVinculadoV2(base({replay:async()=>{throw Error('replay');}}));
- assert.equal(x.state,'reconciliation_required');
+test('el ledger incierto no se declara éxito',async()=>{
+ const r=responses({finish:{state:'not_leased'}});
+ const x=await procesarArchivoVinculadoV2(base({rpc:r.rpc}));
+ assert.equal(x.state,'reconciliation_required');assert.equal(x.outboundMessages,0);
+});
+test('fallo RPC no filtra mensajes ni originales',async()=>{
+ const x=await procesarArchivoVinculadoV2(base({
+  rpc:async()=>{throw Error('no DB')}
+ }));
+ assert.equal(x.state,'reconciliation_required');assert.equal(x.processed,0);
 });
 const sql=readFileSync(new URL(
  '../../supabase/piloto/v2_d013_archivo_vinculado_recuperacion_CANDIDATE.sql',import.meta.url
 ),'utf8');
-test('SQL selector solo lectura reutiliza source/buyer/supplier y no inventa autorización',()=>{
+test('SQL selector reutiliza identidad, SHA, vínculo y consentimientos; nunca publica',()=>{
  for(const key of [
   "decision.state='linked'",
   'decision.selected_request_id=link.request_id',
-  "m.request_id=link.request_id",
+  'm.request_id=link.request_id',
   "a.state='stored'",
   "a.storage_path='media/'||m.message_hmac",
   "a.content_sha256=link.source_sha256",
-  "u.resolved_request_id=link.request_id",
+  'u.resolved_request_id=link.request_id',
   "link.status='awaiting_semantic_review'",
   "r.state='prepared'",
   "supplier.opted_out_at IS NULL",
@@ -98,19 +131,17 @@ test('SQL selector solo lectura reutiliza source/buyer/supplier y no inventa aut
   'TO service_role'
  ])assert.ok(sql.includes(key),key);
  assert.doesNotMatch(sql,/\b(?:INSERT|UPDATE|DELETE)\s+(?:INTO\s+)?cotironda_piloto_privado\./iu);
- assert.doesNotMatch(sql,/net\.http|vault\.|whapi\.cloud|messages\/document/iu);
 });
-test('Edge recuperador no altera envío ni reserva archivo sin passing claims',()=>{
+test('el Edge antiguo no se reescribe: continúa con un único SHA y sin doble lectura',()=>{
  const edge=readFileSync(new URL(
   '../../supabase/functions/cotironda-piloto-auto-recovery/index.ts',import.meta.url
  ),'utf8');
- assert.match(edge,/if\(commercial.state!=='empty'\)return/);
- assert.match(edge,/procesarArchivoVinculadoV2\(/);
- assert.match(edge,/document_reconciliation_required/);
  const worker=readFileSync(new URL(
   '../../supabase/functions/cotironda-piloto-whapi/supplier-linked-document-replay-v2.ts',import.meta.url
  ),'utf8');
- assert.match(worker,/reprocesarOriginalHistoricoMvp292/);
- assert.match(worker,/cotironda_piloto_next_linked_supplier_document_v2/);
- assert.doesNotMatch(worker,/https:\/\/gate\.whapi|messages\/document|\.send\(/iu);
+ assert.match(edge,/if\(commercial.state!=='empty'\)return/);
+ assert.match(edge,/procesarArchivoVinculadoV2\(/);
+ assert.match(worker,/cotironda_piloto_reserve_archive_replay_mvp292/);
+ assert.match(worker,/crypto\.subtle\.digest/);
+ assert.doesNotMatch(worker,/proposeDocumentAI|reprocesarOriginalHistoricoMvp292|fetch\(|messages\/document/iu);
 });
