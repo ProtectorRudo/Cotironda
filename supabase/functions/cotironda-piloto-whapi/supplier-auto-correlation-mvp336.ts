@@ -203,31 +203,6 @@ export function elegirRondaUnicaMvp291(
  const ranked=[...scored].sort((a,b)=>b.points-a.points);
  const best=ranked[0],other=ranked[1];
  const no=(reason:string)=>({requestId:null,reason,scores:scored.map(x=>x.points)});
- // V2: último desempate únicamente para solicitudes idénticas de un MISMO
- // comprador. La IA sólo propone; SQL demuestra identidad, totalidad de
- // renglones, orden temporal y despacho real antes de escribir la asociación.
- const identicalRequestFallback=()=>{
-  if(snapshot.options.length<2||snapshot.options.some(c=>c.bind_allowed===false))
-   return null;
-  const normalized=(value:string|null)=>
-   (value??'').normalize('NFC').toLowerCase().replace(/\\s+/gu,' ').trim();
-  const signature=(c:Candidate)=>JSON.stringify(c.lines.map(line=>JSON.stringify([
-   normalized(line.description),
-   line.quantity===null?null:line.quantity.trim(),
-   normalized(line.unit)
-  ])).sort());
-  const original=signature(snapshot.options[0]);
-  if(snapshot.options.some(c=>signature(c)!==original))return null;
-  // Ambos modelos deben coincidir en vínculos físicos comprobables; un
-  // parecido lingüístico sin cantidad acreditada NO alcanza para desempatar.
-  if(scored.some(s=>s.strong<1||s.related<1||s.points!==scored[0].points))
-   return null;
-  if(matches.some(m=>m.relation==='uncertain'))return null;
-  // El SQL prepara candidatos ordenados por fecha descendente y el RPC
-  // específico vuelve a comprobar ese orden desde la base de datos.
-  return {requestId:snapshot.options[0].request_id,
-   reason:'recent_identical_same_buyer_v2',scores:scored.map(s=>s.points)};
- };
  if(!best||!other)return no('candidate_count_invalid');
  // When the supplier PDF omitted units (e.g. 15 cemento, 2 arena,
  // 1 piedra), require THREE independently matched material lines with
@@ -240,8 +215,7 @@ export function elegirRondaUnicaMvp291(
  if(best.points<3)return no('insufficient_material_evidence');
  if(best.related===1&&!(best.points===3&&other.points===0))
   return no('single_item_not_unique');
- if(best.points-other.points<3)
-  return identicalRequestFallback()??no('insufficient_unique_margin');
+ if(best.points-other.points<3)return no('insufficient_unique_margin');
  if(best.related>=2&&best.points<4)return no('partial_weak_evidence');
  // MVP351: closed historical rounds are comparison controls, never destinations.
  // SQL independently requires a prepared request and verified dispatch.
@@ -304,23 +278,11 @@ export async function correlacionAutomaticaMvp291(args:{
   const second=await read(snapshot,args.apiKey,args.model,args.fetchImpl??fetch);
   const chosen=elegirRondaUnicaMvp291(snapshot,first,second);
   if(chosen.requestId){
-   const isRecency=chosen.reason==='recent_identical_same_buyer_v2';
-   const source=await db(isRecency
-    ?'cotironda_piloto_auto_correlation_bind_latest_same_buyer_v2'
-    :'cotironda_piloto_auto_correlation_bind_mvp291',{
+   const source=await db('cotironda_piloto_auto_correlation_bind_mvp291',{
     p_source_hmac:args.sourceHmac,p_chat_hmac:args.chatHmac,
     p_source_sha256:snapshot.sha,p_request:chosen.requestId
    });
-   if(source.state==='linked_private')return result('linked_private',
-    isRecency?'recent_identical_same_buyer_v2':'double_model_unique_margin');
-   if(isRecency){
-    // Si los compradores/materiales no son realmente idénticos, no se
-    // fuerza la asociación. El original permanece privado y recuperable.
-    const ended=await db('cotironda_piloto_auto_correlation_finish_mvp291',{
-     p_source_hmac:args.sourceHmac,p_state:'review',p_reason:'recency_not_verified'
-    });
-    if(ended.state==='recorded')return result('unresolved_private','recency_not_verified');
-   }
+   if(source.state==='linked_private')return result('linked_private','double_model_unique_margin');
    throw Error('sql_commit_not_confirmed');
   }
   const ended=await db('cotironda_piloto_auto_correlation_finish_mvp291',{
