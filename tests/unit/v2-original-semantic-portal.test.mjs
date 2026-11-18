@@ -50,6 +50,16 @@ test('resolución de ronda quita solo rechazo por ambigüedad ya resuelta',()=>{
  assert.ok(v.includes("bad.state='ambiguous_round'"),
   'ambigüedad todavía no resuelta bloquea');
 });
+test('descarga y catálogo preservan veto de ambigüedad para otros métodos',()=>{
+ const catalog=value(candidate,'D'),source=value(candidate,'H');
+ for(const guard of [catalog,source]){
+  assert.ok(guard.includes("bad.state='media_context_conflict'"));
+  assert.ok(guard.includes("link.association IS DISTINCT FROM 'semantic_unique_mvp291'"));
+  assert.ok(guard.includes('bad.resolved_request_id IS DISTINCT FROM link.request_id'));
+ }
+ const initial=value(candidate,'G');
+ assert.ok(initial.includes("bad.state IN ('ambiguous_round','media_context_conflict')"));
+});
 test('V2 preserva consentimiento explícito, sesión, aislamiento y original privado',()=>{
  for(const x of [
   "v2_d016_effective_original_consent_private",
@@ -74,14 +84,14 @@ test('V2 release verifica hashes de pre/post SQL; rollback requiere hashes poste
   '70a964168c5ca9cd284d4e9fdd2ff8bf67827c09f0ec07719669e4c1f2abd87c'
  ];
  const after=[
-  '72bf82d597beb16872b7e893d7562b5419180df715050ffd05d7221ad36808cd',
-  '21e52c8b1fa968e561573bc103c365c8ac668bd957fe556e1f6fbee48da746c9'
+  '0106761b2a4fc103ec3010788c0335f21550ae8d75995e4e28cdea6c22c848c4',
+  '4be254ef7351da8f43e0673ece96022d287f53e5a6b608b8a2713be1ab4274ba'
  ];
  for(const h of [...before,...after]){
   assert.ok(candidate.includes(h),'candidate '+h);
   assert.ok(rollback.includes(h),'rollback '+h);
  }
- for(const id of ['A','B','C','D','E','F'])
+ for(const id of ['A','B','C','D','E','F','G','H'])
   assert.equal(value(candidate,id),value(rollback,id),id);
  assert.match(candidate,/v2_portal_post_source_mismatch/);
  assert.match(rollback,/v2_semantic_rollback_live_drift/);
