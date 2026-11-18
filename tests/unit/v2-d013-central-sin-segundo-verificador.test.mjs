@@ -170,3 +170,41 @@ test('D013: una duda no esencial no bloquea; un dato esencial sí',()=>{
  });
  assert.equal(legacy.estado,'requiere_aclaracion');
 });
+
+test('D013: misma localidad válida con provincia no detiene el planificador',async()=>{
+ const pedidoTexto='Hola, necesito 10 bolsas de cemento. Entrega en La Plata, Buenos Aires.';
+ const evidencia='10 bolsas de cemento';
+ const source={intencion:'cotizar',zona_entrega:'La Plata, Buenos Aires',
+  aclaracion_esencial:false,dudas:[],articulos:[{
+   evidencia,descripcion:evidencia,cantidad:'10',unidad:'bag',
+   rubro:'obra_gruesa',presentacion:null,aclaracion:null,
+   citaCantidad:'10',citaProducto:'cemento',citaPresentacion:null
+  }]};
+ const catalogo={state:'catalogue_snapshot',localidad:'La Plata',proveedores:[{
+  clave:'corralon_ailin',localidad:'La Plata',catalogoConfirmado:true,
+  articulos:[{numero:1,descripcion:'Cemento CPC 50 kg',
+   familiaAnterior:'cemento_gris_obra',revisionAnterior:'curated_family'}]
+ }],proveedoresSinConfirmar:0};
+ const reply=(v)=>new Response(JSON.stringify({status:'completed',
+  output:[{type:'message',role:'assistant',
+   content:[{type:'output_text',text:JSON.stringify(v)}]}]}),{status:200});
+ const {planificarMensajeAutenticadoMvp220}=await import(
+  '../../src/domain/ia-central/planificador-piloto-v2-d013.ts');
+ let calls=0;
+ const p=await planificarMensajeAutenticadoMvp220({
+  textoOriginal:pedidoTexto,autenticadoPorWebhook:true,
+  chatHmac:'a'.repeat(64),messageHmac:'b'.repeat(64),
+  apiKey:'sk-'+'x'.repeat(22),model:'gpt-6-luna',
+  fetchImpl:async()=>reply(++calls===1?source:{propuestas:[{
+   proveedor:'corralon_ailin',correspondencias:[{
+    indicePedido:0,numeroCatalogo:1,tipo:'producto_declarado',
+    explicacion:'Producto declarado en el catálogo'
+   }]
+  }]}),
+  rpc:async()=>({data:catalogo,error:null})
+ });
+ assert.equal(p.estado,'plan_validado_sin_envio',p.motivo);
+ assert.equal(p.pedido.zona_entrega,'La Plata, Buenos Aires');
+ assert.equal(p.ruteo.propuestas.length,1);
+ assert.equal(calls,2,'una lectura de pedido y una decisión de catálogo');
+});

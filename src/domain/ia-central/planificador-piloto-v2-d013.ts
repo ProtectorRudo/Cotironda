@@ -13,7 +13,7 @@ import {interpretarConIaCentralV2D013} from './cliente-openai-v2-d013.ts';
 import type {DiagnosticoCantidadD013} from './contrato-v2-d013.ts';
 import {validarSnapshotCatalogosMvp220} from './catalogo-supabase-mvp220.ts';
 import {categorizarCatalogosCuradosD013} from './catalogo-curado-v2-d013.ts';
-import {proponerRuteoCatalogoConIAV2} from './ruteador-catalogos-v2-d013.ts';
+import {proponerRuteoCatalogoConIAV2,zonaIgual} from './ruteador-catalogos-v2-d013.ts';
 import type {PropuestaPedido} from './contrato-v1.ts';
 import type {ResultadoCatalogoV2} from './ruteador-catalogos-v2-d013.ts';
 import type {ProveedorCatalogoV2} from './ruteador-catalogos-v2-d013.ts';
@@ -36,9 +36,6 @@ const KEY=/^[a-f0-9]{64}$/u;
 const deny=(estado:PlanMvp220['estado'],motivo:string):PlanMvp220=>({
  estado,motivo,pedido:null,ruteo:null,catalogos:null,whatsappEnviado:false,baseModificada:false
 });
-const matchCity=(a:string,b:string):boolean=>
- a.normalize('NFD').replace(/[\u0300-\u036f]/gu,'').trim().toLowerCase()===
- b.normalize('NFD').replace(/[\u0300-\u036f]/gu,'').trim().toLowerCase();
 export async function planificarMensajeAutenticadoMvp220(args:{
  chatHmac:string;messageHmac:string;
  textoOriginal:string;
@@ -77,7 +74,7 @@ export async function planificarMensajeAutenticadoMvp220(args:{
   raw=r.data;
  }catch{return deny('rechazado','catalogo_rpc_indisponible')}
  const catalog=validarSnapshotCatalogosMvp220(raw);
- if(!catalog||!matchCity(catalog.localidad,city))
+ if(!catalog||!zonaIgual(catalog.localidad,city))
   return deny('rechazado','catalogo_rpc_no_conciliado');
  if(catalog.proveedores.length===0)
   return deny('rechazado','sin_catalogos_consentidos');
