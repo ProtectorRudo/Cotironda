@@ -79,3 +79,35 @@ BEGIN
   'public.cotironda_piloto_v2_d016_responders_with_analysis_private(uuid,text)','EXECUTE')
  THEN RAISE EXCEPTION 'commercial_postcheck_failed';END IF;
 END $commercial_d016$;
+
+-- El mismo analizador original acepta 2..8 hallazgos, respaldados por fuente.
+-- No modifica acceso, autorización, token, SHA, cuotas ni leases.
+DO $expand_analysis_d016$
+DECLARE old_finish text;new_finish text;
+ p_old text:='jsonb_array_length(p_points) NOT BETWEEN 2 AND 4';
+ p_new text:='jsonb_array_length(p_points) NOT BETWEEN 2 AND 8';
+BEGIN
+ old_finish:=pg_get_functiondef(
+  'public.cotironda_piloto_v2_d016_analysis_finish_private(uuid,text,uuid,uuid,text,text,jsonb,text)'::regprocedure);
+ IF encode(extensions.digest(convert_to(old_finish,'UTF8'),'sha256'),'hex')
+  <> '12fbd1ca58702d9b1bb4278f60b57efbae7490fd9f5f159653de3aadb7880026'
+ OR length(old_finish)-length(replace(old_finish,p_old,''))<>length(p_old)
+ THEN RAISE EXCEPTION 'analysis_finish_source_drift';END IF;
+ new_finish:=replace(old_finish,p_old,p_new);
+ IF encode(extensions.digest(convert_to(new_finish,'UTF8'),'sha256'),'hex')
+  <> '0fb46536475094f44c0d70587d32636934a244f12d9263418335d5e503773766'
+ OR new_finish NOT LIKE '%v2_d016_original_source_private%'
+ OR new_finish NOT LIKE '%p_source_sha256%'
+ OR new_finish NOT LIKE '%job_token%'
+ THEN RAISE EXCEPTION 'analysis_finish_guards_changed';END IF;
+ EXECUTE new_finish;
+ IF encode(extensions.digest(convert_to(pg_get_functiondef(
+   'public.cotironda_piloto_v2_d016_analysis_finish_private(uuid,text,uuid,uuid,text,text,jsonb,text)'::regprocedure
+ ),'UTF8'),'sha256'),'hex')
+  <> '0fb46536475094f44c0d70587d32636934a244f12d9263418335d5e503773766'
+ OR has_function_privilege('anon',
+   'public.cotironda_piloto_v2_d016_analysis_finish_private(uuid,text,uuid,uuid,text,text,jsonb,text)','EXECUTE')
+ OR has_function_privilege('authenticated',
+   'public.cotironda_piloto_v2_d016_analysis_finish_private(uuid,text,uuid,uuid,text,text,jsonb,text)','EXECUTE')
+ THEN RAISE EXCEPTION 'analysis_finish_postcheck_failed';END IF;
+END $expand_analysis_d016$;
