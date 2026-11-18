@@ -111,9 +111,9 @@ BEGIN
 
  IF new_catalog=old_catalog OR new_source=old_source
  OR encode(extensions.digest(convert_to(new_catalog,'UTF8'),'sha256'),'hex')
-    <> 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+    <> '0106761b2a4fc103ec3010788c0335f21550ae8d75995e4e28cdea6c22c848c4'
  OR encode(extensions.digest(convert_to(new_source,'UTF8'),'sha256'),'hex')
-    <> 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+    <> '4be254ef7351da8f43e0673ece96022d287f53e5a6b608b8a2713be1ab4274ba'
  OR new_catalog NOT LIKE '%v2_d016_effective_original_consent_private%'
  OR new_catalog NOT LIKE '%v2_d016_session_context_private%'
  OR new_source NOT LIKE '%v2_d016_effective_original_consent_private%'
@@ -128,11 +128,11 @@ BEGIN
  IF encode(extensions.digest(convert_to(pg_get_functiondef(
     'public.cotironda_piloto_v2_d016_responders_private(uuid,text)'::regprocedure),
     'UTF8'),'sha256'),'hex')
-    <> 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+    <> '0106761b2a4fc103ec3010788c0335f21550ae8d75995e4e28cdea6c22c848c4'
  OR encode(extensions.digest(convert_to(pg_get_functiondef(
     'public.cotironda_piloto_v2_d016_original_source_private(uuid,text,uuid)'::regprocedure),
     'UTF8'),'sha256'),'hex')
-    <> 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+    <> '4be254ef7351da8f43e0673ece96022d287f53e5a6b608b8a2713be1ab4274ba'
  THEN RAISE EXCEPTION 'v2_portal_post_source_mismatch';END IF;
 
  IF has_function_privilege('anon',
