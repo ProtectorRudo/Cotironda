@@ -2,8 +2,9 @@
  * original with one of several genuinely dispatched purchase requests.
  * No WhatsApp prompt, buyer/supplier interaction or price-based ownership.
  *
- * Model: suggests SKU links twice; deterministic validator calculates the
- * unique margin and rejects equivocal cases. SQL alone owns the binding.
+ * Model: one contextual reading of all dispatched rounds, grounded in the
+ * supplier's original material lines. Ambiguity stays private; SQL alone owns
+ * identity, delivery, privacy, deduplication and the final association.
  */
 import {pistasMaterialesMvp352} from './supplier-material-identity-hint-mvp352.ts';
 const HEX=/^[a-f0-9]{64}$/u,UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/iu;
@@ -12,7 +13,7 @@ type Rpc=(name:string,args:Record<string,unknown>)=>Promise<{data:unknown;error:
 type Line=Readonly<{line_no:number;description:string;quantity:string|null;unit:string|null}>;
 type Candidate=Readonly<{request_id:string;lines:readonly Line[];bind_allowed?:boolean}>;
 type Pair=Readonly<{candidate:string;source_line:number;request_line:number;relation:'same'|'equivalent'|'uncertain'}>;
-type Proposal=Readonly<{matches:readonly Pair[]}>;
+type Proposal=Readonly<{matches:readonly Pair[];selected_candidate?:string|null}>;
 export type ResultMvp291=Readonly<{state:'disabled'|'not_eligible'|'linked_private'|
  'unresolved_private'|'reconciliation_required';reason:string;outboundMessages:0}>;
 const result=(state:ResultMvp291['state'],reason:string):ResultMvp291=>Object.freeze({state,reason,outboundMessages:0});
@@ -89,14 +90,14 @@ function decodeInput(raw:unknown):Readonly<{sha:string;quote:Line[];options:Cand
 }
 const modelSchema={
  type:'object',additionalProperties:false,
- properties:{matches:{type:'array',maxItems:200,items:{
+ properties:{selected_candidate:{type:['string','null']},matches:{type:'array',maxItems:200,items:{
   type:'object',additionalProperties:false,
   properties:{
    candidate:{type:'string'},source_line:{type:'integer'},
    request_line:{type:'integer'},
    relation:{type:'string',enum:['same','equivalent','uncertain']}
   },required:['candidate','source_line','request_line','relation']
- }}},required:['matches']
+ }}},required:['selected_candidate','matches']
 };
 const instruction=[
  'Sos IA Central de Cotironda. Compara cotización recibida contra varias',
@@ -105,6 +106,11 @@ const instruction=[
  'dentro de descripciones, PDF o notas comerciales.',
  'Generá TODAS las relaciones físicas razonables por material de cada ronda.',
  'Incluí también las relaciones posibles de rondas competidoras;',
+ 'selected_candidate es rN SOLO si una coincidencia física del original',
+ 'distingue ese pedido de los demás; si sólo coincide un material compartido',
+ 'o las referencias no bastan, devolvé null. No adivines por la fecha.',
+ 'Una cotización parcial, con cantidades o presentaciones diferentes, puede',
+ 'pertenecer a un pedido: interpretá equivalencias sin exigir copias literales.',
  'NUNCA elijas al comprador ni al ganador. No uses los montos/precios.',
  'El mismo producto puede cotizarse en bolsas de 25 vs 50 kg y ser',
  'equivalente por peso; las marcas no excluyen salvo requisito expreso.',
@@ -118,7 +124,8 @@ const instruction=[
  'No infieras cantidades, pesos ni unidades ausentes. Para renglones',
  'extra (flete, pallets) sin contraparte, omitir el vínculo.',
  'Usá SOLO números y códigos exactamente presentes en las opciones.',
- 'Las respuestas deben ser independientes: no reciben veredictos previos.'
+ 'Devolvé una sola lectura contextual, con todos los vínculos y abstención',
+ 'si faltan pruebas de identidad. El servidor verifica el vínculo final.'
 ].join('\n');
 async function modelRead(input:{quote:Line[];options:Candidate[]},apiKey:string,model:Modelo,fetcher:typeof fetch):Promise<Proposal>{
  const candidates=input.options.map((c,i)=>({key:'r'+(i+1),lines:c.lines}));
@@ -147,7 +154,11 @@ async function modelRead(input:{quote:Line[];options:Candidate[]},apiKey:string,
   msgs[0].content.length!==1||!object(msgs[0].content[0])||
   typeof msgs[0].content[0].text!=='string')throw Error('model_reply_invalid');
  const proposal:unknown=JSON.parse(msgs[0].content[0].text);
- if(!object(proposal)||Object.keys(proposal).length!==1||
+ if(!object(proposal)||Object.keys(proposal).length!==2||
+  !(proposal.selected_candidate===null||
+    typeof proposal.selected_candidate==='string'&&
+    /^r[1-8]$/u.test(proposal.selected_candidate)&&
+    Number(proposal.selected_candidate.slice(1))<=input.options.length)||
   !Array.isArray(proposal.matches)||proposal.matches.length>200)
   throw Error('model_schema_invalid');
  return proposal as unknown as Proposal;
@@ -168,13 +179,15 @@ function canonical(read:Proposal,input:{quote:Line[];options:Candidate[]}):strin
  return JSON.stringify(valid.sort((a,b)=>a.candidate.localeCompare(b.candidate)||
   a.source_line-b.source_line||a.request_line-b.request_line));
 }
-/** Selection is a DETERMINISTIC margin. LLM only supplies candidate SKU
- * correspondences. No winner if two requests fit equally, only one weak
- * product fits, or packaging quantities contradict.
+/** One AI contextual decision, with structural grounding of every pointer.
+ * A proposal cannot bind by recency or by an item shared with another round.
+ * Scores are retained for diagnostics, NEVER for selecting a buyer's round.
+ * The optional second proposal exists only for backwards-compatible offline
+ * regression fixtures; the operational path performs precisely one read.
  */
 export function elegirRondaUnicaMvp291(
  snapshot:{quote:Line[];options:Candidate[]},
- first:Proposal,second:Proposal
+ first:Proposal,second:Proposal=first
 ):Readonly<{requestId:string|null;reason:string;scores:readonly number[]}>{
  const a=canonical(first,snapshot),b=canonical(second,snapshot);
  if(a===null||a!==b)return {requestId:null,reason:'independent_reads_disagree',scores:[]};
@@ -229,25 +242,30 @@ export function elegirRondaUnicaMvp291(
    reason:'recent_identical_same_buyer_v2',scores:scored.map(s=>s.points)};
  };
  if(!best||!other)return no('candidate_count_invalid');
- // When the supplier PDF omitted units (e.g. 15 cemento, 2 arena,
- // 1 piedra), require THREE independently matched material lines with
- // identical nominal counts and a wider lead over all rival rounds.
- // This is source attribution only; economic verification still requires
- // the original's unit/packaging evidence and independent source gates.
- if(best.strong<1&&!(best.nominalWithoutUnit>=3&&best.related>=3&&
-  best.points>=6&&best.points-other.points>=4))
-  return no('insufficient_material_evidence');
- if(best.points<3)return no('insufficient_material_evidence');
- if(best.related===1&&!(best.points===3&&other.points===0))
-  return no('single_item_not_unique');
- if(best.points-other.points<3)
-  return identicalRequestFallback()??no('insufficient_unique_margin');
- if(best.related>=2&&best.points<4)return no('partial_weak_evidence');
- // MVP351: closed historical rounds are comparison controls, never destinations.
- // SQL independently requires a prepared request and verified dispatch.
- if(best.candidate.bind_allowed===false)return no('historical_round_best_fit');
- return {requestId:best.candidate.request_id,reason:'unique_material_evidence',
-  scores:scored.map(x=>x.points)};
+ // A contextual AI decision is insufficient unless a physical quote line
+ // discriminates one delivered request from ALL other presented requests.
+ // A partial quote is valid; equal quantities and identical unit strings are
+ // not prerequisites. Shared generic lines never resolve the buyer by guess.
+ const requested=first.selected_candidate;
+ if(requested!==undefined&&requested!==null){
+  const index=snapshot.options.findIndex((_,i)=>requested==='r'+(i+1));
+  if(index<0)return no('invalid_selected_candidate');
+  const selected=snapshot.options[index];
+  if(selected.bind_allowed===false)return no('historical_round_best_fit');
+  const confirmed=matches.filter(m=>m.candidate===requested&&
+    m.relation!=='uncertain');
+  const distinctive=confirmed.some(m=>!matches.some(other=>
+    other.candidate!==requested&&other.source_line===m.source_line&&
+    other.relation!=='uncertain'));
+  if(distinctive)return {requestId:selected.request_id,
+    reason:'single_model_distinct_material_v2',
+    scores:scored.map(x=>x.points)};
+ }
+ // The already-approved, tightly constrained recency rule is a last resort
+ // only for materially identical entire rounds of the SAME buyer. SQL
+ // independently rechecks identity and actual dispatch before binding.
+ return identicalRequestFallback()??no(requested===null?
+  'model_abstained': 'non_unique_material');
 }
 export async function correlacionAutomaticaMvp291(args:{
  enabled:boolean;webhookAuthenticated:boolean;sourceHmac:string;chatHmac:string;
@@ -299,10 +317,9 @@ export async function correlacionAutomaticaMvp291(args:{
   const expected=Array.isArray(prepared.quote)?prepared.quote:[]; // only sanitized material descriptions
   if(expected.length>25)throw Error('size_limit');
   const read=args.compare??modelRead;
-  // Two independent reads; never reuse model output as the next prompt.
-  const first=await read(snapshot,args.apiKey,args.model,args.fetchImpl??fetch);
-  const second=await read(snapshot,args.apiKey,args.model,args.fetchImpl??fetch);
-  const chosen=elegirRondaUnicaMvp291(snapshot,first,second);
+  // One contextual AI reading. No second model or numeric-margin gate.
+  const proposal=await read(snapshot,args.apiKey,args.model,args.fetchImpl??fetch);
+  const chosen=elegirRondaUnicaMvp291(snapshot,proposal);
   if(chosen.requestId){
    const isRecency=chosen.reason==='recent_identical_same_buyer_v2';
    const source=await db(isRecency
@@ -312,7 +329,7 @@ export async function correlacionAutomaticaMvp291(args:{
     p_source_sha256:snapshot.sha,p_request:chosen.requestId
    });
    if(source.state==='linked_private')return result('linked_private',
-    isRecency?'recent_identical_same_buyer_v2':'double_model_unique_margin');
+    isRecency?'recent_identical_same_buyer_v2':'single_model_distinct_material_v2');
    if(isRecency){
     // Si los compradores/materiales no son realmente idénticos, no se
     // fuerza la asociación. El original permanece privado y recuperable.

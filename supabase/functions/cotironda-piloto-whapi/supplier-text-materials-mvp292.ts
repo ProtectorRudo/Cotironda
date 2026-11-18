@@ -112,8 +112,9 @@ export async function extraerMaterialesTextoMvp292(args:{
   return null;
  try{
   const read=args.read??runModel;
-  const a=await read(args.source,args.apiKey,args.model,args.fetchImpl??fetch);
-  const b=await read(args.source,args.apiKey,args.model,args.fetchImpl??fetch);
-  return corroborarMaterialesTextoMvp292(args.source,a,b);
+  // One AI extraction followed by literal, deterministic source grounding.
+  // The commercial parser does not reread this message for attribution.
+  const observed=await read(args.source,args.apiKey,args.model,args.fetchImpl??fetch);
+  return corroborarMaterialesTextoMvp292(args.source,observed,observed);
  }catch{return null}
 }

@@ -22,7 +22,7 @@ const agreement=(snap=snapshot())=>({
   candidate:'r'+(index+1),source_line:i+1,request_line:line.line_no,relation:'same'
  })))
 });
-test('V2 desempata sólo rondas idénticas, doble IA concordante y evidencia física',()=>{
+test('V2 desempata sólo rondas idénticas y con evidencia física comprobable',()=>{
  const s=snapshot(),proposal=agreement(s);
  const picked=elegirRondaUnicaMvp291(s,proposal,proposal);
  assert.equal(picked.reason,'recent_identical_same_buyer_v2');
