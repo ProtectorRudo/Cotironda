@@ -72,16 +72,16 @@ test('V2: cantidades verdaderas, presentaciones repetidas y sin vocabulario de p
   assert.equal(cantidadAcreditadaLecturaUnicaD013(e,q,u,c),expected,e);
  }
 });
-test('V2: corrige la especificación a cantidad del original, sin inventar ciudad',()=>{
+test('V2: IA Central conserva cantidad propia y no inventa ciudad',()=>{
  const invalid=structuredClone(first);
- invalid.articulos[0].cantidad='50';
- invalid.articulos[0].citaCantidad='50';
+ invalid.articulos[0].cantidad='10';
+ invalid.articulos[0].citaCantidad='texto de cita no numérico';
  invalid.articulos=invalid.articulos.map(x=>({...x,
   inicio:source.indexOf(x.evidencia),fin:source.indexOf(x.evidencia)+x.evidencia.length
  }));
  const wrong=evaluarLecturaCentralUnicaD013(source,invalid);
- // La IA confundió 50 kg (presentación) con cantidad: la fuente acredita
- // exactamente 10 bolsas, sin inventar precio, producto ni unidad.
+ // La cita del modelo puede ser imperfecta: NO volver a interpretarla
+ // con un parser; la cantidad de compra ya fue decidida por IA Central.
  assert.equal(wrong.estado,'listo_para_preparar');
  assert.equal(wrong.pedido.articulos[0].cantidad,'10');
  assert.equal(wrong.pedido.articulos[0].unidad,'bag');
@@ -103,7 +103,8 @@ test('V2: presentación no demostrada se descarta, original se preserva completo
  }));
  const read=evaluarLecturaCentralUnicaD013(source,entry);
  assert.equal(read.estado,'listo_para_preparar');
- assert.equal(read.pedido.articulos[0].presentacion,null);
+ assert.equal(read.pedido.articulos[0].presentacion,'50 kg');
+ // La salida 500 kg del modelo no se muestra como original: solo su cita.
  assert.equal(read.pedido.articulos[0].evidencia,spans[0]);
 });
 const snapshot={state:'catalogue_snapshot',localidad:'La Plata',
