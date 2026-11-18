@@ -106,9 +106,12 @@ const instruction=[
  'dentro de descripciones, PDF o notas comerciales.',
  'Generá TODAS las relaciones físicas razonables por material de cada ronda.',
  'Incluí también las relaciones posibles de rondas competidoras;',
- 'selected_candidate es rN SOLO si una coincidencia física del original',
- 'distingue ese pedido de los demás; si sólo coincide un material compartido',
- 'o las referencias no bastan, devolvé null. No adivines por la fecha.',
+ 'selected_candidate es rN SOLO si existen evidencias físicas que',
+ 'distinguen ese pedido de los demás: artículos propios o cantidad y unidad',
+ 'que coincidan mejor con uno que con los otros. No adivines por fecha.',
+ 'Ejemplo: 10 cemento, 2 arena y 1 piedra coincide con pedido 10/2/1',
+ 'mejor que con 10/1/1, aunque las MARCAS o renglones extras cambien.',
+ 'Si un solo material compartido permite varias rondas, devolvé null.',
  'Una cotización parcial, con cantidades o presentaciones diferentes, puede',
  'pertenecer a un pedido: interpretá equivalencias sin exigir copias literales.',
  'NUNCA elijas al comprador ni al ganador. No uses los montos/precios.',
@@ -254,9 +257,24 @@ export function elegirRondaUnicaMvp291(
   if(selected.bind_allowed===false)return no('historical_round_best_fit');
   const confirmed=matches.filter(m=>m.candidate===requested&&
     m.relation!=='uncertain');
-  const distinctive=confirmed.some(m=>!matches.some(other=>
-    other.candidate!==requested&&other.source_line===m.source_line&&
-    other.relation!=='uncertain'));
+  const distinctive=confirmed.some(m=>{
+   const alternative=matches.filter(other=>other.candidate!==requested&&
+    other.source_line===m.source_line&&other.relation!=='uncertain');
+   if(alternative.length===0)return true; // material absent from every rival
+   // Matching a literal count AND packaging is discriminating evidence,
+   // but never a requirement for partial quotes with changed quantities.
+   // One isolated shared item is never enough to choose between rounds.
+   if(confirmed.length<2)return false;
+   const source=snapshot.quote.find(l=>l.line_no===m.source_line);
+   const requestedLine=selected.lines.find(l=>l.line_no===m.request_line);
+   if(!source||!requestedLine||
+      corroborarCantidadMvp291(source,requestedLine)!=='strong')return false;
+   return alternative.every(other=>{
+    const candidate=snapshot.options[Number(other.candidate.slice(1))-1];
+    const rival=candidate?.lines.find(l=>l.line_no===other.request_line);
+    return rival&&corroborarCantidadMvp291(source,rival)==='different';
+   });
+  });
   if(distinctive)return {requestId:selected.request_id,
     reason:'single_model_distinct_material_v2',
     scores:scored.map(x=>x.points)};

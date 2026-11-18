@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {elegirRondaUnicaMvp291,correlacionAutomaticaMvp291} from
  '../../supabase/functions/cotironda-piloto-whapi/supplier-auto-correlation-contextual-v2.ts';
+import {extraerMaterialesTextoMvp292} from
+ '../../supabase/functions/cotironda-piloto-whapi/supplier-text-materials-contextual-v2.ts';
 
 const a='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const b='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
@@ -119,4 +121,61 @@ test('Si la base deniega el enlace, el mensaje permanece en revisión privada',a
  assert.notEqual(r.state,'linked_private');
  assert.equal(r.outboundMessages,0);
  assert.ok(names.includes('cotironda_piloto_auto_correlation_finish_mvp291'));
+});
+
+test('Nahuel: 10 cemento, 2 arena, 1 piedra distinguen ronda 18/11 frente a 10/1/1',()=>{
+ const snap={
+  quote:[
+   line(1,'Cemento 50 kg Loma Negra','10','bolsas'),
+   line(2,'bolsón de arena','2','bolsón'),
+   line(3,'bolsón de piedra','1','bolsón')],
+  options:[
+   {request_id:a,lines:[
+    line(1,'Cemento CPC 50kg','10','bag'),
+    line(2,'Arena fina 1 m3','2','bag'),
+    line(3,'Piedra partida 1 m3','1','bag'),
+    line(4,'Montante 70 mm','15','unit'),
+    line(5,'Placa yeso 12,5 mm','8','unit')]},
+   {request_id:b,lines:[
+    line(1,'Cemento CPC 50kg','10','bag'),
+    line(2,'Arena fina 1 m3','1','bag'),
+    line(3,'Piedra partida 1 m3','1','bag')]}
+  ]
+ };
+ const matches=[1,2,3].flatMap(i=>[
+  match('r1',i,i,'equivalent'),match('r2',i,i,'equivalent')]);
+ const picked=elegirRondaUnicaMvp291(snap,proposal('r1',matches));
+ assert.equal(picked.requestId,a);
+ assert.equal(picked.reason,'single_model_distinct_material_v2');
+ // If the AI favors the older request, the numeric evidence denies that
+ // preference instead of assigning somebody else's commercial original.
+ const wrong=elegirRondaUnicaMvp291(snap,proposal('r2',matches));
+ assert.equal(wrong.requestId,null);
+});
+test('Cantidad compartida de un solo material no decide ronda ni inventa equivalencias',()=>{
+ const snapshot={quote:[line(1,'Arena','2','bolsones')],
+ options:[
+  {request_id:a,lines:[line(1,'Arena','2','bag')]},
+  {request_id:b,lines:[line(1,'Arena','1','bag')]}]};
+ const p=proposal('r1',[match('r1',1,1),match('r2',1,1)]);
+ assert.equal(elegirRondaUnicaMvp291(snapshot,p).requestId,null);
+});
+test('La extracción contextual hace una sola llamada y verifica el texto original',async()=>{
+ let reads=0;
+ const source='Cotizo 10 bolsas de cemento CPC 50 kg.';
+ const data=await extraerMaterialesTextoMvp292({
+  source,apiKey:'k'.repeat(24),model:'gpt-6-luna',
+  read:async()=>{reads++;return {items:[{
+   original:'10 bolsas de cemento CPC 50 kg',
+   description:'cemento CPC 50 kg',quantity:'10',unit:'bolsas'}]}}
+ });
+ assert.equal(reads,1);
+ assert.equal(data?.length,1);
+ assert.equal(data[0].quantity,'10');
+ const fabricated=await extraerMaterialesTextoMvp292({
+  source,apiKey:'k'.repeat(24),model:'gpt-6-luna',
+  read:async()=>({items:[{original:'20 bolsas de pintura',
+   description:'pintura',quantity:'20',unit:'bolsas'}]})
+ });
+ assert.equal(fabricated,null,'no se aceptan artículos inventados');
 });
