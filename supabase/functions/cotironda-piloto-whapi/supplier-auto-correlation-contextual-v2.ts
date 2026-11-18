@@ -118,6 +118,8 @@ const instruction=[
  'dentro de descripciones, PDF o notas comerciales.',
  'Generá TODAS las relaciones físicas razonables por material de cada ronda.',
  'Incluí también las relaciones posibles de rondas competidoras;',
+ 'La cantidad puede variar entre solicitudes para el MISMO material;',
+ 'relacioná primero identidad y recién después compará unidades/cantidad.',
  'selected_candidate es rN SOLO si existen evidencias físicas que',
  'distinguen ese pedido de los demás: artículos propios o cantidad y unidad',
  'que coincidan mejor con uno que con los otros. No adivines por fecha.',
@@ -199,6 +201,44 @@ function canonical(read:Proposal,input:{quote:Line[];options:Candidate[]}):strin
  return JSON.stringify(valid.sort((a,b)=>a.candidate.localeCompare(b.candidate)||
   a.source_line-b.source_line||a.request_line-b.request_line));
 }
+/** Request-to-request literal identity; the IA first interprets the source.
+ * We never infer synonyms or meaning from supplier text, price or stock.
+ */
+function literalRequestIdentity(line:Line):string|null{
+ const words=(line.description.normalize('NFKD').replace(/\p{M}/gu,'')
+  .normalize('NFKC').toLowerCase().match(/[a-z0-9]+/gu)??[])
+  .filter(w=>!['de','del','la','las','el','los','un','una','unos',
+   'unas','por','para','con'].includes(w))
+  .map(w=>w.length>=7&&w.endsWith('ones')?w.slice(0,-2):
+   w.length>=4&&w.endsWith('s')?w.slice(0,-1):w);
+ return words.length>=3?words.join('|'):null;
+}
+function completeLiteralRequestLinks(
+ input:{quote:Line[];options:Candidate[]},proposed:readonly Pair[]
+):Pair[]{
+ const complete:Pair[]=[...proposed];
+ const occupied=new Set(proposed.map(m=>m.candidate+'|'+m.source_line));
+ const names=input.options.map(o=>o.lines.map(l=>({
+  no:l.line_no,identity:literalRequestIdentity(l)})));
+ for(const relation of proposed){
+  if(relation.relation==='uncertain')continue;
+  const origin=Number(relation.candidate.slice(1))-1;
+  const identity=names[origin]?.find(x=>x.no===relation.request_line)?.identity;
+  if(!identity)continue;
+  for(let i=0;i<input.options.length;i++){
+   if(i===origin)continue;
+   const key='r'+(i+1)+'|'+relation.source_line;
+   // Do not override a model's direct link, including explicit uncertainty.
+   if(occupied.has(key))continue;
+   const literal=names[i].filter(x=>x.identity===identity);
+   if(literal.length!==1)continue; // repeated RFQ rows are ambiguous
+   complete.push({candidate:'r'+(i+1),source_line:relation.source_line,
+    request_line:literal[0].no,relation:'same'});
+   occupied.add(key);
+  }
+ }
+ return complete;
+}
 /** One AI contextual decision, with structural grounding of every pointer.
  * A proposal cannot bind by recency or by an item shared with another round.
  * Scores are retained for diagnostics, NEVER for selecting a buyer's round.
@@ -211,7 +251,8 @@ export function elegirRondaUnicaMvp291(
 ):Readonly<{requestId:string|null;reason:string;scores:readonly number[]}>{
  const a=canonical(first,snapshot),b=canonical(second,snapshot);
  if(a===null||a!==b)return {requestId:null,reason:'independent_reads_disagree',scores:[]};
- const matches:Pair[]=JSON.parse(a);
+ // Propagate only identical RFQ lines already grounded by one AI reading.
+ const matches:Pair[]=completeLiteralRequestLinks(snapshot,JSON.parse(a));
  const scored=snapshot.options.map((candidate,i)=>{
   const links=matches.filter(x=>x.candidate==='r'+(i+1)&&x.relation!=='uncertain');
   let points=0,strong=0,related=0,nominalWithoutUnit=0;
@@ -286,10 +327,13 @@ export function elegirRondaUnicaMvp291(
   }
   const strong=[...bySource].filter(([,outcome])=>outcome==='strong')
    .map(([line])=>line);
-  return {key,candidate,strong,bySource};
+  // Two quote lines for one requested product are only one source of proof.
+  const uniqueProducts=new Set(links.filter(m=>
+   bySource.get(m.source_line)==='strong').map(m=>m.request_line));
+  return {key,candidate,strong,uniqueCount:uniqueProducts.size,bySource};
  });
  const grounded=quantityEvidence.filter(e=>
-  e.candidate.bind_allowed!==false&&e.strong.length>=2&&
+  e.candidate.bind_allowed!==false&&e.uniqueCount>=2&&
   quantityEvidence.every(rival=>{
    if(rival.key===e.key)return true;
    // No candidate may win while a rival has equally strong, opposing

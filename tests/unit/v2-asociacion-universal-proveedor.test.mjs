@@ -284,8 +284,9 @@ test('Una selección expresa CONTRARIA a la cantidad queda en privado',()=>{
  assert.equal(rejected.requestId,null);
  assert.equal(rejected.reason,'model_quantity_conflict');
 });
-test('Sin vínculos del rival para arena no se inventa una comparación cuantitativa',()=>{
+test('Si la ronda rival pide un material distinto no se inventa el vínculo ausente',()=>{
  const snapshot={quote:pairwiseOffer(),options:pairwiseRequests()};
+ snapshot.options[1].lines[1].description='bolsón de arena gruesa 1 m³';
  const missing=completePairs().filter(x=>!(
   x.candidate==='r2'&&x.source_line===2));
  assert.equal(elegirRondaUnicaMvp291(snapshot,proposal(null,missing)).requestId,null);
@@ -371,4 +372,49 @@ test('No permite reintento de cantidades duplicado ni sin texto corroborado',asy
   ...base,retryReviewedOnce:true,textSha256:hash,textQuote:pairwiseOffer()
  })).state,'not_eligible');
  assert.equal((await correlacionAutomaticaMvp291(base)).state,'not_eligible');
+});
+
+test('IA relaciona sólo ronda nueva: reusa renglones idénticos de la otra',()=>{
+ const s={quote:pairwiseOffer(),options:pairwiseRequests()};
+ assert.equal(elegirRondaUnicaMvp291(s,proposal(null,
+  [1,2,3].map(i=>match('r1',i,i,'equivalent')))).requestId,a);
+});
+test('IA relaciona sólo ronda anterior: el detalle de cantidades identifica la nueva',()=>{
+ const s={quote:pairwiseOffer(),options:pairwiseRequests()};
+ assert.equal(elegirRondaUnicaMvp291(s,proposal(null,
+  [1,2,3].map(i=>match('r2',i,i,'equivalent')))).requestId,a);
+});
+test('Arena fina versus gruesa no puede completarse por parecido de texto',()=>{
+ const s={quote:pairwiseOffer(),options:pairwiseRequests()};
+ s.options[1].lines[1].description='bolsón de arena gruesa 1 m³';
+ assert.equal(elegirRondaUnicaMvp291(s,proposal(null,
+  [1,2,3].map(i=>match('r1',i,i)))).requestId,null);
+});
+test('Una relación uncertain explícita prevalece sobre puente literal',()=>{
+ const s={quote:pairwiseOffer(),options:pairwiseRequests()};
+ const p=[...([1,2,3].map(i=>match('r1',i,i))),match('r2',2,2,'uncertain')];
+ assert.equal(elegirRondaUnicaMvp291(s,proposal(null,p)).requestId,null);
+});
+test('Una sola línea en la respuesta jamás justifica asignación por cantidad',()=>{
+ const s={quote:pairwiseOffer(),options:pairwiseRequests()};
+ assert.equal(elegirRondaUnicaMvp291(s,proposal(null,[match('r1',2,2)])).requestId,null);
+});
+test('No cuenta duplicados del mismo material como dos productos independientes',()=>{
+ const s={quote:[line(1,'Cemento CPC','10','bolsas'),line(2,'Cemento CPC','10','bolsas')],
+  options:[{request_id:a,lines:[line(1,'Cemento CPC 50kg','10','bolsas')]},
+   {request_id:b,lines:[line(1,'Cemento CPC 50kg','9','bolsas')]}]};
+ const p=[match('r1',1,1),match('r1',2,1),match('r2',1,1),match('r2',2,1)];
+ assert.equal(elegirRondaUnicaMvp291(s,proposal(null,p)).requestId,null);
+});
+test('Descripción genérica no permite deducir relaciones omitidas',()=>{
+ const s={quote:[line(1,'cemento','10','bolsas'),line(2,'arena','2','bolsones')],
+ options:[{request_id:a,lines:[line(1,'cemento','10','bolsas'),line(2,'arena','2','bolsones')]},
+ {request_id:b,lines:[line(1,'cemento','10','bolsas'),line(2,'arena','1','bolsones')]}]};
+ assert.equal(elegirRondaUnicaMvp291(s,proposal(null,[match('r1',1,1),match('r1',2,2)])).requestId,null);
+});
+test('Renglones duplicados del pedido rival no pueden completarse',()=>{
+ const s={quote:pairwiseOffer(),options:pairwiseRequests()};
+ s.options[1].lines.push(line(9,'bolsón de arena fina de 1 m³','1','bag'));
+ assert.equal(elegirRondaUnicaMvp291(s,proposal(null,
+  [1,2,3].map(i=>match('r1',i,i)))).requestId,null);
 });
