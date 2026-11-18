@@ -42,10 +42,22 @@ export function corroborarCantidadMvp291(source:Line,requested:Line):'strong'|'u
   au=cleanUnit(source.unit),bu=cleanUnit(requested.unit);
  if(a===null||b===null||au===null||bu===null)return 'unknown';
  if(au==='bag'&&bu==='bag'){
+  // Legacy RFQ normalizes both bolsa and bolsón as 'bag'. When both
+  // descriptions explicitly identify DIFFERENT packages, nominal pieces
+  // cannot be used as corroborating quantities (but may be equivalent by
+  // weight/volume if independently stated in BOTH originals).
+  const form=(l:Line):'sack'|'bigbag'|null=>{
+   const literal=(l.description+' '+(l.unit??'')).toLowerCase();
+   if(/(?:bols[oó]n(?:es)?|big[ -]?bags?)/u.test(literal))return 'bigbag';
+   if(/\b(?:bolsas?|sacos?)\b/u.test(literal))return 'sack';
+   return null;
+  };
   const aa=massOrVolume(source.description),bb=massOrVolume(requested.description);
   if(aa&&bb&&aa.unit===bb.unit)
    return Math.abs(a*aa.per-b*bb.per)<0.0001?'strong':'different';
   if(Boolean(aa)!==Boolean(bb))return 'unknown';
+  const x=form(source),y=form(requested);
+  if(x!==null&&y!==null&&x!==y)return 'unknown';
  }
  if(au===bu&&Math.abs(a-b)<0.0001)return 'strong';
  return 'different';
@@ -112,6 +124,11 @@ const instruction=[
  'Ejemplo: 10 cemento, 2 arena y 1 piedra coincide con pedido 10/2/1',
  'mejor que con 10/1/1, aunque las MARCAS o renglones extras cambien.',
  'Si un solo material compartido permite varias rondas, devolvé null.',
+ 'Incluí TODAS las relaciones físicas del mismo material contra CADA',
+ 'candidato, también si cambian cantidades; no omitas una ronda rival.',
+ 'Podés devolver selected_candidate=null si el contexto es incierto;',
+ 'Cotironda comprueba comparativamente cantidades de materiales YA',
+ 'relacionados, sin reemplazar tu interpretación semántica.',
  'Una cotización parcial, con cantidades o presentaciones diferentes, puede',
  'pertenecer a un pedido: interpretá equivalencias sin exigir copias literales.',
  'NUNCA elijas al comprador ni al ganador. No uses los montos/precios.',
@@ -250,6 +267,49 @@ export function elegirRondaUnicaMvp291(
  // A partial quote is valid; equal quantities and identical unit strings are
  // not prerequisites. Shared generic lines never resolve the buyer by guess.
  const requested=first.selected_candidate;
+ // Universal comparative resolution, not another AI read. The model already
+ // supplies the semantic links for all ACTUALLY dispatched RFQs. A numeric
+ // difference may DISAMBIGUATE only when at least two independent materials
+ // match the selected RFQ and the same physical material is mapped to every
+ // competing RFQ with a demonstrably conflicting count/presentation.
+ // Missing/uncertain rival links, incompatible evidence and one-item replies
+ // ABSTAIN; there is no ranking, price logic, automatic winner or recency guess.
+ const quantityEvidence=snapshot.options.map((candidate,i)=>{
+  const key='r'+(i+1);
+  const links=matches.filter(m=>m.candidate===key&&m.relation!=='uncertain');
+  const bySource=new Map<number,'strong'|'unknown'|'different'>();
+  for(const link of links){
+   const source=snapshot.quote.find(l=>l.line_no===link.source_line);
+   const target=candidate.lines.find(l=>l.line_no===link.request_line);
+   if(source&&target)
+    bySource.set(link.source_line,corroborarCantidadMvp291(source,target));
+  }
+  const strong=[...bySource].filter(([,outcome])=>outcome==='strong')
+   .map(([line])=>line);
+  return {key,candidate,strong,bySource};
+ });
+ const grounded=quantityEvidence.filter(e=>
+  e.candidate.bind_allowed!==false&&e.strong.length>=2&&
+  quantityEvidence.every(rival=>{
+   if(rival.key===e.key)return true;
+   // No candidate may win while a rival has equally strong, opposing
+   // quantitative evidence on another material.
+   if(rival.strong.some(line=>e.bySource.get(line)==='different'))
+    return false;
+   return e.strong.some(line=>rival.bySource.get(line)==='different');
+  })
+ );
+ // If the model selected a DIFFERENT request than the unique physical
+ // evidence, preserve the original privately rather than silently override
+ // any explicit reference to an older RFQ in the supplier's message.
+ if(grounded.length===1){
+  const winner=grounded[0];
+  if(requested!==undefined&&requested!==null&&requested!==winner.key)
+   return no('model_quantity_conflict');
+  return {requestId:winner.candidate.request_id,
+   reason:'single_model_distinct_material_v2',
+   scores:scored.map(x=>x.points)};
+ }
  if(requested!==undefined&&requested!==null){
   const index=snapshot.options.findIndex((_,i)=>requested==='r'+(i+1));
   if(index<0)return no('invalid_selected_candidate');

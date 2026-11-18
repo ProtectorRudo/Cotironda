@@ -247,3 +247,88 @@ test('Un texto de tres renglones recuperado se asocia con SQL a su ronda única'
  assert.equal(changes.filter(x=>x.includes('_bind_')).length,1);
  assert.equal(verdict.outboundMessages,0);
 });
+
+
+// Real pilot structure, anonymized: 10 cement / 2 sand / 1 stone versus
+// an older 10 / 1 / 1 request. Tests never use stored private source text.
+const pairwiseOffer=()=>[
+ line(1,'Cemento CPC 50 kg marca libre','10','bolsas'),
+ line(2,'bolsón de arena fina','2','bolsones'),
+ line(3,'bolsón de piedra partida','1','bolsón')
+];
+const pairwiseRequests=()=>[
+ {request_id:a,bind_allowed:true,lines:[
+  line(1,'bolsas de cemento CPC 50 kg','10','bag'),
+  line(2,'bolsones arena fina 1 m³','2','bag'),
+  line(3,'bolsón piedra partida 1 m³','1','bag'),
+  line(4,'perfiles montantes 70 mm','15','unit'),
+  line(5,'placas yeso 12,5 mm','8','unit')
+ ]},
+ {request_id:b,bind_allowed:false,lines:[
+  line(1,'bolsas de cemento CPC 50 kg','10','bag'),
+  line(2,'bolsón arena fina 1 m³','1','bag'),
+  line(3,'bolsón piedra partida 1 m³','1','bag')
+ ]}
+];
+const completePairs=()=>[1,2,3].flatMap(i=>[
+ match('r1',i,i,'equivalent'),match('r2',i,i,'equivalent')]);
+test('El modelo puede abstenerse; Cotironda resuelve 10/2/1 vs 10/1/1 por prueba física comparativa',()=>{
+ const snapshot={quote:pairwiseOffer(),options:pairwiseRequests()};
+ const resolved=elegirRondaUnicaMvp291(snapshot,proposal(null,completePairs()));
+ assert.equal(resolved.requestId,a);
+ assert.equal(resolved.reason,'single_model_distinct_material_v2');
+});
+test('Una selección expresa CONTRARIA a la cantidad queda en privado',()=>{
+ const snapshot={quote:pairwiseOffer(),options:pairwiseRequests()};
+ const rejected=elegirRondaUnicaMvp291(snapshot,proposal('r2',completePairs()));
+ assert.equal(rejected.requestId,null);
+ assert.equal(rejected.reason,'model_quantity_conflict');
+});
+test('Sin vínculos del rival para arena no se inventa una comparación cuantitativa',()=>{
+ const snapshot={quote:pairwiseOffer(),options:pairwiseRequests()};
+ const missing=completePairs().filter(x=>!(
+  x.candidate==='r2'&&x.source_line===2));
+ assert.equal(elegirRondaUnicaMvp291(snapshot,proposal(null,missing)).requestId,null);
+});
+test('Si dos rondas tienen mismas cantidades, la abstención de IA se respeta',()=>{
+ const options=pairwiseRequests();
+ options[1].bind_allowed=true;
+ options[1].lines[1].quantity='2';
+ const snapshot={quote:pairwiseOffer(),options};
+ assert.equal(elegirRondaUnicaMvp291(snapshot,proposal(null,completePairs())).requestId,null);
+});
+test('Dos coincidencias fuertes con conflictos cruzados deben abstenerse',()=>{
+ const quote=[line(1,'Cemento 50 kg','10','bolsas'),
+  line(2,'Arena fina','2','bolsones'),
+  line(3,'Piedra partida','1','bolsón')];
+ const opts=[
+  {request_id:a,lines:[line(1,'Cemento 50 kg','10','bag'),
+   line(2,'Arena fina','2','bag'),line(3,'Piedra','2','bag')]},
+  {request_id:b,lines:[line(1,'Cemento 50 kg','10','bag'),
+   line(2,'Arena fina','1','bag'),line(3,'Piedra','1','bag')]}
+ ];
+ assert.equal(elegirRondaUnicaMvp291({quote,options:opts},
+  proposal(null,completePairs())).requestId,null);
+});
+test('Una cotización de un solo material nunca se asocia usando sólo diferencias de cantidad',()=>{
+ const snapshot={quote:[line(1,'Arena fina','2','bolsón')],options:[
+  {request_id:a,lines:[line(1,'Arena fina','2','bag')]},
+  {request_id:b,lines:[line(1,'Arena fina','1','bag')]}
+ ]};
+ assert.equal(elegirRondaUnicaMvp291(snapshot,proposal(null,[
+  match('r1',1,1),match('r2',1,1)])).requestId,null);
+});
+test('Una ronda histórica bloqueada nunca es elegida por fuerza numérica',()=>{
+ const snapshot={quote:pairwiseOffer(),options:pairwiseRequests()};
+ snapshot.options[0].bind_allowed=false;
+ assert.equal(elegirRondaUnicaMvp291(snapshot,proposal(null,completePairs())).requestId,null);
+});
+test('No confundir bolsa pequeña con bolsón sólo porque el número coincide',async()=>{
+ const {corroborarCantidadMvp291}=await import(
+  '../../supabase/functions/cotironda-piloto-whapi/supplier-auto-correlation-contextual-v2.ts');
+ const sack=line(1,'bolsas de arena','2','bag');
+ const bigbag=line(1,'bolsones de arena','2','bag');
+ assert.equal(corroborarCantidadMvp291(sack,bigbag),'unknown');
+ assert.equal(corroborarCantidadMvp291(line(1,'arena','2','bolsones'),
+   line(1,'bolsones de arena','2','bag')),'strong');
+});
