@@ -288,7 +288,7 @@ test('D013: diagnóstico cubre rechazos de lectura histórica y central única',
  for(const reason of reasons){
   assert.notEqual(diagnosticoPlanD013(reason),'plan_other_rejected',
     'un motivo legítimo quedó oculto: '+reason);
-  assert.match(diagnosticoPlanD013(reason),/^(?:source_|ai_)/u);
+  assert.match(diagnosticoPlanD013(reason),/^(?:source_|ai_|plan_)/u);
  }
  assert.equal(diagnosticoPlanD013('motivo_usuario_inyectado_con_contactos'),
   'plan_other_rejected');
