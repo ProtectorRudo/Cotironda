@@ -76,7 +76,7 @@ test('V2: alternativa semánticamente plausible es CONSULTA, jamás equivalencia
  const inquiry=res.propuestas[0].correspondencias.find(x=>x.indicePedido===0);
  assert.ok(inquiry);
  assert.equal(inquiry.tipo,'alternativa_razonable');
- assert.match(inquiry.explicacion,/^CONSULTA SIN EQUIVALENCIA CONFIRMADA\./u);
+ assert.match(inquiry.explicacion,/^CONSULTA DE COMPATIBILIDAD SIN STOCK CONFIRMADO\./u);
  assert.equal(request.articulos[0].evidencia,'2 envases Ceresita líquida 1 L');
 });
 test('V2: producto no declarado o proveedor fuera de la zona nunca recibe envío',()=>{
@@ -104,7 +104,7 @@ test('V2: rubro distinto NO excluye mismo artículo catalogado',async()=>{
  assert.deepEqual(result.propuestas.map(x=>x.proveedor),['corralon_nahuel']);
  assert.equal(mock.calls.length,1);
 });
-test('V2: incompatibilidad cable 2.5 mm² frente a 4 mm² NO es consulta aceptable',async()=>{
+test('V2: una propuesta IA sobre cable con medida distinta solo es consulta sin stock confirmado',async()=>{
  const buyer={...request,articulos:[quote('3 metros cable 2.5 mm2','3','m')]};
  const providers=[supplier('ferreteria_123',[
   {numero:1,descripcion:'Cable unipolar 4 mm2',rubro:'electricidad'}
@@ -119,9 +119,10 @@ test('V2: incompatibilidad cable 2.5 mm² frente a 4 mm² NO es consulta aceptab
   fetchImpl:mock.fetchImpl
  });
  assert.equal(mock.calls.length,1);
- assert.equal(result.estado,'requiere_revision');
- assert.deepEqual(result.propuestas,[]);
- assert.equal(result.revisionTecnica[0].motivo,'seccion_cable_no_equivalente');
+ assert.equal(result.estado,'ruteo_valido_para_preparacion');
+ assert.equal(result.propuestas[0].correspondencias[0].tipo,'alternativa_razonable');
+ assert.match(result.propuestas[0].correspondencias[0].explicacion,/^CONSULTA DE COMPATIBILIDAD/u);
+ assert.equal(result.whatsappEnviado,false);
 });
 test('V2: marca excluyente, uso incompatible y presentación diferente siguen bloqueados',()=>{
  const p=quote('10 bolsas cemento obra 25 kg','10','bag');
