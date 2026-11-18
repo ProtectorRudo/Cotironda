@@ -228,10 +228,14 @@ function cond(puntos:readonly Punto[],conditionsText:string|null):ResumenComerci
  if(/iva[^.\n;]*no (?:esta )?incluido/u.test(iva))i='No incluido';
  else if(/iva[^.\n;]*incluido/u.test(iva))i='Incluido';
  else if(/iva[^.\n;]*no informad/u.test(iva))i='No informado';
- let f=flete?'No verificado':'No informado';
+ // "A convenir" es una condición comercial explícita, no una falta de
+ // verificación. Aceptarla solo cuando el original citado lo dice.
+ let f='No informado';
  if(/flete[^.\n;]*no incluido/u.test(flete))
   f=/importe a cotizar/u.test(flete)?'No incluido · a cotizar':'No incluido';
  else if(/flete[^.\n;]*incluido/u.test(flete))f='Incluido';
+ else if(/\bflete\b[^.\n;]{0,90}\b(?:a convenir|queda a convenir)\b/u.test(flete))
+  f='A convenir';
  else if(/flete[^.\n;]*no informad/u.test(flete))f='No informado';
  if(f==='No informado'&&/\bflete\s+a\s+convenir\b/u.test(terms))f='A convenir';
  else if(f==='No informado'&&/\bflete\s+no\s+incluido\b/u.test(terms))f='No incluido';
