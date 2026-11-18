@@ -235,13 +235,17 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
    const needsReview=!cover||cover.identificados<cover.solicitados||
     cover.porVerificar.length>0||cover.adicionales>0;
    const expanded=expandedDoc===q.documentoId;
-   const puntosUtiles=q.puntos.filter(p=>
-    p.categoria!=='plazo'&&!/plazo de entrega|0 d[ií]as/iu.test(p.observacion));
-   const notasTecnicas=puntosUtiles.filter(p=>
-    ['material','presentacion','cobertura','disponibilidad'].includes(p.categoria));
+   // Mostrar valor comercial y diferencias técnicas, sin transcribir los importes
+   // por renglón del PDF ni repetir observaciones de precio, flete o pago.
+   const notasTecnicas=q.puntos.filter(p=>
+    ['material','presentacion','cobertura','disponibilidad'].includes(p.categoria)&&
+    !/\$|\b(?:precio|subtotal|total|iva|flete|pago|descuento)\b/iu.test(p.observacion));
    const conditions=q.resumen.condiciones;
    const cotizados=q.resumen.articulosCotizados;
    const enviados=q.resumen.articulosEnviados;
+   const articulosVisibles=cotizados??(
+    q.resumen.detalleCotizado.length>0?q.resumen.detalleCotizado.length:null);
+   // Un recuento de renglones NO certifica equivalencia de cantidades.
    const conteoConfiable=cotizados!==null&&enviados!==null;
    return <article className="coti-clean-bid" key={q.documentoId}>
     <div className="coti-clean-bid-primary">
@@ -254,9 +258,10 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
     </div>
     <div className={'coti-clean-coverage'+(needsReview?' caution':'')}>
      <span aria-hidden="true">{needsReview?'!':'✓'}</span>
-     <span>{conteoConfiable?
-      cotizados+' artículos cotizados · '+enviados+' solicitados a este negocio':
-      'Artículos en revisión · consultar el original'}</span>
+     <span>{articulosVisibles!==null?
+      articulosVisibles+' artículos cotizados'+
+       (conteoConfiable?' · '+enviados+' enviados a este negocio':''):
+      'Materiales por verificar en el presupuesto original'}</span>
     </div>
     <div className="coti-clean-bid-actions">
      <button className="coti-clean-detail-button" type="button"
@@ -272,57 +277,35 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
     </div>
     {expanded&&<div className="coti-clean-bid-expanded" id={'detalle-'+q.documentoId}>
      <h4>Lo importante de este presupuesto</h4>
-     <ul className="coti-clean-insights">
-      <li><strong>Materiales:</strong> {conteoConfiable?
-       'El negocio recibió '+enviados+' artículos del pedido y respondió con '+cotizados+' artículos.':
-       'Se recibió un presupuesto; los artículos extraídos requieren revisión.'}
-       {' '}Esto no implica que todas las especificaciones técnicas coincidan.</li>
-      {notasTecnicas.slice(0,3).map((p,i)=><li key={q.documentoId+'-nota-'+i}>
-       {p.observacion}</li>)}
-      <li><strong>Importe:</strong> {q.resumen.totalDeclarado?
-       q.resumen.tipoImporte.toLowerCase()+' de '+q.resumen.totalDeclarado+'.':
-       'No informado en la extracción verificada.'}
-       {q.resumen.tipoImporte!=='Total informado'&&q.resumen.totalDeclarado?
-        ' No se presupone que sea el total final.':''}</li>
-     </ul>
-     {cover&&cover.detalle.length>0&&<div className="coti-clean-material-detail">
-      <h4>Materiales del pedido frente al presupuesto</h4>
-      <ul>{cover.detalle.map(item=><li key={item.linea}>
-       <strong>{item.solicitado}</strong>
-       {item.estado==='coincidencia_automatica'?
-        <p><span className="coti-material-state">Coincidencia automática</span> {item.cotizado}. Revisar especificaciones en el original.</p>:
-        <p><span className="coti-material-state caution">Por verificar</span> {item.motivo} {item.cotizado?'El original menciona: '+item.cotizado+'. ':''}No significa que el comercio no lo tenga.</p>}
-      </li>)}</ul>
-     </div>}
      {cover&&cover.porVerificar.length>0&&<div className="coti-clean-alert">
-      <strong>Materiales sin equivalencia confirmada</strong>
-      <ul>{cover.porVerificar.map((x,i)=><li key={i}>{x}</li>)}</ul>
+      <strong>Equivalencias técnicas por comprobar</strong>
+      <ul>{cover.porVerificar.map((material,i)=><li key={i}>{material}</li>)}</ul>
      </div>}
      {cover&&cover.adicionales>0&&
-      <p className="coti-clean-muted">{cover.adicionales} artículo(s) adicional(es) o sin equivalencia confirmada en el presupuesto. Verificá el PDF.</p>}
-     {q.resumen.detalleCotizado.length>0&&<div className="coti-clean-material-detail">
-      <h4>Artículos e importes extraídos del presupuesto</h4>
-      <ul>{q.resumen.detalleCotizado.map((item,i)=><li key={q.documentoId+'-cotizado-'+i}>
-       <strong>{item.descripcion}</strong>
-       <p>Cantidad: {item.cantidad}{item.subtotal?
-        ' · Subtotal informado: '+item.subtotal:''}{item.precioUnitario?
-        ' · Precio unitario informado: '+item.precioUnitario:''}</p>
-      </li>)}</ul>
-      <p className="coti-clean-muted">Importes transcritos del documento; consultar el original para confirmar descuentos y condiciones.</p>
-     </div>}
+      <p className="coti-clean-muted">
+       {cover.adicionales} renglón(es) adicional(es) o sin equivalencia confirmada.
+       Consultá el presupuesto original.
+      </p>}
+     {!cover&&<p className="coti-clean-muted">
+      No se pudo confirmar automáticamente la equivalencia técnica de los materiales.
+      El original permite comprobar presentaciones y cantidades.
+     </p>}
+     {notasTecnicas.length>0&&<ul className="coti-clean-insights">
+      {notasTecnicas.slice(0,3).map((p,i)=><li key={q.documentoId+'-nota-'+i}>
+       {p.observacion}</li>)}
+     </ul>}
+     {q.resumen.descuento&&<p className="coti-clean-muted">
+      <strong>Descuento informado:</strong> {q.resumen.descuento}.
+     </p>}
      <h4 className="coti-terms-heading">Condiciones de la oferta</h4>
      <dl className="coti-clean-terms">
       <div><dt>IVA</dt><dd>{conditions.iva}</dd></div>
       <div><dt>Flete</dt><dd>{conditions.flete}</dd></div>
       <div><dt>Pago</dt><dd>{conditions.pago}</dd></div>
      </dl>
-     {q.resumen.descuento&&<p className="coti-clean-muted"><strong>Descuento indicado:</strong> {q.resumen.descuento}.</p>}
-     {puntosUtiles.length>0?<details className="coti-clean-evidence">
-      <summary>Más observaciones ({puntosUtiles.length})</summary>
-      <ul>{puntosUtiles.map((p,i)=><li key={q.documentoId+'-evidencia-'+i}>
-       <p>{p.observacion}</p>
-      </li>)}</ul>
-     </details>:<p className="coti-clean-muted">{q.analisis}</p>}
+     <p className="coti-clean-muted">
+      Precios unitarios, subtotales y cantidades: consultá el presupuesto original.
+     </p>
     </div>}
    </article>;
   })}
