@@ -40,8 +40,18 @@ DECLARE
       AND (
        bad.state='media_context_conflict'
        OR (bad.state='ambiguous_round'
-           AND bad.resolved_request_id IS DISTINCT FROM link.request_id)
+           AND (link.association IS DISTINCT FROM 'semantic_unique_mvp291'
+                OR bad.resolved_request_id IS DISTINCT FROM link.request_id))
       )$D$;
+ source_unresolved_before text := $G$
+      AND bad.state IN ('ambiguous_round','media_context_conflict')$G$;
+ source_unresolved_after text := $H$
+      AND (
+       bad.state='media_context_conflict'
+       OR (bad.state='ambiguous_round'
+           AND (link.association IS DISTINCT FROM 'semantic_unique_mvp291'
+                OR bad.resolved_request_id IS DISTINCT FROM link.request_id))
+      )$H$;
  source_association_before text := $E$
    AND link.association IN (
     'quoted_whapi_id','single_active_round','prior_supplier_preamble')$E$;
@@ -90,17 +100,20 @@ BEGIN
     <> length(catalog_unresolved_before)
  OR length(old_source)-length(replace(old_source,source_association_before,''))
     <> length(source_association_before)
+ OR length(old_source)-length(replace(old_source,source_unresolved_before,''))
+    <> length(source_unresolved_before)
  THEN RAISE EXCEPTION 'v2_portal_patch_anchor_not_unique';END IF;
 
  new_catalog:=replace(replace(old_catalog,catalog_association_before,
    catalog_association_after),catalog_unresolved_before,catalog_unresolved_after);
- new_source:=replace(old_source,source_association_before,source_association_after);
+ new_source:=replace(replace(old_source,source_association_before,
+  source_association_after),source_unresolved_before,source_unresolved_after);
 
  IF new_catalog=old_catalog OR new_source=old_source
  OR encode(extensions.digest(convert_to(new_catalog,'UTF8'),'sha256'),'hex')
-    <> '72bf82d597beb16872b7e893d7562b5419180df715050ffd05d7221ad36808cd'
+    <> 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
  OR encode(extensions.digest(convert_to(new_source,'UTF8'),'sha256'),'hex')
-    <> '21e52c8b1fa968e561573bc103c365c8ac668bd957fe556e1f6fbee48da746c9'
+    <> 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
  OR new_catalog NOT LIKE '%v2_d016_effective_original_consent_private%'
  OR new_catalog NOT LIKE '%v2_d016_session_context_private%'
  OR new_source NOT LIKE '%v2_d016_effective_original_consent_private%'
@@ -115,11 +128,11 @@ BEGIN
  IF encode(extensions.digest(convert_to(pg_get_functiondef(
     'public.cotironda_piloto_v2_d016_responders_private(uuid,text)'::regprocedure),
     'UTF8'),'sha256'),'hex')
-    <> '72bf82d597beb16872b7e893d7562b5419180df715050ffd05d7221ad36808cd'
+    <> 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
  OR encode(extensions.digest(convert_to(pg_get_functiondef(
     'public.cotironda_piloto_v2_d016_original_source_private(uuid,text,uuid)'::regprocedure),
     'UTF8'),'sha256'),'hex')
-    <> '21e52c8b1fa968e561573bc103c365c8ac668bd957fe556e1f6fbee48da746c9'
+    <> 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
  THEN RAISE EXCEPTION 'v2_portal_post_source_mismatch';END IF;
 
  IF has_function_privilege('anon',
