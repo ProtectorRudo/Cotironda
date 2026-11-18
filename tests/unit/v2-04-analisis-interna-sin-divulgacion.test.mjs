@@ -89,7 +89,7 @@ test('V2 genera seis hallazgos en una sola llamada sin exigir segunda interpreta
  assert.equal(out.estado,'analisis_disponible');
  assert.equal(out.puntos.length,6);
 });
-test('V2 rechaza nueve hallazgos sin relajar evidencia ni exposición',async()=>{
+test('V2 limita a ocho las observaciones verificadas aunque la IA devuelva nueve',async()=>{
  const over=Array.from({length:9},(_,i)=>({
   categoria:i%2?'material':'presentacion',
   evidencia:'10 bolsas de cemento CPC de 50 kg',
@@ -99,7 +99,61 @@ test('V2 rechaza nueve hallazgos sin relajar evidencia ni exposición',async()=>
  const out=await analizarOriginalTextoConIAV2({
   fuente:internal,apiKey,model:'gpt-6-luna',fetchImpl:m.send
  });
+ assert.equal(out.estado,'analisis_disponible');
+ assert.equal(out.puntos.length,8);
+ assert.equal(out.codigo,'evidencias_parciales_comprobadas');
+ assert.equal(m.count,1);
+});
+test('conserva dos hallazgos verificables y descarta un precio inventado, sin segunda llamada',async()=>{
+ const m=mock([
+  evidence[0],
+  {categoria:'precio',evidencia:'10 bolsas de cemento CPC de 50 kg',
+   observacion:'El total informado de la oferta es $500.000.'},
+  evidence[1]
+ ]);
+ const out=await analizarOriginalTextoConIAV2({
+  fuente:internal,apiKey,model:'gpt-6-luna',fetchImpl:m.send
+ });
+ assert.equal(m.count,1);
+ assert.equal(out.estado,'analisis_disponible');
+ assert.equal(out.codigo,'evidencias_parciales_comprobadas');
+ assert.equal(out.puntos.length,2);
+ assert.ok(out.puntos.every(p=>!p.observacion.includes('500.000')));
+ assert.equal(out.originalPermaneceDisponible,true);
+ assert.equal(out.whatsappEnviado,false);
+});
+test('omite citas inexistentes, categorías inválidas, duplicados y datos personales sin contaminar la ficha',async()=>{
+ const m=mock([
+  evidence[0],
+  {categoria:'material',evidencia:'material que no está en el texto',
+   observacion:'Se mencionan materiales que no constan en el original.'},
+  {categoria:'inexistente',evidencia:'1 bolsón de arena fina de 1 m³',
+   observacion:'La arena es fina según el texto.'},
+  {categoria:'precio',evidencia:'1 bolsón de arena fina de 1 m³',
+   observacion:'Contactar al proveedor a ventas@ejemplo.com para confirmar.'},
+  {...evidence[0]},
+  evidence[1]
+ ]);
+ const out=await analizarOriginalTextoConIAV2({
+  fuente:internal,apiKey,model:'gpt-6-luna',fetchImpl:m.send
+ });
+ assert.equal(m.count,1);
+ assert.equal(out.estado,'analisis_disponible');
+ assert.equal(out.puntos.length,2);
+ assert.equal(out.codigo,'evidencias_parciales_comprobadas');
+ assert.ok(out.puntos.every(p=>!p.observacion.includes('@')));
+});
+test('con menos de dos observaciones comprobables el análisis sigue pendiente, sin inventar relleno',async()=>{
+ const m=mock([
+  evidence[0],
+  {categoria:'iva',evidencia:'1 bolsón de arena fina de 1 m³',
+   observacion:'El IVA figura incluido en el presupuesto.'}
+ ]);
+ const out=await analizarOriginalTextoConIAV2({
+  fuente:internal,apiKey,model:'gpt-6-luna',fetchImpl:m.send
+ });
+ assert.equal(m.count,1);
  assert.equal(out.estado,'analisis_pendiente');
  assert.equal(out.codigo,'evidencias_ia_no_comprobadas');
- assert.equal(m.count,1);
+ assert.equal(out.puntos.length,0);
 });
