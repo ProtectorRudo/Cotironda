@@ -321,11 +321,13 @@ export async function correlacionAutomaticaMvp291(args:{
    if(!['staged','already_staged'].includes(String(staged.state)))
     return result('not_eligible',String(staged.state));
   }
-  if(isText&&args.retryReviewedOnce)
-   return result('not_eligible','retry_text_not_supported');
-  const prepared=await db(args.retryReviewedOnce?
-    'cotironda_piloto_auto_correlation_retry_prepare_mvp336':
-    'cotironda_piloto_auto_correlation_prepare_mvp291',{
+  // A single privately leased review for an archived supplier TEXT. The
+  // old document recovery continues using its independent MVP336 RPC.
+  const prepareRpc=args.retryReviewedOnce?
+   (isText?'cotironda_piloto_auto_correlation_retry_text_prepare_v2':
+    'cotironda_piloto_auto_correlation_retry_prepare_mvp336'):
+   'cotironda_piloto_auto_correlation_prepare_mvp291';
+  const prepared=await db(prepareRpc,{
    p_source_hmac:args.sourceHmac,p_chat_hmac:args.chatHmac
   });
   if(prepared.state!=='reserved')return result('not_eligible',String(prepared.state));

@@ -23,6 +23,10 @@ export const FUENTES_ASOCIACION_V2=Object.freeze({
   sha256:'f7a590c280bd9507e057edc7f164d716630395cec8afb27fb71b58ec4f2cb2ea'
  })
 });
+const reviewedTextClaim=[
+ "  if(claimed.state!=='claimed')",
+ "  if(claimed.state==='empty')\n   claimed=await db('cotironda_piloto_claim_reviewed_text_v2');\n  if(claimed.state!=='claimed')"
+];
 const imports=[
  ["from './supplier-auto-correlation-mvp336.ts';",
   "from './supplier-auto-correlation-contextual-v2.ts';"],
@@ -48,7 +52,12 @@ function candidate(source,observed,name){
  if(!observed||observed.version!==expected.version||
     observed.bundle!==expected.bundle||sha(source)!==expected.sha256)
   throw Error('v2_contextual_live_source_drift:'+name);
- const output=sustituirAsociacionV2(source);
+ let output=sustituirAsociacionV2(source);
+ if(name==='recovery'){
+  if(output.split(reviewedTextClaim[0]).length!==2)
+   throw Error('v2_contextual_recovery_claim_drift');
+  output=output.replace(reviewedTextClaim[0],reviewedTextClaim[1]);
+ }
  return Object.freeze({path:expected.path,content:output,sha256:sha(output)});
 }
 export function reconstruirAsociacionUniversalV2(args){
@@ -65,6 +74,8 @@ export function reconstruirAsociacionUniversalV2(args){
   ]),
   usedLiveVersions:Object.freeze({whapi:101,recovery:21}),
   modifiedOriginalSources:false,originalModulesUntouched:true,
-  requiresPilotPublication:true,outboundMessages:0,sqlMutated:false
+  requiresPilotPublication:true,requiresPrivateSqlMigration:true,
+  migration:'supabase/piloto/v2_asociacion_texto_revisado_CANDIDATE.sql',
+  outboundMessages:0,sqlMutated:false
  });
 }

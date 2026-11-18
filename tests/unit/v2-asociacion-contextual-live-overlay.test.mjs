@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
+import {readFileSync} from 'node:fs';
 import {FUENTES_ASOCIACION_V2,sustituirAsociacionV2,
  reconstruirAsociacionUniversalV2} from
  '../../scripts/piloto/v2-asociacion-contextual-live-overlay.mjs';
@@ -38,4 +39,13 @@ test('El gate está anclado a v101 y v21 y no permite despliegue automático',()
  }
  const source="const x='never';";
  assert.doesNotMatch(source,/deploy_edge_function/u);
+});
+
+test('El parche de worker tiene recuperación de texto en revisión privada',()=>{
+ const file=readFileSync(new URL(
+  '../../scripts/piloto/v2-asociacion-contextual-live-overlay.mjs',import.meta.url),'utf8');
+ assert.match(file,/cotironda_piloto_claim_reviewed_text_v2/u);
+ assert.match(file,/requiresPrivateSqlMigration:true/u);
+ assert.match(file,/v2_contextual_recovery_claim_drift/u);
+ assert.doesNotMatch(file,/deploy_edge_function\s*\(/u);
 });

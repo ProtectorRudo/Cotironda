@@ -179,3 +179,71 @@ test('La extracción contextual hace una sola llamada y verifica el texto origin
  });
  assert.equal(fabricated,null,'no se aceptan artículos inventados');
 });
+
+test('Un texto ya archivado en review utiliza un único lease SQL para reintentar',async()=>{
+ const snap={quote:[line(1,'Arena','2','bolsón')],
+  options:[{request_id:a,lines:[line(1,'Arena','2','bag'),
+    line(2,'Cemento','10','bag')]},
+   {request_id:b,lines:[line(1,'Arena','1','bag'),
+    line(2,'Cemento','10','bag')]}]};
+ const events=[],rpc=async(name)=>{
+  events.push(name);
+  if(name==='cotironda_piloto_stage_supplier_text_mvp292')
+   return {data:{state:'already_staged'},error:null};
+  if(name==='cotironda_piloto_auto_correlation_retry_text_prepare_v2')
+   return {data:{state:'reserved',source_sha256:hash,quote:snap.quote,candidates:snap.options},error:null};
+  if(name==='cotironda_piloto_auto_correlation_finish_mvp291')
+   return {data:{state:'recorded'},error:null};
+  throw Error(name);
+ };
+ const r=await correlacionAutomaticaMvp291({
+  enabled:true,webhookAuthenticated:true,retryReviewedOnce:true,
+  sourceHmac:hash,chatHmac:chat,textSha256:hash,textQuote:snap.quote,
+  apiKey:'k'.repeat(24),model:'gpt-6-luna',rpc,
+  compare:async()=>proposal(null,[match('r1',1,1),match('r2',1,1)])
+ });
+ assert.equal(r.state,'unresolved_private','una sola línea compartida jamás debe adivinar ronda');
+ assert.equal(r.outboundMessages,0);
+ assert.equal(events.filter(n=>n==='cotironda_piloto_auto_correlation_retry_text_prepare_v2').length,1);
+});
+test('Un texto de tres renglones recuperado se asocia con SQL a su ronda única',async()=>{
+ const quote=[line(1,'cemento 50 kg','10','bolsas'),
+  line(2,'bolsón de arena','2','bolsones'),
+  line(3,'bolsón de piedra','1','bolsón')];
+ const opts=[
+  {request_id:a,bind_allowed:true,lines:[
+   line(1,'cemento CPC 50 kg','10','bag'),
+   line(2,'arena fina','2','bag'),
+   line(3,'piedra partida','1','bag'),
+   line(4,'placa de yeso','8','unit')]},
+  {request_id:b,bind_allowed:false,lines:[
+   line(1,'cemento CPC 50 kg','10','bag'),
+   line(2,'arena fina','1','bag'),
+   line(3,'piedra partida','1','bag')]}];
+ const changes=[];let reads=0;
+ const rpc=async(name,args)=>{
+  changes.push(name);
+  if(name==='cotironda_piloto_stage_supplier_text_mvp292')
+   return {data:{state:'already_staged'},error:null};
+  if(name==='cotironda_piloto_auto_correlation_retry_text_prepare_v2')
+   return {data:{state:'reserved',source_sha256:hash,quote,candidates:opts},error:null};
+  if(name==='cotironda_piloto_auto_correlation_bind_mvp291'){
+   assert.equal(args.p_request,a);
+   assert.equal(args.p_source_sha256,hash);
+   return {data:{state:'linked_private'},error:null};
+  }
+  throw Error('unrecognized SQL '+name);
+ };
+ const verdict=await correlacionAutomaticaMvp291({
+  enabled:true,webhookAuthenticated:true,retryReviewedOnce:true,
+  sourceHmac:hash,chatHmac:chat,textSha256:hash,textQuote:quote,
+  apiKey:'k'.repeat(24),model:'gpt-6-luna',rpc,
+  compare:async()=>{reads++;return proposal('r1',quote.flatMap((_,i)=>[
+   match('r1',i+1,i+1,'equivalent'),match('r2',i+1,i+1,'equivalent')
+  ]))}
+ });
+ assert.equal(verdict.state,'linked_private');
+ assert.equal(reads,1);
+ assert.equal(changes.filter(x=>x.includes('_bind_')).length,1);
+ assert.equal(verdict.outboundMessages,0);
+});
