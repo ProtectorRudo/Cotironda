@@ -653,8 +653,14 @@ export function evaluarLecturaCentralUnicaD013(
  if(primera.intencion!=='cotizar')
   return Object.freeze({estado:'no_es_pedido',motivo:'intencion_no_comercial',pedido:null});
  if(primera.articulos.length<1)return rejection('sin_articulos');
- if(!(primera.zona_entrega===null||texto(primera.zona_entrega,120)))
+ if(!(primera.zona_entrega===null||texto(primera.zona_entrega,120))||
+    primera.dudas.some((d:unknown)=>!texto(d,250)))
   return rejection('campos_inseguros');
+ // Solo la IA Central puede declarar una duda real. No convertir
+ // incertidumbre explícita en un pedido aparentemente confirmado.
+ if(primera.dudas.length>0)return Object.freeze({
+  estado:'requiere_aclaracion',motivo:'ia_central_solicita_aclaracion',pedido:null
+ });
  const accepted:PropuestaArticulo[]=[];
  const intervals:{inicio:number;fin:number}[]=[];
  for(const raw of primera.articulos){
