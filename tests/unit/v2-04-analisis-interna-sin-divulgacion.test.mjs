@@ -66,3 +66,40 @@ test('observación con cantidades no demostradas se rechaza incluso en modo inte
  assert.equal(out.estado,'analisis_pendiente');
  assert.equal(out.codigo,'evidencias_ia_no_comprobadas');
 });
+
+
+test('V2 genera seis hallazgos en una sola llamada sin exigir segunda interpretación',async()=>{
+ const six=[
+  {...evidence[0]},
+  {...evidence[1]},
+  {categoria:'cobertura',evidencia:'10 bolsas de cemento CPC de 50 kg',
+   observacion:'El documento menciona bolsas de cemento CPC.'},
+  {categoria:'aclaracion',evidencia:'1 bolsón de piedra partida de 1 m³',
+   observacion:'La piedra partida aparece como un artículo del presupuesto.'},
+  {categoria:'plazo',evidencia:'El presupuesto original no establece plazos adicionales.',
+   observacion:'El documento señala que no establece plazos adicionales.'},
+  {categoria:'material',evidencia:'1 bolsón de arena fina de 1 m³',
+   observacion:'Se identifica una presentación de arena fina.'}
+ ];
+ const m=mock(six);
+ const out=await analizarOriginalTextoConIAV2({
+  fuente:internal,apiKey,model:'gpt-6-luna',fetchImpl:m.send
+ });
+ assert.equal(m.count,1);
+ assert.equal(out.estado,'analisis_disponible');
+ assert.equal(out.puntos.length,6);
+});
+test('V2 rechaza nueve hallazgos sin relajar evidencia ni exposición',async()=>{
+ const over=Array.from({length:9},(_,i)=>({
+  categoria:i%2?'material':'presentacion',
+  evidencia:'10 bolsas de cemento CPC de 50 kg',
+  observacion:'El presupuesto informa cemento CPC en bolsas.'
+ }));
+ const m=mock(over);
+ const out=await analizarOriginalTextoConIAV2({
+  fuente:internal,apiKey,model:'gpt-6-luna',fetchImpl:m.send
+ });
+ assert.equal(out.estado,'analisis_pendiente');
+ assert.equal(out.codigo,'evidencias_ia_no_comprobadas');
+ assert.equal(m.count,1);
+});
