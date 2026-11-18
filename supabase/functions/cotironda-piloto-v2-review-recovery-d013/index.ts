@@ -7,7 +7,7 @@
 import {createClient} from 'npm:@supabase/supabase-js@2.118.0';
 import {guardScheduledRecovery} from
  '../cotironda-piloto-document-recovery/scheduled-auth.ts';
-import {recuperarBuyerReviewD013} from
+import {recuperarBuyerReviewD013,diagnosticarBuyerReviewD013} from
  '../../../src/domain/ia-central/recuperacion-review-v2-d013.ts';
 import {ejecutarRecuperacionVaultD013} from './worker-core.ts';
 const ROOT='https://ilggkalaafhtiysyzlmg.supabase.co';
@@ -62,6 +62,18 @@ Deno.serve(async req=>{
      rpc:async(name,params)=>{
       if(!RPC_ALLOWED.has(name))
        return {data:null,error:'rpc_not_allowed'};
+      const {data,error}=await db.rpc(name,params);
+      return {data,error};
+     }
+    }),
+    diagnose:async()=>diagnosticarBuyerReviewD013({
+     habilitado:true,aesKeyHex:config.aes,
+     apiKey:config.ai,model:config.model,
+     // Restricción adicional a la autorización Vault: diagnóstico
+     // únicamente puede leer fuente privada, nunca stage ni catálogo.
+     rpc:async(name,params)=>{
+      if(name!=='cotironda_piloto_v2_d013_review_source_private')
+       return {data:null,error:'diagnosis_rpc_denied'};
       const {data,error}=await db.rpc(name,params);
       return {data,error};
      }
