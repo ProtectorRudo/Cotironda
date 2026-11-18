@@ -90,10 +90,16 @@ test('V2 genera seis hallazgos en una sola llamada sin exigir segunda interpreta
  assert.equal(out.puntos.length,6);
 });
 test('V2 limita a ocho las observaciones verificadas aunque la IA devuelva nueve',async()=>{
+ const originales=[
+  '10 bolsas de cemento CPC de 50 kg',
+  '1 bolsón de arena fina de 1 m³',
+  '1 bolsón de piedra partida de 1 m³'
+ ];
+ const categorias=['material','presentacion','cobertura','aclaracion'];
  const over=Array.from({length:9},(_,i)=>({
-  categoria:i%2?'material':'presentacion',
-  evidencia:'10 bolsas de cemento CPC de 50 kg',
-  observacion:'El presupuesto informa cemento CPC en bolsas.'
+  categoria:categorias[i%4],
+  evidencia:originales[i%3],
+  observacion:'El presupuesto menciona estos materiales de obra.'
  }));
  const m=mock(over);
  const out=await analizarOriginalTextoConIAV2({
