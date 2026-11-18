@@ -98,7 +98,7 @@ test('D013: evitar cambio kg por litros y conversion fraccionaria de envases',()
  assert.equal(fractional.estado,'revision_interna');
  assert.equal(fractional.motivo,'conversion_de_envases_no_entera');
 });
-test('D013: AI no puede inventar producto de catalogo ni ignorar riesgo tecnico',()=>{
+test('D013: IA Central no puede seleccionar un numero de catalogo inexistente',()=>{
  const pedido={intencion:'cotizar',zona_entrega:'La Plata',
   dudas:[],articulos:[base]};
  const proveedores=[{clave:'ferre_123',activo:true,consentido:true,
@@ -106,8 +106,8 @@ test('D013: AI no puede inventar producto de catalogo ni ignorar riesgo tecnico'
    {numero:1,descripcion:'Cemento albañilería 25 kg',rubro:'ferreteria'}
   ]}];
  const prop=[{proveedor:'ferre_123',correspondencias:[{
-  indicePedido:0,numeroCatalogo:1,tipo:'alternativa_razonable',
-  explicacion:'equivalente segun la IA'
+  indicePedido:0,numeroCatalogo:999,tipo:'alternativa_razonable',
+  explicacion:'producto inexistente segun catalogo'
  }]}];
  const r=route(pedido,proveedores,prop);
  assert.equal(r.estado,'requiere_revision');
@@ -115,7 +115,7 @@ test('D013: AI no puede inventar producto de catalogo ni ignorar riesgo tecnico'
  assert.deepEqual(r.propuestas,[]);
 });
 
-test('D013: rechazo tecnico parcial NO cancela otras cotizaciones validas',()=>{
+test('D013: consultas de la IA a productos reales no pasan un segundo lector técnico',()=>{
  const pintura={
   evidencia:'100 baldes pintura latex interior 4 L',
   inicio:60,fin:95,descripcion:'Pintura latex interior blanco 4 L',
@@ -142,16 +142,14 @@ test('D013: rechazo tecnico parcial NO cancela otras cotizaciones validas',()=>{
  ];
  const result=route(pedido,proveedores,propuestas);
  assert.equal(result.estado,'ruteo_valido_para_preparacion');
- assert.equal(result.propuestas.length,1);
- assert.equal(result.propuestas[0].proveedor,'pinturas_123');
- assert.deepEqual(result.cobertura.map(x=>x.proveedoresAutorizados),[0,1]);
- assert.deepEqual(result.revisionTecnica,[{
-  proveedor:'ferre_123',indicePedido:0,numeroCatalogo:1,
-  motivo:'tipo_o_aplicacion_tecnica_diferente'
- }]);
+ assert.equal(result.propuestas.length,2);
+ assert.deepEqual(result.propuestas.map(x=>x.proveedor),['ferre_123','pinturas_123']);
+ assert.deepEqual(result.cobertura.map(x=>x.proveedoresAutorizados),[1,1]);
+ assert.deepEqual(result.revisionTecnica,[]);
+ assert.equal(result.propuestas[0].correspondencias[0].tipo,'alternativa_razonable');
  assert.equal(result.whatsappEnviado,false);
 });
-test('D013: un mismo negocio cotiza solo articulos demostrados',()=>{
+test('D013: proveedor real puede recibir consultas IA sobre varios SKU declarados',()=>{
  const pintura={...base,descripcion:'Pintura latex interior 4 L',
   evidencia:'100 envases pintura latex interior 4 L',unidad:'unit',rubro:'pintura'};
  const pedido={intencion:'cotizar',zona_entrega:'La Plata',dudas:[],
@@ -170,7 +168,7 @@ test('D013: un mismo negocio cotiza solo articulos demostrados',()=>{
   ]
  }]);
  assert.equal(res.estado,'ruteo_valido_para_preparacion');
- assert.deepEqual(res.propuestas[0].correspondencias.map(x=>x.indicePedido),[0]);
- assert.deepEqual(res.cobertura.map(x=>x.proveedoresAutorizados),[1,0]);
- assert.equal(res.revisionTecnica.length,1);
+ assert.deepEqual(res.propuestas[0].correspondencias.map(x=>x.indicePedido),[0,1]);
+ assert.deepEqual(res.cobertura.map(x=>x.proveedoresAutorizados),[1,1]);
+ assert.equal(res.revisionTecnica.length,0);
 });
