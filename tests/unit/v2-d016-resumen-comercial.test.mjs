@@ -136,13 +136,20 @@ test('D016 dashboard mantiene la descarga real, análisis original y claridad co
  for(const phrase of [
   'coti-clean-bid-price','coti-clean-coverage','Condiciones de la oferta',
   'q.resumen.totalDeclarado','q.resumen.cobertura',
-  'Más observaciones','Descargar original','originales-whatsapp',
+  'Descuento informado','Descargar original','originales-whatsapp',
   'informe-final-whatsapp','credentials:', 'cerrarSesion',
-  'aria-expanded={expanded}','coti-clean-bid-expanded'
+  'aria-expanded={expanded}','coti-clean-bid-expanded',
+  'articulosVisibles','Equivalencias técnicas por comprobar'
  ])assert.ok(ui.includes(phrase),phrase);
- assert.ok(ui.includes('<details className="coti-clean-evidence">'));
  assert.ok(ui.includes('PDF original'));
  assert.ok(!ui.includes("['Entrega',q.resumen.condiciones.entrega]"));
+ // Las cifras individuales quedan exclusivamente en el presupuesto original.
+ assert.doesNotMatch(ui,/Artículos e importes extraídos del presupuesto/u);
+ assert.doesNotMatch(ui,/q\.resumen\.detalleCotizado\.map\(/u);
+ assert.doesNotMatch(ui,/item\.precioUnitario|item\.subtotal/u);
+ assert.doesNotMatch(ui,/Más observaciones|puntosUtiles/u);
+ assert.doesNotMatch(ui,/q\.resumen\.totalDeclarado\?/u);
+ assert.match(ui,/notasTecnicas\.slice\(0,3\)/u);
 });
 
 test('D019: explica qué se pidió y qué se cotizó, sin transformar 25 kg en 50 kg',()=>{
@@ -292,4 +299,29 @@ test('V2 SQL de proyección conserva original SHA, invitación real y ACL',()=>{
   import.meta.url),'utf8');
  assert.ok(rollback.includes('commercial_rollback_drift'));
  assert.ok(rollback.includes('analysis_rollback_drift'));
+});
+
+test('V2: flete a convenir citado en evidencia IA se muestra sin inventar un importe',()=>{
+ const cases=[
+  'FLETE A CONVENIR',
+  'El costo del flete queda a convenir; no se especifica importe.',
+  'Costo de Flete: a convenir'
+ ];
+ for(const evidencia of cases){
+  const result=resumirOfertaComercialV2({...input,termsLiteral:null},[
+   {categoria:'flete',evidencia,
+    observacion:'El documento deja el costo del flete a convenir.'}
+  ]);
+  assert.equal(result.condiciones.flete,'A convenir',evidencia);
+ }
+ const unknown=resumirOfertaComercialV2({...input,termsLiteral:null},[
+  {categoria:'flete',evidencia:'Flete: importe a confirmar.',
+   observacion:'El costo del flete no quedó informado.'}
+ ]);
+ assert.equal(unknown.condiciones.flete,'No informado');
+ const explicit=resumirOfertaComercialV2({...input,termsLiteral:null},[
+  {categoria:'flete',evidencia:'Flete no incluido; importe a cotizar.',
+   observacion:'El flete no se incluye en el precio.'}
+ ]);
+ assert.equal(explicit.condiciones.flete,'No incluido · a cotizar');
 });
