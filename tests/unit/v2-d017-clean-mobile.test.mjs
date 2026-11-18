@@ -66,14 +66,16 @@ test('No cambian acciones, autorización de descargas ni regeneración IA',()=>{
  assert.doesNotMatch(bids,/sms|signInWithOtp|createSignedUrl/u);
 });
 
-test('D019: comprobación comercial por material sólo tras cierre y evidencia privada',()=>{
+test('D019: ficha breve muestra solo diferencias técnicas y deja comparativo para el cierre',()=>{
  assert.match(bids,/pedidoConsistente/u);
- assert.match(bids,/cover\.detalle/u);
- assert.match(bids,/coti-clean-material-detail/u);
+ assert.match(bids,/cover\?\.detalle\.filter\(item=>item\.estado==='por_verificar'\)/u);
+ assert.match(bids,/diferencias\.slice\(0,3\)/u);
+ assert.match(bids,/Equivalencias técnicas por comprobar/u);
  assert.match(bids,/informe\.materiales/u);
  assert.match(bids,/Coincidencia automática/u);
- assert.match(bids,/No significa que el comercio no lo tenga/u);
  assert.match(bids,/informe&&<section/u);
  assert.doesNotMatch(bids,/\['Entrega',q\.resumen\.condiciones\.entrega\]/u);
+ assert.doesNotMatch(bids,/Artículos e importes extraídos del presupuesto/u);
+ assert.doesNotMatch(bids,/q\.resumen\.detalleCotizado\.map\(/u);
  assert.match(css,/coti-final-materials/u);
 });
