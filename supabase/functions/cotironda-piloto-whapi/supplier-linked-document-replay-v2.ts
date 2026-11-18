@@ -66,7 +66,8 @@ export async function procesarArchivoVinculadoV2(args:{
   const expected=claim.sha256;
   const size=claim.size_bytes;
   if(typeof expected!=='string'||!HASH.test(expected)||
-   !Number.isSafeInteger(size)||size<8||size>8388608)
+   typeof size!=='number'||!Number.isSafeInteger(size)||
+   size<8||size>8388608)
    throw Error('invalid_archived_original');
   const fetched=await args.download('media/'+source);
   if(fetched.error||!fetched.data||
