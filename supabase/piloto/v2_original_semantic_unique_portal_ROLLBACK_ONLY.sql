@@ -38,8 +38,18 @@ DECLARE
       AND (
        bad.state='media_context_conflict'
        OR (bad.state='ambiguous_round'
-           AND bad.resolved_request_id IS DISTINCT FROM link.request_id)
+           AND (link.association IS DISTINCT FROM 'semantic_unique_mvp291'
+                OR bad.resolved_request_id IS DISTINCT FROM link.request_id))
       )$D$;
+ g text := $G$
+      AND bad.state IN ('ambiguous_round','media_context_conflict')$G$;
+ h text := $H$
+      AND (
+       bad.state='media_context_conflict'
+       OR (bad.state='ambiguous_round'
+           AND (link.association IS DISTINCT FROM 'semantic_unique_mvp291'
+                OR bad.resolved_request_id IS DISTINCT FROM link.request_id))
+      )$H$;
  e text := $E$
    AND link.association IN (
     'quoted_whapi_id','single_active_round','prior_supplier_preamble')$E$;
@@ -72,12 +82,12 @@ BEGIN
  SELECT pg_get_functiondef('public.cotironda_piloto_v2_d016_original_source_private(uuid,text,uuid)'::regprocedure)
  INTO source;
  IF encode(extensions.digest(convert_to(catalog,'UTF8'),'sha256'),'hex')
-    <> '72bf82d597beb16872b7e893d7562b5419180df715050ffd05d7221ad36808cd'
+    <> '0106761b2a4fc103ec3010788c0335f21550ae8d75995e4e28cdea6c22c848c4'
  OR encode(extensions.digest(convert_to(source,'UTF8'),'sha256'),'hex')
-    <> '21e52c8b1fa968e561573bc103c365c8ac668bd957fe556e1f6fbee48da746c9'
+    <> '4be254ef7351da8f43e0673ece96022d287f53e5a6b608b8a2713be1ab4274ba'
  THEN RAISE EXCEPTION 'v2_semantic_rollback_live_drift';END IF;
  undo_catalog:=replace(replace(catalog,b,a),d,c);
- undo_source:=replace(source,f,e);
+ undo_source:=replace(replace(source,f,e),h,g);
  IF encode(extensions.digest(convert_to(undo_catalog,'UTF8'),'sha256'),'hex')
     <> '9c89416f5ba4cf43039ff769dc7daebb071615fd11f051c6654bef67b54de9a9'
  OR encode(extensions.digest(convert_to(undo_source,'UTF8'),'sha256'),'hex')
