@@ -35,7 +35,7 @@ const CATS=new Set([
 ]);
 function safeAnalysis(value:unknown):readonly PuntoVisibleV2[]{
  if(!obj(value)||value.state!=='ready'||!Array.isArray(value.points)||
-  value.points.length<2||value.points.length>4)return [];
+  value.points.length<2||value.points.length>8)return [];
  const points:PuntoVisibleV2[]=[];
  for(const part of value.points){
   if(!obj(part)||typeof part.categoria!=='string'||
