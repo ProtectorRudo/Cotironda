@@ -6,6 +6,8 @@ import {RUBROS_MVP216} from '../rubros-comprador-mvp216.ts';
 import {evaluarLecturaCentralUnicaD013,localizarEvidenciasV1,
  type ResultadoLectura,type DiagnosticoCantidadD013} from './contrato-v2-d013.ts';
 
+import {resumirCantidadPrivadaD013,
+ type InformeCantidadPrivadaD013} from './diagnostico-privado-cantidad-v2-d013.ts';
 const API='https://api.openai.com/v1/responses';
 const MODEL_ALLOWED=new Set(['gpt-6-luna','gpt-6.1-sol']);
 const rubros=Object.keys(RUBROS_MVP216);
@@ -178,4 +180,59 @@ export async function interpretarConIaCentralV2D013(args:{
     ?e.message:'modelo_no_disponible_o_salida_invalida';
   return {estado:'rechazado',motivo:reason,pedido:null};
  }
+}
+
+
+/** Reproducción de SOLO LECTURA de un pedido previamente autenticado por
+ * recuperador privado. Hace una única inferencia IA, nunca SQL, ruteo,
+ * almacenamiento, invitación ni WhatsApp. No devuelve contenido original
+ * ni respuesta del modelo; únicamente una forma estructural sin números.
+ */
+export type DiagnosticoLecturaPrivadaD013=Readonly<{
+ estado:'cantidad_inacreditable'|'sin_fallo_cantidad'|
+ 'esquema_invalido'|'citas_invalidas'|'modelo_no_disponible';
+ detalle:InformeCantidadPrivadaD013|null;
+}>;
+export async function diagnosticarLecturaPrivadaD013(args:{
+ fuente:string;apiKey:string;model:'gpt-6-luna'|'gpt-6.1-sol';
+ fetchImpl?:typeof fetch;
+}):Promise<DiagnosticoLecturaPrivadaD013>{
+ const reply=(estado:DiagnosticoLecturaPrivadaD013['estado'],
+   detalle:InformeCantidadPrivadaD013|null=null)=>
+  Object.freeze({estado,detalle});
+ if(typeof args?.fuente!=='string'||args.fuente.length<10||
+  args.fuente.length>4000||typeof args.apiKey!=='string'||
+  !/^sk-[A-Za-z0-9_-]{16,}$/u.test(args.apiKey)||
+  !MODEL_ALLOWED.has(args.model))return reply('esquema_invalido');
+ let raw:unknown;
+ try{
+  raw=await ask({apiKey:args.apiKey,model:args.model,source:args.fuente,
+   fetchImpl:args.fetchImpl??fetch});
+ }catch{return reply('modelo_no_disponible')}
+ if(raw===null||typeof raw!=='object'||Array.isArray(raw))
+  return reply('esquema_invalido');
+ const model=raw as Record<string,unknown>;
+ if(model.intencion!=='cotizar'||!Array.isArray(model.articulos)||
+    model.articulos.length<1||model.articulos.length>200)
+  return reply('esquema_invalido');
+ const located=localizarEvidenciasV1(args.fuente,model);
+ if(!located||!Array.isArray(located.articulos))
+  return reply('citas_invalidas');
+ for(let i=0;i<located.articulos.length;i++){
+  const a=located.articulos[i];
+  if(a===null||typeof a!=='object'||Array.isArray(a))continue;
+  const item=a as Record<string,unknown>;
+  const isolated=evaluarLecturaCentralUnicaD013(args.fuente,
+   {...located,articulos:[item]});
+  if(isolated.motivo!=='cantidad_sin_respaldo_en_fuente')continue;
+  const evidence={
+   inicio:Number(item.inicio),fin:Number(item.fin),
+   evidencia:String(item.evidencia??''),citaCantidad:item.citaCantidad,
+   cantidad:item.cantidad
+  };
+  const detail=resumirCantidadPrivadaD013(args.fuente,evidence,i);
+  return detail?reply('cantidad_inacreditable',detail):
+   reply('citas_invalidas');
+ }
+ return reply('sin_fallo_cantidad');
 }
