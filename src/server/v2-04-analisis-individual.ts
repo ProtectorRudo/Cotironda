@@ -99,9 +99,10 @@ function claimGrounded(observation:string,evidence:string):boolean{
  if(numbers(observation).some(x=>!proofNumbers.has(x)))return false;
  const a=observation.toLowerCase();
  const e=evidence.toLowerCase();
- if(/\b(?:iva\s+(?:incluido|excluido)|(?:con|sin)\s+iva|iva\s+no\s+informado)\b/u.test(a)&&
-  !/\biva\b/u.test(e))return false;
- if(/\b(?:flete\s+(?:gratis|incluido|no\s+informado)|(?:sin|con)\s+flete|env[ií]o\s+gratis)\b/u.test(a)&&
+ // Cualquier mención de IVA o de flete/envío debe estar en SU cita,
+ // incluso si la IA usa una paráfrasis que el patrón anterior no cubría.
+ if(/\biva\b/u.test(a)&&!/\biva\b/u.test(e))return false;
+ if(/\b(?:flete|env[ií]o)\b/u.test(a)&&
   !/\b(?:flete|env[ií]o)\b/u.test(e))return false;
  if(/\b(?:no\s+(?:consta|se\s+indica|se\s+aclara)|no\s+est[aá]\s+especificado)\b/u.test(a)&&
   !/\b(?:no\s+(?:consta|se\s+indica|se\s+aclara)|sin\s+definir)\b/u.test(e))
