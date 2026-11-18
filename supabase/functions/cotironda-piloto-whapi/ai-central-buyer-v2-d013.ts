@@ -26,7 +26,12 @@ const SAFE_REVIEW_CODES=new Set([
  'lecturas_divergentes','ningun_proveedor_para_la_lista',
  'sin_articulos','esquema_invalido','campos_inseguros',
  'segunda_lectura_invalida','entrada_invalida','sin_catalogo_confirmado',
- 'catalogo_invalido','ia_error_de_lectura'
+ 'catalogo_invalido','ia_error_de_lectura',
+ 'ia_central_solicita_aclaracion','evidencias_superpuestas',
+ 'intencion_no_comercial','ruteo_entrada_no_representable',
+ 'sin_proveedores_autorizados','respuesta_ia_invalida','ia_ruteo_no_disponible',
+ 'propuesta_invalida','correspondencia_invalida',
+ 'producto_no_declarado_en_catalogo','proveedor_no_habilitado_en_zona'
 ]);
 export function codigoRevisionSemanticaMvp286(reason:unknown):string{
  return typeof reason==='string'&&SAFE_REVIEW_CODES.has(reason)

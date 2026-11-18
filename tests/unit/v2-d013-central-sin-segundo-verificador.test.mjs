@@ -121,3 +121,52 @@ test('D013 V2: el broker NO usa segundo verificador de producto ni autoriza SKU 
   }]);
  assert.equal(optedOut.estado,'requiere_revision');
 });
+
+test('D013: lenguaje natural con cinco materiales y dudas no esenciales avanza',async()=>{
+ const fuente='Hola, buenas! Necesito precio de 10 bolsas de cemento de 50kg, '+
+  '2 bolsones de arena fina, uno de piedra partida, 15 metros de caño de PVC de 110 '+
+  'y 4 litros de ceresita. Es para una obra en La Plata. Gracias!';
+ const frases=['10 bolsas de cemento de 50kg','2 bolsones de arena fina',
+  'uno de piedra partida','15 metros de caño de PVC de 110','4 litros de ceresita'];
+ const lectura={intencion:'cotizar',zona_entrega:'La Plata',
+  dudas:['No se indicó marca del caño; el proveedor puede ofrecer opciones'],
+  aclaracion_esencial:false,
+  articulos:frases.map((evidencia,i)=>({
+   evidencia,descripcion:evidencia,cantidad:['10','2','1','15','4'][i],
+   unidad:['bag','bigbag','bigbag','m','l'][i],rubro:'obra_gruesa',
+   presentacion:null,aclaracion:null,
+   citaCantidad:['10','2','uno','15','4'][i],
+   citaProducto:evidencia,citaPresentacion:null
+  }))};
+ let llamadas=0;
+ const r=await interpretarConIaCentralV2D013({
+  fuente,apiKey:'sk-'+'x'.repeat(22),model:'gpt-6-luna',
+  fetchImpl:async(_url,init)=>{
+   llamadas++;
+   const data=JSON.parse(init.body);
+   assert.ok(data.text.format.schema.required.includes('aclaracion_esencial'));
+   return api(lectura);
+  }
+ });
+ assert.equal(llamadas,1);
+ assert.equal(r.estado,'listo_para_preparar',r.motivo);
+ assert.equal(r.pedido.articulos.length,5);
+ assert.deepEqual(r.pedido.articulos.map(x=>x.cantidad),['10','2','1','15','4']);
+ assert.equal(r.pedido.articulos[2].evidencia,'uno de piedra partida');
+});
+test('D013: una duda no esencial no bloquea; un dato esencial sí',()=>{
+ const located=localizarEvidenciasV1(buyer,{
+  ...data,dudas:['Marca no especificada'],aclaracion_esencial:false
+ });
+ const ok=evaluarLecturaCentralUnicaD013(buyer,located);
+ assert.equal(ok.estado,'listo_para_preparar',ok.motivo);
+ const essential=evaluarLecturaCentralUnicaD013(buyer,{
+  ...located,aclaracion_esencial:true
+ });
+ assert.equal(essential.estado,'requiere_aclaracion');
+ assert.equal(essential.motivo,'ia_central_solicita_aclaracion');
+ const legacy=evaluarLecturaCentralUnicaD013(buyer,{
+  ...located,aclaracion_esencial:undefined
+ });
+ assert.equal(legacy.estado,'requiere_aclaracion');
+});

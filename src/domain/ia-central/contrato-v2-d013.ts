@@ -654,13 +654,17 @@ export function evaluarLecturaCentralUnicaD013(
   return Object.freeze({estado:'no_es_pedido',motivo:'intencion_no_comercial',pedido:null});
  if(primera.articulos.length<1)return rejection('sin_articulos');
  if(!(primera.zona_entrega===null||texto(primera.zona_entrega,120))||
-    primera.dudas.some((d:unknown)=>!texto(d,250)))
+    primera.dudas.some((d:unknown)=>!texto(d,250))||
+    !(primera.aclaracion_esencial===undefined||typeof primera.aclaracion_esencial==='boolean'))
   return rejection('campos_inseguros');
- // Solo la IA Central puede declarar una duda real. No convertir
- // incertidumbre explícita en un pedido aparentemente confirmado.
- if(primera.dudas.length>0)return Object.freeze({
-  estado:'requiere_aclaracion',motivo:'ia_central_solicita_aclaracion',pedido:null
- });
+ // La IA Central distingue duda comercial de un dato esencial faltante.
+ // Dudas NO esenciales ya no abortan el pedido. Para lectores anteriores,
+ // sin el indicador, mantenemos el rechazo seguro si hay dudas explícitas.
+ if(primera.aclaracion_esencial===true||
+    (primera.dudas.length>0&&primera.aclaracion_esencial!==false))
+  return Object.freeze({
+   estado:'requiere_aclaracion',motivo:'ia_central_solicita_aclaracion',pedido:null
+  });
  const accepted:PropuestaArticulo[]=[];
  const intervals:{inicio:number;fin:number}[]=[];
  for(const raw of primera.articulos){
