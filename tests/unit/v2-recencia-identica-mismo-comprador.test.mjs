@@ -73,7 +73,7 @@ test('V2 SQL frena recencia entre compradores distintos y conserva el original',
   throw Error('unexpected RPC '+name);
  };
  const result=await correlacionAutomaticaMvp291({
-  enabled:true,webhookAuthenticated:true,sourceHmac:sourceHash,chatHmac,
+  enabled:true,webhookAuthenticated:true,sourceHmac:sourceHash,chatHmac:chatHash,
   apiKey:'x'.repeat(24),model:'gpt-6-luna',rpc,
   compare:async()=>proposal
  });
@@ -95,7 +95,7 @@ test('V2 sólo declara asociado cuando SQL prueba la coincidencia integral',asyn
   throw Error('unexpected RPC');
  };
  const result=await correlacionAutomaticaMvp291({
-  enabled:true,webhookAuthenticated:true,sourceHmac:sourceHash,chatHmac,
+  enabled:true,webhookAuthenticated:true,sourceHmac:sourceHash,chatHmac:chatHash,
   apiKey:'x'.repeat(24),model:'gpt-6-luna',rpc,
   compare:async()=>p
  });
