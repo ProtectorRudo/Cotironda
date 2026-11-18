@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {elegirRondaUnicaMvp291,correlacionAutomaticaMvp291} from
- '../../supabase/functions/cotironda-piloto-whapi/supplier-auto-correlation-mvp336.ts';
+ '../../supabase/functions/cotironda-piloto-whapi/supplier-auto-correlation-contextual-v2.ts';
 
 const a='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const b='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
