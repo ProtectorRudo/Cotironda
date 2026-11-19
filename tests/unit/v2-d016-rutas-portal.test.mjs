@@ -35,7 +35,11 @@ test('D016: las APIs WhatsApp dependen de cookie y RPC exclusivamente privada',(
  assert.match(adapter,/VERCEL_GIT_COMMIT_SHA/u);
  assert.match(adapter,/cookieSesionD016/u);
  assert.match(adapter,/session_context_private/u);
- assert.match(adapter,/cotironda_piloto_v2_d016_responders_with_analysis_private/u);
+ assert.match(adapter,/cotironda_piloto_v2_d021_responders_commercial_private/u);
+ // The wrapper MUST delegate to the existing session-authorized RPC.
+ const sqlD021=src('supabase/piloto/v2_d021_texto_comercial_universal_CANDIDATE.sql');
+ assert.match(sqlD021,/cotironda_piloto_v2_d016_responders_with_analysis_private/u);
+ assert.match(sqlD021,/cotironda_piloto_v2_d016_original_source_private/u);
  assert.match(adapter,/cotironda_piloto_v2_d016_original_source_private/u);
  assert.match(adapter,/cotironda_piloto_v2_d016_record_download_private/u);
  assert.match(adapter,/cotironda_piloto_v2_d016_record_text_download_private/u);
