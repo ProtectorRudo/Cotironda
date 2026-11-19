@@ -28,7 +28,7 @@ Deno.serve(req=>{
  const checks={
   project_url:url===PILOT,
   text_enabled:Deno.env.get('COTIRONDA_PILOT_D016_TEXT_ENABLED')==='true',
-  d016_enabled:Deno.env.get('COTIRONDA_PILOT_D016_ENABLED')==='true',
+  d016_enabled:/^true$/iu.test(Deno.env.get('COTIRONDA_PILOT_D016_ENABLED')??''),
   service_key:serviceKey.startsWith('sb_secret_'),
   shared_secret:/^[A-Za-z0-9_-]{40,256}$/u.test(sharedSecret)&&
    new Set(sharedSecret).size>=8,
