@@ -128,6 +128,9 @@ function comercial(raw:unknown):Readonly<{
  // sólo las líneas EFECTIVAMENTE enviadas a este comercio.
  const assigned=raw.assignedItems===undefined?requested:
   parseLines(raw.assignedItems,false);
+ // Contar renglones realmente cotizados, aunque una variante requiera
+ // revisión. Solo las líneas sin ambigüedad pueden validar equivalencias.
+ const mentioned=parseLines(raw.quotedItems,false);
  const offered=parseLines(raw.quotedItems,true);
  const solicitado=Object.freeze(requested??[]);
  const quotedDetails:DetalleCotizadoV2[]=[];
@@ -151,7 +154,7 @@ function comercial(raw:unknown):Readonly<{
  const termsLiteral=typeof raw.termsLiteral==='string'&&
   raw.termsLiteral.length<=1000&&safe(raw.termsLiteral,1000)?
   raw.termsLiteral:null;
- const extra={articulosCotizados:offered?.length??null,
+ const extra={articulosCotizados:mentioned?.length??null,
   articulosEnviados:assigned?.length??null,
   detalleCotizado:Object.freeze(quotedDetails),descuento,termsLiteral};
  if(!requested||!assigned||!offered||!assigned.length||!offered.length)
