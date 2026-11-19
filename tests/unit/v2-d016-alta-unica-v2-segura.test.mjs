@@ -59,7 +59,11 @@ test('La pantalla WhatsApp reutiliza reintento seguro y no pide confirmaciones p
  assert.doesNotMatch(uix,/startedAnalyses/u);
  assert.match(uix,/credentials:'same-origin'/u);
  assert.doesNotMatch(uix,/confirmarCotizacion|CONTACTOS SI|COTI ORIGINALES SI/u);
- assert.match(d016,/cotironda_piloto_v2_d016_responders_with_analysis_private/u);
+ assert.match(d016,/cotironda_piloto_v2_d021_responders_commercial_private/u);
+ const overlay=readFileSync(new URL(
+  '../../supabase/piloto/v2_d021_texto_comercial_universal_CANDIDATE.sql',
+  import.meta.url),'utf8');
+ assert.match(overlay,/cotironda_piloto_v2_d016_responders_with_analysis_private/u);
  assert.match(commercial,/totalDeclarado/u);
  assert.match(commercial,/cobertura/u);
 });
