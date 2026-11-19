@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {componerInformeFinalD016}
  from '../../src/server/v2-d016-informe-final.ts';
 
@@ -148,4 +149,55 @@ test('D019: matriz final coteja cada renglón sin inventar faltantes ni stock',(
  const drift=componerInformeFinalD016(state(),cat,NOW);
  assert.equal(drift.materiales.length,0);
  assert.match(drift.recomendaciones.join(' '),/no coinciden/u);
+});
+
+test('D021 cierre real: dos respuestas cotizadas y advertencia sin ranking',()=>{
+ const cat=data();
+ cat.respuestas.splice(1,1);
+ cat.respuestas[0].comercio='Corralón Ailín';
+ cat.respuestas[0].resumen={
+  totalDeclarado:'$351.155,11',sumaCalculada:null,
+  tipoImporte:'Subtotal informado',articulosCotizados:3,articulosEnviados:3,
+  solicitado:[],cobertura:{identificados:3,solicitados:3,
+   porVerificar:[],detalle:[],adicionales:0},
+  condiciones:{iva:'No informado',flete:'A convenir',
+   pago:'Contado en efectivo',entrega:'No informado'}
+ };
+ cat.respuestas[1].comercio='Corralón Nahuel';
+ cat.respuestas[1].resumen={
+  totalDeclarado:null,sumaCalculada:'$355.000',
+  tipoImporte:'Importe no informado',articulosCotizados:3,articulosEnviados:3,
+  solicitado:[],cobertura:null,
+  condiciones:{iva:'No informado',flete:'No informado',
+   pago:'No informado',entrega:'No informado'}
+ };
+ const final=componerInformeFinalD016(state(),cat,NOW);
+ assert.ok(final);
+ assert.equal(final.documentos,2);
+ assert.equal(final.comercios,2);
+ assert.deepEqual(final.comparacion.map(x=>x.ofertas[0].articulosCotizados),[3,3]);
+ assert.equal(final.comparacion[0].ofertas[0].tipoImporte,'Subtotal informado');
+ assert.equal(final.comparacion[1].ofertas[0].importe,'$355.000');
+ assert.equal(final.comparacion[1].ofertas[0].tipoImporte,'Suma de artículos cotizados');
+ assert.match(final.conclusion,/subtotales o sumas de artículos/u);
+ assert.match(final.conclusion,/equivalencias/u);
+ assert.equal(final.observacionesIA.length,1,'solo evidencia IA comercial útil');
+ assert.match(final.observacionesIA[0].observacion,/bolsas/u);
+ assert.doesNotMatch(final.conclusion,/ganador|adjudicado|más barato/iu);
+ assert.doesNotMatch(final.conclusion,/\$[0-9]/u,'no duplicar los importes');
+});
+test('D021 cierre de una pantalla: detalle optativo, sin matriz ni advertencias abiertas',()=>{
+ const front=readFileSync(new URL(
+  '../../apps/portal/app/piloto/v2/rondas/[rondaId]/whatsapp/respuestas-whatsapp.tsx',
+  import.meta.url),'utf8');
+ const block=front.slice(front.indexOf('{informe&&<section'),
+  front.indexOf('</section>}',front.indexOf('{informe&&<section'))+11);
+ assert.ok(block.length>1000);
+ assert.match(block,/informe\.conclusion/u);
+ assert.match(block,/oferta\.articulosCotizados/u);
+ assert.match(block,/informe\.observacionesIA/u);
+ assert.match(block,/<summary>Ver detalle técnico por material<\/summary>/u);
+ assert.doesNotMatch(block,/Qué revisar antes de decidir|informe\.recomendaciones\.map/u);
+ assert.doesNotMatch(block,/Sin datos suficientes para cotejar/u);
+ assert.doesNotMatch(block,/ganador autom[aá]tico|adjudicado a/iu);
 });
