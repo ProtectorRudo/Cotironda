@@ -21,6 +21,7 @@ type DetalleOferta=Readonly<{
  importe:string|null;
  tipoImporte:string;
  cobertura:Readonly<{identificados:number;solicitados:number;porVerificar:readonly string[]}>|null;
+ articulosCotizados:number|null;articulosEnviados:number|null;
  pago:string;iva:string;flete:string;
 }>;
 export type ComparacionMaterialFinalV2=Readonly<{
@@ -41,7 +42,9 @@ export type InformeFinalD016=Readonly<{
  estado:'informe_final_disponible';
  cierreMs:number;documentos:number;comercios:number;
  analizados:number;sinAnalisis:number;
- resumen:string;observaciones:readonly string[];
+ resumen:string;conclusion:string;
+ observacionesIA:readonly Readonly<{comercio:string;observacion:string}>[];
+ observaciones:readonly string[];
  recomendaciones:readonly string[];
  materiales:readonly ComparacionMaterialFinalV2[];
  comparacion:readonly ResumenComercio[];
@@ -87,6 +90,8 @@ export function componerInformeFinalD016(
     identificados:cv.identificados,solicitados:cv.solicitados,
     porVerificar:Object.freeze([...cv.porVerificar])
    }):null,
+   articulosCotizados:quote.resumen?.articulosCotizados??null,
+   articulosEnviados:quote.resumen?.articulosEnviados??null,
    pago:quote.resumen?.condiciones.pago??'No informado',
    iva:quote.resumen?.condiciones.iva??'No informado',
    flete:quote.resumen?.condiciones.flete??'No informado'
@@ -173,13 +178,42 @@ export function componerInformeFinalD016(
  if(comparison.some(c=>c.ofertas.some(o=>
   [o.pago,o.iva,o.flete].some(x=>x==='No informado'||x==='No verificado'))))
   recomendaciones.push('Consultá las condiciones no informadas o sin verificar en cada PDF; no se consideran incluidas por defecto.');
+ // El resumen visible se compone de hechos respaldados por proyecciones
+ // privadas; no se comparan subtotales ni sumas como precios finales.
+ const ofertas=sorted.flatMap(([,info])=>info.ofertas);
+ const montosNoFinales=ofertas.some(o=>o.importe&&o.tipoImporte!=='Total informado');
+ const faltanMontos=ofertas.some(o=>!o.importe);
+ const equivalenciasPendientes=ofertas.some(o=>!o.cobertura||
+  o.cobertura.identificados<o.cobertura.solicitados||
+  o.cobertura.porVerificar.length>0);
+ const conclusion=total===0?
+  'No se recibieron presupuestos disponibles para comparar.':
+  [
+   montosNoFinales?
+    'Hay subtotales o sumas de artículos que no acreditan el precio final.':
+    faltanMontos?'No todos los proveedores informaron un importe comparable.':
+    'Los importes declarados deben cotejarse con los originales.',
+   equivalenciasPendientes?
+    'Falta confirmar equivalencias de productos, cantidades o presentaciones.':
+    'Las coincidencias técnicas automáticas no sustituyen la revisión del original.',
+   'Consultá los presupuestos originales antes de decidir.'
+  ].join(' ');
+ // Reutilizar observaciones YA elaboradas por IA, aceptadas por su evidencia
+ // del original y filtradas por el catálogo privado; no hacer otra lectura.
+ const observacionesIA=sorted.flatMap(([comercio,info])=>
+  info.items.filter(p=>['material','presentacion','disponibilidad',
+   'aclaracion','cobertura'].includes(p.categoria)&&
+   !/\$|\b(?:precio|subtotal|total|iva|flete|pago|descuento)\b/iu.test(p.observacion))
+  .slice(0,1).map(p=>Object.freeze({comercio,observacion:p.observacion}))
+ ).slice(0,2);
  const resumen=total===0?'La ronda cerró sin presupuestos habilitados para mostrar.':
   `Se recibieron ${total} documentos de ${sorted.length} comercios identificados por nombre. `+
   `${analysed} tienen guía verificada y ${total-analysed} requieren lectura directa del original.`;
  return Object.freeze({
   estado:'informe_final_disponible',cierreMs:state.closedAtMs,
   documentos:total,comercios:sorted.length,analizados:analysed,
-  sinAnalisis:total-analysed,resumen,
+  sinAnalisis:total-analysed,resumen,conclusion,
+  observacionesIA:Object.freeze(observacionesIA),
   observaciones:Object.freeze(note),
   recomendaciones:Object.freeze(recomendaciones),
   materiales:Object.freeze(materiales),
