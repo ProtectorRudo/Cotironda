@@ -153,3 +153,20 @@ test('D021: datos de contacto literales tampoco pasan a la ficha comercial',()=>
  }],totalLiteral:null,termsLiteral:null};
  assert.equal(evidenciarTextoComercialV2(s,input,1),null);
 });
+
+test('D021: nunca confunde un prefijo de precio o total con el importe original completo',()=>{
+ const source='10 bolsas cemento a $105.000\nTotal: $355.000';
+ const baseline={
+  lines:[{sourceLine:'10 bolsas cemento a $105.000',
+   description:'bolsas cemento',quantity:'10',unit:'bolsas',
+   unitPrice:null,lineTotal:'$105.000',ambiguous:false}],
+  totalLiteral:'$355.000',termsLiteral:null
+ };
+ assert.equal(evidenciarTextoComercialV2(source,baseline,1)?.totalLiteral,'$355.000');
+ assert.equal(evidenciarTextoComercialV2(source,{
+  ...baseline,totalLiteral:'$355.00'},1),null,
+  'No presentar $355.00 como el TOTAL original $355.000');
+ assert.equal(evidenciarTextoComercialV2(source,{
+  ...baseline,lines:[{...baseline.lines[0],lineTotal:'$105.00'}]},1),null,
+  'No presentar $105.00 como $105.000 del renglón');
+});
