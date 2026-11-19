@@ -121,7 +121,7 @@ export async function listarPorWhatsappD016(
  try{
   const before=await sessionContext(db,digest,rondaId);
   if(!before)return deny();
-  const {data,error}=await db.rpc('cotironda_piloto_v2_d016_responders_with_analysis_private',{
+  const {data,error}=await db.rpc('cotironda_piloto_v2_d021_responders_commercial_private',{
    p_request_id:rondaId,p_sesion_hmac:digest
   });
   if(error)return deny(503);
@@ -325,7 +325,7 @@ export async function responderInformeFinalWhatsappD016(
    });
   if(state.state!=='closed_verified_business_two_days')return deny();
   const catalogRes=await db.rpc(
-   'cotironda_piloto_v2_d016_responders_with_analysis_private',q);
+   'cotironda_piloto_v2_d021_responders_commercial_private',q);
   if(catalogRes.error||!catalogRes.data)return deny(503);
   if((catalogRes.data as {buyerKey?:unknown}).buyerKey!==before.buyerKey)
    return deny();
