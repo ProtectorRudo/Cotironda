@@ -296,6 +296,20 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
      </div>}
     {expanded&&<div className="coti-clean-bid-expanded" id={'detalle-'+q.documentoId}>
      <h4>Lo importante de este presupuesto</h4>
+     {q.formato==='WhatsApp (texto)'&&q.resumen.detalleCotizado.length>0&&
+      <div className="coti-clean-text-article-summary">
+       <strong>Artículos mencionados en el mensaje</strong>
+       <ul className="coti-clean-insights">
+        {q.resumen.detalleCotizado.slice(0,5).map((item,i)=>
+         <li key={q.documentoId+'-texto-articulo-'+i}>
+          {item.cantidad?item.cantidad+' · ':''}{item.descripcion}
+         </li>)}
+       </ul>
+       {q.resumen.detalleCotizado.length>5&&
+        <p className="coti-clean-muted">
+         Los demás artículos se consultan en el mensaje original.
+        </p>}
+      </div>}
      {diferencias.length>0&&<div className="coti-clean-alert">
       <strong>Equivalencias técnicas por comprobar</strong>
       <ul>{diferencias.slice(0,3).map(item=><li key={item.linea}>
