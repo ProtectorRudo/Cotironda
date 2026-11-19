@@ -11,7 +11,7 @@ type Decrypt=(nonce:string,ciphertext:string,aad:string)=>Promise<string>;
 type Fetch=typeof fetch;
 const SHA=/^[a-f0-9]{64}$/u;
 const CONTROL=/[\u0000-\u001f\u007f<>]/u;
-const CONTACT=/(?:https?:\/\/|www\.|[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}|\b(?:tel[eé]fono|whatsapp|cuit|cuil|contacto)\b)/iu;
+const CONTACT=/(?:https?:\/\/|www\.|[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}|\b(?:tel[eé]fono|whatsapp|cuit|cuil|contacto)\b|(?:\+?\d[\s().-]?){9,})/iu;
 const MONEY=/^(?:(?:\$|ARS|USD|US\$)\s*)?\d[\d., ]{0,25}$/u;
 const obj=(v:unknown):v is Record<string,unknown>=>
  v!==null&&typeof v==='object'&&!Array.isArray(v);
