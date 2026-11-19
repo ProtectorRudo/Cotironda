@@ -179,7 +179,7 @@ test('D021 cierre real: dos respuestas cotizadas y advertencia sin ranking',()=>
  assert.equal(final.comparacion[0].ofertas[0].tipoImporte,'Subtotal informado');
  assert.equal(final.comparacion[1].ofertas[0].importe,'$355.000');
  assert.equal(final.comparacion[1].ofertas[0].tipoImporte,'Suma de artículos cotizados');
- assert.match(final.conclusion,/subtotales o sumas de artículos/u);
+ assert.match(final.conclusion,/subtotal y la suma calculada/u);
  assert.match(final.conclusion,/equivalencias/u);
  assert.equal(final.observacionesIA.length,1,'solo evidencia IA comercial útil');
  assert.match(final.observacionesIA[0].observacion,/bolsas/u);
