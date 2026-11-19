@@ -373,6 +373,12 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
        oferta.cobertura.porVerificar.length>0)&&
        <p className="coti-clean-muted">Equivalencias técnicas por verificar en el original.</p>}
      </div>)}
+     {item.evidencias.length>0&&<details className="coti-clean-evidence">
+      <summary>Más observaciones</summary>
+      <ul>{item.evidencias.map((p,i)=><li key={p.documentoId+'-'+i}>
+       <p>{p.observacion}</p>
+      </li>)}</ul>
+     </details>}
     </article>)}
    </div>
    {informe.observacionesIA.length>0&&<div className="coti-final-guidance">
