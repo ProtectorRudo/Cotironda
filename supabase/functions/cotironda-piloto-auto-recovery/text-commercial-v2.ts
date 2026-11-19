@@ -94,12 +94,12 @@ const modelOutput=async(text:string,key:string,model:Modelo,fetcher:Fetch):Promi
  * never be accepted as $355.000. This checks both ends of every occurrence.
  * No arithmetic, rounding or price inference is performed. */
 function wholeMoneyOffset(source:string,literal:string):number{
- let start=-1;
+ let start=-1,last=-1;
  while((start=source.indexOf(literal,start+1))>=0){
   const before=source[start-1]??' ',after=source[start+literal.length]??' ';
-  if(!/[\d.,]/u.test(before)&&!/[\d.,]/u.test(after))return start;
+  if(!/[\d.,]/u.test(before)&&!/[\d.,]/u.test(after))last=start;
  }
- return -1;
+ return last;
 }
 function monetaryLiteral(value:unknown,line:string):string|null|false{
  if(value===null)return null;
