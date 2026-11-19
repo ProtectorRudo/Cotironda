@@ -111,3 +111,22 @@ test('D016 SQL: la ruta de WhatsApp preserva relaciones V2 originales y prohíbe
  assert.match(sql,/GRANT EXECUTE ON FUNCTION/u);
  assert.doesNotMatch(sql,/p_auth_user_id|p_auth_session_id/u);
 });
+
+test('D016: preflight del lector de texto diagnostica sin revelar claves ni cambiar autorizacion',()=>{
+ const reader=src('supabase/functions/cotironda-piloto-v2-text-reader-d016/index.ts');
+ assert.match(reader,/const checks=\{/u);
+ for(const check of ['project_url','text_enabled','d016_enabled','service_key',
+  'shared_secret','aes_key','separate_keys']){
+  assert.match(reader,new RegExp('\\b'+check+':','u'),check);
+ }
+ assert.match(reader,/\.filter\(\(\[,ok\]\)=>!ok\)\.map\(\(\[name\]\)=>name\)/u);
+ assert.match(reader,/console\.warn\('cotironda_d016_text_preflight_failed',\{checks:failures\}\)/u);
+ assert.match(reader,/req\.method==='POST'/u);
+ assert.match(reader,/req\.headers\.has\('x-cotironda-d016-text-internal'\)/u);
+ assert.match(reader,/enabled:checks\.project_url&&checks\.text_enabled&&/u);
+ assert.match(reader,/checks\.d016_enabled&&checks\.service_key/u);
+ assert.match(reader,/if\(!config\.enabled\)return new Response\('unavailable',\{status:503/u);
+ // No imprimir ni siquiera accidentalmente el contenido de las variables.
+ assert.doesNotMatch(reader,/console\.(?:log|warn|error)\([^;]*(?:serviceKey|sharedSecret|aesHex|req\.headers\.get)/u);
+ assert.match(reader,/resolverTextoPrivadoD016\(req,config,/u);
+});
