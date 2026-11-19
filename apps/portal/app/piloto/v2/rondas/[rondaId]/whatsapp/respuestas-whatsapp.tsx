@@ -357,48 +357,49 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
   })}
   {informe&&<section className="coti-clean-final" aria-label="Comparación final de la ronda">
    <h2>Comparación final</h2>
-   <p>{informe.resumen}</p>
+   <p>{informe.conclusion}</p>
    <div className="coti-final-list">
     {informe.comparacion.map(item=><article className="coti-final-supplier" key={item.comercio}>
      <h3>{nombreProveedor(item.comercio)}</h3>
      {item.ofertas.map(oferta=><div className="coti-final-offer" key={oferta.documentoId}>
       <strong className="coti-final-amount">{oferta.importe??'No informado'}</strong>
       <small>{oferta.tipoImporte}</small>
-      <p><strong>Materiales:</strong> {oferta.cobertura?
-       oferta.cobertura.identificados+' de '+oferta.cobertura.solicitados+' coincidencias automáticas (no certificadas)':
-       'Cobertura por verificar'}</p>
-      {oferta.cobertura&&oferta.cobertura.porVerificar.length>0&&
-       <p>Por verificar: {oferta.cobertura.porVerificar.join('; ')}</p>}
-      <p><strong>Pago:</strong> {oferta.pago} · <strong>IVA:</strong> {oferta.iva} · <strong>Flete:</strong> {oferta.flete}</p>
+      {oferta.articulosCotizados!==null&&
+       <p><strong>{oferta.articulosCotizados} artículos cotizados</strong>
+        {oferta.articulosEnviados!==null?
+         ' · '+oferta.articulosEnviados+' enviados a este negocio':''}</p>}
+      {(!oferta.cobertura||
+       oferta.cobertura.identificados<oferta.cobertura.solicitados||
+       oferta.cobertura.porVerificar.length>0)&&
+       <p className="coti-clean-muted">Equivalencias técnicas por verificar en el original.</p>}
      </div>)}
-     {item.ofertas.length===0&&<p>Sin documentación comercial verificable.</p>}
-     {item.evidencias.length>0&&<details className="coti-clean-evidence">
-      <summary>Más observaciones</summary>
-      <ul>{item.evidencias.map((p,i)=><li key={p.documentoId+'-'+i}>
-       <p>{p.observacion}</p>
-      </li>)}</ul>
-     </details>}
     </article>)}
    </div>
-   {informe.materiales?.length>0&&<div className="coti-final-materials">
-    <h3>Comparación por material solicitado</h3>
-    {informe.materiales.map(material=><article key={material.linea} className="coti-final-material">
-     <h4>{material.material}</h4>
-     <ul>{material.comercios.map(item=><li key={item.comercio}>
-      <strong>{nombreProveedor(item.comercio)}</strong>
-      <span>{item.estado==='coincidencia_automatica'?
-       'Coincidencia automática · '+item.cotizado:
-       item.estado==='por_verificar'?'Equivalencia pendiente de verificar'+(item.cotizado?' · '+item.cotizado:''):
-       'Sin datos suficientes para cotejar'}</span>
+   {informe.observacionesIA.length>0&&<div className="coti-final-guidance">
+    <h3>Observaciones de los presupuestos</h3>
+    <ul>{informe.observacionesIA.map((p,i)=>
+     <li key={p.comercio+'-'+i}>
+      <strong>{nombreProveedor(p.comercio)}:</strong> {p.observacion}
      </li>)}</ul>
-    </article>)}
-    <p className="coti-clean-muted">Una coincidencia automática no garantiza disponibilidad, calidad ni equivalencia técnica certificada.</p>
    </div>}
-   {informe.recomendaciones.length>0&&<div className="coti-final-guidance">
-    <h3>Qué revisar antes de decidir</h3>
-    <ul>{informe.recomendaciones.map((p,i)=><li key={i}>{p}</li>)}</ul>
-   </div>}
-   <p className="coti-final-decision">Compará únicamente productos equivalentes. La elección del comercio es tuya; Cotironda no adjudica automáticamente.</p>
+   {informe.materiales.length>0&&
+    <details className="coti-clean-evidence">
+     <summary>Ver detalle técnico por material</summary>
+     <div className="coti-final-materials">
+      {informe.materiales.map(material=><article className="coti-final-material" key={material.linea}>
+       <h4>{material.material}</h4>
+       <ul>{material.comercios.map(item=><li key={item.comercio}>
+        <strong>{nombreProveedor(item.comercio)}</strong>
+        <span>{item.estado==='coincidencia_automatica'?
+         'Coincidencia automática · '+item.cotizado:
+         item.estado==='por_verificar'?'Equivalencia por verificar'+
+          (item.cotizado?' · '+item.cotizado:''):
+         'Sin equivalencia confirmada con este artículo'}</span>
+       </li>)}</ul>
+      </article>)}
+     </div>
+    </details>}
+   <p className="coti-final-decision">La decisión comercial es tuya. Cotironda no adjudica automáticamente.</p>
    <small>{informe.mensaje}</small>
   </section>}
  </section>;
