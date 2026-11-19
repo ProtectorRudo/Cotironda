@@ -49,19 +49,21 @@ test('No se amplía la cuota diaria de presupuestos comunes por agregar revision
  assert.match(sql,/AND NOT EXISTS\(SELECT 1 FROM cotironda_piloto_privado\.ai_supplier_quantity_review_v2 revision/u);
  assert.match(sql,/revision\.revision ~ '\^\[a-f0-9\]\{40\}\$'/u);
 });
-test('Overlay sólo modifica la entrada de recuperación de la versión probada',()=>{
- assert.equal(PIN.version,27);
- assert.match(LINKER_REVISION,/^[a-f0-9]{40}$/u);
+test('Worker v28: sólo reemplazar revisión de reintento de la IA, sin otra cola',()=>{
+ assert.equal(PIN.version,28);
+ assert.equal(LINKER_REVISION,'8c3def51cf74ebb0940e3ba97802675c0799c01d');
  const source=("claimed=await db('cotironda_piloto_claim_quantity_review_v2');\n"+
-  "    retryQuantityAfterReview:claimed.retry_quantity===true,\n"+
-  "  if(claimed.state!=='claimed')").padEnd(PIN.length,' ');
- const patched=buildRevisionRecoveryV2(source,{version:27,bundle:PIN.bundle});
- assert.equal(patched.state,'candidate_only');
- assert.equal(patched.outboundMessages,0);
- assert.equal(patched.sqlMutated,false);
- assert.match(patched.content,/cotironda_piloto_claim_revision_review_v2/u);
- assert.match(patched.content,/p_revision:'7e87a32e2838a2fe9386db68b6c9f2a5c2647e44'/u);
- assert.notEqual(patched.content,source);
- assert.throws(()=>buildRevisionRecoveryV2(source,{version:28,bundle:PIN.bundle}),/live_drift/u);
- assert.throws(()=>buildRevisionRecoveryV2(source+'x',{version:27,bundle:PIN.bundle}),/live_drift/u);
+  "  retryQuantityAfterReview:claimed.retry_quantity===true,\n"+
+  "claimed=await db('cotironda_piloto_claim_revision_review_v2',"+
+  "{p_revision:'7e87a32e2838a2fe9386db68b6c9f2a5c2647e44'});")
+   .padEnd(PIN.length,' ');
+ const changed=buildRevisionRecoveryV2(source,{version:28,bundle:PIN.bundle});
+ assert.equal(changed.state,'candidate_only');
+ assert.equal(changed.outboundMessages,0);
+ assert.equal(changed.sqlMutated,false);
+ assert.match(changed.content,/p_revision:'8c3def51cf74ebb0940e3ba97802675c0799c01d'/u);
+ assert.doesNotMatch(changed.content,/p_revision:'7e87a32e2838a2fe9386db68b6c9f2a5c2647e44'/u);
+ assert.equal((changed.content.match(/claim_revision_review_v2/g)||[]).length,1);
+ assert.throws(()=>buildRevisionRecoveryV2(source,{version:27,bundle:PIN.bundle}),/live_drift/u);
+ assert.throws(()=>buildRevisionRecoveryV2(source+'x',{version:28,bundle:PIN.bundle}),/live_drift/u);
 });
