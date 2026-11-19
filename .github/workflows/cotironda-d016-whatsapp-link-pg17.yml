@@ -112,6 +112,8 @@ jobs:
         run: deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/index.v2-d016-candidate.ts
       - name: Deno typecheck del lector de texto D016 (no requiere JWT inventado)
         run: deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-v2-text-reader-d016/index.ts
+      - name: D021 texto comercial exacto, typecheck sin desplegar
+        run: deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-auto-recovery/text-commercial-v2.ts
       - name: Deno typecheck del worker IA offline protegido
         run: deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-v2-worker-d016/index.ts
       - name: D013 recuperador Vault, Deno check sin ejecutar ni desplegar
