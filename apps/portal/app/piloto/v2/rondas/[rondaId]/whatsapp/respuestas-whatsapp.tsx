@@ -253,6 +253,9 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
     ['material','presentacion','cobertura','disponibilidad'].includes(p.categoria)&&
     !/\$|\b(?:precio|subtotal|total|iva|flete|pago|descuento)\b/iu.test(p.observacion));
    const conditions=q.resumen.condiciones;
+   const importeDeclarado=q.resumen.totalDeclarado;
+   const sumaCalculada=q.resumen.sumaCalculada;
+   const esSuma=importeDeclarado===null&&sumaCalculada!==null;
    const cotizados=q.resumen.articulosCotizados;
    const enviados=q.resumen.articulosEnviados;
    const articulosVisibles=cotizados??(
@@ -264,8 +267,8 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
      <span className="coti-clean-supplier-avatar" aria-hidden="true">{letraProveedor(q.comercio)}</span>
      <div className="coti-clean-bid-identity">
       <h3>{nombreProveedor(q.comercio)}</h3>
-      <strong className="coti-clean-bid-price">{q.resumen.totalDeclarado??'No informado'}</strong>
-      <small className="coti-clean-amount-kind">{q.resumen.tipoImporte}</small>
+      <strong className="coti-clean-bid-price">{importeDeclarado??sumaCalculada??'No informado'}</strong>
+      <small className="coti-clean-amount-kind">{esSuma?'Suma de artículos cotizados':q.resumen.tipoImporte}</small>
      </div>
     </div>
     <div className={'coti-clean-coverage'+(needsReview?' caution':'')}>
@@ -296,6 +299,12 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
      </div>}
     {expanded&&<div className="coti-clean-bid-expanded" id={'detalle-'+q.documentoId}>
      <h4>Lo importante de este presupuesto</h4>
+     {esSuma&&<p className="coti-clean-muted">
+      Suma calculada de los importes por artículo; el total declarado por el proveedor no está confirmado. Revisá el original.
+     </p>}
+     {q.resumen.discrepanciaTotal&&<p className="coti-clean-muted">
+      La suma de los renglones no coincide con el total informado. Revisá el original.
+     </p>}
      {q.formato==='WhatsApp (texto)'&&q.resumen.detalleCotizado.length>0&&
       <div className="coti-clean-text-article-summary">
        <strong>Artículos mencionados en el mensaje</strong>
