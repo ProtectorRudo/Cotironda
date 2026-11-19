@@ -19,6 +19,6 @@ export default async function PedidoWhatsappD016(
    ← Mis cotizaciones
   </Link>
   <h1>Presupuestos recibidos</h1>
-  <RespuestasWhatsappD016 rondaId={rondaId}/>
+  <RespuestasWhatsappD016 key={rondaId.toLowerCase()} rondaId={rondaId}/>
  </main>;
 }
