@@ -130,3 +130,18 @@ test('D016: preflight del lector de texto diagnostica sin revelar claves ni camb
  assert.doesNotMatch(reader,/console\.(?:log|warn|error)\([^;]*(?:serviceKey|sharedSecret|aesHex|req\.headers\.get)/u);
  assert.match(reader,/resolverTextoPrivadoD016\(req,config,/u);
 });
+
+test('D016: piloto acepta solo true sin importar mayusculas, mantiene false bloqueado',()=>{
+ const reader=src('supabase/functions/cotironda-piloto-v2-text-reader-d016/index.ts');
+ // Esta es la única bandera tolerante a capitalización: no activar
+ // flags de texto ni saltar chequeos de servicio, consentimiento o AES.
+ assert.match(reader,/d016_enabled:\/\^true\$\/iu\.test\(Deno\.env\.get\('COTIRONDA_PILOT_D016_ENABLED'\)\?\?''\)/u);
+ assert.match(reader,/text_enabled:Deno\.env\.get\('COTIRONDA_PILOT_D016_TEXT_ENABLED'\)==='true'/u);
+ const enabled=/^true$/iu;
+ for(const value of ['true','True','TRUE','TrUe'])assert.equal(enabled.test(value),true,value);
+ for(const value of ['false','False','','1','yes','true ',' true','true\\n','TRUE_NOT','null'])
+  assert.equal(enabled.test(value),false,JSON.stringify(value));
+ assert.match(reader,/enabled:checks\.project_url&&checks\.text_enabled&&/u);
+ assert.match(reader,/checks\.d016_enabled&&checks\.service_key/u);
+ assert.match(reader,/resolverTextoPrivadoD016\(req,config,/u);
+});
