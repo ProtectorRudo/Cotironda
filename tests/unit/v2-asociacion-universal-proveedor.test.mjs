@@ -1,12 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {elegirRondaUnicaMvp291,correlacionAutomaticaMvp291} from
  '../../supabase/functions/cotironda-piloto-whapi/supplier-auto-correlation-contextual-v2.ts';
 import {extraerMaterialesTextoMvp292} from
  '../../supabase/functions/cotironda-piloto-whapi/supplier-text-materials-contextual-v2.ts';
-
 const a='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const b='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+const c='cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 const hash='c'.repeat(64),chat='d'.repeat(64);
 const line=(line_no,description,quantity=null,unit=null)=>({
  line_no,description,quantity,unit
@@ -15,406 +16,268 @@ const proposal=(selected_candidate,matches)=>({selected_candidate,matches});
 const match=(candidate,source_line,request_line,relation='same')=>({
  candidate,source_line,request_line,relation
 });
-test('Una sola coincidencia exclusiva permite presupuesto parcial, marcas y presentaciones diferentes',()=>{
- const snap={
-  quote:[line(1,'Ceresita hidrófugo en bidones de 5 L','3','bidones')],
-  options:[
-   {request_id:a,lines:[line(1,'Cemento CPC 50kg','10','bolsas')]},
-   {request_id:b,lines:[line(1,'Hidrófugo 20 litros','2','bidones'),
-     line(2,'Arena fina','1','bolsón')]}
-  ]
- };
- const picked=elegirRondaUnicaMvp291(snap,proposal('r2',[match('r2',1,1,'equivalent')]));
- assert.equal(picked.requestId,b);
- assert.equal(picked.reason,'single_model_distinct_material_v2');
-});
-test('Una línea común entre dos rondas diferentes JAMÁS asigna por recencia',()=>{
- const snap={
-  quote:[line(1,'Cemento','7','bolsas')],
-  options:[
-   {request_id:a,lines:[line(1,'Cemento CPC 50kg','10','bolsas'),
-     line(2,'Membrana 4 mm','2','rollos')]},
-   {request_id:b,lines:[line(1,'Cemento CPC 50kg','9','bolsas'),
-     line(2,'Arena fina','1','bolsón')]}
-  ]
- };
- const picked=elegirRondaUnicaMvp291(snap,proposal('r1',[
-  match('r1',1,1),match('r2',1,1)]));
- assert.equal(picked.requestId,null);
- assert.equal(picked.reason,'non_unique_material');
- assert.equal(elegirRondaUnicaMvp291(snap,proposal(null,[
-  match('r1',1,1),match('r2',1,1)])).requestId,null);
-});
-test('Una cotización parcial con producto compartido y otro exclusivo asocia sin puntajes',()=>{
- const snap={
-  quote:[line(1,'Cemento','5','bolsas'),line(2,'Membrana aluminizada','4','rollos')],
-  options:[
-   {request_id:a,lines:[line(1,'Cemento','12','bolsas'),line(2,'Arena','1','m3')]},
-   {request_id:b,lines:[line(1,'Cemento','20','bolsas'),
-     line(2,'Membrana asfáltica 4mm','2','rollos')]}
-  ]
- };
- const p=proposal('r2',[match('r1',1,1),match('r2',1,1),
-  match('r2',2,2,'equivalent')]);
- assert.equal(elegirRondaUnicaMvp291(snap,p).requestId,b);
-});
-test('No admite renglones inventados, candidatos inexistentes ni rondas inhabilitadas',()=>{
- const snap={
-  quote:[line(1,'Ceresita')],
-  options:[{request_id:a,lines:[line(1,'Ceresita')]},
-   {request_id:b,lines:[line(1,'Arena')]}]
- };
- assert.equal(elegirRondaUnicaMvp291(snap,proposal('r1',[
-  match('r1',999,1)])).requestId,null);
- assert.equal(elegirRondaUnicaMvp291(snap,proposal('r9',[
-  match('r1',1,1)])).requestId,null);
- snap.options[0].bind_allowed=false;
- assert.equal(elegirRondaUnicaMvp291(snap,proposal('r1',[
-  match('r1',1,1)])).requestId,null);
-});
-test('La asociación operativa llama una SOLA vez a IA; SQL debe autorizar el vínculo',async()=>{
- const snap={
-  quote:[line(1,'Hidrófugo Ceresita')],
-  options:[{request_id:a,lines:[line(1,'Cemento')]},
-   {request_id:b,lines:[line(1,'Hidrófugo')]}]
- };
- const events=[];let reads=0;
- const rpc=async(name)=>{
-  events.push(name);
-  if(name==='cotironda_piloto_auto_correlation_prepare_mvp291')
-   return {data:{state:'reserved',source_sha256:hash,quote:snap.quote,candidates:snap.options},error:null};
-  if(name==='cotironda_piloto_auto_correlation_bind_mvp291')
-   return {data:{state:'linked_private'},error:null};
-  throw Error('unexpected '+name);
- };
- const r=await correlacionAutomaticaMvp291({
-  enabled:true,webhookAuthenticated:true,sourceHmac:hash,chatHmac:chat,
-  apiKey:'k'.repeat(24),model:'gpt-6-luna',rpc,
-  compare:async()=>{reads++;return proposal('r2',[match('r2',1,1,'equivalent')])}
- });
- assert.equal(reads,1);
- assert.equal(r.state,'linked_private');
- assert.equal(r.reason,'single_model_distinct_material_v2');
- assert.equal(r.outboundMessages,0);
- assert.equal(events.filter(n=>n.includes('_bind_')).length,1);
-});
-test('Si la base deniega el enlace, el mensaje permanece en revisión privada',async()=>{
- const snap={quote:[line(1,'Arena')],
-  options:[{request_id:a,lines:[line(1,'Arena')]},
-   {request_id:b,lines:[line(1,'Piedra')]}]};
- const names=[];
- const rpc=async(name)=>{
-  names.push(name);
-  if(name==='cotironda_piloto_auto_correlation_prepare_mvp291')
-   return {data:{state:'reserved',source_sha256:hash,quote:snap.quote,candidates:snap.options},error:null};
-  if(name==='cotironda_piloto_auto_correlation_bind_mvp291')
-   return {data:{state:'not_eligible'},error:null};
-  if(name==='cotironda_piloto_auto_correlation_finish_mvp291')
-   return {data:{state:'recorded'},error:null};
-  throw Error(name);
- };
- const r=await correlacionAutomaticaMvp291({
-  enabled:true,webhookAuthenticated:true,sourceHmac:hash,chatHmac:chat,
-  apiKey:'k'.repeat(24),model:'gpt-6-luna',rpc,
-  compare:async()=>proposal('r1',[match('r1',1,1)])
- });
- assert.notEqual(r.state,'linked_private');
- assert.equal(r.outboundMessages,0);
- assert.ok(names.includes('cotironda_piloto_auto_correlation_finish_mvp291'));
-});
-
-test('Nahuel: 10 cemento, 2 arena, 1 piedra distinguen ronda 18/11 frente a 10/1/1',()=>{
- const snap={
-  quote:[
-   line(1,'Cemento 50 kg Loma Negra','10','bolsas'),
-   line(2,'bolsón de arena','2','bolsón'),
-   line(3,'bolsón de piedra','1','bolsón')],
-  options:[
-   {request_id:a,lines:[
-    line(1,'Cemento CPC 50kg','10','bag'),
-    line(2,'Arena fina 1 m3','2','bag'),
-    line(3,'Piedra partida 1 m3','1','bag'),
-    line(4,'Montante 70 mm','15','unit'),
-    line(5,'Placa yeso 12,5 mm','8','unit')]},
-   {request_id:b,lines:[
-    line(1,'Cemento CPC 50kg','10','bag'),
-    line(2,'Arena fina 1 m3','1','bag'),
-    line(3,'Piedra partida 1 m3','1','bag')]}
-  ]
- };
- const matches=[1,2,3].flatMap(i=>[
-  match('r1',i,i,'equivalent'),match('r2',i,i,'equivalent')]);
- const picked=elegirRondaUnicaMvp291(snap,proposal('r1',matches));
- assert.equal(picked.requestId,a);
- assert.equal(picked.reason,'single_model_distinct_material_v2');
- // If the AI favors the older request, the numeric evidence denies that
- // preference instead of assigning somebody else's commercial original.
- const wrong=elegirRondaUnicaMvp291(snap,proposal('r2',matches));
- assert.equal(wrong.requestId,null);
-});
-test('Cantidad compartida de un solo material no decide ronda ni inventa equivalencias',()=>{
- const snapshot={quote:[line(1,'Arena','2','bolsones')],
- options:[
-  {request_id:a,lines:[line(1,'Arena','2','bag')]},
-  {request_id:b,lines:[line(1,'Arena','1','bag')]}]};
- const p=proposal('r1',[match('r1',1,1),match('r2',1,1)]);
- assert.equal(elegirRondaUnicaMvp291(snapshot,p).requestId,null);
-});
-test('La extracción contextual hace una sola llamada y verifica el texto original',async()=>{
- let reads=0;
- const source='Cotizo 10 bolsas de cemento CPC 50 kg.';
- const data=await extraerMaterialesTextoMvp292({
-  source,apiKey:'k'.repeat(24),model:'gpt-6-luna',
-  read:async()=>{reads++;return {items:[{
-   original:'10 bolsas de cemento CPC 50 kg',
-   description:'cemento CPC 50 kg',quantity:'10',unit:'bolsas'}]}}
- });
- assert.equal(reads,1);
- assert.equal(data?.length,1);
- assert.equal(data[0].quantity,'10');
- const fabricated=await extraerMaterialesTextoMvp292({
-  source,apiKey:'k'.repeat(24),model:'gpt-6-luna',
-  read:async()=>({items:[{original:'20 bolsas de pintura',
-   description:'pintura',quantity:'20',unit:'bolsas'}]})
- });
- assert.equal(fabricated,null,'no se aceptan artículos inventados');
-});
-
-test('Un texto ya archivado en review utiliza un único lease SQL para reintentar',async()=>{
- const snap={quote:[line(1,'Arena','2','bolsón')],
-  options:[{request_id:a,lines:[line(1,'Arena','2','bag'),
-    line(2,'Cemento','10','bag')]},
-   {request_id:b,lines:[line(1,'Arena','1','bag'),
-    line(2,'Cemento','10','bag')]}]};
- const events=[],rpc=async(name)=>{
-  events.push(name);
-  if(name==='cotironda_piloto_stage_supplier_text_mvp292')
-   return {data:{state:'already_staged'},error:null};
-  if(name==='cotironda_piloto_auto_correlation_retry_text_prepare_v2')
-   return {data:{state:'reserved',source_sha256:hash,quote:snap.quote,candidates:snap.options},error:null};
-  if(name==='cotironda_piloto_auto_correlation_finish_mvp291')
-   return {data:{state:'recorded'},error:null};
-  throw Error(name);
- };
- const r=await correlacionAutomaticaMvp291({
-  enabled:true,webhookAuthenticated:true,retryReviewedOnce:true,
-  sourceHmac:hash,chatHmac:chat,textSha256:hash,textQuote:snap.quote,
-  apiKey:'k'.repeat(24),model:'gpt-6-luna',rpc,
-  compare:async()=>proposal(null,[match('r1',1,1),match('r2',1,1)])
- });
- assert.equal(r.state,'unresolved_private','una sola línea compartida jamás debe adivinar ronda');
- assert.equal(r.outboundMessages,0);
- assert.equal(events.filter(n=>n==='cotironda_piloto_auto_correlation_retry_text_prepare_v2').length,1);
-});
-test('Un texto de tres renglones recuperado se asocia con SQL a su ronda única',async()=>{
- const quote=[line(1,'cemento 50 kg','10','bolsas'),
-  line(2,'bolsón de arena','2','bolsones'),
-  line(3,'bolsón de piedra','1','bolsón')];
- const opts=[
-  {request_id:a,bind_allowed:true,lines:[
-   line(1,'cemento CPC 50 kg','10','bag'),
-   line(2,'arena fina','2','bag'),
-   line(3,'piedra partida','1','bag'),
-   line(4,'placa de yeso','8','unit')]},
-  {request_id:b,bind_allowed:false,lines:[
-   line(1,'cemento CPC 50 kg','10','bag'),
-   line(2,'arena fina','1','bag'),
-   line(3,'piedra partida','1','bag')]}];
- const changes=[];let reads=0;
- const rpc=async(name,args)=>{
-  changes.push(name);
-  if(name==='cotironda_piloto_stage_supplier_text_mvp292')
-   return {data:{state:'already_staged'},error:null};
-  if(name==='cotironda_piloto_auto_correlation_retry_text_prepare_v2')
-   return {data:{state:'reserved',source_sha256:hash,quote,candidates:opts},error:null};
-  if(name==='cotironda_piloto_auto_correlation_bind_mvp291'){
-   assert.equal(args.p_request,a);
-   assert.equal(args.p_source_sha256,hash);
-   return {data:{state:'linked_private'},error:null};
-  }
-  throw Error('unrecognized SQL '+name);
- };
- const verdict=await correlacionAutomaticaMvp291({
-  enabled:true,webhookAuthenticated:true,retryReviewedOnce:true,
-  sourceHmac:hash,chatHmac:chat,textSha256:hash,textQuote:quote,
-  apiKey:'k'.repeat(24),model:'gpt-6-luna',rpc,
-  compare:async()=>{reads++;return proposal('r1',quote.flatMap((_,i)=>[
-   match('r1',i+1,i+1,'equivalent'),match('r2',i+1,i+1,'equivalent')
-  ]))}
- });
- assert.equal(verdict.state,'linked_private');
- assert.equal(reads,1);
- assert.equal(changes.filter(x=>x.includes('_bind_')).length,1);
- assert.equal(verdict.outboundMessages,0);
-});
-
-
-// Real pilot structure, anonymized: 10 cement / 2 sand / 1 stone versus
-// an older 10 / 1 / 1 request. Tests never use stored private source text.
-const pairwiseOffer=()=>[
+const latest=()=>({request_id:a,bind_allowed:true,lines:[
+ line(1,'bolsas de cemento CPC 50 kg','10','bag'),
+ line(2,'bolsones arena fina 1 m³','2','bag'),
+ line(3,'bolsón piedra partida 1 m³','1','bag'),
+ line(4,'montantes de 70 mm','15','unit'),
+ line(5,'placas yeso 12,5 mm','8','unit')
+]});
+const former=()=>({request_id:b,bind_allowed:false,lines:[
+ line(1,'bolsas de cemento CPC 50 kg','10','bag'),
+ line(2,'bolsón arena fina 1 m³','1','bag'),
+ line(3,'bolsón piedra partida 1 m³','1','bag')
+]});
+const quote=()=>[
  line(1,'Cemento CPC 50 kg marca libre','10','bolsas'),
  line(2,'bolsón de arena fina','2','bolsones'),
- line(3,'bolsón de piedra partida','1','bolsón')
+ line(3,'bolsón piedra partida','1','bolsón')
 ];
-const pairwiseRequests=()=>[
- {request_id:a,bind_allowed:true,lines:[
-  line(1,'bolsas de cemento CPC 50 kg','10','bag'),
-  line(2,'bolsones arena fina 1 m³','2','bag'),
-  line(3,'bolsón piedra partida 1 m³','1','bag'),
-  line(4,'perfiles montantes 70 mm','15','unit'),
-  line(5,'placas yeso 12,5 mm','8','unit')
- ]},
- {request_id:b,bind_allowed:false,lines:[
-  line(1,'bolsas de cemento CPC 50 kg','10','bag'),
-  line(2,'bolsón arena fina 1 m³','1','bag'),
-  line(3,'bolsón piedra partida 1 m³','1','bag')
- ]}
-];
-const completePairs=()=>[1,2,3].flatMap(i=>[
- match('r1',i,i,'equivalent'),match('r2',i,i,'equivalent')]);
-test('El modelo puede abstenerse; Cotironda resuelve 10/2/1 vs 10/1/1 por prueba física comparativa',()=>{
- const snapshot={quote:pairwiseOffer(),options:pairwiseRequests()};
- const resolved=elegirRondaUnicaMvp291(snapshot,proposal(null,completePairs()));
- assert.equal(resolved.requestId,a);
- assert.equal(resolved.reason,'single_model_distinct_material_v2');
-});
-test('Una selección expresa CONTRARIA a la cantidad queda en privado',()=>{
- const snapshot={quote:pairwiseOffer(),options:pairwiseRequests()};
- const rejected=elegirRondaUnicaMvp291(snapshot,proposal('r2',completePairs()));
- assert.equal(rejected.requestId,null);
- assert.equal(rejected.reason,'model_quantity_conflict');
-});
-test('Si la ronda rival pide un material distinto no se inventa el vínculo ausente',()=>{
- const snapshot={quote:pairwiseOffer(),options:pairwiseRequests()};
- snapshot.options[1].lines[1].description='bolsón de arena gruesa 1 m³';
- const missing=completePairs().filter(x=>!(
-  x.candidate==='r2'&&x.source_line===2));
- assert.equal(elegirRondaUnicaMvp291(snapshot,proposal(null,missing)).requestId,null);
-});
-test('Si dos rondas tienen mismas cantidades, la abstención de IA se respeta',()=>{
- const options=pairwiseRequests();
- options[1].bind_allowed=true;
- options[1].lines[1].quantity='2';
- const snapshot={quote:pairwiseOffer(),options};
- assert.equal(elegirRondaUnicaMvp291(snapshot,proposal(null,completePairs())).requestId,null);
-});
-test('Dos coincidencias fuertes con conflictos cruzados deben abstenerse',()=>{
- const quote=[line(1,'Cemento 50 kg','10','bolsas'),
-  line(2,'Arena fina','2','bolsones'),
-  line(3,'Piedra partida','1','bolsón')];
- const opts=[
-  {request_id:a,lines:[line(1,'Cemento 50 kg','10','bag'),
-   line(2,'Arena fina','2','bag'),line(3,'Piedra','2','bag')]},
-  {request_id:b,lines:[line(1,'Cemento 50 kg','10','bag'),
-   line(2,'Arena fina','1','bag'),line(3,'Piedra','1','bag')]}
- ];
- assert.equal(elegirRondaUnicaMvp291({quote,options:opts},
-  proposal(null,completePairs())).requestId,null);
-});
-test('Una cotización de un solo material nunca se asocia usando sólo diferencias de cantidad',()=>{
- const snapshot={quote:[line(1,'Arena fina','2','bolsón')],options:[
-  {request_id:a,lines:[line(1,'Arena fina','2','bag')]},
-  {request_id:b,lines:[line(1,'Arena fina','1','bag')]}
- ]};
- assert.equal(elegirRondaUnicaMvp291(snapshot,proposal(null,[
-  match('r1',1,1),match('r2',1,1)])).requestId,null);
-});
-test('Una ronda histórica bloqueada nunca es elegida por fuerza numérica',()=>{
- const snapshot={quote:pairwiseOffer(),options:pairwiseRequests()};
- snapshot.options[0].bind_allowed=false;
- assert.equal(elegirRondaUnicaMvp291(snapshot,proposal(null,completePairs())).requestId,null);
-});
-test('No confundir bolsa pequeña con bolsón sólo porque el número coincide',async()=>{
- const {corroborarCantidadMvp291}=await import(
-  '../../supabase/functions/cotironda-piloto-whapi/supplier-auto-correlation-contextual-v2.ts');
- const sack=line(1,'bolsas de arena','2','bag');
- const bigbag=line(1,'bolsones de arena','2','bag');
- assert.equal(corroborarCantidadMvp291(sack,bigbag),'unknown');
- assert.equal(corroborarCantidadMvp291(line(1,'arena','2','bolsones'),
-   line(1,'bolsones de arena','2','bag')),'strong');
-});
+const snap=()=>({quote:quote(),options:[latest(),former()]});
+const allLinks=()=>[1,2,3].flatMap(i=>[
+ match('r1',i,i,'equivalent'),match('r2',i,i,'equivalent')
+]);
+const sql=readFileSync(new URL(
+ '../../supabase/piloto/v2_ia_central_asociacion_ultima_ronda_CANDIDATE.sql',
+ import.meta.url),'utf8');
 
-test('La revisión adicional de cantidad usa un RPC nuevo y un único lease',async()=>{
- const snap={quote:pairwiseOffer(),options:pairwiseRequests()};
- const called=[];let reads=0;
+test('IA Central elige la ronda actual sin segunda interpretación numérica',()=>{
+ const s=snap();
+ const pick=elegirRondaUnicaMvp291(s,proposal('r1',allLinks()));
+ assert.equal(pick.requestId,a);
+ assert.equal(pick.reason,'ai_central_selected_v2');
+ assert.deepEqual(pick.scores,[]);
+});
+test('La IA puede elegir una ronda con marca o presentación diferente',()=>{
+ const s={quote:[line(1,'Ceresita hidrófugo bidones 5 L','3','bidones')],
+ options:[{request_id:a,lines:[line(1,'Cemento','10','bolsas')]},
+ {request_id:b,lines:[line(1,'Hidrófugo 20 litros','2','bidones')]}]};
+ assert.equal(elegirRondaUnicaMvp291(s,
+  proposal('r2',[match('r2',1,1,'equivalent')])).requestId,b);
+});
+test('La IA puede elegir un parcial: Cotironda no inventa requisitos de cantidad',()=>{
+ const s={quote:[line(1,'Cemento','7','bolsas')],
+ options:[{request_id:a,lines:[line(1,'Cemento CPC 50kg','10','bag')]},
+ {request_id:b,lines:[line(1,'Cemento CPC 50kg','9','bag')]}]};
+ const choice=elegirRondaUnicaMvp291(s,
+  proposal('r1',[match('r1',1,1),match('r2',1,1)]));
+ assert.equal(choice.requestId,a);
+ assert.equal(choice.reason,'ai_central_selected_v2');
+});
+test('Una ronda ya cerrada jamás es destino de una selección IA',()=>{
+ const s=snap();
+ assert.equal(elegirRondaUnicaMvp291(s,
+  proposal('r2',allLinks())).requestId,null);
+ assert.equal(elegirRondaUnicaMvp291(s,
+  proposal('r2',allLinks())).reason,'historical_round_selected');
+});
+test('Una elección sin vínculo material comprobable no se publica',()=>{
+ const s=snap();
+ assert.equal(elegirRondaUnicaMvp291(s,proposal('r1',[])).requestId,null);
+ assert.equal(elegirRondaUnicaMvp291(s,
+  proposal('r1',[match('r1',1,1,'uncertain')])).requestId,null);
+});
+test('Los punteros inventados o duplicados se rechazan',()=>{
+ const s=snap();
+ for(const bad of [
+  proposal('r1',[match('r1',99,1)]),
+  proposal('r1',[match('r1',1,99)]),
+  proposal('r9',[match('r1',1,1)]),
+  proposal('r1',[match('r1',1,1),match('r1',1,2)])
+ ])assert.equal(elegirRondaUnicaMvp291(s,bad).requestId,null);
+});
+test('Abstención IA con ronda más reciente compatible abre ÚNICAMENTE último recurso SQL',()=>{
+ const result=elegirRondaUnicaMvp291(snap(),proposal(null,allLinks()));
+ assert.equal(result.requestId,a);
+ assert.equal(result.reason,'last_resort_latest_unanswered_v2');
+ assert.deepEqual(result.scores,[]);
+});
+test('Abstención IA sin ninguna vinculación al pedido reciente permanece privada',()=>{
+ const s=snap();
+ assert.equal(elegirRondaUnicaMvp291(s,proposal(null,[
+  match('r2',1,1)])).requestId,null);
+});
+test('Tres rondas simultáneas jamás admiten último recurso de recencia',()=>{
+ const s=snap();s.options.push({request_id:c,lines:[line(1,'Cemento','10','bolsas')]});
+ assert.equal(elegirRondaUnicaMvp291(s,proposal(null,
+  [match('r1',1,1),match('r2',1,1),match('r3',1,1)])).requestId,null);
+});
+test('IA no pudo resolver por relación uncertain: no se fuerza una asociación',()=>{
+ const s=snap();
+ const selected=elegirRondaUnicaMvp291(s,proposal(null,
+  [match('r1',2,2,'uncertain'),match('r2',2,2)]));
+ assert.equal(selected.requestId,null);
+});
+test('Una decisión IA explícita anterior nunca se cambia silenciosamente por reciente',()=>{
+ const s=snap();s.options[1].bind_allowed=true;
+ const selected=elegirRondaUnicaMvp291(s,proposal('r2',allLinks()));
+ assert.equal(selected.requestId,b);
+ assert.equal(selected.reason,'ai_central_selected_v2');
+});
+test('Dos lecturas divergentes de fixture se invalidan, pero producción usa solo una',()=>{
+ const s=snap();
+ assert.equal(elegirRondaUnicaMvp291(s,proposal('r1',allLinks()),
+  proposal('r2',[match('r2',1,1)])).requestId,null);
+});
+test('Una decisión con un original inventado jamás genera vínculo',async()=>{
+ const original='Cotizo 10 bolsas de cemento CPC 50 kg.';
+ const output=await extraerMaterialesTextoMvp292({
+  source:original,apiKey:'k'.repeat(24),model:'gpt-6-luna',
+  read:async()=>({items:[{
+   original:'20 bolsas de pintura',
+   description:'pintura',quantity:'20',unit:'bolsas'
+  }]})
+ });
+ assert.equal(output,null);
+});
+test('Texto: IA de extracción conserva cantidades originales, sin completar IVA',async()=>{
+ let reads=0;
+ const text='Cotizo 10 bolsas de cemento CPC 50 kg.';
+ const output=await extraerMaterialesTextoMvp292({
+  source:text,apiKey:'k'.repeat(24),model:'gpt-6-luna',
+  read:async()=>{reads++;return {items:[{
+   original:'10 bolsas de cemento CPC 50 kg',
+   description:'cemento CPC 50 kg',quantity:'10',unit:'bolsas'
+  }]}}
+ });
+ assert.equal(output?.[0]?.quantity,'10');
+ assert.equal(reads,1);
+});
+test('Operativo IA selecciona una sola vez; asociación va por SQL aislado',async()=>{
+ const s=snap(),events=[];let reads=0;
  const rpc=async(name,args)=>{
-  called.push(name);
+  events.push({name,args});
   if(name==='cotironda_piloto_stage_supplier_text_mvp292')
    return {data:{state:'already_staged'},error:null};
-  if(name==='cotironda_piloto_auto_correlation_retry_quantity_prepare_v2')
+  if(name==='cotironda_piloto_auto_correlation_prepare_mvp291')
    return {data:{state:'reserved',source_sha256:hash,
-     quote:snap.quote,candidates:snap.options},error:null};
-  if(name==='cotironda_piloto_auto_correlation_bind_mvp291'){
+    quote:s.quote,candidates:s.options},error:null};
+  if(name==='cotironda_piloto_auto_correlation_bind_ai_selected_v2'){
    assert.equal(args.p_request,a);
    return {data:{state:'linked_private'},error:null};
   }
   throw Error('unexpected rpc '+name);
  };
- const result=await correlacionAutomaticaMvp291({
+ const outcome=await correlacionAutomaticaMvp291({
   enabled:true,webhookAuthenticated:true,sourceHmac:hash,chatHmac:chat,
-  apiKey:'k'.repeat(24),model:'gpt-6-luna',
-  textQuote:snap.quote,textSha256:hash,retryQuantityAfterReview:true,rpc,
-  compare:async()=>{reads++;return proposal(null,completePairs())}
+  textQuote:s.quote,textSha256:hash,apiKey:'k'.repeat(24),
+  model:'gpt-6-luna',rpc,compare:async()=>{reads++;return proposal('r1',allLinks())}
  });
- assert.equal(result.state,'linked_private');
+ assert.equal(outcome.state,'linked_private');
+ assert.equal(outcome.reason,'ai_central_selected_v2');
  assert.equal(reads,1);
- assert.equal(result.outboundMessages,0);
- assert.deepEqual(called.filter(n=>n.includes('retry_quantity_prepare_v2')),
-  ['cotironda_piloto_auto_correlation_retry_quantity_prepare_v2']);
- assert.equal(called.filter(n=>n.includes('_bind_')).length,1);
+ assert.equal(outcome.outboundMessages,0);
+ assert.equal(events.filter(x=>x.name.includes('_bind_')).length,1);
 });
-test('No permite reintento de cantidades duplicado ni sin texto corroborado',async()=>{
- const rpc=async()=>{throw Error('should not reach database')};
- const base={enabled:true,webhookAuthenticated:true,
-  sourceHmac:hash,chatHmac:chat,apiKey:'k'.repeat(24),
-  model:'gpt-6-luna',rpc,retryQuantityAfterReview:true};
- assert.equal((await correlacionAutomaticaMvp291({
-  ...base,retryReviewedOnce:true,textSha256:hash,textQuote:pairwiseOffer()
- })).state,'not_eligible');
+test('Si IA se abstiene, se consulta exclusivamente la RPC SQL del último recurso',async()=>{
+ const s=snap(),calls=[];let reads=0;
+ const rpc=async(name,args)=>{
+  calls.push(name);
+  if(name==='cotironda_piloto_stage_supplier_text_mvp292')
+   return {data:{state:'already_staged'},error:null};
+  if(name==='cotironda_piloto_auto_correlation_retry_quantity_prepare_v2')
+   return {data:{state:'reserved',source_sha256:hash,quote:s.quote,candidates:s.options},error:null};
+  if(name==='cotironda_piloto_auto_correlation_bind_latest_unanswered_v2'){
+   assert.equal(args.p_request,a);
+   return {data:{state:'linked_private'},error:null};
+  }
+  throw Error(name);
+ };
+ const outcome=await correlacionAutomaticaMvp291({
+  enabled:true,webhookAuthenticated:true,sourceHmac:hash,chatHmac:chat,
+  textQuote:s.quote,textSha256:hash,retryQuantityAfterReview:true,
+  apiKey:'k'.repeat(24),model:'gpt-6-luna',rpc,
+  compare:async()=>{reads++;return proposal(null,allLinks())}
+ });
+ assert.equal(outcome.state,'linked_private');
+ assert.equal(outcome.reason,'last_resort_latest_unanswered_v2');
+ assert.equal(reads,1);
+ assert.equal(outcome.outboundMessages,0);
+ assert.deepEqual(calls.filter(x=>x.includes('_bind_')),
+  ['cotironda_piloto_auto_correlation_bind_latest_unanswered_v2']);
+});
+test('Si SQL deniega último recurso, original permanece privado y auditado',async()=>{
+ const s=snap(),calls=[];
+ const rpc=async(name)=>{
+  calls.push(name);
+  if(name==='cotironda_piloto_auto_correlation_prepare_mvp291')
+   return {data:{state:'reserved',source_sha256:hash,quote:s.quote,candidates:s.options},error:null};
+  if(name==='cotironda_piloto_auto_correlation_bind_latest_unanswered_v2')
+   return {data:{state:'different_buyers'},error:null};
+  if(name==='cotironda_piloto_auto_correlation_finish_mvp291')
+   return {data:{state:'recorded'},error:null};
+  throw Error(name);
+ };
+ const out=await correlacionAutomaticaMvp291({
+  enabled:true,webhookAuthenticated:true,sourceHmac:hash,chatHmac:chat,
+  apiKey:'k'.repeat(24),model:'gpt-6-luna',rpc,
+  compare:async()=>proposal(null,allLinks())
+ });
+ assert.equal(out.state,'unresolved_private');
+ assert.equal(out.reason,'fallback_not_verified');
+ assert.equal(out.outboundMessages,0);
+ assert.equal(calls.filter(x=>x.includes('_bind_')).length,1);
+});
+test('Si SQL deniega la elección IA, no hay segundo intérprete ni publicación',async()=>{
+ const s=snap(),calls=[];
+ const rpc=async(name)=>{
+  calls.push(name);
+  if(name==='cotironda_piloto_auto_correlation_prepare_mvp291')
+   return {data:{state:'reserved',source_sha256:hash,quote:s.quote,candidates:s.options},error:null};
+  if(name==='cotironda_piloto_auto_correlation_bind_ai_selected_v2')
+   return {data:{state:'buyer_isolation_not_verified'},error:null};
+  if(name==='cotironda_piloto_auto_correlation_finish_mvp291')
+   return {data:{state:'recorded'},error:null};
+  throw Error(name);
+ };
+ const out=await correlacionAutomaticaMvp291({
+  enabled:true,webhookAuthenticated:true,sourceHmac:hash,chatHmac:chat,
+  apiKey:'k'.repeat(24),model:'gpt-6-luna',rpc,
+  compare:async()=>proposal('r1',allLinks())
+ });
+ assert.notEqual(out.state,'linked_private');
+ assert.equal(out.outboundMessages,0);
+ assert.equal(calls.filter(x=>x.includes('_bind_')).length,1);
+});
+test('No permite reintentar automáticamente sin texto auténtico corroborado',async()=>{
+ const base={enabled:true,webhookAuthenticated:true,sourceHmac:hash,
+  chatHmac:chat,apiKey:'k'.repeat(24),model:'gpt-6-luna',
+  rpc:async()=>{throw Error('should not access DB')},
+  retryQuantityAfterReview:true};
  assert.equal((await correlacionAutomaticaMvp291(base)).state,'not_eligible');
+ assert.equal((await correlacionAutomaticaMvp291({
+  ...base,retryReviewedOnce:true,textQuote:quote(),textSha256:hash
+ })).state,'not_eligible');
 });
-
-test('IA relaciona sólo ronda nueva: reusa renglones idénticos de la otra',()=>{
- const s={quote:pairwiseOffer(),options:pairwiseRequests()};
- assert.equal(elegirRondaUnicaMvp291(s,proposal(null,
-  [1,2,3].map(i=>match('r1',i,i,'equivalent')))).requestId,a);
+test('Último recurso exige exactamente dos rondas, mismo comprador y presupuesto anterior',()=>{
+ for(const must of [
+  "v_n<>2", "different_buyers","latest_not_active","latest_already_quoted",
+  "prior_quote_missing","non_unique_order","not_two_latest",
+  "l.request_id=v_previous","l.supplier_key=v_source.participant_key",
+  "prior.received_at<v_source.received_at",
+  "l.request_id=v_latest","seen.request_id=v_latest",
+  "q.request_id=v_latest","r.state IN('prepared','closed')",
+  "r.created_at<=v_source.received_at","r.closes_at>v_source.received_at",
+  "r.closed_at>v_source.received_at","buyer.consent_at IS NOT NULL",
+  "supplier.consent_at IS NOT NULL","i.state='prepared'",
+  "d.state='api_accepted'","o.state='api_accepted'",
+  "public.cotironda_piloto_auto_correlation_bind_mvp291("
+ ])assert.ok(sql.includes(must),must);
 });
-test('IA relaciona sólo ronda anterior: el detalle de cantidades identifica la nueva',()=>{
- const s={quote:pairwiseOffer(),options:pairwiseRequests()};
- assert.equal(elegirRondaUnicaMvp291(s,proposal(null,
-  [1,2,3].map(i=>match('r2',i,i,'equivalent')))).requestId,a);
+test('Decisión IA nunca vincula rondas de compradores diferentes',()=>{
+ assert.match(sql,/count\(DISTINCT candidates\.buyer_key\)/u);
+ assert.match(sql,/v_buyers<>1/u);
+ assert.match(sql,/buyer_isolation_not_verified/u);
 });
-test('Arena fina versus gruesa no puede completarse por parecido de texto',()=>{
- const s={quote:pairwiseOffer(),options:pairwiseRequests()};
- s.options[1].lines[1].description='bolsón de arena gruesa 1 m³';
- assert.equal(elegirRondaUnicaMvp291(s,proposal(null,
-  [1,2,3].map(i=>match('r1',i,i)))).requestId,null);
-});
-test('Una relación uncertain explícita prevalece sobre puente literal',()=>{
- const s={quote:pairwiseOffer(),options:pairwiseRequests()};
- const p=[...([1,2,3].map(i=>match('r1',i,i))),match('r2',2,2,'uncertain')];
- assert.equal(elegirRondaUnicaMvp291(s,proposal(null,p)).requestId,null);
-});
-test('Una sola línea en la respuesta jamás justifica asignación por cantidad',()=>{
- const s={quote:pairwiseOffer(),options:pairwiseRequests()};
- assert.equal(elegirRondaUnicaMvp291(s,proposal(null,[match('r1',2,2)])).requestId,null);
-});
-test('No cuenta duplicados del mismo material como dos productos independientes',()=>{
- const s={quote:[line(1,'Cemento CPC','10','bolsas'),line(2,'Cemento CPC','10','bolsas')],
-  options:[{request_id:a,lines:[line(1,'Cemento CPC 50kg','10','bolsas')]},
-   {request_id:b,lines:[line(1,'Cemento CPC 50kg','9','bolsas')]}]};
- const p=[match('r1',1,1),match('r1',2,1),match('r2',1,1),match('r2',2,1)];
- assert.equal(elegirRondaUnicaMvp291(s,proposal(null,p)).requestId,null);
-});
-test('Descripción genérica no permite deducir relaciones omitidas',()=>{
- const s={quote:[line(1,'cemento','10','bolsas'),line(2,'arena','2','bolsones')],
- options:[{request_id:a,lines:[line(1,'cemento','10','bolsas'),line(2,'arena','2','bolsones')]},
- {request_id:b,lines:[line(1,'cemento','10','bolsas'),line(2,'arena','1','bolsones')]}]};
- assert.equal(elegirRondaUnicaMvp291(s,proposal(null,[match('r1',1,1),match('r1',2,2)])).requestId,null);
-});
-test('Renglones duplicados del pedido rival no pueden completarse',()=>{
- const s={quote:pairwiseOffer(),options:pairwiseRequests()};
- s.options[1].lines.push(line(9,'bolsón de arena fina de 1 m³','1','bag'));
- assert.equal(elegirRondaUnicaMvp291(s,proposal(null,
-  [1,2,3].map(i=>match('r1',i,i)))).requestId,null);
+test('RLS y acceso privados: ninguna RPC de asociación nueva disponible al cliente',()=>{
+ for(const name of [
+  'cotironda_piloto_auto_correlation_bind_latest_unanswered_v2',
+  'cotironda_piloto_auto_correlation_bind_ai_selected_v2'
+ ]){
+  assert.ok(sql.includes('REVOKE ALL ON FUNCTION public.'+name));
+  assert.ok(sql.includes('FROM PUBLIC,anon,authenticated'));
+  assert.ok(sql.includes('TO service_role'));
+ }
+ assert.doesNotMatch(sql,/\bDELETE\s+FROM\b|\bDROP\s+TABLE\b/iu);
+ assert.doesNotMatch(sql,/UPDATE cotironda_piloto_privado\.whapi_inbox SET request_id/u);
 });
