@@ -122,8 +122,9 @@ export function evidenciarTextoComercialV2(
   const pos=source.indexOf(item.sourceLine,previous+1);
   if(pos<0||pos<=previous)return null;
   previous=pos+item.sourceLine.length-1;
+  const literal=item.sourceLine as string;
   const textField=(x:unknown,max:number):x is string|null=>
-   x===null||(quoted(x,max)&&item.sourceLine.includes(x));
+   x===null||(quoted(x,max)&&literal.includes(x));
   if(!textField(item.quantity,40)||!textField(item.unit,50))return null;
   const up=monetaryLiteral(item.unitPrice,item.sourceLine);
   const row=monetaryLiteral(item.lineTotal,item.sourceLine);
