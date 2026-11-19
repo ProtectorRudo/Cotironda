@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHmac} from 'node:crypto';
 import {readFileSync} from 'node:fs';
+import {runInNewContext} from 'node:vm';
 import {generarWebhookD016,conectarConsentimientoOriginalesD016} from '../../scripts/piloto/v2-d016-whapi-overlay.mjs';
 import {notificarAccesoWhatsappD016,permitirAvisoD016,permitirRecuperacionD016,
  habilitarPublicacionD013ConAccesoD016}
@@ -395,4 +396,30 @@ test('D016 Whapi: enlace a app.cotironda.com exacto conserva SQL, HMAC y evita d
   assert.equal(f.state.prepares.length,0,invalid);
   assert.equal(f.state.sent.length,0,invalid);
  }
+});
+
+
+test('D016 recuperación: origen propio exacto, sin aceptar otros dominios ni debilitar el acceso',()=>{
+ const edge=readFileSync(new URL(
+  '../../supabase/functions/cotironda-piloto-v2-reemitir-acceso/index.ts',
+  import.meta.url),'utf8');
+ // Ejecutamos sólo la expresión real de la puerta Deno, sin llamar
+ // al webhook ni emitir un ticket o WhatsApp.
+ const fragment=edge.match(/function originAllowed\(o:string\):boolean\{([\s\S]*?)\n\}/u);
+ assert.ok(fragment,'guardia D016 de reemisión presente');
+ const guard=runInNewContext('(function(o){'+fragment[1]+'\n})',{URL});
+ for(const origin of [PORTAL,'https://app.cotironda.com'])
+  assert.equal(guard(origin),true,origin);
+ for(const origin of [
+  'https://cotironda.com','https://www.cotironda.com',
+  'https://evil.vercel.app','https://app.cotironda.com.evil.test',
+  'https://xapp.cotironda.com','http://app.cotironda.com',
+  'https://app.cotironda.com/','https://app.cotironda.com:8443',
+  'https://app.cotironda.com?token=123',
+  'https://usuario@app.cotironda.com'
+ ])assert.equal(guard(origin),false,origin);
+ assert.match(edge,/const portal=Deno\.env\.get\('COTIRONDA_PILOT_D016_PORTAL_ORIGIN'\)/u);
+ assert.match(edge,/if\(!SHA\.test\(deployed\)\|\|deployed!==approved\)/u);
+ assert.match(edge,/const access=portal\+'\/piloto\/v2\/acceso#d016='/u);
+ assert.match(edge,/cotironda_piloto_v2_d016_reissue_unique_pilot_private/u);
 });
