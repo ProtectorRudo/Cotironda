@@ -53,7 +53,7 @@ test('Propuestas: precio y estado visibles, condiciones y evidencia sólo a pedi
  assert.match(bids,/coti-clean-insights/u);
  assert.match(bids,/coti-clean-amount-kind/u);
  assert.doesNotMatch(bids,/\{p\.observacion\}.*0 días/u);
- assert.match(bids,/informe&&<section/u);
+ assert.match(bids,/informe\?\.requestId===rondaId\.toLowerCase\(\)&&<section/u);
 });
 test('No cambian acciones, autorización de descargas ni regeneración IA',()=>{
  assert.match(bids,/credentials:'same-origin'/u);
@@ -73,7 +73,7 @@ test('D019: ficha breve muestra solo diferencias técnicas y deja comparativo pa
  assert.match(bids,/Equivalencias técnicas por comprobar/u);
  assert.match(bids,/informe\.materiales/u);
  assert.match(bids,/Coincidencia automática/u);
- assert.match(bids,/informe&&<section/u);
+ assert.match(bids,/informe\?\.requestId===rondaId\.toLowerCase\(\)&&<section/u);
  assert.doesNotMatch(bids,/\['Entrega',q\.resumen\.condiciones\.entrega\]/u);
  assert.doesNotMatch(bids,/Artículos e importes extraídos del presupuesto/u);
  assert.doesNotMatch(bids,/q\.resumen\.detalleCotizado\.map\(/u);
