@@ -78,7 +78,7 @@ test('D016 Whapi: token hash igual a Node, URL fragmento no query y sin secretos
  assert.match(body,/No tenés que enviar ninguna palabra/u);
  assert.doesNotMatch(body,/vence en 10 minutos|un solo uso/u);
  const link=body.match(/https:\/\/\S+/u)?.[0];
- assert.ok(link?.startsWith(PORTAL+'/piloto/v2/acceso#d016='));
+ assert.ok(link?.startsWith('https://app.cotironda.com/piloto/v2/acceso#d016='));
  assert.ok(!link.includes('?'));
  const token=link.split('#d016=')[1]?.split('&ronda=')[0];
  assert.match(token,/^[A-Za-z0-9_-]{43}$/u);
@@ -420,6 +420,20 @@ test('D016 recuperación: origen propio exacto, sin aceptar otros dominios ni de
  ])assert.equal(guard(origin),false,origin);
  assert.match(edge,/const portal=Deno\.env\.get\('COTIRONDA_PILOT_D016_PORTAL_ORIGIN'\)/u);
  assert.match(edge,/if\(!SHA\.test\(deployed\)\|\|deployed!==approved\)/u);
- assert.match(edge,/const access=portal\+'\/piloto\/v2\/acceso#d016='/u);
+ assert.match(edge,/const access='https:\/\/app\.cotironda\.com\/piloto\/v2\/acceso#d016='/u);
  assert.match(edge,/cotironda_piloto_v2_d016_reissue_unique_pilot_private/u);
+});
+
+
+test('D016 transición: Whapi no envía más enlaces al alias antiguo, sin tocar el permiso SQL',async()=>{
+ const x=make();
+ assert.equal((await x.run()).estado,'api_aceptada');
+ assert.equal(x.state.sent.length,1);
+ assert.equal(x.state.prepares.length,1);
+ const sent=x.state.sent[0].body;
+ assert.match(sent,/https:\/\/app\.cotironda\.com\/piloto\/v2\/acceso#d016=/u);
+ assert.ok(!sent.includes(PORTAL));
+ const recoverySource=readFileSync(new URL('../../supabase/functions/cotironda-piloto-v2-reemitir-acceso/index.ts',import.meta.url),'utf8');
+ assert.match(recoverySource,/const access='https:\/\/app\.cotironda\.com\/piloto\/v2\/acceso#d016='/u);
+ assert.match(recoverySource,/if\(!originAllowed\(portal\)\)/u);
 });
