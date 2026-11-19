@@ -259,7 +259,7 @@ export async function correlacionAutomaticaMvp291(args:{
    const fallback=chosen.reason==='last_resort_latest_unanswered_v2';
    const source=await db(fallback
     ?'cotironda_piloto_auto_correlation_bind_latest_unanswered_v2'
-    :'cotironda_piloto_auto_correlation_bind_mvp291',{
+    :'cotironda_piloto_auto_correlation_bind_ai_selected_v2',{
     p_source_hmac:args.sourceHmac,p_chat_hmac:args.chatHmac,
     p_source_sha256:snapshot.sha,p_request:chosen.requestId
    });
