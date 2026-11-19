@@ -40,6 +40,7 @@ type ResumenComercio=Readonly<{
 }>;
 export type InformeFinalD016=Readonly<{
  estado:'informe_final_disponible';
+ requestId:string;
  cierreMs:number;documentos:number;comercios:number;
  analizados:number;sinAnalisis:number;
  resumen:string;conclusion:string;
@@ -224,7 +225,8 @@ export function componerInformeFinalD016(
   `Se recibieron ${total} documentos de ${sorted.length} comercios identificados por nombre. `+
   `${analysed} tienen guía verificada y ${total-analysed} requieren lectura directa del original.`;
  return Object.freeze({
-  estado:'informe_final_disponible',cierreMs:state.closedAtMs,
+  estado:'informe_final_disponible',requestId:state.requestId,
+  cierreMs:state.closedAtMs,
   documentos:total,comercios:sorted.length,analizados:analysed,
   sinAnalisis:total-analysed,resumen,conclusion,
   observacionesIA:Object.freeze(observacionesIA),
