@@ -186,18 +186,32 @@ export function componerInformeFinalD016(
  const equivalenciasPendientes=ofertas.some(o=>!o.cobertura||
   o.cobertura.identificados<o.cobertura.solicitados||
   o.cobertura.porVerificar.length>0);
- const conclusion=total===0?
-  'No se recibieron presupuestos disponibles para comparar.':
+ const tipos=new Set(ofertas.map(o=>o.tipoImporte));
+ const sumasYSubtotales=tipos.has('Subtotal informado')&&
+  tipos.has('Suma de artículos cotizados');
+ const dosProveedores=sorted.length===2&&ofertas.length===2;
+ const cantidad=dosProveedores&&ofertas[0].articulosCotizados!==null&&
+  ofertas[0].articulosCotizados===ofertas[1].articulosCotizados?
+  ofertas[0].articulosCotizados:null;
+ const proveedoresPorVerificar=sorted.filter(([,info])=>
+  info.ofertas.some(o=>!o.cobertura||
+   o.cobertura.identificados<o.cobertura.solicitados||
+   o.cobertura.porVerificar.length>0)).map(([comercio])=>comercio);
+ const conclusion=total===0?'No se recibieron presupuestos disponibles para comparar.':
   [
-   montosNoFinales?
-    'Hay subtotales o sumas de artículos que no acreditan el precio final.':
-    faltanMontos?'No todos los proveedores informaron un importe comparable.':
-    'Los importes declarados deben cotejarse con los originales.',
+   cantidad!==null&&cantidad>0?
+    'Ambos proveedores cotizaron '+cantidad+' artículos cada uno.':null,
+   sumasYSubtotales?
+    'El subtotal y la suma calculada no son precios finales directamente comparables.':
+    montosNoFinales?
+     'Hay importes que son subtotales o sumas de artículos, no precios finales.':
+     faltanMontos?'No todos los presupuestos tienen un importe informado.':
+     'Los totales declarados requieren revisar IVA y flete en los originales.',
    equivalenciasPendientes?
-    'Falta confirmar equivalencias de productos, cantidades o presentaciones.':
-    'Las coincidencias técnicas automáticas no sustituyen la revisión del original.',
-   'Consultá los presupuestos originales antes de decidir.'
-  ].join(' ');
+    proveedoresPorVerificar.length===1?
+     'En '+proveedoresPorVerificar[0]+' hay equivalencias por verificar.':
+     'Hay equivalencias de materiales por verificar.':null
+  ].filter(Boolean).join(' ');
  // Reutilizar observaciones YA elaboradas por IA, aceptadas por su evidencia
  // del original y filtradas por el catálogo privado; no hacer otra lectura.
  const observacionesIA=sorted.flatMap(([comercio,info])=>
