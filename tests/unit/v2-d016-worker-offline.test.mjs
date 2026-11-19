@@ -150,3 +150,35 @@ test('D016 offline: error IA guarda review y no inventa guías',async()=>{
  assert.equal(f.state.receipt.points,null);
  assert.equal(f.state.receipt.textSha256,null);
 });
+
+test('D016 offline: internal_text_v2 descifra por AES, analiza y no expone el original',async()=>{
+ const iv=Uint8Array.from({length:12},(_,i)=>i+1);
+ const aes=await crypto.subtle.importKey('raw',Buffer.from(KEY,'hex'),
+  'AES-GCM',false,['encrypt']);
+ const cipher=new Uint8Array(await crypto.subtle.encrypt({
+  name:'AES-GCM',iv,
+  additionalData:new TextEncoder().encode(CHAT+'|'+MESSAGE+'|text'),
+  tagLength:128
+ },aes,BYTES));
+ const source={...file(),state:'internal_text_v2',mime:'text/plain',
+  chatHmac:CHAT,nonceB64:Buffer.from(iv).toString('base64'),
+  ciphertextB64:Buffer.from(cipher).toString('base64')};
+ const f=fixture();f.state.source=source;
+ const response=await f.run();
+ assert.deepEqual(await response.json(),{
+  state:'ready',checked:1,ready:1,review:0
+ });
+ assert.equal(f.state.modelCount,1);
+ assert.equal(f.state.receipt.textSha256,SHA);
+ assert.equal(f.state.receipt.status,'ready');
+ const altered=fixture();altered.state.source={...source,chatHmac:'f'.repeat(64)};
+ const denied=await altered.run();
+ assert.equal((await denied.json()).state,'review');
+ assert.equal(altered.state.modelCount,0);
+ assert.equal(altered.state.receipt.points,null);
+ const badEnrollment=fixture();
+ badEnrollment.state.source={...source,enrolledAt:1700000000002,
+  invitedAt:1700000000001};
+ assert.equal((await (await badEnrollment.run()).json()).state,'skipped');
+ assert.equal(badEnrollment.state.modelCount,0);
+});
