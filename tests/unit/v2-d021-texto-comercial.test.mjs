@@ -144,3 +144,12 @@ test('D021: portal presenta mensaje original privado, sin imagen falsa ni HTML i
  assert.ok(ui.includes('originales-whatsapp'));
  assert.ok(!ui.includes('dangerouslySetInnerHTML'));
 });
+
+test('D021: datos de contacto literales tampoco pasan a la ficha comercial',()=>{
+ const s='cemento 50 kg llamar al 11 1234 5678, precio $20.000';
+ const input={lines:[{
+  sourceLine:s,description:'cemento 50 kg llamar al 11 1234 5678',
+  quantity:null,unit:null,unitPrice:'$20.000',lineTotal:null,ambiguous:false
+ }],totalLiteral:null,termsLiteral:null};
+ assert.equal(evidenciarTextoComercialV2(s,input,1),null);
+});
