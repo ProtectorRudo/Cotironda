@@ -90,12 +90,24 @@ const modelOutput=async(text:string,key:string,model:Modelo,fetcher:Fetch):Promi
   throw Error('model_response_invalid');
  return JSON.parse(messages[0].content[0].text);
 };
+/** A source substring is NOT an entire monetary token: $355.00 must
+ * never be accepted as $355.000. This checks both ends of every occurrence.
+ * No arithmetic, rounding or price inference is performed. */
+function wholeMoneyOffset(source:string,literal:string):number{
+ let start=-1;
+ while((start=source.indexOf(literal,start+1))>=0){
+  const before=source[start-1]??' ',after=source[start+literal.length]??' ';
+  if(!/[\d.,]/u.test(before)&&!/[\d.,]/u.test(after))return start;
+ }
+ return -1;
+}
 function monetaryLiteral(value:unknown,line:string):string|null|false{
  if(value===null)return null;
- if(!quoted(value,45)||!MONEY.test(value)||!line.includes(value))return false;
+ if(!quoted(value,45)||!MONEY.test(value)||
+  wholeMoneyOffset(line,value)<0)return false;
  // Un número sin signo monetario necesita un contexto monetario explícito.
  if(!/^(?:\$|ARS|USD|US\$)/u.test(value)){
-  const pos=line.indexOf(value);
+  const pos=wholeMoneyOffset(line,value);
   const before=line.slice(Math.max(0,pos-38),pos);
   if(!/(?:precio|importe|total|subtotal|valor|c\/u|unitario|\ba\b\s*|=)\s*[:$=]?\s*$/iu.test(before))
    return false;
@@ -139,7 +151,7 @@ export function evidenciarTextoComercialV2(
  let total:string|null=null;
  if(raw.totalLiteral!==null){
   if(!quoted(raw.totalLiteral,45)||!MONEY.test(raw.totalLiteral))return null;
-  const index=source.lastIndexOf(raw.totalLiteral);
+  const index=wholeMoneyOffset(source,raw.totalLiteral);
   if(index<0||!/(?:\btotal|\bsubtotal|\bimporte\s+(?:total|final)|\ba\s+pagar)\s*[:=$ ]*$/iu
    .test(source.slice(Math.max(0,index-45),index)))return null;
   total=raw.totalLiteral;
