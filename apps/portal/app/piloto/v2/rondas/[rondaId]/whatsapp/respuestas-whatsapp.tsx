@@ -25,6 +25,7 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
  const analysisRunning=useRef(false);
  const [analizando,setAnalizando]=useState(false);
  const [expandedDoc,setExpandedDoc]=useState<string|null>(null);
+ const [originalTexto,setOriginalTexto]=useState<{id:string;text:string}|null>(null);
  const [informe,setInforme]=useState<InformeFinalD016|null>(null);
  const informeRunning=useRef(false);
  const url='/api/piloto/v2/rondas/'+encodeURIComponent(rondaId);
@@ -135,8 +136,9 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
   return ()=>{active=false};
  },[catalog,cerrada,url]);
 
- async function download(doc:string){
+ async function download(doc:string,inlineText=false){
   if(busy||!catalog)return;
+  if(inlineText&&originalTexto?.id===doc){setOriginalTexto(null);return;}
   const identity=version.current;
   setBusy(true);setError('');
   try{
@@ -150,13 +152,22 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
    if(identity!==version.current)return;
    if(bytes.byteLength<1||bytes.byteLength>8388608)throw Error('size');
    const mime=res.headers.get('content-type');
-   const link=URL.createObjectURL(new Blob([bytes],{
-    type:mime??'application/octet-stream'
-   }));
-   const a=document.createElement('a');
-   a.href=link;a.download=nombreDescargaOriginalV2(doc,mime);
-   a.style.display='none';document.body.appendChild(a);a.click();a.remove();
-   window.setTimeout(()=>URL.revokeObjectURL(link),30000);
+   if(inlineText){
+    if(mime?.split(';')[0]!=='text/plain'||bytes.byteLength>4000)
+     throw Error('invalid_text_original');
+    const text=new TextDecoder('utf-8',{fatal:true}).decode(bytes);
+    if(text.length<5||text.length>4000)throw Error('invalid_text_size');
+    // React escapes message text. No fake screenshot, HTML or public URL.
+    setOriginalTexto({id:doc,text});
+   }else{
+    const link=URL.createObjectURL(new Blob([bytes],{
+     type:mime??'application/octet-stream'
+    }));
+    const a=document.createElement('a');
+    a.href=link;a.download=nombreDescargaOriginalV2(doc,mime);
+    a.style.display='none';document.body.appendChild(a);a.click();a.remove();
+    window.setTimeout(()=>URL.revokeObjectURL(link),30000);
+   }
   }catch{
    if(identity===version.current)
     setError('No está disponible el original. Cotironda protege cada descarga y vuelve a comprobar los permisos.');
@@ -173,7 +184,7 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
    if(!res.ok)throw Error('logout_failed');
    version.current++;
    historialAnalisis.current.clear();
-   setCatalog(null);setCerrada(true);
+   setCatalog(null);setOriginalTexto(null);setCerrada(true);
   }catch{setError('No pudimos cerrar tu sesión. Volvé a intentarlo.');}
   finally{setBusy(false)}
  }
@@ -271,11 +282,18 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
       {expanded?'Ocultar análisis':'Ver análisis'}
      </button>
      <button className="coti-clean-pdf-button" type="button"
-      disabled={busy} onClick={()=>void download(q.documentoId)}>
-      {q.formato==='WhatsApp (texto)'?'Mensaje original':
+      disabled={busy} onClick={()=>void download(q.documentoId,
+      q.formato==='WhatsApp (texto)')}>
+      {q.formato==='WhatsApp (texto)'?
+       originalTexto?.id===q.documentoId?'Ocultar mensaje original':'Ver mensaje original':
        q.formato==='PDF'?'PDF original':'Descargar original'}
      </button>
     </div>
+    {q.formato==='WhatsApp (texto)'&&originalTexto?.id===q.documentoId&&
+     <div className="coti-clean-original-message" aria-label="Mensaje original autorizado">
+      <strong>Mensaje original de WhatsApp</strong>
+      <pre>{originalTexto.text}</pre>
+     </div>}
     {expanded&&<div className="coti-clean-bid-expanded" id={'detalle-'+q.documentoId}>
      <h4>Lo importante de este presupuesto</h4>
      {diferencias.length>0&&<div className="coti-clean-alert">
