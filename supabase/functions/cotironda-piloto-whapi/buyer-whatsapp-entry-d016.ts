@@ -122,7 +122,9 @@ export async function notificarAccesoWhatsappD016(args:{
   !UUID.test(row.request_id)||
   (args.requestId!==null&&row.request_id!==args.requestId))
   return result('conciliacion_requerida');
- const url=args.portalOrigin+'/piloto/v2/acceso#d016='+token+
+ // El portal comercial ya está activo en app; las URLs anteriores siguen
+ // sirviendo sus tickets desde el despliegue técnico original.
+ const url='https://app.cotironda.com/piloto/v2/acceso#d016='+token+
   '&ronda='+row.request_id;
  const body='Cotironda ✅ Consultá los presupuestos recibidos para tu pedido.\n\n'+
   'Abrí este enlace privado para ingresar sin contraseña ni código:\n'+url+
