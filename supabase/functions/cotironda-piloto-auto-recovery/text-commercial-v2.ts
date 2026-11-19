@@ -97,7 +97,7 @@ function monetaryLiteral(value:unknown,line:string):string|null|false{
  if(!/^(?:\$|ARS|USD|US\$)/u.test(value)){
   const pos=line.indexOf(value);
   const before=line.slice(Math.max(0,pos-38),pos);
-  if(!/(?:precio|importe|total|subtotal|valor|c\/u|unitario|a\s*\$?|=)\s*[:$=]?\s*$/iu.test(before))
+  if(!/(?:precio|importe|total|subtotal|valor|c\/u|unitario|\ba\b\s*|=)\s*[:$=]?\s*$/iu.test(before))
    return false;
  }
  return value;
