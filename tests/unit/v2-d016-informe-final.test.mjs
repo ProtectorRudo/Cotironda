@@ -190,8 +190,9 @@ test('D021 cierre de una pantalla: detalle optativo, sin matriz ni advertencias 
  const front=readFileSync(new URL(
   '../../apps/portal/app/piloto/v2/rondas/[rondaId]/whatsapp/respuestas-whatsapp.tsx',
   import.meta.url),'utf8');
- const block=front.slice(front.indexOf('{informe&&<section'),
-  front.indexOf('</section>}',front.indexOf('{informe&&<section'))+11);
+ const finalStart=front.indexOf('<section className="coti-clean-final"');
+ const block=front.slice(finalStart,
+  front.indexOf('</section>}',finalStart)+11);
  assert.ok(block.length>1000);
  assert.match(block,/informe\.conclusion/u);
  assert.match(block,/oferta\.articulosCotizados/u);
@@ -200,4 +201,28 @@ test('D021 cierre de una pantalla: detalle optativo, sin matriz ni advertencias 
  assert.doesNotMatch(block,/Qué revisar antes de decidir|informe\.recomendaciones\.map/u);
  assert.doesNotMatch(block,/Sin datos suficientes para cotejar/u);
  assert.doesNotMatch(block,/ganador autom[aá]tico|adjudicado a/iu);
+});
+
+test('D016 una ronda nueva jamás muestra informe viejo aunque cambie la navegación',()=>{
+ const newId='eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
+ const previous=componerInformeFinalD016(state(),data(),NOW);
+ const next=componerInformeFinalD016({...state(),requestId:newId},data(),NOW);
+ assert.equal(previous.requestId,ROUND);
+ assert.equal(next.requestId,newId);
+ assert.notEqual(previous.requestId,next.requestId);
+ assert.equal(componerInformeFinalD016(
+  {state:'waiting_for_close',requestId:newId,closedAtMs:CLOSED},data(),NOW),null);
+ const reportSource=readFileSync(new URL(
+  '../../src/server/v2-d016-informe-final.ts',import.meta.url),'utf8');
+ const page=readFileSync(new URL(
+  '../../apps/portal/app/piloto/v2/rondas/[rondaId]/whatsapp/page.tsx',
+  import.meta.url),'utf8');
+ const client=readFileSync(new URL(
+  '../../apps/portal/app/piloto/v2/rondas/[rondaId]/whatsapp/respuestas-whatsapp.tsx',
+  import.meta.url),'utf8');
+ assert.match(reportSource,/requestId:state\.requestId/u);
+ assert.match(page,/key=\{rondaId\.toLowerCase\(\)\}/u);
+ assert.match(client,/data\.requestId!==rondaId\.toLowerCase\(\)/u);
+ assert.match(client,/informe\?\.requestId===rondaId\.toLowerCase\(\)/u);
+ assert.match(client,/setInforme\(null\);return;/u);
 });
