@@ -1,5 +1,6 @@
 /** V2 D016: informe comparativo DETERMINISTA al cerrar dos días hábiles.
- * No suma totales, no decide ganadores, no confunde cobertura con precio,
+ * No suma entre proveedores ni decide ganadores; preserva separada la suma
+ * verificable de renglones de cada oferta y no confunde cobertura con precio,
  * no deduce IVA/flete ausente. Sólo reproduce guías respaldadas por evidencia.
  * Las autorizaciones y fecha de cierre provienen EXCLUSIVAMENTE de SQL.
  */
@@ -79,8 +80,9 @@ export function componerInformeFinalD016(
   const cv=quote.resumen?.cobertura;
   business.ofertas.push(Object.freeze({
    documentoId:quote.documentoId,
-   importe:quote.resumen?.totalDeclarado??null,
-   tipoImporte:quote.resumen?.tipoImporte??'Importe no informado',
+   importe:quote.resumen?.totalDeclarado??quote.resumen?.sumaCalculada??null,
+   tipoImporte:quote.resumen?.totalDeclarado?quote.resumen.tipoImporte:
+    quote.resumen?.sumaCalculada?'Suma de artículos cotizados':'Importe no informado',
    cobertura:cv?Object.freeze({
     identificados:cv.identificados,solicitados:cv.solicitados,
     porVerificar:Object.freeze([...cv.porVerificar])
