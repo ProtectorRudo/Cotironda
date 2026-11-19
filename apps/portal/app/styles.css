@@ -489,3 +489,27 @@ body:has(.coti-clean) .logo:focus-visible{outline:2px solid #9dbff7;outline-offs
  body:has(.coti-clean) a.logo.coti-private-brand img{width:32px;height:35px}
  body:has(.coti-clean) .top .wrap{min-height:58px}
 }
+
+
+/* D021: original WhatsApp only after audited, private text read. */
+.coti-clean-original-message {
+ margin: 12px 0 0;
+ padding: 14px 16px;
+ border: 1px solid #d5e5e2;
+ border-radius: 16px;
+ background: #ecf8f1;
+ color: #193b35;
+}
+.coti-clean-original-message strong {
+ display: block;
+ margin-bottom: 8px;
+ font-size: .875rem;
+}
+.coti-clean-original-message pre {
+ margin: 0;
+ white-space: pre-wrap;
+ overflow-wrap: anywhere;
+ font-family: inherit;
+ font-size: .96rem;
+ line-height: 1.55;
+}
