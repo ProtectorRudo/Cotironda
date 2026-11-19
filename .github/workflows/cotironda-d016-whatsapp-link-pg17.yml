@@ -114,6 +114,8 @@ jobs:
         run: deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-v2-text-reader-d016/index.ts
       - name: D021 texto comercial exacto, typecheck sin desplegar
         run: deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-auto-recovery/text-commercial-v2.ts
+      - name: D021 integración con el recuperador activo, typecheck completo
+        run: deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-auto-recovery/index.ts
       - name: Deno typecheck del worker IA offline protegido
         run: deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-v2-worker-d016/index.ts
       - name: D013 recuperador Vault, Deno check sin ejecutar ni desplegar
