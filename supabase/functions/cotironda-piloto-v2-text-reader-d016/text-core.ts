@@ -189,12 +189,23 @@ export async function resolverTextoPrivadoD016(
 export async function descifrarFuenteWorkerD016(
  raw:unknown,aesHex:string
 ):Promise<Uint8Array|null>{
- if(!object(raw)||raw.state!=='authorized_text_v2'||
+ if(!object(raw)||
+  !['internal_text_v2','authorized_text_v2'].includes(String(raw.state))||
   typeof raw.requestId!=='string'||!UUID.test(raw.requestId)||
   typeof raw.documentId!=='string'||!UUID.test(raw.documentId)||
   typeof raw.buyerKey!=='string'||!BUYER.test(raw.buyerKey)||
   !AES.test(aesHex)||/^0{64}$/u.test(aesHex))
   return null;
- const src=sourceOk(raw,raw.requestId,raw.documentId,raw.buyerKey);
+ // The private cron obtains internal_text_v2, while the public broker
+ // requires authorized_text_v2. Normalize ONLY inside this already
+ // SQL-authorized worker helper; never relax the HTTP broker's sourceOk.
+ const internal=raw.state==='internal_text_v2';
+ if(internal&&(typeof raw.enrolledAt!=='number'||
+  !Number.isSafeInteger(raw.enrolledAt)||raw.enrolledAt<=0||
+  typeof raw.invitedAt!=='number'||!Number.isSafeInteger(raw.invitedAt)||
+  raw.invitedAt<raw.enrolledAt))return null;
+ const normalized=internal?
+  {...raw,state:'authorized_text_v2',consentAt:raw.enrolledAt}:raw;
+ const src=sourceOk(normalized,raw.requestId,raw.documentId,raw.buyerKey);
  return src?decrypt(src,aesHex):null;
 }
