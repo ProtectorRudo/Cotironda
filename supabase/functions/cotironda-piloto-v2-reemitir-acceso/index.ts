@@ -47,6 +47,7 @@ function originAllowed(o:string):boolean{
   const url=new URL(o);
   return url.protocol==='https:'&&url.origin===o&&url.pathname==='/'&&
    !url.search&&!url.hash&&!url.username&&!url.password&&
+   url.port===''&&
    (url.hostname==='app.cotironda.com'||
     (url.hostname.startsWith('cotironda-portal-')&&
      url.hostname.endsWith('-protector-rudo-s-projects.vercel.app')));
