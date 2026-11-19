@@ -128,13 +128,16 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
     if(!response.ok){setInforme(null);return}
     const data:InformeFinalD016=await response.json();
     if(data.estado!=='informe_final_disponible'||
-     !Array.isArray(data.comparacion)||data.documentos<0)return;
+     data.requestId!==rondaId.toLowerCase()||
+     !Array.isArray(data.comparacion)||data.documentos<0){
+     setInforme(null);return;
+    }
     setInforme(data);
    }catch{if(active&&identity===version.current)setInforme(null)}
    finally{informeRunning.current=false}
   })();
   return ()=>{active=false};
- },[catalog,cerrada,url]);
+ },[catalog,cerrada,url,rondaId]);
 
  async function download(doc:string,inlineText=false){
   if(busy||!catalog)return;
@@ -355,7 +358,7 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
     </div>}
    </article>;
   })}
-  {informe&&<section className="coti-clean-final" aria-label="Comparación final de la ronda">
+  {informe?.requestId===rondaId.toLowerCase()&&<section className="coti-clean-final" aria-label="Comparación final de la ronda">
    <h2>Comparación final</h2>
    <p>{informe.conclusion}</p>
    <div className="coti-final-list">
