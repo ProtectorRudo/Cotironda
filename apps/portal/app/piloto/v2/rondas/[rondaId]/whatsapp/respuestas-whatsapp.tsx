@@ -323,8 +323,9 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
        Consultá el presupuesto original.
       </p>}
      {!cover&&<p className="coti-clean-muted">
-      No se pudo confirmar automáticamente la equivalencia técnica de los materiales.
-      El original permite comprobar presentaciones y cantidades.
+      {q.resumen.detalleCotizado.length>0?
+       'Hay artículos cotizados, pero todavía falta confirmar que las cantidades y presentaciones equivalgan a las solicitadas.':
+       'No se pudo confirmar la equivalencia técnica de los materiales. Consultá el original antes de comparar.'}
      </p>}
      {notasTecnicas.length>0&&<ul className="coti-clean-insights">
       {notasTecnicas.slice(0,3).map((p,i)=><li key={q.documentoId+'-nota-'+i}>
