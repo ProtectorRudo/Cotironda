@@ -329,3 +329,48 @@ test('V2: flete a convenir citado en evidencia IA se muestra sin inventar un imp
  ]);
  assert.equal(explicit.condiciones.flete,'No incluido · a cotizar');
 });
+
+test('D021: cuenta articulos cotizados aunque las equivalencias esten pendientes',()=>{
+ const raw={totalLiteral:null,requestItems:[...input.requestItems,
+  {line:4,description:'Montante galvanizado',quantity:'15',unit:'unidad'},
+  {line:5,description:'Placa de yeso',quantity:'8',unit:'unidad'}],
+  assignedItems:input.requestItems,
+  quotedItems:[
+   {line:1,description:'Cemento 50 kg loma negra',quantity:'10',
+    unit:'bolsas',unitPrice:'$105.000',lineTotal:null,
+    ambiguity:'Marca y equivalencia a verificar'},
+   {line:2,description:'arena',quantity:'2',unit:'bolsones',
+    unitPrice:'$150.000',lineTotal:null,
+    ambiguity:'Variante de arena no indicada'},
+   {line:3,description:'piedra',quantity:'1',unit:'bolson',
+    unitPrice:'$100.000',lineTotal:null,
+    ambiguity:'Presentacion no confirmada'}
+  ]};
+ const r=resumirOfertaComercialV2(raw,[]);
+ assert.equal(r.articulosCotizados,3,'cada articulo con precio cuenta como cotizado');
+ assert.equal(r.articulosEnviados,3);
+ assert.equal(r.detalleCotizado.length,3);
+ assert.equal(r.cobertura,null,'la ambiguedad no equivale a coincidencia tecnica');
+ assert.equal(r.totalDeclarado,null,'no inventar total a partir de precios');
+ assert.equal(r.tipoImporte,'Importe no informado');
+ assert.deepEqual(r.condiciones,{iva:'No informado',flete:'No informado',
+  pago:'No informado',entrega:'No informado'});
+});
+test('D021: el contador no infiere articulos de lineas invalidas o duplicadas',()=>{
+ const ambiguous={...input,quotedItems:[
+  {...input.quotedItems[0],ambiguity:'Marca por verificar'},
+  {...input.quotedItems[0],ambiguity:'Repetida'}
+ ]};
+ const r=resumirOfertaComercialV2(ambiguous,[]);
+ assert.equal(r.articulosCotizados,null,'no declarar cantidad con identificadores repetidos');
+ assert.equal(r.cobertura,null);
+});
+test('D021: el portal informa equivalencias pendientes sin repetir importes',()=>{
+ const ui=readFileSync(new URL(
+  '../../apps/portal/app/piloto/v2/rondas/[rondaId]/whatsapp/respuestas-whatsapp.tsx',
+  import.meta.url),'utf8');
+ assert.match(ui,/Hay artículos cotizados, pero todavía falta confirmar/u);
+ assert.match(ui,/q\.resumen\.detalleCotizado\.length>0/u);
+ assert.match(ui,/articulosVisibles\+' artículos cotizados'/u);
+ assert.doesNotMatch(ui,/item\.precioUnitario|item\.subtotal/u);
+});
