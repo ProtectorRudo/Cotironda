@@ -281,3 +281,16 @@ test('RLS y acceso privados: ninguna RPC de asociación nueva disponible al clie
  assert.doesNotMatch(sql,/\bDELETE\s+FROM\b|\bDROP\s+TABLE\b/iu);
  assert.doesNotMatch(sql,/UPDATE cotironda_piloto_privado\.whapi_inbox SET request_id/u);
 });
+
+test('Si el original menciona corrección de oferta anterior no aplica recencia',()=>{
+ const s=snap();
+ s.quote[0].description='Corrección: cemento CPC 50 kg';
+ const outcome=elegirRondaUnicaMvp291(s,proposal(null,allLinks()));
+ assert.equal(outcome.requestId,null);
+ assert.equal(outcome.reason,'explicit_prior_quote_correction');
+});
+test('Sin palabras correctivas, una abstención conserva último recurso SQL',()=>{
+ const s=snap();
+ const result=elegirRondaUnicaMvp291(s,proposal(null,allLinks()));
+ assert.equal(result.reason,'last_resort_latest_unanswered_v2');
+});

@@ -180,6 +180,15 @@ export function elegirRondaUnicaMvp291(
   return {requestId:snapshot.options[i].request_id,
    reason:'ai_central_selected_v2',scores:[]};
  }
+ // A visibly corrective budget is never silently moved to a newer round
+ // as a last resort. This checks only explicit correction wording already
+ // present in an ORIGINAL-SUPPORTED material note, not product semantics.
+ const saysPriorCorrection=snapshot.quote.some(l=>{
+  const text=l.description.normalize('NFD').replace(/\p{M}/gu,'')
+   .toLowerCase();
+  return /\b(?:corrijo|corregimos|correccion|corregido|rectifico|rectificacion|sustituye\s+(?:mi|el)\s+presupuesto|reemplaza\s+(?:mi|el)\s+presupuesto)\b/u.test(text);
+ });
+ if(saysPriorCorrection)return no('explicit_prior_quote_correction');
  // No recency for 3+ overlapping requests, incorrect ordering, or
  // invalid/uncertain description of the NEWEST request.
  // The SQL fallback enforces same buyer and existing supplier quote on
