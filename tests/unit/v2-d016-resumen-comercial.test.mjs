@@ -374,3 +374,92 @@ test('D021: el portal informa equivalencias pendientes sin repetir importes',()=
  assert.match(ui,/articulosVisibles\+' artículos cotizados'/u);
  assert.doesNotMatch(ui,/item\.precioUnitario|item\.subtotal/u);
 });
+
+test('D021: Nahuel conserva suma de 3 renglones sin inventar total declarado',()=>{
+ const original={...input,totalLiteral:null,quotedItems:[
+  {line:1,description:'Cemento 50 kg loma negra',quantity:'10',
+   unit:'bolsas',lineTotal:'$105.000',unitPrice:null,
+   ambiguity:'Marca por verificar'},
+  {line:2,description:'arena',quantity:'2',unit:'bolsón',
+   lineTotal:'$150.000',unitPrice:null,ambiguity:'Tipo de arena por verificar'},
+  {line:3,description:'piedra',quantity:'1',unit:'bolsón',
+   lineTotal:'$100.000',unitPrice:null,ambiguity:'Presentación por verificar'}
+ ]};
+ const r=resumirOfertaComercialV2(original,[]);
+ assert.equal(r.totalDeclarado,null);
+ assert.equal(r.sumaCalculada,'$355.000');
+ assert.equal(r.discrepanciaTotal,false,'sin total literal confiable no se afirma discordancia');
+ assert.equal(r.tipoImporte,'Importe no informado');
+ assert.equal(r.articulosCotizados,3);
+ assert.equal(r.cobertura,null,'un precio no certifica equivalencia de materiales');
+});
+test('D021: no publica suma parcial ni extrapola precios unitarios',()=>{
+ const row={...input.quotedItems[0],lineTotal:'$105.000'};
+ const second={...input.quotedItems[1],lineTotal:'$150.000'};
+ const third={...input.quotedItems[2],lineTotal:'$100.000'};
+ for(const quotedItems of [
+  [row,second,{...third,lineTotal:null,unitPrice:'$100.000'}],
+  [row,{...second,lineTotal:'$150.000 COP'},third],
+  [row,{...second,lineTotal:'$1,234.56'},third],
+  [row,{...second,lineTotal:'USD 150.00'},third],
+  [row,{...second,line:1},third]
+ ]){
+  const r=resumirOfertaComercialV2({...input,totalLiteral:null,quotedItems},[]);
+  assert.equal(r.sumaCalculada,null,JSON.stringify(quotedItems));
+ }
+ assert.equal(resumirOfertaComercialV2({...input,totalLiteral:null},[]).sumaCalculada,null);
+});
+test('D021: suma centavos exactos y separadores ARS/USD sin mezclar monedas',()=>{
+ const make=(a,b)=>resumirOfertaComercialV2({...input,totalLiteral:null,quotedItems:[
+  {...input.quotedItems[0],lineTotal:a},
+  {...input.quotedItems[1],lineTotal:b}
+ ]},[]);
+ assert.equal(make('$1.234,50','$2,25').sumaCalculada,'$1.236,75');
+ assert.equal(make('ARS 1.234.567,80','ARS 1,20').sumaCalculada,'$1.234.569');
+ assert.equal(make('USD 1,234.50','USD 100.00').sumaCalculada,'USD 1.334,50');
+ assert.equal(make('USD 1,234.50','$100').sumaCalculada,null);
+ assert.equal(make('$9.999.999.999.999.999','$1').sumaCalculada,null,
+  'rechazar importes que exceden enteros seguros');
+});
+test('D021: alerta sólo al cotejar total explícito con suma completa',()=>{
+ const quotedItems=[
+  {...input.quotedItems[0],lineTotal:'$105.000'},
+  {...input.quotedItems[1],lineTotal:'$150.000'},
+  {...input.quotedItems[2],lineTotal:'$100.000'}
+ ];
+ const base={...input,quotedItems};
+ const bad=resumirOfertaComercialV2({...base,totalLiteral:'$355.00'},[{
+  categoria:'precio',evidencia:'Total: $355.00',
+  observacion:'El presupuesto declara un importe total.'
+ }]);
+ assert.equal(bad.sumaCalculada,'$355.000');
+ assert.equal(bad.totalDeclarado,'$355.00');
+ assert.equal(bad.tipoImporte,'Total informado');
+ assert.equal(bad.discrepanciaTotal,true);
+ const good=resumirOfertaComercialV2({...base,totalLiteral:'$355.000'},[{
+  categoria:'precio',evidencia:'Total: $355.000',
+  observacion:'La cifra coincide con el total escrito.'
+ }]);
+ assert.equal(good.discrepanciaTotal,false);
+ const subtotal=resumirOfertaComercialV2({...base,totalLiteral:'$355.00'},[{
+  categoria:'precio',evidencia:'Subtotal: $355.00',
+  observacion:'El documento declara un subtotal.'
+ }]);
+ assert.equal(subtotal.discrepanciaTotal,false,
+  'subtotales pueden diferir por IVA, flete u otros conceptos');
+});
+test('D021: portal y cierre distinguen suma calculada de total declarado',()=>{
+ const ui=readFileSync(new URL(
+  '../../apps/portal/app/piloto/v2/rondas/[rondaId]/whatsapp/respuestas-whatsapp.tsx',
+  import.meta.url),'utf8');
+ assert.match(ui,/importeDeclarado\?\?sumaCalculada\?\?'No informado'/u);
+ assert.match(ui,/esSuma\?'Suma de artículos cotizados'/u);
+ assert.match(ui,/el total declarado por el proveedor no está confirmado/u);
+ assert.match(ui,/q\.resumen\.discrepanciaTotal/u);
+ assert.doesNotMatch(ui,/item\.precioUnitario|item\.subtotal/u);
+ const report=readFileSync(new URL('../../src/server/v2-d016-informe-final.ts',
+  import.meta.url),'utf8');
+ assert.match(report,/importe:quote\.resumen\?\.totalDeclarado\?\?quote\.resumen\?\.sumaCalculada\?\?null/u);
+ assert.match(report,/Suma de artículos cotizados/u);
+ assert.doesNotMatch(report,/ganador\s*autom[aá]tico/iu);
+});
