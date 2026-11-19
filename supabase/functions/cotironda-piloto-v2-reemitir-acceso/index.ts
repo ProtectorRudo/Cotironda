@@ -179,7 +179,9 @@ Deno.serve(async(req:Request)=>{
   const contactSha=hex(await crypto.subtle.digest('SHA-256',encoder.encode(recipient)));
   if(!same(row.chatHmac!,expected)||!same(row.contactSha256!,contactSha))
    throw Error('contact_changed');
-  const access=portal+'/piloto/v2/acceso#d016='+token+'&ronda='+row.requestId;
+  // El ticket nuevo se envía al dominio propio; el alias técnico anterior
+  // permanece disponible para enlaces y sesiones ya emitidos.
+  const access='https://app.cotironda.com/piloto/v2/acceso#d016='+token+'&ronda='+row.requestId;
   const message='Cotironda ✅ Tu nuevo acceso privado a Mi Cotironda:\n'+access+
    '\n\nEste enlace se usa una sola vez y vence en 10 minutos. No lo compartas.';
   const sent=await fetch('https://gate.whapi.cloud/messages/text',{
