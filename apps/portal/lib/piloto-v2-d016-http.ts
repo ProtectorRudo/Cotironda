@@ -462,7 +462,10 @@ export async function solicitarAccesoPilotoSinSesionD016(
  if((await req.text().catch(()=>'')).length!==0)return deny(400);
  try{
   // Sin campos del usuario, y HMAC del servidor sobre el cuerpo exacto.
-  const body=JSON.stringify({mode:'pilot_unique',operationId:crypto.randomUUID()});
+  // La firma HMAC certifica también el commit que Vercel ya aprobó en
+  // puertaWhatsappPortalD016; Edge no necesita dos pins divergentes.
+  const body=JSON.stringify({mode:'pilot_unique',operationId:crypto.randomUUID(),
+   releaseSha:gate.shaDesplegado});
   const sentAt=String(Date.now());
   const signature=createHmac('sha256',Buffer.from(gate.claveHmacHex,'hex'))
    .update('cotironda/d016/reissue/v1\\n'+sentAt+'\\n'+body,'utf8')
