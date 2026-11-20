@@ -92,12 +92,12 @@ Deno.serve(async(req:Request)=>{
  if(Deno.env.get('COTIRONDA_PILOT_D016_WHATSAPP_SEND_ENABLED')!=='true')
   return configUnavailable('link_send_disabled');
  const portal=Deno.env.get('COTIRONDA_PILOT_D016_PORTAL_ORIGIN')??'';
- const deployed=Deno.env.get('COTIRONDA_PILOT_D016_PORTAL_RELEASE_SHA')??'';
- const approved=Deno.env.get('COTIRONDA_PILOT_D016_APPROVED_RELEASE_SHA')??'';
  if(!originAllowed(portal))
   return configUnavailable('portal_origin_mismatch');
- if(!SHA.test(deployed)||deployed!==approved)
-  return configUnavailable('release_guard_not_ready');
+ // El portal valida VERCEL_GIT_COMMIT_SHA contra su pin PREVIEW antes
+ // de firmar. Edge exige el commit en el cuerpo firmado con HMAC D016,
+ // sin confiar en dos variables de release duplicadas y potencialmente
+ // divergentes. HMAC, vigencia, elegibilidad SQL y revocación se mantienen.
  if(!req.headers.get('content-type')?.startsWith('application/json'))
   return response('blocked',415);
  const length=req.headers.get('content-length');
@@ -114,11 +114,12 @@ Deno.serve(async(req:Request)=>{
  }catch{return response('blocked',400)}
  // Modo sin cookie: no recibe ID de comprador, teléfono ni ronda.
  // SOLO válido mientras la base posea un único comprador con canal verificado.
- const pilotUnique=Object.keys(input).sort().join(',')==='mode,operationId'&&
+ const pilotUnique=Object.keys(input).sort().join(',')==='mode,operationId,releaseSha'&&
   input.mode==='pilot_unique';
  const authenticated=Object.keys(input).sort().join(',')===
-  'operationId,requestId,sessionHmac';
+  'operationId,releaseSha,requestId,sessionHmac';
  if(typeof input.operationId!=='string'||!UUID.test(input.operationId)||
+  typeof input.releaseSha!=='string'||!SHA.test(input.releaseSha)||
   (!pilotUnique&&!authenticated)||
   (authenticated&&(typeof input.requestId!=='string'||!UUID.test(input.requestId)||
     typeof input.sessionHmac!=='string'||!HASH.test(input.sessionHmac))))
