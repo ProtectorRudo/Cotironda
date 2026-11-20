@@ -451,7 +451,8 @@ test('D016 reemisión: commit del portal validado, HMAC lo ata a la solicitud y 
  assert.match(fn,/req\.headers\.get\('origin'\)!==gate\.origenPortal/u);
  assert.match(fn,/releaseSha:gate\.shaDesplegado/u);
  assert.match(fn,/createHmac\('sha256'/u);
- assert.match(fn,/\.update\('cotironda\/d016\/reissue\/v1\\n'\+sentAt\+'\\n'\+body/u);
+ assert.match(fn,/\.update\('cotironda\/d016\/reissue\/v1/u);
+ assert.match(fn,/\+sentAt\+.*\+body,'utf8'\)/u);
  assert.doesNotMatch(edge,/COTIRONDA_PILOT_D016_(?:PORTAL_RELEASE_SHA|APPROVED_RELEASE_SHA)/u);
  assert.match(edge,/const expectedSign=await hmac\(signedKey,/u);
  assert.match(edge,/if\(!same\(receivedSign,expectedSign\)\)return response\('blocked',403\)/u);
