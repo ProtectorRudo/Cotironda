@@ -419,7 +419,7 @@ test('D016 recuperación: origen propio exacto, sin aceptar otros dominios ni de
   'https://usuario@app.cotironda.com'
  ])assert.equal(guard(origin),false,origin);
  assert.match(edge,/const portal=Deno\.env\.get\('COTIRONDA_PILOT_D016_PORTAL_ORIGIN'\)/u);
- assert.match(edge,/if\(!SHA\.test\(deployed\)\|\|deployed!==approved\)/u);
+ assert.match(edge,/typeof input\.releaseSha!=='string'\|\|!SHA\.test\(input\.releaseSha\)/u);
  assert.match(edge,/const access='https:\/\/app\.cotironda\.com\/piloto\/v2\/acceso#d016='/u);
  assert.match(edge,/cotironda_piloto_v2_d016_reissue_unique_pilot_private/u);
 });
@@ -436,4 +436,54 @@ test('D016 transición: Whapi no envía más enlaces al alias antiguo, sin tocar
  const recoverySource=readFileSync(new URL('../../supabase/functions/cotironda-piloto-v2-reemitir-acceso/index.ts',import.meta.url),'utf8');
  assert.match(recoverySource,/const access='https:\/\/app\.cotironda\.com\/piloto\/v2\/acceso#d016='/u);
  assert.match(recoverySource,/if\(!originAllowed\(portal\)\)/u);
+});
+
+
+test('D016 reemisión: commit del portal validado, HMAC lo ata a la solicitud y Edge rechaza SHA inválido',()=>{
+ const portal=readFileSync(new URL('../../apps/portal/lib/piloto-v2-d016-http.ts',import.meta.url),'utf8');
+ const edge=readFileSync(new URL('../../supabase/functions/cotironda-piloto-v2-reemitir-acceso/index.ts',import.meta.url),'utf8');
+ const fnStart=portal.indexOf('export async function solicitarAccesoPilotoSinSesionD016(');
+ const fn=portal.slice(fnStart,portal.indexOf('\n}\n',fnStart)+2);
+ assert.ok(fnStart>=0);
+ assert.match(fn,/const gate=puertaWhatsappPortalD016\(env\)/u);
+ assert.match(fn,/if\(!gate\|\|env\.COTIRONDA_D016_REISSUE_ENABLED!=='true'\)/u);
+ assert.match(fn,/u\.origin!==gate\.origenPortal/u);
+ assert.match(fn,/req\.headers\.get\('origin'\)!==gate\.origenPortal/u);
+ assert.match(fn,/releaseSha:gate\.shaDesplegado/u);
+ assert.match(fn,/createHmac\('sha256'/u);
+ assert.match(fn,/\.update\('cotironda\/d016\/reissue\/v1\\n'\+sentAt\+'\\n'\+body/u);
+ assert.doesNotMatch(edge,/COTIRONDA_PILOT_D016_(?:PORTAL_RELEASE_SHA|APPROVED_RELEASE_SHA)/u);
+ assert.match(edge,/const expectedSign=await hmac\(signedKey,/u);
+ assert.match(edge,/if\(!same\(receivedSign,expectedSign\)\)return response\('blocked',403\)/u);
+ assert.ok(edge.indexOf('if(!same(receivedSign,expectedSign))')<
+  edge.indexOf('const admin=roleKey()'));
+ const p=edge.indexOf(' const pilotUnique=');
+ const q=edge.indexOf(' // Portal y Edge ya',p);
+ assert.ok(p>=0&&q>p);
+ const validator=runInNewContext('(function(input){'+edge.slice(p,q)+
+  "\nreturn 'ok';\n})",{
+  UUID:/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/iu,
+  HASH:/^[a-f0-9]{64}$/u,SHA:/^[a-f0-9]{40}$/u,
+  response:state=>state
+ });
+ const operationId='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+ const good={mode:'pilot_unique',operationId,releaseSha:'a'.repeat(40)};
+ assert.equal(validator(good),'ok');
+ for(const invalid of [
+  {mode:'pilot_unique',operationId},
+  {...good,releaseSha:'bad'},
+  {...good,releaseSha:'A'.repeat(40)},
+  {...good,releaseSha:'0'.repeat(39)},
+  {...good,requestId:operationId},
+  {...good,recipient:'54999999999@s.whatsapp.net'}
+ ])assert.equal(validator(invalid),'blocked',JSON.stringify(invalid));
+ assert.equal(validator({
+  operationId,requestId:operationId,sessionHmac:'b'.repeat(64),
+  releaseSha:good.releaseSha
+ }),'ok');
+ const timestamp='1795140000000';
+ const signedValue=body=>createHmac('sha256',Buffer.from(KEY,'hex'))
+  .update('cotironda/d016/reissue/v1\n'+timestamp+'\n'+JSON.stringify(body))
+  .digest('hex');
+ assert.notEqual(signedValue(good),signedValue({...good,releaseSha:'c'.repeat(40)}));
 });
