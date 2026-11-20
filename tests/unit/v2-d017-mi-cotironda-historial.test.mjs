@@ -128,7 +128,11 @@ test('D016: recuperación sin cookie no toma identidad del navegador y falla cer
  assert.ok(edge.includes("configUnavailable('outbound_disabled')"));
  assert.ok(edge.includes("configUnavailable('link_send_disabled')"));
  assert.ok(edge.includes("configUnavailable('portal_origin_mismatch')"));
- assert.ok(edge.includes("configUnavailable('release_guard_not_ready')"));
+ // El release aprobado lo valida el portal y firma su SHA en el cuerpo;
+ // Edge rechaza SHA ausente o inválido antes de comprobar el HMAC.
+ assert.ok(adapter.includes('releaseSha:gate.shaDesplegado'));
+ assert.ok(edge.includes("!SHA.test(input.releaseSha)"));
+ assert.ok(!edge.includes("configUnavailable('release_guard_not_ready')"));
  assert.ok(edge.includes("configUnavailable('runtime_secrets_unavailable')"));
  assert.match(edge,/console\.warn\('cotironda_d016_reissue_config_gate',reason\)/u);
 
