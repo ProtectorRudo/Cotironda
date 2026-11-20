@@ -1,5 +1,8 @@
 # Cotironda V2 — Plan maestro operativo, piloto 100 %
 
+**20/11/2026 — HITO DE ACCESO COMPROBADO POR COMPRADOR.** Luego de la publicación D016 `2037caa` + Supabase v14, el usuario probó el reenvío y acceso de `app.cotironda.com` desde su celular y confirmó **«Funcionó perfecto»**. Estado del subcircuito de acceso sin SMS: **confirmado por usuario**; no repetir su auditoría salvo nueva falla. **Siguiente paso:** una única ronda NUEVA REAL desde WhatsApp con un comprador y dos proveedores acreditados (Ailín y Nahuel), comprobando asociación, originales autorizados, análisis individual, cierre y aislamiento; no declarar piloto 100 % antes de completar esa ronda. Sin nuevas funcionalidades ni despliegues por esta constatación.
+
+
 **20/11/2026 — PUBLICADO / VERIFICADO, SOLAMENTE PILOTO.** Reenvío D016 corregido en GitHub [2037caa](https://github.com/ProtectorRudo/Cotironda/commit/2037caa3f9843e54cc3a40c74c94cd7b6f515014) 13/13 CI; Vercel `cotironda-portal-dev` staging deployment `dpl_Av6WT1G9rhfB6wrcNWbeCKsuxcmC` READY, SHA `2037caa`, alias `app.cotironda.com` READY con pin/entorno Preview correctos. Supabase `cotironda-piloto-v2-reemitir-acceso` v14 ACTIVE, fuente idéntica al commit aprobado, Whapi v111 ACTIVE sin modificaciones. Ensayos HTTP directos: ingreso privado 200, GET de recuperación 405, historial sin sesión 404; enlace técnico anterior permanece READY. **Siguiente paso único:** el comprador registrado solicita el nuevo enlace desde el portal; comprobar envío real, canje privado sin SMS, historial y acceso a original. No registrar una ronda nueva solo para probar este link. No hay validación de E2E todavía, producción intacta. Ver seguimiento Issue #794.
 
 
