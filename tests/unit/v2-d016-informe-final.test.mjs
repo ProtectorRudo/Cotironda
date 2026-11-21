@@ -197,7 +197,8 @@ test('D021 cierre de una pantalla: detalle optativo, sin matriz ni advertencias 
  assert.match(block,/informe\.conclusion/u);
  assert.match(block,/oferta\.articulosCotizados/u);
  assert.match(block,/informe\.observacionesIA/u);
- assert.match(block,/<summary>Ver detalle técnico por material<\/summary>/u);
+ assert.match(block,/<h2>Comparación final<\/h2>/u);
+ assert.doesNotMatch(block,/Ver detalle técnico por material|informe\.materiales|Sin equivalencia confirmada con este artículo/u);
  assert.doesNotMatch(block,/Qué revisar antes de decidir|informe\.recomendaciones\.map/u);
  assert.doesNotMatch(block,/Sin datos suficientes para cotejar/u);
  assert.doesNotMatch(block,/ganador autom[aá]tico|adjudicado a/iu);
