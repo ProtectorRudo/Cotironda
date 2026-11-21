@@ -4,11 +4,101 @@
  * No inserta invitaciones ni activa Whapi: sólo llama una RPC privada.
  * La RPC REVALIDA contra HMAC del mensaje archivado y catálogo vigente.
  */
+import {unidadCompradaCanonicaV2D013,unidadDimensionadaV2D013}
+ from './magnitudes-universales-v2-d013.ts';
 import type {PlanMvp220} from './planificador-piloto-mvp220.ts';
-import {descripcionOriginalVerificableMvp288} from './fidelidad-pedido-mvp288.ts';
+/** Proyección de una cita YA validada por los dos lectores V2 a la tabla SQL.
+ * Nunca es fuente de verdad: el pedido íntegro sigue en p_original_text.
+ * Los límites de PDF/WinAnsi (75 caracteres) son de PRESENTACIÓN, no del
+ * contrato comercial; SQL admite hasta 500 caracteres UTF-8 por renglón.
+ * No permitir teléfonos/URLs/correos en descripciones destinadas a proveedores.
+ */
+const CONTACTO_COMERCIAL_D013=/(?:https?:\/\/|www\.|[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}|(?:\+?\d[\s.-]?){9,}|\b(?:whatsapp|tel[eé]fono|celular|cuit|cuil|correo|email|raz[oó]n social)\b)/iu;
+const CONTROL_COMERCIAL_D013=/[\u0000-\u001f\u007f]/u;
+export function descripcionFuenteV2D013(
+ fuente:string,item:{descripcion:string;evidencia:string;inicio:number;fin:number},
+ siguienteInicio?:number
+):string|null{
+ if(typeof fuente!=='string'||!item||typeof item.descripcion!=='string'||
+    item.descripcion.trim().length<3||typeof item.evidencia!=='string'||
+    item.evidencia.length<2||item.evidencia.length>1500||
+    !Number.isSafeInteger(item.inicio)||!Number.isSafeInteger(item.fin)||
+    item.inicio<0||item.fin<=item.inicio||item.fin>fuente.length||
+    fuente.slice(item.inicio,item.fin)!==item.evidencia)return null;
+ const hasta=siguienteInicio??fuente.length;
+ if(!Number.isSafeInteger(hasta)||hasta<item.fin||hasta>fuente.length)return null;
+ // El modelo puede citar el punto final y la IA sigue teniendo razón.
+ // Conservar la cita literal antes de limpiar puntuación de presentación.
+ const resto=fuente.slice(item.fin,hasta);
+ const limite=resto.search(/[\r\n]|(?:\s+|[,;]\s*)(?:entrega\s+(?:en|a)\s+|obra\s+en\s+|para\s+entregar\s+en\s+)/iu);
+ const complemento=limite<0?resto:resto.slice(0,limite);
+ let original=(item.evidencia+complemento).replace(/\s+/gu,' ').trim()
+  .replace(/^[*•-]\s*/u,'').replace(/[.;,]\s*$/u,'').trim();
+ // Cantidad ya corroborada en su campo: retirar SOLO numerales explícitos
+ // del comienzo, jamás medidas ni especificaciones en el medio.
+ original=original.replace(/^(?:[1-9]\d{0,5}(?:[.,]\d{1,3})?)\s+/u,'').trim();
+ if(original.length<3||original.length>500||
+    CONTROL_COMERCIAL_D013.test(original)||CONTACTO_COMERCIAL_D013.test(original))
+  return null;
+ return original;
+}
+
 import type {ProveedorCatalogoV2} from './ruteador-catalogos-v2.ts';
 const HASH=/^[a-f0-9]{64}$/u;
 const KEY=/^[a-z][a-z0-9_]{2,63}$/u;
+/** Canonicaliza SOLO alias explícitos que la RPC de catálogos D013 ya admite.
+ * El original queda intacto en p_original_text; no afecta Córdoba, Berisso
+ * ni otras localidades. SQL de preparación/publicación usa ciudad canónica.
+ */
+const LA_PLATA_D013=new Set([
+ 'la plata',
+ 'la plata, buenos aires',
+ 'la plata, buenos aires, argentina',
+ 'la plata, provincia de buenos aires',
+ 'la plata, provincia de buenos aires, argentina'
+]);
+export function localidadOperativaD013(ciudad:string):string{
+ const literal=ciudad.trim();
+ const normalized=literal.normalize('NFD').replace(/[\u0300-\u036f]/gu,'')
+  .toLowerCase().replace(/\s+/gu,' ');
+ return LA_PLATA_D013.has(normalized)?'La Plata':literal;
+}
+/** Adaptar el lector libre al esquema V2 ya publicado, SIN inventar
+ * envases ni convertir peso a volumen. El texto original se almacena
+ * íntegro y la descripción siempre conserva la presentación literal.
+ */
+export function cantidadUnidadSqlV2D013(
+ cantidad:string,unidad:string
+):Readonly<{cantidad:string;unidad:string}>|null{
+ if(typeof cantidad!=='string'||! /^(?:0|[1-9]\d{0,5})(?:\.\d{1,3})?$/u.test(cantidad)||
+    !(Number(cantidad)>0)||typeof unidad!=='string'||unidad.length>80)
+  return null;
+ const canonical=unidadCompradaCanonicaV2D013(unidad);
+ // El catálogo SQL conserva "bolsón" dentro de la descripción original.
+ // Ambos son conteos de envases, no un volumen asumido.
+ if(canonical==='bigbag')return {cantidad,unidad:'bag'};
+ if(canonical==='bucket')return {cantidad,unidad:'unit'};
+ const supported=new Set(['unit','bag','box','kg','g','l','ml',
+  'm','m2','m3','roll','pack']);
+ if(supported.has(canonical))return {cantidad,unidad:canonical};
+ const measure=unidadDimensionadaV2D013(unidad);
+ if(!measure)return null;
+ const target=measure.dimension==='longitud'?'m':
+  measure.dimension==='superficie'?'m2':
+  measure.dimension==='volumen_aridos'?'m3':
+  measure.dimension==='volumen_liquidos'?'l':'kg';
+ const [entero,decimal='']=cantidad.split('.');
+ const mil=BigInt(entero)*1000n+BigInt(decimal.padEnd(3,'0'));
+ const converted=mil*measure.factor;
+ if(converted%1000000000n!==0n)return null;
+ const quotient=converted/1000000000n;
+ if(quotient<=0n||quotient>1000000000n)return null;
+ const base=quotient/1000n,frac=quotient%1000n;
+ const normalized=frac===0n?base.toString():
+  base.toString()+'.'+frac.toString().padStart(3,'0').replace(/0+$/u,'');
+ return {cantidad:normalized,unidad:target};
+}
+
 type Params=Readonly<{
  p_buyer_chat_hmac:string;p_message_hmac:string;
  p_original_text:string;p_city:string;
@@ -59,17 +149,21 @@ export function armarPreparacionSombraMvp221(args:{
   args.plan.catalogos.map(s=>[s.clave,s] as const)
  );
  if(bySupplier.size!==args.plan.catalogos.length)return no('proveedores_duplicados');
- const items=pedido.articulos.map((item,i)=>({
-  descripcion:descripcionOriginalVerificableMvp288(args.textoOriginal,item,
-   pedido.articulos[i+1]?.inicio),
-  cantidad:item.cantidad,unidad:item.unidad,
-  evidencia:item.evidencia,rubro:item.rubro
- }));
- // Never discard a 50 kg presentation, a bolsón, a brand or a dimension
- // by silently storing an abbreviated LLM description. The proof literal
- // must be complete and fit the supplier PDF's exact 75-char contract.
+ const items=pedido.articulos.map((item,i)=>{
+  const representada=cantidadUnidadSqlV2D013(item.cantidad,item.unidad);
+  return {
+   descripcion:descripcionFuenteV2D013(args.textoOriginal,item,
+    pedido.articulos[i+1]?.inicio),
+   cantidad:representada?.cantidad??null,unidad:representada?.unidad??null,
+   evidencia:item.evidencia,rubro:item.rubro
+  };
+ });
+ // Conservar todas las especificaciones originales; el límite SQL es 500.
+ // La renderización PDF ocurre DESPUÉS y no decide si el pedido es válido.
  if(items.some(x=>x.descripcion===null))
   return no('presentacion_fuente_no_representable');
+ if(items.some(x=>x.cantidad===null||x.unidad===null))
+  return no('cantidad_unidad_no_representable_en_sql');
  const fullItems=items as ReadonlyArray<{
   descripcion:string;cantidad:string;unidad:string;
   evidencia:string;rubro:string
@@ -115,7 +209,7 @@ export function armarPreparacionSombraMvp221(args:{
    p_buyer_chat_hmac:args.chatHmac,
    p_message_hmac:args.messageHmac,
    p_original_text:args.textoOriginal,
-   p_city:pedido.zona_entrega,
+   p_city:localidadOperativaD013(pedido.zona_entrega),
    p_items:fullItems,p_destinos:destinations
   }};
 }

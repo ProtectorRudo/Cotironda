@@ -35,7 +35,11 @@ test('D016: las APIs WhatsApp dependen de cookie y RPC exclusivamente privada',(
  assert.match(adapter,/VERCEL_GIT_COMMIT_SHA/u);
  assert.match(adapter,/cookieSesionD016/u);
  assert.match(adapter,/session_context_private/u);
- assert.match(adapter,/cotironda_piloto_v2_d016_responders_with_analysis_private/u);
+ assert.match(adapter,/cotironda_piloto_v2_d021_responders_commercial_private/u);
+ // The wrapper MUST delegate to the existing session-authorized RPC.
+ const sqlD021=src('supabase/piloto/v2_d021_texto_comercial_universal_CANDIDATE.sql');
+ assert.match(sqlD021,/cotironda_piloto_v2_d016_responders_with_analysis_private/u);
+ assert.match(sqlD021,/cotironda_piloto_v2_d016_original_source_private/u);
  assert.match(adapter,/cotironda_piloto_v2_d016_original_source_private/u);
  assert.match(adapter,/cotironda_piloto_v2_d016_record_download_private/u);
  assert.match(adapter,/cotironda_piloto_v2_d016_record_text_download_private/u);
@@ -77,11 +81,17 @@ test('D016: archivos sólo por sesión privada, nunca por JWT de SMS',()=>{
  assert.match(client,/Cerrar sesión/u);
  assert.match(client,/analisis-whatsapp/u);
  assert.match(client,/informe-final-whatsapp/u);
- assert.match(client,/startedAnalyses/u);
- assert.match(client,/Informe final de la ronda/u);
+ assert.match(client,/seleccionarAnalisisPendientesV2/u);
+ assert.match(client,/registrarIntentosAnalisisV2/u);
+ assert.match(client,/historialAnalisis/u);
+ assert.match(client,/document.visibilityState!=='visible'/u);
+ assert.match(client,/if\(answer\.status===200\)changed=true/u);
+ assert.match(client,/historialAnalisis.current.clear\(\)/u);
+ assert.doesNotMatch(client,/startedAnalyses/u);
+ assert.match(client,/Comparación final/u);
  assert.match(client,/sin intervención/u);
  assert.match(client,/WhatsApp \(texto\)/u);
- assert.match(client,/Descargar mensaje original/u);
+ assert.match(client,/Mensaje original/u);
  assert.doesNotMatch(client,/Bearer |getSession\(|auth\.signOut\(|sms/u);
 });
 test('D016 SQL: la ruta de WhatsApp preserva relaciones V2 originales y prohíbe anon',()=>{
@@ -100,4 +110,38 @@ test('D016 SQL: la ruta de WhatsApp preserva relaciones V2 originales y prohíbe
  assert.match(sql,/REVOKE ALL ON FUNCTION/u);
  assert.match(sql,/GRANT EXECUTE ON FUNCTION/u);
  assert.doesNotMatch(sql,/p_auth_user_id|p_auth_session_id/u);
+});
+
+test('D016: preflight del lector de texto diagnostica sin revelar claves ni cambiar autorizacion',()=>{
+ const reader=src('supabase/functions/cotironda-piloto-v2-text-reader-d016/index.ts');
+ assert.match(reader,/const checks=\{/u);
+ for(const check of ['project_url','text_enabled','d016_enabled','service_key',
+  'shared_secret','aes_key','separate_keys']){
+  assert.match(reader,new RegExp('\\b'+check+':','u'),check);
+ }
+ assert.match(reader,/\.filter\(\(\[,ok\]\)=>!ok\)\.map\(\(\[name\]\)=>name\)/u);
+ assert.match(reader,/console\.warn\('cotironda_d016_text_preflight_failed',\{checks:failures\}\)/u);
+ assert.match(reader,/req\.method==='POST'/u);
+ assert.match(reader,/req\.headers\.has\('x-cotironda-d016-text-internal'\)/u);
+ assert.match(reader,/enabled:checks\.project_url&&checks\.text_enabled&&/u);
+ assert.match(reader,/checks\.d016_enabled&&checks\.service_key/u);
+ assert.match(reader,/if\(!config\.enabled\)return new Response\('unavailable',\{status:503/u);
+ // No imprimir ni siquiera accidentalmente el contenido de las variables.
+ assert.doesNotMatch(reader,/console\.(?:log|warn|error)\([^;]*(?:serviceKey|sharedSecret|aesHex|req\.headers\.get)/u);
+ assert.match(reader,/resolverTextoPrivadoD016\(req,config,/u);
+});
+
+test('D016: piloto acepta solo true sin importar mayusculas, mantiene false bloqueado',()=>{
+ const reader=src('supabase/functions/cotironda-piloto-v2-text-reader-d016/index.ts');
+ // Esta es la única bandera tolerante a capitalización: no activar
+ // flags de texto ni saltar chequeos de servicio, consentimiento o AES.
+ assert.match(reader,/d016_enabled:\/\^true\$\/iu\.test\(Deno\.env\.get\('COTIRONDA_PILOT_D016_ENABLED'\)\?\?''\)/u);
+ assert.match(reader,/text_enabled:Deno\.env\.get\('COTIRONDA_PILOT_D016_TEXT_ENABLED'\)==='true'/u);
+ const enabled=/^true$/iu;
+ for(const value of ['true','True','TRUE','TrUe'])assert.equal(enabled.test(value),true,value);
+ for(const value of ['false','False','','1','yes','true ',' true','true\\n','TRUE_NOT','null'])
+  assert.equal(enabled.test(value),false,JSON.stringify(value));
+ assert.match(reader,/enabled:checks\.project_url&&checks\.text_enabled&&/u);
+ assert.match(reader,/checks\.d016_enabled&&checks\.service_key/u);
+ assert.match(reader,/resolverTextoPrivadoD016\(req,config,/u);
 });

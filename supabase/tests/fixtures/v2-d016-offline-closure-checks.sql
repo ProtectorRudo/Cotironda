@@ -22,15 +22,19 @@ BEGIN
  -- El fixture histórico recibió ofertas a T-12h para una ronda
  -- tradicional de 4 días. Con el contrato real de DOS hábiles a 18:00,
  -- esas ofertas caerían FUERA DE PLAZO. Ajustar solo el fixture:
- -- despacho a T-2h y llegada a T-1h, AMBOS previos al vencimiento.
+ -- despacho a T-2h y llegada a T-1h, PERO nunca en el futuro.
+ -- En domingo, una ronda creada el jueves aún vence lunes: una fecha
+ -- derivada de cierre puede ser futura y la fuente exigiría received_at<=now.
  -- Nunca relajar el filtro temporal del catálogo en producción.
  UPDATE cotironda_piloto_privado.ai_dispatch_jobs_mvp222 dispatch
- SET finished_at=r.closes_at-interval '2 hours'
+ SET finished_at=LEAST(r.closes_at-interval '2 hours',
+                       clock_timestamp()-interval '2 hours')
  FROM cotironda_piloto_privado.requests r
  WHERE dispatch.request_id=r.id
   AND r.id='aaaaaaaa-1111-4111-8111-111111111111';
  UPDATE cotironda_piloto_privado.whapi_inbox msg
- SET received_at=r.closes_at-interval '1 hour'
+ SET received_at=LEAST(r.closes_at-interval '1 hour',
+                      clock_timestamp()-interval '1 hour')
  FROM cotironda_piloto_privado.requests r
  WHERE msg.request_id=r.id
   AND r.id='aaaaaaaa-1111-4111-8111-111111111111'
@@ -39,7 +43,7 @@ BEGIN
  -- Compare worker with the exact source semantics (same 3 original docs).
  v_catalog:=public.cotironda_piloto_v2_d016_worker_catalog_private(
   'aaaaaaaa-1111-4111-8111-111111111111');
- IF v_catalog IS NULL OR v_catalog->>'state'<>'authorized_responders_v2'
+ IF v_catalog IS NULL OR v_catalog->>'state'<>'internal_responders_v2'
   OR jsonb_array_length(v_catalog->'originals')<1
  THEN RAISE EXCEPTION 'd016_worker_catalog_denied';END IF;
  SELECT (x->>'documentId')::uuid INTO v_doc
@@ -48,7 +52,7 @@ BEGIN
  IF v_doc IS NULL THEN RAISE EXCEPTION 'd016_worker_no_pdf';END IF;
  v_src:=public.cotironda_piloto_v2_d016_worker_source_private(
   'aaaaaaaa-1111-4111-8111-111111111111',v_doc);
- IF v_src IS NULL OR v_src->>'state'<>'authorized_original_v2'
+ IF v_src IS NULL OR v_src->>'state'<>'internal_original_v2'
  THEN RAISE EXCEPTION 'd016_worker_source_missing';END IF;
  -- La prueba histórica dejó un análisis de texto EN PROCESO con lease
  -- vigente, así que no debe duplicarse su costo. Simular vencimiento real.

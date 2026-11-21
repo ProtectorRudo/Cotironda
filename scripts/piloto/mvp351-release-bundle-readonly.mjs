@@ -25,7 +25,7 @@ export const FILES_MVP351=Object.freeze({
  sql:'supabase/piloto/mvp351_reintento_fidelidad_y_rivales_historicos.sql',
  semanticSql:'supabase/piloto/mvp352_reevaluacion_semantica_unica.sql'
 });
-const PINNED_CORRELATOR='b5ea8c2b64ba7fe07409943b9c810d7a6e270b84';
+const PINNED_CORRELATOR='edc09812deb71728604e2348a633d6d0f2f8c248'; // V2: igualdad+comprador, CI exacto
 const PINNED_HINT='58ee374e77793c092b3b65b2cf1ffa3a1ad880e9';
 function gitBlob(s){
  const bytes=Buffer.from(s,'utf8');
@@ -55,7 +55,9 @@ export function validarBundleMvp351(files){
   "retryReviewedOnce",
   "cotironda_piloto_auto_correlation_bind_mvp291",
   "pistasMaterialesMvp352(input.quote)",
-  "material_identity_hints:"
+  "material_identity_hints:",
+  "recent_identical_same_buyer_v2",
+  "cotironda_piloto_auto_correlation_bind_latest_same_buyer_v2"
  ]);
  requireAll('identityHint',files.identityHint,[
   "pistaIdentidadMaterialMvp352",

@@ -12,7 +12,9 @@ import {auditStoredSupplierQuote} from './supplier-evidence.ts';
 import {auditStoredSourceFactsMvp163} from './source-facts.ts';
 import {auditarOriginalEconomicoMvp168} from './source-economics-mvp168.ts';
 import {guardScheduledRecovery} from './scheduled-auth.ts';
-import {dispatchPendingPilotSupplierPdfs} from './whapi-dispatch.ts';
+import {dispatchPendingPilotSupplierPdfs,dispatchPendingVerifiedV2SupplierTexts} from './whapi-dispatch.ts';
+import {sendAutomaticBuyerLinkD016} from './buyer-auto-link-d016.ts';
+import {runPrivatePreanalysisVaultD016} from './internal-preanalysis-v2-d016.ts';
 import {invokeAutoRecoveryMvp293} from './auto-recovery-tick-mvp293.ts';
 const REF='ilggkalaafhtiysyzlmg';
 const root='https://'+REF+'.supabase.co';
@@ -72,6 +74,92 @@ Deno.serve(async(req)=>{
      return new Response(JSON.stringify({state:'supplier_dispatch_unavailable'}),{
       status:503,headers:{'content-type':'application/json','cache-control':'no-store'}
      });
+    }
+   }
+   // Opt-in V2: reuse this SAME Vault-authenticated cron.
+   // Unlike V1, the selector requires one prepared V2 round with buyer
+   // auto-approval, supplier contact permission and verified product routes.
+   // No original-share policy is enabled by this worker.
+   if(Deno.env.get('COTIRONDA_PILOT_V2_D013_SCHEDULED_DISPATCH_ENABLED')==='true'){
+    try{
+     const delivery=await dispatchPendingVerifiedV2SupplierTexts({
+      enabled:Deno.env.get('COTIRONDA_PILOT_WHAPI_OUTBOUND_ENABLED')==='true',
+      dynamicRecipientsEnabled:
+       Deno.env.get('COTIRONDA_PILOT_DYNAMIC_RECIPIENT_MVP313_ENABLED')==='true',
+      hmacHex:Deno.env.get('COTIRONDA_PILOT_ID_HMAC_HEX')??'',
+      aesHex:Deno.env.get('COTIRONDA_PILOT_AES_HEX')??'',
+      channel:Deno.env.get('COTIRONDA_PILOT_WHAPI_CHANNEL')??'',
+      token:Deno.env.get('COTIRONDA_PILOT_WHAPI_TOKEN')??'',
+      includeReference:Deno.env.get('COTIRONDA_PILOT_V2_REFERENCE_LINK_ENABLED')==='true'
+     },{
+      rpc:async(name,params)=>{
+       const {data,error}=await db.rpc(name,params??{});
+       return {data,error};
+      },
+      post:(url,init)=>fetch(url,init)
+     });
+     if(delivery.state==='reconciliation'){
+      return new Response(JSON.stringify({state:'v2_dispatch_reconciliation_required'}),{
+       status:503,headers:{'content-type':'application/json','cache-control':'no-store'}
+      });
+     }
+    }catch{
+     return new Response(JSON.stringify({state:'v2_dispatch_unavailable'}),{
+      status:503,headers:{'content-type':'application/json','cache-control':'no-store'}
+     });
+    }
+   }
+   // Auto D016 buyer link on the SAME Vault-authenticated cron, after
+   // supplier dispatch. No new buyer command/event, no second cron.
+   // Approved AUTO V2 pilot: the D016 inbound-send flag can remain OFF.
+   // SQL verifies the original buyer event and two accepted supplier sends;
+   // Whapi outbound remains mandatory and no originals are opened.
+   if(Deno.env.get('COTIRONDA_PILOT_WHAPI_OUTBOUND_ENABLED')==='true'){
+    try{
+     const link=await sendAutomaticBuyerLinkD016({
+      enabled:true,
+      channel:Deno.env.get('COTIRONDA_PILOT_WHAPI_CHANNEL')??'',
+      identityHmacHex:Deno.env.get('COTIRONDA_PILOT_ID_HMAC_HEX')??'',
+      aesHex:Deno.env.get('COTIRONDA_PILOT_AES_HEX')??'',
+      linkHmacHex:Deno.env.get('COTIRONDA_PILOT_D016_HMAC_KEY_HEX')??'',
+      // Pinned PUBLIC pilot deployment metadata verified against Vercel READY.
+      // No credentials, service keys, buyer numbers or tokens in source.
+      portalOrigin:'https://cotironda-portal-dev-git-feat-c9bde9-protector-rudo-s-projects.vercel.app',
+      portalSha:'f98527c9516478783bd7cf95433c58f5ca445937',
+      approvedSha:'f98527c9516478783bd7cf95433c58f5ca445937',
+      whapiToken:Deno.env.get('COTIRONDA_PILOT_WHAPI_TOKEN')??''
+     },{
+      rpc:async(name,args)=>{
+       const {data,error}=await db.rpc(name,args??{});
+       return {data,error};
+      },
+      post:(url,init)=>fetch(url,init)
+     });
+     if(link.state==='reconciliation'||link.state==='uncertain'){
+      return new Response(JSON.stringify({
+       state:'buyer_d016_auto_link_reconciliation_required'
+      }),{status:503,headers:{
+       'content-type':'application/json','cache-control':'no-store'
+      }});
+     }
+    }catch(err){
+     // Report only a fixed error CATEGORY. Never expose secrets or recipient.
+     let state='buyer_d016_auto_link_unavailable';
+     if(err instanceof Error&&err.message==='d016_auto_link_secure_configuration_unavailable'){
+      const hash=Deno.env.get('COTIRONDA_PILOT_D016_HMAC_KEY_HEX')??'';
+      const origin=Deno.env.get('COTIRONDA_PILOT_D016_PORTAL_ORIGIN')??'';
+      const release=Deno.env.get('COTIRONDA_PILOT_D016_PORTAL_RELEASE_SHA')??'';
+      const approved=Deno.env.get('COTIRONDA_PILOT_D016_APPROVED_RELEASE_SHA')??'';
+      state=!/^[a-f0-9]{64}$/u.test(hash)?'buyer_d016_hmac_not_configured':
+       !/^https:\/\/cotironda-portal-[a-z0-9-]+-protector-rudo-s-projects\.vercel\.app$/u.test(origin)?
+        'buyer_d016_origin_not_configured':
+       !/^[a-f0-9]{40}$/u.test(release)?'buyer_d016_release_sha_not_configured':
+       release!==approved?'buyer_d016_approved_release_mismatch':
+        'buyer_d016_other_secure_configuration';
+     }
+     return new Response(JSON.stringify({state}),{
+      status:503,headers:{'content-type':'application/json','cache-control':'no-store'
+     }});
     }
    }
    const baseline=await runRecoveryService(req,{
@@ -187,6 +275,28 @@ Deno.serve(async(req)=>{
    // The legacy Vault-checked task remains authoritative and unaltered.
    // Reuse this SAME approved internal cron; do not expose the MVP292
    // secret to pg_cron or add a second recurring job.
+   // V2: analyze stored original privately after this SAME Vault cron guard.
+   // No disclosure of original bytes to buyer; no other cron or confirmation.
+   try{
+    const state=await runPrivatePreanalysisVaultD016({
+     url:s.url,apiKey:s.apiKey,
+     aesHex:Deno.env.get('COTIRONDA_PILOT_AES_HEX')??'',
+     pdfEnabled:Deno.env.get('COTIRONDA_PILOT_V2_PDF_ENABLED')??'false',
+     pdfSecret:Deno.env.get('COTIRONDA_PILOT_V2_PDF_SHARED_SECRET')??'',
+     rpc:async(name,params)=>{
+      const {data,error}=await db.rpc(name,params);
+      if(error)throw Error('v2_private_analysis_database_unavailable');
+      return data;
+     },
+     readPrivate:async(path)=>{
+      const {data,error}=await db.storage.from('cotironda-piloto-originals')
+       .download(path);
+      if(error||!data||data.size<1||data.size>8388608)return null;
+      return new Uint8Array(await data.arrayBuffer());
+     }
+    });
+    if(state!=='idle'&&state!=='off')console.info('cotironda_v2_preanalysis',state);
+   }catch{console.info('cotironda_v2_preanalysis','unavailable')}
    const tick=await invokeAutoRecoveryMvp293({
     enabled:Deno.env.get('COTIRONDA_PILOT_AUTO_CORRELATION_MVP291_ENABLED')==='true'&&
       Deno.env.get('COTIRONDA_PILOT_AUTO_RECOVERY_MVP292_ENABLED')==='true',

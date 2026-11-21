@@ -10,6 +10,9 @@ const KEY='b'.repeat(64);
 const CHAT='c'.repeat(64);
 const ROUND='123e4567-e89b-42d3-a456-426614174000';
 const NOW=1800000000000;
+test('D016: cada enlace emitido tiene 14 días de vigencia',()=>{
+ assert.equal(V2_D016_TTL_MS,14*24*60*60*1000);
+});
 const gate=()=>({
  habilitada:true,entorno:'preview',proyectoUrl:'https://ilggkalaafhtiysyzlmg.supabase.co',
  shaDesplegado:SHA,shaAprobado:SHA,origenPortal:ORIGIN,claveHmacHex:KEY
@@ -198,4 +201,55 @@ test('D016: jamás se acepta un HMAC incorrecto como token ni HTTP con payload s
  });
  assert.equal(await canjearEnlaceD016(gate(),req,t.ports),'BLOCKED');
  assert.equal(t.state.consuming,0);
+});
+
+
+test('D016 dominio propio: app.cotironda.com exacto, sólo Preview y SHA autorizado',async()=>{
+ const origin='https://app.cotironda.com';
+ assert.equal(origenValidoD016(origin),true);
+ for(const invalid of [
+  'https://cotironda.com','https://www.cotironda.com',
+  'https://evilapp.cotironda.com','https://app.cotironda.com.evil.test',
+  'http://app.cotironda.com','https://app.cotironda.com:444',
+  'https://app.cotironda.com/','https://app.cotironda.com/?ticket=x',
+  'https://user@app.cotironda.com'
+ ])assert.equal(origenValidoD016(invalid),false,invalid);
+ const g={...gate(),origenPortal:origin};
+ assert.equal(puertaD016Lista(g),true);
+ for(const bad of [
+  {...g,entorno:'production'}, {...g,entorno:'development'},
+  {...g,shaAprobado:'9'.repeat(40)}, {...g,habilitada:false}
+ ])assert.equal(puertaD016Lista(bad),false);
+ const f=fixture();
+ let link='';
+ f.ports.enviarPorWhatsapp=async({chatHmac,enlace})=>{
+  assert.equal(chatHmac,CHAT);
+  link=enlace;
+  return true;
+ };
+ assert.equal(await emitirEnlaceD016(g,buyer(),f.ports),'SENT');
+ assert.ok(link.startsWith(origin+'/piloto/v2/acceso#d016='));
+ assert.ok(!link.includes('?'));
+ const raw=link.split('#d016=')[1]?.split('&ronda=')[0];
+ assert.match(raw,/^[A-Za-z0-9_-]{43}$/u);
+ const body=JSON.stringify({ticket:raw});
+ const req=(url,headerOrigin)=>new Request(url,{
+  method:'POST',
+  headers:{origin:headerOrigin,'sec-fetch-site':'same-origin',
+   'content-type':'application/json'},
+  body
+ });
+ assert.equal(await canjearEnlaceD016(g,req(
+  origin+'/api/piloto/v2/acceso/canjear','https://www.cotironda.com'
+ ),f.ports),'BLOCKED');
+ assert.equal(await canjearEnlaceD016(g,req(
+  ORIGIN+'/api/piloto/v2/acceso/canjear',ORIGIN
+ ),f.ports),'BLOCKED');
+ assert.equal(f.state.consuming,0);
+ assert.equal(await canjearEnlaceD016(g,req(
+  origin+'/api/piloto/v2/acceso/canjear',origin
+ ),f.ports),'CLAIMED_AWAITING_AUTH');
+ assert.equal(await canjearEnlaceD016(g,req(
+  origin+'/api/piloto/v2/acceso/canjear',origin
+ ),f.ports),'BLOCKED');
 });

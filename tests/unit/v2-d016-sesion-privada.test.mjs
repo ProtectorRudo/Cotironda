@@ -15,7 +15,8 @@ const gate=()=>({habilitada:true,entorno:'preview',
  origenPortal:ORIGIN,claveHmacHex:KEY
 });
 function fixture(){
- const state={issued:true,consumed:false,sessions:new Map(),now:1800000000000,
+ const state={issued:true,sessions:new Map(),now:1800000000000,
+  expiresAt:1800000000000+14*24*60*60*1000,
   authorized:true,claimCalls:0,readCalls:0};
  const ports={
   ahora:()=>state.now,
@@ -23,8 +24,9 @@ function fixture(){
    state.claimCalls++;
    assert.equal(ticketHmac,hmacTicketD016(TOKEN,KEY));
    assert.match(sesionHmac,/^[a-f0-9]{64}$/u);
-   if(state.consumed||!state.issued)return false;
-   state.consumed=true;
+   if(!state.issued||state.now>=state.expiresAt)return false;
+   // Cada apertura del enlace durante 14 días rota y revoca la cookie anterior.
+   state.sessions.clear();
    state.sessions.set(sesionHmac,{buyerKey:'buyer_a',requestId:ROUND});
    return true;
   },
@@ -73,14 +75,27 @@ test('D016 sesión: POST único crea cookie HttpOnly Secure SameSite sin JWT ni 
   'cccccccc-cccc-4ccc-8ccc-cccccccccccc',f.ports);
  assert.equal(wrong,null);
 });
-test('D016 sesión: dos intentos de canje concurrentes solo crean una cookie',async()=>{
+test('D016 sesión: el mismo enlace sirve 14 días y cada apertura rota la cookie',async()=>{
  const f=fixture();
- const [a,b]=await Promise.all([f.redeem(),f.redeem()]);
- assert.deepEqual([a.status,b.status].sort(),[200,403]);
+ assert.equal(D016_SESSION_SECONDS,14*24*60*60);
+ const first=await f.redeem();
+ assert.equal(first.status,200);
+ f.state.now=f.state.expiresAt-1;
+ const second=await f.redeem();
+ assert.equal(second.status,200);
  assert.equal(f.state.sessions.size,1);
- const denied=[a,b].find(x=>x.status===403);
- assert.equal(denied.headers.has('set-cookie'),false);
- assert.deepEqual(await denied.json(),{state:'BLOCKED'});
+ const oldCookie=first.headers.get('set-cookie').split('=')[1].split(';')[0];
+ const newCookie=second.headers.get('set-cookie').split('=')[1].split(';')[0];
+ assert.notEqual(oldCookie,newCookie);
+ const asRequest=raw=>new Request(ORIGIN+'/piloto/v2/rondas/'+ROUND,{
+  headers:{cookie:D016_SESSION_COOKIE+'='+raw}});
+ assert.equal(await verificarAccesoSesionD016(gate(),asRequest(oldCookie),ROUND,f.ports),null);
+ assert.deepEqual(await verificarAccesoSesionD016(gate(),asRequest(newCookie),ROUND,f.ports),
+  {buyerKey:'buyer_a',requestId:ROUND});
+ f.state.now=f.state.expiresAt;
+ const expired=await f.redeem();
+ assert.equal(expired.status,403);
+ assert.equal(expired.headers.has('set-cookie'),false);
 });
 test('D016 sesión: bloquea GET preview, otras URLs, origen y cuerpo inválido',async()=>{
  const invalid=[
@@ -130,4 +145,32 @@ test('D016 sesión: no filtra token en errores ni declara sesión si BD falla',a
  assert.equal(raw.includes(TOKEN),false);
  assert.equal(digestSesionPrivadaD016('a'.repeat(43),KEY)?.length,64);
  assert.equal(digestSesionPrivadaD016('x',KEY),null);
+});
+
+
+test('D016 subdominio app mantiene cookie __Host y aislamiento de origen',async()=>{
+ const origin='https://app.cotironda.com';
+ const g={...gate(),origenPortal:origin};
+ const f=fixture();
+ const request=(where,from)=>new Request(where+'/api/piloto/v2/acceso/canjear',{
+  method:'POST',
+  headers:{origin:from,'sec-fetch-site':'same-origin',
+   'content-type':'application/json'},
+  body:JSON.stringify({ticket:TOKEN})
+ });
+ for(const [target,from] of [[ORIGIN,ORIGIN],[origin,ORIGIN]]){
+  const rejected=await canjearConSesionPrivadaD016(g,request(target,from),f.ports);
+  assert.equal(rejected.status,403);
+  assert.equal(rejected.headers.has('set-cookie'),false);
+ }
+ assert.equal(f.state.claimCalls,0);
+ const ok=await canjearConSesionPrivadaD016(g,request(origin,origin),f.ports);
+ assert.equal(ok.status,200);
+ const cookie=ok.headers.get('set-cookie');
+ assert.match(cookie,/^__Host-cotironda-v2=/u);
+ assert.match(cookie,/; Secure; HttpOnly; SameSite=Lax/u);
+ assert.doesNotMatch(cookie,/Domain=/u);
+ assert.equal(f.state.claimCalls,1);
+ assert.equal((await canjearConSesionPrivadaD016({...g,entorno:'production'},
+  request(origin,origin),f.ports)).status,403);
 });

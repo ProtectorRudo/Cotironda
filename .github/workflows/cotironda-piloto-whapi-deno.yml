@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - 'supabase/functions/cotironda-piloto-whapi/**'
+      - 'scripts/piloto/whapi-live-readiness.mjs'
+      - 'tests/unit/whapi-live-readiness.test.mjs'
       - 'supabase/functions/cotironda-piloto-document-recovery/**'
       - 'supabase/functions/cotironda-piloto-round-preview-staging/**'
       - 'supabase/functions/cotironda-piloto-seguimiento/**'
@@ -44,6 +46,14 @@ jobs:
           deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-round-preview-staging/index.ts
           deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-seguimiento/index.ts
           deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-finalistas/index.ts
+      - name: Node 22.16 para comprobación HTTP sin secretos
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22.16.0'
+      - name: Validar el preflight sin datos ni efectos secundarios
+        run: node --test tests/unit/whapi-live-readiness.test.mjs
+      - name: Webhook piloto REAL listo antes de distribuir materiales (solo probe)
+        run: node scripts/piloto/whapi-live-readiness.mjs --live
       - name: Exercise unpdf runtime with a real two-page PDF (synthetic content)
         run: deno run --node-modules-dir=auto tests/unit/mvp130-unpdf-deno-runtime.smoke.ts
       - name: Verify no raw supplier document is printed

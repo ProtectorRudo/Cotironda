@@ -1,0 +1,311 @@
+{
+  "kind": "cotironda_whapi_live_v76_two_file_patch",
+  "version": 76,
+  "manifestFile": "scripts/piloto/v2-d016-whapi-live-v76-bundle-manifest.json",
+  "expectedBundleSha256": "656cb24bd1cbfdbb0de6d87a9acae17ad911c13b6e404667029dd4d0b55b822e",
+  "files": [
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/index.ts",
+      "liveSha256": "349831d3be81d0da95ba0cc3b699256521e35d4b7c0f1923e3dc2a6a714d0c7d",
+      "hunks": [
+        {
+          "fromLine": 16,
+          "remove": [
+            "import {correlacionAutomaticaMvp291} from './supplier-auto-correlation-mvp291.ts';"
+          ],
+          "insert": [
+            "import {correlacionAutomaticaMvp291} from './supplier-auto-correlation-mvp336.ts';"
+          ]
+        },
+        {
+          "fromLine": 22,
+          "remove": [
+            "import {esRespuestaConfirmacionMvp279,emitirRevisionCompradorMvp279,confirmarPedidoCompradorMvp279} from './ai-central-buyer-review-mvp279.ts';"
+          ],
+          "insert": [
+            "import {esRespuestaConfirmacionMvp279,confirmarPedidoCompradorMvp279} from './ai-central-buyer-review-mvp279.ts';"
+          ]
+        },
+        {
+          "fromLine": 107,
+          "remove": [],
+          "insert": [
+            " const webhookSecretState=webhookSecret.length===0?'missing':",
+            "  webhookSecret.length<32||webhookSecret.length>256?'invalid_length':'valid';"
+          ]
+        },
+        {
+          "fromLine": 122,
+          "remove": [
+            "  ...(webhookSecret.length<32||webhookSecret.length>256?['webhook_secret']:[]),"
+          ],
+          "insert": [
+            "  ...(webhookSecretState!=='valid'?['webhook_secret']:[]),"
+          ]
+        },
+        {
+          "fromLine": 128,
+          "remove": [],
+          "insert": [
+            "  if(webhookSecretState!=='valid')",
+            "   console.warn('cotironda_pilot_webhook_secret_state:',webhookSecretState);"
+          ]
+        },
+        {
+          "fromLine": 341,
+          "remove": [],
+          "insert": [
+            " let processedInboundMvp333=0,connectivityCountMvp333=0;"
+          ]
+        },
+        {
+          "fromLine": 346,
+          "remove": [],
+          "insert": [
+            "  processedInboundMvp333++;"
+          ]
+        },
+        {
+          "fromLine": 518,
+          "remove": [],
+          "insert": [
+            "  // MVP333: solo una prueba explícita del arquitecto autenticado.",
+            "  const connectivityOnlyMvp333=centralConfigured&&row.type==='text'&&",
+            "    !supplierKnown&&!centralSupplier&&!webLinkCode&&",
+            "    !buyerReviewCommand&&!buyerLinkCommand&&",
+            "    new RegExp(\"^hola\\\\s+cotironda\\\\s*,\\\\s*prueba\\\\s+de\\\\s+conexi[oó]n\\\\s+del\\\\s+piloto[.!]?$\",'iu').test(body.trim());"
+          ]
+        },
+        {
+          "fromLine": 520,
+          "remove": [],
+          "insert": [
+            "  // MVP335: el gate SQL MVP306 es la única activación operativa.",
+            "  // Nunca pedir CONFIRMAR COTI ni volver a un circuito heredado.",
+            "  // Un fallo de permisos, datos, cuota o el gate SQL OFF retiene el pedido."
+          ]
+        },
+        {
+          "fromLine": 521,
+          "remove": [
+            "    if(Deno.env.get('COTIRONDA_PILOT_BUYER_AUTO_RELEASE_MVP306_ENABLED')==='true'){",
+            "      if(!centralConfigured||supplierKnown||centralSupplier||!allowBuyerRelease)",
+            "        return true; // No legacy review fallback: only validated auto release.",
+            "      const auto=await liberarPedidoAutomaticoMvp306({",
+            "        enabled:true,webhookAutenticado:true,compradorVerificado:true,",
+            "        chatHmac:chatHash,sourceHmac,",
+            "        rpc:async(name,params)=>{",
+            "          const r=await db.rpc(name,params);",
+            "          return {data:r.data,error:r.error};",
+            "        }",
+            "      });",
+            "      if(auto.estado==='publicado'&&auto.requestId){",
+            "        trialDispatchChats.add(chatHash);",
+            "        buyerLinkRequests.push({mode:'auto',requestId:auto.requestId,",
+            "          chatHmac:chatHash,eventHmac:sourceHmac,recipient:row.chat_id});",
+            "      }",
+            "      return auto.estado!=='conciliacion_requerida';",
+            "    }",
+            "    if(!centralConfigured||supplierKnown||centralSupplier||!allowBuyerReview)",
+            "      return true; // historical flow retained until prospective activation.",
+            "    const delivery=await emitirRevisionCompradorMvp279({",
+            "      habilitado:true,compradorAutenticado:true,",
+            "      chatHmac:chatHash,sourceHmac,destinatario:row.chat_id,"
+          ],
+          "insert": [
+            "    if(!centralConfigured||supplierKnown||centralSupplier||!allowBuyerRelease)",
+            "      return true; // no buyer review fallback; SQL sigue cerrando todo",
+            "    const auto=await liberarPedidoAutomaticoMvp306({",
+            "      enabled:true,webhookAutenticado:true,compradorVerificado:true,",
+            "      chatHmac:chatHash,sourceHmac,"
+          ]
+        },
+        {
+          "fromLine": 545,
+          "remove": [
+            "        const result=await db.rpc(name,params);",
+            "        return {data:result.data,error:result.error};",
+            "      },",
+            "      send:async(recipient,reviewText)=>{",
+            "        if(recipient!==row.chat_id)throw Error('buyer_chat_changed');",
+            "        const response=await fetch('https://gate.whapi.cloud/messages/text',{",
+            "          method:'POST',",
+            "          headers:{Authorization:'Bearer '+sec.token,",
+            "            'Content-Type':'application/json'},",
+            "          body:JSON.stringify({to:recipient,body:reviewText}),",
+            "          signal:AbortSignal.timeout(12000)",
+            "        });",
+            "        const reply=response.ok?await response.json().catch(()=>null):null;",
+            "        const msg=reply&&typeof reply==='object'?",
+            "          reply as Record<string,unknown>:null;",
+            "        const nested=msg?.message&&typeof msg.message==='object'?",
+            "          msg.message as Record<string,unknown>:null;",
+            "        const id=msg?.message_id??nested?.id??null;",
+            "        return {accepted:response.ok&&msg?.sent===true,",
+            "          messageId:typeof id==='string'?id:null};"
+          ],
+          "insert": [
+            "        const r=await db.rpc(name,params);",
+            "        return {data:r.data,error:r.error};"
+          ]
+        },
+        {
+          "fromLine": 567,
+          "remove": [
+            "    return delivery.estado!=='conciliacion_requerida';"
+          ],
+          "insert": [
+            "    if(auto.estado==='publicado'&&auto.requestId){",
+            "      trialDispatchChats.add(chatHash);",
+            "      buyerLinkRequests.push({mode:'auto',requestId:auto.requestId,",
+            "        chatHmac:chatHash,eventHmac:sourceHmac,recipient:row.chat_id});",
+            "    }",
+            "    // Fail-closed ante estado de ejecución incierto: no duplicar envíos.",
+            "    return auto.estado!=='conciliacion_requerida';"
+          ]
+        },
+        {
+          "fromLine": 573,
+          "remove": [
+            "     !buyerReviewCommand&&!buyerLinkCommand;"
+          ],
+          "insert": [
+            "     !buyerReviewCommand&&!buyerLinkCommand&&!connectivityOnlyMvp333;"
+          ]
+        },
+        {
+          "fromLine": 594,
+          "remove": [
+            "     !buyerReviewCommand&&!buyerLinkCommand&&!canPrepareBuyerPilot(local)&&"
+          ],
+          "insert": [
+            "     !buyerReviewCommand&&!buyerLinkCommand&&!connectivityOnlyMvp333&&",
+            "     !canPrepareBuyerPilot(local)&&"
+          ]
+        },
+        {
+          "fromLine": 701,
+          "remove": [],
+          "insert": [
+            "  // MVP333: conexión archivada; sin IA, ni aviso de error, ni ronda.",
+            "  if(connectivityOnlyMvp333){connectivityCountMvp333++;continue;}"
+          ]
+        },
+        {
+          "fromLine": 1704,
+          "remove": [],
+          "insert": [
+            " if(processedInboundMvp333>0&&connectivityCountMvp333===processedInboundMvp333)",
+            "  return json(200,'connectivity_check_recorded');"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/supplier-auto-correlation-mvp336.ts",
+      "liveSha256": "d400cf8e2e9fd6d4d648ff38b6cbaf7fde0694e534805fbdf1e27006e4b37d34",
+      "hunks": [
+        {
+          "fromLine": 7,
+          "remove": [
+            "import {pistasMaterialesMvp352} from './supplier-material-identity-hint-mvp352.ts';"
+          ],
+          "insert": []
+        },
+        {
+          "fromLine": 113,
+          "remove": [
+            " 'Las pistas material_identity_hint se crean SOLO al separar un descuento',",
+            " 'porcentual explícito al final, luego de punto y coma. Son orientación',",
+            " 'de identidad física, NO reemplazan ni corrigen el original.',",
+            " 'No uses el descuento como artículo, cantidad, unidad ni precio.',"
+          ],
+          "insert": []
+        },
+        {
+          "fromLine": 130,
+          "remove": [
+            "      source_items:input.quote,",
+            "      material_identity_hints:pistasMaterialesMvp352(input.quote),candidates"
+          ],
+          "insert": [
+            "      source_items:input.quote,candidates"
+          ]
+        },
+        {
+          "fromLine": 205,
+          "remove": [
+            " // V2: último desempate únicamente para solicitudes idénticas de un MISMO",
+            " // comprador. La IA sólo propone; SQL demuestra identidad, totalidad de",
+            " // renglones, orden temporal y despacho real antes de escribir la asociación.",
+            " const identicalRequestFallback=()=>{",
+            "  if(snapshot.options.length<2||snapshot.options.some(c=>c.bind_allowed===false))",
+            "   return null;",
+            "  const normalized=(value:string|null)=>",
+            "   (value??'').normalize('NFC').toLowerCase().replace(/\\\\s+/gu,' ').trim();",
+            "  const signature=(c:Candidate)=>JSON.stringify(c.lines.map(line=>JSON.stringify([",
+            "   normalized(line.description),",
+            "   line.quantity===null?null:line.quantity.trim(),",
+            "   normalized(line.unit)",
+            "  ])).sort());",
+            "  const original=signature(snapshot.options[0]);",
+            "  if(snapshot.options.some(c=>signature(c)!==original))return null;",
+            "  // Ambos modelos deben coincidir en vínculos físicos comprobables; un",
+            "  // parecido lingüístico sin cantidad acreditada NO alcanza para desempatar.",
+            "  if(scored.some(s=>s.strong<1||s.related<1||s.points!==scored[0].points))",
+            "   return null;",
+            "  if(matches.some(m=>m.relation==='uncertain'))return null;",
+            "  // El SQL prepara candidatos ordenados por fecha descendente y el RPC",
+            "  // específico vuelve a comprobar ese orden desde la base de datos.",
+            "  return {requestId:snapshot.options[0].request_id,",
+            "   reason:'recent_identical_same_buyer_v2',scores:scored.map(s=>s.points)};",
+            " };"
+          ],
+          "insert": []
+        },
+        {
+          "fromLine": 242,
+          "remove": [
+            " if(best.points-other.points<3)",
+            "  return identicalRequestFallback()??no('insufficient_unique_margin');"
+          ],
+          "insert": [
+            " if(best.points-other.points<3)return no('insufficient_unique_margin');"
+          ]
+        },
+        {
+          "fromLine": 306,
+          "remove": [
+            "   const isRecency=chosen.reason==='recent_identical_same_buyer_v2';",
+            "   const source=await db(isRecency",
+            "    ?'cotironda_piloto_auto_correlation_bind_latest_same_buyer_v2'",
+            "    :'cotironda_piloto_auto_correlation_bind_mvp291',{",
+            "    p_source_hmac:args.sourceHmac,p_chat_hmac:args.chatHmac,",
+            "    p_source_sha256:snapshot.sha,p_request:chosen.requestId",
+            "   });",
+            "   if(source.state==='linked_private')return result('linked_private',",
+            "    isRecency?'recent_identical_same_buyer_v2':'double_model_unique_margin');",
+            "   if(isRecency){",
+            "    // Si los compradores/materiales no son realmente idénticos, no se",
+            "    // fuerza la asociación. El original permanece privado y recuperable.",
+            "    const ended=await db('cotironda_piloto_auto_correlation_finish_mvp291',{",
+            "     p_source_hmac:args.sourceHmac,p_state:'review',p_reason:'recency_not_verified'",
+            "    });",
+            "    if(ended.state==='recorded')return result('unresolved_private','recency_not_verified');",
+            "   }",
+            "   throw Error('sql_commit_not_confirmed');"
+          ],
+          "insert": [
+            "   const source=await db('cotironda_piloto_auto_correlation_bind_mvp291',{",
+            "    p_source_hmac:args.sourceHmac,p_chat_hmac:args.chatHmac,",
+            "    p_source_sha256:snapshot.sha,p_request:chosen.requestId",
+            "   });",
+            "   if(source.state==='linked_private')return result('linked_private','double_model_unique_margin');",
+            "   throw Error('sql_commit_not_confirmed');"
+          ]
+        }
+      ]
+    }
+  ],
+  "source": "read-only Supabase Edge v76 2026-11-14; exactly two files differ from GH and other 59 are byte-identical"
+}

@@ -25,9 +25,9 @@ const request=(c={})=>new Request(URL+(c.query??''),{
  ...(c.cookie?{'cookie':c.cookie}:{})},
  body:c.method==='GET'?undefined:c.body??'{}'
 });
-const file=()=>({state:'authorized_original_v2',
+const file=()=>({state:'internal_original_v2',
  ...job(),buyerKey:'buyer_a',supplierKey:'supplier_a',
- messageHmac:MESSAGE,sha256:SHA,consentAt:1700000000000,invitedAt:1700000000001,
+ messageHmac:MESSAGE,sha256:SHA,enrolledAt:1700000000000,invitedAt:1700000000001,
  bucket:'cotironda-piloto-originals',path:'media/'+MESSAGE,byteCount:BYTES.length});
 const points=()=>[
  {categoria:'material',evidencia:'15 bolsas de cemento',
@@ -66,8 +66,9 @@ function fixture(){
   analyze:async data=>{
    state.modelCount++;
    assert.equal(data.fuente.fuente,TEXT);
-   assert.equal(data.fuente.compradorAutorizado,true);
-   assert.equal(data.fuente.consentimientoOriginalVerificado,true);
+   assert.equal(data.fuente.compradorAutorizado,false);
+    assert.equal(data.fuente.procesamientoInternoPrivado,true);
+   assert.equal(data.fuente.consentimientoOriginalVerificado,false);
    assert.equal(data.fuente.sha256,SHA);
    if(state.modelFail)throw Error('simulate_model_timeout');
    return report();
@@ -129,7 +130,7 @@ test('D016 offline: sin flags, secreto, apikey, cookie o cuerpo inválido jamás
 test('D016 offline: fuente adulterada o ilegible no consulta a la IA',async()=>{
  const bad=[{...file(),buyerKey:''},{...file(),path:'media/'+'f'.repeat(64)},
   {...file(),sha256:'f'.repeat(64)},
-  {...file(),consentAt:1700000000002,invitedAt:1700000000001}];
+  {...file(),enrolledAt:1700000000002,invitedAt:1700000000001}];
  for(const x of bad){const f=fixture();f.state.source=x;
   const res=await f.run();assert.equal((await res.json()).state,'skipped');
   assert.equal(f.state.claimCount,0);assert.equal(f.state.modelCount,0);
@@ -148,4 +149,36 @@ test('D016 offline: error IA guarda review y no inventa guías',async()=>{
  assert.equal(f.state.receipt.status,'review');
  assert.equal(f.state.receipt.points,null);
  assert.equal(f.state.receipt.textSha256,null);
+});
+
+test('D016 offline: internal_text_v2 descifra por AES, analiza y no expone el original',async()=>{
+ const iv=Uint8Array.from({length:12},(_,i)=>i+1);
+ const aes=await crypto.subtle.importKey('raw',Buffer.from(KEY,'hex'),
+  'AES-GCM',false,['encrypt']);
+ const cipher=new Uint8Array(await crypto.subtle.encrypt({
+  name:'AES-GCM',iv,
+  additionalData:new TextEncoder().encode(CHAT+'|'+MESSAGE+'|text'),
+  tagLength:128
+ },aes,BYTES));
+ const source={...file(),state:'internal_text_v2',mime:'text/plain',
+  chatHmac:CHAT,nonceB64:Buffer.from(iv).toString('base64'),
+  ciphertextB64:Buffer.from(cipher).toString('base64')};
+ const f=fixture();f.state.source=source;
+ const response=await f.run();
+ assert.deepEqual(await response.json(),{
+  state:'ready',checked:1,ready:1,review:0
+ });
+ assert.equal(f.state.modelCount,1);
+ assert.equal(f.state.receipt.textSha256,SHA);
+ assert.equal(f.state.receipt.status,'ready');
+ const altered=fixture();altered.state.source={...source,chatHmac:'f'.repeat(64)};
+ const denied=await altered.run();
+ assert.equal((await denied.json()).state,'review');
+ assert.equal(altered.state.modelCount,0);
+ assert.equal(altered.state.receipt.points,null);
+ const badEnrollment=fixture();
+ badEnrollment.state.source={...source,enrolledAt:1700000000002,
+  invitedAt:1700000000001};
+ assert.equal((await (await badEnrollment.run()).json()).state,'skipped');
+ assert.equal(badEnrollment.state.modelCount,0);
 });

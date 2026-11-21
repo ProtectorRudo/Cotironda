@@ -99,9 +99,12 @@ export async function continuarZonaCentralMvp233(args:{
    await finish('staged');
    return result('ronda_en_sombra',args.sourceHmac,linked.request_id);
   }
-  const published=await db('cotironda_piloto_ia_publish_mvp222',{
-   p_request:linked.request_id
+  const published=await db('cotironda_piloto_v2_auto_release_d013',{
+   p_chat_hmac:args.chatHmac,p_source_hmac:args.sourceHmac
   });
+  // Automatic V2 release is atomic: business calendar, identity and catalog.
+  if(['ready_for_delivery','already_published'].includes(String(published.state))&&
+     published.request_id!==linked.request_id)throw Error('v2_zone_release_wrong_round');
   if(!['ready_for_delivery','already_published'].includes(String(published.state))){
    await finish('staged');
    return result('ronda_en_sombra',args.sourceHmac,linked.request_id);
