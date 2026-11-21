@@ -47,20 +47,20 @@ function origenD016(s:string):boolean{
      u.hostname.endsWith('-protector-rudo-s-projects.vercel.app')));
  }catch{return false}
 }
-/** D013 — la publicación comercial no depende del enlace D016.
- * Sólo habilitan la ejecución el outbound global y el ruteo V2 activado.
- * La RPC de publicación sigue validando comprador, catálogo, zona,
- * consentimiento, estado, calendario y deduplicación antes de despachar.
- * D016 conserva POR SEPARADO su validación estricta de SHA, origen y HMAC
- * dentro de notificarAccesoWhatsappD016; un fallo del portal no paraliza
- * un pedido comercial autorizado. Se conserva esta firma por compatibilidad
- * con los tres canales existentes (texto, ciudad y archivos).
+/** D013 — la publicación NO depende de banderas históricas de migración.
+ * En piloto el planificador siempre usa V2 y cruza cada renglón por catálogo:
+ * una bandera de "matching" no constituye una segunda autorización comercial.
+ * La RPC SQL cotironda_piloto_v2_auto_release_d013 verifica comprador, fuente,
+ * zona, catálogos y consentimiento, calendario, estado y deduplicación.
+ * El cierre general del canal outbound sigue siendo una barrera operativa.
+ * D016 valida POR SEPARADO SHA, origen, HMAC, ticket y sesión privada.
+ * Firma conservada por compatibilidad con texto, ciudad y documentos.
  */
 export function habilitarPublicacionD013ConAccesoD016(args:{
  outbound:boolean;matchingEnabled:boolean;linkSendEnabled:boolean;
  portalOrigin:string;portalSha:string;approvedSha:string;hmacKeyHex:string;
 }):boolean{
- return args?.outbound===true&&args.matchingEnabled===true;
+ return args?.outbound===true;
 }
 
 function hex(input:Uint8Array):string{
