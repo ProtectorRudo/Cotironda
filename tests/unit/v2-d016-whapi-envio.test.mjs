@@ -234,11 +234,10 @@ test('D013: el portal D016 NO frena publicación comercial autorizada',()=>{
   portalOrigin:PORTAL,portalSha:SHA,approvedSha:SHA,hmacKeyHex:KEY
  };
  assert.equal(habilitarPublicacionD013ConAccesoD016(base),true);
- for(const update of [{outbound:false},{matchingEnabled:false}])
-  assert.equal(habilitarPublicacionD013ConAccesoD016({...base,...update}),
-   false,JSON.stringify(update));
+ assert.equal(habilitarPublicacionD013ConAccesoD016({...base,outbound:false}),
+  false,'outbound global impide toda publicación');
  for(const update of [
-  {linkSendEnabled:false},
+  {matchingEnabled:false},{linkSendEnabled:false},
   {portalOrigin:'https://evil.example.com'},
   {portalOrigin:'http://cotironda-portal-x-protector-rudo-s-projects.vercel.app'},
   {portalOrigin:PORTAL+'/'},
