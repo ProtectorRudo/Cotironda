@@ -1,20 +1,17 @@
-# 09 — Hoja de ruta y puertas de calidad
+# 09 — Roadmap vigente de Cotironda V2
 
-**Estado actual:** Etapa 00 documentándose mediante PR. Nada implementado ni publicado.
+**Desde el 12/11/2026:** la hoja de ruta activa es [PILOTO-100-PLAN-MAESTRO.md](PILOTO-100-PLAN-MAESTRO.md). Lo anterior con etapas 00–07 y rankings/anonimato es histórico; no ejecutar su orden.
 
-| Etapa | Entregable | Criterio de aprobación |
+| Etapa | Entregable | Puerta de salida |
 | --- | --- | --- |
-| 00 Documentación | Visión, reglas, arquitectura, pruebas, decisiones, riesgos | Documentos coherentes, abiertos registrados y revisión comercial |
-| 01 Usuarios y base | Organizaciones, roles, rubros, catálogos, zonas, Storage privado | Autorización cruzada y RLS probadas con varias empresas |
-| 02 IA documental | Extracción por archivo, trazabilidad, aclaraciones y confirmación | Corpus realista y casos extremos aprobados |
-| 03 Licitaciones | Rondas, invitaciones, ofertas versionadas, rankings y adjudicación | Matemática determinista y casos parciales aprobados |
-| 04 WhatsApp | Adaptador Whapi, webhooks, IA conversacional, colas y opt-out | Ciclo real probado con números autorizados, sin duplicados |
-| 05 UX | Portales comprador/proveedor/admin, móvil y escritorio | Flujos completos usables, pruebas end-to-end |
-| 06 Pagos y protección | Suscripciones, webhooks, gastos, auditoría, backups | Pagos idempotentes y restauración/pruebas de seguridad |
-| 07 Piloto | Primeros compradores y proveedores voluntarios | Rondas completas, costos medidos y retroalimentación |
+| V2-00 | Triage de código y PR; mapa de reutilización | Fuente desplegada/auditoría y primera implementación definida |
+| V2-01 | **D013:** matching PRODUCTO↔catálogo propio y zona (no por rubro); sinónimos, marca/presentación compatibles | 1 pedido, negocios con productos pertinentes, conversiones/alternativas correctas, cero duplicados |
+| V2-02 | Respuesta original y referencia segura | 2 originales auténticos, mismo pedido; concurrencia entre rondas admitida |
+| V2-03 | Portal comprador solo respondedores | Nombres/originales autorizados; ninguna lista de invitados pendientes |
+| V2-04 | Análisis individual | Cobertura, diferencias, condiciones, conclusión; no bloquea originales |
+| V2-05 | Cierre dos días hábiles e informe comparativo | Calendario real, comparación por rubro verificable, no inventos |
+| V2-06 | Permisos y piloto E2E | Whapi y navegador reales, 1 arquitecto, 2 comercios, descargas |
 
-## Secuencia profesional por Issue
-Inspección de situación actual → impacto y aceptación → rama → implementar → pruebas → auditoría → PR → revisión → merge → producción sólo autorizada.
+**Siguiente acción única:** ver [Estado de continuidad](PILOTO-100-ESTADO.md). Nunca continuar una vieja etapa solo por aparecer al final de un PR; no publicar sin autorización explícita.
 
-## Prioridad
-Primero flujo pequeño con datos sintéticos. Activar WhatsApp real cuando base y autorización ya sean seguras. No optimizar por número de pantallas: optimizar por ronda de cotización completa y confiable.
+**Histórico íntegro:** [Plan pre-V2](historico/2026-11-12-plan-maestro-pre-v2.md).

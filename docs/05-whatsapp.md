@@ -1,5 +1,8 @@
 # 05 — WhatsApp y Whapi (diseño; SIN conexión actual)
 
+> **AVISO V2 — 12/11/2026: DOCUMENTO TÉCNICO HEREDADO, NO DIRECTRIZ ACTIVA.** El documento describe un flujo anterior (confirmaciones rutinarias / estado de conexión obsoleto). En V2 el proveedor cotiza libremente, y su respuesta se vincula por referencia sin trabajo extra. Las reglas vigentes están en [Contrato V2](COTIRONDA-V2-CONTRATO.md), [Plan V2](PILOTO-100-PLAN-MAESTRO.md) y [Estado V2](PILOTO-100-ESTADO.md). Si contradice V2, **NO aplicar lo viejo**.
+
+
 ## Propósito
 El proveedor puede cotizar sin aprender un portal. WhatsApp ofrece invitaciones, envío de archivo, correcciones y avisos de cierre/resultado. Portal opcional para contingencia.
 
