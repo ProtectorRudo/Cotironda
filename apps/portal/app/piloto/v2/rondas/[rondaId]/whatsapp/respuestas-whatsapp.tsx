@@ -391,23 +391,6 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
       <strong>{nombreProveedor(p.comercio)}:</strong> {p.observacion}
      </li>)}</ul>
    </div>}
-   {informe.materiales.length>0&&
-    <details className="coti-clean-evidence">
-     <summary>Ver detalle técnico por material</summary>
-     <div className="coti-final-materials">
-      {informe.materiales.map(material=><article className="coti-final-material" key={material.linea}>
-       <h4>{material.material}</h4>
-       <ul>{material.comercios.map(item=><li key={item.comercio}>
-        <strong>{nombreProveedor(item.comercio)}</strong>
-        <span>{item.estado==='coincidencia_automatica'?
-         'Coincidencia automática · '+item.cotizado:
-         item.estado==='por_verificar'?'Equivalencia por verificar'+
-          (item.cotizado?' · '+item.cotizado:''):
-         'Sin equivalencia confirmada con este artículo'}</span>
-       </li>)}</ul>
-      </article>)}
-     </div>
-    </details>}
    <p className="coti-final-decision">La decisión comercial es tuya. Cotironda no adjudica automáticamente.</p>
    <small>{informe.mensaje}</small>
   </section>}
