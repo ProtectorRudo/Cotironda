@@ -1,5 +1,9 @@
 # Cotironda V2 — Plan maestro operativo, piloto 100 %
 
+**21/11/2026 14:40 ART — VISIBILIDAD DE AILÍN EN PORTAL COMPROBADA POR EL ARQUITECTO.** Usuario confirma que la oferta de Ailín **figura** en el portal privado de la ronda real `c1f83043`; sesión comprador activa sin SMS. SQL conserva original asociado y análisis `ready`, aunque el legado `supplier_media_quotes.state=awaiting_fidelity_check` y `offer_versions=0`, por lo que no interpretar ese contador legado como pantalla vacía. **Sin cambios técnicos**: siguiente evidencia necesaria es que comprador abra original autorizado y vea análisis, que Nahuel responda y se refleje automáticamente, y cierre en calendario aprobado. Conservar circuito validado y no abrir nuevos PRs ni interferir en la ronda.
+
+
+
 **21/11/2026 12:23 ART — NUEVA EVIDENCIA REAL PORTAL WHATSAPP `c1f83043`.** El arquitecto confirmó que recibió el enlace; `v2_d016_access_tickets` muestra ticket usado y `v2_d016_browser_sessions` una sesión **activa, no revocada** registrada 15:23:15Z. Acceso privado sin SMS ya verificado desde el enlace. Original Ailín permanece en espera de fidelidad, 0 ofertas publicadas, por lo que sigue pendiente comprobar visibilidad y análisis en sesión, respuesta Nahuel y cierre; no tocar flujo funcionando ni crear trabajo redundante. 
 
 
