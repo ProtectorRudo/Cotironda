@@ -228,27 +228,25 @@ test('D016: SEGUIMIENTO COTI recupera acceso con tracking legado apagado',()=>{
  assert.equal(permitirRecuperacionD016(true,false,'false'),false);
 });
 
-test('D013: no publica sin D016 y release Preview privado verificable',()=>{
+test('D013: el portal D016 NO frena publicación comercial autorizada',()=>{
  const base={
   outbound:true,matchingEnabled:true,linkSendEnabled:true,
   portalOrigin:PORTAL,portalSha:SHA,approvedSha:SHA,hmacKeyHex:KEY
  };
  assert.equal(habilitarPublicacionD013ConAccesoD016(base),true);
+ for(const update of [{outbound:false},{matchingEnabled:false}])
+  assert.equal(habilitarPublicacionD013ConAccesoD016({...base,...update}),
+   false,JSON.stringify(update));
  for(const update of [
-  {outbound:false},{matchingEnabled:false},{linkSendEnabled:false},
+  {linkSendEnabled:false},
   {portalOrigin:'https://evil.example.com'},
   {portalOrigin:'http://cotironda-portal-x-protector-rudo-s-projects.vercel.app'},
   {portalOrigin:PORTAL+'/'},
   {portalSha:'bad'},{approvedSha:'f'.repeat(40)},
   {hmacKeyHex:''},{hmacKeyHex:'x'.repeat(64)}
- ]){
-  assert.equal(habilitarPublicacionD013ConAccesoD016({...base,...update}),false,
-   JSON.stringify(update));
- }
- // Nunca basta activar D013 a solas: el enlace de comprador debe funcionar.
- assert.equal(habilitarPublicacionD013ConAccesoD016({
-  ...base,matchingEnabled:true,linkSendEnabled:false
- }),false);
+ ])
+  assert.equal(habilitarPublicacionD013ConAccesoD016({...base,...update}),
+   true,'solo el enlace D016 mantiene su validación privada: '+JSON.stringify(update));
 });
 
 test('D013+D016: localidad reanuda la MISMA ronda con V2, nunca rubro V1',()=>{
