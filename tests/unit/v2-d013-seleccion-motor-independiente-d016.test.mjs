@@ -52,14 +52,16 @@ const gates={outbound:true,matchingEnabled:true,linkSendEnabled:true,
  portalOrigin:'https://cotironda-portal-123-protector-rudo-s-projects.vercel.app',
  portalSha:'a'.repeat(40),approvedSha:'a'.repeat(40),
  hmacKeyHex:'b'.repeat(64)};
-test('D013: publicación D016 sigue bloqueada sin autorizaciones completas',()=>{
+test('D013: publicación comercial no depende del release del portal D016',()=>{
  assert.equal(habilitarPublicacionD013ConAccesoD016(gates),true);
+ for(const patch of [{outbound:false},{matchingEnabled:false}])
+  assert.equal(habilitarPublicacionD013ConAccesoD016({...gates,...patch}),
+   false,JSON.stringify(patch));
  for(const patch of [
-  {outbound:false},{matchingEnabled:false},{linkSendEnabled:false},
-  {portalOrigin:'https://evil.example.com'},{portalSha:'c'.repeat(40)},
-  {hmacKeyHex:''}
+  {linkSendEnabled:false},{portalOrigin:'https://evil.example.com'},
+  {portalSha:'c'.repeat(40)},{approvedSha:''},{hmacKeyHex:''}
  ])assert.equal(habilitarPublicacionD013ConAccesoD016({...gates,...patch}),
-  false,JSON.stringify(patch));
+  true,'el acceso D016 no debe suspender distribución: '+JSON.stringify(patch));
 });
 const source='10 bolsas cemento 25 kg. Entrega en La Plata.';
 const evidence='10 bolsas cemento 25 kg';
@@ -117,6 +119,35 @@ test('D013: WhatsApp comprador V2 prepara sombra sin auto-release',async()=>{
  assert.ok(calls.some(x=>x.name==='cotironda_piloto_ia_finish_buyer_mvp226'&&
   x.params.p_state==='staged'));
 });
+
+test('D013: IA V2 publica por RPC con D016 fuera de servicio, sin enviar Whapi desde el broker',async()=>{
+ const {calls,rpc:existingRpc}=recorder();
+ const rpc=async(name,params)=>{
+  if(name==='cotironda_piloto_v2_auto_release_d013'){
+   calls.push({name,params});
+   return {data:{state:'ready_for_delivery',request_id:round},error:null};
+  }
+  return existingRpc(name,params);
+ };
+ const publicar=habilitarPublicacionD013ConAccesoD016({
+  ...gates,linkSendEnabled:false,portalSha:'',approvedSha:'',
+  portalOrigin:'https://evil.example.com',hmacKeyHex:''
+ });
+ assert.equal(publicar,true);
+ const r=await procesarV2({
+  habilitado:true,publicar,autenticadoPorWebhook:true,
+  chatHmac:'a'.repeat(64),messageHmac:'b'.repeat(64),
+  sourceSha256:'c'.repeat(64),fuente:source,
+  apiKey:'sk-test-local',model:'gpt-6-luna',rpc,planificar:async()=>plan
+ });
+ assert.equal(r.estado,'ronda_publicada',r.codigo);
+ assert.equal(r.requestId,round);
+ assert.equal(r.whatsappEnviado,false);
+ assert.equal(calls.filter(x=>x.name==='cotironda_piloto_v2_auto_release_d013').length,1);
+ assert.ok(calls.some(x=>x.name==='cotironda_piloto_ia_finish_buyer_mvp226'&&
+  x.params.p_state==='prepared'));
+});
+
 test('D013: localidad V2 reanuda en sombra sin liberar',async()=>{
  const {calls,rpc}=recorder();
  const r=await continuarV2({
