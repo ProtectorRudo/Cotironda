@@ -66,16 +66,18 @@ test('No cambian acciones, autorización de descargas ni regeneración IA',()=>{
  assert.doesNotMatch(bids,/sms|signInWithOtp|createSignedUrl/u);
 });
 
-test('D019: ficha breve muestra solo diferencias técnicas y deja comparativo para el cierre',()=>{
+test('D019: ficha breve conserva comparativo final y oculta la matriz técnica por material',()=>{
  assert.match(bids,/pedidoConsistente/u);
  assert.match(bids,/cover\?\.detalle\.filter\(item=>item\.estado==='por_verificar'\)/u);
  assert.match(bids,/diferencias\.slice\(0,3\)/u);
  assert.match(bids,/Equivalencias técnicas por comprobar/u);
- assert.match(bids,/informe\.materiales/u);
- assert.match(bids,/Coincidencia automática/u);
  assert.match(bids,/informe\?\.requestId===rondaId\.toLowerCase\(\)&&<section/u);
+ assert.match(bids,/<h2>Comparación final<\/h2>/u);
+ assert.match(bids,/informe\.comparacion\.map/u);
+ assert.match(bids,/La decisión comercial es tuya/u);
+ assert.doesNotMatch(bids,/informe\.materiales|coti-final-materials|coti-final-material/u);
+ assert.doesNotMatch(bids,/Ver detalle técnico por material|Sin equivalencia confirmada con este artículo/u);
  assert.doesNotMatch(bids,/\['Entrega',q\.resumen\.condiciones\.entrega\]/u);
  assert.doesNotMatch(bids,/Artículos e importes extraídos del presupuesto/u);
  assert.doesNotMatch(bids,/q\.resumen\.detalleCotizado\.map\(/u);
- assert.match(css,/coti-final-materials/u);
 });
