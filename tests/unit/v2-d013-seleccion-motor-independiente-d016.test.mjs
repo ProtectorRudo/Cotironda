@@ -52,16 +52,16 @@ const gates={outbound:true,matchingEnabled:true,linkSendEnabled:true,
  portalOrigin:'https://cotironda-portal-123-protector-rudo-s-projects.vercel.app',
  portalSha:'a'.repeat(40),approvedSha:'a'.repeat(40),
  hmacKeyHex:'b'.repeat(64)};
-test('D013: publicación comercial no depende del release del portal D016',()=>{
+test('D013: publicación comercial no depende de switches históricos ni del portal D016',()=>{
  assert.equal(habilitarPublicacionD013ConAccesoD016(gates),true);
- for(const patch of [{outbound:false},{matchingEnabled:false}])
-  assert.equal(habilitarPublicacionD013ConAccesoD016({...gates,...patch}),
-   false,JSON.stringify(patch));
+ assert.equal(habilitarPublicacionD013ConAccesoD016({...gates,outbound:false}),
+  false,'el cierre operativo outbound sigue vigente');
  for(const patch of [
-  {linkSendEnabled:false},{portalOrigin:'https://evil.example.com'},
-  {portalSha:'c'.repeat(40)},{approvedSha:''},{hmacKeyHex:''}
+  {matchingEnabled:false},{linkSendEnabled:false},
+  {portalOrigin:'https://evil.example.com'},{portalSha:'c'.repeat(40)},
+  {approvedSha:''},{hmacKeyHex:''}
  ])assert.equal(habilitarPublicacionD013ConAccesoD016({...gates,...patch}),
-  true,'el acceso D016 no debe suspender distribución: '+JSON.stringify(patch));
+  true,'SQL verifica catálogo y autorización, D016 sólo protege el enlace: '+JSON.stringify(patch));
 });
 const source='10 bolsas cemento 25 kg. Entrega en La Plata.';
 const evidence='10 bolsas cemento 25 kg';
@@ -130,7 +130,8 @@ test('D013: IA V2 publica por RPC con D016 fuera de servicio, sin enviar Whapi d
   return existingRpc(name,params);
  };
  const publicar=habilitarPublicacionD013ConAccesoD016({
-  ...gates,linkSendEnabled:false,portalSha:'',approvedSha:'',
+  ...gates,matchingEnabled:false,linkSendEnabled:false,
+  portalSha:'',approvedSha:'',
   portalOrigin:'https://evil.example.com',hmacKeyHex:''
  });
  assert.equal(publicar,true);
@@ -146,6 +147,29 @@ test('D013: IA V2 publica por RPC con D016 fuera de servicio, sin enviar Whapi d
  assert.equal(calls.filter(x=>x.name==='cotironda_piloto_v2_auto_release_d013').length,1);
  assert.ok(calls.some(x=>x.name==='cotironda_piloto_ia_finish_buyer_mvp226'&&
   x.params.p_state==='prepared'));
+});
+
+test('D013: SQL deniega publicación sin fuente elegible aun sin flag de matching',async()=>{
+ const {calls,rpc:existingRpc}=recorder();
+ const rpc=async(name,params)=>{
+  if(name==='cotironda_piloto_v2_auto_release_d013'){
+   calls.push({name,params});
+   return {data:{state:'source_not_eligible'},error:null};
+  }
+  return existingRpc(name,params);
+ };
+ const r=await procesarV2({
+  habilitado:true,publicar:habilitarPublicacionD013ConAccesoD016({
+   ...gates,matchingEnabled:false,linkSendEnabled:false
+  }),autenticadoPorWebhook:true,
+  chatHmac:'a'.repeat(64),messageHmac:'b'.repeat(64),
+  sourceSha256:'c'.repeat(64),fuente:source,
+  apiKey:'sk-test-local',model:'gpt-6-luna',rpc,planificar:async()=>plan
+ });
+ assert.equal(r.estado,'ronda_en_sombra');
+ assert.equal(r.codigo,'needs_publication_review');
+ assert.equal(r.whatsappEnviado,false);
+ assert.equal(calls.filter(c=>c.name==='cotironda_piloto_v2_auto_release_d013').length,1);
 });
 
 test('D013: localidad V2 reanuda en sombra sin liberar',async()=>{
