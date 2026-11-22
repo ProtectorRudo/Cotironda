@@ -60,13 +60,21 @@ BEGIN
  INTO v_supplier
  FROM cotironda_piloto_privado.participants p
  WHERE p.key=v_source->>'supplierKey' AND p.participant_role='supplier';
- IF NOT FOUND OR v_supplier.opted_out_at IS NOT NULL THEN RETURN NULL;END IF;
+ IF NOT FOUND THEN RETURN NULL;END IF;
+ IF v_supplier.opted_out_at IS NOT NULL THEN RETURN NULL;END IF;
  SELECT rubro,direccion,localidad,pais,whatsapp_e164,foto_path,
   consentido_en,revocado_en,consentimiento_version,consentimiento_evidencia_hmac,
   whatsapp_verificado_en INTO v_profile
  FROM cotironda_piloto_privado.supplier_business_profiles_d022
  WHERE supplier_key=v_supplier.key;
- v_valid:=FOUND AND v_profile.consentido_en IS NOT NULL
+ v_valid:=FOUND;
+ IF NOT v_valid THEN
+  RETURN jsonb_build_object('state','supplier_profile_authorized_v2',
+   'comercio',v_supplier.display_label,'rubro',NULL,'direccion',NULL,
+   'localidad',NULL,'pais',NULL,'whatsapp',NULL,'fotoPath',NULL,
+   'supplierKey',v_supplier.key);
+ END IF;
+ v_valid:=v_profile.consentido_en IS NOT NULL
   AND v_profile.consentimiento_version='D022-2026-11-22'
   AND v_profile.consentimiento_evidencia_hmac ~ '^[a-f0-9]{64}
  -- El perfil sin consentimiento no expone contactos, direcciones ni foto.
