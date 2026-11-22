@@ -52,6 +52,11 @@ test('D022: la RPC verifica sesión, respondedor, documento y consentimiento rev
  ])assert.ok(sql.includes(v),v);
  assert.ok(api.includes('sessionContext(db,digest,rondaId)'));
  assert.ok(api.includes('cotironda_piloto_v2_d022_profile_private'));
+ assert.match(api,/createHash\('sha256'\)/u);
+ assert.match(api,/expectedSha=path\.split/u);
+ assert.match(api,/recheck=await db\.rpc\('cotironda_piloto_v2_d022_profile_private'/u);
+ assert.match(sql,/whatsapp_verificado_en IS NOT NULL/u);
+ assert.match(sql,/consentimiento_evidencia_hmac/u);
  assert.ok(api.includes("credentials:'same-origin'") || modal.includes("credentials:'same-origin'"));
  assert.match(modal,/role="dialog"/u);
  assert.match(modal,/rel="noopener noreferrer"/u);
