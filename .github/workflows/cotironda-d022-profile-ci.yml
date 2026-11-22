@@ -73,4 +73,4 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             "https://api.github.com/repos/${{ github.repository }}/statuses/${{ github.sha }}" \
-            -d "{\"state\":\"$state\",\"context\":\"cotironda/D022-build-and-safety\",\"description\":\"$description\"}" >/dev/null
+            -d "{\"state\":\"$state\",\"context\":\"cotironda/D022-build-and-safety\",\"description\":\"$description\",\"target_url\":\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}" >/dev/null
