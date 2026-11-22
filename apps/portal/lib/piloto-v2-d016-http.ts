@@ -529,7 +529,7 @@ export async function consultarPerfilComercialWhatsappD022(
     path.endsWith('.png')?'image/png':'image/jpeg';
    if(file.type!==mime)return deny();
    // El nombre de Storage incluye SHA256. No entregar bytes sustituidos.
-   const expectedSha=path.match(/\\/([a-f0-9]{64})\\.(?:jpg|png|webp)$/u)?.[1];
+   const expectedSha=path.split('/').at(-1)?.split('.')[0];
    const bytes=new Uint8Array(await file.arrayBuffer());
    if(!expectedSha||bytes.byteLength!==file.size||
     createHash('sha256').update(bytes).digest('hex')!==expectedSha)return deny();
