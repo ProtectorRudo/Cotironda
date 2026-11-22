@@ -1,6 +1,8 @@
 'use client';
 /** Cotironda D016: sesión HttpOnly, no OTP ni JWT en JavaScript. */
 import {useCallback,useEffect,useRef,useState} from 'react';
+import {PerfilComercialWhatsappD022} from './perfil-comercial-whatsapp';
+
 import type {CatalogoRespuestasV2} from '../../../../../../../../src/server/v2-03-catalogo-respondedores.ts';
 import type {InformeFinalD016}
  from '../../../../../../../../src/server/v2-d016-informe-final.ts';
@@ -25,6 +27,7 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
  const analysisRunning=useRef(false);
  const [analizando,setAnalizando]=useState(false);
  const [expandedDoc,setExpandedDoc]=useState<string|null>(null);
+ const [perfilActivo,setPerfilActivo]=useState<{id:string;nombre:string}|null>(null);
  const [originalTexto,setOriginalTexto]=useState<{id:string;text:string}|null>(null);
  const [informe,setInforme]=useState<InformeFinalD016|null>(null);
  const informeRunning=useRef(false);
@@ -187,7 +190,7 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
    if(!res.ok)throw Error('logout_failed');
    version.current++;
    historialAnalisis.current.clear();
-   setCatalog(null);setOriginalTexto(null);setCerrada(true);
+   setCatalog(null);setOriginalTexto(null);setPerfilActivo(null);setCerrada(true);
   }catch{setError('No pudimos cerrar tu sesión. Volvé a intentarlo.');}
   finally{setBusy(false)}
  }
@@ -269,7 +272,10 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
     <div className="coti-clean-bid-primary">
      <span className="coti-clean-supplier-avatar" aria-hidden="true">{letraProveedor(q.comercio)}</span>
      <div className="coti-clean-bid-identity">
-      <h3>{nombreProveedor(q.comercio)}</h3>
+      <h3><button type="button" className="coti-supplier-name-button"
+       onClick={()=>setPerfilActivo({id:q.documentoId,nombre:q.comercio})}
+       aria-label={'Ver perfil comercial de '+nombreProveedor(q.comercio)}>
+       {nombreProveedor(q.comercio)}</button></h3>
       <strong className="coti-clean-bid-price">{importeDeclarado??sumaCalculada??'No informado'}</strong>
       <small className="coti-clean-amount-kind">{esSuma?'Suma de artículos cotizados':q.resumen.tipoImporte}</small>
      </div>
@@ -363,7 +369,12 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
    <p>{informe.conclusion}</p>
    <div className="coti-final-list">
     {informe.comparacion.map(item=><article className="coti-final-supplier" key={item.comercio}>
-     <h3>{nombreProveedor(item.comercio)}</h3>
+     <h3>{(()=>{
+      const matches=catalog?.respuestas.filter(q=>q.comercio===item.comercio)??[];
+      return matches.length===1?<button type="button" className="coti-supplier-name-button"
+       onClick={()=>setPerfilActivo({id:matches[0].documentoId,nombre:item.comercio})}>
+       {nombreProveedor(item.comercio)}</button>:nombreProveedor(item.comercio);
+     })()}</h3>
      {item.ofertas.map(oferta=><div className="coti-final-offer" key={oferta.documentoId}>
       <strong className="coti-final-amount">{oferta.importe??'No informado'}</strong>
       <small>{oferta.tipoImporte}</small>
@@ -394,5 +405,8 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
    <p className="coti-final-decision">La decisión comercial es tuya. Cotironda no adjudica automáticamente.</p>
    <small>{informe.mensaje}</small>
   </section>}
+  {perfilActivo&&<PerfilComercialWhatsappD022
+   rondaId={rondaId} documentoId={perfilActivo.id} nombre={perfilActivo.nombre}
+   onClose={()=>setPerfilActivo(null)}/>}
  </section>;
 }
