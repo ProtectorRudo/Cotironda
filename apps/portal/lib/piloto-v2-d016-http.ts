@@ -542,7 +542,7 @@ export async function consultarPerfilComercialWhatsappD022(
     !proyectarPerfilComercialD022(recheck.data)?.fotoDisponible)return deny();
    const after=await sessionContext(db,digest,rondaId);
    if(!after||after.buyerKey!==before.buyerKey)return deny();
-   return new Response(bytes,{status:200,headers:{
+   return new Response(file,{status:200,headers:{
     'content-type':mime,'cache-control':'private, no-store, max-age=0',
     'x-content-type-options':'nosniff','referrer-policy':'no-referrer',
     'cross-origin-resource-policy':'same-origin','vary':'Cookie'
