@@ -1,5 +1,9 @@
 # Cotironda V2 — Estado REAL del piloto
 
+**22/11/2026 — FICHA COMERCIAL D022 CREADA EN CÓDIGO, NO INSTALADA.** Código aislado en [rama D022](https://github.com/ProtectorRudo/Cotironda/tree/feat/d022-ficha-comercial-proveedor-20261122), último commit SQL [242cf8b](https://github.com/ProtectorRudo/Cotironda/commit/242cf8be6c4ef9685da7c48c6f530f0a16eb1506): al tocar el nombre del corralón en presupuesto visible se abre ficha con rubro, dirección, foto, Maps y WhatsApp predefinido, todos condicionados a datos comerciales acreditados y autorizados. 11 contratos estáticos OK; falta CI, carga explícita de datos y comprobación en navegador. No migraciones ni publicaciones. **Acción inmediata sin cambiar:** confirmar presupuesto original/análisis de Ailín, esperar la cotización de Nahuel y verificar cierre `c1f83043`. No confundir feature preparada con piloto 100 %.
+
+
+
 **21/11/2026 14:40 ART — OFERTA AILÍN VISIBLE PARA EL ARQUITECTO, CONFIRMACIÓN REAL DEL USUARIO.** En ronda `c1f83043`, el arquitecto **ve la oferta comercial de Ailín dentro del portal privado** según confirmación directa del propietario; la sesión D016 sigue activa en SQL. Se comprobó en read-only a las 17:40Z que el original PDF/documental de Ailín sigue asociado a la ronda, análisis `v2_original_analysis.status=ready`, y el sistema conserva `supplier_media_quotes_mvp098.state=awaiting_fidelity_check` con **0 registros `offer_versions`**. Estas tablas son un circuito distinto al de presentación visible; **no negar la evidencia de interfaz ni declarar normalizada/publicada la versión comercial por `offer_versions`**. No forzar estados ni duplicar mensajes. Nahuel aún **no respondió** en registros `whapi_inbox` de esta ronda a la fecha de control. **Próximo paso:** comprobar apertura del original autorizado y análisis breve desde portal; recibir segundo presupuesto real de Nahuel y confirmar visualización y cierre autónomos. No hay evidencia suficiente para declarar piloto 100 %.
 
 
