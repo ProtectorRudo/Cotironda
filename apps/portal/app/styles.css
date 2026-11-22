@@ -513,3 +513,64 @@ body:has(.coti-clean) .logo:focus-visible{outline:2px solid #9dbff7;outline-offs
  font-size: .96rem;
  line-height: 1.55;
 }
+
+
+/* D022: ficha comercial; el nombre abre modal, no dispara WhatsApp ni pagos. */
+.coti-clean .coti-supplier-name-button{
+ display:inline!important;margin:0!important;padding:0!important;
+ width:auto!important;border:0!important;border-radius:0!important;
+ background:transparent!important;color:#1457a7!important;
+ font:inherit!important;font-weight:inherit!important;text-align:left;
+ text-decoration:underline;text-decoration-color:#b4c8df;
+ text-underline-offset:4px;cursor:pointer
+}
+.coti-clean .coti-supplier-name-button:hover{color:#063c85!important}
+.coti-clean .coti-supplier-name-button:focus-visible{
+ outline:2px solid #0866ff;outline-offset:4px;border-radius:3px
+}
+.coti-profile-overlay{
+ position:fixed;inset:0;z-index:1000;padding:20px;
+ display:flex;justify-content:center;align-items:center;
+ background:#102c4d99;overflow:auto
+}
+.coti-clean .coti-supplier-profile{
+ position:relative;min-width:0;width:min(100%,460px);
+ margin:auto;border-radius:22px;border:1px solid #cbdff5;
+ box-shadow:0 30px 100px #10294970;padding:26px 22px;
+ background:#fff;color:#203954;text-align:left
+}
+.coti-clean .coti-profile-close{
+ position:absolute;top:9px;right:11px;display:grid;place-items:center;
+ width:36px!important;height:36px;padding:0!important;margin:0!important;
+ background:#edf3fc;color:#2e4f70;font-size:25px;border-radius:50%
+}
+.coti-clean .coti-profile-brand{display:flex;gap:16px;align-items:center;padding-right:27px}
+.coti-clean .coti-profile-photo,.coti-clean .coti-profile-placeholder{
+ display:grid;place-items:center;width:86px;height:86px;flex:none;
+ border-radius:18px;object-fit:cover;background:#e2efff;color:#1259af;
+ font-size:38px;font-weight:850
+}
+.coti-clean .coti-profile-brand h2{font-size:21px;font-weight:800;margin:0 0 5px;
+ color:#143352;line-height:1.25;overflow-wrap:anywhere}
+.coti-clean .coti-profile-brand p{font-size:13px;margin:0;color:#687e96}
+.coti-clean .coti-profile-fields{margin:24px 0 18px;display:grid;gap:12px}
+.coti-clean .coti-profile-fields div{border-bottom:1px solid #edf1f7;padding-bottom:10px}
+.coti-clean .coti-profile-fields dt{font-size:11px;color:#6d8195;margin-bottom:4px}
+.coti-clean .coti-profile-fields dd{font-size:14px;font-weight:650;margin:0;
+ color:#263e59;overflow-wrap:anywhere}
+.coti-clean .coti-profile-actions{display:grid;gap:9px;margin:20px 0 5px}
+.coti-clean .coti-profile-actions a,.coti-clean .coti-profile-unavailable{
+ display:block;text-align:center;border-radius:10px;padding:13px 14px;
+ font-size:13px;font-weight:750
+}
+.coti-clean .coti-profile-whatsapp{background:#168b5b;color:#fff!important}
+.coti-clean .coti-profile-maps{background:#e9f2ff;color:#1258a6!important}
+.coti-clean .coti-profile-unavailable{background:#f1f4f8;color:#718296}
+.coti-clean .coti-profile-disclaimer{margin:14px 0 0;font-size:11px;line-height:1.4;
+ color:#60758b}
+@media(max-width:520px){
+ .coti-profile-overlay{padding:12px}
+ .coti-clean .coti-supplier-profile{padding:24px 17px}
+ .coti-clean .coti-profile-photo,.coti-clean .coti-profile-placeholder{
+  width:70px;height:70px}
+}
