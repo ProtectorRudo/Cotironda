@@ -1,4 +1,4 @@
-import {createHmac} from 'node:crypto';
+import {createHash,createHmac} from 'node:crypto';
 /** D016: adaptador Node/Next aislado, SIN SMS ni sesiones GoTrue falsas.
  * No se habilita sin Preview+SHA+secreto exactos ni RPC privada.
  */
@@ -528,16 +528,33 @@ export async function consultarPerfilComercialWhatsappD022(
    const mime=path.endsWith('.webp')?'image/webp':
     path.endsWith('.png')?'image/png':'image/jpeg';
    if(file.type!==mime)return deny();
+   // El nombre de Storage incluye SHA256. No entregar bytes sustituidos.
+   const expectedSha=path.match(/\\/([a-f0-9]{64})\\.(?:jpg|png|webp)$/u)?.[1];
+   const bytes=new Uint8Array(await file.arrayBuffer());
+   if(!expectedSha||bytes.byteLength!==file.size||
+    createHash('sha256').update(bytes).digest('hex')!==expectedSha)return deny();
+   // Reconsultar permisos de original y consentimiento tras leer Storage:
+   // una baja/revocación concurrente también cierra esta respuesta.
+   const recheck=await db.rpc('cotironda_piloto_v2_d022_profile_private',{
+    p_request_id:rondaId,p_sesion_hmac:digest,p_document_id:documentoId
+   });
+   if(recheck.error||recheck.data?.fotoPath!==path||
+    !proyectarPerfilComercialD022(recheck.data)?.fotoDisponible)return deny();
    const after=await sessionContext(db,digest,rondaId);
    if(!after||after.buyerKey!==before.buyerKey)return deny();
-   return new Response(file,{status:200,headers:{
+   return new Response(bytes,{status:200,headers:{
     'content-type':mime,'cache-control':'private, no-store, max-age=0',
     'x-content-type-options':'nosniff','referrer-policy':'no-referrer',
     'cross-origin-resource-policy':'same-origin','vary':'Cookie'
    }});
   }
+  const recheck=await db.rpc('cotironda_piloto_v2_d022_profile_private',{
+   p_request_id:rondaId,p_sesion_hmac:digest,p_document_id:documentoId
+  });
+  const current=recheck.error?null:proyectarPerfilComercialD022(recheck.data);
+  if(!current||JSON.stringify(current)!==JSON.stringify(profile))return deny();
   const after=await sessionContext(db,digest,rondaId);
   if(!after||after.buyerKey!==before.buyerKey)return deny();
-  return new Response(JSON.stringify(profile),{status:200,headers:HEADERS});
+  return new Response(JSON.stringify(current),{status:200,headers:HEADERS});
  }catch{return deny(503)}
 }
