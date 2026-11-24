@@ -2,6 +2,7 @@
 /** Cotironda D016: sesión HttpOnly, no OTP ni JWT en JavaScript. */
 import {useCallback,useEffect,useRef,useState} from 'react';
 import {PerfilComercialWhatsappD022} from './perfil-comercial-whatsapp';
+import {importeVisiblePesosV2} from '../../../../../../../../src/server/v2-d016-resumen-comercial.ts';
 
 import type {CatalogoRespuestasV2} from '../../../../../../../../src/server/v2-03-catalogo-respondedores.ts';
 import type {InformeFinalD016}
@@ -249,8 +250,9 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
    <p className="coti-clean-empty" role="status">Los presupuestos aparecerán acá cuando respondan los comercios.</p>}
   {catalog?.respuestas.map(q=>{
    const cover=q.resumen.cobertura;
-   const needsReview=!cover||cover.identificados<cover.solicitados||
-    cover.porVerificar.length>0||cover.adicionales>0;
+   // El conteo de presupuestos no equivale a validación de especificaciones:
+   // reservar alertas visibles para datos realmente ausentes.
+   const countMissing=q.resumen.articulosCotizados===null;
    const expanded=expandedDoc===q.documentoId;
    const diferencias=cover?.detalle.filter(item=>item.estado==='por_verificar')??[];
    // Mostrar valor comercial y diferencias técnicas, sin transcribir los importes
@@ -268,6 +270,8 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
     q.resumen.detalleCotizado.length>0?q.resumen.detalleCotizado.length:null);
    // Un recuento de renglones NO certifica equivalencia de cantidades.
    const conteoConfiable=cotizados!==null&&enviados!==null;
+   const importeVisible=importeVisiblePesosV2(importeDeclarado??sumaCalculada)??'No informado';
+   const monedaAjena=/^(?:USD|US\$)/u.test((importeDeclarado??sumaCalculada??'').trim());
    return <article className="coti-clean-bid" key={q.documentoId}>
     <div className="coti-clean-bid-primary">
      <a className="coti-clean-supplier-avatar coti-supplier-avatar-link"
@@ -292,12 +296,11 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
        }}
        aria-label={'Ver perfil comercial de '+nombreProveedor(q.comercio)}>
        {nombreProveedor(q.comercio)}</a></h3>
-      <strong className="coti-clean-bid-price">{importeDeclarado??sumaCalculada??'No informado'}</strong>
+      <strong className="coti-clean-bid-price">{importeVisible}</strong>
       <small className="coti-clean-amount-kind">{esSuma?'Suma de artículos cotizados':q.resumen.tipoImporte}</small>
      </div>
     </div>
-    <div className={'coti-clean-coverage'+(needsReview?' caution':'')}>
-     <span aria-hidden="true">{needsReview?'!':'✓'}</span>
+    <div className={'coti-clean-coverage'+(countMissing?' caution':'')}>
      <span>{articulosVisibles!==null?
       articulosVisibles+' artículos cotizados'+
        (conteoConfiable?' · '+enviados+' enviados a este negocio':''):
@@ -324,25 +327,24 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
      </div>}
     {expanded&&<div className="coti-clean-bid-expanded" id={'detalle-'+q.documentoId}>
      <h4>Lo importante de este presupuesto</h4>
-     <div className="coti-clean-commercial-recap" aria-label="Resumen comercial del presupuesto">
-      <p><strong>Importe declarado:</strong> {importeDeclarado??sumaCalculada??'No informado'}
-       {importeDeclarado!==null&&<span className="coti-clean-recap-kind">
-        {' · '+q.resumen.tipoImporte}
-       </span>}
-       {esSuma&&<span className="coti-clean-recap-kind">
-        {' · Suma de renglones, no total declarado'}
-       </span>}
-      </p>
-      <p><strong>Renglones cotizados:</strong> {articulosVisibles!==null?
-       articulosVisibles+(enviados!==null?' de '+enviados+' materiales consultados a este negocio':''):
-       'No informado'}</p>
-      <p><strong>Coincidencia técnica:</strong> {cover?
-       cover.identificados===cover.solicitados&&cover.adicionales===0?
-        'Los renglones coinciden automáticamente; revisá las especificaciones del original.':
-        cover.identificados+' de '+cover.solicitados+
-        ' materiales con equivalencia automática. Los demás requieren revisión.':
-       'Pendiente de verificar en el documento original.'}</p>
-     </div>
+     {monedaAjena&&<p className="coti-clean-muted">
+      El documento menciona una moneda diferente de pesos argentinos. Confirmala con el proveedor antes de comparar importes.
+     </p>}
+     {diferencias.length===0&&articulosVisibles!==null&&
+      <p className="coti-clean-analysis-intro">
+       Los materiales cotizados no presentan diferencias técnicas identificadas automáticamente. Revisá el original para confirmar especificaciones.
+      </p>}
+     {diferencias.length>0&&<div className="coti-clean-material-review">
+      <strong>Detalles que conviene confirmar</strong>
+      <p>Hay artículos cotizados; estas descripciones no permiten confirmar todas las especificaciones del pedido.</p>
+      <ul>{diferencias.slice(0,4).map(item=><li key={item.linea}>
+       <strong>{item.cotizado??item.solicitado}</strong>
+       {item.cotizado?
+        <small>{'Pedido: '+item.solicitado}</small>:
+        <small>{'No se identificó una correspondencia única en el original para: '+item.solicitado}</small>}
+       <span>Confirmar presentación y cantidad con el documento original.</span>
+      </li>)}</ul>
+     </div>}
      {esSuma&&<p className="coti-clean-muted">
       Suma calculada de los importes por artículo; el total declarado por el proveedor no está confirmado. Revisá el original.
      </p>}
@@ -363,17 +365,9 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
          Los demás artículos se consultan en el mensaje original.
         </p>}
       </div>}
-     {diferencias.length>0&&<div className="coti-clean-alert">
-      <strong>Equivalencias técnicas por comprobar</strong>
-      <ul>{diferencias.slice(0,3).map(item=><li key={item.linea}>
-       {item.solicitado}
-       {item.cotizado?' · El original menciona: '+item.cotizado:''}
-      </li>)}</ul>
-     </div>}
      {cover&&cover.adicionales>0&&
       <p className="coti-clean-muted">
-       {cover.adicionales} renglón(es) adicional(es) o sin equivalencia confirmada.
-       Consultá el presupuesto original.
+       {cover.adicionales} artículo(s) de la oferta no pudieron relacionarse con las descripciones solicitadas. Podrían ser adicionales o alternativas: revisá el original.
       </p>}
      {!cover&&<p className="coti-clean-muted">
       {q.resumen.detalleCotizado.length>0?
@@ -387,7 +381,7 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
      {q.resumen.descuento&&<p className="coti-clean-muted">
       <strong>Descuento informado:</strong> {q.resumen.descuento}.
      </p>}
-     <h4 className="coti-terms-heading">Condiciones de la oferta</h4>
+     <h4 className="coti-terms-heading">Condiciones comerciales</h4>
      <dl className="coti-clean-terms">
       <div><dt>IVA</dt><dd>{conditions.iva}</dd></div>
       <div><dt>Flete</dt><dd>{conditions.flete}</dd></div>
