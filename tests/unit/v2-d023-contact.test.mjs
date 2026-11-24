@@ -27,7 +27,7 @@ test('D023: fuente privada exige documento autorizado y revocación',()=>{
  assert.match(sql,/c\.authenticated_message_hmac IS NOT NULL/u);
  assert.match(sql,/ENABLE ROW LEVEL SECURITY/u);
  assert.match(sql,/REVOKE ALL ON FUNCTION/u);
- assert.match(sql,/source_message_hmac/u);
+ assert.doesNotMatch(sql,/INSERT\s+INTO\s+cotironda_piloto_privado\.contact_reveal_consents_mvp109/u);
  assert.match(sql,/Corralón Ailín/u);
  assert.match(sql,/Corralón Nahuel/u);
  assert.doesNotMatch(sql,/UPDATE\s+cotironda_piloto_privado\.contact_reveal_consents_mvp109/u);
