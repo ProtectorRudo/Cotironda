@@ -7,7 +7,7 @@ export function enlaceWhatsappD023(raw:unknown):string|null{
  const obj=raw as Record<string,unknown>;
  if(obj.state!=='authorized_contact_d023'||
   typeof obj.digits!=='string'||!DIGITS.test(obj.digits))return null;
- return 'https://wa.me/'+obj.digits+'?text='+encodeURIComponent(MESSAGE);
+ return 'https://api.whatsapp.com/send?phone='+obj.digits+'&text='+encodeURIComponent(MESSAGE);
 }
 export async function recuperarContactoVerificadoD023(
  rondaId:string,documentoId:string,sesionHmac:string,
