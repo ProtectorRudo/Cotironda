@@ -1,6 +1,6 @@
 \set ON_ERROR_STOP on
 -- Ejecución totalmente local a PostgreSQL 17 sintético (no toca piloto real).
-\ir v2-d022-profile-pg17.sql
+-- Se ejecuta DESPUÉS de v2-d022-profile-pg17.sql en la misma BD.
 BEGIN;
 ALTER TABLE cotironda_piloto_privado.participants
  ADD COLUMN consent_at timestamptz,
