@@ -139,7 +139,7 @@ test('D016 dashboard mantiene la descarga real, análisis original y claridad co
   'Descuento informado','Descargar original','originales-whatsapp',
   'informe-final-whatsapp','credentials:', 'cerrarSesion',
   'aria-expanded={expanded}','coti-clean-bid-expanded',
-  'articulosVisibles','Equivalencias técnicas por comprobar'
+  'articulosVisibles','Detalles que conviene confirmar'
  ])assert.ok(ui.includes(phrase),phrase);
  assert.ok(ui.includes('PDF original'));
  assert.ok(!ui.includes("['Entrega',q.resumen.condiciones.entrega]"));
