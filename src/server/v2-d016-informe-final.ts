@@ -6,6 +6,7 @@
  */
 import type {CatalogoRespuestasV2,PuntoVisibleV2}
  from './v2-03-catalogo-respondedores.ts';
+import {importeVisiblePesosV2} from './v2-d016-resumen-comercial.ts';
 import type {LineaCompraV2} from './v2-d016-resumen-comercial.ts';
 
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/iu;
@@ -84,7 +85,7 @@ export function componerInformeFinalD016(
   const cv=quote.resumen?.cobertura;
   business.ofertas.push(Object.freeze({
    documentoId:quote.documentoId,
-   importe:quote.resumen?.totalDeclarado??quote.resumen?.sumaCalculada??null,
+   importe:importeVisiblePesosV2(quote.resumen?.totalDeclarado??quote.resumen?.sumaCalculada??null),
    tipoImporte:quote.resumen?.totalDeclarado?quote.resumen.tipoImporte:
     quote.resumen?.sumaCalculada?'Suma de artículos cotizados':'Importe no informado',
    cobertura:cv?Object.freeze({
