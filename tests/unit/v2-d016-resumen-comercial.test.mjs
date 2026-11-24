@@ -463,3 +463,80 @@ test('D021: portal y cierre distinguen suma calculada de total declarado',()=>{
  assert.match(report,/Suma de artículos cotizados/u);
  assert.doesNotMatch(report,/ganador\s*autom[aá]tico/iu);
 });
+
+
+test('D016 regresión real: Nahuel 3 renglones sin unidad ni símbolo monetario',()=>{
+ // Reproduce forma de extracción autorizada observada en Supabase piloto,
+ // con descripciones sintéticas para no filtrar el documento original.
+ const requested=[
+  {line:1,description:'Cemento bolsa 25 kg',quantity:'14',unit:'bolsas'},
+  {line:2,description:'Arena fina m3',quantity:'3',unit:'bolsones'},
+  {line:3,description:'Piedra partida m3',quantity:'2',unit:'bolsones'},
+  {line:4,description:'Material no vendido',quantity:'1',unit:'unidad'}
+ ];
+ const raw={
+  totalLiteral:'438000',requestItems:requested,assignedItems:requested.slice(0,3),
+  quotedItems:[
+   {line:1,description:'Cemento bolsa 25 kg',quantity:'14',
+    unit:null,unitPrice:'6500',lineTotal:'91000',ambiguity:null},
+   {line:2,description:'Arena fina',quantity:'3',
+    unit:null,unitPrice:'57000',lineTotal:'171000',ambiguity:null},
+   {line:3,description:'Piedra partida',quantity:'2',
+    unit:null,unitPrice:'88000',lineTotal:'176000',ambiguity:null}
+  ]
+ };
+ const result=resumirOfertaComercialV2(raw,[]);
+ assert.equal(result.totalDeclarado,'438000',
+  'conservar exactamente el literal de la fuente sin agregar $');
+ assert.equal(result.tipoImporte,'Importe informado · moneda no especificada');
+ assert.equal(result.articulosCotizados,3);
+ assert.equal(result.articulosEnviados,3);
+ assert.equal(result.detalleCotizado.length,3);
+ assert.deepEqual(result.detalleCotizado.map(x=>x.subtotal),
+  ['91000','171000','176000']);
+ assert.equal(result.sumaCalculada,'438.000');
+ assert.equal(result.solicitado.length,4);
+ assert.equal(result.cobertura?.solicitados,3);
+ assert.ok(result.cobertura?.identificados<3,
+  'no transformar automáticamente cantidad sin unidad en equivalencia técnica');
+ assert.deepEqual(result.condiciones,{iva:'No informado',flete:'No informado',
+  pago:'No informado',entrega:'No informado'});
+});
+
+test('D016 otros formatos: sin moneda explícita no inventar ARS ni sumar cifras incompletas',()=>{
+ const item=(line,amount)=>({line,description:'Material '+line,quantity:'1',
+  unit:null,unitPrice:null,lineTotal:amount,ambiguity:null});
+ const basic={requestItems:input.requestItems,assignedItems:input.requestItems,
+  quotedItems:[item(1,'70000'),item(2,'25000'),item(3,'3000')]};
+ const result=resumirOfertaComercialV2({...basic,totalLiteral:'98000'},[]);
+ assert.equal(result.sumaCalculada,'98.000');
+ assert.equal(result.totalDeclarado,'98000');
+ assert.equal(result.tipoImporte,'Importe informado · moneda no especificada');
+ assert.equal(result.articulosCotizados,3);
+ for(const bad of ['Total: 98000','98000 pesos','1,2,3','1234567890123']){
+  assert.equal(resumirOfertaComercialV2({...basic,totalLiteral:bad},[]).totalDeclarado,null,bad);
+ }
+ for(const unknown of [[item(1,'70000'),item(2,null)],
+  [item(1,'70000'),item(2,'USD 25000')],
+  [item(1,'70000'),item(1,'25000')]]){
+  assert.equal(resumirOfertaComercialV2({...basic,totalLiteral:null,quotedItems:unknown},[]).sumaCalculada,null);
+ }
+ const withoutLine=resumirOfertaComercialV2({...basic,totalLiteral:'98000',
+  quotedItems:[{line:1,description:'Material 1',quantity:'1',
+   unit:null,unitPrice:'98000',lineTotal:null}]},[]);
+ assert.equal(withoutLine.sumaCalculada,null,'precios unitarios no producen totales');
+});
+
+test('D016 portal: expandir análisis muestra importe y renglones sin precios de cada línea',()=>{
+ const ui=readFileSync(new URL(
+  '../../apps/portal/app/piloto/v2/rondas/[rondaId]/whatsapp/respuestas-whatsapp.tsx',
+  import.meta.url),'utf8');
+ const expanded=ui.slice(ui.indexOf('<h4>Lo importante de este presupuesto</h4>'));
+ assert.match(expanded,/coti-clean-commercial-recap/u);
+ assert.match(expanded,/Importe declarado:/u);
+ assert.match(expanded,/importeDeclarado\?\?sumaCalculada\?\?'No informado'/u);
+ assert.match(expanded,/Renglones cotizados:/u);
+ assert.match(expanded,/Coincidencia técnica:/u);
+ assert.match(expanded,/cover\.identificados/u);
+ assert.doesNotMatch(expanded,/item\.precioUnitario|item\.subtotal/u);
+});
