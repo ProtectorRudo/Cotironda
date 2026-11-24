@@ -631,3 +631,19 @@ body:has(.coti-clean) .logo:focus-visible{outline:2px solid #9dbff7;outline-offs
 .coti-clean .coti-profile-copy-fallback strong{
  user-select:text;-webkit-user-select:text;
 }
+
+/* D016: recap commercial autoritativo, sin repetir precios por artículo. */
+.coti-clean .coti-clean-commercial-recap{
+ display:grid;gap:6px;margin:12px 0 18px;padding:0;
+ border:0;background:transparent;
+}
+.coti-clean .coti-clean-commercial-recap p{
+ margin:0;font-size:13px;line-height:1.5;color:#3f576e;
+ overflow-wrap:anywhere;
+}
+.coti-clean .coti-clean-commercial-recap strong{
+ font-weight:750;color:#183c60;
+}
+.coti-clean .coti-clean-recap-kind{
+ color:#657789;font-weight:450;
+}
