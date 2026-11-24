@@ -33,6 +33,14 @@ export default async function PerfilProveedorD022({
  const base='/api/piloto/v2/rondas/'+encodeURIComponent(rondaId)+
   '/perfiles-whatsapp/'+encodeURIComponent(documentoId);
  const regreso='/piloto/v2/rondas/'+encodeURIComponent(rondaId)+'/whatsapp';
+ // Respaldo sin JavaScript para el comprador autenticado.
+ let numeroComercial:string|null=null;
+ try{
+  const u=new URL(perfil.whatsappUrl??'');
+  const digits=u.protocol==='https:'&&u.hostname==='api.whatsapp.com'&&
+   u.pathname==='/send'?u.searchParams.get('phone'):null;
+  if(digits&&/^[1-9][0-9]{7,14}$/u.test(digits))numeroComercial=digits;
+ }catch{ /* La ficha sigue disponible si falta el contacto. */ }
  return <main className="panel coti-clean coti-buyer-portal coti-supplier-profile-page">
   <Link className="coti-back-link" href={regreso}>← Volver a la cotización</Link>
   <section className="coti-supplier-profile" aria-label={'Perfil comercial de '+perfil.comercio}>
@@ -59,6 +67,10 @@ export default async function PerfilProveedorD022({
      <a className="coti-profile-maps" href={perfil.mapsUrl}
       rel="noopener noreferrer" target="_blank">Ver ubicación en Google Maps</a>}
    </nav>
+   {numeroComercial&&
+    <p className="coti-profile-copy-fallback">
+     Si no abre WhatsApp, copiá el contacto comercial: <strong>+{numeroComercial}</strong>.
+    </p>}
    <p className="coti-profile-disclaimer">El mensaje de WhatsApp se abre listo para revisar.
     Solo se envía si decidís hacerlo.</p>
   </section>
