@@ -7,7 +7,7 @@ const src=path=>readFileSync(new URL('../../'+path,import.meta.url),'utf8');
 
 test('D023: WhatsApp comercial válido se abre con mensaje preparado',()=>{
  const link=enlaceWhatsappD023({state:'authorized_contact_d023',digits:'5492215551234'});
- assert.ok(link?.startsWith('https://wa.me/5492215551234?text='));
+ assert.ok(link?.startsWith('https://api.whatsapp.com/send?phone=5492215551234&text='));
  assert.ok(decodeURIComponent(link).includes('vi su presupuesto en Cotironda'));
  assert.equal(enlaceWhatsappD023({state:'unavailable',digits:'5492215551234'}),null);
 });
@@ -40,4 +40,20 @@ test('D023: fuente privada exige documento autorizado y revocación',()=>{
  assert.doesNotMatch(edge,/Access-Control-Allow-Origin/u);
  assert.match(api,/recuperarContactoVerificadoD023/u);
  assert.match(api,/fresh\.data\?\.state==='authorized_contact_envelope_d023'/u);
+});
+
+test('D023: contacto del proveedor incluye alternativa para fallos de app móvil',()=>{
+ const modal=src('apps/portal/app/piloto/v2/rondas/[rondaId]/whatsapp/perfil-comercial-whatsapp.tsx');
+ const page=src('apps/portal/app/piloto/v2/rondas/[rondaId]/whatsapp/perfiles/[documentoId]/page.tsx');
+ const style=src('apps/portal/app/styles.css');
+ assert.match(modal,/hostname==='api\.whatsapp\.com'/u);
+ assert.match(modal,/Copiar número de WhatsApp/u);
+ assert.match(modal,/navigator\.clipboard\.writeText/u);
+ assert.match(modal,/mostrarNumero&&contacto/u);
+ assert.match(modal,/\^\[1-9\]\[0-9\]\{7,14\}\$/u);
+ assert.match(page,/Si no abre WhatsApp, copiá el contacto comercial/u);
+ assert.match(page,/numeroComercial/u);
+ assert.match(style,/\.coti-profile-copy-contact:focus-visible/u);
+ assert.match(style,/user-select:text/u);
+ assert.doesNotMatch(modal,/fetch\('https:\/\/ilggkalaafhtiysyzlmg/u);
 });
