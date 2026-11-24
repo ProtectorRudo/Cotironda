@@ -272,10 +272,17 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
     <div className="coti-clean-bid-primary">
      <span className="coti-clean-supplier-avatar" aria-hidden="true">{letraProveedor(q.comercio)}</span>
      <div className="coti-clean-bid-identity">
-      <h3><button type="button" className="coti-supplier-name-button"
-       onClick={()=>setPerfilActivo({id:q.documentoId,nombre:q.comercio})}
+      <h3><a className="coti-supplier-name-button"
+       href={'/piloto/v2/rondas/'+encodeURIComponent(rondaId)+
+        '/whatsapp/perfiles/'+encodeURIComponent(q.documentoId)}
+       onClick={event=>{
+        // Con JavaScript: ventana dentro de la cotización. Sin hidratar:
+        // enlace HTML real a una ficha server-side autenticada y privada.
+        event.preventDefault();
+        setPerfilActivo({id:q.documentoId,nombre:q.comercio});
+       }}
        aria-label={'Ver perfil comercial de '+nombreProveedor(q.comercio)}>
-       {nombreProveedor(q.comercio)}</button></h3>
+       {nombreProveedor(q.comercio)}</a></h3>
       <strong className="coti-clean-bid-price">{importeDeclarado??sumaCalculada??'No informado'}</strong>
       <small className="coti-clean-amount-kind">{esSuma?'Suma de artículos cotizados':q.resumen.tipoImporte}</small>
      </div>
@@ -371,9 +378,13 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
     {informe.comparacion.map(item=><article className="coti-final-supplier" key={item.comercio}>
      <h3>{(()=>{
       const matches=catalog?.respuestas.filter(q=>q.comercio===item.comercio)??[];
-      return matches.length===1?<button type="button" className="coti-supplier-name-button"
-       onClick={()=>setPerfilActivo({id:matches[0].documentoId,nombre:item.comercio})}>
-       {nombreProveedor(item.comercio)}</button>:nombreProveedor(item.comercio);
+      return matches.length===1?<a className="coti-supplier-name-button"
+       href={'/piloto/v2/rondas/'+encodeURIComponent(rondaId)+
+        '/whatsapp/perfiles/'+encodeURIComponent(matches[0].documentoId)}
+       onClick={event=>{
+        event.preventDefault();
+        setPerfilActivo({id:matches[0].documentoId,nombre:item.comercio});
+       }}>{nombreProveedor(item.comercio)}</a>:nombreProveedor(item.comercio);
      })()}</h3>
      {item.ofertas.map(oferta=><div className="coti-final-offer" key={oferta.documentoId}>
       <strong className="coti-final-amount">{oferta.importe??'No informado'}</strong>
