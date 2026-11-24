@@ -647,3 +647,33 @@ body:has(.coti-clean) .logo:focus-visible{outline:2px solid #9dbff7;outline-offs
 .coti-clean .coti-clean-recap-kind{
  color:#657789;font-weight:450;
 }
+
+/* D016: revisión comercial sin alertas falsas ni resultados técnicos absolutos. */
+.coti-clean .coti-clean-coverage:not(.caution){
+ background:#eef5ff;color:#215892;border:1px solid #dceafb;
+}
+.coti-clean .coti-clean-material-review{
+ margin:10px 0 14px;border:1px solid #e0e9f4;background:#f7faff;
+ border-radius:11px;padding:13px 14px;color:#26415c;
+}
+.coti-clean .coti-clean-material-review>strong{font-size:13px;color:#203e5c}
+.coti-clean .coti-clean-material-review>p{
+ font-size:12px;color:#5d728b;line-height:1.55;margin:5px 0 10px;
+}
+.coti-clean .coti-clean-material-review ul{list-style:none;padding:0;margin:0}
+.coti-clean .coti-clean-material-review li{
+ padding:9px 0;border-top:1px solid #e5ecf5;
+ display:grid;gap:3px;line-height:1.45;
+}
+.coti-clean .coti-clean-material-review li strong{
+ font-size:12px;color:#254b73;font-weight:760;
+}
+.coti-clean .coti-clean-material-review li small{
+ font-size:11px;color:#59748e;overflow-wrap:anywhere;
+}
+.coti-clean .coti-clean-material-review li span{
+ font-size:11px;color:#6e8094;
+}
+.coti-clean .coti-clean-analysis-intro{
+ font-size:12px;line-height:1.55;color:#4f647a;margin:8px 0 14px;
+}
