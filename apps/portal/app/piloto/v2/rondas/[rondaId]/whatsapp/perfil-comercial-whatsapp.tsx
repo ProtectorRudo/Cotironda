@@ -70,7 +70,7 @@ export function PerfilComercialWhatsappD022({
       {perfil.whatsappUrl?
        <a href={perfil.whatsappUrl} target="_blank" rel="noopener noreferrer"
         className="coti-profile-whatsapp">Consultar por WhatsApp</a>:
-       <span className="coti-profile-unavailable">WhatsApp comercial no informado</span>}
+       <span className="coti-profile-unavailable">Contacto comercial por WhatsApp pendiente de habilitación</span>}
       {perfil.mapsUrl&&
        <a href={perfil.mapsUrl} target="_blank" rel="noopener noreferrer"
         className="coti-profile-maps">Ver ubicación en Google Maps</a>}
