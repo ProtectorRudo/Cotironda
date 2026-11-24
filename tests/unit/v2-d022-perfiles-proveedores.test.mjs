@@ -65,3 +65,21 @@ test('D022: la RPC verifica sesión, respondedor, documento y consentimiento rev
  assert.doesNotMatch(sql,/GRANT EXECUTE[^;]+TO\s+(?:anon|authenticated)/u);
  assert.doesNotMatch(modal,/fetch\([^)]*,\s*\{\s*method:'POST'/u);
 });
+
+
+test('D022: proveedor clickeable con destino HTML SSR aun sin hidratación',()=>{
+ const ui=src('apps/portal/app/piloto/v2/rondas/[rondaId]/whatsapp/respuestas-whatsapp.tsx');
+ const page=src('apps/portal/app/piloto/v2/rondas/[rondaId]/whatsapp/perfiles/[documentoId]/page.tsx');
+ const css=src('apps/portal/app/styles.css');
+ assert.match(ui,/<h3><a className="coti-supplier-name-button"/u);
+ assert.match(ui,/href=\{'\/piloto\/v2\/rondas\/'\+encodeURIComponent\(rondaId\)/u);
+ assert.match(ui,/event\.preventDefault\(\)/u);
+ assert.match(page,/await consultarPerfilComercialWhatsappD022\(internal,rondaId,documentoId\)/u);
+ assert.match(page,/!puertaWhatsappPortalD016\(process\.env\)/u);
+ assert.match(page,/if\(!result\.ok\)notFound\(\)/u);
+ assert.match(page,/\(await headers\(\)\)\.get\('cookie'\)/u);
+ assert.match(page,/No informada/u);
+ assert.match(page,/Volver a la cotización/u);
+ assert.match(css,/coti-supplier-profile-page/u);
+ assert.doesNotMatch(page,/supplier_key\s*=\s*params/u);
+});
