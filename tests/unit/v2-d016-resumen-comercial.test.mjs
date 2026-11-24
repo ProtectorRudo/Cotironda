@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {resumirOfertaComercialV2}
+import {resumirOfertaComercialV2,importeVisiblePesosV2}
  from '../../src/server/v2-d016-resumen-comercial.ts';
 
 const input={
@@ -134,7 +134,7 @@ test('D016 dashboard mantiene la descarga real, análisis original y claridad co
   import.meta.url),'utf8');
  // Diseño minimalista: información esencial a la vista y evidencia en detalle.
  for(const phrase of [
-  'coti-clean-bid-price','coti-clean-coverage','Condiciones de la oferta',
+  'coti-clean-bid-price','coti-clean-coverage','Condiciones comerciales',
   'q.resumen.totalDeclarado','q.resumen.cobertura',
   'Descuento informado','Descargar original','originales-whatsapp',
   'informe-final-whatsapp','credentials:', 'cerrarSesion',
@@ -452,14 +452,14 @@ test('D021: portal y cierre distinguen suma calculada de total declarado',()=>{
  const ui=readFileSync(new URL(
   '../../apps/portal/app/piloto/v2/rondas/[rondaId]/whatsapp/respuestas-whatsapp.tsx',
   import.meta.url),'utf8');
- assert.match(ui,/importeDeclarado\?\?sumaCalculada\?\?'No informado'/u);
+ assert.match(ui,/importeVisiblePesosV2\(importeDeclarado\?\?sumaCalculada\)/u);
  assert.match(ui,/esSuma\?'Suma de artículos cotizados'/u);
  assert.match(ui,/el total declarado por el proveedor no está confirmado/u);
  assert.match(ui,/q\.resumen\.discrepanciaTotal/u);
  assert.doesNotMatch(ui,/item\.precioUnitario|item\.subtotal/u);
  const report=readFileSync(new URL('../../src/server/v2-d016-informe-final.ts',
   import.meta.url),'utf8');
- assert.match(report,/importe:quote\.resumen\?\.totalDeclarado\?\?quote\.resumen\?\.sumaCalculada\?\?null/u);
+ assert.match(report,/importe:importeVisiblePesosV2\(quote\.resumen\?\.totalDeclarado\?\?quote\.resumen\?\.sumaCalculada\?\?null\)/u);
  assert.match(report,/Suma de artículos cotizados/u);
  assert.doesNotMatch(report,/ganador\s*autom[aá]tico/iu);
 });
@@ -488,7 +488,7 @@ test('D016 regresión real: Nahuel 3 renglones sin unidad ni símbolo monetario'
  const result=resumirOfertaComercialV2(raw,[]);
  assert.equal(result.totalDeclarado,'438000',
   'conservar exactamente el literal de la fuente sin agregar $');
- assert.equal(result.tipoImporte,'Importe informado · moneda no especificada');
+ assert.equal(result.tipoImporte,'Importe informado');
  assert.equal(result.articulosCotizados,3);
  assert.equal(result.articulosEnviados,3);
  assert.equal(result.detalleCotizado.length,3);
@@ -503,7 +503,7 @@ test('D016 regresión real: Nahuel 3 renglones sin unidad ni símbolo monetario'
   pago:'No informado',entrega:'No informado'});
 });
 
-test('D016 otros formatos: sin moneda explícita no inventar ARS ni sumar cifras incompletas',()=>{
+test('D016 otros formatos: ARS por regla comercial, no extrapola precios incompletos',()=>{
  const item=(line,amount)=>({line,description:'Material '+line,quantity:'1',
   unit:null,unitPrice:null,lineTotal:amount,ambiguity:null});
  const basic={requestItems:input.requestItems,assignedItems:input.requestItems,
@@ -511,7 +511,7 @@ test('D016 otros formatos: sin moneda explícita no inventar ARS ni sumar cifras
  const result=resumirOfertaComercialV2({...basic,totalLiteral:'98000'},[]);
  assert.equal(result.sumaCalculada,'98.000');
  assert.equal(result.totalDeclarado,'98000');
- assert.equal(result.tipoImporte,'Importe informado · moneda no especificada');
+ assert.equal(result.tipoImporte,'Importe informado');
  assert.equal(result.articulosCotizados,3);
  for(const bad of ['Total: 98000','98000 pesos','1,2,3','1234567890123']){
   assert.equal(resumirOfertaComercialV2({...basic,totalLiteral:bad},[]).totalDeclarado,null,bad);
@@ -527,16 +527,97 @@ test('D016 otros formatos: sin moneda explícita no inventar ARS ni sumar cifras
  assert.equal(withoutLine.sumaCalculada,null,'precios unitarios no producen totales');
 });
 
-test('D016 portal: expandir análisis muestra importe y renglones sin precios de cada línea',()=>{
+test('D016 análisis comercial: sin montos repetidos, 0 de 3 ficticio ni alertas por redacción',()=>{
  const ui=readFileSync(new URL(
   '../../apps/portal/app/piloto/v2/rondas/[rondaId]/whatsapp/respuestas-whatsapp.tsx',
   import.meta.url),'utf8');
  const expanded=ui.slice(ui.indexOf('<h4>Lo importante de este presupuesto</h4>'));
- assert.match(expanded,/coti-clean-commercial-recap/u);
- assert.match(expanded,/Importe declarado:/u);
- assert.match(expanded,/importeDeclarado\?\?sumaCalculada\?\?'No informado'/u);
- assert.match(expanded,/Renglones cotizados:/u);
- assert.match(expanded,/Coincidencia técnica:/u);
- assert.match(expanded,/cover\.identificados/u);
+ assert.match(expanded,/Detalles que conviene confirmar/u);
+ assert.match(expanded,/item\.cotizado/u);
+ assert.match(expanded,/Confirmar presentación y cantidad/u);
+ assert.match(ui,/countMissing/u);
+ assert.doesNotMatch(ui,/needsReview|Equivalencias técnicas por comprobar/u);
+ assert.doesNotMatch(expanded,/Coincidencia técnica:|Renglones cotizados:|Importe declarado:/u);
  assert.doesNotMatch(expanded,/item\.precioUnitario|item\.subtotal/u);
+ assert.match(ui,/monedaAjena/u);
+});
+
+
+test('D024: Cotironda usa ARS al mostrar importes, sin alterar el literal del original',()=>{
+ for(const [raw,display] of [
+  ['438000','$438.000'],
+  ['438.000','$438.000'],
+  ['98.000,50','$98.000,50'],
+  ['$607.341,07','$607.341,07'],
+  ['ARS 1.234.567,80','$1.234.567,80'],
+  ['$ 355.400','$355.400'],
+  ['USD 123.50','USD 123.50'],
+  ['US$ 12.00','US$ 12.00'],
+  ['0','$0']
+ ]){
+  assert.equal(importeVisiblePesosV2(raw),display,raw);
+ }
+ for(const invalid of [null,'',undefined,'438000 COP','1,2,3','Total: 438000',
+  '9999999999999999999999999']){
+  assert.equal(importeVisiblePesosV2(invalid),null,String(invalid));
+ }
+});
+
+test('D024: Nahuel se describe como 3 artículos cotizados y 3 relacionados, sin tres extras ficticios',()=>{
+ const requested=[
+  {line:1,description:'bolsas de cemento de 25 kilos',quantity:'14.000',unit:'bag'},
+  {line:2,description:'bolsones de arena y',quantity:'3.000',unit:'bag'},
+  {line:3,description:'bolsones de piedra partida',quantity:'2.000',unit:'bag'},
+  {line:4,description:'un rollo de membrana asfáltica de 4 mm',quantity:'1.000',unit:'roll'}
+ ];
+ const quote={totalLiteral:'438000',requestItems:requested,
+  assignedItems:requested.slice(0,3),quotedItems:[
+   {line:1,description:'cemento loma negra',quantity:'14',unit:null,
+    unitPrice:'6500',lineTotal:'91000',ambiguity:null},
+   {line:2,description:'Arena big',quantity:'3',unit:null,
+    unitPrice:'57000',lineTotal:'171000',ambiguity:null},
+   {line:3,description:'Piedra big',quantity:'2',unit:null,
+    unitPrice:'88000',lineTotal:'176000',ambiguity:null}
+  ],termsLiteral:'efectivo; sin iva; flete a convenir'};
+ const pts=[
+  {categoria:'forma_pago',evidencia:'efectivo · sin iva',observacion:'Pago en efectivo.'},
+  {categoria:'iva',evidencia:'efectivo · sin iva',observacion:'Sin IVA.'},
+  {categoria:'flete',evidencia:'flete a convenir',observacion:'Flete a convenir.'}
+ ];
+ const r=resumirOfertaComercialV2(quote,pts);
+ assert.equal(r.totalDeclarado,'438000','el original no se modifica');
+ assert.equal(importeVisiblePesosV2(r.totalDeclarado),'$438.000');
+ assert.equal(r.tipoImporte,'Importe informado');
+ assert.equal(r.articulosCotizados,3);
+ assert.equal(r.articulosEnviados,3);
+ assert.equal(r.sumaCalculada,'438.000','suma obtenida solo de subtotales explícitos');
+ assert.equal(r.cobertura?.solicitados,3);
+ assert.equal(r.cobertura?.identificados,0,'las variantes no están garantizadas');
+ assert.equal(r.cobertura?.adicionales,0,
+  'misma familia de materiales no constituye producto adicional');
+ assert.deepEqual(r.cobertura?.detalle.map(x=>x.cotizado),
+  ['cemento loma negra','Arena big','Piedra big']);
+ assert.ok(r.cobertura?.detalle.every(x=>x.estado==='por_verificar'));
+ assert.equal(r.condiciones.iva,'Sin IVA (informado)');
+ assert.equal(r.condiciones.pago,'Efectivo');
+ assert.equal(r.condiciones.flete,'A convenir');
+});
+
+test('D024: diferente variante requiere revisión y un pallet genuino sigue apareciendo como posible adicional',()=>{
+ const request=[
+  {line:1,description:'arena fina m3',quantity:'1',unit:'bolsones'},
+  {line:2,description:'piedra partida m3',quantity:'2',unit:'bolsones'}
+ ];
+ const value=resumirOfertaComercialV2({
+  totalLiteral:'100000',requestItems:request,assignedItems:request,
+  quotedItems:[
+   {line:1,description:'Arena gruesa BIG BAG',quantity:'1',unit:null,ambiguity:null},
+   {line:2,description:'Piedra BIG BAG',quantity:'2',unit:null,ambiguity:null},
+   {line:3,description:'Pallet retornable',quantity:'1',unit:null,ambiguity:null}
+  ]
+ },[]);
+ assert.equal(value.cobertura?.identificados,0);
+ assert.equal(value.cobertura?.adicionales,1);
+ assert.equal(value.cobertura?.detalle[0].cotizado,'Arena gruesa BIG BAG');
+ assert.equal(value.cobertura?.detalle[1].cotizado,'Piedra BIG BAG');
 });
