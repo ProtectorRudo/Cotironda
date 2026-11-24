@@ -270,7 +270,16 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
    const conteoConfiable=cotizados!==null&&enviados!==null;
    return <article className="coti-clean-bid" key={q.documentoId}>
     <div className="coti-clean-bid-primary">
-     <span className="coti-clean-supplier-avatar" aria-hidden="true">{letraProveedor(q.comercio)}</span>
+     <a className="coti-clean-supplier-avatar coti-supplier-avatar-link"
+      href={'/piloto/v2/rondas/'+encodeURIComponent(rondaId)+
+       '/whatsapp/perfiles/'+encodeURIComponent(q.documentoId)}
+      onClick={event=>{
+       event.preventDefault();
+       setPerfilActivo({id:q.documentoId,nombre:q.comercio});
+      }}
+      aria-label={'Ver perfil comercial de '+nombreProveedor(q.comercio)}
+      title={'Ver perfil de '+nombreProveedor(q.comercio)}>
+      {letraProveedor(q.comercio)}</a>
      <div className="coti-clean-bid-identity">
       <h3><a className="coti-supplier-name-button"
        href={'/piloto/v2/rondas/'+encodeURIComponent(rondaId)+
