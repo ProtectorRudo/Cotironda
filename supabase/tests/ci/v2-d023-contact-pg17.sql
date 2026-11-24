@@ -22,6 +22,10 @@ CREATE TABLE cotironda_piloto_privado.contact_reveal_consents_mvp109 (
 UPDATE cotironda_piloto_privado.participants
 SET consent_at=now(),chat_hmac=repeat('a',64)
 WHERE key='corralon_a';
+-- La prueba D022 previa termina REVOCANDO el perfil. Reiniciarlo en
+-- esta fixture sintética para aislar la autorización de WhatsApp D023.
+UPDATE cotironda_piloto_privado.supplier_business_profiles_d022
+ SET revocado_en=NULL WHERE supplier_key='corralon_a';
 INSERT INTO cotironda_piloto_privado.participant_channels_mvp109
 (participant_key,chat_hmac,contact_sha256,nonce_b64,ciphertext_b64,bound_at,authenticated_message_hmac)
 VALUES('corralon_a',repeat('a',64),repeat('b',64),
