@@ -54,7 +54,7 @@ export default async function PerfilProveedorD022({
     {perfil.whatsappUrl?
      <a className="coti-profile-whatsapp" href={perfil.whatsappUrl}
       rel="noopener noreferrer" target="_blank">Consultar por WhatsApp</a>:
-     <p className="coti-profile-unavailable">WhatsApp comercial no informado</p>}
+     <p className="coti-profile-unavailable">Contacto comercial por WhatsApp pendiente de habilitación</p>}
     {perfil.mapsUrl&&
      <a className="coti-profile-maps" href={perfil.mapsUrl}
       rel="noopener noreferrer" target="_blank">Ver ubicación en Google Maps</a>}
