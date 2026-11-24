@@ -83,3 +83,22 @@ test('D022: proveedor clickeable con destino HTML SSR aun sin hidratación',()=>
  assert.match(css,/coti-supplier-profile-page/u);
  assert.doesNotMatch(page,/supplier_key\s*=\s*params/u);
 });
+
+
+test('D022: tocar el avatar o el nombre abre el mismo perfil sin exponer WhatsApp operativo',()=>{
+ const ui=src('apps/portal/app/piloto/v2/rondas/[rondaId]/whatsapp/respuestas-whatsapp.tsx');
+ const modal=src('apps/portal/app/piloto/v2/rondas/[rondaId]/whatsapp/perfil-comercial-whatsapp.tsx');
+ const standalone=src('apps/portal/app/piloto/v2/rondas/[rondaId]/whatsapp/perfiles/[documentoId]/page.tsx');
+ const css=src('apps/portal/app/styles.css');
+ assert.match(ui,/<a className="coti-clean-supplier-avatar coti-supplier-avatar-link"/u);
+ assert.match(ui,/aria-label=\{'Ver perfil comercial de '\+nombreProveedor\(q\.comercio\)\}/u);
+ const block=ui.slice(ui.indexOf('coti-supplier-avatar-link'),ui.indexOf('coti-clean-bid-identity'));
+ assert.match(block,/encodeURIComponent\(q\.documentoId\)/u);
+ assert.match(block,/setPerfilActivo\(\{id:q\.documentoId,nombre:q\.comercio\}\)/u);
+ assert.match(block,/event\.preventDefault\(\)/u);
+ assert.match(css,/coti-supplier-avatar-link:focus-visible/u);
+ assert.match(css,/min-width:44px;min-height:44px/u);
+ assert.match(modal,/Contacto comercial por WhatsApp pendiente de habilitación/u);
+ assert.match(standalone,/Contacto comercial por WhatsApp pendiente de habilitación/u);
+ assert.doesNotMatch(modal,/participant_channels_mvp109|contact_sha256|nonce_b64/u);
+});
