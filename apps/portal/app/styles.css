@@ -574,3 +574,26 @@ body:has(.coti-clean) .logo:focus-visible{outline:2px solid #9dbff7;outline-offs
  .coti-clean .coti-profile-photo,.coti-clean .coti-profile-placeholder{
   width:70px;height:70px}
 }
+
+
+/* D022: ficha enlazable SSR, disponible aunque la hidratación del modal falle. */
+.coti-clean.coti-supplier-profile-page{min-height:65vh}
+.coti-clean.coti-supplier-profile-page .coti-supplier-profile{
+ width:min(100%,500px);margin:24px auto;min-width:0;
+ border:1px solid #d7e4f3;border-radius:20px;padding:24px;
+ background:#fff;box-shadow:0 8px 28px #173a6214;color:#203954;
+}
+.coti-clean.coti-supplier-profile-page .coti-profile-brand h1{
+ margin:0 0 6px;font-size:22px;line-height:1.25;overflow-wrap:anywhere;
+ color:#143352;font-weight:800;
+}
+.coti-clean.coti-supplier-profile-page .coti-profile-fields{margin:22px 0 18px}
+.coti-clean .coti-supplier-name-button{
+ -webkit-tap-highlight-color:#1457a726;
+ min-height:30px;display:inline-flex!important;align-items:center;
+}
+@media(max-width:520px){
+ .coti-clean.coti-supplier-profile-page .coti-supplier-profile{
+  margin-top:15px;padding:20px 16px;
+ }
+}
