@@ -12,6 +12,9 @@ import {D016_SESSION_COOKIE}
  from '../../../src/server/v2-d016-sesion-privada.ts';
 import {proyectarPerfilComercialD022}
  from '../../../src/server/v2-d022-perfil-comercial.ts';
+import {recuperarContactoVerificadoD023}
+ from '../../../src/server/v2-d023-contacto-verificado.ts';
+
 import {proyectarRespuestasV2}
  from '../../../src/server/v2-03-catalogo-respondedores.ts';
 import {proyectarHistorialPrivadoD017}
@@ -553,8 +556,20 @@ export async function consultarPerfilComercialWhatsappD022(
   });
   const current=recheck.error?null:proyectarPerfilComercialD022(recheck.data);
   if(!current||JSON.stringify(current)!==JSON.stringify(profile))return deny();
+  // D023: el número operativo se descifra SOLO en Edge privado y solo si
+  // existe una declaración individual del propietario, no una suposición
+  // derivada de cotizar. El enlace del navegador nunca indica proveedor.
+  const contacto=await recuperarContactoVerificadoD023(rondaId,documentoId,digest,env);
+  let whatsappUrl=current.whatsappUrl;
+  if(contacto){
+   const fresh=await db.rpc('cotironda_piloto_v2_d023_supplier_contact_source_private',{
+    p_request_id:rondaId,p_sesion_hmac:digest,p_document_id:documentoId
+   });
+   if(!fresh.error&&fresh.data?.state==='authorized_contact_envelope_d023')
+    whatsappUrl=contacto;
+  }
   const after=await sessionContext(db,digest,rondaId);
   if(!after||after.buyerKey!==before.buyerKey)return deny();
-  return new Response(JSON.stringify(current),{status:200,headers:HEADERS});
+  return new Response(JSON.stringify({...current,whatsappUrl}),{status:200,headers:HEADERS});
  }catch{return deny(503)}
 }
