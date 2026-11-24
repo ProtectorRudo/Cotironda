@@ -597,3 +597,19 @@ body:has(.coti-clean) .logo:focus-visible{outline:2px solid #9dbff7;outline-offs
   margin-top:15px;padding:20px 16px;
  }
 }
+
+/* D022: avatar también abre la ficha, con navegación HTML si falla JS. */
+.coti-clean .coti-supplier-avatar-link{
+ text-decoration:none;cursor:pointer;-webkit-tap-highlight-color:#1457a72a;
+ border:0;padding:0;min-width:44px;min-height:44px;
+ display:grid;place-items:center;transition:background-color .15s ease;
+}
+.coti-clean .coti-supplier-avatar-link:hover{
+ background:#c8dfff;color:#104c98;text-decoration:none;
+}
+.coti-clean .coti-supplier-avatar-link:focus-visible{
+ outline:3px solid #0866ff;outline-offset:3px;
+}
+@media(max-width:520px){
+ .coti-clean .coti-supplier-avatar-link{width:44px;height:44px}
+}
