@@ -3,6 +3,19 @@ import {useEffect,useRef,useState} from 'react';
 import type {PerfilComercialD022}
  from '../../../../../../../../src/server/v2-d022-perfil-comercial.ts';
 
+/** Sólo presentar el número de un enlace devuelto por API privada D022/D023. */
+function numeroDeWhatsappAutorizado(link:string|null|undefined):string|null{
+ if(!link)return null;
+ try{
+  const u=new URL(link);
+  if(u.protocol!=='https:')return null;
+  const numero=u.hostname==='api.whatsapp.com'&&u.pathname==='/send'
+   ?u.searchParams.get('phone'):
+   u.hostname==='wa.me'?u.pathname.slice(1):null;
+  return numero&&/^[1-9][0-9]{7,14}$/u.test(numero)?numero:null;
+ }catch{return null}
+}
+
 export function PerfilComercialWhatsappD022({
  rondaId,documentoId,nombre,onClose
 }:{rondaId:string;documentoId:string;nombre:string;onClose:()=>void}){
@@ -10,6 +23,8 @@ export function PerfilComercialWhatsappD022({
  const [error,setError]=useState(false);
  const [loading,setLoading]=useState(true);
  const [fotoError,setFotoError]=useState(false);
+ const [numeroCopiado,setNumeroCopiado]=useState(false);
+ const [mostrarNumero,setMostrarNumero]=useState(false);
  const closeRef=useRef<HTMLButtonElement>(null);
  const base='/api/piloto/v2/rondas/'+encodeURIComponent(rondaId)+
   '/perfiles-whatsapp/'+encodeURIComponent(documentoId);
@@ -39,6 +54,15 @@ export function PerfilComercialWhatsappD022({
   return ()=>{active=false;controller.abort()};
  },[base]);
  const titulo=perfil?.comercio??nombre;
+ const contacto=numeroDeWhatsappAutorizado(perfil?.whatsappUrl);
+ const copiarContacto=async()=>{
+  if(!contacto)return;
+  try{
+   if(!navigator.clipboard)throw Error('clipboard unavailable');
+   await navigator.clipboard.writeText('+'+contacto);
+   setNumeroCopiado(true);
+  }catch{setMostrarNumero(true)}
+ };
  return <div className="coti-profile-overlay">
   <section className="coti-supplier-profile" role="dialog"
    aria-modal="true" aria-label={'Perfil comercial de '+nombre}>
@@ -71,10 +95,19 @@ export function PerfilComercialWhatsappD022({
        <a href={perfil.whatsappUrl} target="_blank" rel="noopener noreferrer"
         className="coti-profile-whatsapp">Consultar por WhatsApp</a>:
        <span className="coti-profile-unavailable">Contacto comercial por WhatsApp pendiente de habilitación</span>}
+      {contacto&&<button type="button"
+        className="coti-profile-copy-contact"
+        onClick={()=>void copiarContacto()}>
+        {numeroCopiado?'Número copiado':'Copiar número de WhatsApp'}
+       </button>}
       {perfil.mapsUrl&&
        <a href={perfil.mapsUrl} target="_blank" rel="noopener noreferrer"
         className="coti-profile-maps">Ver ubicación en Google Maps</a>}
      </nav>
+     {mostrarNumero&&contacto&&
+      <p className="coti-profile-copy-fallback">
+       Número comercial: <strong>+{contacto}</strong>. Podés seleccionarlo y copiarlo manualmente.
+      </p>}
      <p className="coti-profile-disclaimer">
       El mensaje de WhatsApp está preparado para que lo revises y lo envíes vos.
      </p>
