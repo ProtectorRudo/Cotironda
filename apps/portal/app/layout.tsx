@@ -6,5 +6,5 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false }
 };
 export default function Layout({ children }: Readonly<{children: React.ReactNode}>) {
-  return <html lang="es-AR"><body><header className="top"><div className="wrap"><a className="logo" href="/">COTI<span>RONDA</span></a><span className="status">ENTORNO DE DESARROLLO · ETAPA 01</span></div></header>{children}<footer className="foot">Cotironda · Registro en desarrollo. Sin licitaciones reales ni pagos.</footer></body></html>;
+  return <html lang="es-AR"><body><header className="top"><div className="wrap"><a className="logo coti-legacy-brand" href="/">COTI<span>RONDA</span></a><a className="logo coti-private-brand" href="/piloto/v2/mi-cotironda" aria-label="Cotironda · Mis cotizaciones"><img src="/cotironda-isotipo.svg" alt="" width="38" height="41"/><span>Cotironda</span></a><span className="status">ENTORNO DE DESARROLLO · ETAPA 01</span></div></header>{children}<footer className="foot">Cotironda · Registro en desarrollo. Sin licitaciones reales ni pagos.</footer></body></html>;
 }

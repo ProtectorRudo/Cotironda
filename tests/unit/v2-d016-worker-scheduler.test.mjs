@@ -9,7 +9,7 @@ const nonComments=yaml.split('\n')
  .filter(line=>!line.trimStart().startsWith('#')).join('\n');
 
 test('D016 IA offline: no ejecuta en PR, default branch y variables OFF de base',()=>{
- assert.match(nonComments,/\bon:\s*\n\s+schedule:\s*\n\s+- cron: '13,43 \* \* \* \*'/u);
+ assert.match(nonComments,/\bon:\s*\n\s+schedule:\s*\n\s+- cron: '\*\/5 \* \* \* \*'/u);
  assert.match(nonComments,/workflow_dispatch:/u);
  assert.doesNotMatch(nonComments,/\bpull_request:|\bpush:/u);
  assert.match(nonComments,/github\.repository == 'ProtectorRudo\/Cotironda'/u);

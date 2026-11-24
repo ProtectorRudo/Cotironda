@@ -1,3 +1,4 @@
+import {createHash,createHmac} from 'node:crypto';
 /** D016: adaptador Node/Next aislado, SIN SMS ni sesiones GoTrue falsas.
  * No se habilita sin Preview+SHA+secreto exactos ni RPC privada.
  */
@@ -9,8 +10,12 @@ import {canjearConSesionPrivadaD016,verificarAccesoSesionD016,
  from '../../../src/server/v2-d016-sesion-privada.ts';
 import {D016_SESSION_COOKIE}
  from '../../../src/server/v2-d016-sesion-privada.ts';
+import {proyectarPerfilComercialD022}
+ from '../../../src/server/v2-d022-perfil-comercial.ts';
 import {proyectarRespuestasV2}
  from '../../../src/server/v2-03-catalogo-respondedores.ts';
+import {proyectarHistorialPrivadoD017}
+ from '../../../src/server/v2-d017-historial-comprador.ts';
 import {descargarConWhatsappD016}
  from '../../../src/server/v2-d016-descarga-privada.ts';
 import {leerTextoOriginalEdgeD016}
@@ -118,7 +123,7 @@ export async function listarPorWhatsappD016(
  try{
   const before=await sessionContext(db,digest,rondaId);
   if(!before)return deny();
-  const {data,error}=await db.rpc('cotironda_piloto_v2_d016_responders_with_analysis_private',{
+  const {data,error}=await db.rpc('cotironda_piloto_v2_d021_responders_commercial_private',{
    p_request_id:rondaId,p_sesion_hmac:digest
   });
   if(error)return deny(503);
@@ -322,7 +327,7 @@ export async function responderInformeFinalWhatsappD016(
    });
   if(state.state!=='closed_verified_business_two_days')return deny();
   const catalogRes=await db.rpc(
-   'cotironda_piloto_v2_d016_responders_with_analysis_private',q);
+   'cotironda_piloto_v2_d021_responders_commercial_private',q);
   if(catalogRes.error||!catalogRes.data)return deny(503);
   if((catalogRes.data as {buyerKey?:unknown}).buyerKey!==before.buyerKey)
    return deny();
@@ -337,5 +342,219 @@ export async function responderInformeFinalWhatsappD016(
   const report=componerInformeFinalD016(gateAgain.data,catalog,Date.now());
   if(!report)return deny();
   return new Response(JSON.stringify(report),{status:200,headers:HEADERS});
+ }catch{return deny(503)}
+}
+
+
+/** D017: índice de TODAS las solicitudes del comprador de la sesión D016.
+ * No acepta buyerKey/phone/customerId desde cliente ni muestra invitados.
+ * El detalle de cada presupuesto usa el mismo control D016 que ya funciona.
+ */
+export async function listarHistorialWhatsappD017(
+ req:Request,env:Record<string,string|undefined>=process.env
+):Promise<Response>{
+ const gate=puertaWhatsappPortalD016(env);
+ const db=gate?privateDb(env):null;
+ if(!gate||!db)return deny(503);
+ if(req.method!=='GET')return deny(405);
+ const url=new URL(req.url);
+ if(url.origin!==gate.origenPortal||
+  url.pathname!=='/api/piloto/v2/mi-cotironda'||
+  url.search!==''||url.hash!=='')return deny(400);
+ const cookie=cookieSesionD016(req);
+ const digest=cookie?digestSesionPrivadaD016(cookie,gate.claveHmacHex):null;
+ if(!digest)return deny();
+ try{
+  const first=await db.rpc('cotironda_piloto_v2_d017_buyer_history_private',{
+   p_sesion_hmac:digest
+  });
+  if(first.error)return deny(503);
+  const history=proyectarHistorialPrivadoD017(first.data);
+  if(!history)return deny();
+  // Segundo control: logout/revocación no deja publicar una vista cacheada.
+  const after=await db.rpc('cotironda_piloto_v2_d017_buyer_history_private',{
+   p_sesion_hmac:digest
+  });
+  if(after.error||!proyectarHistorialPrivadoD017(after.data))return deny();
+  return new Response(JSON.stringify(history),{status:200,headers:HEADERS});
+ }catch{return deny(503)}
+}
+
+/** Recuperación de la sesión D016 desde Mi Cotironda.
+ * El navegador NO elige chat, teléfono, empresa ni ronda. Solo envía un
+ * POST same-origin con cookie HttpOnly; el Edge resuelve el WhatsApp cifrado.
+ * Aislado y deshabilitado hasta Publicalo (doble flag portal + Edge).
+ */
+export async function enviarNuevoAccesoWhatsappD016(
+ req:Request,env:Record<string,string|undefined>=process.env
+):Promise<Response>{
+ const gate=puertaWhatsappPortalD016(env);
+ if(!gate||env.COTIRONDA_D016_REISSUE_ENABLED!=='true')
+  return deny(503);
+ const url=new URL(req.url);
+ if(req.method!=='POST'||url.origin!==gate.origenPortal||
+  url.pathname!=='/api/piloto/v2/mi-cotironda/enviar-acceso'||
+  url.search!==''||url.hash!==''||
+  req.headers.get('origin')!==gate.origenPortal||
+  req.headers.get('sec-fetch-site')!=='same-origin'||
+  req.headers.get('x-cotironda-reissue')!=='1')
+  return deny(403);
+ if((await req.text().catch(()=>'')).length!==0)return deny(400);
+ const db=privateDb(env);
+ const rawCookie=cookieSesionD016(req);
+ const digest=rawCookie?digestSesionPrivadaD016(rawCookie,gate.claveHmacHex):null;
+ if(!db||!digest)return deny();
+ try{
+  const first=await db.rpc('cotironda_piloto_v2_d017_buyer_history_private',{
+   p_sesion_hmac:digest
+  });
+  if(first.error)return deny(503);
+  const history=proyectarHistorialPrivadoD017(first.data);
+  if(!history)return deny();
+  // Elegir SIEMPRE una ronda V2 autorizada del comprador autenticado.
+  const selected=history.cotizaciones.find(r=>r.ofertasDisponibles);
+  if(!selected)return deny(403);
+  const after=await db.rpc('cotironda_piloto_v2_d017_buyer_history_private',{
+   p_sesion_hmac:digest
+  });
+  const again=after.error?null:proyectarHistorialPrivadoD017(after.data);
+  if(!again||!again.cotizaciones.some(r=>
+    r.rondaId===selected.rondaId&&r.ofertasDisponibles))return deny();
+  const body=JSON.stringify({requestId:selected.rondaId,
+   sessionHmac:digest,operationId:crypto.randomUUID()});
+  const sentAt=String(Date.now());
+  const signature=createHmac('sha256',Buffer.from(gate.claveHmacHex,'hex'))
+   .update('cotironda/d016/reissue/v1\\n'+sentAt+'\\n'+body,'utf8')
+   .digest('hex');
+  const reply=await fetch(PILOT+'/functions/v1/cotironda-piloto-v2-reemitir-acceso',{
+   method:'POST',headers:{'content-type':'application/json',
+    'x-cotironda-time':sentAt,'x-cotironda-signature':signature},
+   body,cache:'no-store',signal:AbortSignal.timeout(18000)
+  });
+  if(!reply.ok)return deny(reply.status===403?429:503);
+  const state:unknown=await reply.json().catch(()=>null);
+  if(!state||typeof state!=='object'||
+   (state as Record<string,unknown>).state!=='api_accepted')return deny(503);
+  return new Response(JSON.stringify({state:'sent'}),{
+   status:200,headers:HEADERS
+  });
+ }catch{return deny(503)}
+}
+
+/** D016: ÚNICO comprador del piloto, SIN cookie y SIN elección de destinatario.
+ * Seguro ante múltiples compradores: la RPC deniega cualquier caso ambiguo.
+ * El POST anónimo solo puede pedir entregar al WhatsApp YA verificado, nunca
+ * revela el teléfono ni obtiene sesión, presupuestos o buyerKey.
+ * Habilitación limitada a Preview; release sigue sujeto al gate D016.
+ */
+export async function solicitarAccesoPilotoSinSesionD016(
+ req:Request,env:Record<string,string|undefined>=process.env
+):Promise<Response>{
+ const gate=puertaWhatsappPortalD016(env);
+ if(!gate||env.COTIRONDA_D016_REISSUE_ENABLED!=='true')
+  return deny(503);
+ const u=new URL(req.url);
+ if(req.method!=='POST'||u.origin!==gate.origenPortal||
+  u.pathname!=='/api/piloto/v2/acceso/recuperar'||
+  u.search!==''||u.hash!==''||
+  req.headers.get('origin')!==gate.origenPortal||
+  req.headers.get('sec-fetch-site')!=='same-origin'||
+  req.headers.get('x-cotironda-reissue')!=='1')
+  return deny(403);
+ if((await req.text().catch(()=>'')).length!==0)return deny(400);
+ try{
+  // Sin campos del usuario, y HMAC del servidor sobre el cuerpo exacto.
+  // La firma HMAC certifica también el commit que Vercel ya aprobó en
+  // puertaWhatsappPortalD016; Edge no necesita dos pins divergentes.
+  const body=JSON.stringify({mode:'pilot_unique',operationId:crypto.randomUUID(),
+   releaseSha:gate.shaDesplegado});
+  const sentAt=String(Date.now());
+  const signature=createHmac('sha256',Buffer.from(gate.claveHmacHex,'hex'))
+   .update('cotironda/d016/reissue/v1\\n'+sentAt+'\\n'+body,'utf8')
+   .digest('hex');
+  const r=await fetch(PILOT+'/functions/v1/cotironda-piloto-v2-reemitir-acceso',{
+   method:'POST',headers:{'content-type':'application/json',
+    'x-cotironda-time':sentAt,'x-cotironda-signature':signature},
+   body,cache:'no-store',signal:AbortSignal.timeout(18_000)
+  });
+  // Denegación de elegibilidad o cuota devuelve respuesta opaca;
+  // fallas reales 5xx NO deben aparentar una solicitud tramitada.
+  if(!r.ok&&r.status!==403&&r.status!==429)return deny(503);
+  // Respuesta genérica sin confirmar existencia de comprador o número.
+  // Estado de envío auditable solo internamente en Supabase.
+  return new Response(JSON.stringify({state:'request_processed'}),{
+   status:202,headers:HEADERS
+  });
+ }catch{return deny(503)}
+}
+
+
+/** D022: ficha individual; mismo documento autorizado que la oferta visible.
+ * Ni la ruta ni el navegador eligen un supplier_key.
+ */
+export async function consultarPerfilComercialWhatsappD022(
+ req:Request,rondaId:string,documentoId:string,
+ foto=false,env:Record<string,string|undefined>=process.env
+):Promise<Response>{
+ const gate=puertaWhatsappPortalD016(env);
+ if(!gate)return deny(503);
+ if(req.method!=='GET')return deny(405);
+ if(!UUID.test(rondaId)||!UUID.test(documentoId)||
+  new URL(req.url).search)return deny(400);
+ const db=privateDb(env);
+ if(!db)return deny(503);
+ const cookie=cookieSesionD016(req);
+ const digest=cookie?digestSesionPrivadaD016(cookie,gate.claveHmacHex):null;
+ if(!digest)return deny();
+ try{
+  const before=await sessionContext(db,digest,rondaId);
+  if(!before)return deny();
+  const {data,error}=await db.rpc('cotironda_piloto_v2_d022_profile_private',{
+   p_request_id:rondaId,p_sesion_hmac:digest,p_document_id:documentoId
+  });
+  if(error||!data)return deny();
+  const profile=proyectarPerfilComercialD022(data);
+  if(!profile)return deny();
+  if(foto){
+   if(!profile.fotoDisponible||
+    typeof data.fotoPath!=='string'||
+    typeof data.supplierKey!=='string')return deny();
+   const path:string=data.fotoPath;
+   if(!/^proveedores\/[a-z0-9_-]{3,100}\/[a-f0-9]{64}\.(jpg|png|webp)$/u.test(path)||
+     !path.startsWith('proveedores/'+data.supplierKey+'/'))return deny();
+   const {data:file,error:fileError}=await db.storage
+    .from('cotironda-piloto-perfiles').download(path);
+   if(fileError||!file||file.size<1||file.size>1048576)return deny();
+   const mime=path.endsWith('.webp')?'image/webp':
+    path.endsWith('.png')?'image/png':'image/jpeg';
+   if(file.type!==mime)return deny();
+   // El nombre de Storage incluye SHA256. No entregar bytes sustituidos.
+   const expectedSha=path.split('/').at(-1)?.split('.')[0];
+   const bytes=new Uint8Array(await file.arrayBuffer());
+   if(!expectedSha||bytes.byteLength!==file.size||
+    createHash('sha256').update(bytes).digest('hex')!==expectedSha)return deny();
+   // Reconsultar permisos de original y consentimiento tras leer Storage:
+   // una baja/revocación concurrente también cierra esta respuesta.
+   const recheck=await db.rpc('cotironda_piloto_v2_d022_profile_private',{
+    p_request_id:rondaId,p_sesion_hmac:digest,p_document_id:documentoId
+   });
+   if(recheck.error||recheck.data?.fotoPath!==path||
+    !proyectarPerfilComercialD022(recheck.data)?.fotoDisponible)return deny();
+   const after=await sessionContext(db,digest,rondaId);
+   if(!after||after.buyerKey!==before.buyerKey)return deny();
+   return new Response(file,{status:200,headers:{
+    'content-type':mime,'cache-control':'private, no-store, max-age=0',
+    'x-content-type-options':'nosniff','referrer-policy':'no-referrer',
+    'cross-origin-resource-policy':'same-origin','vary':'Cookie'
+   }});
+  }
+  const recheck=await db.rpc('cotironda_piloto_v2_d022_profile_private',{
+   p_request_id:rondaId,p_sesion_hmac:digest,p_document_id:documentoId
+  });
+  const current=recheck.error?null:proyectarPerfilComercialD022(recheck.data);
+  if(!current||JSON.stringify(current)!==JSON.stringify(profile))return deny();
+  const after=await sessionContext(db,digest,rondaId);
+  if(!after||after.buyerKey!==before.buyerKey)return deny();
+  return new Response(JSON.stringify(current),{status:200,headers:HEADERS});
  }catch{return deny(503)}
 }

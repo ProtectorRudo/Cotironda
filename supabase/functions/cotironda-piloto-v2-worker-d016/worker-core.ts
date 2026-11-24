@@ -1,6 +1,6 @@
 /** Cotironda V2 D016 background analyzer. Edge ONLY; no browser session.
  * Every SQL call and original is independently gated by buyer WhatsApp proof,
- * supplier consent, pilot V2 policies and approved calendar. Max ONE offer/tick.
+ * supplier enrollment, pilot V2 policies and approved calendar. Max ONE offer/tick.
  * No PII, ciphertext, price list, AI response or API keys in HTTP/log output.
  */
 import {obtenerTextoVerificadoV2,type PdfSourceReaderV2}
@@ -25,7 +25,7 @@ const HEADER={
  'cross-origin-resource-policy':'same-origin'
 } as const;
 type Source=Record<string,unknown> & {
- state:'authorized_original_v2'|'authorized_text_v2';
+ state:'internal_original_v2'|'internal_text_v2';
  requestId:string;documentId:string;buyerKey:string;supplierKey:string;
  sha256:string;mime:string;
 };
@@ -66,16 +66,16 @@ function gateValid(c:WorkerD016Config){
   HMAC.test(c.aesHex)&&!/^0{64}$/u.test(c.aesHex);
 }
 function sourceOk(raw:unknown,j:Job):Source|null{
- if(!obj(raw)||!['authorized_original_v2','authorized_text_v2'].includes(
+ if(!obj(raw)||!['internal_original_v2','internal_text_v2'].includes(
   String(raw.state))||
   raw.requestId!==j.requestId||raw.documentId!==j.documentId||
   raw.sha256!==j.sourceSha256||raw.mime!==j.mime||
   typeof raw.buyerKey!=='string'||raw.buyerKey.length<3||
   typeof raw.supplierKey!=='string'||raw.supplierKey.length<3||
   typeof raw.messageHmac!=='string'||!HMAC.test(raw.messageHmac)||
-  typeof raw.consentAt!=='number'||raw.consentAt<=0||
-  typeof raw.invitedAt!=='number'||raw.invitedAt<raw.consentAt)return null;
- if(raw.state==='authorized_text_v2'){
+  typeof raw.enrolledAt!=='number'||raw.enrolledAt<=0||
+  typeof raw.invitedAt!=='number'||raw.invitedAt<raw.enrolledAt)return null;
+ if(raw.state==='internal_text_v2'){
   if(raw.mime!=='text/plain'||typeof raw.chatHmac!=='string'||
    !HMAC.test(raw.chatHmac))return null;
  }else if(raw.bucket!=='cotironda-piloto-originals'||
@@ -132,18 +132,21 @@ export async function procesarTrabajoOfflineD016(
   token=claim.jobToken;
   let result:ResultadoAnalisisV2|null=null;
   let textSha:string|null=null;
+  let diagnostic='original_bytes_unavailable';
   try{
-   const bytes=src.state==='authorized_text_v2'?
+   const bytes=src.state==='internal_text_v2'?
     await descifrarFuenteWorkerD016(src,config.aesHex):
     await ports.readStorage({bucket:src.bucket as string,path:src.path as string});
    if(bytes instanceof Uint8Array&&
-    bytes.length<=(src.state==='authorized_text_v2'?4000:8388608)&&
-    (src.state==='authorized_text_v2'||bytes.length===src.byteCount)){
+    bytes.length<=(src.state==='internal_text_v2'?4000:8388608)&&
+    (src.state==='internal_text_v2'||bytes.length===src.byteCount)){
+    diagnostic='original_text_unverified';
     const verified=await obtenerTextoVerificadoV2({
      bytes,mime:src.mime,shaBinario:src.sha256,pdfReader:ports.pdfReader
     });
     if(verified){
-     // No IA with stale source/consent, even if original bytes are valid.
+     diagnostic='ai_result_pending';
+     // No IA with stale source/enrollment, even if original bytes are valid.
      const before=sourceOk(await ports.source(scope),job);
      if(!before||JSON.stringify(before)!==JSON.stringify(src))
       return output(200,'revoked',{checked:1,ready:0,review:0});
@@ -152,13 +155,19 @@ export async function procesarTrabajoOfflineD016(
       fuente:{documentoId:job.documentId,sha256:verified.shaTexto,
        tipo:'texto_extraido_de_original',fuente:verified.fuente,
        originalAutenticado:true,proveedorAutenticado:true,
-       consentimientoOriginalVerificado:true,compradorAutorizado:true
+       consentimientoOriginalVerificado:false,compradorAutorizado:false,
+       procesamientoInternoPrivado:true
       },
       apiKey:config.apiKey,model:'gpt-6-luna'
      });
+     diagnostic=result.estado==='analisis_disponible'?'success':
+      (/^[a-z_]{3,64}$/u.test(result.codigo)?result.codigo:'ai_review');
     }
    }
-  }catch{/* Error no bloquea original: reintentar sólo según cuota SQL. */}
+  }catch{diagnostic='unexpected_private_processing_error'}
+  // Diagnostic only fixed codes; never log source, prices or contacts.
+  if(result?.estado!=='analisis_disponible')
+   console.info('cotironda_v2_private_analysis_review',diagnostic);
   const state: 'ready'|'review'=
    result?.estado==='analisis_disponible'?'ready':'review';
   const previous=src;

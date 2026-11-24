@@ -1,4 +1,5 @@
 import {notFound} from 'next/navigation';
+import Link from 'next/link';
 import {puertaWhatsappPortalD016} from '@/lib/piloto-v2-d016-http';
 import {RespuestasWhatsappD016} from './respuestas-whatsapp';
 
@@ -13,10 +14,11 @@ export default async function PedidoWhatsappD016(
  const {rondaId}=await params;
  if(!UUID.test(rondaId)||!puertaWhatsappPortalD016(process.env))
   notFound();
- return <main className="panel">
-  <span className="eyebrow">COTIRONDA · SEGUIMIENTO PRIVADO</span>
+ return <main className="panel coti-buyer-portal coti-clean">
+  <Link className="coti-back-link" href="/piloto/v2/mi-cotironda" scroll={false}>
+   ← Mis cotizaciones
+  </Link>
   <h1>Presupuestos recibidos</h1>
-  <p>Acá aparecen únicamente los comercios que respondieron a tu pedido.</p>
-  <RespuestasWhatsappD016 rondaId={rondaId}/>
+  <RespuestasWhatsappD016 key={rondaId.toLowerCase()} rondaId={rondaId}/>
  </main>;
 }

@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {componerInformeFinalD016}
  from '../../src/server/v2-d016-informe-final.ts';
 
@@ -74,4 +75,155 @@ test('D016 informe: rechaza ID duplicado y observaciones malformadas',()=>{
  const corrupted=data();
  corrupted.respuestas[0].puntos[0].evidencia='x';
  assert.equal(componerInformeFinalD016(state(),corrupted,NOW),null);
+});
+
+test('D019: el informe compara por comercio sin ordenar ganadores ni inventar importes',()=>{
+ const cat=data();
+ cat.respuestas[0].resumen={
+  totalDeclarado:'$293.991,23',tipoImporte:'Subtotal informado',
+  cobertura:{identificados:1,solicitados:3,porVerificar:['Cemento CPC 50 kg'],adicionales:0},
+  condiciones:{pago:'Contado en efectivo',iva:'No informado',flete:'No informado',entrega:'No informado'}
+ };
+ cat.respuestas[2].resumen={
+  totalDeclarado:'$355.400',tipoImporte:'Importe informado',
+  cobertura:{identificados:3,solicitados:3,porVerificar:[],adicionales:0},
+  condiciones:{pago:'No informado',iva:'No informado',flete:'No informado',entrega:'No informado'}
+ };
+ cat.respuestas[0].puntos.push(punto('plazo','Plazo de entrega 0 días',
+  'El plazo de entrega indicado es 0 días.'));
+ const report=componerInformeFinalD016(state(),cat,NOW);
+ assert.ok(report);
+ const norte=report.comparacion.find(x=>x.comercio==='Corralón Norte');
+ assert.equal(norte.ofertas.length,2);
+ assert.equal(norte.ofertas[0].tipoImporte,'Subtotal informado');
+ assert.equal(norte.ofertas[0].pago,'Contado en efectivo');
+ assert.equal(norte.ofertas[0].cobertura.identificados,1);
+ assert.ok(report.recomendaciones.some(x=>/equivalencia técnica/u.test(x)));
+ assert.ok(report.recomendaciones.some(x=>/total final/u.test(x)));
+ assert.ok(!norte.evidencias.some(x=>x.categoria==='plazo'));
+ assert.deepEqual(report.comparacion.map(x=>x.comercio),['Corralón Norte','Pinturería Sur']);
+ assert.ok(!JSON.stringify(report).includes('"ganador":'));
+ assert.ok(!JSON.stringify(report).includes('"adjudicado":'));
+});
+
+test('D019: matriz final coteja cada renglón sin inventar faltantes ni stock',()=>{
+ const cat=data();
+ const requested=[
+  {line:1,description:'Cemento CPC 50 kg',quantity:'10.000',unit:'bolsas'},
+  {line:2,description:'Arena fina 1 m3',quantity:'1.000',unit:'bolsón'}
+ ];
+ const coverage=(details,found)=>({
+  identificados:found,solicitados:2,
+  porVerificar:found===2?[]:['Cemento CPC 50 kg'],adicionales:0,
+  detalle:details
+ });
+ cat.respuestas[0].resumen={
+  solicitado:requested,totalDeclarado:'$350.000',tipoImporte:'Total informado',
+  condiciones:{iva:'No informado',flete:'No informado',pago:'Contado',entrega:'No informado'},
+  cobertura:coverage([
+   {linea:1,solicitado:requested[0].description,cotizado:'Cemento CPC 50 kg',
+    estado:'coincidencia_automatica',motivo:'Cantidad nominal coincidente'},
+   {linea:2,solicitado:requested[1].description,cotizado:'Arena fina 1 m3',
+    estado:'coincidencia_automatica',motivo:'Cantidad nominal coincidente'}
+  ],2)
+ };
+ cat.respuestas[2].resumen={
+  solicitado:requested,totalDeclarado:'$300.000',tipoImporte:'Subtotal informado',
+  condiciones:{iva:'No informado',flete:'No informado',pago:'No informado',entrega:'No informado'},
+  cobertura:coverage([
+   {linea:1,solicitado:requested[0].description,cotizado:null,
+    estado:'por_verificar',motivo:'No se confirmó correspondencia'},
+   {linea:2,solicitado:requested[1].description,cotizado:'Arena fina 1 m3',
+    estado:'coincidencia_automatica',motivo:'Cantidad nominal coincidente'}
+  ],1)
+ };
+ const output=componerInformeFinalD016(state(),cat,NOW);
+ assert.equal(output.materiales.length,2);
+ assert.equal(output.materiales[0].material,requested[0].description);
+ assert.deepEqual(output.materiales[0].comercios.map(x=>x.estado),
+  ['coincidencia_automatica','por_verificar']);
+ assert.equal(output.materiales[0].comercios[1].cotizado,null);
+ assert.match(output.recomendaciones.join(' '),/no faltantes de stock/u);
+ assert.equal(componerInformeFinalD016({...state(),state:'waiting_for_close'},cat,NOW),null);
+ cat.respuestas[2].resumen.solicitado=[{...requested[0],description:'Cemento distinto'},requested[1]];
+ const drift=componerInformeFinalD016(state(),cat,NOW);
+ assert.equal(drift.materiales.length,0);
+ assert.match(drift.recomendaciones.join(' '),/no coinciden/u);
+});
+
+test('D021 cierre real: dos respuestas cotizadas y advertencia sin ranking',()=>{
+ const cat=data();
+ cat.respuestas.splice(1,1);
+ cat.respuestas[0].comercio='Corralón Ailín';
+ cat.respuestas[0].resumen={
+  totalDeclarado:'$351.155,11',sumaCalculada:null,
+  tipoImporte:'Subtotal informado',articulosCotizados:3,articulosEnviados:3,
+  solicitado:[],cobertura:{identificados:3,solicitados:3,
+   porVerificar:[],detalle:[],adicionales:0},
+  condiciones:{iva:'No informado',flete:'A convenir',
+   pago:'Contado en efectivo',entrega:'No informado'}
+ };
+ cat.respuestas[1].comercio='Corralón Nahuel';
+ cat.respuestas[1].resumen={
+  totalDeclarado:null,sumaCalculada:'$355.000',
+  tipoImporte:'Importe no informado',articulosCotizados:3,articulosEnviados:3,
+  solicitado:[],cobertura:null,
+  condiciones:{iva:'No informado',flete:'No informado',
+   pago:'No informado',entrega:'No informado'}
+ };
+ const final=componerInformeFinalD016(state(),cat,NOW);
+ assert.ok(final);
+ assert.equal(final.documentos,2);
+ assert.equal(final.comercios,2);
+ assert.deepEqual(final.comparacion.map(x=>x.ofertas[0].articulosCotizados),[3,3]);
+ assert.equal(final.comparacion[0].ofertas[0].tipoImporte,'Subtotal informado');
+ assert.equal(final.comparacion[1].ofertas[0].importe,'$355.000');
+ assert.equal(final.comparacion[1].ofertas[0].tipoImporte,'Suma de artículos cotizados');
+ assert.match(final.conclusion,/subtotal y la suma calculada/u);
+ assert.match(final.conclusion,/equivalencias/u);
+ assert.equal(final.observacionesIA.length,1,'solo evidencia IA comercial útil');
+ assert.match(final.observacionesIA[0].observacion,/bolsas/u);
+ assert.doesNotMatch(final.conclusion,/ganador|adjudicado|más barato/iu);
+ assert.doesNotMatch(final.conclusion,/\$[0-9]/u,'no duplicar los importes');
+});
+test('D021 cierre de una pantalla: detalle optativo, sin matriz ni advertencias abiertas',()=>{
+ const front=readFileSync(new URL(
+  '../../apps/portal/app/piloto/v2/rondas/[rondaId]/whatsapp/respuestas-whatsapp.tsx',
+  import.meta.url),'utf8');
+ const finalStart=front.indexOf('<section className="coti-clean-final"');
+ const block=front.slice(finalStart,
+  front.indexOf('</section>}',finalStart)+11);
+ assert.ok(block.length>1000);
+ assert.match(block,/informe\.conclusion/u);
+ assert.match(block,/oferta\.articulosCotizados/u);
+ assert.match(block,/informe\.observacionesIA/u);
+ assert.match(block,/<h2>Comparación final<\/h2>/u);
+ assert.doesNotMatch(block,/Ver detalle técnico por material|informe\.materiales|Sin equivalencia confirmada con este artículo/u);
+ assert.doesNotMatch(block,/Qué revisar antes de decidir|informe\.recomendaciones\.map/u);
+ assert.doesNotMatch(block,/Sin datos suficientes para cotejar/u);
+ assert.doesNotMatch(block,/ganador autom[aá]tico|adjudicado a/iu);
+});
+
+test('D016 una ronda nueva jamás muestra informe viejo aunque cambie la navegación',()=>{
+ const newId='eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
+ const previous=componerInformeFinalD016(state(),data(),NOW);
+ const next=componerInformeFinalD016({...state(),requestId:newId},data(),NOW);
+ assert.equal(previous.requestId,ROUND);
+ assert.equal(next.requestId,newId);
+ assert.notEqual(previous.requestId,next.requestId);
+ assert.equal(componerInformeFinalD016(
+  {state:'waiting_for_close',requestId:newId,closedAtMs:CLOSED},data(),NOW),null);
+ const reportSource=readFileSync(new URL(
+  '../../src/server/v2-d016-informe-final.ts',import.meta.url),'utf8');
+ const page=readFileSync(new URL(
+  '../../apps/portal/app/piloto/v2/rondas/[rondaId]/whatsapp/page.tsx',
+  import.meta.url),'utf8');
+ const client=readFileSync(new URL(
+  '../../apps/portal/app/piloto/v2/rondas/[rondaId]/whatsapp/respuestas-whatsapp.tsx',
+  import.meta.url),'utf8');
+ assert.match(reportSource,/requestId:state\.requestId/u);
+ assert.match(page,/key=\{rondaId\.toLowerCase\(\)\}/u);
+ assert.match(client,/data\.requestId!==rondaId\.toLowerCase\(\)/u);
+ assert.match(client,/informe\?\.requestId===rondaId\.toLowerCase\(\)/u);
+ assert.match(client,/setInforme\(null\);return;/u);
 });

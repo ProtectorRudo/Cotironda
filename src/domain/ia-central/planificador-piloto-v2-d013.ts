@@ -9,10 +9,11 @@
  * La fase de preparación económica/WhatsApp será otra transacción SQL.
  * NO introducir fetch Whapi en este archivo.
  */
-import {interpretarConIaCentralV1} from './cliente-openai-v1.ts';
-import {categorizarCatalogosConIAMvp220,
- validarSnapshotCatalogosMvp220} from './catalogo-supabase-mvp220.ts';
-import {proponerRuteoCatalogoConIAV2} from './ruteador-catalogos-v2-d013.ts';
+import {interpretarConIaCentralV2D013} from './cliente-openai-v2-d013.ts';
+import type {DiagnosticoCantidadD013} from './contrato-v2-d013.ts';
+import {validarSnapshotCatalogosMvp220} from './catalogo-supabase-mvp220.ts';
+import {categorizarCatalogosCuradosD013} from './catalogo-curado-v2-d013.ts';
+import {proponerRuteoCatalogoConIAV2,zonaIgual} from './ruteador-catalogos-v2-d013.ts';
 import type {PropuestaPedido} from './contrato-v1.ts';
 import type {ResultadoCatalogoV2} from './ruteador-catalogos-v2-d013.ts';
 import type {ProveedorCatalogoV2} from './ruteador-catalogos-v2-d013.ts';
@@ -35,15 +36,13 @@ const KEY=/^[a-f0-9]{64}$/u;
 const deny=(estado:PlanMvp220['estado'],motivo:string):PlanMvp220=>({
  estado,motivo,pedido:null,ruteo:null,catalogos:null,whatsappEnviado:false,baseModificada:false
 });
-const matchCity=(a:string,b:string):boolean=>
- a.normalize('NFD').replace(/[\u0300-\u036f]/gu,'').trim().toLowerCase()===
- b.normalize('NFD').replace(/[\u0300-\u036f]/gu,'').trim().toLowerCase();
 export async function planificarMensajeAutenticadoMvp220(args:{
  chatHmac:string;messageHmac:string;
  textoOriginal:string;
  autenticadoPorWebhook:boolean;
  apiKey:string;model:Modelo;
  rpc:Rpc;fetchImpl?:typeof fetch;
+ onQuantityDiagnostic?:(code:DiagnosticoCantidadD013)=>void;
 }):Promise<PlanMvp220>{
  if(!args||args.autenticadoPorWebhook!==true||
     !KEY.test(args.chatHmac)||!KEY.test(args.messageHmac)||
@@ -53,9 +52,10 @@ export async function planificarMensajeAutenticadoMvp220(args:{
  // IMPORTANT: el webhook real aplica identidad/HMAC, persiste la fuente
  // y reserva su cuota ANTES de habilitar este worker. El booleano no
  // es autorización real; el RPC verifica identidad nuevamente.
- const interpreted=await interpretarConIaCentralV1({
+ const interpreted=await interpretarConIaCentralV2D013({
   fuente:args.textoOriginal,apiKey:args.apiKey,
-  model:args.model,fetchImpl:args.fetchImpl
+  model:args.model,fetchImpl:args.fetchImpl,
+  onQuantityDiagnostic:args.onQuantityDiagnostic
  });
  if(interpreted.estado==='requiere_aclaracion')
   return deny('requiere_aclaracion',interpreted.motivo);
@@ -74,16 +74,19 @@ export async function planificarMensajeAutenticadoMvp220(args:{
   raw=r.data;
  }catch{return deny('rechazado','catalogo_rpc_indisponible')}
  const catalog=validarSnapshotCatalogosMvp220(raw);
- if(!catalog||!matchCity(catalog.localidad,city))
+ if(!catalog||!zonaIgual(catalog.localidad,city))
   return deny('rechazado','catalogo_rpc_no_conciliado');
  if(catalog.proveedores.length===0)
   return deny('rechazado','sin_catalogos_consentidos');
- const classified=await categorizarCatalogosConIAMvp220({
+ const classified=await categorizarCatalogosCuradosD013({
   snapshot:catalog,apiKey:args.apiKey,
   model:args.model,fetchImpl:args.fetchImpl
  });
  if(classified.estado==='catalogo_invalido')
   return deny('rechazado',classified.motivo);
+ // En V2 la ÚNICA IA Central decide todos los ítems; nunca fragmentar
+ // el pedido según supuestas diferencias entre lectores. El catálogo
+ // aporta productos concretos y permisos, NO una nueva lectura del texto.
  const route=await proponerRuteoCatalogoConIAV2({
   pedido,proveedores:classified.proveedores,
   apiKey:args.apiKey,model:args.model,fetchImpl:args.fetchImpl
@@ -92,6 +95,7 @@ export async function planificarMensajeAutenticadoMvp220(args:{
   return deny('rechazado',route.motivo);
  if(route.propuestas.length===0)
   return deny('requiere_aclaracion','ningun_proveedor_para_la_lista');
+
  return {
   estado:'plan_validado_sin_envio',
   motivo:classified.estado==='catalogo_sin_confirmar'?

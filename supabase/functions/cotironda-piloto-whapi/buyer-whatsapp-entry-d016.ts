@@ -2,7 +2,7 @@
  * Se ejecuta SOLO después de webhook autenticado y persistencia del evento.
  * Una reserva SQL por evento = máximo un POST Whapi. Nunca reintentar
  * automáticamente ante entrega incierta; el comprador pide un enlace nuevo.
- * No crea sesión ni toca originales: el navegador redime el ticket una vez.
+ * No crea sesión ni toca originales: el navegador abre una sesión privada renovable de 14 días.
  */
 type Rpc=(name:string,args:Record<string,unknown>)=>Promise<{data:unknown;error:unknown}>;
 type Send=(recipient:string,body:string)=>Promise<{accepted:boolean;messageId:string|null}>;
@@ -18,16 +18,51 @@ const ID=/^[A-Za-z0-9._:-]{8,160}$/u;
 const SHA=/^[a-f0-9]{40}$/u;
 const enc=new TextEncoder();
 
+/** MVP289 utilizaba DOS políticas diferentes para el mismo flag:
+ * envio normal: solo "false" lo apaga;
+ * recuperacion SEGUIMIENTO COTI: solo undefined o "true" lo autorizan.
+ * D016 tiene su propio gate y jamás se salta el OFF general de outbound.
+ */
+export function permitirAvisoD016(
+ outbound:boolean,d016Enabled:boolean,legacyTrackingValue:string|undefined
+):boolean{
+ return outbound===true&&(d016Enabled===true||legacyTrackingValue!=='false');
+}
+export function permitirRecuperacionD016(
+ outbound:boolean,d016Enabled:boolean,legacyTrackingValue:string|undefined
+):boolean{
+ return outbound===true&&(d016Enabled===true||
+  legacyTrackingValue===undefined||legacyTrackingValue==='true');
+}
+
+
 function origenD016(s:string):boolean{
  try{
   const u=new URL(s);
   return u.protocol==='https:'&&u.origin===s&&u.username===''&&
    u.password===''&&u.port===''&&u.pathname==='/'&&
    u.search===''&&u.hash===''&&
-   u.hostname.startsWith('cotironda-portal-')&&
-   u.hostname.endsWith('-protector-rudo-s-projects.vercel.app');
+   (u.hostname==='app.cotironda.com'||
+    (u.hostname.startsWith('cotironda-portal-')&&
+     u.hostname.endsWith('-protector-rudo-s-projects.vercel.app')));
  }catch{return false}
 }
+/** D013 — la publicación NO depende de banderas históricas de migración.
+ * En piloto el planificador siempre usa V2 y cruza cada renglón por catálogo:
+ * una bandera de "matching" no constituye una segunda autorización comercial.
+ * La RPC SQL cotironda_piloto_v2_auto_release_d013 verifica comprador, fuente,
+ * zona, catálogos y consentimiento, calendario, estado y deduplicación.
+ * El cierre general del canal outbound sigue siendo una barrera operativa.
+ * D016 valida POR SEPARADO SHA, origen, HMAC, ticket y sesión privada.
+ * Firma conservada por compatibilidad con texto, ciudad y documentos.
+ */
+export function habilitarPublicacionD013ConAccesoD016(args:{
+ outbound:boolean;matchingEnabled:boolean;linkSendEnabled:boolean;
+ portalOrigin:string;portalSha:string;approvedSha:string;hmacKeyHex:string;
+}):boolean{
+ return args?.outbound===true;
+}
+
 function hex(input:Uint8Array):string{
  return Array.from(input,x=>x.toString(16).padStart(2,'0')).join('');
 }
@@ -88,12 +123,14 @@ export async function notificarAccesoWhatsappD016(args:{
   !UUID.test(row.request_id)||
   (args.requestId!==null&&row.request_id!==args.requestId))
   return result('conciliacion_requerida');
- const url=args.portalOrigin+'/piloto/v2/acceso#d016='+token+
+ // El portal comercial ya está activo en app; las URLs anteriores siguen
+ // sirviendo sus tickets desde el despliegue técnico original.
+ const url='https://app.cotironda.com/piloto/v2/acceso#d016='+token+
   '&ronda='+row.request_id;
  const body='Cotironda ✅ Consultá los presupuestos recibidos para tu pedido.\n\n'+
   'Abrí este enlace privado para ingresar sin contraseña ni código:\n'+url+
-  '\n\nEl enlace vence en 10 minutos y es de un solo uso. '+
-  'Si vence, escribí SEGUIMIENTO COTI por este mismo WhatsApp. '+
+  '\n\nEste enlace funciona durante 14 días y podés abrirlo las veces que necesites. '+
+  'No tenés que enviar ninguna palabra para consultar las propuestas. '+
   'No compartas el enlace.';
  let accepted=false,messageId:string|null=null;
  try{

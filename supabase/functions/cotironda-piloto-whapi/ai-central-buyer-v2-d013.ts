@@ -26,11 +26,29 @@ const SAFE_REVIEW_CODES=new Set([
  'lecturas_divergentes','ningun_proveedor_para_la_lista',
  'sin_articulos','esquema_invalido','campos_inseguros',
  'segunda_lectura_invalida','entrada_invalida','sin_catalogo_confirmado',
- 'catalogo_invalido','ia_error_de_lectura'
+ 'catalogo_invalido','ia_error_de_lectura',
+ 'ia_central_solicita_aclaracion','evidencias_superpuestas',
+ 'intencion_no_comercial','ruteo_entrada_no_representable',
+ 'sin_proveedores_autorizados','respuesta_ia_invalida','ia_ruteo_no_disponible',
+ 'propuesta_invalida','correspondencia_invalida',
+ 'producto_no_declarado_en_catalogo','proveedor_no_habilitado_en_zona'
 ]);
 export function codigoRevisionSemanticaMvp286(reason:unknown):string{
  return typeof reason==='string'&&SAFE_REVIEW_CODES.has(reason)
   &&/^[a-z_]{3,64}$/u.test(reason)?reason:'semantic_review_required';
+}
+// Motivos exclusivamente estáticos del puente, sin descripción/cita/contacto.
+// No persistir respuestas de IA ni texto del comprador como failure_code.
+const SAFE_BRIDGE_CODES=new Set([
+ 'origen_o_plan_no_verificado','ciudad_o_items_invalidos',
+ 'proveedores_duplicados','presentacion_fuente_no_representable',
+ 'cantidad_unidad_no_representable_en_sql',
+ 'destinatario_duplicado_o_invalido','catalogo_no_confirmado',
+ 'indice_de_pedido_invalido','catalogo_sin_evidencia','sin_destinos'
+]);
+export function codigoRevisionPuenteV2D013(reason:unknown):string{
+ return typeof reason==='string'&&SAFE_BRIDGE_CODES.has(reason)
+  &&/^[a-z_]{3,64}$/u.test(reason)?reason:'plan_not_verifiable';
 }
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 type RpcResponse={data:unknown;error:unknown};
@@ -124,8 +142,9 @@ export async function procesarCompradorCentralMvp226(
    textoOriginal:args.fuente,autenticadoPorWebhook:true,plan:p
   });
   if(prepared.estado!=='plan_sql_listo'){
-   await finish('review','plan_not_verifiable');
-   return done('requiere_revision','plan_not_verifiable');
+   const reason=codigoRevisionPuenteV2D013(prepared.motivo);
+   await finish('review',reason);
+   return done('requiere_revision',reason);
   }
   const written=await guardarRondaSombraMvp221(prepared,
    async(name,params)=>db(name,params));
@@ -142,9 +161,15 @@ export async function procesarCompradorCentralMvp226(
    await finish('staged');
    return done('ronda_en_sombra','publish_flag_disabled',requestId);
   }
-  const publication=await call(db,'cotironda_piloto_ia_publish_mvp222',{
-   p_request:requestId
+  const publication=await call(db,'cotironda_piloto_v2_auto_release_d013',{
+   p_chat_hmac:args.chatHmac,p_source_hmac:args.messageHmac
   });
+  // V2 atomic release verifies calendar, source, supplier and no repeated
+  // buyer confirmation. Never fall back to MVP222 on refusal.
+  if(publication.state==='ready_for_delivery'||publication.state==='already_published'){
+   if(publication.request_id!==requestId)
+    throw Error('v2_release_wrong_request');
+  }
   if(publication.state==='dispatch_disabled'||publication.state==='transport_disabled'){
    await finish('staged');
    return done('ronda_en_sombra','sql_dispatch_disabled',requestId);

@@ -1,1 +1,599 @@
 :root{color-scheme:dark;font-family:ui-sans-serif,system-ui,Arial;background:#0b1724;color:#e9f2f3}*{box-sizing:border-box}body{margin:0}a{color:inherit;text-decoration:none}.top{border-bottom:1px solid #263e4a}.wrap{width:min(1080px,calc(100% - 38px));margin:auto}.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:76px}.logo{font-size:21px;letter-spacing:.07em;font-weight:900}.logo span,h1 span{color:#44d9b5}.status,.eyebrow{font-size:11px;color:#6ee6c9;font-weight:800;letter-spacing:.12em}.hero{padding-top:110px;padding-bottom:120px}.hero h1{font-size:clamp(38px,6vw,68px);letter-spacing:-.05em;line-height:1.1}.hero p{max-width:710px;color:#a9bcc9;line-height:1.8}.actions{display:flex;gap:12px;flex-wrap:wrap;margin:32px 0}.button,button{border:0;cursor:pointer;display:inline-block;border-radius:11px;background:#43dbb7;color:#0a2922;font-weight:800;padding:13px 19px;font-size:14px}.button:disabled,button:disabled{opacity:.5;cursor:not-allowed}.outline{color:#e8f3f4;border:1px solid #41616e;background:transparent}.notice{background:#112638;border:1px solid #284555;padding:18px;border-radius:12px;color:#bed1d9;max-width:690px;font-size:13px}.panel{width:min(560px,calc(100% - 32px));margin:65px auto 110px;padding:30px;background:#132839;border:1px solid #315061;border-radius:20px}.panel h1{font-size:28px;letter-spacing:-.03em}.panel p{color:#aac1ca;line-height:1.6}label{display:block;margin-top:20px;margin-bottom:6px;color:#d4e3e6;font-size:13px;font-weight:700}input,select{padding:13px 14px;background:#0a1c29;border:1px solid #3b5868;color:white;width:100%;border-radius:9px;font:inherit;font-size:14px}input:focus,select:focus{outline:2px solid #45d9ba}.panel button{width:100%;margin-top:23px}.inline-actions{display:flex;gap:12px}.inline-actions button{flex:1}.feedback{margin-top:18px;padding:12px;border-radius:9px;background:#1d3443;color:#e3f5ee;line-height:1.5;font-size:13px}.muted{font-size:12px;color:#a6bbc7}.foot{text-align:center;padding:32px 15px;font-size:12px;color:#8aa1ad;border-top:1px solid #273e4b}@media(max-width:630px){.top .wrap{min-height:67px}.status{font-size:9px;letter-spacing:0}.panel{padding:22px}.hero{padding:72px 0}}
+
+
+/* D016: la vista del comprador es un tablero COMERCIAL, no un informe técnico.
+   Estilos aislados: no alteran el alta ni el resto del portal. */
+.coti-buyer-portal.panel{width:min(900px,calc(100% - 28px));margin:36px auto 84px;
+ padding:0;background:transparent;border:0;border-radius:0}
+.coti-buyer-portal>.eyebrow{display:inline-block;margin-bottom:8px}
+.coti-buyer-portal>h1{font-size:clamp(30px,5.5vw,42px);line-height:1.14;
+ letter-spacing:-.045em;margin:3px 0 8px;color:#f2f9fa}
+.coti-buyer-portal>.coti-page-desc{font-size:14px;margin:0 0 25px;
+ color:#9cb4c1;line-height:1.55}
+.coti-buyer-dashboard{min-width:0}
+.coti-dashboard-top{display:flex;align-items:center;justify-content:space-between;
+ gap:16px;flex-wrap:wrap;margin:12px 0 18px}
+.coti-eyebrow{font-size:10px;letter-spacing:.13em;font-weight:800;color:#42dbb6}
+.coti-dashboard-subtitle{margin:5px 0 0!important;font-size:14px;line-height:1.4}
+.coti-dashboard-actions{display:flex;gap:9px;flex-wrap:wrap}
+.coti-buyer-portal .coti-dashboard-actions button{width:auto!important;margin:0!important;
+ padding:9px 13px;border-radius:10px;font-size:12px}
+.coti-offer{border:1px solid #294759;border-radius:22px;background:#132838;
+ box-shadow:0 22px 55px #020b1345;overflow:hidden;padding:26px;
+ margin:0 0 18px;color:#e3f0f1}
+.coti-offer-header{display:flex;align-items:center;gap:14px;padding-bottom:20px;
+ border-bottom:1px solid #2b4554}
+.coti-supplier-icon{display:grid;place-items:center;flex:none;width:47px;height:47px;
+ border:1px solid #296959;border-radius:14px;background:#163f3b;
+ color:#58e3c3;font-size:22px;font-weight:850}
+.coti-offer-identity{min-width:0;flex:1}
+.coti-offer-identity h2{color:#f5fbfb;font-weight:760;font-size:clamp(18px,3vw,22px);
+ line-height:1.2;letter-spacing:-.03em;margin:4px 0}
+.coti-offer-identity p{font-size:12px;margin:0;color:#a8bec8}
+.coti-doc-tag{border:1px solid #355565;color:#c7dadf;align-self:flex-start;
+ border-radius:8px;padding:6px 10px;font-size:11px;font-weight:800}
+.coti-metrics{display:grid;grid-template-columns:minmax(0,1.18fr) minmax(0,1fr);
+ gap:13px;margin:22px 0}
+.coti-total-panel,.coti-coverage-panel{min-width:0;border:1px solid #2b4855;
+ border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:9px}
+.coti-total-panel{background:linear-gradient(140deg,#144b44,#163b42 70%,#183a45)}
+.coti-coverage-panel{background:#182e3f}
+.coti-metric-label{font-size:12px;color:#b6c9cf;font-weight:750}
+.coti-total-value{color:#76efcc;font-size:clamp(26px,5vw,38px);font-weight:820;
+ letter-spacing:-.05em;line-height:1.12;overflow-wrap:anywhere}
+.coti-coverage-value{color:#f0f9f9;font-size:clamp(28px,4.5vw,38px);font-weight:800;line-height:1.1}
+.coti-coverage-value span{font-size:18px;font-weight:600;color:#adc2cb}
+.coti-coverage-unknown{color:#f1e9cc;font-size:19px;line-height:1.3}
+.coti-total-panel small,.coti-coverage-panel small{color:#b6cbd0;font-size:11px;
+ line-height:1.45}
+.coti-offer-section{padding:2px 0 4px}
+.coti-offer-section h3{font-size:15px;color:#eef7f7;margin:4px 0 14px}
+.coti-condition-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.coti-condition{border:1px solid #2c4856;border-radius:12px;background:#172d3e;
+ padding:13px 12px;min-height:78px;display:flex;flex-direction:column;gap:8px}
+.coti-condition span{font-size:11px;color:#92afbd}
+.coti-condition strong{color:#e4f0f2;font-size:12px;font-weight:750;
+ line-height:1.38;overflow-wrap:anywhere}
+.coti-review-notice{margin:18px 0 4px;background:#2a2b28;border:1px solid #736144;
+ border-radius:12px;padding:13px 16px}
+.coti-review-notice strong{color:#ffe9ae;font-size:13px}
+.coti-review-notice p,.coti-review-notice li,
+.coti-review-notice small{color:#ead7b5;font-size:12px;line-height:1.55}
+.coti-review-notice ul{margin:8px 0;padding-left:20px}
+.coti-minor-note{color:#b9cbd2;font-size:12px;margin:16px 0}
+.coti-analysis-details{border-top:1px solid #2b4554;
+ border-bottom:1px solid #2b4554;margin:22px 0 20px;padding:5px 0}
+.coti-analysis-details summary{display:flex;align-items:center;justify-content:space-between;
+ gap:15px;cursor:pointer;font-size:13px;font-weight:720;color:#d9ebea;
+ list-style:none;padding:13px 2px}
+.coti-analysis-details summary::-webkit-details-marker{display:none}
+.coti-analysis-details summary:focus-visible{outline:2px solid #43dbb7;outline-offset:3px}
+.coti-analysis-details summary:after{content:"+";font-size:20px;color:#55dbba}
+.coti-analysis-details[open] summary:after{content:"−"}
+.coti-details-count{background:#27463e;color:#6bedc4;border-radius:20px;
+ padding:3px 9px;font-size:11px;margin-left:auto}
+.coti-evidence-list{margin:0 0 12px;padding:0 0 0 18px}
+.coti-evidence-list li{padding:7px 0 10px;font-size:13px;line-height:1.5}
+.coti-evidence-list p{color:#e0eced;margin:0 0 5px}
+.coti-evidence-list small{color:#9eb7c0;font-size:11px}
+.coti-buyer-portal .coti-download{width:100%;margin:0;padding:16px 22px;
+ border-radius:12px;font-size:15px;box-shadow:0 8px 22px #0bd29a21}
+.coti-footer-note{text-align:center;font-size:11px!important;margin:13px 0 0!important;
+ color:#849eac!important}
+.coti-empty{border:1px dashed #41606d;border-radius:14px;padding:24px;color:#aac1ca}
+@media(max-width:650px){
+ .coti-buyer-portal.panel{width:calc(100% - 24px);margin:25px auto 70px}
+ .coti-offer{padding:17px;border-radius:18px}
+ .coti-offer-header{gap:10px}
+ .coti-supplier-icon{width:41px;height:41px;font-size:19px}
+ .coti-metrics{grid-template-columns:1fr}
+ .coti-total-panel,.coti-coverage-panel{padding:17px}
+ .coti-condition-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .coti-dashboard-top{align-items:flex-start}
+ .coti-dashboard-actions{width:100%}
+ .coti-buyer-portal .coti-dashboard-actions button{flex:1}
+}
+
+/* D017 MI COTIRONDA: dashboard histórico, sin afectar tarjetas de presupuesto. */
+.coti-profile-shell{width:min(910px,calc(100% - 34px));margin:38px auto 95px;min-height:58vh}
+.coti-profile-heading{margin-bottom:27px}
+.coti-profile-heading h1{font-size:clamp(29px,5.1vw,44px);letter-spacing:-.05em;
+ line-height:1.09;color:#f3fbfb;margin:8px 0 9px}
+.coti-profile-heading p{max-width:620px;color:#9fb9c4;font-size:14px;line-height:1.6;margin:0}
+.coti-profile-welcome{display:flex;align-items:center;justify-content:space-between;gap:18px;
+ padding:25px;border:1px solid #2b5159;border-radius:19px;
+ background:linear-gradient(105deg,#18433e 0%,#172f42 78%);margin-bottom:16px}
+.coti-profile-welcome h2{font-size:clamp(19px,3.2vw,24px);
+ color:#f4fafb;line-height:1.2;letter-spacing:-.028em;margin:9px 0}
+.coti-profile-welcome p{font-size:13px;color:#b0c9cb;line-height:1.55;margin:0}
+.coti-profile-welcome .button{white-space:nowrap}
+.coti-profile-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:32px}
+.coti-profile-stats>div{border:1px solid #2b4756;border-radius:14px;
+ background:#132a3a;padding:17px;display:flex;flex-direction:column;gap:8px}
+.coti-profile-stats span{font-size:12px;color:#9fb8c5;font-weight:650}
+.coti-profile-stats strong{font-weight:800;font-size:30px;line-height:1.12;color:#ebf8f8}
+.coti-history-group{margin:24px 0}
+.coti-history-title{display:flex;align-items:baseline;justify-content:space-between;
+ flex-wrap:wrap;gap:8px 12px;margin-bottom:13px}
+.coti-history-title h2{font-size:18px;letter-spacing:-.02em;color:#eaf6f6;margin:0}
+.coti-history-title>span{font-size:12px;color:#95b0bc}
+.coti-history-item{display:flex;align-items:center;gap:15px;border:1px solid #294858;
+ border-radius:15px;background:#132938;padding:17px;margin:9px 0;
+ transition:background-color .15s,border-color .15s;min-width:0}
+.coti-history-item:hover,.coti-history-item:focus-visible{background:#1a3845;
+ border-color:#55caae;outline:none}
+.coti-history-date-icon{flex:none;width:57px;height:57px;border-radius:12px;
+ background:#193f3f;border:1px solid #2d645d;display:flex;flex-direction:column;
+ justify-content:center;align-items:center;gap:1px}
+.coti-history-date-icon>span{font-size:22px;font-weight:800;color:#71e9cb;line-height:1}
+.coti-history-date-icon>small{font-size:11px;color:#c3ddd7;text-transform:uppercase}
+.coti-history-details{min-width:0;flex:1}
+.coti-history-mainline{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.coti-history-mainline>strong{font-size:15px;line-height:1.4;color:#eff9fa;font-weight:750}
+.coti-history-state{padding:3px 8px;border-radius:7px;font-size:10px;
+ font-weight:800;line-height:1.5}
+.coti-history-state.active{background:#164439;color:#67efbf}
+.coti-history-state.closed{background:#2d3a4c;color:#c8d8e3}
+.coti-history-state.draft{background:#443b2c;color:#ebd1a0}
+.coti-history-details p{font-size:12px;margin:4px 0 6px;color:#a7beca;line-height:1.45}
+.coti-history-documents{color:#7ee1c7;font-size:12px;line-height:1.45}
+.coti-history-chevron{flex:none;font-size:30px;color:#72c4b4;font-weight:300;
+ line-height:1}
+.coti-profile-privacy{color:#829eae;font-size:12px;line-height:1.6;margin:24px 0}
+.coti-profile-message{background:#172f3d;border:1px solid #31515d;
+ padding:25px;border-radius:16px;color:#cadce0;font-size:14px;line-height:1.6}
+.coti-profile-message h2{font-size:18px;color:#eff9fa;margin:0 0 10px}
+.coti-profile-message p{margin:4px 0 12px}
+.coti-profile-message a{color:#6be9c4;text-decoration:underline}
+.coti-back-link{display:inline-flex;align-items:center;margin:3px 0 26px;
+ font-size:13px;font-weight:700;color:#75e3c6;min-height:30px}
+.coti-back-link:hover{text-decoration:underline}
+.coti-profile-shell .coti-buyer-dashboard .coti-dashboard-top{margin-top:0}
+@media(max-width:650px){
+ .coti-profile-shell{width:calc(100% - 26px);margin:26px auto 70px}
+ .coti-profile-welcome{padding:18px;align-items:flex-start;flex-direction:column}
+ .coti-profile-welcome button{width:100%}
+ .coti-profile-stats{gap:7px;margin-bottom:26px}
+ .coti-profile-stats>div{padding:13px 10px}
+ .coti-profile-stats span{font-size:10px;line-height:1.35}
+ .coti-profile-stats strong{font-size:26px}
+ .coti-history-item{padding:12px;gap:10px}
+ .coti-history-date-icon{width:46px;height:49px}
+ .coti-history-date-icon>span{font-size:20px}
+ .coti-history-mainline>strong{font-size:13px}
+ .coti-history-details p,.coti-history-documents{font-size:11px}
+ .coti-history-chevron{font-size:24px}
+}
+
+
+/* COTIRONDA CLEAN BLUE V2: sólo vistas del comprador con sesión privada.
+   Sin cambios a alta, WhatsApp, original, rutas o API. Mobile first. */
+body:has(.coti-clean){background:#f5f7fc;color:#14253e}
+body:has(.coti-clean) .top{background:#06183b;border-bottom:1px solid #163262;box-shadow:0 2px 14px #04112d18}
+body:has(.coti-clean) .top .wrap{min-height:66px;max-width:760px}
+body:has(.coti-clean) .logo{color:#fff;font-size:21px;letter-spacing:-.04em}
+body:has(.coti-clean) .logo span{color:#fff}
+body:has(.coti-clean) .status,body:has(.coti-clean) .foot{display:none}
+.coti-clean.coti-profile-shell{width:min(710px,calc(100% - 28px));margin:30px auto 70px;min-height:74vh}
+.coti-clean.coti-buyer-portal.panel{width:min(710px,calc(100% - 28px));margin:28px auto 70px;
+ padding:0;background:transparent;border:0;box-shadow:none}
+.coti-clean .coti-profile-heading{margin-bottom:16px}
+.coti-clean .coti-profile-heading h1,.coti-clean.coti-buyer-portal>h1{
+ color:#122443;font-size:clamp(24px,4.2vw,32px);letter-spacing:-.035em;
+ line-height:1.22;margin:0 0 8px;font-weight:800}
+.coti-clean .coti-profile-heading p{color:#62748b;font-size:13px;margin:0;line-height:1.4}
+.coti-clean .coti-back-link{color:#1555a9;margin:0 0 20px;font-weight:750}
+.coti-clean .coti-clean-profilebar{display:flex;align-items:center;justify-content:space-between;
+ gap:12px;min-height:42px;padding-bottom:9px;color:#718095;font-size:12px}
+.coti-clean .coti-clean-profilebar>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.coti-clean .coti-clean-account-tools{position:relative;flex:none;font-size:12px}
+.coti-clean .coti-clean-account-tools>summary{cursor:pointer;list-style:none;
+ color:#1757bd;font-weight:700;padding:7px 9px;border-radius:8px}
+.coti-clean .coti-clean-account-tools>summary::-webkit-details-marker{display:none}
+.coti-clean .coti-clean-account-tools>summary:focus-visible,
+.coti-clean button:focus-visible,.coti-clean a:focus-visible,.coti-clean summary:focus-visible{
+ outline:3px solid #86b5ff;outline-offset:2px}
+.coti-clean .coti-clean-account-menu{position:absolute;z-index:8;right:0;top:100%;
+ background:#fff;border:1px solid #d8e3f0;border-radius:12px;padding:9px;
+ width:min(270px,75vw);box-shadow:0 10px 30px #223c612e}
+.coti-clean .coti-clean-account-menu button{display:block;text-align:left;width:100%;
+ background:#fff;border:0;color:#163b77;font-size:12px;padding:11px;border-radius:8px}
+.coti-clean .coti-clean-account-menu button:hover{background:#f1f6ff}
+.coti-clean .coti-clean-account-menu p{font-size:11px;color:#4b6078;padding:0 9px}
+.coti-clean .coti-history-group{margin:17px 0 26px}
+.coti-clean .coti-history-title{margin-bottom:11px}
+.coti-clean .coti-history-title h2{color:#142b4c;font-size:16px;font-weight:800}
+.coti-clean .coti-history-item{background:#fff;border:1px solid #dce5f0;
+ border-radius:13px;padding:13px;gap:12px;margin:8px 0;
+ box-shadow:0 2px 7px #2039580b;min-height:74px;color:#14253e}
+.coti-clean .coti-history-item.coti-history-active{background:#eff5ff;border-color:#92b9ff}
+.coti-clean .coti-history-item:hover,.coti-clean .coti-history-item:focus-visible{
+ background:#f3f7ff;border-color:#1758b5;outline-offset:2px}
+.coti-clean .coti-history-date-icon{background:#eaf2ff;border:0;
+ border-radius:10px;width:49px;height:49px}
+.coti-clean .coti-history-date-icon>span{color:#155bb5;font-size:20px}
+.coti-clean .coti-history-date-icon>small{color:#4876b5;font-size:10px}
+.coti-clean .coti-history-mainline>strong{color:#152940;font-size:14px;line-height:1.3}
+.coti-clean .coti-history-details p{color:#65778e;margin:3px 0;font-size:12px}
+.coti-clean .coti-history-documents{color:#155bb5;font-size:12px;font-weight:750}
+.coti-clean .coti-history-archive{color:#8997a7;font-size:11px}
+.coti-clean .coti-history-state{border-radius:99px;font-size:10px;white-space:nowrap;
+ font-weight:750;padding:5px 8px}
+.coti-clean .coti-history-state.active{background:#d5f5e3;color:#146c43}
+.coti-clean .coti-history-state.closed{background:#e9edf3;color:#4a5c73}
+.coti-clean .coti-history-state.draft{background:#fff0d0;color:#815814}
+.coti-clean .coti-history-chevron{font-size:26px;color:#4171bc}
+.coti-clean .coti-clean-drafts{margin-top:20px}
+.coti-clean .coti-clean-drafts>summary{list-style:none;cursor:pointer;color:#1d456f;
+ font-size:15px;font-weight:750;padding:8px 0}
+.coti-clean .coti-clean-drafts>summary::-webkit-details-marker{display:none}
+.coti-clean .coti-profile-privacy,.coti-clean .coti-clean-muted{
+ color:#718199;font-size:12px;line-height:1.5}
+.coti-clean .coti-profile-message{background:#fff;border:1px solid #dce6f2;
+ color:#18324d;border-radius:14px;padding:18px;font-size:13px}
+.coti-clean .coti-profile-message a{color:#1758b5}
+.coti-clean .coti-profile-message .button{background:#1758b5;color:#fff}
+.coti-clean .coti-clean-bids-heading{display:flex;align-items:center;justify-content:space-between;
+ gap:12px;margin:16px 0 17px}
+.coti-clean .coti-clean-bids-heading h2{font-size:16px;font-weight:800;
+ margin:0;color:#152b49}
+.coti-clean .coti-clean-bid{border:1px solid #dce5f0;border-radius:15px;
+ padding:18px;background:#fff;box-shadow:0 3px 12px #1b365b10;
+ margin-bottom:13px;color:#172b44}
+.coti-clean .coti-clean-bid-primary{display:flex;align-items:center;gap:13px}
+.coti-clean .coti-clean-supplier-avatar{display:grid;place-items:center;
+ background:#dfedff;color:#1555a9;border-radius:12px;width:46px;height:46px;
+ font-size:22px;font-weight:850;flex:none}
+.coti-clean .coti-clean-bid-identity{min-width:0}
+.coti-clean .coti-clean-bid-identity h3{color:#152940;font-weight:750;font-size:15px;
+ margin:0 0 5px;line-height:1.3;overflow-wrap:anywhere}
+.coti-clean .coti-clean-bid-price{color:#1555a9;font-size:clamp(23px,4.5vw,31px);
+ font-weight:850;line-height:1.12;letter-spacing:-.035em;overflow-wrap:anywhere}
+.coti-clean .coti-clean-coverage{display:inline-flex;align-items:center;gap:8px;
+ border-radius:9px;color:#17754c;background:#eaf8ef;font-weight:700;
+ font-size:12px;line-height:1.3;padding:7px 10px;margin:13px 0 14px;max-width:100%}
+.coti-clean .coti-clean-coverage.caution{background:#fff4dd;color:#875800}
+.coti-clean .coti-clean-coverage>span:first-child{font-weight:900}
+.coti-clean .coti-clean-bid-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.coti-clean .coti-clean-bid-actions button{min-width:0;width:100%;min-height:42px;
+ border-radius:10px;padding:10px 9px;font-size:12px;font-weight:780}
+.coti-clean .coti-clean-detail-button{background:#1758b5;color:#fff;border:1px solid #1758b5}
+.coti-clean .coti-clean-pdf-button{background:#fff;color:#1555a9;border:1px solid #1758b5}
+.coti-clean .coti-clean-bid-expanded{border-top:1px solid #e7eef5;
+ margin-top:16px;padding-top:16px}
+.coti-clean .coti-clean-bid-expanded h4{font-size:13px;color:#253e59;margin:0 0 12px}
+.coti-clean .coti-clean-terms{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+ margin:0;gap:8px}
+.coti-clean .coti-clean-terms>div{border:1px solid #e1e9f2;border-radius:9px;
+ padding:10px;background:#f8fbff;min-width:0}
+.coti-clean .coti-clean-terms dt{color:#748299;font-size:11px;margin-bottom:5px}
+.coti-clean .coti-clean-terms dd{color:#253b55;font-size:12px;font-weight:700;
+ overflow-wrap:anywhere;margin:0;line-height:1.35}
+.coti-clean .coti-clean-alert{margin-top:14px;padding:12px;border-radius:9px;
+ background:#fff6e8;color:#78521a;font-size:12px}
+.coti-clean .coti-clean-alert strong{font-size:12px}
+.coti-clean .coti-clean-alert ul{padding-left:16px}
+.coti-clean .coti-clean-evidence{margin-top:14px;border-top:1px solid #e7eef5;
+ padding-top:12px;font-size:12px}
+.coti-clean .coti-clean-evidence summary{cursor:pointer;color:#1555a9;font-weight:750;
+ list-style:none;padding:5px 0}
+.coti-clean .coti-clean-evidence summary::-webkit-details-marker{display:none}
+.coti-clean .coti-clean-evidence ul{padding-left:18px}
+.coti-clean .coti-clean-evidence li{line-height:1.5;margin:11px 0}
+.coti-clean .coti-clean-evidence small{color:#7c8da2;font-size:11px;overflow-wrap:anywhere}
+.coti-clean .coti-clean-source-note{display:block;color:#7f8ea1;margin-top:12px;font-size:11px}
+.coti-clean .coti-clean-empty,.coti-clean .coti-clean-error{padding:16px;
+ color:#385170;background:#fff;border:1px solid #dce5f0;border-radius:12px}
+.coti-clean .coti-clean-error{color:#8f2e2e;background:#fff4f4}
+.coti-clean .coti-clean-final{border:1px solid #cddcf0;background:#fff;
+ border-radius:13px;padding:14px 17px;margin-top:20px;font-size:13px}
+.coti-clean .coti-clean-final>summary{color:#1555a9;font-weight:800;cursor:pointer}
+.coti-clean .coti-clean-final p,.coti-clean .coti-clean-final li{line-height:1.5}
+@media(max-width:560px){
+ .coti-clean.coti-profile-shell{margin:22px auto 55px}
+ .coti-clean .coti-history-item{padding:11px 10px;gap:9px}
+ .coti-clean .coti-history-date-icon{width:43px;height:43px}
+ .coti-clean .coti-history-date-icon>span{font-size:18px}
+ .coti-clean .coti-history-mainline>strong{font-size:12px}
+ .coti-clean .coti-history-state{font-size:9px;padding:4px 6px}
+ .coti-clean .coti-history-chevron{font-size:22px}
+ .coti-clean .coti-clean-bid{padding:15px}
+ .coti-clean .coti-clean-bid-price{font-size:25px}
+ .coti-clean .coti-clean-terms{gap:6px}
+ .coti-clean .coti-clean-terms>div{padding:9px 7px}
+ .coti-clean .coti-clean-terms dd{font-size:11px}
+}
+@media(prefers-reduced-motion:reduce){
+ .coti-clean .coti-history-item{transition:none}
+}
+
+
+/* D018: pantalla de acceso por WhatsApp dentro del mismo sistema visual privado. */
+.coti-access-clean.panel{
+ width:min(530px,calc(100% - 30px));margin:55px auto 100px;
+ padding:31px;background:#fff;border:1px solid #e1e8f3;
+ border-radius:18px;box-shadow:0 10px 35px #23426a12;color:#20334c
+}
+.coti-access-clean .eyebrow{color:#1758b5;font-size:10px;letter-spacing:.10em}
+.coti-access-clean.panel h1{color:#132947;font-size:clamp(26px,5vw,35px);
+ letter-spacing:-.04em;line-height:1.2;margin:10px 0}
+.coti-access-clean.panel p{color:#697a91;font-size:13px;line-height:1.65}
+.coti-access-clean.panel button,.coti-access-clean.panel .button{
+ background:#1758b5;color:#fff;border-radius:10px;font-size:13px;
+ min-height:43px;max-width:100%
+}
+.coti-access-clean.panel .feedback{background:#edf5ff;color:#315b99;
+ border:1px solid #d9e7ff}
+.coti-access-clean.panel a{color:#075ccc}
+@media(max-width:560px){
+ .coti-access-clean.panel{padding:22px 18px;margin:30px auto 65px}
+}
+
+/* D019 refinamiento comercial: sobre el portal que ya descarga originales. */
+html:has(.coti-clean){background:#f5f7fc;color-scheme:light;min-height:100%}
+body:has(.coti-clean){background:#f5f7fc;min-height:100dvh}
+body:has(.coti-clean) .top .wrap{min-height:52px}
+body:has(.coti-clean) .logo{font-size:18px}
+.coti-clean.coti-profile-shell{margin:21px auto 48px;min-height:unset}
+.coti-clean.coti-buyer-portal.panel{margin:22px auto 48px}
+.coti-clean .coti-profile-heading{margin-bottom:14px}
+.coti-clean .coti-profile-heading h1{font-size:clamp(23px,3.9vw,29px);line-height:1.15}
+.coti-clean .coti-profile-heading p{font-size:12px}
+.coti-clean .coti-history-group{margin:15px 0 20px}
+.coti-clean .coti-history-item{min-height:56px;padding:9px 11px;gap:10px;margin:6px 0}
+.coti-clean .coti-history-item.coti-history-active{
+ background:#eef5ff;border:1.5px solid #78a9ff;box-shadow:0 3px 13px #1555a914}
+.coti-clean .coti-history-item.coti-history-active .coti-history-documents{
+ color:#074cb9;font-weight:850}
+.coti-clean .coti-history-date-icon{height:39px;width:39px;border-radius:8px}
+.coti-clean .coti-history-date-icon>span{font-size:17px}
+.coti-clean .coti-history-date-icon>small{font-size:9px}
+.coti-clean .coti-history-mainline>strong{font-size:12px}
+.coti-clean .coti-history-details p{font-size:11px;margin:2px 0}
+.coti-clean .coti-history-documents{font-size:11px}
+.coti-clean .coti-history-state{font-size:9px;padding:4px 7px}
+.coti-clean .coti-history-chevron{font-size:20px}
+.coti-clean .coti-history-archive{font-size:11px;color:#7a879a;line-height:1.5;margin:12px 2px}
+.coti-clean .coti-clean-profilebar{min-height:30px}
+.coti-clean .coti-clean-bids-heading{margin:12px 0 10px}
+.coti-clean .coti-clean-bids-heading h2{font-size:15px}
+.coti-clean .coti-clean-bid{padding:14px;margin-bottom:10px;border-radius:13px}
+.coti-clean .coti-clean-bid-primary{gap:10px}
+.coti-clean .coti-clean-supplier-avatar{height:39px;width:39px;font-size:19px;border-radius:10px}
+.coti-clean .coti-clean-bid-identity h3{font-size:14px;margin-bottom:3px}
+.coti-clean .coti-clean-bid-price{display:block;font-size:clamp(22px,4vw,27px);line-height:1.15}
+.coti-clean .coti-clean-amount-kind{display:block;font-size:11px;color:#75869b;margin-top:4px}
+.coti-clean .coti-clean-coverage{font-size:11px;margin:9px 0 11px;padding:5px 8px}
+.coti-clean .coti-clean-bid-actions{gap:8px}
+.coti-clean .coti-clean-bid-actions button{
+ min-height:38px;padding:8px 6px;font-size:12px;border-radius:9px}
+.coti-clean .coti-clean-bid-expanded{margin-top:13px;padding-top:13px}
+.coti-clean .coti-clean-bid-expanded h4{margin-bottom:9px}
+.coti-clean .coti-clean-insights{padding-left:17px;margin:0 0 12px}
+.coti-clean .coti-clean-insights li{margin:7px 0;line-height:1.45;font-size:12px}
+.coti-clean .coti-terms-heading{margin-top:12px!important}
+.coti-clean .coti-clean-terms{gap:5px}
+.coti-clean .coti-clean-terms>div{background:#f8fbff;border:1px solid #e6edf7;
+ border-radius:7px;padding:7px}
+.coti-clean .coti-clean-terms dt{font-size:10px;margin-bottom:3px}
+.coti-clean .coti-clean-terms dd{font-size:11px;font-weight:720}
+.coti-clean .coti-clean-evidence{margin-top:12px}
+.coti-clean .coti-clean-evidence summary{font-size:11px}
+.coti-clean .coti-request-list{margin:0 0 13px;background:#fff;
+ border:1px solid #dce7f4;border-radius:11px;padding:0 12px;color:#18385b}
+.coti-clean .coti-request-list summary{cursor:pointer;list-style:none;
+ font-size:12px;font-weight:750;color:#1758b5;padding:12px 0}
+.coti-clean .coti-request-list summary::-webkit-details-marker{display:none}
+.coti-clean .coti-request-list ol{margin:0 0 12px;padding-left:20px}
+.coti-clean .coti-request-list li{font-size:12px;line-height:1.5;margin:5px 0}
+.coti-clean .coti-clean-final{margin-top:24px;padding:16px}
+.coti-clean .coti-clean-final h2{font-size:19px;color:#142b4c;margin:0 0 9px}
+.coti-clean .coti-clean-final>p{color:#4b617c;line-height:1.55;margin:8px 0 16px}
+.coti-clean .coti-final-list{display:grid;gap:10px}
+.coti-clean .coti-final-supplier{border:1px solid #dce7f5;border-radius:10px;padding:12px;background:#fbfdff}
+.coti-clean .coti-final-supplier h3{font-size:14px;color:#163c6c;margin:0 0 10px}
+.coti-clean .coti-final-offer{border-top:1px solid #e5edf7;padding:9px 0}
+.coti-clean .coti-final-offer p{font-size:12px;margin:6px 0;line-height:1.45}
+.coti-clean .coti-final-offer small{display:block;color:#708198}
+.coti-clean .coti-final-amount{font-size:20px;font-weight:850;color:#155bb5}
+.coti-clean .coti-final-decision{font-weight:700;font-size:12px;color:#173b6d!important}
+.coti-clean .coti-screen-reader{position:absolute;width:1px;height:1px;overflow:hidden;
+ clip:rect(0,0,0,0);white-space:nowrap}
+.coti-clean .coti-skeleton-stack{display:grid;gap:12px;padding-top:10px}
+.coti-clean .coti-skeleton-row,.coti-clean .coti-skeleton-line{
+ border-radius:12px;background:linear-gradient(100deg,#e8eef7 0%,#f8fbff 50%,#e8eef7 100%);
+ background-size:200% 100%;animation:coti-skeleton-wave 1.7s ease-in-out infinite}
+.coti-clean .coti-skeleton-row{height:88px;border:1px solid #e4ebf5}
+.coti-clean .coti-skeleton-line{height:22px;width:70%}
+.coti-clean .coti-skeleton-line.short{width:42%}
+@keyframes coti-skeleton-wave{0%{background-position:100% 0}100%{background-position:-100% 0}}
+@media(max-width:560px){
+ .coti-clean.coti-profile-shell{margin:18px auto 35px}
+ .coti-clean .coti-history-item{padding:8px}
+ .coti-clean .coti-clean-bid{padding:12px}
+ .coti-clean .coti-clean-bid-price{font-size:24px}
+}
+@media(prefers-reduced-motion:reduce){
+ .coti-clean .coti-skeleton-row,.coti-clean .coti-skeleton-line{animation:none}
+}
+
+/* D019 material por material: lectura comercial sobria, adaptable y accesible. */
+.coti-clean .coti-clean-material-detail{margin:12px 0;padding:11px 12px;
+ background:#f8fbff;border:1px solid #e1eaf6;border-radius:10px}
+.coti-clean .coti-clean-material-detail h4{margin:0 0 10px;font-size:12px}
+.coti-clean .coti-clean-material-detail ul{padding:0;margin:0;list-style:none}
+.coti-clean .coti-clean-material-detail li{padding:9px 0;border-top:1px solid #e5edf8;
+ font-size:12px;line-height:1.5}
+.coti-clean .coti-clean-material-detail li:first-child{border-top:0}
+.coti-clean .coti-clean-material-detail li>strong{display:block;color:#142b4d}
+.coti-clean .coti-clean-material-detail li p{color:#536881;margin:5px 0}
+.coti-clean .coti-material-state{display:inline-flex;align-items:center;margin-right:4px;
+ border-radius:6px;background:#ebf3ff;color:#1257ba;font-weight:750;padding:2px 6px;
+ font-size:10px}
+.coti-clean .coti-material-state.caution{color:#876014;background:#fff1d7}
+.coti-clean .coti-final-materials{margin:18px 0}
+.coti-clean .coti-final-materials>h3{font-size:15px;color:#163c66;margin:0 0 12px}
+.coti-clean .coti-final-material{border:1px solid #e1eaf6;background:#fbfdff;
+ border-radius:10px;padding:12px;margin:9px 0}
+.coti-clean .coti-final-material h4{margin:0 0 10px;font-size:12px;
+ line-height:1.5;color:#17365a}
+.coti-clean .coti-final-material ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.coti-clean .coti-final-material li{display:grid;grid-template-columns:minmax(90px, .8fr) minmax(0, 2fr);
+ gap:10px;font-size:11px;line-height:1.5;border-top:1px solid #eaf0f7;padding-top:8px}
+.coti-clean .coti-final-material li strong{color:#17437a;overflow-wrap:anywhere}
+.coti-clean .coti-final-material li span{color:#536984;overflow-wrap:anywhere}
+.coti-clean .coti-final-guidance{padding:12px;background:#f4f8ff;border:1px solid #deebff;
+ border-radius:10px;margin:13px 0;color:#244366}
+.coti-clean .coti-final-guidance h3{font-size:13px;margin:0 0 8px}
+.coti-clean .coti-final-guidance ul{padding-left:18px;margin:0}
+.coti-clean .coti-final-guidance li{font-size:12px;line-height:1.5;margin-bottom:7px}
+@media(max-width:460px){
+ .coti-clean .coti-final-material li{grid-template-columns:minmax(0,1fr);gap:2px}
+}
+
+/* D020 identidad aportada por el propietario (logotipo C original vectorizado).
+ * Azul marino como soporte; azul real de la marca sólo como acento sereno. */
+.coti-private-brand{display:none}
+body:has(.coti-clean) .coti-legacy-brand{display:none}
+body:has(.coti-clean) a.logo.coti-private-brand{
+ display:inline-flex;align-items:center;gap:10px;
+ color:#fff;font-weight:850;font-size:23px;letter-spacing:-.045em;line-height:1
+}
+body:has(.coti-clean) a.logo.coti-private-brand img{
+ width:36px;height:39px;display:block;object-fit:contain;flex:none
+}
+body:has(.coti-clean) a.logo.coti-private-brand span{color:#fff}
+body:has(.coti-clean) .top .wrap{min-height:62px}
+body:has(.coti-clean) .logo:focus-visible{outline:2px solid #9dbff7;outline-offset:4px}
+.coti-clean .coti-request-lines{
+ list-style:none;margin:0 0 12px;padding:0;display:grid;gap:0
+}
+.coti-clean .coti-request-lines li{
+ display:grid;grid-template-columns:minmax(35px,max-content) minmax(0,1fr);
+ gap:11px;align-items:center;padding:10px 0;
+ border-top:1px solid #e6edf6;min-width:0
+}
+.coti-clean .coti-request-lines li:first-child{border-top:0}
+.coti-clean .coti-request-quantity{
+ display:inline-flex;justify-content:center;align-items:center;
+ min-width:35px;padding:6px 9px;border-radius:9px;
+ background:#e8f0fb;color:#154d99;font-size:13px;font-weight:850;
+ font-variant-numeric:tabular-nums
+}
+.coti-clean .coti-request-description{color:#1b3557;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+.coti-clean .coti-clean-detail-button:hover{background:#124a98;border-color:#124a98}
+.coti-clean .coti-clean-pdf-button:hover{background:#edf3fb}
+.coti-clean .coti-clean-bid-actions button:focus-visible{outline-color:#9cbbeb}
+@media(max-width:560px){
+ body:has(.coti-clean) a.logo.coti-private-brand{font-size:21px}
+ body:has(.coti-clean) a.logo.coti-private-brand img{width:32px;height:35px}
+ body:has(.coti-clean) .top .wrap{min-height:58px}
+}
+
+
+/* D021: original WhatsApp only after audited, private text read. */
+.coti-clean-original-message {
+ margin: 12px 0 0;
+ padding: 14px 16px;
+ border: 1px solid #d5e5e2;
+ border-radius: 16px;
+ background: #ecf8f1;
+ color: #193b35;
+}
+.coti-clean-original-message strong {
+ display: block;
+ margin-bottom: 8px;
+ font-size: .875rem;
+}
+.coti-clean-original-message pre {
+ margin: 0;
+ white-space: pre-wrap;
+ overflow-wrap: anywhere;
+ font-family: inherit;
+ font-size: .96rem;
+ line-height: 1.55;
+}
+
+
+/* D022: ficha comercial; el nombre abre modal, no dispara WhatsApp ni pagos. */
+.coti-clean .coti-supplier-name-button{
+ display:inline!important;margin:0!important;padding:0!important;
+ width:auto!important;border:0!important;border-radius:0!important;
+ background:transparent!important;color:#1457a7!important;
+ font:inherit!important;font-weight:inherit!important;text-align:left;
+ text-decoration:underline;text-decoration-color:#b4c8df;
+ text-underline-offset:4px;cursor:pointer
+}
+.coti-clean .coti-supplier-name-button:hover{color:#063c85!important}
+.coti-clean .coti-supplier-name-button:focus-visible{
+ outline:2px solid #0866ff;outline-offset:4px;border-radius:3px
+}
+.coti-profile-overlay{
+ position:fixed;inset:0;z-index:1000;padding:20px;
+ display:flex;justify-content:center;align-items:center;
+ background:#102c4d99;overflow:auto
+}
+.coti-clean .coti-supplier-profile{
+ position:relative;min-width:0;width:min(100%,460px);
+ margin:auto;border-radius:22px;border:1px solid #cbdff5;
+ box-shadow:0 30px 100px #10294970;padding:26px 22px;
+ background:#fff;color:#203954;text-align:left
+}
+.coti-clean .coti-profile-close{
+ position:absolute;top:9px;right:11px;display:grid;place-items:center;
+ width:36px!important;height:36px;padding:0!important;margin:0!important;
+ background:#edf3fc;color:#2e4f70;font-size:25px;border-radius:50%
+}
+.coti-clean .coti-profile-brand{display:flex;gap:16px;align-items:center;padding-right:27px}
+.coti-clean .coti-profile-photo,.coti-clean .coti-profile-placeholder{
+ display:grid;place-items:center;width:86px;height:86px;flex:none;
+ border-radius:18px;object-fit:cover;background:#e2efff;color:#1259af;
+ font-size:38px;font-weight:850
+}
+.coti-clean .coti-profile-brand h2{font-size:21px;font-weight:800;margin:0 0 5px;
+ color:#143352;line-height:1.25;overflow-wrap:anywhere}
+.coti-clean .coti-profile-brand p{font-size:13px;margin:0;color:#687e96}
+.coti-clean .coti-profile-fields{margin:24px 0 18px;display:grid;gap:12px}
+.coti-clean .coti-profile-fields div{border-bottom:1px solid #edf1f7;padding-bottom:10px}
+.coti-clean .coti-profile-fields dt{font-size:11px;color:#6d8195;margin-bottom:4px}
+.coti-clean .coti-profile-fields dd{font-size:14px;font-weight:650;margin:0;
+ color:#263e59;overflow-wrap:anywhere}
+.coti-clean .coti-profile-actions{display:grid;gap:9px;margin:20px 0 5px}
+.coti-clean .coti-profile-actions a,.coti-clean .coti-profile-unavailable{
+ display:block;text-align:center;border-radius:10px;padding:13px 14px;
+ font-size:13px;font-weight:750
+}
+.coti-clean .coti-profile-whatsapp{background:#168b5b;color:#fff!important}
+.coti-clean .coti-profile-maps{background:#e9f2ff;color:#1258a6!important}
+.coti-clean .coti-profile-unavailable{background:#f1f4f8;color:#718296}
+.coti-clean .coti-profile-disclaimer{margin:14px 0 0;font-size:11px;line-height:1.4;
+ color:#60758b}
+@media(max-width:520px){
+ .coti-profile-overlay{padding:12px}
+ .coti-clean .coti-supplier-profile{padding:24px 17px}
+ .coti-clean .coti-profile-photo,.coti-clean .coti-profile-placeholder{
+  width:70px;height:70px}
+}
+
+
+/* D022: ficha enlazable SSR, disponible aunque la hidratación del modal falle. */
+.coti-clean.coti-supplier-profile-page{min-height:65vh}
+.coti-clean.coti-supplier-profile-page .coti-supplier-profile{
+ width:min(100%,500px);margin:24px auto;min-width:0;
+ border:1px solid #d7e4f3;border-radius:20px;padding:24px;
+ background:#fff;box-shadow:0 8px 28px #173a6214;color:#203954;
+}
+.coti-clean.coti-supplier-profile-page .coti-profile-brand h1{
+ margin:0 0 6px;font-size:22px;line-height:1.25;overflow-wrap:anywhere;
+ color:#143352;font-weight:800;
+}
+.coti-clean.coti-supplier-profile-page .coti-profile-fields{margin:22px 0 18px}
+.coti-clean .coti-supplier-name-button{
+ -webkit-tap-highlight-color:#1457a726;
+ min-height:30px;display:inline-flex!important;align-items:center;
+}
+@media(max-width:520px){
+ .coti-clean.coti-supplier-profile-page .coti-supplier-profile{
+  margin-top:15px;padding:20px 16px;
+ }
+}

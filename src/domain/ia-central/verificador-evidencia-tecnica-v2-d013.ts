@@ -1,3 +1,4 @@
+import {leerMagnitudesV2D013} from './magnitudes-universales-v2-d013.ts';
 /** V2 D013: deterministic second gate for product-level semantic proposals.
  * This guard NEVER makes up functional equivalence, stock, price or taxes.
  * A false positive leads to internal review, not a WhatsApp request.
@@ -9,7 +10,7 @@ export type PruebaTecnicaD013=Readonly<{
  estado:'evidencia_suficiente'|'revision_interna';
  motivo:string;
  conversion:Readonly<{
-  unidad:'kg'|'l';
+  unidad:'kg'|'l'|'m3';
   cantidadSolicitadaBase:string;
   presentacionSolicitada:string;
   presentacionCatalogo:string;
@@ -17,7 +18,7 @@ export type PruebaTecnicaD013=Readonly<{
  }> | null;
 }>;
 
-type Kind='kg'|'l';
+type Kind='kg'|'l'|'m3';
 type Pack=Readonly<{kind:Kind;amount:bigint;size:string}>;
 const SEPARADOR=/[\s.,;:()\[\]{}«»"“”/\-]+/u;
 const STOP=new Set([
@@ -44,17 +45,19 @@ function normalizedWords(s:string):Set<string>{
  return new Set(tokens);
 }
 function size(s:string):Pack|null{
- const all=[...fold(s).matchAll(/(?:^|\s)(\d{1,5}(?:[.,]\d{1,3})?)\s*(kg|g|litros?|l|lt|lts|ml)(?=\s|$|[.,;])/gu)];
- if(all.length!==1)return null;
- const [,number,unit]=all[0];
- const n=BigInt(number.replace(',','.').split('.')[0]) * 1000n+
-  BigInt((number.replace(',','.').split('.')[1]??'').padEnd(3,'0'));
- if(n<=0n)return null;
- const type=/^(?:kg|g)$/u.test(unit)?'kg':'l';
- const per=/^(?:g|ml)$/u.test(unit)?1n:1000n;
- const scaled=n*per/1000n;
- if(scaled<=0n||n*per%1000n!==0n)return null;
- return {kind:type,amount:scaled,size:number+' '+unit};
+ const medidas=leerMagnitudesV2D013(s);
+ if(medidas===null)return null;
+ const fisicas=medidas.filter(m=>
+  m.dimension==='masa'||m.dimension==='volumen_liquidos'||
+  m.dimension==='volumen_aridos');
+ // Una sola presentación comercial acreditada, no elegir un número
+ // conveniente entre varios. Valores a milésimas de kg o de litro.
+ if(fisicas.length!==1||fisicas[0].valorBase%1000000n!==0n)return null;
+ const dato=fisicas[0];
+ const amount=dato.valorBase/1000000n;
+ return amount>0n?{kind:dato.dimension==='masa'?'kg':
+  dato.dimension==='volumen_aridos'?'m3':'l',
+  amount,size:dato.literal.trim()}:null;
 }
 function parseAmount(s:string):bigint|null{
  if(!/^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$/u.test(s))return null;
@@ -71,16 +74,24 @@ function mandatoryPhrase(request:string):string|null{
  return marked?.[1]??null;
 }
 function cableSize(text:string):string|null{
- const items=[...fold(text).matchAll(/\b(\d{1,3}(?:[.,]\d{1,2})?)\s*mm\s*(?:2|²)(?=\W|$)/gu)];
- if(items.length!==1)return null;
- return String(Number(items[0][1].replace(',','.')));
+ const values=leerMagnitudesV2D013(text);
+ if(values===null)return null;
+ const sections=values.filter(m=>m.dimension==='superficie'&&
+  (m.unidad==='mm2'||m.unidad==='cm2'));
+ if(sections.length!==1)return null;
+ // Valor exacto en m², no comparar grafías (2,5 mm² = 0,025 cm²).
+ return sections[0].valorBase.toString();
 }
-/** Numeric thickness / dimensions (mm) are mandatory technical attributes.
- * This is intentionally a NEGATIVE guard, not universal equivalence logic. */
+/** Espesor/dimensión técnica convertida a longitud base exacta.
+ * No confundir sección de cable (área) ni metros comprados con espesor.
+ */
 function thicknessMillimeters(text:string):string|null{
- const all=[...fold(text).matchAll(/\b(\d{1,4}(?:[.,]\d{1,2})?)\s*mm(?!\s*(?:2|²))(?=\W|$)/gu)];
- if(all.length!==1)return null;
- return String(Number(all[0][1].replace(',','.')));
+ const values=leerMagnitudesV2D013(text);
+ if(values===null)return null;
+ const thickness=values.filter(m=>m.dimension==='longitud'&&
+  (m.unidad==='mm'||m.unidad==='cm'));
+ if(thickness.length!==1)return null;
+ return thickness[0].valorBase.toString();
 }
 function materialGroup(text:string):string|null{
  const s=fold(text);
@@ -108,11 +119,19 @@ function materialGroup(text:string):string|null{
  return null;
 }
 export function verificarCorrespondenciaTecnicaD013(
- pedido:PropuestaArticulo,catalogo:string,tipo:'producto_declarado'|'alternativa_razonable'
+ pedido:PropuestaArticulo,catalogo:string,tipo:'producto_declarado'|'alternativa_razonable',
+ /** Solo autorización interna tras segunda verificación IA independiente. */
+ identidadCorroborada=false
 ):PruebaTecnicaD013{
  if(!pedido||typeof pedido.descripcion!=='string'||
   typeof pedido.evidencia!=='string'||typeof catalogo!=='string'||
   !catalogo.trim()||catalogo.length>250)return refuse('fuentes_invalidas');
+ // Una categoría administrativa sirve para clasificar o pedir precios,
+ // pero NO demuestra que exista un producto concreto en el catálogo.
+ // Caso real del piloto: «Arena/Piedra sin subtipo (categoría de cotización)».
+ // Eliminar esta falso positivo evita invitar por categoría en vez de SKU.
+ if(/\bcategoria de cotizacion\b/u.test(fold(catalogo)))
+  return refuse('entrada_de_catalogo_no_es_producto');
  const demand=[pedido.descripcion,pedido.evidencia,pedido.presentacion??'',
   pedido.aclaracion??''].join(' ');
  const supplied=fold(catalogo);
@@ -121,10 +140,15 @@ export function verificarCorrespondenciaTecnicaD013(
   return refuse('marca_excluyente_no_acreditada');
 
  const wantedGroup=materialGroup(demand),offeredGroup=materialGroup(catalogo);
- if(wantedGroup&&offeredGroup&&wantedGroup!==offeredGroup)
+ const categoriaGenerica=(g:string|null)=>g===null||
+  /_(?:tipo|uso)_desconocido$/u.test(g);
+ // Sólo una CONTRADICCIÓN técnica explícita es negativa definitiva.
+ // "cemento" frente a "cemento Portland" NO es una contradicción:
+ // una segunda IA debe decidir si hay respaldo suficiente.
+ if(wantedGroup&&offeredGroup&&wantedGroup!==offeredGroup&&
+    !categoriaGenerica(wantedGroup)&&!categoriaGenerica(offeredGroup))
   return refuse('tipo_o_aplicacion_tecnica_diferente');
- if(wantedGroup&&!offeredGroup||!wantedGroup&&offeredGroup)
-  return refuse('prestacion_tecnica_sin_acreditar');
+ const grupoIncompleto=wantedGroup!==offeredGroup;
 
  const wantedCable=cableSize(pedido.descripcion)||cableSize(pedido.evidencia),
   offeredCable=cableSize(catalogo);
@@ -136,15 +160,15 @@ export function verificarCorrespondenciaTecnicaD013(
  if(wantThickness&&wantThickness!==haveThickness)
   return refuse('dimension_tecnica_no_equivalente');
 
- // The AI's narrative is NEVER accepted as proof of a missing product;
- // product identity must have evidence in BOTH original description strings.
+ // La coincidencia literal es un atajo seguro, NO una obligación de
+ // vocabulario. Si faltan palabras comunes, una segunda lectura IA
+ // contrastará DOS descripciones originales, con decisión fail-closed.
  const buyerWords=normalizedWords(pedido.descripcion+' '+pedido.evidencia);
  const sellerWords=normalizedWords(catalogo);
- if(![...buyerWords].some(x=>sellerWords.has(x)))
-  return refuse('sin_identidad_material_comprobable');
+ const palabrasCoincidentes=[...buyerWords].some(x=>sellerWords.has(x));
 
  let conversion:PruebaTecnicaD013['conversion']=null;
- if(['bag','unit','pack','box'].includes(pedido.unidad)){
+ if(['bag','unit','pack','box','bucket'].includes(pedido.unidad)){
   const want=size(pedido.descripcion)||size(pedido.presentacion??'')||
    size(pedido.evidencia),have=size(catalogo),q=parseAmount(pedido.cantidad);
   if(want&&have){
@@ -165,5 +189,11 @@ export function verificarCorrespondenciaTecnicaD013(
    return refuse('presentacion_alternativa_sin_acreditar');
   }
  }
- return pass('identidad_material_y_restricciones_comprobadas',conversion);
+ if(grupoIncompleto&&!identidadCorroborada)
+  return refuse('prestacion_tecnica_sin_acreditar');
+ if(!palabrasCoincidentes&&!identidadCorroborada)
+  return refuse('sin_identidad_material_comprobable');
+ return pass(identidadCorroborada?
+  'identidad_conciliada_por_lecturas_independientes':
+  'identidad_material_y_restricciones_comprobadas',conversion);
 }

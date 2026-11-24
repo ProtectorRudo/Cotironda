@@ -5,6 +5,8 @@
 import {createClient} from 'npm:@supabase/supabase-js@2.118.0';
 import {procesarPendienteAutomaticoMvp292} from '../cotironda-piloto-whapi/supplier-auto-recovery-worker-mvp292.ts';
 import {procesarTextoVinculadoMvp295} from '../cotironda-piloto-whapi/supplier-linked-text-replay-mvp295.ts';
+import {procesarArchivoVinculadoV2} from '../cotironda-piloto-whapi/supplier-linked-document-replay-v2.ts';
+import {procesarTextoComercialV2} from './text-commercial-v2.ts';
 import {authorizeRecoveryMvp294} from './internal-auth-mvp294.ts';
 import {scheduleV2ShadowB4} from './v2-shadow-bridge-b4.ts';
 declare const EdgeRuntime:{waitUntil:(promise:Promise<void>)=>void};
@@ -130,7 +132,39 @@ async function execute(req:Request):Promise<Response>{
   });
   if(commercial.state==='reconciliation_required')
    return json(503,'commercial_reconciliation_required');
-  return json(200,commercial.state);
+  if(commercial.state!=='empty')return json(200,commercial.state);
+  // V2: the original may have been safely linked after its first recovery
+  // attempt failed. Never re-read its metadata or invent a new association:
+  // the existing private MVP292 replay verifies archived SHA, immutable PDF,
+  // prices, tax/discount clauses, and creates its own one-shot lease.
+  const linkedDocument=await procesarArchivoVinculadoV2({
+   enabled:true,trustedInternalWorker:true,apiKey,model,
+   documentSemanticEnabled:Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_DOCUMENT_QUOTE_ENABLED')==='true',
+   rpc:async(name,params)=>{
+    const r=await db.rpc(name,params);
+    return {data:r.data,error:r.error};
+   },
+   download:async(path)=>{
+    const r=await db.storage.from('cotironda-piloto-originals').download(path);
+    return {data:r.data,error:r.error};
+   }
+  });
+  if(linkedDocument.state==='reconciliation_required')
+   return json(503,'document_reconciliation_required');
+  if(linkedDocument.state!=='empty')return json(200,linkedDocument.state);
+  // D021: reuse the SAME scheduled, secret-authenticated tick. Extract
+  // source-backed commercial facts from an already linked TEXT one time.
+  // Never touch MVP291 association, historic MVP227 reviews, or WhatsApp.
+  const textFacts=await procesarTextoComercialV2({
+   enabled:true,apiKey,model,decrypt,shaText:digest,
+   rpc:async(name,params)=>{
+    const r=await db.rpc(name,params);
+    return {data:r.data,error:r.error};
+   }
+  });
+  if(textFacts.state==='reconciliation_required')
+   return json(503,'text_commercial_reconciliation_required');
+  return json(200,textFacts.state);
  }
  return json(200,outcome.state);
 }

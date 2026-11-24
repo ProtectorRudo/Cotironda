@@ -3,12 +3,12 @@
 # Activar exclusivamente tras «Publicalo» PILOTO, merge auditado,
 # Edge/SQL con permisos y presupuesto aprobados.
 # Servicio directo HTTPS -> Edge: NO usa pg_net ni expone secrets en SQL.
-# 13 y 43 UTC: dos veces/hora y fuera del minuto 0 (schedules pueden tardar).
+# Piloto: cada 5 min, existente, con bandera y secretos obligatorios; puede demorarse.
 # ~48 ejecuciones/día, sujeto a cuotas de GitHub Actions del repositorio.
 name: Cotironda PILOTO D016 - IA offline protegida
 on:
   schedule:
-    - cron: '13,43 * * * *'
+    - cron: '*/5 * * * *'
   workflow_dispatch:
 permissions: {}
 concurrency:
