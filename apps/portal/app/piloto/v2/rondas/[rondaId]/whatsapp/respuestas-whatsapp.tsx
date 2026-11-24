@@ -324,6 +324,25 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
      </div>}
     {expanded&&<div className="coti-clean-bid-expanded" id={'detalle-'+q.documentoId}>
      <h4>Lo importante de este presupuesto</h4>
+     <div className="coti-clean-commercial-recap" aria-label="Resumen comercial del presupuesto">
+      <p><strong>Importe declarado:</strong> {importeDeclarado??sumaCalculada??'No informado'}
+       {importeDeclarado!==null&&<span className="coti-clean-recap-kind">
+        {' · '+q.resumen.tipoImporte}
+       </span>}
+       {esSuma&&<span className="coti-clean-recap-kind">
+        {' · Suma de renglones, no total declarado'}
+       </span>}
+      </p>
+      <p><strong>Renglones cotizados:</strong> {articulosVisibles!==null?
+       articulosVisibles+(enviados!==null?' de '+enviados+' materiales consultados a este negocio':''):
+       'No informado'}</p>
+      <p><strong>Coincidencia técnica:</strong> {cover?
+       cover.identificados===cover.solicitados&&cover.adicionales===0?
+        'Los renglones coinciden automáticamente; revisá las especificaciones del original.':
+        cover.identificados+' de '+cover.solicitados+
+        ' materiales con equivalencia automática. Los demás requieren revisión.':
+       'Pendiente de verificar en el documento original.'}</p>
+     </div>
      {esSuma&&<p className="coti-clean-muted">
       Suma calculada de los importes por artículo; el total declarado por el proveedor no está confirmado. Revisá el original.
      </p>}
