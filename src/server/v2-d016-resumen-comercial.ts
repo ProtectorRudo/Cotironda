@@ -50,7 +50,8 @@ function importeCentavos(input:unknown):ImporteSeguro|null{
  }
  const m=trimmed.match(/^(\$|ARS|US\$|USD)\s*(\d[\d.,]*)$/u);
  if(!m)return null;
- const moneda=m[1]==='USD'||m[1]==='US
+ const moneda=m[1]==='USD'||m[1]==='US$'?'USD':'ARS';
+ const literal=m[2];
  let entero='',decimal='';
  if(moneda==='ARS'){
   if(/^(?:\d{1,3}(?:\.\d{3})+|\d+)(?:,\d{1,2})?$/u.test(literal)){
@@ -88,7 +89,7 @@ function sumarRenglonesCotizados(raw:unknown,validas:readonly LineaCompraV2[]|nu
  }
  const entero=String(Math.floor(total/100)).replace(/\B(?=(\d{3})+(?!\d))/gu,'.');
  const decimales=total%100;
- return (moneda==='USD'?'USD ':moneda==='NO_INFORMADA'?'':'
+ return (moneda==='USD'?'USD ':moneda==='NO_INFORMADA'?'':'$')+entero+
   (decimales?','+String(decimales).padStart(2,'0'):'');
 }
 const CONTACT=/(?:\+?\d[\s().-]?){9,}|[\w.+-]+@[\w.-]+\.\w+|https?:\/\//iu;
