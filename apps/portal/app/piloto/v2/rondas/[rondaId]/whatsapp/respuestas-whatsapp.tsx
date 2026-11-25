@@ -94,7 +94,7 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
      document.visibilityState!=='visible')return;
   const ahoraMs=Date.now();
   const pending=seleccionarAnalisisPendientesV2(
-   catalog.respuestas,historialAnalisis.current,ahoraMs);
+   catalog.respuestas.filter(q=>!q.originalesAgrupados),historialAnalisis.current,ahoraMs);
   if(pending.length===0)return;
   // Registrar ANTES de iniciar: el polling nunca duplica ejecuciones.
   registrarIntentosAnalisisV2(historialAnalisis.current,pending,ahoraMs);
@@ -328,25 +328,31 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
       onClick={()=>setExpandedDoc(expanded?null:q.documentoId)}>
       {expanded?'Ocultar análisis':'Ver análisis'}
      </button>
-     <button className="coti-clean-pdf-button" type="button"
+     {q.originalesAgrupados?
+      q.originalesAgrupados.map((id,index)=><button key={id} className="coti-clean-pdf-button" type="button"
+       disabled={busy} onClick={()=>void download(id,true)}>
+       {originalTexto?.id===id?'Ocultar mensaje '+(index+1):'Ver mensaje '+(index+1)}
+      </button>):
+      (<button className="coti-clean-pdf-button" type="button"
       disabled={busy} onClick={()=>void download(q.documentoId,
       q.formato==='WhatsApp (texto)')}>
       {q.formato==='WhatsApp (texto)'?
        originalTexto?.id===q.documentoId?'Ocultar mensaje original':'Ver mensaje original':
        q.formato==='PDF'?'PDF original':'Descargar original'}
-     </button>
+     </button>)}
     </div>
-    {q.formato==='WhatsApp (texto)'&&originalTexto?.id===q.documentoId&&
+    {q.formato==='WhatsApp (texto)'&&originalTexto&&(originalTexto.id===q.documentoId||q.originalesAgrupados?.includes(originalTexto.id))&&
      <div className="coti-clean-original-message" aria-label="Mensaje original autorizado">
       <strong>Mensaje original de WhatsApp</strong>
       <pre>{originalTexto.text}</pre>
      </div>}
     {expanded&&<div className="coti-clean-bid-expanded" id={'detalle-'+q.documentoId}>
      <h4>Lo importante de este presupuesto</h4>
+     {q.originalesAgrupados&&<p className="coti-clean-muted">Oferta enviada en {q.originalesAgrupados.length} mensajes. Se muestran juntos, sin modificar los originales. El importe total no se presume.</p>}
      {monedaAjena&&<p className="coti-clean-muted">
       El documento menciona una moneda diferente de pesos argentinos. Confirmala con el proveedor antes de comparar importes.
      </p>}
-     {diferencias.length===0&&articulosVisibles!==null&&
+     {!q.originalesAgrupados&&diferencias.length===0&&articulosVisibles!==null&&
       <p className="coti-clean-analysis-intro">
        Los materiales cotizados no presentan diferencias técnicas identificadas automáticamente. Revisá el original para confirmar especificaciones.
       </p>}
