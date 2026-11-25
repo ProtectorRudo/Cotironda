@@ -8,5 +8,5 @@ export const revalidate=0;
 export const metadata:Metadata={title:'Cotizaciones compartidas · Cotironda',robots:{index:false,follow:false},referrer:'no-referrer'};
 export default function Compartido(){
  if(!puertaWhatsappPortalD016(process.env))notFound();
- return <main className="coti-profile-shell coti-clean"><header className="coti-profile-heading"><h1>Cotizaciones compartidas</h1></header><HistorialCompartidoV2/></main>;
+ return <main className="coti-profile-shell coti-clean"><HistorialCompartidoV2/></main>;
 }

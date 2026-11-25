@@ -693,3 +693,19 @@ body:has(.coti-clean) .logo:focus-visible{outline:2px solid #9dbff7;outline-offs
 .coti-clean .coti-share-controls input{box-sizing:border-box;width:100%;min-width:0;background:#f4f7fc;color:#18324d;border:1px solid #d8e3f0;border-radius:7px;padding:8px;font-size:12px;margin:2px 0 6px}
 .coti-clean .coti-share-controls button{color:#1757bd;padding:10px 8px}
 .coti-clean .coti-share-controls button:disabled{opacity:.6;cursor:default}
+
+/* Vista de invitados: mismas tarjetas, estados, importes y escala del comprador.
+   Solo las diferencias de interacción (botones en vez de enlaces) se ajustan aquí. */
+.coti-clean .coti-shared-view .coti-history-item{width:100%;text-align:left;font:inherit;cursor:pointer}
+.coti-clean .coti-shared-round-meta{display:block;color:#65778e;font-size:11px;margin:2px 0;line-height:1.45}
+.coti-clean .coti-shared-view .coti-history-documents{display:block}
+.coti-clean .coti-shared-back,.coti-clean .coti-shared-refresh{
+ background:transparent;color:#1555a9;border:0;padding:7px 0;min-height:36px;
+ font-size:13px;font-weight:750;text-align:left;border-radius:6px
+}
+.coti-clean .coti-shared-back{margin:0 0 12px}
+.coti-clean .coti-shared-refresh{padding:7px 9px}
+.coti-clean .coti-shared-view .coti-clean-bid-identity h3.coti-shared-supplier-name{color:#1555a9}
+.coti-clean .coti-shared-one-action{grid-template-columns:minmax(0,1fr)}
+.coti-clean .coti-shared-view .coti-clean-bid-actions button{min-height:44px}
+.coti-clean .coti-shared-view .coti-clean-bid-identity{flex:1}

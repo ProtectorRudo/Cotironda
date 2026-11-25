@@ -32,3 +32,16 @@ test('Compartir cotizaciones es una opción discreta del menú, sin tarjeta perm
  const css=readFileSync('apps/portal/app/styles.css','utf8');
  assert.ok(css.includes('.coti-clean .coti-share-controls input')&&css.includes('color:#1757bd'));
 });
+
+test('Vista compartida reutiliza tarjetas y colores del portal sin añadir permisos ni acciones privadas',()=>{
+ const ui=readFileSync('apps/portal/app/piloto/v2/compartido/historial-compartido.tsx','utf8');
+ const css=readFileSync('apps/portal/app/styles.css','utf8');
+ for(const c of ['coti-history-item','coti-history-date-icon','coti-history-mainline','coti-history-state','coti-clean-bid','coti-clean-bid-price','coti-clean-amount-kind','coti-clean-coverage','coti-clean-detail-button','coti-clean-terms','coti-shared-one-action'])assert.ok(ui.includes(c),c);
+ assert.ok(ui.includes('nombreProveedor(q.comercio)')&&ui.includes('inicialProveedor(q.comercio)'));
+ assert.ok(ui.includes("r.estado==='prepared'")&&ui.includes("r.estado==='closed'"));
+ assert.ok(ui.includes('aria-expanded={expanded}')&&ui.includes('shortDate(selected.fechaMs)'));
+ assert.ok(css.includes('.coti-clean .coti-shared-view .coti-history-item{width:100%;text-align:left'));
+ assert.ok(css.includes('.coti-clean .coti-shared-one-action{grid-template-columns:minmax(0,1fr)}'));
+ assert.doesNotMatch(ui,/className="coti-profile-message"|className="button outline"|descargarOriginal|perfiles-whatsapp|originales\/|credentials:'same-origin'/);
+ assert.ok(ui.includes("credentials:'omit'")&&ui.includes("referrerPolicy:'no-referrer'"));
+});
