@@ -12,7 +12,7 @@ import {procesarCompradorCentralMvp226} from './ai-central-buyer-mvp226.ts';
 import {avisarRevisionSemanticaMvp286,aceptarRespuestaWhapiMvp287} from './ai-central-review-notice-mvp286.ts';
 import {continuarZonaCentralMvp233} from './ai-central-zone-mvp233.ts';
 import {ciudadDeRespuestaCentralMvp234,estadoClaimZonaMvp234} from './ai-central-city-mvp234.ts';
-import {procesarPresupuestoCentralMvp227} from './ai-central-supplier-mvp227.ts';
+import {procesarPresupuestoCentralMvp227,interpretarIntencionTextoProveedorV2} from './ai-central-supplier-mvp227.ts';
 import {procesarDocumentoCentralMvp245} from './ai-central-document-mvp245.ts';
 import {correlacionAutomaticaMvp291} from './supplier-auto-correlation-mvp291.ts';
 import {extraerMaterialesTextoMvp292} from './supplier-text-materials-mvp292.ts';
@@ -567,7 +567,7 @@ async function respond(req:Request):Promise<Response>{
     });
     return delivery.estado!=='conciliacion_requerida';
   };
-  const attachmentNotice=row.type==='text'&&centralSupplier&&
+  let attachmentNotice=row.type==='text'&&centralSupplier&&
     esAvisoAdjuntoProveedorMvp238(body);
   const centralBuyerText=centralConfigured&&row.type==='text'&&
     !supplierKnown&&!centralSupplier&&!webLinkCode&&
@@ -664,7 +664,7 @@ async function respond(req:Request):Promise<Response>{
    p_nonce_b64:c.nonce,p_ciphertext_b64:c.ciphertext,
    p_source_unix:row.timestamp,
    p_plaintext:body,
-   p_city:supplierQuotedId||centralSupplier
+   p_city:supplierQuotedId||centralSupplier||supplierKnown
      ?'__quoted_supplier_reply__':parsed.city,
    p_items:!centralBuyerText&&canPrepareBuyerPilot(parsed)?parsed.items:null
   });
@@ -735,6 +735,41 @@ async function respond(req:Request):Promise<Response>{
       chatHmac:chatHash,eventHmac:messageHash,recipient:row.chat_id});
     continue;
    }
+
+  // V2: archivar primero, interpretar intención antes de cualquier asociación
+  // comercial. Los controles explícitos de consentimiento/enlace ya salieron.
+  if(row.type==='text'&&(centralSupplier||supplierKnown)&&
+     !webLinkCode&&!buyerReviewCommand&&!buyerLinkCommand&&
+     !respuestaCitaPedidoMvp239(body)&&outcome(out.data)!=='unrecognized_contact'){
+    const args={p_message_hmac:messageHash,p_chat_hmac:chatHash,p_source_sha256:textHash};
+    const previous=await db.rpc('cotironda_piloto_supplier_text_intent_v2',{...args,p_intent:null});
+    if(previous.error)return json(503,'supplier_intent_storage_unavailable');
+    let intent=previous.data?.state;
+    let receiptState=previous.data?.processing_state;
+    if(intent==='classify'){
+      const model=Deno.env.get('COTIRONDA_PILOT_AI_CENTRAL_MODEL')==='gpt-6.1-sol'?'gpt-6.1-sol':'gpt-6-luna';
+      const decision=await interpretarIntencionTextoProveedorV2({
+       source:body,apiKey:Deno.env.get('COTIRONDA_PILOT_OPENAI_API_KEY')??'',model,
+       hasQuotedRequest:supplierQuotedId!==null
+      });
+      // Fallo de transporte/esquema: original privado, reintento del webhook.
+      // Un fallo de IA nunca se convierte en presupuesto.
+      if(decision===null)return json(503,'supplier_intent_retry_required');
+      // Los avisos reconocidos por el circuito de adjuntos conservan su enlace
+      // contextual; otras variantes quedan privadas hasta que llegue el archivo.
+      const normalized=decision==='attachment_notice'&&!attachmentNotice?'non_quote':decision;
+      const saved=await db.rpc('cotironda_piloto_supplier_text_intent_v2',{...args,p_intent:normalized});
+      if(saved.error)return json(503,'supplier_intent_storage_unavailable');
+      intent=saved.data?.state;receiptState=saved.data?.processing_state;
+    }
+    if(['non_quote','uncertain','already_processed','denied'].includes(intent))continue;
+    if(!['quote','attachment_notice'].includes(intent)||
+       !['needs_review','unmatched_quote'].includes(receiptState))
+      return json(503,'supplier_intent_state_invalid');
+    attachmentNotice=intent==='attachment_notice';
+    // Permite recuperar una recepción cifrada ya guardada tras fallo transitorio.
+    if(outcome(out.data)==='duplicate')out.data={state:receiptState};
+  }
    // La reserva SQL verifica identidad de comprador y cuota ANTES de
   // gastar tokens. El mensaje ya fue almacenado cifrado y con SHA original.
   // Un mensaje breve que aporta la localidad continúa el único pedido

@@ -44,7 +44,7 @@ jobs:
         with:
           node-version: '22.16.0'
       - name: Unitarias D022 y regresión D016 en código real
-        run: node --experimental-strip-types --test tests/unit/v2-d022-perfiles-proveedores.test.mjs tests/unit/v2-d016-rutas-portal.test.mjs tests/unit/v2-d016-sesion-privada.test.mjs tests/unit/v2-d016-enlace-whatsapp.test.mjs tests/unit/v2-d023-contact.test.mjs tests/unit/v2-d016-resumen-comercial.test.mjs tests/unit/v2-d016-informe-final.test.mjs
+        run: node --experimental-strip-types --test tests/unit/mvp227-recepcion-presupuesto-evaluado.test.mjs tests/unit/v2-d022-perfiles-proveedores.test.mjs tests/unit/v2-d016-rutas-portal.test.mjs tests/unit/v2-d016-sesion-privada.test.mjs tests/unit/v2-d016-enlace-whatsapp.test.mjs tests/unit/v2-d023-contact.test.mjs tests/unit/v2-d016-resumen-comercial.test.mjs tests/unit/v2-d016-informe-final.test.mjs
       - name: PostgreSQL 17 - SQL candidato, RLS, consentimiento y revocación
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/tests/ci/v2-d022-profile-pg17.sql
       - name: PostgreSQL 17 - D023, contacto cifrado y revocación comprobados

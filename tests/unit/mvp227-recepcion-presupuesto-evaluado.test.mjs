@@ -115,3 +115,16 @@ test('MVP227: error al terminar exige conciliación, sin retry de lectura',async
   interpretar:async()=>sample});
  assert.equal(r.estado,'conciliacion_requerida');
 });
+
+
+test('V2: la intención de proveedor distingue oferta, conversación, aviso y duda, sin inventar evidencia',async()=>{
+ const {interpretarIntencionTextoProveedorV2,validarIntencionTextoProveedorV2}=await import('../../supabase/functions/cotironda-piloto-whapi/ai-central-supplier-mvp227.ts');
+ for(const [source,intent] of [['Quiero más información','non_quote'],['¿Cuánto cuesta el servicio?','non_quote'],['Mañana cotizo 20 bolsas','non_quote'],['cemento 8500 la bolsa','quote'],['Todo 438000','quote'],['Te mando el PDF','attachment_notice'],['Puede ser 20','uncertain']]){
+  let calls=0;
+  const fetchImpl=async()=>{calls++;return new Response(JSON.stringify({status:'completed',output:[{type:'message',role:'assistant',content:[{type:'output_text',text:JSON.stringify({intent,evidence:source})}]}]}));};
+  assert.equal(await interpretarIntencionTextoProveedorV2({source,apiKey:'sk-test-synthetic-only-key',model:'gpt-6-luna',hasQuotedRequest:false,fetchImpl}),intent);
+  assert.equal(calls,1);
+  assert.equal(validarIntencionTextoProveedorV2({intent,evidence:'inventado'},source),null);
+ }
+ assert.equal(await interpretarIntencionTextoProveedorV2({source:'Quiero más información',apiKey:'sk-test-synthetic-only-key',model:'gpt-6-luna',hasQuotedRequest:false,fetchImpl:async()=>new Response('',{status:503})}),null);
+});
