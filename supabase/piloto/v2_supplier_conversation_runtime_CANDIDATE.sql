@@ -25,7 +25,7 @@ $fn$;
 -- Solo non_quote; nunca convertir fragmentos económicos en mensajes de consulta.
 CREATE FUNCTION public.cotironda_piloto_v2_supplier_conversation_finish_question(p_chat_hmac text,p_id uuid,p_revision bigint,p_lease uuid,p_fields text[])
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO '' AS $fn$
-DECLARE s record;g record;anchor record;f record;r jsonb;changed jsonb;
+DECLARE s record;g record;anchor record;fragment_row record;r jsonb;changed jsonb;
 BEGIN
  IF NOT public.cotironda_piloto_v2_supplier_conversation_enabled() THEN RETURN jsonb_build_object('state','disabled');END IF;
  IF p_fields IS NULL OR cardinality(p_fields)>9 OR EXISTS(SELECT 1 FROM unnest(p_fields) f WHERE f IS NULL OR f NOT IN ('city','payment','vat','deadline','materials','alternatives','freight','other','how_it_works')) THEN RETURN jsonb_build_object('state','invalid');END IF;
@@ -45,8 +45,8 @@ BEGIN
   IF changed->>'state' IS DISTINCT FROM 'non_quote' THEN RAISE EXCEPTION 'supplier anchor changed';END IF;
   r:=jsonb_build_object('state','recorded');
  END IF;
- FOR f IN SELECT * FROM cotironda_piloto_privado.v2_supplier_conversation_sources WHERE conversation_id=p_id AND message_hmac<>anchor.message_hmac LOOP
-  changed:=public.cotironda_piloto_supplier_text_intent_v2(f.message_hmac,p_chat_hmac,f.source_sha256,'non_quote');
+ FOR fragment_row IN SELECT * FROM cotironda_piloto_privado.v2_supplier_conversation_sources WHERE conversation_id=p_id AND message_hmac<>anchor.message_hmac LOOP
+  changed:=public.cotironda_piloto_supplier_text_intent_v2(fragment_row.message_hmac,p_chat_hmac,fragment_row.source_sha256,'non_quote');
   IF changed->>'state' IS DISTINCT FROM 'non_quote' THEN RAISE EXCEPTION 'supplier source changed';END IF;
  END LOOP;
  UPDATE cotironda_piloto_privado.v2_supplier_conversations SET state='done',lease=NULL,lease_until=NULL WHERE id=p_id;
