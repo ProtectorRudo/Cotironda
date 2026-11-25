@@ -10,7 +10,7 @@ const PROFILE='/piloto/v2/mi-cotironda';
 type SessionCheck='authorized'|'missing'|'unavailable';
 type Phase='checking'|'retry'|'recover';
 export function AccesoWhatsappD016(){
- // No guardar identificadores, cookies ni tickets en localStorage.
+ // No persistir credenciales ni tickets fuera de la cookie privada del servidor.
  // El ref sobrevive a la doble ejecución de efectos de React StrictMode.
  const fragment=useRef<string|null>(null);
  const [attempt,setAttempt]=useState(0);
