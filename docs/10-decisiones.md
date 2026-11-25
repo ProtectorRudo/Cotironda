@@ -1,5 +1,15 @@
 # 10 — Registro de decisiones Cotironda
 
+### Aclaración operativa D014 — decisión del propietario 25/11/2026
+
+**Pedido conversacional, sin fricción.** Un mismo pedido puede llegar en uno o varios mensajes y en formatos distintos. IA Central conserva las fuentes originales identificadas por mensaje/archivo, reúne los materiales, cantidades/unidades y aclaraciones de la misma compra; no exige reenviar ni reformatear. Los únicos datos imprescindibles son materiales suficientemente identificables (con sus cantidades) y zona de entrega. Si la localidad ya consta en el contexto inequívoco, no vuelve a preguntarla. Si la cantidad/producto no es determinable, solicita solamente el dato imprescindible, sin pedir el pedido íntegro. No mezclar compras/obras distintas ni duplicar líneas por reintentos de webhook; validar identidad, consentimiento, vínculo y evidencia por fuente. No despachar fragmentos que aún formen parte de un mismo pedido incompleto. El mecanismo concreto de agrupación y momento de cierre de la recepción debe verificarse antes de publicación.
+
+**Condiciones de solicitud al proveedor:** si el comprador no indica forma de pago, solicitar cotización de contado efectivo; si no indica IVA, solicitar precios sin IVA (base antes de impuestos, no implica venta sin factura). Los valores explícitos del comprador prevalecen individualmente sobre cada predeterminado. No exigir al comprador forma de pago, IVA, flete, marcas no excluyentes u otras condiciones accesorias. Identificar internamente cada valor como explícito o predeterminado. **Nunca aplicar esos defaults a la oferta recibida:** el proveedor puede informar otras condiciones; si omite una, mostrar No informado. No alterar archivos, importes, IVA ni evidencia original.
+
+**Recuperación autónoma del selector:** errores técnicos de una correspondencia no deben invalidar las demás. IA Central puede corregir referencias rechazadas sin releer el pedido ni exigir reenvíos; mantener los pares ya verificados, rechazar proveedores no autorizados y SKU inexistentes, conservar cobertura completa del pedido original aunque no todos los artículos tengan coincidencia. No prometer stock ni enviar a destinatarios fuera de catálogo/zona/consentimiento. Registrar razones concretas y distinguir no coincidencias comerciales de fallos técnicos.
+
+**Estado:** regla aprobada; implementación y prueba E2E pendientes. En especial, v118 conserva el pedido de texto durante la consulta de localidad, pero todavía no agrupa múltiples fuentes de materiales ni transmite los nuevos defaults comerciales.
+
 **D012 — APROBADA por el propietario, 12/11/2026 — COTIRONDA V2.**
 
 ## D013 — APROBADA 12/11/2026: selección por producto + equivalencias
