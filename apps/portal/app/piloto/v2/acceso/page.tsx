@@ -25,7 +25,8 @@ export default function AccesoDesdeWhatsappD016(){
  }
  return <main className="panel coti-clean coti-access-clean">
   <span className="eyebrow">COTIRONDA · ACCESO PRIVADO</span>
-  <h1>Mi Cotironda</h1>\n  <p>Ingresá a tus cotizaciones con el enlace privado de WhatsApp.</p>
+  <h1>Mi Cotironda</h1>
+  <p>Ingresá a tus cotizaciones con el enlace privado de WhatsApp.</p>
   <AccesoWhatsappD016/>
  </main>;
 }
