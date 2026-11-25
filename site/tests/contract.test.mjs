@@ -5,7 +5,7 @@ import {readFileSync,existsSync} from 'node:fs';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 const html=read('index.html');
 const css=read('styles.css');
-const portal='https://cotironda-portal-dev-git-feat-c9bde9-protector-rudo-s-projects.vercel.app/piloto/v2/acceso';
+const portal='https://app.cotironda.com/piloto/v2/acceso';
 
 test('La nueva home pública muestra identidad y experiencia de Cotironda',()=>{
  assert.match(html,/<!doctype html>/iu);
@@ -29,12 +29,12 @@ test('No se exponen presupuestos reales ni secretos en la web pública',()=>{
  assert.doesNotMatch(html,/Ganador automático|adjudicación automática|ranking en vivo/u);
  assert.match(html,/Demostración visual del funcionamiento/u);
 });
-test('Los enlaces privados utilizan el origen operativo, no el subdominio sin DNS',()=>{
+test('Los enlaces privados utilizan exclusivamente el dominio oficial del piloto',()=>{
  const outgoing=[...html.matchAll(/href="(https:[^"]+)"/gu)].map(x=>x[1]);
- assert.ok(outgoing.length>=3);
+ assert.equal(outgoing.length,4);
  assert.deepEqual([...new Set(outgoing)],[portal]);
  assert.match(html,/href="#empezar"/u);
- assert.doesNotMatch(html,/https:\/\/app\.cotironda\.com/u);
+ assert.doesNotMatch(html,/vercel\.app/iu);
  assert.match(html,/href="\.\/styles\.css"/u);
  assert.doesNotMatch(html,/src="\.\/app\.js"/u);
 });
