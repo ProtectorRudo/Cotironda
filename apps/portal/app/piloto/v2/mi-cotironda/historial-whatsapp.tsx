@@ -1,5 +1,5 @@
 'use client';
-import {useCallback,useEffect,useState} from 'react';
+import {useCallback,useEffect,useRef,useState} from 'react';
 import Link from 'next/link';
 
 // Estado efímero de navegación; no guardamos documentos ni identidad en storage.
@@ -45,10 +45,13 @@ function Row({r}:{r:RondaHistorialD017}){
  </Link>;
 }
 function CompartirHistorialV2(){
+ const [expanded,setExpanded]=useState(false);
+ const loaded=useRef(false);
  const [link,setLink]=useState('');
  const [busy,setBusy]=useState(false);
  const [message,setMessage]=useState('');
  async function act(action:'get'|'create'|'revoke'){
+  if(busy)return;
   setBusy(true);setMessage('');
   try{
    const res=await fetch(endpoint+'/compartir',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'x-cotironda-share':'1'},body:action});
@@ -57,24 +60,31 @@ function CompartirHistorialV2(){
    if(d.state==='active'&&typeof d.url==='string'&&d.url.startsWith(window.location.origin+'/piloto/v2/compartido#'))setLink(d.url);
    else if(d.state==='inactive')setLink('');
    else throw Error('invalid');
+   loaded.current=true;
    if(action==='revoke')setMessage('Enlace desactivado.');
   }catch{setMessage('No se pudo gestionar el enlace. Volvé a intentar.')}
   finally{setBusy(false)}
  }
- useEffect(()=>{void act('get')},[]);
+ function toggle(){
+  const next=!expanded;
+  setExpanded(next);
+  if(next&&!loaded.current&&!busy)void act('get');
+ }
  async function copy(){
   try{await navigator.clipboard.writeText(link);setMessage('Enlace copiado.')}catch{setMessage('Seleccioná y copiá el enlace de abajo.')}
  }
- return <div className="coti-profile-message">
-  <h2>Compartir cotizaciones</h2>
-  <p>Quien tenga este enlace podrá consultar tu historial y sus importes, incluidos nuevos presupuestos, sin iniciar sesión. No podrá descargar originales ni acceder a tu cuenta.</p>
-  {!link?<button type="button" disabled={busy} onClick={()=>void act('create')}>Crear enlace compartido</button>:<>
-   <input aria-label="Enlace compartido" readOnly value={link} onFocus={e=>e.currentTarget.select()} style={{width:'100%',marginBottom:12}}/>
+ return <div className="coti-share-menu">
+  <button type="button" aria-expanded={expanded} aria-controls="coti-share-controls" onClick={toggle}>Compartir cotizaciones <span aria-hidden="true">{expanded?'−':'›'}</span></button>
+  {expanded&&<div id="coti-share-controls" className="coti-share-controls">
+   <p>Solo lectura, sin registro. Incluye nuevos presupuestos; no permite descargar originales.</p>
+   {busy&&!loaded.current?<p role="status">Consultando enlace…</p>:!loaded.current?<button type="button" disabled={busy} onClick={()=>void act('get')}>Volver a intentar</button>:!link?<button type="button" disabled={busy} onClick={()=>void act('create')}>Crear enlace compartido</button>:<>
+   <input aria-label="Enlace compartido" readOnly value={link} onFocus={e=>e.currentTarget.select()}/>
    <button type="button" disabled={busy} onClick={()=>void copy()}>Copiar enlace</button>
    {'share' in navigator&&<button type="button" disabled={busy} onClick={()=>void navigator.share({title:'Cotizaciones compartidas',url:link}).catch(()=>{})}>Compartir</button>}
    <button type="button" className="button outline" disabled={busy} onClick={()=>void act('revoke')}>Desactivar enlace</button>
   </>}
   {message&&<p role="status">{message}</p>}
+  </div>}
  </div>;
 }
 
@@ -160,6 +170,7 @@ export function HistorialWhatsappD017(){
     <summary aria-label="Opciones de acceso">Opciones</summary>
     <div className="coti-clean-account-menu">
      <button type="button" onClick={()=>void refresh()}>Actualizar historial</button>
+     <CompartirHistorialV2/>
      <button type="button" disabled={reissue==='sending'} onClick={()=>void sendNewAccess()}>
       {reissue==='sending'?'Enviando…':'Enviar acceso a mi WhatsApp'}
      </button>
@@ -168,7 +179,6 @@ export function HistorialWhatsappD017(){
     </div>
    </details>
   </div>
-  <CompartirHistorialV2/>
   {active.length>0&&<section className="coti-history-group" aria-label="Cotizaciones en curso">
    <div className="coti-history-title"><h2>En curso</h2></div>
    {active.map(r=><Row key={r.rondaId} r={r}/>)}

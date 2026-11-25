@@ -685,3 +685,11 @@ body:has(.coti-clean) .logo:focus-visible{outline:2px solid #9dbff7;outline-offs
  background:#fff;border-radius:inherit;visibility:hidden;pointer-events:none;
 }
 .coti-clean .coti-supplier-avatar-photo.is-visible{visibility:visible}
+
+/* Compartir: opción secundaria dentro del menú, nunca una tarjeta del historial. */
+.coti-clean .coti-share-menu>button{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.coti-clean .coti-share-controls{margin:0 4px 5px;padding:7px 5px;border-left:2px solid #dce6f2;min-width:0}
+.coti-clean .coti-share-controls p{margin:4px 0 8px;line-height:1.45;padding:0 6px}
+.coti-clean .coti-share-controls input{box-sizing:border-box;width:100%;min-width:0;background:#f4f7fc;color:#18324d;border:1px solid #d8e3f0;border-radius:7px;padding:8px;font-size:12px;margin:2px 0 6px}
+.coti-clean .coti-share-controls button{color:#1757bd;padding:10px 8px}
+.coti-clean .coti-share-controls button:disabled{opacity:.6;cursor:default}

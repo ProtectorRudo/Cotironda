@@ -17,3 +17,18 @@ test('guest endpoint uses capability, allowlist and separate path; no original o
  assert.ok(ui.includes("credentials:'omit'"));assert.ok(ui.includes('window.location.hash'));assert.ok(ui.includes("referrerPolicy:'no-referrer'"));
  assert.doesNotMatch(ui,/perfiles-whatsapp|originales\/|localStorage|sessionStorage/);
 });
+
+test('Compartir cotizaciones es una opción discreta del menú, sin tarjeta permanente ni cambios de permiso',()=>{
+ const ui=readFileSync('apps/portal/app/piloto/v2/mi-cotironda/historial-whatsapp.tsx','utf8');
+ const component=ui.slice(ui.indexOf('function CompartirHistorialV2'),ui.indexOf('export function HistorialWhatsappD017'));
+ const menu=ui.slice(ui.indexOf('<div className="coti-clean-account-menu">'),ui.indexOf('</details>',ui.indexOf('<div className="coti-clean-account-menu">')));
+ assert.ok(menu.includes('<CompartirHistorialV2/>'));
+ assert.equal(ui.split('<CompartirHistorialV2/>').length,2);
+ assert.ok(component.includes('useState(false)')&&component.includes('aria-expanded={expanded}')&&component.includes('{expanded&&<div'));
+ assert.ok(component.includes("if(next&&!loaded.current&&!busy)void act('get')"));
+ assert.ok(component.includes("act('create')")&&component.includes("act('revoke')")&&component.includes('navigator.clipboard.writeText(link)'));
+ assert.ok(component.includes("endpoint+'/compartir'")&&component.includes("credentials:'same-origin'"));
+ assert.doesNotMatch(component,/className="coti-profile-message"|useEffect\(\(\)=>\{void act\('get'\)/);
+ const css=readFileSync('apps/portal/app/styles.css','utf8');
+ assert.ok(css.includes('.coti-clean .coti-share-controls input')&&css.includes('color:#1757bd'));
+});
