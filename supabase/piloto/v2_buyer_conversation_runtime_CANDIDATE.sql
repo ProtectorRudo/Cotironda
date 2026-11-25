@@ -137,3 +137,24 @@ DO $acl$ DECLARE sig text; BEGIN
  EXECUTE 'GRANT EXECUTE ON FUNCTION '||sig||' TO service_role';
  END LOOP;
 END $acl$;
+
+-- Revalidar el último fragmento antes de emitir una pregunta ya reservada.
+CREATE FUNCTION public.cotironda_piloto_v2_conversation_reply_current(p_chat_hmac text,p_id uuid,p_event_hmac text)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO '' AS $fn$
+ SELECT EXISTS(SELECT 1 FROM cotironda_piloto_privado.v2_buyer_conversations g
+ JOIN cotironda_piloto_privado.participants b ON b.key=g.buyer_key AND b.chat_hmac=g.chat_hmac AND b.participant_role='buyer' AND b.consent_at IS NOT NULL AND b.opted_out_at IS NULL
+ JOIN cotironda_piloto_privado.ai_replies_mvp094 r ON r.message_hmac=p_event_hmac AND r.chat_hmac=g.chat_hmac AND r.state='leased'
+ WHERE g.id=p_id AND g.chat_hmac=p_chat_hmac AND g.state='awaiting_context'
+ AND p_event_hmac=(SELECT message_hmac FROM cotironda_piloto_privado.v2_buyer_conversation_sources WHERE conversation_id=g.id ORDER BY received_at DESC,message_hmac DESC LIMIT 1)
+ AND EXISTS(SELECT 1 FROM cotironda_piloto_privado.integration_flags WHERE only_row AND whatsapp_outbound_enabled));
+$fn$;
+CREATE FUNCTION public.cotironda_piloto_v2_conversation_link_status(p_chat_hmac text,p_id uuid,p_lease uuid,p_event_hmac text)
+RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO '' AS $fn$
+ SELECT jsonb_build_object('state',coalesce((SELECT d.state FROM cotironda_piloto_privado.v2_d016_whapi_link_deliveries d
+ JOIN cotironda_piloto_privado.v2_buyer_conversations g ON g.request_id=d.request_id AND g.buyer_key=d.buyer_key AND g.chat_hmac=d.chat_hmac
+ JOIN cotironda_piloto_privado.participants b ON b.key=g.buyer_key AND b.chat_hmac=g.chat_hmac AND b.consent_at IS NOT NULL AND b.opted_out_at IS NULL
+ WHERE g.id=p_id AND g.chat_hmac=p_chat_hmac AND g.delivery_state='processing' AND g.delivery_lease=p_lease AND g.delivery_lease_until>clock_timestamp()
+ AND d.event_hmac=p_event_hmac),'not_found'));
+$fn$;
+REVOKE ALL ON FUNCTION public.cotironda_piloto_v2_conversation_reply_current(text,uuid,text),public.cotironda_piloto_v2_conversation_link_status(text,uuid,uuid,text) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.cotironda_piloto_v2_conversation_reply_current(text,uuid,text),public.cotironda_piloto_v2_conversation_link_status(text,uuid,uuid,text) TO service_role;
