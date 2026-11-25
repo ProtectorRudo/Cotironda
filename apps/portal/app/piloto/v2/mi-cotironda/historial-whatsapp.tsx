@@ -48,20 +48,22 @@ function CompartirHistorialV2(){
  const [expanded,setExpanded]=useState(false);
  const loaded=useRef(false);
  const [link,setLink]=useState('');
+ const [originalsEnabled,setOriginalsEnabled]=useState(false);
  const [busy,setBusy]=useState(false);
  const [message,setMessage]=useState('');
- async function act(action:'get'|'create'|'revoke'){
+ async function act(action:'get'|'create'|'revoke'|'enable-originals'){
   if(busy)return;
   setBusy(true);setMessage('');
   try{
    const res=await fetch(endpoint+'/compartir',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'x-cotironda-share':'1'},body:action});
    if(!res.ok)throw Error('denied');
    const d=await res.json();
-   if(d.state==='active'&&typeof d.url==='string'&&d.url.startsWith(window.location.origin+'/piloto/v2/compartido#'))setLink(d.url);
-   else if(d.state==='inactive')setLink('');
+   if(d.state==='active'&&typeof d.url==='string'&&d.url.startsWith(window.location.origin+'/piloto/v2/compartido#')){setLink(d.url);setOriginalsEnabled(d.originalsEnabled===true)}
+   else if(d.state==='inactive'){setLink('');setOriginalsEnabled(false)}
    else throw Error('invalid');
    loaded.current=true;
    if(action==='revoke')setMessage('Enlace desactivado.');
+   if(action==='enable-originals'&&d.originalsEnabled===true)setMessage('Descargas habilitadas en el mismo enlace.');
   }catch{setMessage('No se pudo gestionar el enlace. Volvé a intentar.')}
   finally{setBusy(false)}
  }
@@ -76,9 +78,10 @@ function CompartirHistorialV2(){
  return <div className="coti-share-menu">
   <button type="button" aria-expanded={expanded} aria-controls="coti-share-controls" onClick={toggle}>Compartir cotizaciones <span aria-hidden="true">{expanded?'−':'›'}</span></button>
   {expanded&&<div id="coti-share-controls" className="coti-share-controls">
-   <p>Solo lectura, sin registro. Incluye nuevos presupuestos; no permite descargar originales.</p>
+   <p>Solo lectura, sin registro. {link&&!originalsEnabled?'Este enlace muestra resúmenes. Podés habilitar la descarga de originales autorizados.':'Incluye nuevos presupuestos y descarga de originales autorizados.'}</p>
    {busy&&!loaded.current?<p role="status">Consultando enlace…</p>:!loaded.current?<button type="button" disabled={busy} onClick={()=>void act('get')}>Volver a intentar</button>:!link?<button type="button" disabled={busy} onClick={()=>void act('create')}>Crear enlace compartido</button>:<>
    <input aria-label="Enlace compartido" readOnly value={link} onFocus={e=>e.currentTarget.select()}/>
+   {!originalsEnabled&&<button type="button" disabled={busy} onClick={()=>void act('enable-originals')}>Habilitar descarga de originales</button>}
    <button type="button" disabled={busy} onClick={()=>void copy()}>Copiar enlace</button>
    {'share' in navigator&&<button type="button" disabled={busy} onClick={()=>void navigator.share({title:'Cotizaciones compartidas',url:link}).catch(()=>{})}>Compartir</button>}
    <button type="button" className="button outline" disabled={busy} onClick={()=>void act('revoke')}>Desactivar enlace</button>

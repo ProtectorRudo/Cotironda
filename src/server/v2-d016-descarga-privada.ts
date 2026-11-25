@@ -156,3 +156,30 @@ export async function descargarConWhatsappD016(
   }});
  }catch{return deny(503)}
 }
+
+// Invitados: la capacidad ya fue verificada por el adaptador HTTP. Estos
+// puertos solo consultan la autorización delegada, nunca una sesión D016.
+export async function descargarArchivoCompartidoV2(rondaId:string,docId:string,ports:{
+ fuente:()=>Promise<unknown>;
+ leerStorage:DescargaWhatsappPortsD016['leerStorage'];
+ auditar:(sha256:string,byteCount:number)=>Promise<boolean>;
+}):Promise<Response>{
+ if(!UUID.test(rondaId)||!UUID.test(docId))return deny(400);
+ try{
+  const first=sourceValid(await ports.fuente(),rondaId,docId);
+  if(!first)return deny(404);
+  const bytes=await ports.leerStorage({bucket:first.bucket,path:first.path});
+  if(!(bytes instanceof Uint8Array)||bytes.byteLength!==first.byteCount||bytes.byteLength>MAX)return deny(404);
+  const copied=Uint8Array.from(bytes);
+  const sha=createHash('sha256').update(copied).digest('hex');
+  if(sha!==first.sha256)return deny(404);
+  const again=sourceValid(await ports.fuente(),rondaId,docId);
+  if(!again||JSON.stringify(again)!==JSON.stringify(first))return deny(404);
+  if(!await ports.auditar(sha,copied.byteLength))return deny(404);
+  return new Response(copied.buffer,{status:200,headers:{
+   ...HEADERS,'vary':'Origin','x-robots-tag':'noindex, nofollow, noarchive',
+   'content-type':first.mime,'content-length':String(copied.length),
+   'content-disposition':'attachment; filename="cotironda-original-'+docId.slice(0,8)+'.'+TYPES[first.mime]+'"'
+  }});
+ }catch{return deny(503)}
+}

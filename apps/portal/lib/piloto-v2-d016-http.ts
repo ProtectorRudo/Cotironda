@@ -21,7 +21,7 @@ import {proyectarRespuestasV2}
  from '../../../src/server/v2-03-catalogo-respondedores.ts';
 import {proyectarHistorialPrivadoD017}
  from '../../../src/server/v2-d017-historial-comprador.ts';
-import {descargarConWhatsappD016}
+import {descargarConWhatsappD016,descargarArchivoCompartidoV2}
  from '../../../src/server/v2-d016-descarga-privada.ts';
 import {leerTextoOriginalEdgeD016}
  from '../../../src/server/v2-d016-texto-edge-client.ts';
@@ -591,13 +591,13 @@ export async function gestionarHistorialCompartidoV2(req:Request,env:Record<stri
  const raw=cookieSesionD016(req);const digest=raw?digestSesionPrivadaD016(raw,gate.claveHmacHex):null;
  if(!digest)return deny();
  try{
-  const action=await req.text();if(!['get','create','revoke'].includes(action))return deny(400);
+  const action=await req.text();if(!['get','create','revoke','enable-originals'].includes(action))return deny(400);
   const out=await db.rpc('cotironda_piloto_v2_manage_shared_history',{p_sesion_hmac:digest,p_action:action});
   if(out.error)return deny(503);
   if(out.data?.state==='inactive')return Response.json({state:'inactive'},{headers:sharedHeaders});
   if(out.data?.state!=='active'||typeof out.data.shareId!=='string')return deny();
   const token=sharedHistoryToken(out.data.shareId,gate.claveHmacHex);if(!token)return deny(503);
-  return Response.json({state:'active',url:gate.origenPortal+'/piloto/v2/compartido#'+token},{headers:sharedHeaders});
+  return Response.json({state:'active',url:gate.origenPortal+'/piloto/v2/compartido#'+token,originalsEnabled:out.data.originalsEnabled===true},{headers:sharedHeaders});
  }catch{return deny(503)}
 }
 export async function leerHistorialCompartidoV2(req:Request,env:Record<string,string|undefined>=process.env):Promise<Response>{
@@ -619,9 +619,12 @@ export async function leerHistorialCompartidoV2(req:Request,env:Record<string,st
    return Response.json({estado:h.estado,cotizaciones:h.cotizaciones},{headers:sharedHeaders});
   }
   const catalog=proyectarRespuestasV2(out.data);if(!catalog)return deny();
-  // Strict allowlist: no buyer key, document IDs, raw evidence, free text,
-  // contact data, source paths, download links, or owner actions.
+  // IDs opacos únicamente para originales autorizados para invitados.
+  // La descarga vuelve a validar el token, alcance, SHA y auditoría.
+  const permitted=await db.rpc('cotironda_piloto_v2_shared_original_source',{...args,p_document_id:null});
+  const ids=new Set<string>(!permitted.error&&Array.isArray(permitted.data)?permitted.data.filter(uuid):[]);
   const ofertas=catalog.respuestas.map(q=>({
+   descargaId:ids.has(q.documentoId)?q.documentoId:null,
    comercio:q.comercio,formato:q.formato,
    importe:importeVisiblePesosV2(q.resumen.totalDeclarado??q.resumen.sumaCalculada),
    tipoImporte:q.resumen.totalDeclarado?q.resumen.tipoImporte:q.resumen.sumaCalculada?'Suma de renglones':'Importe no informado',
@@ -630,5 +633,34 @@ export async function leerHistorialCompartidoV2(req:Request,env:Record<string,st
    discrepancia:q.resumen.discrepanciaTotal
   }));
   return Response.json({estado:'cotizaciones_compartidas',ofertas},{headers:sharedHeaders});
+ }catch{return deny(503)}
+}
+
+export async function descargarCompartidoV2(req:Request,env:Record<string,string|undefined>=process.env):Promise<Response>{
+ const gate=puertaWhatsappPortalD016(env);const db=gate?privateDb(env):null;
+ if(!gate||!db)return deny(503);
+ if(!sharedPost(req,gate.origenPortal,'/api/piloto/v2/compartido/descargar'))return deny(403);
+ try{
+  const body=await req.text();if(body.length>300)return deny(400);
+  const x=JSON.parse(body) as Record<string,unknown>;
+  if(!x||typeof x!=='object'||Array.isArray(x)||Object.keys(x).length!==3||!uuid(x.rondaId)||!uuid(x.descargaId))return deny(400);
+  const shareId=verifySharedHistoryToken(x.token,gate.claveHmacHex);if(!shareId)return deny();
+  const args={p_share_id:shareId,p_request_id:x.rondaId,p_document_id:x.descargaId};
+  return descargarArchivoCompartidoV2(x.rondaId,x.descargaId,{
+   fuente:async()=>{
+    const out=await db.rpc('cotironda_piloto_v2_shared_original_source',args);
+    if(out.error)throw Error('source_unavailable');return out.data;
+   },
+   leerStorage:async({bucket,path})=>{
+    if(bucket!=='cotironda-piloto-originals'||!/^media\/[a-f0-9]{64}$/u.test(path))return null;
+    const {data,error}=await db.storage.from(bucket).download(path);
+    if(error||!data||data.size<1||data.size>8388608)return null;
+    const bytes=new Uint8Array(await data.arrayBuffer());return bytes.byteLength===data.size?bytes:null;
+   },
+   auditar:async(sha256,byteCount)=>{
+    const out=await db.rpc('cotironda_piloto_v2_shared_record_download',{...args,p_source_sha256:sha256,p_byte_count:byteCount});
+    return !out.error&&out.data===true;
+   }
+  });
  }catch{return deny(503)}
 }

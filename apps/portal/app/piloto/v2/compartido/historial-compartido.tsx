@@ -1,7 +1,7 @@
 'use client';
 import {useCallback,useEffect,useRef,useState} from 'react';
 import type {RondaHistorialD017} from '../../../../../../src/server/v2-d017-historial-comprador.ts';
-type Oferta={comercio:string;formato:string;importe:string|null;tipoImporte:string;cotizados:number|null;enviados:number|null;iva:string;flete:string;pago:string;discrepancia:boolean};
+type Oferta={descargaId:string|null;comercio:string;formato:string;importe:string|null;tipoImporte:string;cotizados:number|null;enviados:number|null;iva:string;flete:string;pago:string;discrepancia:boolean};
 const date=(ms:number)=>new Date(ms).toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric',timeZone:'America/Argentina/Buenos_Aires'});
 const shortDate=(ms:number)=>new Date(ms).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',timeZone:'America/Argentina/Buenos_Aires'});
 const nombreProveedor=(name:string)=>name.replace(/\s*·\s*prueba\s*$/iu,'');
@@ -26,8 +26,29 @@ function RoundRow({r,onSelect}:{r:RondaHistorialD017;onSelect:()=>void}){
   <span className="coti-history-chevron" aria-hidden="true">›</span>
  </button>;
 }
-function SharedOffer({q}:{q:Oferta}){
+function SharedOffer({q,rondaId}:{q:Oferta;rondaId:string}){
  const [expanded,setExpanded]=useState(false);
+ const [downloading,setDownloading]=useState(false);
+ const [downloadError,setDownloadError]=useState(false);
+ const live=useRef(true);
+ useEffect(()=>{live.current=true;return()=>{live.current=false}},[]);
+ async function download(){
+  if(downloading||!q.descargaId)return;
+  setDownloading(true);setDownloadError(false);
+  try{
+   const res=await fetch('/api/piloto/v2/compartido/descargar',{method:'POST',credentials:'omit',cache:'no-store',referrerPolicy:'no-referrer',headers:{'x-cotironda-share':'1','content-type':'application/json'},body:JSON.stringify({token:window.location.hash.slice(1),rondaId,descargaId:q.descargaId}),signal:AbortSignal.timeout(30000)});
+   if(!res.ok)throw Error('denied');
+   const fileName=res.headers.get('content-disposition')?.match(/^attachment; filename="(cotironda-original-[a-f0-9]{8}\.(?:pdf|xlsx|xls|docx|doc|jpg|png|webp|csv|txt))"$/u)?.[1];
+   if(!fileName)throw Error('invalid');
+   const blob=await res.blob();
+   if(blob.size<1||blob.size>8388608)throw Error('invalid');
+   if(!live.current)return;
+   const url=URL.createObjectURL(blob);
+   const a=document.createElement('a');a.href=url;a.download=fileName;a.style.display='none';
+   document.body.appendChild(a);a.click();a.remove();window.setTimeout(()=>URL.revokeObjectURL(url),30000);
+  }catch{if(live.current)setDownloadError(true)}
+  finally{if(live.current)setDownloading(false)}
+ }
  return <article className="coti-clean-bid">
   <div className="coti-clean-bid-primary">
    <span className="coti-clean-supplier-avatar" aria-hidden="true">{inicialProveedor(q.comercio)}</span>
@@ -40,9 +61,11 @@ function SharedOffer({q}:{q:Oferta}){
   <div className={'coti-clean-coverage'+(q.cotizados===null?' caution':'')}>
    <span>{q.cotizados===null?'Materiales por verificar':q.cotizados+' '+(q.cotizados===1?'artículo cotizado':'artículos cotizados')+(q.enviados===null?'':' · '+q.enviados+' enviados a este negocio')}</span>
   </div>
-  <div className="coti-clean-bid-actions coti-shared-one-action">
+  <div className={'coti-clean-bid-actions'+(q.descargaId?'':' coti-shared-one-action')}>
    <button type="button" className="coti-clean-detail-button" aria-expanded={expanded} onClick={()=>setExpanded(v=>!v)}>{expanded?'Ocultar resumen':'Ver resumen comercial'}</button>
+   {q.descargaId&&<button type="button" className="coti-clean-pdf-button" disabled={downloading} onClick={()=>void download()}>{downloading?'Descargando…':q.formato==='PDF'?'PDF original':'Descargar original'}</button>}
   </div>
+  {downloadError&&<p role="alert" className="coti-clean-muted">No se pudo descargar el original. Actualizá y volvé a intentar.</p>}
   {expanded&&<div className="coti-clean-bid-expanded">
    <h4>Condiciones comerciales</h4>
    <dl className="coti-clean-terms">
@@ -100,7 +123,7 @@ export function HistorialCompartidoV2(){
    <span className="coti-screen-reader">Consultando cotizaciones…</span>
   </div>:error?<p role="alert" className="coti-clean-error">El enlace no está disponible o fue desactivado.</p>:selected?<div className="coti-clean-offers">
    <div className="coti-clean-bids-heading"><h2>{offers.length} {offers.length===1?'presupuesto recibido':'presupuestos recibidos'}</h2></div>
-   {offers.length?offers.map((q,i)=><SharedOffer key={selected.rondaId+':'+i} q={q}/>):<p className="coti-clean-empty">Todavía no recibimos cotizaciones.</p>}
+   {offers.length?offers.map((q,i)=><SharedOffer key={selected.rondaId+':'+i} q={q} rondaId={selected.rondaId}/>):<p className="coti-clean-empty">Todavía no recibimos cotizaciones.</p>}
   </div>:<>
    {active.length>0&&<section className="coti-history-group" aria-label="Cotizaciones en curso">
     <div className="coti-history-title"><h2>En curso</h2></div>
@@ -112,6 +135,6 @@ export function HistorialCompartidoV2(){
    </section>}
    {!active.length&&!closed.length&&<p className="coti-clean-empty">No hay cotizaciones compartidas.</p>}
   </>}
-  <p className="coti-profile-privacy">Los originales y el acceso a la cuenta permanecen privados.</p>
+  <p className="coti-profile-privacy">Solo se pueden descargar originales autorizados. El acceso a la cuenta permanece privado.</p>
  </section>;
 }
