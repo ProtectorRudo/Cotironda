@@ -6,6 +6,7 @@ const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 const html=read('index.html');
 const css=read('styles.css');
 const portal='https://app.cotironda.com/piloto/v2/acceso';
+const contact='https://api.whatsapp.com/send?phone=5492215653163&amp;text=Hola%2C%20quiero%20m%C3%A1s%20informaci%C3%B3n%20sobre%20Cotironda.';
 
 test('La nueva home pública muestra identidad y experiencia de Cotironda',()=>{
  assert.match(html,/<!doctype html>/iu);
@@ -31,12 +32,27 @@ test('No se exponen presupuestos reales ni secretos en la web pública',()=>{
 });
 test('Los enlaces privados utilizan exclusivamente el dominio oficial del piloto',()=>{
  const outgoing=[...html.matchAll(/href="(https:[^"]+)"/gu)].map(x=>x[1]);
- assert.equal(outgoing.length,4);
- assert.deepEqual([...new Set(outgoing)],[portal]);
- assert.match(html,/href="#empezar"/u);
+ assert.equal(outgoing.length,6);
+ assert.equal(outgoing.filter(url=>url===portal).length,4);
+ assert.equal(outgoing.filter(url=>url===contact).length,2);
+ assert.deepEqual([...new Set(outgoing)].sort(),[portal,contact].sort());
+ assert.match(html,/id="empezar"/u);
  assert.doesNotMatch(html,/vercel\.app/iu);
  assert.match(html,/href="\.\/styles\.css"/u);
  assert.doesNotMatch(html,/src="\.\/app\.js"/u);
+});
+test('Los botones de información abren el contacto comercial sin enviar mensajes automáticamente',()=>{
+ const links=[...html.matchAll(/<a\b[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gu)].filter(x=>x[2].includes('Quiero más información'));
+ assert.equal(links.length,2);
+ for(const link of links){
+  assert.equal(link[1],contact);
+  const url=new URL(link[1].replaceAll('&amp;','&'));
+  assert.equal(url.origin,'https://api.whatsapp.com');
+  assert.equal(url.pathname,'/send');
+  assert.equal(url.searchParams.get('phone'),'5492215653163');
+  assert.equal(url.searchParams.get('text'),'Hola, quiero más información sobre Cotironda.');
+ }
+ assert.doesNotMatch(html,/<script\b|onclick=/iu);
 });
 test('Diseño accesible, adaptable a teléfonos y logo real',()=>{
  assert.match(html,/<meta name="viewport" content="width=device-width, initial-scale=1">/u);
