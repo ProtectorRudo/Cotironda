@@ -1,5 +1,5 @@
 'use client';
-import {useCallback,useEffect,useState} from 'react';
+import {useCallback,useEffect,useRef,useState} from 'react';
 import type {RondaHistorialD017} from '../../../../../../src/server/v2-d017-historial-comprador.ts';
 type Oferta={comercio:string;formato:string;importe:string|null;tipoImporte:string;cotizados:number|null;enviados:number|null;iva:string;flete:string;pago:string;discrepancia:boolean};
 const date=(ms:number)=>new Date(ms).toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric',timeZone:'America/Argentina/Buenos_Aires'});
@@ -9,7 +9,9 @@ export function HistorialCompartidoV2(){
  const [offers,setOffers]=useState<Oferta[]>([]);
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState(false);
+ const sequence=useRef(0);
  const refresh=useCallback(async(ronda:RondaHistorialD017|null)=>{
+  const current=++sequence.current;
   setLoading(true);setError(false);setSelected(ronda);setOffers([]);setRounds([]);
   try{
    const token=window.location.hash.slice(1);
@@ -17,10 +19,11 @@ export function HistorialCompartidoV2(){
    const res=await fetch('/api/piloto/v2/compartido',{method:'POST',credentials:'omit',cache:'no-store',referrerPolicy:'no-referrer',headers:{'x-cotironda-share':'1','content-type':'application/json'},body:JSON.stringify({token,rondaId:ronda?.rondaId??null}),signal:AbortSignal.timeout(20000)});
    if(!res.ok)throw Error('denied');
    const d=await res.json();
+   if(current!==sequence.current)return;
    if(ronda){if(d.estado!=='cotizaciones_compartidas'||!Array.isArray(d.ofertas))throw Error('invalid');setOffers(d.ofertas)}
    else{if(d.estado!=='historial_autorizado'||!Array.isArray(d.cotizaciones))throw Error('invalid');setRounds(d.cotizaciones)}
-  }catch{setError(true);setOffers([]);setRounds([])}
-  finally{setLoading(false)}
+  }catch{if(current===sequence.current){setError(true);setOffers([]);setRounds([])}}
+  finally{if(current===sequence.current)setLoading(false)}
  },[]);
  useEffect(()=>{void refresh(null)},[refresh]);
  useEffect(()=>{
