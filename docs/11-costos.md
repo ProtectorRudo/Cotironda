@@ -1,5 +1,8 @@
 # 11 — Costos y sostenibilidad
 
+> **AVISO V2 — 12/11/2026: DOCUMENTO TÉCNICO HEREDADO, NO DIRECTRIZ ACTIVA.** Modelo económico estimado, no validado. V2 requiere medir Whapi, IA por cotización y análisis general al cierre antes de fijar suscripción/uso razonable. Las reglas vigentes están en [Contrato V2](COTIRONDA-V2-CONTRATO.md), [Plan V2](PILOTO-100-PLAN-MAESTRO.md) y [Estado V2](PILOTO-100-ESTADO.md). Si contradice V2, **NO aplicar lo viejo**.
+
+
 ## Ingresos proyectados
 Comprador: ARS 10.000/mes como hipótesis inicial, sin comisiones; período gratis pendiente. Proveedor: $0. Solicitudes ilimitadas con uso razonable transparente.
 

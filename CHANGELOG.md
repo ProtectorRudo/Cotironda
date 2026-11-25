@@ -1,24 +1,33 @@
-## 2026-11-12 — MVP356: evitar ambigüedad por despachos paralelos (SOLO DESARROLLO)
-[PR #799](https://github.com/ProtectorRudo/Cotironda/pull/799): se detectaron 2 originales ambiguos con despachos simultáneos del mismo proveedor. SQL privado de guardia en ambos claims (mvp222/mvp314) con lock transaccional compartido y bandera privada OFF por defecto; PG17 de dos compradores y proveedores con ROLLBACK aprobado. **Bloqueado para publicación** hasta demostrar cron idempotente de retry sobre trabajos pending y evitar que el dispatcher legacy opere en paralelo. Actualizados [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794), plan y relevo; sin cambios de piloto ni WhatsApp.
+# Registro de cambios Cotironda
 
-## 2026-11-11 — MVP355: origen firmado y P2 más seguro (DESARROLLO)
-[PR #798](https://github.com/ProtectorRudo/Cotironda/pull/798): se bloquea la falsa atribución de un original guardado por fecha con verificación de inbox+link WhatsApp+SHA. PG17 sintético y SELECT del SQL sin instalación aprobados. Sin publicación ni E2E; [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794).
+## [PILOTO PUBLICADO] — 14/11/2026 — Pausa segura del cron cierre V1
 
-## 2026-11-11 — MVP354: tests y manifiesto de tracking (SOLO DESARROLLO)
-La regresión inicial detectó integridad MVP324; se integró el import documental en el manifiesto sin alterar baseline activo. Unidad general, Next.js y PG17 general terminaron en verde con SHA `c8a937...`; la prueba PG17 específica se ejecutó finalmente desde el workflow unitario existente: `pg17-mvp354-documental` PASS, job `130900434755`, commit `97bf726dea3add014b027c971156a79b0126390c`. Sin despliegue; no certifica E2E. PR #797 y Issue #794 conservan el semáforo pendiente.
+- Supabase `cotironda-piloto` migración **`20261114093622`**: `cotironda_v2_pause_legacy_close_cron_only_pilot_20261114`. Suspendió exclusivamente `cron.job` job1 `cotironda_piloto_close_due_5min` heredado de V1, mediante `cron.alter_job(...active=>false)` sin borrarlo. Conserva cron job3/4.
+- Preflight exige PG17, job exacto, 7 rondas (5 cerradas, 2 borradores, 0 preparadas) y todas las políticas V2 OFF. Simulación SQL en transacción `BEGIN/ROLLBACK` real comprobada y posterior migración `success=true`; poscontrol: job1 OFF, jobs3/4 ON; 7 rondas sin cambios y cero consentimientos.
+- [PR #852](https://github.com/ProtectorRudo/Cotironda/pull/852) · [Acta](docs/PILOTO-V2-CRON-V1-SUSPENDIDO-20261114.md). Rollback separado `REVIEW_ONLY` necesita autorización explícita; no volver a activar cierre V1 para V2.
+- Ningún WhatsApp, acceso privado, Vercel ni producción modificados. Piloto E2E no completado; Preview f985 402 por cuota y clave `sb_secret_` Supabase todavía ausente.
 
-## 2026-11-11 — MVP354: proyección privada documental no bloqueante (DESARROLLO)
-Se registró [PR técnico #797](https://github.com/ProtectorRudo/Cotironda/pull/797): consulta por token, archivo original con SHA, invitación+despacho y exclusión de rondas solapadas; Edge/HTML bajo flag OFF y tests. Lecturas SQL con token falso/not_found y preparada 2/0. Sin deploy ni habilitación de originales; P0–P5 siguen pendientes de E2E.
 
-## 2026-11-11 — P0: evaluación ERPNext vs núcleo Cotironda (SOLO DESARROLLO)
-Se contrastó código oficial ERPNext RFQ/quotations/comparador con Whapi/Storage/seguimiento/descarga existentes y conteos SQL del piloto. El proveedor ERPNext debe usar portal o la empresa registrar cotización estructurada; eso no elimina bloqueo de archivo libre WhatsApp. Decisión: mantener núcleo y separar recepción documental de revisión económica; NO instalar ERPNext, ni copiar GPL, ni publicar. Ver [acta P0](docs/P0-ERPNext-vs-Cotironda-evaluacion.md). P0 pendiente por permisos de originales y matriz de deploy.
+## [Sin publicar] — 14/11/2026 — Relevo corto y foco piloto real
 
-## 2026-11-11 — Decisión de producto: Cotironda documental y continuidad obligatoria (DOCUMENTACIÓN)
-Se registra el cambio a MVP híbrido no bloqueante: WhatsApp -> original privado inmutable -> correlación segura -> estado recibido en portal sin exigir interpretación económica -> cierre y descarga Auth de los archivos permitidos; comparación/anonimización visual posteriormente. Fuente canónica [Issue #794](https://github.com/ProtectorRudo/Cotironda/issues/794); [plan maestro](docs/PILOTO-100-PLAN-MAESTRO.md) y [relevo](docs/PILOTO-100-ESTADO.md). Ninguna modificación de aplicación, base de datos, mensajes o despliegues. Resolver explícitamente política de contactos dentro de los originales antes de habilitar descargas.
+- AGENTS.md queda en **3.421 caracteres**, menos de 3.500. V2 vigente, prioridad WhatsApp y ronda comercial real, no versiones anteriores.
+- Estado compacto: 86.729 a 4.239 caracteres; un solo bloqueo real: credencial sb_secret de Supabase ausente en Vercel Preview, con HMAC ya creada; flags V2 apagados.
+- Plan maestro: 90.751 a 4.794 caracteres; seis bloqueos en secuencia, prueba E2E de comprador y dos proveedores, sin mejoras secundarias.
+- Historial anterior preservado completo en Git SHA 7ea6863deb38415a518d5c80788d5210a9fca75e. Ramas anteriores pueden contener instrucciones V1 no vigentes.
+- Solo documentación de la rama V2; cero cambios en WhatsApp, Vercel, Supabase o producción. Piloto NO terminado.
 
-# Registro de cambios
 
-## [Sin publicar] — Etapa 00
-- Diseño de producto, reglas de licitaciones, IA, mensajería, ranking y seguridad.
-- Roadmap y criterios de prueba iniciales documentados.
-- **No existe todavía una aplicación ni se han conectado servicios.**
+## [Sin publicar] — 12/11/2026 — D013 / catálogos por producto y equivalencias
+
+- **Decisión DOCUMENTADA, sin código ni despliegue:** distribución por coincidencia de productos concretos del catálogo propio de cada proveedor, nunca por rubro/nicho. La IA comprende sinónimos, nombres comerciales (Ceresita/hidrófugo compatible), marcas flexibles y presentaciones (cemento 50/25 kg normalizado en masa), sin falsear equivalencias técnicas.
+- Se actualizan Contrato V2, Plan/Estado, AGENTS, decisión D013 e Issue #794; V2-00 continúa como única próxima tarea técnica y V2-01 incorporará pruebas de matching por artículo.
+
+## [Sin publicar] — 12/11/2026 — D012 / reorientación V2
+
+- **Documentación, no código ni despliegue.** Dirección única: solicitudes por catálogo/zona; negocios identificados al responder, original exacto y análisis individual breve útil; durante ronda **solo respondedores**; cierre en **dos días hábiles** y análisis general comparativo justificado.
+- Se sustituyen reglas de anonimato, ganadores obligatorios, listas de pendientes, plazo de cinco días y confirmaciones rutinarias. **PR #814 se marca NO DESPLEGAR tal como está:** un proveedor debe poder cotizar varias rondas concurrentes.
+- Contrato, plan maestro, estado, README, AGENTS, reglas, roadmap, decisiones e Issue #794 se consolidan; copias íntegras de plan/estado/issue previos en `docs/historico/`.
+- Los cambios NO implican que V2 exista en PILOTO. E2E WhatsApp→dos originales→vista comprador→informe final y descargas sigue PENDIENTE.
+
+## [Histórico] — Etapa 00 inicial
+- Primera documentación del producto de licitaciones/rankings (ahora reemplazada por D012); conservar commits previos como evidencia.
