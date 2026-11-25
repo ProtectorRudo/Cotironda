@@ -677,3 +677,11 @@ body:has(.coti-clean) .logo:focus-visible{outline:2px solid #9dbff7;outline-offs
 .coti-clean .coti-clean-analysis-intro{
  font-size:12px;line-height:1.55;color:#4f647a;margin:8px 0 14px;
 }
+
+/* D022: logo privado real, sin modificar el tamaño ni la interacción del avatar. */
+.coti-clean .coti-supplier-avatar-link{position:relative;overflow:hidden}
+.coti-clean .coti-supplier-avatar-photo{
+ position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
+ background:#fff;border-radius:inherit;visibility:hidden;pointer-events:none;
+}
+.coti-clean .coti-supplier-avatar-photo.is-visible{visibility:visible}

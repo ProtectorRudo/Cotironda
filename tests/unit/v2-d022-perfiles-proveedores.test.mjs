@@ -102,3 +102,25 @@ test('D022: tocar el avatar o el nombre abre el mismo perfil sin exponer WhatsAp
  assert.match(standalone,/Contacto comercial por WhatsApp pendiente de habilitación/u);
  assert.doesNotMatch(modal,/participant_channels_mvp109|contact_sha256|nonce_b64/u);
 });
+
+
+test('D022: todas las tarjetas actuales e históricas usan el logo privado y conservan una inicial de respaldo',()=>{
+ const ui=src('apps/portal/app/piloto/v2/rondas/[rondaId]/whatsapp/respuestas-whatsapp.tsx');
+ const history=src('apps/portal/app/piloto/v2/mi-cotironda/cotizaciones/[rondaId]/detalle-historico.tsx');
+ const photoRoute=src('apps/portal/app/api/piloto/v2/rondas/[rondaId]/perfiles-whatsapp/[documentoId]/foto/route.ts');
+ const css=src('apps/portal/app/styles.css');
+ const avatar=ui.slice(ui.indexOf('function LogoProveedorD022'),ui.indexOf('export function RespuestasWhatsappD016'));
+ assert.ok(avatar.includes('src={fotoUrl}'));
+ assert.ok(avatar.includes('{inicial}'));
+ assert.ok(avatar.includes("onLoad={()=>setEstado('visible')}"));
+ assert.ok(avatar.includes("onError={()=>setEstado('sin_foto')}"));
+ assert.ok(avatar.includes("estado!=='sin_foto'"));
+ assert.ok(avatar.includes('referrerPolicy="no-referrer"'));
+ assert.ok(ui.includes("fotoUrl={url+'/perfiles-whatsapp/'+encodeURIComponent(q.documentoId)+'/foto'}"));
+ assert.ok(ui.includes("key={rondaId+':'+q.documentoId+':'+revisionLogos}"));
+ assert.ok(ui.includes('setRevisionLogos(v=>v+1)'));
+ assert.ok(history.includes('<RespuestasWhatsappD016 rondaId={ronda.rondaId}/>'));
+ assert.ok(photoRoute.includes('consultarPerfilComercialWhatsappD022(req,rondaId,documentoId,true)'));
+ assert.ok(css.includes('.coti-supplier-avatar-photo.is-visible{visibility:visible}'));
+ assert.doesNotMatch(avatar,/https?:|storage|corralon_ailin|corralon_nahuel/u);
+});

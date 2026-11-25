@@ -14,6 +14,19 @@ import {seleccionarAnalisisPendientesV2,registrarIntentosAnalisisV2,
  type IntentoAnalisisV2}
  from '../../../../../../lib/piloto-v2-reintento-analisis.ts';
 
+/** Cada tarjeta usa el mismo recurso privado D022 que la ficha comercial.
+ * No consulta el bucket desde el navegador ni infiere rutas por nombre. */
+function LogoProveedorD022({fotoUrl,inicial}:{fotoUrl:string;inicial:string}){
+ const [estado,setEstado]=useState<'cargando'|'visible'|'sin_foto'>('cargando');
+ return <>
+  <span aria-hidden="true">{inicial}</span>
+  {estado!=='sin_foto'&&<img
+   className={'coti-supplier-avatar-photo'+(estado==='visible'?' is-visible':'')}
+   src={fotoUrl} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer"
+   onLoad={()=>setEstado('visible')} onError={()=>setEstado('sin_foto')}/>}
+ </>;
+}
+
 export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
  const [catalog,setCatalog]=useState<CatalogoRespuestasV2|null>(null);
  const [loading,setLoading]=useState(true);
@@ -29,6 +42,7 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
  const [analizando,setAnalizando]=useState(false);
  const [expandedDoc,setExpandedDoc]=useState<string|null>(null);
  const [perfilActivo,setPerfilActivo]=useState<{id:string;nombre:string}|null>(null);
+ const [revisionLogos,setRevisionLogos]=useState(0);
  const [originalTexto,setOriginalTexto]=useState<{id:string;text:string}|null>(null);
  const [informe,setInforme]=useState<InformeFinalD016|null>(null);
  const informeRunning=useRef(false);
@@ -227,7 +241,7 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
    <details className="coti-clean-account-tools">
     <summary>Opciones</summary>
     <div className="coti-clean-account-menu">
-     <button type="button" disabled={busy} onClick={()=>void refresh()}>Actualizar</button>
+     <button type="button" disabled={busy} onClick={()=>{setRevisionLogos(v=>v+1);void refresh()}}>Actualizar</button>
      <button type="button" disabled={busy} onClick={()=>void cerrarSesion()}>Cerrar sesión</button>
     </div>
    </details>
@@ -283,7 +297,9 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
       }}
       aria-label={'Ver perfil comercial de '+nombreProveedor(q.comercio)}
       title={'Ver perfil de '+nombreProveedor(q.comercio)}>
-      {letraProveedor(q.comercio)}</a>
+      <LogoProveedorD022 key={rondaId+':'+q.documentoId+':'+revisionLogos}
+       fotoUrl={url+'/perfiles-whatsapp/'+encodeURIComponent(q.documentoId)+'/foto'}
+       inicial={letraProveedor(q.comercio)}/></a>
      <div className="coti-clean-bid-identity">
       <h3><a className="coti-supplier-name-button"
        href={'/piloto/v2/rondas/'+encodeURIComponent(rondaId)+
