@@ -44,6 +44,40 @@ function Row({r}:{r:RondaHistorialD017}){
   <span className="coti-history-chevron" aria-hidden="true">›</span>
  </Link>;
 }
+function CompartirHistorialV2(){
+ const [link,setLink]=useState('');
+ const [busy,setBusy]=useState(false);
+ const [message,setMessage]=useState('');
+ async function act(action:'get'|'create'|'revoke'){
+  setBusy(true);setMessage('');
+  try{
+   const res=await fetch(endpoint+'/compartir',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'x-cotironda-share':'1'},body:action});
+   if(!res.ok)throw Error('denied');
+   const d=await res.json();
+   if(d.state==='active'&&typeof d.url==='string'&&d.url.startsWith(window.location.origin+'/piloto/v2/compartido#'))setLink(d.url);
+   else if(d.state==='inactive')setLink('');
+   else throw Error('invalid');
+   if(action==='revoke')setMessage('Enlace desactivado.');
+  }catch{setMessage('No se pudo gestionar el enlace. Volvé a intentar.')}
+  finally{setBusy(false)}
+ }
+ useEffect(()=>{void act('get')},[]);
+ async function copy(){
+  try{await navigator.clipboard.writeText(link);setMessage('Enlace copiado.')}catch{setMessage('Seleccioná y copiá el enlace de abajo.')}
+ }
+ return <div className="coti-profile-message">
+  <h2>Compartir cotizaciones</h2>
+  <p>Quien tenga este enlace podrá consultar tu historial y sus importes, incluidos nuevos presupuestos, sin iniciar sesión. No podrá descargar originales ni acceder a tu cuenta.</p>
+  {!link?<button type="button" disabled={busy} onClick={()=>void act('create')}>Crear enlace compartido</button>:<>
+   <input aria-label="Enlace compartido" readOnly value={link} onFocus={e=>e.currentTarget.select()} style={{width:'100%',marginBottom:12}}/>
+   <button type="button" disabled={busy} onClick={()=>void copy()}>Copiar enlace</button>
+   {'share' in navigator&&<button type="button" disabled={busy} onClick={()=>void navigator.share({title:'Cotizaciones compartidas',url:link}).catch(()=>{})}>Compartir</button>}
+   <button type="button" className="button outline" disabled={busy} onClick={()=>void act('revoke')}>Desactivar enlace</button>
+  </>}
+  {message&&<p role="status">{message}</p>}
+ </div>;
+}
+
 export function HistorialWhatsappD017(){
  const [data,setData]=useState<HistorialCompradorD017|null>(null);
  const [loading,setLoading]=useState(true);
@@ -134,6 +168,7 @@ export function HistorialWhatsappD017(){
     </div>
    </details>
   </div>
+  <CompartirHistorialV2/>
   {active.length>0&&<section className="coti-history-group" aria-label="Cotizaciones en curso">
    <div className="coti-history-title"><h2>En curso</h2></div>
    {active.map(r=><Row key={r.rondaId} r={r}/>)}

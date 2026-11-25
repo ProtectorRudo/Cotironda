@@ -1,4 +1,6 @@
 import {createHash,createHmac} from 'node:crypto';
+import {sharedHistoryToken,verifySharedHistoryToken} from '../../../src/server/v2-shared-history-token.ts';
+import {importeVisiblePesosV2} from '../../../src/server/v2-d016-resumen-comercial.ts';
 /** D016: adaptador Node/Next aislado, SIN SMS ni sesiones GoTrue falsas.
  * No se habilita sin Preview+SHA+secreto exactos ni RPC privada.
  */
@@ -571,5 +573,62 @@ export async function consultarPerfilComercialWhatsappD022(
   const after=await sessionContext(db,digest,rondaId);
   if(!after||after.buyerKey!==before.buyerKey)return deny();
   return new Response(JSON.stringify({...current,whatsappUrl}),{status:200,headers:HEADERS});
+ }catch{return deny(503)}
+}
+
+/** Guest path is deliberately separate. Never accepts or issues a D016 session. */
+const sharedHeaders={...HEADERS,'x-robots-tag':'noindex, nofollow, noarchive','vary':'Origin'};
+function sharedPost(req:Request,origin:string,path:string){
+ const u=new URL(req.url);
+ return req.method==='POST'&&u.origin===origin&&u.pathname===path&&!u.search&&!u.hash&&
+ req.headers.get('origin')===origin&&req.headers.get('sec-fetch-site')==='same-origin'&&
+ req.headers.get('x-cotironda-share')==='1';
+}
+export async function gestionarHistorialCompartidoV2(req:Request,env:Record<string,string|undefined>=process.env):Promise<Response>{
+ const gate=puertaWhatsappPortalD016(env);const db=gate?privateDb(env):null;
+ if(!gate||!db)return deny(503);
+ if(!sharedPost(req,gate.origenPortal,'/api/piloto/v2/mi-cotironda/compartir'))return deny(403);
+ const raw=cookieSesionD016(req);const digest=raw?digestSesionPrivadaD016(raw,gate.claveHmacHex):null;
+ if(!digest)return deny();
+ try{
+  const action=await req.text();if(!['get','create','revoke'].includes(action))return deny(400);
+  const out=await db.rpc('cotironda_piloto_v2_manage_shared_history',{p_sesion_hmac:digest,p_action:action});
+  if(out.error)return deny(503);
+  if(out.data?.state==='inactive')return Response.json({state:'inactive'},{headers:sharedHeaders});
+  if(out.data?.state!=='active'||typeof out.data.shareId!=='string')return deny();
+  const token=sharedHistoryToken(out.data.shareId,gate.claveHmacHex);if(!token)return deny(503);
+  return Response.json({state:'active',url:gate.origenPortal+'/piloto/v2/compartido#'+token},{headers:sharedHeaders});
+ }catch{return deny(503)}
+}
+export async function leerHistorialCompartidoV2(req:Request,env:Record<string,string|undefined>=process.env):Promise<Response>{
+ const gate=puertaWhatsappPortalD016(env);const db=gate?privateDb(env):null;
+ if(!gate||!db)return deny(503);
+ if(!sharedPost(req,gate.origenPortal,'/api/piloto/v2/compartido'))return deny(403);
+ try{
+  const body=await req.text();if(body.length>220)return deny(400);
+  const parsed:unknown=JSON.parse(body);
+  if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))return deny(400);
+  const x=parsed as Record<string,unknown>;
+  if(Object.keys(x).length!==2||!(x.rondaId===null||uuid(x.rondaId)))return deny(400);
+  const shareId=verifySharedHistoryToken(x.token,gate.claveHmacHex);if(!shareId)return deny();
+  const args={p_share_id:shareId,p_request_id:x.rondaId};
+  const out=await db.rpc('cotironda_piloto_v2_read_shared_history',args);
+  if(out.error)return deny(503);
+  if(x.rondaId===null){
+   const h=proyectarHistorialPrivadoD017(out.data);if(!h)return deny();
+   return Response.json({estado:h.estado,cotizaciones:h.cotizaciones},{headers:sharedHeaders});
+  }
+  const catalog=proyectarRespuestasV2(out.data);if(!catalog)return deny();
+  // Strict allowlist: no buyer key, document IDs, raw evidence, free text,
+  // contact data, source paths, download links, or owner actions.
+  const ofertas=catalog.respuestas.map(q=>({
+   comercio:q.comercio,formato:q.formato,
+   importe:importeVisiblePesosV2(q.resumen.totalDeclarado??q.resumen.sumaCalculada),
+   tipoImporte:q.resumen.totalDeclarado?q.resumen.tipoImporte:q.resumen.sumaCalculada?'Suma de renglones':'Importe no informado',
+   cotizados:q.resumen.articulosCotizados,enviados:q.resumen.articulosEnviados,
+   iva:q.resumen.condiciones.iva,flete:q.resumen.condiciones.flete,pago:q.resumen.condiciones.pago,
+   discrepancia:q.resumen.discrepanciaTotal
+  }));
+  return Response.json({estado:'cotizaciones_compartidas',ofertas},{headers:sharedHeaders});
  }catch{return deny(503)}
 }
