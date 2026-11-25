@@ -88,6 +88,10 @@ No somos una bolsa de archivos, un ranking anónimo, un intermediario que oculta
 
 **Estado:** regla aprobada; implementación y prueba E2E pendientes. En especial, v118 conserva el pedido de texto durante la consulta de localidad, pero todavía no agrupa múltiples fuentes de materiales ni transmite los nuevos defaults comerciales.
 
+### Continuidad conversacional del proveedor — decisión del propietario 25/11/2026
+
+La misma IA Central debe comprender al proveedor como interlocutor, no como un formulario de cotización. Una pregunta no es una oferta. Consultar primero el contexto de la solicitud efectivamente enviada y contestar localidad, condiciones solicitadas de pago/IVA, materiales, cantidades, fecha límite y dudas comerciales usando datos registrados. Por ejemplo: La Plata; contado efectivo y precios sin IVA si esos son los defaults de la nueva solicitud. No imponer los defaults a la oferta recibida ni cambiar retrospectivamente condiciones no registradas. Si hay varias rondas, resolver por cita/referencia o contexto inequívoco; no revelar datos de otros compradores ni otros proveedores. Admitir equivalencias como alternativas para decisión manual; no aceptar compras, inventar stock, fijar precios ni prometer condiciones desconocidas. Una consulta que acompañe una oferta no debe hacer perder la oferta. La conversación debe conservar las fuentes, permitir varios mensajes y resolver aclaraciones sin exigir un nuevo envío. Consultas con datos realmente faltantes requieren recuperación interna o una aclaración puntual, nunca inventar ni convertir la conversación en presupuesto.
+
 ## 2.3 Publicación por etapas seguras (D015, 12/11/2026)
 
 **Publicación de infraestructura no es activación comercial.** Primero, tras autorización expresa `Publicalo`, se pueden instalar en **PILOTO** las tablas/RPC privadas, lector Edge PDF y portal Preview **con todas las banderas V2 OFF** y sin enviar WhatsApps. Esta primera fase no requiere que ya exista el arquitecto en Auth. No se despliega en producción.
