@@ -158,3 +158,42 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO '' AS $fn$
 $fn$;
 REVOKE ALL ON FUNCTION public.cotironda_piloto_v2_conversation_reply_current(text,uuid,text),public.cotironda_piloto_v2_conversation_link_status(text,uuid,uuid,text) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.cotironda_piloto_v2_conversation_reply_current(text,uuid,text),public.cotironda_piloto_v2_conversation_link_status(text,uuid,uuid,text) TO service_role;
+
+-- Snapshot cifrado de una interpretación que solo espera localidad.
+ALTER TABLE cotironda_piloto_privado.v2_buyer_conversations
+ ADD COLUMN zone_resume_revision bigint,
+ ADD COLUMN zone_resume_nonce text,
+ ADD COLUMN zone_resume_ciphertext text,
+ ADD CONSTRAINT v2_zone_resume_envelope CHECK(
+ (zone_resume_revision IS NULL AND zone_resume_nonce IS NULL AND zone_resume_ciphertext IS NULL)
+ OR (zone_resume_revision IS NOT NULL AND zone_resume_revision BETWEEN 1 AND revision
+ AND zone_resume_nonce IS NOT NULL AND zone_resume_nonce ~ '^[A-Za-z0-9+/]{16}$'
+ AND zone_resume_ciphertext IS NOT NULL AND length(zone_resume_ciphertext) BETWEEN 24 AND 266668
+ AND zone_resume_ciphertext ~ '^[A-Za-z0-9+/=]+$'));
+CREATE FUNCTION public.cotironda_piloto_v2_conversation_save_zone(p_chat_hmac text,p_id uuid,p_revision bigint,p_lease uuid,p_message_hmac text,p_nonce text,p_ciphertext text)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO '' AS $fn$
+DECLARE v jsonb;
+BEGIN
+ IF p_nonce IS NULL OR p_nonce !~ '^[A-Za-z0-9+/]{16}$' OR p_ciphertext IS NULL
+ OR length(p_ciphertext) NOT BETWEEN 24 AND 266668 OR p_ciphertext !~ '^[A-Za-z0-9+/=]+$'
+ THEN RETURN jsonb_build_object('state','invalid_snapshot');END IF;
+ v:=public.cotironda_piloto_v2_conversation_finish(p_chat_hmac,p_id,p_revision,p_lease,p_message_hmac,'awaiting_context','delivery_city_missing','zone');
+ IF v->>'state'='awaiting_context' THEN
+  UPDATE cotironda_piloto_privado.v2_buyer_conversations SET zone_resume_revision=p_revision,zone_resume_nonce=p_nonce,zone_resume_ciphertext=p_ciphertext
+  WHERE id=p_id AND chat_hmac=p_chat_hmac AND state='awaiting_context' AND revision=p_revision;
+ END IF;
+ RETURN v;
+END $fn$;
+CREATE FUNCTION public.cotironda_piloto_v2_conversation_zone_resume(p_chat_hmac text,p_id uuid,p_revision bigint,p_lease uuid)
+RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO '' AS $fn$
+ SELECT coalesce((SELECT jsonb_build_object('state','snapshot','revision',g.zone_resume_revision,'nonce',g.zone_resume_nonce,'ciphertext',g.zone_resume_ciphertext)
+ FROM cotironda_piloto_privado.v2_buyer_conversations g
+ JOIN cotironda_piloto_privado.participants b ON b.key=g.buyer_key AND b.chat_hmac=g.chat_hmac AND b.participant_role='buyer' AND b.consent_at IS NOT NULL AND b.opted_out_at IS NULL
+ WHERE g.id=p_id AND g.chat_hmac=p_chat_hmac AND g.state='processing' AND g.revision=p_revision AND g.lease=p_lease AND g.lease_until>clock_timestamp()
+ AND g.zone_resume_revision=p_revision-1 AND g.zone_resume_nonce IS NOT NULL
+ AND EXISTS(SELECT 1 FROM cotironda_piloto_privado.v2_buyer_conversation_sources src JOIN cotironda_piloto_privado.ai_replies_mvp094 r ON r.message_hmac=src.message_hmac AND r.chat_hmac=g.chat_hmac AND r.reply_code='zone' AND r.state='api_accepted'
+ WHERE src.conversation_id=g.id AND src.message_hmac=(SELECT message_hmac FROM cotironda_piloto_privado.v2_buyer_conversation_sources WHERE conversation_id=g.id ORDER BY received_at DESC,message_hmac DESC OFFSET 1 LIMIT 1))
+ ),jsonb_build_object('state','none'));
+$fn$;
+REVOKE ALL ON FUNCTION public.cotironda_piloto_v2_conversation_save_zone(text,uuid,bigint,uuid,text,text,text),public.cotironda_piloto_v2_conversation_zone_resume(text,uuid,bigint,uuid) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.cotironda_piloto_v2_conversation_save_zone(text,uuid,bigint,uuid,text,text,text),public.cotironda_piloto_v2_conversation_zone_resume(text,uuid,bigint,uuid) TO service_role;
