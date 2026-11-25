@@ -14,7 +14,7 @@ test('guest endpoint uses capability, allowlist and separate path; no original o
  const http=readFileSync('apps/portal/lib/piloto-v2-d016-http.ts','utf8').split('export async function leerHistorialCompartidoV2')[1];
  assert.ok(http.includes('verifySharedHistoryToken'));
  assert.ok(http.includes('cotironda_piloto_v2_read_shared_history'));
- assert.doesNotMatch(http,/cookieSesionD016|descargarOriginal|set-cookie|documentoId:|puntos:|buyerKey:/);
+ assert.doesNotMatch(http,/cookieSesionD016|descargarOriginal|set-cookie|(?:^|[,{\s])documentoId\s*:|puntos:|buyerKey:/m);
  assert.ok(http.includes('descargaId:ids.has(q.documentoId)?q.documentoId:null'));
  const ui=readFileSync('apps/portal/app/piloto/v2/compartido/historial-compartido.tsx','utf8');
  assert.ok(ui.includes("credentials:'omit'"));assert.ok(ui.includes('window.location.hash'));assert.ok(ui.includes("referrerPolicy:'no-referrer'"));
