@@ -20,8 +20,9 @@ BEGIN
  AND p.participant_role='supplier' AND p.consent_at IS NOT NULL AND p.opted_out_at IS NULL
  FOR UPDATE OF m;
  IF NOT FOUND THEN RETURN jsonb_build_object('state','denied'); END IF;
- IF v.request_id IS NOT NULL OR v.processing_state NOT IN ('needs_review','unmatched_quote')
- THEN RETURN jsonb_build_object('state',COALESCE(v.supplier_text_intent,'already_processed')); END IF;
+ IF v.request_id IS NOT NULL THEN RETURN jsonb_build_object('state','already_processed'); END IF;
+ IF v.processing_state NOT IN ('needs_review','unmatched_quote')
+ THEN RETURN jsonb_build_object('state',CASE WHEN v.supplier_text_intent IN ('non_quote','uncertain') THEN v.supplier_text_intent ELSE 'already_processed' END); END IF;
  IF v.supplier_text_intent IS NULL AND p_intent IS NOT NULL THEN
   UPDATE cotironda_piloto_privado.whapi_inbox SET supplier_text_intent=p_intent,
    processing_state=CASE WHEN p_intent IN ('non_quote','uncertain') THEN 'recorded' ELSE processing_state END
