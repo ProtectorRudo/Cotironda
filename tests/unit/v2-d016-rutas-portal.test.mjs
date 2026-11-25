@@ -145,3 +145,51 @@ test('D016: piloto acepta solo true sin importar mayusculas, mantiene false bloq
  assert.match(reader,/checks\.d016_enabled&&checks\.service_key/u);
  assert.match(reader,/resolverTextoPrivadoD016\(req,config,/u);
 });
+
+
+test('D016: enlace WhatsApp reutilizado consulta la sesión privada antes de gastar el ticket',()=>{
+ const client=src('apps/portal/app/piloto/v2/acceso/acceso-whatsapp-client.tsx');
+ const page=src('apps/portal/app/piloto/v2/acceso/page.tsx');
+ const core=src('src/server/v2-d016-sesion-privada.ts');
+ // Siempre se verifica por RPC de historial, sin asumir que la cookie da acceso.
+ const check=client.indexOf('const session=await checkSession()');
+ const exchange=client.indexOf("fetch('/api/piloto/v2/acceso/canjear'");
+ assert.ok(check>0&&exchange>check,'sesión autenticada ANTES del canje');
+ assert.match(client,/fetch\('\/api\/piloto\/v2\/mi-cotironda'/u);
+ assert.match(client,/obj\.estado!=='historial_autorizado'/u);
+ assert.match(client,/obj\.cotizaciones\.some\(item=>/u);
+ assert.match(client,/rondaId\?:unknown/u);
+ assert.match(client,/if\(session==='authorized'\)\{openProfile\(\);return\}/u);
+ assert.match(client,/if\(session==='unavailable'\)/u);
+ assert.match(client,/if\(!validTicket\)/u);
+ assert.match(client,/const after=await checkSession\(\)/u);
+ assert.match(client,/if\(after==='authorized'\)\{openProfile\(\);return\}/u);
+ assert.match(client,/window\.location\.replace\(PROFILE\)/u);
+ assert.match(client,/const PROFILE='\/piloto\/v2\/mi-cotironda'/u);
+ // Los tokens permanecen efímeros y se retiran de la URL.
+ assert.match(client,/useRef<string\|null>\(null\)/u);
+ assert.match(client,/window\.history\.replaceState\(null,'',window\.location\.pathname\)/u);
+ assert.match(client,/window\.setTimeout\(\(\)=>\{void run\(\)\},0\)/u);
+ assert.match(client,/controller\.abort\(\)/u);
+ assert.doesNotMatch(client,/started\.current|localStorage|sessionStorage/u);
+ assert.match(core,/cookieSesionD016/u);
+ assert.match(core,/verificarAccesoSesionD016/u);
+ assert.doesNotMatch(page,/<h1>Mi Cotironda<\/h1>\\n/u);
+});
+
+test('D016: sin sesión no convierte un enlace público en un perfil sin autorización',()=>{
+ const client=src('apps/portal/app/piloto/v2/acceso/acceso-whatsapp-client.tsx');
+ const core=src('src/server/v2-d016-sesion-privada.ts');
+ const adapter=src('apps/portal/lib/piloto-v2-d016-http.ts');
+ assert.match(client,/if\(!validTicket\)\{/u);
+ assert.match(client,/setPhase\('recover'\)/u);
+ assert.match(client,/setPhase\('retry'\)/u);
+ assert.match(client,/Recibir acceso por WhatsApp/u);
+ assert.match(client,/\/api\/piloto\/v2\/acceso\/recuperar/u);
+ assert.match(client,/response\.status===202/u);
+ assert.match(core,/reclamarYCrearSesion/u);
+ assert.match(core,/verificarSesion/u);
+ assert.match(adapter,/cotironda_piloto_v2_d016_session_context_private/u);
+ assert.match(adapter,/cotironda_piloto_v2_d017_buyer_history_private/u);
+ assert.doesNotMatch(client,/createUser|signInWithOtp|access_token|Bearer /u);
+});
