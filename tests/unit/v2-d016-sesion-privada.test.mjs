@@ -174,3 +174,26 @@ test('D016 subdominio app mantiene cookie __Host y aislamiento de origen',async(
  assert.equal((await canjearConSesionPrivadaD016({...g,entorno:'production'},
   request(origin,origin),f.ports)).status,403);
 });
+
+
+test('D016: al reabrir un ticket ya consumido, la sesión anterior sigue siendo válida',async()=>{
+ const f=fixture();
+ const first=await f.redeem();
+ assert.equal(first.status,200);
+ const raw=first.headers.get('set-cookie').split('=')[1].split(';')[0];
+ // Una vez consumido el ticket no se puede volver a redimir. Eso NO
+ // revoca la sesión privada emitida durante el primer ingreso.
+ f.state.issued=false;
+ const second=await f.redeem();
+ assert.equal(second.status,403);
+ assert.equal(second.headers.has('set-cookie'),false);
+ assert.equal(f.state.sessions.size,1);
+ const req=new Request(ORIGIN+'/piloto/v2/mi-cotironda',{
+  headers:{cookie:D016_SESSION_COOKIE+'='+raw}
+ });
+ assert.deepEqual(await verificarAccesoSesionD016(gate(),req,ROUND,f.ports),
+  {buyerKey:'buyer_a',requestId:ROUND});
+ f.state.authorized=false;
+ assert.equal(await verificarAccesoSesionD016(gate(),req,ROUND,f.ports),null,
+  'reutilizar el link no permite eludir revocación o permisos');
+});
