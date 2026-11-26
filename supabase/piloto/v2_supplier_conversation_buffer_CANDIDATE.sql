@@ -19,12 +19,34 @@ CREATE TABLE cotironda_piloto_privado.v2_supplier_conversation_sources(
  message_hmac text PRIMARY KEY REFERENCES cotironda_piloto_privado.whapi_inbox(message_hmac),
  source_sha256 text NOT NULL CHECK(source_sha256 ~ '^[a-f0-9]{64}$'),
  received_at timestamptz NOT NULL,
- kind text NOT NULL CHECK(kind='text')
+ kind text NOT NULL CHECK(kind='text'),
+ quoted_reference text CHECK(quoted_reference IS NULL OR quoted_reference ~ '^[A-Za-z0-9._:-]{8,160}$')
 );
 CREATE INDEX v2_supplier_conversation_source_order ON cotironda_piloto_privado.v2_supplier_conversation_sources(conversation_id,received_at,message_hmac);
 ALTER TABLE cotironda_piloto_privado.v2_supplier_conversations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cotironda_piloto_privado.v2_supplier_conversation_sources ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON cotironda_piloto_privado.v2_supplier_conversations,cotironda_piloto_privado.v2_supplier_conversation_sources FROM PUBLIC,anon,authenticated;
+-- Agrupar solo si la ronda es única; la cita original se conserva aparte.
+CREATE FUNCTION cotironda_piloto_privado.v2_supplier_unique_reference(p_supplier text,p_received timestamptz)
+RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO '' AS $fn$
+ WITH eligible AS (
+ SELECT j.whapi_message_id AS ref FROM cotironda_piloto_privado.ai_dispatch_jobs_mvp222 j
+ JOIN cotironda_piloto_privado.requests r ON r.id=j.request_id
+ JOIN cotironda_piloto_privado.invitations i ON i.request_id=r.id AND i.supplier_key=j.supplier_key
+ JOIN cotironda_piloto_privado.ai_shadow_requests_mvp221 sh ON sh.request_id=r.id AND sh.status='shadow'
+ JOIN cotironda_piloto_privado.participants b ON b.key=r.buyer_key AND b.participant_role='buyer' AND b.consent_at IS NOT NULL AND b.opted_out_at IS NULL
+ WHERE j.supplier_key=p_supplier AND j.state='api_accepted' AND j.whapi_message_id IS NOT NULL
+ AND j.finished_at<=p_received AND r.created_at<=p_received AND r.closes_at>p_received
+ AND r.closes_at>clock_timestamp() AND r.state='prepared' AND i.state='prepared'
+ UNION ALL
+ SELECT NULL::text FROM cotironda_piloto_privado.invitations i JOIN cotironda_piloto_privado.requests r ON r.id=i.request_id
+ WHERE i.supplier_key=p_supplier AND i.state='prepared' AND r.state='prepared' AND r.created_at<=p_received AND r.closes_at>p_received
+ AND EXISTS(SELECT 1 FROM cotironda_piloto_privado.whapi_outbox o WHERE o.request_id=r.id AND o.supplier_key=i.supplier_key AND o.state='api_accepted' AND o.whapi_message_id IS NOT NULL AND o.sent_at<=p_received)
+ AND NOT EXISTS(SELECT 1 FROM cotironda_piloto_privado.ai_shadow_requests_mvp221 sh WHERE sh.request_id=r.id)
+ )
+ SELECT CASE WHEN count(*)=1 THEN min(ref) ELSE NULL END FROM eligible;
+$fn$;
+REVOKE ALL ON FUNCTION cotironda_piloto_privado.v2_supplier_unique_reference(text,timestamptz) FROM PUBLIC,anon,authenticated;
 CREATE FUNCTION public.cotironda_piloto_v2_supplier_conversation_enqueue(p_chat_hmac text,p_message_hmac text,p_reference text DEFAULT NULL)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO '' AS $fn$
 DECLARE s record;m record;g record;k text:=coalesce(p_reference,'');t timestamptz;
@@ -42,13 +64,14 @@ BEGIN
  OR m.received_at<s.consent_at OR m.received_at<clock_timestamp()-interval '10 minutes' OR m.received_at>clock_timestamp()
  THEN RETURN jsonb_build_object('state','source_not_eligible');END IF;
  t:=clock_timestamp();
+ IF k='' THEN k:=coalesce(cotironda_piloto_privado.v2_supplier_unique_reference(s.key,m.received_at),'');END IF;
  SELECT * INTO g FROM cotironda_piloto_privado.v2_supplier_conversations WHERE supplier_key=s.key AND reference_key=k AND state IN ('collecting','processing') FOR UPDATE;
  IF NOT FOUND THEN
  INSERT INTO cotironda_piloto_privado.v2_supplier_conversations(supplier_key,chat_hmac,reference_key,ready_at) VALUES(s.key,p_chat_hmac,k,t+interval '60 seconds') RETURNING * INTO g;
  ELSE
  UPDATE cotironda_piloto_privado.v2_supplier_conversations SET state='collecting',revision=revision+1,ready_at=t+interval '60 seconds',lease=NULL,lease_until=NULL WHERE id=g.id RETURNING * INTO g;
  END IF;
- INSERT INTO cotironda_piloto_privado.v2_supplier_conversation_sources VALUES(g.id,m.message_hmac,m.plaintext_sha256,m.received_at,m.kind);
+ INSERT INTO cotironda_piloto_privado.v2_supplier_conversation_sources(conversation_id,message_hmac,source_sha256,received_at,kind,quoted_reference) VALUES(g.id,m.message_hmac,m.plaintext_sha256,m.received_at,m.kind,nullif(p_reference,''));
  RETURN jsonb_build_object('state','queued','conversation_id',g.id,'revision',g.revision,'ready_at',g.ready_at);
 END $fn$;
 CREATE FUNCTION public.cotironda_piloto_v2_supplier_conversation_claim(p_chat_hmac text,p_id uuid)
