@@ -42,7 +42,7 @@ type ResumenComercio=Readonly<{
 export type InformeFinalD016=Readonly<{
  estado:'informe_final_disponible';
  requestId:string;
- cierreMs:number;documentos:number;comercios:number;
+ cierreMs:number;documentos:number;presupuestos:number;comercios:number;
  analizados:number;sinAnalisis:number;
  resumen:string;conclusion:string;
  observacionesIA:readonly Readonly<{comercio:string;observacion:string}>[];
@@ -74,14 +74,19 @@ export function componerInformeFinalD016(
    !UUID.test(quote.documentoId)||seen.has(quote.documentoId)||
    typeof quote.comercio!=='string'||quote.comercio.length<3||
    quote.comercio.length>100||!Array.isArray(quote.puntos)||
-   quote.puntos.length>4)return null;
-  seen.add(quote.documentoId);
+   quote.puntos.length>8)return null;
+  const originals=quote.originalesAgrupados??[quote.documentoId];
+  if(!Array.isArray(originals)||originals.length<1||originals.length>60||
+   !originals.includes(quote.documentoId)||originals.some(id=>typeof id!=='string'||!UUID.test(id)||seen.has(id))||
+   new Set(originals).size!==originals.length)return null;
+  for(const id of originals)seen.add(id);
+  if(seen.size>100)return null;
   let business=byBusiness.get(quote.comercio);
   if(!business){
    business={docs:0,analizados:0,items:[],areas:new Set(),ofertas:[]};
    byBusiness.set(quote.comercio,business);
   }
-  business.docs++;
+  business.docs+=originals.length;
   const cv=quote.resumen?.cobertura;
   business.ofertas.push(Object.freeze({
    documentoId:quote.documentoId,
@@ -223,12 +228,12 @@ export function componerInformeFinalD016(
   .slice(0,1).map(p=>Object.freeze({comercio,observacion:p.observacion}))
  ).slice(0,2);
  const resumen=total===0?'La ronda cerró sin presupuestos habilitados para mostrar.':
-  `Se recibieron ${total} documentos de ${sorted.length} comercios identificados por nombre. `+
+  `Se recibieron ${total} presupuestos de ${sorted.length} comercios, con ${seen.size} originales conservados. `+
   `${analysed} tienen guía verificada y ${total-analysed} requieren lectura directa del original.`;
  return Object.freeze({
   estado:'informe_final_disponible',requestId:state.requestId,
   cierreMs:state.closedAtMs,
-  documentos:total,comercios:sorted.length,analizados:analysed,
+  documentos:seen.size,presupuestos:total,comercios:sorted.length,analizados:analysed,
   sinAnalisis:total-analysed,resumen,conclusion,
   observacionesIA:Object.freeze(observacionesIA),
   observaciones:Object.freeze(note),
