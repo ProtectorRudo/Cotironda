@@ -612,7 +612,7 @@ export async function leerHistorialCompartidoV2(req:Request,env:Record<string,st
   if(Object.keys(x).length!==2||!(x.rondaId===null||uuid(x.rondaId)))return deny(400);
   const shareId=verifySharedHistoryToken(x.token,gate.claveHmacHex);if(!shareId)return deny();
   const args={p_share_id:shareId,p_request_id:x.rondaId};
-  const out=await db.rpc('cotironda_piloto_v2_read_shared_history',args);
+  const out=await db.rpc('cotironda_piloto_v2_read_shared_history_grouped',args);
   if(out.error)return deny(503);
   if(x.rondaId===null){
    const h=proyectarHistorialPrivadoD017(out.data);if(!h)return deny();
