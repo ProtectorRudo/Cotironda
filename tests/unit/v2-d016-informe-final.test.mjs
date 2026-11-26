@@ -227,3 +227,31 @@ test('D016 una ronda nueva jamás muestra informe viejo aunque cambie la navegac
  assert.match(client,/informe\?\.requestId===rondaId\.toLowerCase\(\)/u);
  assert.match(client,/setInforme\(null\);return;/u);
 });
+
+test('Cierre multimensaje: un presupuesto, dos originales, importe único y condición explícita',()=>{
+ const cat=data();
+ cat.respuestas.splice(1,1);
+ const a=cat.respuestas[0];
+ a.formato='WhatsApp (texto)';
+ a.originalesAgrupados=[DOC1,DOC2];
+ a.puntos=[];
+ a.resumen={totalDeclarado:'$9.500',sumaCalculada:null,tipoImporte:'Subtotal informado',
+ articulosCotizados:2,articulosEnviados:3,cobertura:null,solicitado:[],
+ condiciones:{iva:'No informado',flete:'No informado',pago:'Contado',entrega:'No informado'}};
+ const r=componerInformeFinalD016(state(),cat,NOW);
+ assert.equal(r.presupuestos,2);assert.equal(r.documentos,3);
+ assert.equal(r.comparacion[0].documentos,2);
+ assert.equal(r.comparacion[0].ofertas.length,1);
+ assert.equal(r.comparacion[0].ofertas[0].importe,'$9.500');
+ assert.equal(r.comparacion[0].ofertas[0].tipoImporte,'Subtotal informado');
+ assert.equal(r.comparacion[0].ofertas[0].pago,'Contado');
+ assert.match(r.resumen,/2 presupuestos.*3 originales/u);
+ assert.match(r.conclusion,/no precios finales/u);
+ assert.equal(componerInformeFinalD016({...state(),state:'waiting_for_close'},cat,NOW),null);
+ a.originalesAgrupados=[DOC1,DOC3];
+ assert.equal(componerInformeFinalD016(state(),cat,NOW),null,'original duplicado entre ofertas');
+ a.originalesAgrupados=[DOC2];
+ assert.equal(componerInformeFinalD016(state(),cat,NOW),null,'ancla ausente');
+ a.originalesAgrupados=[DOC1,DOC1];
+ assert.equal(componerInformeFinalD016(state(),cat,NOW),null,'duplicado interno');
+});
