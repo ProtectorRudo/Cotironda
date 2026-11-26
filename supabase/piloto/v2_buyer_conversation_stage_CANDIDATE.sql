@@ -17,21 +17,22 @@ RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO '' AS $f
  JOIN storage.objects o ON o.bucket_id='cotironda-piloto-originals' AND o.name=a.storage_path
  JOIN storage.buckets b ON b.id=o.bucket_id AND b.public=false
  WHERE a.message_hmac=p_hmac AND a.chat_hmac=p_chat AND a.participant_key=p_buyer
- AND a.kind='document' AND a.state='stored' AND a.finished_at IS NOT NULL
- AND a.mime IN ('application/pdf','application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','text/plain','text/csv')
+ AND a.kind IN ('document','image') AND a.state='stored' AND a.finished_at IS NOT NULL
+ AND ((a.kind='document' AND a.mime IN ('application/pdf','application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','text/plain','text/csv'))
+ OR (a.kind='image' AND a.mime IN ('image/jpeg','image/png','image/webp')))
  AND a.content_sha256=p_media_sha AND a.storage_path='media/'||p_hmac
  AND a.size_bytes BETWEEN 1 AND 3145728 AND a.request_id IS NOT DISTINCT FROM p_request);
 $fn$;
 REVOKE ALL ON FUNCTION cotironda_piloto_privado.v2_conversation_document_verified(text,text,text,text,uuid) FROM PUBLIC,anon,authenticated;
 CREATE FUNCTION public.cotironda_piloto_v2_conversation_document_source(p_chat_hmac text,p_id uuid,p_revision bigint,p_lease uuid,p_message_hmac text)
 RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO '' AS $fn$
- SELECT jsonb_build_object('state','authorized_document','mime',a.mime,'size',a.size_bytes,'sha256',a.content_sha256,'manifest_id_sha256',a.media_id_sha256)
+ SELECT jsonb_build_object('state','authorized_document','mime',a.mime,'size',a.size_bytes,'sha256',a.content_sha256,'manifest_id_sha256',a.media_id_sha256,'kind',a.kind)
  FROM cotironda_piloto_privado.v2_buyer_conversations g
  JOIN cotironda_piloto_privado.participants b ON b.key=g.buyer_key AND b.chat_hmac=g.chat_hmac AND b.participant_role='buyer' AND b.consent_at IS NOT NULL AND b.opted_out_at IS NULL
- JOIN cotironda_piloto_privado.v2_buyer_conversation_sources s ON s.conversation_id=g.id AND s.message_hmac=p_message_hmac AND s.kind='document'
- JOIN cotironda_piloto_privado.whapi_inbox m ON m.message_hmac=s.message_hmac AND m.plaintext_sha256=s.source_sha256 AND m.chat_hmac=g.chat_hmac AND m.participant_key=g.buyer_key AND m.kind='document' AND m.request_id IS NULL
+ JOIN cotironda_piloto_privado.v2_buyer_conversation_sources s ON s.conversation_id=g.id AND s.message_hmac=p_message_hmac AND s.kind IN ('document','image')
+ JOIN cotironda_piloto_privado.whapi_inbox m ON m.message_hmac=s.message_hmac AND m.plaintext_sha256=s.source_sha256 AND m.chat_hmac=g.chat_hmac AND m.participant_key=g.buyer_key AND m.kind=s.kind AND m.request_id IS NULL
  JOIN cotironda_piloto_privado.media_archive_mvp095 a ON a.message_hmac=s.message_hmac
- WHERE g.id=p_id AND g.chat_hmac=p_chat_hmac AND g.revision=p_revision AND g.lease=p_lease AND g.lease_until>clock_timestamp() AND g.state='processing'
+ WHERE a.kind=s.kind AND g.id=p_id AND g.chat_hmac=p_chat_hmac AND g.revision=p_revision AND g.lease=p_lease AND g.lease_until>clock_timestamp() AND g.state='processing'
  AND cotironda_piloto_privado.v2_conversation_document_verified(s.message_hmac,g.chat_hmac,g.buyer_key,a.content_sha256,NULL);
 $fn$;
 REVOKE ALL ON FUNCTION public.cotironda_piloto_v2_conversation_document_source(text,uuid,bigint,uuid,text) FROM PUBLIC,anon,authenticated;
@@ -50,11 +51,11 @@ BEGIN
  WHERE s.conversation_id=g.id ORDER BY s.received_at,s.message_hmac LOOP
   IF n=0 AND f.message_hmac IS DISTINCT FROM g.source_hmac THEN RETURN false; END IF;
   IF n>0 THEN IF substring(g.original_request FROM pos FOR 2)<>E'\n\n' THEN RETURN false; END IF; pos:=pos+2; END IF;
-  IF f.text_length IS NULL OR f.text_length<1 OR f.kind NOT IN ('text','document') OR f.inbox_kind<>f.kind
+  IF f.text_length IS NULL OR f.text_length<1 OR f.kind NOT IN ('text','document','image') OR f.inbox_kind<>f.kind
    OR f.chat_hmac IS DISTINCT FROM g.chat_hmac OR f.participant_key IS DISTINCT FROM g.buyer_key
    OR f.request_id IS DISTINCT FROM p_request OR f.plaintext_sha256 IS DISTINCT FROM f.source_sha256
    OR encode(sha256(convert_to(substring(g.original_request FROM pos FOR f.text_length),'UTF8')),'hex') IS DISTINCT FROM (CASE WHEN f.kind='text' THEN f.source_sha256 ELSE f.derived_sha256 END)
-   OR (f.kind='document' AND NOT cotironda_piloto_privado.v2_conversation_document_verified(f.message_hmac,g.chat_hmac,g.buyer_key,f.media_sha256,p_request))
+   OR (f.kind IN ('document','image') AND NOT cotironda_piloto_privado.v2_conversation_document_verified(f.message_hmac,g.chat_hmac,g.buyer_key,f.media_sha256,p_request))
   THEN RETURN false; END IF;
   pos:=pos+f.text_length;n:=n+1;
  END LOOP;
@@ -126,14 +127,14 @@ BEGIN
  FROM cotironda_piloto_privado.v2_buyer_conversation_sources s JOIN cotironda_piloto_privado.whapi_inbox m USING(message_hmac)
  WHERE s.conversation_id=p_id ORDER BY s.received_at,s.message_hmac FOR UPDATE OF m LOOP
   v_part:=p_fragments->v_ord->>'text';
-  IF v_f.kind NOT IN ('text','document') OR v_f.inbox_kind<>v_f.kind OR v_f.chat_hmac IS DISTINCT FROM p_buyer_chat_hmac
+  IF v_f.kind NOT IN ('text','document','image') OR v_f.inbox_kind<>v_f.kind OR v_f.chat_hmac IS DISTINCT FROM p_buyer_chat_hmac
    OR v_f.participant_key IS DISTINCT FROM v_buyer OR v_f.request_id IS NOT NULL
    OR v_f.processing_state NOT IN ('needs_review','needs_zone')
    OR v_f.plaintext_sha256 IS DISTINCT FROM v_f.source_sha256
    OR p_fragments->v_ord->>'message_hmac' IS DISTINCT FROM v_f.message_hmac
    OR v_part IS NULL OR length(v_part)<1
    OR (v_f.kind='text' AND encode(sha256(convert_to(v_part,'UTF8')),'hex') IS DISTINCT FROM v_f.source_sha256)
-   OR (v_f.kind='document' AND (p_fragments->v_ord->>'derived_sha256' IS DISTINCT FROM encode(sha256(convert_to(v_part,'UTF8')),'hex')
+   OR (v_f.kind IN ('document','image') AND (p_fragments->v_ord->>'derived_sha256' IS DISTINCT FROM encode(sha256(convert_to(v_part,'UTF8')),'hex')
      OR NOT cotironda_piloto_privado.v2_conversation_document_verified(v_f.message_hmac,p_buyer_chat_hmac,v_buyer,p_fragments->v_ord->>'media_sha256',NULL)))
   THEN RETURN jsonb_build_object('state','source_not_authorized');END IF;
   IF v_ord=0 THEN p_message_hmac:=v_f.message_hmac; ELSE p_original_text:=p_original_text||E'\n\n'; END IF;
@@ -259,10 +260,10 @@ BEGIN
  UPDATE cotironda_piloto_privado.whapi_inbox
  SET request_id=v_request WHERE message_hmac IN (SELECT message_hmac FROM cotironda_piloto_privado.v2_buyer_conversation_sources WHERE conversation_id=p_id);
  UPDATE cotironda_piloto_privado.media_archive_mvp095 a SET request_id=v_request
- WHERE a.message_hmac IN (SELECT message_hmac FROM cotironda_piloto_privado.v2_buyer_conversation_sources WHERE conversation_id=p_id AND kind='document') AND a.request_id IS NULL;
+ WHERE a.message_hmac IN (SELECT message_hmac FROM cotironda_piloto_privado.v2_buyer_conversation_sources WHERE conversation_id=p_id AND kind IN ('document','image')) AND a.request_id IS NULL;
  UPDATE cotironda_piloto_privado.v2_buyer_conversation_sources s SET text_length=length(f->>'text'),
- media_sha256=CASE WHEN s.kind='document' THEN f->>'media_sha256' END,
- derived_sha256=CASE WHEN s.kind='document' THEN f->>'derived_sha256' END
+ media_sha256=CASE WHEN s.kind IN ('document','image') THEN f->>'media_sha256' END,
+ derived_sha256=CASE WHEN s.kind IN ('document','image') THEN f->>'derived_sha256' END
  FROM jsonb_array_elements(p_fragments) f WHERE s.conversation_id=p_id AND s.message_hmac=f->>'message_hmac';
  UPDATE cotironda_piloto_privado.v2_buyer_conversations SET request_id=v_request,state='done',lease=NULL,lease_until=NULL,
   requested_payment=v_payment,requested_vat=v_vat,payment_origin=v_payment_origin,vat_origin=v_vat_origin WHERE id=p_id;
