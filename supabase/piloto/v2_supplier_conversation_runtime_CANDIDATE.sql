@@ -25,7 +25,7 @@ $fn$;
 -- Solo non_quote; nunca convertir fragmentos económicos en mensajes de consulta.
 CREATE FUNCTION public.cotironda_piloto_v2_supplier_conversation_finish_question(p_chat_hmac text,p_id uuid,p_revision bigint,p_lease uuid,p_fields text[])
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO '' AS $fn$
-DECLARE s record;g record;anchor record;fragment_row record;r jsonb;changed jsonb;
+DECLARE s record;g record;anchor record;fragment_row record;r jsonb;changed jsonb;context_ref text;
 BEGIN
  IF NOT public.cotironda_piloto_v2_supplier_conversation_enabled() THEN RETURN jsonb_build_object('state','disabled');END IF;
  IF p_fields IS NULL OR cardinality(p_fields)>9 OR EXISTS(SELECT 1 FROM unnest(p_fields) f WHERE f IS NULL OR f NOT IN ('city','payment','vat','deadline','materials','alternatives','freight','other','how_it_works')) THEN RETURN jsonb_build_object('state','invalid');END IF;
@@ -38,7 +38,13 @@ BEGIN
  SELECT * INTO anchor FROM cotironda_piloto_privado.v2_supplier_conversation_sources WHERE conversation_id=p_id ORDER BY received_at DESC,message_hmac DESC LIMIT 1;
  IF NOT FOUND THEN RETURN jsonb_build_object('state','empty');END IF;
  IF cardinality(p_fields)>0 THEN
-  r:=public.cotironda_piloto_v2_supplier_question(anchor.message_hmac,p_chat_hmac,anchor.source_sha256,nullif(g.reference_key,''),p_fields,'non_quote');
+  -- Only disclose the request conditions if all fragments support the same context.
+  context_ref:=nullif(g.reference_key,'');
+  IF context_ref IS NULL OR EXISTS(SELECT 1 FROM cotironda_piloto_privado.v2_supplier_conversation_sources f WHERE f.conversation_id=p_id AND
+   ((f.quoted_reference IS NOT NULL AND f.quoted_reference<>context_ref)
+   OR (f.quoted_reference IS NULL AND cotironda_piloto_privado.v2_supplier_unique_reference(s.key,f.received_at) IS DISTINCT FROM context_ref)))
+  THEN context_ref:='unmatched-'||p_id::text;END IF;
+  r:=public.cotironda_piloto_v2_supplier_question(anchor.message_hmac,p_chat_hmac,anchor.source_sha256,context_ref,p_fields,'non_quote');
   IF r->>'state' NOT IN ('reply_reserved','recorded') THEN RETURN jsonb_build_object('state','question_not_reserved');END IF;
  ELSE
   changed:=public.cotironda_piloto_supplier_text_intent_v2(anchor.message_hmac,p_chat_hmac,anchor.source_sha256,'non_quote');
