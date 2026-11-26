@@ -331,7 +331,7 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
      {q.originalesAgrupados?
       q.originalesAgrupados.map((id,index)=><button key={id} className="coti-clean-pdf-button" type="button"
        disabled={busy} onClick={()=>void download(id,true)}>
-       {originalTexto?.id===id?'Ocultar mensaje '+(index+1):'Ver mensaje '+(index+1)}
+       {q.originalesAgrupados!.length===1?(originalTexto?.id===id?'Ocultar mensaje':'Ver mensaje original'):(originalTexto?.id===id?'Ocultar mensaje '+(index+1):'Ver mensaje '+(index+1))}
       </button>):
       (<button className="coti-clean-pdf-button" type="button"
       disabled={busy} onClick={()=>void download(q.documentoId,
@@ -348,7 +348,7 @@ export function RespuestasWhatsappD016({rondaId}:{rondaId:string}){
      </div>}
     {expanded&&<div className="coti-clean-bid-expanded" id={'detalle-'+q.documentoId}>
      <h4>Lo importante de este presupuesto</h4>
-     {q.originalesAgrupados&&<p className="coti-clean-muted">Oferta enviada en {q.originalesAgrupados.length} mensajes. Se muestran juntos, sin modificar los originales. El importe total no se presume.</p>}
+     {q.originalesAgrupados&&<p className="coti-clean-muted">{q.originalesAgrupados.length===1?'Oferta enviada por WhatsApp. Se conserva el mensaje original.':`Oferta enviada en ${q.originalesAgrupados.length} mensajes. Se muestran juntos, sin modificar los originales.`} El importe total no se presume.</p>}
      {monedaAjena&&<p className="coti-clean-muted">
       El documento menciona una moneda diferente de pesos argentinos. Confirmala con el proveedor antes de comparar importes.
      </p>}
