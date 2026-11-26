@@ -16,7 +16,7 @@ BEGIN
  FOR g IN SELECT c.* FROM cotironda_piloto_privado.v2_supplier_conversations c WHERE c.quote_request_id=p_request_id AND c.state='done' LOOP
   SELECT coalesce(jsonb_agg(cotironda_piloto_privado.v2_group_original_id(p_request_id,f.message_hmac)::text ORDER BY f.received_at,f.message_hmac),'[]'::jsonb),count(*) INTO ids,expected
   FROM cotironda_piloto_privado.v2_supplier_conversation_sources f WHERE f.conversation_id=g.id;
-  IF expected<2 THEN CONTINUE;END IF;
+  IF expected<1 THEN CONTINUE;END IF;
   anchor:=cotironda_piloto_privado.v2_group_original_id(p_request_id,g.quote_anchor_hmac);
   SELECT coalesce(jsonb_agg(v),'[]'::jsonb),count(*) INTO authorized,present FROM jsonb_array_elements(result) a(v) WHERE ids ? (v->>'documentId');
   -- Never present a partially authorized group or a group with stale links.
