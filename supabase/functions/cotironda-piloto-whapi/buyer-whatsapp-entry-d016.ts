@@ -129,8 +129,8 @@ export async function notificarAccesoWhatsappD016(args:{
   '&ronda='+row.request_id;
  const body='Cotironda ✅ Consultá los presupuestos recibidos para tu pedido.\n\n'+
   'Abrí este enlace privado para ingresar sin contraseña ni código:\n'+url+
-  '\n\nEste enlace funciona durante 14 días y podés abrirlo las veces que necesites. '+
-  'No tenés que enviar ninguna palabra para consultar las propuestas. '+
+  '\n\nEn Mi Cotironda podés consultar tus pedidos y presupuestos. '+
+  'Si necesitás recuperar el acceso, ingresá en app.cotironda.com. '+
   'No compartas el enlace.';
  let accepted=false,messageId:string|null=null;
  try{
