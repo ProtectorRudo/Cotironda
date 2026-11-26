@@ -39,6 +39,7 @@ BEGIN
    IF quoted>assigned OR assigned>25 OR assigned<1 THEN quoted:=NULL;assigned:=NULL;END IF;
   END IF;
   groupinfo:=jsonb_build_object('anchorId',anchor::text,'documentIds',ids,'quotedCount',quoted,'assignedCount',assigned,
+   'amountDisplay',g.quote_amount_display,
    'iva',CASE WHEN summary->>'iva' IN ('incluido_explicito','sin_iva_explicito') THEN summary->>'iva' ELSE 'no_informado' END,
    'flete',CASE WHEN summary->>'flete' IN ('incluido_explicito','excluido_explicito','a_convenir') THEN summary->>'flete' ELSE 'no_informado' END,
    'pago',CASE WHEN summary->>'pago' IN ('contado','transferencia','credito') THEN summary->>'pago' ELSE 'no_informado' END);
