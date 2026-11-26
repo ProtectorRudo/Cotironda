@@ -116,7 +116,7 @@ jobs:
         uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb
         with:
           deno-version: v2.x
-      - name: Materializar únicamente las 81 fuentes candidatas verificadas
+      - name: Materializar base v119 y candidato comercial integrado (86 fuentes)
         run: |
           node --input-type=module <<'NODE'
           import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
@@ -147,9 +147,27 @@ jobs:
           }
           for(const f of j.files)put(f.path,f.content);
           assert.equal(seen.size,81);
-          console.log('81 fuentes exactas materializadas; no se ejecuta el webhook.');
+          // Base v119: los 18 overlays del release v118 y 63 blobs exactos
+          // fueron contrastados byte por byte con la función desplegada.
+          const c=JSON.parse(readFileSync('supabase/piloto/v2_commercial_integrated_v119_CANDIDATE.json','utf8'));
+          assert.equal(c.base.version,119);
+          assert.equal(c.base.ezbr_sha256,'92a4ac176f5db35b8694a7543c20c180a1553c99d9a9d7a097faad58ae25e741');
+          assert.equal(c.files.length,11);
+          const overlay=new Set();
+          for(const f of c.files){
+            assert.match(f.path,/^(src\/domain\/|supabase\/functions\/)[a-zA-Z0-9_./-]+\.(?:ts|mjs)$/);
+            assert.ok(!f.path.split('/').includes('..')&&!overlay.has(f.path));
+            overlay.add(f.path);
+            const target=resolve(root,f.path);
+            assert.ok(target.startsWith(root+'/'));
+            mkdirSync(dirname(target),{recursive:true});
+            writeFileSync(target,f.content);
+            seen.add(f.path);
+          }
+          assert.equal(seen.size,86);
+          console.log('86 fuentes exactas: base v119 y 11 overlays comerciales; no se ejecuta el webhook.');
           NODE
-      - name: Typecheck Deno del candidato Whapi completo sin despliegue
+      - name: Typecheck Deno del candidato comercial completo sin despliegue
         run: |
           cd "$RUNNER_TEMP/cotironda-whapi-candidate"
           deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/index.ts
