@@ -76,3 +76,59 @@ jobs:
             -H "X-GitHub-Api-Version: 2022-11-28" \
             "https://api.github.com/repos/${{ github.repository }}/statuses/${{ github.sha }}" \
             -d "{\"state\":\"$state\",\"context\":\"cotironda/D022-build-and-safety\",\"description\":\"$description\",\"target_url\":\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}" >/dev/null
+
+  whapi-candidate-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout fuente exacta sin credenciales
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Node 22.16
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Deno 2
+        uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb
+        with:
+          deno-version: v2.x
+      - name: Materializar únicamente las 81 fuentes candidatas verificadas
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
+          import {dirname,resolve} from 'node:path';
+          import {createHash} from 'node:crypto';
+          import assert from 'node:assert/strict';
+          const j=JSON.parse(readFileSync('supabase/piloto/v2_catalogue_recovery_v118_CANDIDATE.json','utf8'));
+          assert.equal(j.base.version,118);
+          assert.equal(j.base.file_count,76);
+          assert.equal(j.base_unchanged.length,63);
+          assert.equal(j.files.length,18);
+          const root=resolve(process.env.RUNNER_TEMP,'cotironda-whapi-candidate');
+          const seen=new Set();
+          const put=(path,bytes)=>{
+            assert.match(path,/^(src\/domain\/|supabase\/functions\/)[a-zA-Z0-9_./-]+\.ts$/);
+            assert.ok(!path.split('/').includes('..')&&!seen.has(path));
+            seen.add(path);
+            const target=resolve(root,path);
+            assert.ok(target.startsWith(root+'/'));
+            mkdirSync(dirname(target),{recursive:true});
+            writeFileSync(target,bytes);
+          };
+          for(const f of j.base_unchanged){
+            const bytes=readFileSync(f.path);
+            const digest=createHash('sha1').update('blob '+bytes.length+'\0').update(bytes).digest('hex');
+            assert.equal(digest,f.git_blob_sha,'Base v118 modificada: '+f.path);
+            put(f.path,bytes);
+          }
+          for(const f of j.files)put(f.path,f.content);
+          assert.equal(seen.size,81);
+          console.log('81 fuentes exactas materializadas; no se ejecuta el webhook.');
+          NODE
+      - name: Typecheck Deno del candidato Whapi completo sin despliegue
+        run: |
+          cd "$RUNNER_TEMP/cotironda-whapi-candidate"
+          deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/index.ts
