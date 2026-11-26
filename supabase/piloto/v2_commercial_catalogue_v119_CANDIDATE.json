@@ -1,0 +1,136 @@
+{
+  "base": {
+    "slug": "cotironda-piloto-whapi",
+    "version": 119,
+    "ezbr_sha256": "92a4ac176f5db35b8694a7543c20c180a1553c99d9a9d7a097faad58ae25e741"
+  },
+  "activation": "OFF: standalone candidate, no live caller. Must integrate with semantic routing batches, selector, history and stage capacity prior to release.",
+  "scope": "Separate private RPC with 200 candidate suppliers (not recipients), 150 catalogue rows each unchanged. Reuse legacy validator and curator in batches of 25; global dedup and count reconciliation. Original RPC and validators untouched.",
+  "sql_candidate": "-- CANDIDATO: no instalar sin publicación autorizada del conjunto integrado.\n-- Clone de RPC real: identidad, consentimiento, zona, catálogo y privacidad idénticos.\nDO $commercial_catalogue$\nDECLARE\n source_oid oid:=to_regprocedure('public.cotironda_piloto_ia_catalogo_mvp220(text,text)');\n def text;\n dest_oid oid;\nBEGIN\n IF source_oid IS NULL THEN RAISE EXCEPTION 'catalogue source absent'; END IF;\n def:=pg_get_functiondef(source_oid);\n IF md5(def)<>'7404b7cca5f8a5ce64b39bae89cec2c0'\n OR (length(def)-length(replace(def,'IF v_suppliers>25 OR v_too_large THEN','')))/length('IF v_suppliers>25 OR v_too_large THEN')<>1\n OR (length(def)-length(replace(def,'public.cotironda_piloto_ia_catalogo_mvp220','')))/length('public.cotironda_piloto_ia_catalogo_mvp220')<>1\n THEN RAISE EXCEPTION 'catalogue source drift'; END IF;\n IF to_regprocedure('public.cotironda_piloto_v2_commercial_catalogue(text,text)') IS NOT NULL THEN RAISE EXCEPTION 'commercial catalogue already exists'; END IF;\n IF has_function_privilege('anon',source_oid,'EXECUTE') OR has_function_privilege('authenticated',source_oid,'EXECUTE') OR NOT has_function_privilege('service_role',source_oid,'EXECUTE') THEN RAISE EXCEPTION 'catalogue source ACL drift'; END IF;\n EXECUTE replace(replace(def,'public.cotironda_piloto_ia_catalogo_mvp220','public.cotironda_piloto_v2_commercial_catalogue'),'IF v_suppliers>25 OR v_too_large THEN','IF v_suppliers>200 OR v_too_large THEN');\n EXECUTE 'ALTER FUNCTION public.cotironda_piloto_v2_commercial_catalogue(text,text) OWNER TO postgres';\n EXECUTE 'REVOKE ALL ON FUNCTION public.cotironda_piloto_v2_commercial_catalogue(text,text) FROM PUBLIC, anon, authenticated';\n EXECUTE 'GRANT EXECUTE ON FUNCTION public.cotironda_piloto_v2_commercial_catalogue(text,text) TO service_role';\n dest_oid:=to_regprocedure('public.cotironda_piloto_v2_commercial_catalogue(text,text)');\n IF has_function_privilege('anon',dest_oid,'EXECUTE') OR has_function_privilege('authenticated',dest_oid,'EXECUTE') OR NOT has_function_privilege('service_role',dest_oid,'EXECUTE') THEN RAISE EXCEPTION 'commercial catalogue ACL mismatch'; END IF;\nEND\n$commercial_catalogue$;\n",
+  "files": [
+    {
+      "path": "src/domain/ia-central/catalogo-comercial-v2.ts",
+      "content": "import {validarSnapshotCatalogosMvp220,type SnapshotRealMvp220,type CatalogoRealMvp220,type ResultadoContextoMvp220} from './catalogo-supabase-mvp220.ts';\nimport {categorizarCatalogosCuradosD013} from './catalogo-curado-v2-d013.ts';\nimport type {ProveedorCatalogoV2} from './ruteador-catalogos-v2-d013.ts';\n\n/** V2 comercial solamente. Reutiliza el validador legado en grupos completos.\n * 200 candidatos consultables NO significa 200 invitaciones. No filtra por rubro. */\nexport function validarSnapshotCatalogosComercialesV2(input:unknown):SnapshotRealMvp220|null{\n const base=validarSnapshotCatalogosMvp220(input);\n if(base)return base;\n if(!input||typeof input!=='object'||Array.isArray(input))return null;\n const raw=input as Record<string,unknown>;\n if(raw.estado!==undefined||raw.state!=='catalogue_snapshot'||!Array.isArray(raw.proveedores)||\n    raw.proveedores.length<26||raw.proveedores.length>200||\n    !Number.isSafeInteger(raw.proveedoresSinConfirmar)||Number(raw.proveedoresSinConfirmar)<0)return null;\n const all:CatalogoRealMvp220[]=[];\n const seen=new Set<string>();\n let city='';\n let unconfirmed=0;\n for(let i=0;i<raw.proveedores.length;i+=25){\n  const rows=raw.proveedores.slice(i,i+25);\n  const localCount=rows.filter(x=>x&&x.catalogoConfirmado===false).length;\n  const verified=validarSnapshotCatalogosMvp220({...raw,proveedores:rows,proveedoresSinConfirmar:localCount});\n  if(!verified||city&&verified.localidad!==city)return null;\n  city=verified.localidad;\n  for(const supplier of verified.proveedores){\n   if(seen.has(supplier.clave))return null;\n   seen.add(supplier.clave);all.push(supplier);\n  }\n  unconfirmed+=verified.proveedoresSinConfirmar;\n }\n if(unconfirmed!==raw.proveedoresSinConfirmar||all.length!==raw.proveedores.length)return null;\n return {estado:'catalogue_snapshot',localidad:city,proveedores:all,proveedoresSinConfirmar:unconfirmed};\n}\n\nexport async function categorizarCatalogosComercialesV2(args:Parameters<typeof categorizarCatalogosCuradosD013>[0]):Promise<ResultadoContextoMvp220>{\n const {snapshot}=args;\n if(snapshot.proveedores.length<=25)return categorizarCatalogosCuradosD013(args);\n const invalid=():ResultadoContextoMvp220=>({estado:'catalogo_invalido',motivo:'catalogo_comercial_no_conciliado',proveedores:[],sinConfirmar:0});\n if(snapshot.proveedores.length>200)return invalid();\n const all:ProveedorCatalogoV2[]=[];\n const seen=new Set<string>();let unconfirmed=0;\n for(let i=0;i<snapshot.proveedores.length;i+=25){\n  const suppliers=snapshot.proveedores.slice(i,i+25);\n  const count=suppliers.filter(x=>!x.catalogoConfirmado).length;\n  const result=await categorizarCatalogosCuradosD013({...args,snapshot:{...snapshot,proveedores:suppliers,proveedoresSinConfirmar:count}});\n  if(result.estado==='catalogo_invalido'||result.proveedores.length!==suppliers.length||result.sinConfirmar!==count)return invalid();\n  for(const supplier of result.proveedores){\n   if(seen.has(supplier.clave)||!suppliers.some(x=>x.clave===supplier.clave))return invalid();\n   seen.add(supplier.clave);all.push(supplier);\n  }\n  unconfirmed+=count;\n }\n if(all.length!==snapshot.proveedores.length||unconfirmed!==snapshot.proveedoresSinConfirmar)return invalid();\n return {estado:unconfirmed?'catalogo_sin_confirmar':'catalogo_apto',motivo:unconfirmed?'falta_confirmacion_de_al_menos_un_catalogo':'catalogo_completo_con_fuente',proveedores:all,sinConfirmar:unconfirmed};\n}\n"
+    }
+  ],
+  "tests": {
+    "sql_predicate": [
+      {
+        "n": 0,
+        "items": 0,
+        "ok": true
+      },
+      {
+        "n": 2,
+        "items": 25,
+        "ok": true
+      },
+      {
+        "n": 25,
+        "items": 150,
+        "ok": true
+      },
+      {
+        "n": 26,
+        "items": 150,
+        "ok": true
+      },
+      {
+        "n": 70,
+        "items": 150,
+        "ok": true
+      },
+      {
+        "n": 100,
+        "items": 150,
+        "ok": true
+      },
+      {
+        "n": 200,
+        "items": 150,
+        "ok": true
+      },
+      {
+        "n": 201,
+        "items": 150,
+        "ok": true
+      },
+      {
+        "n": 70,
+        "items": 151,
+        "ok": true
+      }
+    ],
+    "snapshot_validator": [
+      {
+        "name": "count_0",
+        "ok": true
+      },
+      {
+        "name": "count_2",
+        "ok": true
+      },
+      {
+        "name": "count_25",
+        "ok": true
+      },
+      {
+        "name": "count_26",
+        "ok": true
+      },
+      {
+        "name": "count_70",
+        "ok": true
+      },
+      {
+        "name": "count_140",
+        "ok": true
+      },
+      {
+        "name": "count_200",
+        "ok": true
+      },
+      {
+        "name": "reject_201",
+        "ok": true
+      },
+      {
+        "name": "duplicate_across_batches",
+        "ok": true
+      },
+      {
+        "name": "wrong_total",
+        "ok": true
+      },
+      {
+        "name": "invalid_last_sku",
+        "ok": true
+      },
+      {
+        "name": "duplicate_sku",
+        "ok": true
+      },
+      {
+        "name": "bad_consent_shape",
+        "ok": true
+      },
+      {
+        "name": "empty_last_description",
+        "ok": true
+      },
+      {
+        "name": "inconsistent_family",
+        "ok": true
+      },
+      {
+        "name": "bad_city",
+        "ok": true
+      },
+      {
+        "name": "preserve_last_catalogue",
+        "ok": true
+      }
+    ],
+    "method": "Exact legacy validator and candidate validator executed as JS in V8 after explicit type annotation removal. No DDL; SQL predicate only. Curator and full TS compilation not executed."
+  }
+}
