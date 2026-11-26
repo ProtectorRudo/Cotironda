@@ -1,0 +1,108 @@
+{
+  "base": {
+    "slug": "cotironda-piloto-whapi",
+    "version": 119,
+    "ezbr_sha256": "92a4ac176f5db35b8694a7543c20c180a1553c99d9a9d7a097faad58ae25e741"
+  },
+  "activation": "OFF. SQL candidate not installed. Requires checkpoint worker wiring, cleanup, actual SQL and TypeScript compilation, full integration and authorized release.",
+  "decision": "Bound extended sequence to 32 paid calls only for an authenticated buyer's active commercial checkpoint, latest source, revision and lease. Existing buyer 8 / supplier 2 unchanged, same token ledger and 200k observed-token rolling pre-reservation threshold, no unknown usage bypass. 32 is not guaranteed affordable or sufficient. No new calls in this test.",
+  "sql_candidate": "-- CANDIDATO NO INSTALADO; apply with checkpoint and worker as one authorized pilot release.\n-- 32 is an upper technical bound ONLY for active commercial checkpoint. Ordinary reserve remains unchanged.\nDO $pre$\nDECLARE x record; f oid; \nBEGIN\n FOR x IN SELECT * FROM (VALUES ('public.cotironda_piloto_ai_usage_finish_mvp264(text,text,integer,text,text,integer,integer,integer,text)','4b44408f10327f4ff6d30e575244d889'),('public.cotironda_piloto_ai_usage_manual_review_mvp266(text,integer,uuid,text,text)','2e4862ecd372dddf62b2ecec37f3ec2b'),('public.cotironda_piloto_ai_usage_reserve_mvp264(text,text,integer,text)','3c3a6b21daaae8b4ec68e76906122235'),('public.cotironda_piloto_v2_conversation_meter(text,uuid,bigint,uuid)','94b2d4cb28b09a9d973b4f506e83a7dd')) a(sig,fp) LOOP\n  f:=to_regprocedure(x.sig);\n  IF f IS NULL OR md5(pg_get_functiondef(f))<>x.fp OR has_function_privilege('anon',f,'EXECUTE') OR has_function_privilege('authenticated',f,'EXECUTE') THEN RAISE EXCEPTION 'commercial meter source drift'; END IF;\n END LOOP;\n IF pg_get_constraintdef((SELECT oid FROM pg_constraint WHERE conrelid='cotironda_piloto_privado.ai_usage_calls_mvp264'::regclass AND conname='ai_usage_calls_mvp264_call_no_check')) IS DISTINCT FROM 'CHECK (((call_no >= 1) AND (call_no <= 8)))'\n OR pg_get_constraintdef((SELECT oid FROM pg_constraint WHERE conrelid='cotironda_piloto_privado.ai_usage_reviews_mvp266'::regclass AND conname='ai_usage_reviews_mvp266_call_no_check')) IS DISTINCT FROM 'CHECK (((call_no >= 1) AND (call_no <= 8)))'\n THEN RAISE EXCEPTION 'commercial ledger constraint drift'; END IF;\nEND $pre$;\nALTER TABLE cotironda_piloto_privado.ai_usage_calls_mvp264 DROP CONSTRAINT ai_usage_calls_mvp264_call_no_check, ADD CONSTRAINT ai_usage_calls_mvp264_call_no_check CHECK(call_no BETWEEN 1 AND 8 OR (participant_role='buyer' AND call_no BETWEEN 9 AND 32));\nALTER TABLE cotironda_piloto_privado.ai_usage_reviews_mvp266 DROP CONSTRAINT ai_usage_reviews_mvp266_call_no_check, ADD CONSTRAINT ai_usage_reviews_mvp266_call_no_check CHECK(call_no BETWEEN 1 AND 32);\n-- Existing finish and manual review only affect a real reserved ledger row, not authorization of new calls.\nDO $extend$\nDECLARE x record; f oid; def text; acl aclitem[]; owner_oid oid;\nBEGIN\n FOR x IN SELECT * FROM (VALUES ('public.cotironda_piloto_ai_usage_finish_mvp264(text,text,integer,text,text,integer,integer,integer,text)','4b44408f10327f4ff6d30e575244d889'),('public.cotironda_piloto_ai_usage_manual_review_mvp266(text,integer,uuid,text,text)','2e4862ecd372dddf62b2ecec37f3ec2b')) a(sig,fp) LOOP\n  f:=to_regprocedure(x.sig);def:=pg_get_functiondef(f);\n  SELECT proacl,proowner INTO acl,owner_oid FROM pg_proc WHERE oid=f;\n  IF md5(def)<>x.fp OR (length(def)-length(replace(def,'p_call_no NOT BETWEEN 1 AND 8','')))/length('p_call_no NOT BETWEEN 1 AND 8')<>1 THEN RAISE EXCEPTION 'usage finish drift';END IF;\n  EXECUTE replace(def,'p_call_no NOT BETWEEN 1 AND 8','p_call_no NOT BETWEEN 1 AND 32');\n  IF NOT EXISTS(SELECT 1 FROM pg_proc WHERE oid=f AND proacl IS NOT DISTINCT FROM acl AND proowner=owner_oid) THEN RAISE EXCEPTION 'usage acl drift';END IF;\n END LOOP;\nEND $extend$;\nCREATE OR REPLACE FUNCTION public.cotironda_piloto_v2_commercial_usage_reserve(p_message_hmac text, p_chat_hmac text, p_call_no integer, p_model text, p_id uuid, p_revision bigint, p_lease uuid)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\nDECLARE v_person text;v_role text;n_ bigint;used_ bigint;unknown_ bigint;written_ int;\nBEGIN\n IF p_message_hmac IS NULL OR p_message_hmac !~ '^[a-f0-9]{64}$'\n OR p_chat_hmac IS NULL OR p_chat_hmac !~ '^[a-f0-9]{64}$'\n OR p_call_no IS NULL OR p_call_no NOT BETWEEN 1 AND 32\n OR p_model IS NULL OR p_model NOT IN ('gpt-6-luna','gpt-6.1-sol')\n THEN RETURN jsonb_build_object('state','invalid');END IF;\n SELECT p.key,p.participant_role INTO v_person,v_role\n FROM cotironda_piloto_privado.whapi_inbox m\n JOIN cotironda_piloto_privado.participants p\n  ON p.key=m.participant_key AND p.chat_hmac=m.chat_hmac\n WHERE m.message_hmac=p_message_hmac AND m.chat_hmac=p_chat_hmac\n  AND p.consent_at IS NOT NULL AND p.opted_out_at IS NULL\n  AND p.participant_role='buyer' AND EXISTS(\n    SELECT 1 FROM cotironda_piloto_privado.ai_central_attempts_mvp226 b\n    WHERE b.message_hmac=m.message_hmac AND b.buyer_key=p.key\n     AND b.chat_hmac=m.chat_hmac AND b.state='reserved')\n  AND EXISTS(\n SELECT 1 FROM cotironda_piloto_privado.v2_buyer_conversations g\n JOIN cotironda_piloto_privado.v2_commercial_route_checkpoint cp ON cp.conversation_id=g.id AND cp.revision=g.revision\n WHERE g.id=p_id AND g.buyer_key=p.key AND g.chat_hmac=p_chat_hmac\n  AND g.revision=p_revision AND g.lease=p_lease AND g.state='processing'\n  AND g.lease_until>clock_timestamp() AND g.request_id IS NULL\n  AND cp.expires_at>clock_timestamp() AND cp.cursor_no<cp.total_groups\n  AND m.message_hmac=(SELECT s.message_hmac FROM cotironda_piloto_privado.v2_buyer_conversation_sources s\n   WHERE s.conversation_id=g.id ORDER BY s.received_at DESC,s.message_hmac DESC LIMIT 1)\n)\n FOR UPDATE OF p;\n IF NOT FOUND THEN RETURN jsonb_build_object('state','not_authorized');END IF;\n -- Same lock ordering as checkpoint/claim: participant, then conversation.\n PERFORM 1 FROM cotironda_piloto_privado.v2_buyer_conversations g\n JOIN cotironda_piloto_privado.v2_commercial_route_checkpoint cp ON cp.conversation_id=g.id AND cp.revision=g.revision\n WHERE g.id=p_id AND g.buyer_key=v_person AND g.chat_hmac=p_chat_hmac AND g.revision=p_revision\n AND g.lease=p_lease AND g.state='processing' AND g.lease_until>clock_timestamp()\n AND g.request_id IS NULL AND cp.expires_at>clock_timestamp() AND cp.cursor_no<cp.total_groups\n AND p_message_hmac=(SELECT s.message_hmac FROM cotironda_piloto_privado.v2_buyer_conversation_sources s WHERE s.conversation_id=g.id ORDER BY s.received_at DESC,s.message_hmac DESC LIMIT 1)\n FOR UPDATE OF g;\n IF NOT FOUND THEN RETURN jsonb_build_object('state','stale');END IF;\n IF EXISTS(SELECT 1 FROM cotironda_piloto_privado.ai_usage_calls_mvp264 a\n  WHERE a.message_hmac=p_message_hmac AND a.call_no=p_call_no)\n THEN RETURN jsonb_build_object('state','already_reserved');END IF;\n IF p_call_no<>(SELECT coalesce(max(a.call_no),0)+1 FROM cotironda_piloto_privado.ai_usage_calls_mvp264 a WHERE a.message_hmac=p_message_hmac)\n THEN RETURN jsonb_build_object('state','invalid_sequence');END IF;\n -- 24h rolling quotas are separate from persistent unreviewed uncertainty.\n SELECT count(*),\n  coalesce(sum(CASE WHEN state='observed' THEN total_tokens ELSE 0 END),0)\n INTO n_,used_\n FROM cotironda_piloto_privado.ai_usage_calls_mvp264\n WHERE participant_key=v_person\n  AND started_at>=clock_timestamp()-interval '24 hours';\n SELECT count(*) INTO unknown_\n FROM cotironda_piloto_privado.ai_usage_calls_mvp264 a\n WHERE a.participant_key=v_person AND a.state IN('reserved','unmetered')\n  AND NOT EXISTS(\n   SELECT 1 FROM cotironda_piloto_privado.ai_usage_reviews_mvp266 r\n   WHERE r.message_hmac=a.message_hmac AND r.call_no=a.call_no\n  );\n -- 24 calls maximum per person/24h AND no fresh paid call while previous\n -- request is of UNKNOWN spend. Includes network timeouts and missing usage.\n IF unknown_>0 THEN RETURN jsonb_build_object('state','usage_unknown_blocked');END IF;\n -- Llamadas sin tope artificial; proteger el consumo real de tokens.\n -- Un consumo desconocido bloquea nuevas llamadas hasta su revision.\n IF used_>=200000\n THEN RETURN jsonb_build_object('state','budget_exceeded');END IF;\n INSERT INTO cotironda_piloto_privado.ai_usage_calls_mvp264(\n  message_hmac,call_no,participant_key,participant_role,model_code)\n VALUES(p_message_hmac,p_call_no,v_person,v_role,p_model)\n ON CONFLICT DO NOTHING;\n GET DIAGNOSTICS written_=row_count;\n RETURN jsonb_build_object('state',CASE WHEN written_=1 THEN 'reserved'\n  ELSE 'already_reserved' END);\nEND;$function$;\nREVOKE ALL ON FUNCTION public.cotironda_piloto_v2_commercial_usage_reserve(text,text,integer,text,uuid,bigint,uuid) FROM PUBLIC,anon,authenticated;\nGRANT EXECUTE ON FUNCTION public.cotironda_piloto_v2_commercial_usage_reserve(text,text,integer,text,uuid,bigint,uuid) TO service_role;\nCREATE OR REPLACE FUNCTION public.cotironda_piloto_v2_commercial_meter(p_chat_hmac text, p_id uuid, p_revision bigint, p_lease uuid)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\nDECLARE g record; m record; b text; prev record; n integer;\nBEGIN\n SELECT key INTO b FROM cotironda_piloto_privado.participants WHERE chat_hmac=p_chat_hmac AND participant_role='buyer' AND consent_at IS NOT NULL AND opted_out_at IS NULL FOR UPDATE;\n IF b IS NULL THEN RETURN jsonb_build_object('state','not_authorized'); END IF;\n SELECT * INTO g FROM cotironda_piloto_privado.v2_buyer_conversations WHERE id=p_id AND buyer_key=b AND chat_hmac=p_chat_hmac AND state='processing' AND revision=p_revision AND lease=p_lease AND lease_until>clock_timestamp() FOR UPDATE;\n IF NOT FOUND THEN RETURN jsonb_build_object('state','stale');END IF;\n SELECT s.message_hmac,s.source_sha256 INTO m FROM cotironda_piloto_privado.v2_buyer_conversation_sources s JOIN cotironda_piloto_privado.whapi_inbox i USING(message_hmac)\n WHERE s.conversation_id=p_id AND i.participant_key=b AND i.chat_hmac=p_chat_hmac AND i.plaintext_sha256=s.source_sha256 AND i.request_id IS NULL\n ORDER BY s.received_at DESC,s.message_hmac DESC LIMIT 1;\n IF NOT FOUND THEN RETURN jsonb_build_object('state','source_changed');END IF;\n -- Si otra revisión todavía tiene una llamada abierta, no competir por tokens.\n IF EXISTS(SELECT 1 FROM cotironda_piloto_privado.ai_usage_calls_mvp264 u WHERE u.participant_key=b AND u.state='reserved')\n THEN\n  UPDATE cotironda_piloto_privado.v2_buyer_conversations SET state='collecting',lease=NULL,lease_until=NULL,ready_at=clock_timestamp()+interval '15 seconds' WHERE id=p_id;\n  RETURN jsonb_build_object('state','meter_busy');\n END IF;\n SELECT * INTO prev FROM cotironda_piloto_privado.ai_central_attempts_mvp226 WHERE message_hmac=m.message_hmac FOR UPDATE;\n IF FOUND AND (prev.buyer_key IS DISTINCT FROM b OR prev.chat_hmac IS DISTINCT FROM p_chat_hmac OR prev.source_sha256 IS DISTINCT FROM m.source_sha256 OR prev.state<>'reserved')\n THEN RETURN jsonb_build_object('state','attempt_not_eligible');END IF;\n IF NOT FOUND THEN\n  INSERT INTO cotironda_piloto_privado.ai_central_attempts_mvp226(message_hmac,buyer_key,chat_hmac,source_sha256) VALUES(m.message_hmac,b,p_chat_hmac,m.source_sha256);\n END IF;\n SELECT coalesce(max(call_no),0) INTO n FROM cotironda_piloto_privado.ai_usage_calls_mvp264 WHERE message_hmac=m.message_hmac;\n IF NOT EXISTS(SELECT 1 FROM cotironda_piloto_privado.v2_commercial_route_checkpoint cp WHERE cp.conversation_id=g.id AND cp.revision=g.revision AND cp.expires_at>clock_timestamp())\n THEN RETURN jsonb_build_object('state','checkpoint_missing');END IF;\n IF n>=32 THEN RETURN jsonb_build_object('state','meter_exhausted');END IF;\n RETURN jsonb_build_object('state','reserved','message_hmac',m.message_hmac,'usage_call_no',n,'max_calls',32,'lease_until_ms',floor(extract(epoch FROM g.lease_until)*1000)::bigint);\nEND $function$;\nREVOKE ALL ON FUNCTION public.cotironda_piloto_v2_commercial_meter(text,uuid,bigint,uuid) FROM PUBLIC,anon,authenticated;\nGRANT EXECUTE ON FUNCTION public.cotironda_piloto_v2_commercial_meter(text,uuid,bigint,uuid) TO service_role;\n",
+  "files": [
+    {
+      "path": "supabase/functions/cotironda-piloto-whapi/ai-central-usage-mvp264.ts",
+      "content": "/** MVP264: OpenAI Responses metering for an ALREADY authorized IA Central\n * source. 100% opt-in in the broker. Never stores prompts or responses,\n * only usage numbers and a SHA-256 of the opaque API response identifier.\n * Reserved/unknown usage is NOT zero cost; future paid calls fail closed.\n */\ntype Rpc=(name:string,params:Record<string,unknown>)=>\n Promise<{data:unknown;error:unknown}>;\ntype Model='gpt-6-luna'|'gpt-6.1-sol';\ntype Role='buyer'|'supplier';\nconst API='https://api.openai.com/v1/responses';\nconst SHA=/^[a-f0-9]{64}$/u;\nconst isObj=(x:unknown):x is Record<string,unknown>=>\n x!==null&&typeof x==='object'&&!Array.isArray(x);\nconst safe=(n:unknown,max=600000):n is number=>\n typeof n==='number'&&Number.isSafeInteger(n)&&n>=0&&n<=max;\nfunction usageOf(raw:unknown){\n if(!isObj(raw)||typeof raw.id!=='string'||!/^resp_[a-zA-Z0-9_-]{8,160}$/u.test(raw.id)\n  ||!isObj(raw.usage))return null;\n const u=raw.usage;\n if(!safe(u.input_tokens,300000)||!safe(u.output_tokens,300000)||\n  !safe(u.total_tokens)||u.total_tokens!==u.input_tokens+u.output_tokens)\n  return null;\n return {id:raw.id,input:u.input_tokens,output:u.output_tokens,total:u.total_tokens};\n}\nasync function sha(source:string){\n const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(source));\n return Array.from(new Uint8Array(bytes)).map(x=>x.toString(16).padStart(2,'0')).join('');\n}\nexport function instrumentoOpenAiMvp264(args:{\n messageHmac:string;chatHmac:string;role:Role;model:Model;\n rpc:Rpc;fetchImpl?:typeof fetch;initialCallNo?:number;\n commercialScope?:{id:string;revision:number;lease:string};onCallNo?:(n:number)=>void;\n}):typeof fetch{\n if(!SHA.test(args.messageHmac)||!SHA.test(args.chatHmac)\n  ||!['buyer','supplier'].includes(args.role)||\n  !['gpt-6-luna','gpt-6.1-sol'].includes(args.model))\n  throw Error('mvp264_invalid_identity');\n const scope=args.commercialScope;\n const uuid=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/iu;\n if(scope&&(args.role!=='buyer'||!uuid.test(scope.id)||!uuid.test(scope.lease)||!Number.isSafeInteger(scope.revision)||scope.revision<1))\n  throw Error('mvp264_invalid_commercial_scope');\n const max=scope?32:args.role==='buyer'?8:2;\n let callNo=args.initialCallNo??0;\n if(!Number.isSafeInteger(callNo)||callNo<0||callNo>=max)throw Error('mvp264_invalid_call_sequence');\n const db=async(name:string,params:Record<string,unknown>)=>{\n  const r=await args.rpc(name,params);\n  if(r.error!==null&&r.error!==undefined||!isObj(r.data)||\n   typeof r.data.state!=='string')\n   throw Error('mvp264_ledger_unavailable');\n  return r.data;\n };\n return (async(input:RequestInfo|URL,init?:RequestInit):Promise<Response>=>{\n  if(typeof input!=='string'||input!==API||init?.method!=='POST'||\n   callNo>=max||typeof init.body!=='string')\n   throw Error('mvp264_call_outside_budget');\n  const body:unknown=JSON.parse(init.body);\n  if(!isObj(body)||body.model!==args.model||body.store!==false||\n   !Array.isArray(body.tools)||body.tools.length!==0)\n   throw Error('mvp264_unexpected_request');\n  const seq=++callNo;\n  const fields={p_chat_hmac:args.chatHmac,p_message_hmac:args.messageHmac,\n   p_call_no:seq};\n  const pre=await db(scope?'cotironda_piloto_v2_commercial_usage_reserve':'cotironda_piloto_ai_usage_reserve_mvp264',{\n   ...fields,p_model:args.model,...(scope?{p_id:scope.id,p_revision:scope.revision,p_lease:scope.lease}:{})\n  });\n  if(pre.state!=='reserved')throw Error('mvp264_budget_denied');\n  args.onCallNo?.(seq);\n  const finish=async(state:'observed'|'unmetered',reason:string|null,\n   usage:{input:number;output:number;total:number;digest:string}|null)=>{\n   const r=await db('cotironda_piloto_ai_usage_finish_mvp264',{\n    ...fields,p_state:state,p_reason_code:reason,\n    p_input_tokens:usage?.input??null,p_output_tokens:usage?.output??null,\n    p_total_tokens:usage?.total??null,p_response_id_sha256:usage?.digest??null\n   });\n   if(r.state!=='recorded')throw Error('mvp264_usage_unconfirmed');\n  };\n  let response:Response;\n  try{response=await (args.fetchImpl??fetch)(input,init);}\n  catch{\n   await finish('unmetered','network_uncertain',null);\n   throw Error('mvp264_network_uncertain');\n  }\n  if(!response.ok){\n   await finish('unmetered','http_failure',null);\n   return response;\n  }\n  let raw:unknown;\n  try{\n   const clone=response.clone();\n   const body=await clone.text();\n   if(body.length>150000)throw Error('response_too_large');\n   raw=JSON.parse(body);\n  }catch{\n   await finish('unmetered','response_read_failed',null);\n   throw Error('mvp264_unreadable_response');\n  }\n  const usage=usageOf(raw);\n  if(!usage){\n   await finish('unmetered',\n    isObj(raw)&&Object.hasOwn(raw,'usage')?'invalid_usage':'usage_missing',null);\n   // Fail closed: never treat an unmetered model output as a free response.\n   throw Error('mvp264_usage_not_observed');\n  }\n  const digest=await sha(usage.id);\n  await finish('observed',null,{...usage,digest});\n  return response;\n }) as typeof fetch;\n}\n"
+    }
+  ],
+  "tests": {
+    "fingerprints": [
+      {
+        "name": "cotironda_piloto_ai_usage_finish_mvp264",
+        "fingerprint": "4b44408f10327f4ff6d30e575244d889",
+        "no_public": true
+      },
+      {
+        "name": "cotironda_piloto_ai_usage_manual_review_mvp266",
+        "fingerprint": "2e4862ecd372dddf62b2ecec37f3ec2b",
+        "no_public": true
+      },
+      {
+        "name": "cotironda_piloto_ai_usage_reserve_mvp264",
+        "fingerprint": "3c3a6b21daaae8b4ec68e76906122235",
+        "no_public": true
+      },
+      {
+        "name": "cotironda_piloto_v2_conversation_meter",
+        "fingerprint": "94b2d4cb28b09a9d973b4f506e83a7dd",
+        "no_public": true
+      }
+    ],
+    "sql_predicate": [
+      {
+        "label": "normal_buyer_8",
+        "ok": true
+      },
+      {
+        "label": "normal_buyer_9",
+        "ok": true
+      },
+      {
+        "label": "commercial_9",
+        "ok": true
+      },
+      {
+        "label": "commercial_32",
+        "ok": true
+      },
+      {
+        "label": "commercial_33",
+        "ok": true
+      },
+      {
+        "label": "supplier_2",
+        "ok": true
+      },
+      {
+        "label": "supplier_3",
+        "ok": true
+      },
+      {
+        "label": "supplier_commercial",
+        "ok": true
+      },
+      {
+        "label": "stale_lease",
+        "ok": true
+      },
+      {
+        "label": "source_mismatch",
+        "ok": true
+      },
+      {
+        "label": "missing_checkpoint",
+        "ok": true
+      },
+      {
+        "label": "daily_limit",
+        "ok": true
+      },
+      {
+        "label": "unknown_spend",
+        "ok": true
+      },
+      {
+        "label": "sequence_gap",
+        "ok": true
+      }
+    ],
+    "js_guard": [
+      "legacy_buyer",
+      "legacy_supplier",
+      "commercial",
+      "commercial_supplier",
+      "bad_revision",
+      "cap_exhausted",
+      "legacy_exhausted"
+    ],
+    "method": "SQL SELECT synthetic predicates, exact extracted JS guard. No DDL/SQL function execution, full meter/TS or IA API execution."
+  }
+}
