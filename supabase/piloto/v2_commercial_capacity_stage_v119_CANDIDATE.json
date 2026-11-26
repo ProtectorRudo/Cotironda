@@ -1,0 +1,143 @@
+{
+  "base": {
+    "slug": "cotironda-piloto-whapi",
+    "version": 119,
+    "ezbr_sha256": "92a4ac176f5db35b8694a7543c20c180a1553c99d9a9d7a097faad58ae25e741"
+  },
+  "activation": "OFF; no caller opt-in. SQL candidate not installed. Requires catalog expansion, routing budget and integration with commercial selector/history, access D016, full E2E, authorization and real round closure.",
+  "scope": "25 items unchanged. Only multi-source commercial opt-in bridge; publishing beyond old capacity only for verified V2 two-business-day conversation. 70 destinations, 1750 item/supplier pairs. Historical shadow preparation remains unchanged. No change to identity, source, authorization, catalog, dedup or delivery.",
+  "sql_candidate": "-- CANDIDATO NO INSTALADO. Ejecutar únicamente como parte del release piloto autorizado y completo.\n-- Las 2 funciones se sustituyen atómicamente por CREATE OR REPLACE; no cambia firmas ni ACL.\nDO $capacity$\nDECLARE x record; current_def text; next_def text; fn oid; old_acl aclitem[]; old_owner oid;\nBEGIN\n FOR x IN SELECT * FROM (VALUES\n('public.cotironda_piloto_v2_conversation_stage(text,uuid,bigint,uuid,jsonb,text,jsonb,jsonb,jsonb,jsonb)','b0a2363b70306c07cb518dc73c97cac4','IF v_line_count NOT BETWEEN 1 AND 25 OR jsonb_array_length(p_destinos) NOT BETWEEN 1 AND 25','IF v_line_count NOT BETWEEN 1 AND 25 OR jsonb_array_length(p_destinos) NOT BETWEEN 1 AND 70'),\n('public.cotironda_piloto_ia_publish_mvp222(uuid)','8c14f3a39b2c22a9f2d9b0b5e0c06783','IF v_supplier_count NOT BETWEEN 1 AND 25 OR v_pairs>625','IF v_supplier_count NOT BETWEEN 1 AND 70 OR v_pairs>1750\n  OR ((v_supplier_count>25 OR v_pairs>625) AND NOT (\n   (v_round.timing_mode IS NOT DISTINCT FROM ''business_two_days''\n    AND v_round.round_days IS NOT DISTINCT FROM 2\n    AND v_round.v2_calendar_revision IS NOT NULL\n    AND cotironda_piloto_privado.v2_conversation_source_verified(v_round.id)) IS TRUE))')\n ) p(signature,expected,old_text,new_text) LOOP\n  fn:=to_regprocedure(x.signature);\n  IF fn IS NULL THEN RAISE EXCEPTION 'capacity candidate missing function'; END IF;\n  SELECT proacl,proowner INTO old_acl,old_owner FROM pg_proc WHERE oid=fn;\n  current_def:=pg_get_functiondef(fn);\n  IF md5(current_def)<>x.expected OR (length(current_def)-length(replace(current_def,x.old_text,'')))/length(x.old_text)<>1 THEN RAISE EXCEPTION 'capacity candidate fingerprint mismatch'; END IF;\n  IF has_function_privilege('anon',fn,'EXECUTE') OR has_function_privilege('authenticated',fn,'EXECUTE') OR NOT has_function_privilege('service_role',fn,'EXECUTE') THEN RAISE EXCEPTION 'capacity candidate ACL mismatch'; END IF;\n  next_def:=replace(current_def,x.old_text,x.new_text);\n  EXECUTE next_def;\n  IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE oid=fn AND proacl IS NOT DISTINCT FROM old_acl AND proowner=old_owner) THEN RAISE EXCEPTION 'capacity candidate ACL changed'; END IF;\n END LOOP;\nEND\n$capacity$;\n",
+  "files": [
+    {
+      "name": "src/domain/ia-central/puente-sql-rondas-v2-d013.ts",
+      "content": "/** D013 V2-only: conserva número y fuente exacta del catálogo, NO excluye por rubro.\n * Separado del M221 histórico para respetar el manifest criptográfico M332. */\n/** Etapa B3 — del plan semántico verificado a SQL transaccional en SOMBRA.\n * No inserta invitaciones ni activa Whapi: sólo llama una RPC privada.\n * La RPC REVALIDA contra HMAC del mensaje archivado y catálogo vigente.\n */\nimport {unidadCompradaCanonicaV2D013,unidadDimensionadaV2D013}\n from './magnitudes-universales-v2-d013.ts';\nimport type {PlanMvp220} from './planificador-piloto-mvp220.ts';\n/** Proyección de una cita YA validada por los dos lectores V2 a la tabla SQL.\n * Nunca es fuente de verdad: el pedido íntegro sigue en p_original_text.\n * Los límites de PDF/WinAnsi (75 caracteres) son de PRESENTACIÓN, no del\n * contrato comercial; SQL admite hasta 500 caracteres UTF-8 por renglón.\n * No permitir teléfonos/URLs/correos en descripciones destinadas a proveedores.\n */\nconst CONTACTO_COMERCIAL_D013=/(?:https?:\\/\\/|www\\.|[\\w.+-]+@[\\w.-]+\\.[A-Za-z]{2,}|(?:\\+?\\d[\\s.-]?){9,}|\\b(?:whatsapp|tel[eé]fono|celular|cuit|cuil|correo|email|raz[oó]n social)\\b)/iu;\nconst CONTROL_COMERCIAL_D013=/[\\u0000-\\u001f\\u007f]/u;\nexport function descripcionFuenteV2D013(\n fuente:string,item:{descripcion:string;evidencia:string;inicio:number;fin:number},\n siguienteInicio?:number\n):string|null{\n if(typeof fuente!=='string'||!item||typeof item.descripcion!=='string'||\n    item.descripcion.trim().length<3||typeof item.evidencia!=='string'||\n    item.evidencia.length<2||item.evidencia.length>1500||\n    !Number.isSafeInteger(item.inicio)||!Number.isSafeInteger(item.fin)||\n    item.inicio<0||item.fin<=item.inicio||item.fin>fuente.length||\n    fuente.slice(item.inicio,item.fin)!==item.evidencia)return null;\n const hasta=siguienteInicio??fuente.length;\n if(!Number.isSafeInteger(hasta)||hasta<item.fin||hasta>fuente.length)return null;\n // El modelo puede citar el punto final y la IA sigue teniendo razón.\n // Conservar la cita literal antes de limpiar puntuación de presentación.\n const resto=fuente.slice(item.fin,hasta);\n const limite=resto.search(/[\\r\\n]|(?:\\s+|[,;]\\s*)(?:entrega\\s+(?:en|a)\\s+|obra\\s+en\\s+|para\\s+entregar\\s+en\\s+)/iu);\n const complemento=limite<0?resto:resto.slice(0,limite);\n let original=(item.evidencia+complemento).replace(/\\s+/gu,' ').trim()\n  .replace(/^[*•-]\\s*/u,'').replace(/[.;,]\\s*$/u,'').trim();\n // Cantidad ya corroborada en su campo: retirar SOLO numerales explícitos\n // del comienzo, jamás medidas ni especificaciones en el medio.\n original=original.replace(/^(?:[1-9]\\d{0,5}(?:[.,]\\d{1,3})?)\\s+/u,'').trim();\n if(original.length<3||original.length>500||\n    CONTROL_COMERCIAL_D013.test(original)||CONTACTO_COMERCIAL_D013.test(original))\n  return null;\n return original;\n}\n\nimport type {ProveedorCatalogoV2} from './ruteador-catalogos-v2.ts';\nconst HASH=/^[a-f0-9]{64}$/u;\nconst KEY=/^[a-z][a-z0-9_]{2,63}$/u;\n/** Canonicaliza SOLO alias explícitos que la RPC de catálogos D013 ya admite.\n * El original queda intacto en p_original_text; no afecta Córdoba, Berisso\n * ni otras localidades. SQL de preparación/publicación usa ciudad canónica.\n */\nconst LA_PLATA_D013=new Set([\n 'la plata',\n 'la plata, buenos aires',\n 'la plata, buenos aires, argentina',\n 'la plata, provincia de buenos aires',\n 'la plata, provincia de buenos aires, argentina'\n]);\nexport function localidadOperativaD013(ciudad:string):string{\n const literal=ciudad.trim();\n const normalized=literal.normalize('NFD').replace(/[\\u0300-\\u036f]/gu,'')\n  .toLowerCase().replace(/\\s+/gu,' ');\n return LA_PLATA_D013.has(normalized)?'La Plata':literal;\n}\n/** Adaptar el lector libre al esquema V2 ya publicado, SIN inventar\n * envases ni convertir peso a volumen. El texto original se almacena\n * íntegro y la descripción siempre conserva la presentación literal.\n */\nexport function cantidadUnidadSqlV2D013(\n cantidad:string,unidad:string\n):Readonly<{cantidad:string;unidad:string}>|null{\n if(typeof cantidad!=='string'||! /^(?:0|[1-9]\\d{0,5})(?:\\.\\d{1,3})?$/u.test(cantidad)||\n    !(Number(cantidad)>0)||typeof unidad!=='string'||unidad.length>80)\n  return null;\n const canonical=unidadCompradaCanonicaV2D013(unidad);\n // El catálogo SQL conserva \"bolsón\" dentro de la descripción original.\n // Ambos son conteos de envases, no un volumen asumido.\n if(canonical==='bigbag')return {cantidad,unidad:'bag'};\n if(canonical==='bucket')return {cantidad,unidad:'unit'};\n const supported=new Set(['unit','bag','box','kg','g','l','ml',\n  'm','m2','m3','roll','pack']);\n if(supported.has(canonical))return {cantidad,unidad:canonical};\n const measure=unidadDimensionadaV2D013(unidad);\n if(!measure)return null;\n const target=measure.dimension==='longitud'?'m':\n  measure.dimension==='superficie'?'m2':\n  measure.dimension==='volumen_aridos'?'m3':\n  measure.dimension==='volumen_liquidos'?'l':'kg';\n const [entero,decimal='']=cantidad.split('.');\n const mil=BigInt(entero)*1000n+BigInt(decimal.padEnd(3,'0'));\n const converted=mil*measure.factor;\n if(converted%1000000000n!==0n)return null;\n const quotient=converted/1000000000n;\n if(quotient<=0n||quotient>1000000000n)return null;\n const base=quotient/1000n,frac=quotient%1000n;\n const normalized=frac===0n?base.toString():\n  base.toString()+'.'+frac.toString().padStart(3,'0').replace(/0+$/u,'');\n return {cantidad:normalized,unidad:target};\n}\n\ntype Params=Readonly<{\n p_buyer_chat_hmac:string;p_message_hmac:string;\n p_original_text:string;p_city:string;\n p_items:readonly Readonly<{\n  descripcion:string;cantidad:string;unidad:string;\n  evidencia:string;rubro:string\n }>[];\n p_destinos:readonly Readonly<{\n  proveedor:string;\n  correspondencias:readonly Readonly<{\n   indicePedido:number;numeroCatalogo:number;\n   descripcionCatalogo:string;rubroCatalogo:string;\n   tipo:'producto_declarado'|'alternativa_razonable';\n   explicacion:string\n  }>[];\n }>[];\n}>;\nexport type ResultadoPuenteMvp221=Readonly<{\n estado:'plan_sql_listo'|'plan_no_verificable';\n motivo:string;params:Params|null;\n}>;\nconst no=(motivo:string):ResultadoPuenteMvp221=>({\n estado:'plan_no_verificable',motivo,params:null\n});\n/** Convertir coincidencia IA a referencia exacta del catálogo.\n * Si cambió la fuente, el SQL rechaza la escritura (CAS por descripción).\n */\nexport function armarPreparacionSombraMvp221(args:{\n chatHmac:string;messageHmac:string;textoOriginal:string;\n autenticadoPorWebhook:boolean;\n plan:PlanMvp220;multifuente?:boolean;distribucionComercial?:boolean\n}):ResultadoPuenteMvp221{\n if(!args||args.autenticadoPorWebhook!==true||\n    !HASH.test(args.chatHmac)||!HASH.test(args.messageHmac)||\n    typeof args.textoOriginal!=='string'||\n    args.textoOriginal.length<10||args.textoOriginal.length>(args.multifuente?12000:4000)||\n    args.plan?.estado!=='plan_validado_sin_envio'||\n    args.plan.whatsappEnviado!==false||args.plan.baseModificada!==false||\n    !args.plan.pedido||!Array.isArray(args.plan.pedido.articulos)||\n    !args.plan.ruteo||args.plan.ruteo.estado!=='ruteo_valido_para_preparacion'||\n    !Array.isArray(args.plan.catalogos))\n  return no('origen_o_plan_no_verificado');\n const {pedido,ruteo}=args.plan;\n if(typeof pedido.zona_entrega!=='string'||pedido.zona_entrega.length<3||\n    pedido.articulos.length<1||pedido.articulos.length>200)\n  return no('ciudad_o_items_invalidos');\n const bySupplier=new Map<string,ProveedorCatalogoV2>(\n  args.plan.catalogos.map(s=>[s.clave,s] as const)\n );\n if(bySupplier.size!==args.plan.catalogos.length)return no('proveedores_duplicados');\n const items=pedido.articulos.map((item,i)=>{\n  const representada=cantidadUnidadSqlV2D013(item.cantidad,item.unidad);\n  return {\n   descripcion:descripcionFuenteV2D013(args.textoOriginal,item,\n    pedido.articulos[i+1]?.inicio),\n   cantidad:representada?.cantidad??null,unidad:representada?.unidad??null,\n   evidencia:item.evidencia,rubro:item.rubro\n  };\n });\n // Conservar todas las especificaciones originales; el límite SQL es 500.\n // La renderización PDF ocurre DESPUÉS y no decide si el pedido es válido.\n if(items.some(x=>x.descripcion===null))\n  return no('presentacion_fuente_no_representable');\n if(items.some(x=>x.cantidad===null||x.unidad===null))\n  return no('cantidad_unidad_no_representable_en_sql');\n const fullItems=items as ReadonlyArray<{\n  descripcion:string;cantidad:string;unidad:string;\n  evidencia:string;rubro:string\n }>;\n const seen=new Set<string>();\n const destinations:Params['p_destinos'][number][]=[];\n for(const destination of ruteo.propuestas){\n  if(!KEY.test(destination.proveedor)||seen.has(destination.proveedor))\n   return no('destinatario_duplicado_o_invalido');\n  const source=bySupplier.get(destination.proveedor);\n  if(!source||!source.consentido||!source.activo||\n     destination.correspondencias.length<1)\n   return no('catalogo_no_confirmado');\n  const matches:Params['p_destinos'][number]['correspondencias'][number][]=[];\n  const positions=new Set<number>();\n  for(const match of destination.correspondencias){\n   if(!Number.isSafeInteger(match.indicePedido)||\n      match.indicePedido<0||match.indicePedido>=fullItems.length||\n      !Number.isSafeInteger(match.numeroCatalogo)||\n      positions.has(match.indicePedido))return no('indice_de_pedido_invalido');\n   const row=source.articulos.find(x=>x.numero===match.numeroCatalogo);\n   if(!row||\n      !['producto_declarado','alternativa_razonable'].includes(match.tipo)||\n      typeof match.explicacion!=='string'||\n      match.explicacion.length<3||match.explicacion.length>240)\n    return no('catalogo_sin_evidencia');\n   positions.add(match.indicePedido);\n   matches.push({\n    indicePedido:match.indicePedido,\n    numeroCatalogo:match.numeroCatalogo,\n    descripcionCatalogo:row.descripcion,\n    rubroCatalogo:row.rubro,\n    tipo:match.tipo,explicacion:match.explicacion\n   });\n  }\n  seen.add(destination.proveedor);\n  destinations.push({proveedor:destination.proveedor,\n   correspondencias:matches});\n }\n if(destinations.length<1||destinations.length>(args.multifuente===true&&args.distribucionComercial===true?70:25))return no('sin_destinos');\n return {estado:'plan_sql_listo',motivo:'identificadores_y_citas_del_catalogo',\n  params:{\n   p_buyer_chat_hmac:args.chatHmac,\n   p_message_hmac:args.messageHmac,\n   p_original_text:args.textoOriginal,\n   p_city:localidadOperativaD013(pedido.zona_entrega),\n   p_items:fullItems,p_destinos:destinations\n  }};\n}\ntype DbResponse={data:unknown;error:unknown};\n/** Solo ejecuta una RPC cuya implementación no puede despachar.\n * No exponer request_id, catálogo ni token de WhatsApp en web o logs.\n */\nexport async function guardarRondaSombraMvp221(\n prepared:ResultadoPuenteMvp221,\n rpc:(name:string,params:Params)=>Promise<DbResponse>\n):Promise<Readonly<{estado:'guardado'|'ya_existia'|'rechazado';\n motivo:string;articulos:number;matches:number}>>{\n const error=(motivo:string)=>({estado:'rechazado' as const,\n  motivo,articulos:0,matches:0});\n if(prepared?.estado!=='plan_sql_listo'||!prepared.params||\n    typeof rpc!=='function')return error('plan_no_preparado');\n try{\n  // V2-21: solo RPC V2 aislada. Nunca modificar/ejecutar M221 histórico.\n  const result=await rpc('cotironda_piloto_v2_shadow_prepare_d013',\n   prepared.params);\n  if(result.error!==null&&result.error!==undefined)\n   return error('sql_no_disponible');\n  const d=result.data;\n  if(!d||typeof d!=='object'||Array.isArray(d))\n   return error('sql_no_conciliado');\n  const body=d as Record<string,unknown>;\n  if(body.state==='already_staged')\n   return {estado:'ya_existia',motivo:'idempotencia_por_mensaje',\n    articulos:0,matches:0};\n  const expected=prepared.params;\n  const lines=expected.p_items.length;\n  const matches=expected.p_destinos.reduce(\n   (sum,d)=>sum+d.correspondencias.length,0);\n  if(body.state!=='shadow_staged'||body.items_staged!==lines||\n     body.matches_staged!==matches||body.invitations_sent!==0||\n     body.outbox_sent!==0)return error('sql_resultado_incoherente');\n  return {estado:'guardado',motivo:'ronda_sombra_verificada',\n   articulos:lines,matches};\n }catch{return error('sql_no_disponible')}\n}\n"
+    }
+  ],
+  "tests": {
+    "sql_readonly_fingerprint": [
+      {
+        "signature": "public.cotironda_piloto_v2_conversation_stage(text,uuid,bigint,uuid,jsonb,text,jsonb,jsonb,jsonb,jsonb)",
+        "fingerprint_ok": true,
+        "one_anchor": true,
+        "reversible": true,
+        "private_acl": true
+      },
+      {
+        "signature": "public.cotironda_piloto_ia_publish_mvp222(uuid)",
+        "fingerprint_ok": true,
+        "one_anchor": true,
+        "reversible": true,
+        "private_acl": true
+      }
+    ],
+    "sql_predicate": [
+      {
+        "label": "zero",
+        "ok": true
+      },
+      {
+        "label": "two",
+        "ok": true
+      },
+      {
+        "label": "legacy25",
+        "ok": true
+      },
+      {
+        "label": "legacy26",
+        "ok": true
+      },
+      {
+        "label": "legacy_unknown",
+        "ok": true
+      },
+      {
+        "label": "seven",
+        "ok": true
+      },
+      {
+        "label": "35",
+        "ok": true
+      },
+      {
+        "label": "70",
+        "ok": true
+      },
+      {
+        "label": "71",
+        "ok": true
+      },
+      {
+        "label": "overflow_pairs",
+        "ok": true
+      },
+      {
+        "label": "legacy_pairs",
+        "ok": true
+      },
+      {
+        "label": "legacy2",
+        "ok": true
+      }
+    ],
+    "bridge_guard": [
+      {
+        "n": 0,
+        "m": true,
+        "c": true,
+        "expected": false,
+        "ok": true
+      },
+      {
+        "n": 2,
+        "m": false,
+        "c": false,
+        "expected": true,
+        "ok": true
+      },
+      {
+        "n": 25,
+        "m": true,
+        "c": false,
+        "expected": true,
+        "ok": true
+      },
+      {
+        "n": 26,
+        "m": true,
+        "c": false,
+        "expected": false,
+        "ok": true
+      },
+      {
+        "n": 26,
+        "m": false,
+        "c": true,
+        "expected": false,
+        "ok": true
+      },
+      {
+        "n": 26,
+        "m": true,
+        "c": true,
+        "expected": true,
+        "ok": true
+      },
+      {
+        "n": 70,
+        "m": true,
+        "c": true,
+        "expected": true,
+        "ok": true
+      },
+      {
+        "n": 71,
+        "m": true,
+        "c": true,
+        "expected": false,
+        "ok": true
+      }
+    ],
+    "limitations": "No DDL executed; not full SQL function compilation or actual delivery. Guard tests do not execute full bridge."
+  }
+}
