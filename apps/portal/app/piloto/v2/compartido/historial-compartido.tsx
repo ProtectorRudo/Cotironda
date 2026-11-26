@@ -20,7 +20,7 @@ function RoundRow({r,onSelect}:{r:RondaHistorialD017;onSelect:()=>void}){
   <span className="coti-history-details">
    <span className="coti-history-mainline"><strong>{date(r.fechaMs)}</strong></span>
    <span className="coti-shared-round-meta">{r.localidad||'Localidad no informada'} · {r.articulos} {r.articulos===1?'material':'materiales'}</span>
-   <span className="coti-history-documents">{r.originales} {r.originales===1?'presupuesto recibido':'presupuestos recibidos'}</span>
+   <span className="coti-history-documents">{r.originales} {r.originales===1?'original recibido':'originales recibidos'}</span>
   </span>
   <span className={'coti-history-state '+(active?'active':'closed')}>{active?'En curso':'Cerrada'}</span>
   <span className="coti-history-chevron" aria-hidden="true">›</span>
