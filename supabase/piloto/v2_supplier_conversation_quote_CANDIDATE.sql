@@ -17,11 +17,58 @@ BEGIN
  IF length(p_source)>4000 THEN RETURN NULL;END IF;
  foreign_seen:=p_source ~* '(USD|US\$|U\$S|d[oó]lares)';
  local_seen:=p_source ~* '(ARS|AR\$|pesos)';
- IF foreign_seen AND (local_seen OR regexp_replace(p_source,'(?:US\$|U\$S)','', 'gi') ~ '\
+ IF foreign_seen AND (local_seen OR regexp_replace(p_source,'(?:US\$|U\$S)','','gi') ~ '\$') THEN RETURN jsonb_build_object('state','ambiguous');END IF;
  FOR line IN SELECT btrim(v) FROM regexp_split_to_table(p_source,E'\\r?\\n|;') a(v) LOOP
   IF line !~* '^(total([[:space:]]+(general|final|a[[:space:]]+pagar|presupuesto|cotizaci[oó]n))?|importe[[:space:]]+total|monto[[:space:]]+total|subtotal)([[:space:]:=$]|$)' THEN CONTINUE;END IF;
   label:=CASE WHEN line ~* '^subtotal' THEN 'subtotal' ELSE 'total' END;
-  parts:=regexp_match(line,'^(?:total(?:[[:space:]]+(?:general|final|a[[:space:]]+pagar|presupuesto|cotizaci[oó]n))?|importe[[:space:]]+total|monto[[:space:]]+total|subtotal)[[:space:]]*[:=]?[[:space:]]*((?:(?:ARS|AR\$|USD|US\$|U\$S|\$)[[:space:]]*)?(?:[0-9]{1,3}(?:\.[0-9]{3})+|[0-9]{1,12})(?:,[0-9]{1,2})?)[[:space:]]*(p_chat_hmac text,p_id uuid,p_revision bigint,p_lease uuid,p_fragments jsonb)
+  parts:=regexp_match(line,'^(?:total(?:[[:space:]]+(?:general|final|a[[:space:]]+pagar|presupuesto|cotizaci[oó]n))?|importe[[:space:]]+total|monto[[:space:]]+total|subtotal)[[:space:]]*[:=]?[[:space:]]*((?:(?:ARS|AR\$|USD|US\$|U\$S|\$)[[:space:]]*)?(?:[0-9]{1,3}(?:\.[0-9]{3})+|[0-9]{1,12})(?:,[0-9]{1,2})?)[[:space:]]*$','i');
+  IF parts IS NULL THEN
+   IF label='total' THEN bad_total:=true;ELSE bad_subtotal:=true;END IF;
+   CONTINUE;
+  END IF;
+  amount:=parts[1];
+  IF foreign_seen AND amount !~* '^(USD|US\$|U\$S)' THEN
+   IF label='total' THEN bad_total:=true;ELSE bad_subtotal:=true;END IF;
+   CONTINUE;
+  END IF;
+  IF label='total' THEN
+   IF total IS NOT NULL AND total<>amount THEN bad_total:=true;END IF;
+   total:=amount;
+  ELSE
+   IF subtotal IS NOT NULL AND subtotal<>amount THEN bad_subtotal:=true;END IF;
+   subtotal:=amount;
+  END IF;
+ END LOOP;
+ IF bad_total THEN RETURN jsonb_build_object('state','ambiguous');END IF;
+ IF total IS NOT NULL THEN RETURN jsonb_build_object('state','declared','kind','total','literal',total);END IF;
+ IF bad_subtotal THEN RETURN jsonb_build_object('state','ambiguous');END IF;
+ IF subtotal IS NOT NULL THEN RETURN jsonb_build_object('state','declared','kind','subtotal','literal',subtotal);END IF;
+ RETURN NULL;
+END $fn$;
+REVOKE ALL ON FUNCTION cotironda_piloto_privado.v2_group_declared_amount(text) FROM PUBLIC,anon,authenticated;
+CREATE FUNCTION cotironda_piloto_privado.v2_group_display_amount(p_source text,p_summary jsonb)
+RETURNS jsonb LANGUAGE plpgsql IMMUTABLE SET search_path TO '' AS $fn$
+DECLARE declared jsonb;n int;distinct_n int;responded int;sum_cents numeric;
+BEGIN
+ declared:=cotironda_piloto_privado.v2_group_declared_amount(p_source);
+ IF declared IS NOT NULL THEN RETURN declared;END IF;
+ IF p_summary->'group_sum_eligible' IS DISTINCT FROM 'true'::jsonb
+ OR coalesce(p_summary->>'moneda','') NOT IN ('ARS','USD','no_informada')
+ OR jsonb_typeof(p_summary->'precios') IS DISTINCT FROM 'array'
+ OR jsonb_typeof(p_summary->'rubros') IS DISTINCT FROM 'array' THEN RETURN NULL;END IF;
+ IF jsonb_array_length(p_summary->'precios') NOT BETWEEN 1 AND 25
+ OR jsonb_array_length(p_summary->'rubros') NOT BETWEEN 1 AND 7 THEN RETURN NULL;END IF;
+ IF EXISTS(SELECT 1 FROM jsonb_array_elements(p_summary->'precios') a(v)
+ WHERE coalesce(v->>'centavos','') !~ '^[0-9]{1,15}$' OR coalesce(v->>'pedidoId','') !~ '^item_[1-9][0-9]{0,2}$')
+ OR EXISTS(SELECT 1 FROM jsonb_array_elements(p_summary->'rubros') a(v)
+ WHERE coalesce(v->>'respondidos','') !~ '^[0-9]{1,3}$') THEN RETURN NULL;END IF;
+ SELECT count(*),count(DISTINCT v->>'pedidoId'),sum((v->>'centavos')::numeric) INTO n,distinct_n,sum_cents FROM jsonb_array_elements(p_summary->'precios') a(v);
+ SELECT sum((v->>'respondidos')::int) INTO responded FROM jsonb_array_elements(p_summary->'rubros') a(v);
+ IF n<>distinct_n OR n<>responded OR sum_cents>99999999999999 OR sum_cents<0 THEN RETURN NULL;END IF;
+ RETURN jsonb_build_object('state','calculated','centavos',sum_cents::text,'moneda',p_summary->>'moneda');
+END $fn$;
+REVOKE ALL ON FUNCTION cotironda_piloto_privado.v2_group_display_amount(text,jsonb) FROM PUBLIC,anon,authenticated;
+CREATE FUNCTION public.cotironda_piloto_v2_supplier_group_quote_context(p_chat_hmac text,p_id uuid,p_revision bigint,p_lease uuid,p_fragments jsonb)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO '' AS $fn$
 DECLARE g record;s record;cnt int;rid uuid;items jsonb;anchor text;combined text;
 BEGIN
