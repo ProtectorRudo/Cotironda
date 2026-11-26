@@ -108,7 +108,7 @@ export function proyectarRespuestasV2(raw:unknown):CatalogoRespuestasV2|null{
   if(it.quoteGroup!==undefined){
    const g=it.quoteGroup;
    if(!obj(g)||it.kind!=='text'||typeof g.anchorId!=='string'||!UUID.test(g.anchorId)||
-    !Array.isArray(g.documentIds)||g.documentIds.length<2||g.documentIds.length>60||
+    !Array.isArray(g.documentIds)||g.documentIds.length<1||g.documentIds.length>60||
     g.documentIds.some(id=>typeof id!=='string'||!UUID.test(id))||
     new Set(g.documentIds).size!==g.documentIds.length||!g.documentIds.includes(g.anchorId)||!g.documentIds.includes(it.documentId))return null;
    const existing=groups.get(g.anchorId);
@@ -146,7 +146,7 @@ export function proyectarRespuestasV2(raw:unknown):CatalogoRespuestasV2|null{
   const pago=g.raw.pago==='contado'?'Contado':g.raw.pago==='transferencia'?'Transferencia':g.raw.pago==='credito'?'Crédito':'No informado';
   const blank=resumirOfertaComercialV2(null,[]);
   merged.set(anchor,Object.freeze({...base,originalesAgrupados:Object.freeze([...g.ids]),
-   analisis:valid?'Análisis conjunto de los mensajes':'Revisá los mensajes originales',puntos:Object.freeze([]),
+   analisis:valid?(g.ids.length===1?'Análisis del presupuesto':'Análisis conjunto de los mensajes'):(g.ids.length===1?'Revisá el mensaje original':'Revisá los mensajes originales'),puntos:Object.freeze([]),
    resumen:Object.freeze({...blank,...groupedAmount(g.raw.amountDisplay),articulosCotizados:valid?q:null,articulosEnviados:valid?a:null,
     condiciones:Object.freeze({...blank.condiciones,iva,flete,pago})})}));
  }
