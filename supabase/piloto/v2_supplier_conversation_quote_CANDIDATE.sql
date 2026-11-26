@@ -88,6 +88,10 @@ BEGIN
  THEN RETURN jsonb_build_object('state','source_changed');END IF;
  SELECT string_agg(v->>'text',E'\n\n' ORDER BY pos) INTO combined FROM jsonb_array_elements(p_fragments) WITH ORDINALITY a(v,pos);
  IF length(combined) NOT BETWEEN 5 AND 4000 THEN RETURN jsonb_build_object('state','source_length');END IF;
+ -- Revalidar las referencias inferidas sin convertirlas en citas explícitas.
+ IF g.reference_key<>'' AND EXISTS(SELECT 1 FROM cotironda_piloto_privado.v2_supplier_conversation_sources f WHERE f.conversation_id=p_id AND
+ ((f.quoted_reference IS NOT NULL AND f.quoted_reference<>g.reference_key)
+ OR (f.quoted_reference IS NULL AND cotironda_piloto_privado.v2_supplier_unique_reference(s.key,f.received_at) IS DISTINCT FROM g.reference_key))) THEN RETURN jsonb_build_object('state','context_changed');END IF;
  -- Una ronda acreditada para TODOS los fragmentos, no la ronda más reciente.
  SELECT count(*),(array_agg(r.id))[1] INTO cnt,rid
  FROM cotironda_piloto_privado.ai_dispatch_jobs_mvp222 j
@@ -131,7 +135,7 @@ BEGIN
   FOR fragment IN SELECT v FROM jsonb_array_elements(p_fragments) a(v) LOOP
    r:=public.cotironda_piloto_supplier_text_intent_v2(fragment->>'message_hmac',p_chat_hmac,encode(sha256(convert_to(fragment->>'text','UTF8')),'hex'),'quote');
    IF r->>'state' IS DISTINCT FROM 'quote' THEN RAISE EXCEPTION 'group_classify_failed';END IF;
-   r:=public.cotironda_piloto_ia_link_supplier_mvp225(fragment->>'message_hmac',p_chat_hmac,nullif(g.reference_key,''),fragment->>'text');
+   r:=public.cotironda_piloto_ia_link_supplier_mvp225(fragment->>'message_hmac',p_chat_hmac,(SELECT f.quoted_reference FROM cotironda_piloto_privado.v2_supplier_conversation_sources f WHERE f.conversation_id=p_id AND f.message_hmac=fragment->>'message_hmac'),fragment->>'text');
    IF r->>'state' IS DISTINCT FROM 'linked_for_semantic_review' OR r->>'request_id' IS DISTINCT FROM p_request_id::text THEN RAISE EXCEPTION 'group_link_failed';END IF;
   END LOOP;
   r:=public.cotironda_piloto_ia_reserve_quote_mvp227(anchor,p_chat_hmac);
