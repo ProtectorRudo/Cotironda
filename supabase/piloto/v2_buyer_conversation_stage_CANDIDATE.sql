@@ -14,6 +14,7 @@ ALTER TABLE cotironda_piloto_privado.v2_buyer_conversation_sources ADD COLUMN te
 CREATE FUNCTION cotironda_piloto_privado.v2_conversation_document_verified(p_hmac text,p_chat text,p_buyer text,p_media_sha text,p_request uuid)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO '' AS $fn$
  SELECT EXISTS(SELECT 1 FROM cotironda_piloto_privado.media_archive_mvp095 a
+ JOIN cotironda_piloto_privado.whapi_inbox m ON m.message_hmac=a.message_hmac AND m.kind=a.kind AND m.chat_hmac=a.chat_hmac AND m.participant_key=a.participant_key
  JOIN storage.objects o ON o.bucket_id='cotironda-piloto-originals' AND o.name=a.storage_path
  JOIN storage.buckets b ON b.id=o.bucket_id AND b.public=false
  WHERE a.message_hmac=p_hmac AND a.chat_hmac=p_chat AND a.participant_key=p_buyer
