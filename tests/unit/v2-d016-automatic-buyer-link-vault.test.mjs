@@ -9,7 +9,7 @@ const config={
  enabled:true,channel:'pilot_1234',
  identityHmacHex:'a'.repeat(64),
  aesHex:'b'.repeat(64),linkHmacHex:'c'.repeat(64),
- portalOrigin:'https://cotironda-portal-dev-git-feat-c9bde9-protector-rudo-s-projects.vercel.app',
+ portalOrigin:'https://app.cotironda.com',
  portalSha:'f98527c9516478783bd7cf95433c58f5ca445937',
  approvedSha:'f98527c9516478783bd7cf95433c58f5ca445937',
  whapiToken:'token_not_real_or_used_0123456789'
@@ -79,7 +79,7 @@ test('buyer packet must be authentic; no buyer number from external input',async
   post:async()=>{throw Error('no HTTP on mismatch')}
  }),/contact_envelope_invalid/);
 });
-test('auto sends D016 private 14-day URL after authenticated dispatch exactly once',async()=>{
+test('auto sends D016 canonical private URL after authenticated dispatch exactly once',async()=>{
  const packet=await authenticatedPacket();
  let posts=0,prepared=0,finished=0,deliveredBody='';
  const rpc=async(name,params)=>{
@@ -112,8 +112,9 @@ test('auto sends D016 private 14-day URL after authenticated dispatch exactly on
   assert.match(deliveredBody,/ronda=665759f0-251b-4a2b-afb4-d763612366f7/);
   assert.doesNotMatch(deliveredBody,/https:\/\/.*\/originales/);
   assert.doesNotMatch(deliveredBody,/SEGUIMIENTO COTI/);
-  assert.match(deliveredBody,/funciona durante 14 días/);
-   assert.match(deliveredBody,/No tenés que enviar ninguna palabra/);
+  assert.match(deliveredBody,/https:\/\/app\.cotironda\.com\/piloto\/v2\/acceso#d016=/);
+   assert.match(deliveredBody,/En Mi Cotironda podés consultar tus pedidos y presupuestos/);
+   assert.doesNotMatch(deliveredBody,/vercel\.app|14 días/);
   return {ok:true,json:async()=>({
    sent:true,message_id:'wamid.SYNTHETIC12345'
   })};
