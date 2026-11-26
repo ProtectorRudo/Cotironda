@@ -124,9 +124,9 @@ Deno.serve(async(req)=>{
       linkHmacHex:Deno.env.get('COTIRONDA_PILOT_D016_HMAC_KEY_HEX')??'',
       // Pinned PUBLIC pilot deployment metadata verified against Vercel READY.
       // No credentials, service keys, buyer numbers or tokens in source.
-      portalOrigin:'https://cotironda-portal-dev-git-feat-c9bde9-protector-rudo-s-projects.vercel.app',
-      portalSha:'f98527c9516478783bd7cf95433c58f5ca445937',
-      approvedSha:'f98527c9516478783bd7cf95433c58f5ca445937',
+      portalOrigin:'https://app.cotironda.com',
+      portalSha:'18751c1ddc8c3431d464b98ea4459795d2fdeee3',
+      approvedSha:'18751c1ddc8c3431d464b98ea4459795d2fdeee3',
       whapiToken:Deno.env.get('COTIRONDA_PILOT_WHAPI_TOKEN')??''
      },{
       rpc:async(name,args)=>{
