@@ -56,3 +56,13 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO '' AS $fn$
 $fn$;
 REVOKE ALL ON FUNCTION public.cotironda_piloto_v2_d021_grouped_responders_private(uuid,text) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.cotironda_piloto_v2_d021_grouped_responders_private(uuid,text) TO service_role;
+
+-- Reutilizar la capacidad de invitado y sus controles, sin ampliar descargas.
+CREATE FUNCTION public.cotironda_piloto_v2_read_shared_history_grouped(p_share_id uuid,p_request_id uuid DEFAULT NULL)
+RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO '' AS $fn$
+ SELECT CASE WHEN p_request_id IS NULL THEN c.raw
+ ELSE cotironda_piloto_privado.v2_supplier_group_catalog_enrich(p_request_id,c.raw) END
+ FROM (SELECT public.cotironda_piloto_v2_read_shared_history(p_share_id,p_request_id) AS raw) c;
+$fn$;
+REVOKE ALL ON FUNCTION public.cotironda_piloto_v2_read_shared_history_grouped(uuid,uuid) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.cotironda_piloto_v2_read_shared_history_grouped(uuid,uuid) TO service_role;
