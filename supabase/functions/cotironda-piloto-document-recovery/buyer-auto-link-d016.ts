@@ -107,7 +107,7 @@ export async function sendAutomaticBuyerLinkD016(
     config.identityHmacHex===config.aesHex||
     !WHAPI_CHANNEL.test(config.channel)||
     !SHA.test(config.portalSha)||config.portalSha!==config.approvedSha||
-    !/^https:\/\/cotironda-portal-[a-z0-9-]+-protector-rudo-s-projects\.vercel\.app$/u.test(config.portalOrigin)||
+    config.portalOrigin!=='https://app.cotironda.com'||
     typeof config.whapiToken!=='string'||config.whapiToken.length<16||
     config.whapiToken.length>300)
   throw Error('d016_auto_link_secure_configuration_unavailable');
