@@ -53,7 +53,7 @@ BEGIN
   IF f.text_length IS NULL OR f.text_length<1 OR f.kind NOT IN ('text','document') OR f.inbox_kind<>f.kind
    OR f.chat_hmac IS DISTINCT FROM g.chat_hmac OR f.participant_key IS DISTINCT FROM g.buyer_key
    OR f.request_id IS DISTINCT FROM p_request OR f.plaintext_sha256 IS DISTINCT FROM f.source_sha256
-   OR encode(sha256(convert_to(substring(g.original_request FROM pos FOR f.text_length),'UTF8')),'hex') IS DISTINCT FROM CASE WHEN f.kind='text' THEN f.source_sha256 ELSE f.derived_sha256 END
+   OR encode(sha256(convert_to(substring(g.original_request FROM pos FOR f.text_length),'UTF8')),'hex') IS DISTINCT FROM (CASE WHEN f.kind='text' THEN f.source_sha256 ELSE f.derived_sha256 END)
    OR (f.kind='document' AND NOT cotironda_piloto_privado.v2_conversation_document_verified(f.message_hmac,g.chat_hmac,g.buyer_key,f.media_sha256,p_request))
   THEN RETURN false; END IF;
   pos:=pos+f.text_length;n:=n+1;
