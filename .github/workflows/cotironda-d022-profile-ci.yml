@@ -152,7 +152,7 @@ jobs:
           const c=JSON.parse(readFileSync('supabase/piloto/v2_commercial_integrated_v119_CANDIDATE.json','utf8'));
           assert.equal(c.base.version,119);
           assert.equal(c.base.ezbr_sha256,'92a4ac176f5db35b8694a7543c20c180a1553c99d9a9d7a097faad58ae25e741');
-          assert.equal(c.files.length,11);
+          assert.equal(c.files.length,12);
           const overlay=new Set();
           for(const f of c.files){
             assert.match(f.path,/^(src\/domain\/|supabase\/functions\/)[a-zA-Z0-9_./-]+\.(?:ts|mjs)$/);
@@ -165,7 +165,7 @@ jobs:
             seen.add(f.path);
           }
           assert.equal(seen.size,86);
-          console.log('86 fuentes exactas: base v119 y 11 overlays comerciales; no se ejecuta el webhook.');
+          console.log('86 fuentes exactas: base v119 y 12 overlays comerciales; no se ejecuta el webhook.');
           NODE
       - name: Typecheck Deno del candidato comercial completo sin despliegue
         run: |
