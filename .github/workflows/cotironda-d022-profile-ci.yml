@@ -250,3 +250,30 @@ jobs:
           console.log('PASS exact worker: two buyers, AES-GCM, one reader each, 2 routing batches, 14 selected each, no transport.');
           TEST
           deno run --node-modules-dir=auto --no-prompt commercial-worker-smoke.mjs
+
+      - name: Probar corrección de unidades literales sobre V120 exacta (sin despliegue)
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          import {resolve} from 'node:path';
+          import assert from 'node:assert/strict';
+          const c=JSON.parse(readFileSync('supabase/piloto/v2_unit_fidelity_v120_CANDIDATE.json','utf8'));
+          assert.equal(c.base.version,120);
+          assert.equal(c.base.file_count,86);
+          assert.equal(c.base.ezbr_sha256,'274c0a9ab48ed7451c3a7aede50c3a15b99d20a8b05a4ee02873bcb996b07818');
+          assert.equal(c.files.length,4);
+          const root=resolve(process.env.RUNNER_TEMP,'cotironda-whapi-candidate');
+          for(const f of c.files){
+            assert.match(f.path,/^(src\/domain\/|supabase\/functions\/)[a-zA-Z0-9_./-]+\.ts$/);
+            assert.ok(!f.path.split('/').includes('..'));
+            const p=resolve(root,f.path);
+            assert.ok(p.startsWith(root+'/'));
+            assert.equal(readFileSync(p,'utf8'),f.base_content,'V120 base drift '+f.path);
+            writeFileSync(p,f.content);
+          }
+          writeFileSync(root+'/unit-fidelity-smoke.mjs',c.test);
+          NODE
+          cd "$RUNNER_TEMP/cotironda-whapi-candidate"
+          deno check --node-modules-dir=auto supabase/functions/cotironda-piloto-whapi/index.ts
+          deno run --no-prompt unit-fidelity-smoke.mjs
+          deno run --node-modules-dir=auto --no-prompt commercial-worker-smoke.mjs
